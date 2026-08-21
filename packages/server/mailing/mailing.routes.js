@@ -39,6 +39,7 @@ router.post(
 
 router.post('/download-multiple-zip', GUARD_USER, mailings.downloadMultipleZip);
 
+router.patch('/:mailingId/metadata', GUARD_USER, mailings.updateMetadata);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);

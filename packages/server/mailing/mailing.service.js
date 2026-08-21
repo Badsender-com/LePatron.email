@@ -43,6 +43,7 @@ const request = require('request');
 
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
+const mailingMetadataService = require('./mailing-metadata.service.js');
 const logger = require('../utils/logger.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
@@ -259,6 +260,7 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     parentFolderId,
     mailingName,
     user,
+    metadata,
   } = mailingData;
 
   checkCreationPayload({
@@ -299,6 +301,16 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     mailing.userName = user.name;
     mailing.group = user.group.id;
   }
+
+  // Same validation as the PATCH, so a typology can never enter through the
+  // creation path without being checked. An admin creates without a company, so
+  // the template's own company is the only reference available.
+  Object.assign(
+    mailing,
+    await mailingMetadataService.validateMetadataPayload(metadata, {
+      companyId: mailing.group || template._company,
+    })
+  );
 
   const newMailing = await createMailing(mailing);
 
@@ -1169,6 +1181,9 @@ async function copyMailing(mailingId, destination, user) {
     'workspace',
     '_parentFolder',
     '__v',
+    // Kept: `subject` and `_emailType` describe the email. Dropped: a planned
+    // send date belongs to the source campaign only.
+    'plannedSendDate',
   ]);
 
   if (workspaceId) {
@@ -1267,6 +1282,9 @@ async function duplicateWithTranslatedData({
     'workspace',
     '_parentFolder',
     '__v',
+    // Kept: `subject` and `_emailType` describe the email. Dropped: a planned
+    // send date belongs to the source campaign only.
+    'plannedSendDate',
   ]);
 
   // Set new name

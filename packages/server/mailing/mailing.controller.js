@@ -23,6 +23,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const mailingMetadataService = require('./mailing-metadata.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
 
@@ -39,6 +40,7 @@ module.exports = {
   moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
+  updateMetadata: asyncHandler(updateMetadata),
   bulkUpdate: asyncHandler(bulkUpdate),
   downloadMultipleZip: asyncHandler(downloadMultipleZip),
   bulkDestroy: asyncHandler(bulkDestroy),
@@ -134,7 +136,15 @@ async function listTags(req, res) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
+  const {
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+    subject,
+    plannedSendDate,
+    _emailType,
+  } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
     templateId,
@@ -142,6 +152,9 @@ async function create(req, res) {
     parentFolderId,
     mailingName,
     user,
+    // Optional editorial metadata, filled in by the creation modal when the
+    // company has the feature enabled.
+    metadata: { subject, plannedSendDate, _emailType },
   });
 
   res.json(response);
@@ -445,6 +458,64 @@ async function updateMosaico(req, res) {
   );
 
   res.json(mailingForMosaico);
+}
+
+/**
+ * @api {patch} /mailings/:mailingId/metadata update the editorial metadata
+ * @apiPermission user
+ * @apiName UpdateMailingMetadata
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiParam (Body) {String} [subject] the email subject line
+ * @apiParam (Body) {String} [preheader] written into the template's own
+ *   `preheaderText` property, and ignored when the template declares none
+ * @apiParam (Body) {String} [plannedSendDate] ISO date, `null` to clear
+ * @apiParam (Body) {String} [_emailType] a taxonomy item of the same company,
+ *   `null` to detach
+ *
+ * @apiUse mailing
+ */
+
+async function updateMetadata(req, res) {
+  const { user } = req;
+  const { mailingId } = req.params;
+
+  const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
+  const mailing = await Mailings.findOne(query);
+
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  // Same access control as updateMosaico: belonging to the company is not enough,
+  // the user must have access to the workspace or folder holding the mailing.
+  if (!user.isAdmin) {
+    const { _workspace, _parentFolder } = mailing;
+
+    let hasAccess;
+
+    if (_parentFolder) {
+      hasAccess = await folderService.hasAccess(_parentFolder, user);
+    }
+
+    if (_workspace) {
+      hasAccess = await workspaceService.hasAccess(user, _workspace);
+    }
+
+    if (!hasAccess) {
+      throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+    }
+  }
+
+  const {
+    preheaderWritten,
+  } = await mailingMetadataService.applyMetadataToMailing(mailing, req.body);
+
+  await mailing.save();
+
+  res.json({ ...mailing.toJSON(), meta: { preheaderWritten } });
 }
 
 /**
