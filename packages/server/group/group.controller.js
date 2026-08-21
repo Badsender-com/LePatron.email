@@ -13,6 +13,7 @@ const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
+const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
 
 const {
   Groups,
@@ -461,7 +462,30 @@ async function update(req, res) {
     ]);
   }
 
+  // Read the retention before the write, and only when the payload carries it,
+  // so an ordinary group update costs no extra query.
+  const carriesRetention = groupToUpdate.logRetentionDays !== undefined;
+  const previousRetention = carriesRetention
+    ? (
+        await Groups.findById(req.params.groupId, {
+          logRetentionDays: 1,
+        }).lean()
+      )?.logRetentionDays
+    : undefined;
+
   await groupService.updateGroup(groupToUpdate);
+
+  // AISkillInvocation.expiresAt is stamped at write time, so a retention change
+  // has to be propagated to the invocations already logged — otherwise lowering
+  // it would only apply to future ones, and the RGPD promise would be weaker
+  // than the nightly purge this replaced.
+  const nextRetention = Number(groupToUpdate.logRetentionDays);
+  if (carriesRetention && nextRetention !== previousRetention) {
+    await invocationLogService.restampRetention({
+      groupId: req.params.groupId,
+      retentionDays: nextRetention,
+    });
+  }
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
