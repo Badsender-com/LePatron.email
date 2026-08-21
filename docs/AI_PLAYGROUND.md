@@ -55,22 +55,25 @@ Principe : _le playground orchestre, la skill est une fonction pure de son input
   plateforme (`yarn flag-platform-group` ou bouton sur /groups). Le moteur
   (Integration, modèle) vient de la config "Fonctionnalités IA" de ce Group.
 - **Budget de test** : l'exécution consomme le budget quotidien admin partagé
-  (`test-budget.service.js`, `MaxDailyTestInvocations`) ; épuisé → HTTP 429,
-  affiché en clair dans l'UI.
+  (`ai-playground/services/test-budget.service.js`, `MaxDailyPlaygroundRuns`
+  = 50/jour) ; épuisé → HTTP 429, affiché en clair dans l'UI. Le service vivait
+  dans `ai-skill/` tant que le runner de test super-admin existait ; le
+  playground étant son dernier consommateur, il a suivi le module.
 - **Contrat de sortie** : injecté automatiquement par le moteur de skills depuis
   `outputSchemaId`, avec mode natif `response_format: json_object` quand le
   provider le supporte — rien à configurer côté playground
   (cf. [AI_SKILL_AUTHORING.md](./AI_SKILL_AUTHORING.md)).
 
-## `featureType: 'playground'`
+## `invocationSource: 'playground'`
 
-Toute invocation produite par le runner porte `featureType: 'playground'` sur l'`AISkillInvocation`. Cette valeur est **exclue par défaut** des analytics de l'onglet Invocations (cf. toggle "Inclure admin-test / playground" dans `BsAiInvocationsTab.vue`).
+Toute invocation produite par le runner porte `invocationSource: 'playground'` sur l'`AISkillInvocation`. Cette valeur fait partie des sources **non productives** (`NonProductiveSources` dans `invocation-log.service.js`) : elle est **exclue côté serveur** des analytics de l'onglet Invocations, sauf opt-in explicite via le switch "Inclure les invocations non productives".
 
 ## Rétention & purge
 
-- `purge-playground-runs.job.js` tourne via Agenda à **4h UTC** chaque jour.
-- Fenêtre : `DefaultPlaygroundRunRetentionDays = 365` jours.
-- Filtre : `createdAt < cutoff && isGolden !== true` — les **golden runs ne sont jamais purgés**.
+- Purge assurée par l'**index TTL** `{ expiresAt: 1 }, { expireAfterSeconds: 0 }` sur `AIPlaygroundRun` — pas de job planifié, même mécanisme que `AISkillInvocation.expiresAt` et `translation-job.schema.js`.
+- Fenêtre : `DefaultPlaygroundRunRetentionDays = 365` jours, `expiresAt` étant estampillé à la création (`run-retention.service.js`).
+- Les **golden runs ne sont jamais purgés** : `markGolden` met `expiresAt` à `null`, `unmarkGolden` le recalcule depuis `createdAt` — une échéance déjà passée est rendue telle quelle, la suppression qui aurait dû avoir lieu est simplement rattrapée.
+- Les runs écrits avant l'index (données de dev uniquement, la fonctionnalité n'est pas livrée) ont `expiresAt: null` et n'expirent donc jamais : pas de script de backfill, contrairement aux invocations.
 
 ## Endpoints REST
 

@@ -27,8 +27,16 @@ const FeedbackRatings = Object.freeze({
 });
 const FeedbackRatingValues = Object.values(FeedbackRatings);
 
+// Daily run quota per user, enforced by test-budget.service.js. Lived in
+// skill-constants as MaxDailyTestInvocations while the super-admin Test runner
+// existed; the playground is its only consumer now.
+const MaxDailyPlaygroundRuns = 50;
 const DefaultPlaygroundRunRetentionDays = 365;
-const PlaygroundFeatureType = 'playground';
+// Analytics source tag carried by every AISkillInvocation the runner
+// produces. Reserved as non-productive server-side (NonProductiveSources in
+// invocation-log.service.js), so playground traffic stays out of the default
+// Invocations view.
+const PlaygroundInvocationSource = 'playground';
 
 module.exports = {
   ScenarioIdRegex,
@@ -37,6 +45,7 @@ module.exports = {
   VersionRefModeValues,
   RunStatusValues,
   FeedbackRatingValues,
+  MaxDailyPlaygroundRuns,
   DefaultPlaygroundRunRetentionDays,
-  PlaygroundFeatureType,
+  PlaygroundInvocationSource,
 };

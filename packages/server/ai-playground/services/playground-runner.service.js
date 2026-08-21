@@ -9,11 +9,12 @@ const {
   Groups,
 } = require('../../common/models.common.js');
 const skillInvocation = require('../../ai-skill/services/skill-invocation.service.js');
-const testBudget = require('../../ai-skill/services/test-budget.service.js');
+const testBudget = require('./test-budget.service.js');
 const { resolveExpertise } = require('./expertise-resolver.service.js');
+const { runExpiresAt } = require('./run-retention.service.js');
 const {
   VersionRefModes,
-  PlaygroundFeatureType,
+  PlaygroundInvocationSource,
 } = require('../constant/playground-constants.js');
 
 /**
@@ -24,10 +25,10 @@ const {
  *   4. Compose the input. v1 doctrine: the runner only auto-injects the
  *      `expertise` field. Everything else stays in scenario.input verbatim.
  *   5. Consume the user's daily test budget.
- *   6. Call skillInvocation.invoke({ ..., featureType: 'playground' }).
+ *   6. Call skillInvocation.invoke({ ..., invocationSource: 'playground' }).
  *      The invoke service handles its own logging into AISkillInvocation.
  *   7. Persist an AIPlaygroundRun with the snapshot, refs and denormalised
- *      output for fast listing.
+ *      output for fast listing, and its retention deadline.
  *
  * @returns {Promise<AIPlaygroundRun>}
  */
@@ -95,7 +96,7 @@ async function executeScenario({
       input: composedInput,
       groupId: effectiveGroupId,
       userId,
-      featureType: PlaygroundFeatureType,
+      invocationSource: PlaygroundInvocationSource,
       variantPath: scenario.variantPath || [],
       // Always pass the resolved version: in pinned mode this is what makes
       // the pinned version actually RUN (not just be displayed on the run).
@@ -137,6 +138,9 @@ async function executeScenario({
       ? humanizeErrorMessage(invocationError)
       : null,
     createdBy: userId,
+    // Retention deadline for the TTL index. Cleared when the run is marked
+    // golden (run.service.js).
+    expiresAt: runExpiresAt(new Date()),
   });
 
   if (invocationError && invocationError.fieldErrors) {

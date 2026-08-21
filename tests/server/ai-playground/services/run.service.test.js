@@ -7,7 +7,7 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
     findById: jest.fn(),
     find: jest.fn(),
     countDocuments: jest.fn(),
-    updateMany: jest.fn(),
+    updateOne: jest.fn(),
     deleteOne: jest.fn(),
   },
   AIPlaygroundScenarios: {
@@ -26,6 +26,7 @@ function mockRunDoc(overrides = {}) {
   return {
     _id: new Types.ObjectId(),
     _scenario: new Types.ObjectId(),
+    createdAt: new Date('2026-01-01T00:00:00Z'),
     isGolden: false,
     feedback: null,
     save: jest.fn().mockImplementation(async function () {
@@ -70,15 +71,30 @@ describe('run.service', () => {
   describe('markGolden', () => {
     it('demotes the previous golden run, flips the new one, updates scenario.goldenRunId', async () => {
       const doc = mockRunDoc();
+      const previous = {
+        _id: new Types.ObjectId(),
+        createdAt: new Date('2025-06-01T00:00:00Z'),
+      };
       AIPlaygroundRuns.findById.mockResolvedValue(doc);
-      AIPlaygroundRuns.updateMany.mockResolvedValue({});
+      AIPlaygroundRuns.find.mockReturnValue({
+        lean: jest.fn().mockResolvedValue([previous]),
+      });
+      AIPlaygroundRuns.updateOne.mockResolvedValue({});
       AIPlaygroundScenarios.updateOne.mockResolvedValue({});
       await runService.markGolden(doc._id);
-      expect(AIPlaygroundRuns.updateMany).toHaveBeenCalledWith(
-        { _scenario: doc._scenario, isGolden: true },
-        { $set: { isGolden: false } }
+      // Demoted: isGolden off AND the retention deadline it lost on promotion
+      // put back, counted from its own createdAt.
+      expect(AIPlaygroundRuns.updateOne).toHaveBeenCalledWith(
+        { _id: previous._id },
+        {
+          $set: {
+            isGolden: false,
+            expiresAt: new Date('2026-06-01T00:00:00Z'),
+          },
+        }
       );
       expect(doc.isGolden).toBe(true);
+      expect(doc.expiresAt).toBeNull();
       expect(AIPlaygroundScenarios.updateOne).toHaveBeenCalledWith(
         { _id: doc._scenario },
         { $set: { goldenRunId: doc._id } }
@@ -89,7 +105,8 @@ describe('run.service', () => {
       const doc = mockRunDoc({ isGolden: true });
       AIPlaygroundRuns.findById.mockResolvedValue(doc);
       await runService.markGolden(doc._id);
-      expect(AIPlaygroundRuns.updateMany).not.toHaveBeenCalled();
+      expect(AIPlaygroundRuns.find).not.toHaveBeenCalled();
+      expect(AIPlaygroundRuns.updateOne).not.toHaveBeenCalled();
       expect(AIPlaygroundScenarios.updateOne).not.toHaveBeenCalled();
     });
   });
@@ -101,6 +118,8 @@ describe('run.service', () => {
       AIPlaygroundScenarios.updateOne.mockResolvedValue({});
       await runService.unmarkGolden(doc._id);
       expect(doc.isGolden).toBe(false);
+      // Back under the TTL index, one window from its own creation.
+      expect(doc.expiresAt).toEqual(new Date('2027-01-01T00:00:00Z'));
       expect(AIPlaygroundScenarios.updateOne).toHaveBeenCalledWith(
         { _id: doc._scenario, goldenRunId: doc._id },
         { $set: { goldenRunId: null } }

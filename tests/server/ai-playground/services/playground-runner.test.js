@@ -15,7 +15,7 @@ jest.mock(
   () => ({ invoke: jest.fn() })
 );
 jest.mock(
-  '../../../../packages/server/ai-skill/services/test-budget.service',
+  '../../../../packages/server/ai-playground/services/test-budget.service',
   () => ({ consumeBudget: jest.fn() })
 );
 jest.mock(
@@ -33,7 +33,7 @@ const {
   Groups,
 } = require('../../../../packages/server/common/models.common');
 const skillInvocation = require('../../../../packages/server/ai-skill/services/skill-invocation.service');
-const testBudget = require('../../../../packages/server/ai-skill/services/test-budget.service');
+const testBudget = require('../../../../packages/server/ai-playground/services/test-budget.service');
 const {
   resolveExpertise,
 } = require('../../../../packages/server/ai-playground/services/expertise-resolver.service');
@@ -110,7 +110,7 @@ describe('playground-runner.executeScenario', () => {
     expect(skillInvocation.invoke).toHaveBeenCalledWith(
       expect.objectContaining({
         skillId: 'generic.text',
-        featureType: 'playground',
+        invocationSource: 'playground',
         groupId: GROUP_ID,
         userId: USER_ID,
       })

@@ -5,6 +5,7 @@ const {
   AIPlaygroundRuns,
   AIPlaygroundScenarios,
 } = require('../../common/models.common.js');
+const { runExpiresAt } = require('./run-retention.service.js');
 const { FeedbackRatingValues } = require('../constant/playground-constants.js');
 
 const LIST_PROJECTION = {
@@ -85,8 +86,10 @@ async function setRunFeedback(runId, feedback, userId) {
 
 /**
  * Mark a run as the golden reference for its scenario:
- *  1. Unmark the previously golden run for this scenario (if any).
- *  2. Mark the new run as golden.
+ *  1. Unmark the previously golden run for this scenario (if any), restoring
+ *     its retention deadline.
+ *  2. Mark the new run as golden and clear its deadline — golden runs are
+ *     never expired by the TTL index.
  *  3. Update scenario.goldenRunId.
  * NOT atomic (no transaction): the partial-unique index on
  * { _scenario, isGolden: true } is the backstop — two concurrent markGolden
@@ -99,11 +102,18 @@ async function markGolden(runId) {
   if (run.isGolden) {
     return run;
   }
-  await AIPlaygroundRuns.updateMany(
+  const previous = await AIPlaygroundRuns.find(
     { _scenario: run._scenario, isGolden: true },
-    { $set: { isGolden: false } }
-  );
+    { createdAt: 1 }
+  ).lean();
+  for (const stale of previous) {
+    await AIPlaygroundRuns.updateOne(
+      { _id: stale._id },
+      { $set: { isGolden: false, expiresAt: runExpiresAt(stale.createdAt) } }
+    );
+  }
   run.isGolden = true;
+  run.expiresAt = null;
   try {
     await run.save();
   } catch (err) {
@@ -127,6 +137,7 @@ async function unmarkGolden(runId) {
   if (!run) throw createError(404, 'Run not found');
   if (!run.isGolden) return run;
   run.isGolden = false;
+  run.expiresAt = runExpiresAt(run.createdAt);
   await run.save();
   await AIPlaygroundScenarios.updateOne(
     { _id: run._scenario, goldenRunId: run._id },

@@ -75,6 +75,12 @@ const AIPlaygroundRunSchema = new Schema(
     feedback: { type: RunFeedbackSchema, default: null },
     isGolden: { type: Boolean, default: false },
 
+    // When Mongo may delete this run, stamped at write time (see the TTL index
+    // below). Null means "never expires": golden runs are durable references
+    // for regression / comparison, so markGolden clears the deadline and
+    // unmarkGolden puts it back.
+    expiresAt: { type: Date, default: null },
+
     // Nullable: the Playground is a super-admin tool and the super-admin
     // pseudo-account (config.admin) has no User row, so runs it triggers have
     // no createdBy (same convention as the test-budget service's null userId).
@@ -100,5 +106,8 @@ AIPlaygroundRunSchema.index(
     name: 'one_golden_per_scenario',
   }
 );
+// Retention enforced by Mongo's own TTL monitor rather than a scheduled job —
+// same mechanism as AISkillInvocation.expiresAt and translation-job.schema.js.
+AIPlaygroundRunSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = AIPlaygroundRunSchema;
