@@ -33,10 +33,12 @@ const {
 
 const TENANT_A = '507f1f77bcf86cd799439001';
 const TENANT_B = '507f1f77bcf86cd799439002';
+const TENANT_WITHOUT_VARIABLES = '507f1f77bcf86cd799439003';
 
 const VARIABLE_A = '507f1f77bcf86cd7994390a1';
 const VARIABLE_B = '507f1f77bcf86cd7994390b1'; // belongs to TENANT_B
 const UNKNOWN_VARIABLE = '507f1f77bcf86cd7994390ff';
+const CREATED_VARIABLE = '507f1f77bcf86cd7994390c1'; // id the create mock hands out
 
 // --- in-memory store behaving like the collection ---------------------------
 
@@ -47,9 +49,13 @@ const asString = (value) =>
 
 /** Mimics MongoDB: every key of the filter must match, compared as strings. */
 const matches = (doc, filter = {}) =>
-  Object.keys(filter).every(
-    (key) => asString(doc[key]) === asString(filter[key])
-  );
+  Object.keys(filter).every((key) => {
+    const expected = filter[key];
+    if (expected && Array.isArray(expected.$in)) {
+      return expected.$in.some((id) => asString(id) === asString(doc[key]));
+    }
+    return asString(doc[key]) === asString(expected);
+  });
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -57,11 +63,16 @@ beforeEach(() => {
   store = [
     {
       _id: VARIABLE_A,
-      label: 'Prénom',
+      label: 'First name',
       variable: 'firstname',
       _group: TENANT_A,
     },
-    { _id: VARIABLE_B, label: 'Nom', variable: 'lastname', _group: TENANT_B },
+    {
+      _id: VARIABLE_B,
+      label: 'Last name',
+      variable: 'lastname',
+      _group: TENANT_B,
+    },
   ];
 
   PersonalizedVariables.deleteOne.mockImplementation(async (filter) => {
@@ -89,7 +100,7 @@ beforeEach(() => {
   );
 
   PersonalizedVariables.create.mockImplementation(async (doc) => {
-    const created = { _id: UNKNOWN_VARIABLE, ...doc };
+    const created = { _id: CREATED_VARIABLE, ...doc };
     store.push(created);
     return created;
   });
@@ -115,15 +126,9 @@ describe('deletePersonalizedVariable', () => {
     // The victim document is still there, untouched.
     expect(findById(VARIABLE_B)).toMatchObject({ _group: TENANT_B });
     expect(store).toHaveLength(2);
-  });
 
-  it('passes the company as a query filter, not just to the log', async () => {
-    await personalizedVariableService
-      .deletePersonalizedVariable(VARIABLE_B, TENANT_A)
-      .catch(() => {});
-
+    // The company reached the query, it was not just passed to the log.
     const [filter] = PersonalizedVariables.deleteOne.mock.calls[0];
-    expect(filter).toHaveProperty('_group');
     expect(asString(filter._group)).toBe(TENANT_A);
   });
 
@@ -158,27 +163,35 @@ describe('createOrUpdatePersonalizedVariables — updating', () => {
 
     // Neither the content nor the company of the victim document moved.
     expect(findById(VARIABLE_B)).toMatchObject({
-      label: 'Nom',
+      label: 'Last name',
       variable: 'lastname',
       _group: TENANT_B,
     });
+    expect(PersonalizedVariables.findOneAndReplace).not.toHaveBeenCalled();
   });
 
-  it('passes the company as a query filter', async () => {
-    await personalizedVariableService
-      .createOrUpdatePersonalizedVariables(
-        [{ _id: VARIABLE_B, label: 'x', variable: 'x' }],
-        TENANT_A
-      )
-      .catch(() => {});
+  it('updates a variable of its own company, scoped and without upsert', async () => {
+    await personalizedVariableService.createOrUpdatePersonalizedVariables(
+      [{ _id: VARIABLE_A, label: 'First name updated', variable: 'firstname' }],
+      TENANT_A
+    );
 
-    const [filter] = PersonalizedVariables.findOneAndReplace.mock.calls[0];
-    expect(filter).toHaveProperty('_group');
+    expect(findById(VARIABLE_A)).toMatchObject({ label: 'First name updated' });
+    expect(asString(findById(VARIABLE_A)._group)).toBe(TENANT_A);
+    expect(store).toHaveLength(2);
+
+    const [
+      filter,
+      ,
+      options,
+    ] = PersonalizedVariables.findOneAndReplace.mock.calls[0];
     expect(asString(filter._group)).toBe(TENANT_A);
+    // Without upsert, an id that matches nothing can no longer create a
+    // document — which is how a caller-supplied id used to enter the
+    // collection.
+    expect(options).toMatchObject({ upsert: false });
   });
 
-  // Without upsert, an unknown id can no longer create a document — which is how
-  // a caller-supplied id used to end up in the collection.
   it('creates nothing when the id is unknown', async () => {
     await expect(
       personalizedVariableService.createOrUpdatePersonalizedVariables(
@@ -189,20 +202,8 @@ describe('createOrUpdatePersonalizedVariables — updating', () => {
 
     expect(store).toHaveLength(2);
     expect(findById(UNKNOWN_VARIABLE)).toBeUndefined();
-
-    const [, , options] = PersonalizedVariables.findOneAndReplace.mock.calls[0];
-    expect(options.upsert).toBe(false);
-  });
-
-  it('updates a variable of its own company', async () => {
-    await personalizedVariableService.createOrUpdatePersonalizedVariables(
-      [{ _id: VARIABLE_A, label: 'Prénom modifié', variable: 'firstname' }],
-      TENANT_A
-    );
-
-    expect(findById(VARIABLE_A)).toMatchObject({ label: 'Prénom modifié' });
-    expect(asString(findById(VARIABLE_A)._group)).toBe(TENANT_A);
-    expect(store).toHaveLength(2);
+    expect(PersonalizedVariables.findOneAndReplace).not.toHaveBeenCalled();
+    expect(PersonalizedVariables.create).not.toHaveBeenCalled();
   });
 });
 
@@ -211,7 +212,7 @@ describe('createOrUpdatePersonalizedVariables — creating', () => {
   // : undefined`), and the key disappears in JSON.
   it('creates a variable when no id is provided', async () => {
     await personalizedVariableService.createOrUpdatePersonalizedVariables(
-      [{ label: 'Ville', variable: 'city' }],
+      [{ label: 'City', variable: 'city' }],
       TENANT_A
     );
 
@@ -222,7 +223,7 @@ describe('createOrUpdatePersonalizedVariables — creating', () => {
 
   it('writes _group as an ObjectId, matching the schema and the read', async () => {
     await personalizedVariableService.createOrUpdatePersonalizedVariables(
-      [{ label: 'Ville', variable: 'city' }],
+      [{ label: 'City', variable: 'city' }],
       TENANT_A
     );
 
@@ -237,7 +238,7 @@ describe('createOrUpdatePersonalizedVariables — creating', () => {
 
   it('always attaches the caller company, whatever the payload claims', async () => {
     await personalizedVariableService.createOrUpdatePersonalizedVariables(
-      [{ label: 'Ville', variable: 'city', _group: TENANT_B }],
+      [{ label: 'City', variable: 'city', _group: TENANT_B }],
       TENANT_A
     );
 
@@ -248,14 +249,85 @@ describe('createOrUpdatePersonalizedVariables — creating', () => {
   it('handles a mixed batch of one creation and one update', async () => {
     await personalizedVariableService.createOrUpdatePersonalizedVariables(
       [
-        { label: 'Ville', variable: 'city' },
-        { _id: VARIABLE_A, label: 'Prénom modifié', variable: 'firstname' },
+        { label: 'City', variable: 'city' },
+        {
+          _id: VARIABLE_A,
+          label: 'First name updated',
+          variable: 'firstname',
+        },
       ],
       TENANT_A
     );
 
     expect(store).toHaveLength(3);
-    expect(findById(VARIABLE_A)).toMatchObject({ label: 'Prénom modifié' });
+    expect(findById(VARIABLE_A)).toMatchObject({ label: 'First name updated' });
+  });
+});
+
+// The payload is a batch and the writes are concurrent, so a rejected item must
+// stop the whole thing before anything is written: the UI keeps its local rows
+// on error, and a partial write would be duplicated by the next save.
+describe('createOrUpdatePersonalizedVariables — batch integrity', () => {
+  it('writes nothing when one item of the batch belongs to another company', async () => {
+    await expect(
+      personalizedVariableService.createOrUpdatePersonalizedVariables(
+        [
+          { label: 'City', variable: 'city' },
+          { _id: VARIABLE_B, label: 'Hijacked', variable: 'hijacked' },
+        ],
+        TENANT_A
+      )
+    ).rejects.toThrow(ERROR_CODES.PERSONALIZED_VARIABLE_NOT_FOUND);
+
+    expect(PersonalizedVariables.create).not.toHaveBeenCalled();
+    expect(PersonalizedVariables.findOneAndReplace).not.toHaveBeenCalled();
+    expect(store).toHaveLength(2);
+  });
+
+  it('writes nothing when one item of the batch has an unknown id', async () => {
+    await expect(
+      personalizedVariableService.createOrUpdatePersonalizedVariables(
+        [
+          { label: 'City', variable: 'city' },
+          { _id: UNKNOWN_VARIABLE, label: 'Ghost', variable: 'ghost' },
+        ],
+        TENANT_A
+      )
+    ).rejects.toThrow(ERROR_CODES.PERSONALIZED_VARIABLE_NOT_FOUND);
+
+    expect(PersonalizedVariables.create).not.toHaveBeenCalled();
+    expect(store).toHaveLength(2);
+  });
+
+  // The ownership check and the write are two round trips; the guard inside the
+  // update path is what covers the gap between them.
+  it('reports not found when the variable disappears between check and write', async () => {
+    PersonalizedVariables.findOneAndReplace.mockResolvedValue(null);
+
+    await expect(
+      personalizedVariableService.createOrUpdatePersonalizedVariables(
+        [
+          {
+            _id: VARIABLE_A,
+            label: 'First name updated',
+            variable: 'firstname',
+          },
+        ],
+        TENANT_A
+      )
+    ).rejects.toThrow(ERROR_CODES.PERSONALIZED_VARIABLE_NOT_FOUND);
+  });
+
+  it('accepts a batch repeating the same owned id', async () => {
+    await personalizedVariableService.createOrUpdatePersonalizedVariables(
+      [
+        { _id: VARIABLE_A, label: 'First', variable: 'firstname' },
+        { _id: VARIABLE_A, label: 'Second', variable: 'firstname' },
+      ],
+      TENANT_A
+    );
+
+    expect(store).toHaveLength(2);
   });
 });
 
@@ -271,7 +343,7 @@ describe('getGroupPersonalizedVariables', () => {
 
   it('returns nothing for a company without variables', async () => {
     const result = await personalizedVariableService.getGroupPersonalizedVariables(
-      '507f1f77bcf86cd799439003'
+      TENANT_WITHOUT_VARIABLES
     );
 
     expect(result).toHaveLength(0);
