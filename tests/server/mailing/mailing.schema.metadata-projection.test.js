@@ -43,7 +43,7 @@ beforeEach(() => {
 });
 
 describe('findForApiWithPagination — metadata projection', () => {
-  it.each(['subject', 'plannedSendDate', '_emailType'])(
+  it.each(['subject', 'plannedSendDate', 'emailTypeId'])(
     'projects %s so the listing column is not empty',
     async (field) => {
       const { model, paginate } = makeModel();
@@ -51,6 +51,14 @@ describe('findForApiWithPagination — metadata projection', () => {
       expect(paginate.mock.calls[0][1].projection).toHaveProperty(field);
     }
   );
+
+  it('exposes the typology without an underscore, like templateId and userId', async () => {
+    const { model, paginate } = makeModel();
+    await findForApiWithPagination.call(model, {});
+    const projection = paginate.mock.calls[0][1].projection;
+    expect(projection.emailTypeId).toBe('$_emailType');
+    expect(projection).not.toHaveProperty('_emailType');
+  });
 
   it('still does not project previewHtml (the blob stays out of the page query)', async () => {
     const { model, paginate } = makeModel();

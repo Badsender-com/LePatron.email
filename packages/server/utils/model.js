@@ -80,16 +80,46 @@ function validatePaginationJSON(pagination) {
   return pagination;
 }
 
-// Validate pagination JSON
+// The filters come from a JSON query-string parameter, so nothing about their
+// shape is guaranteed. Anything that reaches a typed schema path (an ObjectId, a
+// Date) must be checked here: Mongoose would otherwise raise a CastError, which
+// surfaces as a 500 instead of a 400. Keeping this as a table rather than a chain
+// of `||` means a new filter is one line, and cannot be forgotten silently.
+const FILTER_SHAPES = {
+  templates: 'array',
+  tags: 'array',
+  emailTypes: 'objectIdArray',
+  plannedSendDateStart: 'date',
+  plannedSendDateEnd: 'date',
+};
+
+// A single query cannot legitimately enumerate more than this; an unbounded $in
+// is a cheap way to make the database do a lot of work.
+const MAX_FILTER_ARRAY_LENGTH = 200;
+
+const FILTER_VALIDATORS = {
+  array: (value) =>
+    Array.isArray(value) && value.length <= MAX_FILTER_ARRAY_LENGTH,
+  objectIdArray: (value) =>
+    Array.isArray(value) &&
+    value.length <= MAX_FILTER_ARRAY_LENGTH &&
+    value.every(
+      (item) =>
+        typeof item === 'string' && mongoose.Types.ObjectId.isValid(item)
+    ),
+  date: (value) =>
+    typeof value === 'string' && !Number.isNaN(new Date(value).getTime()),
+};
+
+// Validate the filters JSON
 function validateFiltersJSON(filters) {
   if (filters) {
-    if (
-      (filters?.templates && !Array.isArray(filters.templates)) ||
-      (filters?.tags && !Array.isArray(filters.tags)) ||
-      (filters?.emailTypes && !Array.isArray(filters.emailTypes))
-    ) {
-      throw new BadRequest(ERROR_CODES.BAD_FORMAT_FILTERS);
-    }
+    Object.entries(FILTER_SHAPES).forEach(([key, shape]) => {
+      if (filters[key] == null) return;
+      if (!FILTER_VALIDATORS[shape](filters[key])) {
+        throw new BadRequest(ERROR_CODES.BAD_FORMAT_FILTERS);
+      }
+    });
   }
   return filters;
 }

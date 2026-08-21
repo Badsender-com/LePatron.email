@@ -37,17 +37,22 @@ const TaxonomyItemSchema = Schema(
       type: String,
       required: [true, 'label is required'],
       set: trimString,
+      // Bounded now, while the collection is still empty: adding a limit once
+      // client data exists means a migration.
+      maxlength: 120,
     },
     // The company's own definition of what this typology means for them. This is
     // the real editorial value of the taxonomy, and the future LLM context.
     description: {
       type: String,
+      maxlength: 2000,
     },
     // Optional bridge onto the AI skills vocabulary — see
     // constant/email-type-canonical.js for why it is not an enum here.
     canonicalType: {
       type: String,
       set: trimString,
+      maxlength: 60,
     },
     // Soft disable: an item still referenced by mailings must keep resolving, so
     // it is deactivated rather than deleted.

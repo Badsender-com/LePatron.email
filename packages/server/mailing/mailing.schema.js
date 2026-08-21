@@ -101,6 +101,9 @@ const MailingSchema = Schema(
     // Single field: no A/B variants in this phase.
     subject: {
       type: String,
+      // Both ends of an email header have a practical ceiling; nothing else would
+      // bound this field.
+      maxlength: 255,
     },
     plannedSendDate: {
       type: Date,
@@ -315,8 +318,10 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       subject: 1,
       plannedSendDate: 1,
       // The id only: resolving the typology label needs a populate or a
-      // complementary query, which a .find() projection cannot do here.
-      _emailType: 1,
+      // complementary query, which a .find() projection cannot do here. Named
+      // like the other exposed references (templateId, userId), so the listing
+      // never receives an underscore-prefixed key.
+      emailTypeId: '$_emailType',
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,

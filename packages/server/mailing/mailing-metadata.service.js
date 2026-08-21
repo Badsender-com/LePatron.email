@@ -1,7 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { BadRequest, NotFound, Forbidden } = require('http-errors');
+const { UnprocessableEntity, NotFound, Forbidden } = require('http-errors');
 
 const { TaxonomyItems } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -9,24 +9,23 @@ const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const modelsUtils = require('../utils/model.js');
 const { writePreheader } = require('./preheader-resolver.js');
 
-/**
- * Keys accepted by both `PATCH /mailings/:id/metadata` and `POST /mailings`.
- * `preheader` is accepted by the PATCH only — at creation time the mailing has no
- * `data` yet, so there is nowhere to write it.
- */
-const METADATA_KEYS = Object.freeze([
-  'subject',
-  'plannedSendDate',
-  '_emailType',
-]);
+// Subject and preheader both end up in email headers; a client has no reason to
+// store more, and `preheader` lands in the Mixed `data` field where nothing else
+// would bound it.
+const MAX_SUBJECT_LENGTH = 255;
+const MAX_PREHEADER_LENGTH = 255;
 
 module.exports = {
   validateMetadataPayload,
   applyMetadataToMailing,
-  METADATA_KEYS,
+  MAX_SUBJECT_LENGTH,
+  MAX_PREHEADER_LENGTH,
 };
 
 const isDefined = (value) => value !== undefined;
+
+const invalid = () =>
+  new UnprocessableEntity(ERROR_CODES.INVALID_EMAIL_METADATA);
 
 /**
  * Validate the metadata part of a payload and return only the fields it actually
@@ -43,14 +42,16 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
   const validated = {};
 
   if (isDefined(payload.subject)) {
-    if (payload.subject === null) {
-      validated.subject = undefined;
-    } else if (typeof payload.subject !== 'string') {
-      throw new BadRequest(ERROR_CODES.INVALID_EMAIL_METADATA);
-    } else {
-      // A single subject per email: A/B variants are out of scope for this phase.
-      validated.subject = modelsUtils.trimString(payload.subject);
+    if (payload.subject !== null && typeof payload.subject !== 'string') {
+      throw invalid();
     }
+    // A single subject per email: A/B variants are out of scope for this phase.
+    const subject = modelsUtils.trimString(payload.subject || '');
+    if (subject.length > MAX_SUBJECT_LENGTH) {
+      throw invalid();
+    }
+    // An emptied input arrives as '' and must clear the field, not store a blank.
+    validated.subject = subject === '' ? undefined : subject;
   }
 
   if (isDefined(payload.plannedSendDate)) {
@@ -59,7 +60,7 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
     } else {
       const date = new Date(payload.plannedSendDate);
       if (Number.isNaN(date.getTime())) {
-        throw new BadRequest(ERROR_CODES.INVALID_EMAIL_METADATA);
+        throw invalid();
       }
       validated.plannedSendDate = date;
     }
@@ -84,15 +85,15 @@ async function validateEmailType(rawId, { companyId }) {
   if (rawId === null || rawId === '') return undefined;
 
   if (!mongoose.Types.ObjectId.isValid(rawId)) {
-    throw new BadRequest(ERROR_CODES.INVALID_EMAIL_METADATA);
+    throw invalid();
   }
 
   // A mailing created by a super admin carries no company (see
   // mailing.service.js#createInsideWorkspaceOrFolder). There is then no company
   // to check the typology against, so we refuse rather than store a reference
   // nobody can validate.
-  if (!companyId) {
-    throw new Forbidden(ERROR_CODES.EMAIL_TYPE_WRONG_COMPANY);
+  if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
+    throw new Forbidden(ERROR_CODES.EMAIL_TYPE_COMPANY_MISSING);
   }
 
   const emailType = await TaxonomyItems.findOne({
@@ -125,19 +126,23 @@ async function applyMetadataToMailing(mailing, payload = {}) {
   const companyId = mailing._company ? String(mailing._company) : null;
   const validated = await validateMetadataPayload(payload, { companyId });
 
-  METADATA_KEYS.forEach((key) => {
-    if (key in validated) {
-      mailing[key] = validated[key];
-    }
+  // `validated` holds exactly the keys the payload carried, so a field added to
+  // the validation applies here without a second list to keep in sync.
+  Object.keys(validated).forEach((key) => {
+    mailing[key] = validated[key];
   });
 
   let preheaderWritten = false;
 
   if (isDefined(payload.preheader)) {
     if (payload.preheader !== null && typeof payload.preheader !== 'string') {
-      throw new BadRequest(ERROR_CODES.INVALID_EMAIL_METADATA);
+      throw invalid();
     }
-    const result = writePreheader(mailing.data || {}, payload.preheader || '');
+    const preheader = payload.preheader || '';
+    if (preheader.length > MAX_PREHEADER_LENGTH) {
+      throw invalid();
+    }
+    const result = writePreheader(mailing.data || {}, preheader);
     preheaderWritten = result.written;
     if (preheaderWritten) {
       // http://mongoosejs.com/docs/schematypes.html#mixed
