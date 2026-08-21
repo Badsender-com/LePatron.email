@@ -1,7 +1,13 @@
 'use strict';
 
 jest.mock('../../../../packages/server/common/models.common', () => ({
-  Expertises: { find: jest.fn() },
+  Expertises: { find: jest.fn(), distinct: jest.fn() },
+}));
+
+jest.mock('../../../../packages/server/utils/logger.js', () => ({
+  warn: jest.fn(),
+  log: jest.fn(),
+  error: jest.fn(),
 }));
 
 const {
@@ -11,9 +17,13 @@ const {
 const {
   Expertises,
 } = require('../../../../packages/server/common/models.common');
+const logger = require('../../../../packages/server/utils/logger.js');
 
 function mockReturnDocs(docs) {
   Expertises.find.mockReturnValue({ lean: () => Promise.resolve(docs) });
+  Expertises.distinct.mockResolvedValue(
+    docs.flatMap((d) => d.scope || []).filter(Boolean)
+  );
 }
 
 describe('expertise.repository', () => {
@@ -210,6 +220,116 @@ describe('expertise.repository', () => {
       });
       expect(out).toHaveLength(1);
       expect(out[0].expertiseId).toBe('b');
+    });
+  });
+
+  describe('scope normalisation and unmatched-scope warning (R2)', () => {
+    it('normalises the requested scope, so UI casing meets code casing', async () => {
+      mockReturnDocs([]);
+      await findApplicable({
+        scope: [' CTA ', 'Objet'],
+        categories: ['redaction'],
+      });
+      const query = Expertises.find.mock.calls[0][0];
+      expect(query.$and[1]).toEqual({
+        $or: [{ isTransversal: true }, { scope: { $in: ['cta', 'objet'] } }],
+      });
+    });
+
+    it('dedupes scopes that collapse once normalised', async () => {
+      mockReturnDocs([]);
+      await findApplicable({
+        scope: ['CTA', 'cta'],
+        categories: ['redaction'],
+      });
+      const query = Expertises.find.mock.calls[0][0];
+      expect(query.$and[1].$or[1]).toEqual({ scope: { $in: ['cta'] } });
+    });
+
+    it('stays silent when every requested scope matched something', async () => {
+      mockReturnDocs([
+        {
+          expertiseId: 'cta-principles',
+          category: 'redaction',
+          scope: ['cta'],
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
+        },
+      ]);
+      await findApplicable({ scope: 'cta', categories: ['redaction'] });
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The silent failure of R2: the caller asks for a scope no expertise
+     * carries, so nothing from it reaches the prompt — and the invocation
+     * succeeds anyway.
+     */
+    it('warns when a requested scope matched no expertise', async () => {
+      mockReturnDocs([]);
+      Expertises.distinct.mockResolvedValue(['cta', 'objet']);
+      await findApplicable({ scope: 'bouton', categories: ['redaction'] });
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      const message = logger.warn.mock.calls[0][0];
+      expect(message).toContain('bouton');
+      // The scopes that DO exist are the one thing needed to fix the call.
+      expect(message).toContain('cta');
+      expect(message).toContain('objet');
+    });
+
+    /**
+     * The nastiest shape: transversal expertises match whatever the scope, so
+     * the returned list is NOT empty. The prompt is not broken, just poorer —
+     * which is exactly what goes unnoticed without this warning.
+     */
+    it('warns even when transversal expertises came back', async () => {
+      mockReturnDocs([
+        {
+          expertiseId: 'general',
+          isTransversal: true,
+          category: 'redaction',
+          scope: [],
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
+        },
+      ]);
+      Expertises.distinct.mockResolvedValue(['cta']);
+      const out = await findApplicable({
+        scope: 'bouton',
+        categories: ['redaction'],
+      });
+      expect(out).toHaveLength(1);
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0][0]).toContain('bouton');
+    });
+
+    it('warns about the unmatched scope only, not the ones that matched', async () => {
+      mockReturnDocs([
+        {
+          expertiseId: 'cta-principles',
+          category: 'redaction',
+          scope: ['cta'],
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
+        },
+      ]);
+      Expertises.distinct.mockResolvedValue(['cta']);
+      await findApplicable({
+        scope: ['cta', 'bouton'],
+        categories: ['redaction'],
+      });
+      const message = logger.warn.mock.calls[0][0];
+      expect(message).toContain('bouton');
+      expect(message).not.toContain('["cta"] matched');
+    });
+
+    it('never lets the diagnostic break the invocation it diagnoses', async () => {
+      mockReturnDocs([]);
+      Expertises.distinct.mockRejectedValue(new Error('connection lost'));
+      await expect(
+        findApplicable({ scope: 'bouton', categories: ['redaction'] })
+      ).resolves.toEqual([]);
+      expect(logger.warn).toHaveBeenCalledTimes(1);
     });
   });
 });

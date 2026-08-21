@@ -12,6 +12,7 @@ const {
   versionLabel,
 } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
+const { normalizeScopes } = require('./expertise-scope.js');
 
 const LIST_PROJECTION = {
   expertiseId: 1,
@@ -78,7 +79,9 @@ async function createExpertise(data, userId) {
     title: data.title,
     description: data.description || '',
     category: data.category,
-    scope: data.scope || [],
+    // Normalised so `CTA` typed in the UI matches `cta` written in a
+    // findApplicable call — the match is a strict string equality (R2).
+    scope: normalizeScopes(data.scope),
     isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
@@ -128,7 +131,8 @@ const PATCHABLE_FIELDS = [
 async function updateExpertise(expertiseId, patch) {
   const exp = await getExpertise(expertiseId);
   for (const key of PATCHABLE_FIELDS) {
-    if (patch[key] !== undefined) exp[key] = patch[key];
+    if (patch[key] === undefined) continue;
+    exp[key] = key === 'scope' ? normalizeScopes(patch[key]) : patch[key];
   }
   await exp.save();
   return exp;

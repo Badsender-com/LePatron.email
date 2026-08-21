@@ -77,6 +77,37 @@ Une expertise matche si :
 - ET ( `appliesToEmailTypes` vide OU `emailType ∈ appliesToEmailTypes` )
 - ET ( `appliesToLanguages` vide OU `language ∈ appliesToLanguages` )
 
+### Périmètres : normalisés des deux côtés, et un warning si ça ne matche pas
+
+L'intersection est une **égalité stricte de chaînes**. Le périmètre est saisi en
+texte libre par un admin dans l'UI, et écrit en dur par un dev dans l'appel :
+les deux côtés doivent tomber sur le même mot.
+
+Pour que ça ne dépende pas de la casse, les deux passent par
+`services/expertise-scope.js` (`trim` + minuscules + dédoublonnage + tri) — à
+l'enregistrement comme à la requête. `CTA` saisi dans l'UI matche donc `cta`
+écrit dans le code. Les données antérieures sont alignées par
+`node scripts/migrate-expertise-scope-normalize.js [--dry-run]`, **obligatoire**
+sinon une expertise taguée `CTA` cesse de matcher.
+
+La normalisation ne peut rien contre les **synonymes** (`cta` vs `bouton`).
+Donc `findApplicable` logue un warning quand un périmètre demandé ne matche
+aucune expertise ACTIVE, en listant les périmètres réellement en usage — c'est
+la seule information nécessaire pour corriger l'appel :
+
+```
+[expertise] scope(s) ["bouton"] matched no ACTIVE expertise — nothing from that
+scope will reach the prompt. Scopes in use: ["cta","objet"]. Check the
+findApplicable call against the expertise tagging.
+```
+
+Volontairement un warning et pas une erreur : une expertise manquante dégrade
+la sortie, elle ne rend pas l'invocation invalide, et une feature ne doit pas
+casser parce qu'un module de doctrine n'est pas encore écrit. Attention, le
+warning se déclenche **aussi** quand des expertises transversales sont revenues
+— c'est le cas le plus vicieux : la liste n'est pas vide, le prompt part sans la
+doctrine spécifique, et sans ce log personne ne le remarque.
+
 ### Ordre de retour (déterministe)
 
 `findApplicable` trie les expertises de façon stable = **l'ordre d'apparition

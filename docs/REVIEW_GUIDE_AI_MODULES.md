@@ -309,6 +309,7 @@ retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
 | Réf          | Sujet                                                                                                                                                                                                         |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous).                                       |
+| **R2** 🔴    | Périmètres d'expertise normalisés des deux côtés + warning quand un périmètre demandé ne matche rien. La garde CI proposée n'a pas été retenue — voir ci-dessous.                                             |
 | **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                                                                    |
 | **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                                                                |
 | **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                                                                  |
@@ -328,10 +329,8 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
 
 ### Reportés, décision consciente
 
-- **R2** 🔴 — normalisation + garde CI des périmètres d'expertise (`scope`).
-  Question de conception ouverte (texte libre normalisé vs constante partagée
-  type `SkillCategories`) : **à trancher avant correctif**, la panne étant
-  silencieuse dans les deux cas. Le seul retour bloquant non traité.
+- **R2** 🔴 — **traité**, mais pas comme proposé : voir la section dédiée plus
+  bas.
 - **R10** 🟡 — section « Anatomie d'une skill » dans `AI_SKILL_AUTHORING.md`.
 - **R11** 🟡 — garde-fou anti-perte de saisie (~½ journée) et écrasement entre
   deux panneaux de versions dépliés.
@@ -344,6 +343,42 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
   Touche `translation` → étape 2.
 - **A6** 🟡 — **résolu par le TTL** : le scheduler n'existe plus, donc plus rien
   à déplacer.
+
+### R2 : normaliser, et rendre l'échec audible
+
+Le retour proposait trois pistes : (a) normaliser à l'enregistrement, (b) croiser
+les `scope` déclarés dans les manifests avec la base via `check-skill-usage.js`,
+(c) une constante partagée de périmètres.
+
+Retenu : **(a), plus une variante de (b)**.
+
+**(a) Normalisation des deux côtés.** `services/expertise-scope.js` est la seule
+source de vérité de « c'est le même périmètre » : `trim` + minuscules +
+dédoublonnage + tri. Consommé par le service (écriture), le repository
+(requête) et la migration, donc les trois ne peuvent pas diverger. `CTA` saisi
+dans l'UI matche désormais `cta` écrit dans un appel. Migration **obligatoire**
+(`scripts/migrate-expertise-scope-normalize.js`) : sans elle, une expertise
+taguée `CTA` cesse de matcher puisque la lecture normalise.
+
+**(b) Pas dans la CI, dans `findApplicable`.** Le croisement via
+`check-skill-usage.js` aurait eu le même sort que celui d'A3 : le script passe
+`--dry`, aucun workflow ne l'appelle, et sans base joignable il sort en vert. Et
+la question « ce périmètre existe-t-il ? » n'a pas de réponse au build : elle
+dépend de l'environnement. Donc le contrôle vit là où il a la donnée réelle,
+c'est-à-dire à l'appel : un warning listant les périmètres réellement en usage,
+la seule information utile pour corriger.
+
+Le warning se déclenche **aussi quand des expertises transversales sont
+revenues** — c'est le cas qui rendait la panne indétectable : la liste n'est pas
+vide, le prompt part sans la doctrine spécifique, et la sortie est seulement
+« un peu moins bonne ».
+
+**(c) écarté.** Fermer les périmètres par un enum retirerait à l'équipe la
+possibilité d'organiser sa doctrine sans livraison de code, pour se protéger
+d'une faute de frappe que (a) élimine et que (b) rend visible. Disproportionné.
+
+**Ce qui reste non couvert, assumé** : rien n'empêche un synonyme (`cta` vs
+`bouton`). C'est un warning à lire, pas une garantie.
 
 ### A3 : traité au runtime, pas dans `check-skill-usage.js`
 

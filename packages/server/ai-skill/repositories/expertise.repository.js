@@ -8,8 +8,10 @@
  */
 
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const { normalizeScopes } = require('../services/expertise-scope.js');
 
 /**
  * Find ACTIVE expertise modules matching an invocation context, projecting
@@ -38,7 +40,9 @@ const { SkillStatuses } = require('../constant/skill-constants.js');
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
 async function findApplicable({ scope, categories, emailType, language } = {}) {
-  const scopes = Array.isArray(scope) ? scope : scope ? [scope] : [];
+  // Normalised on the way in, as the write side is (services/expertise-scope):
+  // the match below is a strict string equality, so `cta` must meet `CTA`.
+  const scopes = normalizeScopes(scope);
   if (!scopes.length || !Array.isArray(categories) || !categories.length) {
     throw createError(
       400,
@@ -74,6 +78,8 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
 
   const docs = await Expertises.find({ $and: and }).lean();
 
+  await warnOnUnmatchedScopes(scopes, docs);
+
   // Deterministic order = the order expertises appear in the composed prompt:
   // transversal (general) first, then alphabetical by expertiseId. Stable so
   // features and the playground filter mode get a predictable, reviewable mix.
@@ -84,6 +90,52 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
       if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
       return a.expertiseId.localeCompare(b.expertiseId);
     });
+}
+
+/**
+ * Say something when a requested scope matched nothing.
+ *
+ * This is the silent failure of R2: the caller hardcodes a scope, the admin
+ * typed a different word, the intersection is empty — and the invocation
+ * proceeds without the doctrine it asked for. Worse, transversal expertises
+ * match regardless of scope, so the returned list is rarely empty: the prompt
+ * is not broken, just poorer, which is exactly what nobody notices.
+ *
+ * Normalisation cannot catch this (`cta` vs `bouton` are genuinely different
+ * words), so the point is to make it visible, with the scopes that DO exist in
+ * the message — that is the one piece of information needed to fix the call.
+ *
+ * Deliberately a warning and not a throw: a missing expertise degrades the
+ * output, it does not make the invocation wrong, and a feature must not break
+ * because a doctrine module has not been written yet.
+ */
+async function warnOnUnmatchedScopes(scopes, docs) {
+  const matched = new Set();
+  for (const doc of docs) {
+    for (const value of doc.scope || []) matched.add(value);
+  }
+  const unmatched = scopes.filter((s) => !matched.has(s));
+  if (!unmatched.length) return;
+
+  try {
+    const known = await Expertises.distinct('scope', {
+      status: SkillStatuses.ACTIVE,
+    });
+    logger.warn(
+      `[expertise] scope(s) ${JSON.stringify(unmatched)} matched no ACTIVE ` +
+        'expertise — nothing from that scope will reach the prompt. ' +
+        `Scopes in use: ${JSON.stringify(
+          normalizeScopes(known)
+        )}. Check the findApplicable call against the expertise tagging.`
+    );
+  } catch (err) {
+    // Never let the diagnostic break the invocation it is diagnosing.
+    logger.warn(
+      `[expertise] scope(s) ${JSON.stringify(
+        unmatched
+      )} matched no ACTIVE expertise`
+    );
+  }
 }
 
 function projectActiveVersion(doc) {
