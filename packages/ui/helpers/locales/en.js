@@ -948,16 +948,20 @@ export default {
         'Lets your team set a subject, a preheader, a planned send date and a typology on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
       enabledHint:
-        'While off, these fields appear nowhere and the API refuses them. Data already entered is kept.',
+        'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
+      taxonomyAction: 'Manage typologies',
       taxonomyHint:
         'The "Typologies" page now lets you define your own email typologies.',
     },
     snackbars: {
+      invalid: 'The settings sent were not accepted.',
       updated: 'Email Builder settings updated',
       error: 'Could not update the settings',
     },
   },
   taxonomy: {
+    active: 'Active',
+    inactive: 'Inactive',
     title: 'Email typologies',
     sidebarLabel: 'Typologies',
     description:
@@ -965,7 +969,7 @@ export default {
     table: {
       label: 'Label',
       description: 'Definition',
-      canonicalType: 'AI typology',
+      canonicalType: 'AI mapping',
       order: 'Order',
       isActive: 'Status',
     },
@@ -1004,14 +1008,17 @@ export default {
     deleteConfirmHint:
       'If emails use it, the deletion will be refused — deactivate it instead.',
     empty: {
+      action: 'Create a typology',
       title: 'No typology yet',
       description:
         'Create your first typologies: nothing is pre-filled, these are your own words.',
     },
     errors: {
+      limitReached: 'You have reached the maximum number of typologies for this company.',
+      featureDisabled: 'Email metadata is not enabled for this company.',
       labelAlreadyExists: 'A typology already uses this label.',
       inUse:
-        'This typology is used by {count} email(s): deactivate it instead of deleting it.',
+        'This typology is used by {count} email: deactivate it instead of deleting it. | This typology is used by {count} emails: deactivate it instead of deleting it.',
     },
     snackbars: {
       created: 'Typology created',
@@ -1020,7 +1027,7 @@ export default {
     },
     disabled: {
       message:
-        'Email metadata is not enabled for this company. Typologies are of no use until it is.',
+        'Email metadata is not enabled for this company. Enable it so your typologies are offered to your team.',
       action: 'Go to Email Builder settings',
     },
   },
@@ -1058,8 +1065,6 @@ export default {
     },
   },
   settingsNav: {
-    taxonomy: 'Typologies',
-    emailBuilder: 'Email Builder settings',
     categories: {
       superAdmin: 'Super Admin',
       general: 'General',

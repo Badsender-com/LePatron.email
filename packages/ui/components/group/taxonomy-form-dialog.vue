@@ -5,16 +5,11 @@ import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-
-// Mirrors the server-side bounds (taxonomy.service.js) so the user is told before
-// the request rather than by a 400.
-const MAX_LABEL_LENGTH = 120;
-const MAX_DESCRIPTION_LENGTH = 2000;
-
-// Kept in sync with packages/server/constant/email-type-canonical.js. Neither side
-// constrains the stored value: the AI skills vocabulary evolves and already falls
-// back on the raw string.
-const CANONICAL_TYPES = ['promo', 'newsletter', 'transactional'];
+import {
+  CANONICAL_TYPES,
+  TAXONOMY_LIMITS,
+  buildTaxonomyPayload,
+} from '~/helpers/taxonomy.js';
 
 function emptyItem() {
   return {
@@ -42,13 +37,16 @@ export default {
     return {
       form: emptyItem(),
       editingId: null,
-      maxDescriptionLength: MAX_DESCRIPTION_LENGTH,
+      maxDescriptionLength: TAXONOMY_LIMITS.DESCRIPTION,
+      // A refusal the server alone can decide — a label already taken — shown next
+      // to the field rather than in a snackbar at the other end of the screen.
+      serverLabelError: null,
     };
   },
   validations: {
     form: {
-      label: { required, maxLength: maxLength(MAX_LABEL_LENGTH) },
-      description: { maxLength: maxLength(MAX_DESCRIPTION_LENGTH) },
+      label: { required, maxLength: maxLength(TAXONOMY_LIMITS.LABEL) },
+      description: { maxLength: maxLength(TAXONOMY_LIMITS.DESCRIPTION) },
     },
   },
   computed: {
@@ -71,13 +69,16 @@ export default {
     },
     labelErrors() {
       const errors = [];
+      if (this.serverLabelError) errors.push(this.serverLabelError);
       if (!this.$v.form.label.$dirty) return errors;
       if (!this.$v.form.label.required) {
         errors.push(this.$t('taxonomy.form.labelRequired'));
       }
       if (!this.$v.form.label.maxLength) {
         errors.push(
-          this.$t('taxonomy.form.labelTooLong', { max: MAX_LABEL_LENGTH })
+          this.$t('taxonomy.form.labelTooLong', {
+            max: TAXONOMY_LIMITS.LABEL,
+          })
         );
       }
       return errors;
@@ -88,7 +89,7 @@ export default {
       if (!this.$v.form.description.maxLength) {
         errors.push(
           this.$t('taxonomy.form.descriptionTooLong', {
-            max: MAX_DESCRIPTION_LENGTH,
+            max: TAXONOMY_LIMITS.DESCRIPTION,
           })
         );
       }
@@ -98,9 +99,11 @@ export default {
   methods: {
     /**
      * @param {Object|null} item the row to edit, or null to create
+     * @param {number} [suggestedOrder] pre-filled order for a new item
      */
-    open(item = null) {
-      this.editingId = item ? item._id || item.id : null;
+    open(item = null, suggestedOrder = 0) {
+      this.editingId = item ? item.id : null;
+      this.serverLabelError = null;
       this.form = item
         ? {
             label: item.label || '',
@@ -109,9 +112,20 @@ export default {
             isActive: item.isActive !== false,
             order: typeof item.order === 'number' ? item.order : 0,
           }
-        : emptyItem();
+        : { ...emptyItem(), order: suggestedOrder };
       this.$v.$reset();
       this.$refs.modal.open();
+    },
+
+    /**
+     * Attach a server-side refusal to the label field. Called by the parent, which
+     * is the one that talks to the API.
+     *
+     * @param {string} message already translated
+     */
+    setLabelError(message) {
+      this.serverLabelError = message;
+      this.$v.form.label.$touch();
     },
 
     close() {
@@ -119,20 +133,14 @@ export default {
     },
 
     onSubmit() {
+      // A previous refusal must not survive a corrected label.
+      this.serverLabelError = null;
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
       this.$emit('save', {
         id: this.editingId,
-        payload: {
-          label: this.form.label.trim(),
-          // Null rather than '' so an emptied field clears the value server-side
-          // instead of storing a blank.
-          description: this.form.description ? this.form.description : null,
-          canonicalType: this.form.canonicalType || null,
-          isActive: this.form.isActive,
-          order: Number(this.form.order) || 0,
-        },
+        payload: buildTaxonomyPayload(this.form),
       });
     },
   },
@@ -159,6 +167,7 @@ export default {
       :disabled="loading"
       required
       autofocus
+      @input="serverLabelError = null"
       @blur="$v.form.label.$touch()"
     />
 
@@ -200,10 +209,13 @@ export default {
         />
       </div>
 
-      <div class="taxonomy-form__col">
-        <span class="taxonomy-form__label">
+      <!-- A fieldset rather than a bare span: the column needs a heading to line
+           up with the label opposite, and a heading a screen reader ignores is
+           decoration. -->
+      <fieldset class="taxonomy-form__col taxonomy-form__fieldset">
+        <legend class="taxonomy-form__label">
           {{ $t('taxonomy.form.status') }}
-        </span>
+        </legend>
         <v-switch
           :input-value="form.isActive"
           :label="$t('taxonomy.form.isActive')"
@@ -217,7 +229,7 @@ export default {
         <p class="taxonomy-form__hint">
           {{ $t('taxonomy.form.isActiveHint') }}
         </p>
-      </div>
+      </fieldset>
     </div>
   </bs-modal-form>
 </template>
@@ -233,6 +245,12 @@ export default {
   &__col {
     flex: 1 1 0;
     min-width: 0;
+  }
+
+  &__fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
   }
 
   // Same typography as the bs-* field labels, so the two columns line up.

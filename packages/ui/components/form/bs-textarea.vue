@@ -37,6 +37,12 @@ export default {
     autofocus: { type: Boolean, default: false },
   },
   computed: {
+    // A label without `for` is decoration: clicking it does not focus the field
+    // and a screen reader does not announce the field's name. bs-text-field has
+    // the same gap, but this component is new — no reason to inherit it.
+    inputId() {
+      return `bs-textarea-${this._uid}`;
+    },
     localValue: {
       get() {
         return this.value;
@@ -55,14 +61,6 @@ export default {
       return this.errorMessages ? [this.errorMessages] : [];
     },
   },
-  methods: {
-    onFocus(e) {
-      this.$emit('focus', e);
-    },
-    onBlur(e) {
-      this.$emit('blur', e);
-    },
-  },
 };
 </script>
 
@@ -74,26 +72,29 @@ export default {
       'bs-textarea--disabled': disabled,
     }"
   >
-    <label v-if="label" class="bs-textarea__label">
+    <label v-if="label" :for="inputId" class="bs-textarea__label">
       {{ label }}
       <span v-if="required" class="bs-textarea__required">*</span>
     </label>
+    <!-- `v-on="$listeners"` already forwards focus and blur; re-emitting them here
+         too would call a parent handler twice. -->
     <v-textarea
-      v-model="localValue"
       v-bind="$attrs"
+      :id="inputId"
+      v-model="localValue"
       :placeholder="placeholder"
       :disabled="disabled"
       :rows="rows"
       :counter="counter"
       :autofocus="autofocus"
       :error-messages="normalizedErrors"
+      :aria-required="required ? 'true' : null"
+      :aria-invalid="hasError ? 'true' : null"
       solo
       flat
       hide-details="auto"
       class="bs-textarea__input"
       v-on="$listeners"
-      @focus="onFocus"
-      @blur="onBlur"
     />
     <div v-if="hint && !hasError" class="bs-textarea__hint">
       {{ hint }}

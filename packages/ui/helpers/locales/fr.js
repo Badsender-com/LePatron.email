@@ -747,16 +747,20 @@ export default {
         'Permet de renseigner un objet, un préheader, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
       enabled: 'Activer les métadonnées des emails',
       enabledHint:
-        'Désactivé, ces champs n\'apparaissent nulle part et l\'API les refuse. Les données déjà saisies sont conservées.',
+        'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
+      taxonomyAction: 'Gérer les typologies',
       taxonomyHint:
         'La page « Typologies » vous permet maintenant de définir vos propres typologies d\'email.',
     },
     snackbars: {
+      invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
       updated: 'Réglages Email Builder mis à jour',
       error: 'La mise à jour des réglages a échoué',
     },
   },
   taxonomy: {
+    active: 'Actif',
+    inactive: 'Inactif',
     title: 'Typologies d\'email',
     sidebarLabel: 'Typologies',
     description:
@@ -764,7 +768,7 @@ export default {
     table: {
       label: 'Libellé',
       description: 'Définition',
-      canonicalType: 'Typologie IA',
+      canonicalType: 'Correspondance IA',
       order: 'Ordre',
       isActive: 'Statut',
     },
@@ -803,14 +807,17 @@ export default {
     deleteConfirmHint:
       'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
     empty: {
+      action: 'Créer une typologie',
       title: 'Aucune typologie pour le moment',
       description:
         'Créez vos premières typologies : rien n\'est prérempli, ce sont vos mots.',
     },
     errors: {
+      limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
+      featureDisabled: 'Les métadonnées des emails ne sont pas activées pour cette entreprise.',
       labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
       inUse:
-        'Cette typologie est utilisée par {count} email(s) : désactivez-la plutôt que de la supprimer.',
+        'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
     },
     snackbars: {
       created: 'Typologie créée',
@@ -819,7 +826,7 @@ export default {
     },
     disabled: {
       message:
-        'Les métadonnées des emails ne sont pas activées pour cette entreprise. Les typologies ne servent à rien tant qu\'elles ne sont pas activées.',
+        'Les métadonnées des emails ne sont pas activées pour cette entreprise. Activez-les pour que vos typologies soient proposées à vos équipes.',
       action: 'Aller aux réglages Email Builder',
     },
   },
@@ -1109,8 +1116,6 @@ export default {
     contactBadsender: 'Contacter Badsender',
   },
   settingsNav: {
-    taxonomy: 'Typologies',
-    emailBuilder: 'Réglages Email Builder',
     categories: {
       superAdmin: 'Super Admin',
       general: 'Général',

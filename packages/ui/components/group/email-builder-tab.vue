@@ -1,6 +1,8 @@
 <script>
 import { mapMutations } from 'vuex';
+import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
+import { emailMetadataErrorKeyFor } from '~/helpers/taxonomy.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
 function emptyConfig() {
@@ -25,10 +27,22 @@ export default {
   },
   computed: {
     hasUnsavedChanges() {
-      return this.config.enabled !== this.savedConfig.enabled;
+      // The whole section, not just `enabled`: `requiredFields` is already carried
+      // in the local state and sent on save, so comparing only the switch would
+      // silently discard the first setting added next to it.
+      return !isEqual(this.config, this.normalizedSavedConfig);
     },
     savedConfig() {
       return this.group.emailMetadata || emptyConfig();
+    },
+    normalizedSavedConfig() {
+      return {
+        enabled: this.savedConfig.enabled === true,
+        requiredFields: [...(this.savedConfig.requiredFields || [])],
+      };
+    },
+    taxonomyRoute() {
+      return `/groups/${this.group.id}/settings/taxonomy`;
     },
   },
   watch: {
@@ -64,12 +78,12 @@ export default {
         });
         this.$emit('update');
       } catch (error) {
-        const message =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          this.$t('emailBuilderSettings.snackbars.error');
-        this.showSnackbar({ text: message, color: 'error' });
+        // Never the raw server message: it is an error code, or an untranslated
+        // developer sentence.
+        this.showSnackbar({
+          text: this.$t(emailMetadataErrorKeyFor(error)),
+          color: 'error',
+        });
       } finally {
         this.loading = false;
       }
@@ -105,14 +119,20 @@ export default {
         {{ $t('emailBuilderSettings.metadata.enabledHint') }}
       </p>
 
+      <!-- On the SAVED state, not the edited one: announcing that the taxonomy
+           page is available while the switch is still unsaved would be a lie the
+           user can check in one click. -->
       <v-alert
-        v-if="config.enabled"
+        v-if="savedConfig.enabled"
         text
         dense
         type="info"
         class="settings-section__alert"
       >
         {{ $t('emailBuilderSettings.metadata.taxonomyHint') }}
+        <v-btn :to="taxonomyRoute" small text color="accent" class="ml-2">
+          {{ $t('emailBuilderSettings.metadata.taxonomyAction') }}
+        </v-btn>
       </v-alert>
     </section>
 
@@ -133,16 +153,16 @@ export default {
 <style lang="scss" scoped>
 .settings-section {
   &__title {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.87);
-    margin: 0 0 4px 0;
+    color: var(--gray-900);
+    margin: 0 0 0.25rem 0;
   }
 
   &__description {
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 14px;
-    margin-bottom: 16px;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
   }
 
   &__switch {
@@ -150,28 +170,28 @@ export default {
   }
 
   &__hint {
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 13px;
-    margin: 8px 0 0 0;
+    color: var(--gray-700);
+    font-size: 0.8125rem;
+    margin: 0.5rem 0 0 0;
   }
 
   &__alert {
-    margin-top: 16px;
-    font-size: 13px;
+    margin-top: 1rem;
+    font-size: 0.8125rem;
   }
 
   & + & {
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray-300);
   }
 }
 
 .settings-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 32px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-300);
 }
 </style>
