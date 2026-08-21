@@ -71,4 +71,19 @@ describe('zod schema registry', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  // A bare `schemas[id]` lookup returned Object.prototype members as truthy
+  // non-schemas, which then threw on .safeParse — while hasSchema next to it
+  // guarded correctly.
+  it('does not resolve inherited Object properties as schemas', () => {
+    for (const id of [
+      'constructor',
+      'toString',
+      'hasOwnProperty',
+      '__proto__',
+    ]) {
+      expect(hasSchema(id)).toBe(false);
+      expect(getSchema(id)).toBeUndefined();
+    }
+  });
 });

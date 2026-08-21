@@ -34,7 +34,6 @@ const InvocationStatusValues = Object.values(InvocationStatuses);
 const SkillIdRegex = /^[a-z0-9._-]+$/;
 const SectionIdRegex = /^[a-z0-9-]+$/;
 const MaxSkillIdLength = 100;
-const MaxDailyTestInvocations = 50;
 const DefaultLogRetentionDays = 30;
 // NB: the retention bounds (7/365 days) live as literals on
 // Group.logRetentionDays (group.schema.js) — single source of truth there.
@@ -48,6 +47,5 @@ module.exports = {
   SkillIdRegex,
   SectionIdRegex,
   MaxSkillIdLength,
-  MaxDailyTestInvocations,
   DefaultLogRetentionDays,
 };

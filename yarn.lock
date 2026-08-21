@@ -21709,7 +21709,7 @@ superagent@^10.3.0:
     mime "2.6.0"
     qs "^6.14.1"
 
-supertest@^7.2.2:
+supertest@7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/supertest/-/supertest-7.2.2.tgz#dac3ee25a2aa59942a7f641e50c838a7c8819204"
   integrity sha512-oK8WG9diS3DlhdUkcFn4tkNIiIbBx9lI2ClF8K+b2/m8Eyv47LSawxUzZQSNKUrVb2KsqeTDCcjAAVPYaSLVTA==
@@ -24488,7 +24488,7 @@ zip-stream@^4.0.4:
     compress-commons "^4.1.0"
     readable-stream "^3.6.0"
 
-zod@^4.4.3:
+zod@4.4.3:
   version "4.4.3"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.4.3.tgz#b680f172885d18bbebf21a834ea25e55a1bbf356"
   integrity sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==

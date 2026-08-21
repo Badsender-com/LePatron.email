@@ -188,7 +188,7 @@ function createVersionedEntityService({
    * major, archive the version it replaces, and move the `activeVersion`
    * pointer.
    */
-  async function activateVersion(id, { major, minor }, payload, userId) {
+  async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
     if (!version) throw createError(404, `Version ${major}.${minor} not found`);
