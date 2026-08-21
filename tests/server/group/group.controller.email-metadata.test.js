@@ -39,6 +39,7 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
 const { Groups } = require('../../../packages/server/common/models.common.js');
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
 
@@ -113,9 +114,21 @@ describe('PUT /groups/:groupId — emailMetadata, company admin', () => {
         user: groupAdmin,
         body: { emailMetadata: { requiredFields: ['language'] } },
       })
-    ).rejects.toThrow(/not a known field/);
+    ).rejects.toThrow(ERROR_CODES.INVALID_EMAIL_METADATA);
 
     expect(groupService.updateGroup).not.toHaveBeenCalled();
+  });
+
+  it('turns an explicit null into the default sub-object, not a stored null', async () => {
+    const { payload } = await update({
+      user: groupAdmin,
+      body: { emailMetadata: null },
+    });
+
+    expect(payload.emailMetadata).toEqual({
+      enabled: false,
+      requiredFields: [],
+    });
   });
 
   it('leaves the payload alone when it carries no emailMetadata', async () => {
@@ -126,6 +139,26 @@ describe('PUT /groups/:groupId — emailMetadata, company admin', () => {
 
     expect(payload).not.toHaveProperty('emailMetadata');
     expect(payload.name).toBe('Renamed');
+  });
+});
+
+describe('PUT /groups/:groupId — the URL names the group being updated', () => {
+  // The route guard only ever checked `req.params.groupId`, so that is the only
+  // id allowed to reach the update.
+  it.each([
+    ['company admin', { isGroupAdmin: true, isAdmin: false }],
+    ['super admin', { isGroupAdmin: false, isAdmin: true }],
+  ])('ignores an id supplied in the body (%s)', async (_label, user) => {
+    const { payload } = await update({
+      user,
+      body: {
+        id: '507f1f77bcf86cd7994390ff',
+        name: 'Renamed',
+        emailMetadata: { enabled: true },
+      },
+    });
+
+    expect(payload.id).toBe(GROUP_ID);
   });
 });
 
