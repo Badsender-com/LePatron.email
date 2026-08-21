@@ -318,10 +318,15 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       subject: 1,
       plannedSendDate: 1,
       // The id only: resolving the typology label needs a populate or a
-      // complementary query, which a .find() projection cannot do here. Named
-      // like the other exposed references (templateId, userId), so the listing
-      // never receives an underscore-prefixed key.
-      emailTypeId: '$_emailType',
+      // complementary query, which a .find() projection cannot do here.
+      //
+      // Projected under its real name and renamed below, NOT as
+      // `emailTypeId: '$_emailType'`: that aggregation-expression form is not
+      // honoured by the .find() projection mongoose-paginate-v2 uses, so the
+      // field came back absent from the response — silently, since asserting on
+      // the projection object cannot see it. The pre-existing `group`,
+      // `templateId` and `userId` aliases above are absent for the same reason.
+      _emailType: 1,
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
@@ -389,10 +394,14 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
   }));
 
+  // Renamed here rather than in the projection, which cannot do it: the client
+  // gets `emailTypeId`, like `templateName` and `userName`, and never an
+  // underscore-prefixed key.
   const convertedResultMailingDocs = finalDocs.map(
-    ({ wireframe, author, ...doc }) => ({
+    ({ wireframe, author, _emailType, ...doc }) => ({
       templateName: wireframe,
       userName: author,
+      emailTypeId: _emailType,
       ...doc,
     })
   );
