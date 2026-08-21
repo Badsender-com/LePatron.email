@@ -1,10 +1,18 @@
 'use strict';
 
-// Reads are open to any user (filling in an email's metadata needs the list),
-// writes are company-admin only. That split is a one-word difference per line in
-// the routes file and nothing else in the codebase would notice if a write route
-// lost its guard — so the guards are pinned here by identity, on the actual
-// express stack rather than on the source text.
+// Two properties are pinned here, both invisible anywhere else.
+//
+// The read/write split: reads are open to any user (filling in an email's metadata
+// needs the list), writes are company-admin only. That is a one-word difference per
+// line in the routes file, and nothing in the codebase would notice a write route
+// losing its guard.
+//
+// And the absence of GUARD_EMAIL_METADATA: the taxonomy is deliberately NOT gated
+// by the metadata flag, so an admin can prepare a company's typologies before
+// switching the metadata on. Re-adding the guard "for consistency" would silently
+// restore the ordering problem, hence the negative assertions below.
+//
+// Guards are compared by identity on the actual express stack, not on source text.
 
 const {
   GUARD_USER,
@@ -64,14 +72,13 @@ describe('taxonomy routes — declared surface', () => {
 
 describe('taxonomy routes — guards', () => {
   it('opens the list to any authenticated user', () => {
-    expect(guardsOf('get', '')).toEqual([GUARD_USER, GUARD_EMAIL_METADATA]);
+    expect(guardsOf('get', '')).toEqual([GUARD_USER]);
   });
 
   it('checks company access on the per-company list', () => {
     expect(guardsOf('get', '/groups/:groupId')).toEqual([
       GUARD_USER,
       GUARD_CAN_ACCESS_GROUP,
-      GUARD_EMAIL_METADATA,
     ]);
   });
 
@@ -79,7 +86,6 @@ describe('taxonomy routes — guards', () => {
     expect(guardsOf('post', '')).toEqual([
       GUARD_GROUP_ADMIN,
       GUARD_CAN_ACCESS_GROUP_FROM_BODY,
-      GUARD_EMAIL_METADATA,
     ]);
   });
 
@@ -87,22 +93,20 @@ describe('taxonomy routes — guards', () => {
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
   ])('reserves %s %s to a company admin', (method, path) => {
-    expect(guardsOf(method, path)).toEqual([
-      GUARD_GROUP_ADMIN,
-      GUARD_EMAIL_METADATA,
-    ]);
+    expect(guardsOf(method, path)).toEqual([GUARD_GROUP_ADMIN]);
   });
 
-  // A taxonomy serves the email metadata and nothing else: while a company has
-  // not opted in, the feature must leave no trace through the API either.
+  // The taxonomy stays usable whether or not a company switched the metadata on:
+  // typologies have to be preparable first, and CRM Governance will read them
+  // regardless of the email builder.
   it.each([
     ['get', ''],
     ['get', '/groups/:groupId'],
     ['post', ''],
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
-  ])('gates %s %s behind the emailMetadata flag', (method, path) => {
-    expect(guardsOf(method, path)).toContain(GUARD_EMAIL_METADATA);
+  ])('leaves %s %s reachable with the metadata flag off', (method, path) => {
+    expect(guardsOf(method, path)).not.toContain(GUARD_EMAIL_METADATA);
   });
 
   it.each([

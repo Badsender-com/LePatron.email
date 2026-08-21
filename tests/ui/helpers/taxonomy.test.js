@@ -45,11 +45,19 @@ describe('taxonomyErrorFor', () => {
     expect(taxonomyErrorFor(axiosError('TAXONOMY_ITEM_IN_USE')).count).toBe(0);
   });
 
-  it.each([
-    ['TAXONOMY_LIMIT_REACHED', 'taxonomy.errors.limitReached'],
-    ['EMAIL_METADATA_DISABLED', 'taxonomy.errors.featureDisabled'],
-  ])('maps %s onto its own message', (code, key) => {
-    expect(taxonomyErrorFor(axiosError(code)).key).toBe(key);
+  it('maps the per-company cap onto its own message', () => {
+    expect(taxonomyErrorFor(axiosError('TAXONOMY_LIMIT_REACHED')).key).toBe(
+      'taxonomy.errors.limitReached'
+    );
+  });
+
+  // The taxonomy is no longer gated by `emailMetadata.enabled`, so this code
+  // cannot come back from a taxonomy call — it falls through to the generic
+  // message like any other unexpected one.
+  it('has no special case left for the metadata feature flag', () => {
+    expect(taxonomyErrorFor(axiosError('EMAIL_METADATA_DISABLED')).key).toBe(
+      'global.errors.errorOccured'
+    );
   });
 
   it.each([
