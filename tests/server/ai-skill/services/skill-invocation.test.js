@@ -387,6 +387,61 @@ describe('skill-invocation.invoke', () => {
       ).rejects.toThrow(/not found/);
     });
 
+    /**
+     * "The data of this environment does not match the deployed code" is a
+     * configuration failure, and a caller must be able to tell it apart from a
+     * provider outage — one means fix the setup, the other means retry.
+     */
+    it('types every resolution failure as CONFIG_ERROR', async () => {
+      const cases = [
+        [
+          'missing or archived skill',
+          () => LePatronSkills.findOne.mockResolvedValue(null),
+        ],
+        [
+          'missing active version',
+          () => {
+            const skill = buildSkill({ activeVersion: { major: 9, minor: 9 } });
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+        [
+          'unresolvable input schema',
+          () => {
+            const skill = buildSkill();
+            skill.versions[0].inputSchemaId = 'goneInput';
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+        [
+          'unresolvable output schema',
+          () => {
+            const skill = buildSkill();
+            skill.versions[0].outputSchemaId = 'goneOutput';
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+      ];
+
+      for (const [label, wire] of cases) {
+        jest.clearAllMocks();
+        wire();
+        let caught;
+        try {
+          await skillInvocation.invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+          });
+        } catch (err) {
+          caught = err;
+        }
+        expect(caught).toBeDefined();
+        expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+        expect(label).toBeTruthy();
+      }
+    });
+
     it('throws when the Group has no skill feature configured', async () => {
       LePatronSkills.findOne.mockResolvedValue(buildSkill());
       Groups.findById.mockReturnValue({

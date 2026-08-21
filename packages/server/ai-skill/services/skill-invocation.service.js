@@ -113,7 +113,10 @@ async function invoke({
     }
   );
   if (!skill) {
-    throw createError(404, `Skill "${skillId}" not found or not ACTIVE`);
+    // Typed like the group/integration failures below: "this environment's data
+    // does not match the deployed code" is a configuration problem, and the
+    // caller must be able to tell it apart from a provider outage.
+    throw configError(404, `Skill "${skillId}" not found or not ACTIVE`);
   }
 
   const activeRef = skill.activeVersion || {};
@@ -124,8 +127,9 @@ async function invoke({
   );
   if (!version) {
     // A missing pinned version is the caller's mistake (404); a missing
-    // active version is a data integrity bug (500).
-    throw createError(
+    // active version is a data integrity bug (500). Both are configuration
+    // failures, not provider failures.
+    throw configError(
       versionRef ? 404 : 500,
       versionRef
         ? `Version ${wantedMajor}.${wantedMinor} of skill "${skillId}" not found`
@@ -136,7 +140,7 @@ async function invoke({
   // ─── 2. Validate input against zod schema (schemas live on the version) ──
   const inputSchema = getSchema(version.inputSchemaId);
   if (!inputSchema) {
-    throw createError(
+    throw configError(
       500,
       `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown input schema "${version.inputSchemaId}"`
     );
@@ -146,7 +150,7 @@ async function invoke({
   // while a version still points at it) otherwise surfaced as a TypeError
   // *after* the provider call had been made and billed.
   if (!getSchema(version.outputSchemaId)) {
-    throw createError(
+    throw configError(
       500,
       `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown output schema "${version.outputSchemaId}"`
     );
@@ -362,6 +366,13 @@ async function invoke({
  *   category featureType (redaction/qc/…) → fallback 'skill' → CONFIG_ERROR.
  *
  * Throws a CONFIG_ERROR if not configured.
+ */
+/**
+ * Every failure that means "this environment's data does not match the deployed
+ * code" — missing/archived skill, missing active version, unresolvable schema
+ * id, no configured engine. Grouping them under CONFIG_ERROR lets a caller tell
+ * a misconfiguration apart from a provider outage, which is the difference
+ * between "fix the setup" and "retry later".
  */
 function configError(status, message) {
   const err = createError(status, message);
