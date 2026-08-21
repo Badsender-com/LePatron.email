@@ -12,6 +12,7 @@ const {
 } = require('../../../packages/server/account/auth.guard.js');
 const {
   GUARD_CAN_ACCESS_GROUP,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
 } = require('../../../packages/server/group/group.guard.js');
 const {
   GUARD_EMAIL_METADATA,
@@ -74,8 +75,15 @@ describe('taxonomy routes — guards', () => {
     ]);
   });
 
+  it('reserves the create to a company admin, and checks the target company', () => {
+    expect(guardsOf('post', '')).toEqual([
+      GUARD_GROUP_ADMIN,
+      GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+      GUARD_EMAIL_METADATA,
+    ]);
+  });
+
   it.each([
-    ['post', ''],
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
   ])('reserves %s %s to a company admin', (method, path) => {

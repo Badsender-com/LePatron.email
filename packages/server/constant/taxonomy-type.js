@@ -15,4 +15,18 @@ const TaxonomyTypes = Object.freeze({
 
 const TaxonomyTypeValues = Object.freeze(Object.values(TaxonomyTypes));
 
-module.exports = { TaxonomyTypes, TaxonomyTypeValues };
+/**
+ * Bounds of the editable fields. Declared here so the Mongoose schema, the service
+ * validation and the form all read the same numbers — they were written three
+ * times, and three copies of a limit is two chances to disagree.
+ */
+const TaxonomyLimits = Object.freeze({
+  LABEL: 120,
+  DESCRIPTION: 2000,
+  CANONICAL_TYPE: 60,
+  // A company describing its own editorial vocabulary needs tens of entries, not
+  // thousands. Bounds both the unpaginated read and the storage.
+  ITEMS_PER_COMPANY: 200,
+});
+
+module.exports = { TaxonomyTypes, TaxonomyTypeValues, TaxonomyLimits };

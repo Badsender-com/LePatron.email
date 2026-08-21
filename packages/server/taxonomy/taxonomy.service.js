@@ -11,8 +11,28 @@ const {
 
 const { TaxonomyItems, Mailings } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { TaxonomyTypeValues } = require('../constant/taxonomy-type.js');
+const {
+  TaxonomyTypeValues,
+  TaxonomyLimits,
+} = require('../constant/taxonomy-type.js');
 const logger = require('../utils/logger.js');
+
+// `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
+// bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a
+// company that does not exist. Only a 24-char hex string is a real id.
+const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+const isObjectId = (value) => OBJECT_ID_PATTERN.test(String(value));
+
+// The fields a payload may carry. Anything else is refused rather than dropped: a
+// typo like `cannonicalType` would otherwise answer 200 and change nothing, which
+// reads as "saved" to the admin.
+const EDITABLE_FIELDS = Object.freeze([
+  'label',
+  'description',
+  'canonicalType',
+  'isActive',
+  'order',
+]);
 
 module.exports = {
   listTaxonomyItems,
@@ -21,10 +41,6 @@ module.exports = {
   deleteTaxonomyItem,
   resolveCompanyId,
 };
-
-const MAX_LABEL_LENGTH = 120;
-const MAX_DESCRIPTION_LENGTH = 2000;
-const MAX_CANONICAL_TYPE_LENGTH = 60;
 
 /**
  * The company every query in this service is bounded to.
@@ -59,19 +75,25 @@ function resolveCompanyId(user, requestedGroupId) {
     if (!ownGroupId) {
       throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
     }
+    // Checked, not assumed: a malformed id on the session would otherwise raise a
+    // BSON error, hence a 500 where a 400 belongs.
+    if (!isObjectId(ownGroupId)) {
+      throw new BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
+    }
     return Types.ObjectId(String(ownGroupId));
   }
 
-  const targetId = requestedGroupId || ownGroupId;
-
-  if (!targetId) {
+  // A super admin has no company of their own to fall back on, so they must name
+  // the one they are acting for. Falling back on `user.group` would let a request
+  // that forgot the parameter write somewhere plausible but unintended.
+  if (!requestedGroupId) {
     throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
   }
-  if (!Types.ObjectId.isValid(targetId)) {
-    throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
+  if (!isObjectId(requestedGroupId)) {
+    throw new BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
   }
 
-  return Types.ObjectId(String(targetId));
+  return Types.ObjectId(String(requestedGroupId));
 }
 
 /**
@@ -109,11 +131,31 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     label: fields.label,
   });
 
-  return TaxonomyItems.create({
-    ...fields,
+  const existingCount = await TaxonomyItems.countDocuments({
     _company: companyId,
     type: taxonomyType,
   });
+
+  if (existingCount >= TaxonomyLimits.ITEMS_PER_COMPANY) {
+    throw new Conflict(ERROR_CODES.TAXONOMY_LIMIT_REACHED);
+  }
+
+  try {
+    return await TaxonomyItems.create({
+      ...fields,
+      _company: companyId,
+      type: taxonomyType,
+    });
+  } catch (error) {
+    // The check above is not atomic with the insert; the unique index is what
+    // actually holds. Without this, two concurrent creations of the same label
+    // answer a 500 carrying the raw Mongo error — collection and index names
+    // included — instead of the conflict the caller can act on.
+    if (error && error.code === 11000) {
+      throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+    }
+    throw error;
+  }
 }
 
 async function updateTaxonomyItem({ user, itemId, payload = {} }) {
@@ -132,7 +174,15 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   }
 
   Object.assign(item, fields);
-  await item.save();
+
+  try {
+    await item.save();
+  } catch (error) {
+    if (error && error.code === 11000) {
+      throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+    }
+    throw error;
+  }
 
   return item;
 }
@@ -149,6 +199,10 @@ async function deleteTaxonomyItem({ user, itemId }) {
 
   const item = await findScopedItem({ user, itemId });
 
+  // Scoped by company as well as by item: it serves the
+  // `{_company, _emailType}` index, and an email can only ever reference a
+  // typology of its own company — `transferToUser` clears `_emailType` when a
+  // transfer moves the mailing (mailing.controller.js).
   const usageCount = await Mailings.countDocuments({
     _company: item._company,
     _emailType: item._id,
@@ -180,7 +234,7 @@ async function deleteTaxonomyItem({ user, itemId }) {
  * about what exists elsewhere.
  */
 async function findScopedItem({ user, itemId }) {
-  if (!itemId || !Types.ObjectId.isValid(itemId)) {
+  if (!itemId || !isObjectId(itemId)) {
     throw new NotFound(ERROR_CODES.TAXONOMY_ITEM_NOT_FOUND);
   }
 
@@ -207,7 +261,16 @@ async function findScopedItem({ user, itemId }) {
  * an E11000 rather than a usable error, so it is checked here too.
  */
 async function assertLabelIsFree({ companyId, type, label, exceptId }) {
-  const query = { _company: companyId, type, label };
+  // Case-insensitive: "Newsletter" and "newsletter" in the same curated list are a
+  // mistake, not two typologies. Accent differences are NOT caught — that would
+  // need a stored normalised field, and it is not the collision people actually
+  // make. The unique index stays as the exact-match backstop.
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const query = {
+    _company: companyId,
+    type,
+    label: { $regex: `^${escaped}$`, $options: 'i' },
+  };
   if (exceptId) {
     query._id = { $ne: exceptId };
   }
@@ -237,6 +300,15 @@ function validatePayload(payload, { partial }) {
   const fields = {};
   const invalid = () => new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
 
+  // Own enumerable keys only, so a `__proto__` coming out of JSON.parse is looked
+  // at like any other unknown key and refused.
+  const unknownKeys = Object.keys(payload).filter(
+    (key) => !EDITABLE_FIELDS.includes(key)
+  );
+  if (unknownKeys.length > 0) {
+    throw invalid();
+  }
+
   const hasLabel = payload.label !== undefined;
 
   if (!partial && !hasLabel) {
@@ -249,16 +321,21 @@ function validatePayload(payload, { partial }) {
     if (label === '') {
       throw new BadRequest(ERROR_CODES.MISSING_TAXONOMY_ITEM_LABEL);
     }
-    if (label.length > MAX_LABEL_LENGTH) throw invalid();
+    if (label.length > TaxonomyLimits.LABEL) throw invalid();
     fields.label = label;
   }
 
   if (payload.description !== undefined) {
-    if (payload.description === null) {
+    // Same rule as canonicalType below: an emptied field clears the value rather
+    // than storing a blank. Two neighbouring optional fields must not answer
+    // differently to the same input.
+    if (payload.description === null || payload.description === '') {
       fields.description = undefined;
     } else {
       if (typeof payload.description !== 'string') throw invalid();
-      if (payload.description.length > MAX_DESCRIPTION_LENGTH) throw invalid();
+      if (payload.description.length > TaxonomyLimits.DESCRIPTION) {
+        throw invalid();
+      }
       fields.description = payload.description;
     }
   }
@@ -271,7 +348,7 @@ function validatePayload(payload, { partial }) {
     } else {
       if (typeof payload.canonicalType !== 'string') throw invalid();
       const canonicalType = payload.canonicalType.trim();
-      if (canonicalType.length > MAX_CANONICAL_TYPE_LENGTH) throw invalid();
+      if (canonicalType.length > TaxonomyLimits.CANONICAL_TYPE) throw invalid();
       // Deliberately not checked against the canonical list: that list evolves
       // with the AI skills, which already accept a free value and fall back on
       // the raw string. See constant/email-type-canonical.js.
@@ -289,6 +366,12 @@ function validatePayload(payload, { partial }) {
       throw invalid();
     }
     fields.order = payload.order;
+  }
+
+  // A PATCH carrying nothing usable would answer 200 without changing anything,
+  // which reads as a successful save.
+  if (partial && Object.keys(fields).length === 0) {
+    throw invalid();
   }
 
   return fields;

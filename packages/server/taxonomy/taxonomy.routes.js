@@ -6,14 +6,22 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
-const { GUARD_CAN_ACCESS_GROUP } = require('../group/group.guard.js');
+const {
+  GUARD_CAN_ACCESS_GROUP,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+} = require('../group/group.guard.js');
 const { GUARD_EMAIL_METADATA } = require('../mailing/email-metadata.guard.js');
 const taxonomy = require('./taxonomy.controller.js');
 
 // GUARD_EMAIL_METADATA on every route, reads included: a taxonomy only exists to
-// serve the email metadata, so while a company has not opted in the feature must
-// leave no trace through the API either — not only in the interface. Super admins
-// bypass it, as everywhere else.
+// serve the email metadata, so while a company has not opted in the feature stays
+// closed through the API too, not only in the interface. Super admins bypass it,
+// as everywhere else.
+//
+// Note what this flag is and is not. It is a self-service switch: a company admin
+// may raise it on their own company through PUT /groups/:groupId, and then use
+// everything below. It is not a commercial lock — turning it into one means moving
+// `emailMetadata` out of the company-admin whitelist in group.controller.js.
 //
 // Reads are GUARD_USER: any user filling in an email's metadata needs the list of
 // typologies, not just company admins — who own create/update/delete.
@@ -28,9 +36,12 @@ router.get(
   taxonomy.listTaxonomyItemsForGroup
 );
 
+// The service resolves the company itself and never trusts `groupId`, but the
+// guard states the boundary where the rest of the codebase states it too.
 router.post(
   '',
   GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   GUARD_EMAIL_METADATA,
   taxonomy.createTaxonomyItem
 );

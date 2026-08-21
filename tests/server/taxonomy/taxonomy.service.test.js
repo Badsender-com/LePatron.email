@@ -14,6 +14,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     exists: jest.fn(),
     create: jest.fn(),
     deleteOne: jest.fn(),
+    countDocuments: jest.fn(),
   },
   Mailings: { countDocuments: jest.fn() },
   Groups: {},
@@ -68,12 +69,25 @@ const matchesId = (item, idFilter) =>
     ? String(item._id) !== String(idFilter.$ne)
     : String(item._id) === String(idFilter);
 
+// The label filter arrives as a case-insensitive `$regex`, exactly as MongoDB
+// would receive it; matching on equality here would let a case-sensitive
+// implementation pass.
+const matchesLabel = (item, labelFilter) => {
+  if (labelFilter === undefined) return true;
+  if (typeof labelFilter === 'object' && labelFilter.$regex) {
+    return new RegExp(labelFilter.$regex, labelFilter.$options || '').test(
+      item.label
+    );
+  }
+  return item.label === labelFilter;
+};
+
 const matches = (item, query) =>
   (!query._id || matchesId(item, query._id)) &&
   (!query._company || String(item._company) === String(query._company)) &&
   (!query.type || item.type === query.type) &&
   (query.isActive === undefined || item.isActive === query.isActive) &&
-  (!query.label || item.label === query.label);
+  matchesLabel(item, query.label);
 
 function dbFindOne(query) {
   return DB.find((item) => matches(item, query)) || null;
@@ -96,6 +110,7 @@ beforeEach(() => {
   }));
   TaxonomyItems.create.mockImplementation(async (doc) => ({ ...doc }));
   TaxonomyItems.deleteOne.mockResolvedValue({ deletedCount: 1 });
+  TaxonomyItems.countDocuments.mockResolvedValue(0);
   Mailings.countDocuments.mockResolvedValue(0);
 });
 
@@ -176,16 +191,43 @@ describe('listTaxonomyItems — company scope', () => {
 });
 
 describe('createTaxonomyItem', () => {
-  it('stamps the caller company, never one from the payload', async () => {
+  it('stamps the caller company', async () => {
     await taxonomyService.createTaxonomyItem({
       user: userA,
       type: 'emailType',
-      payload: { label: 'Black Friday', _company: COMPANY_B },
+      payload: { label: 'Black Friday' },
     });
 
     const created = TaxonomyItems.create.mock.calls[0][0];
     expect(String(created._company)).toBe(COMPANY_A);
     expect(created.label).toBe('Black Friday');
+    expect(created.type).toBe('emailType');
+  });
+
+  // Refused rather than dropped: a payload that silently loses a field answers
+  // 200 and changes nothing, which reads as a successful save.
+  it.each([
+    ['_company', COMPANY_B],
+    ['_id', '507f1f77bcf86cd799439999'],
+    ['type', 'language'],
+    ['cannonicalType', 'promo'],
+    ['__proto__', { polluted: true }],
+  ])('refuses an unexpected %s in the payload', async (key, value) => {
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: JSON.parse(
+          JSON.stringify({ label: 'Black Friday', [key]: value })
+        ),
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+
+    expect(TaxonomyItems.create).not.toHaveBeenCalled();
+    expect({}.polluted).toBeUndefined();
   });
 
   it('refuses to create in another company', async () => {
@@ -291,6 +333,96 @@ describe('createTaxonomyItem', () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 
+  it.each([
+    ['description', 'x'.repeat(2001)],
+    ['canonicalType', 'x'.repeat(61)],
+  ])('refuses an over-long %s', async (field, value) => {
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'Valide', [field]: value },
+      })
+    ).rejects.toMatchObject({
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
+  it.each([['description'], ['canonicalType']])(
+    'clears %s with an empty string, so both optional fields answer alike',
+    async (field) => {
+      await taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'Valide', [field]: '' },
+      });
+
+      expect(TaxonomyItems.create.mock.calls[0][0][field]).toBeUndefined();
+    }
+  );
+
+  it('refuses a label that differs only by case from an existing one', async () => {
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'INFOLETTRE' },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS,
+    });
+  });
+
+  it('does not treat a regex metacharacter in the label as a pattern', async () => {
+    // '.' would match any character if the label went into the regex raw, so
+    // 'Infolettr.' would collide with 'Infolettre'.
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'Infolettr.' },
+      })
+    ).resolves.toBeTruthy();
+  });
+
+  it('turns a lost race on the unique index into a conflict, not a 500', async () => {
+    TaxonomyItems.create.mockRejectedValue(
+      Object.assign(new Error('E11000 duplicate key error'), { code: 11000 })
+    );
+
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'Soldes' },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS,
+    });
+  });
+
+  it('refuses to create past the per-company cap', async () => {
+    TaxonomyItems.countDocuments.mockResolvedValue(200);
+
+    await expect(
+      taxonomyService.createTaxonomyItem({
+        user: userA,
+        type: 'emailType',
+        payload: { label: 'Une de trop' },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_LIMIT_REACHED,
+    });
+
+    // Counted within the company, not across the platform.
+    const query = TaxonomyItems.countDocuments.mock.calls[0][0];
+    expect(String(query._company)).toBe(COMPANY_A);
+    expect(query.type).toBe('emailType');
+  });
+
   it('refuses an over-long label', async () => {
     await expect(
       taxonomyService.createTaxonomyItem({
@@ -388,6 +520,77 @@ describe('updateTaxonomyItem', () => {
     }
   );
 
+  // Moving an item between taxonomies or companies would orphan the emails
+  // pointing at it, so neither is editable — and the payload saying otherwise is
+  // refused rather than ignored.
+  it.each([
+    ['_company', COMPANY_B],
+    ['type', 'language'],
+  ])('refuses to move the item to another %s', async (key, value) => {
+    await expect(
+      taxonomyService.updateTaxonomyItem({
+        user: userA,
+        itemId: ITEM_A,
+        payload: { [key]: value },
+      })
+    ).rejects.toMatchObject({
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
+  it('refuses a payload that would change nothing', async () => {
+    await expect(
+      taxonomyService.updateTaxonomyItem({
+        user: userA,
+        itemId: ITEM_A,
+        payload: {},
+      })
+    ).rejects.toMatchObject({
+      status: 400,
+      message: ERROR_CODES.INVALID_TAXONOMY_ITEM,
+    });
+  });
+
+  it('checks label availability within the item taxonomy, excluding itself', async () => {
+    await taxonomyService.updateTaxonomyItem({
+      user: userA,
+      itemId: ITEM_A,
+      payload: { label: 'Autre libellé' },
+    });
+
+    const query = TaxonomyItems.exists.mock.calls[0][0];
+    expect(String(query._company)).toBe(COMPANY_A);
+    expect(query.type).toBe('emailType');
+    expect(String(query._id.$ne)).toBe(ITEM_A);
+  });
+
+  it('turns a lost race on the unique index into a conflict', async () => {
+    TaxonomyItems.findOne.mockImplementation(async (query) => {
+      const found = dbFindOne(query);
+      return (
+        found && {
+          ...found,
+          save: jest
+            .fn()
+            .mockRejectedValue(
+              Object.assign(new Error('E11000'), { code: 11000 })
+            ),
+        }
+      );
+    });
+
+    await expect(
+      taxonomyService.updateTaxonomyItem({
+        user: userA,
+        itemId: ITEM_A,
+        payload: { label: 'Autre libellé' },
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS,
+    });
+  });
+
   it('lets a super admin edit across companies', async () => {
     await expect(
       taxonomyService.updateTaxonomyItem({
@@ -466,9 +669,33 @@ describe('resolveCompanyId', () => {
     ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);
   });
 
-  it('refuses a malformed company id from a super admin', () => {
+  // `ObjectId.isValid` says yes to any 12-character string and reinterprets its
+  // bytes, so 'companyAdmin' would become a valid id pointing at a company that
+  // does not exist — and an item created there is invisible everywhere.
+  it.each([['not-an-objectid'], ['companyAdmin'], ['aaaaaaaaaaaa'], [12]])(
+    'refuses the malformed company id %p from a super admin',
+    (groupId) => {
+      expect(() =>
+        taxonomyService.resolveCompanyId(superAdmin, groupId)
+      ).toThrow(ERROR_CODES.INVALID_GROUP_PARAM);
+    }
+  );
+
+  it('refuses a malformed company id on the session of a regular caller', () => {
     expect(() =>
-      taxonomyService.resolveCompanyId(superAdmin, 'not-an-objectid')
+      taxonomyService.resolveCompanyId({
+        isAdmin: false,
+        group: { id: 'companyAdmin' },
+      })
+    ).toThrow(ERROR_CODES.INVALID_GROUP_PARAM);
+  });
+
+  it('refuses a super admin falling back on a company of their own', () => {
+    expect(() =>
+      taxonomyService.resolveCompanyId({
+        isAdmin: true,
+        group: { id: COMPANY_A },
+      })
     ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);
   });
 });

@@ -18,7 +18,11 @@ module.exports = {
 // arrive, an unnamed type must stop meaning "email type".
 const DEFAULT_TYPE = TaxonomyTypes.EMAIL_TYPE;
 
-const wantsActiveOnly = (req) => req.query.activeOnly === 'true';
+// A query-string boolean arrives as a string; `?activeOnly=1` meaning the opposite
+// of what it says would be a trap.
+const TRUTHY_QUERY_VALUES = ['true', '1', 'yes'];
+const wantsActiveOnly = (req) =>
+  TRUTHY_QUERY_VALUES.includes(String(req.query.activeOnly).toLowerCase());
 
 /**
  * @api {get} /taxonomy-items list the caller company's taxonomy items
