@@ -17,14 +17,16 @@ Before committing code:
 ```
 yarn code:lint         # Check for linting errors
 yarn code:fix          # Auto-fix errors and format code
-yarn test              # Run all tests
+yarn test-ci           # Run all tests (yarn test is jest --watch, it never exits)
 ```
 
-## Skills
+## Claude Code Skills
 
-| Skill      | Use for                                                                    |
-| ---------- | -------------------------------------------------------------------------- |
-| `git-sync` | Keeping the branch rebased on `origin/develop` with a clean worktree        |
+Agent skills in `.claude/skills/` (not the product's AI Skills feature).
+
+| Skill      | Use for                                                      |
+| ---------- | ------------------------------------------------------------ |
+| `git-sync` | Keeping the branch rebased on its base with a clean worktree |
 
 ## Available Subagents
 
