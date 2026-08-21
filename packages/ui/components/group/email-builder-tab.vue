@@ -119,21 +119,15 @@ export default {
         {{ $t('emailBuilderSettings.metadata.enabledHint') }}
       </p>
 
-      <!-- On the SAVED state, not the edited one: announcing that the taxonomy
-           page is available while the switch is still unsaved would be a lie the
-           user can check in one click. -->
-      <v-alert
-        v-if="savedConfig.enabled"
-        text
-        dense
-        type="info"
-        class="settings-section__alert"
-      >
+      <!-- Not conditioned on the switch: the taxonomy is configured independently
+           of it, precisely so a company's typologies can be prepared before the
+           metadata are turned on. The link is a signpost, not an unlock notice. -->
+      <p class="settings-section__hint">
         {{ $t('emailBuilderSettings.metadata.taxonomyHint') }}
-        <v-btn :to="taxonomyRoute" small text color="accent" class="ml-2">
+        <nuxt-link :to="taxonomyRoute" class="settings-section__link">
           {{ $t('emailBuilderSettings.metadata.taxonomyAction') }}
-        </v-btn>
-      </v-alert>
+        </nuxt-link>
+      </p>
     </section>
 
     <div class="settings-actions">
@@ -175,9 +169,13 @@ export default {
     margin: 0.5rem 0 0 0;
   }
 
-  &__alert {
-    margin-top: 1rem;
-    font-size: 0.8125rem;
+  &__link {
+    color: var(--v-accent-base, #00acdc);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   & + & {
