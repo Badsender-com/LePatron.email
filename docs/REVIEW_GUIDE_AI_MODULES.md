@@ -306,21 +306,25 @@ retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
 
 ### Traités dans la PR
 
-| Réf          | Sujet                                                                                                                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous).                                       |
-| **R2** 🔴    | Périmètres d'expertise normalisés des deux côtés + warning quand un périmètre demandé ne matche rien. La garde CI proposée n'a pas été retenue — voir ci-dessous.                                             |
-| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                                                                    |
-| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                                                                |
-| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                                                                  |
-| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                                                         |
-| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                                                                    |
-| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                                                                    |
-| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                                                         |
-| **A3** 🟠    | Le schéma de sortie est résolu **avant** l'appel provider (il l'était après, d'où un TypeError une fois la requête LLM facturée). Le croisement base↔registre en CI n'a **pas** été retenu — voir ci-dessous. |
-| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                                                                   |
-| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                                                       |
-| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                                                                 |
+| Réf           | Sujet                                                                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R1** 🔴     | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous).                                       |
+| **R2** 🔴     | Périmètres d'expertise normalisés des deux côtés + warning quand un périmètre demandé ne matche rien. La garde CI proposée n'a pas été retenue — voir ci-dessous.                                             |
+| **R3** 🟠     | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                                                                    |
+| **R4** 🟠     | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                                                                |
+| **R5** 🟠     | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                                                                  |
+| **R6** 🟠     | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                                                         |
+| **R7** 🟠     | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                                                                    |
+| **R8** 🟡     | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                                                                    |
+| **R9** 🟡     | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                                                         |
+| **A3** 🟠     | Le schéma de sortie est résolu **avant** l'appel provider (il l'était après, d'où un TypeError une fois la requête LLM facturée). Le croisement base↔registre en CI n'a **pas** été retenu — voir ci-dessous. |
+| **A4/A5** 🟡  | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                                                                   |
+| **A7** 🟡     | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                                                       |
+| **A8** 🟡     | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                                                                 |
+| **A1** 🔴     | Cycle de vie versionné factorisé (`versioned-entity.service.js`), avec un test de contrat unique pour les deux entités — voir ci-dessous.                                                                     |
+| **A2** 🟠     | Résolution Group → feature → intégration en un seul endroit (`resolveActiveFeature`), en préservant les messages distincts — voir ci-dessous.                                                                 |
+| **A6** 🟡     | Sans objet : le scheduler n'existe plus (index TTL).                                                                                                                                                          |
+| _hors review_ | Les échecs de résolution (skill absente/archivée, version active manquante, schéma non résolu) sont typés `CONFIG_ERROR` comme le chemin groupe/intégration.                                                  |
 
 Au passage, trois clés i18n dupliquées issues du rebase (bloc `aiFeatures`
 entier dans `fr.js`, `global.savedSuccessfully` dans `fr.js` et `en.js`), toutes
@@ -329,12 +333,24 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
 
 ### Reportés, décision consciente
 
-- **R2** 🔴 — **traité**, mais pas comme proposé : voir la section dédiée plus
-  bas.
 - **R10** 🟡 — section « Anatomie d'une skill » dans `AI_SKILL_AUTHORING.md`.
 - **R11** 🟡 — garde-fou anti-perte de saisie (~½ journée) et écrasement entre
   deux panneaux de versions dépliés.
 - **R12** 🟡 — publication d'une version au contenu entièrement vide.
+
+Points relevés hors review et laissés ouverts :
+
+- **Version épinglée ARCHIVED invocable** : `versions.find()` sans filtre de
+  statut. Assumé — c'est le mode épinglé du playground qui l'utilise, la
+  décision appartient donc à la PR2.
+- **PR2 doit passer au TTL** : son job de purge n'a plus de `job-scheduler.js`
+  où se brancher.
+- **`check-skill-usage.js` tourne à vide** (zéro appel `invoke()`, manifest aux
+  tableaux vides, jamais exécuté). À trancher sur la PR2 : le garder pour
+  l'étape 2, le brancher en CI, ou le supprimer.
+
+### A1 et A2 : ce qui a été factorisé
+
 - **A1** 🔴 — **traité** : `services/versioned-entity.service.js` porte le cycle
   de vie versionné une seule fois (`createVersionedEntityService`). Les deux
   services le configurent — champs de contenu et, côté skill, la gate de
@@ -369,9 +385,6 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
   sont pas touchés — et un test verrouille ce contrat. Le compromis que la
   reviewer signalait (« ne pas perdre les trois messages distincts ») est
   couvert par un test paramétré sur les quatre raisons.
-
-- **A6** 🟡 — **résolu par le TTL** : le scheduler n'existe plus, donc plus rien
-  à déplacer.
 
 ### R2 : normaliser, et rendre l'échec audible
 
