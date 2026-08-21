@@ -19,6 +19,12 @@ const {
 } = require('../../../../packages/server/common/models.common');
 const logger = require('../../../../packages/server/utils/logger.js');
 
+// The warning is fire-and-forget (it must not add a round-trip to the hot
+// path), so let the microtask queue drain before asserting on it.
+function flushWarning() {
+  return new Promise((resolve) => setImmediate(resolve));
+}
+
 function mockReturnDocs(docs) {
   Expertises.find.mockReturnValue({ lean: () => Promise.resolve(docs) });
   Expertises.distinct.mockResolvedValue(
@@ -257,6 +263,7 @@ describe('expertise.repository', () => {
         },
       ]);
       await findApplicable({ scope: 'cta', categories: ['redaction'] });
+      await flushWarning();
       expect(logger.warn).not.toHaveBeenCalled();
     });
 
@@ -269,6 +276,7 @@ describe('expertise.repository', () => {
       mockReturnDocs([]);
       Expertises.distinct.mockResolvedValue(['cta', 'objet']);
       await findApplicable({ scope: 'bouton', categories: ['redaction'] });
+      await flushWarning();
       expect(logger.warn).toHaveBeenCalledTimes(1);
       const message = logger.warn.mock.calls[0][0];
       expect(message).toContain('bouton');
@@ -299,8 +307,39 @@ describe('expertise.repository', () => {
         categories: ['redaction'],
       });
       expect(out).toHaveLength(1);
+      await flushWarning();
       expect(logger.warn).toHaveBeenCalledTimes(1);
       expect(logger.warn.mock.calls[0][0]).toContain('bouton');
+    });
+
+    /**
+     * The false negative: the schema tolerates isTransversal + a scope
+     * coexisting. Such a document is returned because of its flag, not its
+     * scope — counting its scope as "matched" suppressed the warning in exactly
+     * the case it exists for, no SCOPED expertise having answered.
+     */
+    it('warns when only a transversal expertise carries the requested scope', async () => {
+      mockReturnDocs([
+        {
+          expertiseId: 'general',
+          isTransversal: true,
+          category: 'redaction',
+          scope: ['cta'],
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
+        },
+      ]);
+      Expertises.distinct.mockResolvedValue(['cta']);
+
+      const out = await findApplicable({
+        scope: 'cta',
+        categories: ['redaction'],
+      });
+
+      expect(out).toHaveLength(1);
+      await flushWarning();
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0][0]).toContain('cta');
     });
 
     it('warns about the unmatched scope only, not the ones that matched', async () => {
@@ -318,6 +357,7 @@ describe('expertise.repository', () => {
         scope: ['cta', 'bouton'],
         categories: ['redaction'],
       });
+      await flushWarning();
       const message = logger.warn.mock.calls[0][0];
       expect(message).toContain('bouton');
       expect(message).not.toContain('["cta"] matched');
@@ -329,6 +369,7 @@ describe('expertise.repository', () => {
       await expect(
         findApplicable({ scope: 'bouton', categories: ['redaction'] })
       ).resolves.toEqual([]);
+      await flushWarning();
       expect(logger.warn).toHaveBeenCalledTimes(1);
     });
   });

@@ -300,6 +300,7 @@ OUTPUT (valid JSON only):`;
         } catch {
           errorMessage = errorText || 'Unknown error';
         }
+        // Sanitize error message to prevent logging sensitive data
         const sanitizedMessage = this._sanitizeLogMessage(errorMessage);
         logger.error(
           `${providerName} API error:`,
@@ -329,10 +330,14 @@ OUTPUT (valid JSON only):`;
       }
 
       const usage = data.usage || {};
+      // Content length stays in the log even though this returns the whole
+      // payload now (chatComplete needs the usage): a response that arrives
+      // empty is otherwise indistinguishable from a normal one here.
+      const content = data.choices[0].message.content;
       logger.log(
-        `${providerName} response received in ${elapsed}s - tokens: ${
-          usage.total_tokens || 'N/A'
-        }`
+        `${providerName} response received in ${elapsed}s - length: ${
+          content ? content.length : 0
+        } chars, tokens: ${usage.total_tokens || 'N/A'}`
       );
 
       return data;

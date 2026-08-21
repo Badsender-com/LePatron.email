@@ -105,13 +105,24 @@ async function logFailure(params) {
     // callers pass allowContent once the group is resolved (default: allowed).
     allowContent: params.allowContent,
   });
+  // What reaches the client, and what does not.
+  //
+  // INPUT_VALIDATION is about the caller's own payload: our own zod formatting,
+  // safe and actionable, and it powers the inline field errors. Everything else
+  // describes what happened downstream — provider error text, model names, API
+  // hosts, or a fragment of an unparseable LLM response — and has no business
+  // in an HTTP body. The full detail is persisted in AISkillInvocation.error,
+  // which the Invocations tab already displays, so `invocationId` is the handle
+  // to it.
+  const isCallerInputError =
+    params.error && params.error.code === 'INPUT_VALIDATION';
   const err = createError(
     params.status === InvocationStatuses.VALIDATION_ERROR ? 400 : 502,
-    params.error.message
+    isCallerInputError ? params.error.message : 'Skill invocation failed'
   );
   err.invocationId = invocationId;
   err.invocationStatus = params.status;
-  err.skillError = params.error;
+  if (isCallerInputError) err.skillError = params.error;
   // Transient decoration for UI consumption (inline field errors). Never
   // persisted: logInvocation builds its doc from explicit picks and `error`
   // is a typed subdoc — fieldErrors must stay out of both.

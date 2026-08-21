@@ -15,7 +15,7 @@ const retentionByGroup = new Map([
 ]);
 
 describe('migrate-invocation-expires-at.planExpiresAt', () => {
-  it('stamps startedAt + the Group\'s retention', () => {
+  it("stamps startedAt + the Group's retention", () => {
     const at = planExpiresAt(
       { _company: GROUP_A, startedAt: new Date('2026-08-01T00:00:00Z') },
       retentionByGroup,

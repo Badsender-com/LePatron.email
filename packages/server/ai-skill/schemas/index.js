@@ -57,7 +57,9 @@ const schemas = Object.freeze({
  * @returns {import('zod').ZodTypeAny | undefined}
  */
 function getSchema(schemaId) {
-  return schemas[schemaId];
+  // Via hasSchema rather than a bare lookup: `getSchema('constructor')` would
+  // otherwise return a truthy non-schema and blow up on .safeParse.
+  return hasSchema(schemaId) ? schemas[schemaId] : undefined;
 }
 
 /**

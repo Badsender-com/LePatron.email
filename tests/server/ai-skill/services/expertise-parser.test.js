@@ -19,10 +19,10 @@ describe('expertise-parser', () => {
     const md = [
       '# Intro',
       'Some preamble',
-      '## [urgency-strategy] Stratégie d\'urgence',
+      "## [urgency-strategy] Stratégie d'urgence",
       'Les CTA promo doivent...',
       '## [verbs] Choix des verbes',
-      'Privilégier les verbes d\'action',
+      "Privilégier les verbes d'action",
       '## [length] Longueur recommandée',
       'Maximum 25 caractères.',
     ].join('\n');
@@ -32,7 +32,7 @@ describe('expertise-parser', () => {
     expect(errors).toEqual([]);
     expect(warnings).toEqual([]);
     expect(sections).toEqual([
-      { id: 'urgency-strategy', title: 'Stratégie d\'urgence', position: 0 },
+      { id: 'urgency-strategy', title: "Stratégie d'urgence", position: 0 },
       { id: 'verbs', title: 'Choix des verbes', position: 1 },
       { id: 'length', title: 'Longueur recommandée', position: 2 },
     ]);

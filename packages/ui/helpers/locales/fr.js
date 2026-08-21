@@ -1116,6 +1116,20 @@ export default {
       translation: 'Traduction',
       other: 'Autre',
     },
+    errors: {
+      SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
+        'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
+      SKILL_TEMPLATE_UNKNOWN_FIELDS:
+        'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
+    },
+    warnings: {
+      TEMPLATE_UNKNOWN_FIELDS:
+        'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Ils seront interpolés vides à l\'exécution — la publication sera bloquée.',
+      TEMPLATE_MISSING_REQUIRED:
+        'Champ(s) requis du schéma « {schemaId} » non référencé(s) dans le template : {fields}.',
+      TEMPLATE_MISSING_EXPERTISE:
+        'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
+    },
     emailTypes: {
       promo: 'Promotionnel',
       newsletter: 'Newsletter',

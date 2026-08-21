@@ -6,6 +6,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { aiSkillSchemaDescriptor } from '~/helpers/ai-skill-routes.js';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
+import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
 import { Plus, CheckCircle2, Check, Copy, Trash2 } from 'lucide-vue';
 
 // How long a copied chip keeps its confirmation mark.
@@ -161,9 +162,10 @@ export default {
       const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
       return !!(d && d.hasExpertiseField);
     },
+    // The server sends warning codes; the wording lives in the locales.
     warningsFor(v) {
       if (this.versionLabel(v) !== this.warningsVersionKey) return [];
-      return this.warnings || [];
+      return (this.warnings || []).map((w) => skillWarningMessage(this, w));
     },
   },
 };

@@ -22,6 +22,12 @@ function safeRequire(path) {
     // eslint-disable-next-line global-require, import/no-dynamic-require
     return require(path);
   } catch (err) {
+    // Only "the file is not on this branch" is tolerated. Swallowing anything
+    // else would let a SyntaxError in an EXISTING manifest silently disable the
+    // activation-impact alert instead of failing loudly at boot.
+    const isMissingThisModule =
+      err.code === 'MODULE_NOT_FOUND' && err.message.includes(path);
+    if (!isMissingThisModule) throw err;
     return null;
   }
 }

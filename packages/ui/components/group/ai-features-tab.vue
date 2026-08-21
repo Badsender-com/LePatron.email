@@ -315,7 +315,7 @@ export default {
             <v-col
               v-if="
                 supportsModelSelection &&
-                  (modelOptions.length > 0 || loadingModels)
+                (modelOptions.length > 0 || loadingModels)
               "
               cols="12"
               md="6"

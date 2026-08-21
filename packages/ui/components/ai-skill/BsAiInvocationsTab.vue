@@ -377,7 +377,9 @@ export default {
       <template #item.provider="{ item }">
         <span class="text-caption">
           {{ item.provider || '—' }}
-          <span v-if="item.model" class="text--secondary">· {{ item.model }}</span>
+          <span v-if="item.model" class="text--secondary"
+            >· {{ item.model }}</span
+          >
         </span>
       </template>
       <template #no-data>
@@ -409,8 +411,10 @@ export default {
           >
             {{ statusLabel(detail.status) }}
           </v-chip>
-          <span class="text-caption ml-2" :title="`${detail.latencyMs} ms`">{{ latencySeconds(detail.latencyMs) }} · {{ detail.provider }} ·
-            {{ detail.model }}</span>
+          <span class="text-caption ml-2" :title="`${detail.latencyMs} ms`"
+            >{{ latencySeconds(detail.latencyMs) }} · {{ detail.provider }} ·
+            {{ detail.model }}</span
+          >
         </p>
         <v-alert v-if="detail.error" type="error" dense outlined class="mb-3">
           <strong>{{ detail.error.code }}</strong> — {{ detail.error.message }}

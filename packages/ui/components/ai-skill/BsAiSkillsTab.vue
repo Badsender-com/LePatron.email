@@ -1,5 +1,6 @@
 <script>
 import { mapMutations } from 'vuex';
+import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -135,9 +136,7 @@ export default {
           `/ai-skills/${created.skillId}?tab=versions&expand=${expand}`
         );
       } catch (err) {
-        const msg =
-          (err.response && err.response.data && err.response.data.message) ||
-          this.$t('global.errors.errorOccured');
+        const msg = skillErrorMessage(this, err);
         this.showSnackbar({ text: msg, color: 'error' });
       } finally {
         this.saving = false;

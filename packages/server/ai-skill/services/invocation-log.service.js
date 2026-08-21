@@ -1,7 +1,10 @@
 'use strict';
 
 const createError = require('http-errors');
+const { Types } = require('mongoose');
+const logger = require('../../utils/logger.js');
 const { AISkillInvocations } = require('../../common/models.common.js');
+const { computeExpiresAt } = require('./invocation-logger.service.js');
 
 // Reserved non-productive invocation sources (cf. docs/AI_SKILL_AUTHORING.md):
 // excluded from the Invocations list by default so test traffic does not
@@ -99,6 +102,54 @@ async function listInvocations({
   return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
 }
 
+// Written in batches rather than one update per document, and without an
+// aggregation-pipeline update: those need MongoDB 4.2 while the project
+// documents 3.4 as its minimum (packages/documentation/development.md).
+const RESTAMP_BATCH_SIZE = 500;
+
+/**
+ * Re-stamp the retention deadline of every invocation of a Group.
+ *
+ * `expiresAt` is computed at write time, so changing a Group's
+ * logRetentionDays would otherwise apply to new logs only. The nightly purge
+ * this TTL index replaced recomputed the cutoff on every run, so tightening a
+ * retention took effect retroactively — this restores that property, which is
+ * the one RGPD-relevant thing the TTL lost.
+ *
+ * @param {Object} params
+ * @param {import('mongoose').Types.ObjectId|string} params.groupId
+ * @param {number} params.retentionDays
+ * @returns {Promise<{ restamped: number }>}
+ */
+async function restampRetention({ groupId, retentionDays }) {
+  const docs = await AISkillInvocations.find(
+    { _company: Types.ObjectId(groupId) },
+    { startedAt: 1 }
+  ).lean();
+  if (!docs.length) return { restamped: 0 };
+
+  let restamped = 0;
+  for (let i = 0; i < docs.length; i += RESTAMP_BATCH_SIZE) {
+    const batch = docs.slice(i, i + RESTAMP_BATCH_SIZE);
+    await AISkillInvocations.bulkWrite(
+      batch.map((doc) => ({
+        updateOne: {
+          filter: { _id: doc._id },
+          update: {
+            $set: { expiresAt: computeExpiresAt(doc.startedAt, retentionDays) },
+          },
+        },
+      }))
+    );
+    restamped += batch.length;
+  }
+
+  logger.log(
+    `[ai-skill] retention re-stamped for group=${groupId} days=${retentionDays} invocations=${restamped}`
+  );
+  return { restamped };
+}
+
 async function getInvocation(id) {
   const inv = await AISkillInvocations.findById(id).lean();
   if (!inv) throw createError(404, 'Invocation not found');
@@ -108,5 +159,6 @@ async function getInvocation(id) {
 module.exports = {
   listInvocations,
   getInvocation,
+  restampRetention,
   SortableFields,
 };
