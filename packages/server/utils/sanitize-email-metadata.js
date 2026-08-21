@@ -1,5 +1,9 @@
 'use strict';
 
+const { UnprocessableEntity } = require('http-errors');
+
+const ERROR_CODES = require('../constant/error-codes.js');
+
 /**
  * Fields a company may declare as mandatory. `preheader` is in the list even
  * though it is not a mailing field: it is edited through the same panel, and
@@ -21,16 +25,17 @@ const EMAIL_METADATA_FIELDS = Object.freeze([
  * restricted to the known field names — an unknown entry would silently never be
  * enforced, which is worse than a clear rejection.
  *
- * Throws an Error with `.code = INVALID_EMAIL_METADATA` and `.statusCode = 422`.
+ * Throws an UnprocessableEntity carrying ERROR_CODES.INVALID_EMAIL_METADATA — the
+ * same code and status as the mailing-side validation, so the front has a single
+ * case to handle. The human-readable reason travels in `.details`.
  *
  * @param {Object} raw the req.body emailMetadata payload
  * @returns {{ enabled: boolean, requiredFields: string[] }}
  */
 function sanitizeEmailMetadata(raw) {
-  const fail = (message) => {
-    const err = new Error(message);
-    err.code = 'INVALID_EMAIL_METADATA';
-    err.statusCode = 422;
+  const fail = (details) => {
+    const err = new UnprocessableEntity(ERROR_CODES.INVALID_EMAIL_METADATA);
+    err.details = details;
     return err;
   };
 
@@ -46,13 +51,18 @@ function sanitizeEmailMetadata(raw) {
       throw fail(`emailMetadata.requiredFields[${i}] must be a string`);
     }
     const name = field.trim();
+    // The offending value is deliberately not echoed back: the list of allowed
+    // names is more useful to the caller, and nothing user-supplied travels back
+    // out through an error message.
     if (!EMAIL_METADATA_FIELDS.includes(name)) {
       throw fail(
-        `emailMetadata.requiredFields[${i}] is not a known field: ${name}`
+        `emailMetadata.requiredFields[${i}] is not a known field. Allowed: ${EMAIL_METADATA_FIELDS.join(
+          ', '
+        )}`
       );
     }
     if (seen.has(name)) {
-      throw fail(`emailMetadata.requiredFields has a duplicate: ${name}`);
+      throw fail(`emailMetadata.requiredFields[${i}] is a duplicate`);
     }
     seen.add(name);
     return name;

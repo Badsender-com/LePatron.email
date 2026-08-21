@@ -108,7 +108,7 @@ describe('validateMetadataPayload — subject', () => {
       await expect(
         validateMetadataPayload({ subject }, { companyId: COMPANY_A })
       ).rejects.toMatchObject({
-        status: 400,
+        status: 422,
         message: ERROR_CODES.INVALID_EMAIL_METADATA,
       });
     }
@@ -132,7 +132,7 @@ describe('validateMetadataPayload — plannedSendDate', () => {
       await expect(
         validateMetadataPayload({ plannedSendDate }, { companyId: COMPANY_A })
       ).rejects.toMatchObject({
-        status: 400,
+        status: 422,
         message: ERROR_CODES.INVALID_EMAIL_METADATA,
       });
     }
@@ -208,7 +208,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
         { companyId: COMPANY_A }
       )
     ).rejects.toMatchObject({
-      status: 400,
+      status: 422,
       message: ERROR_CODES.INVALID_EMAIL_METADATA,
     });
     expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
@@ -232,7 +232,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
       validateMetadataPayload({ _emailType: TYPE_A }, { companyId: null })
     ).rejects.toMatchObject({
       status: 403,
-      message: ERROR_CODES.EMAIL_TYPE_WRONG_COMPANY,
+      message: ERROR_CODES.EMAIL_TYPE_COMPANY_MISSING,
     });
     expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
   });
@@ -309,7 +309,7 @@ describe('applyMetadataToMailing', () => {
     await expect(
       applyMetadataToMailing(mailing, { preheader: { nested: true } })
     ).rejects.toMatchObject({
-      status: 400,
+      status: 422,
       message: ERROR_CODES.INVALID_EMAIL_METADATA,
     });
   });
