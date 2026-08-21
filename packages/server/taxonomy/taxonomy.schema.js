@@ -5,7 +5,10 @@ const { ObjectId } = Schema.Types;
 
 const { trimString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
-const { TaxonomyTypeValues } = require('../constant/taxonomy-type.js');
+const {
+  TaxonomyTypeValues,
+  TaxonomyLimits,
+} = require('../constant/taxonomy-type.js');
 
 /**
  * @apiDefine taxonomyItem
@@ -39,20 +42,20 @@ const TaxonomyItemSchema = Schema(
       set: trimString,
       // Bounded now, while the collection is still empty: adding a limit once
       // client data exists means a migration.
-      maxlength: 120,
+      maxlength: TaxonomyLimits.LABEL,
     },
     // The company's own definition of what this typology means for them. This is
     // the real editorial value of the taxonomy, and the future LLM context.
     description: {
       type: String,
-      maxlength: 2000,
+      maxlength: TaxonomyLimits.DESCRIPTION,
     },
     // Optional bridge onto the AI skills vocabulary — see
     // constant/email-type-canonical.js for why it is not an enum here.
     canonicalType: {
       type: String,
       set: trimString,
-      maxlength: 60,
+      maxlength: TaxonomyLimits.CANONICAL_TYPE,
     },
     // Soft disable: an item still referenced by mailings must keep resolving, so
     // it is deactivated rather than deleted.
