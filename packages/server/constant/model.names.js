@@ -30,4 +30,6 @@ module.exports = Object.freeze({
   FeedMappingModel: 'FeedMapping',
   // Translation
   TranslationJobModel: 'TranslationJob',
+  // Taxonomy (email metadata)
+  TaxonomyItemModel: 'TaxonomyItem',
 });

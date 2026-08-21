@@ -29,6 +29,7 @@ const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
 const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
+const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 
 /// ///
 // EXPORTS
@@ -85,6 +86,10 @@ const FeedMappings = mongoose.model(
   modelNames.FeedMappingModel,
   FeedMappingSchema
 );
+const TaxonomyItems = mongoose.model(
+  modelNames.TaxonomyItemModel,
+  TaxonomyItemSchema
+);
 
 module.exports = {
   mongoose,
@@ -112,4 +117,5 @@ module.exports = {
   AIFeatureConfigs,
   TranslationJobs,
   FeedMappings,
+  TaxonomyItems,
 };
