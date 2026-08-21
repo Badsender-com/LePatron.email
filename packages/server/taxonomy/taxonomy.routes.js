@@ -7,23 +7,45 @@ const router = express.Router();
 
 const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('../group/group.guard.js');
+const { GUARD_EMAIL_METADATA } = require('../mailing/email-metadata.guard.js');
 const taxonomy = require('./taxonomy.controller.js');
 
+// GUARD_EMAIL_METADATA on every route, reads included: a taxonomy only exists to
+// serve the email metadata, so while a company has not opted in the feature must
+// leave no trace through the API either — not only in the interface. Super admins
+// bypass it, as everywhere else.
+//
 // Reads are GUARD_USER: any user filling in an email's metadata needs the list of
 // typologies, not just company admins — who own create/update/delete.
-router.get('', GUARD_USER, taxonomy.listTaxonomyItems);
+router.get('', GUARD_USER, GUARD_EMAIL_METADATA, taxonomy.listTaxonomyItems);
 
 // Must come before '/:itemId' below, otherwise "groups" is captured as an itemId.
 router.get(
   '/groups/:groupId',
   GUARD_USER,
   GUARD_CAN_ACCESS_GROUP,
+  GUARD_EMAIL_METADATA,
   taxonomy.listTaxonomyItemsForGroup
 );
 
-router.post('', GUARD_GROUP_ADMIN, taxonomy.createTaxonomyItem);
-router.patch('/:itemId', GUARD_GROUP_ADMIN, taxonomy.updateTaxonomyItem);
-router.delete('/:itemId', GUARD_GROUP_ADMIN, taxonomy.deleteTaxonomyItem);
+router.post(
+  '',
+  GUARD_GROUP_ADMIN,
+  GUARD_EMAIL_METADATA,
+  taxonomy.createTaxonomyItem
+);
+router.patch(
+  '/:itemId',
+  GUARD_GROUP_ADMIN,
+  GUARD_EMAIL_METADATA,
+  taxonomy.updateTaxonomyItem
+);
+router.delete(
+  '/:itemId',
+  GUARD_GROUP_ADMIN,
+  GUARD_EMAIL_METADATA,
+  taxonomy.deleteTaxonomyItem
+);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

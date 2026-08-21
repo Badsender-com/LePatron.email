@@ -13,6 +13,9 @@ const {
 const {
   GUARD_CAN_ACCESS_GROUP,
 } = require('../../../packages/server/group/group.guard.js');
+const {
+  GUARD_EMAIL_METADATA,
+} = require('../../../packages/server/mailing/email-metadata.guard.js');
 const router = require('../../../packages/server/taxonomy/taxonomy.routes.js');
 
 // Express keeps one layer per `router.<method>()` call; `route.stack` holds the
@@ -60,13 +63,14 @@ describe('taxonomy routes — declared surface', () => {
 
 describe('taxonomy routes — guards', () => {
   it('opens the list to any authenticated user', () => {
-    expect(guardsOf('get', '')).toEqual([GUARD_USER]);
+    expect(guardsOf('get', '')).toEqual([GUARD_USER, GUARD_EMAIL_METADATA]);
   });
 
   it('checks company access on the per-company list', () => {
     expect(guardsOf('get', '/groups/:groupId')).toEqual([
       GUARD_USER,
       GUARD_CAN_ACCESS_GROUP,
+      GUARD_EMAIL_METADATA,
     ]);
   });
 
@@ -75,7 +79,22 @@ describe('taxonomy routes — guards', () => {
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
   ])('reserves %s %s to a company admin', (method, path) => {
-    expect(guardsOf(method, path)).toEqual([GUARD_GROUP_ADMIN]);
+    expect(guardsOf(method, path)).toEqual([
+      GUARD_GROUP_ADMIN,
+      GUARD_EMAIL_METADATA,
+    ]);
+  });
+
+  // A taxonomy serves the email metadata and nothing else: while a company has
+  // not opted in, the feature must leave no trace through the API either.
+  it.each([
+    ['get', ''],
+    ['get', '/groups/:groupId'],
+    ['post', ''],
+    ['patch', '/:itemId'],
+    ['delete', '/:itemId'],
+  ])('gates %s %s behind the emailMetadata flag', (method, path) => {
+    expect(guardsOf(method, path)).toContain(GUARD_EMAIL_METADATA);
   });
 
   it.each([
