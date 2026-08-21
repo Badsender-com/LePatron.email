@@ -267,9 +267,11 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ skill.skillId }} · {{ categoryLabel(skill.category) }} ·
-      <span v-if="activeVersionLabel">{{ $t('aiSkills.skill.activeVersion') }} v{{
-        activeVersionLabel
-      }}</span>
+      <span v-if="activeVersionLabel"
+        >{{ $t('aiSkills.skill.activeVersion') }} v{{
+          activeVersionLabel
+        }}</span
+      >
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
