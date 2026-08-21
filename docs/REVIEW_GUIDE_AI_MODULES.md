@@ -481,3 +481,89 @@ tâche quotidienne. Remplacé par le mécanisme déjà utilisé par
 déjà écrits. Aujourd'hui `logRetentionDays` n'est exposé dans aucune UI
 (modifiable en base uniquement) ; si ça change, un `updateMany` recalculant
 `expiresAt` au changement de config suffit.
+
+## 8. Retours de review — passe 3 (#1079 mergée)
+
+Troisième passe après le merge du lot #1079. 14 retours inline, tous vérifiés et
+tous exacts. Corrigés sur `fix/ai-skills-review-pass3`.
+
+### HIGH
+
+| Sujet                               | Correctif                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Audit trail mort**                | `userIdOf` faisait `req.user && !req.user.isAdmin`, condition impossible ici : toutes les routes sont derrière `GUARD_ADMIN`, qui n'admet qu'un compte dont `isAdmin` est vrai — et le seul est l'`adminUser` codé dans `auth.guard.js`, le virtual `isAdmin` d'`UserSchema` renvoyant `false` pour tout utilisateur en base. `owner` / `createdBy` / `updatedBy` étaient donc toujours `null`. **Plafond à connaître** : une seule identité super-admin atteignant ces routes, la traçabilité restaurée dit « le compte admin », pas quelle personne. |
+| **Régression `base-llm-provider`**  | La longueur de contenu dans le log de succès et le commentaire `// Sanitize error message…` avaient disparu au rebase. Restaurés — chemin partagé avec la traduction.                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Français en dur + `ERROR_CODES`** | Voir la section dédiée plus bas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+### MEDIUM
+
+| Sujet                               | Correctif                                                                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`expiresAt` non re-stampé**       | `invocation-log.service.restampRetention`, déclenché depuis `group.controller.update` quand `logRetentionDays` change. Recalcule chaque échéance depuis le `startedAt` du document, par lots de 500 — **pas** de pipeline d'update, qui exigerait MongoDB 4.2 alors que le projet documente 3.4 comme minimum. Restaure la seule propriété RGPD que le TTL avait perdue. |
+| **Faux négatif du warning R2**      | `matched` se construisait sur le scope de **tous** les documents retournés, transversaux inclus. Or le schéma tolère `isTransversal` + un scope : une telle expertise revient grâce à son flag et faisait passer son scope pour matché, supprimant l'avertissement exactement dans le cas qui le justifie. Les transversales sont désormais ignorées à la collecte.      |
+| **`distinct` dans le chemin chaud** | L'avertissement était awaité à chaque invocation dont un scope ne matchait pas — et comme les transversales matchent toujours, à **chaque** appel indéfiniment. Devenu fire-and-forget : il ne dit rien du résultat de l'invocation, donc rien ne l'attend.                                                                                                              |
+| **Fuite du message provider**       | Le 502 portait le message brut (modèles, hôtes d'API, texte upstream). Seul `INPUT_VALIDATION` garde son détail — il porte sur la charge de l'appelant et alimente les erreurs de champ. Le reste vit dans `AISkillInvocation.error`, joignable par l'`invocationId` retourné.                                                                                           |
+| **`safeRequire` trop tolérant**     | Ne rattrape plus que `MODULE_NOT_FOUND` sur ce module précis : une `SyntaxError` dans un manifest existant désactivait silencieusement l'alerte d'impact au lieu d'échouer au boot.                                                                                                                                                                                      |
+| **`zod` / `supertest` en caret**    | Épinglés à l'exact comme le reste du repo. Critique pour zod : `output-contract.js` utilise `z.toJSONSchema` et `describe-schema.js` des internals zod 4, vérifiés contre 4.4.3. (`lucide-vue` garde son caret : il vient de develop.)                                                                                                                                   |
+| **Code mort**                       | `test-budget.service.js`, son test, `User.dailyTestInvocationCount` et `MaxDailyTestInvocations` supprimés — le test runner qui les consommait avait été retiré avant la PR.                                                                                                                                                                                             |
+
+### LOW
+
+`getSchema` passe par `hasSchema` (`getSchema('constructor')` renvoyait un
+non-schéma truthy) · `activateVersion(…, payload = {}, …)` · `.gitignore`
+corrigé : c'est `.claude/settings.local.json` qui est personnel, le fichier
+projet est partagé et versionné.
+
+### Français en dur et `ERROR_CODES`
+
+`grep ERROR_CODES packages/server/ai-skill` renvoyait 0 résultat et huit phrases
+françaises vivaient côté serveur, alors qu'`ai-feature.service.js` utilise
+correctement les codes — écart devenu visible dans le diff.
+
+- Deux codes ajoutés : `SKILL_SCHEMAS_REQUIRED_TO_PUBLISH` et
+  `SKILL_TEMPLATE_UNKNOWN_FIELDS`. Les champs fautifs voyagent comme propriétés
+  de l'erreur, que le handler global étale dans la réponse, donc l'UI construit
+  la phrase avec.
+- `templateWarnings` renvoie des codes + leurs données d'interpolation au lieu de
+  phrases. Les libellés vivent sous `aiSkills.warnings.*` en fr **et en** — ces
+  avertissements existent en anglais pour la première fois.
+- `helpers/ai-skill-errors.js` résout un code en phrase pour les quatre écrans
+  qui affichaient le message serveur brut, avec repli sur le code lui-même
+  (cherchable, rapportable) puis sur le message générique.
+- L'erreur de contrat de `findApplicable` passe en anglais : elle est lue par qui
+  a écrit l'appel, donc ni code ni traduction.
+
+**Une exception assumée**, nommée `MinorVersionDefaults` dans
+`skill-constants.js` : le changelog par défaut d'une version mineure reste
+français. C'est du **contenu** éditorial persisté à côté de la doctrine que
+l'auteur écrit — le même français que les prompts et les corps d'expertise — pas
+un message de code, un log ou un libellé d'UI ; et il est affiché et édité tel
+qu'écrit, sans locale disponible au moment de la création.
+
+### Prettier ↔ ESLint : la cause racine des 11 fichiers
+
+Les 11 fichiers non formatés étaient un symptôme. Les deux outils se
+contredisaient réellement, et le gagnant dépendait de l'ordre : `lint-staged`
+lance `prettier --write` puis `eslint --fix`, `yarn code:fix` l'inverse. Un
+fichier passé par le hook ressortait donc non formaté, et le reformater aurait
+régressé au commit suivant.
+
+Deux lignes de configuration ferment la boucle, toutes deux la façon documentée
+de laisser Prettier posséder le formatage :
+
+- `extends: 'prettier/vue'` — fourni par `eslint-config-prettier`, il éteint
+  `vue/html-closing-bracket-newline` et consorts. Le projet étendait `prettier`
+  mais pas le compagnon Vue.
+- `quotes: ['error', 'single', { avoidEscape: true }]` — sans `avoidEscape`, une
+  chaîne contenant une apostrophe ne peut pas prendre les guillemets doubles que
+  Prettier émet.
+
+Vérifié : après `prettier --write` puis `eslint --fix` dans l'ordre de
+`lint-staged`, `prettier --check` passe toujours. Le total ESLint du repo tombe
+de 3926 à 3881.
+
+### Rétrogradé par la reviewer
+
+Le gate d'activation ne vérifie pas `hasSchema` : passé de HIGH à LOW, le hook
+`pre('validate')` empêchant la persistance d'un id inconnu et le null-check
+d'`outputSchemaId` transformant le résidu en 500 propre avant tout appel facturé.
