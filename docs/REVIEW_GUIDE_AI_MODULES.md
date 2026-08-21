@@ -338,9 +338,23 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
 - **A1** 🔴 — factoriser la machine à états versionnée dupliquée entre
   `skill.service` et `expertise.service`. Refactor de code validé en recette :
   **prérequis avant une troisième entité versionnée**, pas maintenant.
-- **A2** 🟠 — déléguer la résolution group→integration à
-  `getActiveFeatureWithIntegration` en l'enrichissant d'une raison de rejet.
-  Touche `translation` → étape 2.
+- **A2** 🟠 — **traité** : `ai-feature.service.js` expose désormais
+  `resolveActiveFeature({ groupId, featureType })`, qui renvoie
+  `{ ok: true, feature, integration }` ou `{ ok: false, reason }` parmi
+  `NO_CONFIG` / `FEATURE_INACTIVE` / `NO_INTEGRATION` /
+  `INTEGRATION_INACTIVE`. `resolveGroupIntegration` d'`ai-skill` le consomme et
+  ne garde que ce qui lui est propre : le typage `CONFIG_ERROR`, la traduction
+  de la raison en message (le vocabulaire est celui des skills, pas celui de la
+  machinerie feature) et la lecture du Group, qui porte l'opt-out RGPD et la
+  fenêtre de rétention.
+
+  **Fait maintenant plutôt qu'à l'étape 2** parce que le helper a été _enrichi_
+  et non _modifié_ : `getActiveFeatureWithIntegration` devient un wrapper au
+  contrat `null` inchangé, donc `translation` (4 appels) et `mailing.schema` ne
+  sont pas touchés — et un test verrouille ce contrat. Le compromis que la
+  reviewer signalait (« ne pas perdre les trois messages distincts ») est
+  couvert par un test paramétré sur les quatre raisons.
+
 - **A6** 🟡 — **résolu par le TTL** : le scheduler n'existe plus, donc plus rien
   à déplacer.
 

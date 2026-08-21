@@ -29,12 +29,10 @@
 const createError = require('http-errors');
 
 const ProviderFactory = require('../../integration-providers/provider-factory.js');
-const {
-  LePatronSkills,
-  AIFeatureConfigs,
-  Integrations,
-  Groups,
-} = require('../../common/models.common.js');
+const { LePatronSkills, Groups } = require('../../common/models.common.js');
+const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
+
+const { FeatureResolutionReasons } = aiFeatureService;
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const { getSchema } = require('../schemas');
@@ -382,39 +380,49 @@ function configError(status, message) {
   return err;
 }
 
+// Why the engine could not be resolved, in words. The shared helper reports a
+// reason code; turning it back into a sentence stays here because the wording is
+// about skills ("configure a 'skill' integration"), not about the generic
+// feature machinery. This is what delegating must not lose: the helper used to
+// return a bare null, and these distinct messages are the reason ai-skill had
+// reimplemented the walk in the first place.
+const ENGINE_ERROR_MESSAGES = {
+  [FeatureResolutionReasons.NO_CONFIG]: (groupId) =>
+    `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`,
+  [FeatureResolutionReasons.FEATURE_INACTIVE]: (groupId) =>
+    `Group ${groupId} has no active 'skill' feature configuration`,
+  [FeatureResolutionReasons.NO_INTEGRATION]: (groupId) =>
+    `Group ${groupId} has an active 'skill' feature but no integration selected`,
+  [FeatureResolutionReasons.INTEGRATION_INACTIVE]: (groupId) =>
+    `Group ${groupId} has a 'skill' integration that is inactive`,
+};
+
 async function resolveGroupIntegration(groupId) {
+  // The Group document itself stays this module's business: it carries the RGPD
+  // content opt-out and the log retention window, neither of which the shared
+  // feature helper knows or should know about.
   const group = await Groups.findById(groupId).lean();
   if (!group) {
     throw configError(404, `Group ${groupId} not found`);
   }
-  const featureConfig = await AIFeatureConfigs.findOne({
-    _company: groupId,
-  }).lean();
-  if (!featureConfig) {
+
+  const resolved = await aiFeatureService.resolveActiveFeature({
+    groupId,
+    featureType: AIFeatureTypes.SKILL,
+  });
+  if (!resolved.ok) {
+    const toMessage = ENGINE_ERROR_MESSAGES[resolved.reason];
     throw configError(
       400,
-      `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`
+      toMessage
+        ? toMessage(groupId)
+        : `Group ${groupId} has no usable 'skill' engine (${resolved.reason})`
     );
   }
-  const skillFeature = (featureConfig.features || []).find(
-    (f) => f.featureType === AIFeatureTypes.SKILL && f.isActive
-  );
-  if (!skillFeature || !skillFeature.integration) {
-    throw configError(
-      400,
-      `Group ${groupId} has no active 'skill' feature configuration`
-    );
-  }
-  const integration = await Integrations.findById(skillFeature.integration);
-  if (!integration || !integration.isActive) {
-    throw configError(
-      400,
-      `Integration ${skillFeature.integration} is missing or inactive`
-    );
-  }
+
   return {
-    integration,
-    groupFeatureConfig: skillFeature.config || {},
+    integration: resolved.integration,
+    groupFeatureConfig: resolved.feature.config || {},
     group,
   };
 }

@@ -466,4 +466,154 @@ describe('AIFeatureService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('resolveActiveFeature', () => {
+    const { FeatureResolutionReasons: Reasons } = aiFeatureService;
+
+    function mockConfig(features) {
+      AIFeatureConfigs.findOne.mockReturnValue({
+        populate: jest
+          .fn()
+          .mockResolvedValue(features === null ? null : { features }),
+      });
+    }
+
+    const activeIntegration = {
+      _id: mockIntegrationId,
+      name: 'OpenAI',
+      isActive: true,
+    };
+
+    it('resolves the feature and its integration when everything is set', async () => {
+      mockConfig([
+        {
+          featureType: 'skill',
+          isActive: true,
+          integration: activeIntegration,
+          config: { model: 'gpt-4o' },
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.integration.name).toBe('OpenAI');
+      expect(result.feature.config.model).toBe('gpt-4o');
+    });
+
+    /**
+     * The point of this function over getActiveFeatureWithIntegration: a bare
+     * null cannot tell an operator which of four setups is missing, which is why
+     * ai-skill had reimplemented the whole walk (review A2).
+     */
+    it.each([
+      ['no config at all', null, 'NO_CONFIG'],
+      ['no entry for that feature', [], 'FEATURE_INACTIVE'],
+      [
+        'feature present but inactive',
+        [
+          {
+            featureType: 'skill',
+            isActive: false,
+            integration: activeIntegration,
+          },
+        ],
+        'FEATURE_INACTIVE',
+      ],
+      [
+        'feature active without integration',
+        [{ featureType: 'skill', isActive: true, integration: null }],
+        'NO_INTEGRATION',
+      ],
+      [
+        'integration selected but inactive',
+        [
+          {
+            featureType: 'skill',
+            isActive: true,
+            integration: { _id: mockIntegrationId, isActive: false },
+          },
+        ],
+        'INTEGRATION_INACTIVE',
+      ],
+    ])('reports %s as %s', async (label, features, reason) => {
+      mockConfig(features);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe(Reasons[reason]);
+      expect(label).toBeTruthy();
+    });
+
+    it('ignores features of another type', async () => {
+      mockConfig([
+        {
+          featureType: 'translation',
+          isActive: true,
+          integration: activeIntegration,
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe(Reasons.FEATURE_INACTIVE);
+    });
+
+    // Preserves the behaviour of the single `find` this replaced: a usable
+    // entry wins over a stale duplicate.
+    it('prefers a usable entry over an unusable duplicate', async () => {
+      mockConfig([
+        { featureType: 'skill', isActive: false, integration: null },
+        {
+          featureType: 'skill',
+          isActive: true,
+          integration: activeIntegration,
+          config: { model: 'gpt-4o' },
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.feature.config.model).toBe('gpt-4o');
+    });
+
+    // getActiveFeatureWithIntegration is now a wrapper: its null contract must
+    // not have moved, since translation and mailing.schema rely on it.
+    it('keeps the legacy wrapper returning null on every failure', async () => {
+      for (const features of [
+        null,
+        [],
+        [
+          {
+            featureType: 'skill',
+            isActive: false,
+            integration: activeIntegration,
+          },
+        ],
+        [{ featureType: 'skill', isActive: true, integration: null }],
+        [
+          {
+            featureType: 'skill',
+            isActive: true,
+            integration: { isActive: false },
+          },
+        ],
+      ]) {
+        mockConfig(features);
+        expect(
+          await aiFeatureService.getActiveFeatureWithIntegration({
+            groupId: mockGroupId,
+            featureType: 'skill',
+          })
+        ).toBeNull();
+      }
+    });
+  });
 });

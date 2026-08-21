@@ -6,10 +6,23 @@ const { Types } = require('mongoose');
 jest.mock('../../../../packages/server/common/models.common', () => ({
   LePatronSkills: { findOne: jest.fn() },
   AISkillInvocations: { create: jest.fn() },
-  AIFeatureConfigs: { findOne: jest.fn() },
-  Integrations: { findById: jest.fn() },
   Groups: { findById: jest.fn() },
 }));
+
+// Engine resolution is delegated to the shared feature service (review A2), so
+// it is mocked here and covered on its own in tests/server/ai-feature.
+jest.mock(
+  '../../../../packages/server/ai-feature/ai-feature.service.js',
+  () => ({
+    resolveActiveFeature: jest.fn(),
+    FeatureResolutionReasons: {
+      NO_CONFIG: 'NO_CONFIG',
+      FEATURE_INACTIVE: 'FEATURE_INACTIVE',
+      NO_INTEGRATION: 'NO_INTEGRATION',
+      INTEGRATION_INACTIVE: 'INTEGRATION_INACTIVE',
+    },
+  })
+);
 
 const mockProvider = { chatComplete: jest.fn() };
 
@@ -23,10 +36,9 @@ jest.mock(
 const {
   LePatronSkills,
   AISkillInvocations,
-  AIFeatureConfigs,
-  Integrations,
   Groups,
 } = require('../../../../packages/server/common/models.common');
+const aiFeatureService = require('../../../../packages/server/ai-feature/ai-feature.service.js');
 
 // Provider factory is mocked above; required only to wire jest.mock.
 require('../../../../packages/server/integration-providers/provider-factory');
@@ -68,24 +80,19 @@ function wireHappyPath({ skill, providerResponse } = {}) {
     lean: () =>
       Promise.resolve({ _id: GROUP_ID, logSkillInvocationContent: true }),
   });
-  AIFeatureConfigs.findOne.mockReturnValue({
-    lean: () =>
-      Promise.resolve({
-        features: [
-          {
-            featureType: 'skill',
-            isActive: true,
-            integration: INTEGRATION_ID,
-            config: { model: 'gpt-4o' },
-          },
-        ],
-      }),
-  });
-  Integrations.findById.mockResolvedValue({
-    _id: INTEGRATION_ID,
-    provider: 'openai',
-    isActive: true,
-    apiKey: 'secret',
+  aiFeatureService.resolveActiveFeature.mockResolvedValue({
+    ok: true,
+    feature: {
+      featureType: 'skill',
+      isActive: true,
+      config: { model: 'gpt-4o' },
+    },
+    integration: {
+      _id: INTEGRATION_ID,
+      provider: 'openai',
+      isActive: true,
+      apiKey: 'secret',
+    },
   });
   AISkillInvocations.create.mockResolvedValue({ _id: new Types.ObjectId() });
   mockProvider.chatComplete.mockResolvedValue(
@@ -442,21 +449,50 @@ describe('skill-invocation.invoke', () => {
       }
     });
 
-    it('throws when the Group has no skill feature configured', async () => {
+    /**
+     * The reason the shared helper reports must survive as a distinct message:
+     * losing that was the risk in delegating to it (review A2).
+     */
+    it.each([
+      ['NO_CONFIG', /no AIFeatureConfig/],
+      ['FEATURE_INACTIVE', /no active 'skill' feature/],
+      ['NO_INTEGRATION', /no integration selected/],
+      ['INTEGRATION_INACTIVE', /integration that is inactive/],
+    ])('turns the %s reason into its own message', async (reason, message) => {
       LePatronSkills.findOne.mockResolvedValue(buildSkill());
       Groups.findById.mockReturnValue({
         lean: () => Promise.resolve({ _id: GROUP_ID }),
       });
-      AIFeatureConfigs.findOne.mockReturnValue({
-        lean: () => Promise.resolve({ features: [] }),
+      aiFeatureService.resolveActiveFeature.mockResolvedValue({
+        ok: false,
+        reason,
       });
-      await expect(
-        skillInvocation.invoke({
+
+      let caught;
+      try {
+        await skillInvocation.invoke({
           skillId: 'generic.text',
           input: { prompt: 'x' },
           groupId: GROUP_ID,
-        })
-      ).rejects.toThrow(/skill/);
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught.message).toMatch(message);
+      expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+    });
+
+    it('asks the shared helper for the skill engine, not another feature', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+      });
+      expect(aiFeatureService.resolveActiveFeature).toHaveBeenCalledWith({
+        groupId: GROUP_ID,
+        featureType: 'skill',
+      });
     });
 
     // Schemas live in code while versions store only their id, so a rename or a
