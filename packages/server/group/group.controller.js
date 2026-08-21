@@ -23,6 +23,9 @@ const {
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
+const {
+  sanitizeEmailMetadata,
+} = require('../utils/sanitize-email-metadata.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -410,12 +413,23 @@ async function update(req, res) {
     );
   }
 
+  // Same reasoning as trackingConfig: shape guaranteed server-side, and only
+  // when the payload actually carries it (partial updates are the norm here).
+  if (groupToUpdate.emailMetadata != null) {
+    groupToUpdate.emailMetadata = sanitizeEmailMetadata(
+      groupToUpdate.emailMetadata
+    );
+  }
+
   if (user.isGroupAdmin) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
       'id',
       'colorScheme',
       'trackingConfig',
+      // Without this, a company admin cannot configure the email metadata
+      // feature at all — the field would be silently dropped here.
+      'emailMetadata',
     ]);
   }
 
