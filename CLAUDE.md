@@ -19,6 +19,13 @@ yarn code:lint         # Check for linting errors
 yarn code:fix          # Auto-fix errors and format code
 yarn test              # Run all tests
 ```
+## Claude Code Skills
+
+Agent skills in `.claude/skills/` (not the product's AI Skills feature).
+
+| Skill      | Use for                                                      |
+| ---------- | ------------------------------------------------------------ |
+| `git-sync` | Keeping the branch rebased on its base with a clean worktree |
 
 ## Available Subagents
 
