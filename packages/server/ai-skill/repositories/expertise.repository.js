@@ -44,9 +44,11 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
   // the match below is a strict string equality, so `cta` must meet `CTA`.
   const scopes = normalizeScopes(scope);
   if (!scopes.length || !Array.isArray(categories) || !categories.length) {
+    // A contract violation by the calling code, not a user error: no error code
+    // and no translation, it is read by whoever wrote the call.
     throw createError(
       400,
-      'findApplicable requiert un scope et au moins une catégorie — précisez le mix d\'expertise de votre feature'
+      'findApplicable requires a scope and at least one category — spell out the expertise mix of your feature'
     );
   }
 

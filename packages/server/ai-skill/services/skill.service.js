@@ -2,6 +2,7 @@
 
 const createError = require('http-errors');
 const { LePatronSkills } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
@@ -135,10 +136,7 @@ const VERSION_CONTENT_FIELDS = [
 function assertSkillPublishable(version) {
   // Schemas are required to publish (they may be empty on a DRAFT).
   if (!version.inputSchemaId || !version.outputSchemaId) {
-    throw createError(
-      400,
-      'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.'
-    );
+    throw createError(400, ERROR_CODES.SKILL_SCHEMAS_REQUIRED_TO_PUBLISH);
   }
 
   // With strict input schemas, an out-of-schema placeholder is ALWAYS
@@ -150,12 +148,13 @@ function assertSkillPublishable(version) {
     version.inputSchemaId
   );
   if (unknownFields.length) {
-    throw createError(
-      400,
-      'Le template référence des champs absents du schéma d\'entrée ' +
-        `« ${version.inputSchemaId} » : ${unknownFields.join(', ')}. ` +
-        'Corrigez le template ou changez le schéma d\'entrée de la version.'
-    );
+    // The offending fields travel as data, not inside the message: the global
+    // error handler spreads own properties into the response, so the UI can
+    // build the sentence in the user's language.
+    throw createError(400, ERROR_CODES.SKILL_TEMPLATE_UNKNOWN_FIELDS, {
+      schemaId: version.inputSchemaId,
+      fields: unknownFields,
+    });
   }
 }
 

@@ -381,7 +381,7 @@ describe('skill.service', () => {
         skillService.activateVersion('a', { major: 2, minor: 0 }, {}, null)
       ).rejects.toMatchObject({
         status: 400,
-        message: expect.stringContaining('schémas'),
+        message: 'SKILL_SCHEMAS_REQUIRED_TO_PUBLISH',
       });
     });
 
@@ -440,7 +440,10 @@ describe('skill.service', () => {
         skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null)
       ).rejects.toMatchObject({
         status: 400,
-        message: expect.stringContaining('brief'),
+        // The offending fields travel as data so the UI can word the sentence.
+        message: 'SKILL_TEMPLATE_UNKNOWN_FIELDS',
+        schemaId: 'genericTextInput',
+        fields: ['brief'],
       });
       expect(doc.versions[0].status).toBe('DRAFT');
     });

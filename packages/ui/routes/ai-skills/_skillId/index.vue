@@ -1,5 +1,6 @@
 <script>
 import { mapMutations } from 'vuex';
+import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
@@ -247,9 +248,7 @@ export default {
       }
     },
     handleError(err) {
-      const msg =
-        (err.response && err.response.data && err.response.data.message) ||
-        this.$t('global.errors.errorOccured');
+      const msg = skillErrorMessage(this, err);
       this.showSnackbar({ text: msg, color: 'error' });
     },
   },

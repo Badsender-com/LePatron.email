@@ -3,6 +3,7 @@
 const {
   validateTemplateCoherence,
   templateWarnings,
+  WarningCodes,
 } = require('../../../../packages/server/ai-skill/services/template-coherence.js');
 
 // Real v1.1 content of redaction.cta.promo (sanitized during the smoke
@@ -106,15 +107,25 @@ describe('validateTemplateCoherence', () => {
 });
 
 describe('templateWarnings', () => {
-  it('builds humanized warnings for every issue kind', () => {
+  // Codes plus interpolation data, not sentences: the wording lives in the UI
+  // locales so it exists in fr and en.
+  it('reports every issue kind as a code carrying what the sentence needs', () => {
     // References only {{input.brief}}: unknown field + missing required prompt
     // + missing expertise (genericTextInput accepts expertises).
     const warnings = templateWarnings('{{input.brief}}', 'genericTextInput');
-    expect(warnings).toHaveLength(3);
-    expect(warnings[0]).toContain('brief');
-    expect(warnings[0]).toContain('genericTextInput');
-    expect(warnings[1]).toContain('prompt');
-    expect(warnings[2]).toContain('expertises');
+    expect(warnings).toEqual([
+      {
+        code: WarningCodes.UNKNOWN_FIELDS,
+        schemaId: 'genericTextInput',
+        fields: ['brief'],
+      },
+      {
+        code: WarningCodes.MISSING_REQUIRED,
+        schemaId: 'genericTextInput',
+        fields: ['prompt'],
+      },
+      { code: WarningCodes.MISSING_EXPERTISE },
+    ]);
   });
 
   it('warns when an expertise-capable schema omits {{input.expertise}}', () => {
@@ -122,9 +133,13 @@ describe('templateWarnings', () => {
       '{{input.prompt}} {{input.context}}',
       'genericTextInput'
     );
-    expect(warnings).toEqual([
-      expect.stringContaining('elles seraient ignorées à l\'invocation'),
-    ]);
+    expect(warnings).toEqual([{ code: WarningCodes.MISSING_EXPERTISE }]);
+  });
+
+  it('carries no French: every warning is an identifier', () => {
+    for (const w of templateWarnings('{{input.brief}}', 'genericTextInput')) {
+      expect(w.code).toMatch(/^[A-Z_]+$/);
+    }
   });
 
   it('returns no warning for a coherent template', () => {

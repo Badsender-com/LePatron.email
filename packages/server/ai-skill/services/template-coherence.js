@@ -54,9 +54,20 @@ function validateTemplateCoherence(inputTemplate, inputSchemaId) {
   return { unknownFields, missingRequired, missingExpertise };
 }
 
+// Warning identifiers sent to the UI, which holds the fr/en wording under
+// `aiSkills.warnings.*`.
+const WarningCodes = Object.freeze({
+  UNKNOWN_FIELDS: 'TEMPLATE_UNKNOWN_FIELDS',
+  MISSING_REQUIRED: 'TEMPLATE_MISSING_REQUIRED',
+  MISSING_EXPERTISE: 'TEMPLATE_MISSING_EXPERTISE',
+});
+
 /**
- * Human-readable warnings for a DRAFT save response (UI display).
- * @returns {string[]}
+ * Coherence warnings for a DRAFT save response, as structured codes rather than
+ * sentences: the wording belongs to the UI, which owns fr/en. Each entry
+ * carries what the sentence needs to interpolate.
+ *
+ * @returns {Array<{code: string, schemaId?: string, fields?: string[]}>}
  */
 function templateWarnings(inputTemplate, inputSchemaId) {
   const {
@@ -66,25 +77,23 @@ function templateWarnings(inputTemplate, inputSchemaId) {
   } = validateTemplateCoherence(inputTemplate, inputSchemaId);
   const warnings = [];
   if (unknownFields.length) {
-    warnings.push(
-      'Le template référence des champs absents du schéma d\'entrée ' +
-        `« ${inputSchemaId} » : ${unknownFields.join(', ')}. ` +
-        'Ils seront interpolés vides à l\'exécution — la publication sera bloquée.'
-    );
+    warnings.push({
+      code: WarningCodes.UNKNOWN_FIELDS,
+      schemaId: inputSchemaId,
+      fields: unknownFields,
+    });
   }
   if (missingRequired.length) {
-    warnings.push(
-      `Champ(s) requis du schéma « ${inputSchemaId} » non référencé(s) dans le ` +
-        `template : ${missingRequired.join(', ')}.`
-    );
+    warnings.push({
+      code: WarningCodes.MISSING_REQUIRED,
+      schemaId: inputSchemaId,
+      fields: missingRequired,
+    });
   }
   if (missingExpertise) {
-    warnings.push(
-      'Le schéma accepte des expertises mais le template ne les insère pas : ' +
-        'elles seraient ignorées à l\'invocation.'
-    );
+    warnings.push({ code: WarningCodes.MISSING_EXPERTISE });
   }
   return warnings;
 }
 
-module.exports = { validateTemplateCoherence, templateWarnings };
+module.exports = { validateTemplateCoherence, templateWarnings, WarningCodes };

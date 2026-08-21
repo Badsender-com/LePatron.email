@@ -1103,6 +1103,20 @@ export default {
       translation: 'Translation',
       other: 'Other',
     },
+    errors: {
+      SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
+        'The input and output schemas must be set before publishing this version.',
+      SKILL_TEMPLATE_UNKNOWN_FIELDS:
+        'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
+    },
+    warnings: {
+      TEMPLATE_UNKNOWN_FIELDS:
+        'The template references fields absent from input schema "{schemaId}": {fields}. They will interpolate empty at runtime — publication will be blocked.',
+      TEMPLATE_MISSING_REQUIRED:
+        'Required field(s) of schema "{schemaId}" not referenced in the template: {fields}.',
+      TEMPLATE_MISSING_EXPERTISE:
+        'The schema accepts expertises but the template does not insert them: they would be ignored at invocation.',
+    },
     emailTypes: {
       promo: 'Promotional',
       newsletter: 'Newsletter',

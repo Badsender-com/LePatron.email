@@ -27,7 +27,10 @@
  */
 
 const createError = require('http-errors');
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const {
+  SkillStatuses,
+  MinorVersionDefaults,
+} = require('../constant/skill-constants.js');
 const {
   findVersion,
   findActiveVersion,
@@ -121,9 +124,11 @@ function createVersionedEntityService({
       status: 'DRAFT',
       ...cloneVersionContent(active),
       // A minor release carries no doctrine change, so it is pre-filled and the
-      // activation gate does not ask for it (unlike a major).
-      changelog: 'Correction mineure',
-      releaseNotes: 'Correction mineure sans changement de doctrine.',
+      // activation gate does not ask for it (unlike a major). These are stored
+      // CONTENT, displayed as authored — see MinorVersionDefaults for why they
+      // are French and not an i18n key.
+      changelog: MinorVersionDefaults.changelog,
+      releaseNotes: MinorVersionDefaults.releaseNotes,
       createdBy: userId,
       createdAt: now,
       updatedBy: userId,

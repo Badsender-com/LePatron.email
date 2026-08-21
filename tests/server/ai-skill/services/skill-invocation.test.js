@@ -534,4 +534,60 @@ describe('skill-invocation.invoke', () => {
       expect(AISkillInvocations.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('what a failure exposes to the caller', () => {
+    /**
+     * The detail of a downstream failure — provider error text, model names,
+     * API hosts, a fragment of an unparseable response — must not travel in an
+     * HTTP body. It stays in AISkillInvocation.error, which the Invocations tab
+     * shows, reachable through the returned invocationId.
+     */
+    it('does not put the provider message in the thrown error', async () => {
+      wireHappyPath();
+      mockProvider.chatComplete.mockRejectedValue(
+        new Error(
+          'openai.example.com: model gpt-4o quota exceeded, key sk-live…'
+        )
+      );
+
+      let caught;
+      try {
+        await skillInvocation.invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'x' },
+          groupId: GROUP_ID,
+        });
+      } catch (err) {
+        caught = err;
+      }
+
+      expect(caught.status).toBe(502);
+      expect(caught.message).toBe('Skill invocation failed');
+      expect(caught.message).not.toMatch(/openai|gpt-4o|sk-live/);
+      expect(caught.skillError).toBeUndefined();
+      // The handle to the full detail is still there.
+      expect(caught.invocationStatus).toBe('PROVIDER_ERROR');
+      expect('invocationId' in caught).toBe(true);
+      // …and the detail itself was persisted.
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.error.message).toMatch(/quota exceeded/);
+    });
+
+    it('keeps the detail for the caller own input, which it can act on', async () => {
+      wireHappyPath();
+      let caught;
+      try {
+        await skillInvocation.invoke({
+          skillId: 'generic.text',
+          input: { prompt: '' },
+          groupId: GROUP_ID,
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught.status).toBe(400);
+      expect(caught.skillError.code).toBe('INPUT_VALIDATION');
+      expect(caught.message).toMatch(/prompt/);
+    });
+  });
 });
