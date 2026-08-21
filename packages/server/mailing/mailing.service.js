@@ -61,6 +61,8 @@ module.exports = {
   findTags,
   findOne,
   findOneForUser,
+  assertUserCanEditMailing,
+  buildMailingCopy,
   renameMailing,
   deleteMailing,
   deleteOne,
@@ -252,6 +254,74 @@ async function findOneForUser(mailingId, user) {
   return mailing;
 }
 
+/**
+ * Belonging to the company is not enough to edit a mailing: the user must have
+ * access to the workspace or the folder holding it.
+ *
+ * Extracted verbatim from the controller so `updateMosaico` and the metadata
+ * endpoint cannot drift apart. Behaviour is deliberately unchanged, including the
+ * case where both `_parentFolder` and `_workspace` are set — unreachable through
+ * creation, which sets exactly one of them.
+ *
+ * @param {Object} user
+ * @param {Object} mailing a Mailings document
+ * @throws {Forbidden} when the user has access to neither
+ */
+async function assertUserCanEditMailing(user, mailing) {
+  if (user.isAdmin) return;
+
+  const { _workspace, _parentFolder } = mailing;
+
+  let hasAccess;
+
+  if (_parentFolder) {
+    hasAccess = await folderService.hasAccess(_parentFolder, user);
+  }
+
+  if (_workspace) {
+    hasAccess = await workspaceService.hasAccess(user, _workspace);
+  }
+
+  if (!hasAccess) {
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+// Fields a copy must never inherit: identity, timestamps, authorship, ESP ids,
+// and the source location (real fields plus their aliases/virtuals, since the
+// copy is built from a plain object). `plannedSendDate` is here because it
+// belongs to one campaign — a copy silently carrying yesterday's send date is a
+// planning bug nobody would look for. `subject` and `_emailType` are absent on
+// purpose: they describe the email and follow the copy.
+const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
+  '_id',
+  'id',
+  'createdAt',
+  'updatedAt',
+  '_user',
+  'userId',
+  'author',
+  'userName',
+  'espIds',
+  '_workspace',
+  'workspace',
+  '_parentFolder',
+  '__v',
+  'plannedSendDate',
+]);
+
+/**
+ * Strip from a mailing the fields a copy must not inherit. Shared by `copyMailing`
+ * and `duplicateWithTranslatedData`, which used to carry the same list twice —
+ * and so could drift apart on the next field added.
+ *
+ * @param {Object} source a mailing as a plain object (`mailing.toObject()`)
+ * @returns {Object} the copy, with the destination still to be set
+ */
+function buildMailingCopy(source) {
+  return omit(source, MAILING_COPY_OMITTED_FIELDS);
+}
+
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
 async function createInsideWorkspaceOrFolder(mailingData) {
   const {
@@ -302,15 +372,27 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     mailing.group = user.group.id;
   }
 
-  // Same validation as the PATCH, so a typology can never enter through the
-  // creation path without being checked. An admin creates without a company, so
-  // the template's own company is the only reference available.
-  Object.assign(
-    mailing,
-    await mailingMetadataService.validateMetadataPayload(metadata, {
-      companyId: mailing.group || template._company,
-    })
-  );
+  // The PATCH route is gated by GUARD_EMAIL_METADATA; this path must honour the
+  // same flag, otherwise creation would be the way around it. Nothing is rejected
+  // when the company is opted out — a stale front must not lose the ability to
+  // create emails — the metadata is simply not stored.
+  // No extra query on the ordinary creation, which carries no metadata at all.
+  const hasMetadata =
+    metadata != null &&
+    Object.values(metadata).some((value) => value !== undefined);
+
+  if (hasMetadata && (await isEmailMetadataEnabled(user))) {
+    // Same validation as the PATCH, so a typology can never enter through the
+    // creation path without being checked — and the same company reference, so an
+    // admin creating a mailing without a company gets the same refusal here as on
+    // the PATCH rather than an orphan typology no later request could change.
+    Object.assign(
+      mailing,
+      await mailingMetadataService.validateMetadataPayload(metadata, {
+        companyId: user.isAdmin ? null : user.group.id,
+      })
+    );
+  }
 
   const newMailing = await createMailing(mailing);
 
@@ -320,6 +402,24 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   response.data = newMailing.data;
 
   return response;
+}
+
+/**
+ * Whether the caller's company opted into the editorial metadata. Super admins
+ * bypass the flag, like GUARD_EMAIL_METADATA does.
+ *
+ * @param {Object} user
+ * @returns {Promise<boolean>}
+ */
+async function isEmailMetadataEnabled(user) {
+  if (user.isAdmin) return true;
+  if (!user.group?.id) return false;
+
+  const group = await Groups.findById(user.group.id)
+    .select('emailMetadata')
+    .lean();
+
+  return group?.emailMetadata?.enabled === true;
 }
 
 function checkCreationPayload(mailings) {
@@ -728,7 +828,9 @@ async function getMailByMailingIdAndUser({ mailingId, user }) {
 async function getMailNameAndCompanyByMailingIdAndUser({ mailingId, user }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   const mailing = await Mailings.findOne(query)
-    .select({ name: 1, _company: 1 })
+    // `subject` so a test send can carry the real subject line rather than the
+    // internal mailing name; the caller falls back on the name when it is empty.
+    .select({ name: 1, subject: 1, _company: 1 })
     .lean();
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
@@ -1167,24 +1269,7 @@ async function copyMailing(mailingId, destination, user) {
   // their aliases/virtuals.
   const source = mailing.toObject();
 
-  const copy = omit(source, [
-    '_id',
-    'id',
-    'createdAt',
-    'updatedAt',
-    '_user',
-    'userId',
-    'author',
-    'userName',
-    'espIds',
-    '_workspace',
-    'workspace',
-    '_parentFolder',
-    '__v',
-    // Kept: `subject` and `_emailType` describe the email. Dropped: a planned
-    // send date belongs to the source campaign only.
-    'plannedSendDate',
-  ]);
+  const copy = buildMailingCopy(source);
 
   if (workspaceId) {
     const destination = await workspaceService.getWorkspace(workspaceId);
@@ -1268,24 +1353,7 @@ async function duplicateWithTranslatedData({
   // source location (`_workspace`/`workspace`/`_parentFolder`).
   const source = mailing.toObject();
 
-  const copy = omit(source, [
-    '_id',
-    'id',
-    'createdAt',
-    'updatedAt',
-    '_user',
-    'userId',
-    'author',
-    'userName',
-    'espIds',
-    '_workspace',
-    'workspace',
-    '_parentFolder',
-    '__v',
-    // Kept: `subject` and `_emailType` describe the email. Dropped: a planned
-    // send date belongs to the source campaign only.
-    'plannedSendDate',
-  ]);
+  const copy = buildMailingCopy(source);
 
   // Set new name
   copy.name = newName || `${mailing.name} - Translated`;

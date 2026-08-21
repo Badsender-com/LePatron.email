@@ -194,6 +194,10 @@ module.exports = {
 
   // EMAIL METADATA
   INVALID_EMAIL_METADATA: 'INVALID_EMAIL_METADATA',
+  EMAIL_METADATA_DISABLED: 'EMAIL_METADATA_DISABLED',
   EMAIL_TYPE_NOT_FOUND: 'EMAIL_TYPE_NOT_FOUND',
-  EMAIL_TYPE_WRONG_COMPANY: 'EMAIL_TYPE_WRONG_COMPANY',
+  // Raised when the mailing has no company to validate the typology against —
+  // NOT when the typology belongs to another company, which reads as NOT_FOUND so
+  // that no code tells a caller what exists elsewhere.
+  EMAIL_TYPE_COMPANY_MISSING: 'EMAIL_TYPE_COMPANY_MISSING',
 };
