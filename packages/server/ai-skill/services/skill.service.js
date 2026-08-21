@@ -3,15 +3,11 @@
 const createError = require('http-errors');
 const { LePatronSkills } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
-const {
-  findVersion,
-  findActiveVersion,
-  maxMajor,
-  maxMinorFor,
-  assertDraft,
-  versionLabel,
-} = require('./version-helpers.js');
+const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
+const {
+  createVersionedEntityService,
+} = require('./versioned-entity.service.js');
 
 const LIST_PROJECTION = {
   skillId: 1,
@@ -42,10 +38,10 @@ async function listSkills({ category, status, page = 1, pageSize = 50 } = {}) {
   return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
 }
 
-async function getSkill(skillId) {
-  const skill = await LePatronSkills.findOne({ skillId });
-  if (!skill) throw createError(404, `Skill "${skillId}" not found`);
-  return skill;
+// Delegated to the shared lifecycle (see `versioned` below) so the lookup and
+// its 404 stay identical across both versioned entities.
+function getSkill(skillId) {
+  return versioned.getDoc(skillId);
 }
 
 // Every new skill starts on the generic text contract: the author iterates
@@ -132,128 +128,11 @@ const VERSION_CONTENT_FIELDS = [
   { name: 'testCases', default: () => [], deep: true },
 ];
 
-function blankVersionContent() {
-  const out = {};
-  for (const field of VERSION_CONTENT_FIELDS) out[field.name] = field.default();
-  return out;
-}
-
-function cloneVersionContent(source) {
-  if (!source) return blankVersionContent();
-  const out = {};
-  for (const field of VERSION_CONTENT_FIELDS) {
-    const value = source[field.name];
-    if (value === undefined || value === null) {
-      out[field.name] = field.default();
-    } else if (field.deep) {
-      out[field.name] = JSON.parse(JSON.stringify(value));
-    } else {
-      out[field.name] = value;
-    }
-  }
-  return out;
-}
-
 /**
- * Create a new minor draft on top of the currently active version.
- * Errors if no active version exists.
+ * Publication gate specific to skills. Expertises have no equivalent, which is
+ * exactly why it is injected rather than living in the shared lifecycle.
  */
-async function createMinorVersion(skillId, userId) {
-  const skill = await getSkill(skillId);
-  const active = findActiveVersion(skill);
-  if (!active) {
-    throw createError(
-      400,
-      'Cannot create a minor version: no active version on this skill'
-    );
-  }
-  const versionMajor = active.versionMajor;
-  const versionMinor = maxMinorFor(skill, versionMajor) + 1;
-  const now = new Date();
-  skill.versions.push({
-    versionMajor,
-    versionMinor,
-    status: 'DRAFT',
-    ...cloneVersionContent(active),
-    changelog: 'Correction mineure',
-    releaseNotes: 'Correction mineure sans changement de doctrine.',
-    createdBy: userId,
-    createdAt: now,
-    updatedBy: userId,
-    updatedAt: now,
-  });
-  await skill.save();
-  return skill;
-}
-
-/**
- * Create a new major draft. Optionally seeded from a specific version
- * (used by the "Duplicate" flow). If no source is given, seeds from the
- * currently active version, falling back to an empty version.
- */
-async function createMajorVersion(skillId, { source, userId } = {}) {
-  const skill = await getSkill(skillId);
-  const seed = source || findActiveVersion(skill);
-  const versionMajor = maxMajor(skill) + 1;
-  const now = new Date();
-  skill.versions.push({
-    versionMajor,
-    versionMinor: 0,
-    status: 'DRAFT',
-    ...cloneVersionContent(seed),
-    changelog: '',
-    releaseNotes: '',
-    createdBy: userId,
-    createdAt: now,
-    updatedBy: userId,
-    updatedAt: now,
-  });
-  await skill.save();
-  return skill;
-}
-
-async function updateVersion(skillId, { major, minor }, patch, userId) {
-  const skill = await getSkill(skillId);
-  const version = findVersion(skill, major, minor);
-  assertDraft(version);
-  for (const key of [
-    'systemPrompt',
-    'skillBody',
-    'inputTemplate',
-    'inputSchemaId',
-    'outputSchemaId',
-    'modelHints',
-    'testCases',
-    'changelog',
-    'releaseNotes',
-  ]) {
-    if (patch[key] !== undefined) version[key] = patch[key];
-  }
-  version.updatedBy = userId;
-  version.updatedAt = new Date();
-  await skill.save();
-  return skill;
-}
-
-async function deleteVersion(skillId, { major, minor }) {
-  const skill = await getSkill(skillId);
-  const version = findVersion(skill, major, minor);
-  assertDraft(version); // 404 if missing, 409 if not DRAFT
-  skill.versions = skill.versions.filter(
-    (v) => !(v.versionMajor === major && v.versionMinor === minor)
-  );
-  await skill.save();
-  return skill;
-}
-
-async function activateVersion(skillId, { major, minor }, payload, userId) {
-  const skill = await getSkill(skillId);
-  const version = findVersion(skill, major, minor);
-  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
-  if (version.status !== 'DRAFT') {
-    throw createError(409, 'Only DRAFT versions can be activated');
-  }
-
+function assertSkillPublishable(version) {
   // Schemas are required to publish (they may be empty on a DRAFT).
   if (!version.inputSchemaId || !version.outputSchemaId) {
     throw createError(
@@ -262,8 +141,8 @@ async function activateVersion(skillId, { major, minor }, payload, userId) {
     );
   }
 
-  // Publication gate: with strict input schemas, an out-of-schema placeholder
-  // is ALWAYS interpolated empty — a guaranteed bug, so activation is blocked.
+  // With strict input schemas, an out-of-schema placeholder is ALWAYS
+  // interpolated empty — a guaranteed bug, so activation is blocked.
   // (A required field missing from the template stays a DRAFT-save warning:
   // omitting it can be intentional.)
   const { unknownFields } = validateTemplateCoherence(
@@ -278,46 +157,30 @@ async function activateVersion(skillId, { major, minor }, payload, userId) {
         'Corrigez le template ou changez le schéma d\'entrée de la version.'
     );
   }
-
-  // Major releases require explicit changelog and releaseNotes. Minor
-  // releases inherit the auto-filled defaults from createMinorVersion.
-  const isMajor = version.versionMinor === 0;
-  if (isMajor) {
-    if (!payload.changelog || !payload.releaseNotes) {
-      throw createError(
-        400,
-        'changelog and releaseNotes are required to activate a major version'
-      );
-    }
-  }
-  if (payload.changelog) version.changelog = payload.changelog;
-  if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
-
-  // Archive the previously active version, if any.
-  const previousActive = findActiveVersion(skill);
-  if (previousActive && previousActive !== version) {
-    previousActive.status = 'ARCHIVED';
-  }
-
-  version.status = 'ACTIVE';
-  version.activatedAt = new Date();
-  version.updatedBy = userId;
-  version.updatedAt = new Date();
-  skill.activeVersion = {
-    major: version.versionMajor,
-    minor: version.versionMinor,
-  };
-  skill.status = SkillStatuses.ACTIVE;
-  await skill.save();
-  return skill;
 }
 
-async function archiveSkill(skillId) {
-  const skill = await getSkill(skillId);
-  skill.status = SkillStatuses.ARCHIVED;
-  await skill.save();
-  return skill;
-}
+// The versioning state machine itself lives in versioned-entity.service.js,
+// shared with expertise (review A1). Only the skill specifics are configured
+// here: the content fields and the publication gate above.
+const versioned = createVersionedEntityService({
+  model: LePatronSkills,
+  entityLabel: 'Skill',
+  entityNoun: 'skill',
+  idField: 'skillId',
+  contentFields: VERSION_CONTENT_FIELDS,
+  activationGate: assertSkillPublishable,
+});
+
+const {
+  blankVersionContent,
+  createMinorVersion,
+  createMajorVersion,
+  updateVersion,
+  deleteVersion,
+  activateVersion,
+} = versioned;
+
+const archiveSkill = versioned.archive;
 
 module.exports = {
   VERSION_CONTENT_FIELDS,

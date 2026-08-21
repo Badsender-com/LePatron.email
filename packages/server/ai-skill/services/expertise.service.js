@@ -3,16 +3,12 @@
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
-const {
-  findVersion,
-  findActiveVersion,
-  maxMajor,
-  maxMinorFor,
-  assertDraft,
-  versionLabel,
-} = require('./version-helpers.js');
+const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
+const {
+  createVersionedEntityService,
+} = require('./versioned-entity.service.js');
 
 const LIST_PROJECTION = {
   expertiseId: 1,
@@ -52,10 +48,10 @@ async function listExpertise({
   return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
 }
 
-async function getExpertise(expertiseId) {
-  const exp = await Expertises.findOne({ expertiseId });
-  if (!exp) throw createError(404, `Expertise "${expertiseId}" not found`);
-  return exp;
+// Delegated to the shared lifecycle (see `versioned` below) so the lookup and
+// its 404 stay identical across both versioned entities.
+function getExpertise(expertiseId) {
+  return versioned.getDoc(expertiseId);
 }
 
 /**
@@ -140,145 +136,40 @@ async function updateExpertise(expertiseId, patch) {
 
 // ─── Versioning ────────────────────────────────────────────────────────────
 
-function blankVersionContent() {
-  return { body: '', examplesGood: [], examplesBad: [] };
-}
+// Content fields of a version — what a new version inherits from its source.
+// `sections` is deliberately absent: the schema's pre('save') hook re-derives
+// it from `body` on every write, so copying it would only risk a stale index.
+//
+// Same descriptor shape as the skill side, and consumed by the same shared
+// lifecycle: adding a content field here makes the blank seed, all three copy
+// paths and their tests follow together.
+const VERSION_CONTENT_FIELDS = [
+  { name: 'body', default: () => '' },
+  { name: 'examplesGood', default: () => [], deep: true },
+  { name: 'examplesBad', default: () => [], deep: true },
+];
 
-function cloneVersionContent(source) {
-  if (!source) return blankVersionContent();
-  return {
-    body: source.body || '',
-    examplesGood: Array.isArray(source.examplesGood)
-      ? [...source.examplesGood]
-      : [],
-    examplesBad: Array.isArray(source.examplesBad)
-      ? [...source.examplesBad]
-      : [],
-  };
-}
+// The versioning state machine lives in versioned-entity.service.js, shared
+// with skills (review A1). An expertise has no publication gate — that is the
+// one real difference between the two entities' lifecycles.
+const versioned = createVersionedEntityService({
+  model: Expertises,
+  entityLabel: 'Expertise',
+  entityNoun: 'expertise',
+  idField: 'expertiseId',
+  contentFields: VERSION_CONTENT_FIELDS,
+});
 
-async function createMinorVersion(expertiseId, userId) {
-  const exp = await getExpertise(expertiseId);
-  const active = findActiveVersion(exp);
-  if (!active) {
-    throw createError(
-      400,
-      'Cannot create a minor version: no active version on this expertise'
-    );
-  }
-  const versionMajor = active.versionMajor;
-  const versionMinor = maxMinorFor(exp, versionMajor) + 1;
-  const now = new Date();
-  exp.versions.push({
-    versionMajor,
-    versionMinor,
-    status: 'DRAFT',
-    ...cloneVersionContent(active),
-    changelog: 'Correction mineure',
-    releaseNotes: 'Correction mineure sans changement de doctrine.',
-    createdBy: userId,
-    createdAt: now,
-    updatedBy: userId,
-    updatedAt: now,
-  });
-  await exp.save();
-  return exp;
-}
+const {
+  blankVersionContent,
+  createMinorVersion,
+  createMajorVersion,
+  updateVersion,
+  deleteVersion,
+  activateVersion,
+} = versioned;
 
-async function createMajorVersion(expertiseId, { source, userId } = {}) {
-  const exp = await getExpertise(expertiseId);
-  const seed = source || findActiveVersion(exp);
-  const versionMajor = maxMajor(exp) + 1;
-  const now = new Date();
-  exp.versions.push({
-    versionMajor,
-    versionMinor: 0,
-    status: 'DRAFT',
-    ...cloneVersionContent(seed),
-    changelog: '',
-    releaseNotes: '',
-    createdBy: userId,
-    createdAt: now,
-    updatedBy: userId,
-    updatedAt: now,
-  });
-  await exp.save();
-  return exp;
-}
-
-async function updateVersion(expertiseId, { major, minor }, patch, userId) {
-  const exp = await getExpertise(expertiseId);
-  const version = findVersion(exp, major, minor);
-  assertDraft(version);
-  for (const key of [
-    'body',
-    'examplesGood',
-    'examplesBad',
-    'changelog',
-    'releaseNotes',
-  ]) {
-    if (patch[key] !== undefined) version[key] = patch[key];
-  }
-  version.updatedBy = userId;
-  version.updatedAt = new Date();
-  await exp.save();
-  return exp;
-}
-
-async function deleteVersion(expertiseId, { major, minor }) {
-  const exp = await getExpertise(expertiseId);
-  const version = findVersion(exp, major, minor);
-  assertDraft(version);
-  exp.versions = exp.versions.filter(
-    (v) => !(v.versionMajor === major && v.versionMinor === minor)
-  );
-  await exp.save();
-  return exp;
-}
-
-async function activateVersion(expertiseId, { major, minor }, payload, userId) {
-  const exp = await getExpertise(expertiseId);
-  const version = findVersion(exp, major, minor);
-  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
-  if (version.status !== 'DRAFT') {
-    throw createError(409, 'Only DRAFT versions can be activated');
-  }
-  const isMajor = version.versionMinor === 0;
-  if (isMajor) {
-    if (!payload.changelog || !payload.releaseNotes) {
-      throw createError(
-        400,
-        'changelog and releaseNotes are required to activate a major version'
-      );
-    }
-  }
-  if (payload.changelog) version.changelog = payload.changelog;
-  if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
-
-  const previousActive = findActiveVersion(exp);
-  if (previousActive && previousActive !== version) {
-    previousActive.status = 'ARCHIVED';
-  }
-
-  version.status = 'ACTIVE';
-  version.activatedAt = new Date();
-  version.updatedBy = userId;
-  version.updatedAt = new Date();
-  exp.activeVersion = {
-    major: version.versionMajor,
-    minor: version.versionMinor,
-  };
-  exp.status = SkillStatuses.ACTIVE;
-  await exp.save();
-  return exp;
-}
-
-async function archiveExpertise(expertiseId) {
-  const exp = await getExpertise(expertiseId);
-  exp.status = SkillStatuses.ARCHIVED;
-  await exp.save();
-  return exp;
-}
+const archiveExpertise = versioned.archive;
 
 /**
  * Activation-impact preview: which declared features would load this
@@ -300,6 +191,7 @@ async function getActivationImpact(expertiseId) {
 }
 
 module.exports = {
+  VERSION_CONTENT_FIELDS,
   listExpertise,
   getExpertise,
   createExpertise,

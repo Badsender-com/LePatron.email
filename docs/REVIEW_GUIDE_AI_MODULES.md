@@ -335,9 +335,24 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
 - **R11** 🟡 — garde-fou anti-perte de saisie (~½ journée) et écrasement entre
   deux panneaux de versions dépliés.
 - **R12** 🟡 — publication d'une version au contenu entièrement vide.
-- **A1** 🔴 — factoriser la machine à états versionnée dupliquée entre
-  `skill.service` et `expertise.service`. Refactor de code validé en recette :
-  **prérequis avant une troisième entité versionnée**, pas maintenant.
+- **A1** 🔴 — **traité** : `services/versioned-entity.service.js` porte le cycle
+  de vie versionné une seule fois (`createVersionedEntityService`). Les deux
+  services le configurent — champs de contenu et, côté skill, la gate de
+  publication (schémas renseignés + cohérence du template), qui est la seule
+  vraie différence de cycle de vie entre les deux entités. Chacun garde ce qui
+  lui appartient : listing, création/patch du document, facettes et impact
+  d'activation côté expertise, schémas par défaut côté skill.
+
+  `skill.service` 335 → 198 l., `expertise.service` 312 → 208 l. Au passage,
+  expertise adopte le descripteur `VERSION_CONTENT_FIELDS` — le point MEDIUM du
+  §6bis — et `sections` en est volontairement absent : le hook `pre('save')` le
+  redérive de `body`, le copier ne ferait que risquer un index périmé.
+
+  **La contrepartie réelle** : `tests/server/ai-skill/services/versioned-entity.test.js`
+  vérifie le contrat de cycle de vie **une fois pour les deux entités**
+  (`describe.each` sur leurs vraies listes de champs). Un correctif de versioning
+  n'a plus à être porté deux fois — ce que cette PR avait déjà dû faire deux fois.
+
 - **A2** 🟠 — **traité** : `ai-feature.service.js` expose désormais
   `resolveActiveFeature({ groupId, featureType })`, qui renvoie
   `{ ok: true, feature, integration }` ou `{ ok: false, reason }` parmi
