@@ -2,24 +2,24 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirm from '~/components/modal-confirm';
+import BsTaxonomyTable from '~/components/group/taxonomy-table.vue';
 import BsTaxonomyFormDialog from '~/components/group/taxonomy-form-dialog.vue';
-import { Tags, Pencil, Trash2 } from 'lucide-vue';
+import { taxonomyErrorFor, nextOrder } from '~/helpers/taxonomy.js';
 
 export default {
   name: 'BsGroupTaxonomyTab',
   components: {
-    BsDataTable,
     BsModalConfirm,
+    BsTaxonomyTable,
     BsTaxonomyFormDialog,
-    LucideTags: Tags,
-    LucidePencil: Pencil,
-    LucideTrash2: Trash2,
   },
   data() {
     return {
+      // Two flags: `saving` must not put the table behind the modal into its
+      // skeleton state and make it flash on the way back.
       loading: false,
+      saving: false,
       items: [],
       deletingItem: null,
     };
@@ -28,46 +28,17 @@ export default {
     groupId() {
       return this.$route.params.groupId;
     },
-    tableHeaders() {
-      const headers = [
-        { text: this.$t('taxonomy.table.label'), value: 'label' },
-      ];
-
-      // The table wrapper clips with `overflow: hidden` and gives no horizontal
-      // scroll, so a column too many silently swallows the actions. The
-      // definition is the one to drop: it is truncated to a single line here
-      // anyway, and reading it in full means opening the row.
-      if (this.$vuetify.breakpoint.lgAndUp) {
-        headers.push({
-          text: this.$t('taxonomy.table.description'),
-          value: 'description',
-          sortable: false,
-        });
-      }
-
-      headers.push(
-        {
-          text: this.$t('taxonomy.table.canonicalType'),
-          value: 'canonicalType',
-        },
-        { text: this.$t('taxonomy.table.order'), value: 'order' },
-        { text: this.$t('taxonomy.table.isActive'), value: 'isActive' },
-        {
-          text: this.$t('global.actions'),
-          value: 'actions',
-          sortable: false,
-          align: 'right',
-        }
-      );
-
-      return headers;
-    },
     deleteConfirmMessage() {
       if (!this.deletingItem) return '';
       return this.$t('taxonomy.deleteConfirmMessage', {
         label: this.deletingItem.label,
       });
     },
+  },
+  watch: {
+    // A super admin switching company keeps this component mounted, and would
+    // otherwise keep reading the previous company's list.
+    groupId: 'fetchItems',
   },
   mounted() {
     this.fetchItems();
@@ -85,17 +56,14 @@ export default {
         );
         this.items = response.items || [];
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
+        this.reportError(error);
       } finally {
         this.loading = false;
       }
     },
 
     openCreateForm() {
-      this.$refs.formDialog.open();
+      this.$refs.formDialog.open(null, nextOrder(this.items));
     },
 
     openEditForm(item) {
@@ -104,7 +72,7 @@ export default {
 
     async saveItem({ id, payload }) {
       try {
-        this.loading = true;
+        this.saving = true;
         if (id) {
           await this.$axios.$patch(apiRoutes.taxonomyItemsItem(id), payload);
           this.showSnackbar({
@@ -126,12 +94,9 @@ export default {
         this.$refs.formDialog.close();
         await this.fetchItems();
       } catch (error) {
-        this.showSnackbar({
-          text: this.errorMessageFor(error),
-          color: 'error',
-        });
+        this.reportError(error);
       } finally {
-        this.loading = false;
+        this.saving = false;
       }
     },
 
@@ -144,42 +109,37 @@ export default {
       if (!this.deletingItem) return;
       const item = this.deletingItem;
       try {
-        this.loading = true;
-        await this.$axios.$delete(
-          apiRoutes.taxonomyItemsItem(item._id || item.id)
-        );
+        this.saving = true;
+        await this.$axios.$delete(apiRoutes.taxonomyItemsItem(item.id));
         this.showSnackbar({
           text: this.$t('taxonomy.snackbars.deleted'),
           color: 'success',
         });
-        this.deletingItem = null;
         await this.fetchItems();
       } catch (error) {
-        this.showSnackbar({
-          text: this.errorMessageFor(error),
-          color: 'error',
-        });
+        this.reportError(error);
       } finally {
-        this.loading = false;
+        // Cleared whatever happened, so a refused delete does not leave the row
+        // armed for the next confirmation.
+        this.deletingItem = null;
+        this.saving = false;
       }
     },
 
-    // The two refusals a user will actually hit deserve an actionable message
-    // rather than the generic one: a duplicate label, and a typology still in use
-    // — where the count tells the admin whether to reassign or just deactivate.
-    errorMessageFor(error) {
-      const data = (error.response && error.response.data) || {};
+    // A duplicate label belongs next to the field the user must change; the rest
+    // goes to the snackbar. The mapping lives in helpers/taxonomy.js so it is
+    // testable without vue-test-utils.
+    reportError(error) {
+      const { key, params, count, field } = taxonomyErrorFor(error);
+      const text =
+        count === null ? this.$t(key, params) : this.$tc(key, count, params);
 
-      if (data.message === 'TAXONOMY_ITEM_LABEL_ALREADY_EXISTS') {
-        return this.$t('taxonomy.errors.labelAlreadyExists');
+      if (field === 'label' && this.$refs.formDialog) {
+        this.$refs.formDialog.setLabelError(text);
+        return;
       }
 
-      if (data.message === 'TAXONOMY_ITEM_IN_USE') {
-        const count = (data.details && data.details.usageCount) || 0;
-        return this.$t('taxonomy.errors.inUse', { count });
-      }
-
-      return this.$t('global.errors.errorOccured');
+      this.showSnackbar({ text, color: 'error' });
     },
   },
 };
@@ -187,91 +147,17 @@ export default {
 
 <template>
   <div>
-    <bs-data-table
-      :headers="tableHeaders"
+    <bs-taxonomy-table
       :items="items"
       :loading="loading"
-      clickable
-      @click:row="openEditForm"
-    >
-      <template #item.label="{ item }">
-        <span class="taxonomy-tab__label">{{ item.label }}</span>
-      </template>
-
-      <template #item.description="{ item }">
-        <span v-if="item.description" class="taxonomy-tab__description">
-          {{ item.description }}
-        </span>
-        <span v-else class="taxonomy-tab__empty-cell">—</span>
-      </template>
-
-      <template #item.canonicalType="{ item }">
-        <v-chip v-if="item.canonicalType" small outlined color="accent">
-          {{ $t(`taxonomy.canonicalTypes.${item.canonicalType}`) }}
-        </v-chip>
-        <span v-else class="taxonomy-tab__empty-cell">—</span>
-      </template>
-
-      <template #item.isActive="{ item }">
-        <v-chip
-          small
-          :color="item.isActive ? 'success' : 'grey'"
-          :outlined="!item.isActive"
-          :dark="item.isActive"
-        >
-          {{ item.isActive ? $t('global.enabled') : $t('global.disabled') }}
-        </v-chip>
-      </template>
-
-      <template #item.actions="{ item }">
-        <div class="d-flex align-center justify-end">
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                v-on="on"
-                @click.stop="openEditForm(item)"
-              >
-                <lucide-pencil :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.edit') }}</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                v-on="on"
-                @click.stop="confirmDelete(item)"
-              >
-                <lucide-trash2 :size="18" class="error--text" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.delete') }}</span>
-          </v-tooltip>
-        </div>
-      </template>
-
-      <template #no-data>
-        <div class="text-center pa-6">
-          <lucide-tags :size="48" class="grey--text text--lighten-1" />
-          <p class="text-body-1 grey--text mt-4 mb-1">
-            {{ $t('taxonomy.empty.title') }}
-          </p>
-          <p class="text-body-2 grey--text text--darken-1">
-            {{ $t('taxonomy.empty.description') }}
-          </p>
-        </div>
-      </template>
-    </bs-data-table>
+      @create="openCreateForm"
+      @edit="openEditForm"
+      @delete="confirmDelete"
+    />
 
     <bs-taxonomy-form-dialog
       ref="formDialog"
-      :loading="loading"
+      :loading="saving"
       @save="saveItem"
     />
 
@@ -282,7 +168,7 @@ export default {
       @confirm="deleteItem"
     >
       <p>{{ deleteConfirmMessage }}</p>
-      <p class="taxonomy-tab__delete-hint">
+      <p class="taxonomy-tab__delete-hint mb-2">
         {{ $t('taxonomy.deleteConfirmHint') }}
       </p>
     </bs-modal-confirm>
@@ -291,35 +177,9 @@ export default {
 
 <style lang="scss" scoped>
 .taxonomy-tab {
-  &__label {
-    display: block;
-    // Without this the column collapses to its narrowest word and a two-word
-    // label stacks over three lines.
-    min-width: 11rem;
-    font-size: 0.875rem;
-  }
-
-  &__description {
-    display: block;
-    // The table wrapper clips with `overflow: hidden`, so a description wide
-    // enough to push the row past the container silently swallows the actions
-    // column. Capped well inside what the six columns can hold.
-    max-width: 18rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
-  &__empty-cell {
-    color: rgba(0, 0, 0, 0.38);
-  }
-
   &__delete-hint {
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     font-size: 0.875rem;
-    margin-bottom: 0;
   }
 }
 </style>
