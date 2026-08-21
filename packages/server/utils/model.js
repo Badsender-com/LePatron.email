@@ -85,7 +85,8 @@ function validateFiltersJSON(filters) {
   if (filters) {
     if (
       (filters?.templates && !Array.isArray(filters.templates)) ||
-      (filters?.tags && !Array.isArray(filters.tags))
+      (filters?.tags && !Array.isArray(filters.tags)) ||
+      (filters?.emailTypes && !Array.isArray(filters.emailTypes))
     ) {
       throw new BadRequest(ERROR_CODES.BAD_FORMAT_FILTERS);
     }
