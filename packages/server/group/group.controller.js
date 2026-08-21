@@ -103,8 +103,18 @@ async function create(req, res) {
     groupFtpService.validateSshKeyOrThrow(req.body.ftpSshKey);
   }
 
+  const groupToCreate = { ...req.body };
+
+  // The update path is not the only write path: without this, a company could be
+  // created with a shape the update path would have refused.
+  if ('emailMetadata' in groupToCreate) {
+    groupToCreate.emailMetadata = sanitizeEmailMetadata(
+      groupToCreate.emailMetadata
+    );
+  }
+
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
-  const newGroup = await groupService.createGroup(req.body);
+  const newGroup = await groupService.createGroup(groupToCreate);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
   res.json(groupFtpService.maskFtpCredentials(newGroup));
@@ -400,9 +410,12 @@ async function update(req, res) {
     groupFtpService.validateSshKeyOrThrow(processedBody.ftpSshKey);
   }
 
+  // The `id` comes last on purpose: the group being updated is the one named by
+  // the URL — the only value the route guard checked — so a payload carrying its
+  // own `id` cannot redirect the write elsewhere.
   let groupToUpdate = {
-    id: req.params.groupId,
     ...processedBody,
+    id: req.params.groupId,
   };
 
   // Validate/normalize the tracking config shape before persisting (the UI
@@ -415,7 +428,9 @@ async function update(req, res) {
 
   // Same reasoning as trackingConfig: shape guaranteed server-side, and only
   // when the payload actually carries it (partial updates are the norm here).
-  if (groupToUpdate.emailMetadata != null) {
+  // `in` rather than `!= null`, so an explicit null goes through the sanitizer
+  // and yields the default sub-object instead of being stored as null.
+  if ('emailMetadata' in groupToUpdate) {
     groupToUpdate.emailMetadata = sanitizeEmailMetadata(
       groupToUpdate.emailMetadata
     );
@@ -424,13 +439,15 @@ async function update(req, res) {
   if (user.isGroupAdmin) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
-      'id',
       'colorScheme',
       'trackingConfig',
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
     ]);
+    // Reinstated after the pick, from the URL, so the whitelist never has to
+    // carry the id of the target.
+    groupToUpdate.id = req.params.groupId;
   }
 
   await groupService.updateGroup(groupToUpdate);
