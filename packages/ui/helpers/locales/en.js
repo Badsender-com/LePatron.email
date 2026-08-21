@@ -939,6 +939,90 @@ export default {
       recommended: 'recommended',
     }
   },
+  emailBuilderSettings: {
+    title: 'Email Builder settings',
+    sidebarLabel: 'Settings',
+    metadata: {
+      sectionTitle: 'Email metadata',
+      sectionDescription:
+        'Lets your team set a subject, a preheader, a planned send date and a typology on each email, instead of retyping them on every send.',
+      enabled: 'Enable email metadata',
+      enabledHint:
+        'While off, these fields appear nowhere and the API refuses them. Data already entered is kept.',
+      taxonomyHint:
+        'The "Typologies" page now lets you define your own email typologies.',
+    },
+    snackbars: {
+      updated: 'Email Builder settings updated',
+      error: 'Could not update the settings',
+    },
+  },
+  taxonomy: {
+    title: 'Email typologies',
+    sidebarLabel: 'Typologies',
+    description:
+      'Your email typologies, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI.',
+    table: {
+      label: 'Label',
+      description: 'Definition',
+      canonicalType: 'AI typology',
+      order: 'Order',
+      isActive: 'Status',
+    },
+    canonicalTypes: {
+      promo: 'Promotional',
+      newsletter: 'Newsletter',
+      transactional: 'Transactional',
+    },
+    form: {
+      createTitle: 'New typology',
+      editTitle: 'Edit typology',
+      label: 'Label',
+      labelPlaceholder: 'Weekly newsletter',
+      labelHint: 'The name your team actually uses.',
+      labelRequired: 'A label is required',
+      labelTooLong: 'The label cannot exceed {max} characters',
+      description: 'Definition',
+      descriptionPlaceholder:
+        'Thursday morning send to the whole base: news and new products.',
+      descriptionHint:
+        'What this typology is for in your company, and when to use it. This text is what will guide the AI.',
+      descriptionTooLong: 'The definition cannot exceed {max} characters',
+      canonicalType: 'Matching AI typology',
+      canonicalTypePlaceholder: 'None',
+      canonicalTypeHint:
+        'Optional. Bridges onto the AI vocabulary, so the right expertise loads whatever name you chose.',
+      order: 'Order',
+      orderHint: 'Display order in the lists.',
+      isActive: 'Active',
+      isActiveHint:
+        'A deactivated typology disappears from the pickers, but emails already using it keep it.',
+    },
+    deleteConfirmTitle: 'Delete this typology?',
+    deleteConfirmMessage: 'The typology "{label}" will be deleted.',
+    deleteConfirmHint:
+      'If emails use it, the deletion will be refused — deactivate it instead.',
+    empty: {
+      title: 'No typology yet',
+      description:
+        'Create your first typologies: nothing is pre-filled, these are your own words.',
+    },
+    errors: {
+      labelAlreadyExists: 'A typology already uses this label.',
+      inUse:
+        'This typology is used by {count} email(s): deactivate it instead of deleting it.',
+    },
+    snackbars: {
+      created: 'Typology created',
+      updated: 'Typology updated',
+      deleted: 'Typology deleted',
+    },
+    disabled: {
+      message:
+        'Email metadata is not enabled for this company. Typologies are of no use until it is.',
+      action: 'Go to Email Builder settings',
+    },
+  },
   feedMappings: {
     title: 'Content Feeds',
     template: 'Template',
@@ -973,6 +1057,8 @@ export default {
     },
   },
   settingsNav: {
+    taxonomy: 'Typologies',
+    emailBuilder: 'Email Builder settings',
     categories: {
       superAdmin: 'Super Admin',
       general: 'General',

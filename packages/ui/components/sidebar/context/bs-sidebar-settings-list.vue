@@ -68,6 +68,14 @@ export default {
       lastGroupId: 'lastGroupId',
     }),
 
+    // Opposite default from the module flags read through isFlagEnabled: this
+    // feature is off unless a company opts in, matching GUARD_EMAIL_METADATA
+    // server-side. A super admin always sees the entry.
+    isEmailMetadataEnabled() {
+      if (this.isAdmin) return true;
+      return this.group?.emailMetadata?.enabled === true;
+    },
+
     groupId() {
       return (
         this.$route.params.groupId ||
@@ -251,8 +259,27 @@ export default {
             label: this.$t('feedMappings.title'),
             icon: 'mdi-rss',
             route: `${this.settingsBasePath}/feed-mappings`,
+          },
+          {
+            id: 'email-builder',
+            label: this.$t('emailBuilderSettings.sidebarLabel'),
+            icon: 'mdi-tune-variant',
+            route: `${this.settingsBasePath}/email-builder`,
           }
         );
+
+        // Taxonomy only once the company opted in: it manages the typologies of a
+        // feature that is otherwise invisible. The switch itself lives on the
+        // "Email builder" page above, which stays visible either way — otherwise a
+        // company admin could never turn the feature on.
+        if (this.isEmailMetadataEnabled) {
+          emailBuilderItems.push({
+            id: 'taxonomy',
+            label: this.$t('taxonomy.sidebarLabel'),
+            icon: 'mdi-tag-multiple-outline',
+            route: `${this.settingsBasePath}/taxonomy`,
+          });
+        }
       }
 
       // Email Builder category - visible if:

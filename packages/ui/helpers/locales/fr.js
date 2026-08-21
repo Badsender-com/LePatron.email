@@ -738,6 +738,90 @@ export default {
       recommended: 'recommandé',
     }
   },
+  emailBuilderSettings: {
+    title: 'Réglages Email Builder',
+    sidebarLabel: 'Réglages',
+    metadata: {
+      sectionTitle: 'Métadonnées des emails',
+      sectionDescription:
+        'Permet de renseigner un objet, un préheader, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
+      enabled: 'Activer les métadonnées des emails',
+      enabledHint:
+        'Désactivé, ces champs n\'apparaissent nulle part et l\'API les refuse. Les données déjà saisies sont conservées.',
+      taxonomyHint:
+        'La page « Typologies » vous permet maintenant de définir vos propres typologies d\'email.',
+    },
+    snackbars: {
+      updated: 'Réglages Email Builder mis à jour',
+      error: 'La mise à jour des réglages a échoué',
+    },
+  },
+  taxonomy: {
+    title: 'Typologies d\'email',
+    sidebarLabel: 'Typologies',
+    description:
+      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA.',
+    table: {
+      label: 'Libellé',
+      description: 'Définition',
+      canonicalType: 'Typologie IA',
+      order: 'Ordre',
+      isActive: 'Statut',
+    },
+    canonicalTypes: {
+      promo: 'Promotionnel',
+      newsletter: 'Infolettre',
+      transactional: 'Transactionnel',
+    },
+    form: {
+      createTitle: 'Nouvelle typologie',
+      editTitle: 'Modifier la typologie',
+      label: 'Libellé',
+      labelPlaceholder: 'Infolettre hebdomadaire',
+      labelHint: 'Le nom que vos équipes utilisent réellement.',
+      labelRequired: 'Le libellé est obligatoire',
+      labelTooLong: 'Le libellé ne peut pas dépasser {max} caractères',
+      description: 'Définition',
+      descriptionPlaceholder:
+        'Envoi du jeudi matin à toute la base, actualités et nouveautés produits.',
+      descriptionHint:
+        'À quoi sert cette typologie chez vous, et quand l\'utiliser. C\'est ce texte qui guidera l\'IA.',
+      descriptionTooLong: 'La définition ne peut pas dépasser {max} caractères',
+      canonicalType: 'Typologie IA correspondante',
+      canonicalTypePlaceholder: 'Aucune',
+      canonicalTypeHint:
+        'Facultatif. Fait le lien avec le vocabulaire de l\'IA, pour charger la bonne expertise quel que soit le nom que vous avez choisi.',
+      order: 'Ordre',
+      orderHint: 'Ordre d\'affichage dans les listes.',
+      isActive: 'Actif',
+      isActiveHint:
+        'Une typologie désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
+    },
+    deleteConfirmTitle: 'Supprimer cette typologie ?',
+    deleteConfirmMessage: 'La typologie « {label} » sera supprimée.',
+    deleteConfirmHint:
+      'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+    empty: {
+      title: 'Aucune typologie pour le moment',
+      description:
+        'Créez vos premières typologies : rien n\'est prérempli, ce sont vos mots.',
+    },
+    errors: {
+      labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
+      inUse:
+        'Cette typologie est utilisée par {count} email(s) : désactivez-la plutôt que de la supprimer.',
+    },
+    snackbars: {
+      created: 'Typologie créée',
+      updated: 'Typologie mise à jour',
+      deleted: 'Typologie supprimée',
+    },
+    disabled: {
+      message:
+        'Les métadonnées des emails ne sont pas activées pour cette entreprise. Les typologies ne servent à rien tant qu\'elles ne sont pas activées.',
+      action: 'Aller aux réglages Email Builder',
+    },
+  },
   feedMappings: {
     title: 'Flux de contenu',
     template: 'Template',
@@ -1024,6 +1108,8 @@ export default {
     contactBadsender: 'Contacter Badsender',
   },
   settingsNav: {
+    taxonomy: 'Typologies',
+    emailBuilder: 'Réglages Email Builder',
     categories: {
       superAdmin: 'Super Admin',
       general: 'Général',
