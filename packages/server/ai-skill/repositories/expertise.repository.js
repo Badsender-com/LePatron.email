@@ -78,7 +78,14 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
 
   const docs = await Expertises.find({ $and: and }).lean();
 
-  await warnOnUnmatchedScopes(scopes, docs);
+  // Not awaited: the diagnostic does nothing for this invocation's result, and
+  // it issues a `distinct` — on a feature whose scope matches no scoped
+  // expertise that would be one extra round-trip on EVERY call, in the hottest
+  // path of the module. Errors inside are swallowed by the function itself.
+  warnOnUnmatchedScopes(scopes, docs).catch(() => {
+    // Belt and braces: the diagnostic must never surface as an invocation
+    // failure, and nothing awaits it to notice.
+  });
 
   // Deterministic order = the order expertises appear in the composed prompt:
   // transversal (general) first, then alphabetical by expertiseId. Stable so
@@ -112,6 +119,11 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
 async function warnOnUnmatchedScopes(scopes, docs) {
   const matched = new Set();
   for (const doc of docs) {
+    // Transversal expertises are returned whatever the scope, and the schema
+    // tolerates them carrying one anyway. Counting their scope as "matched"
+    // would suppress the warning precisely when no SCOPED expertise answered —
+    // the silence this warning exists to break.
+    if (doc.isTransversal) continue;
     for (const value of doc.scope || []) matched.add(value);
   }
   const unmatched = scopes.filter((s) => !matched.has(s));
