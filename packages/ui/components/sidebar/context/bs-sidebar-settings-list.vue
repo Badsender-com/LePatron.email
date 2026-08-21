@@ -68,14 +68,6 @@ export default {
       lastGroupId: 'lastGroupId',
     }),
 
-    // Opposite default from the module flags read through isFlagEnabled: this
-    // feature is off unless a company opts in, matching GUARD_EMAIL_METADATA
-    // server-side. A super admin always sees the entry.
-    isEmailMetadataEnabled() {
-      if (this.isAdmin) return true;
-      return this.group?.emailMetadata?.enabled === true;
-    },
-
     groupId() {
       return (
         this.$route.params.groupId ||
@@ -160,6 +152,19 @@ export default {
         );
       }
 
+      if (canAccessGroupAdmin) {
+        // General, not Email Builder: the taxonomy is a cross-cutting concern —
+        // CRM Governance will read it too — and it must stay reachable whether or
+        // not the email metadata are switched on, so an admin can prepare a
+        // company's typologies before enabling them.
+        generalItems.push({
+          id: 'taxonomy',
+          label: this.$t('taxonomy.sidebarLabel'),
+          icon: 'mdi-tag-multiple-outline',
+          route: `${this.settingsBasePath}/taxonomy`,
+        });
+      }
+
       generalItems.push({
         id: 'users',
         label: this.$tc('global.user', 2),
@@ -179,6 +184,18 @@ export default {
 
       // Email Builder category
       const emailBuilderItems = [];
+
+      // First entry of the category: it holds the module's own configuration,
+      // including the switch that turns the email metadata on, so it is where
+      // someone looks first rather than the last line of the list.
+      if (canAccessGroupAdmin) {
+        emailBuilderItems.push({
+          id: 'email-builder',
+          label: this.$t('emailBuilderSettings.sidebarLabel'),
+          icon: 'mdi-tune-variant',
+          route: `${this.settingsBasePath}/email-builder`,
+        });
+      }
 
       if (this.isAdmin) {
         emailBuilderItems.push(
@@ -259,27 +276,8 @@ export default {
             label: this.$t('feedMappings.title'),
             icon: 'mdi-rss',
             route: `${this.settingsBasePath}/feed-mappings`,
-          },
-          {
-            id: 'email-builder',
-            label: this.$t('emailBuilderSettings.sidebarLabel'),
-            icon: 'mdi-tune-variant',
-            route: `${this.settingsBasePath}/email-builder`,
           }
         );
-
-        // Taxonomy only once the company opted in: it manages the typologies of a
-        // feature that is otherwise invisible. The switch itself lives on the
-        // "Email builder" page above, which stays visible either way — otherwise a
-        // company admin could never turn the feature on.
-        if (this.isEmailMetadataEnabled) {
-          emailBuilderItems.push({
-            id: 'taxonomy',
-            label: this.$t('taxonomy.sidebarLabel'),
-            icon: 'mdi-tag-multiple-outline',
-            route: `${this.settingsBasePath}/taxonomy`,
-          });
-        }
       }
 
       // Email Builder category - visible if:

@@ -951,7 +951,7 @@ export default {
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
       taxonomyAction: 'Manage typologies',
       taxonomyHint:
-        'The "Typologies" page now lets you define your own email typologies.',
+        'Email typologies are configured under Settings → General → Typologies, independently of this option.',
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
@@ -1015,7 +1015,6 @@ export default {
     },
     errors: {
       limitReached: 'You have reached the maximum number of typologies for this company.',
-      featureDisabled: 'Email metadata is not enabled for this company.',
       labelAlreadyExists: 'A typology already uses this label.',
       inUse:
         'This typology is used by {count} email: deactivate it instead of deleting it. | This typology is used by {count} emails: deactivate it instead of deleting it.',
@@ -1024,11 +1023,6 @@ export default {
       created: 'Typology created',
       updated: 'Typology updated',
       deleted: 'Typology deleted',
-    },
-    disabled: {
-      message:
-        'Email metadata is not enabled for this company. Enable it so your typologies are offered to your team.',
-      action: 'Go to Email Builder settings',
     },
   },
   feedMappings: {

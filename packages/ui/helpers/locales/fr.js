@@ -740,7 +740,7 @@ export default {
   },
   emailBuilderSettings: {
     title: 'Réglages Email Builder',
-    sidebarLabel: 'Réglages',
+    sidebarLabel: 'Configuration',
     metadata: {
       sectionTitle: 'Métadonnées des emails',
       sectionDescription:
@@ -750,7 +750,7 @@ export default {
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
       taxonomyAction: 'Gérer les typologies',
       taxonomyHint:
-        'La page « Typologies » vous permet maintenant de définir vos propres typologies d\'email.',
+        'Les typologies d\'email se configurent dans Paramètres → Général → Typologies, indépendamment de cette option.',
     },
     snackbars: {
       invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
@@ -814,7 +814,6 @@ export default {
     },
     errors: {
       limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
-      featureDisabled: 'Les métadonnées des emails ne sont pas activées pour cette entreprise.',
       labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
       inUse:
         'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
@@ -823,11 +822,6 @@ export default {
       created: 'Typologie créée',
       updated: 'Typologie mise à jour',
       deleted: 'Typologie supprimée',
-    },
-    disabled: {
-      message:
-        'Les métadonnées des emails ne sont pas activées pour cette entreprise. Activez-les pour que vos typologies soient proposées à vos équipes.',
-      action: 'Aller aux réglages Email Builder',
     },
   },
   feedMappings: {
