@@ -29,13 +29,23 @@ export default {
       return this.$route.params.groupId;
     },
     tableHeaders() {
-      return [
+      const headers = [
         { text: this.$t('taxonomy.table.label'), value: 'label' },
-        {
+      ];
+
+      // The table wrapper clips with `overflow: hidden` and gives no horizontal
+      // scroll, so a column too many silently swallows the actions. The
+      // definition is the one to drop: it is truncated to a single line here
+      // anyway, and reading it in full means opening the row.
+      if (this.$vuetify.breakpoint.lgAndUp) {
+        headers.push({
           text: this.$t('taxonomy.table.description'),
           value: 'description',
           sortable: false,
-        },
+        });
+      }
+
+      headers.push(
         {
           text: this.$t('taxonomy.table.canonicalType'),
           value: 'canonicalType',
@@ -47,8 +57,10 @@ export default {
           value: 'actions',
           sortable: false,
           align: 'right',
-        },
-      ];
+        }
+      );
+
+      return headers;
     },
     deleteConfirmMessage() {
       if (!this.deletingItem) return '';
@@ -182,6 +194,10 @@ export default {
       clickable
       @click:row="openEditForm"
     >
+      <template #item.label="{ item }">
+        <span class="taxonomy-tab__label">{{ item.label }}</span>
+      </template>
+
       <template #item.description="{ item }">
         <span v-if="item.description" class="taxonomy-tab__description">
           {{ item.description }}
@@ -275,9 +291,20 @@ export default {
 
 <style lang="scss" scoped>
 .taxonomy-tab {
+  &__label {
+    display: block;
+    // Without this the column collapses to its narrowest word and a two-word
+    // label stacks over three lines.
+    min-width: 11rem;
+    font-size: 0.875rem;
+  }
+
   &__description {
     display: block;
-    max-width: 32rem;
+    // The table wrapper clips with `overflow: hidden`, so a description wide
+    // enough to push the row past the container silently swallows the actions
+    // column. Capped well inside what the six columns can hold.
+    max-width: 18rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

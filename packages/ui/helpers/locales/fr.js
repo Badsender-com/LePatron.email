@@ -793,6 +793,7 @@ export default {
         'Facultatif. Fait le lien avec le vocabulaire de l\'IA, pour charger la bonne expertise quel que soit le nom que vous avez choisi.',
       order: 'Ordre',
       orderHint: 'Ordre d\'affichage dans les listes.',
+      status: 'Statut',
       isActive: 'Actif',
       isActiveHint:
         'Une typologie désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',

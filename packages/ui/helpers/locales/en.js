@@ -994,6 +994,7 @@ export default {
         'Optional. Bridges onto the AI vocabulary, so the right expertise loads whatever name you chose.',
       order: 'Order',
       orderHint: 'Display order in the lists.',
+      status: 'Status',
       isActive: 'Active',
       isActiveHint:
         'A deactivated typology disappears from the pickers, but emails already using it keep it.',
