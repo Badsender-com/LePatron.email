@@ -6,10 +6,23 @@ const { Types } = require('mongoose');
 jest.mock('../../../../packages/server/common/models.common', () => ({
   LePatronSkills: { findOne: jest.fn() },
   AISkillInvocations: { create: jest.fn() },
-  AIFeatureConfigs: { findOne: jest.fn() },
-  Integrations: { findById: jest.fn() },
   Groups: { findById: jest.fn() },
 }));
+
+// Engine resolution is delegated to the shared feature service (review A2), so
+// it is mocked here and covered on its own in tests/server/ai-feature.
+jest.mock(
+  '../../../../packages/server/ai-feature/ai-feature.service.js',
+  () => ({
+    resolveActiveFeature: jest.fn(),
+    FeatureResolutionReasons: {
+      NO_CONFIG: 'NO_CONFIG',
+      FEATURE_INACTIVE: 'FEATURE_INACTIVE',
+      NO_INTEGRATION: 'NO_INTEGRATION',
+      INTEGRATION_INACTIVE: 'INTEGRATION_INACTIVE',
+    },
+  })
+);
 
 const mockProvider = { chatComplete: jest.fn() };
 
@@ -23,10 +36,9 @@ jest.mock(
 const {
   LePatronSkills,
   AISkillInvocations,
-  AIFeatureConfigs,
-  Integrations,
   Groups,
 } = require('../../../../packages/server/common/models.common');
+const aiFeatureService = require('../../../../packages/server/ai-feature/ai-feature.service.js');
 
 // Provider factory is mocked above; required only to wire jest.mock.
 require('../../../../packages/server/integration-providers/provider-factory');
@@ -68,24 +80,19 @@ function wireHappyPath({ skill, providerResponse } = {}) {
     lean: () =>
       Promise.resolve({ _id: GROUP_ID, logSkillInvocationContent: true }),
   });
-  AIFeatureConfigs.findOne.mockReturnValue({
-    lean: () =>
-      Promise.resolve({
-        features: [
-          {
-            featureType: 'skill',
-            isActive: true,
-            integration: INTEGRATION_ID,
-            config: { model: 'gpt-4o' },
-          },
-        ],
-      }),
-  });
-  Integrations.findById.mockResolvedValue({
-    _id: INTEGRATION_ID,
-    provider: 'openai',
-    isActive: true,
-    apiKey: 'secret',
+  aiFeatureService.resolveActiveFeature.mockResolvedValue({
+    ok: true,
+    feature: {
+      featureType: 'skill',
+      isActive: true,
+      config: { model: 'gpt-4o' },
+    },
+    integration: {
+      _id: INTEGRATION_ID,
+      provider: 'openai',
+      isActive: true,
+      apiKey: 'secret',
+    },
   });
   AISkillInvocations.create.mockResolvedValue({ _id: new Types.ObjectId() });
   mockProvider.chatComplete.mockResolvedValue(
@@ -115,7 +122,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
 
       expect(result.output).toEqual({ text: 'hello world' });
@@ -137,7 +144,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
 
       const { messages } = mockProvider.chatComplete.mock.calls[0][0];
@@ -157,7 +164,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
       expect(
         mockProvider.chatComplete.mock.calls[0][0].responseFormat
@@ -173,7 +180,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
       expect(
         mockProvider.chatComplete.mock.calls[0][0].responseFormat
@@ -387,22 +394,130 @@ describe('skill-invocation.invoke', () => {
       ).rejects.toThrow(/not found/);
     });
 
-    it('throws when the Group has no skill feature configured', async () => {
+    /**
+     * "The data of this environment does not match the deployed code" is a
+     * configuration failure, and a caller must be able to tell it apart from a
+     * provider outage — one means fix the setup, the other means retry.
+     */
+    it('types every resolution failure as CONFIG_ERROR', async () => {
+      const cases = [
+        [
+          'missing or archived skill',
+          () => LePatronSkills.findOne.mockResolvedValue(null),
+        ],
+        [
+          'missing active version',
+          () => {
+            const skill = buildSkill({ activeVersion: { major: 9, minor: 9 } });
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+        [
+          'unresolvable input schema',
+          () => {
+            const skill = buildSkill();
+            skill.versions[0].inputSchemaId = 'goneInput';
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+        [
+          'unresolvable output schema',
+          () => {
+            const skill = buildSkill();
+            skill.versions[0].outputSchemaId = 'goneOutput';
+            LePatronSkills.findOne.mockResolvedValue(skill);
+          },
+        ],
+      ];
+
+      for (const [label, wire] of cases) {
+        jest.clearAllMocks();
+        wire();
+        let caught;
+        try {
+          await skillInvocation.invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+          });
+        } catch (err) {
+          caught = err;
+        }
+        expect(caught).toBeDefined();
+        expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+        expect(label).toBeTruthy();
+      }
+    });
+
+    /**
+     * The reason the shared helper reports must survive as a distinct message:
+     * losing that was the risk in delegating to it (review A2).
+     */
+    it.each([
+      ['NO_CONFIG', /no AIFeatureConfig/],
+      ['FEATURE_INACTIVE', /no active 'skill' feature/],
+      ['NO_INTEGRATION', /no integration selected/],
+      ['INTEGRATION_INACTIVE', /integration that is inactive/],
+    ])('turns the %s reason into its own message', async (reason, message) => {
       LePatronSkills.findOne.mockResolvedValue(buildSkill());
       Groups.findById.mockReturnValue({
         lean: () => Promise.resolve({ _id: GROUP_ID }),
       });
-      AIFeatureConfigs.findOne.mockReturnValue({
-        lean: () => Promise.resolve({ features: [] }),
+      aiFeatureService.resolveActiveFeature.mockResolvedValue({
+        ok: false,
+        reason,
       });
-      await expect(
-        skillInvocation.invoke({
+
+      let caught;
+      try {
+        await skillInvocation.invoke({
           skillId: 'generic.text',
           input: { prompt: 'x' },
           groupId: GROUP_ID,
-        })
-      ).rejects.toThrow(/skill/);
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught.message).toMatch(message);
+      expect(caught.invocationStatus).toBe('CONFIG_ERROR');
     });
+
+    it('asks the shared helper for the skill engine, not another feature', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+      });
+      expect(aiFeatureService.resolveActiveFeature).toHaveBeenCalledWith({
+        groupId: GROUP_ID,
+        featureType: 'skill',
+      });
+    });
+
+    // Schemas live in code while versions store only their id, so a rename or a
+    // deletion leaves ACTIVE versions pointing at nothing. Both ids must fail
+    // before the provider is called, or the billed request is wasted.
+    it.each([
+      ['inputSchemaId', /unknown input schema/],
+      ['outputSchemaId', /unknown output schema/],
+    ])(
+      'throws before calling the provider when %s no longer resolves',
+      async (field, message) => {
+        const skill = buildSkill();
+        skill.versions[0][field] = 'schemaRenamedAway';
+        wireHappyPath({ skill });
+
+        await expect(
+          skillInvocation.invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+          })
+        ).rejects.toThrow(message);
+        expect(mockProvider.chatComplete).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('dryRun', () => {

@@ -8,7 +8,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
-import { emailTypeLabel } from '~/helpers/email-types.js';
+import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
 
 const CATEGORIES = [
   'redaction',
@@ -42,6 +42,9 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
+    },
+    emailTypeItems() {
+      return emailTypeItems(this.emailTypeFacets);
     },
   },
   async mounted() {
@@ -108,7 +111,7 @@ export default {
     />
     <bs-combobox
       v-model="expertise.appliesToEmailTypes"
-      :items="emailTypeFacets"
+      :items="emailTypeItems"
       :label="$t('aiSkills.expertise.appliesToEmailTypes')"
       :hint="$t('aiSkills.expertise.emailTypeHelp')"
       persistent-hint

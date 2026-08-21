@@ -115,7 +115,6 @@ export default {
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
-    savedSuccessfully: 'Enregistré avec succès',
     settings: 'Réglages',
     cancel: 'Annuler',
     create: 'Créer',
@@ -786,44 +785,6 @@ export default {
       ctaLabel: 'libellé CTA par défaut (texte statique)',
     },
   },
-  aiFeatures: {
-    title: 'Fonctionnalités IA',
-    selectIntegration: 'Intégration à utiliser',
-    noIntegration: '-- Aucune intégration --',
-    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
-    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
-    comingSoon: 'Bientôt disponible',
-    upcomingFeatures: 'Fonctionnalités à venir',
-    upcomingFeaturesDescription: 'Découvrez les prochaines fonctionnalités IA en cours de développement.',
-    translation: {
-      title: 'Traduction',
-      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
-      enableLabel: 'Activer la traduction',
-      model: 'Modèle IA',
-      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
-      availableLanguages: 'Langues disponibles',
-      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
-      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
-      formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
-      formalityDefault: 'Par défaut',
-      formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
-    },
-    textGeneration: {
-      title: 'Génération de texte',
-      description: 'Générez du contenu marketing personnalisé pour vos emails.'
-    },
-    qualityCheck: {
-      title: 'Contrôle qualité',
-      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
-    }
-  },
   exportOptions: {
     title: 'Options d\'export',
     sections: {
@@ -1078,7 +1039,9 @@ export default {
       description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
       enableLabel: 'Activer le moteur Skills',
       model: 'Modèle IA',
-      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux'
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
+      modelDefaultOption: 'Par défaut du fournisseur ({model})',
+      modelDefaultOptionUnknown: 'Par défaut du fournisseur'
     },
     textGeneration: {
       title: 'Génération de texte',
@@ -1278,9 +1241,12 @@ export default {
       schemasHelp:
         'Contrat technique de la version : l\'entrée valide ce que les fonctionnalités envoient et génère le formulaire du playground ; la sortie est imposée automatiquement au LLM. Les schémas sont définis en code — contactez l\'équipe dev pour en ajouter.',
       placeholdersHelp:
-        'Placeholders utilisables dans le corps de la skill et le modèle d\'entrée, dérivés du schéma d\'entrée :',
+        'Placeholders utilisables dans le modèle d\'entrée uniquement — ils sont refusés dans le prompt système et dans le corps de la skill. Dérivés du schéma d\'entrée :',
       placeholdersRequiredHint:
         'Les placeholders marqués d\'un astérisque (*) correspondent à des champs requis par le schéma d\'entrée.',
+      placeholderCopyHint: 'Cliquer pour copier ce placeholder',
+      placeholderCopyFailed:
+        'Copie impossible depuis ce navigateur — sélectionnez le texte du placeholder à la main.',
       placeholdersInvocationNote:
         'Ces champs sont fournis à l\'invocation — seuls ceux référencés dans le modèle d\'entrée sont transmis au LLM.',
       placeholdersExpertiseNote:

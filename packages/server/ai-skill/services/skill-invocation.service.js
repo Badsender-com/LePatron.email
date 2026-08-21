@@ -15,11 +15,11 @@
  *     receives an input already composed by the feature (via findApplicable
  *     with that invocation's own scope + categories).
  *
- * featureType convention
- * -----------------------
- * Each AISkillInvocation log carries a `featureType` string that names the
- * caller. `'playground'` (invocations issued by the AI Playground module) and
- * the `'poc.*'` prefix are reserved for non-production traffic and excluded
+ * invocationSource convention
+ * ---------------------------
+ * Each AISkillInvocation log carries an `invocationSource` string that names
+ * the caller. `'playground'` (invocations issued by the AI Playground module)
+ * and the `'poc.*'` prefix are reserved for non-production traffic and excluded
  * from product analytics by default.
  *
  * Any other value is a productive feature (e.g. 'translation', 'qc.subject',
@@ -29,12 +29,10 @@
 const createError = require('http-errors');
 
 const ProviderFactory = require('../../integration-providers/provider-factory.js');
-const {
-  LePatronSkills,
-  AIFeatureConfigs,
-  Integrations,
-  Groups,
-} = require('../../common/models.common.js');
+const { LePatronSkills, Groups } = require('../../common/models.common.js');
+const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
+
+const { FeatureResolutionReasons } = aiFeatureService;
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const { getSchema } = require('../schemas');
@@ -65,23 +63,23 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * See PLAN-IMPLEMENTATION-V1 §4.2.
  *
  * ── Two orthogonal axes that must NEVER be conflated ──────────────────────
- *   • `featureType` (this param): the SOURCE of the invocation, for ANALYTICS
- *     only ('playground' | a productive feature name). Stored on
+ *   • `invocationSource` (this param): the SOURCE of the invocation, for
+ *     ANALYTICS only ('playground' | a productive feature name). Stored on
  *     AISkillInvocation and used to include/exclude rows from analytics. It does
  *     NOT influence which LLM engine is used.
  *   • [étape 2] `categoryOverride`: ENGINE RESOLUTION. Defaults to skill.category,
  *     overridable by the consuming feature. It selects which AIFeatureConfig
  *     featureType powers the call (redaction/qc/… → fallback 'skill'). See
  *     resolveGroupIntegration().
- *   Never use `featureType` to resolve the engine, and never use the engine
- *   category for analytics. They answer different questions.
+ *   The two used to share the name `featureType`, an invariant held by
+ *   documentation alone; the distinct names are the invariant now.
  *
  * @param {Object} params
  * @param {string} params.skillId
  * @param {Object} params.input
  * @param {import('mongoose').Types.ObjectId | string} params.groupId
  * @param {import('mongoose').Types.ObjectId | string} [params.userId]
- * @param {string} [params.featureType] ANALYTICS source tag only — see contract above.
+ * @param {string} [params.invocationSource] ANALYTICS source tag only — see contract above.
  * @param {string[]} [params.variantPath]
  * @param {{major: number, minor?: number}} [params.version] Pin a specific
  *   version instead of the active one (the playground's "pinned" mode). The
@@ -96,7 +94,7 @@ async function invoke({
   input,
   groupId,
   userId,
-  featureType,
+  invocationSource,
   variantPath,
   version: versionRef,
   options = {},
@@ -113,7 +111,10 @@ async function invoke({
     }
   );
   if (!skill) {
-    throw createError(404, `Skill "${skillId}" not found or not ACTIVE`);
+    // Typed like the group/integration failures below: "this environment's data
+    // does not match the deployed code" is a configuration problem, and the
+    // caller must be able to tell it apart from a provider outage.
+    throw configError(404, `Skill "${skillId}" not found or not ACTIVE`);
   }
 
   const activeRef = skill.activeVersion || {};
@@ -124,8 +125,9 @@ async function invoke({
   );
   if (!version) {
     // A missing pinned version is the caller's mistake (404); a missing
-    // active version is a data integrity bug (500).
-    throw createError(
+    // active version is a data integrity bug (500). Both are configuration
+    // failures, not provider failures.
+    throw configError(
       versionRef ? 404 : 500,
       versionRef
         ? `Version ${wantedMajor}.${wantedMinor} of skill "${skillId}" not found`
@@ -136,9 +138,19 @@ async function invoke({
   // ─── 2. Validate input against zod schema (schemas live on the version) ──
   const inputSchema = getSchema(version.inputSchemaId);
   if (!inputSchema) {
-    throw createError(
+    throw configError(
       500,
       `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown input schema "${version.inputSchemaId}"`
+    );
+  }
+  // Checked here, next to the input schema, rather than where it is used at
+  // step 6: an id that no longer resolves (schema renamed or removed in code
+  // while a version still points at it) otherwise surfaced as a TypeError
+  // *after* the provider call had been made and billed.
+  if (!getSchema(version.outputSchemaId)) {
+    throw configError(
+      500,
+      `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown output schema "${version.outputSchemaId}"`
     );
   }
   const inputParse = inputSchema.safeParse(input);
@@ -148,7 +160,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input,
       startedAt,
@@ -175,6 +187,9 @@ async function invoke({
   // paths below. (The INPUT_VALIDATION failure above happens before the
   // group is resolved; nothing was sent to a provider at that point.)
   const allowContent = group ? group.logSkillInvocationContent !== false : true;
+  // Passed to every log call below so the TTL deadline is stamped without the
+  // logger having to re-read the Group.
+  const retentionDays = group ? group.logRetentionDays : undefined;
   const config = resolveConfig({
     integration,
     groupFeatureConfig,
@@ -235,12 +250,13 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       startedAt,
       resolvedConfig: config,
       allowContent,
+      retentionDays,
       status: isTimeout
         ? InvocationStatuses.TIMEOUT
         : InvocationStatuses.PROVIDER_ERROR,
@@ -264,7 +280,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -272,6 +288,7 @@ async function invoke({
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
       allowContent,
+      retentionDays,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: { code: 'OUTPUT_PARSE', message: err.message },
       skipLogging: options.skipLogging,
@@ -285,7 +302,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -293,6 +310,7 @@ async function invoke({
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
       allowContent,
+      retentionDays,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: {
         code: 'OUTPUT_VALIDATION',
@@ -311,7 +329,7 @@ async function invoke({
     version,
     groupId,
     userId,
-    featureType,
+    invocationSource,
     variantPath,
     input: inputParse.data,
     output: outputParse.data,
@@ -323,6 +341,7 @@ async function invoke({
     latencyMs,
     status: InvocationStatuses.SUCCESS,
     allowContent,
+    retentionDays,
     skipLogging: options.skipLogging,
   });
 
@@ -338,13 +357,20 @@ async function invoke({
 /**
  * Resolve the Integration to use for a Group via the AIFeatureConfig.
  *
- * ENGINE RESOLUTION axis (NOT analytics — do not confuse with invoke()'s
- * `featureType` param, which is the analytics source tag). Today this resolves
+ * ENGINE RESOLUTION axis (NOT analytics — that is invoke()'s
+ * `invocationSource` param). Today this resolves
  * the single generic 'skill' engine. [étape 2] it will take the skill's
  * category (or a caller `categoryOverride`) and resolve in cascade:
  *   category featureType (redaction/qc/…) → fallback 'skill' → CONFIG_ERROR.
  *
  * Throws a CONFIG_ERROR if not configured.
+ */
+/**
+ * Every failure that means "this environment's data does not match the deployed
+ * code" — missing/archived skill, missing active version, unresolvable schema
+ * id, no configured engine. Grouping them under CONFIG_ERROR lets a caller tell
+ * a misconfiguration apart from a provider outage, which is the difference
+ * between "fix the setup" and "retry later".
  */
 function configError(status, message) {
   const err = createError(status, message);
@@ -354,39 +380,49 @@ function configError(status, message) {
   return err;
 }
 
+// Why the engine could not be resolved, in words. The shared helper reports a
+// reason code; turning it back into a sentence stays here because the wording is
+// about skills ("configure a 'skill' integration"), not about the generic
+// feature machinery. This is what delegating must not lose: the helper used to
+// return a bare null, and these distinct messages are the reason ai-skill had
+// reimplemented the walk in the first place.
+const ENGINE_ERROR_MESSAGES = {
+  [FeatureResolutionReasons.NO_CONFIG]: (groupId) =>
+    `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`,
+  [FeatureResolutionReasons.FEATURE_INACTIVE]: (groupId) =>
+    `Group ${groupId} has no active 'skill' feature configuration`,
+  [FeatureResolutionReasons.NO_INTEGRATION]: (groupId) =>
+    `Group ${groupId} has an active 'skill' feature but no integration selected`,
+  [FeatureResolutionReasons.INTEGRATION_INACTIVE]: (groupId) =>
+    `Group ${groupId} has a 'skill' integration that is inactive`,
+};
+
 async function resolveGroupIntegration(groupId) {
+  // The Group document itself stays this module's business: it carries the RGPD
+  // content opt-out and the log retention window, neither of which the shared
+  // feature helper knows or should know about.
   const group = await Groups.findById(groupId).lean();
   if (!group) {
     throw configError(404, `Group ${groupId} not found`);
   }
-  const featureConfig = await AIFeatureConfigs.findOne({
-    _company: groupId,
-  }).lean();
-  if (!featureConfig) {
+
+  const resolved = await aiFeatureService.resolveActiveFeature({
+    groupId,
+    featureType: AIFeatureTypes.SKILL,
+  });
+  if (!resolved.ok) {
+    const toMessage = ENGINE_ERROR_MESSAGES[resolved.reason];
     throw configError(
       400,
-      `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`
+      toMessage
+        ? toMessage(groupId)
+        : `Group ${groupId} has no usable 'skill' engine (${resolved.reason})`
     );
   }
-  const skillFeature = (featureConfig.features || []).find(
-    (f) => f.featureType === AIFeatureTypes.SKILL && f.isActive
-  );
-  if (!skillFeature || !skillFeature.integration) {
-    throw configError(
-      400,
-      `Group ${groupId} has no active 'skill' feature configuration`
-    );
-  }
-  const integration = await Integrations.findById(skillFeature.integration);
-  if (!integration || !integration.isActive) {
-    throw configError(
-      400,
-      `Integration ${skillFeature.integration} is missing or inactive`
-    );
-  }
+
   return {
-    integration,
-    groupFeatureConfig: skillFeature.config || {},
+    integration: resolved.integration,
+    groupFeatureConfig: resolved.feature.config || {},
     group,
   };
 }

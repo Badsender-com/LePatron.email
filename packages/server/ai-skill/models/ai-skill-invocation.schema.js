@@ -86,7 +86,11 @@ const AISkillInvocationSchema = new Schema(
 
     _company: { type: ObjectId, ref: GroupModel, required: true },
     _user: { type: ObjectId, ref: UserModel, default: null },
-    featureType: { type: String },
+    // WHO issued this invocation, for analytics: 'playground', a 'poc.*'
+    // prefix, or a productive feature name. Deliberately NOT called
+    // `featureType`: that name belongs to AIFeatureConfig, where it means the
+    // engine type ('translation' | 'skill') — an orthogonal axis (see invoke()).
+    invocationSource: { type: String },
 
     // Réservé étape 2 (DSE v2) — never populated in v1; kept so the analytics
     // shape is stable when prompt variants land. Cf. docs/REVIEW_GUIDE_AI_MODULES.md.
@@ -105,6 +109,11 @@ const AISkillInvocationSchema = new Schema(
     resolvedConfig: { type: ResolvedConfigSchema, default: () => ({}) },
 
     startedAt: { type: Date, default: Date.now },
+    // When Mongo may delete this document, computed at write time from the
+    // Group's logRetentionDays (see the TTL index below). Null means "never
+    // expires" as far as the TTL monitor is concerned — only documents written
+    // before the retention migration are in that state.
+    expiresAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     latencyMs: { type: Number, default: null },
     tokenUsage: { type: TokenUsageSchema, default: () => ({}) },
@@ -128,8 +137,14 @@ AISkillInvocationSchema.index({ _company: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ skillId: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ status: 1 });
 // The Invocations tab default view has no skillId/groupId filter (only the
-// non-productive featureType exclusion) and sorts by startedAt — without
+// non-productive invocationSource exclusion) and sorts by startedAt — without
 // this index it collection-scans.
 AISkillInvocationSchema.index({ startedAt: -1 });
+// RGPD retention, enforced by Mongo's own TTL monitor rather than a scheduled
+// job: retention is per-Group (Group.logRetentionDays), so the deadline is
+// stamped on each document at write time and this index expires it in place.
+// Same mechanism as translation-job.schema.js — no scheduler, no extra
+// dependency, and nothing to keep running per worker.
+AISkillInvocationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = AISkillInvocationSchema;

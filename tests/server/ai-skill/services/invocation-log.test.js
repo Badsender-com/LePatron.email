@@ -50,12 +50,12 @@ describe('invocation-log.service', () => {
       expect(query.startedAt.$lte).toBeInstanceOf(Date);
     });
 
-    it('excludes non-productive featureTypes by default', async () => {
+    it('excludes non-productive invocation sources by default', async () => {
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
       await invocationService.listInvocations({});
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toEqual({
+      expect(query.invocationSource).toEqual({
         $nin: ['admin-test', 'playground'],
         $not: /^poc\./,
       });
@@ -67,20 +67,22 @@ describe('invocation-log.service', () => {
       // Query-string transport: the controller passes 'true' as a string.
       await invocationService.listInvocations({ includeNonProductive: 'true' });
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toBeUndefined();
+      expect(query.invocationSource).toBeUndefined();
     });
 
-    it('lets an explicit featureType filter win over the exclusion', async () => {
+    it('lets an explicit invocationSource filter win over the exclusion', async () => {
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
-      await invocationService.listInvocations({ featureType: 'playground' });
+      await invocationService.listInvocations({
+        invocationSource: 'playground',
+      });
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toBe('playground');
+      expect(query.invocationSource).toBe('playground');
     });
 
     it('a skill Logs query (skillId + includeNonProductive) keeps playground runs', async () => {
       // The skill's own Logs tab passes includeNonProductive:true → no
-      // featureType exclusion, so its playground runs show without any toggle.
+      // source exclusion, so its playground runs show without any toggle.
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
       await invocationService.listInvocations({
@@ -89,7 +91,60 @@ describe('invocation-log.service', () => {
       });
       const query = AISkillInvocations.find.mock.calls[0][0];
       expect(query.skillId).toBe('redaction.cta.promo');
-      expect(query.featureType).toBeUndefined();
+      expect(query.invocationSource).toBeUndefined();
+    });
+  });
+
+  describe('pagination and sort', () => {
+    function listWith(params) {
+      const c = chain([]);
+      AISkillInvocations.find.mockReturnValue(c);
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      return invocationService.listInvocations(params).then(() => c);
+    }
+
+    it('defaults to the first page of 50, newest first', async () => {
+      const c = await listWith({});
+      expect(c.sort).toHaveBeenCalledWith({ startedAt: -1 });
+      expect(c.skip).toHaveBeenCalledWith(0);
+      expect(c.limit).toHaveBeenCalledWith(50);
+    });
+
+    it('translates page/pageSize into skip/limit', async () => {
+      const c = await listWith({ page: 3, pageSize: 25 });
+      expect(c.skip).toHaveBeenCalledWith(50);
+      expect(c.limit).toHaveBeenCalledWith(25);
+    });
+
+    it('accepts a whitelisted sort field, in both directions', async () => {
+      let c = await listWith({ sortBy: 'latencyMs', sortDesc: true });
+      expect(c.sort).toHaveBeenCalledWith({ latencyMs: -1 });
+      c = await listWith({ sortBy: 'skillId', sortDesc: false });
+      expect(c.sort).toHaveBeenCalledWith({ skillId: 1 });
+    });
+
+    it('reads sortDesc sent as a query string', async () => {
+      const c = await listWith({ sortBy: 'status', sortDesc: 'true' });
+      expect(c.sort).toHaveBeenCalledWith({ status: -1 });
+    });
+
+    it('falls back to the default sort for a field outside the whitelist', async () => {
+      // The value reaches a Mongo sort spec, so an arbitrary client string
+      // must never be honoured.
+      for (const sortBy of [
+        'error.message',
+        'tokenUsage.totalTokens',
+        '$where',
+      ]) {
+        const c = await listWith({ sortBy, sortDesc: true });
+        expect(c.sort).toHaveBeenCalledWith({ startedAt: -1 });
+      }
+    });
+
+    it('exposes the whitelist so the UI can mirror it', () => {
+      expect(invocationService.SortableFields).toContain('startedAt');
+      expect(invocationService.SortableFields).not.toContain('tokens');
+      expect(invocationService.SortableFields).not.toContain('group');
     });
   });
 

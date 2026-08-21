@@ -65,11 +65,13 @@ une violation, c'est un bug :
   à jour au changement de schéma. Comportement de la gate de cohérence
   inchangé au changement de schéma sur un DRAFT (placeholders orphelins
   signalés à l'enregistrement).
-- **`featureType` (analytics) ≠ résolution moteur.** Le `featureType` d'une
-  `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
+- **`invocationSource` (analytics) ≠ résolution moteur.** L'`invocationSource`
+  d'une `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
   `'poc.*'` réservés non productifs, exclus par défaut de l'onglet
   Invocations). La config moteur (provider/modèle) vient de l'`AIFeatureConfig`
-  `featureType='skill'` du Group — deux notions homonymes, jamais croisées.
+  `featureType='skill'` du Group. Les deux champs s'appelaient `featureType` :
+  l'homonymie est levée (review A7), migration
+  `scripts/migrate-invocation-source.js`.
 - **Contenu skills/expertise en clair en DB** : décision documentée
   (AI_SKILL_ETAPE_1.md) — c'est du savoir-faire interne, pas du secret, et le
   chiffrement aurait coûté l'observabilité (recherche, diff de versions).
@@ -133,7 +135,7 @@ Trois surfaces mortes ont été supprimées pour ne pas générer d'allers-retou
 
 - **Runner de test super-admin** (onglet « Test » de la page skill, route
   `POST /ai-skills/:id/test`, controller `testSkill`, `getBudget` + route
-  `/budget`, featureType `admin-test`). Remplacé par un lien **« Tester dans le
+  `/budget`, invocationSource `admin-test`). Remplacé par un lien **« Tester dans le
   playground »** dans le header de la page skill. `test-budget.service` est
   **conservé** (consommé par le playground pour le quota 50/jour).
 - **Champ `consumedBySkills`** (Expertise) + les onglets « Expertises liées »
@@ -189,14 +191,16 @@ les échecs, gate de cohérence non contournable via PATCH du schéma, exécutio
 playground qui sauvegarde d'abord le scénario), ainsi que la majorité des
 MEDIUM. Les écarts suivants sont **connus et assumés** :
 
-- **Pagination UI absente** sur les listes (skills, expertises, invocations,
-  scénarios, runs) alors que le serveur pagine (50 par défaut, `total`
-  renvoyé). Assumé : volumes super-admin actuels très en dessous de 50 ;
-  l'API est prête, c'est un ajout UI pur quand le besoin arrivera.
-- **Purge des invocations de Groups supprimés** : le job de rétention itère
-  les Groups existants ; les invocations orphelines ne sont pas purgées.
-  Assumé pour la v1 (la suppression de Group est exceptionnelle) — à traiter
-  avec la politique de suppression de Group globale.
+- **Pagination UI absente** sur les listes (skills, expertises, scénarios,
+  runs) alors que le serveur pagine (50 par défaut, `total` renvoyé). Assumé :
+  volumes super-admin actuels très en dessous de 50 ; l'API est prête, c'est un
+  ajout UI pur quand le besoin arrivera. **L'onglet Invocations est sorti de cet
+  écart** (review A8) : c'est la seule collection à croissance non bornée, elle
+  pagine et trie désormais côté serveur.
+- ~~**Purge des invocations de Groups supprimés**~~ : **résolu** par le passage
+  à l'index TTL (review R1). La deadline est stampée sur chaque document à
+  l'écriture, donc elle ne dépend plus de l'existence du Group : les invocations
+  orphelines expirent comme les autres.
 - **Casting/validation léger des query params admin** (`?status[$ne]=…`
   injecte un opérateur Mongo ; IDs malformés → CastError 500 au lieu de 400).
   Routes GUARD_ADMIN, lecture seule — à durcir en étape 2 avec un middleware
@@ -236,13 +240,12 @@ déjà couverts au §6 (« Casting/validation léger des query params admin »).
 
 ### Architecture
 
-- **MEDIUM — `JobScheduler` sous `ai-skill` connaît `ai-playground`** :
-  `ai-skill/jobs/job-scheduler.js` require le job de purge du playground (câblage
-  ajouté par la PR2 dans un fichier possédé par la PR1). Assumé : une seule
-  instance `agenda`, PR1 seule reste cohérente (l'import n'existe pas sur
-  `feat/AI-skills-v1`). Refactor = sortir le scheduler vers une composition-root
-  neutre alimentée par des registrars → backlog (c'est un redesign, hors
-  périmètre « corrige, ne redessine pas »).
+- ~~**MEDIUM — `JobScheduler` sous `ai-skill` connaît `ai-playground`**~~ :
+  **sans objet** — le scheduler n'existe plus (review R1/A6). Il n'y a plus de
+  composition root à sortir, ni d'instance `agenda` partagée entre modules.
+  **Impact PR2** : son job de purge des runs de playground n'a plus de
+  `job-scheduler.js` à requérir ; il doit passer au même modèle TTL (index
+  `expireAfterSeconds` sur la collection de runs).
 - **LOW — `manifest-registry.filterMatchesExpertise` miroir manuel de
   `findApplicable`** ayant déjà divergé (clause `language` absente du miroir).
   Impact nul aujourd'hui (les manifests présents déclarent `expertiseFilters: []`). Réaligner ou extraire un prédicat unique → backlog.
@@ -266,8 +269,7 @@ déjà couverts au §6 (« Casting/validation léger des query params admin »).
 - **MEDIUM — 11 fichiers > 300 lignes** dans le périmètre (`.vue` majoritairement
   template+style ; le dense est `skill-invocation.service.js` à 394). Découpe =
   refactor → backlog.
-- **LOW** : `console.error` au lieu de `logger` pour le scheduler dans `index.js`
-  (cohérent avec le style local du fichier) ; `reload()` du playground sans
+- **LOW** : `reload()` du playground sans
   try/catch ; `latencyMillis` interpole `${ms}` brut ; `statusColor` colore
   `CANCELLED` en rouge. Tous cosmétiques/robustesse → backlog.
 
@@ -296,3 +298,186 @@ validé individuellement) :
   expertise plus gros, latence des vues détail ré-implémentée hors `BsLatency`.
 
 Suggestions d'amélioration (hors incohérences) → issues GitHub post-PR.
+
+## 7. Retours de review PR #1075 — traités / reportés
+
+Passe de review externe sur la PR #1075 : 12 retours bug/UX (R1–R12) et 8
+retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
+
+### Traités dans la PR
+
+| Réf           | Sujet                                                                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R1** 🔴     | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous).                                       |
+| **R2** 🔴     | Périmètres d'expertise normalisés des deux côtés + warning quand un périmètre demandé ne matche rien. La garde CI proposée n'a pas été retenue — voir ci-dessous.                                             |
+| **R3** 🟠     | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                                                                    |
+| **R4** 🟠     | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                                                                |
+| **R5** 🟠     | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                                                                  |
+| **R6** 🟠     | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                                                         |
+| **R7** 🟠     | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                                                                    |
+| **R8** 🟡     | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                                                                    |
+| **R9** 🟡     | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                                                         |
+| **A3** 🟠     | Le schéma de sortie est résolu **avant** l'appel provider (il l'était après, d'où un TypeError une fois la requête LLM facturée). Le croisement base↔registre en CI n'a **pas** été retenu — voir ci-dessous. |
+| **A4/A5** 🟡  | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                                                                   |
+| **A7** 🟡     | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                                                       |
+| **A8** 🟡     | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                                                                 |
+| **A1** 🔴     | Cycle de vie versionné factorisé (`versioned-entity.service.js`), avec un test de contrat unique pour les deux entités — voir ci-dessous.                                                                     |
+| **A2** 🟠     | Résolution Group → feature → intégration en un seul endroit (`resolveActiveFeature`), en préservant les messages distincts — voir ci-dessous.                                                                 |
+| **A6** 🟡     | Sans objet : le scheduler n'existe plus (index TTL).                                                                                                                                                          |
+| _hors review_ | Les échecs de résolution (skill absente/archivée, version active manquante, schéma non résolu) sont typés `CONFIG_ERROR` comme le chemin groupe/intégration.                                                  |
+
+Au passage, trois clés i18n dupliquées issues du rebase (bloc `aiFeatures`
+entier dans `fr.js`, `global.savedSuccessfully` dans `fr.js` et `en.js`), toutes
+masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
+`no-dupe-keys` soit déclenché sur ces fichiers.
+
+### Reportés, décision consciente
+
+- **R10** 🟡 — section « Anatomie d'une skill » dans `AI_SKILL_AUTHORING.md`.
+- **R11** 🟡 — garde-fou anti-perte de saisie (~½ journée) et écrasement entre
+  deux panneaux de versions dépliés.
+- **R12** 🟡 — publication d'une version au contenu entièrement vide.
+
+Points relevés hors review et laissés ouverts :
+
+- **Version épinglée ARCHIVED invocable** : `versions.find()` sans filtre de
+  statut. Assumé — c'est le mode épinglé du playground qui l'utilise, la
+  décision appartient donc à la PR2.
+- **PR2 doit passer au TTL** : son job de purge n'a plus de `job-scheduler.js`
+  où se brancher.
+- **`check-skill-usage.js` tourne à vide** (zéro appel `invoke()`, manifest aux
+  tableaux vides, jamais exécuté). À trancher sur la PR2 : le garder pour
+  l'étape 2, le brancher en CI, ou le supprimer.
+
+### A1 et A2 : ce qui a été factorisé
+
+- **A1** 🔴 — **traité** : `services/versioned-entity.service.js` porte le cycle
+  de vie versionné une seule fois (`createVersionedEntityService`). Les deux
+  services le configurent — champs de contenu et, côté skill, la gate de
+  publication (schémas renseignés + cohérence du template), qui est la seule
+  vraie différence de cycle de vie entre les deux entités. Chacun garde ce qui
+  lui appartient : listing, création/patch du document, facettes et impact
+  d'activation côté expertise, schémas par défaut côté skill.
+
+  `skill.service` 335 → 198 l., `expertise.service` 312 → 208 l. Au passage,
+  expertise adopte le descripteur `VERSION_CONTENT_FIELDS` — le point MEDIUM du
+  §6bis — et `sections` en est volontairement absent : le hook `pre('save')` le
+  redérive de `body`, le copier ne ferait que risquer un index périmé.
+
+  **La contrepartie réelle** : `tests/server/ai-skill/services/versioned-entity.test.js`
+  vérifie le contrat de cycle de vie **une fois pour les deux entités**
+  (`describe.each` sur leurs vraies listes de champs). Un correctif de versioning
+  n'a plus à être porté deux fois — ce que cette PR avait déjà dû faire deux fois.
+
+- **A2** 🟠 — **traité** : `ai-feature.service.js` expose désormais
+  `resolveActiveFeature({ groupId, featureType })`, qui renvoie
+  `{ ok: true, feature, integration }` ou `{ ok: false, reason }` parmi
+  `NO_CONFIG` / `FEATURE_INACTIVE` / `NO_INTEGRATION` /
+  `INTEGRATION_INACTIVE`. `resolveGroupIntegration` d'`ai-skill` le consomme et
+  ne garde que ce qui lui est propre : le typage `CONFIG_ERROR`, la traduction
+  de la raison en message (le vocabulaire est celui des skills, pas celui de la
+  machinerie feature) et la lecture du Group, qui porte l'opt-out RGPD et la
+  fenêtre de rétention.
+
+  **Fait maintenant plutôt qu'à l'étape 2** parce que le helper a été _enrichi_
+  et non _modifié_ : `getActiveFeatureWithIntegration` devient un wrapper au
+  contrat `null` inchangé, donc `translation` (4 appels) et `mailing.schema` ne
+  sont pas touchés — et un test verrouille ce contrat. Le compromis que la
+  reviewer signalait (« ne pas perdre les trois messages distincts ») est
+  couvert par un test paramétré sur les quatre raisons.
+
+### R2 : normaliser, et rendre l'échec audible
+
+Le retour proposait trois pistes : (a) normaliser à l'enregistrement, (b) croiser
+les `scope` déclarés dans les manifests avec la base via `check-skill-usage.js`,
+(c) une constante partagée de périmètres.
+
+Retenu : **(a), plus une variante de (b)**.
+
+**(a) Normalisation des deux côtés.** `services/expertise-scope.js` est la seule
+source de vérité de « c'est le même périmètre » : `trim` + minuscules +
+dédoublonnage + tri. Consommé par le service (écriture), le repository
+(requête) et la migration, donc les trois ne peuvent pas diverger. `CTA` saisi
+dans l'UI matche désormais `cta` écrit dans un appel. Migration **obligatoire**
+(`scripts/migrate-expertise-scope-normalize.js`) : sans elle, une expertise
+taguée `CTA` cesse de matcher puisque la lecture normalise.
+
+**(b) Pas dans la CI, dans `findApplicable`.** Le croisement via
+`check-skill-usage.js` aurait eu le même sort que celui d'A3 : le script passe
+`--dry`, aucun workflow ne l'appelle, et sans base joignable il sort en vert. Et
+la question « ce périmètre existe-t-il ? » n'a pas de réponse au build : elle
+dépend de l'environnement. Donc le contrôle vit là où il a la donnée réelle,
+c'est-à-dire à l'appel : un warning listant les périmètres réellement en usage,
+la seule information utile pour corriger.
+
+Le warning se déclenche **aussi quand des expertises transversales sont
+revenues** — c'est le cas qui rendait la panne indétectable : la liste n'est pas
+vide, le prompt part sans la doctrine spécifique, et la sortie est seulement
+« un peu moins bonne ».
+
+**(c) écarté.** Fermer les périmètres par un enum retirerait à l'équipe la
+possibilité d'organiser sa doctrine sans livraison de code, pour se protéger
+d'une faute de frappe que (a) élimine et que (b) rend visible. Disproportionné.
+
+**Ce qui reste non couvert, assumé** : rien n'empêche un synonyme (`cta` vs
+`bouton`). C'est un warning à lire, pas une garantie.
+
+### A3 : traité au runtime, pas dans `check-skill-usage.js`
+
+La recommandation était d'ajouter le croisement `schemaId` base↔registre zod au
+script (~15 lignes, « ça transforme une panne runtime en échec de CI »). Écrit,
+puis retiré après examen — le script est resté identique à la branche de base.
+
+Raisons :
+
+- **Ça n'aurait été un échec de CI dans aucun scénario.** `yarn check-skills`
+  passe `--dry`, qui saute tous les contrôles base ; aucun workflow n'appelle le
+  script ; et lancé sans `--dry` avec une base injoignable il logue
+  `DB check skipped` et **sort en 0**. Un filet qui n'attrape rien.
+- **Le contrôle ne peut structurellement pas être un contrôle de build** : la
+  réponse dépend de l'environnement (une skill ACTIVE en recette peut être
+  absente en prod). Il n'y a pas de vérité à vérifier au moment du build.
+- **Le code vérifie déjà, au bon moment.** La panne se produit à l'invocation ;
+  c'est là qu'elle est détectée, avec la donnée réelle. Avoir besoin d'un
+  contrôle périodique pour surveiller ça signalerait que l'échec est mal traité
+  à l'endroit où il se produit.
+
+Ce qui a été retenu, et qui règle le problème signalé : `getSchema(outputSchemaId)`
+est résolu à l'étape 2 de `invoke()`, à côté du schéma d'entrée, au lieu de
+l'étape 6. Un identifiant qui ne résout plus (schéma renommé ou supprimé en code
+alors qu'une version ACTIVE le référence) échoue désormais avec un message
+explicite **avant** l'appel provider, là où il produisait un TypeError **après**
+une requête LLM facturée.
+
+Point connexe relevé au passage, non traité : quand un appelant **épingle** une
+version (`version: { major, minor }`), la recherche est un `versions.find()`
+**sans filtre de statut** — une version ARCHIVED reste donc invocable par
+épinglage. Vraisemblablement voulu pour le mode épinglé du playground ; à
+trancher côté PR2, qui est la seule consommatrice de l'épinglage.
+
+### Rétention des invocations : TTL au lieu d'un job planifié
+
+Le correctif R1 initial épinglait `agenda@^5`. Revu ensuite : agenda apportait
+une file de jobs distribuée complète (plus son propre `mongodb@4` imbriqué, donc
+un second driver et **une connexion par worker de cluster**) pour une unique
+tâche quotidienne. Remplacé par le mécanisme déjà utilisé par
+`translation-job.schema.js` :
+
+- `AISkillInvocation.expiresAt`, calculé à l'écriture depuis
+  `Group.logRetentionDays` (le Group est déjà chargé par `invoke()` — aucune
+  requête ajoutée ; seul le chemin d'échec `INPUT_VALIDATION`, qui logue avant la
+  résolution du Group, lit la rétention lui-même plutôt que de retomber sur le
+  défaut et de sur-conserver).
+- Index `{ expiresAt: 1 }, { expireAfterSeconds: 0 }` : Mongo purge lui-même.
+- Supprimés : la dépendance `agenda`, `ai-skill/jobs/` (scheduler + job de purge)
+  et le câblage dans `index.js` (dont le wrapper `shutdown` ajouté par la PR,
+  revenu à la forme de `develop`).
+- Backfill des documents antérieurs :
+  `node scripts/migrate-invocation-expires-at.js [--dry-run]` — sans `expiresAt`,
+  un document est invisible pour le moniteur TTL et n'expirerait jamais.
+  Idempotent.
+
+**Compromis assumé** : une rétention modifiée ne se réapplique pas aux documents
+déjà écrits. Aujourd'hui `logRetentionDays` n'est exposé dans aucune UI
+(modifiable en base uniquement) ; si ça change, un `updateMany` recalculant
+`expiresAt` au changement de config suffit.

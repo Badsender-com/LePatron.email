@@ -30,14 +30,21 @@ export default {
       loading: false,
       items: [],
       total: 0,
+      // Server-side pagination and sort: this is the only collection that grows
+      // with usage, so a client-side view of the first page would go silently
+      // wrong past 50 entries.
+      page: 1,
+      itemsPerPage: 50,
+      sortBy: 'startedAt',
+      sortDesc: true,
       filters: {
         skillId: '',
-        featureType: '',
+        invocationSource: '',
         status: null,
         groupId: '',
         startedFrom: null,
         startedTo: null,
-        // Reserved non-productive featureTypes (admin-test, playground, poc.*)
+        // Reserved non-productive sources (admin-test, playground, poc.*)
         // are excluded server-side by default — this opt-in includes them.
         includeNonProductive: false,
       },
@@ -53,6 +60,9 @@ export default {
         text: this.$t(`aiSkills.statuses.${value}`),
       }));
     },
+    // `sortable` mirrors the server whitelist (invocation-log.service.js):
+    // the sort runs in Mongo, so a column it cannot order must not offer the
+    // control. Computed columns (token total, group name, version) are out.
     tableHeaders() {
       return [
         { text: this.$t('aiSkills.invocation.when'), value: 'startedAt' },
@@ -61,9 +71,17 @@ export default {
           text: this.$t('aiSkills.invocation.version'),
           value: 'skillVersion',
           align: 'center',
+          sortable: false,
         },
-        { text: this.$t('aiSkills.invocation.feature'), value: 'featureType' },
-        { text: this.$t('aiSkills.invocation.group'), value: 'group' },
+        {
+          text: this.$t('aiSkills.invocation.feature'),
+          value: 'invocationSource',
+        },
+        {
+          text: this.$t('aiSkills.invocation.group'),
+          value: 'group',
+          sortable: false,
+        },
         { text: this.$t('global.status'), value: 'status' },
         {
           text: this.$t('aiSkills.invocation.latency'),
@@ -74,6 +92,7 @@ export default {
           text: this.$t('aiSkills.invocation.tokens'),
           value: 'tokens',
           align: 'right',
+          sortable: false,
         },
         {
           text: this.$t('aiSkills.invocation.providerModel'),
@@ -118,6 +137,10 @@ export default {
             params[k] = v;
           }
         }
+        params.page = this.page;
+        params.pageSize = this.itemsPerPage;
+        params.sortBy = this.sortBy;
+        params.sortDesc = this.sortDesc;
         const res = await this.$axios.$get(api.aiInvocations(), { params });
         this.items = res.items || [];
         this.total = res.total || 0;
@@ -129,6 +152,32 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    // Any filter change invalidates the current page: page 3 of the previous
+    // result set has nothing to do with page 3 of the new one.
+    applyFilters() {
+      this.page = 1;
+      this.fetchData();
+    },
+    handlePageChange(page) {
+      if (page === this.page) return;
+      this.page = page;
+      this.fetchData();
+    },
+    handleItemsPerPageChange(itemsPerPage) {
+      if (itemsPerPage === this.itemsPerPage) return;
+      this.itemsPerPage = itemsPerPage;
+      this.page = 1;
+      this.fetchData();
+    },
+    handleOptionsChange(options) {
+      const nextSortBy = options.sortBy?.[0] || 'startedAt';
+      const nextSortDesc = options.sortDesc?.[0] ?? true;
+      if (nextSortBy === this.sortBy && nextSortDesc === this.sortDesc) return;
+      this.sortBy = nextSortBy;
+      this.sortDesc = nextSortDesc;
+      this.page = 1;
+      this.fetchData();
     },
     async openDetail(item) {
       try {
@@ -166,17 +215,17 @@ export default {
         hide-details
         clearable
         class="filter-field"
-        @change="fetchData"
+        @change="applyFilters"
       />
       <v-text-field
-        v-model="filters.featureType"
+        v-model="filters.invocationSource"
         :label="$t('aiSkills.filters.feature')"
         dense
         outlined
         hide-details
         clearable
         class="filter-field"
-        @change="fetchData"
+        @change="applyFilters"
       />
       <v-select
         v-model="filters.status"
@@ -189,7 +238,7 @@ export default {
         hide-details
         clearable
         class="filter-field"
-        @change="fetchData"
+        @change="applyFilters"
       />
       <v-text-field
         v-model="filters.groupId"
@@ -199,7 +248,7 @@ export default {
         hide-details
         clearable
         class="filter-field"
-        @change="fetchData"
+        @change="applyFilters"
       />
       <v-menu
         v-model="dateFromMenu"
@@ -221,7 +270,7 @@ export default {
             v-on="on"
             @click:clear="
               filters.startedFrom = null;
-              fetchData();
+              applyFilters();
             "
           />
         </template>
@@ -230,7 +279,7 @@ export default {
           no-title
           @input="
             dateFromMenu = false;
-            fetchData();
+            applyFilters();
           "
         />
       </v-menu>
@@ -254,7 +303,7 @@ export default {
             v-on="on"
             @click:clear="
               filters.startedTo = null;
-              fetchData();
+              applyFilters();
             "
           />
         </template>
@@ -263,7 +312,7 @@ export default {
           no-title
           @input="
             dateToMenu = false;
-            fetchData();
+            applyFilters();
           "
         />
       </v-menu>
@@ -273,7 +322,7 @@ export default {
         dense
         hide-details
         class="mt-0 pt-0"
-        @change="fetchData"
+        @change="applyFilters"
       />
     </div>
 
@@ -281,9 +330,18 @@ export default {
       :headers="tableHeaders"
       :items="items"
       :loading="loading"
+      :server-items-length="total"
+      :page="page"
+      :items-per-page="itemsPerPage"
+      :sort-by="[sortBy]"
+      :sort-desc="[sortDesc]"
+      must-sort
       item-key="_id"
       clickable
       @click:row="openDetail"
+      @update:page="handlePageChange"
+      @update:items-per-page="handleItemsPerPageChange"
+      @update:options="handleOptionsChange"
     >
       <template #item.startedAt="{ item }">
         <span class="text-caption">{{ formatDate(item.startedAt) }}</span>

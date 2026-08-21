@@ -23,18 +23,23 @@ Deux maillons manquaient :
 2. Le playground n'avait **aucune company** à utiliser (pas de sélecteur, pas de
    défaut).
 
-## Contrat à ne jamais violer : `featureType` ≠ `categoryOverride`
+## Contrat à ne jamais violer : `invocationSource` ≠ `categoryOverride`
 
 Deux axes **orthogonaux** que les futurs devs ne doivent pas confondre (gravé en
 JSDoc dans `skill-invocation.service.js`) :
 
-| Axe                                | Sert à                                                                                                                      | Vit où                          |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `featureType` (param d'`invoke()`) | **Analytics** : source de l'appel (`'playground'`, `'admin-test'`, feature productive). Inclusion/exclusion dans les stats. | `AISkillInvocation.featureType` |
-| `categoryOverride` _(étape 2)_     | **Résolution du moteur** : quel `AIFeatureConfig.featureType` alimente l'appel. Défaut = `skill.category`.                  | `resolveGroupIntegration()`     |
+| Axe                                     | Sert à                                                                                                                      | Vit où                               |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `invocationSource` (param d'`invoke()`) | **Analytics** : source de l'appel (`'playground'`, `'admin-test'`, feature productive). Inclusion/exclusion dans les stats. | `AISkillInvocation.invocationSource` |
+| `categoryOverride` _(étape 2)_          | **Résolution du moteur** : quel `AIFeatureConfig.featureType` alimente l'appel. Défaut = `skill.category`.                  | `resolveGroupIntegration()`          |
 
-→ Ne jamais utiliser `featureType` (analytics) pour choisir le moteur, ni la
-catégorie moteur pour les analytics.
+→ Ne jamais utiliser `invocationSource` (analytics) pour choisir le moteur, ni
+la catégorie moteur pour les analytics.
+
+Le param d'`invoke()` s'appelait lui aussi `featureType` : l'invariant tenait
+alors sur la documentation seule. Les deux noms distincts **sont** l'invariant
+désormais (retour de review A7). Migration :
+`node scripts/migrate-invocation-source.js [--dry-run]`.
 
 ## Ce qui a été livré (étape 1)
 
@@ -91,7 +96,7 @@ un groupe **opérateur** (Badsender, ou le groupe interne d'un self-host). On le
 `executeScenario()` : si ni `groupId` (runtime) ni `scenario.groupContext`,
 fallback sur `Groups.findOne({ isPlatform: true })` au lieu de jeter
 « A Group context is required ». Échec explicite seulement si aucun groupe
-plateforme n'est flaggé / n'a de moteur `skill` actif. `featureType: 'playground'`
+plateforme n'est flaggé / n'a de moteur `skill` actif. `invocationSource: 'playground'`
 (analytics) inchangé.
 
 ## Critères de done (étape 1)
@@ -102,7 +107,7 @@ plateforme n'est flaggé / n'a de moteur `skill` actif. `featureType: 'playgroun
    le groupe reste présent dans les listes / le switcher (pas de filtrage).
 3. Le run d'un scénario aboutit avec un output non nul (clé API saisie au
    préalable).
-4. Le contrat `featureType` ≠ `categoryOverride` est documenté (code + ce doc).
+4. Le contrat `invocationSource` ≠ `categoryOverride` est documenté (code + ce doc).
 
 ## Répartition par branche
 
