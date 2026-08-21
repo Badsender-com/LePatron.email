@@ -109,9 +109,9 @@ export default {
 <style lang="scss" scoped>
 .taxonomy-page {
   &__description {
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 14px;
-    margin-bottom: 16px;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
   }
 }
 </style>
