@@ -562,6 +562,36 @@ Vérifié : après `prettier --write` puis `eslint --fix` dans l'ordre de
 `lint-staged`, `prettier --check` passe toujours. Le total ESLint du repo tombe
 de 3926 à 3881.
 
+### Limites connues, à rediscuter (pas des retours de review)
+
+Deux constats soulevés au passage, laissés en l'état sciemment.
+
+**Les réglages RGPD n'ont aucune UI.** `Group.logRetentionDays` et
+`Group.logSkillInvocationContent` fonctionnent côté serveur mais ne sont exposés
+par aucun écran ni route dédiée : seuls un `PUT /groups/:id` fabriqué à la main
+ou une écriture en base les changent.
+
+- La rétention (défaut 30 jours) est bénigne : le TTL purge, et le re-stampage
+  est en place si la valeur change un jour.
+- L'enregistrement du contenu, en revanche, est à `true` par défaut : **le
+  prompt, le contexte et la sortie du LLM sont stockés en clair** dans
+  `AISkillInvocation` et visibles dans l'onglet Invocations. Le flag sert à
+  _couper_ cet enregistrement — c'est l'opt-out annoncé dans la description de
+  la #1075, et il n'est aujourd'hui pas atteignable.
+- Sans conséquence tant que seul le playground super-admin invoque : le contenu
+  stocké est celui de l'équipe. À traiter **avec la PR 2**, quand de vraies
+  saisies utilisateur passeront par là.
+
+**Les champs d'audit ne distinguent pas les personnes.** `role` sur `User` a pour
+enum `[company_admin, regular_user]` : `super_admin` n'en fait pas partie, donc
+aucun compte en base ne peut être super-admin. Le seul l'est en dur dans la
+config (`config.admin.username` / `.password`), avec un `id` constant. Les routes
+du module étant derrière `GUARD_ADMIN`, `owner` / `createdBy` / `updatedBy`
+porteront toujours ce même id : ils tracent « le compte admin », jamais quelle
+personne. Les champs sont conservés — remplis et cohérents avec le reste de
+l'app, prêts si de vrais comptes super-admin arrivent — et la limite est écrite
+dans `userIdOf`. À rediscuter.
+
 ### Rétrogradé par la reviewer
 
 Le gate d'activation ne vérifie pas `hasSchema` : passé de HIGH à LOW, le hook
