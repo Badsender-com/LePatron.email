@@ -4,6 +4,13 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 
 const { trimString } = require('../utils/model');
+
+// `trimString` does `String(value).trim()`, so clearing an optional field by
+// assigning `undefined` stored the literal string "undefined" — which then showed
+// up as a chip reading "undefined" in the taxonomy table. Guard the setter instead
+// of changing the shared helper, which every other schema relies on.
+const trimOptionalString = (value) =>
+  value === undefined || value === null ? value : trimString(value);
 const { GroupModel } = require('../constant/model.names.js');
 const {
   TaxonomyTypeValues,
@@ -39,7 +46,7 @@ const TaxonomyItemSchema = Schema(
     label: {
       type: String,
       required: [true, 'label is required'],
-      set: trimString,
+      set: trimOptionalString,
       // Bounded now, while the collection is still empty: adding a limit once
       // client data exists means a migration.
       maxlength: TaxonomyLimits.LABEL,
@@ -54,7 +61,7 @@ const TaxonomyItemSchema = Schema(
     // constant/email-type-canonical.js for why it is not an enum here.
     canonicalType: {
       type: String,
-      set: trimString,
+      set: trimOptionalString,
       maxlength: TaxonomyLimits.CANONICAL_TYPE,
     },
     // Soft disable: an item still referenced by mailings must keep resolving, so
