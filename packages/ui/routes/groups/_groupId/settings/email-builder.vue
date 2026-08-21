@@ -5,7 +5,7 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupEmailBuilderTab from '~/components/group/email-builder-tab.vue';
-import { IS_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, USER, GROUP, USER_SET } from '~/store/user';
 
 export default {
   name: 'BsPageSettingsEmailBuilder',
@@ -31,6 +31,7 @@ export default {
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
+      sessionGroup: GROUP,
     }),
     showGroupBadge() {
       return this.isAdmin && this.group.name;
@@ -49,6 +50,20 @@ export default {
         app: { i18n: this.$i18n },
       });
       this.group = group;
+
+      // The sidebar decides whether to list "Typologies" from the company held in
+      // the session, not from this page's copy. Without this, a company admin
+      // flips the switch, sees the confirmation, and the entry only appears after
+      // a full page reload. Only when the company edited is the caller's own — a
+      // super admin editing someone else's company must keep their own session.
+      const sessionGroupId =
+        this.sessionGroup && (this.sessionGroup.id || this.sessionGroup._id);
+      if (sessionGroupId && String(sessionGroupId) === String(group.id)) {
+        await this.$store.dispatch(
+          `${USER}/${USER_SET}`,
+          this.$store.state.user.info
+        );
+      }
     },
   },
 };
