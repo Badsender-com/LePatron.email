@@ -95,14 +95,6 @@ export function taxonomyErrorFor(error) {
         field: null,
       };
 
-    case ERROR_CODES.EMAIL_METADATA_DISABLED:
-      return {
-        key: 'taxonomy.errors.featureDisabled',
-        params: {},
-        count: null,
-        field: null,
-      };
-
     default:
       return generic;
   }

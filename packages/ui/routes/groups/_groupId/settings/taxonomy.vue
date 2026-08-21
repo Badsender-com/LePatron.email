@@ -37,20 +37,6 @@ export default {
     showGroupBadge() {
       return this.isAdmin && this.group.name;
     },
-    // The sidebar hides this page when the company opted out, but a bookmarked URL
-    // does not go through the sidebar. Rather than a bare 403, the page explains
-    // where the switch is — a super admin also lands here on a company that has
-    // not opted in.
-    isFeatureEnabled() {
-      return (
-        this.group &&
-        this.group.emailMetadata &&
-        this.group.emailMetadata.enabled === true
-      );
-    },
-    emailBuilderSettingsRoute() {
-      return `/groups/${this.$route.params.groupId}/settings/email-builder`;
-    },
   },
 };
 </script>
@@ -69,7 +55,7 @@ export default {
           {{ group.name }}
         </v-chip>
       </template>
-      <template v-if="isFeatureEnabled" #actions>
+      <template #actions>
         <v-btn
           color="accent"
           elevation="0"
@@ -86,21 +72,7 @@ export default {
           {{ $t('taxonomy.description') }}
         </p>
 
-        <v-alert v-if="!isFeatureEnabled" text type="info" class="mt-4">
-          <p class="mb-2">
-            {{ $t('taxonomy.disabled.message') }}
-          </p>
-          <v-btn
-            :to="emailBuilderSettingsRoute"
-            color="accent"
-            small
-            elevation="0"
-          >
-            {{ $t('taxonomy.disabled.action') }}
-          </v-btn>
-        </v-alert>
-
-        <bs-group-taxonomy-tab v-else ref="taxonomyTab" />
+        <bs-group-taxonomy-tab ref="taxonomyTab" />
       </div>
     </v-container>
   </div>
