@@ -81,7 +81,12 @@ module.exports = {
   // ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  // `~/` is the Nuxt alias for packages/ui. Without this, any UI helper importing
+  // a sibling through the alias cannot be required from a test — which is what
+  // kept the front-end helpers untestable.
+  moduleNameMapper: {
+    '^~/(.*)$': '<rootDir>/packages/ui/$1',
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
