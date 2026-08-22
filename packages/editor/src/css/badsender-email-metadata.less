@@ -1,0 +1,248 @@
+/**
+ * Email metadata panel (#toolmetadata)
+ *
+ * Same slidebar geometry as #toolcomments — see badsender-comments.less — so the
+ * two panels behave identically: fixed to the viewport, sliding in from the right,
+ * pushing #main-edit-area aside.
+ *
+ * The fields are styled here rather than reusing `bs-form-field`: that class is
+ * imported INSIDE badsender-modal.less, so it only exists under a modal scope and
+ * reaches nothing in a slidebar. The look follows the same rules — 12px label
+ * above a 40px input — without depending on a scope this panel is not in.
+ */
+
+@keyframes metadata-slide-in {
+  0% {
+    right: -(@leftsidebar-width + 50px);
+  }
+  100% {
+    right: 0;
+  }
+}
+
+@keyframes metadata-slide-out {
+  0% {
+    right: 0;
+  }
+  100% {
+    right: -(@leftsidebar-width + 50px);
+  }
+}
+
+#toolmetadata.slidebar {
+  position: fixed;
+  left: auto;
+  right: 0;
+  top: var(--top-bar-height, 50px);
+  height: calc(100vh - var(--top-bar-height, 50px));
+  animation: metadata-slide-in 0.2s ease-out 0s 1;
+  border-left: 1px solid var(--gray-300, rgba(0, 0, 0, 0.12));
+  overflow-y: auto;
+
+  &.hidden {
+    left: auto;
+    right: -(@leftsidebar-width + 50px);
+    animation: metadata-slide-out 0.2s ease-out 0s 1;
+  }
+
+  > .pane-title {
+    background: white !important;
+    color: @bs-primary-color !important;
+    font-size: 16px !important;
+  }
+}
+
+.withMetadata #main-edit-area {
+  right: @leftsidebar-width;
+  transition: right 0.2s ease-out;
+}
+
+// Toolbar toggle, aligned on the comments button next to it
+.metadata-button-wrapper {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+
+  &.active .lucide,
+  &:hover .lucide {
+    color: var(--v-accent-base, #00acdc);
+  }
+}
+
+.email-metadata-content {
+  padding: 16px;
+}
+
+.email-metadata {
+  &__intro {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+    margin: 0 0 16px 0;
+  }
+
+  &__field {
+    margin-bottom: 18px;
+  }
+
+  // Label and counter share a line, the counter pushed to the right end: the
+  // count belongs to the field but must not move the input as digits change.
+  &__labelRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    > label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-700, rgba(0, 0, 0, 0.6));
+      margin: 0;
+      // The editor's global styles set a width on labels in some panes; this
+      // panel puts the label on its own line, so it takes the room it needs.
+      width: auto;
+      float: none;
+      text-align: left;
+    }
+  }
+
+  &__input {
+    display: block;
+    width: 100%;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    color: var(--gray-900, rgba(0, 0, 0, 0.87));
+    background: white;
+    border: 1px solid var(--field-border, rgba(0, 0, 0, 0.2));
+    border-radius: var(--r-sm, 4px);
+
+    &:hover:not(:disabled) {
+      border-color: var(--field-border-hover, rgba(0, 0, 0, 0.4));
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--v-accent-base, #00acdc);
+    }
+
+    &:disabled {
+      background: var(--surface-muted, #f5f5f5);
+      color: var(--gray-500, rgba(0, 0, 0, 0.38));
+      cursor: not-allowed;
+    }
+
+    &::placeholder {
+      color: var(--field-placeholder, rgba(0, 0, 0, 0.5));
+    }
+
+    // The native date control needs its own room for the picker glyph.
+    &--date {
+      padding-right: 8px;
+    }
+  }
+
+  &__required {
+    color: var(--color-error, #f44336);
+    margin-left: 2px;
+  }
+
+  &__counter {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+
+    // Out of range is advice, not an error: amber rather than red, and never a
+    // blocking state.
+    &--short,
+    &--long {
+      color: #b26a00;
+      font-weight: 600;
+    }
+
+    &--empty {
+      color: var(--gray-500, rgba(0, 0, 0, 0.38));
+    }
+  }
+
+  &__hint {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+    margin: 4px 0 0 0;
+  }
+
+  // Native select styled like the text inputs: the editor has no select
+  // component, and a custom one here would drift from the rest of the panel.
+  &__select {
+    width: 100%;
+    height: 40px;
+    padding: 0 32px 0 12px;
+    font-size: 0.875rem;
+    color: var(--gray-900, rgba(0, 0, 0, 0.87));
+    background-color: white;
+    border: 1px solid var(--field-border, rgba(0, 0, 0, 0.2));
+    border-radius: var(--r-sm, 4px);
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.54)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+
+    &:hover {
+      border-color: var(--field-border-hover, rgba(0, 0, 0, 0.4));
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--v-accent-base, #00acdc);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-300, rgba(0, 0, 0, 0.12));
+  }
+
+  &__save {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    background: var(--v-accent-base, #00acdc);
+    border: none;
+    border-radius: var(--r-sm, 4px);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.95);
+    }
+
+    &:disabled {
+      background: var(--gray-300, rgba(0, 0, 0, 0.12));
+      color: var(--gray-700, rgba(0, 0, 0, 0.6));
+      cursor: default;
+    }
+  }
+
+  &__feedback {
+    margin: 12px 0 0 0;
+    font-size: 12px;
+
+    &--success {
+      color: #2e7d32;
+    }
+
+    &--error {
+      color: var(--color-error, #f44336);
+    }
+  }
+}

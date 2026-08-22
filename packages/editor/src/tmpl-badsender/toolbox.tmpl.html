@@ -502,3 +502,18 @@
   </div><!-- .comments-content -->
   <!-- /ko -->
 </div>
+
+<!-- Email metadata panel. Same slidebar pattern as #toolcomments: hidden by CSS
+     class rather than removed, so the Vue root inside it is mounted once. Rendered
+     only when the company opted in — `hasEmailMetadata` is false otherwise and the
+     toolbar button does not exist either. -->
+<div id="toolmetadata" class="slidebar" data-bind="css: { hidden: $root.showMetadata() === false }">
+  <div class="close" data-bind="click: $root.showMetadata.bind($element, false);">X</div>
+  <span class="pane-title" data-bind="text: $root.t('email-metadata-title')">Metadata</span>
+
+  <!-- ko if: $root.hasEmailMetadata() -->
+  <div id="email-metadata-panel" class="email-metadata-content">
+    <email-metadata-plugin />
+  </div>
+  <!-- /ko -->
+</div>
