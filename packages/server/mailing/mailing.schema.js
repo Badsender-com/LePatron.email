@@ -592,16 +592,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     );
   }
 
-  // No company on the mailing means a super admin created it; the template's is
-  // then the only reference available, and it is the one the download options
-  // already use.
-  const metadataCompanyId = mailingCompanyId || templateCompanyId;
-
   if (!companiesDiverge) {
-    const metadataCompany =
-      mailingCompanyId && String(mailingCompanyId) !== String(templateCompanyId)
-        ? await Groups.findById(metadataCompanyId)
-        : group;
+    // Past the divergence guard the two companies are the same one, so `group`
+    // — already loaded — IS the mailing's company. No second read.
+    const metadataCompany = group;
 
     if (
       metadataCompany &&
@@ -613,20 +607,26 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         // Better a loud log than a company told it has no typology when the
         // model simply is not registered.
         logger.warn(
-          '[findOneForMosaico] TaxonomyItem model is not registered; the editor panel will show an empty typology list'
+          '[findOneForMosaico] TaxonomyItem model is not registered; the editor section will show an empty typology list'
         );
       }
 
-      const emailTypes = TaxonomyItems
-        ? await TaxonomyItems.find({
-            _company: metadataCompanyId,
-            type: TaxonomyTypes.EMAIL_TYPE,
-            isActive: true,
-          })
-            .select({ label: 1, canonicalType: 1, order: 1 })
-            .sort({ order: 1, label: 1 })
-            .lean()
-        : [];
+      // A mailing with no company of its own cannot have a typology saved on it:
+      // the PATCH refuses `_emailType` with EMAIL_TYPE_COMPANY_MISSING, having no
+      // company to check it against (mailing-metadata.service.js#validateEmailType).
+      // Offering the template company's typologies here would be a select whose
+      // every option fails on save. The subject and the date stay editable.
+      const emailTypes =
+        TaxonomyItems && mailingCompanyId
+          ? await TaxonomyItems.find({
+              _company: mailingCompanyId,
+              type: TaxonomyTypes.EMAIL_TYPE,
+              isActive: true,
+            })
+              .select({ label: 1, canonicalType: 1, order: 1 })
+              .sort({ order: 1, label: 1 })
+              .lean()
+          : [];
 
       emailMetadata = {
         subject: mailing.subject,
