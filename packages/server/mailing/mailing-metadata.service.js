@@ -7,19 +7,14 @@ const { TaxonomyItems } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const modelsUtils = require('../utils/model.js');
-const { writePreheader } = require('./preheader-resolver.js');
 
-// Subject and preheader both end up in email headers; a client has no reason to
-// store more, and `preheader` lands in the Mixed `data` field where nothing else
-// would bound it.
+// A subject ends up in an email header; a client has no reason to store more.
 const MAX_SUBJECT_LENGTH = 255;
-const MAX_PREHEADER_LENGTH = 255;
 
 module.exports = {
   validateMetadataPayload,
   applyMetadataToMailing,
   MAX_SUBJECT_LENGTH,
-  MAX_PREHEADER_LENGTH,
 };
 
 const isDefined = (value) => value !== undefined;
@@ -112,15 +107,21 @@ async function validateEmailType(rawId, { companyId }) {
 }
 
 /**
- * Assign validated metadata onto a mailing document, preheader included.
+ * Assign validated metadata onto a mailing document.
  *
- * `requiredFields` of the company config is deliberately NOT enforced here: it is
+ * The preheader is deliberately absent. It is a template property living in the
+ * Mixed `data` field, and wiring it through this endpoint would mean changing how
+ * our templates declare it — a product question still to be settled. It stays
+ * editable where it always has been: the template's own options in the editor,
+ * persisted with the email.
+ *
+ * `requiredFields` of the company config is likewise NOT enforced here: it is
  * stored and validated in this phase, but making fields mandatory comes later
  * with CRM Governance.
  *
  * @param {Object} mailing a Mailings document
  * @param {Object} payload raw body
- * @returns {Promise<{ preheaderWritten: boolean }>}
+ * @returns {Promise<void>}
  */
 async function applyMetadataToMailing(mailing, payload = {}) {
   const companyId = mailing._company ? String(mailing._company) : null;
@@ -131,24 +132,4 @@ async function applyMetadataToMailing(mailing, payload = {}) {
   Object.keys(validated).forEach((key) => {
     mailing[key] = validated[key];
   });
-
-  let preheaderWritten = false;
-
-  if (isDefined(payload.preheader)) {
-    if (payload.preheader !== null && typeof payload.preheader !== 'string') {
-      throw invalid();
-    }
-    const preheader = payload.preheader || '';
-    if (preheader.length > MAX_PREHEADER_LENGTH) {
-      throw invalid();
-    }
-    const result = writePreheader(mailing.data || {}, preheader);
-    preheaderWritten = result.written;
-    if (preheaderWritten) {
-      // http://mongoosejs.com/docs/schematypes.html#mixed
-      mailing.markModified('data');
-    }
-  }
-
-  return { preheaderWritten };
 }

@@ -5,13 +5,14 @@ const { UnprocessableEntity } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 /**
- * Fields a company may declare as mandatory. `preheader` is in the list even
- * though it is not a mailing field: it is edited through the same panel, and
- * stored in the template's own `data` (see mailing/preheader-resolver.js).
+ * Fields a company may declare as mandatory.
+ *
+ * `preheader` is deliberately absent: it is a template property, not a mailing
+ * field, and it is not part of the metadata this phase edits. Declaring it
+ * mandatory would name a field nothing collects.
  */
 const EMAIL_METADATA_FIELDS = Object.freeze([
   'subject',
-  'preheader',
   'plannedSendDate',
   'emailType',
 ]);
