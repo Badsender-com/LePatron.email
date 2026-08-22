@@ -9,7 +9,19 @@
  * imported INSIDE badsender-modal.less, so it only exists under a modal scope and
  * reaches nothing in a slidebar. The look follows the same rules — 12px label
  * above a 40px input — without depending on a scope this panel is not in.
+ *
+ * Colours come from the tokens the EDITOR declares (badsender-editor.less:44-73):
+ * --gray-*, --error, --success, --accent. The Nuxt app's --field-border, --r-sm,
+ * --color-error and friends do not exist here, so referencing them would mean
+ * shipping a file that never applies its own tokens.
  */
+
+// Geometry shared with #toolcomments (badsender-comments.less): fixed to the
+// viewport, sliding in from the right, pushing #main-edit-area aside. Kept local
+// rather than refactored into a shared mixin, which would mean editing the
+// comments panel's own rules — not something to do from here.
+@metadata-field-border: @comment-gray-300;
+@metadata-field-border-hover: @comment-gray-400;
 
 @keyframes metadata-slide-in {
   0% {
@@ -36,7 +48,7 @@
   top: var(--top-bar-height, 50px);
   height: calc(100vh - var(--top-bar-height, 50px));
   animation: metadata-slide-in 0.2s ease-out 0s 1;
-  border-left: 1px solid var(--gray-300, rgba(0, 0, 0, 0.12));
+  border-left: 1px solid var(--gray-300, #e0e0e0);
   overflow-y: auto;
 
   &.hidden {
@@ -45,10 +57,27 @@
     animation: metadata-slide-out 0.2s ease-out 0s 1;
   }
 
+  // Same header as the comments panel: without the weight, the padding and the
+  // rule below it, the title floats unaligned with the content underneath.
   > .pane-title {
     background: white !important;
     color: @bs-primary-color !important;
     font-size: 16px !important;
+    font-weight: 600 !important;
+    padding: 12px 16px !important;
+    padding-right: 40px !important;
+    border-bottom: 1px solid var(--gray-300, #e0e0e0) !important;
+  }
+
+  > .close {
+    top: 12px;
+    right: 10px;
+    color: var(--gray-600, #757575);
+    font-size: 14px;
+
+    &:hover {
+      color: var(--gray-900, #212121);
+    }
   }
 }
 
@@ -57,16 +86,30 @@
   transition: right 0.2s ease-out;
 }
 
-// Toolbar toggle, aligned on the comments button next to it
+// Toolbar toggle: same size, colour and hit area as .comments-button-wrapper
+// beside it (badsender-comments.less), otherwise it reads as a different kind of
+// control.
 .metadata-button-wrapper {
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  padding: 0 6px;
+  gap: 4px;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.15s ease;
+  border-radius: 2px;
 
-  &.active .lucide,
-  &:hover .lucide {
-    color: var(--v-accent-base, #00acdc);
+  &:hover,
+  &:focus-visible {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &.active {
+    background-color: rgba(255, 255, 255, 0.16);
+  }
+
+  > .lucide {
+    font-size: 18px;
   }
 }
 
@@ -78,7 +121,7 @@
   &__intro {
     font-size: 12px;
     line-height: 1.5;
-    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+    color: var(--gray-700, #616161);
     margin: 0 0 16px 0;
   }
 
@@ -99,7 +142,7 @@
       display: block;
       font-size: 12px;
       font-weight: 500;
-      color: var(--gray-700, rgba(0, 0, 0, 0.6));
+      color: var(--gray-700, #616161);
       margin: 0;
       // The editor's global styles set a width on labels in some panes; this
       // panel puts the label on its own line, so it takes the room it needs.
@@ -115,29 +158,30 @@
     height: 40px;
     box-sizing: border-box;
     padding: 0 12px;
+    font-family: inherit;
     font-size: 0.875rem;
-    color: var(--gray-900, rgba(0, 0, 0, 0.87));
+    color: var(--gray-900, #212121);
     background: white;
-    border: 1px solid var(--field-border, rgba(0, 0, 0, 0.2));
-    border-radius: var(--r-sm, 4px);
+    border: 1px solid @metadata-field-border;
+    border-radius: 4px;
 
     &:hover:not(:disabled) {
-      border-color: var(--field-border-hover, rgba(0, 0, 0, 0.4));
+      border-color: @metadata-field-border-hover;
     }
 
     &:focus {
       outline: none;
-      border-color: var(--v-accent-base, #00acdc);
+      border-color: var(--accent, #00acdc);
     }
 
     &:disabled {
-      background: var(--surface-muted, #f5f5f5);
-      color: var(--gray-500, rgba(0, 0, 0, 0.38));
+      background: var(--gray-100, #f5f5f5);
+      color: var(--gray-600, #757575);
       cursor: not-allowed;
     }
 
     &::placeholder {
-      color: var(--field-placeholder, rgba(0, 0, 0, 0.5));
+      color: var(--gray-600, #757575);
     }
 
     // The native date control needs its own room for the picker glyph.
@@ -147,7 +191,7 @@
   }
 
   &__required {
-    color: var(--color-error, #f44336);
+    color: var(--error, #ff5252);
     margin-left: 2px;
   }
 
@@ -155,25 +199,25 @@
     flex: 0 0 auto;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+    color: var(--gray-700, #616161);
 
     // Out of range is advice, not an error: amber rather than red, and never a
     // blocking state.
     &--short,
     &--long {
-      color: #b26a00;
+      color: #8a5100;
       font-weight: 600;
     }
 
     &--empty {
-      color: var(--gray-500, rgba(0, 0, 0, 0.38));
+      color: var(--gray-600, #757575);
     }
   }
 
   &__hint {
     font-size: 11px;
     line-height: 1.4;
-    color: var(--gray-700, rgba(0, 0, 0, 0.6));
+    color: var(--gray-700, #616161);
     margin: 4px 0 0 0;
   }
 
@@ -183,23 +227,24 @@
     width: 100%;
     height: 40px;
     padding: 0 32px 0 12px;
+    font-family: inherit;
     font-size: 0.875rem;
-    color: var(--gray-900, rgba(0, 0, 0, 0.87));
+    color: var(--gray-900, #212121);
     background-color: white;
-    border: 1px solid var(--field-border, rgba(0, 0, 0, 0.2));
-    border-radius: var(--r-sm, 4px);
+    border: 1px solid @metadata-field-border;
+    border-radius: 4px;
     appearance: none;
     background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.54)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
 
     &:hover {
-      border-color: var(--field-border-hover, rgba(0, 0, 0, 0.4));
+      border-color: @metadata-field-border-hover;
     }
 
     &:focus {
       outline: none;
-      border-color: var(--v-accent-base, #00acdc);
+      border-color: var(--accent, #00acdc);
     }
   }
 
@@ -208,18 +253,19 @@
     justify-content: flex-end;
     margin-top: 24px;
     padding-top: 16px;
-    border-top: 1px solid var(--gray-300, rgba(0, 0, 0, 0.12));
+    border-top: 1px solid var(--gray-300, #e0e0e0);
   }
 
   &__save {
     height: 36px;
     padding: 0 16px;
+    font-family: inherit;
     font-size: 0.875rem;
     font-weight: 500;
     color: white;
-    background: var(--v-accent-base, #00acdc);
+    background: var(--accent, #00acdc);
     border: none;
-    border-radius: var(--r-sm, 4px);
+    border-radius: 4px;
     cursor: pointer;
 
     &:hover:not(:disabled) {
@@ -227,8 +273,8 @@
     }
 
     &:disabled {
-      background: var(--gray-300, rgba(0, 0, 0, 0.12));
-      color: var(--gray-700, rgba(0, 0, 0, 0.6));
+      background: var(--gray-300, #e0e0e0);
+      color: var(--gray-700, #616161);
       cursor: default;
     }
   }
@@ -238,11 +284,13 @@
     font-size: 12px;
 
     &--success {
+      // --success (#4caf50) is 3.0:1 on white, too light for 12px text; this is
+      // the same darkened green used for success states elsewhere.
       color: #2e7d32;
     }
 
     &--error {
-      color: var(--color-error, #f44336);
+      color: var(--error, #ff5252);
     }
   }
 }

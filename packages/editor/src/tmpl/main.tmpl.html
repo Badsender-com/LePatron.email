@@ -46,11 +46,11 @@
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'lucide lucide-fw lucide-image', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
 <!-- ko if: $root.hasEmailMetadata && $root.hasEmailMetadata() -->
-    <span class="metadata-button-wrapper" data-bind="click: function() { $root.showMetadata(!$root.showMetadata()); }, clickBubble: false, css: { active: $root.showMetadata() }, attr: { title: $root.t('email-metadata-toggle'), 'aria-label': $root.t('email-metadata-toggle') }" role="button">
+    <span class="metadata-button-wrapper" tabindex="0" role="button" data-bind="click: $root.toggleMetadata, event: { keydown: $root.toggleMetadataOnKey }, clickBubble: false, css: { active: $root.showMetadata() }, attr: { title: $root.showMetadata() ? $root.t('email-metadata-hide') : $root.t('email-metadata-toggle'), 'aria-label': $root.showMetadata() ? $root.t('email-metadata-hide') : $root.t('email-metadata-toggle'), 'aria-expanded': $root.showMetadata() ? 'true' : 'false' }">
       <span class="lucide lucide-clipboard-list"></span>
     </span>
     <!-- /ko -->
-    <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle') }" role="button">
+    <span class="comments-button-wrapper" tabindex="0" role="button" data-bind="click: function() { $root.showComments(!$root.showComments()); }, event: { keydown: function(d, e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $root.showComments(!$root.showComments()); } return true; } }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle'), 'aria-expanded': $root.showComments() ? 'true' : 'false' }">
       <span class="lucide lucide-messages-square"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>

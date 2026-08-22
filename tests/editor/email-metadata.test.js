@@ -219,12 +219,21 @@ describe('typologyOptions', () => {
 
   // An email may point at a typology deactivated since. Dropping it silently
   // would rewrite the email's typology on the next save.
-  it('keeps a typology that is no longer offered, flagged', () => {
-    const options = typologyOptions(types, 'gone', 'Aucune');
+  it('keeps a typology that is no longer offered, flagged and named apart', () => {
+    const options = typologyOptions(types, 'gone', 'Aucune', 'Désactivée');
     const kept = options.find((o) => o.value === 'gone');
 
     expect(kept).toBeDefined();
     expect(kept.missing).toBe(true);
+    // Not "Aucune": two identical labels would hide the fact that the email
+    // points at a withdrawn typology.
+    expect(kept.text).toBe('Désactivée');
+    expect(options.filter((o) => o.text === 'Aucune')).toHaveLength(1);
+  });
+
+  it('falls back on the empty label when no missing label is given', () => {
+    const options = typologyOptions(types, 'gone', 'Aucune');
+    expect(options.find((o) => o.value === 'gone').text).toBe('Aucune');
   });
 
   it('does not duplicate the current typology when it is still offered', () => {

@@ -296,16 +296,17 @@ module.exports = {
   'email-metadata-title': 'Métadonnées',
   'email-metadata-toggle': 'Afficher les métadonnées',
   'email-metadata-intro':
-    "Ces informations décrivent l'email. Elles ne partent pas dans le message : elles servent à vos équipes et, pour l'objet et le préheader, à ce que voient vos destinataires dans leur boîte.",
+    "Ces informations décrivent l'email pour vos équipes. Seuls l'objet et le préheader sont vus par vos destinataires, dans leur boîte de réception.",
   'email-metadata-subject': "Objet de l'email",
   'email-metadata-subject-placeholder':
-    'Découvrez nos nouveautés de la rentrée',
+    'Ex. : Découvrez nos nouveautés de la rentrée',
   'email-metadata-subject-hint':
     "Entre 30 et 50 caractères : en dessous il n'annonce rien, au-dessus les clients le tronquent.",
   'email-metadata-preheader': 'Préheader',
-  'email-metadata-preheader-placeholder': "Le texte affiché après l'objet",
+  'email-metadata-preheader-placeholder':
+    "Ex. : Livraison offerte jusqu'à dimanche",
   'email-metadata-preheader-hint':
-    "Entre 40 et 130 caractères. Ce champ est celui de « Template Options » : il est enregistré avec l'email.",
+    "Ce texte fait partie du contenu de l'email : il est enregistré avec lui, pas avec les métadonnées.",
   'email-metadata-preheader-unavailable':
     "Ce template ne prévoit pas de préheader. Rien n'est ajouté à votre place.",
   'email-metadata-planned-date': "Date d'envoi prévue",
@@ -322,4 +323,15 @@ module.exports = {
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
+  'email-metadata-counter': '__length__ car. · cible __min__-__max__',
+  'email-metadata-required': 'Champ déclaré obligatoire par votre entreprise',
+  'email-metadata-typology-missing': 'Typologie désactivée',
+  'email-metadata-save-with-email': "Enregistrer et sauvegarder l'email",
+  'email-metadata-saved-with-email': 'Métadonnées et email enregistrés',
+  'email-metadata-error-busy':
+    'Une sauvegarde est déjà en cours, réessayez dans un instant',
+  'email-metadata-error-no-company':
+    "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
+  'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
+  'email-metadata-hide': 'Masquer les métadonnées',
 };

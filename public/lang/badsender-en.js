@@ -287,15 +287,15 @@ module.exports = {
   'email-metadata-title': 'Metadata',
   'email-metadata-toggle': 'Show metadata',
   'email-metadata-intro':
-    'This describes the email. None of it is sent in the message: it serves your team, and — for the subject and preheader — what your recipients see in their inbox.',
+    'This describes the email for your team. Only the subject and the preheader are seen by your recipients, in their inbox.',
   'email-metadata-subject': 'Subject line',
-  'email-metadata-subject-placeholder': 'Discover our new autumn range',
+  'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
   'email-metadata-subject-hint':
     'Between 30 and 50 characters: below that it announces nothing, above it clients truncate it.',
   'email-metadata-preheader': 'Preheader',
-  'email-metadata-preheader-placeholder': 'The text shown after the subject',
+  'email-metadata-preheader-placeholder': 'E.g. Free delivery until Sunday',
   'email-metadata-preheader-hint':
-    'Between 40 and 130 characters. This is the "Template Options" field: it is saved with the email.',
+    "This text is part of the email's content: it is saved with the email, not with the metadata.",
   'email-metadata-preheader-unavailable':
     'This template has no preheader. Nothing is added on your behalf.',
   'email-metadata-planned-date': 'Planned send date',
@@ -311,4 +311,15 @@ module.exports = {
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This typology is no longer available',
+  'email-metadata-counter': '__length__ chars · target __min__-__max__',
+  'email-metadata-required': 'Field your company declared mandatory',
+  'email-metadata-typology-missing': 'Deactivated typology',
+  'email-metadata-save-with-email': 'Save, including the email',
+  'email-metadata-saved-with-email': 'Metadata and email saved',
+  'email-metadata-error-busy':
+    'A save is already running, try again in a moment',
+  'email-metadata-error-no-company':
+    'This email belongs to no company: the typology cannot be saved',
+  'email-metadata-error-invalid': 'One of the values was refused',
+  'email-metadata-hide': 'Hide metadata',
 };

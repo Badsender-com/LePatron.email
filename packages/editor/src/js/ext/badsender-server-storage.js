@@ -6,6 +6,9 @@ const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
 const {
+  EDITOR_ONLY_METADATA_KEYS,
+} = require('../utils/editor-only-metadata-keys');
+const {
   getErrorsForControlQuality,
   displayErrors,
   checkRequiredTrackingParams,
@@ -15,14 +18,7 @@ const {
 function getData(viewModel) {
   // gather meta
   // remove keys that aren't necessary to update
-  const datas = _omit(ko.toJS(viewModel.metadata), [
-      'urlConverter',
-      'template',
-      // Read-only for the editor: the panel patches the values through their own
-      // route, and the typology list has no reason to travel back on every save.
-      'emailMetadata',
-      'emailMetadataConfig',
-    ]);
+  const datas = _omit(ko.toJS(viewModel.metadata), EDITOR_ONLY_METADATA_KEYS);
   datas.data = viewModel.exportJS();
   return datas;
 }
@@ -49,7 +45,11 @@ function loader(opts) {
       };
       // force JSON for bodyparser to catch up
       // => keep types server side
-      $.ajax({
+      //
+      // The promise is returned so a caller can wait for it. The metadata panel
+      // needs that: it triggers this save for the preheader and must not report
+      // success — nor consider the field clean — before the PUT lands.
+      return $.ajax({
         url: updateRoute,
         method: 'PUT',
         contentType: 'application/json',
