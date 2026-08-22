@@ -110,11 +110,11 @@ const MailingSchema = Schema(
     },
     // Strict reference to the company's own taxonomy — no free text. Validated
     // against the mailing's company and the `emailType` taxonomy on write.
-    // NOTE: the preheader is deliberately NOT a field here. It already exists as
-    // a template property in `data` (`data.preheaderText` or
-    // `data.preheaderBlock.preheaderText` depending on the template), and a second
-    // copy would drift from the one that actually reaches the email.
-    // See mailing/preheader-resolver.js
+    // NOTE: the preheader is deliberately NOT a field here, and not part of the
+    // metadata this phase edits at all. It is a template property living in
+    // `data`, editable where it always has been — the template's own options in
+    // the editor. Bringing it into the metadata would mean changing how our
+    // templates declare it, which is a product question still to be settled.
     _emailType: {
       type: ObjectId,
       ref: TaxonomyItemModel,
