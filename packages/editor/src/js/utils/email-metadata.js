@@ -141,16 +141,23 @@ function toFormState(emailMetadata) {
  * @param {Array} emailTypes metadata.emailMetadataConfig.emailTypes
  * @param {string} [currentId] the typology the email points at
  * @param {string} noneLabel translated label for "no typology"
+ * @param {string} [missingLabel] translated label for a deactivated typology;
+ *   distinct from `noneLabel`, otherwise the select shows two identical options
+ *   and the user cannot tell their email points at a withdrawn typology
  * @returns {Array<{value: string, text: string, missing?: boolean}>}
  */
-function typologyOptions(emailTypes, currentId, noneLabel) {
+function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
   const options = (emailTypes || []).map((item) => ({
     value: String(item.id || item._id),
     text: item.label,
   }));
 
   if (currentId && !options.some((o) => o.value === String(currentId))) {
-    options.push({ value: String(currentId), text: noneLabel, missing: true });
+    options.push({
+      value: String(currentId),
+      text: missingLabel || noneLabel,
+      missing: true,
+    });
   }
 
   return [{ value: '', text: noneLabel }].concat(

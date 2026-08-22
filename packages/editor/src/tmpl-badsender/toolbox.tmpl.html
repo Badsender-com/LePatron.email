@@ -507,7 +507,7 @@
      class rather than removed, so the Vue root inside it is mounted once. Rendered
      only when the company opted in — `hasEmailMetadata` is false otherwise and the
      toolbar button does not exist either. -->
-<div id="toolmetadata" class="slidebar" data-bind="css: { hidden: $root.showMetadata() === false }">
+<div id="toolmetadata" class="slidebar" data-bind="css: { hidden: $root.showMetadata() === false }, attr: { 'aria-hidden': $root.showMetadata() ? 'false' : 'true' }">
   <div class="close" data-bind="click: $root.showMetadata.bind($element, false);">X</div>
   <span class="pane-title" data-bind="text: $root.t('email-metadata-title')">Metadata</span>
 

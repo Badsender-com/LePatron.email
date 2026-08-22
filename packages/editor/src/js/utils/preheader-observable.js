@@ -22,6 +22,7 @@
  */
 
 const PREHEADER_PROPERTY = 'preheaderText';
+const PREHEADER_BLOCK = 'preheaderBlock';
 
 const isObservable = (value) =>
   typeof value === 'function' && typeof value.subscribe === 'function';
@@ -51,23 +52,22 @@ function findPreheaderObservable(content) {
     };
   }
 
-  // Not only `preheaderBlock`: a template is free to name its block otherwise, and
-  // scanning by property is what makes this survive that. Own keys only, and the
-  // first match wins — a template with two would be a template bug, and picking
-  // one deterministically beats picking none.
-  const keys = Object.keys(root);
-  for (let i = 0; i < keys.length; i += 1) {
-    const candidate = unwrap(root[keys[i]]);
-    if (
-      hasOwn(candidate, PREHEADER_PROPERTY) &&
-      isObservable(candidate[PREHEADER_PROPERTY])
-    ) {
-      return {
-        observable: candidate[PREHEADER_PROPERTY],
-        location: 'block',
-        blockName: keys[i],
-      };
-    }
+  // `preheaderBlock` by name, and only that name — deliberately narrower than a
+  // scan of every block. The server resolver looks the property up by that exact
+  // name (preheader-resolver.js), so a preheader found here under any other block
+  // would be editable in this panel and invisible to every server-side path: the
+  // metadata PATCH, the listing, the export. Two subsystems disagreeing in
+  // silence is worse than a template shape we do not support.
+  const block = unwrap(root[PREHEADER_BLOCK]);
+  if (
+    hasOwn(block, PREHEADER_PROPERTY) &&
+    isObservable(block[PREHEADER_PROPERTY])
+  ) {
+    return {
+      observable: block[PREHEADER_PROPERTY],
+      location: 'block',
+      blockName: PREHEADER_BLOCK,
+    };
   }
 
   return null;
@@ -90,4 +90,5 @@ module.exports = {
   findPreheaderObservable,
   readPreheader,
   PREHEADER_PROPERTY,
+  PREHEADER_BLOCK,
 };
