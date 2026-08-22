@@ -4,6 +4,9 @@
 var $ = require('jquery');
 var ko = require('knockout');
 const _omit = require('lodash.omit');
+const {
+  EDITOR_ONLY_METADATA_KEYS,
+} = require('./utils/editor-only-metadata-keys');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
@@ -302,14 +305,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   function getTemplateData() {
     // gather meta
     // remove keys that aren't necessary to update
-    const datas = _omit(ko.toJS(viewModel.metadata), [
-      'urlConverter',
-      'template',
-      // Read-only for the editor: the panel patches the values through their own
-      // route, and the typology list has no reason to travel back on every save.
-      'emailMetadata',
-      'emailMetadataConfig',
-    ]);
+    const datas = _omit(ko.toJS(viewModel.metadata), EDITOR_ONLY_METADATA_KEYS);
     datas.data = viewModel.exportJS();
     return datas;
   }
