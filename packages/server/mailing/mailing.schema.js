@@ -14,6 +14,7 @@ const {
   CommentModel,
   TaxonomyItemModel,
 } = require('../constant/model.names');
+const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
@@ -551,6 +552,102 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     translationFeatureConfig.integration.isActive
   );
 
+  // Editorial metadata, exposed only when the company opted in. Two keys on
+  // purpose: the VALUES the panel edits, and the CONFIG it needs to render (the
+  // company's active typologies, and which fields it wants mandatory).
+  //
+  // Scoped on the MAILING's company, not on `group` above. `group` is the
+  // TEMPLATE's company — a deliberate choice for the download options, since a
+  // mailing created by a super admin has no company of its own — but reusing it
+  // here would read the flag and the typology list of whichever company owns the
+  // template. The two are not guaranteed equal, and the write path (the PATCH)
+  // validates against `mailing._company`: reading somewhere else than we write
+  // means offering typologies the save will refuse, and showing one company's
+  // vocabulary inside another company's editor.
+  //
+  // Nothing is exposed when the flag is off — the editor decides whether the
+  // panel exists from the absence of `emailMetadataConfig`, so an opted-out
+  // company cannot even see that the feature is there.
+  //
+  // The preheader is deliberately NOT here: it lives in the template's own
+  // `data`, which the editor already receives and holds live. A copy in the
+  // metadata would be a second value competing with the one that reaches the
+  // sent email.
+  let emailMetadata;
+  let emailMetadataConfig;
+
+  const mailingCompanyId =
+    (mailing._company && (mailing._company._id || mailing._company.id)) || null;
+  const templateCompanyId = group._id;
+
+  // A mailing whose company differs from its template's is an inconsistent
+  // state, not a supported one. Rather than pick a side, expose nothing and say
+  // so: whichever company we chose would be wrong for the other.
+  const companiesDiverge =
+    mailingCompanyId && String(mailingCompanyId) !== String(templateCompanyId);
+
+  if (companiesDiverge) {
+    logger.warn(
+      `[findOneForMosaico] mailing ${mailingId} belongs to company ${mailingCompanyId} but its template belongs to ${templateCompanyId}; email metadata not exposed`
+    );
+  }
+
+  if (!companiesDiverge) {
+    // Past the divergence guard the two companies are the same one, so `group`
+    // — already loaded — IS the mailing's company. No second read.
+    const metadataCompany = group;
+
+    if (
+      metadataCompany &&
+      metadataCompany.emailMetadata &&
+      metadataCompany.emailMetadata.enabled === true
+    ) {
+      const TaxonomyItems = mongoose.models[TaxonomyItemModel];
+      if (!TaxonomyItems) {
+        // Better a loud log than a company told it has no typology when the
+        // model simply is not registered.
+        logger.warn(
+          '[findOneForMosaico] TaxonomyItem model is not registered; the editor section will show an empty typology list'
+        );
+      }
+
+      // A mailing with no company of its own cannot have a typology saved on it:
+      // the PATCH refuses `_emailType` with EMAIL_TYPE_COMPANY_MISSING, having no
+      // company to check it against (mailing-metadata.service.js#validateEmailType).
+      // Offering the template company's typologies here would be a select whose
+      // every option fails on save. The subject and the date stay editable.
+      const emailTypes =
+        TaxonomyItems && mailingCompanyId
+          ? await TaxonomyItems.find({
+              _company: mailingCompanyId,
+              type: TaxonomyTypes.EMAIL_TYPE,
+              isActive: true,
+            })
+              .select({ label: 1, canonicalType: 1, order: 1 })
+              .sort({ order: 1, label: 1 })
+              .lean()
+          : [];
+
+      emailMetadata = {
+        subject: mailing.subject,
+        plannedSendDate: mailing.plannedSendDate,
+        emailTypeId: mailing._emailType,
+      };
+      emailMetadataConfig = {
+        enabled: true,
+        requiredFields: metadataCompany.emailMetadata.requiredFields || [],
+        // Active items only: a deactivated typology must not be offered, but an
+        // email already pointing at one keeps its reference.
+        emailTypes: emailTypes.map((item) => ({
+          id: item._id,
+          label: item.label,
+          canonicalType: item.canonicalType,
+        })),
+        url: { update: `/api/mailings/${mailingId}/metadata` },
+      };
+    }
+  }
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -604,6 +701,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
+      // Spread so both keys are simply absent when the company opted out, rather
+      // than present and undefined — the editor tests for presence.
+      ...(emailMetadataConfig ? { emailMetadata, emailMetadataConfig } : {}),
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata

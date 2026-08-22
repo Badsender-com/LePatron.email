@@ -6,6 +6,9 @@ const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
 const {
+  EDITOR_ONLY_METADATA_KEYS,
+} = require('../utils/editor-only-metadata-keys');
+const {
   getErrorsForControlQuality,
   displayErrors,
   checkRequiredTrackingParams,
@@ -15,7 +18,7 @@ const {
 function getData(viewModel) {
   // gather meta
   // remove keys that aren't necessary to update
-  const datas = _omit(ko.toJS(viewModel.metadata), ['urlConverter', 'template']);
+  const datas = _omit(ko.toJS(viewModel.metadata), EDITOR_ONLY_METADATA_KEYS);
   datas.data = viewModel.exportJS();
   return datas;
 }

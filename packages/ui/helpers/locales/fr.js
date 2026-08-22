@@ -744,7 +744,7 @@ export default {
     metadata: {
       sectionTitle: 'Métadonnées des emails',
       sectionDescription:
-        'Permet de renseigner un objet, un préheader, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
+        'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
       enabled: 'Activer les métadonnées des emails',
       enabledHint:
         'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',

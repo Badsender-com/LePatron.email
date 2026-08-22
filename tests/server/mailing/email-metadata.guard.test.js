@@ -1,10 +1,10 @@
 'use strict';
 
 // The `emailMetadata.enabled` flag is presented as a kill-switch: a company that
-// has not opted in must not end up with metadata on its emails, and the preheader
-// is written into the template `data` that ends up in the sent email. Without a
-// server-side check the flag would only hide fields in the UI, which a request
-// bypassing the UI ignores.
+// has not opted in must not end up with metadata on its emails. `subject` reaches
+// the recipient's inbox and `_emailType` points at a per-company taxonomy, so both
+// need a server-side check — without one the flag would only hide fields in the UI,
+// which a request bypassing the UI ignores.
 //
 // Note the default is the OPPOSITE of GUARD_EMAIL_BUILDER: this feature is off
 // unless a company opts in, so an absent config means disabled.

@@ -283,4 +283,33 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  // email metadata section of the Content tab
+  'email-metadata-title': 'Metadata',
+  'email-metadata-intro':
+    'These details describe the email for your team and your tools. They do not appear in the email.',
+  'email-metadata-subject': 'Subject line',
+  'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
+  'email-metadata-subject-hint': 'Inboxes truncate beyond 50 characters.',
+  'email-metadata-planned-date': 'Planned send date',
+  'email-metadata-planned-date-hint':
+    'For reference only: it triggers no send, and is not carried over to duplicated emails.',
+  'email-metadata-typology': 'Typology',
+  'email-metadata-typology-none': 'None',
+  'email-metadata-typology-empty':
+    'No active typology for your company. They are configured under Settings → General → Typologies.',
+  // Distinct from the top bar's "Save", which saves the email itself: the two
+  // buttons do different jobs and neither triggers the other.
+  'email-metadata-save': 'Save metadata',
+  'email-metadata-saving': 'Saving…',
+  'email-metadata-saved': 'Metadata saved',
+  'email-metadata-error': 'Could not save the metadata',
+  'email-metadata-error-disabled': 'Metadata is not enabled for this company',
+  'email-metadata-error-typology': 'This typology is no longer available',
+  'email-metadata-counter': '__length__ chars · target __min__-__max__',
+  'email-metadata-typology-missing': 'Deactivated typology',
+  'email-metadata-error-no-company':
+    'This email belongs to no company: the typology cannot be saved',
+  'email-metadata-error-invalid': 'One of the values was refused',
+  'email-metadata-preheader-note':
+    'The preheader is set just below, under "Template Options".',
 };

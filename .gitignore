@@ -156,3 +156,7 @@ seed-mailings.js
 backfill-tags.local.js
 
 .notes
+
+# Recette snapshots (scripts/recette-db-snapshot.js) — database extracts, never committed
+lepatron-recette-backups/
+*.bson

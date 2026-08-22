@@ -1,0 +1,230 @@
+/**
+ * Email metadata section (#email-metadata-section)
+ *
+ * A section of the Content tab, beside Template Options and the tracking section —
+ * not a panel. Metadata is a setting of the document, and this tab is where the
+ * document-level properties already live.
+ *
+ * EVERYTHING IS NESTED IN `.mo`, and that is not cosmetic. The editor declares
+ * generic element rules under that class — `.mo h3 { font-size: 1.3em }`,
+ * `.mo select { height: auto; background: white }` (the shorthand wipes a
+ * background-image), `.mo p { margin: 1em 0 }` — all at specificity (0,1,1). A bare
+ * `.email-metadata__title` is (0,1,0) and loses: the title rendered ~18px instead of
+ * 13px, the select lost its chevron and its height, and every hint carried a 1em
+ * margin. `#main-toolbox` carries `class="mo"` (tmpl/main.tmpl.html:100), so the
+ * extra level costs nothing and puts these rules at (0,2,0).
+ *
+ * The fields are styled here rather than reusing `bs-form-field`: that class is
+ * imported INSIDE badsender-modal.less, so it only exists under a modal scope and
+ * reaches nothing here. The look follows the same rules — 12px label above a 40px
+ * input — without depending on a scope this section is not in.
+ *
+ * Colours come from the tokens the EDITOR declares (badsender-editor.less:44-73):
+ * --gray-*, --error, --success, --accent. The Nuxt app's --field-border, --r-sm,
+ * --color-error and friends do not exist here, so referencing them would mean
+ * shipping a file that never applies its own tokens.
+ */
+
+// Text input and select share their whole box: same height, same border, same
+// focus ring. Two copies of eight declarations drifted the moment one was touched.
+.metadata-field-box() {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--gray-900, #212121);
+  background-color: white;
+  border: 1px solid var(--gray-300, #e0e0e0);
+  border-radius: 4px;
+
+  &:hover:not(:disabled) {
+    border-color: var(--gray-400, #bdbdbd);
+  }
+
+  // The editor's own focus ring (badsender-editor.less:551-555). A border colour
+  // alone is a weak focus indicator; nesting in `.mo` means we now outrank
+  // `.mo select:focus`, so we have to carry the ring ourselves.
+  &:focus {
+    outline: none;
+    border-color: var(--accent, #00acdc);
+    box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+  }
+
+  &:disabled {
+    background-color: var(--gray-100, #f5f5f5);
+    color: var(--gray-600, #757575);
+    cursor: not-allowed;
+  }
+}
+
+.mo .email-metadata {
+  // Separated from the section below it the way the tracking section separates
+  // itself: a rule and breathing room, no card, no border.
+  margin-bottom: 24px;
+  // 16px matches the inset the editor gives every level0 property editor
+  // (style_mosaico_tools.less:337); 10px made the label column step sideways
+  // from one section to the next.
+  padding: 0 16px 16px;
+  border-bottom: 1px solid var(--gray-300, #e0e0e0);
+
+  &__title {
+    margin: 16px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray-700, #616161);
+  }
+
+  &__intro {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--gray-700, #616161);
+    margin: 0 0 16px 0;
+  }
+
+  &__field {
+    margin-bottom: 18px;
+  }
+
+  // Label and counter share a line, the counter pushed to the right end: the
+  // count belongs to the field but must not move the input as digits change.
+  &__label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    > label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-700, #616161);
+      margin: 0;
+      // The editor's global styles set a width on labels in some panes; this
+      // section puts the label on its own line, so it takes the room it needs.
+      width: auto;
+      float: none;
+      text-align: left;
+    }
+  }
+
+  &__input {
+    .metadata-field-box();
+    display: block;
+    padding: 0 12px;
+
+    &::placeholder {
+      color: var(--gray-600, #757575);
+    }
+
+    // The native date control needs its own room for the picker glyph.
+    &--date {
+      padding-right: 8px;
+    }
+  }
+
+  &__counter {
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--gray-700, #616161);
+
+    // Out of range is advice, not an error: amber rather than red, and never a
+    // blocking state. #8a5100 is 7.3:1 on white — the token --warning (#fb8c00)
+    // would be 2.3:1 at this size.
+    &--short,
+    &--long {
+      color: #8a5100;
+      font-weight: 600;
+    }
+
+    &--empty {
+      color: var(--gray-600, #757575);
+    }
+  }
+
+  &__hint {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--gray-700, #616161);
+    margin: 4px 0 0 0;
+  }
+
+  // Native select boxed like the text inputs: the editor has no select component,
+  // and a custom one here would drift from the rest of the tab.
+  &__select {
+    .metadata-field-box();
+    padding: 0 32px 0 12px;
+    appearance: none;
+    // Same chevron the editor draws on its own selects
+    // (badsender-editor.less:703-713), same grey.
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray-300, #e0e0e0);
+    // The feedback message shares this row, so saving must not shift the section
+    // below it — the line is reserved whether a message is showing or not.
+    min-height: 36px;
+  }
+
+  &__save {
+    flex: 0 0 auto;
+    height: 36px;
+    padding: 0 16px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+    background: var(--accent, #00acdc);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.95);
+    }
+
+    // Without this the button has no visible focus state at all for a keyboard
+    // user: it has no border to recolour.
+    &:focus-visible {
+      outline: 2px solid var(--accent, #00acdc);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      background: var(--gray-300, #e0e0e0);
+      color: var(--gray-700, #616161);
+      cursor: default;
+    }
+  }
+
+  &__feedback {
+    margin: 0;
+    font-size: 12px;
+    text-align: right;
+
+    &--success {
+      // --success (#4caf50) is 3.0:1 on white, too light for 12px text; this is
+      // the same darkened green used for success states elsewhere.
+      color: #2e7d32;
+    }
+
+    &--error {
+      // --error (#ff5252) is 3.2:1 on white — under the 4.5:1 the UX guidelines
+      // require. Same red the tracking section uses for its own errors.
+      color: #d32f2f;
+    }
+  }
+}

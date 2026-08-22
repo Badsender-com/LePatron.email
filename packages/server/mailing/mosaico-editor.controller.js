@@ -22,8 +22,22 @@ function exposeHelpersToPug(req, res, next) {
     isDev: config.isDev,
     host: config.host,
   };
+  // Serialised into a `<script>` block through Pug's UNESCAPED interpolation
+  // (`!{ printJS(data) }` in mosaico-editor.pug). JSON.stringify does not escape
+  // `/`, so any string in the payload containing `</script>` closes the tag and
+  // executes what follows on the application origin.
+  //
+  // The payload has always carried user-controlled strings (the email name, the
+  // whole template `data`); this escaping closes the sink for all of them at
+  // once. Escaping `<` and `>` as unicode sequences is inert inside a JS string
+  // literal and cannot break the parse; U+2028/U+2029 are line terminators in
+  // JS but not in JSON.
   res.locals.printJS = function (data) {
-    return JSON.stringify(data, null, '  ');
+    return JSON.stringify(data, null, '  ')
+      .replace(/</g, '\\u003C')
+      .replace(/>/g, '\\u003E')
+      .replace(/\u2028/g, '\\u2028')
+      .replace(/\u2029/g, '\\u2029');
   };
   next();
 }
