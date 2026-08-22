@@ -945,7 +945,7 @@ export default {
     metadata: {
       sectionTitle: 'Email metadata',
       sectionDescription:
-        'Lets your team set a subject, a preheader, a planned send date and a typology on each email, instead of retyping them on every send.',
+        'Lets your team set a subject, a planned send date and a typology on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',

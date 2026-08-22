@@ -68,7 +68,11 @@ describe('sanitizeEmailMetadata — requiredFields', () => {
     ).toEqual(['subject']);
   });
 
-  it.each([['language'], ['brand'], ['SUBJECT'], ['']])(
+  // `preheader` was a known field until the preheader left this phase. Pinned by
+  // name rather than only through the EMAIL_METADATA_FIELDS iteration above:
+  // dropping a value from that constant fails no test on its own, so nothing would
+  // notice if it came back.
+  it.each([['preheader'], ['language'], ['brand'], ['SUBJECT'], ['']])(
     'refuses the unknown field %p',
     (field) => {
       expect(() => sanitizeEmailMetadata({ requiredFields: [field] })).toThrow(

@@ -183,7 +183,12 @@ describe('findOneForMosaico — the metadata follow the mailing company', () => 
 
   // A mailing created by a super admin has no company of its own; the template's
   // is then the only reference, and it is the one the download options use.
-  it('falls back on the template company for a mailing without one', async () => {
+  // A mailing with no company of its own (super admin creation) keeps the subject
+  // and the date, but is offered NO typology: the PATCH refuses `_emailType` with
+  // EMAIL_TYPE_COMPANY_MISSING, having no company to check it against. Offering the
+  // template company's typologies would be a select whose every option fails on
+  // save.
+  it('offers no typology for a mailing without a company', async () => {
     const context = makeContext({
       companyFlag: enabled,
       mailingOverrides: { _company: undefined },
@@ -192,9 +197,8 @@ describe('findOneForMosaico — the metadata follow the mailing company', () => 
     const result = await call(context);
 
     expect(result.metadata.emailMetadataConfig.enabled).toBe(true);
-    expect(String(context.taxonomyFind.mock.calls[0][0]._company)).toBe(
-      String(COMPANY)
-    );
+    expect(result.metadata.emailMetadataConfig.emailTypes).toEqual([]);
+    expect(context.taxonomyFind).not.toHaveBeenCalled();
   });
 });
 

@@ -22,10 +22,12 @@
  * the same database, and `--yes` was passed. An interrupted restore leaves the
  * collections it had already emptied in a partial state — there is no transaction.
  *
- * The dump excludes credentials. `users` carries password hashes and reset
- * tokens, `companies` stores `ftpPassword` and `ftpSshKey` in clear; none of that
- * is needed to replay a recette, and a world-readable file in a home directory is
- * not where it belongs. Files are written 0600 in a 0700 directory all the same.
+ * The dump excludes credentials. `users` carries password hashes, session tokens
+ * and a connection log; `companies` stores `ftpPassword` and `ftpSshKey` (encrypted
+ * at rest by the schema's encryption plugin, so a raw-driver dump would write
+ * ciphertext nobody can use anyway). None of it is needed to replay a recette, and
+ * a file in a home directory is not where it belongs. Files are written 0600 in a
+ * 0700 directory all the same.
  */
 
 const fs = require('fs');
@@ -52,15 +54,17 @@ const COLLECTIONS = [
 const DEFAULT_ROOT = path.join(os.homedir(), 'lepatron-recette-backups');
 
 // Never dumped: replaying a recette needs none of it, and a plain file in a home
-// directory is the wrong place for a credential.
+// directory is the wrong place for a credential — nor for the connection log that
+// `sessionMetadata` holds (IP, user agent, sign-in time).
+// Only fields that exist in user.schema.js are listed: a name that matches nothing
+// reads as a protection that is not actually in place.
 const EXCLUDED_FIELDS = {
   users: {
     password: 0,
     token: 0,
     tokenExpire: 0,
-    resetToken: 0,
-    resetTokenExpiration: 0,
     activeSessionId: 0,
+    sessionMetadata: 0,
   },
   companies: { ftpPassword: 0, ftpSshKey: 0 },
 };
@@ -80,6 +84,32 @@ function redactUri(uri) {
 }
 
 /**
+ * Whether a connection string points at this machine.
+ *
+ * The HOST is what matters, not the string: an unanchored search would accept
+ * `mongodb://prod.example.com/db?replicaSet=localhost`.
+ *
+ * @param {string} uri
+ * @returns {boolean}
+ */
+function isLocalHost(uri) {
+  try {
+    // `mongodb:` is not a scheme URL knows how to parse; `http:` is, and only the
+    // host is read out of it.
+    const { hostname } = new URL(
+      String(uri).replace(/^mongodb(\+srv)?:/, 'http:')
+    );
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '[::1]'
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Restore empties collections. It runs only against a local development database
  * named by the dump itself, and only when explicitly confirmed.
  *
@@ -96,7 +126,7 @@ function assertRestoreIsSafe(manifest) {
       `refusing to restore: config.isDev is ${config.isDev}, this is not a development environment`
     );
   }
-  if (!/(localhost|127\.0\.0\.1)/.test(config.database)) {
+  if (!isLocalHost(config.database)) {
     throw new Error(
       `refusing to restore: ${redactUri(
         config.database
@@ -237,8 +267,18 @@ async function restore(dir) {
 
 async function list(dir) {
   if (!dir) throw new Error('list requires the dump directory');
+
+  // The manifest's list, like restore reads it: listing the constant instead would
+  // show `dump -` for a collection restore is simply going to skip, which reads as
+  // "empty in the dump" rather than "not in this dump".
+  const manifestPath = path.join(dir, 'MANIFEST.json');
+  const collections = fs.existsSync(manifestPath)
+    ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).collections ||
+      COLLECTIONS
+    : COLLECTIONS;
+
   await withDb(async (db) => {
-    for (const name of COLLECTIONS) {
+    for (const name of collections) {
       const file = path.join(dir, `${name}.bson`);
       const dumped = fs.existsSync(file) ? readBson(file).length : '-';
       const current = await db.collection(name).countDocuments();

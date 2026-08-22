@@ -11,10 +11,20 @@ const modelsUtils = require('../utils/model.js');
 // A subject ends up in an email header; a client has no reason to store more.
 const MAX_SUBJECT_LENGTH = 255;
 
+// The whole endpoint contract. A key outside this list is refused rather than
+// dropped: `preheader` is the case that matters — a client still sending it would
+// otherwise get a 200 and believe it saved something.
+const KNOWN_FIELDS = Object.freeze([
+  'subject',
+  'plannedSendDate',
+  '_emailType',
+]);
+
 module.exports = {
   validateMetadataPayload,
   applyMetadataToMailing,
   MAX_SUBJECT_LENGTH,
+  KNOWN_FIELDS,
 };
 
 const isDefined = (value) => value !== undefined;
@@ -28,6 +38,11 @@ const invalid = () =>
  *
  * `null` is meaningful and distinct from `undefined`: it clears the field.
  *
+ * An unknown key is a 422, like taxonomy.service.js does on the neighbouring
+ * service. Two guarantees follow: no caller is silently ignored, and `validated`
+ * is built field by field — so nothing from the payload can reach the mailing on
+ * its own, not `data`, not `_company`, not a Mongo operator.
+ *
  * @param {Object} payload raw body
  * @param {Object} options
  * @param {string|ObjectId|null} options.companyId company the mailing belongs to
@@ -35,6 +50,13 @@ const invalid = () =>
  */
 async function validateMetadataPayload(payload = {}, { companyId } = {}) {
   const validated = {};
+
+  const unknown = Object.keys(payload || {}).filter(
+    (key) => !KNOWN_FIELDS.includes(key)
+  );
+  if (unknown.length > 0) {
+    throw invalid();
+  }
 
   if (isDefined(payload.subject)) {
     if (payload.subject !== null && typeof payload.subject !== 'string') {

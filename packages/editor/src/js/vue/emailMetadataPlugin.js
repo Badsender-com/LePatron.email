@@ -1,3 +1,5 @@
+'use strict';
+
 const Vue = require('vue/dist/vue.common');
 const axios = require('axios');
 
@@ -7,9 +9,14 @@ const {
   toFormState,
   typologyOptions,
   hasMetadataChanges,
+  errorKeyFor,
   SUBJECT_HARD_LIMIT,
 } = require('../utils/email-metadata');
 const template = require('./components/email-metadata/email-metadata.template');
+
+// The mounted Vue instance, kept so `dispose` can tear it down when the editor
+// swaps templates (template-loader.js:623 calls the hook).
+let app = null;
 
 /**
  * The "Metadata" section of the Content tab: subject, planned send date, typology.
@@ -100,7 +107,9 @@ module.exports = {
       },
 
       methods: {
-        t: (key) => vm.t(key),
+        // The second argument matters: vm.t(key, params) interpolates __token__
+        // placeholders, and dropping it would lose them without an error.
+        t: (key, params) => vm.t(key, params),
 
         counterLabel(count) {
           return vm.t('email-metadata-counter', {
@@ -136,35 +145,15 @@ module.exports = {
       template,
     });
 
-    new Vue({ el: '#email-metadata-section' });
+    app = new Vue({ el: '#email-metadata-section' });
+  },
+
+  // Called by the template loader when the editor swaps templates. Without it the
+  // Vue instance outlives its node and keeps a closure over a stale config.
+  dispose() {
+    if (app) {
+      app.$destroy();
+      app = null;
+    }
   },
 };
-
-/**
- * A server error code mapped onto a translated message. A raw server message is
- * never shown: it is a code, or an untranslated developer sentence.
- *
- * @param {Error} error
- * @returns {string} an i18n key
- */
-function errorKeyFor(error) {
-  const code =
-    (error &&
-      error.response &&
-      error.response.data &&
-      error.response.data.message) ||
-    null;
-
-  switch (code) {
-    case 'EMAIL_METADATA_DISABLED':
-      return 'email-metadata-error-disabled';
-    case 'EMAIL_TYPE_NOT_FOUND':
-      return 'email-metadata-error-typology';
-    case 'EMAIL_TYPE_COMPANY_MISSING':
-      return 'email-metadata-error-no-company';
-    case 'INVALID_EMAIL_METADATA':
-      return 'email-metadata-error-invalid';
-    default:
-      return 'email-metadata-error';
-  }
-}

@@ -1,6 +1,6 @@
 'use strict';
 
-// The editor has no component test harness, so the panel's decisions live in a
+// The editor has no component test harness, so the section's decisions live in a
 // helper module and are pinned here: what the counters say, how a date crosses
 // the `<input type="date">` boundary without shifting a day, what the PATCH
 // carries — and above all what it does NOT carry.
@@ -14,7 +14,9 @@ const {
   toFormState,
   typologyOptions,
   hasMetadataChanges,
+  errorKeyFor,
   SUBJECT_RANGE,
+  SUBJECT_HARD_LIMIT,
 } = require('../../packages/editor/src/js/utils/email-metadata.js');
 
 describe('counters', () => {
@@ -27,7 +29,7 @@ describe('counters', () => {
     expect(subjectCounter('x'.repeat(51)).state).toBe('long');
   });
 
-  it('reports the length so the panel can show "n / max"', () => {
+  it('reports the length so the section can show "n / max"', () => {
     expect(subjectCounter('abc')).toEqual({
       length: 3,
       min: 30,
@@ -123,7 +125,7 @@ describe('buildMetadataPayload', () => {
   it('never carries the preheader, even if the caller passes one', () => {
     const payload = buildMetadataPayload({
       subject: 'x',
-      preheader: 'ne doit pas partir',
+      preheader: 'must not travel',
     });
 
     expect(payload).not.toHaveProperty('preheader');
@@ -268,5 +270,43 @@ describe('hasMetadataChanges', () => {
         { subject: undefined, plannedSendDate: null, emailTypeId: '' }
       )
     ).toBe(false);
+  });
+});
+
+describe('errorKeyFor', () => {
+  const asAxiosError = (code) => ({ response: { data: { message: code } } });
+
+  // Each server code has to reach its own message: a typo would degrade silently
+  // to the generic one, and the section is the only place these are shown.
+  it.each([
+    ['EMAIL_METADATA_DISABLED', 'email-metadata-error-disabled'],
+    ['EMAIL_TYPE_NOT_FOUND', 'email-metadata-error-typology'],
+    ['EMAIL_TYPE_COMPANY_MISSING', 'email-metadata-error-no-company'],
+    ['INVALID_EMAIL_METADATA', 'email-metadata-error-invalid'],
+  ])('maps %s onto %s', (code, key) => {
+    expect(errorKeyFor(asAxiosError(code))).toBe(key);
+  });
+
+  // Anything else falls back on the generic message rather than showing a raw
+  // server sentence, which would be untranslated at best.
+  it.each([
+    ['an unknown code', asAxiosError('SOMETHING_ELSE')],
+    ['a network error with no response', new Error('Network Error')],
+    ['no error at all', null],
+    ['a response with no body', { response: {} }],
+  ])('falls back to the generic message for %s', (_case, error) => {
+    expect(errorKeyFor(error)).toBe('email-metadata-error');
+  });
+});
+
+// Two constants, two packages, one rule. The editor warns at 50 and hard-stops the
+// input at the server's own maximum; if the server lowers it, the input would
+// accept a value the PATCH refuses.
+describe('SUBJECT_HARD_LIMIT', () => {
+  it('matches the server MAX_SUBJECT_LENGTH', () => {
+    const {
+      MAX_SUBJECT_LENGTH,
+    } = require('../../packages/server/mailing/mailing-metadata.service.js');
+    expect(SUBJECT_HARD_LIMIT).toBe(MAX_SUBJECT_LENGTH);
   });
 });

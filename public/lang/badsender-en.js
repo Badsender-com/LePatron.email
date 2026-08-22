@@ -283,22 +283,23 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
-  // email metadata panel
+  // email metadata section of the Content tab
   'email-metadata-title': 'Metadata',
   'email-metadata-intro':
-    'This describes the email for your team and your tools. It does not change its content.',
+    'These details describe the email for your team and your tools. They do not appear in the email.',
   'email-metadata-subject': 'Subject line',
   'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
-  'email-metadata-subject-hint':
-    'Between 30 and 50 characters: below that it announces nothing, above it clients truncate it.',
+  'email-metadata-subject-hint': 'Inboxes truncate beyond 50 characters.',
   'email-metadata-planned-date': 'Planned send date',
   'email-metadata-planned-date-hint':
-    'For reference only: it triggers no send. It is not carried over to copies.',
+    'For reference only: it triggers no send, and is not carried over to duplicated emails.',
   'email-metadata-typology': 'Typology',
   'email-metadata-typology-none': 'None',
   'email-metadata-typology-empty':
     'No active typology for your company. They are configured under Settings → General → Typologies.',
-  'email-metadata-save': 'Save',
+  // Distinct from the top bar's "Save", which saves the email itself: the two
+  // buttons do different jobs and neither triggers the other.
+  'email-metadata-save': 'Save metadata',
   'email-metadata-saving': 'Saving…',
   'email-metadata-saved': 'Metadata saved',
   'email-metadata-error': 'Could not save the metadata',
@@ -309,4 +310,6 @@ module.exports = {
   'email-metadata-error-no-company':
     'This email belongs to no company: the typology cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
+  'email-metadata-preheader-note':
+    'The preheader is set just below, under "Template Options".',
 };
