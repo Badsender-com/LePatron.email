@@ -51,6 +51,11 @@ const invalid = () =>
  *
  * `null` is meaningful and distinct from `undefined`: it clears the field.
  *
+ * An unknown key is a 422, like taxonomy.service.js does on the neighbouring
+ * service. Two guarantees follow: no caller is silently ignored, and `validated`
+ * is built field by field — so nothing from the payload can reach the mailing on
+ * its own, not `data`, not `_company`, not a Mongo operator.
+ *
  * @param {Object} payload raw body
  * @param {Object} options
  * @param {string|ObjectId|null} options.companyId company the mailing belongs to
@@ -60,6 +65,13 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
   assertNoUnknownKey(payload);
 
   const validated = {};
+
+  const unknown = Object.keys(payload || {}).filter(
+    (key) => !KNOWN_FIELDS.includes(key)
+  );
+  if (unknown.length > 0) {
+    throw invalid();
+  }
 
   if (isDefined(payload.subject)) {
     if (payload.subject !== null && typeof payload.subject !== 'string') {

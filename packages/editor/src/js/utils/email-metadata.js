@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Pure helpers for the editor's email-metadata panel.
+ * Pure helpers for the editor's email-metadata section.
  *
- * Everything the panel decides lives here rather than in the Vue component: the
+ * Everything the section decides lives here rather than in the Vue component: the
  * editor has no component test harness, so anything left in the component is
  * untested. Covered by tests/editor/email-metadata.test.js.
  */
@@ -13,7 +13,7 @@
 // and it says nothing.
 const SUBJECT_RANGE = { min: 30, max: 50 };
 // Mirrors MAX_SUBJECT_LENGTH in packages/server/mailing/mailing-metadata.service.js.
-// The panel warns; the server refuses.
+// The section warns; the server refuses.
 const SUBJECT_HARD_LIMIT = 255;
 
 /**
@@ -106,7 +106,7 @@ function buildMetadataPayload(form) {
 }
 
 /**
- * The form state the panel opens with, from what the server exposed.
+ * The form state the section opens with, from what the server exposed.
  *
  * @param {Object} [emailMetadata] metadata.emailMetadata
  * @returns {{subject: string, plannedSendDate: string, emailTypeId: string}}
@@ -160,7 +160,7 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
  * unchanged payload is a request for nothing.
  *
  * @param {Object} form current form state
- * @param {Object} initial state the panel opened with
+ * @param {Object} initial state the section opened with
  * @returns {boolean}
  */
 function hasMetadataChanges(form, initial) {
@@ -172,9 +172,45 @@ function hasMetadataChanges(form, initial) {
   );
 }
 
+/**
+ * A server error code mapped onto an i18n key.
+ *
+ * Lives here, not in the component, for the reason the file header gives: this is
+ * the most breakable part of the save path — a typo in one of the four codes
+ * degrades silently to the generic message — and the component is untested.
+ *
+ * A raw server message is never shown: it is a code, or an untranslated developer
+ * sentence.
+ *
+ * @param {Error} error an axios error
+ * @returns {string} an i18n key
+ */
+function errorKeyFor(error) {
+  const code =
+    (error &&
+      error.response &&
+      error.response.data &&
+      error.response.data.message) ||
+    null;
+
+  switch (code) {
+    case 'EMAIL_METADATA_DISABLED':
+      return 'email-metadata-error-disabled';
+    case 'EMAIL_TYPE_NOT_FOUND':
+      return 'email-metadata-error-typology';
+    case 'EMAIL_TYPE_COMPANY_MISSING':
+      return 'email-metadata-error-no-company';
+    case 'INVALID_EMAIL_METADATA':
+      return 'email-metadata-error-invalid';
+    default:
+      return 'email-metadata-error';
+  }
+}
+
 module.exports = {
   SUBJECT_RANGE,
   SUBJECT_HARD_LIMIT,
+  errorKeyFor,
   counterState,
   subjectCounter,
   toDateInputValue,

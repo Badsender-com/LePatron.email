@@ -257,6 +257,32 @@ describe('validateMetadataPayload — emailTypeId scoping', () => {
     expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
   });
 
+  // The security property of this endpoint. `validated` is built field by field,
+  // AND an unknown key is refused outright — so a payload can neither smuggle a
+  // mailing field through nor be silently half-honoured.
+  it.each([
+    ['data', { data: { preheaderText: 'injected' } }],
+    ['previewHtml', { previewHtml: '<script>alert(1)</script>' }],
+    ['_company', { _company: COMPANY_B }],
+    ['name', { name: 'renamed' }],
+    ['$set', { $set: { _company: COMPANY_B } }],
+    // The one a real client might still send, and the reason this is a 422 rather
+    // than a silent drop: it would otherwise get a 200 and believe it saved.
+    ['preheader', { preheader: 'no longer a metadata' }],
+  ])('refuses a payload carrying %s', async (_name, extra) => {
+    await expect(
+      validateMetadataPayload(
+        { subject: 'ok', ...extra },
+        {
+          companyId: COMPANY_A,
+        }
+      )
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+  });
+
   it('still lets a company-less mailing set a subject and a date', async () => {
     const result = await validateMetadataPayload(
       { subject: 'ok', plannedSendDate: '2026-09-01T08:00:00.000Z' },
@@ -325,36 +351,45 @@ describe('validateMetadataPayload — unknown keys', () => {
 });
 
 describe('applyMetadataToMailing', () => {
+  function makeMailing(overrides = {}) {
+    return {
+      _company: mongoose.Types.ObjectId(COMPANY_A),
+      data: { preheaderText: 'template property, untouched' },
+      ...overrides,
+    };
+  }
+
   // The preheader is not part of this endpoint: it is a template property, and
-  // wiring it through here would mean changing how our templates declare it.
-  // It is REFUSED rather than ignored — a 200 carrying the other fields looks
-  // like a success, so a client sending it would never learn it was dropped.
-  it('refuses a preheader in the payload and leaves the mailing untouched', async () => {
+  // wiring it through here would mean changing how our templates declare it. The
+  // refusal happens in the validation, so nothing reaches `data` — the field this
+  // endpoint used to write into.
+  it('refuses a payload carrying a preheader, leaving data untouched', async () => {
     const mailing = makeMailing();
 
     await expect(
       applyMetadataToMailing(mailing, {
         subject: 'Soldes',
-        preheader: 'should do nothing',
+        preheader: 'no longer a metadata',
       })
-    ).rejects.toMatchObject({
-      status: 422,
-      message: ERROR_CODES.INVALID_EMAIL_METADATA,
-    });
+    ).rejects.toMatchObject({ status: 422 });
 
     expect(mailing.subject).toBeUndefined();
-    expect(mailing.data).toEqual({ preheaderText: 'old' });
-    expect(mailing.markModified).not.toHaveBeenCalled();
+    expect(mailing.data).toEqual({
+      preheaderText: 'template property, untouched',
+    });
   });
 
-  function makeMailing(overrides = {}) {
-    return {
-      _company: mongoose.Types.ObjectId(COMPANY_A),
-      data: { preheaderText: 'old' },
-      markModified: jest.fn(),
-      ...overrides,
-    };
-  }
+  // Emptying a field must clear it, not store a blank. The service assigns
+  // `undefined`, which mongoose turns into an $unset at save — the one subtle
+  // behaviour left in the function now that markModified is gone.
+  it('clears a field by assigning undefined rather than an empty string', async () => {
+    const mailing = makeMailing({ subject: 'à effacer' });
+
+    await applyMetadataToMailing(mailing, { subject: '' });
+
+    expect('subject' in mailing).toBe(true);
+    expect(mailing.subject).toBeUndefined();
+  });
 
   it('assigns only the fields the payload carries', async () => {
     const mailing = makeMailing({
