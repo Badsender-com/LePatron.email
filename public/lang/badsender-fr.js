@@ -292,4 +292,34 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  // email metadata panel
+  'email-metadata-title': 'Métadonnées',
+  'email-metadata-toggle': 'Afficher les métadonnées',
+  'email-metadata-intro':
+    "Ces informations décrivent l'email. Elles ne partent pas dans le message : elles servent à vos équipes et, pour l'objet et le préheader, à ce que voient vos destinataires dans leur boîte.",
+  'email-metadata-subject': "Objet de l'email",
+  'email-metadata-subject-placeholder':
+    'Découvrez nos nouveautés de la rentrée',
+  'email-metadata-subject-hint':
+    "Entre 30 et 50 caractères : en dessous il n'annonce rien, au-dessus les clients le tronquent.",
+  'email-metadata-preheader': 'Préheader',
+  'email-metadata-preheader-placeholder': "Le texte affiché après l'objet",
+  'email-metadata-preheader-hint':
+    "Entre 40 et 130 caractères. Ce champ est celui de « Template Options » : il est enregistré avec l'email.",
+  'email-metadata-preheader-unavailable':
+    "Ce template ne prévoit pas de préheader. Rien n'est ajouté à votre place.",
+  'email-metadata-planned-date': "Date d'envoi prévue",
+  'email-metadata-planned-date-hint':
+    "Indicative : elle ne déclenche aucun envoi. Elle n'est pas reprise sur les copies.",
+  'email-metadata-typology': 'Typologie',
+  'email-metadata-typology-none': 'Aucune',
+  'email-metadata-typology-empty':
+    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Typologies.',
+  'email-metadata-save': 'Enregistrer',
+  'email-metadata-saving': 'Enregistrement…',
+  'email-metadata-saved': 'Métadonnées enregistrées',
+  'email-metadata-error': "L'enregistrement des métadonnées a échoué",
+  'email-metadata-error-disabled':
+    'Les métadonnées ne sont pas activées pour cette entreprise',
+  'email-metadata-error-typology': "Cette typologie n'est plus disponible",
 };
