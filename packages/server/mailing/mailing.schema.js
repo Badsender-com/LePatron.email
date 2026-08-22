@@ -14,6 +14,7 @@ const {
   CommentModel,
   TaxonomyItemModel,
 } = require('../constant/model.names');
+const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
@@ -551,6 +552,53 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     translationFeatureConfig.integration.isActive
   );
 
+  // Editorial metadata, exposed only when the company opted in. Two keys on
+  // purpose: the VALUES the panel edits, and the CONFIG it needs to render (the
+  // company's active typologies, and which fields it wants mandatory).
+  //
+  // Nothing is exposed when the flag is off — the editor decides whether the
+  // panel exists from the absence of `emailMetadataConfig`, so an opted-out
+  // company cannot even see that the feature is there.
+  //
+  // The preheader is deliberately NOT here: it lives in the template's own
+  // `data`, which the editor already receives and holds live. A copy in the
+  // metadata would be a second value competing with the one that reaches the
+  // sent email.
+  let emailMetadata;
+  let emailMetadataConfig;
+
+  if (group.emailMetadata && group.emailMetadata.enabled === true) {
+    const TaxonomyItems = mongoose.models[TaxonomyItemModel];
+    const emailTypes = TaxonomyItems
+      ? await TaxonomyItems.find({
+          _company: group._id,
+          type: TaxonomyTypes.EMAIL_TYPE,
+          isActive: true,
+        })
+          .select({ label: 1, canonicalType: 1, order: 1 })
+          .sort({ order: 1, label: 1 })
+          .lean()
+      : [];
+
+    emailMetadata = {
+      subject: mailing.subject,
+      plannedSendDate: mailing.plannedSendDate,
+      emailTypeId: mailing._emailType,
+    };
+    emailMetadataConfig = {
+      enabled: true,
+      requiredFields: group.emailMetadata.requiredFields || [],
+      // Active items only: a deactivated typology must not be offered, but an
+      // email already pointing at one keeps its reference.
+      emailTypes: emailTypes.map((item) => ({
+        id: item._id,
+        label: item.label,
+        canonicalType: item.canonicalType,
+      })),
+      url: { update: `/api/mailings/${mailingId}/metadata` },
+    };
+  }
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -604,6 +652,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
+      // Spread so both keys are simply absent when the company opted out, rather
+      // than present and undefined — the editor tests for presence.
+      ...(emailMetadataConfig ? { emailMetadata, emailMetadataConfig } : {}),
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata
