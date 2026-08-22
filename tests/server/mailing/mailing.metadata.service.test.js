@@ -248,6 +248,21 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 });
 
 describe('applyMetadataToMailing', () => {
+  // The preheader is not part of this endpoint: it is a template property, and
+  // wiring it through here would mean changing how our templates declare it.
+  it('ignores a preheader in the payload and leaves data untouched', async () => {
+    const mailing = makeMailing();
+
+    await applyMetadataToMailing(mailing, {
+      subject: 'Soldes',
+      preheader: 'ne doit rien faire',
+    });
+
+    expect(mailing.subject).toBe('Soldes');
+    expect(mailing.data).toEqual({ preheaderText: 'old' });
+    expect(mailing.markModified).not.toHaveBeenCalled();
+  });
+
   function makeMailing(overrides = {}) {
     return {
       _company: mongoose.Types.ObjectId(COMPANY_A),
@@ -268,50 +283,6 @@ describe('applyMetadataToMailing', () => {
     expect(mailing.subject).toBe('kept');
     expect(mailing.plannedSendDate).toBe('kept-too');
     expect(String(mailing._emailType)).toBe(TYPE_A);
-  });
-
-  it('writes the preheader into data and marks it modified', async () => {
-    const mailing = makeMailing();
-
-    const { preheaderWritten } = await applyMetadataToMailing(mailing, {
-      preheader: 'new preheader',
-    });
-
-    expect(preheaderWritten).toBe(true);
-    expect(mailing.data.preheaderText).toBe('new preheader');
-    expect(mailing.markModified).toHaveBeenCalledWith('data');
-  });
-
-  it('reports preheaderWritten false, and marks nothing, on a template without one', async () => {
-    const mailing = makeMailing({ data: { titleBlock: {} } });
-
-    const { preheaderWritten } = await applyMetadataToMailing(mailing, {
-      preheader: 'new preheader',
-    });
-
-    expect(preheaderWritten).toBe(false);
-    expect(mailing.data).toEqual({ titleBlock: {} });
-    expect(mailing.markModified).not.toHaveBeenCalled();
-  });
-
-  it('leaves data untouched when the payload has no preheader key', async () => {
-    const mailing = makeMailing();
-
-    await applyMetadataToMailing(mailing, { subject: 'x' });
-
-    expect(mailing.data.preheaderText).toBe('old');
-    expect(mailing.markModified).not.toHaveBeenCalled();
-  });
-
-  it('refuses a non-string preheader', async () => {
-    const mailing = makeMailing();
-
-    await expect(
-      applyMetadataToMailing(mailing, { preheader: { nested: true } })
-    ).rejects.toMatchObject({
-      status: 422,
-      message: ERROR_CODES.INVALID_EMAIL_METADATA,
-    });
   });
 
   it('refuses a foreign typology through the mailing company, not the caller', async () => {

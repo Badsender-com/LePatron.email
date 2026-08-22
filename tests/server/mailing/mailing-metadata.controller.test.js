@@ -8,7 +8,9 @@
 //
 // Also pinned: the response carries only the fields this endpoint owns. Returning
 // `mailing.toJSON()` would ship `previewHtml`, the rendered email HTML the rest of
-// the read paths take pains to strip.
+// the read paths take pains to strip. And it carries no preheader — that field is
+// not part of this endpoint, and a response mentioning it would invite a client to
+// send it.
 
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
@@ -35,7 +37,9 @@ function makeMailing(overrides = {}) {
     plannedSendDate: new Date('2026-09-01'),
     _emailType: '507f1f77bcf86cd799439101',
     updatedAt: new Date('2026-08-01'),
-    data: { preheaderText: 'stored preheader' },
+    // Still present on the document — the template owns it, this endpoint does
+    // not touch it either way.
+    data: { preheaderText: 'laissé au template' },
     previewHtml: '<html>a very large rendered email</html>',
     save: jest.fn(),
     ...overrides,
@@ -45,9 +49,7 @@ function makeMailing(overrides = {}) {
 async function callEndpoint(mailing, body = {}) {
   mailingService.findOneForUser.mockResolvedValue(mailing);
   mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
-  mailingMetadataService.applyMetadataToMailing.mockResolvedValue({
-    preheaderWritten: true,
-  });
+  mailingMetadataService.applyMetadataToMailing.mockResolvedValue(undefined);
 
   const res = { json: jest.fn() };
   await controller.updateMetadata(
@@ -142,10 +144,15 @@ describe('PATCH /mailings/:mailingId/metadata — response', () => {
       subject: 'Soldes',
       plannedSendDate: mailing.plannedSendDate,
       emailTypeId: mailing._emailType,
-      preheader: 'stored preheader',
-      preheaderWritten: true,
       updatedAt: mailing.updatedAt,
     });
+  });
+
+  it('never mentions the preheader', async () => {
+    const { payload } = await callEndpoint(makeMailing());
+
+    expect(payload).not.toHaveProperty('preheader');
+    expect(payload).not.toHaveProperty('preheaderWritten');
   });
 
   it('never ships previewHtml or data', async () => {
@@ -153,28 +160,5 @@ describe('PATCH /mailings/:mailingId/metadata — response', () => {
 
     expect(payload).not.toHaveProperty('previewHtml');
     expect(payload).not.toHaveProperty('data');
-  });
-
-  it('reports preheaderWritten false so the UI can hide the field', async () => {
-    const mailing = makeMailing({ data: { titleBlock: {} } });
-    mailingService.findOneForUser.mockResolvedValue(mailing);
-    mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
-    mailingMetadataService.applyMetadataToMailing.mockResolvedValue({
-      preheaderWritten: false,
-    });
-
-    const res = { json: jest.fn() };
-    await controller.updateMetadata(
-      { params: { mailingId: MAILING_ID }, body: {}, user },
-      res,
-      (err) => {
-        throw err;
-      }
-    );
-
-    expect(res.json.mock.calls[0][0]).toMatchObject({
-      preheaderWritten: false,
-      preheader: null,
-    });
   });
 });
