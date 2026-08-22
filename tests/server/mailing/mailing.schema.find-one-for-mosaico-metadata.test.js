@@ -37,10 +37,15 @@ const ACTIVE_TYPES = [
 
 // Minimal `this` for the static: the mailing, the company, and the taxonomy model
 // it reaches through mongoose.models.
+const OTHER_COMPANY = mongoose.Types.ObjectId('507f1f77bcf86cd799439b01');
+
 function makeContext({
   companyFlag,
   mailingOverrides = {},
   taxonomy = ACTIVE_TYPES,
+  // company of the TEMPLATE; equal to the mailing's unless a test diverges them
+  templateCompany = COMPANY,
+  otherCompanyFlag,
 }) {
   const mailing = {
     _id: MAILING,
@@ -48,11 +53,11 @@ function makeContext({
     data: { preheaderText: 'dans data' },
     previewHtml: '',
     _workspace: mongoose.Types.ObjectId('507f1f77bcf86cd799439301'),
-    _company: { id: String(COMPANY), name: 'Company A' },
+    _company: { _id: COMPANY, id: String(COMPANY), name: 'Company A' },
     _wireframe: {
       _id: TEMPLATE,
       name: 'Badsender News',
-      _company: COMPANY,
+      _company: templateCompany,
       assets: {},
     },
     ...mailingOverrides,
@@ -74,19 +79,23 @@ function makeContext({
     }),
   });
 
+  const findById = jest.fn().mockImplementation(async (id) => {
+    const isOther = String(id) === String(OTHER_COMPANY);
+    const flag = isOther ? otherCompanyFlag : companyFlag;
+    return {
+      _id: mongoose.Types.ObjectId(String(id)),
+      name: isOther ? 'Company B' : 'Company A',
+      ...(flag === undefined ? {} : { emailMetadata: flag }),
+    };
+  });
+
   mongoose.models = {
-    Company: {
-      findById: jest.fn().mockResolvedValue({
-        _id: COMPANY,
-        name: 'Company A',
-        ...(companyFlag === undefined ? {} : { emailMetadata: companyFlag }),
-      }),
-    },
+    Company: { findById },
     TaxonomyItem: { find: taxonomyFind },
     Comment: null,
   };
 
-  return { model, taxonomyFind };
+  return { model, taxonomyFind, findById };
 }
 
 const call = (context) =>
@@ -123,6 +132,69 @@ describe('findOneForMosaico — company opted out', () => {
     expect(result.metadata.id).toEqual(MAILING);
     expect(result.metadata.url.update).toBe(`/api/mailings/${MAILING}/mosaico`);
     expect(result.data).toEqual({ preheaderText: 'dans data' });
+  });
+});
+
+// `group` in this function is the TEMPLATE's company, on purpose, for the
+// download options. Reusing it for the metadata would read the flag and the
+// typology list of whichever company owns the template — and the write path
+// validates against the MAILING's company, so we would offer typologies the save
+// refuses, and show one company's vocabulary inside another's editor.
+describe('findOneForMosaico — the metadata follow the mailing company', () => {
+  const enabled = { enabled: true, requiredFields: [] };
+
+  it('reads the typologies of the mailing company, not the template one', async () => {
+    const context = makeContext({ companyFlag: enabled });
+
+    await call(context);
+
+    expect(String(context.taxonomyFind.mock.calls[0][0]._company)).toBe(
+      String(COMPANY)
+    );
+  });
+
+  it('exposes nothing when the mailing and its template belong to different companies', async () => {
+    const context = makeContext({
+      companyFlag: enabled,
+      otherCompanyFlag: enabled,
+      templateCompany: OTHER_COMPANY,
+    });
+
+    const result = await call(context);
+
+    expect('emailMetadataConfig' in result.metadata).toBe(false);
+    expect(context.taxonomyFind).not.toHaveBeenCalled();
+  });
+
+  // The state above is what a broken template access check produces; exposing
+  // the template company's vocabulary there is the leak this guards against.
+  it('does not leak the other company vocabulary on divergence', async () => {
+    const context = makeContext({
+      companyFlag: undefined,
+      otherCompanyFlag: enabled,
+      templateCompany: OTHER_COMPANY,
+    });
+
+    const result = await call(context);
+
+    expect('emailMetadata' in result.metadata).toBe(false);
+    expect(context.taxonomyFind).not.toHaveBeenCalled();
+  });
+
+  // A mailing created by a super admin has no company of its own; the template's
+  // is then the only reference, and it is the one the download options use.
+  it('falls back on the template company for a mailing without one', async () => {
+    const context = makeContext({
+      companyFlag: enabled,
+      mailingOverrides: { _company: undefined },
+    });
+
+    const result = await call(context);
+
+    expect(result.metadata.emailMetadataConfig.enabled).toBe(true);
+    expect(String(context.taxonomyFind.mock.calls[0][0]._company)).toBe(
+      String(COMPANY)
+    );
   });
 });
 
