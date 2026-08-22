@@ -60,16 +60,15 @@ describe('findPreheaderObservable — location', () => {
     expect(findPreheaderObservable(content).location).toBe('root');
   });
 
-  // A template is free to name its block something else; scanning by property
-  // rather than by block name is what makes that work.
-  it('finds the property in a block whatever the block is called', () => {
+  // Deliberately NOT found: the server resolver looks the property up under the
+  // `preheaderBlock` name only, so a preheader under any other block would be
+  // editable in the panel and invisible to every server-side path.
+  it('ignores the property when it sits in a differently named block', () => {
     const content = ko.observable({
       entete: ko.observable({ preheaderText: ko.observable('autre nom') }),
     });
 
-    const found = findPreheaderObservable(content);
-    expect(found.blockName).toBe('entete');
-    expect(found.observable()).toBe('autre nom');
+    expect(findPreheaderObservable(content)).toBeNull();
   });
 
   it('returns null on a template that declares no preheader', () => {
