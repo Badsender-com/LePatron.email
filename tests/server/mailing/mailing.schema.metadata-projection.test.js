@@ -19,13 +19,14 @@ const MailingSchema = require('../../../packages/server/mailing/mailing.schema')
 
 const findForApiWithPagination = MailingSchema.statics.findForApiWithPagination;
 
+const ID_ROW = mongoose.Types.ObjectId('507f1f77bcf86cd799439055');
 const TYPE_A = '507f1f77bcf86cd799439101';
 const TYPE_B = '507f1f77bcf86cd799439102';
 
-function makeModel() {
+function makeModel(pageDocs = []) {
   const paginate = jest
     .fn()
-    .mockResolvedValue({ docs: [], totalDocs: 0, page: 1 });
+    .mockResolvedValue({ docs: pageDocs, totalDocs: pageDocs.length, page: 1 });
   const lean = jest.fn().mockResolvedValue([]);
   const find = jest.fn().mockReturnValue({ lean });
   return { model: { paginate, find }, paginate };
@@ -43,7 +44,7 @@ beforeEach(() => {
 });
 
 describe('findForApiWithPagination — metadata projection', () => {
-  it.each(['subject', 'plannedSendDate', 'emailTypeId'])(
+  it.each(['subject', 'plannedSendDate', '_emailType'])(
     'projects %s so the listing column is not empty',
     async (field) => {
       const { model, paginate } = makeModel();
@@ -52,12 +53,38 @@ describe('findForApiWithPagination — metadata projection', () => {
     }
   );
 
-  it('exposes the typology without an underscore, like templateId and userId', async () => {
+  // Asserting on the projection object is not enough, and that is exactly how a
+  // regression slipped through: `emailTypeId: '$_emailType'` looked right there,
+  // but the .find() projection mongoose-paginate-v2 uses does not honour an
+  // aggregation expression, so the field came back ABSENT from the response.
+  // Caught by running the real endpoint. These assertions look at the row the
+  // client actually receives.
+  it('returns the typology as emailTypeId on the row itself', async () => {
+    const TYPE = mongoose.Types.ObjectId('507f1f77bcf86cd799439101');
+    const { model } = makeModel([
+      { _id: ID_ROW, name: 'a', _emailType: TYPE, subject: 'Soldes' },
+    ]);
+
+    const { docs } = await findForApiWithPagination.call(model, {});
+
+    expect(docs[0].emailTypeId).toEqual(TYPE);
+    expect(docs[0]).not.toHaveProperty('_emailType');
+    expect(docs[0].subject).toBe('Soldes');
+  });
+
+  it('leaves emailTypeId undefined on an email without a typology', async () => {
+    const { model } = makeModel([{ _id: ID_ROW, name: 'a' }]);
+
+    const { docs } = await findForApiWithPagination.call(model, {});
+
+    expect(docs[0].emailTypeId).toBeUndefined();
+    expect(docs[0]).not.toHaveProperty('_emailType');
+  });
+
+  it('does not project the aggregation-expression form, which does not work', async () => {
     const { model, paginate } = makeModel();
     await findForApiWithPagination.call(model, {});
-    const projection = paginate.mock.calls[0][1].projection;
-    expect(projection.emailTypeId).toBe('$_emailType');
-    expect(projection).not.toHaveProperty('_emailType');
+    expect(paginate.mock.calls[0][1].projection.emailTypeId).toBeUndefined();
   });
 
   it('still does not project previewHtml (the blob stays out of the page query)', async () => {

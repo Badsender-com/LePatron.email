@@ -355,6 +355,31 @@ export function feedMappingsItem(feedMappingId) {
 }
 
 /// ///
+// TAXONOMY
+/// ///
+
+// Per-company read: the settings screen always knows which company it edits, and
+// a super admin browses a company other than their own.
+export function taxonomyItems(
+  groupId,
+  { type = 'emailType', activeOnly } = {}
+) {
+  const params = new URLSearchParams({ type });
+  if (activeOnly) {
+    params.set('activeOnly', 'true');
+  }
+  return `/taxonomy-items/groups/${groupId}?${params.toString()}`;
+}
+
+export function taxonomyItemsCreate() {
+  return '/taxonomy-items';
+}
+
+export function taxonomyItemsItem(itemId) {
+  return `/taxonomy-items/${itemId}`;
+}
+
+/// ///
 // AI FEATURES
 /// ///
 
