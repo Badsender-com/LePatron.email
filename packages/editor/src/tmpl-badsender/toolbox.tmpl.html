@@ -116,17 +116,28 @@
       data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
-    <!-- ko block: content -->content<!-- /ko -->
     <!-- Metadata: a document-level setting, so it belongs in this tab beside
-         Template Options rather than in a panel of its own. Placed AFTER
-         Template Options so that section keeps the position users know, and
-         BEFORE tracking so the two Badsender-added document sections sit
-         together. Rendered only when the company opted in. -->
+         Template Options rather than in a panel of its own.
+
+         Placed FIRST, before Template Options. The alternative — after it, so
+         Template Options keeps the exact position users know — put the section
+         below the fold on a 900px screen even with nothing selected: the save
+         button was off screen before a single block was clicked. Two arguments
+         settle it: what identifies the document (subject, date, typology) comes
+         before what configures its rendering, and the section has to be reachable
+         without scrolling to be found at all.
+
+         `hasEmailMetadata` is set once in the plugin's `viewModel` hook and never
+         written again, so this `if` renders once and never re-runs. That matters:
+         `new Vue({el})` REPLACES the node Knockout thinks it owns, so a reactive
+         observable here would tear the mount down without remounting it. Do not
+         make it reactive without moving the mount. -->
     <!-- ko if: $root.hasEmailMetadata() -->
     <div id="email-metadata-section">
       <email-metadata-plugin />
     </div>
     <!-- /ko -->
+    <!-- ko block: content -->content<!-- /ko -->
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
@@ -512,4 +523,3 @@
   </div><!-- .comments-content -->
   <!-- /ko -->
 </div>
-
