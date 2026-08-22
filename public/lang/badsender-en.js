@@ -283,4 +283,32 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  // email metadata panel
+  'email-metadata-title': 'Metadata',
+  'email-metadata-toggle': 'Show metadata',
+  'email-metadata-intro':
+    'This describes the email. None of it is sent in the message: it serves your team, and — for the subject and preheader — what your recipients see in their inbox.',
+  'email-metadata-subject': 'Subject line',
+  'email-metadata-subject-placeholder': 'Discover our new autumn range',
+  'email-metadata-subject-hint':
+    'Between 30 and 50 characters: below that it announces nothing, above it clients truncate it.',
+  'email-metadata-preheader': 'Preheader',
+  'email-metadata-preheader-placeholder': 'The text shown after the subject',
+  'email-metadata-preheader-hint':
+    'Between 40 and 130 characters. This is the "Template Options" field: it is saved with the email.',
+  'email-metadata-preheader-unavailable':
+    'This template has no preheader. Nothing is added on your behalf.',
+  'email-metadata-planned-date': 'Planned send date',
+  'email-metadata-planned-date-hint':
+    'For reference only: it triggers no send. It is not carried over to copies.',
+  'email-metadata-typology': 'Typology',
+  'email-metadata-typology-none': 'None',
+  'email-metadata-typology-empty':
+    'No active typology for your company. They are configured under Settings → General → Typologies.',
+  'email-metadata-save': 'Save',
+  'email-metadata-saving': 'Saving…',
+  'email-metadata-saved': 'Metadata saved',
+  'email-metadata-error': 'Could not save the metadata',
+  'email-metadata-error-disabled': 'Metadata is not enabled for this company',
+  'email-metadata-error-typology': 'This typology is no longer available',
 };
