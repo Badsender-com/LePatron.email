@@ -4,7 +4,6 @@ const asyncHandler = require('express-async-handler');
 
 const mailingService = require('./mailing.service.js');
 const mailingMetadataService = require('./mailing-metadata.service.js');
-const { readPreheader } = require('./preheader-resolver.js');
 
 module.exports = {
   updateMetadata: asyncHandler(updateMetadata),
@@ -19,8 +18,6 @@ module.exports = {
  * @apiParam {string} mailingId
  *
  * @apiParam (Body) {String} [subject] the email subject line, `null` to clear
- * @apiParam (Body) {String} [preheader] written into the template's own
- *   `preheaderText` property, and ignored when the template declares none
  * @apiParam (Body) {String} [plannedSendDate] ISO date, `null` to clear
  * @apiParam (Body) {String} [_emailType] a taxonomy item of the same company,
  *   `null` to detach
@@ -29,9 +26,12 @@ module.exports = {
  * @apiSuccess {String} subject
  * @apiSuccess {Date} plannedSendDate
  * @apiSuccess {String} emailTypeId
- * @apiSuccess {String} preheader the value now stored in the template property
- * @apiSuccess {Boolean} preheaderWritten false when the template declares none,
- *   so the UI can hide the field
+ *
+ * @apiDescription The preheader is NOT part of this endpoint. It is a template
+ *   property, edited where it always has been — the template's own options in the
+ *   editor — and persisted with the email. Wiring it through here would mean
+ *   changing how our templates declare it, which is a product question still to be
+ *   settled.
  */
 
 async function updateMetadata(req, res) {
@@ -42,9 +42,7 @@ async function updateMetadata(req, res) {
   const mailing = await mailingService.findOneForUser(mailingId, user);
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  const {
-    preheaderWritten,
-  } = await mailingMetadataService.applyMetadataToMailing(mailing, req.body);
+  await mailingMetadataService.applyMetadataToMailing(mailing, req.body);
 
   await mailing.save();
 
@@ -55,8 +53,6 @@ async function updateMetadata(req, res) {
     subject: mailing.subject,
     plannedSendDate: mailing.plannedSendDate,
     emailTypeId: mailing._emailType,
-    preheader: readPreheader(mailing.data),
-    preheaderWritten,
     updatedAt: mailing.updatedAt,
   });
 }
