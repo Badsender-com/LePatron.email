@@ -12,6 +12,7 @@ const {
   WorkspaceModel,
   FolderModel,
   CommentModel,
+  TaxonomyItemModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
@@ -96,6 +97,28 @@ const MailingSchema = Schema(
         type: String,
       },
     ],
+    // --- Editorial metadata (behind the company's emailMetadata.enabled flag) ---
+    // Single field: no A/B variants in this phase.
+    subject: {
+      type: String,
+      // Both ends of an email header have a practical ceiling; nothing else would
+      // bound this field.
+      maxlength: 255,
+    },
+    plannedSendDate: {
+      type: Date,
+    },
+    // Strict reference to the company's own taxonomy — no free text. Validated
+    // against the mailing's company and the `emailType` taxonomy on write.
+    // NOTE: the preheader is deliberately NOT a field here, and not part of the
+    // metadata this phase edits at all. It is a template property living in
+    // `data`, editable where it always has been — the template's own options in
+    // the editor. Bringing it into the metadata would mean changing how our
+    // templates declare it, which is a product question still to be settled.
+    _emailType: {
+      type: ObjectId,
+      ref: TaxonomyItemModel,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -124,6 +147,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   this.name = `${this.name.trim()} copy`;
   this.isNew = true;
   this.espIds = [];
+  // The subject and the typology describe the email and are worth keeping; a
+  // planned send date belongs to one campaign and must not be inherited.
+  this.plannedSendDate = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -169,6 +195,10 @@ MailingSchema.index({ _company: 1, createdAt: -1 });
 MailingSchema.index({ _company: 1, name: 1 });
 MailingSchema.index({ _company: 1, wireframe: 1 });
 MailingSchema.index({ _company: 1, author: 1 });
+// Editorial metadata filters on the mailing listing, same reasoning as above:
+// the `_company` prefix is what keeps the query from scanning a global index.
+MailingSchema.index({ _company: 1, _emailType: 1 });
+MailingSchema.index({ _company: 1, plannedSendDate: -1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
@@ -232,6 +262,26 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       restQuery.tags = { $in: filtersJSON.tags };
     }
 
+    if (
+      Array.isArray(filtersJSON.emailTypes) &&
+      filtersJSON.emailTypes?.length > 0
+    ) {
+      restQuery._emailType = { $in: filtersJSON.emailTypes };
+    }
+
+    if (filtersJSON.plannedSendDateStart) {
+      restQuery.plannedSendDate = {
+        $gte: new Date(filtersJSON.plannedSendDateStart),
+      };
+    }
+
+    if (filtersJSON.plannedSendDateEnd) {
+      restQuery.plannedSendDate = {
+        ...(restQuery.plannedSendDate || {}),
+        $lt: new Date(filtersJSON.plannedSendDateEnd),
+      };
+    }
+
     if (filtersJSON.createdAtStart) {
       restQuery.createdAt = { $gte: new Date(filtersJSON.createdAtStart) };
     }
@@ -265,6 +315,13 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       author: 1,
       userId: '$_user',
       tags: 1,
+      subject: 1,
+      plannedSendDate: 1,
+      // The id only: resolving the typology label needs a populate or a
+      // complementary query, which a .find() projection cannot do here. Named
+      // like the other exposed references (templateId, userId), so the listing
+      // never receives an underscore-prefixed key.
+      emailTypeId: '$_emailType',
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,

@@ -137,6 +137,15 @@ const GroupSchema = Schema(
         },
       ],
     },
+    // Editorial metadata on emails (subject, planned send date, typology).
+    // Off by default: the feature adds fields to the creation modal, the editor
+    // and the listing, and existing companies must not see them appear.
+    emailMetadata: {
+      enabled: { type: Boolean, default: false },
+      // Which metadata a company wants to make mandatory. Stored and validated,
+      // but NOT enforced in this phase — enforcement comes with CRM Governance.
+      requiredFields: { type: [String], default: [] },
+    },
     // Module activation settings
     enableEmailBuilder: {
       type: Boolean,

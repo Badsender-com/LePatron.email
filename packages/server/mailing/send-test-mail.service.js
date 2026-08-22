@@ -60,7 +60,10 @@ async function sendTestMail({
       const mailInfo = await mail.send({
         to: address,
         replyTo: user?.email,
-        subject: mailing.name,
+        // Now that an email carries a real subject, a test send should show it.
+        // Falls back on the mailing name, which is what every existing mailing
+        // has and what this used to send unconditionally.
+        subject: mailing.subject || mailing.name,
         html,
       });
 

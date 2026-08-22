@@ -1,11 +1,6 @@
 'use strict';
 
-const {
-  NotFound,
-  BadRequest,
-  UnprocessableEntity,
-  Forbidden,
-} = require('http-errors');
+const { NotFound, BadRequest, UnprocessableEntity } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
@@ -23,8 +18,6 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const folderService = require('../folder/folder.service.js');
-const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -134,7 +127,15 @@ async function listTags(req, res) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
+  const {
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+    subject,
+    plannedSendDate,
+    _emailType,
+  } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
     templateId,
@@ -142,6 +143,9 @@ async function create(req, res) {
     parentFolderId,
     mailingName,
     user,
+    // Optional editorial metadata, filled in by the creation modal when the
+    // company has the feature enabled.
+    metadata: { subject, plannedSendDate, _emailType },
   });
 
   res.json(response);
@@ -407,23 +411,7 @@ async function updateMosaico(req, res) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
 
-  if (!user.isAdmin) {
-    const { _workspace, _parentFolder } = mailing;
-
-    let hasAccess;
-
-    if (_parentFolder) {
-      hasAccess = await folderService.hasAccess(_parentFolder, user);
-    }
-
-    if (_workspace) {
-      hasAccess = await workspaceService.hasAccess(user, _workspace);
-    }
-
-    if (!hasAccess) {
-      throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
-    }
-  }
+  await mailingService.assertUserCanEditMailing(user, mailing);
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
@@ -655,7 +643,13 @@ async function transferToUser(req, res) {
 
   const [user, mailing] = await Promise.all([
     Users.findById(userId, { name: 1, _company: 1 }),
-    Mailings.findById(mailingId, { name: 1 }).populate('_wireframe', {
+    // `_company` and `_emailType` are needed to tell whether the transfer moves
+    // the mailing to another company, see below.
+    Mailings.findById(mailingId, {
+      name: 1,
+      _company: 1,
+      _emailType: 1,
+    }).populate('_wireframe', {
       _company: 1,
     }),
   ]);
@@ -665,9 +659,17 @@ async function transferToUser(req, res) {
     String(user._company) === String(mailing._wireframe._company);
   if (!isMailingFromSameGroupThanUser) throw new BadRequest();
 
+  // A typology belongs to one company. If the transfer moves the mailing, the
+  // stored reference would point outside its own company — drop it rather than
+  // carry a reference the metadata endpoint could no longer resolve.
+  const changesCompany = String(mailing._company) !== String(user._company);
+
   mailing.userId = user._id;
   mailing.userName = user.name;
   mailing.group = user._company;
+  if (changesCompany) {
+    mailing._emailType = undefined;
+  }
   await mailing.save();
 
   const updatedMailing = await Mailings.findById(mailingId);
