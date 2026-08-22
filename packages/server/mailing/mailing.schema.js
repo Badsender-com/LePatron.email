@@ -556,6 +556,15 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   // purpose: the VALUES the panel edits, and the CONFIG it needs to render (the
   // company's active typologies, and which fields it wants mandatory).
   //
+  // Scoped on the MAILING's company, not on `group` above. `group` is the
+  // TEMPLATE's company — a deliberate choice for the download options, since a
+  // mailing created by a super admin has no company of its own — but reusing it
+  // here would read the flag and the typology list of whichever company owns the
+  // template. The two are not guaranteed equal, and the write path (the PATCH)
+  // validates against `mailing._company`: reading somewhere else than we write
+  // means offering typologies the save will refuse, and showing one company's
+  // vocabulary inside another company's editor.
+  //
   // Nothing is exposed when the flag is off — the editor decides whether the
   // panel exists from the absence of `emailMetadataConfig`, so an opted-out
   // company cannot even see that the feature is there.
@@ -567,36 +576,76 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   let emailMetadata;
   let emailMetadataConfig;
 
-  if (group.emailMetadata && group.emailMetadata.enabled === true) {
-    const TaxonomyItems = mongoose.models[TaxonomyItemModel];
-    const emailTypes = TaxonomyItems
-      ? await TaxonomyItems.find({
-          _company: group._id,
-          type: TaxonomyTypes.EMAIL_TYPE,
-          isActive: true,
-        })
-          .select({ label: 1, canonicalType: 1, order: 1 })
-          .sort({ order: 1, label: 1 })
-          .lean()
-      : [];
+  const mailingCompanyId =
+    (mailing._company && (mailing._company._id || mailing._company.id)) || null;
+  const templateCompanyId = group._id;
 
-    emailMetadata = {
-      subject: mailing.subject,
-      plannedSendDate: mailing.plannedSendDate,
-      emailTypeId: mailing._emailType,
-    };
-    emailMetadataConfig = {
-      enabled: true,
-      requiredFields: group.emailMetadata.requiredFields || [],
-      // Active items only: a deactivated typology must not be offered, but an
-      // email already pointing at one keeps its reference.
-      emailTypes: emailTypes.map((item) => ({
-        id: item._id,
-        label: item.label,
-        canonicalType: item.canonicalType,
-      })),
-      url: { update: `/api/mailings/${mailingId}/metadata` },
-    };
+  // A mailing whose company differs from its template's is an inconsistent
+  // state, not a supported one. Rather than pick a side, expose nothing and say
+  // so: whichever company we chose would be wrong for the other.
+  const companiesDiverge =
+    mailingCompanyId && String(mailingCompanyId) !== String(templateCompanyId);
+
+  if (companiesDiverge) {
+    logger.warn(
+      `[findOneForMosaico] mailing ${mailingId} belongs to company ${mailingCompanyId} but its template belongs to ${templateCompanyId}; email metadata not exposed`
+    );
+  }
+
+  // No company on the mailing means a super admin created it; the template's is
+  // then the only reference available, and it is the one the download options
+  // already use.
+  const metadataCompanyId = mailingCompanyId || templateCompanyId;
+
+  if (!companiesDiverge) {
+    const metadataCompany =
+      mailingCompanyId && String(mailingCompanyId) !== String(templateCompanyId)
+        ? await Groups.findById(metadataCompanyId)
+        : group;
+
+    if (
+      metadataCompany &&
+      metadataCompany.emailMetadata &&
+      metadataCompany.emailMetadata.enabled === true
+    ) {
+      const TaxonomyItems = mongoose.models[TaxonomyItemModel];
+      if (!TaxonomyItems) {
+        // Better a loud log than a company told it has no typology when the
+        // model simply is not registered.
+        logger.warn(
+          '[findOneForMosaico] TaxonomyItem model is not registered; the editor panel will show an empty typology list'
+        );
+      }
+
+      const emailTypes = TaxonomyItems
+        ? await TaxonomyItems.find({
+            _company: metadataCompanyId,
+            type: TaxonomyTypes.EMAIL_TYPE,
+            isActive: true,
+          })
+            .select({ label: 1, canonicalType: 1, order: 1 })
+            .sort({ order: 1, label: 1 })
+            .lean()
+        : [];
+
+      emailMetadata = {
+        subject: mailing.subject,
+        plannedSendDate: mailing.plannedSendDate,
+        emailTypeId: mailing._emailType,
+      };
+      emailMetadataConfig = {
+        enabled: true,
+        requiredFields: metadataCompany.emailMetadata.requiredFields || [],
+        // Active items only: a deactivated typology must not be offered, but an
+        // email already pointing at one keeps its reference.
+        emailTypes: emailTypes.map((item) => ({
+          id: item._id,
+          label: item.label,
+          canonicalType: item.canonicalType,
+        })),
+        url: { update: `/api/mailings/${mailingId}/metadata` },
+      };
+    }
   }
 
   let redirectUrl = null;
