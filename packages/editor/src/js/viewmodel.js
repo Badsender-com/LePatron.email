@@ -305,6 +305,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     const datas = _omit(ko.toJS(viewModel.metadata), [
       'urlConverter',
       'template',
+      // Read-only for the editor: the panel patches the values through their own
+      // route, and the typology list has no reason to travel back on every save.
+      'emailMetadata',
+      'emailMetadataConfig',
     ]);
     datas.data = viewModel.exportJS();
     return datas;
