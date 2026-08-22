@@ -285,19 +285,12 @@ module.exports = {
   'comments-no-block': 'This comment is not linked to a block',
   // email metadata panel
   'email-metadata-title': 'Metadata',
-  'email-metadata-toggle': 'Show metadata',
   'email-metadata-intro':
-    'This describes the email for your team. Only the subject and the preheader are seen by your recipients, in their inbox.',
+    'This describes the email for your team and your tools. It does not change its content.',
   'email-metadata-subject': 'Subject line',
   'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
   'email-metadata-subject-hint':
     'Between 30 and 50 characters: below that it announces nothing, above it clients truncate it.',
-  'email-metadata-preheader': 'Preheader',
-  'email-metadata-preheader-placeholder': 'E.g. Free delivery until Sunday',
-  'email-metadata-preheader-hint':
-    "This text is part of the email's content: it is saved with the email, not with the metadata.",
-  'email-metadata-preheader-unavailable':
-    'This template has no preheader. Nothing is added on your behalf.',
   'email-metadata-planned-date': 'Planned send date',
   'email-metadata-planned-date-hint':
     'For reference only: it triggers no send. It is not carried over to copies.',
@@ -312,14 +305,8 @@ module.exports = {
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This typology is no longer available',
   'email-metadata-counter': '__length__ chars · target __min__-__max__',
-  'email-metadata-required': 'Field your company declared mandatory',
   'email-metadata-typology-missing': 'Deactivated typology',
-  'email-metadata-save-with-email': 'Save, including the email',
-  'email-metadata-saved-with-email': 'Metadata and email saved',
-  'email-metadata-error-busy':
-    'A save is already running, try again in a moment',
   'email-metadata-error-no-company':
     'This email belongs to no company: the typology cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
-  'email-metadata-hide': 'Hide metadata',
 };

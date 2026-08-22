@@ -7,7 +7,6 @@
 
 const {
   subjectCounter,
-  preheaderCounter,
   counterState,
   toDateInputValue,
   fromDateInputValue,
@@ -16,7 +15,6 @@ const {
   typologyOptions,
   hasMetadataChanges,
   SUBJECT_RANGE,
-  PREHEADER_RANGE,
 } = require('../../packages/editor/src/js/utils/email-metadata.js');
 
 describe('counters', () => {
@@ -27,14 +25,6 @@ describe('counters', () => {
     expect(subjectCounter('x'.repeat(30)).state).toBe('ok');
     expect(subjectCounter('x'.repeat(50)).state).toBe('ok');
     expect(subjectCounter('x'.repeat(51)).state).toBe('long');
-  });
-
-  it('advises on the preheader range, 40 to 130', () => {
-    expect(PREHEADER_RANGE).toEqual({ min: 40, max: 130 });
-    expect(preheaderCounter('x'.repeat(39)).state).toBe('short');
-    expect(preheaderCounter('x'.repeat(40)).state).toBe('ok');
-    expect(preheaderCounter('x'.repeat(130)).state).toBe('ok');
-    expect(preheaderCounter('x'.repeat(131)).state).toBe('long');
   });
 
   it('reports the length so the panel can show "n / max"', () => {
@@ -128,9 +118,9 @@ describe('buildMetadataPayload', () => {
     expect(payload._emailType).toBe('507f1f77bcf86cd799439101');
   });
 
-  // The preheader is held live in the template data and saved by the global save.
-  // Sending it here would be overwritten by the next global save.
-  it('never carries the preheader', () => {
+  // The preheader is not part of the metadata at all in this phase: it is a
+  // template property, edited in the template's own options.
+  it('never carries the preheader, even if the caller passes one', () => {
     const payload = buildMetadataPayload({
       subject: 'x',
       preheader: 'ne doit pas partir',

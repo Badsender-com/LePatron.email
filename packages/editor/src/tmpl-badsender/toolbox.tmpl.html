@@ -117,6 +117,16 @@
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
+    <!-- Metadata: a document-level setting, so it belongs in this tab beside
+         Template Options rather than in a panel of its own. Placed AFTER
+         Template Options so that section keeps the position users know, and
+         BEFORE tracking so the two Badsender-added document sections sit
+         together. Rendered only when the company opted in. -->
+    <!-- ko if: $root.hasEmailMetadata() -->
+    <div id="email-metadata-section">
+      <email-metadata-plugin />
+    </div>
+    <!-- /ko -->
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
@@ -503,17 +513,3 @@
   <!-- /ko -->
 </div>
 
-<!-- Email metadata panel. Same slidebar pattern as #toolcomments: hidden by CSS
-     class rather than removed, so the Vue root inside it is mounted once. Rendered
-     only when the company opted in — `hasEmailMetadata` is false otherwise and the
-     toolbar button does not exist either. -->
-<div id="toolmetadata" class="slidebar" data-bind="css: { hidden: $root.showMetadata() === false }, attr: { 'aria-hidden': $root.showMetadata() ? 'false' : 'true' }">
-  <div class="close" data-bind="click: $root.showMetadata.bind($element, false);">X</div>
-  <span class="pane-title" data-bind="text: $root.t('email-metadata-title')">Metadata</span>
-
-  <!-- ko if: $root.hasEmailMetadata() -->
-  <div id="email-metadata-panel" class="email-metadata-content">
-    <email-metadata-plugin />
-  </div>
-  <!-- /ko -->
-</div>
