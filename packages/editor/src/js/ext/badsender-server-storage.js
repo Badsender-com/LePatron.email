@@ -45,11 +45,7 @@ function loader(opts) {
       };
       // force JSON for bodyparser to catch up
       // => keep types server side
-      //
-      // The promise is returned so a caller can wait for it. The metadata panel
-      // needs that: it triggers this save for the preheader and must not report
-      // success — nor consider the field clean — before the PUT lands.
-      return $.ajax({
+      $.ajax({
         url: updateRoute,
         method: 'PUT',
         contentType: 'application/json',

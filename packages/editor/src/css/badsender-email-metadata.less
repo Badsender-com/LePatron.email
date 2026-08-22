@@ -1,14 +1,14 @@
 /**
- * Email metadata panel (#toolmetadata)
+ * Email metadata section (#email-metadata-section)
  *
- * Same slidebar geometry as #toolcomments — see badsender-comments.less — so the
- * two panels behave identically: fixed to the viewport, sliding in from the right,
- * pushing #main-edit-area aside.
+ * A section of the Content tab, beside Template Options and the tracking section —
+ * not a panel. Metadata is a setting of the document, and this tab is where the
+ * document-level properties already live.
  *
  * The fields are styled here rather than reusing `bs-form-field`: that class is
  * imported INSIDE badsender-modal.less, so it only exists under a modal scope and
- * reaches nothing in a slidebar. The look follows the same rules — 12px label
- * above a 40px input — without depending on a scope this panel is not in.
+ * reaches nothing here. The look follows the same rules — 12px label above a 40px
+ * input — without depending on a scope this section is not in.
  *
  * Colours come from the tokens the EDITOR declares (badsender-editor.less:44-73):
  * --gray-*, --error, --success, --accent. The Nuxt app's --field-border, --r-sm,
@@ -16,108 +16,25 @@
  * shipping a file that never applies its own tokens.
  */
 
-// Geometry shared with #toolcomments (badsender-comments.less): fixed to the
-// viewport, sliding in from the right, pushing #main-edit-area aside. Kept local
-// rather than refactored into a shared mixin, which would mean editing the
-// comments panel's own rules — not something to do from here.
 @metadata-field-border: @comment-gray-300;
 @metadata-field-border-hover: @comment-gray-400;
 
-@keyframes metadata-slide-in {
-  0% {
-    right: -(@leftsidebar-width + 50px);
-  }
-  100% {
-    right: 0;
-  }
-}
-
-@keyframes metadata-slide-out {
-  0% {
-    right: 0;
-  }
-  100% {
-    right: -(@leftsidebar-width + 50px);
-  }
-}
-
-#toolmetadata.slidebar {
-  position: fixed;
-  left: auto;
-  right: 0;
-  top: var(--top-bar-height, 50px);
-  height: calc(100vh - var(--top-bar-height, 50px));
-  animation: metadata-slide-in 0.2s ease-out 0s 1;
-  border-left: 1px solid var(--gray-300, #e0e0e0);
-  overflow-y: auto;
-
-  &.hidden {
-    left: auto;
-    right: -(@leftsidebar-width + 50px);
-    animation: metadata-slide-out 0.2s ease-out 0s 1;
-  }
-
-  // Same header as the comments panel: without the weight, the padding and the
-  // rule below it, the title floats unaligned with the content underneath.
-  > .pane-title {
-    background: white !important;
-    color: @bs-primary-color !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    padding: 12px 16px !important;
-    padding-right: 40px !important;
-    border-bottom: 1px solid var(--gray-300, #e0e0e0) !important;
-  }
-
-  > .close {
-    top: 12px;
-    right: 10px;
-    color: var(--gray-600, #757575);
-    font-size: 14px;
-
-    &:hover {
-      color: var(--gray-900, #212121);
-    }
-  }
-}
-
-.withMetadata #main-edit-area {
-  right: @leftsidebar-width;
-  transition: right 0.2s ease-out;
-}
-
-// Toolbar toggle: same size, colour and hit area as .comments-button-wrapper
-// beside it (badsender-comments.less), otherwise it reads as a different kind of
-// control.
-.metadata-button-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 7px 10px;
-  cursor: pointer;
-  color: white;
-  transition: background-color 0.15s ease;
-  border-radius: 2px;
-
-  &:hover,
-  &:focus-visible {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  &.active {
-    background-color: rgba(255, 255, 255, 0.16);
-  }
-
-  > .lucide {
-    font-size: 18px;
-  }
-}
-
-.email-metadata-content {
-  padding: 16px;
-}
-
 .email-metadata {
+  // Separated from Template Options above it the way the tracking section
+  // separates itself: a rule and breathing room, no card, no border.
+  margin-top: 24px;
+  padding: 0 10px 16px;
+  border-top: 1px solid var(--gray-300, #e0e0e0);
+
+  &__title {
+    margin: 16px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray-700, #616161);
+  }
+
   &__intro {
     font-size: 12px;
     line-height: 1.5;

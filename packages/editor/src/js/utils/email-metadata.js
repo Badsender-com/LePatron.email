@@ -12,14 +12,9 @@
 // refused. A subject that is too long is truncated by the mail client; too short
 // and it says nothing.
 const SUBJECT_RANGE = { min: 30, max: 50 };
-// A preheader below this adds nothing next to the subject; above it, no client
-// shows the rest.
-const PREHEADER_RANGE = { min: 40, max: 130 };
-
 // Mirrors MAX_SUBJECT_LENGTH in packages/server/mailing/mailing-metadata.service.js.
 // The panel warns; the server refuses.
 const SUBJECT_HARD_LIMIT = 255;
-const PREHEADER_HARD_LIMIT = 255;
 
 /**
  * State of a character counter, for a field whose length is advice rather than a
@@ -41,7 +36,6 @@ function counterState(value, range) {
 }
 
 const subjectCounter = (value) => counterState(value, SUBJECT_RANGE);
-const preheaderCounter = (value) => counterState(value, PREHEADER_RANGE);
 
 /**
  * A Date, or the value the server sent, rendered for `<input type="date">`, which
@@ -95,10 +89,6 @@ function fromDateInputValue(value) {
 
 /**
  * The PATCH payload for subject, planned send date and typology.
- *
- * The preheader is absent on purpose: in the editor it is held live in the
- * template data and saved by the global save. Sending it here would be
- * overwritten by the next global save.
  *
  * `null` clears a field, and the server reads it that way.
  *
@@ -184,12 +174,9 @@ function hasMetadataChanges(form, initial) {
 
 module.exports = {
   SUBJECT_RANGE,
-  PREHEADER_RANGE,
   SUBJECT_HARD_LIMIT,
-  PREHEADER_HARD_LIMIT,
   counterState,
   subjectCounter,
-  preheaderCounter,
   toDateInputValue,
   fromDateInputValue,
   buildMetadataPayload,
