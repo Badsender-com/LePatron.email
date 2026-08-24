@@ -330,6 +330,7 @@ async function getDashboardCount(req, res) {
  *
  * @apiSuccess {Array} models List of available models
  * @apiSuccess {Boolean} dynamic Whether the list was fetched dynamically from the provider
+ * @apiSuccess {String} defaultModel Model the provider falls back to when none is configured (null if it has none)
  */
 async function getModels(req, res) {
   const { user, params } = req;
@@ -344,17 +345,23 @@ async function getModels(req, res) {
 
   const provider = ProviderFactory.createProvider(integration);
   const capabilities = provider.getCapabilities();
+  const defaultModel = resolveDefaultModel(provider);
 
   try {
     // If the provider supports live model listing (e.g. fetches from the provider API)
     if (typeof provider.getAvailableModels === 'function') {
       const models = await provider.getAvailableModels();
-      return res.json({ models, dynamic: true, capabilities });
+      return res.json({ models, dynamic: true, capabilities, defaultModel });
     }
 
     // Otherwise delegate to the provider's own static list
     const staticModels = provider.getStaticModels();
-    return res.json({ models: staticModels, dynamic: false, capabilities });
+    return res.json({
+      models: staticModels,
+      dynamic: false,
+      capabilities,
+      defaultModel,
+    });
   } catch (error) {
     logger.error('Error fetching models:', error.message);
     // Return empty model list but preserve capabilities so the UI stays coherent
@@ -362,7 +369,25 @@ async function getModels(req, res) {
       models: [],
       dynamic: false,
       capabilities,
+      defaultModel,
       error: 'Failed to fetch models from provider',
     });
+  }
+}
+
+/**
+ * The model a provider silently falls back to when the group leaves the field
+ * empty. Exposed so the UI can label its "default" option instead of showing an
+ * empty select that suggests no model will be used.
+ *
+ * `_getDefaultModel` is optional: the base class throws when a subclass has not
+ * implemented it, and translation-only providers (DeepL) have no notion of one.
+ */
+function resolveDefaultModel(provider) {
+  if (typeof provider._getDefaultModel !== 'function') return null;
+  try {
+    return provider._getDefaultModel() || null;
+  } catch (error) {
+    return null;
   }
 }

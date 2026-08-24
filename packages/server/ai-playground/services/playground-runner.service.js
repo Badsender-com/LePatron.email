@@ -1,0 +1,272 @@
+'use strict';
+
+const createError = require('http-errors');
+
+const {
+  AIPlaygroundScenarios,
+  AIPlaygroundRuns,
+  LePatronSkills,
+  Groups,
+} = require('../../common/models.common.js');
+const skillInvocation = require('../../ai-skill/services/skill-invocation.service.js');
+const testBudget = require('./test-budget.service.js');
+const { resolveExpertise } = require('./expertise-resolver.service.js');
+const { runExpiresAt } = require('./run-retention.service.js');
+const {
+  VersionRefModes,
+  PlaygroundInvocationSource,
+  RunStatuses,
+  PlaygroundTimeoutMs,
+} = require('../constant/playground-constants.js');
+const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+} = require('../../ai-skill/services/version-helpers.js');
+
+/**
+ * Execute a scenario:
+ *   1. Snapshot scenario (full deep copy).
+ *   2. Resolve the skill version (active or pinned).
+ *   3. Resolve expertises (3 modes: explicit / filter / none).
+ *   4. Compose the input. v1 doctrine: the runner only auto-injects the
+ *      `expertise` field. Everything else stays in scenario.input verbatim.
+ *   5. Pre-flight the composed input against the version's schema, then
+ *      consume the user's daily test budget — an input zod refuses costs no
+ *      provider call, so it must not cost a run either.
+ *   6. Call skillInvocation.invoke({ ..., invocationSource: 'playground' }).
+ *      The invoke service handles its own logging into AISkillInvocation.
+ *   7. Persist an AIPlaygroundRun with the snapshot, refs and denormalised
+ *      output for fast listing, and its retention deadline.
+ *
+ * @returns {Promise<AIPlaygroundRun>}
+ */
+async function executeScenario({
+  scenarioId,
+  userId,
+  groupId,
+  overrides = {},
+}) {
+  const scenario = await AIPlaygroundScenarios.findOne({ scenarioId });
+  if (!scenario) throw createError(404, `Scenario "${scenarioId}" not found`);
+
+  const snapshot = JSON.parse(JSON.stringify(scenario.toObject()));
+  // Group resolution order: explicit runtime groupId > scenario.groupContext >
+  // the internal platform group. The platform group lets the playground run as
+  // a super-admin R&D engine without borrowing a client group's integration.
+  let effectiveGroupId = groupId || scenario.groupContext;
+  if (!effectiveGroupId) {
+    const platformGroup = await Groups.findOne(
+      { isPlatform: true },
+      { _id: 1 }
+    ).lean();
+    if (!platformGroup) {
+      throw createError(
+        400,
+        // Reaches the UI verbatim (err.response.data.message), so it names
+        // the screen in English rather than embedding its French label.
+        'No group context and no platform group found. Run ' +
+          '`yarn flag-platform-group`, then configure its Skills engine in ' +
+          "the group's AI features settings."
+      );
+    }
+    effectiveGroupId = platformGroup._id;
+  }
+
+  const resolvedSkill = await loadActiveOrPinnedSkill(scenario.skillRef);
+  const resolvedExpertise = await resolveExpertise(scenario);
+
+  const baseInput =
+    overrides.input !== undefined ? overrides.input : scenario.input || {};
+  // The runner only auto-injects `expertise`, and ONLY when there is at least
+  // one resolved expertise. Injecting an empty `expertise: []` would break
+  // skills whose (strict) input schema doesn't declare an expertise field —
+  // e.g. `generic.text`. A skill that consumes expertise must declare an
+  // optional `expertise` field in its input schema. Everything else stays the
+  // super-admin's responsibility on scenario.input.
+  const composedInput = { ...baseInput };
+  if (resolvedExpertise.length) {
+    composedInput.expertise = resolvedExpertise.map((e) => ({
+      expertiseId: e.expertiseId,
+      title: e.title,
+      body: e.body,
+      examplesGood: e.examplesGood,
+      examplesBad: e.examplesBad,
+    }));
+  }
+
+  const invocationOptions = buildInvocationOptions(scenario, overrides);
+
+  let invocationResult = null;
+  let invocationError = null;
+
+  // An input zod refuses triggers no provider call and costs nothing, so it
+  // must not burn one of the 50 daily runs either. `invoke()` validates again
+  // — this only decides whether we are about to spend anything.
+  const preflight = skillInvocation.validateInputAgainstSchema(
+    resolvedSkill.inputSchemaId,
+    composedInput
+  );
+  if (!preflight.ok) {
+    invocationError = Object.assign(new Error(preflight.message), {
+      invocationStatus: RunStatuses.VALIDATION_ERROR,
+      fieldErrors: preflight.fieldErrors,
+    });
+  } else {
+    await testBudget.consumeBudget(userId);
+    try {
+      invocationResult = await skillInvocation.invoke({
+        skillId: resolvedSkill.skillId,
+        input: composedInput,
+        groupId: effectiveGroupId,
+        userId,
+        invocationSource: PlaygroundInvocationSource,
+        variantPath: scenario.variantPath || [],
+        // Always pass the resolved version: in pinned mode this is what makes
+        // the pinned version actually RUN (not just be displayed on the run).
+        version: {
+          major: resolvedSkill.versionMajor,
+          minor: resolvedSkill.versionMinor,
+        },
+        options: invocationOptions,
+      });
+    } catch (err) {
+      invocationError = err;
+    }
+  }
+
+  const run = await AIPlaygroundRuns.create({
+    _scenario: scenario._id,
+    scenarioSnapshot: snapshot,
+    resolvedSkill: {
+      skillId: resolvedSkill.skillId,
+      versionMajor: resolvedSkill.versionMajor,
+      versionMinor: resolvedSkill.versionMinor,
+    },
+    resolvedExpertise: resolvedExpertise.map((e) => ({
+      expertiseId: e.expertiseId,
+      versionMajor: e.versionMajor,
+      versionMinor: e.versionMinor,
+    })),
+    composedInput,
+    _invocation:
+      (invocationResult && invocationResult.invocationId) ||
+      (invocationError && invocationError.invocationId) ||
+      null,
+    output: invocationResult ? invocationResult.output : null,
+    status: invocationError
+      ? invocationError.invocationStatus || RunStatuses.PROVIDER_ERROR
+      : RunStatuses.SUCCESS,
+    latencyMs: (invocationResult && invocationResult.latencyMs) || null,
+    tokenUsage: (invocationResult && invocationResult.tokenUsage) || {},
+    errorMessage: invocationError ? invocationError.message : null,
+    // Codes, not sentences: the UI renders them through
+    // aiPlayground.validation.* so a failed run stays legible in either
+    // language, on the execute response AND on every later GET.
+    fieldErrors: normaliseFieldErrors(invocationError),
+    createdBy: userId,
+    // Retention deadline for the TTL index. Cleared when the run is marked
+    // golden (run.service.js).
+    expiresAt: runExpiresAt(new Date()),
+  });
+
+  return run;
+}
+
+/**
+ * The field errors carried by an invocation failure, in the persisted shape.
+ * `[]` for any other kind of error.
+ */
+function normaliseFieldErrors(invocationError) {
+  const fieldErrors = invocationError && invocationError.fieldErrors;
+  if (!Array.isArray(fieldErrors)) return [];
+  return fieldErrors
+    .filter((e) => e && e.field && e.issue)
+    .map((e) => ({ field: e.field, issue: e.issue }));
+}
+
+async function loadActiveOrPinnedSkill(skillRef) {
+  const skill = await LePatronSkills.findOne(
+    { skillId: skillRef.skillId },
+    { skillId: 1, status: 1, activeVersion: 1, versions: 1 }
+  ).lean();
+  if (!skill) throw createError(404, `Skill "${skillRef.skillId}" not found`);
+  // `assertReferencesExist` carries this invariant when a scenario is written;
+  // the runner was missing it, so an archived skill got as far as consuming the
+  // budget and persisting a failed run for a condition knowable up front.
+  if (skill.status !== SkillStatuses.ACTIVE) {
+    throw createError(
+      400,
+      `Skill "${skillRef.skillId}" is not ACTIVE (status ${skill.status})`
+    );
+  }
+  // Which version to run is the playground's policy; finding it is the shared
+  // version mechanics (ai-skill/services/version-helpers).
+  let version;
+  if (skillRef.mode === VersionRefModes.PINNED) {
+    version = findVersion(
+      skill,
+      skillRef.versionMajor,
+      skillRef.versionMinor || 0
+    );
+    if (!version) {
+      throw createError(
+        404,
+        `Version ${skillRef.versionMajor}.${
+          skillRef.versionMinor || 0
+        } of skill "${skillRef.skillId}" not found`
+      );
+    }
+  } else {
+    if ((skill.activeVersion || {}).major == null) {
+      throw createError(
+        400,
+        `Skill "${skillRef.skillId}" has no active version`
+      );
+    }
+    version = findActiveVersion(skill);
+    if (!version) {
+      throw createError(
+        404,
+        `Skill "${skillRef.skillId}" points at an active version that no longer exists`
+      );
+    }
+  }
+  return {
+    skillId: skill.skillId,
+    versionMajor: version.versionMajor,
+    versionMinor: version.versionMinor,
+    // Carried so the runner can pre-flight the input before spending quota.
+    inputSchemaId: version.inputSchemaId,
+  };
+}
+
+function buildInvocationOptions(scenario, overrides) {
+  // `invoke()` defaults to 30 s, which is tuned for a user-facing feature. The
+  // playground is where long prompts and large outputs are deliberately tried
+  // out, by one super-admin who is watching the request — a timeout here reads
+  // as "the model is broken".
+  const opts = { timeoutMs: PlaygroundTimeoutMs };
+  const po =
+    (overrides && overrides.providerOverride) || scenario.providerOverride;
+  if (!po) return opts;
+  // The invocation service applies skill-modelHints; provider override is
+  // surfaced for future use but not yet wired into invoke(). Kept as a
+  // pass-through in `options.providerOverride` for forward compatibility.
+  if (
+    po.model ||
+    po.temperature != null ||
+    po.maxTokens != null ||
+    po.topP != null
+  ) {
+    opts.providerOverride = {
+      model: po.model || undefined,
+      temperature: po.temperature,
+      maxTokens: po.maxTokens,
+      topP: po.topP,
+    };
+  }
+  return opts;
+}
+
+module.exports = { executeScenario };

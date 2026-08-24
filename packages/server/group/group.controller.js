@@ -13,6 +13,7 @@ const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
+const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
 
 const {
   Groups,
@@ -37,6 +38,7 @@ module.exports = {
   readEmailGroups: asyncHandler(readEmailGroups),
   readColorScheme: asyncHandler(readColorScheme),
   update: asyncHandler(update),
+  setPlatform: asyncHandler(setPlatform),
   deleteGroup: asyncHandler(deleteGroup),
   readPersonalizedVariables: asyncHandler(readPersonalizedVariables),
   createOrUpdatePersonalizedVariables: asyncHandler(
@@ -57,6 +59,9 @@ module.exports = {
  */
 
 async function list(req, res) {
+  // The platform group is a real operator group (Badsender / self-host
+  // operator) used for actual emailing, so it appears in listings like any
+  // other group — no filtering.
   const [groups, groupsWithProfiles] = await Promise.all([
     Groups.find({}).sort({ name: 1 }),
     Profiles.distinct('_company'),
@@ -67,6 +72,44 @@ async function list(req, res) {
     hasProfiles: profileGroupSet.has(String(group._id)),
   }));
   res.json({ items });
+}
+
+/**
+ * @api {put} /groups/:groupId/platform Set or unset the platform group
+ * @apiPermission admin
+ * @apiName SetPlatformGroup
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ * @apiParam (Body) {Boolean} [isPlatform=true] Whether this group becomes the
+ *   platform group. Setting it true moves the flag: any other platform group is
+ *   unset first (the platform group is a singleton, also enforced by a partial
+ *   unique index).
+ */
+async function setPlatform(req, res) {
+  const { groupId } = req.params;
+  const isPlatform = req.body.isPlatform !== false; // default true
+
+  const group = await Groups.findById(groupId);
+  if (!group) {
+    throw new NotFound();
+  }
+
+  if (!isPlatform) {
+    group.isPlatform = false;
+    await group.save();
+    return res.json(group.toJSON());
+  }
+
+  // Move the flag: clear any other platform group first so the partial unique
+  // index never trips, then mark this one.
+  await Groups.updateMany(
+    { isPlatform: true, _id: { $ne: group._id } },
+    { $set: { isPlatform: false } }
+  );
+  group.isPlatform = true;
+  await group.save();
+  res.json(group.toJSON());
 }
 
 /**
@@ -419,7 +462,30 @@ async function update(req, res) {
     ]);
   }
 
+  // Read the retention before the write, and only when the payload carries it,
+  // so an ordinary group update costs no extra query.
+  const carriesRetention = groupToUpdate.logRetentionDays !== undefined;
+  const previousRetention = carriesRetention
+    ? (
+        await Groups.findById(req.params.groupId, {
+          logRetentionDays: 1,
+        }).lean()
+      )?.logRetentionDays
+    : undefined;
+
   await groupService.updateGroup(groupToUpdate);
+
+  // AISkillInvocation.expiresAt is stamped at write time, so a retention change
+  // has to be propagated to the invocations already logged — otherwise lowering
+  // it would only apply to future ones, and the RGPD promise would be weaker
+  // than the nightly purge this replaced.
+  const nextRetention = Number(groupToUpdate.logRetentionDays);
+  if (carriesRetention && nextRetention !== previousRetention) {
+    await invocationLogService.restampRetention({
+      groupId: req.params.groupId,
+      retentionDays: nextRetention,
+    });
+  }
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
