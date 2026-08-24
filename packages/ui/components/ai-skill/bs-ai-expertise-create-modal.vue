@@ -166,6 +166,7 @@ export default {
         multiple
         chips
         small-chips
+        clearable
         :disabled="loading || expertise.isTransversal"
       />
       <bs-combobox
@@ -177,6 +178,7 @@ export default {
         multiple
         chips
         small-chips
+        clearable
         :disabled="loading"
       >
         <template #selection="{ item }">

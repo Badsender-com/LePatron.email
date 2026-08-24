@@ -22,6 +22,10 @@ export default {
     clearable: { type: Boolean, default: false },
     chips: { type: Boolean, default: false },
     smallChips: { type: Boolean, default: false },
+    // Opt-out only. A combobox accepts freely typed values, which are absent
+    // from `items` and therefore cannot be deselected from the menu either: a
+    // chip with no close icon made a typo permanent.
+    deletableChips: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -53,6 +57,17 @@ export default {
         return this.errorMessages;
       }
       return this.errorMessages ? [this.errorMessages] : [];
+    },
+    // `readonly` reaches us through $attrs, as a boolean or as a bare
+    // attribute (empty string).
+    isReadonly() {
+      const readonly = this.$attrs.readonly;
+      return readonly === true || readonly === '' || readonly === 'readonly';
+    },
+    chipsDeletable() {
+      return (
+        this.deletableChips && this.chips && !this.disabled && !this.isReadonly
+      );
     },
   },
   methods: {
@@ -105,6 +120,7 @@ export default {
       :clearable="clearable"
       :chips="chips"
       :small-chips="smallChips"
+      :deletable-chips="chipsDeletable"
       :error-messages="normalizedErrors"
       solo
       flat

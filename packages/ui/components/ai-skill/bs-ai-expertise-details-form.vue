@@ -106,6 +106,7 @@ export default {
       multiple
       chips
       small-chips
+      clearable
       @input="update({ scope: $event })"
     />
     <bs-combobox
@@ -117,6 +118,7 @@ export default {
       multiple
       chips
       small-chips
+      clearable
       @input="update({ appliesToEmailTypes: $event })"
     >
       <template #selection="{ item }">

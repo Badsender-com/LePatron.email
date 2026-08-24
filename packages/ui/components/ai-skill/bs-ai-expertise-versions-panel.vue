@@ -151,6 +151,7 @@ export default {
               multiple
               chips
               small-chips
+              :clearable="v.status === 'DRAFT'"
               :readonly="v.status !== 'DRAFT'"
             />
             <bs-combobox
@@ -159,6 +160,7 @@ export default {
               multiple
               chips
               small-chips
+              :clearable="v.status === 'DRAFT'"
               :readonly="v.status !== 'DRAFT'"
             />
             <bs-textarea
