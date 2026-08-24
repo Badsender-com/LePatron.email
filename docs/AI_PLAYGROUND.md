@@ -150,6 +150,21 @@ Les filtres de liste (`skillId`, `tag`, `owner`, `search`, `status`,
 `startedFrom`, `startedTo`) passent par `utils/query-scalars.js` : un opérateur
 Mongo injecté depuis la query string (`?status[$ne]=`) répond 400.
 
+## Dépendance `markdown-it`
+
+Le rendu de la sortie (`bs-markdown-renderer.vue`) dépend de `markdown-it`,
+déclaré en **version exacte `13.0.2`**. Deux contraintes qui se croisent, à
+connaître avant tout bump :
+
+- **plafond** : la 14.x est ESM-only et cette stack (Nuxt 2 / webpack 4) ne sait
+  pas consommer les exports nommés de ses dépendances CJS (`entities`,
+  `mdurl`) — le bundle client ne compile pas ;
+- **plancher** : le correctif de la CVE-2022-21670 (ReDoS) est arrivé en 12.3.2,
+  et ce composant rend précisément de la sortie LLM non maîtrisée avec
+  `linkify: true`.
+
+Donc : 13.x uniquement, jusqu'à une éventuelle migration webpack 5.
+
 ## Déploiement — migration obligatoire
 
 `categories` est devenu **obligatoire** dans `expertiseFilter` pour que
