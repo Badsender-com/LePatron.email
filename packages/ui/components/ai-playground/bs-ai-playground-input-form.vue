@@ -8,8 +8,8 @@
  * authority and returns inline `fieldErrors`.
  */
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsAiPlaygroundInputField from './BsAiPlaygroundInputField.vue';
-import BsAiPlaygroundSkillChangeDialog from './BsAiPlaygroundSkillChangeDialog.vue';
+import BsAiPlaygroundInputField from './bs-ai-playground-input-field.vue';
+import BsAiPlaygroundSkillChangeDialog from './bs-ai-playground-skill-change-dialog.vue';
 import {
   fetchSchemaDescriptor,
   humanizeFieldLabel,

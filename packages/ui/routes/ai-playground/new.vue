@@ -5,7 +5,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import BsAiPlaygroundScenarioForm from '~/components/ai-playground/BsAiPlaygroundScenarioForm.vue';
+import BsAiPlaygroundScenarioForm from '~/components/ai-playground/bs-ai-playground-scenario-form.vue';
 
 export default {
   name: 'PageAiPlaygroundNew',

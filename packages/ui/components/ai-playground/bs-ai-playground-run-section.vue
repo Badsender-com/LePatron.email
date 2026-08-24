@@ -2,10 +2,10 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-playground-routes.js';
-import BsAiPlaygroundRunResult from './BsAiPlaygroundRunResult.vue';
-import BsAiPlaygroundRunsList from './BsAiPlaygroundRunsList.vue';
-import BsAiPlaygroundRunDetailModal from './BsAiPlaygroundRunDetailModal.vue';
-import BsAiPlaygroundRunCompareView from './BsAiPlaygroundRunCompareView.vue';
+import BsAiPlaygroundRunResult from './bs-ai-playground-run-result.vue';
+import BsAiPlaygroundRunsList from './bs-ai-playground-runs-list.vue';
+import BsAiPlaygroundRunDetailModal from './bs-ai-playground-run-detail-modal.vue';
+import BsAiPlaygroundRunCompareView from './bs-ai-playground-run-compare-view.vue';
 import { Play } from 'lucide-vue';
 
 export default {

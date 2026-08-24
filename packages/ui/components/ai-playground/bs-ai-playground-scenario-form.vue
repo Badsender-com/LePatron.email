@@ -7,9 +7,9 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
-import BsAiPlaygroundExpertiseSelector from './BsAiPlaygroundExpertiseSelector.vue';
-import BsAiPlaygroundInputForm from './BsAiPlaygroundInputForm.vue';
-import BsAiSkillPicker from './BsAiSkillPicker.vue';
+import BsAiPlaygroundExpertiseSelector from './bs-ai-playground-expertise-selector.vue';
+import BsAiPlaygroundInputForm from './bs-ai-playground-input-form.vue';
+import BsAiSkillPicker from './bs-ai-skill-picker.vue';
 
 export default {
   name: 'BsAiPlaygroundScenarioForm',
@@ -239,7 +239,8 @@ export default {
       >
         {{ $t('aiPlayground.form.scenarioIdToggle') }}
         <span v-if="!showIdentifier && scenario.scenarioId" class="ml-1">
-          — {{ scenario.scenarioId }}</span>
+          — {{ scenario.scenarioId }}</span
+        >
         <v-icon :size="18">
           {{ showIdentifier ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
         </v-icon>

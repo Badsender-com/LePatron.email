@@ -12,7 +12,7 @@ import {
 } from '~/helpers/expertise-filter.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
+import BsAiExpertisePicker from './bs-ai-expertise-picker.vue';
 import { ArrowUp, ArrowDown } from 'lucide-vue';
 
 const MODES = ['none', 'explicit', 'filter'];

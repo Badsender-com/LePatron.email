@@ -6,8 +6,8 @@ import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
-import BsAiPlaygroundScenarioForm from '~/components/ai-playground/BsAiPlaygroundScenarioForm.vue';
-import BsAiPlaygroundRunSection from '~/components/ai-playground/BsAiPlaygroundRunSection.vue';
+import BsAiPlaygroundScenarioForm from '~/components/ai-playground/bs-ai-playground-scenario-form.vue';
+import BsAiPlaygroundRunSection from '~/components/ai-playground/bs-ai-playground-run-section.vue';
 import { Trash2 } from 'lucide-vue';
 
 function inferExpertiseMode(scenario) {
