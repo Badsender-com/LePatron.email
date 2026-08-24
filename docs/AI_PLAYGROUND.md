@@ -76,7 +76,11 @@ Principe : _le playground orchestre, la skill est une fonction pure de son input
   coûter. `invoke()` revalide de son côté.
 - **Budget de test** : `MaxDailyPlaygroundRuns = 50`/jour
   (`ai-playground/services/test-budget.service.js`) ; épuisé → HTTP 429,
-  affiché en clair dans l'UI.
+  affiché en clair dans l'UI. **Aucun compteur n'est exposé** : `consumeBudget`
+  calcule bien `{ count, max, remaining }` mais le runner ne lit pas la valeur
+  de retour, donc le budget ne se manifeste que par le 429. Volontaire tant que
+  le compteur est par worker — afficher un chiffre reviendrait à afficher un
+  chiffre faux (cf. §3 de l'issue ci-dessous).
   ⚠️ **Ce compteur est en mémoire, donc PAR WORKER.** Le pseudo-compte
   `config.admin` n'a pas de ligne `users` (cf. `userIdOf`), le service tombe
   toujours sur sa branche mémoire, et `packages/server/index.js` démarre un

@@ -205,8 +205,15 @@ Corps de version 1.0, puis activation :
 - [ ] Vider `Instruction / demande` + Exécuter → erreur **sous le bon champ** ;
       en base `errorMessage` = le message zod brut et `fieldErrors` =
       `[{ field: 'prompt', issue: 'required' }]` (le libellé vient des locales)
-- [ ] Ce run raté **ne consomme pas** de budget : le compteur affiché ne bouge
-      pas (aucun appel provider n'a eu lieu)
+- [ ] _(non observable à la main)_ Ce run raté **ne consomme pas** de budget :
+      aucun compteur n'est affiché dans l'UI — le budget ne se manifeste que
+      par le 429 une fois épuisé — et il faudrait brûler 50 runs pour le voir.
+      La garantie est portée par le test
+      `does not consume budget when the input fails the pre-flight`
+      (`tests/server/ai-playground/services/playground-runner.test.js`), qui
+      vérifie que `consumeBudget` n'est jamais appelé. Affichage du compteur :
+      volontairement pas fait, cf. §3 de l'issue #1086 (le compteur est en
+      mémoire donc par worker, l'afficher donnerait un chiffre faux).
 - [ ] Rouvrir ce run plus tard → la modale affiche **la même erreur traduite**,
       pas seulement le message brut
 - [ ] Changer de skill avec des champs saisis → modale « Changer de skill ? » → tester **Garder mes saisies (JSON)** et **Continuer (champs supprimés)**
