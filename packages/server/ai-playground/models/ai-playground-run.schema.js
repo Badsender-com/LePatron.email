@@ -43,7 +43,10 @@ const RunFeedbackSchema = new Schema(
   {
     rating: { type: String, enum: FeedbackRatingValues },
     score: { type: Number, min: 1, max: 5 },
-    comment: { type: String },
+    // Generous but bounded: the daily quota only guards /execute, so every
+    // other writable text field needs its own ceiling. Not a product rule —
+    // a bound on unbounded storage.
+    comment: { type: String, maxlength: 2000 },
     ratedBy: { type: ObjectId, ref: UserModel },
     ratedAt: { type: Date },
   },

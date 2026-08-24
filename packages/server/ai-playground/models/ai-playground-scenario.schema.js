@@ -82,7 +82,7 @@ const AIPlaygroundScenarioSchema = new Schema(
       match: [ScenarioIdRegex, 'scenarioId must match ^[a-z0-9._-]+$'],
     },
     name: { type: String, required: true },
-    description: { type: String, default: '' },
+    description: { type: String, default: '', maxlength: 5000 },
     tags: { type: [String], default: [] },
 
     skillRef: { type: SkillRefSchema, required: true },

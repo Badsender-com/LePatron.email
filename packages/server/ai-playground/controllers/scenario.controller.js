@@ -49,7 +49,11 @@ module.exports = {
     const run = await playgroundRunner.executeScenario({
       scenarioId: req.params.scenarioId,
       userId: userIdOf(req),
-      groupId: req.body && req.body.groupId,
+      // `groupId` is deliberately NOT read from the body. No UI sends it, and
+      // it selects which client group's integration — API key, budget — the
+      // run spends, and which group's AISkillInvocation carries the prompt.
+      // The runner falls back to scenario.groupContext then the platform
+      // group. A runtime override is a step-2 concern and needs a whitelist.
       overrides: req.body && req.body.overrides,
     });
     // fieldErrors is a transient property outside the mongoose schema:

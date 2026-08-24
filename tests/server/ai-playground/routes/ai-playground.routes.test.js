@@ -121,17 +121,32 @@ describe('ai-playground HTTP routes', () => {
     playgroundRunner.executeScenario.mockResolvedValue(
       mockRunDoc({ _id: new Types.ObjectId(), status: 'SUCCESS' })
     );
-    const groupId = new Types.ObjectId().toString();
     const res = await request(makeApp())
       .post('/api/ai-playground/scenarios/demo/execute')
-      .send({ groupId, overrides: { input: { prompt: 'override' } } });
+      .send({ overrides: { input: { prompt: 'override' } } });
     expect(res.status).toBe(200);
     expect(playgroundRunner.executeScenario).toHaveBeenCalledWith(
       expect.objectContaining({
         scenarioId: 'demo',
-        groupId,
         overrides: { input: { prompt: 'override' } },
       })
+    );
+  });
+
+  // `groupId` selects whose API key and budget the run spends, and whose
+  // AISkillInvocation carries the prompt. No UI sends it; the body must not be
+  // able to.
+  it('POST /scenarios/:id/execute ignores a groupId sent in the body', async () => {
+    playgroundRunner.executeScenario.mockResolvedValue(
+      mockRunDoc({ _id: new Types.ObjectId(), status: 'SUCCESS' })
+    );
+    const groupId = new Types.ObjectId().toString();
+    const res = await request(makeApp())
+      .post('/api/ai-playground/scenarios/demo/execute')
+      .send({ groupId, overrides: {} });
+    expect(res.status).toBe(200);
+    expect(playgroundRunner.executeScenario).toHaveBeenCalledWith(
+      expect.not.objectContaining({ groupId })
     );
   });
 

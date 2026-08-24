@@ -9,6 +9,11 @@ const {
 } = require('../../common/models.common.js');
 const { VersionRefModes } = require('../constant/playground-constants.js');
 const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
+const {
+  scalarParam,
+  objectIdParam,
+  escapeRegex,
+} = require('../../utils/query-scalars.js');
 
 const LIST_PROJECTION = {
   scenarioId: 1,
@@ -33,12 +38,19 @@ async function listScenarios({
   page = 1,
   pageSize = 50,
 } = {}) {
+  // Express turns `?skillId[$regex]=.*` into an object: every filter goes
+  // through a scalar guard before it becomes a query operand. `search` was
+  // already escaped, which is what made the inconsistency visible.
   const query = {};
-  if (skillId) query['skillRef.skillId'] = skillId;
-  if (tag) query.tags = tag;
-  if (owner) query.owner = owner;
-  if (search) {
-    const rx = new RegExp(escapeRegex(search), 'i');
+  const skillIdFilter = scalarParam(skillId, 'skillId');
+  const tagFilter = scalarParam(tag, 'tag');
+  const ownerFilter = objectIdParam(owner, 'owner');
+  const searchFilter = scalarParam(search, 'search');
+  if (skillIdFilter) query['skillRef.skillId'] = skillIdFilter;
+  if (tagFilter) query.tags = tagFilter;
+  if (ownerFilter) query.owner = ownerFilter;
+  if (searchFilter) {
+    const rx = new RegExp(escapeRegex(searchFilter), 'i');
     query.$or = [{ name: rx }, { description: rx }, { scenarioId: rx }];
   }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
@@ -108,7 +120,10 @@ async function createScenario(data, userId) {
   await assertReferencesExist(data);
   try {
     return await AIPlaygroundScenarios.create({
-      ...data,
+      // Whitelisted like the update path. `create({ ...data })` let a caller
+      // set `_id` and `goldenRunId` — the identity of the document and a
+      // reference the golden flow owns.
+      ...pick(data, CREATABLE_FIELDS),
       owner: userId,
       updatedBy: userId,
     });
@@ -118,6 +133,14 @@ async function createScenario(data, userId) {
     }
     throw err;
   }
+}
+
+function pick(source, fields) {
+  const out = {};
+  for (const key of fields) {
+    if (source && source[key] !== undefined) out[key] = source[key];
+  }
+  return out;
 }
 
 const PATCHABLE_FIELDS = [
@@ -132,6 +155,9 @@ const PATCHABLE_FIELDS = [
   'groupContext',
   'variantPath',
 ];
+
+// scenarioId is set at creation and immutable afterwards, hence the two lists.
+const CREATABLE_FIELDS = ['scenarioId', ...PATCHABLE_FIELDS];
 
 async function updateScenario(scenarioId, patch, userId) {
   const doc = await getScenario(scenarioId);
@@ -230,10 +256,6 @@ async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
       }
     }
   }
-}
-
-function escapeRegex(s) {
-  return String(s).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 module.exports = {
