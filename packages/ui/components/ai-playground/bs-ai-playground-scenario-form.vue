@@ -37,7 +37,6 @@ export default {
       skills: [],
       availableExpertise: [],
       knownTags: [],
-      groups: [],
       // From the input form's descriptor: whether the selected skill accepts
       // expertise input. Default true so nothing is blocked before load.
       skillAcceptsExpertise: true,
@@ -166,7 +165,7 @@ export default {
     async loadExpertise() {
       try {
         // Reuse the ai-expertise list endpoint as a directory.
-        const res = await this.$axios.$get('/ai-expertise', {
+        const res = await this.$axios.$get(skillApi.aiExpertiseList(), {
           params: { status: 'ACTIVE', pageSize: 200 },
         });
         this.availableExpertise = res.items || [];
@@ -176,16 +175,14 @@ export default {
     },
     async loadTags() {
       // Suggest existing scenario tags in the tags combobox (free create too).
+      // GET /scenarios/facets returns exactly { skillIds, tags }; this used to
+      // download 200 complete scenarios to extract their tags, on every mount
+      // of the form — creation included, where there is nothing to extract yet.
       try {
         const res = await this.$axios.$get(
-          playgroundApi.aiPlaygroundScenarios(),
-          { params: { pageSize: 200 } }
+          playgroundApi.aiPlaygroundScenarioFacets()
         );
-        const set = new Set();
-        for (const s of res.items || []) {
-          for (const t of s.tags || []) set.add(t);
-        }
-        this.knownTags = [...set].sort();
+        this.knownTags = (res && res.tags) || [];
       } catch (e) {
         this.knownTags = [];
       }

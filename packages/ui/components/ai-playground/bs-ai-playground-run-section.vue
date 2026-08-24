@@ -63,6 +63,21 @@ export default {
         this.executing = false;
       }
     },
+    async deleteRun(run) {
+      try {
+        await this.$axios.$delete(api.aiPlaygroundRun(run._id));
+        // The golden reference may have been the run just deleted; the server
+        // clears it, so the page has to hear about it.
+        if (run.isGolden) this.$emit('golden-changed', null);
+        await this.reloadRuns();
+        this.showSnackbar({
+          text: this.$t('aiPlayground.runs.deleted'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.handleError(err);
+      }
+    },
     async reloadRuns() {
       const res = await this.$axios.$get(
         api.aiPlaygroundScenarioRuns(this.scenarioId),
@@ -194,7 +209,11 @@ export default {
     <h3 class="section-title mt-6">
       {{ $t('aiPlayground.runs.title') }}
     </h3>
-    <bs-ai-playground-runs-list :runs="runs" @open="openRun" />
+    <bs-ai-playground-runs-list
+      :runs="runs"
+      @open="openRun"
+      @delete="deleteRun"
+    />
 
     <bs-ai-playground-run-detail-modal
       ref="runDetailModal"

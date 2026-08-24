@@ -98,14 +98,15 @@ describe('ai-playground HTTP routes', () => {
     expect(scenarioService.createScenario).toHaveBeenCalled();
   });
 
-  // The runner returns a mongoose doc — the controller relies on toJSON().
+  // The runner returns a mongoose doc — express serialises it through toJSON().
+  // `fieldErrors` is part of the schema now, so it survives that pass (it used
+  // to be a transient property the controller had to copy by hand).
   function mockRunDoc(doc) {
     return {
       ...doc,
       toJSON() {
         const json = { ...this };
         delete json.toJSON;
-        delete json.fieldErrors;
         return json;
       },
     };
@@ -144,12 +145,13 @@ describe('ai-playground HTTP routes', () => {
     );
   });
 
-  it('POST /scenarios/:id/execute exposes transient fieldErrors in the payload', async () => {
+  it('POST /scenarios/:id/execute returns the run field errors', async () => {
     playgroundRunner.executeScenario.mockResolvedValue(
       mockRunDoc({
         _id: new Types.ObjectId(),
         status: 'VALIDATION_ERROR',
-        errorMessage: 'Champs invalides : prompt (obligatoire)',
+        errorMessage:
+          'prompt: Invalid input: expected string, received undefined',
         fieldErrors: [{ field: 'prompt', issue: 'required' }],
       })
     );

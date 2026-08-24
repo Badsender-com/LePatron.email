@@ -1281,7 +1281,6 @@ export default {
     intro: 'Compose, run and store test scenarios that combine a skill, expertise modules and parameters. Use it to iterate on a prompt, validate an update, or prototype a feature before writing it.',
     actions: {
       newScenario: 'New scenario',
-      duplicate: 'Duplicate',
       delete: 'Delete',
       execute: 'Run',
       markGolden: 'Mark as reference',
@@ -1397,7 +1396,6 @@ export default {
       title: 'Run history',
       empty: 'No run yet on this scenario. Trigger one to start.',
       runOf: 'Run of {date}',
-      latestRun: 'Latest run',
       executing: 'Running, may take up to 30 seconds…',
       budgetExhausted: 'Daily test budget reached (50/50). Try again tomorrow.',
       tabs: {
@@ -1422,6 +1420,8 @@ export default {
         current: 'Selected run',
         noGolden: 'No reference set for this scenario.',
       },
+      delete: 'Delete this run',
+      deleted: 'Run deleted',
       deleteConfirm: 'Permanently delete this run?',
     },
     status: {

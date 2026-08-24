@@ -56,7 +56,7 @@ const ExpertiseFilterSchema = new Schema(
   { _id: false }
 );
 
-// Réservé étape 3 (mode benchmark) — NOT wired into invoke() in v1: the
+// Reserved for step 3 (benchmark mode) — NOT wired into invoke() in v1: the
 // provider always comes from the Group's Skills-engine Integration, and no UI
 // exposes these fields (deliberate: never show a control without effect).
 // The runner passes the override through as a forward-compat envelope only.
@@ -100,10 +100,10 @@ const AIPlaygroundScenarioSchema = new Schema(
       default: () => ({}),
     },
 
-    // Réservé étape 2 (sélecteur de Group) — no UI sets it in v1: the runner
+    // Reserved for step 2 (Group selector) — no UI sets it in v1: the runner
     // falls back to the platform group. Cf. docs/REVIEW_GUIDE_AI_MODULES.md.
     groupContext: { type: ObjectId, ref: GroupModel, default: null },
-    // Réservé étape 2 (DSE v2, prompt variants) — never populated in v1.
+    // Reserved for step 2 (DSE v2, prompt variants) — never populated in v1.
     variantPath: { type: [String], default: [] },
 
     goldenRunId: { type: ObjectId, ref: AIPlaygroundRunModel, default: null },

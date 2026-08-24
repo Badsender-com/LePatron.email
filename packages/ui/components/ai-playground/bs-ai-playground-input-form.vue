@@ -239,16 +239,14 @@ export default {
         this.$emit('valid', false);
       }
     },
+    // describe-schema only produces string | number | boolean | unknown, so
+    // there is nothing else to cover.
     templateValueFor(type) {
       switch (type) {
         case 'number':
           return 0;
         case 'boolean':
           return false;
-        case 'array':
-          return [];
-        case 'object':
-          return {};
         default:
           return '';
       }

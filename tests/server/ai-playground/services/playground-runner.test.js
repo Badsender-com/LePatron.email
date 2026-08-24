@@ -171,7 +171,7 @@ describe('playground-runner.executeScenario', () => {
     expect(composedInput.prompt).toBe('hi');
   });
 
-  it('carries transient fieldErrors and humanizes the persisted errorMessage', async () => {
+  it('persists the field errors as codes and keeps the raw zod message', async () => {
     AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
     LePatronSkills.findOne.mockReturnValue({
       lean: () =>
@@ -198,14 +198,16 @@ describe('playground-runner.executeScenario', () => {
     const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
 
     expect(run.status).toBe('VALIDATION_ERROR');
-    // Transient property for the execute controller, never in the create doc.
+    // Persisted on the document, so the execute response and every later GET
+    // of the run carry the same thing — and the wording stays in the locales.
+    expect(AIPlaygroundRuns.create.mock.calls[0][0].fieldErrors).toEqual([
+      { field: 'prompt', issue: 'required' },
+      { field: 'brief', issue: 'unrecognized' },
+    ]);
     expect(run.fieldErrors).toEqual(validationError.fieldErrors);
-    expect(
-      AIPlaygroundRuns.create.mock.calls[0][0].fieldErrors
-    ).toBeUndefined();
-    // Persisted message is the humanized summary, not the raw zod message.
+    // No server-side French summary any more: the raw zod message is kept.
     expect(AIPlaygroundRuns.create.mock.calls[0][0].errorMessage).toBe(
-      'Champs invalides : prompt (obligatoire) ; brief (non reconnu par cette skill)'
+      'prompt: Invalid input: expected string, received undefined'
     );
   });
 
@@ -230,7 +232,8 @@ describe('playground-runner.executeScenario', () => {
     const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
 
     expect(run.errorMessage).toBe('Provider timeout');
-    expect(run.fieldErrors).toBeUndefined();
+    // An error with no per-field detail persists an empty list, not undefined.
+    expect(run.fieldErrors).toEqual([]);
   });
 
   it('refuses when no group context and no platform group exists', async () => {

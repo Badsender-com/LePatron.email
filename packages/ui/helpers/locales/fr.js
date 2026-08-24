@@ -1294,7 +1294,6 @@ export default {
     intro: 'Composez, exécutez et conservez des scénarios de test qui combinent une skill, des expertises et des paramètres. Servez-vous-en pour itérer sur un prompt, valider une mise à jour, ou prototyper une feature avant écriture.',
     actions: {
       newScenario: 'Nouveau scénario',
-      duplicate: 'Dupliquer',
       delete: 'Supprimer',
       execute: 'Exécuter',
       markGolden: 'Marquer comme référence',
@@ -1411,7 +1410,6 @@ export default {
       title: 'Historique des runs',
       empty: 'Aucun run pour ce scénario. Lance une exécution pour commencer.',
       runOf: 'Run du {date}',
-      latestRun: 'Dernier run',
       executing: 'Invocation en cours, peut prendre jusqu\'à 30 secondes…',
       budgetExhausted: 'Budget de test quotidien atteint (50/50). Réessayer demain.',
       tabs: {
@@ -1436,6 +1434,8 @@ export default {
         current: 'Run sélectionné',
         noGolden: 'Aucune référence définie pour ce scénario.',
       },
+      delete: 'Supprimer ce run',
+      deleted: 'Run supprimé',
       deleteConfirm: 'Supprimer ce run définitivement ?',
     },
     status: {

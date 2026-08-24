@@ -1,6 +1,7 @@
 <script>
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
 import { latencySeconds } from '~/helpers/format-latency.js';
+import runOutputAsMarkdown from '~/helpers/run-output-markdown.js';
 
 export default {
   name: 'BsAiPlaygroundRunResult',
@@ -18,15 +19,7 @@ export default {
       return this.$t(`aiPlayground.status.${this.run.status}`);
     },
     outputAsMarkdown() {
-      if (!this.run || this.run.output == null) return '';
-      // The skill output is typically an object; if it contains a string
-      // field obviously meant as the rendered text (text/markdown/html), use
-      // that. Otherwise fall back to JSON-stringified pretty output.
-      const o = this.run.output;
-      if (typeof o === 'string') return o;
-      if (o.text && typeof o.text === 'string') return o.text;
-      if (o.markdown && typeof o.markdown === 'string') return o.markdown;
-      return '```json\n' + JSON.stringify(o, null, 2) + '\n```';
+      return runOutputAsMarkdown(this.run && this.run.output);
     },
     totalTokens() {
       const u = (this.run && this.run.tokenUsage) || {};

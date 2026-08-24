@@ -53,6 +53,26 @@ const RunFeedbackSchema = new Schema(
   { _id: false }
 );
 
+/**
+ * Per-field validation errors, as zod reported them.
+ *
+ * Persisted, not transient: the controller used to hand-copy a JS property
+ * onto the execute response, so the FIRST response was rich and every later
+ * GET of the same run was poor. Storing the codes (never a sentence) also
+ * means the wording stays in the locales — `aiPlayground.validation.*` — with
+ * no server-side French.
+ */
+const RunFieldErrorSchema = new Schema(
+  {
+    field: { type: String, required: true },
+    // 'required' | 'unrecognized' | 'length' | 'invalid' — the zod issue,
+    // translated client-side. Free-form on purpose: an issue kind we do not
+    // have a key for must not make the write fail.
+    issue: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const AIPlaygroundRunSchema = new Schema(
   {
     _scenario: {
@@ -74,6 +94,7 @@ const AIPlaygroundRunSchema = new Schema(
     latencyMs: { type: Number, default: null },
     tokenUsage: { type: TokenUsageSchema, default: () => ({}) },
     errorMessage: { type: String, default: null },
+    fieldErrors: { type: [RunFieldErrorSchema], default: [] },
 
     feedback: { type: RunFeedbackSchema, default: null },
     isGolden: { type: Boolean, default: false },

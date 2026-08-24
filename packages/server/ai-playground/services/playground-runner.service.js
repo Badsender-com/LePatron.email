@@ -63,9 +63,11 @@ async function executeScenario({
     if (!platformGroup) {
       throw createError(
         400,
+        // Reaches the UI verbatim (err.response.data.message), so it names
+        // the screen in English rather than embedding its French label.
         'No group context and no platform group found. Run ' +
-          '`yarn flag-platform-group`, then configure its Skills engine ' +
-          'in "Fonctionnalités IA".'
+          '`yarn flag-platform-group`, then configure its Skills engine in ' +
+          "the group's AI features settings."
       );
     }
     effectiveGroupId = platformGroup._id;
@@ -157,46 +159,30 @@ async function executeScenario({
       : RunStatuses.SUCCESS,
     latencyMs: (invocationResult && invocationResult.latencyMs) || null,
     tokenUsage: (invocationResult && invocationResult.tokenUsage) || {},
-    errorMessage: invocationError
-      ? humanizeErrorMessage(invocationError)
-      : null,
+    errorMessage: invocationError ? invocationError.message : null,
+    // Codes, not sentences: the UI renders them through
+    // aiPlayground.validation.* so a failed run stays legible in either
+    // language, on the execute response AND on every later GET.
+    fieldErrors: normaliseFieldErrors(invocationError),
     createdBy: userId,
     // Retention deadline for the TTL index. Cleared when the run is marked
     // golden (run.service.js).
     expiresAt: runExpiresAt(new Date()),
   });
 
-  if (invocationError && invocationError.fieldErrors) {
-    // Transient JS property, outside the mongoose schema: never persisted.
-    // The execute controller copies it explicitly into the HTTP payload
-    // (res.json would prune it through toJSON()).
-    run.fieldErrors = invocationError.fieldErrors;
-  }
-
   return run;
 }
 
-const FIELD_ISSUE_LABELS = {
-  required: 'obligatoire',
-  unrecognized: 'non reconnu par cette skill',
-  length: 'longueur invalide',
-  invalid: 'format invalide',
-};
-
 /**
- * Persisted errorMessage: when structured field errors exist, store a
- * human-readable summary instead of the raw zod message so historical failed
- * runs stay legible to consultants. Other error types keep their message.
+ * The field errors carried by an invocation failure, in the persisted shape.
+ * `[]` for any other kind of error.
  */
-function humanizeErrorMessage(invocationError) {
-  const fieldErrors = invocationError.fieldErrors;
-  if (!Array.isArray(fieldErrors) || !fieldErrors.length) {
-    return invocationError.message;
-  }
-  const parts = fieldErrors.map(
-    (e) => `${e.field} (${FIELD_ISSUE_LABELS[e.issue] || e.issue})`
-  );
-  return `Champs invalides : ${parts.join(' ; ')}`;
+function normaliseFieldErrors(invocationError) {
+  const fieldErrors = invocationError && invocationError.fieldErrors;
+  if (!Array.isArray(fieldErrors)) return [];
+  return fieldErrors
+    .filter((e) => e && e.field && e.issue)
+    .map((e) => ({ field: e.field, issue: e.issue }));
 }
 
 async function loadActiveOrPinnedSkill(skillRef) {

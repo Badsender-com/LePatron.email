@@ -1,6 +1,7 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
+import runOutputAsMarkdown from '~/helpers/run-output-markdown.js';
 
 export default {
   name: 'BsAiPlaygroundRunCompareView',
@@ -25,12 +26,7 @@ export default {
       this.$refs.modal.close();
     },
     toMarkdown(run) {
-      if (!run || run.output == null) return '';
-      const o = run.output;
-      if (typeof o === 'string') return o;
-      if (o.text && typeof o.text === 'string') return o.text;
-      if (o.markdown && typeof o.markdown === 'string') return o.markdown;
-      return '```json\n' + JSON.stringify(o, null, 2) + '\n```';
+      return runOutputAsMarkdown(run && run.output);
     },
   },
 };

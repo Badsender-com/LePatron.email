@@ -56,13 +56,9 @@ module.exports = {
       // group. A runtime override is a step-2 concern and needs a whitelist.
       overrides: req.body && req.body.overrides,
     });
-    // fieldErrors is a transient property outside the mongoose schema:
-    // res.json(run) would prune it through toJSON(), so compose explicitly.
-    // Only the immediate execute response carries it — later GETs of the run
-    // fall back to the (humanized) errorMessage.
-    const payload = run.toJSON();
-    if (run.fieldErrors) payload.fieldErrors = run.fieldErrors;
-    res.json(payload);
+    // `fieldErrors` is part of the run document now, so there is nothing to
+    // hand-copy: the execute response and every later GET carry the same thing.
+    res.json(run);
   }),
 
   previewExpertiseFilter: asyncHandler(async (req, res) => {
