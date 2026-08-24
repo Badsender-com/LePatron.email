@@ -6,9 +6,9 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
-  name: `bs-user-modals-confirmation`,
+  name: 'BsUserModalsConfirmation',
   components: { BsModalConfirm },
-  model: { prop: `loading`, event: `updateLoading` },
+  model: { prop: 'loading', event: 'updateLoading' },
   props: {
     loading: { type: Boolean, default: false },
     user: { type: Object, default: () => ({ group: {} }) },
@@ -19,25 +19,25 @@ export default {
         return this.loading;
       },
       set(newLoading) {
-        this.$emit(`updateLoading`, newLoading);
+        this.$emit('updateLoading', newLoading);
       },
     },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    activate(user) {
+    activate(_user) {
       this.$refs.activateDialog.open();
     },
-    deactivate(user) {
+    deactivate(_user) {
       this.$refs.deactivateDialog.open();
     },
-    resetPassword(user) {
+    resetPassword(_user) {
       this.$refs.resetPasswordDialog.open();
     },
-    sendPassword(user) {
+    sendPassword(_user) {
       this.$refs.sendPasswordDialog.open();
     },
-    resendPassword(user) {
+    resendPassword(_user) {
       this.$refs.resendPasswordDialog.open();
     },
     async activateUser() {
@@ -49,14 +49,14 @@ export default {
         const user = await $axios.$put(apiRoutes.usersItemActivate({ userId }));
         this.showSnackbar({
           text: this.$t('global.enabled'),
-          color: `success`,
+          color: 'success',
         });
-        this.$emit(`update`, user);
-        this.$emit(`activate`, user);
+        this.$emit('update', user);
+        this.$emit('activate', user);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -72,14 +72,14 @@ export default {
         const user = await $axios.$delete(apiRoutes.usersItem({ userId }));
         this.showSnackbar({
           text: this.$t('global.disabled'),
-          color: `success`,
+          color: 'success',
         });
-        this.$emit(`update`, user);
-        this.$emit(`deactivate`, user);
+        this.$emit('update', user);
+        this.$emit('deactivate', user);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -97,14 +97,14 @@ export default {
         );
         this.showSnackbar({
           text: this.$t('snackbars.emailSent'),
-          color: `success`,
+          color: 'success',
         });
-        this.$emit(`update`, user);
-        this.$emit(`sendPassword`, user);
+        this.$emit('update', user);
+        this.$emit('sendPassword', user);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {

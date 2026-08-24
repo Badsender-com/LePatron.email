@@ -1,9 +1,9 @@
 <script>
-/* eslint-disable vue/no-mutating-props */
 import * as api from '~/helpers/ai-playground-routes.js';
 import { aiExpertiseFacets } from '~/helpers/ai-skill-routes.js';
 import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import { emailTypeOptions } from '~/helpers/email-types.js';
+import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
 import {
   hasFilterScope,
   hasFilterCategories,
@@ -12,19 +12,13 @@ import {
 } from '~/helpers/expertise-filter.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
+import BsAiExpertisePicker from './bs-ai-expertise-picker.vue';
 import { ArrowUp, ArrowDown } from 'lucide-vue';
 
 const MODES = ['none', 'explicit', 'filter'];
-const CATEGORIES = [
-  'redaction',
-  'qc',
-  'design',
-  'html_integration',
-  'deliverability',
-  'translation',
-  'other',
-];
+// The scope combobox fires on every keystroke; one request per character would
+// race and the last answer to ARRIVE would win.
+const PREVIEW_DEBOUNCE_MS = 300;
 
 export default {
   name: 'BsAiPlaygroundExpertiseSelector',
@@ -52,6 +46,8 @@ export default {
     return {
       filterPreviewCount: null,
       previewPending: false,
+      // Incremented on every request so a stale response can be dropped.
+      previewToken: 0,
       // Existing scope values (same source as the expertise modal) so the
       // filter-mode scope field proposes known scopes; free entry stays allowed.
       scopeFacets: [],
@@ -86,10 +82,7 @@ export default {
       });
     },
     categoryOptions() {
-      return CATEGORIES.map((value) => ({
-        value,
-        text: this.$t(`aiSkills.categories.${value}`),
-      }));
+      return skillCategoryOptions(this);
     },
     emailTypeOptions() {
       return emailTypeOptions(this);
@@ -117,20 +110,6 @@ export default {
     },
   },
   watch: {
-    mode(next) {
-      // Reset the inactive field so the scenario payload stays clean.
-      if (next === 'none' || next === 'filter') {
-        this.$emit('update:expertise-refs', []);
-      }
-      if (next === 'none' || next === 'explicit') {
-        this.$emit('update:expertise-filter', {
-          scope: [],
-          categories: [],
-          emailType: null,
-          language: null,
-        });
-      }
-    },
     categoryDefaultNeeded: {
       immediate: true,
       handler(needed) {
@@ -139,17 +118,13 @@ export default {
         if (needed) this.emitFilter({ categories: [this.skillCategory] });
       },
     },
-    skillAcceptsExpertise(accepts) {
-      // The newly selected skill has no expertise input: selecting expertise
-      // would silently do nothing useful — fall back to 'none'.
-      if (!accepts && this.mode !== 'none') {
-        this.$emit('update:mode', 'none');
-      }
-    },
   },
   mounted() {
     this.loadScopeFacets();
     if (this.mode === 'filter') this.refreshFilterPreview();
+  },
+  beforeDestroy() {
+    clearTimeout(this.previewTimer);
   },
   methods: {
     async loadScopeFacets() {
@@ -160,8 +135,24 @@ export default {
         this.scopeFacets = [];
       }
     },
+    // Picking a mode by hand drops the other mode's payload so the saved
+    // scenario stays coherent. This used to live in a watcher on the `mode`
+    // prop, which also fired when the page hydrated the mode from the loaded
+    // scenario: opening an existing scenario and clicking Save was enough to
+    // erase its expertise refs or its filter, without any user action.
     onModeChange(value) {
       this.$emit('update:mode', value);
+      if (value === 'none' || value === 'filter') {
+        this.$emit('update:expertise-refs', []);
+      }
+      if (value === 'none' || value === 'explicit') {
+        this.$emit('update:expertise-filter', {
+          scope: [],
+          categories: [],
+          emailType: null,
+          language: null,
+        });
+      }
     },
     // Reorder the explicit selection: the runner composes the prompt in
     // expertiseRefs order, so this list is the order the model sees.
@@ -213,24 +204,39 @@ export default {
     refreshFilterPreview() {
       this.refreshFilterPreviewFor(this.expertiseFilter);
     },
-    async refreshFilterPreviewFor(filter) {
+    refreshFilterPreviewFor(filter) {
       // findApplicable requires BOTH scope and categories — an incomplete
       // filter shows an explicit message instead of calling the endpoint.
       if (!hasFilterScope(filter) || !hasFilterCategories(filter)) {
+        clearTimeout(this.previewTimer);
+        this.previewToken += 1;
+        this.previewPending = false;
         this.filterPreviewCount = null;
         return;
       }
       this.previewPending = true;
+      clearTimeout(this.previewTimer);
+      this.previewTimer = setTimeout(
+        () => this.fetchFilterPreview(filter),
+        PREVIEW_DEBOUNCE_MS
+      );
+    },
+    async fetchFilterPreview(filter) {
+      // Only the answer to the LAST request asked for is allowed to land: the
+      // count used to take the value of the last response to ARRIVE.
+      const token = (this.previewToken += 1);
       try {
         const res = await this.$axios.$get(
           api.aiPlaygroundPreviewExpertiseFilter(),
           { params: serialiseExpertiseFilter(filter) }
         );
+        if (token !== this.previewToken) return;
         this.filterPreviewCount = res.count;
       } catch (e) {
+        if (token !== this.previewToken) return;
         this.filterPreviewCount = null;
       } finally {
-        this.previewPending = false;
+        if (token === this.previewToken) this.previewPending = false;
       }
     },
   },
@@ -250,7 +256,6 @@ export default {
     </v-alert>
 
     <bs-select
-      v-if="skillAcceptsExpertise"
       :value="mode"
       :items="modeOptions"
       item-text="text"
@@ -259,10 +264,7 @@ export default {
       :disabled="disabled"
       @input="onModeChange"
     />
-    <p
-      v-if="skillAcceptsExpertise"
-      class="text-caption text--secondary mt-n2 mb-3"
-    >
+    <p class="text-caption text--secondary mt-n2 mb-3">
       {{ $t('aiPlayground.form.expertiseModeHelp') }}
     </p>
 
@@ -377,6 +379,9 @@ export default {
         </span>
         <span v-else-if="!hasCategories">
           {{ $t('aiPlayground.form.filterSelectCategory') }}
+        </span>
+        <span v-else-if="previewPending">
+          {{ $t('aiPlayground.form.filterPreviewPending') }}
         </span>
         <span v-else-if="filterPreviewCount !== null">
           {{

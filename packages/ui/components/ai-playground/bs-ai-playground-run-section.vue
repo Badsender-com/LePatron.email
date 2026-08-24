@@ -2,10 +2,10 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-playground-routes.js';
-import BsAiPlaygroundRunResult from './BsAiPlaygroundRunResult.vue';
-import BsAiPlaygroundRunsList from './BsAiPlaygroundRunsList.vue';
-import BsAiPlaygroundRunDetailModal from './BsAiPlaygroundRunDetailModal.vue';
-import BsAiPlaygroundRunCompareView from './BsAiPlaygroundRunCompareView.vue';
+import BsAiPlaygroundRunResult from './bs-ai-playground-run-result.vue';
+import BsAiPlaygroundRunsList from './bs-ai-playground-runs-list.vue';
+import BsAiPlaygroundRunDetailModal from './bs-ai-playground-run-detail-modal.vue';
+import BsAiPlaygroundRunCompareView from './bs-ai-playground-run-compare-view.vue';
 import { Play } from 'lucide-vue';
 
 export default {
@@ -61,6 +61,21 @@ export default {
         this.handleError(err);
       } finally {
         this.executing = false;
+      }
+    },
+    async deleteRun(run) {
+      try {
+        await this.$axios.$delete(api.aiPlaygroundRun(run._id));
+        // The golden reference may have been the run just deleted; the server
+        // clears it, so the page has to hear about it.
+        if (run.isGolden) this.$emit('golden-changed', null);
+        await this.reloadRuns();
+        this.showSnackbar({
+          text: this.$t('aiPlayground.runs.deleted'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.handleError(err);
       }
     },
     async reloadRuns() {
@@ -194,7 +209,11 @@ export default {
     <h3 class="section-title mt-6">
       {{ $t('aiPlayground.runs.title') }}
     </h3>
-    <bs-ai-playground-runs-list :runs="runs" @open="openRun" />
+    <bs-ai-playground-runs-list
+      :runs="runs"
+      @open="openRun"
+      @delete="deleteRun"
+    />
 
     <bs-ai-playground-run-detail-modal
       ref="runDetailModal"

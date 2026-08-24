@@ -5,7 +5,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import BsAiPlaygroundScenarioForm from '~/components/ai-playground/BsAiPlaygroundScenarioForm.vue';
+import BsAiPlaygroundScenarioForm from '~/components/ai-playground/bs-ai-playground-scenario-form.vue';
 
 export default {
   name: 'PageAiPlaygroundNew',
@@ -37,7 +37,12 @@ export default {
     // Prefill the skill when arriving from a skill page's "Test in the
     // playground" link (/ai-playground/new?skillId=…).
     const { skillId } = this.$route.query;
-    if (skillId) this.scenario.skillRef.skillId = skillId;
+    if (skillId) {
+      this.scenario = {
+        ...this.scenario,
+        skillRef: { ...this.scenario.skillRef, skillId },
+      };
+    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -49,7 +54,12 @@ export default {
         tags: [],
         skillRef: { skillId: '', mode: 'active' },
         expertiseRefs: [],
-        expertiseFilter: { scope: [], emailType: null, language: null },
+        expertiseFilter: {
+          scope: [],
+          categories: [],
+          emailType: null,
+          language: null,
+        },
         input: {},
         providerOverride: {},
         groupContext: null,
@@ -100,7 +110,7 @@ export default {
 
     <v-container fluid>
       <bs-ai-playground-scenario-form
-        :scenario="scenario"
+        v-model="scenario"
         :expertise-mode="expertiseMode"
         :creating="true"
         :saving="saving"

@@ -1281,7 +1281,6 @@ export default {
     intro: 'Compose, run and store test scenarios that combine a skill, expertise modules and parameters. Use it to iterate on a prompt, validate an update, or prototype a feature before writing it.',
     actions: {
       newScenario: 'New scenario',
-      duplicate: 'Duplicate',
       delete: 'Delete',
       execute: 'Run',
       markGolden: 'Mark as reference',
@@ -1332,7 +1331,8 @@ export default {
       expertiseSelector: 'Selected expertise',
       expertiseRecommended: 'Recommended for this skill',
       expertiseAll: 'All expertise modules',
-      expertiseNotSupported: 'This skill does not accept expertise input.',
+      expertiseNotSupported:
+        'This skill does not accept expertise input: the selection below is kept but will not be injected.',
       filterCategories: 'Categories',
       filterScope: 'Scope',
       filterScopeHint:
@@ -1346,6 +1346,7 @@ export default {
       filterSelectScope: 'Select a scope to preview.',
       filterSelectCategory: 'Select at least one category to preview.',
       filterPreviewCount: '{count} expertise(s) match this filter.',
+      filterPreviewPending: 'Counting…',
       expertiseModeHelp:
         'None: the skill is invoked without expertise. Explicit selection: you choose the expertises and their order — recommended for reproducible tests. Dynamic filter: expertises are loaded automatically from the criteria below (category, scope, email type, language). This is the mechanism production features use — it is what lets you enrich the doctrine without a redeploy.',
       filterOrderHint:
@@ -1363,6 +1364,8 @@ export default {
       unknownTypeFallback: 'This skill uses an advanced input format — JSON editing required.',
       templateHelp: 'Template derived from the input schema:',
       insertTemplate: 'Insert template',
+      manualExpertiseKey:
+        'The "expertise" field is injected automatically from the selection above: your value is overwritten as soon as one expertise resolves.',
       unknownKeysWarning: 'Some fields do not match the skill\'s schema (kept, but rejected at run time): {keys}',
       expertiseInjected: 'The expertise selected above is added to the request automatically — nothing to type here.',
       skillChangeConfirmTitle: 'Change skill?',
@@ -1393,8 +1396,7 @@ export default {
       title: 'Run history',
       empty: 'No run yet on this scenario. Trigger one to start.',
       runOf: 'Run of {date}',
-      latestRun: 'Latest run',
-      executing: 'Running, may take up to 30 seconds…',
+      executing: 'Running, may take up to 90 seconds…',
       budgetExhausted: 'Daily test budget reached (50/50). Try again tomorrow.',
       tabs: {
         input: 'Input',
@@ -1418,6 +1420,8 @@ export default {
         current: 'Selected run',
         noGolden: 'No reference set for this scenario.',
       },
+      delete: 'Delete this run',
+      deleted: 'Run deleted',
       deleteConfirm: 'Permanently delete this run?',
     },
     status: {

@@ -8,6 +8,13 @@ const {
   Expertises,
 } = require('../../common/models.common.js');
 const { VersionRefModes } = require('../constant/playground-constants.js');
+const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
+const {
+  scalarParam,
+  objectIdParam,
+  escapeRegex,
+} = require('../../utils/query-scalars.js');
+const { findVersion } = require('../../ai-skill/services/version-helpers.js');
 
 const LIST_PROJECTION = {
   scenarioId: 1,
@@ -32,12 +39,19 @@ async function listScenarios({
   page = 1,
   pageSize = 50,
 } = {}) {
+  // Express turns `?skillId[$regex]=.*` into an object: every filter goes
+  // through a scalar guard before it becomes a query operand. `search` was
+  // already escaped, which is what made the inconsistency visible.
   const query = {};
-  if (skillId) query['skillRef.skillId'] = skillId;
-  if (tag) query.tags = tag;
-  if (owner) query.owner = owner;
-  if (search) {
-    const rx = new RegExp(escapeRegex(search), 'i');
+  const skillIdFilter = scalarParam(skillId, 'skillId');
+  const tagFilter = scalarParam(tag, 'tag');
+  const ownerFilter = objectIdParam(owner, 'owner');
+  const searchFilter = scalarParam(search, 'search');
+  if (skillIdFilter) query['skillRef.skillId'] = skillIdFilter;
+  if (tagFilter) query.tags = tagFilter;
+  if (ownerFilter) query.owner = ownerFilter;
+  if (searchFilter) {
+    const rx = new RegExp(escapeRegex(searchFilter), 'i');
     query.$or = [{ name: rx }, { description: rx }, { scenarioId: rx }];
   }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
@@ -107,7 +121,10 @@ async function createScenario(data, userId) {
   await assertReferencesExist(data);
   try {
     return await AIPlaygroundScenarios.create({
-      ...data,
+      // Whitelisted like the update path. `create({ ...data })` let a caller
+      // set `_id` and `goldenRunId` — the identity of the document and a
+      // reference the golden flow owns.
+      ...pick(data, CREATABLE_FIELDS),
       owner: userId,
       updatedBy: userId,
     });
@@ -117,6 +134,14 @@ async function createScenario(data, userId) {
     }
     throw err;
   }
+}
+
+function pick(source, fields) {
+  const out = {};
+  for (const key of fields) {
+    if (source && source[key] !== undefined) out[key] = source[key];
+  }
+  return out;
 }
 
 const PATCHABLE_FIELDS = [
@@ -132,9 +157,22 @@ const PATCHABLE_FIELDS = [
   'variantPath',
 ];
 
+// scenarioId is set at creation and immutable afterwards, hence the two lists.
+const CREATABLE_FIELDS = ['scenarioId', ...PATCHABLE_FIELDS];
+
 async function updateScenario(scenarioId, patch, userId) {
   const doc = await getScenario(scenarioId);
-  await assertReferencesExist({ ...doc.toObject(), ...patch });
+  // The ACTIVE requirement only applies to a skill reference the caller is
+  // actually setting. Re-asserting it on the merged document made a scenario
+  // unmodifiable — even renaming it — the moment its skill was archived, and
+  // the picker cannot offer a replacement for a non-ACTIVE skill either, so
+  // the reference was uncorrectable and only deletion worked. The runner
+  // refuses to execute it (loadActiveOrPinnedSkill): fail late at edit,
+  // early at run.
+  await assertReferencesExist(
+    { ...doc.toObject(), ...patch },
+    { requireActiveSkill: patch.skillRef !== undefined }
+  );
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) doc[key] = patch[key];
   }
@@ -151,11 +189,14 @@ async function deleteScenario(scenarioId) {
 }
 
 /**
- * Confirms the referenced skill exists and is ACTIVE, that any pinned version
- * is reachable, and that each explicit expertise reference points to a real
- * expertise (and its pinned version when applicable).
+ * Confirms the referenced skill exists, that any pinned version is reachable,
+ * and that each explicit expertise reference points to a real expertise (and
+ * its pinned version when applicable).
+ *
+ * `requireActiveSkill` (default true) also demands the skill be ACTIVE. An
+ * update that does not touch `skillRef` passes false: see updateScenario.
  */
-async function assertReferencesExist(data) {
+async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
   if (!data || !data.skillRef || !data.skillRef.skillId) return;
   const skill = await LePatronSkills.findOne(
     { skillId: data.skillRef.skillId },
@@ -167,17 +208,17 @@ async function assertReferencesExist(data) {
       `Skill "${data.skillRef.skillId}" referenced by the scenario does not exist`
     );
   }
-  if (skill.status !== 'ACTIVE') {
+  if (requireActiveSkill && skill.status !== SkillStatuses.ACTIVE) {
     throw createError(
       400,
       `Skill "${data.skillRef.skillId}" is not ACTIVE (status=${skill.status})`
     );
   }
   if (data.skillRef.mode === VersionRefModes.PINNED) {
-    const found = (skill.versions || []).some(
-      (v) =>
-        v.versionMajor === data.skillRef.versionMajor &&
-        v.versionMinor === (data.skillRef.versionMinor || 0)
+    const found = findVersion(
+      skill,
+      data.skillRef.versionMajor,
+      data.skillRef.versionMinor || 0
     );
     if (!found) {
       throw createError(
@@ -189,11 +230,19 @@ async function assertReferencesExist(data) {
     }
   }
 
-  for (const ref of data.expertiseRefs || []) {
-    const exp = await Expertises.findOne(
-      { expertiseId: ref.expertiseId },
-      { expertiseId: 1, versions: 1 }
-    ).lean();
+  // One query for every reference, not one per reference: this runs on every
+  // create AND every update, and `expertise-resolver.resolveExplicit` already
+  // does the `$in` right next door.
+  const refs = data.expertiseRefs || [];
+  if (!refs.length) return;
+  const expertises = await Expertises.find(
+    { expertiseId: { $in: refs.map((r) => r.expertiseId) } },
+    { expertiseId: 1, versions: 1 }
+  ).lean();
+  const byId = new Map(expertises.map((e) => [e.expertiseId, e]));
+
+  for (const ref of refs) {
+    const exp = byId.get(ref.expertiseId);
     if (!exp) {
       throw createError(
         400,
@@ -201,11 +250,7 @@ async function assertReferencesExist(data) {
       );
     }
     if (ref.mode === VersionRefModes.PINNED) {
-      const found = (exp.versions || []).some(
-        (v) =>
-          v.versionMajor === ref.versionMajor &&
-          v.versionMinor === (ref.versionMinor || 0)
-      );
+      const found = findVersion(exp, ref.versionMajor, ref.versionMinor || 0);
       if (!found) {
         throw createError(
           400,
@@ -216,10 +261,6 @@ async function assertReferencesExist(data) {
       }
     }
   }
-}
-
-function escapeRegex(s) {
-  return String(s).replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 module.exports = {

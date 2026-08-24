@@ -1,4 +1,10 @@
 <script>
+// Pinned to 13.0.2 in package.json, and it must stay on a 13.x: markdown-it
+// 14 is ESM-only and this stack (Nuxt 2 / webpack 4) cannot consume the named
+// exports of its CJS dependencies (`entities`, `mdurl`) — the client bundle
+// fails to build. 13.0.2 is also above the CVE-2022-21670 (ReDoS) fix, which
+// landed in 12.3.2, so the security point that motivated declaring the
+// dependency stands.
 import MarkdownIt from 'markdown-it';
 
 // Single shared parser. HTML disabled — the input may come straight from
@@ -86,7 +92,9 @@ export default {
       padding: 0;
     }
     a {
-      color: #00acdc;
+      // White-label: the brand colour must come from the theme, never a
+      // literal (see issue #1002).
+      color: var(--v-accent-base, #00acdc);
       text-decoration: none;
       &:hover {
         text-decoration: underline;

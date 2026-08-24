@@ -3,13 +3,23 @@
 jest.mock('../../../../packages/server/common/models.common', () => ({
   Expertises: { find: jest.fn() },
 }));
+// `findApplicable` is mocked (it is the filter path under test), but
+// `projectVersion` is kept REAL: it is the shared projection the explicit path
+// now goes through, and the assertions below are about its output.
 jest.mock(
   '../../../../packages/server/ai-skill/repositories/expertise.repository',
-  () => ({ findApplicable: jest.fn() })
+  () => {
+    const actual = jest.requireActual(
+      '../../../../packages/server/ai-skill/repositories/expertise.repository'
+    );
+    return { findApplicable: jest.fn(), projectVersion: actual.projectVersion };
+  }
 );
 
 const {
   resolveExpertise,
+  previewFilter,
+  normaliseFilter,
 } = require('../../../../packages/server/ai-playground/services/expertise-resolver.service');
 const {
   Expertises,
@@ -177,5 +187,79 @@ describe('expertise-resolver.resolveExpertise', () => {
         ],
       })
     ).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+// The normalisation the controller used to do by hand, two layers down.
+describe('normaliseFilter', () => {
+  it('wraps single query values into arrays', () => {
+    expect(normaliseFilter({ scope: 'cta', categories: 'redaction' })).toEqual({
+      scope: ['cta'],
+      categories: ['redaction'],
+      emailType: null,
+      language: null,
+    });
+  });
+
+  it('keeps repeated values and drops empties', () => {
+    expect(
+      normaliseFilter({
+        scope: ['cta', 'objet'],
+        emailType: '',
+        language: 'fr',
+      })
+    ).toEqual({
+      scope: ['cta', 'objet'],
+      categories: [],
+      emailType: null,
+      language: 'fr',
+    });
+  });
+
+  it('answers a fully-shaped filter for an empty query', () => {
+    expect(normaliseFilter()).toEqual({
+      scope: [],
+      categories: [],
+      emailType: null,
+      language: null,
+    });
+  });
+});
+
+describe('previewFilter', () => {
+  it('returns the count and a trimmed item list', async () => {
+    expertiseRepo.findApplicable.mockResolvedValue([
+      {
+        expertiseId: 'a',
+        title: 'A',
+        versionMajor: 1,
+        versionMinor: 0,
+        body: 'secret doctrine',
+      },
+    ]);
+    const out = await previewFilter({ scope: 'cta', categories: 'redaction' });
+    expect(out.count).toBe(1);
+    // The preview is a count, not a content dump.
+    expect(out.items).toEqual([
+      { expertiseId: 'a', title: 'A', versionMajor: 1, versionMinor: 0 },
+    ]);
+    expect(expertiseRepo.findApplicable).toHaveBeenCalledWith({
+      scope: ['cta'],
+      categories: ['redaction'],
+      emailType: null,
+      language: null,
+    });
+  });
+
+  // resolveExpertise treats an incomplete filter as "no filter"; the preview
+  // must let the 400 through, or an incomplete filter reads as "0 matches".
+  it('propagates the repository error instead of returning count 0', async () => {
+    const err = Object.assign(new Error('categories required'), {
+      status: 400,
+    });
+    expertiseRepo.findApplicable.mockRejectedValue(err);
+    await expect(previewFilter({ scope: 'cta' })).rejects.toMatchObject({
+      status: 400,
+    });
   });
 });

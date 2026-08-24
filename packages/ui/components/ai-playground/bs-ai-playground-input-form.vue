@@ -8,8 +8,8 @@
  * authority and returns inline `fieldErrors`.
  */
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsAiPlaygroundInputField from './BsAiPlaygroundInputField.vue';
-import BsAiPlaygroundSkillChangeDialog from './BsAiPlaygroundSkillChangeDialog.vue';
+import BsAiPlaygroundInputField from './bs-ai-playground-input-field.vue';
+import BsAiPlaygroundSkillChangeDialog from './bs-ai-playground-skill-change-dialog.vue';
 import {
   fetchSchemaDescriptor,
   humanizeFieldLabel,
@@ -18,6 +18,7 @@ import {
 import {
   partitionInputKeys,
   cleanInput,
+  EXPERTISE_KEY,
 } from '~/helpers/input-form-reconcile.js';
 
 export default {
@@ -58,7 +59,17 @@ export default {
     unknownKeys() {
       if (!this.descriptor) return [];
       return Object.keys(this.value || {}).filter(
-        (k) => !this.knownFieldNames.includes(k)
+        (k) => !this.knownFieldNames.includes(k) && k !== EXPERTISE_KEY
+      );
+    },
+    // `expertise` typed by hand: accepted by the schema, but the runner
+    // overwrites it as soon as the scenario resolves at least one expertise.
+    // Worth saying explicitly instead of counting it as an unknown key.
+    hasManualExpertiseKey() {
+      return (
+        !!this.descriptor &&
+        this.descriptor.hasExpertiseField &&
+        EXPERTISE_KEY in (this.value || {})
       );
     },
     activeFieldErrors() {
@@ -106,6 +117,22 @@ export default {
     fieldErrors() {
       this.dismissedFields = [];
     },
+    value(next) {
+      if (this.mode !== 'json') return;
+      let shown;
+      try {
+        shown = JSON.parse(this.jsonDraft || '{}');
+      } catch (e) {
+        // Draft is mid-edit and invalid — never clobber what is being typed.
+        return;
+      }
+      // Only re-sync when the incoming object is not what the textarea already
+      // says, so `onJsonInput` → parent → back here is not a reformat loop.
+      if (JSON.stringify(shown) !== JSON.stringify(next || {})) {
+        this.jsonDraft = JSON.stringify(next || {}, null, 2);
+        this.jsonError = null;
+      }
+    },
   },
   methods: {
     fieldLabel(name) {
@@ -152,7 +179,8 @@ export default {
     reconcileSkillChange() {
       const { dropped, droppedNonEmpty } = partitionInputKeys(
         this.value,
-        this.knownFieldNames
+        this.knownFieldNames,
+        this.descriptor
       );
       if (droppedNonEmpty.length) {
         this.pendingDropped = droppedNonEmpty;
@@ -164,7 +192,10 @@ export default {
       this.$emit('valid', true);
     },
     emitCleanedInput() {
-      this.$emit('input', cleanInput(this.value, this.knownFieldNames));
+      this.$emit(
+        'input',
+        cleanInput(this.value, this.knownFieldNames, this.descriptor)
+      );
     },
     confirmSkillChangeProceed() {
       this.pendingDropped = null;
@@ -208,16 +239,14 @@ export default {
         this.$emit('valid', false);
       }
     },
+    // describe-schema only produces string | number | boolean | unknown, so
+    // there is nothing else to cover.
     templateValueFor(type) {
       switch (type) {
         case 'number':
           return 0;
         case 'boolean':
           return false;
-        case 'array':
-          return [];
-        case 'object':
-          return {};
         default:
           return '';
       }
@@ -265,7 +294,7 @@ export default {
       </v-alert>
 
       <v-alert
-        v-if="mode === 'form' && unknownKeys.length"
+        v-if="unknownKeys.length"
         type="warning"
         dense
         outlined
@@ -276,6 +305,16 @@ export default {
             keys: unknownKeys.join(', '),
           })
         }}
+      </v-alert>
+
+      <v-alert
+        v-if="hasManualExpertiseKey"
+        type="info"
+        dense
+        outlined
+        class="mb-3"
+      >
+        {{ $t('aiPlayground.input.manualExpertiseKey') }}
       </v-alert>
 
       <v-alert

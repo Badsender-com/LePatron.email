@@ -5,6 +5,8 @@
  * the list (tooltip only) but stays searchable for power users. Reusable
  * outside the playground (admin screens, future features).
  */
+import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+
 export default {
   name: 'BsAiSkillPicker',
   props: {
@@ -15,7 +17,13 @@ export default {
   },
   methods: {
     categoryLabel(value) {
-      return value ? this.$t(`aiSkills.categories.${value}`) : '';
+      return skillCategoryLabel(this, value);
+    },
+    // Only worth showing when it is NOT active: the list is active skills plus,
+    // when an existing scenario references one, its archived skill.
+    statusLabel(item) {
+      if (!item.status || item.status === 'ACTIVE') return null;
+      return this.$t(`aiSkills.statuses.${item.status}`);
     },
     truncate(text, max = 100) {
       if (!text) return '';
@@ -60,6 +68,15 @@ export default {
           </v-list-item-subtitle>
         </v-list-item-content>
         <v-list-item-action>
+          <v-chip
+            v-if="statusLabel(item)"
+            x-small
+            outlined
+            color="warning"
+            class="mr-1"
+          >
+            {{ statusLabel(item) }}
+          </v-chip>
           <v-chip x-small outlined color="grey">
             {{ categoryLabel(item.category) }}
           </v-chip>
@@ -67,6 +84,15 @@ export default {
       </template>
       <template #selection="{ item }">
         <span :title="item.skillId">{{ item.title }}</span>
+        <v-chip
+          v-if="statusLabel(item)"
+          x-small
+          outlined
+          color="warning"
+          class="ml-2"
+        >
+          {{ statusLabel(item) }}
+        </v-chip>
       </template>
     </v-autocomplete>
   </div>

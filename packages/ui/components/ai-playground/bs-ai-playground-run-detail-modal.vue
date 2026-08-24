@@ -6,6 +6,7 @@ import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
 import { dateTime } from '~/helpers/format-date.js';
 import { latencySeconds } from '~/helpers/format-latency.js';
 import { Star, GitCompare } from 'lucide-vue';
+import runOutputAsMarkdown from '~/helpers/run-output-markdown.js';
 
 export default {
   name: 'BsAiPlaygroundRunDetailModal',
@@ -57,12 +58,13 @@ export default {
       }));
     },
     outputAsMarkdown() {
-      if (!this.run || this.run.output == null) return '';
-      const o = this.run.output;
-      if (typeof o === 'string') return o;
-      if (o.text && typeof o.text === 'string') return o.text;
-      if (o.markdown && typeof o.markdown === 'string') return o.markdown;
-      return '```json\n' + JSON.stringify(o, null, 2) + '\n```';
+      return runOutputAsMarkdown(this.run && this.run.output);
+    },
+    fieldErrorMessages() {
+      const errors = (this.run && this.run.fieldErrors) || [];
+      return errors.map((e) =>
+        this.$t(`aiPlayground.validation.${e.issue}`, { field: e.field })
+      );
     },
     inputJson() {
       if (!this.run) return '';
@@ -186,7 +188,18 @@ export default {
       <v-tabs-items v-model="tab">
         <v-tab-item value="output">
           <v-alert v-if="!isSuccess" type="error" dense outlined class="mb-0">
-            {{ run.errorMessage || $t(`aiPlayground.status.${run.status}`) }}
+            <!-- Field errors are persisted on the run now, so reopening an old
+                 failed run shows the same translated detail as the execute
+                 response did. errorMessage (the raw provider / zod message) is
+                 the fallback. -->
+            <template v-if="fieldErrorMessages.length">
+              <div v-for="(msg, i) in fieldErrorMessages" :key="i">
+                {{ msg }}
+              </div>
+            </template>
+            <template v-else>
+              {{ run.errorMessage || $t(`aiPlayground.status.${run.status}`) }}
+            </template>
           </v-alert>
           <bs-markdown-renderer v-else :source="outputAsMarkdown" />
         </v-tab-item>

@@ -43,9 +43,32 @@ const RunFeedbackSchema = new Schema(
   {
     rating: { type: String, enum: FeedbackRatingValues },
     score: { type: Number, min: 1, max: 5 },
-    comment: { type: String },
+    // Generous but bounded: the daily quota only guards /execute, so every
+    // other writable text field needs its own ceiling. Not a product rule —
+    // a bound on unbounded storage.
+    comment: { type: String, maxlength: 2000 },
     ratedBy: { type: ObjectId, ref: UserModel },
     ratedAt: { type: Date },
+  },
+  { _id: false }
+);
+
+/**
+ * Per-field validation errors, as zod reported them.
+ *
+ * Persisted, not transient: the controller used to hand-copy a JS property
+ * onto the execute response, so the FIRST response was rich and every later
+ * GET of the same run was poor. Storing the codes (never a sentence) also
+ * means the wording stays in the locales — `aiPlayground.validation.*` — with
+ * no server-side French.
+ */
+const RunFieldErrorSchema = new Schema(
+  {
+    field: { type: String, required: true },
+    // 'required' | 'unrecognized' | 'length' | 'invalid' — the zod issue,
+    // translated client-side. Free-form on purpose: an issue kind we do not
+    // have a key for must not make the write fail.
+    issue: { type: String, required: true },
   },
   { _id: false }
 );
@@ -71,6 +94,7 @@ const AIPlaygroundRunSchema = new Schema(
     latencyMs: { type: Number, default: null },
     tokenUsage: { type: TokenUsageSchema, default: () => ({}) },
     errorMessage: { type: String, default: null },
+    fieldErrors: { type: [RunFieldErrorSchema], default: [] },
 
     feedback: { type: RunFeedbackSchema, default: null },
     isGolden: { type: Boolean, default: false },
@@ -93,9 +117,13 @@ const AIPlaygroundRunSchema = new Schema(
   }
 );
 
+// Every read of a run is scoped by its scenario (the list, the golden lookup,
+// the status filter), so this compound index is the one that gets used. The
+// standalone { isGolden: 1 } and { status: 1 } indexes were dropped: two
+// values of very low cardinality, never queried on their own, paying a write
+// cost on every run.
 AIPlaygroundRunSchema.index({ _scenario: 1, createdAt: -1 });
-AIPlaygroundRunSchema.index({ isGolden: 1 });
-AIPlaygroundRunSchema.index({ status: 1 });
+AIPlaygroundRunSchema.index({ _scenario: 1, status: 1 });
 // Belt-and-suspenders: at most one golden run per scenario (DB-level invariant
 // on top of the mark-golden service logic). Cf. Q6 in the v1.2 plan.
 AIPlaygroundRunSchema.index(

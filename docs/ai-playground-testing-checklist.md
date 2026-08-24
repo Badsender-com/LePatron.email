@@ -125,7 +125,9 @@ Corps de version 1.0, puis activation :
 ## 2. Premier run
 
 - [ ] **Enregistrer** et **Exécuter** sont sur la même ligne
-- [ ] Exécution → « Invocation en cours, peut prendre jusqu'à 30 secondes… »
+- [ ] Exécution → « Invocation en cours, peut prendre jusqu'à 90 secondes… »
+      (le timeout du playground est `PlaygroundTimeoutMs` = 90 s, pas le défaut
+      user-facing de 30 s d'`invoke()`)
 - [ ] Carte résultat : statut **Succès**, latence, tokens
 - [ ] Historique : 1 ligne (Quand / Statut / Latence / Tokens / Référence / Feedback)
 - [ ] Modale run : onglets **Output**, **Input**, **Output (JSON)**, **Feedback**
@@ -168,9 +170,22 @@ Corps de version 1.0, puis activation :
 - [ ] Le compteur se rafraîchit à chaque changement (pas seulement au blur), sans 400 ni 304 figé
 - [ ] Enregistrer + Exécuter → `resolvedExpertise` du run = le compte du preview, E2 en premier
 
-### 3c. Cas limite
+### 3c. Cas limites — non-régression sur la perte de saisie
 
-- [ ] Mode filtre, **catégorie remplie, périmètre vide** → enregistrer → recharger → le mode rouvre sur `Aucune` (`inferExpertiseMode` ignore `categories`)
+- [ ] Mode filtre, **catégorie remplie, périmètre vide** → enregistrer →
+      recharger → le mode rouvre sur **`Filtre dynamique`**, la catégorie est
+      toujours là, et un second enregistrement ne l'efface pas
+- [ ] Scénario à 4 expertises explicites sur une skill **sans champ
+      `expertise`** → ouvrir le détail, ne toucher à rien, **Exécuter** (qui
+      enregistre) → les 4 expertises sont **toujours là**, une alerte explique
+      qu'elles ne seront pas injectées
+- [ ] Basculer le mode à la main (`Explicite` → `Filtre`) efface bien l'autre
+      champ : le reset est lié à l'action, pas au chargement
+- [ ] Passer de `Filtre dynamique` à un autre mode puis revenir : les champs
+      Catégories / Périmètre / Type d'email / Langue **s'affichent** (le mode
+      filtre ne rendait rien du tout avant le correctif R-01)
+- [ ] Taper vite dans `Périmètre` : le compteur affiche « Comptage… » puis **le
+      résultat de la dernière saisie**, pas celui d'une réponse en retard
 
 ---
 
@@ -178,11 +193,29 @@ Corps de version 1.0, puis activation :
 
 - [ ] Bascule **Mode avancé (JSON)** → JSON fidèle à la saisie
 - [ ] Retour **Formulaire** → aucune perte
-- [ ] Ajouter `"brandVoice": "test"` en JSON → repasser en Formulaire → warning « champs ne correspondant pas au schéma (conservés, mais rejetés à l'exécution) »
+- [ ] Ajouter `"brandVoice": "test"` en JSON → le warning « champs ne
+      correspondant pas au schéma » s'affiche **dès le mode JSON**, sans
+      attendre le retour au Formulaire
+- [ ] Ajouter `"expertise": []` en JSON → message **dédié** (« injecté
+      automatiquement, votre saisie sera écrasée »), et **pas** compté comme
+      champ inconnu
 - [ ] Exécuter avec ce champ → run `Erreur de validation`, message par champ
 - [ ] JSON cassé (`{`) → « JSON invalide » + Exécuter désactivé
 - [ ] **Insérer le gabarit** → squelette dérivé du schéma
-- [ ] Vider `Instruction / demande` + Exécuter → erreur **sous le bon champ** ; en base `errorMessage` = `Champs invalides : prompt (obligatoire)`
+- [ ] Vider `Instruction / demande` + Exécuter → erreur **sous le bon champ** ;
+      en base `errorMessage` = le message zod brut et `fieldErrors` =
+      `[{ field: 'prompt', issue: 'required' }]` (le libellé vient des locales)
+- [ ] _(non observable à la main)_ Ce run raté **ne consomme pas** de budget :
+      aucun compteur n'est affiché dans l'UI — le budget ne se manifeste que
+      par le 429 une fois épuisé — et il faudrait brûler 50 runs pour le voir.
+      La garantie est portée par le test
+      `does not consume budget when the input fails the pre-flight`
+      (`tests/server/ai-playground/services/playground-runner.test.js`), qui
+      vérifie que `consumeBudget` n'est jamais appelé. Affichage du compteur :
+      volontairement pas fait, cf. §3 de l'issue #1086 (le compteur est en
+      mémoire donc par worker, l'afficher donnerait un chiffre faux).
+- [ ] Rouvrir ce run plus tard → la modale affiche **la même erreur traduite**,
+      pas seulement le message brut
 - [ ] Changer de skill avec des champs saisis → modale « Changer de skill ? » → tester **Garder mes saisies (JSON)** et **Continuer (champs supprimés)**
 
 ---
@@ -194,6 +227,8 @@ Corps de version 1.0, puis activation :
 - [ ] Marquer le run B → **A est démarqué automatiquement** (un seul golden par scénario)
 - [ ] **Comparer avec la référence** → vue côte à côte Référence / Run sélectionné
 - [ ] Démarquer puis comparer → « Aucune référence définie », pas d'erreur
+- [ ] Action ⋮ **Supprimer ce run** sur une ligne d'historique → confirmation →
+      le run disparaît ; supprimer le golden retire aussi l'étoile du scénario
 - [ ] Supprimer le scénario → confirmation → runs supprimés en cascade
 
 ---
@@ -206,6 +241,19 @@ Corps de version 1.0, puis activation :
 - [ ] Le run affiche `generic.text v1.0`
 - [ ] Épingler une version DRAFT puis la supprimer → Exécuter → **404 explicite**, pas de 500
 - [ ] Liste : colonne Skill = `generic.text v1.0` en figé, `generic.text` en actif
+
+---
+
+## 6 bis. Skill archivée — échec tôt à l'exécution, tolérance à l'édition
+
+- [ ] Archiver la skill du scénario, puis **Exécuter** → refus **immédiat**
+      (400, la skill n'est pas ACTIVE), **aucun run créé** et **aucun budget
+      consommé**
+- [ ] Sur le même scénario, **renommer** puis Enregistrer → **ça passe** (avant,
+      tout PATCH répondait 400 et seule la suppression fonctionnait)
+- [ ] Le picker de skill affiche toujours la skill référencée, avec un badge de
+      statut `ARCHIVED`, et permet d'en choisir une autre
+- [ ] Choisir une skill non-ACTIVE dans le picker → refus (400)
 
 ---
 
@@ -245,7 +293,13 @@ db.aiplaygroundscenarios.find({}, { scenarioId: 1, owner: 1, createdBy: 1 });
 
 - [ ] `isGolden: true` ⇒ `expiresAt: null`
 - [ ] Démarquer un golden ⇒ `expiresAt` recalculé depuis `createdAt`
-- [ ] `owner` / `createdBy` — voir retour R-06 ci-dessous
+- [ ] `fieldErrors` présent sur un run en `VALIDATION_ERROR`, sous forme de
+      codes (`{ field, issue }`), sans phrase française
+- [ ] `owner` / `createdBy` / `feedback.ratedBy` sont **`null`** : c'est le
+      comportement attendu tant que le super-admin est un pseudo-compte sans
+      ligne `users` — cf. [issue #1086](https://github.com/Badsender-com/LePatron.email/issues/1086)
+- [ ] `?status[$ne]=` sur `/runs` répond **400**, pas 500
+- [ ] Un `:runId` qui n'est pas un ObjectId répond **400**, pas 500
 
 ---
 
@@ -261,9 +315,10 @@ db.aiplaygroundscenarios.find({}, { scenarioId: 1, owner: 1, createdBy: 1 });
 
 ## Historique des passes de recette
 
-| Date       | Périmètre                                     | Retours                                                                                                           |
-| ---------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 2026-08-24 | §1 à §8 et §10 (§9 non joué), fixtures créées | 8 retours (R-01 → R-08) — [commentaire de la PR #1076](https://github.com/Badsender-com/LePatron.email/pull/1076) |
+| Date       | Périmètre                                       | Retours                                                                                                              |
+| ---------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-24 | §1 à §8 et §10 (§9 non joué), fixtures créées   | 8 retours (R-01 → R-08) — [commentaire de la PR #1076](https://github.com/Badsender-com/LePatron.email/pull/1076)    |
+| _à jouer_  | Repasse complète après les correctifs de review | §3c, §4, §6 bis et §9 sont neufs ou modifiés — R-06 et R-07 doivent être **rejoués** maintenant que R-01 est corrigé |
 
 Les retours de recette vivent dans les commentaires de PR, pas dans ce fichier :
 la checklist doit rester rejouable à l'identique d'une passe à l'autre.

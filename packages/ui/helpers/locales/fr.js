@@ -1294,7 +1294,6 @@ export default {
     intro: 'Composez, exécutez et conservez des scénarios de test qui combinent une skill, des expertises et des paramètres. Servez-vous-en pour itérer sur un prompt, valider une mise à jour, ou prototyper une feature avant écriture.',
     actions: {
       newScenario: 'Nouveau scénario',
-      duplicate: 'Dupliquer',
       delete: 'Supprimer',
       execute: 'Exécuter',
       markGolden: 'Marquer comme référence',
@@ -1345,7 +1344,8 @@ export default {
       expertiseSelector: 'Expertises sélectionnées',
       expertiseRecommended: 'Recommandées pour cette skill',
       expertiseAll: 'Toutes les expertises',
-      expertiseNotSupported: 'Cette skill n\'accepte pas d\'expertise en entrée.',
+      expertiseNotSupported:
+        "Cette skill n'accepte pas d'expertise en entrée : la sélection ci-dessous est conservée mais ne sera pas injectée.",
       filterCategories: 'Catégories',
       filterScope: 'Périmètre',
       filterScopeHint:
@@ -1360,6 +1360,7 @@ export default {
       filterSelectCategory:
         'Sélectionnez au moins une catégorie pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
+      filterPreviewPending: 'Comptage…',
       expertiseModeHelp:
         'Aucune : la skill est invoquée sans expertise. Sélection explicite : vous choisissez les expertises et leur ordre — recommandé pour les tests reproductibles. Filtre dynamique : les expertises sont chargées automatiquement selon les critères ci-dessous (catégorie, périmètre, type d\'email, langue). C\'est le mécanisme des fonctionnalités en production — c\'est lui qui permet d\'enrichir la doctrine sans redéploiement.',
       filterOrderHint:
@@ -1377,6 +1378,8 @@ export default {
       unknownTypeFallback: 'Cette skill utilise un format d\'entrée avancé, édition en JSON requise.',
       templateHelp: 'Gabarit dérivé du schéma d\'entrée :',
       insertTemplate: 'Insérer le gabarit',
+      manualExpertiseKey:
+        "Le champ « expertise » est injecté automatiquement depuis la sélection ci-dessus : votre saisie sera écrasée dès qu'une expertise se résout.",
       unknownKeysWarning: 'Certains champs ne correspondent pas au schéma de la skill (conservés, mais rejetés à l\'exécution) : {keys}',
       expertiseInjected: 'Les expertises sélectionnées ci-dessus sont ajoutées automatiquement à la demande — rien à saisir ici.',
       skillChangeConfirmTitle: 'Changer de skill ?',
@@ -1407,8 +1410,7 @@ export default {
       title: 'Historique des runs',
       empty: 'Aucun run pour ce scénario. Lance une exécution pour commencer.',
       runOf: 'Run du {date}',
-      latestRun: 'Dernier run',
-      executing: 'Invocation en cours, peut prendre jusqu\'à 30 secondes…',
+      executing: 'Invocation en cours, peut prendre jusqu\'à 90 secondes…',
       budgetExhausted: 'Budget de test quotidien atteint (50/50). Réessayer demain.',
       tabs: {
         input: 'Input',
@@ -1432,6 +1434,8 @@ export default {
         current: 'Run sélectionné',
         noGolden: 'Aucune référence définie pour ce scénario.',
       },
+      delete: 'Supprimer ce run',
+      deleted: 'Run supprimé',
       deleteConfirm: 'Supprimer ce run définitivement ?',
     },
     status: {

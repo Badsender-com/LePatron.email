@@ -1,15 +1,18 @@
 <script>
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsLatency from '~/components/bs-latency.vue';
-import { Star, MessageSquare } from 'lucide-vue';
+import BsTimestamp from '~/components/bs-timestamp.vue';
+import { Star, MessageSquare, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsAiPlaygroundRunsList',
   components: {
     BsDataTable,
     BsLatency,
+    BsTimestamp,
     LucideStar: Star,
     LucideMessageSquare: MessageSquare,
+    LucideTrash2: Trash2,
   },
   props: {
     runs: { type: Array, default: () => [] },
@@ -40,13 +43,11 @@ export default {
           value: 'feedback',
           align: 'center',
         },
+        { text: '', value: 'actions', align: 'right', sortable: false },
       ];
     },
   },
   methods: {
-    formatDate(d) {
-      return d ? new Date(d).toLocaleString() : '';
-    },
     statusColor(s) {
       return s === 'SUCCESS' ? 'success' : 'error';
     },
@@ -59,6 +60,13 @@ export default {
     },
     openRun(run) {
       this.$emit('open', run);
+    },
+    // DELETE /runs/:runId was implemented and tested but unreachable, and its
+    // confirmation key was already translated. A consultant needs it to drop a
+    // botched run from a scenario's history.
+    askDelete(run) {
+      if (!confirm(this.$t('aiPlayground.runs.deleteConfirm'))) return;
+      this.$emit('delete', run);
     },
   },
 };
@@ -74,7 +82,7 @@ export default {
     @click:row="openRun"
   >
     <template #item.createdAt="{ item }">
-      <span class="text-caption">{{ formatDate(item.createdAt) }}</span>
+      <bs-timestamp :value="item.createdAt" />
     </template>
     <template #item.status="{ item }">
       <v-chip
@@ -109,6 +117,22 @@ export default {
         :size="16"
         class="text--secondary"
       />
+    </template>
+    <template #item.actions="{ item }">
+      <v-tooltip left>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            icon
+            small
+            v-bind="attrs"
+            v-on="on"
+            @click.stop="askDelete(item)"
+          >
+            <lucide-trash2 :size="16" class="text--secondary" />
+          </v-btn>
+        </template>
+        <span>{{ $t('aiPlayground.runs.delete') }}</span>
+      </v-tooltip>
     </template>
     <template #no-data>
       <p class="text--disabled text-center my-4">

@@ -23,3 +23,13 @@ export function emailTypeItems(facets = []) {
   );
   return [...EMAIL_TYPES, ...[...new Set(extras)].sort()];
 }
+
+// Items for an email-type SELECT ({ value, text }), as opposed to the raw
+// strings emailTypeItems returns for a combobox. Same source, translated
+// labels.
+export function emailTypeOptions(vm, facets = []) {
+  return emailTypeItems(facets).map((value) => ({
+    value,
+    text: emailTypeLabel(vm, value),
+  }));
+}

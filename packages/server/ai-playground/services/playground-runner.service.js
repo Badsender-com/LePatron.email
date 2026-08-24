@@ -15,7 +15,14 @@ const { runExpiresAt } = require('./run-retention.service.js');
 const {
   VersionRefModes,
   PlaygroundInvocationSource,
+  RunStatuses,
+  PlaygroundTimeoutMs,
 } = require('../constant/playground-constants.js');
+const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+} = require('../../ai-skill/services/version-helpers.js');
 
 /**
  * Execute a scenario:
@@ -24,7 +31,9 @@ const {
  *   3. Resolve expertises (3 modes: explicit / filter / none).
  *   4. Compose the input. v1 doctrine: the runner only auto-injects the
  *      `expertise` field. Everything else stays in scenario.input verbatim.
- *   5. Consume the user's daily test budget.
+ *   5. Pre-flight the composed input against the version's schema, then
+ *      consume the user's daily test budget — an input zod refuses costs no
+ *      provider call, so it must not cost a run either.
  *   6. Call skillInvocation.invoke({ ..., invocationSource: 'playground' }).
  *      The invoke service handles its own logging into AISkillInvocation.
  *   7. Persist an AIPlaygroundRun with the snapshot, refs and denormalised
@@ -54,9 +63,11 @@ async function executeScenario({
     if (!platformGroup) {
       throw createError(
         400,
+        // Reaches the UI verbatim (err.response.data.message), so it names
+        // the screen in English rather than embedding its French label.
         'No group context and no platform group found. Run ' +
-          '`yarn flag-platform-group`, then configure its Skills engine ' +
-          'in "Fonctionnalités IA".'
+          '`yarn flag-platform-group`, then configure its Skills engine in ' +
+          "the group's AI features settings."
       );
     }
     effectiveGroupId = platformGroup._id;
@@ -84,30 +95,44 @@ async function executeScenario({
     }));
   }
 
-  await testBudget.consumeBudget(userId);
-
   const invocationOptions = buildInvocationOptions(scenario, overrides);
 
   let invocationResult = null;
   let invocationError = null;
-  try {
-    invocationResult = await skillInvocation.invoke({
-      skillId: resolvedSkill.skillId,
-      input: composedInput,
-      groupId: effectiveGroupId,
-      userId,
-      invocationSource: PlaygroundInvocationSource,
-      variantPath: scenario.variantPath || [],
-      // Always pass the resolved version: in pinned mode this is what makes
-      // the pinned version actually RUN (not just be displayed on the run).
-      version: {
-        major: resolvedSkill.versionMajor,
-        minor: resolvedSkill.versionMinor,
-      },
-      options: invocationOptions,
+
+  // An input zod refuses triggers no provider call and costs nothing, so it
+  // must not burn one of the 50 daily runs either. `invoke()` validates again
+  // — this only decides whether we are about to spend anything.
+  const preflight = skillInvocation.validateInputAgainstSchema(
+    resolvedSkill.inputSchemaId,
+    composedInput
+  );
+  if (!preflight.ok) {
+    invocationError = Object.assign(new Error(preflight.message), {
+      invocationStatus: RunStatuses.VALIDATION_ERROR,
+      fieldErrors: preflight.fieldErrors,
     });
-  } catch (err) {
-    invocationError = err;
+  } else {
+    await testBudget.consumeBudget(userId);
+    try {
+      invocationResult = await skillInvocation.invoke({
+        skillId: resolvedSkill.skillId,
+        input: composedInput,
+        groupId: effectiveGroupId,
+        userId,
+        invocationSource: PlaygroundInvocationSource,
+        variantPath: scenario.variantPath || [],
+        // Always pass the resolved version: in pinned mode this is what makes
+        // the pinned version actually RUN (not just be displayed on the run).
+        version: {
+          major: resolvedSkill.versionMajor,
+          minor: resolvedSkill.versionMinor,
+        },
+        options: invocationOptions,
+      });
+    } catch (err) {
+      invocationError = err;
+    }
   }
 
   const run = await AIPlaygroundRuns.create({
@@ -130,50 +155,34 @@ async function executeScenario({
       null,
     output: invocationResult ? invocationResult.output : null,
     status: invocationError
-      ? invocationError.invocationStatus || 'PROVIDER_ERROR'
-      : 'SUCCESS',
+      ? invocationError.invocationStatus || RunStatuses.PROVIDER_ERROR
+      : RunStatuses.SUCCESS,
     latencyMs: (invocationResult && invocationResult.latencyMs) || null,
     tokenUsage: (invocationResult && invocationResult.tokenUsage) || {},
-    errorMessage: invocationError
-      ? humanizeErrorMessage(invocationError)
-      : null,
+    errorMessage: invocationError ? invocationError.message : null,
+    // Codes, not sentences: the UI renders them through
+    // aiPlayground.validation.* so a failed run stays legible in either
+    // language, on the execute response AND on every later GET.
+    fieldErrors: normaliseFieldErrors(invocationError),
     createdBy: userId,
     // Retention deadline for the TTL index. Cleared when the run is marked
     // golden (run.service.js).
     expiresAt: runExpiresAt(new Date()),
   });
 
-  if (invocationError && invocationError.fieldErrors) {
-    // Transient JS property, outside the mongoose schema: never persisted.
-    // The execute controller copies it explicitly into the HTTP payload
-    // (res.json would prune it through toJSON()).
-    run.fieldErrors = invocationError.fieldErrors;
-  }
-
   return run;
 }
 
-const FIELD_ISSUE_LABELS = {
-  required: 'obligatoire',
-  unrecognized: 'non reconnu par cette skill',
-  length: 'longueur invalide',
-  invalid: 'format invalide',
-};
-
 /**
- * Persisted errorMessage: when structured field errors exist, store a
- * human-readable summary instead of the raw zod message so historical failed
- * runs stay legible to consultants. Other error types keep their message.
+ * The field errors carried by an invocation failure, in the persisted shape.
+ * `[]` for any other kind of error.
  */
-function humanizeErrorMessage(invocationError) {
-  const fieldErrors = invocationError.fieldErrors;
-  if (!Array.isArray(fieldErrors) || !fieldErrors.length) {
-    return invocationError.message;
-  }
-  const parts = fieldErrors.map(
-    (e) => `${e.field} (${FIELD_ISSUE_LABELS[e.issue] || e.issue})`
-  );
-  return `Champs invalides : ${parts.join(' ; ')}`;
+function normaliseFieldErrors(invocationError) {
+  const fieldErrors = invocationError && invocationError.fieldErrors;
+  if (!Array.isArray(fieldErrors)) return [];
+  return fieldErrors
+    .filter((e) => e && e.field && e.issue)
+    .map((e) => ({ field: e.field, issue: e.issue }));
 }
 
 async function loadActiveOrPinnedSkill(skillRef) {
@@ -182,36 +191,62 @@ async function loadActiveOrPinnedSkill(skillRef) {
     { skillId: 1, status: 1, activeVersion: 1, versions: 1 }
   ).lean();
   if (!skill) throw createError(404, `Skill "${skillRef.skillId}" not found`);
-  let major;
-  let minor;
-  if (skillRef.mode === VersionRefModes.PINNED) {
-    major = skillRef.versionMajor;
-    minor = skillRef.versionMinor || 0;
-    const exists = (skill.versions || []).some(
-      (v) => v.versionMajor === major && v.versionMinor === minor
+  // `assertReferencesExist` carries this invariant when a scenario is written;
+  // the runner was missing it, so an archived skill got as far as consuming the
+  // budget and persisting a failed run for a condition knowable up front.
+  if (skill.status !== SkillStatuses.ACTIVE) {
+    throw createError(
+      400,
+      `Skill "${skillRef.skillId}" is not ACTIVE (status ${skill.status})`
     );
-    if (!exists) {
+  }
+  // Which version to run is the playground's policy; finding it is the shared
+  // version mechanics (ai-skill/services/version-helpers).
+  let version;
+  if (skillRef.mode === VersionRefModes.PINNED) {
+    version = findVersion(
+      skill,
+      skillRef.versionMajor,
+      skillRef.versionMinor || 0
+    );
+    if (!version) {
       throw createError(
         404,
-        `Version ${major}.${minor} of skill "${skillRef.skillId}" not found`
+        `Version ${skillRef.versionMajor}.${
+          skillRef.versionMinor || 0
+        } of skill "${skillRef.skillId}" not found`
       );
     }
   } else {
-    const av = skill.activeVersion || {};
-    if (av.major == null) {
+    if ((skill.activeVersion || {}).major == null) {
       throw createError(
         400,
         `Skill "${skillRef.skillId}" has no active version`
       );
     }
-    major = av.major;
-    minor = av.minor || 0;
+    version = findActiveVersion(skill);
+    if (!version) {
+      throw createError(
+        404,
+        `Skill "${skillRef.skillId}" points at an active version that no longer exists`
+      );
+    }
   }
-  return { skillId: skill.skillId, versionMajor: major, versionMinor: minor };
+  return {
+    skillId: skill.skillId,
+    versionMajor: version.versionMajor,
+    versionMinor: version.versionMinor,
+    // Carried so the runner can pre-flight the input before spending quota.
+    inputSchemaId: version.inputSchemaId,
+  };
 }
 
 function buildInvocationOptions(scenario, overrides) {
-  const opts = {};
+  // `invoke()` defaults to 30 s, which is tuned for a user-facing feature. The
+  // playground is where long prompts and large outputs are deliberately tried
+  // out, by one super-admin who is watching the request — a timeout here reads
+  // as "the model is broken".
+  const opts = { timeoutMs: PlaygroundTimeoutMs };
   const po =
     (overrides && overrides.providerOverride) || scenario.providerOverride;
   if (!po) return opts;

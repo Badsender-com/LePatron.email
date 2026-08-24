@@ -6,7 +6,15 @@ const {
   AIPlaygroundScenarios,
 } = require('../../common/models.common.js');
 const { runExpiresAt } = require('./run-retention.service.js');
-const { FeedbackRatingValues } = require('../constant/playground-constants.js');
+const {
+  FeedbackRatingValues,
+  RunStatusValues,
+} = require('../constant/playground-constants.js');
+const {
+  enumParam,
+  dateParam,
+  objectIdParam,
+} = require('../../utils/query-scalars.js');
 
 const LIST_PROJECTION = {
   _scenario: 1,
@@ -32,12 +40,18 @@ async function listRunsForScenario(
     { _id: 1 }
   ).lean();
   if (!scenario) throw createError(404, `Scenario "${scenarioId}" not found`);
+  // Untrusted query values are guarded before becoming query operands:
+  // `?status[$ne]=` reached the driver as an operator, and
+  // `?startedFrom=notadate` reached it as `Invalid Date` — both 500s.
   const query = { _scenario: scenario._id };
-  if (status) query.status = status;
-  if (startedFrom || startedTo) {
+  const statusFilter = enumParam(status, 'status', RunStatusValues);
+  const from = dateParam(startedFrom, 'startedFrom');
+  const to = dateParam(startedTo, 'startedTo');
+  if (statusFilter) query.status = statusFilter;
+  if (from || to) {
     query.createdAt = {};
-    if (startedFrom) query.createdAt.$gte = new Date(startedFrom);
-    if (startedTo) query.createdAt.$lte = new Date(startedTo);
+    if (from) query.createdAt.$gte = from;
+    if (to) query.createdAt.$lte = to;
   }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
@@ -52,8 +66,14 @@ async function listRunsForScenario(
   return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
 }
 
+// Every by-id entry point validates the id first: a non-ObjectId `:runId`
+// surfaced as a Mongoose CastError turned 500 instead of a 400/404.
+function assertRunId(runId) {
+  return objectIdParam(runId, 'runId');
+}
+
 async function getRun(runId) {
-  const run = await AIPlaygroundRuns.findById(runId).lean();
+  const run = await AIPlaygroundRuns.findById(assertRunId(runId)).lean();
   if (!run) throw createError(404, 'Run not found');
   return run;
 }
@@ -71,7 +91,7 @@ async function setRunFeedback(runId, feedback, userId) {
   if (score != null && !(Number.isFinite(score) && score >= 1 && score <= 5)) {
     throw createError(400, 'score must be a number between 1 and 5');
   }
-  const run = await AIPlaygroundRuns.findById(runId);
+  const run = await AIPlaygroundRuns.findById(assertRunId(runId));
   if (!run) throw createError(404, 'Run not found');
   run.feedback = {
     rating: feedback.rating,
@@ -97,7 +117,7 @@ async function setRunFeedback(runId, feedback, userId) {
  * 409 the caller can simply retry.
  */
 async function markGolden(runId) {
-  const run = await AIPlaygroundRuns.findById(runId);
+  const run = await AIPlaygroundRuns.findById(assertRunId(runId));
   if (!run) throw createError(404, 'Run not found');
   if (run.isGolden) {
     return run;
@@ -133,7 +153,7 @@ async function markGolden(runId) {
 }
 
 async function unmarkGolden(runId) {
-  const run = await AIPlaygroundRuns.findById(runId);
+  const run = await AIPlaygroundRuns.findById(assertRunId(runId));
   if (!run) throw createError(404, 'Run not found');
   if (!run.isGolden) return run;
   run.isGolden = false;
@@ -147,7 +167,7 @@ async function unmarkGolden(runId) {
 }
 
 async function deleteRun(runId) {
-  const run = await AIPlaygroundRuns.findById(runId);
+  const run = await AIPlaygroundRuns.findById(assertRunId(runId));
   if (!run) throw createError(404, 'Run not found');
   if (run.isGolden) {
     await AIPlaygroundScenarios.updateOne(
