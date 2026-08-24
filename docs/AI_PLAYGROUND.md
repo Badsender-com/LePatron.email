@@ -82,8 +82,8 @@ Principe : _le playground orchestre, la skill est une fonction pure de son input
   toujours sur sa branche mémoire, et `packages/server/index.js` démarre un
   cluster de `WORKERS` process. Le plafond réel est donc `50 × WORKERS` par
   jour, remis à zéro à chaque deploy ou crash de worker. Suffisant pour stopper
-  une boucle folle, ce n'est pas un plafond de coût fiable — voir l'issue de
-  suivi « identité super-admin ».
+  une boucle folle, ce n'est pas un plafond de coût fiable — cf.
+  [issue #1086](https://github.com/Badsender-com/LePatron.email/issues/1086).
 - **Timeout provider** : `PlaygroundTimeoutMs = 90 s`, passé explicitement à
   `invoke()` (dont le défaut, 30 s, est calibré pour une feature user-facing).
   C'est l'outil où l'on essaie de longs prompts exprès.

@@ -288,7 +288,7 @@ db.aiplaygroundscenarios.find({}, { scenarioId: 1, owner: 1, createdBy: 1 });
       codes (`{ field, issue }`), sans phrase française
 - [ ] `owner` / `createdBy` / `feedback.ratedBy` sont **`null`** : c'est le
       comportement attendu tant que le super-admin est un pseudo-compte sans
-      ligne `users` — voir l'issue de suivi « identité super-admin »
+      ligne `users` — cf. [issue #1086](https://github.com/Badsender-com/LePatron.email/issues/1086)
 - [ ] `?status[$ne]=` sur `/runs` répond **400**, pas 500
 - [ ] Un `:runId` qui n'est pas un ObjectId répond **400**, pas 500
 
