@@ -125,7 +125,9 @@ Corps de version 1.0, puis activation :
 ## 2. Premier run
 
 - [ ] **Enregistrer** et **Exécuter** sont sur la même ligne
-- [ ] Exécution → « Invocation en cours, peut prendre jusqu'à 30 secondes… »
+- [ ] Exécution → « Invocation en cours, peut prendre jusqu'à 90 secondes… »
+      (le timeout du playground est `PlaygroundTimeoutMs` = 90 s, pas le défaut
+      user-facing de 30 s d'`invoke()`)
 - [ ] Carte résultat : statut **Succès**, latence, tokens
 - [ ] Historique : 1 ligne (Quand / Statut / Latence / Tokens / Référence / Feedback)
 - [ ] Modale run : onglets **Output**, **Input**, **Output (JSON)**, **Feedback**

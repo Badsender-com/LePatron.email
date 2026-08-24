@@ -1410,7 +1410,7 @@ export default {
       title: 'Historique des runs',
       empty: 'Aucun run pour ce scénario. Lance une exécution pour commencer.',
       runOf: 'Run du {date}',
-      executing: 'Invocation en cours, peut prendre jusqu\'à 30 secondes…',
+      executing: 'Invocation en cours, peut prendre jusqu\'à 90 secondes…',
       budgetExhausted: 'Budget de test quotidien atteint (50/50). Réessayer demain.',
       tabs: {
         input: 'Input',

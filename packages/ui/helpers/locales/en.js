@@ -1396,7 +1396,7 @@ export default {
       title: 'Run history',
       empty: 'No run yet on this scenario. Trigger one to start.',
       runOf: 'Run of {date}',
-      executing: 'Running, may take up to 30 seconds…',
+      executing: 'Running, may take up to 90 seconds…',
       budgetExhausted: 'Daily test budget reached (50/50). Try again tomorrow.',
       tabs: {
         input: 'Input',
