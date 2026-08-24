@@ -5,12 +5,12 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
-import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
-import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
-import BsAiSkillVersionsPanel from '~/components/ai-skill/BsAiSkillVersionsPanel.vue';
-import BsAiSkillDetailsForm from '~/components/ai-skill/BsAiSkillDetailsForm.vue';
-import BsAiSkillLogsPanel from '~/components/ai-skill/BsAiSkillLogsPanel.vue';
+import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
+import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
+import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
+import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
+import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
 
 export default {
   name: 'PageAiSkillDetail',

@@ -4,7 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
-import BsLatency from '~/components/ai-skill/BsLatency.vue';
+import BsLatency from '~/components/bs-latency.vue';
 import { latencySeconds } from '~/helpers/format-latency.js';
 import { History } from 'lucide-vue';
 

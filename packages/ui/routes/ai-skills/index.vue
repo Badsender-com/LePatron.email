@@ -2,9 +2,9 @@
 import * as acls from '~/helpers/pages-acls.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import BsAiSkillsTab from '~/components/ai-skill/BsAiSkillsTab.vue';
-import BsAiExpertiseTab from '~/components/ai-skill/BsAiExpertiseTab.vue';
-import BsAiInvocationsTab from '~/components/ai-skill/BsAiInvocationsTab.vue';
+import BsAiSkillsTab from '~/components/ai-skill/bs-ai-skills-tab.vue';
+import BsAiExpertiseTab from '~/components/ai-skill/bs-ai-expertise-tab.vue';
+import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue';
 import { Plus } from 'lucide-vue';
 
 const VALID_TABS = ['skills', 'expertise', 'invocations'];

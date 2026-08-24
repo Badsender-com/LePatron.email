@@ -5,11 +5,11 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
-import BsAiExpertiseDetailsForm from '~/components/ai-skill/BsAiExpertiseDetailsForm.vue';
-import BsAiExpertiseVersionsPanel from '~/components/ai-skill/BsAiExpertiseVersionsPanel.vue';
-import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
-import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
+import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
+import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
+import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
+import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 
 export default {
   name: 'PageAiExpertiseDetail',

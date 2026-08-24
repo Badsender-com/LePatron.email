@@ -7,7 +7,7 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
-import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
+import BsAiLanguagePicker from '~/components/ai-skill/bs-ai-language-picker.vue';
 import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
 
 const CATEGORIES = [
