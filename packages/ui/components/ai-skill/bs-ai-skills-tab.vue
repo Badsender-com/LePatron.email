@@ -7,16 +7,11 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import { Sparkles } from 'lucide-vue';
+import {
+  skillCategoryOptions,
+  skillCategoryLabel,
+} from '~/helpers/ai-skill-categories.js';
 
-const CATEGORIES = [
-  'redaction',
-  'qc',
-  'design',
-  'html_integration',
-  'deliverability',
-  'translation',
-  'other',
-];
 const STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
 
 export default {
@@ -40,10 +35,7 @@ export default {
   },
   computed: {
     categoryOptions() {
-      return CATEGORIES.map((value) => ({
-        value,
-        text: this.$t(`aiSkills.categories.${value}`),
-      }));
+      return skillCategoryOptions(this);
     },
     statusOptions() {
       return STATUSES.map((value) => ({
@@ -87,7 +79,7 @@ export default {
       );
     },
     categoryLabel(value) {
-      return value ? this.$t(`aiSkills.categories.${value}`) : '';
+      return skillCategoryLabel(this, value);
     },
     statusLabel(value) {
       return value ? this.$t(`aiSkills.statuses.${value}`) : '';

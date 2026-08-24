@@ -1,19 +1,33 @@
 <script>
-/* eslint-disable vue/no-mutating-props */
+// The page owns the expertise object; this panel edits its own drafts and
+// hands a merged version back on save / publish (see mixin-version-drafts).
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
+import BsTimestamp from '~/components/bs-timestamp.vue';
+import mixinVersionDrafts from '~/helpers/mixins/mixin-version-drafts.js';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
+
+// What the version editor lets one change on a DRAFT.
+const EDITABLE_FIELDS = Object.freeze([
+  'body',
+  'examplesGood',
+  'examplesBad',
+  'changelog',
+  'releaseNotes',
+]);
 
 export default {
   name: 'BsAiExpertiseVersionsPanel',
   components: {
     BsTextarea,
     BsCombobox,
+    BsTimestamp,
     LucidePlus: Plus,
     LucideCheckCircle2: CheckCircle2,
     LucideCopy: Copy,
     LucideTrash2: Trash2,
   },
+  mixins: [mixinVersionDrafts],
   props: {
     expertise: { type: Object, required: true },
     saving: { type: Boolean, default: false },
@@ -25,17 +39,15 @@ export default {
     return { openPanel: null };
   },
   computed: {
-    hasActive() {
-      const av = this.expertise && this.expertise.activeVersion;
-      return !!(av && av.major != null);
+    // Consumed by mixin-version-drafts.
+    versionsSource() {
+      return this.expertise.versions;
     },
-    sortedVersions() {
-      return [...(this.expertise.versions || [])].sort((a, b) => {
-        if (b.versionMajor !== a.versionMajor) {
-          return b.versionMajor - a.versionMajor;
-        }
-        return b.versionMinor - a.versionMinor;
-      });
+    activeVersionRef() {
+      return this.expertise && this.expertise.activeVersion;
+    },
+    editableVersionFields() {
+      return EDITABLE_FIELDS;
     },
   },
   mounted() {
@@ -45,27 +57,6 @@ export default {
       );
       if (idx >= 0) this.openPanel = idx;
     }
-  },
-  methods: {
-    formatDate(d) {
-      return d ? new Date(d).toLocaleString() : '';
-    },
-    versionLabel(v) {
-      return `${v.versionMajor}.${v.versionMinor}`;
-    },
-    statusLabel(v) {
-      return this.$t(`aiSkills.statuses.${v.status}`);
-    },
-    statusColor(v) {
-      return v.status === 'ACTIVE'
-        ? 'success'
-        : v.status === 'ARCHIVED'
-        ? 'grey'
-        : 'warning';
-    },
-    isMajorDraft(v) {
-      return v.status === 'DRAFT' && v.versionMinor === 0;
-    },
   },
 };
 </script>
@@ -122,9 +113,10 @@ export default {
               >
                 {{ statusLabel(v) }}
               </v-chip>
-              <span class="text-caption text--secondary">
-                {{ formatDate(v.updatedAt || v.createdAt) }}
-              </span>
+              <bs-timestamp :value="v.updatedAt || v.createdAt" />
+              <v-chip v-if="isVersionDirty(v)" x-small outlined color="warning">
+                {{ $t('aiSkills.version.unsavedChanges') }}
+              </v-chip>
               <v-spacer />
               <v-tooltip left>
                 <template #activator="{ on, attrs }">
@@ -144,7 +136,7 @@ export default {
           </v-expansion-panel-header>
           <v-expansion-panel-content>
             <bs-textarea
-              v-model="v.body"
+              v-model="draftFor(v).body"
               :label="$t('aiSkills.expertise.bodyLabel')"
               :rows="10"
               :readonly="v.status !== 'DRAFT'"
@@ -154,7 +146,7 @@ export default {
               {{ $t('aiSkills.expertise.sectionIdHelp') }}
             </p>
             <bs-combobox
-              v-model="v.examplesGood"
+              v-model="draftFor(v).examplesGood"
               :label="$t('aiSkills.expertise.goodExamples')"
               multiple
               chips
@@ -162,7 +154,7 @@ export default {
               :readonly="v.status !== 'DRAFT'"
             />
             <bs-combobox
-              v-model="v.examplesBad"
+              v-model="draftFor(v).examplesBad"
               :label="$t('aiSkills.expertise.badExamples')"
               multiple
               chips
@@ -171,13 +163,13 @@ export default {
             />
             <bs-textarea
               v-if="isMajorDraft(v)"
-              v-model="v.changelog"
+              v-model="draftFor(v).changelog"
               :label="$t('aiSkills.version.changelog')"
               :rows="2"
             />
             <bs-textarea
               v-if="isMajorDraft(v)"
-              v-model="v.releaseNotes"
+              v-model="draftFor(v).releaseNotes"
               :label="$t('aiSkills.version.releaseNotes')"
               :rows="2"
             />
@@ -199,7 +191,7 @@ export default {
                 text
                 color="primary"
                 :loading="saving"
-                @click="$emit('save', { version: v })"
+                @click="emitSaveVersion(v)"
               >
                 {{ $t('aiSkills.version.saveDraft') }}
               </v-btn>
@@ -207,7 +199,7 @@ export default {
                 color="accent"
                 elevation="0"
                 :loading="saving"
-                @click="$emit('activate', v)"
+                @click="emitActivateVersion(v)"
               >
                 <lucide-check-circle2 :size="18" class="mr-2" />
                 {{ $t('aiSkills.version.publish') }}

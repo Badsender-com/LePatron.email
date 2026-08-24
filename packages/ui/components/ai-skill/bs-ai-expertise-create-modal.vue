@@ -9,16 +9,7 @@ import BsAiLanguagePicker from '~/components/ai-skill/bs-ai-language-picker.vue'
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
 import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
 import { RefreshCw } from 'lucide-vue';
-
-const CATEGORIES = [
-  'redaction',
-  'qc',
-  'design',
-  'html_integration',
-  'deliverability',
-  'translation',
-  'other',
-];
+import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiExpertiseCreateModal',
@@ -45,10 +36,7 @@ export default {
   },
   computed: {
     categoryOptions() {
-      return CATEGORIES.map((value) => ({
-        value,
-        text: this.$t(`aiSkills.categories.${value}`),
-      }));
+      return skillCategoryOptions(this);
     },
     emailTypeItems() {
       return emailTypeItems(this.emailTypeFacets);

@@ -1,7 +1,6 @@
 <script>
-// Parent owns the expertise object and accepts in-place edits via v-model;
-// see BsAiSkillDetailsForm for rationale.
-/* eslint-disable vue/no-mutating-props */
+// The page owns the expertise object; this form never writes into it. See
+// bs-ai-skill-details-form for the rationale.
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
@@ -9,16 +8,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/bs-ai-language-picker.vue';
 import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
-
-const CATEGORIES = [
-  'redaction',
-  'qc',
-  'design',
-  'html_integration',
-  'deliverability',
-  'translation',
-  'other',
-];
+import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiExpertiseDetailsForm',
@@ -30,7 +20,7 @@ export default {
     BsAiLanguagePicker,
   },
   props: {
-    expertise: { type: Object, required: true },
+    value: { type: Object, required: true },
     saving: { type: Boolean, default: false },
   },
   data() {
@@ -38,10 +28,7 @@ export default {
   },
   computed: {
     categoryOptions() {
-      return CATEGORIES.map((value) => ({
-        value,
-        text: this.$t(`aiSkills.categories.${value}`),
-      }));
+      return skillCategoryOptions(this);
     },
     emailTypeItems() {
       return emailTypeItems(this.emailTypeFacets);
@@ -58,13 +45,18 @@ export default {
     }
   },
   methods: {
+    update(patch) {
+      this.$emit('input', { ...this.value, ...patch });
+    },
     emailTypeLabel(value) {
       return emailTypeLabel(this, value);
     },
     onTransversalChange(checked) {
       // Scope and transversal are contradictory; the flag wins. Clear the
       // scope so the saved state matches what the disabled field shows.
-      if (checked) this.expertise.scope = [];
+      this.update(
+        checked ? { isTransversal: true, scope: [] } : { isTransversal: false }
+      );
     },
   },
 };
@@ -72,25 +64,31 @@ export default {
 
 <template>
   <v-card outlined class="pa-4">
-    <bs-text-field v-model="expertise.title" :label="$t('global.title')" />
+    <bs-text-field
+      :value="value.title"
+      :label="$t('global.title')"
+      @input="update({ title: $event })"
+    />
     <bs-textarea
-      v-model="expertise.description"
+      :value="value.description"
       :label="$t('global.description')"
       :hint="$t('aiSkills.expertise.descriptionHelp')"
       persistent-hint
       :rows="2"
+      @input="update({ description: $event })"
     />
     <bs-select
-      v-model="expertise.category"
+      :value="value.category"
       :items="categoryOptions"
       item-text="text"
       item-value="value"
       :label="$t('aiSkills.filters.category')"
       :hint="$t('aiSkills.expertise.categoryHelp')"
       persistent-hint
+      @input="update({ category: $event })"
     />
     <v-checkbox
-      v-model="expertise.isTransversal"
+      :input-value="value.isTransversal"
       :label="$t('aiSkills.expertise.transversal')"
       :hint="$t('aiSkills.expertise.transversalHint')"
       persistent-hint
@@ -99,18 +97,19 @@ export default {
       @change="onTransversalChange"
     />
     <bs-combobox
-      v-model="expertise.scope"
+      :value="value.scope"
       :items="scopeFacets"
       :label="$t('aiSkills.expertise.scope')"
       :hint="$t('aiSkills.expertise.scopeHelp')"
       persistent-hint
-      :disabled="expertise.isTransversal"
+      :disabled="value.isTransversal"
       multiple
       chips
       small-chips
+      @input="update({ scope: $event })"
     />
     <bs-combobox
-      v-model="expertise.appliesToEmailTypes"
+      :value="value.appliesToEmailTypes"
       :items="emailTypeItems"
       :label="$t('aiSkills.expertise.appliesToEmailTypes')"
       :hint="$t('aiSkills.expertise.emailTypeHelp')"
@@ -118,6 +117,7 @@ export default {
       multiple
       chips
       small-chips
+      @input="update({ appliesToEmailTypes: $event })"
     >
       <template #selection="{ item }">
         <v-chip small>
@@ -129,10 +129,10 @@ export default {
       </template>
     </bs-combobox>
     <bs-ai-language-picker
-      :value="expertise.appliesToLanguages"
+      :value="value.appliesToLanguages"
       :label="$t('aiSkills.expertise.appliesToLanguages')"
       :hint="$t('aiSkills.expertise.languageHelp')"
-      @input="expertise.appliesToLanguages = $event"
+      @input="update({ appliesToLanguages: $event })"
     />
     <div class="d-flex justify-end mt-3">
       <v-btn

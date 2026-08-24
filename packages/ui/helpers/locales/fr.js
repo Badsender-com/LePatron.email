@@ -1240,6 +1240,7 @@ export default {
       newVersionShort: 'Nouvelle version',
       versionCreated: 'Version créée',
       draftSaved: 'Brouillon enregistré',
+      unsavedChanges: 'Modifications non enregistrées',
       activate: 'Activer',
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',

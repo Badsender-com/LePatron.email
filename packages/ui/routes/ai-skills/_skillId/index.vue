@@ -11,6 +11,7 @@ import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
+import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -67,7 +68,7 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     categoryLabel(value) {
-      return value ? this.$t(`aiSkills.categories.${value}`) : '';
+      return skillCategoryLabel(this, value);
     },
 
     async saveDetails() {
@@ -138,7 +139,10 @@ export default {
       }
     },
 
-    async saveVersion({ version }) {
+    // `silent` skips the snackbar: publishing an edited draft saves it first
+    // (see askActivate) and only the activation is worth announcing.
+    // Returns true when the PATCH went through.
+    async saveVersion({ version, silent = false }) {
       this.saving = true;
       try {
         const payload = {
@@ -165,12 +169,16 @@ export default {
         this.warningsVersionKey = `${version.versionMajor}.${version.versionMinor}`;
         delete res.warnings;
         this.skill = res;
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.draftSaved'),
-          color: 'success',
-        });
+        if (!silent) {
+          this.showSnackbar({
+            text: this.$t('aiSkills.version.draftSaved'),
+            color: 'success',
+          });
+        }
+        return true;
       } catch (err) {
         this.handleError(err);
+        return false;
       } finally {
         this.saving = false;
       }
@@ -194,7 +202,15 @@ export default {
       }
     },
 
-    askActivate(version) {
+    async askActivate({ version, dirty }) {
+      // Publishing means publishing what is on screen. Activation only posts
+      // changelog / release notes and then replaces the local state with the
+      // server response, so an unsaved draft used to be published absent AND
+      // wiped off the screen without warning (review R-04). Persist it first,
+      // and give up on the publish if that save fails.
+      if (dirty && !(await this.saveVersion({ version, silent: true }))) {
+        return;
+      }
       this.activatingVersion = version;
       // Both major AND minor go through the modal: activating any version
       // instantly changes the doctrine features consume. Pre-filled from the
@@ -294,7 +310,7 @@ export default {
       <v-tabs-items v-model="tab" class="transparent">
         <v-tab-item value="details">
           <bs-ai-skill-details-form
-            :skill="skill"
+            v-model="skill"
             :saving="saving"
             @save="saveDetails"
           />

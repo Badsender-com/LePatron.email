@@ -1,28 +1,42 @@
 <script>
-// Parent owns the skill object and accepts in-place edits via v-model on the
-// individual version fields. See BsAiSkillDetailsForm for rationale.
-/* eslint-disable vue/no-mutating-props */
+// The page owns the skill object; this panel edits its own drafts and hands a
+// merged version back on save / publish (see mixin-version-drafts).
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsTimestamp from '~/components/bs-timestamp.vue';
 import { aiSkillSchemaDescriptor } from '~/helpers/ai-skill-routes.js';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
+import mixinVersionDrafts from '~/helpers/mixins/mixin-version-drafts.js';
 import { Plus, CheckCircle2, Check, Copy, Trash2 } from 'lucide-vue';
 
 // How long a copied chip keeps its confirmation mark.
 const COPIED_FEEDBACK_MS = 1500;
+
+// What the version editor lets one change on a DRAFT.
+const EDITABLE_FIELDS = Object.freeze([
+  'inputSchemaId',
+  'outputSchemaId',
+  'systemPrompt',
+  'skillBody',
+  'inputTemplate',
+  'changelog',
+  'releaseNotes',
+]);
 
 export default {
   name: 'BsAiSkillVersionsPanel',
   components: {
     BsTextarea,
     BsSelect,
+    BsTimestamp,
     LucidePlus: Plus,
     LucideCheck: Check,
     LucideCheckCircle2: CheckCircle2,
     LucideCopy: Copy,
     LucideTrash2: Trash2,
   },
+  mixins: [mixinVersionDrafts],
   props: {
     skill: { type: Object, required: true },
     saving: { type: Boolean, default: false },
@@ -53,9 +67,15 @@ export default {
     };
   },
   computed: {
-    hasActive() {
-      const av = this.skill && this.skill.activeVersion;
-      return !!(av && av.major != null);
+    // Consumed by mixin-version-drafts.
+    versionsSource() {
+      return this.skill.versions;
+    },
+    activeVersionRef() {
+      return this.skill && this.skill.activeVersion;
+    },
+    editableVersionFields() {
+      return EDITABLE_FIELDS;
     },
     inputSchemas() {
       return this.schemas.filter((s) => /Input$/.test(s));
@@ -63,18 +83,14 @@ export default {
     outputSchemas() {
       return this.schemas.filter((s) => /Output$/.test(s));
     },
-    sortedVersions() {
-      return [...(this.skill.versions || [])].sort((a, b) => {
-        if (b.versionMajor !== a.versionMajor) {
-          return b.versionMajor - a.versionMajor;
-        }
-        return b.versionMinor - a.versionMinor;
-      });
-    },
     // Watched as a stable string so a change to any version's input schema
-    // triggers a descriptor (re)load.
+    // triggers a descriptor (re)load. Reads the drafts, not the server
+    // documents: switching the schema in the select must load its descriptor
+    // before the draft is saved.
     inputSchemaIds() {
-      return this.sortedVersions.map((v) => v.inputSchemaId || '').join(',');
+      return this.sortedVersions
+        .map((v) => this.draftInputSchemaId(v) || '')
+        .join(',');
     },
   },
   watch: {
@@ -95,25 +111,17 @@ export default {
     clearTimeout(this.copiedTimer);
   },
   methods: {
-    formatDate(d) {
-      return d ? new Date(d).toLocaleString() : '';
-    },
-    versionLabel(v) {
-      return `${v.versionMajor}.${v.versionMinor}`;
-    },
-    statusLabel(v) {
-      return this.$t(`aiSkills.statuses.${v.status}`);
-    },
-    statusColor(v) {
-      return v.status === 'ACTIVE'
-        ? 'success'
-        : v.status === 'ARCHIVED'
-        ? 'grey'
-        : 'warning';
+    // The schema id currently shown for a version: its draft value while the
+    // panel is open, the server value otherwise.
+    draftInputSchemaId(v) {
+      const draft = this.draftFor(v);
+      return draft ? draft.inputSchemaId : v.inputSchemaId;
     },
     ensureDescriptors() {
       const ids = new Set(
-        this.sortedVersions.map((v) => v.inputSchemaId).filter(Boolean)
+        this.sortedVersions
+          .map((v) => this.draftInputSchemaId(v))
+          .filter(Boolean)
       );
       ids.forEach((id) => this.loadDescriptor(id));
     },
@@ -132,7 +140,8 @@ export default {
     // version's input-schema descriptor (§C2). Returns null while the
     // descriptor is loading or unknown, so the helper block stays hidden.
     placeholdersFor(v) {
-      const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
+      const schemaId = this.draftInputSchemaId(v);
+      const d = schemaId && this.descriptorCache[schemaId];
       if (!d) return null;
       const tokens = (d.fields || []).map((f) => ({
         token: `{{input.${f.name}}}`,
@@ -159,7 +168,8 @@ export default {
       }
     },
     hasExpertiseFor(v) {
-      const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
+      const schemaId = this.draftInputSchemaId(v);
+      const d = schemaId && this.descriptorCache[schemaId];
       return !!(d && d.hasExpertiseField);
     },
     // The server sends warning codes; the wording lives in the locales.
@@ -223,9 +233,16 @@ export default {
               >
                 {{ statusLabel(v) }}
               </v-chip>
-              <span class="text-caption text--secondary">
-                {{ formatDate(v.updatedAt || v.createdAt) }}
-              </span>
+              <bs-timestamp :value="v.updatedAt || v.createdAt" />
+              <v-chip
+                v-if="isVersionDirty(v)"
+                x-small
+                outlined
+                color="warning"
+                class="version-dirty"
+              >
+                {{ $t('aiSkills.version.unsavedChanges') }}
+              </v-chip>
               <span
                 v-if="v.changelog"
                 class="text-caption text--secondary text-truncate version-changelog"
@@ -252,14 +269,14 @@ export default {
           <v-expansion-panel-content>
             <div class="schema-row">
               <bs-select
-                v-model="v.inputSchemaId"
+                v-model="draftFor(v).inputSchemaId"
                 :items="inputSchemas"
                 :label="$t('aiSkills.skill.inputSchemaId')"
                 :readonly="v.status !== 'DRAFT'"
                 :disabled="v.status !== 'DRAFT'"
               />
               <bs-select
-                v-model="v.outputSchemaId"
+                v-model="draftFor(v).outputSchemaId"
                 :items="outputSchemas"
                 :label="$t('aiSkills.skill.outputSchemaId')"
                 :readonly="v.status !== 'DRAFT'"
@@ -270,14 +287,14 @@ export default {
               {{ $t('aiSkills.version.schemasHelp') }}
             </p>
             <bs-textarea
-              v-model="v.systemPrompt"
+              v-model="draftFor(v).systemPrompt"
               :label="$t('aiSkills.version.systemPrompt')"
               :rows="3"
               :readonly="v.status !== 'DRAFT'"
               monospace
             />
             <bs-textarea
-              v-model="v.skillBody"
+              v-model="draftFor(v).skillBody"
               :label="$t('aiSkills.version.skillBody')"
               :rows="5"
               :readonly="v.status !== 'DRAFT'"
@@ -287,7 +304,7 @@ export default {
               {{ $t('aiSkills.version.outputFormatNote') }}
             </p>
             <bs-textarea
-              v-model="v.inputTemplate"
+              v-model="draftFor(v).inputTemplate"
               :label="$t('aiSkills.version.inputTemplate')"
               :rows="3"
               :readonly="v.status !== 'DRAFT'"
@@ -341,14 +358,14 @@ export default {
             </div>
             <bs-textarea
               v-if="v.status === 'DRAFT'"
-              v-model="v.changelog"
+              v-model="draftFor(v).changelog"
               :label="$t('aiSkills.version.changelog')"
               :placeholder="$t('aiSkills.version.changelogPlaceholder')"
               :rows="2"
             />
             <bs-textarea
               v-if="v.status === 'DRAFT'"
-              v-model="v.releaseNotes"
+              v-model="draftFor(v).releaseNotes"
               :label="$t('aiSkills.version.releaseNotes')"
               :placeholder="$t('aiSkills.version.releaseNotesPlaceholder')"
               :rows="2"
@@ -381,7 +398,7 @@ export default {
                 text
                 color="primary"
                 :loading="saving"
-                @click="$emit('save', { version: v })"
+                @click="emitSaveVersion(v)"
               >
                 {{ $t('aiSkills.version.saveDraft') }}
               </v-btn>
@@ -389,7 +406,7 @@ export default {
                 color="accent"
                 elevation="0"
                 :loading="saving"
-                @click="$emit('activate', v)"
+                @click="emitActivateVersion(v)"
               >
                 <lucide-check-circle2 :size="18" class="mr-2" />
                 {{ $t('aiSkills.version.publish') }}

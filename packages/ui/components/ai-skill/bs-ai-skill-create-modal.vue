@@ -5,16 +5,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
 import { RefreshCw } from 'lucide-vue';
-
-const CATEGORIES = [
-  'redaction',
-  'qc',
-  'design',
-  'html_integration',
-  'deliverability',
-  'translation',
-  'other',
-];
+import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiSkillCreateModal',
@@ -37,10 +28,7 @@ export default {
   },
   computed: {
     categoryOptions() {
-      return CATEGORIES.map((value) => ({
-        value,
-        text: this.$t(`aiSkills.categories.${value}`),
-      }));
+      return skillCategoryOptions(this);
     },
     suggestedIdentifier() {
       return suggestIdentifier({

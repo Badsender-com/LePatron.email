@@ -1227,6 +1227,7 @@ export default {
       newVersionShort: 'New version',
       versionCreated: 'Version created',
       draftSaved: 'Draft saved',
+      unsavedChanges: 'Unsaved changes',
       activate: 'Activate',
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
