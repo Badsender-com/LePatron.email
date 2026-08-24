@@ -1,6 +1,6 @@
 <script>
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsLatency from '~/components/ai-skill/BsLatency.vue';
+import BsLatency from '~/components/bs-latency.vue';
 import { Star, MessageSquare } from 'lucide-vue';
 
 export default {

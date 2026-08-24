@@ -6,7 +6,7 @@ import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsTimestamp from '~/components/ai-skill/BsTimestamp.vue';
+import BsTimestamp from '~/components/bs-timestamp.vue';
 import { Plus, FlaskConical, Star } from 'lucide-vue';
 
 export default {
