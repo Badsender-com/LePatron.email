@@ -117,9 +117,13 @@ const AIPlaygroundRunSchema = new Schema(
   }
 );
 
+// Every read of a run is scoped by its scenario (the list, the golden lookup,
+// the status filter), so this compound index is the one that gets used. The
+// standalone { isGolden: 1 } and { status: 1 } indexes were dropped: two
+// values of very low cardinality, never queried on their own, paying a write
+// cost on every run.
 AIPlaygroundRunSchema.index({ _scenario: 1, createdAt: -1 });
-AIPlaygroundRunSchema.index({ isGolden: 1 });
-AIPlaygroundRunSchema.index({ status: 1 });
+AIPlaygroundRunSchema.index({ _scenario: 1, status: 1 });
 // Belt-and-suspenders: at most one golden run per scenario (DB-level invariant
 // on top of the mark-golden service logic). Cf. Q6 in the v1.2 plan.
 AIPlaygroundRunSchema.index(

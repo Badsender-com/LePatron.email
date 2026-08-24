@@ -90,7 +90,15 @@ const AIPlaygroundScenarioSchema = new Schema(
     expertiseRefs: { type: [ExpertiseRefSchema], default: [] },
     expertiseFilter: {
       type: ExpertiseFilterSchema,
-      default: () => ({ scope: [], emailType: null, language: null }),
+      // The full shape, `categories` included. Mongoose would have filled it
+      // anyway, but the filter's shape was described in four places and this
+      // one disagreed with the other three.
+      default: () => ({
+        scope: [],
+        categories: [],
+        emailType: null,
+        language: null,
+      }),
     },
 
     input: { type: Mixed, default: {} },
