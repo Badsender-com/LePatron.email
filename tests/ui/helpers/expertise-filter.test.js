@@ -5,6 +5,7 @@ const {
   hasFilterCategories,
   needsCategoryDefault,
   serialiseExpertiseFilter,
+  inferExpertiseMode,
 } = require('../../../packages/ui/helpers/expertise-filter');
 
 describe('hasFilterScope', () => {
@@ -101,5 +102,63 @@ describe('serialiseExpertiseFilter', () => {
   it('returns an empty object for an empty filter', () => {
     expect(serialiseExpertiseFilter({})).toEqual({});
     expect(serialiseExpertiseFilter(null)).toEqual({});
+  });
+});
+
+// Which mode an existing scenario reloads in. Four implementations of this
+// predicate disagreed; the one on the page ignored `categories`, so a
+// filter-on-categories scenario came back as 'none' and the next save erased
+// the filter.
+describe('inferExpertiseMode', () => {
+  it('is explicit as soon as there is one reference', () => {
+    expect(
+      inferExpertiseMode({
+        expertiseRefs: [{ expertiseId: 'e1' }],
+        expertiseFilter: { scope: ['cta'], categories: ['qc'] },
+      })
+    ).toBe('explicit');
+  });
+
+  it('is filter for a scope-only filter', () => {
+    expect(
+      inferExpertiseMode({
+        expertiseRefs: [],
+        expertiseFilter: { scope: ['cta'] },
+      })
+    ).toBe('filter');
+  });
+
+  it('is filter for a categories-only filter — the case that used to be lost', () => {
+    expect(
+      inferExpertiseMode({
+        expertiseRefs: [],
+        expertiseFilter: { scope: [], categories: ['redaction'] },
+      })
+    ).toBe('filter');
+  });
+
+  it('is filter for an emailType-only or language-only filter', () => {
+    expect(
+      inferExpertiseMode({ expertiseFilter: { emailType: 'promo' } })
+    ).toBe('filter');
+    expect(inferExpertiseMode({ expertiseFilter: { language: 'fr' } })).toBe(
+      'filter'
+    );
+  });
+
+  it('is none for an empty scenario, an empty filter, or no argument', () => {
+    expect(inferExpertiseMode({})).toBe('none');
+    expect(
+      inferExpertiseMode({
+        expertiseRefs: [],
+        expertiseFilter: {
+          scope: [],
+          categories: [],
+          emailType: null,
+          language: null,
+        },
+      })
+    ).toBe('none');
+    expect(inferExpertiseMode()).toBe('none');
   });
 });
