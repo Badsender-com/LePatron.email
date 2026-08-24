@@ -113,7 +113,10 @@ export default {
     // Edit case: a skill is already selected — load its versions so the input
     // form can resolve the (versioned) schema.
     const selected = this.value.skillRef && this.value.skillRef.skillId;
-    if (selected) await this.ensureSkillVersionsLoaded(selected);
+    if (selected) {
+      await this.ensureReferencedSkillListed(selected);
+      await this.ensureSkillVersionsLoaded(selected);
+    }
   },
   methods: {
     async loadSkills() {
@@ -127,6 +130,23 @@ export default {
         this.skills = (res.items || []).map((s) => ({ ...s, versions: [] }));
       } catch (e) {
         this.skills = [];
+      }
+    },
+    // The list holds ACTIVE skills only. A scenario referencing a skill that
+    // has since been archived would otherwise show an empty picker and resolve
+    // no input schema, making the reference impossible to even read — let alone
+    // replace. Fetch it and append it; the picker badges its status.
+    async ensureReferencedSkillListed(skillId) {
+      if (!skillId) return;
+      if (this.skills.some((s) => s.skillId === skillId)) return;
+      try {
+        const full = await this.$axios.$get(skillApi.aiSkill(skillId));
+        this.skills = [
+          ...this.skills,
+          { ...full, versions: full.versions || [] },
+        ];
+      } catch (e) {
+        /* a deleted skill stays unresolvable — the form shows it empty */
       }
     },
     async ensureSkillVersionsLoaded(skillId) {

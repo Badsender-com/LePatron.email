@@ -8,6 +8,7 @@ const {
   Expertises,
 } = require('../../common/models.common.js');
 const { VersionRefModes } = require('../constant/playground-constants.js');
+const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
 
 const LIST_PROJECTION = {
   scenarioId: 1,
@@ -134,7 +135,17 @@ const PATCHABLE_FIELDS = [
 
 async function updateScenario(scenarioId, patch, userId) {
   const doc = await getScenario(scenarioId);
-  await assertReferencesExist({ ...doc.toObject(), ...patch });
+  // The ACTIVE requirement only applies to a skill reference the caller is
+  // actually setting. Re-asserting it on the merged document made a scenario
+  // unmodifiable — even renaming it — the moment its skill was archived, and
+  // the picker cannot offer a replacement for a non-ACTIVE skill either, so
+  // the reference was uncorrectable and only deletion worked. The runner
+  // refuses to execute it (loadActiveOrPinnedSkill): fail late at edit,
+  // early at run.
+  await assertReferencesExist(
+    { ...doc.toObject(), ...patch },
+    { requireActiveSkill: patch.skillRef !== undefined }
+  );
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) doc[key] = patch[key];
   }
@@ -151,11 +162,14 @@ async function deleteScenario(scenarioId) {
 }
 
 /**
- * Confirms the referenced skill exists and is ACTIVE, that any pinned version
- * is reachable, and that each explicit expertise reference points to a real
- * expertise (and its pinned version when applicable).
+ * Confirms the referenced skill exists, that any pinned version is reachable,
+ * and that each explicit expertise reference points to a real expertise (and
+ * its pinned version when applicable).
+ *
+ * `requireActiveSkill` (default true) also demands the skill be ACTIVE. An
+ * update that does not touch `skillRef` passes false: see updateScenario.
  */
-async function assertReferencesExist(data) {
+async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
   if (!data || !data.skillRef || !data.skillRef.skillId) return;
   const skill = await LePatronSkills.findOne(
     { skillId: data.skillRef.skillId },
@@ -167,7 +181,7 @@ async function assertReferencesExist(data) {
       `Skill "${data.skillRef.skillId}" referenced by the scenario does not exist`
     );
   }
-  if (skill.status !== 'ACTIVE') {
+  if (requireActiveSkill && skill.status !== SkillStatuses.ACTIVE) {
     throw createError(
       400,
       `Skill "${data.skillRef.skillId}" is not ACTIVE (status=${skill.status})`

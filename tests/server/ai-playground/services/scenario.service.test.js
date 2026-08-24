@@ -223,4 +223,68 @@ describe('scenario.service', () => {
       });
     });
   });
+  describe('updateScenario', () => {
+    function mockDoc(over = {}) {
+      const obj = {
+        scenarioId: 'demo',
+        name: 'Demo',
+        skillRef: { skillId: 'generic.text', mode: 'active' },
+        expertiseRefs: [],
+        ...over,
+      };
+      return {
+        ...obj,
+        toObject: () => obj,
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+    }
+
+    // The ACTIVE requirement used to be re-asserted on the merged document, so
+    // archiving a skill made every one of its scenarios unmodifiable — even a
+    // rename — while the picker could not offer a replacement either.
+    it('lets a patch that does not touch skillRef through on an archived skill', async () => {
+      const doc = mockDoc();
+      AIPlaygroundScenarios.findOne.mockResolvedValue(doc);
+      mockSkillLean({
+        skillId: 'generic.text',
+        status: 'ARCHIVED',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+
+      const updated = await scenarioService.updateScenario('demo', {
+        name: 'Renamed',
+      });
+
+      expect(updated.name).toBe('Renamed');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('still refuses a patch that points skillRef at a non-ACTIVE skill', async () => {
+      AIPlaygroundScenarios.findOne.mockResolvedValue(mockDoc());
+      mockSkillLean({
+        skillId: 'other.skill',
+        status: 'ARCHIVED',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+
+      await expect(
+        scenarioService.updateScenario('demo', {
+          skillRef: { skillId: 'other.skill', mode: 'active' },
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('still refuses a patch pointing at a skill that does not exist', async () => {
+      AIPlaygroundScenarios.findOne.mockResolvedValue(mockDoc());
+      mockSkillLean(null);
+
+      await expect(
+        scenarioService.updateScenario('demo', {
+          skillRef: { skillId: 'ghost', mode: 'active' },
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
 });

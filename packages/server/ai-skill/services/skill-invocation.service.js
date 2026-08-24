@@ -427,4 +427,30 @@ async function resolveGroupIntegration(groupId) {
   };
 }
 
-module.exports = { invoke };
+/**
+ * Validate an input against a schema id, with the same message and per-field
+ * errors `invoke()` would produce.
+ *
+ * Exists so a caller can reject an invalid input BEFORE spending anything it
+ * cannot get back — the playground's daily quota. A zod failure triggers no
+ * provider call and costs nothing, so it must not cost a run either. This is a
+ * pre-flight, not a replacement: `invoke()` still validates.
+ *
+ * An unknown schema id is reported as valid on purpose — that is a
+ * configuration error, and raising it is `invoke()`'s job (CONFIG_ERROR).
+ *
+ * @returns {{ ok: true } | { ok: false, message: string, fieldErrors: Array }}
+ */
+function validateInputAgainstSchema(schemaId, input) {
+  const schema = getSchema(schemaId);
+  if (!schema) return { ok: true };
+  const parse = schema.safeParse(input);
+  if (parse.success) return { ok: true };
+  return {
+    ok: false,
+    message: formatZodError(parse.error),
+    fieldErrors: buildFieldErrors(parse.error, input),
+  };
+}
+
+module.exports = { invoke, validateInputAgainstSchema };

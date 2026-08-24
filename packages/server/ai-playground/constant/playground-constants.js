@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  InvocationStatuses,
+} = require('../../ai-skill/constant/skill-constants.js');
+
 const ScenarioIdRegex = /^[a-z0-9._-]+$/;
 const MaxScenarioIdLength = 100;
 
@@ -10,14 +14,11 @@ const VersionRefModeValues = Object.values(VersionRefModes);
 // expertiseRefs wins over expertiseFilter, cf. expertise-resolver.service.js)
 // — there is deliberately no persisted enum for it.
 
-const RunStatuses = Object.freeze({
-  SUCCESS: 'SUCCESS',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  PROVIDER_ERROR: 'PROVIDER_ERROR',
-  TIMEOUT: 'TIMEOUT',
-  CANCELLED: 'CANCELLED',
-  CONFIG_ERROR: 'CONFIG_ERROR',
-});
+// A run's status IS the status of the invocation that produced it. Derived, not
+// copied: the enum used to be duplicated by hand, so the day ai-skill added a
+// status the runner would hand it to `AIPlaygroundRuns.create()`, hit a
+// mongoose ValidationError, and lose the run — after the LLM call was paid for.
+const RunStatuses = InvocationStatuses;
 const RunStatusValues = Object.values(RunStatuses);
 
 const FeedbackRatings = Object.freeze({
@@ -40,6 +41,7 @@ const PlaygroundInvocationSource = 'playground';
 
 module.exports = {
   ScenarioIdRegex,
+  RunStatuses,
   MaxScenarioIdLength,
   VersionRefModes,
   VersionRefModeValues,

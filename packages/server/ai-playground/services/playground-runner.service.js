@@ -15,7 +15,9 @@ const { runExpiresAt } = require('./run-retention.service.js');
 const {
   VersionRefModes,
   PlaygroundInvocationSource,
+  RunStatuses,
 } = require('../constant/playground-constants.js');
+const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
 
 /**
  * Execute a scenario:
@@ -24,7 +26,9 @@ const {
  *   3. Resolve expertises (3 modes: explicit / filter / none).
  *   4. Compose the input. v1 doctrine: the runner only auto-injects the
  *      `expertise` field. Everything else stays in scenario.input verbatim.
- *   5. Consume the user's daily test budget.
+ *   5. Pre-flight the composed input against the version's schema, then
+ *      consume the user's daily test budget — an input zod refuses costs no
+ *      provider call, so it must not cost a run either.
  *   6. Call skillInvocation.invoke({ ..., invocationSource: 'playground' }).
  *      The invoke service handles its own logging into AISkillInvocation.
  *   7. Persist an AIPlaygroundRun with the snapshot, refs and denormalised
@@ -84,30 +88,44 @@ async function executeScenario({
     }));
   }
 
-  await testBudget.consumeBudget(userId);
-
   const invocationOptions = buildInvocationOptions(scenario, overrides);
 
   let invocationResult = null;
   let invocationError = null;
-  try {
-    invocationResult = await skillInvocation.invoke({
-      skillId: resolvedSkill.skillId,
-      input: composedInput,
-      groupId: effectiveGroupId,
-      userId,
-      invocationSource: PlaygroundInvocationSource,
-      variantPath: scenario.variantPath || [],
-      // Always pass the resolved version: in pinned mode this is what makes
-      // the pinned version actually RUN (not just be displayed on the run).
-      version: {
-        major: resolvedSkill.versionMajor,
-        minor: resolvedSkill.versionMinor,
-      },
-      options: invocationOptions,
+
+  // An input zod refuses triggers no provider call and costs nothing, so it
+  // must not burn one of the 50 daily runs either. `invoke()` validates again
+  // — this only decides whether we are about to spend anything.
+  const preflight = skillInvocation.validateInputAgainstSchema(
+    resolvedSkill.inputSchemaId,
+    composedInput
+  );
+  if (!preflight.ok) {
+    invocationError = Object.assign(new Error(preflight.message), {
+      invocationStatus: RunStatuses.VALIDATION_ERROR,
+      fieldErrors: preflight.fieldErrors,
     });
-  } catch (err) {
-    invocationError = err;
+  } else {
+    await testBudget.consumeBudget(userId);
+    try {
+      invocationResult = await skillInvocation.invoke({
+        skillId: resolvedSkill.skillId,
+        input: composedInput,
+        groupId: effectiveGroupId,
+        userId,
+        invocationSource: PlaygroundInvocationSource,
+        variantPath: scenario.variantPath || [],
+        // Always pass the resolved version: in pinned mode this is what makes
+        // the pinned version actually RUN (not just be displayed on the run).
+        version: {
+          major: resolvedSkill.versionMajor,
+          minor: resolvedSkill.versionMinor,
+        },
+        options: invocationOptions,
+      });
+    } catch (err) {
+      invocationError = err;
+    }
   }
 
   const run = await AIPlaygroundRuns.create({
@@ -130,8 +148,8 @@ async function executeScenario({
       null,
     output: invocationResult ? invocationResult.output : null,
     status: invocationError
-      ? invocationError.invocationStatus || 'PROVIDER_ERROR'
-      : 'SUCCESS',
+      ? invocationError.invocationStatus || RunStatuses.PROVIDER_ERROR
+      : RunStatuses.SUCCESS,
     latencyMs: (invocationResult && invocationResult.latencyMs) || null,
     tokenUsage: (invocationResult && invocationResult.tokenUsage) || {},
     errorMessage: invocationError
@@ -182,20 +200,20 @@ async function loadActiveOrPinnedSkill(skillRef) {
     { skillId: 1, status: 1, activeVersion: 1, versions: 1 }
   ).lean();
   if (!skill) throw createError(404, `Skill "${skillRef.skillId}" not found`);
+  // `assertReferencesExist` carries this invariant when a scenario is written;
+  // the runner was missing it, so an archived skill got as far as consuming the
+  // budget and persisting a failed run for a condition knowable up front.
+  if (skill.status !== SkillStatuses.ACTIVE) {
+    throw createError(
+      400,
+      `Skill "${skillRef.skillId}" is not ACTIVE (status ${skill.status})`
+    );
+  }
   let major;
   let minor;
   if (skillRef.mode === VersionRefModes.PINNED) {
     major = skillRef.versionMajor;
     minor = skillRef.versionMinor || 0;
-    const exists = (skill.versions || []).some(
-      (v) => v.versionMajor === major && v.versionMinor === minor
-    );
-    if (!exists) {
-      throw createError(
-        404,
-        `Version ${major}.${minor} of skill "${skillRef.skillId}" not found`
-      );
-    }
   } else {
     const av = skill.activeVersion || {};
     if (av.major == null) {
@@ -207,7 +225,22 @@ async function loadActiveOrPinnedSkill(skillRef) {
     major = av.major;
     minor = av.minor || 0;
   }
-  return { skillId: skill.skillId, versionMajor: major, versionMinor: minor };
+  const version = (skill.versions || []).find(
+    (v) => v.versionMajor === major && v.versionMinor === minor
+  );
+  if (!version) {
+    throw createError(
+      404,
+      `Version ${major}.${minor} of skill "${skillRef.skillId}" not found`
+    );
+  }
+  return {
+    skillId: skill.skillId,
+    versionMajor: major,
+    versionMinor: minor,
+    // Carried so the runner can pre-flight the input before spending quota.
+    inputSchemaId: version.inputSchemaId,
+  };
 }
 
 function buildInvocationOptions(scenario, overrides) {

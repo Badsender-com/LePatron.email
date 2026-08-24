@@ -12,7 +12,11 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
 }));
 jest.mock(
   '../../../../packages/server/ai-skill/services/skill-invocation.service',
-  () => ({ invoke: jest.fn() })
+  () => ({
+    invoke: jest.fn(),
+    // Pre-flight: valid by default, individual tests override it.
+    validateInputAgainstSchema: jest.fn(() => ({ ok: true })),
+  })
 );
 jest.mock(
   '../../../../packages/server/ai-playground/services/test-budget.service',
@@ -65,6 +69,14 @@ function mockScenario(overrides = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  skillInvocation.validateInputAgainstSchema.mockReturnValue({ ok: true });
+  // clearAllMocks resets calls, not implementations: a test that makes the
+  // budget reject would otherwise leak into the next one.
+  testBudget.consumeBudget.mockResolvedValue({
+    count: 1,
+    max: 50,
+    remaining: 49,
+  });
   AIPlaygroundRuns.create.mockImplementation(async (doc) => ({
     _id: new Types.ObjectId(),
     ...doc,
@@ -360,5 +372,134 @@ describe('playground-runner.executeScenario', () => {
     expect(run.status).toBe('PROVIDER_ERROR');
     expect(run.errorMessage).toBe('LLM down');
     expect(run.output).toBeNull();
+  });
+  // ─── Spending nothing we cannot get back ────────────────────────────────
+
+  it('does not consume budget when the input fails the pre-flight', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [
+            {
+              versionMajor: 1,
+              versionMinor: 0,
+              inputSchemaId: 'genericTextInput',
+            },
+          ],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.validateInputAgainstSchema.mockReturnValue({
+      ok: false,
+      message: 'prompt: Required',
+      fieldErrors: [{ field: 'prompt', issue: 'required' }],
+    });
+
+    const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    // No provider call, no cost — so no quota either.
+    expect(testBudget.consumeBudget).not.toHaveBeenCalled();
+    expect(skillInvocation.invoke).not.toHaveBeenCalled();
+    // The run is still persisted, with its field errors, so the consultant
+    // sees what to fix.
+    expect(run.status).toBe('VALIDATION_ERROR');
+    expect(run.fieldErrors).toEqual([{ field: 'prompt', issue: 'required' }]);
+    expect(run._invocation).toBeNull();
+  });
+
+  it('passes the resolved version input schema to the pre-flight', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 2, minor: 0 },
+          versions: [
+            { versionMajor: 1, versionMinor: 0, inputSchemaId: 'oldInput' },
+            { versionMajor: 2, versionMinor: 0, inputSchemaId: 'newInput' },
+          ],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockResolvedValue({ output: {}, latencyMs: 1 });
+
+    await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    expect(
+      skillInvocation.validateInputAgainstSchema
+    ).toHaveBeenCalledWith('newInput', { prompt: 'hi' });
+  });
+
+  it('refuses a skill that is not ACTIVE before spending anything', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ARCHIVED',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+
+    await expect(
+      executeScenario({ scenarioId: 'demo', userId: USER_ID })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(testBudget.consumeBudget).not.toHaveBeenCalled();
+    expect(skillInvocation.invoke).not.toHaveBeenCalled();
+    expect(AIPlaygroundRuns.create).not.toHaveBeenCalled();
+  });
+
+  it('creates no run when the daily quota is exhausted', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    testBudget.consumeBudget.mockRejectedValue(
+      Object.assign(new Error('Daily playground run budget exceeded'), {
+        status: 429,
+      })
+    );
+
+    await expect(
+      executeScenario({ scenarioId: 'demo', userId: USER_ID })
+    ).rejects.toMatchObject({ status: 429 });
+    expect(skillInvocation.invoke).not.toHaveBeenCalled();
+    expect(AIPlaygroundRuns.create).not.toHaveBeenCalled();
+  });
+
+  it('uses the invocation status verbatim, including one it does not know', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockRejectedValue(
+      Object.assign(new Error('boom'), { invocationStatus: 'RATE_LIMITED' })
+    );
+
+    // RunStatuses is derived from InvocationStatuses, so a status ai-skill
+    // adds tomorrow reaches create() as-is instead of blowing up the enum and
+    // losing a run that has already been paid for.
+    const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+    expect(run.status).toBe('RATE_LIMITED');
   });
 });
