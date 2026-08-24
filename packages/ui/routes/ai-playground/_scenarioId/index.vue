@@ -167,7 +167,7 @@ export default {
 
     <v-container fluid>
       <bs-ai-playground-scenario-form
-        :scenario="scenario"
+        v-model="scenario"
         :expertise-mode="expertiseMode"
         :saving="saving"
         :field-errors="fieldErrors"
