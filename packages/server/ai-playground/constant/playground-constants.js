@@ -32,6 +32,10 @@ const FeedbackRatingValues = Object.values(FeedbackRatings);
 // skill-constants as MaxDailyTestInvocations while the super-admin Test runner
 // existed; the playground is its only consumer now.
 const MaxDailyPlaygroundRuns = 50;
+// Provider timeout for a playground run. Longer than invoke()'s 30 s default:
+// this is the tool where long prompts are tried on purpose, watched live by one
+// super-admin, and 50 runs/day bounds the cost of waiting.
+const PlaygroundTimeoutMs = 90000;
 const DefaultPlaygroundRunRetentionDays = 365;
 // Analytics source tag carried by every AISkillInvocation the runner
 // produces. Reserved as non-productive server-side (NonProductiveSources in
@@ -48,6 +52,7 @@ module.exports = {
   RunStatusValues,
   FeedbackRatingValues,
   MaxDailyPlaygroundRuns,
+  PlaygroundTimeoutMs,
   DefaultPlaygroundRunRetentionDays,
   PlaygroundInvocationSource,
 };

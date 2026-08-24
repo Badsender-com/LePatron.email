@@ -86,7 +86,9 @@ export default {
       padding: 0;
     }
     a {
-      color: #00acdc;
+      // White-label: the brand colour must come from the theme, never a
+      // literal (see issue #1002).
+      color: var(--v-accent-base, #00acdc);
       text-decoration: none;
       &:hover {
         text-decoration: underline;

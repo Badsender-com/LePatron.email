@@ -18,11 +18,7 @@ jest.mock(
 );
 jest.mock(
   '../../../../packages/server/ai-playground/services/expertise-resolver.service',
-  () => ({ resolveExpertise: jest.fn() })
-);
-jest.mock(
-  '../../../../packages/server/ai-skill/repositories/expertise.repository',
-  () => ({ findApplicable: jest.fn() })
+  () => ({ resolveExpertise: jest.fn(), previewFilter: jest.fn() })
 );
 jest.mock(
   '../../../../packages/server/ai-playground/services/run.service',
@@ -47,9 +43,7 @@ const request = require('supertest');
 
 const scenarioService = require('../../../../packages/server/ai-playground/services/scenario.service');
 const playgroundRunner = require('../../../../packages/server/ai-playground/services/playground-runner.service');
-const {
-  findApplicable,
-} = require('../../../../packages/server/ai-skill/repositories/expertise.repository');
+const expertiseResolver = require('../../../../packages/server/ai-playground/services/expertise-resolver.service');
 const runService = require('../../../../packages/server/ai-playground/services/run.service');
 
 const router = require('../../../../packages/server/ai-playground/ai-playground.routes');
@@ -207,34 +201,40 @@ describe('ai-playground HTTP routes', () => {
     expect(r5.body.deleted).toBe(true);
   });
 
-  it('GET /preview-expertise-filter forwards scope + categories and returns count', async () => {
-    findApplicable.mockResolvedValue([
-      { expertiseId: 'a', title: 'A', versionMajor: 1, versionMinor: 0 },
-      { expertiseId: 'b', title: 'B', versionMajor: 2, versionMinor: 1 },
-    ]);
+  // The filter normalisation itself is unit-tested on the service
+  // (expertise-resolver.test.js); here we only check the route hands the query
+  // over and returns what it gets.
+  it('GET /preview-expertise-filter hands the query to the service and returns its count', async () => {
+    expertiseResolver.previewFilter.mockResolvedValue({
+      count: 2,
+      items: [
+        { expertiseId: 'a', title: 'A', versionMajor: 1, versionMinor: 0 },
+        { expertiseId: 'b', title: 'B', versionMajor: 2, versionMinor: 1 },
+      ],
+    });
     const res = await request(makeApp())
       .get('/api/ai-playground/preview-expertise-filter')
       .query({ scope: 'cta', categories: 'redaction', emailType: 'promo' });
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
     expect(res.body.items[0].expertiseId).toBe('a');
-    // categories[] is forwarded (the §1 regression: it was dropped).
-    expect(findApplicable).toHaveBeenCalledWith({
-      scope: ['cta'],
-      categories: ['redaction'],
-      emailType: 'promo',
-      language: null,
-    });
+    expect(expertiseResolver.previewFilter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: 'cta',
+        categories: 'redaction',
+        emailType: 'promo',
+      })
+    );
     // No 304 caching on the preview count (§1.3).
     expect(res.headers['cache-control']).toBe('no-store');
   });
 
-  it('GET /preview-expertise-filter surfaces the 400 when categories is missing', async () => {
+  it('GET /preview-expertise-filter surfaces the 400 of an incomplete filter', async () => {
     // findApplicable rejects (400) when categories is empty — the preview must
     // not swallow it into a silent count 0 (§1.2).
     const err = new Error('categories required');
     err.status = 400;
-    findApplicable.mockRejectedValue(err);
+    expertiseResolver.previewFilter.mockRejectedValue(err);
     const res = await request(makeApp())
       .get('/api/ai-playground/preview-expertise-filter')
       .query({ scope: 'cta' });

@@ -14,6 +14,7 @@ const {
   objectIdParam,
   escapeRegex,
 } = require('../../utils/query-scalars.js');
+const { findVersion } = require('../../ai-skill/services/version-helpers.js');
 
 const LIST_PROJECTION = {
   scenarioId: 1,
@@ -214,10 +215,10 @@ async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
     );
   }
   if (data.skillRef.mode === VersionRefModes.PINNED) {
-    const found = (skill.versions || []).some(
-      (v) =>
-        v.versionMajor === data.skillRef.versionMajor &&
-        v.versionMinor === (data.skillRef.versionMinor || 0)
+    const found = findVersion(
+      skill,
+      data.skillRef.versionMajor,
+      data.skillRef.versionMinor || 0
     );
     if (!found) {
       throw createError(
@@ -229,11 +230,19 @@ async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
     }
   }
 
-  for (const ref of data.expertiseRefs || []) {
-    const exp = await Expertises.findOne(
-      { expertiseId: ref.expertiseId },
-      { expertiseId: 1, versions: 1 }
-    ).lean();
+  // One query for every reference, not one per reference: this runs on every
+  // create AND every update, and `expertise-resolver.resolveExplicit` already
+  // does the `$in` right next door.
+  const refs = data.expertiseRefs || [];
+  if (!refs.length) return;
+  const expertises = await Expertises.find(
+    { expertiseId: { $in: refs.map((r) => r.expertiseId) } },
+    { expertiseId: 1, versions: 1 }
+  ).lean();
+  const byId = new Map(expertises.map((e) => [e.expertiseId, e]));
+
+  for (const ref of refs) {
+    const exp = byId.get(ref.expertiseId);
     if (!exp) {
       throw createError(
         400,
@@ -241,11 +250,7 @@ async function assertReferencesExist(data, { requireActiveSkill = true } = {}) {
       );
     }
     if (ref.mode === VersionRefModes.PINNED) {
-      const found = (exp.versions || []).some(
-        (v) =>
-          v.versionMajor === ref.versionMajor &&
-          v.versionMinor === (ref.versionMinor || 0)
-      );
+      const found = findVersion(exp, ref.versionMajor, ref.versionMinor || 0);
       if (!found) {
         throw createError(
           400,

@@ -16,8 +16,13 @@ const {
   VersionRefModes,
   PlaygroundInvocationSource,
   RunStatuses,
+  PlaygroundTimeoutMs,
 } = require('../constant/playground-constants.js');
 const { SkillStatuses } = require('../../ai-skill/constant/skill-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+} = require('../../ai-skill/services/version-helpers.js');
 
 /**
  * Execute a scenario:
@@ -209,42 +214,53 @@ async function loadActiveOrPinnedSkill(skillRef) {
       `Skill "${skillRef.skillId}" is not ACTIVE (status ${skill.status})`
     );
   }
-  let major;
-  let minor;
+  // Which version to run is the playground's policy; finding it is the shared
+  // version mechanics (ai-skill/services/version-helpers).
+  let version;
   if (skillRef.mode === VersionRefModes.PINNED) {
-    major = skillRef.versionMajor;
-    minor = skillRef.versionMinor || 0;
+    version = findVersion(
+      skill,
+      skillRef.versionMajor,
+      skillRef.versionMinor || 0
+    );
+    if (!version) {
+      throw createError(
+        404,
+        `Version ${skillRef.versionMajor}.${
+          skillRef.versionMinor || 0
+        } of skill "${skillRef.skillId}" not found`
+      );
+    }
   } else {
-    const av = skill.activeVersion || {};
-    if (av.major == null) {
+    if ((skill.activeVersion || {}).major == null) {
       throw createError(
         400,
         `Skill "${skillRef.skillId}" has no active version`
       );
     }
-    major = av.major;
-    minor = av.minor || 0;
-  }
-  const version = (skill.versions || []).find(
-    (v) => v.versionMajor === major && v.versionMinor === minor
-  );
-  if (!version) {
-    throw createError(
-      404,
-      `Version ${major}.${minor} of skill "${skillRef.skillId}" not found`
-    );
+    version = findActiveVersion(skill);
+    if (!version) {
+      throw createError(
+        404,
+        `Skill "${skillRef.skillId}" points at an active version that no longer exists`
+      );
+    }
   }
   return {
     skillId: skill.skillId,
-    versionMajor: major,
-    versionMinor: minor,
+    versionMajor: version.versionMajor,
+    versionMinor: version.versionMinor,
     // Carried so the runner can pre-flight the input before spending quota.
     inputSchemaId: version.inputSchemaId,
   };
 }
 
 function buildInvocationOptions(scenario, overrides) {
-  const opts = {};
+  // `invoke()` defaults to 30 s, which is tuned for a user-facing feature. The
+  // playground is where long prompts and large outputs are deliberately tried
+  // out, by one super-admin who is watching the request — a timeout here reads
+  // as "the model is broken".
+  const opts = { timeoutMs: PlaygroundTimeoutMs };
   const po =
     (overrides && overrides.providerOverride) || scenario.providerOverride;
   if (!po) return opts;

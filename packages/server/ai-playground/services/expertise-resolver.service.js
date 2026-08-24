@@ -4,6 +4,10 @@ const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const expertiseRepo = require('../../ai-skill/repositories/expertise.repository.js');
 const { VersionRefModes } = require('../constant/playground-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+} = require('../../ai-skill/services/version-helpers.js');
 
 /**
  * Resolve the expertise list a scenario should inject into the skill input.
@@ -65,36 +69,59 @@ async function resolveExplicit(refs) {
         `Version ${ref.versionMajor}.${ref.versionMinor} of expertise "${ref.expertiseId}" not found`
       );
     }
-    out.push({
-      expertiseId: doc.expertiseId,
-      title: doc.title,
-      category: doc.category,
-      scope: doc.scope,
-      versionMajor: version.versionMajor,
-      versionMinor: version.versionMinor,
-      body: version.body,
-      examplesGood: version.examplesGood || [],
-      examplesBad: version.examplesBad || [],
-      sections: version.sections || [],
-    });
+    // Same projection as the filter path: the shape an expertise takes is the
+    // repository's business, only the CHOICE of version is the playground's.
+    out.push(expertiseRepo.projectVersion(doc, version));
   }
   return out;
 }
 
+// Which version an explicit reference points at — the playground's policy,
+// built on the shared version mechanics.
 function pickVersion(doc, ref) {
   if (ref.mode === VersionRefModes.PINNED) {
-    return (doc.versions || []).find(
-      (v) =>
-        v.versionMajor === ref.versionMajor &&
-        v.versionMinor === (ref.versionMinor || 0)
-    );
+    return findVersion(doc, ref.versionMajor, ref.versionMinor || 0);
   }
-  // active mode
-  const av = doc.activeVersion || {};
-  if (av.major == null) return null;
-  return (doc.versions || []).find(
-    (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
-  );
+  return findActiveVersion(doc);
 }
 
-module.exports = { resolveExpertise };
+/**
+ * The filter as the API receives it (query string or body): scalars may arrive
+ * single or repeated, empties must not over-constrain. Lives here rather than
+ * in the controller, which was reaching two layers down into
+ * `ai-skill/repositories` with its own normalisation.
+ */
+function normaliseFilter(source = {}) {
+  const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+  return {
+    scope: toArray(source.scope),
+    categories: toArray(source.categories),
+    emailType: source.emailType || null,
+    language: source.language || null,
+  };
+}
+
+/**
+ * Count and list the expertises a filter would inject — the live preview
+ * behind the filter fields.
+ *
+ * Distinct from resolveExpertise on purpose: `findApplicable` throws 400 when
+ * scope or categories is missing, and the preview WANTS that error (an
+ * incomplete filter must not read as "0 matches"), where the runner treats the
+ * same case as "no filter".
+ */
+async function previewFilter(source) {
+  const filter = normaliseFilter(source);
+  const matches = await expertiseRepo.findApplicable(filter);
+  return {
+    count: matches.length,
+    items: matches.map((m) => ({
+      expertiseId: m.expertiseId,
+      title: m.title,
+      versionMajor: m.versionMajor,
+      versionMinor: m.versionMinor,
+    })),
+  };
+}
+
+module.exports = { resolveExpertise, previewFilter, normaliseFilter };
