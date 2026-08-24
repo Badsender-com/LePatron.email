@@ -12,6 +12,7 @@ const logger = require('../../utils/logger.js');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { normalizeScopes } = require('../services/expertise-scope.js');
+const { findActiveVersion } = require('../services/version-helpers.js');
 
 /**
  * Find ACTIVE expertise modules matching an invocation context, projecting
@@ -152,14 +153,15 @@ async function warnOnUnmatchedScopes(scopes, docs) {
   }
 }
 
-function projectActiveVersion(doc) {
-  const av = doc.activeVersion || {};
-  if (av.major == null) return null;
-  const version = (doc.versions || []).find(
-    (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
-  );
+/**
+ * The shape an expertise takes once flattened onto one of its versions — what
+ * every consumer (features, playground runner, filter preview) receives.
+ * Parameterised by the version so a pinned reference projects through the same
+ * code as an active one; only the CHOICE of version differs, and that is the
+ * caller's policy.
+ */
+function projectVersion(doc, version) {
   if (!version) return null;
-
   return {
     expertiseId: doc.expertiseId,
     title: doc.title,
@@ -175,4 +177,11 @@ function projectActiveVersion(doc) {
   };
 }
 
-module.exports = { findApplicable, projectActiveVersion };
+// Kept as the ACTIVE-version shorthand: `findApplicable` and every feature
+// path want the active version, and the version-picking policy stays out of
+// the projection.
+function projectActiveVersion(doc) {
+  return projectVersion(doc, findActiveVersion(doc));
+}
+
+module.exports = { findApplicable, projectActiveVersion, projectVersion };

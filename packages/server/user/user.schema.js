@@ -97,6 +97,12 @@ const UserSchema = Schema(
       of: Schema.Types.Mixed,
       default: {},
     },
+    // AI Playground — daily run quota (ai-playground/services/test-budget).
+    // `date` is the YYYY-MM-DD bucket; resets when a run comes in on a new day.
+    dailyTestInvocationCount: {
+      date: { type: String, default: null },
+      count: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,
@@ -246,16 +252,16 @@ function getTemplateData(templateName, lang, additionalDatas) {
   const i18n = {
     common: {
       fr: {
-        baseline: 'L\'EMAILING SUR MESURE',
+        baseline: "L'EMAILING SUR MESURE",
         footerBaseline1: 'Pour des emails sur mesure',
         footerBaseline2: 'et modulables',
         rgpd1:
           'Conformément au règlement européen pour la protection des données personnelles (RGPD) et, en France, à la loi "informatique et libertés", vous bénéficiez notamment d\'un droit d\'accès, de rectification et de suppression des données personnelles vous concernant. Pour en savoir davantage sur tous vos droits et les conditions dans lesquelles Badsender traite vos données personnelles, nous vous invitons à prendre connaissance de',
         rgpd2:
-          'Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l\'adresse suivante&nbsp;:',
+          "Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l'adresse suivante&nbsp;:",
         rgpdUrl: 'notre Politique de confidentialité',
         zeroCarbon:
-          'N\'oubliez pas de détruire ce message une fois que vous l\'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ',
+          "N'oubliez pas de détruire ce message une fois que vous l'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ",
         zeroCarbonLink: 'en suivant ce lien',
         legals: 'Badsender SASU - SIRET 81310812300015',
       },
@@ -269,20 +275,20 @@ function getTemplateData(templateName, lang, additionalDatas) {
           'To exercise your rights or if you have any questions, please contact us at the following address:',
         rgpdUrl: 'our Privacy Policy',
         zeroCarbon:
-          'Don\'t forget to delete this message once you\'ve viewed it. All our best practices for a green emailing are available ',
+          "Don't forget to delete this message once you've viewed it. All our best practices for a green emailing are available ",
         zeroCarbonLink: 'by following this link',
         legals: 'Badsender SASU - SIRET 81310812300015',
       },
     },
     'reset-password': {
       fr: {
-        title: 'Bienvenue sur l\'email builder de Badsender',
+        title: "Bienvenue sur l'email builder de Badsender",
         desc:
-          'Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l\'url suivante dans votre navigateur:',
+          "Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l'url suivante dans votre navigateur:",
         reset: 'INITIALISER MON MOT DE PASSE',
       },
       en: {
-        title: 'Welcome to the Badsender\'s email builder',
+        title: "Welcome to the Badsender's email builder",
         desc:
           'Click the button below to reset your password, or copy the following URL into your browser:',
         reset: 'RESET MY PASSWORD',
@@ -292,7 +298,7 @@ function getTemplateData(templateName, lang, additionalDatas) {
       fr: {
         title: 'Votre mot de passe a bien été réinitialisé',
         desc:
-          'Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l\'url suivante dans votre navigateur:',
+          "Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l'url suivante dans votre navigateur:",
         reset: 'SE CONNECTER',
       },
       en: {
