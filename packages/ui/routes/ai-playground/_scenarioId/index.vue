@@ -8,18 +8,8 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsAiPlaygroundScenarioForm from '~/components/ai-playground/bs-ai-playground-scenario-form.vue';
 import BsAiPlaygroundRunSection from '~/components/ai-playground/bs-ai-playground-run-section.vue';
+import { inferExpertiseMode } from '~/helpers/expertise-filter.js';
 import { Trash2 } from 'lucide-vue';
-
-function inferExpertiseMode(scenario) {
-  if (Array.isArray(scenario.expertiseRefs) && scenario.expertiseRefs.length) {
-    return 'explicit';
-  }
-  const f = scenario.expertiseFilter || {};
-  if ((Array.isArray(f.scope) && f.scope.length) || f.emailType || f.language) {
-    return 'filter';
-  }
-  return 'none';
-}
 
 export default {
   name: 'PageAiPlaygroundDetail',

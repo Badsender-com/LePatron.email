@@ -36,3 +36,23 @@ export function serialiseExpertiseFilter(filter) {
   if (f.language) params.language = f.language;
   return params;
 }
+
+// Which expertise mode an existing scenario was saved in. THE single source of
+// truth: the page used to carry its own copy that ignored `categories`, so a
+// scenario filtering on categories alone came back as mode 'none' and the next
+// save wiped the filter (review, `inferExpertiseMode` divergence). Explicit
+// refs win over a filter — that ordering is the playground's policy, mirrored
+// by expertise-resolver.service on the server.
+export function inferExpertiseMode(scenario) {
+  const s = scenario || {};
+  if (Array.isArray(s.expertiseRefs) && s.expertiseRefs.length) {
+    return 'explicit';
+  }
+  const filter = s.expertiseFilter || {};
+  const hasAnyFilterValue =
+    hasFilterScope(filter) ||
+    hasFilterCategories(filter) ||
+    !!filter.emailType ||
+    !!filter.language;
+  return hasAnyFilterValue ? 'filter' : 'none';
+}

@@ -1345,7 +1345,8 @@ export default {
       expertiseSelector: 'Expertises sélectionnées',
       expertiseRecommended: 'Recommandées pour cette skill',
       expertiseAll: 'Toutes les expertises',
-      expertiseNotSupported: 'Cette skill n\'accepte pas d\'expertise en entrée.',
+      expertiseNotSupported:
+        "Cette skill n'accepte pas d'expertise en entrée : la sélection ci-dessous est conservée mais ne sera pas injectée.",
       filterCategories: 'Catégories',
       filterScope: 'Périmètre',
       filterScopeHint:
@@ -1360,6 +1361,7 @@ export default {
       filterSelectCategory:
         'Sélectionnez au moins une catégorie pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
+      filterPreviewPending: 'Comptage…',
       expertiseModeHelp:
         'Aucune : la skill est invoquée sans expertise. Sélection explicite : vous choisissez les expertises et leur ordre — recommandé pour les tests reproductibles. Filtre dynamique : les expertises sont chargées automatiquement selon les critères ci-dessous (catégorie, périmètre, type d\'email, langue). C\'est le mécanisme des fonctionnalités en production — c\'est lui qui permet d\'enrichir la doctrine sans redéploiement.',
       filterOrderHint:
@@ -1377,6 +1379,8 @@ export default {
       unknownTypeFallback: 'Cette skill utilise un format d\'entrée avancé, édition en JSON requise.',
       templateHelp: 'Gabarit dérivé du schéma d\'entrée :',
       insertTemplate: 'Insérer le gabarit',
+      manualExpertiseKey:
+        "Le champ « expertise » est injecté automatiquement depuis la sélection ci-dessus : votre saisie sera écrasée dès qu'une expertise se résout.",
       unknownKeysWarning: 'Certains champs ne correspondent pas au schéma de la skill (conservés, mais rejetés à l\'exécution) : {keys}',
       expertiseInjected: 'Les expertises sélectionnées ci-dessus sont ajoutées automatiquement à la demande — rien à saisir ici.',
       skillChangeConfirmTitle: 'Changer de skill ?',
