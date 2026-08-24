@@ -45,6 +45,12 @@ const {
   updateSessionTracking,
 } = require('./account/session-tracking.helper.js');
 const aiFeatureRouter = require('./ai-feature/ai-feature.routes');
+const {
+  skillsRouter: aiSkillsRouter,
+  expertiseRouter: aiExpertiseRouter,
+  invocationsRouter: aiInvocationsRouter,
+} = require('./ai-skill/ai-skill.routes');
+const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
@@ -296,6 +302,10 @@ if (cluster.isMaster) {
   app.use('/api/integrations', integrationRouter);
   app.use('/api/feed-mappings', feedMappingRouter);
   app.use('/api/ai-features', aiFeatureRouter);
+  app.use('/api/ai-skills', aiSkillsRouter);
+  app.use('/api/ai-expertise', aiExpertiseRouter);
+  app.use('/api/ai-invocations', aiInvocationsRouter);
+  app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);

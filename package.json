@@ -85,6 +85,7 @@
     "konva": "9.3.18",
     "lodash": "4.17.21",
     "lucide-vue": "^0.517.0",
+    "markdown-it": "13.0.2",
     "mime-types": "2.1.24",
     "moment": "2.24.0",
     "mongoose": "5.13.22",
@@ -121,7 +122,8 @@
     "vue-select": "3.13.0",
     "vue2-timepicker": "1.1.6",
     "vuelidate": "0.7.4",
-    "vuex": "3.6.2"
+    "vuex": "3.6.2",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@testing-library/cypress": "8.0.0",
@@ -219,6 +221,7 @@
     "readline": "1.3.0",
     "sass-loader": "10.1.1",
     "slick": "1.12.2",
+    "supertest": "7.2.2",
     "through2": "3.0.1",
     "tinycolor2": "1.4.1",
     "tinymce": "4.5.8",
@@ -274,6 +277,8 @@
     "code:fix": "yarn code:lint --fix && yarn code:pretty",
     "test": "jest --watch",
     "test-ci": "jest",
+    "check-skills": "node scripts/check-skill-usage.js --dry",
+    "flag-platform-group": "node scripts/flag-platform-group.js",
     "test:e2e": "cypress",
     "test:e2e-ci": "cypress run"
   },

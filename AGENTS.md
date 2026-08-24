@@ -109,6 +109,15 @@ scope: server, ui, editor, etc.
 - Models/schemas in `/{resource}/{resource}.schema.js`
 - Unit tests in `/tests/server/{resource}/` (centralized test directory)
 
+**Flat or nested?** A module owning a single entity stays flat, as above —
+that covers `mailing`, `group`, `translation`, `ai-feature`, `integration`,
+`user`, `workspace`. A module owning several entities uses one sub-folder per
+layer (`controllers/`, `services/`, `models/`, `schemas/`, `jobs/`,
+`constant/`), as `ai-skill` does for its three entities (skill, expertise,
+invocation): 27 flat files would be unreadable. The file-naming rules above
+still apply inside each sub-folder, and `/tests/server/{resource}/` mirrors
+whichever structure the module uses.
+
 ### packages/ui
 
 - Pages in `/pages/`
@@ -129,23 +138,25 @@ LePatron.email has a documented design system for UI consistency and white-label
 
 ### Documentation
 
-| Document | Content |
-|----------|---------|
-| [docs/design-system/](./docs/design-system/) | Visual specifications (tokens, components, patterns) |
-| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies |
-| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md) | Editor-specific documentation |
-| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md) | UX patterns, accessibility |
-| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md) | UI modernization roadmap (11 phases) |
+| Document                                                                           | Content                                              |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [docs/design-system/](./docs/design-system/)                                       | Visual specifications (tokens, components, patterns) |
+| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies                             |
+| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md)   | Editor-specific documentation                        |
+| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md)                                   | UX patterns, accessibility                           |
+| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md)       | UI modernization roadmap (11 phases)                 |
 
 ### Key Constraints
 
 **Vue App (`packages/ui/`):**
+
 - Use Vuetify 2.x components (never raw HTML for standard UI)
 - Use Material Design Icons via `v-icon`
 - Use CSS variables for colors (enables white-label)
 - Target font: Work Sans (currently Montserrat)
 
 **Email Editor (`packages/editor/`):**
+
 - Use LESS variables from `style_variables.less`
 - Use CSS variables for theme integration (`--v-primary-base`, etc.)
 - Use jQuery UI widgets and Knockout bindings

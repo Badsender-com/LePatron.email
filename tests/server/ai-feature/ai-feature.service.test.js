@@ -9,6 +9,7 @@ jest.mock('../../../packages/server/common/models.common', () => ({
     findOne: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
+    updateOne: jest.fn(),
   },
   Integrations: {
     findOne: jest.fn(),
@@ -40,9 +41,16 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
+        // All enum feature types present → no backfill.
         features: [
           {
             featureType: 'translation',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
+          },
+          {
+            featureType: 'skill',
             integration: null,
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
@@ -61,6 +69,55 @@ describe('AIFeatureService', () => {
 
       expect(result).toEqual(existingConfig);
       expect(AIFeatureConfigs.create).not.toHaveBeenCalled();
+      expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should backfill feature types missing from an existing config', async () => {
+      const existingConfig = {
+        _id: mockConfigId,
+        _company: mockGroupId,
+        // Predates the 'skill' type — only translation present.
+        features: [
+          {
+            featureType: 'translation',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
+          },
+        ],
+      };
+      const backfilledConfig = {
+        ...existingConfig,
+        features: [
+          ...existingConfig.features,
+          { featureType: 'skill', integration: null, isActive: false },
+        ],
+      };
+
+      groupService.findById.mockResolvedValue({ _id: mockGroupId });
+      AIFeatureConfigs.findOne.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(existingConfig),
+      });
+      AIFeatureConfigs.updateOne.mockResolvedValue({ modifiedCount: 1 });
+      AIFeatureConfigs.findById.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(backfilledConfig),
+      });
+
+      const result = await aiFeatureService.getOrCreateConfig({
+        groupId: mockGroupId,
+      });
+
+      // Conditional push (concurrency-safe): the $ne filter makes it a no-op if
+      // the type already exists.
+      expect(AIFeatureConfigs.updateOne).toHaveBeenCalledWith(
+        { _id: mockConfigId, 'features.featureType': { $ne: 'skill' } },
+        {
+          $push: {
+            features: expect.objectContaining({ featureType: 'skill' }),
+          },
+        }
+      );
+      expect(result.features.map((f) => f.featureType)).toContain('skill');
     });
 
     it('should create default config when not found', async () => {
@@ -129,7 +186,10 @@ describe('AIFeatureService', () => {
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      Integrations.findOne.mockResolvedValue({ _id: mockIntegrationId });
+      Integrations.findOne.mockResolvedValue({
+        _id: mockIntegrationId,
+        type: 'ai',
+      });
       AIFeatureConfigs.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
@@ -218,6 +278,28 @@ describe('AIFeatureService', () => {
         })
       ).rejects.toThrow('INTEGRATION_NOT_FOUND');
     });
+
+    // A Metabase (dashboard) or RSS (data_feed) integration belongs to the same
+    // group, so ownership alone accepted it as an AI engine.
+    it.each(['dashboard', 'data_feed'])(
+      'should reject a %s integration as an AI engine',
+      async (type) => {
+        groupService.findById.mockResolvedValue({ _id: mockGroupId });
+        Integrations.findOne.mockResolvedValue({
+          _id: mockIntegrationId,
+          type,
+        });
+
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType: 'skill',
+            integrationId: mockIntegrationId,
+          })
+        ).rejects.toThrow('UNAUTHORIZED_INTEGRATION_TYPE');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('getFeatureConfig', () => {
@@ -225,6 +307,7 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
+        // All enum types present → no backfill.
         features: [
           {
             featureType: 'translation',
@@ -234,6 +317,12 @@ describe('AIFeatureService', () => {
               availableLanguages: ['fr', 'en'],
               defaultSourceLanguage: 'fr',
             },
+          },
+          {
+            featureType: 'skill',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
         ],
       };
@@ -256,7 +345,12 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
-        features: [],
+        // All enum types present, so no backfill; we request a type that is
+        // not part of the enum to trigger the not-found path.
+        features: [
+          { featureType: 'translation', integration: null, isActive: false },
+          { featureType: 'skill', integration: null, isActive: false },
+        ],
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
@@ -267,7 +361,7 @@ describe('AIFeatureService', () => {
       await expect(
         aiFeatureService.getFeatureConfig({
           groupId: mockGroupId,
-          featureType: 'translation',
+          featureType: 'nonexistent_feature',
         })
       ).rejects.toThrow('AI_FEATURE_CONFIG_NOT_FOUND');
     });
@@ -370,6 +464,156 @@ describe('AIFeatureService', () => {
       });
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('resolveActiveFeature', () => {
+    const { FeatureResolutionReasons: Reasons } = aiFeatureService;
+
+    function mockConfig(features) {
+      AIFeatureConfigs.findOne.mockReturnValue({
+        populate: jest
+          .fn()
+          .mockResolvedValue(features === null ? null : { features }),
+      });
+    }
+
+    const activeIntegration = {
+      _id: mockIntegrationId,
+      name: 'OpenAI',
+      isActive: true,
+    };
+
+    it('resolves the feature and its integration when everything is set', async () => {
+      mockConfig([
+        {
+          featureType: 'skill',
+          isActive: true,
+          integration: activeIntegration,
+          config: { model: 'gpt-4o' },
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.integration.name).toBe('OpenAI');
+      expect(result.feature.config.model).toBe('gpt-4o');
+    });
+
+    /**
+     * The point of this function over getActiveFeatureWithIntegration: a bare
+     * null cannot tell an operator which of four setups is missing, which is why
+     * ai-skill had reimplemented the whole walk (review A2).
+     */
+    it.each([
+      ['no config at all', null, 'NO_CONFIG'],
+      ['no entry for that feature', [], 'FEATURE_INACTIVE'],
+      [
+        'feature present but inactive',
+        [
+          {
+            featureType: 'skill',
+            isActive: false,
+            integration: activeIntegration,
+          },
+        ],
+        'FEATURE_INACTIVE',
+      ],
+      [
+        'feature active without integration',
+        [{ featureType: 'skill', isActive: true, integration: null }],
+        'NO_INTEGRATION',
+      ],
+      [
+        'integration selected but inactive',
+        [
+          {
+            featureType: 'skill',
+            isActive: true,
+            integration: { _id: mockIntegrationId, isActive: false },
+          },
+        ],
+        'INTEGRATION_INACTIVE',
+      ],
+    ])('reports %s as %s', async (label, features, reason) => {
+      mockConfig(features);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe(Reasons[reason]);
+      expect(label).toBeTruthy();
+    });
+
+    it('ignores features of another type', async () => {
+      mockConfig([
+        {
+          featureType: 'translation',
+          isActive: true,
+          integration: activeIntegration,
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(false);
+      expect(result.reason).toBe(Reasons.FEATURE_INACTIVE);
+    });
+
+    // Preserves the behaviour of the single `find` this replaced: a usable
+    // entry wins over a stale duplicate.
+    it('prefers a usable entry over an unusable duplicate', async () => {
+      mockConfig([
+        { featureType: 'skill', isActive: false, integration: null },
+        {
+          featureType: 'skill',
+          isActive: true,
+          integration: activeIntegration,
+          config: { model: 'gpt-4o' },
+        },
+      ]);
+      const result = await aiFeatureService.resolveActiveFeature({
+        groupId: mockGroupId,
+        featureType: 'skill',
+      });
+      expect(result.ok).toBe(true);
+      expect(result.feature.config.model).toBe('gpt-4o');
+    });
+
+    // getActiveFeatureWithIntegration is now a wrapper: its null contract must
+    // not have moved, since translation and mailing.schema rely on it.
+    it('keeps the legacy wrapper returning null on every failure', async () => {
+      for (const features of [
+        null,
+        [],
+        [
+          {
+            featureType: 'skill',
+            isActive: false,
+            integration: activeIntegration,
+          },
+        ],
+        [{ featureType: 'skill', isActive: true, integration: null }],
+        [
+          {
+            featureType: 'skill',
+            isActive: true,
+            integration: { isActive: false },
+          },
+        ],
+      ]) {
+        mockConfig(features);
+        expect(
+          await aiFeatureService.getActiveFeatureWithIntegration({
+            groupId: mockGroupId,
+            featureType: 'skill',
+          })
+        ).toBeNull();
+      }
     });
   });
 });

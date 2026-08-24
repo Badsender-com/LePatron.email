@@ -1,0 +1,197 @@
+<script>
+import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsTextField from '~/components/form/bs-text-field.vue';
+import BsSelect from '~/components/form/bs-select.vue';
+import BsTextarea from '~/components/form/bs-textarea.vue';
+import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
+import { RefreshCw } from 'lucide-vue';
+import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
+
+export default {
+  name: 'BsAiSkillCreateModal',
+  components: {
+    BsModalConfirm,
+    BsTextField,
+    BsSelect,
+    BsTextarea,
+    LucideRefreshCw: RefreshCw,
+  },
+  props: {
+    loading: { type: Boolean, default: false },
+  },
+  data() {
+    return {
+      skill: this.emptySkill(),
+      identifierManuallyEdited: false,
+      showIdentifier: false,
+    };
+  },
+  computed: {
+    categoryOptions() {
+      return skillCategoryOptions(this);
+    },
+    suggestedIdentifier() {
+      return suggestIdentifier({
+        category: this.skill.category,
+        title: this.skill.title,
+      });
+    },
+    canSubmit() {
+      return !!this.skill.skillId && !!this.skill.title;
+    },
+  },
+  watch: {
+    suggestedIdentifier(next) {
+      if (!this.identifierManuallyEdited && next) {
+        this.skill.skillId = next;
+      }
+    },
+  },
+  methods: {
+    emptySkill() {
+      return {
+        skillId: '',
+        title: '',
+        description: '',
+        category: 'redaction',
+      };
+    },
+    open() {
+      this.skill = this.emptySkill();
+      this.identifierManuallyEdited = false;
+      this.showIdentifier = false;
+      this.$refs.modal.open();
+    },
+    close() {
+      this.$refs.modal.close();
+    },
+    onIdentifierInput(value) {
+      this.skill.skillId = value;
+      this.identifierManuallyEdited = true;
+    },
+    resetIdentifier() {
+      this.identifierManuallyEdited = false;
+      this.skill.skillId = this.suggestedIdentifier;
+    },
+    onSubmit() {
+      if (!this.canSubmit) return;
+      this.$emit('submit', { ...this.skill });
+    },
+  },
+};
+</script>
+
+<template>
+  <bs-modal-confirm
+    ref="modal"
+    :title="$t('aiSkills.skill.newSkill')"
+    :is-form="true"
+    modal-width="600"
+  >
+    <v-form @submit.prevent="onSubmit">
+      <bs-text-field
+        v-model="skill.title"
+        :label="$t('global.title')"
+        :disabled="loading"
+        required
+      />
+      <bs-textarea
+        v-model="skill.description"
+        :label="$t('global.description')"
+        :rows="2"
+        :disabled="loading"
+      />
+      <bs-select
+        v-model="skill.category"
+        :items="categoryOptions"
+        item-text="text"
+        item-value="value"
+        :label="$t('aiSkills.filters.category')"
+        :disabled="loading"
+      />
+
+      <div class="technical-id mt-4">
+        <v-btn
+          text
+          small
+          color="primary"
+          class="px-0"
+          @click="showIdentifier = !showIdentifier"
+        >
+          {{ $t('aiSkills.skill.technicalId') }}
+          <v-icon :size="18">
+            {{ showIdentifier ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+          </v-icon>
+        </v-btn>
+        <div v-if="showIdentifier" class="identifier-row">
+          <bs-text-field
+            :value="skill.skillId"
+            :label="$t('aiSkills.skill.id')"
+            placeholder="redaction.cta"
+            :disabled="loading"
+            required
+            class="identifier-row__field"
+            @input="onIdentifierInput"
+          />
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                :disabled="loading || !suggestedIdentifier"
+                class="identifier-row__reset"
+                v-bind="attrs"
+                v-on="on"
+                @click="resetIdentifier"
+              >
+                <lucide-refresh-cw :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('aiSkills.skill.idResetHint') }}</span>
+          </v-tooltip>
+        </div>
+      </div>
+
+      <p class="text-caption text--secondary mt-2 mb-0">
+        {{ $t('aiSkills.skill.schemasOnVersionNote') }}
+      </p>
+      <v-divider class="mt-4" />
+      <div class="modal-actions">
+        <v-btn text color="primary" :disabled="loading" @click="close">
+          {{ $t('global.cancel') }}
+        </v-btn>
+        <v-btn
+          type="submit"
+          color="accent"
+          elevation="0"
+          :loading="loading"
+          :disabled="loading || !canSubmit"
+        >
+          {{ $t('global.create') }}
+        </v-btn>
+      </div>
+    </v-form>
+  </bs-modal-confirm>
+</template>
+
+<style lang="scss" scoped>
+.identifier-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  &__field {
+    flex: 1;
+  }
+
+  &__reset {
+    margin-top: 1.6rem; // align with the input baseline
+  }
+}
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0;
+}
+</style>

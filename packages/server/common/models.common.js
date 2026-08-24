@@ -29,6 +29,11 @@ const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
 const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
+const LePatronSkillSchema = require('../ai-skill/models/le-patron-skill.schema.js');
+const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
+const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
+const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
+const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 
 /// ///
 // EXPORTS
@@ -85,6 +90,23 @@ const FeedMappings = mongoose.model(
   modelNames.FeedMappingModel,
   FeedMappingSchema
 );
+const LePatronSkills = mongoose.model(
+  modelNames.LePatronSkillModel,
+  LePatronSkillSchema
+);
+const Expertises = mongoose.model(modelNames.ExpertiseModel, ExpertiseSchema);
+const AISkillInvocations = mongoose.model(
+  modelNames.AISkillInvocationModel,
+  AISkillInvocationSchema
+);
+const AIPlaygroundScenarios = mongoose.model(
+  modelNames.AIPlaygroundScenarioModel,
+  AIPlaygroundScenarioSchema
+);
+const AIPlaygroundRuns = mongoose.model(
+  modelNames.AIPlaygroundRunModel,
+  AIPlaygroundRunSchema
+);
 
 module.exports = {
   mongoose,
@@ -112,4 +134,9 @@ module.exports = {
   AIFeatureConfigs,
   TranslationJobs,
   FeedMappings,
+  LePatronSkills,
+  Expertises,
+  AISkillInvocations,
+  AIPlaygroundScenarios,
+  AIPlaygroundRuns,
 };
