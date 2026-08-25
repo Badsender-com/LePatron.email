@@ -857,6 +857,11 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
 }
 
 // This will either add images to archive ( zip file ) or upload an image depending on the value of the cdnDownload and regularDownload
+// Our own image endpoint, whatever the file extension. The extension-based
+// regex below cannot match a file stored as `.bin` or `.false`, and those are
+// precisely the ones that escaped the transfer in production.
+const OWN_IMAGES_URL_REGEX = /https?:\/\/\S*\/api\/images\/[^\s"'<>)]+/g;
+
 async function handleRelativeOrFtpImages({
   html,
   cdnDownload,
@@ -924,7 +929,9 @@ async function handleRelativeOrFtpImages({
   //   })
 
   const urlsRegexDataRaw = /data-raw/g;
-  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
+  // `svg` was missing here: a perfectly well-named SVG was never collected, so
+  // it was never transferred, and the delivered email kept pointing at us.
+  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp|svg)/gi;
 
   let splittedHtml = html.split('\n');
   if (!html.includes('\n')) {
@@ -935,17 +942,15 @@ async function handleRelativeOrFtpImages({
   // We will retrieve only URLs from each matched lines
   splittedHtml.forEach((line) => {
     const containsDataRaw = urlsRegexDataRaw.test(line);
-    const containsUrl = urlsRegexUrl.test(line);
-    if (containsDataRaw || (containsDataRaw && !containsUrl)) {
-      return;
-    }
     urlsRegexDataRaw.lastIndex = 0;
-    urlsRegexUrl.lastIndex = 0;
+    if (containsDataRaw) return;
 
-    const result = urlsRegexUrl.exec(line);
-    if (result && result.length > 0) {
-      allImages.push(result[0]);
-    }
+    // `.match` with a /g regex returns *every* occurrence: the previous `.exec`
+    // took only the first one, so a second image on the same line was silently
+    // left behind — and left hotlinking us.
+    const found = line.match(urlsRegexUrl) || [];
+    const ownImages = line.match(OWN_IMAGES_URL_REGEX) || [];
+    allImages.push(...found, ...ownImages);
   });
 
   // keep a dictionary of all downloaded images
@@ -966,6 +971,20 @@ async function handleRelativeOrFtpImages({
     const search = new RegExp(escImgUrl, 'g');
     html = html.replace(search, relativeUrl);
   });
+
+  // Anything of ours still standing here was not collected above, so it was
+  // neither bundled in the archive nor pushed to the client's host: the
+  // delivered email would fetch it from our infrastructure on every open. That
+  // is exactly how one campaign ended up served from our servers at 115 GB/h.
+  // Fail loudly rather than ship it.
+  const missedImages = _.uniq(html.match(OWN_IMAGES_URL_REGEX) || []);
+  if (missedImages.length) {
+    console.log(
+      '[EXPORT] images left pointing at our infrastructure:',
+      missedImages
+    );
+    throw new InternalServerError(ERROR_CODES.EXPORT_IMAGES_NOT_TRANSFERRED);
+  }
 
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
