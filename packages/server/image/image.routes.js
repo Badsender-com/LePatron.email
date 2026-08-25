@@ -38,4 +38,17 @@ router.use((req, res, next) => {
   next(new createError.NotImplemented());
 });
 
+// An <img> that receives an uncacheable error is re-requested on every
+// re-render of the editor: that is how a single tab produced 37 req/s of 300 KB
+// responses in production. Let the browser remember the failure for a minute so
+// a broken image can never turn into a flood again.
+const ERROR_CACHE_SECONDS = 60;
+
+router.use((err, req, res, next) => {
+  if (!res.headersSent) {
+    res.set('Cache-Control', `public, max-age=${ERROR_CACHE_SECONDS}`);
+  }
+  next(err);
+});
+
 module.exports = router;
