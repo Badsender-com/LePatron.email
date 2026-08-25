@@ -107,8 +107,20 @@ function handleSharpStream(req, res, next, pipeline) {
   const { path } = req;
   const { imageName } = req.params;
 
+  // Without this, a sharp failure (an input it can't re-encode, a truncated
+  // upload) leaves the client with a half-written 200 that no cache stores — so
+  // the browser retries forever. Fail loudly instead.
+  const onPipelineError = (e) => {
+    console.log(red('[IMAGE] sharp pipeline error'), path);
+    console.log(inspect(e));
+    if (res.headersSent) return res.destroy();
+    next(e);
+  };
+
   // prepare sending to response
-  pipeline.clone().pipe(res);
+  const responseStream = pipeline.clone();
+  responseStream.on('error', onPipelineError);
+  responseStream.pipe(res);
 
   // prepare sending to cache
   if (config.images.cache) {
@@ -121,7 +133,9 @@ function handleSharpStream(req, res, next, pipeline) {
   }
   // flow readStream into the pipeline!
   // this has to be done after of course :D
-  fileManager.streamImage(imageName).pipe(pipeline);
+  const sourceStream = fileManager.streamImage(imageName);
+  sourceStream.on('error', handleFileStreamError(next));
+  sourceStream.pipe(pipeline);
 }
 
 // unlike sharp, no .clone() method
@@ -146,9 +160,46 @@ const handleGifStream = (req, res, next, gifProcessor) => {
     .catch(onWriteResizeError(path));
 };
 
-const streamImageToResponse = (req, res, next, imageName) => {
-  const imageStream = fileManager.streamImage(imageName);
-  const contentType = mime.lookup(imageName);
+const isImageContentType = (contentType) =>
+  typeof contentType === 'string' && contentType.startsWith('image/');
+
+// A gallery filename is not a reliable source of truth for the content type:
+// uploads keep whatever extension they came in with (we have `.bin` and
+// `.false` in production), so `mime.lookup()` answers `application/octet-stream`
+// for what is actually a PNG. The browser then refuses to paint the response in
+// an `<img>`, the editor re-requests the same thumbnail on every re-render, and
+// a single open tab becomes thousands of requests per minute.
+// So when the extension doesn't already name an image type, ask the bytes.
+const resolveContentType = async (imageName) => {
+  const guessedContentType = mime.lookup(imageName);
+  if (isImageContentType(guessedContentType)) return guessedContentType;
+
+  const probeStream = fileManager.streamImage(imageName);
+  try {
+    const { mime: probedContentType } = await probe(probeStream);
+    return isImageContentType(probedContentType)
+      ? probedContentType
+      : guessedContentType;
+  } catch (e) {
+    // unreadable, or genuinely not an image: keep the extension guess
+    return guessedContentType;
+  } finally {
+    // we only needed the header, same abort dance as checkSizes
+    probeStream.destroy();
+  }
+};
+
+const streamImageToResponse = async (req, res, next, imageName) => {
+  let contentType;
+  let imageStream;
+  // this function is fire-and-forget for its callers: an async throw would
+  // become an unhandled rejection instead of reaching the error handler
+  try {
+    contentType = await resolveContentType(imageName);
+    imageStream = fileManager.streamImage(imageName);
+  } catch (e) {
+    return handleFileStreamError(next)(e);
+  }
   imageStream.on('error', handleFileStreamError(next));
   // We have to end stream manually on res stream error (can happen if user close connection before end)
   // If not done, we will have a memory leak
@@ -156,10 +207,6 @@ const streamImageToResponse = (req, res, next, imageName) => {
   // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
   imageStream.once('readable', () => {
     addCacheControl(res);
-    // try to guess content-type from filename
-    // we should do a better thing like a fs-stat
-    // http://stackoverflow.com/questions/13485933/createreadstream-send-file-http#answer-13486341
-    // but we want the response to be as quick as possible
     if (contentType) res.set('Content-Type', contentType);
 
     imageStream
@@ -225,6 +272,15 @@ function checkSizes(req, res, next) {
     .catch(handleFileStreamError(next));
 }
 
+// sharp has no SVG encoder: a vector input always comes out raster. Announce
+// PNG explicitly, otherwise checkSizes has already set `image/svg+xml` on a PNG
+// payload — the browser drops the image and the editor starts retrying.
+const rasterizeVector = (pipeline, imageDatas, res) => {
+  if (imageDatas.type !== 'svg') return pipeline;
+  res.set('Content-Type', 'image/png');
+  return pipeline.png();
+};
+
 /// ///
 // IMAGE GENERATION
 /// ///
@@ -248,7 +304,11 @@ function resize(req, res, next) {
 
   // Sharp can't handle animated gif
   if (imageDatas.type !== 'gif') {
-    const pipeline = sharp().resize(width, height);
+    const pipeline = rasterizeVector(
+      sharp().resize(width, height),
+      imageDatas,
+      res
+    );
     return handleSharpStream(req, res, next, pipeline);
   }
 
@@ -281,7 +341,11 @@ function cover(req, res, next) {
   if (imageDatas.type !== 'gif') {
     // if this method is called we want to resize the image to 2 times the container
     const resizedHeight = height ? height * 2 : null;
-    const pipeline = sharp().resize(width * 2, resizedHeight);
+    const pipeline = rasterizeVector(
+      sharp().resize(width * 2, resizedHeight),
+      imageDatas,
+      res
+    );
     return handleSharpStream(req, res, next, pipeline);
   }
 
