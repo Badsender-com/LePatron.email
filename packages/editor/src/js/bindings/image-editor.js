@@ -91,6 +91,11 @@ const Editor = {
  * @param {any} parent - The html parent of the editor frame.
  * @param {HTMLImageElement} image - The uploaded image as a html element.
  */
+// formats we may re-encode with a quality setting; anything else stays PNG so
+// transparency survives the round-trip
+const LOSSY_MIME_TYPES = ['image/jpeg', 'image/webp'];
+const LOSSY_QUALITY = 0.85;
+
 export function OpenEditor(next, abort, data, file, messages, parent, image) {
   Editor.deferredCallback = next;
   Editor.messages = messages;
@@ -688,9 +693,21 @@ function save() {
   Editor.transformer.nodes([]);
   const rect = Editor.image.getClientRect();
 
+  // Konva's toBlob defaults to PNG. Without an explicit mimeType, a JPEG photo
+  // came back re-encoded as PNG — 10 to 50 times heavier — while the File kept
+  // the *original* declared type, so the server named the stored file `.jpeg`
+  // on PNG bytes (and `.bin` or `.false` when the declared type was octet-stream
+  // or empty). Keep the source format, fall back to PNG for anything that may
+  // carry transparency, and make the File announce what we actually encoded.
+  const mimeType = LOSSY_MIME_TYPES.includes(Editor.file.type)
+    ? Editor.file.type
+    : 'image/png';
+
   Editor.stage.toBlob({
+    mimeType,
+    quality: LOSSY_QUALITY,
     callback: (blob) => {
-      const file = new File([blob], Editor.file.name, { type: Editor.file.type });
+      const file = new File([blob], Editor.file.name, { type: mimeType });
       Editor.data.files[Editor.file.index] = file;
       clean();
     },
