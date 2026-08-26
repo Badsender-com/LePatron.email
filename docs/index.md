@@ -92,6 +92,15 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 - **{feature}-testing-checklist.md** - Manual QA checklists
 - **integration/** - Integration test docs
 
+### Design & Conception Plans
+
+#### /docs/plans/
+
+Pre-implementation design docs for larger features — audit findings, target model, phased increments. Written before code, updated as decisions are made.
+
+- **[rbac-refonte.md](./plans/rbac-refonte.md)** - Roles & permissions redesign (RBAC model, permissions matrix, share-link/audit-log design, increments A/B/C)
+- Other entries: editor-modals-modernization.md, quality-control-analysis.md, content-feed-rss.md, etc.
+
 ### Hidden Configuration
 
 #### /.claude/
