@@ -1,17 +1,25 @@
-# Refonte des rôles et permissions
+# Ajout de nouveaux rôles et spectateur non loggué
 
-Document de conception pour la refonte du système de rôles et permissions de LePatron.email. Rédigé à partir de la vision produit d'Olivier Fredon et d'un audit du code existant. Ce document couvre le cadrage complet ; l'implémentation se fait en incréments séparés (voir [Incréments](#4-incréments-dimplémentation)), chacun étant une PR distincte.
+Document de conception pour l'ajout de nouveaux rôles au système de rôles et permissions de LePatron.email. Rédigé à partir de la vision produit d'Olivier Fredon et d'un audit du code existant.
 
-Issue GitHub associée : `Refonte des rôles et permissions`.
+**Scope réduit le 2026-08-27** : le chantier RBAC initial couvrait tout en un seul cadrage (nouveaux rôles, `super_admin` en rôle DB multi-comptes, notion d'équipe, spectateur non loggué, audit log). Jugé trop "epic" et risqué pour un seul incrément, il est désormais découpé :
+
+- **Ce document/incrément** : ajout des rôles `company_admin_tech`, `reviewer`, `writer`, + spectateur non loggué via lien de partage. Issue GitHub [#1099](https://github.com/Badsender-com/LePatron.email/issues/1099).
+- Team / notion d'équipe au sein d'une company — différé, issue [#1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
+- `super_admin` en rôle persistant multi-comptes — différé, issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101).
+- Audit log des changements de rôle et réglages sensibles — différé, issue [#1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
+- Gestion granulaire des droits par feature et action — différé, issue [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
+
+L'audit du code existant (section 2) reste une référence factuelle valide pour l'ensemble de ces chantiers, pas seulement celui-ci.
 
 ## Sommaire
 
 1. [Vision produit](#1-vision-produit)
 2. [Audit — vision vs code réel](#2-audit--vision-vs-code-réel)
 3. [Modèle RBAC cible](#3-modèle-rbac-cible)
-4. [Incréments d'implémentation](#4-incréments-dimplémentation)
+4. [Incrément d'implémentation](#4-incrément-dimplémentation)
 5. [Spectateur non loggué — lien de partage](#5-spectateur-non-loggué--lien-de-partage)
-6. [Audit log](#6-audit-log)
+6. [Audit log — différé](#6-audit-log--différé)
 7. [Plan de tests](#7-plan-de-tests)
 8. [Hors périmètre](#8-hors-périmètre)
 
@@ -23,7 +31,7 @@ Issue GitHub associée : `Refonte des rôles et permissions`.
 
 - **Utilisateur (regular user)** : droits d'accès et d'actions limités à l'application. Évolution prévue : en tant que company admin, on doit pouvoir assigner les workspaces disponibles depuis le profil utilisateur au moment de sa création ou de sa modification.
 - **Administrateur de compte (group admin → company admin)** : mêmes droits qu'un regular user + accès complet à la company et à son administration. Évolution : devient "propriétaire" de la company et peut désigner de nouveaux rôles parmi les utilisateurs de sa company.
-- **Super administrateur (super admin)** : mêmes droits que company admin, applicables sur l'ensemble des comptes. Aujourd'hui un seul compte par environnement (prod/staging/dev), défini en variable d'environnement. Évolution : doit devenir un rôle à part entière dans l'application, avec plusieurs comptes individuels possibles.
+- **Super administrateur (super admin)** : mêmes droits que company admin, applicables sur l'ensemble des comptes. Aujourd'hui un seul compte par environnement (prod/staging/dev), défini en variable d'environnement. Évolution envisagée (différée, [issue #1101](https://github.com/Badsender-com/LePatron.email/issues/1101)) : devenir un rôle à part entière dans l'application, avec plusieurs comptes individuels possibles. **Hors scope de cet incrément.**
 
 ### Note de vocabulaire
 
@@ -31,18 +39,14 @@ Issue GitHub associée : `Refonte des rôles et permissions`.
 
 ### Nouveaux rôles envisagés
 
-- **Administrateur technique (company admin tech)** : accède aux réglages techniques (intégrations, IA, profils d'export, hébergement d'images…) sans pouvoir gérer les utilisateurs ni les workspaces.
-- **Relecteur (reviewer)** : ouvre un email en lecture, peut commenter/tester/valider, mais ne peut pas modifier la structure, les contenus ou le style.
-- **Rédacteur (writer)** : édite le contenu d'un email mais ne touche pas à sa structure (ajout/suppression de bloc) et n'accède pas aux options de style.
+- **Administrateur technique (company admin tech)** : accède aux réglages techniques (intégrations, IA, profils d'export, hébergement d'images…) sans pouvoir gérer les utilisateurs ni les workspaces. Dans cet incrément, l'accès couvre intégrations/AI features/feed mappings/tracking ; les exports et profils ESP (FTP/CDN) restent super-admin-only pour l'instant (section 3.2).
+- **Relecteur (reviewer)** : ouvre un email en lecture, peut commenter/tester/valider, mais ne peut pas modifier la structure, les contenus ou le style — **ni les actions de gestion du listing** (renommer/déplacer/dupliquer/supprimer un mailing). Rôle entièrement passif sur le contenu, actif uniquement sur commentaire/test/validation. Détail affiné en section 3.3.
+- **Rédacteur (writer)** : édite le contenu d'un email mais ne touche pas à sa structure (ajout/suppression de bloc) et n'accède pas aux options de style. Peut dupliquer/renommer/déplacer un mailing pour créer des variantes/déclinaisons, mais ne peut ni créer un mailing from scratch ni en supprimer. Détail affiné en section 3.3.
 - **Spectateur (non loggué)** : consulte un email partagé via un lien et ajoute un commentaire contextualisé, sans pouvoir modifier l'email. US liée : un utilisateur génère un lien de partage donnant accès à un email à un spectateur non loggué pour recueillir des commentaires.
 
-### Bonus — gestion d'utilisateurs multiples
+### Notion d'équipe — différée
 
-- Notion d'équipe au sein d'une company.
-- Vue d'administration des équipes par les rôles admin (même type d'UI que workspace).
-- Liste des utilisateurs assignables à une équipe.
-- Si une équipe existe : select dans la vue d'édition de profil pour assigner une ou plusieurs équipes.
-- Si une équipe existe : select dans la vue d'édition du workspace pour assigner une ou plusieurs équipes.
+La notion d'équipe au sein d'une company (vue d'administration façon workspace, assignation multi-select depuis le profil utilisateur et depuis le workspace) est différée dans une issue dédiée : [#1100](https://github.com/Badsender-com/LePatron.email/issues/1100). **Hors scope de cet incrément.**
 
 ### Notes sur l'administration actuelle
 
@@ -52,19 +56,18 @@ Issue GitHub associée : `Refonte des rôles et permissions`.
 
 ### Cadrage fonctionnel de départ
 
-Aujourd'hui, le rôle touche uniquement l'accès au backoffice de l'application ; les permissions associées définissent des actions disponibles sur ce même backoffice (accès réglages, ajout workspace/utilisateur, liste de test, nuancier…). Le rôle n'a pas d'incidence sur les permissions et fonctionnalités du builder. Demain, d'autres outils viendront s'ajouter au builder, et certaines fonctionnalités du builder pourraient être réservées à certains rôles. **Décision : oui**, il faut introduire des permissions liées directement aux fonctionnalités des outils, pas seulement à l'accès aux outils.
+Aujourd'hui, le rôle touche uniquement l'accès au backoffice de l'application ; les permissions associées définissent des actions disponibles sur ce même backoffice (accès réglages, ajout workspace/utilisateur, liste de test, nuancier…). Le rôle n'a pas d'incidence sur les permissions et fonctionnalités du builder. Demain, d'autres outils viendront s'ajouter au builder, et certaines fonctionnalités du builder pourraient être réservées à certains rôles. **Décision : oui**, il faut introduire des permissions liées directement aux fonctionnalités des outils, pas seulement à l'accès aux outils — mais un moteur de permissions générique par feature × action est un chantier à part entière, différé dans [l'issue #1103](https://github.com/Badsender-com/LePatron.email/issues/1103) (avec un premier inventaire des features administrables actuelles). Pour cet incrément, `reviewer`/`writer` sont traités au cas par cas via des booléens dérivés du rôle côté éditeur (voir section 4), sans construire ce moteur générique.
 
 Règles de compatibilité actées :
 
 - Un utilisateur ne peut **pas** avoir des rôles différents selon le workspace — le rôle est global à la company.
 - Un company admin **peut** déléguer/désigner des rôles à d'autres utilisateurs de sa company.
 
-### Plan d'action macro (4 phases)
+### Plan d'action macro (3 phases)
 
 1. **Cadrage fonctionnel** — décisions à figer (ce document).
-2. **Conception produit (UX + garde-fous)** — écran "Utilisateurs & rôles", UI d'accès dans l'éditeur (actions désactivées), partage "spectateur" (lien, droits, expiration, journal).
-3. **Implémentation par incréments** — A (RBAC propre sur les rôles existants) / B (nouveaux rôles standards) / C (spectateur non loggué), activables via feature flags, migration progressive.
-4. **Migration, conformité, exploitation** — mapping ancien→nouveau rôle, audit log, tests de non-régression/sécurité/UX, documentation.
+2. **Conception produit (UX + garde-fous)** — écran "Utilisateurs & rôles", UI d'accès dans l'éditeur (actions désactivées), partage "spectateur" (lien, droits, expiration).
+3. **Implémentation en un seul incrément** — nouveaux rôles (`company_admin_tech`, `reviewer`, `writer`) + spectateur non loggué, voir section 4. Pas de migration de données destructive : l'enum `role` ne fait qu'ajouter des valeurs.
 
 ---
 
@@ -88,7 +91,7 @@ Basé sur l'exploration du code réel (`packages/server`, `packages/ui`, `packag
 
 - **`super_admin` n'est pas un rôle en base.** C'est un compte unique codé en dur (`config.admin.id/username/password`, `packages/server/node.config.js`, un `ObjectId` fixe `576b90a441ceadc005124896`), et `UserSchema.virtual('isAdmin')` (`packages/server/user/user.schema.js:156-158`) retourne **toujours `false`** pour un vrai utilisateur en base. "Super admin doit devenir un rôle à part entière avec plusieurs comptes individuels" est donc un changement structurel, pas une simple évolution d'UI.
   - **Important** : le compte super admin en variable d'environnement (`config.admin`) n'est **pas remplacé**. Il devient le mécanisme de **bootstrap/break-glass permanent** : dans chaque environnement, il sert à créer le tout premier compte `super_admin` réel en base (on se connecte avec les identifiants env var — qui passent déjà `GUARD_ADMIN` via l'objet figé `isAdmin: true`, indépendamment de toute donnée en base — puis on crée/gère les comptes super admin individuels depuis ce compte). Il reste actif indéfiniment comme filet de secours (nouvel environnement, perte d'accès aux comptes DB) ; il n'est **pas prévu de le retirer**.
-- Les intégrations/ESP sont déjà gérables par `company_admin` (`GUARD_GROUP_ADMIN` sur `packages/server/integration/integration.routes.js`), pas réservées au super admin comme décrit dans la note d'usage. **Écart documenté, non corrigé pour l'instant** — le resserrement (super admin + futur company admin tech, sans company admin générique) est repoussé à l'incrément B.
+- Les intégrations/ESP sont déjà gérables par `company_admin` (`GUARD_GROUP_ADMIN` sur `packages/server/integration/integration.routes.js`), pas réservées au super admin comme décrit dans la note d'usage. **Écart documenté, non corrigé pour l'instant** — `company_admin_tech` reçoit cet accès en alternative (section 3.2), mais `company_admin` ne le perd pas dans cet incrément (voir section 8).
 - La liste des rôles est dupliquée en dur dans deux composants Vue distincts (`packages/ui/components/users/form.vue:16-19` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`) — tout ajout de rôle oblige à modifier les deux, risque d'oubli.
 - L'écran de **création** d'utilisateur (`packages/ui/routes/groups/_groupId/new-user.vue` + `components/users/form.vue`) n'a aucune section workspace/équipe — l'US "j'assigne les workspaces disponibles depuis le profil utilisateur au moment de sa création" n'est pas couverte aujourd'hui ; elle n'existe qu'à l'édition, et de façon plus faible (des `v-switch` un par un, pas un multi-select comme dans `workspace-form.vue`).
 
@@ -112,12 +115,10 @@ Basé sur l'exploration du code réel (`packages/server`, `packages/ui`, `packag
 
 ## 3. Modèle RBAC cible
 
-### 3.1 Rôles codés en dur, permissions atomiques en code
+### 3.1 Rôles codés en dur, pas de moteur de permissions générique
 
-Pour ce chantier (pas de rôles sur-mesure demandés), les rôles restent codés en dur mais la logique est structurée pour qu'un futur passage à des rôles persistés en base soit un simple changement de "backend" de `getPermissionsForRole`, sans toucher les appelants (guards, controllers, UI) :
+Pas de rôles sur-mesure demandés, et pas de moteur générique de permissions (feature × action) construit dans cet incrément — ce chantier plus large est différé dans [l'issue #1103](https://github.com/Badsender-com/LePatron.email/issues/1103). Ici, on se contente d'étendre les rôles codés en dur et d'ajouter des guards additifs ciblés :
 
-- `packages/server/account/permissions.js` (nouveau) — constantes de permissions atomiques par domaine : `company:manage-settings`, `company:manage-users`, `company:assign-roles`, `company:delete` (super_admin only), `workspace:manage`, `workspace:access`, `content:write`, `content:read`, `modules:toggle`, `integration:manage`, `ai:manage`, `ai:use`, `builder:edit-structure`, `builder:edit-content`, `builder:edit-style`, `builder:comment`.
-- `packages/server/account/role-permissions.js` (nouveau) — table rôle → `Set` de permissions + fonctions pures `getPermissionsForRole(role)` / `hasPermission(user, permission)`.
 - `packages/server/account/roles.js` (existant, étendu) — ajout des 3 nouveaux rôles :
   ```js
   Roles = {
@@ -129,90 +130,135 @@ Pour ce chantier (pas de rôles sur-mesure demandés), les rôles restent codés
     WRITER: 'writer',
   };
   ```
-- `packages/server/account/permission.guard.js` (nouveau) — factory `guardPermission(permission)`, **additive** : on ne remplace pas `GUARD_GROUP_ADMIN`/`GUARD_ADMIN`/`GUARD_USER` existants (zéro régression), on ajoute cette factory pour les nouveaux points de contrôle fins de l'incrément B.
+  `SUPER_ADMIN` reste hors de l'enum `role` persisté (`user.schema.js:45-49`) — inchangé, voir [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101).
+- `packages/server/account/auth.guard.js` (existant, étendu) — nouveau guard additif `GUARD_GROUP_ADMIN_OR_TECH = guard([Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH])`, sans toucher `GUARD_GROUP_ADMIN`/`GUARD_ADMIN`/`GUARD_USER` existants (zéro régression sur les routes déjà en place).
+- `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 valeurs de rôle (les 5 assignables + `super_admin` non exposé dans le picker) avec labels i18n, remplace les deux listes dupliquées de `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`.
 
-### 3.2 `super_admin` : du compte env var au rôle DB multi-comptes (additif)
+### 3.2 `company_admin` vs `company_admin_tech` : matrice de droits par feature
 
-Point clé : tous les guards et services branchent déjà sur `user.isAdmin` (`auth.guard.js`, `group.guard.js`, `workspace.service.js`, `comment.service.js:verifyMailingAccess`, `integration.service.js:checkIfUserIsAuthorizedToAccessIntegration`). Un seul changement cascade partout :
+**Statut : en cours de validation avec Olivier — les cases sont à remplir avant implémentation.** `company_admin_tech` n'est pas un simple sous-ensemble additif de `company_admin` : c'est un vrai partage/retrait de pouvoirs (`company_admin` perd l'accès à plusieurs domaines qu'il a aujourd'hui), donc chaque ligne doit être tranchée explicitement plutôt que déduite.
 
-```js
-UserSchema.virtual('isAdmin').get(function () {
-  return this.role === Roles.SUPER_ADMIN;
-});
-```
+Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écriture** = créer et/ou modifier · **Suppression** = supprimer (`—` = l'action n'existe pas pour cette feature). Valeurs possibles par cellule : `company_admin`, `company_admin_tech`, `super_admin`, ou une combinaison (ex. `company_admin + company_admin_tech`).
 
-Étapes, sans casser le bootstrap existant :
+| #   | Feature                                                                           | Lecture | Écriture                | Suppression |
+| --- | --------------------------------------------------------------------------------- | ------- | ----------------------- | ----------- |
+| 1   | Workspaces                                                                        |         |                         |             |
+| 2   | Utilisateurs                                                                      |         |                         |             |
+| 3   | Rôles (assigner un rôle à un utilisateur)                                         |         | _(assigner = écriture)_ | —           |
+| 4   | Test lists (listes d'emails de test)                                              |         |                         |             |
+| 5   | Couleurs (nuancier)                                                               |         |                         |             |
+| 6   | Bibliothèque de blocs personnalisés                                               |         |                         |             |
+| 7   | Modération de commentaires (supprimer un commentaire d'autrui)                    | —       | —                       |             |
+| 8   | Variables personnalisées (merge tags)                                             |         |                         |             |
+| 9   | Profils ESP (Adobe/Actito/DSC/Sendinblue)                                         |         |                         |             |
+| 10  | Export options (hébergement CDN/FTP)                                              |         |                         |             |
+| 11  | Intégrations (connecteurs AI/feed/dashboard)                                      |         |                         |             |
+| 12  | AI Features (traduction, config skills par company)                               |         |                         |             |
+| 13  | Tracking (UTM) — niveau company                                                   |         |                         | —           |
+| 14  | Tracking (UTM) — override par template                                            |         |                         | —           |
+| 15  | Feed mappings (flux de contenu)                                                   |         |                         |             |
+| 16  | CRM Intelligence — dashboards                                                     |         |                         |             |
+| 17  | Templates — admin (CRUD templates d'une company)                                  |         |                         |             |
+| 18  | Mailings — rapport admin (vue d'ensemble lecture seule)                           |         | —                       | —           |
+| 19  | Company — réglages généraux (nom, statut, modules, rétention logs)                |         |                         | —           |
+| 20  | Company — SAML (authentification)                                                 |         |                         |             |
+| 21  | AI Skills Hub (plateforme, skills/expertise)                                      |         |                         |             |
+| 22  | AI Playground (plateforme)                                                        |         |                         |             |
+| 23  | Annuaire des companies (créer/supprimer une company, lister toutes les companies) |         |                         |             |
 
-1. Étendre l'enum `role` (`user.schema.js:45-49`) pour accepter les 4 nouvelles valeurs. `_company` reste `required` : les comptes super admin sont rattachés au groupe plateforme déjà existant (`Group.isPlatform === true`).
-2. Script de migration one-off `scripts/migrate-super-admin.js` (dossier déjà utilisé pour `scripts/seed-playground-demo.js`) : crée le premier `User` avec `role: 'super_admin'`, rattaché au groupe `isPlatform`, email paramétrable, mot de passe à réinitialiser au premier login. Idempotent.
-3. **Le compte env var (`config.admin`) reste actif indéfiniment** en parallèle — c'est le mécanisme de bootstrap qui permet de créer/gérer les comptes super admin réels, et le filet de secours permanent de chaque environnement.
-4. Garde-fou anti-lockout : vérifier qu'il existe au moins un `super_admin` actif OU que `config.admin` est configuré, sinon logguer une alerte.
-5. Écran de gestion des comptes super admin, réservé aux super admin eux-mêmes (via `user.controller.js`/`user.routes.js` existants + garde-fou 3.3).
+Décisions déjà actées dans la conversation de cadrage (à reporter dans les cases ci-dessus, comme rappel — pas encore vérifiées ligne par ligne) :
 
-### 3.3 Garde-fous anti-escalade
+- `company_admin` exclusif : Workspaces (1), Utilisateurs (2), Rôles (3), Test lists (4), Couleurs (5).
+- `company_admin_tech` exclusif (retiré à `company_admin`) : Profils ESP (9), Export options CDN/FTP (10), Intégrations (11), AI Features (12), Tracking company (13), Tracking par template (14), Feed mappings (15).
+- Partagé `company_admin` + `company_admin_tech` : Variables personnalisées (8).
+- `super_admin` exclusif, ni `company_admin` ni `company_admin_tech` : Templates admin (17), Company réglages généraux (19), Company SAML (20), AI Skills Hub (21), AI Playground (22), Annuaire des companies (23).
+- Encore ouvert : Bibliothèque de blocs (6), Modération de commentaires (7), CRM Intelligence dashboards (16), Mailings rapport admin (18).
 
-1. Impossible de retirer le dernier `company_admin` d'une company (comptage avant désactivation/changement de rôle).
-2. Impossible de retirer le dernier `super_admin` de la plateforme (comptage global).
-3. Un `company_admin` ne peut pas s'auto-attribuer ni attribuer `super_admin` à un tiers — seul un `super_admin` peut poser ce rôle.
-4. Un `company_admin` ne peut assigner des rôles qu'à des utilisateurs de sa propre company.
+Une fois la matrice validée, la mise en œuvre technique suit le même mécanisme pour toutes les lignes qui passent de `GUARD_GROUP_ADMIN` (les deux) à un guard exclusif : remplacer `GUARD_GROUP_ADMIN` par un nouveau guard dédié (`GUARD_GROUP_ADMIN_TECH` pour les lignes exclusives à `company_admin_tech`, sans `GROUP_ADMIN` dans la liste) sur les routes concernées (`integration.routes.js`, `ai-feature.routes.js`, `feed-mapping.routes.js`, `template.routes.js` pour le tracking par template, `profile.routes.js`, et les futures routes d'export options). Pour les lignes partagées (variables personnalisées), garder `GUARD_GROUP_ADMIN_OR_TECH` (additif) comme prévu initialement. Le détail par route sera précisé une fois la matrice figée, pour éviter de re-documenter deux fois.
 
-### 3.4 Règle "rôle global à la company, pas par workspace"
+### 3.3 `reviewer` / `writer` : restriction UI du canvas ET du listing, pas d'enforcement serveur
+
+**Constat technique clé** : la sauvegarde d'un mailing passe par un seul endpoint (`PUT /:mailingId/mosaico`, `packages/server/mailing/mailing.controller.js:398`, `mailing.data = req.body.data`) qui écrase tout le JSON Mosaico (structure + contenu + style mélangés) en une fois. Il n'existe aucune séparation champ par champ côté serveur. Garantir côté API que `writer` ne modifie que le contenu nécessiterait de diffuser ce JSON — jugé trop risqué pour cet incrément, différé dans [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103). De la même façon, les actions de listing (renommer/déplacer/dupliquer/supprimer un mailing) passent par `mailing.routes.js`, toutes en `GUARD_USER` — aucune restriction serveur par rôle n'existe non plus à ce niveau.
+
+**Décision actée (affinée après revue produit)** : restriction **UI uniquement** pour `reviewer` et `writer`, à la fois dans le canvas de l'éditeur et dans le listing de mailings. Aucun garde-fou serveur nouveau dans cet incrément — écart de sécurité documenté et élargi (un `reviewer`/`writer` appelant l'API directement pourrait encore modifier structure/style, ou renommer/déplacer/dupliquer/supprimer un mailing) ; le vrai fix serveur est différé dans [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
+
+**`reviewer`** — rôle passif sur le contenu, actif uniquement sur commentaire/test/validation :
+
+- Canvas builder : structure, contenu, style — aucun contrôle d'édition affiché (`toolbox.tmpl.html` griffé par les booléens `canEditStructure`/`canEditContent`/`canEditStyle`, tous `false`).
+- Listing de mailings (`packages/ui/routes/mailings/__partials/mailings-table.vue`) : renommer, déplacer, dupliquer/copier, supprimer — **masqués**. Ce fichier calcule déjà une liste d'actions cachées par contexte (`TABLE_HIDDEN_COLUMNS_ADMIN`/`_USER`/`_NO_ACCESS`, lignes ~117-193) ; on y ajoute un jeu `TABLE_HIDDEN_COLUMNS_REVIEWER` (RENAME, DELETE, MOVE_MAIL, COPY_MAIL, ADD_TAGS) sélectionné quand `role === 'reviewer'`, sur le même modèle que l'existant.
+- Gestion de dossiers (`packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue`) : renommer/déplacer/supprimer un dossier, créer un sous-dossier — masqués pour `reviewer` (`checkIfAuthorizedFolderMenu`/`hasRightToCreateFolder` gagnent une condition de rôle), cohérent avec un rôle entièrement passif sur l'organisation du contenu.
+- Envoi de test (`sendTestMail`, `GUARD_USER`) : **conservé**, correspond au "tester" de la vision produit — aucune restriction.
+- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
+
+**`writer`** — édite le contenu, gère ses variantes, ne crée ni ne supprime :
+
+- Canvas builder : contenu — **édition activée** ; structure, style — aucun contrôle affiché (mêmes booléens que reviewer, sauf `canEditContent: true`).
+- Listing de mailings : renommer, déplacer, dupliquer/copier — **conservés** (permet de décliner des variantes à partir d'un mailing existant) ; créer un nouveau mailing "from scratch" et supprimer — **masqués**. Même mécanisme `TABLE_HIDDEN_COLUMNS_WRITER` que pour reviewer, mais avec un jeu d'actions cachées plus restreint (DELETE + l'entrée "nouveau mailing" du point d'entrée de création, pas RENAME/MOVE_MAIL/COPY_MAIL).
+- Gestion de dossiers : inchangée par rapport à `regular_user` — rien dans la demande produit ne justifie de la restreindre pour `writer`.
+- Envoi de test : conservé.
+- Commentaire : mêmes droits qu'un `regular_user` (pas d'action de décision d'approbation affichée par défaut — voir 3.4).
+
+### 3.4 Décision d'approbation sur les commentaires (mécanisme de "validation")
+
+"Valider" pour `reviewer` ne crée pas un nouveau statut d'approbation séparé sur le mailing — c'est un commentaire qui porte une décision. Extension minimale du système de commentaires existant (`packages/server/comment/comment.schema.js`, 200 lignes, déjà riche : `category`, `severity`, `resolved`/`_resolvedBy`/`resolvedAt`, `mentions`, soft delete) :
+
+- Nouveau champ `decision: { type: String, enum: ['approved', 'changes_requested'], default: null }` sur `CommentSchema`. `null` = commentaire normal ; `'approved'`/`'changes_requested'` = décision de revue.
+- `createComment` (`comment.controller.js:129-152`, `comment.service.js:133-187`) : threader `decision` dans les paramètres acceptés et dans le payload `Comments.create`, au même niveau que `category`/`severity`. Pas de validation supplémentaire côté service au-delà de l'enum Mongoose.
+- Restriction additive pour le spectateur non loggué (section 5) : `req.user.isShareViewer` ne peut pas poser de `decision` (même logique que l'interdiction actuelle de `delete`/`resolve`) — l'approbation est une action de revue interne, pas une action de spectateur externe.
+- Côté UI éditeur (composeur de commentaire) : deux actions dédiées "Approuver" / "Demander des changements" qui soumettent un commentaire avec `decision` renseigné ; affichées pour `reviewer`/`company_admin`/`super_admin`, masquées pour `writer`/`regular_user` (qui gardent le commentaire simple). Le fil de commentaires affiche un badge distinct pour les commentaires de décision.
+- Pas de rollup "statut d'approbation courant du mailing" affiché dans le listing dans cet incrément (ex. badge "Approuvé" sur la ligne du mailing) — amélioration possible mais non nécessaire pour livrer le besoin exprimé ; à envisager plus tard si le besoin se confirme, indépendamment de [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103) puisque ce n'est pas un problème de permissions.
+
+### 3.5 Règle "rôle global à la company, pas par workspace"
 
 Le rôle vit sur `User.role`, un champ scalaire — aucune structure supplémentaire n'est nécessaire pour respecter cette règle, elle est déjà garantie par construction. À documenter explicitement comme invariant pour éviter qu'un futur développeur n'introduise un rôle par workspace en réutilisant `Workspace._users`.
 
-### 3.5 Matrice rôles × permissions (cible)
+### 3.6 Matrice rôles × permissions (cible, scope réduit et affiné)
 
-Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Assigned** = restreint aux workspaces assignés · **R** = lecture seule · **C** = commenter seulement · **—** = aucun accès.
+Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Assigned** = restreint aux workspaces assignés · **R** = lecture seule · **C** = commenter seulement · **—** = aucun accès · **UI:** = restriction non garantie côté serveur (section 3.3).
 
-| Domaine                                                 | regular_user | writer             | reviewer                                    | company_admin_tech         | company_admin                          | super_admin |
-| ------------------------------------------------------- | ------------ | ------------------ | ------------------------------------------- | -------------------------- | -------------------------------------- | ----------- |
-| Company (créer/supprimer)                               | —            | —                  | —                                           | —                          | —                                      | Full        |
-| Company (réglages généraux)                             | —            | —                  | —                                           | —                          | Own (déjà restreint par `pick()`)      | Full        |
-| Users & rôles (créer/assigner un rôle)                  | —            | —                  | —                                           | —                          | Own, sauf `super_admin`                | Full        |
-| Workspaces (CRUD + membres)                             | —            | —                  | —                                           | —                          | Own                                    | Full        |
-| Workspaces (accès)                                      | Assigned     | Assigned           | Assigned                                    | Assigned                   | Own                                    | Full        |
-| Contenu / mailing (créer, éditer, déplacer, supprimer)  | Assigned     | Assigned (contenu) | R + C                                       | —                          | Own                                    | Full        |
-| Modules (`enableEmailBuilder`, `enableCrmIntelligence`) | —            | —                  | —                                           | —                          | — (déjà restreint)                     | Full        |
-| Exports / intégrations                                  | —            | —                  | —                                           | Own (nouveau, incrément B) | Own _(inchangé, écart documenté)_      | Full        |
-| IA (config skills/quotas)                               | Utilise      | Utilise            | Utilise                                     | Own                        | Own                                    | Full        |
-| Builder — structure                                     | Full         | —                  | —                                           | n/a                        | Full                                   | Full        |
-| Builder — contenu                                       | Full         | Full               | —                                           | n/a                        | Full                                   | Full        |
-| Builder — style                                         | Full         | —                  | —                                           | n/a                        | Full                                   | Full        |
-| Builder — commentaire                                   | Full (siens) | Full               | Full (créer/résoudre, pas supprimer autrui) | n/a                        | Full (aussi autrui, comme aujourd'hui) | Full        |
+| Domaine                                                | regular_user | writer   | reviewer | company_admin_tech | company_admin                          |
+| ------------------------------------------------------ | ------------ | -------- | -------- | ------------------ | -------------------------------------- |
+| Company (réglages généraux)                            | —            | —        | —        | —                  | Own (déjà restreint par `pick()`)      |
+| Users & rôles (créer/assigner un rôle)                 | —            | —        | —        | —                  | Own, sauf `super_admin`                |
+| Workspaces (CRUD + membres)                            | —            | —        | —        | —                  | Own                                    |
+| Workspaces (accès)                                     | Assigned     | Assigned | Assigned | Assigned           | Own                                    |
+| Mailing — créer                                        | Full         | UI: —    | UI: —    | Full               | Own                                    |
+| Mailing — renommer / déplacer / dupliquer              | Full         | UI: Full | UI: —    | Full               | Own                                    |
+| Mailing — supprimer                                    | Full         | UI: —    | UI: —    | Full               | Own                                    |
+| Mailing — dossiers (créer/renommer/déplacer/supprimer) | Full         | Full     | UI: —    | Full               | Own                                    |
+| Mailing — envoyer un test                              | Full         | Full     | Full     | Full               | Own                                    |
+| Intégrations / AI features / feed mappings             | —            | —        | —        | Own (nouveau)      | Own _(inchangé, écart documenté)_      |
+| Exports / profils ESP                                  | —            | —        | —        | —                  | — (inchangé, super-admin only)         |
+| Builder — structure                                    | Full         | UI: —    | UI: —    | Full               | Full                                   |
+| Builder — contenu                                      | Full         | UI: Full | UI: —    | Full               | Full                                   |
+| Builder — style                                        | Full         | UI: —    | UI: —    | Full               | Full                                   |
+| Commentaire — créer/répondre/résoudre                  | Full (siens) | Full     | Full     | Full               | Full (aussi autrui, comme aujourd'hui) |
+| Commentaire — décision d'approbation (3.4)             | —            | —        | Full     | —                  | Full                                   |
 
-`reviewer`/`writer` n'ont aucun accès aux domaines admin (company/workspace/modules/intégrations/IA au-delà de l'usage), pour matérialiser "rôle = permissions builder uniquement". Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5).
+`super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (toujours le compte env var, accès complet partout). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
 
 ---
 
-## 4. Incréments d'implémentation
+## 4. Incrément d'implémentation
 
-### Incrément A — RBAC propre + super_admin en vrai rôle DB
+### Incrément unique — Nouveaux rôles + spectateur non loggué
 
-**Livrable** : sécuriser le socle actuel sans toucher à l'éditeur ; `super_admin` devient un rôle persistable multi-comptes, en complément du bootstrap env var.
+**Livrable** : `company_admin_tech`, `reviewer`, `writer` existent en tant que rôles assignables ; `company_admin_tech` opère réellement sur les réglages techniques ; `reviewer`/`writer` ont une expérience builder restreinte côté UI ; un spectateur non loggué peut consulter et commenter un mailing via un lien de partage.
 
-Fichiers à créer : `permissions.js`, `role-permissions.js` (mapping limité à `regular_user`/`company_admin`/`super_admin` pour A), `permission.guard.js` (posé, pas encore branché), `scripts/migrate-super-admin.js`.
+Fichiers à créer : `packages/server/share/share-link.schema.js`, `.service.js`, `.controller.js`, `.routes.js`, `.guard.js` ; `packages/ui/helpers/roles.js`.
 
-Fichiers à modifier : `roles.js` (ajouter les 3 constantes futures), `user.schema.js` (enum `role` étendu, flip du virtual `isAdmin`), `user.controller.js`/`user.service.js` (garde-fous anti-escalade 3.3).
+Fichiers à modifier :
 
-Migration de données : aucune migration destructive — l'enum ne fait qu'ajouter des valeurs, les `User` existants gardent leur rôle actuel.
+- `packages/server/account/roles.js` (3 nouvelles constantes), `packages/server/user/user.schema.js` (enum `role` étendu, pas de flip d'`isAdmin` — hors scope), `packages/server/account/auth.guard.js` (nouveau `GUARD_GROUP_ADMIN_OR_TECH`).
+- `integration.routes.js`/`ai-feature.routes.js`/`feed-mapping.routes.js`/`template.routes.js` (swap du guard pour `company_admin_tech`), `packages/ui/helpers/pages-acls.js` + `meta.acl` des pages techniques + sidebar.
+- `packages/editor/src/js/ext/badsender-current-user.js` + `toolbox.tmpl.html` (booléens `canEditStructure`/`canEditContent`/`canEditStyle`/`canComment`).
+- `packages/ui/routes/mailings/__partials/mailings-table.vue` (nouveaux jeux `TABLE_HIDDEN_COLUMNS_REVIEWER`/`_WRITER` dans le calcul existant des actions cachées) et `packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` (restriction des actions de dossier pour `reviewer`).
+- `packages/server/comment/comment.schema.js` (nouveau champ `decision`), `comment.controller.js`/`comment.service.js` (threader `decision`, interdiction pour le spectateur non loggué), composeur de commentaire côté éditeur (actions "Approuver"/"Demander des changements", badge de décision) — détail en section 3.4.
+- `comment.controller.js`/`comment.routes.js`/`comment.service.js` (accepter session **ou** token de partage, restrictions spectateur), `packages/editor/src/js/ext/badsender-comments.js` (utilisateur virtuel spectateur), écran de gestion des liens côté UI (génération/expiration/révocation).
 
-### Incrément B — Nouveaux rôles standards + UI + restriction fine des intégrations
+Détail du spectateur non loggué : voir section 5. Détail de la restriction `company_admin_tech`/`reviewer`/`writer` : voir sections 3.2 et 3.3. Détail de la décision d'approbation : voir section 3.4.
 
-**Livrable** : `company_admin_tech`, `reviewer`, `writer` opèrent réellement sur les réglages techniques et l'éditeur.
-
-Côté serveur : compléter `role-permissions.js` ; sur `integration.routes.js`, passer à `guardPermission(PERMISSIONS.INTEGRATION_MANAGE)` — permission détenue par `company_admin_tech`, `super_admin`, et encore `company_admin` (pour ne pas régresser tant que le produit n'a pas tranché le retrait, cf. écart documenté) ; nouveau `packages/server/mailing/builder-permission.guard.js` (`GUARD_BUILDER_STRUCTURE`/`STYLE`/`CONTENT`) sur les endpoints de sauvegarde de mailing qui modifient structure/style, en miroir des permissions builder côté client.
-
-Côté éditeur : `packages/editor/src/js/ext/badsender-current-user.js` enrichi de booléens dérivés (`canEditStructure`, `canEditContent`, `canEditStyle`, `canComment`), idéalement renvoyés directement par `/api/users/current-user` pour éviter de dupliquer la logique de permission côté client. `toolbox.tmpl.html` (les deux variantes) étendu avec ces booléens pour griser/masquer les actions de structure/style pour reviewer/writer — état "désactivé + tooltip explicatif" pour reviewer plutôt qu'un masquage pur.
-
-Côté UI Nuxt : `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 rôles avec labels i18n, remplace les deux listes dupliquées de `users/form.vue` et `settings/users/_userId.vue`. Composant partagé `workspace-multiselect.vue` extrait de `workspace-form.vue`, réutilisé pour ajouter la section workspace manquante sur l'écran de création utilisateur et pour remplacer les `v-switch` un par un de l'écran d'édition. Si le bonus équipe est retenu : `packages/server/team/team.schema.js` (calqué sur `workspace.schema.js`), routes/écran calqués sur l'existant workspace, même composant multiselect généralisé.
-
-Garde-fous complémentaires : hiérarchie explicite `super_admin > company_admin > company_admin_tech > reviewer/writer > regular_user` pour l'assignation de rôle (sauf `super_admin`, réservé aux super admin uniquement).
-
-Migration de données : aucune — les nouveaux rôles ne s'appliquent qu'aux utilisateurs reclassés manuellement.
-
-### Incrément C — Spectateur non loggué via lien de partage
-
-Voir détail complet section 5. Résumé des fichiers : `packages/server/share/share-link.schema.js`, `.service.js`, `.controller.js`, `.routes.js`, `.guard.js` (nouveaux) ; modifications additives sur `comment.controller.js`/`comment.routes.js` pour accepter session **ou** token de partage ; adaptation de `badsender-comments.js` côté éditeur pour un "utilisateur virtuel spectateur" sans droit de suppression ; écran de gestion des liens côté UI (génération/expiration/révocation/journal).
+Migration de données : aucune migration destructive — l'enum `role` ne fait qu'ajouter des valeurs, les `User` existants gardent leur rôle actuel ; les nouveaux rôles ne s'appliquent qu'aux utilisateurs reclassés manuellement.
 
 ---
 
@@ -240,54 +286,19 @@ Index : `{ token: 1 }` unique, `{ _mailing: 1 }`, `{ expiresAt: 1 }`.
 
 Point d'extension unique : `verifyMailingAccess(mailingId, user)` (`comment.service.js:99-128`). Un nouveau middleware `GUARD_SHARE_TOKEN` résout le token en un **objet `user` synthétique** : `{ id: null, isAdmin: false, isShareViewer: true, _company: shareLink._company, group: { id: shareLink._company } }`. Ce faux "user" satisfait déjà la comparaison de company dans `verifyMailingAccess` **sans modifier une seule ligne du service existant**.
 
-Sur `comment.routes.js`, un middleware composite `GUARD_USER_OR_SHARE_TOKEN` (nouveau, `comment.guard.js`) essaie `GUARD_USER` puis, à défaut, `GUARD_SHARE_TOKEN`. Restrictions additives dans `comment.controller.js`/`comment.service.js` : si `req.user.isShareViewer`, refuser `deleteComment`/`resolveComment`/`unresolveComment` (le spectateur commente, il ne modère pas), et exiger un nom saisi à la volée pour l'auteur du commentaire. `CommentSchema._author` devient nullable, avec un champ additif `authorType: 'user' | 'share-viewer'` et `_shareLink` (ref) pour tracer la provenance.
+Sur `comment.routes.js`, un middleware composite `GUARD_USER_OR_SHARE_TOKEN` (nouveau, `comment.guard.js`) essaie `GUARD_USER` puis, à défaut, `GUARD_SHARE_TOKEN`. Restrictions additives dans `comment.controller.js`/`comment.service.js` : si `req.user.isShareViewer`, refuser `deleteComment`/`resolveComment`/`unresolveComment` et refuser de poser une `decision` (section 3.4) — le spectateur commente, il ne modère pas et ne valide pas — et exiger un nom saisi à la volée pour l'auteur du commentaire. `CommentSchema._author` devient nullable, avec un champ additif `authorType: 'user' | 'share-viewer'` et `_shareLink` (ref) pour tracer la provenance.
 
 ### 5.3 Révocation / expiration / journal
 
 - Révocation : `PATCH /api/share-links/:id/revoke`, guard `GUARD_USER` + `verifyMailingAccess` réutilisé.
 - Expiration : vérifiée à chaque résolution de token (`expiresAt < now` ou `revokedAt` non-null ⇒ 410 Gone).
-- Journal : chaque création/révocation de lien, et chaque commentaire posté via un lien, génère une entrée d'audit log (section 6) avec `actorType: 'share-viewer'`.
+- Compteurs par lien uniquement (`lastAccessedAt`, `accessCount` sur `ShareLinkSchema`, section 5.1) — pas de journal d'audit transverse dans cet incrément. Un audit log générique (traçabilité des changements de rôle et réglages sensibles, incluant création/révocation de lien) est différé dans [l'issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 
 ---
 
-## 6. Audit log
+## 6. Audit log — différé
 
-Un seul modèle, un seul service, appelé explicitement aux points sensibles — pas d'interception automatique de toutes les requêtes.
-
-### 6.1 Schéma — `packages/server/audit/audit-log.schema.js`
-
-```
-AuditLogSchema = {
-  action: String (enum fermé : user.role.changed, user.created, user.deactivated,
-                  company.settings.changed, integration.created, integration.deleted,
-                  share-link.created, share-link.revoked, workspace.deleted, ...),
-  _actor: ObjectId ref User (null si spectateur anonyme),
-  actorLabel: String (dénormalisé, même pattern que CommentSchema.authorName),
-  _company: ObjectId ref Group,
-  _target: ObjectId,
-  targetType: String,
-  metadata: Mixed (ex: { before: 'regular_user', after: 'company_admin' }),
-  createdAt (timestamps: true, log immuable, pas de updatedAt),
-}
-```
-
-Index : `{ _company: 1, createdAt: -1 }`, `{ action: 1, createdAt: -1 }`.
-
-### 6.2 Service — `packages/server/audit/audit-log.service.js`
-
-Fonction unique `recordAuditEvent({ action, actor, company, target, targetType, metadata })`, fire-and-forget (try/catch + log d'erreur, jamais de `throw` qui ferait échouer la requête métier).
-
-### 6.3 Points d'instrumentation (uniquement les actions sensibles)
-
-- Changement de rôle, désactivation/réactivation de compte, création d'un super admin (`user.controller.js`/`user.service.js`).
-- Modification de réglages sensibles de company : FTP/CDN/SAML/modules (`group.controller.js:update`, masquer les secrets comme le fait déjà `groupFtpService.maskFtpCredentials`).
-- CRUD intégrations (`integration.controller.js`).
-- Création/révocation de lien de partage (`share-link.service.js`).
-- Pas d'instrumentation à granularité fine sur les actions builder (structure/contenu/style) — hors périmètre "actions sensibles" ; le commentaire garde son propre historique via `CommentSchema`.
-
-### 6.4 Consultation
-
-Écran minimal `packages/ui/routes/groups/_groupId/settings/audit-log.vue` (`company_admin`/`super_admin` uniquement), route `GET /api/audit-logs?groupId=` filtrée par company (super admin voit tout). Pas d'export CSV ni de recherche full-text pour le MVP.
+Le chantier d'audit log (modèle, service, points d'instrumentation, écran de consultation) est sorti de cet incrément et traité dans [l'issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102). Il n'existe aujourd'hui aucun mécanisme de traçabilité des changements de rôle ou des réglages sensibles — ce constat reste valide et documenté dans cette issue.
 
 ---
 
@@ -296,36 +307,43 @@ Fonction unique `recordAuditEvent({ action, actor, company, target, targetType, 
 ### 7.1 Renforcer les tests de guards existants
 
 - `tests/server/account/roles.test.js` : étendre pour couvrir les 3 nouvelles constantes de rôle et l'absence de collision.
-- **Nouveau** `tests/server/account/auth.guard.test.js` (aucun test dédié n'existe aujourd'hui sur `guard()` lui-même, contrairement à `group.guard.test.js`) : `GUARD_USER` accepte tout user authentifié ; `GUARD_GROUP_ADMIN` accepte `isGroupAdmin` OU `isAdmin` ; `GUARD_ADMIN` accepte **seulement** `isAdmin: true` — test critique post-incrément A puisque `isAdmin` passe de "toujours false" à "dérivé du rôle" ; cas `super_admin` réel en base.
-- **Nouveau** test sur l'enum `role` de `user.schema.js` : accepte les 6 valeurs, rejette une valeur arbitraire.
+- **Nouveau** `tests/server/account/auth.guard.test.js` (aucun test dédié n'existe aujourd'hui sur `guard()` lui-même, contrairement à `group.guard.test.js`) : `GUARD_USER` accepte tout user authentifié ; `GUARD_GROUP_ADMIN` accepte `isGroupAdmin` OU `isAdmin` ; `GUARD_GROUP_ADMIN_OR_TECH` accepte `company_admin`, `company_admin_tech` OU `isAdmin`, mais pas `reviewer`/`writer`/`regular_user`.
+- **Nouveau** test sur l'enum `role` de `user.schema.js` : accepte les 5 valeurs persistées (`regular_user`, `company_admin`, `company_admin_tech`, `reviewer`, `writer`), rejette `super_admin` (toujours hors enum, voir [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101)) et toute valeur arbitraire.
 
-### 7.2 Matrice de permissions systématique
-
-**Nouveau** `tests/server/account/role-permissions.test.js` : pour chaque rôle × chaque permission, assertion générée par boucle, miroir de la matrice section 3.5 — casse si `role-permissions.js` est modifié sans mise à jour de la matrice documentée.
-
-### 7.3 Tests d'escalade de privilège
+### 7.2 Tests d'isolation cross-tenant
 
 Dans `tests/server/security/`, même naming que l'existant (`exploit-f2-idor-cross-tenant.test.js`, `exploit-f4-apikey-leak.test.js`) :
 
-- `exploit-rbac-1-self-promote-super-admin.test.js` : un company admin ne peut pas se poser/poser à un tiers `role: 'super_admin'`.
-- `exploit-rbac-2-remove-last-company-admin.test.js` : impossible de désactiver/rétrograder le dernier company admin.
-- `exploit-rbac-3-cross-tenant-role-assignment.test.js` : un company admin ne peut pas modifier le rôle d'un user d'une autre company.
-- `exploit-rbac-4-share-token-scope.test.js` (incrément C) : un token de partage d'un mailing A ne donne pas accès aux commentaires du mailing B, ni `delete`/`resolve`.
+- `exploit-rbac-1-share-token-scope.test.js` : un token de partage d'un mailing A ne donne pas accès aux commentaires du mailing B, ni `delete`/`resolve`.
+- `exploit-rbac-2-tech-admin-no-user-access.test.js` : un `company_admin_tech` ne peut pas lister/créer/modifier des utilisateurs ou des workspaces via l'API, même en devinant les routes.
 
-### 7.4 Non-régression fonctionnelle
+Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier admin) sont différés avec [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101), puisque `super_admin` reste hors de l'enum persisté dans cet incrément.
 
-Étendre `group.guard.test.js` (cas `company_admin_tech`), `integration.service.test.js` (déjà bon niveau cross-tenant), et créer `tests/server/comment/comment.service.test.js` si absent, pour couvrir `deleteComment` avec un reviewer/writer (échec sur commentaire d'autrui, succès sur le sien).
+### 7.3 Non-régression fonctionnelle
 
-### 7.5 Tests UX/UI
+Étendre `group.guard.test.js` (cas `company_admin_tech`), `integration.service.test.js` (déjà bon niveau cross-tenant), et créer `tests/server/comment/comment.service.test.js` si absent, pour couvrir : `deleteComment`/`resolveComment` avec un spectateur non loggué (refus) et un reviewer/writer (comportement inchangé : échec sur commentaire d'autrui, succès sur le sien) ; `createComment` avec `decision: 'approved'|'changes_requested'` pour un utilisateur normal (accepté, persisté) et pour un spectateur non loggué (`isShareViewer`, rejeté).
 
-Composant `users/form.vue` : le sélecteur de rôle propose les 6 rôles. Composant `workspace-multiselect.vue` : pré-sélection correcte, comportement verrouillé pour company_admin (repris de `isUserSelected`/`toggleUserSelection`).
+### 7.4 Tests UX/UI
 
-Une checklist QA manuelle (`docs/rbac-testing-checklist.md`, sur le modèle de `docs/comments-testing-checklist.md`) sera créée au moment de l'implémentation de l'incrément A, une fois les écrans réels disponibles à tester.
+- Composant `users/form.vue` : le sélecteur de rôle propose les 5 rôles assignables (hors `super_admin`). Vérifier que les onglets Intégrations/AI Features/Feed Mappings/Tracking sont visibles pour `company_admin_tech` et que Users/Workspaces/Réglages généraux ne le sont pas.
+- Composant `mailings-table.vue` : pour `reviewer`, les actions renommer/déplacer/dupliquer/supprimer sont absentes des lignes de la table ; pour `writer`, renommer/déplacer/dupliquer restent présentes mais supprimer et "nouveau mailing" sont absents ; pour `regular_user`/`company_admin_tech`, comportement inchangé.
+- Composant `bs-sidebar-workspace-tree.vue` : pour `reviewer`, les actions de dossier (renommer/déplacer/supprimer/créer sous-dossier) sont absentes du menu.
+- Éditeur (`toolbox.tmpl.html`, composeur de commentaire) : pour `reviewer`, structure/style/contenu désactivés, actions "Approuver"/"Demander des changements" visibles ; pour `writer`, contenu activé, structure/style désactivés, pas d'action de décision affichée.
+
+Une checklist QA manuelle (`docs/rbac-testing-checklist.md`, sur le modèle de `docs/comments-testing-checklist.md`) sera créée au moment de l'implémentation de cet incrément, une fois les écrans réels disponibles à tester.
 
 ---
 
 ## 8. Hors périmètre
 
+Quatre chantiers sont explicitement sortis de cet incrément et suivis dans des issues dédiées :
+
+- **Team / notion d'équipe au sein d'une company** — [issue #1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
+- **`super_admin` en rôle persistant multi-comptes** (migration DB, flip d'`isAdmin`, garde-fous anti-escalade) — [issue #1101](https://github.com/Badsender-com/LePatron.email/issues/1101). Le compte super admin en variable d'environnement reste le mécanisme de bootstrap/break-glass permanent, il n'est pas remplacé par des comptes DB dans cet incrément.
+- **Audit log** des changements de rôle et réglages sensibles — [issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
+- **Gestion granulaire des droits par feature et action** (moteur de permissions générique, enforcement serveur fin pour `writer`) — [issue #1103](https://github.com/Badsender-com/LePatron.email/issues/1103), avec un premier inventaire des features administrables actuelles.
+
+Autres éléments hors périmètre, indépendants du découpage ci-dessus :
+
 - **Renommage des identifiants de code** `group`→`company` (modèle Mongoose `Group`, fichiers `group.*.js`, guards `isGroupAdmin`/`GUARD_GROUP_ADMIN`, ACL `ACL_GROUP_ADMIN`, routes `/groups/...`) : seul le vocabulaire visible (libellés UI, i18n `fr.js`/`en.js`, documentation) est renommé dans l'immédiat. Le renommage du code est un incrément technique séparé, sans urgence fonctionnelle.
-- **Resserrement de l'accès aux intégrations** pour le retirer à `company_admin` : documenté comme écart avec la vision produit, mais non traité avant qu'une décision produit explicite ne soit prise (au plus tôt incrément B, pour `company_admin_tech` en alternative, pas en remplacement immédiat).
-- **Retrait du compte super admin en variable d'environnement** : ce compte reste le mécanisme de bootstrap/break-glass permanent, il n'est pas remplacé par les comptes DB.
+- **Resserrement de l'accès aux intégrations** pour le retirer à `company_admin` : documenté comme écart avec la vision produit (section 2), mais non traité avant qu'une décision produit explicite ne soit prise — `company_admin_tech` reçoit cet accès en alternative dans cet incrément, sans que `company_admin` ne le perde.
