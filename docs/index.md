@@ -98,7 +98,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 
 Pre-implementation design docs for larger features — audit findings, target model, phased increments. Written before code, updated as decisions are made.
 
-- **[rbac-refonte.md](./plans/rbac-refonte.md)** - Roles & permissions redesign (RBAC model, permissions matrix, share-link/audit-log design, increments A/B/C)
+- **[rbac-refonte.md](./plans/rbac-refonte.md)** - Add new roles (company_admin_tech, reviewer, writer) + non-logged-in share-link viewer. Team management, persisted super_admin, audit log, and granular per-feature permissions are split into separate issues (#1100-#1103)
 - Other entries: editor-modals-modernization.md, quality-control-analysis.md, content-feed-rss.md, etc.
 
 ### Hidden Configuration
