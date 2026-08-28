@@ -1,0 +1,18 @@
+// Vue gallery panel — scoped styles (US-04+)
+// Palette: aliased from the design-system tokens (style_variables.less),
+// in scope because this file is imported from badsender-editor.less.
+
+@gallery-navy: @bs-primary-color;
+@gallery-cyan: @bs-accent-color;
+@gallery-cyan-soft: tint(@bs-accent-color, 90%);
+@gallery-grey: #f5f5f5;
+@gallery-text: #333;
+
+.gallery-vue-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: inherit;
+  color: @gallery-text;
+  background: #fff;
+}
