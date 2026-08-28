@@ -819,8 +819,36 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
  *
  */
   viewModel.editImage = function (src, domElement, vm) {
-    // Locate the corresponding file upload input within the nearest upload zone
-    var $uploadInput = $(domElement).closest('.uploadzone').find('input.fileupload');
+    // Locate the corresponding file upload input within the nearest upload zone.
+    // The image block renders TWO inputs in mutually-exclusive `ko if` branches:
+    //   - `input.fileupload.nofile`  when the block has no image (_src == '')
+    //   - `input.fileupload.withfile` when the block has an image (_src != '')
+    // The pencil only shows when _src != '', so the active, plugin-bound input is
+    // `.withfile`. Targeting the generic `input.fileupload` used to also grab the
+    // `.nofile` input: right after adding an image (drag-drop / gallery finder),
+    // Knockout is mid-swap between the two branches and the jQuery set could
+    // include a disposed/not-yet-initialised input, so `.fileupload('add')`
+    // silently no-op'd — until a page refresh rebuilt the DOM with only
+    // `.withfile` present. Scope to `.withfile` (and take the last, live one) to
+    // always hit the initialised input.
+    var $uploadInput = $(domElement)
+      .closest('.uploadzone')
+      .find('input.fileupload.withfile')
+      .last();
+
+    // Guard: if the active upload input isn't in the DOM / bound to the plugin,
+    // bail loudly instead of the previous silent no-op (which read as "the
+    // pencil does nothing").
+    if (
+      !$uploadInput.length ||
+      typeof $uploadInput.fileupload !== 'function'
+    ) {
+      console.error('editImage: no initialised upload input found');
+      if (vm && vm.notifier && typeof vm.notifier.error === 'function') {
+        vm.notifier.error('Unable to edit this image. Please try again.');
+      }
+      return;
+    }
 
     // Construct the full image URL if it's not already an absolute path
     var sourceValue = src();
