@@ -41,8 +41,10 @@ const subjectCounter = (value) => counterState(value, SUBJECT_RANGE);
  * A Date, or the value the server sent, rendered for `<input type="date">`, which
  * only accepts `yyyy-mm-dd`.
  *
- * Uses the LOCAL date parts, not toISOString(): an evening send date in Paris is
- * the previous day in UTC, and the field would show the wrong day.
+ * Read in UTC, to match the way fromDateInputValue writes. A planned send date is
+ * a calendar day, not an instant: it must read back as the same day for every
+ * teammate, whatever their timezone. Local parts would make a date stored by a
+ * colleague in Los Angeles show up shifted for one in Tokyo.
  *
  * @param {Date|string|null|undefined} value
  * @returns {string} '' when there is no usable date
@@ -52,17 +54,23 @@ function toDateInputValue(value) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${month}-${day}`;
 }
 
 /**
  * The value of a `<input type="date">` as the API expects it.
  *
- * Noon local time rather than midnight: a planned send date is a day, and
- * midnight in a negative-offset timezone lands on the day before once stored in
- * UTC.
+ * Noon UTC, not midnight and not noon local.
+ *
+ * The field carries a calendar day with no time, so the stored instant only has
+ * to satisfy one property: every timezone must read the same day back. Noon UTC
+ * does, for every offset from -11 to +12. Midnight UTC fails west of Greenwich
+ * (23:00 the previous day in Paris terms is fine, but 16:00 the DAY BEFORE in Los
+ * Angeles is not), and noon *local* — what this did before — fails between two
+ * users: a date saved at noon in Los Angeles is 19:00Z, which is the next day in
+ * Tokyo.
  *
  * @param {string} value 'yyyy-mm-dd' or ''
  * @returns {string|null} an ISO string, or null to clear the field
@@ -73,18 +81,10 @@ function fromDateInputValue(value) {
   if (!match) return null;
 
   const [, year, month, day] = match;
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    12,
-    0,
-    0,
-    0
-  );
-  if (Number.isNaN(date.getTime())) return null;
+  const timestamp = Date.UTC(Number(year), Number(month) - 1, Number(day), 12);
+  if (Number.isNaN(timestamp)) return null;
 
-  return date.toISOString();
+  return new Date(timestamp).toISOString();
 }
 
 /**

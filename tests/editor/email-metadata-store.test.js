@@ -1,0 +1,163 @@
+'use strict';
+
+const store = require('../../packages/editor/src/js/utils/email-metadata-store');
+
+const FORM = {
+  subject: 'Nos nouveautés',
+  plannedSendDate: '2026-09-01',
+  emailTypeId: 'abc123',
+};
+
+describe('email metadata store', () => {
+  afterEach(() => {
+    store.dispose();
+  });
+
+  describe('before the section is mounted', () => {
+    // An opted-out company never mounts the section. The save command asks the
+    // store on every save, so "no section" has to be a safe, quiet answer rather
+    // than a crash or a spurious dirty flag.
+    it('is inactive and never dirty', () => {
+      expect(store.isActive()).toBe(false);
+      expect(store.isDirty()).toBe(false);
+    });
+
+    it('ignores edits', () => {
+      store.setCurrent(FORM);
+      expect(store.isDirty()).toBe(false);
+    });
+
+    it('ignores markSaved', () => {
+      expect(() => store.markSaved()).not.toThrow();
+      expect(store.isActive()).toBe(false);
+    });
+  });
+
+  describe('once armed', () => {
+    beforeEach(() => {
+      store.reset(FORM);
+    });
+
+    it('opens clean', () => {
+      expect(store.isActive()).toBe(true);
+      expect(store.isDirty()).toBe(false);
+    });
+
+    it('goes dirty on a changed field', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      expect(store.isDirty()).toBe(true);
+    });
+
+    it('stays clean when a field is set to the value it already had', () => {
+      store.setCurrent({ ...FORM });
+      expect(store.isDirty()).toBe(false);
+    });
+
+    // Typing something and undoing it by hand should leave the button quiet.
+    it('goes back to clean when the edit is reverted', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      store.setCurrent({ ...FORM });
+      expect(store.isDirty()).toBe(false);
+    });
+
+    it('detects a cleared field', () => {
+      store.setCurrent({ ...FORM, emailTypeId: '' });
+      expect(store.isDirty()).toBe(true);
+    });
+
+    it('builds the PATCH body from the current state, not the initial one', () => {
+      store.setCurrent({ ...FORM, subject: '  Objet espacé  ' });
+      expect(store.payload()).toEqual({
+        subject: 'Objet espacé',
+        plannedSendDate: '2026-09-01T12:00:00.000Z',
+        _emailType: 'abc123',
+      });
+    });
+
+    it('sends null for an emptied subject and typology', () => {
+      store.setCurrent({
+        subject: '   ',
+        plannedSendDate: '',
+        emailTypeId: '',
+      });
+      expect(store.payload()).toEqual({
+        subject: null,
+        plannedSendDate: null,
+        _emailType: null,
+      });
+    });
+
+    it('is clean again after markSaved', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      store.markSaved();
+      expect(store.isDirty()).toBe(false);
+    });
+
+    // The reason markSaved is called only on a successful PATCH: a failed save
+    // must keep the button signalling that something still needs saving.
+    it('stays dirty when markSaved is not called', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      expect(store.isDirty()).toBe(true);
+    });
+
+    it('measures later edits against the state markSaved recorded', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      store.markSaved();
+      store.setCurrent({ ...FORM });
+      expect(store.isDirty()).toBe(true);
+    });
+
+    it('does not keep a reference to the caller object', () => {
+      const mutable = { ...FORM };
+      store.setCurrent(mutable);
+      mutable.subject = 'Modifié après coup';
+      expect(store.isDirty()).toBe(false);
+    });
+  });
+
+  describe('subscriptions', () => {
+    it('reports dirtiness to its listeners', () => {
+      const seen = [];
+      store.onChange((dirty) => seen.push(dirty));
+
+      store.reset(FORM);
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      store.markSaved();
+
+      expect(seen).toEqual([false, true, false]);
+    });
+
+    it('stops calling a listener once unsubscribed', () => {
+      const seen = [];
+      const unsubscribe = store.onChange((dirty) => seen.push(dirty));
+
+      store.reset(FORM);
+      unsubscribe();
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+
+      expect(seen).toEqual([false]);
+    });
+
+    // The template loader disposes the section when the editor swaps templates.
+    // The save command subscribed once for the lifetime of the editor, so it has
+    // to be told the fields are gone — otherwise the button keeps a stale dot.
+    it('reports clean when the section is disposed while dirty', () => {
+      const seen = [];
+      store.reset(FORM);
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      store.onChange((dirty) => seen.push(dirty));
+
+      store.dispose();
+
+      expect(seen).toEqual([false]);
+      expect(store.isActive()).toBe(false);
+    });
+
+    it('survives a listener added before the store was ever armed', () => {
+      const seen = [];
+      store.onChange((dirty) => seen.push(dirty));
+      store.reset(FORM);
+      expect(seen).toEqual([false]);
+    });
+  });
+});

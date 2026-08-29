@@ -1,9 +1,18 @@
 /**
- * Email metadata section (#email-metadata-section)
+ * Email settings block (#email-metadata-section)
  *
- * A section of the Content tab, beside Template Options and the tracking section —
- * not a panel. Metadata is a setting of the document, and this tab is where the
- * document-level properties already live.
+ * The second half of one continuous panel: it follows the template's own options
+ * in the Content tab and is styled to read as their continuation.
+ *
+ * Why two headings and not one. The decision was to merge both into a single
+ * section renamed "Email settings" — that turned out to be impossible. The
+ * "Template Options" heading above is not ours: it is declared in each client
+ * template's markup, in its `@supports -ko-blockdefs` block (6 of the 7 templates
+ * in the dev database carry that exact string, and Ouest France has no such block
+ * at all). Renaming it would mean editing customer-owned data. So `__title` below
+ * reproduces `.objLabel.level0` (style_mosaico_tools.less:279) declaration for
+ * declaration — same grey band, same 3px accent rule, same weight — and the two
+ * headings read as two labelled groups of one panel instead of two panels.
  *
  * EVERYTHING IS NESTED IN `.mo`, and that is not cosmetic. The editor declares
  * generic element rules under that class — `.mo h3 { font-size: 1.3em }`,
@@ -59,33 +68,41 @@
 }
 
 .mo .email-metadata {
-  // Separated from the section below it the way the tracking section separates
-  // itself: a rule and breathing room, no card, no border.
+  // `.objEdit.level0`'s own top margin (style_mosaico_tools.less:275), so the gap
+  // above this heading equals the gap above the template's own one.
+  margin-top: 20px;
   margin-bottom: 24px;
-  // 16px matches the inset the editor gives every level0 property editor
-  // (style_mosaico_tools.less:337); 10px made the label column step sideways
-  // from one section to the next.
-  padding: 0 16px 16px;
-  border-bottom: 1px solid var(--gray-300, #e0e0e0);
+  // No horizontal padding on the block itself: the heading has to break out to
+  // full width exactly like `.objLabel.level0` does. The fields carry the 16px
+  // inset instead (see `__field`).
+  padding: 0;
+  border-bottom: none;
 
+  // A copy of `.objLabel.level0` (style_mosaico_tools.less:279). Copied rather
+  // than shared: that selector belongs to the template's generated markup, and
+  // extending it from here would bind our heading to a rule whose owner has no
+  // idea we depend on it.
   &__title {
-    margin: 16px 0 4px;
-    font-size: 13px;
+    display: block;
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #f5f5f5;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--gray-700, #616161);
+    font-size: 0.9375rem;
+    border: none;
+    border-left: 3px solid var(--accent, #00acdc);
+    border-radius: 0;
+    padding: 10px 12px;
+    margin: 0 0 12px;
+    text-transform: none;
+    letter-spacing: 0.01em;
   }
 
-  &__intro {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--gray-700, #616161);
-    margin: 0 0 16px 0;
-  }
-
+  // 16px matches the inset the editor gives every level0 property row
+  // (style_mosaico_tools.less:337), so the label column lines up with the
+  // template options above instead of stepping sideways.
   &__field {
     margin-bottom: 18px;
+    padding: 0 16px;
   }
 
   // Label and counter share a line, the counter pushed to the right end: the
@@ -165,66 +182,33 @@
     background-repeat: no-repeat;
     background-position: right 10px center;
   }
+}
 
-  &__actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid var(--gray-300, #e0e0e0);
-    // The feedback message shares this row, so saving must not shift the section
-    // below it — the line is reserved whether a message is showing or not.
-    min-height: 36px;
-  }
+/**
+ * The editor's Save button, when the email settings carry unsaved edits.
+ *
+ * These fields lost their own save button — the editor's Save writes them now —
+ * and without a signal here the user types a subject line, sees nothing change,
+ * and leaves. A dot, not a colour change: the button is already accent-coloured,
+ * and the state must not read as "disabled" or "error".
+ *
+ * Not nested in `.mo`: the button is in the top bar (tmpl/main.tmpl.html:88),
+ * outside `#main-toolbox`.
+ */
+.primaryButton.has-unsaved-metadata {
+  position: relative;
 
-  &__save {
-    flex: 0 0 auto;
-    height: 36px;
-    padding: 0 16px;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: white;
-    background: var(--accent, #00acdc);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-
-    &:hover:not(:disabled) {
-      filter: brightness(0.95);
-    }
-
-    // Without this the button has no visible focus state at all for a keyboard
-    // user: it has no border to recolour.
-    &:focus-visible {
-      outline: 2px solid var(--accent, #00acdc);
-      outline-offset: 2px;
-    }
-
-    &:disabled {
-      background: var(--gray-300, #e0e0e0);
-      color: var(--gray-700, #616161);
-      cursor: default;
-    }
-  }
-
-  &__feedback {
-    margin: 0;
-    font-size: 12px;
-    text-align: right;
-
-    &--success {
-      // --success (#4caf50) is 3.0:1 on white, too light for 12px text; this is
-      // the same darkened green used for success states elsewhere.
-      color: #2e7d32;
-    }
-
-    &--error {
-      // --error (#ff5252) is 3.2:1 on white — under the 4.5:1 the UX guidelines
-      // require. Same red the tracking section uses for its own errors.
-      color: #d32f2f;
-    }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+    // The button's own background shows through the gap and reads as a ring, so
+    // the dot stays visible whatever the button is sitting on.
+    box-shadow: 0 0 0 2px var(--accent, #00acdc);
   }
 }
