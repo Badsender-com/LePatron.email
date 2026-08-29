@@ -116,16 +116,21 @@
       data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
-    <!-- Metadata: a document-level setting, so it belongs in this tab beside
-         Template Options rather than in a panel of its own.
+    <!-- ko block: content -->content<!-- /ko -->
+    <!-- Email settings: a document-level setting, so it belongs in this tab with
+         the template's own options rather than in a panel of its own.
 
-         Placed FIRST, before Template Options. The alternative — after it, so
-         Template Options keeps the exact position users know — put the section
-         below the fold on a 900px screen even with nothing selected: the save
-         button was off screen before a single block was clicked. Two arguments
-         settle it: what identifies the document (subject, date, typology) comes
-         before what configures its rendering, and the section has to be reachable
-         without scrolling to be found at all.
+         Placed AFTER those options, and styled to continue them: the two read as
+         one panel. An earlier revision put this block FIRST, because it then had a
+         save button of its own that fell off a 900px screen. That button is gone —
+         the editor's Save writes the metadata now — so the reason to jump the
+         queue went with it, and the template options keep the position users know.
+
+         What could NOT be done: rename the heading above. "Template Options" is
+         declared in each client template's own markup (`@supports -ko-blockdefs`),
+         not here — 6 of the 7 templates in the dev database use that exact string
+         and Ouest France has no such block at all. Hence two headings joined by a
+         frame, rather than one renamed section.
 
          `hasEmailMetadata` is set once in the plugin's `viewModel` hook and never
          written again, so this `if` renders once and never re-runs. That matters:
@@ -137,7 +142,6 @@
       <email-metadata-plugin />
     </div>
     <!-- /ko -->
-    <!-- ko block: content -->content<!-- /ko -->
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
