@@ -293,14 +293,15 @@ module.exports = {
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
   // email metadata section of the Content tab
-  'email-metadata-title': 'Métadonnées',
-  'email-metadata-intro':
-    "Ces informations décrivent l'email pour vos équipes et pour vos outils. Elles n'apparaissent pas dans l'email.",
+  'email-metadata-title': "Paramètres de l'email",
   'email-metadata-subject': "Objet de l'email",
   'email-metadata-subject-placeholder':
     'Ex. : Découvrez nos nouveautés de la rentrée',
+  // Both bounds, deliberately: under 30 characters a subject line announces
+  // nothing, over 50 the inbox cuts it. Keeping only the second half turns advice
+  // into a warning about one mistake out of two.
   'email-metadata-subject-hint':
-    'Les messageries tronquent au-delà de 50 caractères.',
+    "En dessous de 30 caractères, l'objet n'annonce rien ; au-delà de 50, les messageries le tronquent.",
   'email-metadata-planned-date': "Date d'envoi prévue",
   'email-metadata-planned-date-hint':
     "Indicative : elle ne déclenche aucun envoi, et n'est pas reprise sur les emails dupliqués.",
@@ -308,11 +309,6 @@ module.exports = {
   'email-metadata-typology-none': 'Aucune',
   'email-metadata-typology-empty':
     'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Typologies.',
-  // Distinct from the top bar's « Sauvegarder », which saves the email itself:
-  // the two buttons do different jobs and neither triggers the other.
-  'email-metadata-save': 'Enregistrer les métadonnées',
-  'email-metadata-saving': 'Enregistrement…',
-  'email-metadata-saved': 'Métadonnées enregistrées',
   'email-metadata-error': "L'enregistrement des métadonnées a échoué",
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
@@ -322,6 +318,13 @@ module.exports = {
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
+  // Carried by each field rather than by a section title: the section now sits
+  // under the template's own options, whose fields (preheader, mirror link,
+  // brand) DO show in the email. A blanket statement at the top would be false
+  // for its neighbours.
+  'email-metadata-not-shown': "N'apparaît pas dans l'email.",
+  // The preheader lives in the template's own options, which are now ABOVE this
+  // section rather than below it.
   'email-metadata-preheader-note':
-    'Le préheader se règle juste en dessous, dans « Template Options ».',
+    'Le préheader se règle plus haut, dans les options du template.',
 };
