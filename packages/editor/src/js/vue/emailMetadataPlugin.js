@@ -3,7 +3,6 @@
 const Vue = require('vue/dist/vue.common');
 
 const {
-  subjectCounter,
   toFormState,
   typologyOptions,
   SUBJECT_HARD_LIMIT,
@@ -68,9 +67,6 @@ module.exports = {
       }),
 
       computed: {
-        subjectCount() {
-          return subjectCounter(this.subject);
-        },
         typologyChoices() {
           return typologyOptions(
             this.emailTypes,
@@ -103,14 +99,6 @@ module.exports = {
         // The second argument matters: vm.t(key, params) interpolates __token__
         // placeholders, and dropping it would lose them without an error.
         t: (key, params) => vm.t(key, params),
-
-        counterLabel(count) {
-          return vm.t('email-metadata-counter', {
-            length: count.length,
-            min: count.min,
-            max: count.max,
-          });
-        },
       },
 
       template,
