@@ -22,12 +22,24 @@
  * the same database, and `--yes` was passed. An interrupted restore leaves the
  * collections it had already emptied in a partial state — there is no transaction.
  *
- * The dump excludes credentials. `users` carries password hashes, session tokens
- * and a connection log; `companies` stores `ftpPassword` and `ftpSshKey` (encrypted
- * at rest by the schema's encryption plugin, so a raw-driver dump would write
- * ciphertext nobody can use anyway). None of it is needed to replay a recette, and
- * a file in a home directory is not where it belongs. Files are written 0600 in a
- * 0700 directory all the same.
+ * The dump excludes credentials: `companies` stores `ftpPassword` and `ftpSshKey`
+ * (encrypted at rest by the schema's encryption plugin, so a raw-driver dump would
+ * write ciphertext nobody can use anyway). None of it is needed to replay a
+ * recette, and a file in a home directory is not where it belongs. Files are
+ * written 0600 in a 0700 directory all the same.
+ *
+ * EXCLUDING A FIELD FROM THE DUMP USED TO DESTROY IT ON RESTORE, and that is the
+ * single most important thing to know about this file. Restore replaces whole
+ * collections, so every excluded field was re-inserted as absent. On 2026-08-29 it
+ * wiped every password hash in the development database — and the reset tokens
+ * with them, so the accounts could not even be recovered by email. The two halves
+ * of the design were each defensible and were never put side by side.
+ *
+ * Two things changed. `users` left the collection list: a recette writes mailings,
+ * companies, taxonomies and workspaces, never users, and the collection was there
+ * for completeness alone. And `preserveExcludedFields` now carries every excluded
+ * field back from the live database onto the documents being restored, for any
+ * collection — so the same mistake is survivable even where it is still reachable.
  */
 
 const fs = require('fs');
@@ -47,9 +59,17 @@ const COLLECTIONS = [
   'creations', // mailings — the Mailing model points here, NOT `mailings`
   'companies', // groups — the Company model points here
   'taxonomyitems',
-  'users',
   'workspaces',
 ];
+
+// `users` used to be here, and restoring it wiped every password hash in the
+// development database on 2026-08-29. A recette writes mailings, companies,
+// taxonomies and workspaces; it does not write users. The collection was in the
+// list for completeness, and completeness was not worth a credential.
+//
+// The generic protection below (restoreWithPreservedFields) now makes the same
+// mistake survivable for any collection. This exclusion makes it unreachable for
+// the one collection where it actually cost something.
 
 const DEFAULT_ROOT = path.join(os.homedir(), 'lepatron-recette-backups');
 
@@ -253,6 +273,15 @@ async function restore(dir) {
       }
       const docs = readBson(file);
       const before = await db.collection(name).countDocuments();
+
+      // What the dump does not carry must not be destroyed by restoring it.
+      const { orphaned } = await preserveExcludedFields(
+        db,
+        name,
+        docs,
+        manifest
+      );
+
       await db.collection(name).deleteMany({});
       if (docs.length > 0) {
         // Unordered so one bad document does not abort the rest, leaving the
@@ -260,9 +289,76 @@ async function restore(dir) {
         await db.collection(name).insertMany(docs, { ordered: false });
       }
       process.stdout.write(`${name}: ${before} -> ${docs.length} documents\n`);
+      if (orphaned.length > 0) {
+        // These documents exist in the database, are absent from the dump, and
+        // carry fields the dump never stored. Restoring deletes them and the
+        // fields go with them — say so rather than let it pass as a count.
+        process.stdout.write(
+          `${name}: WARNING — ${orphaned.length} document(s) not in the dump ` +
+            'carried excluded fields and are being deleted: ' +
+            `${orphaned.slice(0, 5).join(', ')}` +
+            `${orphaned.length > 5 ? ', …' : ''}\n`
+        );
+      }
     }
   });
   process.stdout.write(`\nrestored from ${dir}\n`);
+}
+
+/**
+ * Carries the fields the dump deliberately did not store back onto the documents
+ * about to replace the collection.
+ *
+ * Restore empties a collection and re-inserts the dump. Every field the dump
+ * excluded — password hashes, reset tokens, the connection log, FTP credentials —
+ * would therefore be destroyed by an operation whose whole point is to put things
+ * back. That is not hypothetical: it wiped every password in the development
+ * database on 2026-08-29, and the accounts could not even be recovered by email
+ * because their reset tokens went with them.
+ *
+ * The exclusion list is read from the dump's own manifest AND from the current
+ * constant, unioned: an old dump may have excluded fields this version no longer
+ * names, and vice versa. Preserving a field that did not need preserving costs
+ * nothing; missing one costs a database.
+ *
+ * @returns {{orphaned: string[]}} ids present live, absent from the dump, and
+ *   carrying at least one excluded field — they are about to be deleted.
+ */
+async function preserveExcludedFields(db, name, docs, manifest) {
+  const fromManifest = (manifest.excludedFields || {})[name] || {};
+  const fields = Array.from(
+    new Set(
+      Object.keys(EXCLUDED_FIELDS[name] || {}).concat(Object.keys(fromManifest))
+    )
+  );
+  if (fields.length === 0) return { orphaned: [] };
+
+  const projection = { _id: 1 };
+  fields.forEach((field) => {
+    projection[field] = 1;
+  });
+
+  const live = await db.collection(name).find({}, { projection }).toArray();
+  const byId = new Map(live.map((doc) => [String(doc._id), doc]));
+
+  docs.forEach((doc) => {
+    const kept = byId.get(String(doc._id));
+    if (!kept) return;
+    byId.delete(String(doc._id));
+    fields.forEach((field) => {
+      if (kept[field] !== undefined) doc[field] = kept[field];
+    });
+  });
+
+  // Whatever is left in the map is live-only. It matters only when it actually
+  // holds one of the excluded fields — an ordinary document being replaced by the
+  // dump is the normal case and not worth a warning.
+  const orphaned = [];
+  byId.forEach((doc, id) => {
+    if (fields.some((field) => doc[field] !== undefined)) orphaned.push(id);
+  });
+
+  return { orphaned };
 }
 
 async function list(dir) {
