@@ -51,23 +51,27 @@ describe('counters', () => {
 });
 
 describe('toDateInputValue', () => {
-  // The field only accepts yyyy-mm-dd, and it must show the day the user meant.
-  it('renders a Date as yyyy-mm-dd', () => {
-    expect(toDateInputValue(new Date(2026, 8, 1, 10, 0, 0))).toBe('2026-09-01');
+  // The field only accepts yyyy-mm-dd, and it must show the day the user meant —
+  // the same day for every teammate, whatever their timezone.
+  it('renders the stored instant as yyyy-mm-dd', () => {
+    expect(toDateInputValue('2026-09-01T12:00:00.000Z')).toBe('2026-09-01');
   });
 
   it('pads month and day', () => {
-    expect(toDateInputValue(new Date(2026, 0, 5))).toBe('2026-01-05');
+    expect(toDateInputValue('2026-01-05T12:00:00.000Z')).toBe('2026-01-05');
   });
 
-  // toISOString() would answer the previous day for an evening date in Paris.
-  it('uses the local date, not the UTC one', () => {
-    const evening = new Date(2026, 8, 1, 23, 30, 0);
-    expect(toDateInputValue(evening)).toBe('2026-09-01');
+  // The whole point of reading in UTC: noon UTC is the same calendar day for
+  // every offset from -11 to +12, so two colleagues never see different days.
+  it('reads the day in UTC, not in the local timezone', () => {
+    const noonUtc = new Date(Date.UTC(2026, 8, 1, 12));
+    expect(toDateInputValue(noonUtc)).toBe('2026-09-01');
+    // Same instant, expressed the way the API sends it back.
+    expect(toDateInputValue(noonUtc.toISOString())).toBe('2026-09-01');
   });
 
   it('accepts the ISO string the API returns', () => {
-    expect(toDateInputValue('2026-09-01T08:00:00.000Z')).toBe('2026-09-01');
+    expect(toDateInputValue('2026-09-01T12:00:00.000Z')).toBe('2026-09-01');
   });
 
   it.each([[null], [undefined], [''], ['pas une date'], [NaN]])(
@@ -84,13 +88,31 @@ describe('fromDateInputValue', () => {
     expect(iso).toMatch(/^2026-09-01T/);
   });
 
-  // Midnight would land on 2026-08-31 once stored in UTC west of Greenwich.
-  it('anchors the day at noon so no timezone moves it', () => {
+  // Midnight UTC would land on 2026-08-31 for anyone west of Greenwich, and noon
+  // LOCAL — what this did before — shifts between two users: noon in Los Angeles
+  // is 19:00Z, which is already 2026-09-02 in Tokyo.
+  it('anchors the day at noon UTC so no timezone moves it', () => {
     const date = new Date(fromDateInputValue('2026-09-01'));
-    expect(date.getFullYear()).toBe(2026);
-    expect(date.getMonth()).toBe(8);
-    expect(date.getDate()).toBe(1);
-    expect(date.getHours()).toBe(12);
+    expect(date.getUTCFullYear()).toBe(2026);
+    expect(date.getUTCMonth()).toBe(8);
+    expect(date.getUTCDate()).toBe(1);
+    expect(date.getUTCHours()).toBe(12);
+  });
+
+  // The property that matters, and the one the previous implementation broke: the
+  // instant written for a given day does not depend on where the person saving it
+  // happens to be. `new Date(y, m, d, 12)` did — it built noon LOCAL, so the same
+  // picked day produced a different instant in Paris and in Los Angeles, and the
+  // two disagreed about the date once either of them read it back.
+  //
+  // Asserting the exact string is the point: any reintroduction of a local-time
+  // constructor moves it.
+  it('writes the same instant whatever the machine timezone', () => {
+    expect(fromDateInputValue('2026-09-01')).toBe('2026-09-01T12:00:00.000Z');
+    expect(fromDateInputValue('2026-01-01')).toBe('2026-01-01T12:00:00.000Z');
+    // A summer date and a winter one, because a local-time implementation also
+    // drifts by an hour across a daylight-saving boundary.
+    expect(fromDateInputValue('2026-06-15')).toBe('2026-06-15T12:00:00.000Z');
   });
 
   it('round-trips through the field without shifting a day', () => {

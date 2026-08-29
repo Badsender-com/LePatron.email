@@ -42,6 +42,32 @@ module.exports = {
 
 const isDefined = (value) => value !== undefined;
 
+/**
+ * A planned send date is a calendar day, not an instant: it has no time field in
+ * the interface, and it must read back as the same day for every teammate.
+ *
+ * The editor already sends noon UTC, but it is not the only writer — the creation
+ * modal and the listing are coming, and the ESP export will read this back. The
+ * invariant belongs here, where every client passes, rather than in each of them.
+ *
+ * Noon UTC rather than midnight: midnight UTC is the previous day everywhere west
+ * of Greenwich, so a range query on `plannedSendDate` would put a send on the
+ * wrong side of a day boundary. Noon holds for every offset from -11 to +11.
+ */
+function toNoonUtc(date) {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      12,
+      0,
+      0,
+      0
+    )
+  );
+}
+
 const invalid = () =>
   new UnprocessableEntity(ERROR_CODES.INVALID_EMAIL_METADATA);
 

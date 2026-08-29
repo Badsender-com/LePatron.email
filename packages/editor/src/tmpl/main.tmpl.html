@@ -85,7 +85,7 @@
     <div class="rightButtons">
 
     <!-- ko if: typeof $root.save !== 'undefined' -->
-    <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, button: { disabled: !$root.save.enabled(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
+    <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, css: { 'has-unsaved-metadata': $root.save.hasPendingChanges && $root.save.hasPendingChanges() }, button: { disabled: !$root.save.enabled(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
     <!-- /ko -->
     <!-- ko if: typeof $root.test !== 'undefined' -->
     <a title="Show preview and send test" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show preview and send test') }, click: $root.test.execute, clickBubble: false, button: { disabled: !$root.test.enabled(), icons: { primary: 'lucide lucide-fw lucide-send' }, label: $root.t($root.test.name), text: true }">TEST</a>
