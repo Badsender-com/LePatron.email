@@ -284,32 +284,38 @@ module.exports = {
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
   // email metadata section of the Content tab
-  'email-metadata-title': 'Metadata',
-  'email-metadata-intro':
-    'These details describe the email for your team and your tools. They do not appear in the email.',
+  'email-metadata-title': 'Email settings',
   'email-metadata-subject': 'Subject line',
   'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
-  'email-metadata-subject-hint': 'Inboxes truncate beyond 50 characters.',
+  // Both bounds, to match the French: under 30 characters a subject line
+  // announces nothing, over 50 the inbox cuts it. The English used to carry only
+  // the truncation half.
+  'email-metadata-subject-hint':
+    'Under 30 characters a subject line says nothing; over 50, inboxes truncate it.',
   'email-metadata-planned-date': 'Planned send date',
   'email-metadata-planned-date-hint':
     'For reference only: it triggers no send, and is not carried over to duplicated emails.',
-  'email-metadata-typology': 'Typology',
+  // "Typology" is a false friend in a marketing interface — the English for what
+  // the French calls « typologie » is simply the email's type.
+  'email-metadata-typology': 'Email type',
   'email-metadata-typology-none': 'None',
   'email-metadata-typology-empty':
-    'No active typology for your company. They are configured under Settings → General → Typologies.',
-  // Distinct from the top bar's "Save", which saves the email itself: the two
-  // buttons do different jobs and neither triggers the other.
-  'email-metadata-save': 'Save metadata',
-  'email-metadata-saving': 'Saving…',
-  'email-metadata-saved': 'Metadata saved',
+    'No active email type for your company. They are configured under Settings → General → Typologies.',
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
-  'email-metadata-error-typology': 'This typology is no longer available',
+  'email-metadata-error-typology': 'This email type is no longer available',
   'email-metadata-counter': '__length__ chars · target __min__-__max__',
-  'email-metadata-typology-missing': 'Deactivated typology',
+  'email-metadata-typology-missing': 'Deactivated email type',
   'email-metadata-error-no-company':
-    'This email belongs to no company: the typology cannot be saved',
+    'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
+  // Carried by each field rather than by a section title: the section now sits
+  // under the template's own options, whose fields (preheader, mirror link,
+  // brand) DO show in the email. A blanket statement at the top would be false
+  // for its neighbours.
+  'email-metadata-not-shown': 'Does not appear in the email.',
+  // The preheader lives in the template's own options, which are now ABOVE this
+  // section rather than below it.
   'email-metadata-preheader-note':
-    'The preheader is set just below, under "Template Options".',
+    "The preheader is set above, in the template's own options.",
 };

@@ -116,14 +116,31 @@ describe('validateMetadataPayload — subject', () => {
 });
 
 describe('validateMetadataPayload — plannedSendDate', () => {
-  it('accepts an ISO date', async () => {
+  it('accepts an ISO date and pins it to noon UTC', async () => {
     const result = await validateMetadataPayload(
       { plannedSendDate: '2026-09-01T08:00:00.000Z' },
       { companyId: COMPANY_A }
     );
     expect(result.plannedSendDate.toISOString()).toBe(
-      '2026-09-01T08:00:00.000Z'
+      '2026-09-01T12:00:00.000Z'
     );
+  });
+
+  // The field has no time input: what is stored is a calendar day. Pinning the
+  // time here rather than trusting each client keeps the planning view's range
+  // queries honest — the editor, the creation modal and the ESP export all write
+  // through this function.
+  it.each([
+    ['2026-09-01T00:00:00.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T23:59:59.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01', '2026-09-01T12:00:00.000Z'],
+    ['2026-12-31T18:30:00.000Z', '2026-12-31T12:00:00.000Z'],
+  ])('normalises %p to %p', async (sent, stored) => {
+    const result = await validateMetadataPayload(
+      { plannedSendDate: sent },
+      { companyId: COMPANY_A }
+    );
+    expect(result.plannedSendDate.toISOString()).toBe(stored);
   });
 
   it.each([['not a date'], ['2026-13-45'], [{}]])(
