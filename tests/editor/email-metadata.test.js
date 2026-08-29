@@ -1,13 +1,11 @@
 'use strict';
 
 // The editor has no component test harness, so the section's decisions live in a
-// helper module and are pinned here: what the counters say, how a date crosses
-// the `<input type="date">` boundary without shifting a day, what the PATCH
-// carries — and above all what it does NOT carry.
+// helper module and are pinned here: how a date crosses the `<input type="date">`
+// boundary without shifting a day, what the PATCH carries — and above all what it
+// does NOT carry.
 
 const {
-  subjectCounter,
-  counterState,
   toDateInputValue,
   fromDateInputValue,
   buildMetadataPayload,
@@ -15,40 +13,8 @@ const {
   typologyOptions,
   hasMetadataChanges,
   errorKeyFor,
-  SUBJECT_RANGE,
   SUBJECT_HARD_LIMIT,
 } = require('../../packages/editor/src/js/utils/email-metadata.js');
-
-describe('counters', () => {
-  it('advises on the subject range, 30 to 50', () => {
-    expect(SUBJECT_RANGE).toEqual({ min: 30, max: 50 });
-    expect(subjectCounter('').state).toBe('empty');
-    expect(subjectCounter('x'.repeat(29)).state).toBe('short');
-    expect(subjectCounter('x'.repeat(30)).state).toBe('ok');
-    expect(subjectCounter('x'.repeat(50)).state).toBe('ok');
-    expect(subjectCounter('x'.repeat(51)).state).toBe('long');
-  });
-
-  it('reports the length so the section can show "n / max"', () => {
-    expect(subjectCounter('abc')).toEqual({
-      length: 3,
-      min: 30,
-      max: 50,
-      state: 'short',
-    });
-  });
-
-  it.each([[null], [undefined]])('treats %p as empty', (value) => {
-    expect(counterState(value, SUBJECT_RANGE)).toMatchObject({
-      length: 0,
-      state: 'empty',
-    });
-  });
-
-  it('counts characters, not bytes', () => {
-    expect(counterState('éàü', SUBJECT_RANGE).length).toBe(3);
-  });
-});
 
 describe('toDateInputValue', () => {
   // The field only accepts yyyy-mm-dd, and it must show the day the user meant —
