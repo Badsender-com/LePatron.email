@@ -297,11 +297,6 @@ module.exports = {
   'email-metadata-subject': "Objet de l'email",
   'email-metadata-subject-placeholder':
     'Ex. : Découvrez nos nouveautés de la rentrée',
-  // Both bounds, deliberately: under 30 characters a subject line announces
-  // nothing, over 50 the inbox cuts it. Keeping only the second half turns advice
-  // into a warning about one mistake out of two.
-  'email-metadata-subject-hint':
-    "En dessous de 30 caractères, l'objet n'annonce rien ; au-delà de 50, les messageries le tronquent.",
   'email-metadata-planned-date': "Date d'envoi prévue",
   'email-metadata-planned-date-hint':
     "Indicative : elle ne déclenche aucun envoi, et n'est pas reprise sur les emails dupliqués.",
@@ -313,7 +308,6 @@ module.exports = {
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
-  'email-metadata-counter': '__length__ car. · cible __min__-__max__',
   'email-metadata-typology-missing': 'Typologie désactivée',
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
