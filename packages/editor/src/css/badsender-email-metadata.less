@@ -105,8 +105,8 @@
     padding: 0 16px;
   }
 
-  // Label and counter share a line, the counter pushed to the right end: the
-  // count belongs to the field but must not move the input as digits change.
+  // Kept as a row even though it holds only the label now: the three fields share
+  // this structure, and a field-level control may well come back here.
   &__label-row {
     display: flex;
     align-items: baseline;
@@ -140,26 +140,6 @@
     // The native date control needs its own room for the picker glyph.
     &--date {
       padding-right: 8px;
-    }
-  }
-
-  &__counter {
-    flex: 0 0 auto;
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    color: var(--gray-700, #616161);
-
-    // Out of range is advice, not an error: amber rather than red, and never a
-    // blocking state. #8a5100 is 7.3:1 on white — the token --warning (#fb8c00)
-    // would be 2.3:1 at this size.
-    &--short,
-    &--long {
-      color: #8a5100;
-      font-weight: 600;
-    }
-
-    &--empty {
-      color: var(--gray-600, #757575);
     }
   }
 

@@ -17,12 +17,14 @@
  * asymmetry it was meant to avoid: metadata persisting silently while the
  * template options beside them waited for the global Save.
  *
- * Every field is label-then-input with a real `for`/`id` pair, and its counter and
- * hint are tied to it with `aria-describedby` so a screen reader reads them as part
- * of the field rather than as loose text after it. The counter is deliberately NOT
- * `aria-live`: it changes on every keystroke, and announcing "12 chars · target
- * 30-50", "13 chars · target 30-50" over and over drowns out the typing. The state
- * is never colour-only — the numbers and the target are spelled out.
+ * Every field is label-then-input with a real `for`/`id` pair, and its hint is tied
+ * to it with `aria-describedby` so a screen reader reads it as part of the field
+ * rather than as loose text after it.
+ *
+ * The subject carries no character counter and no 30-50 recommendation: they were
+ * removed on request. Deliverability advice is not this field's job, and a counter
+ * updating on every keystroke was noise on a field filled once. `maxlength` still
+ * mirrors the server's hard limit, which is a rule rather than advice.
  *
  * "Does not appear in the email" is repeated per field rather than stated once at
  * the top. Since the group moved under the template's options, a statement in the
@@ -42,23 +44,18 @@ module.exports = `
     <div class="email-metadata__field">
       <div class="email-metadata__label-row">
         <label for="email-metadata-subject">{{ t('email-metadata-subject') }}</label>
-        <span id="email-metadata-subject-counter"
-              class="email-metadata__counter"
-              :class="'email-metadata__counter--' + subjectCount.state"
-              >{{ counterLabel(subjectCount) }}</span>
       </div>
       <input id="email-metadata-subject"
              type="text"
              class="email-metadata__input"
              v-model="subject"
              :maxlength="subjectHardLimit"
-             aria-describedby="email-metadata-subject-counter email-metadata-subject-hint"
+             aria-describedby="email-metadata-subject-hint"
              :placeholder="t('email-metadata-subject-placeholder')" />
       <!-- Subject and preheader are the two strings the recipient reads in their
            inbox, and the preheader stays in the template's own options (a product
            decision). Without this pointer nothing tells the user where it is. -->
       <p id="email-metadata-subject-hint" class="email-metadata__hint">
-        {{ t('email-metadata-subject-hint') }}
         {{ t('email-metadata-preheader-note') }}
         {{ t('email-metadata-not-shown') }}
       </p>

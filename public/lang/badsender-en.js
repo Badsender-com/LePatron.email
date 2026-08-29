@@ -287,11 +287,6 @@ module.exports = {
   'email-metadata-title': 'Email settings',
   'email-metadata-subject': 'Subject line',
   'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
-  // Both bounds, to match the French: under 30 characters a subject line
-  // announces nothing, over 50 the inbox cuts it. The English used to carry only
-  // the truncation half.
-  'email-metadata-subject-hint':
-    'Under 30 characters a subject line says nothing; over 50, inboxes truncate it.',
   'email-metadata-planned-date': 'Planned send date',
   'email-metadata-planned-date-hint':
     'For reference only: it triggers no send, and is not carried over to duplicated emails.',
@@ -304,7 +299,6 @@ module.exports = {
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
-  'email-metadata-counter': '__length__ chars · target __min__-__max__',
   'email-metadata-typology-missing': 'Deactivated email type',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
