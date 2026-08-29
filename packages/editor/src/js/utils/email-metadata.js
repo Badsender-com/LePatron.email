@@ -8,34 +8,13 @@
  * untested. Covered by tests/editor/email-metadata.test.js.
  */
 
-// Deliverability guidance, not validation: an out-of-range value is flagged, never
-// refused. A subject that is too long is truncated by the mail client; too short
-// and it says nothing.
-const SUBJECT_RANGE = { min: 30, max: 50 };
 // Mirrors MAX_SUBJECT_LENGTH in packages/server/mailing/mailing-metadata.service.js.
-// The section warns; the server refuses.
+// The field stops there; the server refuses beyond it.
+//
+// There is deliberately no 30-50 character counter or recommendation any more:
+// deliverability advice is not this field's job, and the counter was noise on a
+// field the user fills once.
 const SUBJECT_HARD_LIMIT = 255;
-
-/**
- * State of a character counter, for a field whose length is advice rather than a
- * rule.
- *
- * @param {string} value
- * @param {{min: number, max: number}} range
- * @returns {{length: number, min: number, max: number, state: 'empty'|'short'|'ok'|'long'}}
- */
-function counterState(value, range) {
-  const length = String(value == null ? '' : value).length;
-  let state = 'ok';
-
-  if (length === 0) state = 'empty';
-  else if (length < range.min) state = 'short';
-  else if (length > range.max) state = 'long';
-
-  return { length, min: range.min, max: range.max, state };
-}
-
-const subjectCounter = (value) => counterState(value, SUBJECT_RANGE);
 
 /**
  * A Date, or the value the server sent, rendered for `<input type="date">`, which
@@ -208,11 +187,8 @@ function errorKeyFor(error) {
 }
 
 module.exports = {
-  SUBJECT_RANGE,
   SUBJECT_HARD_LIMIT,
   errorKeyFor,
-  counterState,
-  subjectCounter,
   toDateInputValue,
   fromDateInputValue,
   buildMetadataPayload,
