@@ -105,6 +105,12 @@
         </div>
       </div>
     </div>
+    <!-- ko if: !$root.currentUser()?.canEditStructure -->
+    <div class="toolbox-readonly-overlay">
+      <span class="lucide lucide-lock"></span>
+      <span data-bind="text: $root.t('toolbox-readonly-structure')">You don't have permission to edit this mailing's structure</span>
+    </div>
+    <!-- /ko -->
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">
@@ -120,6 +126,12 @@
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
+    <!-- ko if: !$root.currentUser()?.canEditContent -->
+    <div class="toolbox-readonly-overlay">
+      <span class="lucide lucide-lock"></span>
+      <span data-bind="text: $root.t('toolbox-readonly-content')">You don't have permission to edit this mailing's content</span>
+    </div>
+    <!-- /ko -->
   </div>
 
   <div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
@@ -136,6 +148,12 @@
     <!-- /ko -->
     <div class="workGlobalContent">
       <!-- ko block: content --><!-- /ko -->
+    </div>
+    <!-- /ko -->
+    <!-- ko if: !$root.currentUser()?.canEditStyle -->
+    <div class="toolbox-readonly-overlay">
+      <span class="lucide lucide-lock"></span>
+      <span data-bind="text: $root.t('toolbox-readonly-style')">You don't have permission to edit this mailing's style</span>
     </div>
     <!-- /ko -->
   </div>
@@ -291,6 +309,12 @@
         <span class="comment-date" data-bind="text: $root.formatDate(createdAt)"></span>
         <!-- ko if: resolved -->
         <span class="comment-badge comment-badge-resolved"><span class="lucide lucide-check"></span> <span data-bind="text: $root.t('comments-resolved-badge')">Resolved</span></span>
+        <!-- /ko -->
+        <!-- ko if: decision === 'approved' -->
+        <span class="comment-badge comment-badge-decision comment-badge-approved"><span class="lucide lucide-check-check"></span> <span data-bind="text: $root.getDecisionLabel('approved')">Approved</span></span>
+        <!-- /ko -->
+        <!-- ko if: decision === 'changes_requested' -->
+        <span class="comment-badge comment-badge-decision comment-badge-changes-requested"><span class="lucide lucide-x"></span> <span data-bind="text: $root.getDecisionLabel('changes_requested')">Changes requested</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'important' -->
         <span class="comment-badge comment-badge-important"><span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span></span>
@@ -491,9 +515,17 @@
           </span>
           <!-- /ko -->
         </div>
-        <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
-          <span data-bind="text: $root.t('comments-add')">Add</span>
-        </button>
+        <div class="comments-form-submit-actions">
+          <!-- ko if: $root.canPostDecision() -->
+          <button class="comments-btn comments-btn-decision comments-btn-approve" data-bind="click: function() { $root.createComment('approved'); }">
+            <span class="lucide lucide-check"></span>
+            <span data-bind="text: $root.t('comments-decision-approve')">Approve</span>
+          </button>
+          <!-- /ko -->
+          <button class="comments-btn comments-btn-primary" data-bind="click: function() { $root.createComment(); }">
+            <span data-bind="text: $root.t('comments-add')">Add</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

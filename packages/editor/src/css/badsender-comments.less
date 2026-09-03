@@ -582,11 +582,23 @@
 
 // Form actions area (per DS: form-actions pattern)
 // Context indicator left, submit button right
+.comments-form-submit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  // Stay right-aligned when there's room; wraps to its own line instead of
+  // overlapping the context indicator when the sidebar is narrow and the
+  // Approve button pushes the row past the available width.
+  margin-left: auto;
+}
+
 .comments-form-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   width: 100%;
   padding-top: 12px;
   margin-top: 4px;
@@ -757,6 +769,17 @@
   &:hover {
     background: fade(@comment-error, 10%);
     color: darken(@comment-error, 10%);
+  }
+}
+
+// Decision button (reviewer's "validate" mechanism). A plain comment already
+// conveys "changes requested" — approve is the only explicit decision action.
+.comments-btn-approve {
+  background: var(--success);
+  color: white;
+
+  &:hover {
+    background: darken(#4caf50, 8%);
   }
 }
 
@@ -939,6 +962,17 @@
 }
 
 .comment-badge-blocking {
+  background: var(--error);
+  color: white;
+}
+
+// Decision badges (reviewer's "validate" mechanism)
+.comment-badge-approved {
+  background: var(--success);
+  color: white;
+}
+
+.comment-badge-changes-requested {
   background: var(--error);
   color: white;
 }

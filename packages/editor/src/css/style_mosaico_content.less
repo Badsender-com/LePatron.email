@@ -5,6 +5,24 @@
   // display: table;
 }
 
+// Read-only canvas for reviewer (canEditContent: false) — an additive
+// overlay next to the block's own rendered content, never a replacement for
+// it, so the "Comment block" tool (a sibling of .block-content-wrapper, see
+// block-wysiwyg.tmpl.html) stays clickable.
+#main-edit-area .block-content-wrapper {
+  position: relative;
+}
+
+#main-edit-area .canvas-readonly-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  cursor: default;
+}
+
 /* minimum size for empty dropzones */
 #main-edit-area .sortable-blocks-edit.empty {
   min-height: 200px;

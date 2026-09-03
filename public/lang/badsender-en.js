@@ -283,4 +283,14 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  'comments-decision-approve': 'Approve',
+  'comments-decision-approve-default-text': 'I approve this email',
+  'comments-decision-approved': 'Approved',
+  'comments-decision-changes-requested': 'Changes requested',
+  'toolbox-readonly-structure':
+    "You don't have permission to edit this mailing's structure",
+  'toolbox-readonly-content':
+    "You don't have permission to edit this mailing's content",
+  'toolbox-readonly-style':
+    "You don't have permission to edit this mailing's style",
 };

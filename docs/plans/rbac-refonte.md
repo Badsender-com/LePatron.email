@@ -191,30 +191,39 @@ Décisions actées le 2026-09-03 :
 
 **Décision actée (affinée après revue produit)** : restriction **UI uniquement** pour `reviewer` et `writer`, à la fois dans le canvas de l'éditeur et dans le listing de mailings. Aucun garde-fou serveur nouveau dans cet incrément — écart de sécurité documenté et élargi (un `reviewer`/`writer` appelant l'API directement pourrait encore modifier structure/style, ou renommer/déplacer/dupliquer/supprimer un mailing) ; le vrai fix serveur est différé dans [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
 
+**Contrainte technique découverte à l'implémentation (2026-09-03)** : le mécanisme d'onglets du canvas (`#tooltabs`) est propulsé par le widget **jQuery UI Tabs** (`#tooltabs.ui-tabs`), pas un code custom. Il indexe ses panneaux (`#toolblocks`/`#toolcontents`/`#toolstyles`) **une seule fois au chargement**. Comme `currentUser` (rôle courant) est chargé en asynchrone (`GET /api/users/current-user`) et vaut `null` au tout premier rendu — pour tout le monde, pas seulement `reviewer`/`writer` — toute tentative de masquer/retirer ces panneaux via un binding Knockout `if:` conditionné par le rôle casse l'indexation de jQuery UI Tabs pour **tous les utilisateurs** (chevauchement visuel entre panneaux, fond de sidebar cassé). Un premier essai en ce sens a dû être entièrement annulé. **Approche retenue** : ne jamais supprimer/masquer un élément que jQuery UI Tabs ou le `foreach: blockDefs` gèrent structurellement — uniquement des **overlays additifs** (nouveaux enfants, jamais un remplacement), qui bloquent visuellement/à l'interaction sans toucher au DOM que ces mécanismes indexent.
+
 **`reviewer`** — rôle passif sur le contenu, actif uniquement sur commentaire/test/validation :
 
-- Canvas builder : structure, contenu, style — aucun contrôle d'édition affiché (`toolbox.tmpl.html` griffé par les booléens `canEditStructure`/`canEditContent`/`canEditStyle`, tous `false`).
-- Listing de mailings (`packages/ui/routes/mailings/__partials/mailings-table.vue`) : renommer, déplacer, dupliquer/copier, supprimer — **masqués**. Ce fichier calcule déjà une liste d'actions cachées par contexte (`TABLE_HIDDEN_COLUMNS_ADMIN`/`_USER`/`_NO_ACCESS`, lignes ~117-193) ; on y ajoute un jeu `TABLE_HIDDEN_COLUMNS_REVIEWER` (RENAME, DELETE, MOVE_MAIL, COPY_MAIL, ADD_TAGS) sélectionné quand `role === 'reviewer'`, sur le même modèle que l'existant.
+- Canvas builder — onglets (`packages/editor/src/tmpl-badsender/toolbox.tmpl.html`) : overlay additif (`.toolbox-readonly-overlay`, position absolue, z-index au-dessus du contenu du panneau) sur Blocks/Content/Style quand `canEditStructure`/`canEditContent`/`canEditStyle` (booléens dérivés dans `badsender-current-user.js`) sont `false` — bloque le clic ET le drag-and-drop (l'overlay intercepte le `mousedown`) sans toucher aux `<div id="toolblocks">` etc. eux-mêmes.
+- Canvas builder — contenu du bloc (`packages/editor/src/tmpl/block-wysiwyg.tmpl.html`) : un overlay additif similaire (`.canvas-readonly-overlay`) est ajouté à l'intérieur de `.block-content-wrapper`, **à côté de** (pas à la place de) `<!-- ko block: $data -->` qui rend le contenu réel — bloque le focus/l'édition inline (texte, image, lien) sans toucher à la barre d'outils du bloc, qui est un **sibling** de ce wrapper.
+- Canvas builder — barre d'outils par bloc (même fichier) : réduite à l'icône **Commenter** uniquement. Déplacer/dupliquer/sauvegarder en bibliothèque/variante/supprimer sont masqués (`if: canEditStructure`, `false` pour reviewer et writer).
+- Listing de mailings (`packages/ui/routes/mailings/__partials/mailings-table.vue`) : renommer, déplacer, dupliquer/copier, supprimer, transférer — **masqués**. Ce fichier calcule déjà une liste d'actions cachées par contexte (`TABLE_HIDDEN_COLUMNS_ADMIN` ligne 49/`_USER` ligne 50, définitions lignes 48-50, logique de sélection lignes ~117-127) ; on y ajoute un jeu `TABLE_HIDDEN_COLUMNS_REVIEWER` sélectionné via `roleHiddenColumns[this.role]` quand `role === 'reviewer'`, sur le même modèle que l'existant.
+- Bouton "Nouveau mail" (`packages/ui/routes/mailings/index.vue`) : désactivé (`canCreateMailing` combine l'accès workspace existant et le rôle).
 - Gestion de dossiers (`packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue`) : renommer/déplacer/supprimer un dossier, créer un sous-dossier — masqués pour `reviewer` (`checkIfAuthorizedFolderMenu`/`hasRightToCreateFolder` gagnent une condition de rôle), cohérent avec un rôle entièrement passif sur l'organisation du contenu.
 - Envoi de test (`sendTestMail`, `GUARD_USER`) : **conservé**, correspond au "tester" de la vision produit — aucune restriction.
-- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
+- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Le panneau commentaires s'ouvre **par défaut** à l'arrivée dans l'éditeur (`showComments(true)` déclenché dès que le rôle est connu). Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
 
 **`writer`** — édite le contenu, gère ses variantes, ne crée ni ne supprime :
 
-- Canvas builder : contenu — **édition activée** ; structure, style — aucun contrôle affiché (mêmes booléens que reviewer, sauf `canEditContent: true`).
-- Listing de mailings : renommer, déplacer, dupliquer/copier — **conservés** (permet de décliner des variantes à partir d'un mailing existant) ; créer un nouveau mailing "from scratch" et supprimer — **masqués**. Même mécanisme `TABLE_HIDDEN_COLUMNS_WRITER` que pour reviewer, mais avec un jeu d'actions cachées plus restreint (DELETE + l'entrée "nouveau mailing" du point d'entrée de création, pas RENAME/MOVE_MAIL/COPY_MAIL).
+- Canvas builder — onglets : overlay sur Blocks et Style (`canEditStructure: false`) ; Content reste pleinement éditable (`canEditContent: true`, aucun overlay).
+- Canvas builder — barre d'outils par bloc : Commenter, Traduire, Import flux RSS (actions de contenu, `canEditContent`) ; déplacer/dupliquer/sauvegarder/variante/supprimer masqués (actions de structure, `canEditStructure: false`), comme pour `reviewer`.
+- Listing de mailings : renommer, déplacer, dupliquer/copier — **conservés** (permet de décliner des variantes à partir d'un mailing existant) ; supprimer et transférer — **masqués**. Même mécanisme `TABLE_HIDDEN_COLUMNS_WRITER` que pour reviewer, jeu d'actions cachées plus restreint.
+- Bouton "Nouveau mail" : désactivé, comme pour reviewer (créer un mailing "from scratch" reste une action de structure).
 - Gestion de dossiers : inchangée par rapport à `regular_user` — rien dans la demande produit ne justifie de la restreindre pour `writer`.
 - Envoi de test : conservé.
-- Commentaire : mêmes droits qu'un `regular_user` (pas d'action de décision d'approbation affichée par défaut — voir 3.4).
+- Commentaire : panneau ouvert par défaut, comme pour reviewer. Mêmes droits qu'un `regular_user` sur le fond (pas d'action de décision d'approbation affichée — voir 3.4).
 
 ### 3.4 Décision d'approbation sur les commentaires (mécanisme de "validation")
 
 "Valider" pour `reviewer` ne crée pas un nouveau statut d'approbation séparé sur le mailing — c'est un commentaire qui porte une décision. Extension minimale du système de commentaires existant (`packages/server/comment/comment.schema.js`, 200 lignes, déjà riche : `category`, `severity`, `resolved`/`_resolvedBy`/`resolvedAt`, `mentions`, soft delete) :
 
-- Nouveau champ `decision: { type: String, enum: ['approved', 'changes_requested'], default: null }` sur `CommentSchema`. `null` = commentaire normal ; `'approved'`/`'changes_requested'` = décision de revue.
-- `createComment` (`comment.controller.js:129-152`, `comment.service.js:133-187`) : threader `decision` dans les paramètres acceptés et dans le payload `Comments.create`, au même niveau que `category`/`severity`. Pas de validation supplémentaire côté service au-delà de l'enum Mongoose.
+- Nouveau champ `decision: { type: String, enum: [...Object.values(COMMENT_DECISIONS), null], default: null }` sur `CommentSchema`. `null` = commentaire normal ; `'approved'`/`'changes_requested'` = décision de revue. **Piège Mongoose rencontré** : un champ `enum` avec `default: null` fait échouer la validation de **tout** commentaire (pas seulement ceux avec décision) si `null` n'est pas explicitement listé dans l'`enum` — Mongoose ne traite pas `null` comme "absent" contrairement à `undefined`. À surveiller pour tout futur champ `enum` optionnel sur ce schéma.
+- `createComment` (`comment.controller.js`, `comment.service.js`) : threader `decision` dans les paramètres acceptés et dans le payload `Comments.create`, au même niveau que `category`/`severity`. Pas de validation supplémentaire côté service au-delà de l'enum Mongoose.
 - Restriction additive pour le spectateur non loggué (section 5) : `req.user.isShareViewer` ne peut pas poser de `decision` (même logique que l'interdiction actuelle de `delete`/`resolve`) — l'approbation est une action de revue interne, pas une action de spectateur externe.
-- Côté UI éditeur (composeur de commentaire) : deux actions dédiées "Approuver" / "Demander des changements" qui soumettent un commentaire avec `decision` renseigné ; affichées pour `reviewer`/`company_admin`/`super_admin`, masquées pour `writer`/`regular_user` (qui gardent le commentaire simple). Le fil de commentaires affiche un badge distinct pour les commentaires de décision.
+- **UX simplifiée le 2026-09-03** (décision produit) : une seule action de décision exposée, "Approuver" — un commentaire simple vaut déjà, par construction, demande de changement implicite ; pas besoin d'un bouton "Demander des changements" dédié. `'changes_requested'` reste dans l'enum côté données (pour ne pas fermer la porte à une saisie explicite plus tard, ex. via l'API), mais n'est plus atteignable depuis le composeur de commentaire. Affiché pour `reviewer`/`company_admin`/`super_admin`, masqué pour `writer`/`regular_user`/`company_admin_tech`.
+- Approuver ne requiert pas de texte : si le champ de commentaire est vide, un message par défaut est inséré automatiquement (`comments-decision-approve-default-text` dans `public/lang/badsender-{fr,en}.js`, résolu selon la langue du compte de l'utilisateur courant — `req.user.lang`), plutôt que de bloquer l'action.
+- Le fil de commentaires affiche un badge distinct pour les commentaires de décision (`approved`/`changes_requested` restent tous deux gérés à l'affichage, même si seul `approved` est postable depuis l'UI).
 - Pas de rollup "statut d'approbation courant du mailing" affiché dans le listing dans cet incrément (ex. badge "Approuvé" sur la ligne du mailing) — amélioration possible mais non nécessaire pour livrer le besoin exprimé ; à envisager plus tard si le besoin se confirme, indépendamment de [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103) puisque ce n'est pas un problème de permissions.
 
 ### 3.5 Règle "rôle global à la company, pas par workspace"
@@ -252,6 +261,8 @@ Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Ass
 
 ### Incrément unique — Nouveaux rôles (#1099)
 
+**Statut au 2026-09-03 : implémenté et testé manuellement en local** (roles/guards/ACL, picker de rôles, restrictions listing/dossiers/canvas, décision d'approbation). Reste à faire avant de considérer l'incrément terminé : tests automatisés sur les restrictions UI (aucune infra de test de composants Vue/Knockout dans ce repo aujourd'hui — décision à prendre séparément), et une passe de QA plus large (autres navigateurs,autres tailles d'écran, autres mailings/blocks que ceux testés).
+
 **Livrable** : `company_admin_tech`, `reviewer`, `writer` existent en tant que rôles assignables ; `company_admin_tech` opère réellement sur les réglages techniques ; `reviewer`/`writer` ont une expérience builder restreinte côté UI.
 
 Fichiers à créer : `packages/ui/helpers/roles.js`.
@@ -262,9 +273,9 @@ Fichiers à modifier :
 - `packages/ui/store/user.js` (nouveau getter `IS_GROUP_ADMIN_TECH` + clé dans `SESSION_ACL`), `packages/ui/helpers/pages-acls.js` (nouvelle constante `ACL_GROUP_ADMIN_TECH` + flag `groupAdminTech`), `packages/ui/middleware/authentication-check.js` (4ᵉ branche).
 - `integration.routes.js`/`ai-feature.routes.js`/`feed-mapping.routes.js`/`template.routes.js` (swap `GUARD_GROUP_ADMIN` → `GUARD_GROUP_ADMIN_TECH`, exclusif), `group.routes.js` (`/:groupId/personalized-variables`, écriture/suppression : swap → `GUARD_GROUP_ADMIN_OR_TECH`, partagé).
 - `packages/ui/routes/groups/_groupId/settings/{integrations,ai-features,feed-mappings,tracking}.vue` (`meta.acl` → `ACL_GROUP_ADMIN_TECH`), `variables.vue` (`meta.acl` += `ACL_GROUP_ADMIN_TECH`), `packages/ui/components/sidebar/context/bs-sidebar-settings-list.vue` (le flag unique `canAccessGroupAdmin` qui gate aujourd'hui intégrations/AI features/tracking/feed-mappings/variables/couleurs/emails-groups ensemble doit être scindé — ces 4 premiers deviennent `company_admin_tech`-only).
-- `packages/editor/src/js/ext/badsender-current-user.js` + `toolbox.tmpl.html` (booléens `canEditStructure`/`canEditContent`/`canEditStyle`/`canComment`).
-- `packages/ui/routes/mailings/__partials/mailings-table.vue` (nouveaux jeux `TABLE_HIDDEN_COLUMNS_REVIEWER`/`_WRITER` — la logique actuelle ne branche que sur `isAdmin` vs le reste, il faut aussi y faire remonter le rôle courant) et `packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` (restriction des actions de dossier pour `reviewer`).
-- `packages/server/comment/comment.schema.js` (nouveau champ `decision`), `comment.controller.js`/`comment.service.js` (threader `decision`), composeur de commentaire côté éditeur (actions "Approuver"/"Demander des changements", badge de décision) — détail en section 3.4.
+- `packages/editor/src/js/ext/badsender-current-user.js` (booléens `canEditStructure`/`canEditContent`/`canEditStyle` + ouverture par défaut du panneau commentaires), `packages/editor/src/tmpl-badsender/toolbox.tmpl.html` (overlays additifs sur les 3 panneaux, jamais un `if:` sur les panneaux eux-mêmes — voir la contrainte jQuery UI Tabs en section 3.3), `packages/editor/src/tmpl/block-wysiwyg.tmpl.html` (overlay additif sur le contenu du bloc + réduction de la barre d'outils par bloc), `packages/editor/src/css/badsender-main-toolbox.less` + `style_mosaico_content.less` (styles des overlays).
+- `packages/ui/routes/mailings/__partials/mailings-table.vue` (nouveaux jeux `TABLE_HIDDEN_COLUMNS_REVIEWER`/`_WRITER`, rôle remonté via un nouveau getter `ROLE` dans `store/user.js`), `packages/ui/routes/mailings/index.vue` (bouton "Nouveau mail" désactivé pour reviewer/writer) et `packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` (restriction des actions de dossier pour `reviewer`).
+- `packages/server/comment/comment.schema.js` (nouveau champ `decision`, `null` explicite dans l'`enum` — piège Mongoose, voir section 3.4), `comment.controller.js`/`comment.service.js` (threader `decision`), composeur de commentaire côté éditeur (action "Approuver" uniquement, avec message par défaut si le texte est vide, badge de décision) — détail en section 3.4.
 - `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue` (listes de rôles en dur, avec des libellés anglais non i18n comme `'Group admin'` → remplacées par `roles.js` + vraies clés `$t()`), `packages/ui/helpers/locales/{fr,en}.js` (nouvelles clés de libellés de rôle — travail de contenu net-nouveau, pas seulement une dédup).
 
 Détail de la restriction `company_admin_tech`/`reviewer`/`writer` : voir sections 3.2 et 3.3. Détail de la décision d'approbation : voir section 3.4. Le spectateur non loggué (schéma/service/controller/routes/guard `share-link`, restrictions comment associées, écran de gestion des liens) est implémenté dans une issue séparée : voir section 5 et [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
@@ -293,9 +304,10 @@ Le chantier d'audit log (modèle, service, points d'instrumentation, écran de c
 
 ### 7.1 Renforcer les tests de guards existants
 
-- `tests/server/account/roles.test.js` : étendre pour couvrir les 3 nouvelles constantes de rôle et l'absence de collision.
-- **Nouveau** `tests/server/account/auth.guard.test.js` (aucun test dédié n'existe aujourd'hui sur `guard()` lui-même, contrairement à `group.guard.test.js`) : `GUARD_USER` accepte tout user authentifié ; `GUARD_GROUP_ADMIN` accepte `isGroupAdmin` OU `isAdmin` ; `GUARD_GROUP_ADMIN_OR_TECH` accepte `company_admin`, `company_admin_tech` OU `isAdmin`, mais pas `reviewer`/`writer`/`regular_user`.
-- **Nouveau** test sur l'enum `role` de `user.schema.js` : accepte les 5 valeurs persistées (`regular_user`, `company_admin`, `company_admin_tech`, `reviewer`, `writer`), rejette `super_admin` (toujours hors enum, voir [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101)) et toute valeur arbitraire.
+- **Fait** : `tests/server/account/roles.test.js` étendu pour couvrir les 5 constantes de rôle.
+- **Fait** : `tests/server/account/auth.guard.test.js` (n'existait pas avant cet incrément) — `GUARD_USER`/`GUARD_GROUP_ADMIN`/`GUARD_GROUP_ADMIN_TECH`/`GUARD_GROUP_ADMIN_OR_TECH`/`GUARD_ADMIN`, couvre l'acceptation et le rejet croisés des 5 rôles pour chaque guard.
+- **Fait** : `tests/server/comment/comment.test.js` étendu avec des tests de validation Mongoose **réels** (pas mockés) sur le champ `decision` — a permis d'attraper le piège `enum` + `default: null` (section 3.4) qu'un test avec `Comments.create` mocké ne peut pas détecter.
+- Pas fait : test dédié sur l'enum `role` de `user.schema.js` lui-même (accepte les 5 valeurs persistées, rejette `super_admin` et toute valeur arbitraire) — couverture indirecte via `auth.guard.test.js`, mais pas de test isolé sur le schema.
 
 ### 7.2 Tests d'isolation cross-tenant
 
@@ -307,16 +319,23 @@ Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier 
 
 ### 7.3 Non-régression fonctionnelle
 
-Étendre `group.guard.test.js` (cas `company_admin_tech`), `integration.service.test.js` (déjà bon niveau cross-tenant), et créer `tests/server/comment/comment.service.test.js` si absent, pour couvrir : `deleteComment`/`resolveComment` avec un reviewer/writer (comportement inchangé : échec sur commentaire d'autrui, succès sur le sien) ; `createComment` avec `decision: 'approved'|'changes_requested'` pour un utilisateur normal (accepté, persisté). Les cas spectateur non loggué (`isShareViewer`) sont couverts dans [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
+Pas encore fait : étendre `group.guard.test.js` (cas `company_admin_tech`), et des tests dédiés `deleteComment`/`resolveComment` avec un reviewer/writer (comportement attendu : échec sur commentaire d'autrui, succès sur le sien). Les cas spectateur non loggué (`isShareViewer`) sont couverts dans [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 ### 7.4 Tests UX/UI
 
-- Composant `users/form.vue` : le sélecteur de rôle propose les 5 rôles assignables (hors `super_admin`). Vérifier que les onglets Intégrations/AI Features/Feed Mappings/Tracking sont visibles pour `company_admin_tech` et que Users/Workspaces/Réglages généraux ne le sont pas.
-- Composant `mailings-table.vue` : pour `reviewer`, les actions renommer/déplacer/dupliquer/supprimer sont absentes des lignes de la table ; pour `writer`, renommer/déplacer/dupliquer restent présentes mais supprimer et "nouveau mailing" sont absents ; pour `regular_user`/`company_admin_tech`, comportement inchangé.
-- Composant `bs-sidebar-workspace-tree.vue` : pour `reviewer`, les actions de dossier (renommer/déplacer/supprimer/créer sous-dossier) sont absentes du menu.
-- Éditeur (`toolbox.tmpl.html`, composeur de commentaire) : pour `reviewer`, structure/style/contenu désactivés, actions "Approuver"/"Demander des changements" visibles ; pour `writer`, contenu activé, structure/style désactivés, pas d'action de décision affichée.
+**Aucune infra de test de composants Vue/Knockout n'existe dans ce repo** (seulement des tests de helpers JS purs sous `tests/ui/`) — les points ci-dessous ont été vérifiés **manuellement en local** (5 comptes de test créés sur une company de test, un par rôle) plutôt qu'via des tests automatisés. Mettre en place cette infra (ex. `@vue/test-utils`) est une décision à part, hors scope de cette liste.
 
-Une checklist QA manuelle (`docs/rbac-testing-checklist.md`, sur le modèle de `docs/comments-testing-checklist.md`) sera créée au moment de l'implémentation de cet incrément, une fois les écrans réels disponibles à tester.
+Vérifié manuellement :
+
+- Picker de rôle (`form.vue`/`_userId.vue`/`modal-create-user.vue`) : les 5 rôles assignables s'affichent avec les bons libellés traduits.
+- Sidebar réglages : `company_admin_tech` voit Intégrations/AI Features/Feed Mappings/Tracking/Variables, pas Users/Workspaces/Réglages généraux/Couleurs/Groupes d'emails ; `company_admin` a bien perdu les 4 premiers.
+- `mailings-table.vue` + bouton "Nouveau mail" : reviewer/writer restreints comme prévu (section 3.3).
+- `bs-sidebar-workspace-tree.vue` : actions de dossier absentes pour reviewer.
+- Éditeur : onglets Blocks/Content/Style bloqués par overlay selon le rôle ; barre d'outils par bloc réduite à Commenter (reviewer) ou Commenter/Traduire/Flux RSS (writer) ; canvas non focusable en contenu pour reviewer ; panneau commentaires ouvert par défaut pour reviewer/writer ; bouton "Approuver" seul (pas de "Demander des changements"), message par défaut si le commentaire est vide.
+
+Bugs trouvés et corrigés pendant cette passe manuelle (aucun n'aurait été attrapé par les tests server existants) : mécanisme d'onglets cassé par un premier essai de restriction (voir section 3.3), enum Mongoose + `default: null` (section 3.4), superposition CSS des boutons du composeur de commentaire.
+
+Une checklist QA manuelle formalisée (`docs/rbac-testing-checklist.md`, sur le modèle de `docs/comments-testing-checklist.md`) reste à créer si on veut industrialiser cette vérification pour les prochains incréments RBAC (#1100+).
 
 ---
 

@@ -292,4 +292,14 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-decision-approve': 'Approuver',
+  'comments-decision-approve-default-text': 'Je valide cet email',
+  'comments-decision-approved': 'Approuvé',
+  'comments-decision-changes-requested': 'Changements demandés',
+  'toolbox-readonly-structure':
+    "Vous n'avez pas le droit de modifier la structure de cet email",
+  'toolbox-readonly-content':
+    "Vous n'avez pas le droit de modifier le contenu de cet email",
+  'toolbox-readonly-style':
+    "Vous n'avez pas le droit de modifier le style de cet email",
 };

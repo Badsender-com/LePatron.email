@@ -504,11 +504,17 @@ function commentsLoader(opts) {
     /**
      * Create a new comment
      */
-    viewModel.createComment = function () {
-      const text = viewModel.newCommentText().trim();
+    viewModel.createComment = function (decision) {
+      let text = viewModel.newCommentText().trim();
       if (!text) {
-        viewModel.notifier.error(viewModel.t('comments-text-required'));
-        return;
+        // Approving doesn't require a written comment — fall back to a
+        // default message instead of blocking the action.
+        if (decision === 'approved') {
+          text = viewModel.t('comments-decision-approve-default-text');
+        } else {
+          viewModel.notifier.error(viewModel.t('comments-text-required'));
+          return;
+        }
       }
 
       // Extract mentions from text (uses tracked mentions)
@@ -522,6 +528,7 @@ function commentsLoader(opts) {
         text: textForStorage,
         category: viewModel.newCommentCategory(),
         severity: viewModel.newCommentSeverity(),
+        decision: typeof decision === 'string' ? decision : null,
         blockId: viewModel.selectedBlockForComments() || null,
         blockSnapshot: blockSnapshot
           ? {
@@ -836,6 +843,28 @@ function commentsLoader(opts) {
       if (!currentUser) return false;
       if (viewModel.isCommentAuthor(comment)) return true;
       return currentUser.isAdminOfCurrentGroup;
+    };
+
+    /**
+     * Check if current user can post an approval decision (reviewer's
+     * "validate" mechanism — see docs/plans/rbac-refonte.md section 3.4).
+     */
+    viewModel.canPostDecision = function () {
+      const currentUser = viewModel.currentUser();
+      if (!currentUser) return false;
+      return (
+        currentUser.role === 'reviewer' ||
+        currentUser.isAdminOfCurrentGroup ||
+        currentUser.isAdmin
+      );
+    };
+
+    /**
+     * Get decision label for display
+     */
+    viewModel.getDecisionLabel = function (decision) {
+      if (!decision) return '';
+      return viewModel.t('comments-decision-' + decision.replace(/_/g, '-'));
     };
 
     /**
