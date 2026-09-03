@@ -138,6 +138,7 @@ async function createComment({
   text,
   category,
   severity,
+  decision,
   parentCommentId,
   mentions,
 }) {
@@ -175,6 +176,7 @@ async function createComment({
     text,
     category: category || 'general',
     severity: severity || 'info',
+    decision: decision || null,
     _author: user._id || user.id,
     authorName: user.name,
     _parentComment: parentCommentId || null,

@@ -24,6 +24,13 @@ const COMMENT_SEVERITIES = Object.freeze({
   BLOCKING: 'blocking',
 });
 
+// Review decision enum — reviewer's concrete "validate" mechanism (see
+// docs/plans/rbac-refonte.md section 3.4). null = a normal comment.
+const COMMENT_DECISIONS = Object.freeze({
+  APPROVED: 'approved',
+  CHANGES_REQUESTED: 'changes_requested',
+});
+
 const BlockSnapshotSchema = new Schema(
   {
     index: { type: Number },
@@ -78,6 +85,13 @@ const CommentSchema = new Schema(
       type: String,
       enum: Object.values(COMMENT_SEVERITIES),
       default: COMMENT_SEVERITIES.INFO,
+    },
+    decision: {
+      type: String,
+      // Mongoose's enum validator rejects `null` unless it's explicitly
+      // listed — required here since this field defaults to null.
+      enum: [...Object.values(COMMENT_DECISIONS), null],
+      default: null,
     },
 
     // Author
@@ -196,4 +210,5 @@ module.exports = {
   CommentSchema,
   COMMENT_CATEGORIES,
   COMMENT_SEVERITIES,
+  COMMENT_DECISIONS,
 };
