@@ -4,11 +4,14 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 
 **Scope réduit le 2026-08-27** : le chantier RBAC initial couvrait tout en un seul cadrage (nouveaux rôles, `super_admin` en rôle DB multi-comptes, notion d'équipe, spectateur non loggué, audit log). Jugé trop "epic" et risqué pour un seul incrément, il est désormais découpé :
 
-- **Ce document/incrément** : ajout des rôles `company_admin_tech`, `reviewer`, `writer`, + spectateur non loggué via lien de partage. Issue GitHub [#1099](https://github.com/Badsender-com/LePatron.email/issues/1099).
+- **Ce document/incrément** : ajout des rôles `company_admin_tech`, `reviewer`, `writer`. Issue GitHub [#1099](https://github.com/Badsender-com/LePatron.email/issues/1099).
+- Spectateur non loggué via lien de partage — différé, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (voir section 5).
 - Team / notion d'équipe au sein d'une company — différé, issue [#1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
 - `super_admin` en rôle persistant multi-comptes — différé, issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101).
 - Audit log des changements de rôle et réglages sensibles — différé, issue [#1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 - Gestion granulaire des droits par feature et action — différé, issue [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
+
+**Scope réduit à nouveau le 2026-09-03** : le spectateur non loggué, initialement gardé dans #1099 "malgré sa spécificité non-authentifiée, par décision produit explicite", en est extrait dans sa propre issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) — c'est un sous-système quasi autonome (schéma/service/controller/routes/guard dédiés, écran UI dédié) qui ne partage avec les 3 nouveaux rôles qu'une dépendance légère sur le champ `decision` des commentaires (section 3.4), pas un vrai couplage.
 
 L'audit du code existant (section 2) reste une référence factuelle valide pour l'ensemble de ces chantiers, pas seulement celui-ci.
 
@@ -18,7 +21,7 @@ L'audit du code existant (section 2) reste une référence factuelle valide pour
 2. [Audit — vision vs code réel](#2-audit--vision-vs-code-réel)
 3. [Modèle RBAC cible](#3-modèle-rbac-cible)
 4. [Incrément d'implémentation](#4-incrément-dimplémentation)
-5. [Spectateur non loggué — lien de partage](#5-spectateur-non-loggué--lien-de-partage)
+5. [Spectateur non loggué — différé](#5-spectateur-non-loggué--différé)
 6. [Audit log — différé](#6-audit-log--différé)
 7. [Plan de tests](#7-plan-de-tests)
 8. [Hors périmètre](#8-hors-périmètre)
@@ -42,7 +45,7 @@ L'audit du code existant (section 2) reste une référence factuelle valide pour
 - **Administrateur technique (company admin tech)** : accède aux réglages techniques (intégrations, IA, profils d'export, hébergement d'images…) sans pouvoir gérer les utilisateurs ni les workspaces. Dans cet incrément, l'accès couvre intégrations/AI features/feed mappings/tracking ; les exports et profils ESP (FTP/CDN) restent super-admin-only pour l'instant (section 3.2).
 - **Relecteur (reviewer)** : ouvre un email en lecture, peut commenter/tester/valider, mais ne peut pas modifier la structure, les contenus ou le style — **ni les actions de gestion du listing** (renommer/déplacer/dupliquer/supprimer un mailing). Rôle entièrement passif sur le contenu, actif uniquement sur commentaire/test/validation. Détail affiné en section 3.3.
 - **Rédacteur (writer)** : édite le contenu d'un email mais ne touche pas à sa structure (ajout/suppression de bloc) et n'accède pas aux options de style. Peut dupliquer/renommer/déplacer un mailing pour créer des variantes/déclinaisons, mais ne peut ni créer un mailing from scratch ni en supprimer. Détail affiné en section 3.3.
-- **Spectateur (non loggué)** : consulte un email partagé via un lien et ajoute un commentaire contextualisé, sans pouvoir modifier l'email. US liée : un utilisateur génère un lien de partage donnant accès à un email à un spectateur non loggué pour recueillir des commentaires.
+- **Spectateur (non loggué)** — **différé, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104)** : consulte un email partagé via un lien et ajoute un commentaire contextualisé, sans pouvoir modifier l'email. US liée : un utilisateur génère un lien de partage donnant accès à un email à un spectateur non loggué pour recueillir des commentaires.
 
 ### Notion d'équipe — différée
 
@@ -67,7 +70,7 @@ Règles de compatibilité actées :
 
 1. **Cadrage fonctionnel** — décisions à figer (ce document).
 2. **Conception produit (UX + garde-fous)** — écran "Utilisateurs & rôles", UI d'accès dans l'éditeur (actions désactivées), partage "spectateur" (lien, droits, expiration).
-3. **Implémentation en un seul incrément** — nouveaux rôles (`company_admin_tech`, `reviewer`, `writer`) + spectateur non loggué, voir section 4. Pas de migration de données destructive : l'enum `role` ne fait qu'ajouter des valeurs.
+3. **Implémentation en un seul incrément** — nouveaux rôles (`company_admin_tech`, `reviewer`, `writer`), voir section 4. Pas de migration de données destructive : l'enum `role` ne fait qu'ajouter des valeurs. Le spectateur non loggué est implémenté séparément, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 ---
 
@@ -241,11 +244,11 @@ Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Ass
 
 ## 4. Incrément d'implémentation
 
-### Incrément unique — Nouveaux rôles + spectateur non loggué
+### Incrément unique — Nouveaux rôles (#1099)
 
-**Livrable** : `company_admin_tech`, `reviewer`, `writer` existent en tant que rôles assignables ; `company_admin_tech` opère réellement sur les réglages techniques ; `reviewer`/`writer` ont une expérience builder restreinte côté UI ; un spectateur non loggué peut consulter et commenter un mailing via un lien de partage.
+**Livrable** : `company_admin_tech`, `reviewer`, `writer` existent en tant que rôles assignables ; `company_admin_tech` opère réellement sur les réglages techniques ; `reviewer`/`writer` ont une expérience builder restreinte côté UI.
 
-Fichiers à créer : `packages/server/share/share-link.schema.js`, `.service.js`, `.controller.js`, `.routes.js`, `.guard.js` ; `packages/ui/helpers/roles.js`.
+Fichiers à créer : `packages/ui/helpers/roles.js`.
 
 Fichiers à modifier :
 
@@ -253,46 +256,21 @@ Fichiers à modifier :
 - `integration.routes.js`/`ai-feature.routes.js`/`feed-mapping.routes.js`/`template.routes.js` (swap du guard pour `company_admin_tech`), `packages/ui/helpers/pages-acls.js` + `meta.acl` des pages techniques + sidebar.
 - `packages/editor/src/js/ext/badsender-current-user.js` + `toolbox.tmpl.html` (booléens `canEditStructure`/`canEditContent`/`canEditStyle`/`canComment`).
 - `packages/ui/routes/mailings/__partials/mailings-table.vue` (nouveaux jeux `TABLE_HIDDEN_COLUMNS_REVIEWER`/`_WRITER` dans le calcul existant des actions cachées) et `packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` (restriction des actions de dossier pour `reviewer`).
-- `packages/server/comment/comment.schema.js` (nouveau champ `decision`), `comment.controller.js`/`comment.service.js` (threader `decision`, interdiction pour le spectateur non loggué), composeur de commentaire côté éditeur (actions "Approuver"/"Demander des changements", badge de décision) — détail en section 3.4.
-- `comment.controller.js`/`comment.routes.js`/`comment.service.js` (accepter session **ou** token de partage, restrictions spectateur), `packages/editor/src/js/ext/badsender-comments.js` (utilisateur virtuel spectateur), écran de gestion des liens côté UI (génération/expiration/révocation).
+- `packages/server/comment/comment.schema.js` (nouveau champ `decision`), `comment.controller.js`/`comment.service.js` (threader `decision`), composeur de commentaire côté éditeur (actions "Approuver"/"Demander des changements", badge de décision) — détail en section 3.4.
 
-Détail du spectateur non loggué : voir section 5. Détail de la restriction `company_admin_tech`/`reviewer`/`writer` : voir sections 3.2 et 3.3. Détail de la décision d'approbation : voir section 3.4.
+Détail de la restriction `company_admin_tech`/`reviewer`/`writer` : voir sections 3.2 et 3.3. Détail de la décision d'approbation : voir section 3.4. Le spectateur non loggué (schéma/service/controller/routes/guard `share-link`, restrictions comment associées, écran de gestion des liens) est implémenté dans une issue séparée : voir section 5 et [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 Migration de données : aucune migration destructive — l'enum `role` ne fait qu'ajouter des valeurs, les `User` existants gardent leur rôle actuel ; les nouveaux rôles ne s'appliquent qu'aux utilisateurs reclassés manuellement.
 
 ---
 
-## 5. Spectateur non loggué — lien de partage
+## 5. Spectateur non loggué — différé
 
-### 5.1 Schéma — `packages/server/share/share-link.schema.js`
+Le chantier du spectateur non loggué (lien de partage : schéma `ShareLink`, service/controller/routes/guard dédiés, branchement additif sur `comment.service.js`/`comment.controller.js`, écran de gestion des liens) est sorti de cet incrément et traité dans [l'issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), qui contient le détail de conception complet (schéma, branchement sur `verifyMailingAccess`, révocation/expiration).
 
-```
-ShareLinkSchema = {
-  token: String (unique, index, généré via rand-token comme UserSchema.token),
-  _mailing: ObjectId ref Creation (required),
-  _company: ObjectId ref Group (dénormalisé, même pattern que CommentSchema._company),
-  _createdBy: ObjectId ref User (required),
-  permissions: { type: [String], enum: ['read', 'comment'], default: ['read', 'comment'] },
-  expiresAt: Date (required — pas de lien sans expiration, ex. +30 jours par défaut),
-  revokedAt: Date (null = actif),
-  lastAccessedAt: Date,
-  accessCount: Number (default: 0),
-}
-```
+**Pourquoi une issue séparée** : c'est un sous-système quasi autonome — aucun fichier partagé avec l'infra des 3 nouveaux rôles (`roles.js`, guards, booléens éditeur, `mailings-table.vue`). Le seul point de couplage est une dépendance légère sur le champ `decision` des commentaires (introduit par cet incrément, section 3.4) : la restriction "le spectateur ne peut pas poser de décision" ne peut être activée qu'une fois ce champ mergé — un ordre de séquencement, pas un vrai couplage technique.
 
-Index : `{ token: 1 }` unique, `{ _mailing: 1 }`, `{ expiresAt: 1 }`.
-
-### 5.2 Branchement sans dupliquer `comment.service.js`
-
-Point d'extension unique : `verifyMailingAccess(mailingId, user)` (`comment.service.js:99-128`). Un nouveau middleware `GUARD_SHARE_TOKEN` résout le token en un **objet `user` synthétique** : `{ id: null, isAdmin: false, isShareViewer: true, _company: shareLink._company, group: { id: shareLink._company } }`. Ce faux "user" satisfait déjà la comparaison de company dans `verifyMailingAccess` **sans modifier une seule ligne du service existant**.
-
-Sur `comment.routes.js`, un middleware composite `GUARD_USER_OR_SHARE_TOKEN` (nouveau, `comment.guard.js`) essaie `GUARD_USER` puis, à défaut, `GUARD_SHARE_TOKEN`. Restrictions additives dans `comment.controller.js`/`comment.service.js` : si `req.user.isShareViewer`, refuser `deleteComment`/`resolveComment`/`unresolveComment` et refuser de poser une `decision` (section 3.4) — le spectateur commente, il ne modère pas et ne valide pas — et exiger un nom saisi à la volée pour l'auteur du commentaire. `CommentSchema._author` devient nullable, avec un champ additif `authorType: 'user' | 'share-viewer'` et `_shareLink` (ref) pour tracer la provenance.
-
-### 5.3 Révocation / expiration / journal
-
-- Révocation : `PATCH /api/share-links/:id/revoke`, guard `GUARD_USER` + `verifyMailingAccess` réutilisé.
-- Expiration : vérifiée à chaque résolution de token (`expiresAt < now` ou `revokedAt` non-null ⇒ 410 Gone).
-- Compteurs par lien uniquement (`lastAccessedAt`, `accessCount` sur `ShareLinkSchema`, section 5.1) — pas de journal d'audit transverse dans cet incrément. Un audit log générique (traçabilité des changements de rôle et réglages sensibles, incluant création/révocation de lien) est différé dans [l'issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
+Un audit log générique des accès/création/révocation de lien reste différé dans [l'issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102), indépendamment de #1104.
 
 ---
 
@@ -314,14 +292,13 @@ Le chantier d'audit log (modèle, service, points d'instrumentation, écran de c
 
 Dans `tests/server/security/`, même naming que l'existant (`exploit-f2-idor-cross-tenant.test.js`, `exploit-f4-apikey-leak.test.js`) :
 
-- `exploit-rbac-1-share-token-scope.test.js` : un token de partage d'un mailing A ne donne pas accès aux commentaires du mailing B, ni `delete`/`resolve`.
 - `exploit-rbac-2-tech-admin-no-user-access.test.js` : un `company_admin_tech` ne peut pas lister/créer/modifier des utilisateurs ou des workspaces via l'API, même en devinant les routes.
 
-Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier admin) sont différés avec [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101), puisque `super_admin` reste hors de l'enum persisté dans cet incrément.
+Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier admin) sont différés avec [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101), puisque `super_admin` reste hors de l'enum persisté dans cet incrément. Le test d'isolation du token de partage (`exploit-rbac-1-share-token-scope.test.js`) est différé avec [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 ### 7.3 Non-régression fonctionnelle
 
-Étendre `group.guard.test.js` (cas `company_admin_tech`), `integration.service.test.js` (déjà bon niveau cross-tenant), et créer `tests/server/comment/comment.service.test.js` si absent, pour couvrir : `deleteComment`/`resolveComment` avec un spectateur non loggué (refus) et un reviewer/writer (comportement inchangé : échec sur commentaire d'autrui, succès sur le sien) ; `createComment` avec `decision: 'approved'|'changes_requested'` pour un utilisateur normal (accepté, persisté) et pour un spectateur non loggué (`isShareViewer`, rejeté).
+Étendre `group.guard.test.js` (cas `company_admin_tech`), `integration.service.test.js` (déjà bon niveau cross-tenant), et créer `tests/server/comment/comment.service.test.js` si absent, pour couvrir : `deleteComment`/`resolveComment` avec un reviewer/writer (comportement inchangé : échec sur commentaire d'autrui, succès sur le sien) ; `createComment` avec `decision: 'approved'|'changes_requested'` pour un utilisateur normal (accepté, persisté). Les cas spectateur non loggué (`isShareViewer`) sont couverts dans [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 ### 7.4 Tests UX/UI
 
@@ -336,8 +313,9 @@ Une checklist QA manuelle (`docs/rbac-testing-checklist.md`, sur le modèle de `
 
 ## 8. Hors périmètre
 
-Quatre chantiers sont explicitement sortis de cet incrément et suivis dans des issues dédiées :
+Cinq chantiers sont explicitement sortis de cet incrément et suivis dans des issues dédiées :
 
+- **Spectateur non loggué via lien de partage** — [issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), voir section 5.
 - **Team / notion d'équipe au sein d'une company** — [issue #1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
 - **`super_admin` en rôle persistant multi-comptes** (migration DB, flip d'`isAdmin`, garde-fous anti-escalade) — [issue #1101](https://github.com/Badsender-com/LePatron.email/issues/1101). Le compte super admin en variable d'environnement reste le mécanisme de bootstrap/break-glass permanent, il n'est pas remplacé par des comptes DB dans cet incrément.
 - **Audit log** des changements de rôle et réglages sensibles — [issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
