@@ -1,5 +1,3 @@
-'use strict';
-
 // Route protection is one word per route, and nothing else notices which
 // account a guard lets through. `GUARD_ADMIN` had no test of its own: the only
 // admin was the bootstrap account, a frozen object outside the database.
@@ -151,4 +149,78 @@ describe('auth guards', () => {
       expect(await runGuard(GUARD_ADMIN_REDIRECT, superAdmin)).toEqual(PASSES);
     });
   });
+});
+
+describe('the roles added by the roles and permissions epic', () => {
+  const {
+    GUARD_GROUP_ADMIN_TECH,
+    GUARD_GROUP_ADMIN_OR_TECH,
+  } = require('../../../packages/server/account/auth.guard.js');
+
+  const companyAdmin = persisted('company_admin');
+  const tech = persisted('company_admin_tech');
+  const reviewer = persisted('reviewer');
+  const writer = persisted('writer');
+  const regular = persisted('regular_user');
+  const superAdmin = persisted('super_admin');
+
+  it.each([
+    ['company_admin_tech', tech],
+    ['reviewer', reviewer],
+    ['writer', writer],
+  ])('a %s passes the user guard', async (_role, user) => {
+    expect(await runGuard(GUARD_USER, user)).toEqual(PASSES);
+  });
+
+  it.each([
+    ['company_admin_tech', tech],
+    ['reviewer', reviewer],
+    ['writer', writer],
+  ])('a %s is rejected by the group admin guard', (_role, user) =>
+    expectRejected(GUARD_GROUP_ADMIN, user)
+  );
+
+  describe('GUARD_GROUP_ADMIN_TECH', () => {
+    it.each([
+      ['company_admin_tech', tech],
+      ['super_admin', superAdmin],
+    ])('accepts a %s', async (_role, user) => {
+      expect(await runGuard(GUARD_GROUP_ADMIN_TECH, user)).toEqual(PASSES);
+    });
+
+    it.each([
+      ['company_admin', companyAdmin],
+      ['reviewer', reviewer],
+      ['writer', writer],
+      ['regular_user', regular],
+    ])('rejects a %s', (_role, user) =>
+      expectRejected(GUARD_GROUP_ADMIN_TECH, user)
+    );
+  });
+
+  describe('GUARD_GROUP_ADMIN_OR_TECH', () => {
+    it.each([
+      ['company_admin', companyAdmin],
+      ['company_admin_tech', tech],
+      ['super_admin', superAdmin],
+    ])('accepts a %s', async (_role, user) => {
+      expect(await runGuard(GUARD_GROUP_ADMIN_OR_TECH, user)).toEqual(PASSES);
+    });
+
+    it.each([
+      ['reviewer', reviewer],
+      ['writer', writer],
+      ['regular_user', regular],
+    ])('rejects a %s', (_role, user) =>
+      expectRejected(GUARD_GROUP_ADMIN_OR_TECH, user)
+    );
+  });
+
+  it.each([
+    ['company_admin_tech', tech],
+    ['reviewer', reviewer],
+    ['writer', writer],
+  ])('a %s is rejected by the admin guard', (_role, user) =>
+    expectRejected(GUARD_ADMIN, user)
+  );
 });

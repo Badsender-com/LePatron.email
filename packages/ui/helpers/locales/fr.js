@@ -511,6 +511,9 @@ export default {
       superAdmin: 'Super administrateur',
       groupAdmin: 'Administrateur du groupe',
       regularUser: 'Utilisateur',
+      writer: 'Rédacteur',
+      reviewer: 'Relecteur',
+      companyAdminTech: 'Admin technique',
       chip: {
         superAdmin: 'Super admin',
         groupAdmin: 'Admin',

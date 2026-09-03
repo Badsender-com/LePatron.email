@@ -8,6 +8,7 @@ const router = express.Router();
 const {
   GUARD_ADMIN,
   GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_OR_TECH,
   guard,
   GUARD_USER,
 } = require('../account/auth.guard.js');
@@ -88,13 +89,13 @@ router.get(
 );
 router.post(
   '/:groupId/personalized-variables',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_OR_TECH,
   GUARD_CAN_ACCESS_GROUP,
   groups.createOrUpdatePersonalizedVariables
 );
 router.delete(
   '/:groupId/personalized-variables/:variableId',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_OR_TECH,
   GUARD_CAN_ACCESS_GROUP,
   groups.deletePersonalizedVariable
 );

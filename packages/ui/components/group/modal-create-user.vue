@@ -61,6 +61,12 @@ export default {
         errors.push(this.$t('global.errors.nameRequired'));
       return errors;
     },
+    roleOptions() {
+      return ASSIGNABLE_ROLES.map((value) => ({
+        value,
+        text: this.$t(getRoleLabelKey(value)),
+      }));
+    },
   },
   methods: {
     open() {
