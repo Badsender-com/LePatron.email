@@ -130,7 +130,15 @@ async function createComment(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { text, blockId, category, severity, parentCommentId, mentions },
+    body: {
+      text,
+      blockId,
+      category,
+      severity,
+      decision,
+      parentCommentId,
+      mentions,
+    },
   } = req;
 
   if (!text || text.trim() === '') {
@@ -144,6 +152,7 @@ async function createComment(req, res) {
     text: text.trim(),
     category,
     severity,
+    decision,
     parentCommentId,
     mentions,
   });

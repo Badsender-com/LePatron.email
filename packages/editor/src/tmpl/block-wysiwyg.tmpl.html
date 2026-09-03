@@ -1,7 +1,8 @@
-<div class="editable block" data-drop-content="Drop here" data-bind="attr: { 'data-drop-content': $root.t('Drop here'), 'data-block-id': $data.id }, click: function(obj, evt) { $root.selectBlock(obj); $root.revealBlockSettings(obj, evt); return true }, clickBubble: false, event: { dblclick: $root.openBlockFromCanvas }, dblclickBubble: false, css: { selected: $root.selectedBlock() === $data }, scrollIntoView: $root.selectedBlock() === $data">
+<div class="editable block" data-drop-content="Drop here" data-bind="attr: { 'data-drop-content': $root.t('Drop here'), 'data-block-id': $data.id }, click: function(obj, evt) { $root.selectBlock(obj); return true }, clickBubble: false, css: { selected: $root.selectedBlock() === $data }, scrollIntoView: $root.selectedBlock() === $data">
   <div class="mo-blockselectionhelper"></div>
   <div class="tools" data-bind="tooltips: {}">
     <!-- ko if: typeof $index != 'undefined' -->
+    <!-- ko if: $root.currentUser()?.canEditStructure -->
     <!-- Drag handle -->
     <div title="Drag this handle to move the block" data-bind="attr: { title: $root.t('Drag this handle to move the block') }" class="tool handle"><span class="lucide lucide-fw lucide-grip-vertical"></span></div>
     <!-- Move up/down -->
@@ -19,14 +20,21 @@
          in the Content tab. Hidden when the template no longer enables the
          builder, as the panel's own button is. -->
     <!-- ko if: $root.canComposeBlock && $root.canComposeBlock($data) --><div title="Compose block" class="tool compose" data-bind="attr: { title: $root.t('block-builder-tool-compose') }, click: $root.composeBlock.bind($element, $data)"><span class="lucide lucide-fw lucide-layout-template"></span></div><!-- /ko -->
-    <!-- Comment block -->
+    <!-- /ko -->
+    <!-- Comment block (always available, including reviewer/writer) -->
     <div title="Comment block" class="tool comment" data-bind="attr: { title: $root.t('Comment block') }, click: $root.commentBlock.bind($element, $rawData, $parent, $index)">
       <span class="lucide lucide-message-circle"></span>
       <!-- ko if: $root.getBlockCommentCount && $root.getBlockCommentCount($data.id) > 0 -->
       <span class="comment-count-badge" data-bind="text: $root.getBlockCommentCount($data.id)"></span>
       <!-- /ko -->
     </div>
+    <!-- ko if: $root.currentUser()?.canEditStructure -->
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
+    <!-- Delete block (destructive action - always last) -->
+    <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
+    <!-- /ko -->
+    <!-- Translate / content feed: content-level actions, available to writer (canEditContent) even though structure tools above are hidden -->
+    <!-- ko if: $root.currentUser()?.canEditContent -->
     <!-- Translate block — hidden on both synthetic blocks: AI translation
          would rewrite the HTML code block's pasted markup, and the per-block
          route cannot rebuild a composed block's markup (it is translated with
@@ -34,18 +42,22 @@
     <!-- ko if: $root.metadata.hasTranslationFeature && $root.offersBlockTranslation && $root.offersBlockTranslation($rawData) --><div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-languages"></span></div><!-- /ko -->
     <!-- Import from content feed (only for blocks with an active feed mapping) -->
     <!-- ko if: $root.isFeedMappableBlock($rawData) --><div title="Import from feed" class="tool content-feed" data-bind="attr: { title: $root.t('Import from feed') }, click: $root.openContentFeedModal.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-rss"></span></div><!-- /ko -->
-    <!-- Delete block (destructive action - always last) -->
-    <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
+    <!-- /ko -->
     <!-- /ko -->
   </div>
-  <!-- ko block: $data --><!-- /ko -->
-  <!-- Placeholder for an empty synthetic block: its content is hidden by a
-       `ko if` until it holds markup, leaving nothing to click on. The wording
-       comes from the block's own descriptor — "paste some HTML" and "compose a
-       block" are different invitations. This template is only used in edit mode
-       (the export resolves `<type>-show`), so it can never leak into the
-       exported HTML. -->
-  <!-- ko if: $root.isEmptyHtmlBlock && $root.isEmptyHtmlBlock($rawData) -->
-  <div class="lp-html-block-empty" data-bind="text: $root.t($root.emptyBlockLabelKey($rawData))"></div>
-  <!-- /ko -->
+  <div class="block-content-wrapper">
+    <!-- ko block: $data --><!-- /ko -->
+    <!-- Placeholder for an empty synthetic block: its content is hidden by a
+         `ko if` until it holds markup, leaving nothing to click on. The wording
+         comes from the block's own descriptor — "paste some HTML" and "compose a
+         block" are different invitations. This template is only used in edit mode
+         (the export resolves `<type>-show`), so it can never leak into the
+         exported HTML. -->
+    <!-- ko if: $root.isEmptyHtmlBlock && $root.isEmptyHtmlBlock($rawData) -->
+    <div class="lp-html-block-empty" data-bind="text: $root.t($root.emptyBlockLabelKey($rawData))"></div>
+    <!-- /ko -->
+    <!-- ko if: !$root.currentUser()?.canEditContent -->
+    <div class="canvas-readonly-overlay"></div>
+    <!-- /ko -->
+  </div>
 </div>

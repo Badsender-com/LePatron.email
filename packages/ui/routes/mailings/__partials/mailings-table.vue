@@ -2,7 +2,8 @@
 import { mapMutations, mapGetters, mapState } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { USER, IS_ADMIN } from '~/store/user.js';
+import { USER, IS_ADMIN, ROLE } from '~/store/user.js';
+import { REVIEWER, WRITER } from '~/helpers/roles.js';
 import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
@@ -47,6 +48,15 @@ import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
+const TABLE_HIDDEN_COLUMNS_REVIEWER = [
+  ACTIONS.RENAME,
+  ACTIONS.DELETE,
+  ACTIONS.MOVE_MAIL,
+  ACTIONS.COPY_MAIL,
+  ACTIONS.ADD_TAGS,
+  ACTIONS.TRANSFER,
+];
+const TABLE_HIDDEN_COLUMNS_WRITER = [ACTIONS.DELETE, ACTIONS.TRANSFER];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   ACTIONS.RENAME,
   ACTIONS.DELETE,
@@ -108,16 +118,20 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { isAdmin: IS_ADMIN, role: ROLE }),
     ...mapState(FOLDER, [
       'pagination',
       'tags',
       'isLoadingMailingsForFilterUpdate',
     ]),
     hiddenCols() {
+      const roleHiddenColumns = {
+        [REVIEWER]: TABLE_HIDDEN_COLUMNS_REVIEWER,
+        [WRITER]: TABLE_HIDDEN_COLUMNS_WRITER,
+      };
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
-        : TABLE_HIDDEN_COLUMNS_USER;
+        : roleHiddenColumns[this.role] || TABLE_HIDDEN_COLUMNS_USER;
       if (!this.hasAccess) {
         return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }

@@ -98,6 +98,41 @@
     }
   }
 
+  // Read-only overlay for reviewer/writer (structure/content/style
+  // restrictions) — an additive child of the existing tab panel, never a
+  // replacement for it: jQuery UI Tabs indexes #toolblocks/#toolcontents/
+  // #toolstyles once at init, so removing/re-adding those panels themselves
+  // breaks its active-panel tracking (see git history).
+  #toolblocks,
+  #toolcontents,
+  #toolstyles {
+    position: relative;
+  }
+
+  .toolbox-readonly-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--v-primary-base);
+    font-size: 0.9em;
+    cursor: not-allowed;
+
+    .lucide {
+      font-size: 1.8em;
+    }
+  }
+
   .tooltabs__top-bar {
     display: flex;
     height: @topbar-height;

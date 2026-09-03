@@ -16,6 +16,7 @@ import {
   FETCH_FOLDER_CHILDREN,
 } from '~/store/folder';
 import { USER } from '~/store/user';
+import { REVIEWER } from '~/helpers/roles.js';
 import { canCreateFolder } from '~/utils/workspaces';
 import { findNodeById, findNodesByIds, findPathToNode } from '~/utils/tree';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -450,7 +451,11 @@ export default {
       });
     },
     hasRightToCreateFolder(item) {
-      return item.hasAccess && canCreateFolder(item?.id, item);
+      return (
+        this.userInfo?.role !== REVIEWER &&
+        item.hasAccess &&
+        canCreateFolder(item?.id, item)
+      );
     },
     openNewFolderModal(event, item) {
       event.stopPropagation();
@@ -519,7 +524,11 @@ export default {
       }
     },
     checkIfAuthorizedFolderMenu(item) {
-      return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+      return (
+        this.userInfo?.role !== REVIEWER &&
+        item.hasAccess &&
+        item?.type === SPACE_TYPE.FOLDER
+      );
     },
     checkIfAuthorizedWorkspaceMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
