@@ -44,7 +44,13 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
+      enum: [
+        Roles.GROUP_ADMIN,
+        Roles.GROUP_ADMIN_TECH,
+        Roles.REGULAR_USER,
+        Roles.REVIEWER,
+        Roles.WRITER,
+      ],
       required: false,
     },
     externalUsername: {
@@ -160,6 +166,11 @@ UserSchema.virtual('isAdmin').get(function () {
 UserSchema.virtual('isGroupAdmin').get(function () {
   const user = this;
   return user.role === Roles.GROUP_ADMIN;
+});
+
+UserSchema.virtual('isGroupAdminTech').get(function () {
+  const user = this;
+  return user.role === Roles.GROUP_ADMIN_TECH;
 });
 
 UserSchema.methods.activate = function activate() {

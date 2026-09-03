@@ -491,6 +491,13 @@ export default {
     lang: 'Langue',
     details: 'Informations',
     role: 'Rôle',
+    roles: {
+      regularUser: 'Utilisateur',
+      writer: 'Rédacteur',
+      reviewer: 'Relecteur',
+      companyAdminTech: 'Admin technique',
+      companyAdmin: 'Admin compagnie',
+    },
     noUsersAvailable: 'Aucun utilisateur disponible',
     sections: {
       statusSecurity: 'Statut & Sécurité',

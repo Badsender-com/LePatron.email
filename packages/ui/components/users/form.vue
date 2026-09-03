@@ -3,6 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
+import { ASSIGNABLE_ROLES, getRoleLabelKey } from '~/helpers/roles.js';
 
 export default {
   name: 'BsUserForm',
@@ -12,10 +13,6 @@ export default {
   supportedLanguages: [
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
-  ],
-  roles: [
-    { text: 'Group admin', value: 'company_admin' },
-    { text: 'Regular user', value: 'regular_user' },
   ],
   props: {
     user: { type: Object, default: () => ({}) },
@@ -57,6 +54,12 @@ export default {
       !this.$v.user.name.required &&
         errors.push(this.$t('global.errors.nameRequired'));
       return errors;
+    },
+    roleOptions() {
+      return ASSIGNABLE_ROLES.map((value) => ({
+        value,
+        text: this.$t(getRoleLabelKey(value)),
+      }));
     },
   },
   methods: {
@@ -127,7 +130,7 @@ export default {
             v-model="localModel.role"
             :label="$t('users.role')"
             name="role"
-            :items="$options.roles"
+            :items="roleOptions"
           />
         </v-col>
       </v-row>

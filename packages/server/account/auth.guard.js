@@ -37,6 +37,8 @@ module.exports = {
   GUARD_USER: guard([Roles.REGULAR_USER]),
   GUARD_USER_REDIRECT: guard([Roles.REGULAR_USER], true),
   GUARD_GROUP_ADMIN: guard([Roles.GROUP_ADMIN]),
+  GUARD_GROUP_ADMIN_TECH: guard([Roles.GROUP_ADMIN_TECH]),
+  GUARD_GROUP_ADMIN_OR_TECH: guard([Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH]),
   GUARD_ADMIN: guard([Roles.SUPER_ADMIN]),
   GUARD_ADMIN_REDIRECT: guard([Roles.SUPER_ADMIN], true),
 };
@@ -53,11 +55,13 @@ function guard(roles = [Roles.REGULAR_USER], redirect) {
 
     const isUserRoute = roles.includes(Roles.REGULAR_USER);
     const isGroupUserRoute = roles.includes(Roles.GROUP_ADMIN);
+    const isGroupAdminTechRoute = roles.includes(Roles.GROUP_ADMIN_TECH);
     const isAdminRoute = roles.includes(Roles.SUPER_ADMIN);
 
     if (
       (isAdminRoute && user?.isAdmin) ||
       (isGroupUserRoute && (user?.isGroupAdmin || user?.isAdmin)) ||
+      (isGroupAdminTechRoute && (user?.isGroupAdminTech || user?.isAdmin)) ||
       (isUserRoute && !!user)
     ) {
       return next();

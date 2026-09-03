@@ -14,6 +14,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import { User, Shield, Users, Mail } from 'lucide-vue';
+import { ASSIGNABLE_ROLES, getRoleLabelKey } from '~/helpers/roles.js';
 
 export default {
   name: 'BsPageSettingsUserEdit',
@@ -34,10 +35,6 @@ export default {
   supportedLanguages: [
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
-  ],
-  roles: [
-    { text: 'Group admin', value: 'company_admin' },
-    { text: 'Regular user', value: 'regular_user' },
   ],
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
@@ -98,6 +95,12 @@ export default {
   computed: {
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
+    },
+    roleOptions() {
+      return ASSIGNABLE_ROLES.map((value) => ({
+        value,
+        text: this.$t(getRoleLabelKey(value)),
+      }));
     },
     workspaceHeaders() {
       return [
@@ -365,7 +368,7 @@ export default {
                   <bs-select
                     v-model="user.role"
                     :label="$t('users.role')"
-                    :items="$options.roles"
+                    :items="roleOptions"
                   />
                 </v-col>
               </v-row>

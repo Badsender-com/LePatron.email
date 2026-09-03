@@ -1,7 +1,12 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
-import { Roles } from '~/helpers/constants/roles';
+import {
+  GROUP_ADMIN,
+  GROUP_ADMIN_TECH,
+  REGULAR_USER,
+  getRoleLabelKey,
+} from '~/helpers/roles.js';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -23,7 +28,6 @@ export default {
   data() {
     return {
       selectedUser: { group: {} },
-      roles: Roles,
     };
   },
   computed: {
@@ -31,7 +35,7 @@ export default {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
         { text: this.$t('users.email'), align: 'left', value: 'email' },
-        { text: '', value: 'role', sortable: false, width: '80px' },
+        { text: this.$t('users.role'), value: 'role', width: '130px' },
         {
           text: this.$tc('global.group', 1),
           align: 'left',
@@ -91,6 +95,19 @@ export default {
     },
     isActiveStatus(status) {
       return status === 'confirmed' || status === 'saml-authentication';
+    },
+    showRoleChip(role) {
+      return !!role && role !== REGULAR_USER;
+    },
+    isAdminTierRole(role) {
+      return role === GROUP_ADMIN || role === GROUP_ADMIN_TECH;
+    },
+    getRoleColor(role) {
+      return this.isAdminTierRole(role) ? 'accent' : 'grey';
+    },
+    getRoleLabel(role) {
+      const labelKey = getRoleLabelKey(role);
+      return labelKey ? this.$t(labelKey) : role;
     },
     resetPassword(user) {
       this.selectedUser = user;
@@ -215,12 +232,12 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="item.role === roles.GROUP_ADMIN"
+          v-if="showRoleChip(item.role)"
           x-small
-          color="accent"
-          dark
+          :color="getRoleColor(item.role)"
+          :dark="isAdminTierRole(item.role)"
         >
-          Admin
+          {{ getRoleLabel(item.role) }}
         </v-chip>
       </template>
 

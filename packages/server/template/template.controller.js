@@ -204,8 +204,8 @@ async function updateTrackingConfig(req, res) {
   const { user } = req;
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
-  // Group admins can only edit tracking config for templates of their own
-  // company. Super admins (isAdmin) can edit any template.
+  // company_admin_tech can only edit tracking config for templates of their
+  // own company. Super admins (isAdmin) can edit any template.
   if (!user.isAdmin) {
     const templateCompanyId = template._company && template._company.toString();
     const userCompanyId = user.group && user.group.id;

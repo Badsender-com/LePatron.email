@@ -10,6 +10,7 @@ export const LOCALE = 'LOCALE';
 export const IS_CONNECTED = 'IS_CONNECTED';
 export const IS_ADMIN = 'IS_ADMIN';
 export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
+export const IS_GROUP_ADMIN_TECH = 'IS_GROUP_ADMIN_TECH';
 export const SESSION_ACL = 'SESSION_ACL';
 // Derived from state.info.group.downloadMailingWithFtpImages. Used to be a
 // separate boolean kept in sync via USER_SET_HAS_FTP_ACCESS — removed to
@@ -23,6 +24,9 @@ export const getters = {
   },
   [IS_GROUP_ADMIN](state) {
     return state.info != null && state.info.isGroupAdmin === true;
+  },
+  [IS_GROUP_ADMIN_TECH](state) {
+    return state.info != null && state.info.isGroupAdminTech === true;
   },
   [IS_ADMIN](state) {
     return state.info != null && state.info.isAdmin === true;
@@ -50,6 +54,7 @@ export const getters = {
         state.info.isGroupAdmin !== true,
       isAdmin: hasSession && state.info.isAdmin === true,
       isGroupAdmin: hasSession && state.info.isGroupAdmin === true,
+      isGroupAdminTech: hasSession && state.info.isGroupAdminTech === true,
     };
   },
 };

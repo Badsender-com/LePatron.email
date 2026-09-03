@@ -486,6 +486,13 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    roles: {
+      regularUser: 'User',
+      writer: 'Writer',
+      reviewer: 'Reviewer',
+      companyAdminTech: 'Tech admin',
+      companyAdmin: 'Company admin',
+    },
     noUsersAvailable: 'No users available',
     sections: {
       statusSecurity: 'Status & Security',

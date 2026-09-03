@@ -49,7 +49,13 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
+import {
+  IS_ADMIN,
+  IS_GROUP_ADMIN,
+  IS_GROUP_ADMIN_TECH,
+  USER,
+  GROUP,
+} from '~/store/user';
 import { Shield, Sparkles, FlaskConical } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
@@ -70,6 +76,7 @@ export default {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
+      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
       group: GROUP,
     }),
     ...mapGetters('sidebar', {
@@ -92,6 +99,7 @@ export default {
 
     visibleCategories() {
       const canAccessGroupAdmin = this.isGroupAdmin || this.isAdmin;
+      const canAccessGroupAdminTech = this.isGroupAdminTech || this.isAdmin;
       const hasGroupContext = !!this.settingsBasePath;
 
       const categories = [];
@@ -149,18 +157,21 @@ export default {
       ];
 
       if (canAccessGroupAdmin) {
+        generalItems.push({
+          id: 'workspaces',
+          label: this.$tc('global.teams', 2),
+          icon: 'mdi-account-group-outline',
+          route: `${this.settingsBasePath}/workspaces`,
+          activePatterns: [
+            `${this.settingsBasePath}/workspaces`,
+            `/groups/${this.groupId}/workspace`,
+            `/groups/${this.groupId}/new-workspace`,
+          ],
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
         generalItems.push(
-          {
-            id: 'workspaces',
-            label: this.$tc('global.teams', 2),
-            icon: 'mdi-account-group-outline',
-            route: `${this.settingsBasePath}/workspaces`,
-            activePatterns: [
-              `${this.settingsBasePath}/workspaces`,
-              `/groups/${this.groupId}/workspace`,
-              `/groups/${this.groupId}/new-workspace`,
-            ],
-          },
           {
             id: 'integrations',
             label: this.$t('integrations.title'),
@@ -257,13 +268,21 @@ export default {
               `/groups/${this.groupId}/emails-groups`,
               `/groups/${this.groupId}/new-emails-group`,
             ],
-          },
-          {
-            id: 'variables',
-            label: this.$t('global.variables'),
-            icon: 'mdi-code-braces',
-            route: `${this.settingsBasePath}/variables`,
-          },
+          }
+        );
+      }
+
+      if (canAccessGroupAdmin || canAccessGroupAdminTech) {
+        emailBuilderItems.push({
+          id: 'variables',
+          label: this.$t('global.variables'),
+          icon: 'mdi-code-braces',
+          route: `${this.settingsBasePath}/variables`,
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
+        emailBuilderItems.push(
           {
             id: 'tracking',
             label: this.$t('trackingConfig.sidebarLabel'),
