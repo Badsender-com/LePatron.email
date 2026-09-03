@@ -505,6 +505,9 @@ export default {
       superAdmin: 'Super admin',
       groupAdmin: 'Company admin',
       regularUser: 'Regular user',
+      writer: 'Writer',
+      reviewer: 'Reviewer',
+      companyAdminTech: 'Tech admin',
       chip: {
         superAdmin: 'Super admin',
         groupAdmin: 'Admin',

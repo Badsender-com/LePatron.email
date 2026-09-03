@@ -1,6 +1,12 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
+import {
+  GROUP_ADMIN,
+  GROUP_ADMIN_TECH,
+  REGULAR_USER,
+  getRoleLabelKey,
+} from '~/helpers/roles.js';
 import { Roles } from '~/helpers/constants/roles';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
@@ -22,8 +28,8 @@ export default {
   },
   data() {
     return {
+      superAdminRole: Roles.SUPER_ADMIN,
       selectedUser: { group: {} },
-      roles: Roles,
     };
   },
   computed: {
@@ -121,6 +127,24 @@ export default {
     },
     isActiveStatus(status) {
       return status === 'confirmed' || status === 'saml-authentication';
+    },
+    showRoleChip(role) {
+      return !!role && role !== REGULAR_USER;
+    },
+    isAdminTierRole(role) {
+      return role === GROUP_ADMIN || role === GROUP_ADMIN_TECH;
+    },
+    getRoleColor(role) {
+      if (role === Roles.SUPER_ADMIN) return 'primary';
+      return this.isAdminTierRole(role) ? 'accent' : 'grey';
+    },
+    getRoleLabel(role) {
+      if (role === Roles.SUPER_ADMIN)
+        return this.$t('users.roles.chip.superAdmin');
+      if (role === Roles.GROUP_ADMIN)
+        return this.$t('users.roles.chip.groupAdmin');
+      const labelKey = getRoleLabelKey(role);
+      return labelKey ? this.$t(labelKey) : role;
     },
     resetPassword(user) {
       this.selectedUser = user;
@@ -240,20 +264,12 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="item.role === roles.SUPER_ADMIN"
+          v-if="showRoleChip(item.role)"
           x-small
-          color="primary"
-          dark
+          :color="getRoleColor(item.role)"
+          :dark="isAdminTierRole(item.role) || item.role === superAdminRole"
         >
-          {{ $t('users.roles.chip.superAdmin') }}
-        </v-chip>
-        <v-chip
-          v-else-if="item.role === roles.GROUP_ADMIN"
-          x-small
-          color="accent"
-          dark
-        >
-          {{ $t('users.roles.chip.groupAdmin') }}
+          {{ getRoleLabel(item.role) }}
         </v-chip>
       </template>
 

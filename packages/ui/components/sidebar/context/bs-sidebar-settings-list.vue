@@ -53,6 +53,7 @@ import {
   GROUP,
   IS_ADMIN,
   IS_GROUP_ADMIN,
+  IS_GROUP_ADMIN_TECH,
   SELECTED_GROUP,
   USER,
 } from '~/store/user';
@@ -77,6 +78,7 @@ export default {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
+      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
       group: GROUP,
       selectedGroup: SELECTED_GROUP,
     }),
@@ -97,6 +99,7 @@ export default {
 
     visibleCategories() {
       const canAccessGroupAdmin = this.isGroupAdmin || this.isAdmin;
+      const canAccessGroupAdminTech = this.isGroupAdminTech || this.isAdmin;
       const hasGroupContext = !!this.settingsBasePath;
 
       const categories = [];
@@ -162,18 +165,21 @@ export default {
       ];
 
       if (canAccessGroupAdmin) {
+        generalItems.push({
+          id: 'workspaces',
+          label: this.$tc('global.teams', 2),
+          icon: 'mdi-account-group-outline',
+          route: `${this.settingsBasePath}/workspaces`,
+          activePatterns: [
+            `${this.settingsBasePath}/workspaces`,
+            `/groups/${this.groupId}/workspace`,
+            `/groups/${this.groupId}/new-workspace`,
+          ],
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
         generalItems.push(
-          {
-            id: 'workspaces',
-            label: this.$tc('global.teams', 2),
-            icon: 'mdi-account-group-outline',
-            route: `${this.settingsBasePath}/workspaces`,
-            activePatterns: [
-              `${this.settingsBasePath}/workspaces`,
-              `/groups/${this.groupId}/workspace`,
-              `/groups/${this.groupId}/new-workspace`,
-            ],
-          },
           {
             id: 'integrations',
             label: this.$t('integrations.title'),
@@ -295,13 +301,21 @@ export default {
               `/groups/${this.groupId}/emails-groups`,
               `/groups/${this.groupId}/new-emails-group`,
             ],
-          },
-          {
-            id: 'variables',
-            label: this.$t('global.variables'),
-            icon: 'mdi-code-braces',
-            route: `${this.settingsBasePath}/variables`,
-          },
+          }
+        );
+      }
+
+      if (canAccessGroupAdmin || canAccessGroupAdminTech) {
+        emailBuilderItems.push({
+          id: 'variables',
+          label: this.$t('global.variables'),
+          icon: 'mdi-code-braces',
+          route: `${this.settingsBasePath}/variables`,
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
+        emailBuilderItems.push(
           {
             id: 'tracking',
             label: this.$t('trackingConfig.sidebarLabel'),
