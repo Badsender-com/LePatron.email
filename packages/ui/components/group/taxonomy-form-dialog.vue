@@ -37,7 +37,6 @@ export default {
     return {
       form: emptyItem(),
       editingId: null,
-      maxDescriptionLength: TAXONOMY_LIMITS.DESCRIPTION,
       // A refusal the server alone can decide — a label already taken — shown next
       // to the field rather than in a snackbar at the other end of the screen.
       serverLabelError: null,
@@ -180,7 +179,6 @@ export default {
       :placeholder="$t('taxonomy.form.descriptionPlaceholder')"
       :hint="$t('taxonomy.form.descriptionHint')"
       :error-messages="descriptionErrors"
-      :counter="maxDescriptionLength"
       :disabled="loading"
       rows="4"
       @blur="$v.form.description.$touch()"
