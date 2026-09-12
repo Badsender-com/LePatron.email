@@ -288,8 +288,6 @@ module.exports = {
   'email-metadata-subject': 'Subject line',
   'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
   'email-metadata-planned-date': 'Planned send date',
-  'email-metadata-planned-date-hint':
-    'For reference only: it triggers no send, and is not carried over to duplicated emails.',
   // "Typology" is a false friend in a marketing interface — the English for what
   // the French calls « typologie » is simply the email's type.
   'email-metadata-typology': 'Email type',
@@ -303,13 +301,4 @@ module.exports = {
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
-  // Carried by each field rather than by a section title: the section now sits
-  // under the template's own options, whose fields (preheader, mirror link,
-  // brand) DO show in the email. A blanket statement at the top would be false
-  // for its neighbours.
-  'email-metadata-not-shown': 'Does not appear in the email.',
-  // The preheader lives in the template's own options, which are now ABOVE this
-  // section rather than below it.
-  'email-metadata-preheader-note':
-    "The preheader is set above, in the template's own options.",
 };
