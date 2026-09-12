@@ -955,13 +955,13 @@ export default {
     metadata: {
       sectionTitle: 'Email metadata',
       sectionDescription:
-        'Lets your team set a subject, a preheader, a planned send date and a typology on each email, instead of retyping them on every send.',
+        'Lets your team set a subject, a preheader, a planned send date and an email type on each email, instead of retyping them on every send.',
       enabled: 'Enable email metadata',
       enabledHint:
         'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
-      taxonomyAction: 'Manage typologies',
+      taxonomyAction: 'Manage email types',
       taxonomyHint:
-        'Email typologies are configured under Settings → General → Typologies, independently of this option.',
+        'Email types are configured under Settings → General → Email types, independently of this option.',
     },
     snackbars: {
       invalid: 'The settings sent were not accepted.',
@@ -972,10 +972,10 @@ export default {
   taxonomy: {
     active: 'Active',
     inactive: 'Inactive',
-    title: 'Email typologies',
-    sidebarLabel: 'Typologies',
+    title: 'Email types',
+    sidebarLabel: 'Email types',
     description:
-      'Your email typologies, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI.',
+      'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI.',
     table: {
       label: 'Label',
       description: 'Definition',
@@ -987,10 +987,11 @@ export default {
       promo: 'Promotional',
       newsletter: 'Newsletter',
       transactional: 'Transactional',
+      trigger: 'Trigger',
     },
     form: {
-      createTitle: 'New typology',
-      editTitle: 'Edit typology',
+      createTitle: 'New email type',
+      editTitle: 'Edit email type',
       label: 'Label',
       labelPlaceholder: 'Weekly newsletter',
       labelHint: 'The name your team actually uses.',
@@ -1000,9 +1001,9 @@ export default {
       descriptionPlaceholder:
         'Thursday morning send to the whole base: news and new products.',
       descriptionHint:
-        'What this typology is for in your company, and when to use it. This text is what will guide the AI.',
+        'What this email type is for in your company, and when to use it. This text is what will guide the AI.',
       descriptionTooLong: 'The definition cannot exceed {max} characters',
-      canonicalType: 'Matching AI typology',
+      canonicalType: 'Matching AI email type',
       canonicalTypePlaceholder: 'None',
       canonicalTypeHint:
         'Optional. Bridges onto the AI vocabulary, so the right expertise loads whatever name you chose.',
@@ -1011,28 +1012,28 @@ export default {
       status: 'Status',
       isActive: 'Active',
       isActiveHint:
-        'A deactivated typology disappears from the pickers, but emails already using it keep it.',
+        'A deactivated email type disappears from the pickers, but emails already using it keep it.',
     },
-    deleteConfirmTitle: 'Delete this typology?',
-    deleteConfirmMessage: 'The typology "{label}" will be deleted.',
+    deleteConfirmTitle: 'Delete this email type?',
+    deleteConfirmMessage: 'The email type "{label}" will be deleted.',
     deleteConfirmHint:
       'If emails use it, the deletion will be refused — deactivate it instead.',
     empty: {
-      action: 'Create a typology',
-      title: 'No typology yet',
+      action: 'Create an email type',
+      title: 'No email type yet',
       description:
-        'Create your first typologies: nothing is pre-filled, these are your own words.',
+        'Create your first email types: nothing is pre-filled, these are your own words.',
     },
     errors: {
-      limitReached: 'You have reached the maximum number of typologies for this company.',
-      labelAlreadyExists: 'A typology already uses this label.',
+      limitReached: 'You have reached the maximum number of email types for this company.',
+      labelAlreadyExists: 'An email type already uses this label.',
       inUse:
-        'This typology is used by {count} email: deactivate it instead of deleting it. | This typology is used by {count} emails: deactivate it instead of deleting it.',
+        'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
     },
     snackbars: {
-      created: 'Typology created',
-      updated: 'Typology updated',
-      deleted: 'Typology deleted',
+      created: 'Email type created',
+      updated: 'Email type updated',
+      deleted: 'Email type deleted',
     },
   },
   feedMappings: {
@@ -1207,6 +1208,7 @@ export default {
       promo: 'Promotional',
       newsletter: 'Newsletter',
       transactional: 'Transactional',
+      trigger: 'Trigger',
     },
     statuses: {
       DRAFT: 'Draft',
@@ -1267,7 +1269,7 @@ export default {
       scopeHelp:
         'Loading key: features fetch expertise by scope before calling the AI (e.g. CTA generation loads the "cta" scope).',
       emailTypeHelp:
-        'Restricts the expertise to some typologies (e.g. "promo"). Empty = all types.',
+        'Restricts the expertise to some email types (e.g. "promo"). Empty = all types.',
       languageHelp:
         'Languages of the content this know-how applies to — e.g. a French risky-words list only applies to FR content. Empty = all.',
       descriptionHelp:
