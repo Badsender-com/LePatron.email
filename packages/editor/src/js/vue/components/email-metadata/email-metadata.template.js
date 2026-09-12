@@ -17,19 +17,17 @@
  * asymmetry it was meant to avoid: metadata persisting silently while the
  * template options beside them waited for the global Save.
  *
- * Every field is label-then-input with a real `for`/`id` pair, and its hint is tied
- * to it with `aria-describedby` so a screen reader reads it as part of the field
- * rather than as loose text after it.
+ * Every field is label-then-input with a real `for`/`id` pair.
  *
- * The subject carries no character counter and no 30-50 recommendation: they were
- * removed on request. Deliverability advice is not this field's job, and a counter
- * updating on every keystroke was noise on a field filled once. `maxlength` still
- * mirrors the server's hard limit, which is a rule rather than advice.
+ * No explanatory sentence under any field, and no character counter on the
+ * subject: all removed on request, to be reconsidered only if users ask for them.
+ * Three labelled fields in a panel titled "Email settings" do not need a paragraph
+ * each. `maxlength` still mirrors the server's hard limit, which is a rule rather
+ * than advice.
  *
- * "Does not appear in the email" is repeated per field rather than stated once at
- * the top. Since the group moved under the template's options, a statement in the
- * heading would sit above the preheader, the mirror link and the brand — which DO
- * appear in the email. True of these three fields, false of their neighbours.
+ * One hint survives, and it is not an explanation: when the company has configured
+ * no email type, the select is empty and disabled, and nothing on screen says what
+ * to do about it. That one says where to create them.
  *
  * No required markers. `requiredFields` is stored but nothing enforces it in this
  * phase, and an asterisk promising a check that does not exist is worse than no
@@ -50,15 +48,7 @@ module.exports = `
              class="email-metadata__input"
              v-model="subject"
              :maxlength="subjectHardLimit"
-             aria-describedby="email-metadata-subject-hint"
              :placeholder="t('email-metadata-subject-placeholder')" />
-      <!-- Subject and preheader are the two strings the recipient reads in their
-           inbox, and the preheader stays in the template's own options (a product
-           decision). Without this pointer nothing tells the user where it is. -->
-      <p id="email-metadata-subject-hint" class="email-metadata__hint">
-        {{ t('email-metadata-preheader-note') }}
-        {{ t('email-metadata-not-shown') }}
-      </p>
     </div>
 
     <div class="email-metadata__field">
@@ -68,12 +58,7 @@ module.exports = `
       <input id="email-metadata-date"
              type="date"
              class="email-metadata__input email-metadata__input--date"
-             v-model="plannedSendDate"
-             aria-describedby="email-metadata-date-hint" />
-      <p id="email-metadata-date-hint" class="email-metadata__hint">
-        {{ t('email-metadata-planned-date-hint') }}
-        {{ t('email-metadata-not-shown') }}
-      </p>
+             v-model="plannedSendDate" />
     </div>
 
     <div class="email-metadata__field">
@@ -89,13 +74,13 @@ module.exports = `
                 :key="choice.value"
                 :value="choice.value">{{ choice.text }}</option>
       </select>
-      <!-- Rendered unconditionally, unlike before: it now carries the "does not
-           appear in the email" note, which is true whether or not the company has
-           configured any type. -->
-      <p id="email-metadata-typology-hint" class="email-metadata__hint">
-        <template v-if="emailTypes.length === 0"
-          >{{ t('email-metadata-typology-empty') }} </template
-        >{{ t('email-metadata-not-shown') }}
+      <!-- The one surviving hint, and not an explanation: with no type configured
+           the select is empty AND disabled, which tells the user nothing about
+           what to do. It says where to create them. -->
+      <p v-if="emailTypes.length === 0"
+         id="email-metadata-typology-hint"
+         class="email-metadata__hint">
+        {{ t('email-metadata-typology-empty') }}
       </p>
     </div>
   </section>
