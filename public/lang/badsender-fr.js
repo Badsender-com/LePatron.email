@@ -298,8 +298,6 @@ module.exports = {
   'email-metadata-subject-placeholder':
     'Ex. : Découvrez nos nouveautés de la rentrée',
   'email-metadata-planned-date': "Date d'envoi prévue",
-  'email-metadata-planned-date-hint':
-    "Indicative : elle ne déclenche aucun envoi, et n'est pas reprise sur les emails dupliqués.",
   'email-metadata-typology': 'Typologie',
   'email-metadata-typology-none': 'Aucune',
   'email-metadata-typology-empty':
@@ -312,13 +310,4 @@ module.exports = {
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
-  // Carried by each field rather than by a section title: the section now sits
-  // under the template's own options, whose fields (preheader, mirror link,
-  // brand) DO show in the email. A blanket statement at the top would be false
-  // for its neighbours.
-  'email-metadata-not-shown': "N'apparaît pas dans l'email.",
-  // The preheader lives in the template's own options, which are now ABOVE this
-  // section rather than below it.
-  'email-metadata-preheader-note':
-    'Le préheader se règle plus haut, dans les options du template.',
 };
