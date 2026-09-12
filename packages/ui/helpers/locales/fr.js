@@ -786,6 +786,7 @@ export default {
       promo: 'Promotionnel',
       newsletter: 'Infolettre',
       transactional: 'Transactionnel',
+      trigger: 'Trigger',
     },
     form: {
       createTitle: 'Nouvelle typologie',
@@ -1220,6 +1221,7 @@ export default {
       promo: 'Promotionnel',
       newsletter: 'Newsletter',
       transactional: 'Transactionnel',
+      trigger: 'Trigger',
     },
     statuses: {
       DRAFT: 'Brouillon',

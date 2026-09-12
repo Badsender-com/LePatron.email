@@ -22,6 +22,11 @@ const EmailTypeCanonical = Object.freeze({
   PROMO: 'promo',
   NEWSLETTER: 'newsletter',
   TRANSACTIONAL: 'transactional',
+  // A behavioural send fired by an event — abandoned cart, birthday, welcome
+  // step. Neither promotional nor transactional in the AI's sense: the intent is
+  // commercial, but the trigger is the contact's own behaviour rather than a
+  // campaign calendar.
+  TRIGGER: 'trigger',
 });
 
 const EmailTypeCanonicalValues = Object.freeze(
