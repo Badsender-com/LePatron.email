@@ -1,7 +1,7 @@
 // Canonical email types. Values are stored RAW (promo/newsletter/transactional);
 // only the display is translated via aiSkills.emailTypes.*. Free/unknown values
 // (facet inputs allow custom entries) fall back to their raw string.
-export const EMAIL_TYPES = ['promo', 'newsletter', 'transactional'];
+export const EMAIL_TYPES = ['promo', 'newsletter', 'transactional', 'trigger'];
 
 // `vm` is the component instance (for $t). Returns the translated label for a
 // known type, or the raw value otherwise.

@@ -30,6 +30,7 @@ export const CANONICAL_TYPES = Object.freeze([
   'promo',
   'newsletter',
   'transactional',
+  'trigger',
 ]);
 
 /**
