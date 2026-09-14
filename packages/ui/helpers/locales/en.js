@@ -1018,6 +1018,12 @@ export default {
     deleteConfirmMessage: 'The email type "{label}" will be deleted.',
     deleteConfirmHint:
       'If emails use it, the deletion will be refused — deactivate it instead.',
+    loadError: {
+      title: 'Could not load your email types',
+      description:
+        'The list could not be read. Nothing has been lost — try again.',
+      action: 'Retry',
+    },
     empty: {
       action: 'Create an email type',
       title: 'No email type yet',
