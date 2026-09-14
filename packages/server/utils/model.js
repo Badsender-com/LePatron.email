@@ -88,9 +88,6 @@ function validatePaginationJSON(pagination) {
 const FILTER_SHAPES = {
   templates: 'array',
   tags: 'array',
-  emailTypes: 'objectIdArray',
-  plannedSendDateStart: 'date',
-  plannedSendDateEnd: 'date',
 };
 
 // A single query cannot legitimately enumerate more than this; an unbounded $in

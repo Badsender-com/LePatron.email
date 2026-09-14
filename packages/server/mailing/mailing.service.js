@@ -43,7 +43,6 @@ const request = require('request');
 
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
-const mailingMetadataService = require('./mailing-metadata.service.js');
 const logger = require('../utils/logger.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
@@ -330,7 +329,6 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     parentFolderId,
     mailingName,
     user,
-    metadata,
   } = mailingData;
 
   checkCreationPayload({
@@ -372,28 +370,6 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     mailing.group = user.group.id;
   }
 
-  // The PATCH route is gated by GUARD_EMAIL_METADATA; this path must honour the
-  // same flag, otherwise creation would be the way around it. Nothing is rejected
-  // when the company is opted out — a stale front must not lose the ability to
-  // create emails — the metadata is simply not stored.
-  // No extra query on the ordinary creation, which carries no metadata at all.
-  const hasMetadata =
-    metadata != null &&
-    Object.values(metadata).some((value) => value !== undefined);
-
-  if (hasMetadata && (await isEmailMetadataEnabled(user))) {
-    // Same validation as the PATCH, so a typology can never enter through the
-    // creation path without being checked — and the same company reference, so an
-    // admin creating a mailing without a company gets the same refusal here as on
-    // the PATCH rather than an orphan typology no later request could change.
-    Object.assign(
-      mailing,
-      await mailingMetadataService.validateMetadataPayload(metadata, {
-        companyId: user.isAdmin ? null : user.group.id,
-      })
-    );
-  }
-
   const newMailing = await createMailing(mailing);
 
   // strangely toJSON doesn't render the data object
@@ -402,24 +378,6 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   response.data = newMailing.data;
 
   return response;
-}
-
-/**
- * Whether the caller's company opted into the editorial metadata. Super admins
- * bypass the flag, like GUARD_EMAIL_METADATA does.
- *
- * @param {Object} user
- * @returns {Promise<boolean>}
- */
-async function isEmailMetadataEnabled(user) {
-  if (user.isAdmin) return true;
-  if (!user.group?.id) return false;
-
-  const group = await Groups.findById(user.group.id)
-    .select('emailMetadata')
-    .lean();
-
-  return group?.emailMetadata?.enabled === true;
 }
 
 function checkCreationPayload(mailings) {

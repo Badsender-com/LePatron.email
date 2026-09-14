@@ -262,26 +262,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       restQuery.tags = { $in: filtersJSON.tags };
     }
 
-    if (
-      Array.isArray(filtersJSON.emailTypes) &&
-      filtersJSON.emailTypes?.length > 0
-    ) {
-      restQuery._emailType = { $in: filtersJSON.emailTypes };
-    }
-
-    if (filtersJSON.plannedSendDateStart) {
-      restQuery.plannedSendDate = {
-        $gte: new Date(filtersJSON.plannedSendDateStart),
-      };
-    }
-
-    if (filtersJSON.plannedSendDateEnd) {
-      restQuery.plannedSendDate = {
-        ...(restQuery.plannedSendDate || {}),
-        $lt: new Date(filtersJSON.plannedSendDateEnd),
-      };
-    }
-
     if (filtersJSON.createdAtStart) {
       restQuery.createdAt = { $gte: new Date(filtersJSON.createdAtStart) };
     }
@@ -315,13 +295,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       author: 1,
       userId: '$_user',
       tags: 1,
-      subject: 1,
-      plannedSendDate: 1,
-      // The id only: resolving the typology label needs a populate or a
-      // complementary query, which a .find() projection cannot do here. Named
-      // like the other exposed references (templateId, userId), so the listing
-      // never receives an underscore-prefixed key.
-      emailTypeId: '$_emailType',
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
