@@ -20,6 +20,11 @@ export default {
       // skeleton state and make it flash on the way back.
       loading: false,
       saving: false,
+      // Distinct from an empty list. Without it a failed fetch leaves `items`
+      // empty and the table shows "no email type yet" with a create button: the
+      // user is told they have none, and invited to duplicate a list nobody
+      // managed to read.
+      loadError: false,
       items: [],
       deletingItem: null,
     };
@@ -51,11 +56,14 @@ export default {
     async fetchItems() {
       try {
         this.loading = true;
+        this.loadError = false;
         const response = await this.$axios.$get(
           apiRoutes.taxonomyItems(this.groupId)
         );
         this.items = response.items || [];
       } catch (error) {
+        this.loadError = true;
+        this.items = [];
         this.reportError(error);
       } finally {
         this.loading = false;
@@ -150,6 +158,8 @@ export default {
     <bs-taxonomy-table
       :items="items"
       :loading="loading"
+      :load-error="loadError"
+      @retry="fetchItems"
       @create="openCreateForm"
       @edit="openEditForm"
       @delete="confirmDelete"

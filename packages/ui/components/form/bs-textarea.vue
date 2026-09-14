@@ -22,12 +22,6 @@ export default {
     monospace: { type: Boolean, default: false },
   },
   computed: {
-    // A label without `for` is decoration: clicking it does not focus the field
-    // and a screen reader does not announce the field's name. bs-text-field has
-    // the same gap, but this component is new — no reason to inherit it.
-    inputId() {
-      return `bs-textarea-${this._uid}`;
-    },
     localValue: {
       get() {
         return this.value;
@@ -61,24 +55,19 @@ export default {
       'bs-textarea--monospace': monospace,
     }"
   >
-    <label v-if="label" :for="inputId" class="bs-textarea__label">
+    <label v-if="label" class="bs-textarea__label">
       {{ label }}
       <span v-if="required" class="bs-textarea__required">*</span>
     </label>
-    <!-- `v-on="$listeners"` already forwards focus and blur; re-emitting them here
-         too would call a parent handler twice. -->
     <v-textarea
-      v-bind="$attrs"
-      :id="inputId"
       v-model="localValue"
+      v-bind="$attrs"
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
       :rows="rows"
       :auto-grow="autoGrow"
       :error-messages="normalizedErrors"
-      :aria-required="required ? 'true' : null"
-      :aria-invalid="hasError ? 'true' : null"
       solo
       flat
       hide-details="auto"

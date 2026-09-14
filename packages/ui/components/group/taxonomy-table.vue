@@ -1,7 +1,7 @@
 <script>
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { canonicalTypeLabelKey } from '~/helpers/taxonomy.js';
-import { Tags, Pencil, Trash2 } from 'lucide-vue';
+import { Tags, Pencil, Trash2, AlertTriangle } from 'lucide-vue';
 
 export default {
   name: 'BsTaxonomyTable',
@@ -10,10 +10,14 @@ export default {
     LucideTags: Tags,
     LucidePencil: Pencil,
     LucideTrash2: Trash2,
+    LucideAlertTriangle: AlertTriangle,
   },
   props: {
     items: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    // The empty slot has to tell the two apart: "you have none" and "we could
+    // not read them" lead to opposite actions.
+    loadError: { type: Boolean, default: false },
   },
   computed: {
     headers() {
@@ -140,7 +144,19 @@ export default {
     </template>
 
     <template #no-data>
-      <div class="text-center pa-6">
+      <div v-if="loadError" class="text-center pa-6">
+        <lucide-alert-triangle :size="48" class="error--text" />
+        <p class="text-body-1 grey--text text--darken-2 mt-4 mb-1">
+          {{ $t('taxonomy.loadError.title') }}
+        </p>
+        <p class="text-body-2 grey--text text--darken-1">
+          {{ $t('taxonomy.loadError.description') }}
+        </p>
+        <v-btn color="accent" elevation="0" @click="$emit('retry')">
+          {{ $t('taxonomy.loadError.action') }}
+        </v-btn>
+      </div>
+      <div v-else class="text-center pa-6">
         <lucide-tags :size="48" class="grey--text text--lighten-1" />
         <p class="text-body-1 grey--text mt-4 mb-1">
           {{ $t('taxonomy.empty.title') }}
