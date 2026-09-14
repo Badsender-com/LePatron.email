@@ -55,17 +55,23 @@ function loader(opts) {
     });
 
     /**
-     * The email settings, PATCHed on their own route before the email itself.
+     * The email settings, PATCHed on their own route, before the email itself.
      *
      * Two requests rather than one because the metadata endpoint validates what
      * `updateMosaico` does not — a withdrawn typology, a subject past the server
-     * limit, a company that opted out — and answers 422. Running it FIRST means a
-     * refusal costs nothing: the email has not been written yet, the user sees why,
-     * and fixes it. The other order would save the email and then report that half
-     * the form was rejected.
+     * limit, a company that opted out — and answers 422.
      *
-     * Resolves to true when there is nothing to do, so an opted-out company follows
-     * exactly the path it did before this feature existed.
+     * Its failure NEVER blocks the email save. An earlier revision skipped the PUT
+     * when the PATCH failed, reasoning that refusing early costs nothing. It holds
+     * for a 422, which the user can fix in the form. It does not hold for a 403,
+     * a 5xx or a dropped connection: the store stays dirty by design, so every
+     * later click replayed the same failing PATCH and skipped the PUT again, and
+     * the email became permanently unsavable with no way out from the interface.
+     * An admin turning the company flag off mid-session was enough to destroy
+     * someone's afternoon of work.
+     *
+     * Resolves immediately when there is nothing to do, so an opted-out company
+     * follows exactly the path it did before this feature existed.
      */
     function saveMetadata() {
       if (!metadataRoute || !emailMetadataStore.isDirty()) {
@@ -86,17 +92,19 @@ function loader(opts) {
 
     saveCmd.execute = function () {
       saveCmd.enabled(false);
+      // Read by onPostSuccess: a "saved" toast shown next to a metadata error
+      // would tell the user their subject line is safe when it is not.
+      let metadataFailed = false;
 
-      // Two explicit branches rather than one chain: a single `.fail()` after
-      // `.then(saveMailing)` would also catch a PUT failure and stack a metadata
-      // message on top of the save message the PUT already showed.
       saveMetadata()
-        .done(function () {
-          saveMailing().always(onPostComplete);
-        })
         .fail(function (jqXHR) {
+          metadataFailed = true;
           onMetadataError(jqXHR);
-          onPostComplete();
+        })
+        // `always`, not `done`: the email content is never held hostage by the
+        // metadata route. See saveMetadata's header for what that cost before.
+        .always(function () {
+          saveMailing().always(onPostComplete);
         });
 
       function saveMailing() {
@@ -121,6 +129,7 @@ function loader(opts) {
       // use callback for easier jQuery updates
       // => Deprecation notice for .success(), .error(), and .complete()
       function onPostSuccess(data, textStatus, jqXHR) {
+        if (metadataFailed) return;
         viewModel.notifier.success(viewModel.t('save-message-success'));
       }
 
@@ -130,9 +139,8 @@ function loader(opts) {
         viewModel.notifier.error(viewModel.t('save-message-error'));
       }
 
-      // Reached only when the metadata PATCH failed, so the email was never sent.
-      // The message names the actual reason — a withdrawn typology reads very
-      // differently from a generic save failure.
+      // The email itself is saved either way; this names what did NOT go through.
+      // A withdrawn typology reads very differently from a generic save failure.
       function onMetadataError(jqXHR) {
         viewModel.notifier.error(
           viewModel.t(
