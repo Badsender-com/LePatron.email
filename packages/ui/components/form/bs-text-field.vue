@@ -31,6 +31,16 @@ export default {
     dense: { type: Boolean, default: false },
   },
   computed: {
+    // A label without `for` is decoration: clicking it does not focus the field,
+    // and a screen reader announces an unnamed control.
+    //
+    // The caller's own id wins when there is one — `users/form.vue` passes
+    // `id="email"`, `id="lang"` and others, and overriding those would break
+    // whatever relies on them. Ours is only the fallback, and the label follows
+    // either way.
+    inputId() {
+      return this.$attrs.id || `bs-text-field-${this._uid}`;
+    },
     localValue: {
       get() {
         return this.value;
@@ -75,13 +85,26 @@ export default {
       'bs-text-field--dense': dense,
     }"
   >
-    <label v-if="label && !hideLabel" class="bs-text-field__label">
+    <label
+      v-if="label && !hideLabel"
+      :for="inputId"
+      class="bs-text-field__label"
+    >
       {{ label }}
       <span v-if="required" class="bs-text-field__required">*</span>
     </label>
+    <!-- `v-bind="$attrs"` deliberately keeps its position, which
+         vue/attributes-order would move to the front: in Vue 2 the order decides
+         precedence for an object v-bind, and hoisting it would make every
+         individual binding below win over what a caller passes. A style rule is
+         not worth a behaviour change for every consumer. -->
+    <!-- eslint-disable vue/attributes-order -->
     <v-text-field
       v-model="localValue"
       v-bind="$attrs"
+      :id="inputId"
+      :aria-required="required ? 'true' : null"
+      :aria-invalid="hasError ? 'true' : null"
       :type="type"
       :placeholder="placeholder"
       :disabled="disabled"
@@ -96,6 +119,7 @@ export default {
       @focus="onFocus"
       @blur="onBlur"
     />
+    <!-- eslint-enable vue/attributes-order -->
     <div v-if="hint && !hasError" class="bs-text-field__hint">
       {{ hint }}
     </div>
