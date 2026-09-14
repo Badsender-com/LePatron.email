@@ -161,6 +161,3 @@ backfill-tags.local.js
 # shared and versioned — only the per-developer overrides are ignored.
 .claude/settings.local.json
 
-# Recette snapshots (scripts/recette-db-snapshot.js) — database extracts, never committed
-lepatron-recette-backups/
-*.bson
