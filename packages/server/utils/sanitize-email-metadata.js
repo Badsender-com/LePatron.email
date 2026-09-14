@@ -30,10 +30,18 @@ const EMAIL_METADATA_FIELDS = Object.freeze([
  * same code and status as the mailing-side validation, so the front has a single
  * case to handle. The human-readable reason travels in `.details`.
  *
+ * Partial-safe, and that is not a detail: this function returns the WHOLE
+ * sub-object, so a payload carrying only `requiredFields` used to resolve
+ * `enabled` to `Boolean(undefined)` — turning the feature off for the entire
+ * company, silently, in a 200 response, and leaving every open editor unable to
+ * save. Only the keys actually present in the payload are replaced; the rest is
+ * carried over from what is stored.
+ *
  * @param {Object} raw the req.body emailMetadata payload
+ * @param {Object} [current] the config currently stored on the company
  * @returns {{ enabled: boolean, requiredFields: string[] }}
  */
-function sanitizeEmailMetadata(raw) {
+function sanitizeEmailMetadata(raw, current) {
   const fail = (details) => {
     const err = new UnprocessableEntity(ERROR_CODES.INVALID_EMAIL_METADATA);
     err.details = details;
@@ -69,9 +77,14 @@ function sanitizeEmailMetadata(raw) {
     return name;
   });
 
+  const stored = current && typeof current === 'object' ? current : {};
+
   return {
-    enabled: Boolean(cfg.enabled),
-    requiredFields,
+    enabled: 'enabled' in cfg ? Boolean(cfg.enabled) : stored.enabled === true,
+    requiredFields:
+      'requiredFields' in cfg
+        ? requiredFields
+        : (Array.isArray(stored.requiredFields) && stored.requiredFields) || [],
   };
 }
 

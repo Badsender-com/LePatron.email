@@ -58,7 +58,12 @@ async function update({ user, body }) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  Groups.findById.mockResolvedValue({ id: GROUP_ID, name: 'Company A' });
+  // A query object, not a resolved document: the controller reads the stored
+  // config with `.lean()` before sanitizing, so a partial payload cannot switch
+  // the feature off by omission.
+  Groups.findById.mockReturnValue({
+    lean: jest.fn().mockResolvedValue({ id: GROUP_ID, name: 'Company A' }),
+  });
 });
 
 describe('PUT /groups/:groupId — emailMetadata, company admin', () => {
@@ -176,6 +181,57 @@ describe('PUT /groups/:groupId — emailMetadata, super admin', () => {
     expect(payload.emailMetadata).toEqual({
       enabled: true,
       requiredFields: ['subject'],
+    });
+  });
+});
+
+describe('PUT /groups/:groupId — partial emailMetadata payloads', () => {
+  const groupAdmin = { isGroupAdmin: true, isAdmin: false };
+
+  function withStored(emailMetadata) {
+    Groups.findById.mockReturnValue({
+      lean: jest
+        .fn()
+        .mockResolvedValue({ id: GROUP_ID, name: 'Company A', emailMetadata }),
+    });
+  }
+
+  // The failure this pins: sanitizeEmailMetadata returns the whole sub-object, so
+  // a payload carrying only `requiredFields` used to resolve `enabled` to
+  // `Boolean(undefined)`. A company with the feature on lost it, in a 200, and
+  // every open editor became unable to save its emails.
+  it('does not switch the feature off when the payload omits `enabled`', async () => {
+    withStored({ enabled: true, requiredFields: [] });
+    const { payload } = await update({
+      user: groupAdmin,
+      body: { emailMetadata: { requiredFields: ['subject'] } },
+    });
+    expect(payload.emailMetadata).toEqual({
+      enabled: true,
+      requiredFields: ['subject'],
+    });
+  });
+
+  it('keeps the stored requiredFields when the payload omits them', async () => {
+    withStored({ enabled: true, requiredFields: ['subject'] });
+    const { payload } = await update({
+      user: groupAdmin,
+      body: { emailMetadata: { enabled: false } },
+    });
+    expect(payload.emailMetadata).toEqual({
+      enabled: false,
+      requiredFields: ['subject'],
+    });
+  });
+
+  it('reads the stored config from the group named by the URL', async () => {
+    withStored({ enabled: true, requiredFields: [] });
+    await update({
+      user: groupAdmin,
+      body: { emailMetadata: { requiredFields: [] } },
+    });
+    expect(Groups.findById).toHaveBeenCalledWith(GROUP_ID, {
+      emailMetadata: 1,
     });
   });
 });

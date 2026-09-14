@@ -133,3 +133,58 @@ describe('sanitizeEmailMetadata — requiredFields', () => {
     }
   });
 });
+
+describe('sanitizeEmailMetadata — partial payloads', () => {
+  // The bug this guards against: the function returns the WHOLE sub-object, so a
+  // payload carrying only `requiredFields` resolved `enabled` to
+  // `Boolean(undefined)` — false. A company that had the feature on lost it, in a
+  // 200 response, and every open editor became unable to save.
+  const STORED = { enabled: true, requiredFields: ['subject'] };
+
+  it('keeps `enabled` when the payload does not carry it', () => {
+    const result = sanitizeEmailMetadata({ requiredFields: [] }, STORED);
+    expect(result.enabled).toBe(true);
+    expect(result.requiredFields).toEqual([]);
+  });
+
+  it('keeps `requiredFields` when the payload does not carry it', () => {
+    const result = sanitizeEmailMetadata({ enabled: false }, STORED);
+    expect(result.enabled).toBe(false);
+    expect(result.requiredFields).toEqual(['subject']);
+  });
+
+  it('replaces both when the payload carries both', () => {
+    const result = sanitizeEmailMetadata(
+      { enabled: false, requiredFields: [] },
+      STORED
+    );
+    expect(result).toEqual({ enabled: false, requiredFields: [] });
+  });
+
+  // An explicit `enabled: false` must win over a stored `true` — the distinction
+  // is between "absent" and "false", not between falsy and truthy.
+  it('honours an explicit false rather than treating it as absent', () => {
+    expect(sanitizeEmailMetadata({ enabled: false }, STORED).enabled).toBe(
+      false
+    );
+  });
+
+  it('falls back to the defaults when nothing is stored yet', () => {
+    expect(sanitizeEmailMetadata({ requiredFields: ['subject'] })).toEqual({
+      enabled: false,
+      requiredFields: ['subject'],
+    });
+    expect(sanitizeEmailMetadata({}, undefined)).toEqual({
+      enabled: false,
+      requiredFields: [],
+    });
+  });
+
+  // A company created with the key, where there is nothing stored to carry over.
+  it('treats a null stored config as absent', () => {
+    expect(sanitizeEmailMetadata({ requiredFields: [] }, null)).toEqual({
+      enabled: false,
+      requiredFields: [],
+    });
+  });
+});

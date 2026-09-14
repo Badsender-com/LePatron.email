@@ -473,9 +473,17 @@ async function update(req, res) {
   // when the payload actually carries it (partial updates are the norm here).
   // `in` rather than `!= null`, so an explicit null goes through the sanitizer
   // and yields the default sub-object instead of being stored as null.
+  // The stored config is read first, and only when the payload carries the key,
+  // following the `previousRetention` pattern below: the sanitizer returns the
+  // whole sub-object, so without it a partial update would resolve the missing
+  // keys to their defaults and switch the feature off for the company.
   if ('emailMetadata' in groupToUpdate) {
+    const storedMetadata = (
+      await Groups.findById(req.params.groupId, { emailMetadata: 1 }).lean()
+    )?.emailMetadata;
     groupToUpdate.emailMetadata = sanitizeEmailMetadata(
-      groupToUpdate.emailMetadata
+      groupToUpdate.emailMetadata,
+      storedMetadata
     );
   }
 
