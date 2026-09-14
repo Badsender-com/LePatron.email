@@ -293,7 +293,7 @@ module.exports = {
   'email-metadata-typology': 'Email type',
   'email-metadata-typology-none': 'None',
   'email-metadata-typology-empty':
-    'No active email type for your company. They are configured under Settings → General → Typologies.',
+    'No active email type for your company. They are configured under Settings → General → Email types.',
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',

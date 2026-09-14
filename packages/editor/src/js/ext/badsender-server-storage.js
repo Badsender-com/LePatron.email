@@ -78,6 +78,11 @@ function loader(opts) {
         return $.Deferred().resolve().promise();
       }
 
+      // Captured before the request, and handed back on success. Marking the
+      // state at response time would swallow whatever the user typed while it was
+      // in flight: their correction would never be sent and never be flagged.
+      const sent = emailMetadataStore.snapshot();
+
       return $.ajax({
         url: metadataRoute,
         method: 'PATCH',
@@ -86,7 +91,7 @@ function loader(opts) {
       }).then(function () {
         // Only on success: a failed PATCH leaves the state dirty on purpose, so
         // the button keeps saying there is something to retry.
-        emailMetadataStore.markSaved();
+        emailMetadataStore.markSaved(sent);
       });
     }
 
