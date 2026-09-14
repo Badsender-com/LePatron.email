@@ -64,13 +64,28 @@ function payload() {
   return buildMetadataPayload(current || {});
 }
 
+/** The form state as it stands, to be handed back to markSaved once written. */
+function snapshot() {
+  return { ...(current || {}) };
+}
+
 /**
- * Called once the PATCH succeeded. Deliberately NOT called on failure: the state
- * stays dirty so the Save button keeps signalling there is something to retry.
+ * Called once the PATCH succeeded, with the snapshot that was actually SENT.
+ *
+ * The snapshot matters. Resetting to `current` instead would mark as saved
+ * whatever the user typed WHILE the request was in flight: the button goes quiet,
+ * the correction was never sent, and it is gone on the next reload with no signal
+ * at all. Measured against the wrong state, a save silently eats an edit.
+ *
+ * Deliberately NOT called on failure: the state stays dirty so the Save button
+ * keeps signalling there is something to retry.
+ *
+ * @param {Object} [sent] the state handed to the server; defaults to the current
+ *   one, which is only correct when nothing can have changed since.
  */
-function markSaved() {
+function markSaved(sent) {
   if (!isActive()) return;
-  initial = { ...current };
+  initial = { ...(sent || current) };
   notify();
 }
 
@@ -107,6 +122,7 @@ module.exports = {
   setCurrent,
   isDirty,
   payload,
+  snapshot,
   markSaved,
   dispose,
   onChange,
