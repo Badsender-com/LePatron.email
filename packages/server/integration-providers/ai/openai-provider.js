@@ -12,6 +12,11 @@ const DEFAULT_API_HOST = 'https://api.openai.com';
  * OpenAI provider implementation
  */
 class OpenAIProvider extends BaseLLMProvider {
+  // OpenAI-compatible JSON mode: guarantees syntactically valid JSON output.
+  supportsJsonResponseFormat() {
+    return true;
+  }
+
   constructor(integration) {
     super(integration);
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;

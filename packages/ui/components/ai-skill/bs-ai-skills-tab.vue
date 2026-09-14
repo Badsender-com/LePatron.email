@@ -1,0 +1,261 @@
+<script>
+import { mapMutations } from 'vuex';
+import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import * as api from '~/helpers/ai-skill-routes.js';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal.vue';
+import BsTimestamp from '~/components/bs-timestamp.vue';
+import { Sparkles } from 'lucide-vue';
+import {
+  skillCategoryOptions,
+  skillCategoryLabel,
+} from '~/helpers/ai-skill-categories.js';
+
+const STATUSES = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
+
+export default {
+  name: 'BsAiSkillsTab',
+  components: {
+    BsDataTable,
+    BsAiSkillCreateModal,
+    BsTimestamp,
+    LucideSparkles: Sparkles,
+  },
+  data() {
+    return {
+      loading: false,
+      items: [],
+      total: 0,
+      search: '',
+      filterCategory: null,
+      filterStatus: null,
+      saving: false,
+    };
+  },
+  computed: {
+    categoryOptions() {
+      return skillCategoryOptions(this);
+    },
+    statusOptions() {
+      return STATUSES.map((value) => ({
+        value,
+        text: this.$t(`aiSkills.statuses.${value}`),
+      }));
+    },
+    filteredItems() {
+      // Client-side text search over title + identifier (parity with the
+      // expertise list). `clearable` sets search to null on clear — guard it.
+      const q = (this.search || '').trim().toLowerCase();
+      if (!q) return this.items;
+      return this.items.filter((s) =>
+        `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
+      );
+    },
+    tableHeaders() {
+      return [
+        { text: this.$t('global.title'), value: 'title' },
+        { text: this.$t('aiSkills.skill.id'), value: 'skillId' },
+        { text: this.$t('aiSkills.filters.category'), value: 'category' },
+        { text: this.$t('global.status'), value: 'status' },
+        {
+          text: this.$t('aiSkills.skill.activeVersion'),
+          value: 'activeVersion',
+          align: 'center',
+        },
+        { text: this.$t('global.updatedAt'), value: 'updatedAt' },
+      ];
+    },
+  },
+  mounted() {
+    this.fetchData();
+  },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    statusColor(status) {
+      return (
+        { ACTIVE: 'success', DRAFT: 'warning', ARCHIVED: 'grey' }[status] ||
+        'grey'
+      );
+    },
+    categoryLabel(value) {
+      return skillCategoryLabel(this, value);
+    },
+    statusLabel(value) {
+      return value ? this.$t(`aiSkills.statuses.${value}`) : '';
+    },
+    formatDate(d) {
+      return d ? new Date(d).toLocaleString() : '';
+    },
+    openSkill(item) {
+      this.$router.push(`/ai-skills/${item.skillId}`);
+    },
+    openCreate() {
+      this.$refs.createModal.open();
+    },
+    async fetchData() {
+      this.loading = true;
+      try {
+        const params = {};
+        if (this.filterCategory) params.category = this.filterCategory;
+        if (this.filterStatus) params.status = this.filterStatus;
+        const list = await this.$axios.$get(api.aiSkills(), { params });
+        this.items = list.items || [];
+        this.total = list.total || 0;
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
+    async createSkill(payload) {
+      this.saving = true;
+      try {
+        const created = await this.$axios.$post(api.aiSkills(), payload);
+        this.showSnackbar({
+          text: this.$t('aiSkills.skill.created'),
+          color: 'success',
+        });
+        this.$refs.createModal.close();
+        // Land on the Versions tab with the seeded v1.0 DRAFT expanded (§B2):
+        // the author edits the version straight away, no detour via Details.
+        const seed = (created.versions && created.versions[0]) || {};
+        const expand = `${seed.versionMajor || 1}.${seed.versionMinor || 0}`;
+        this.$router.push(
+          `/ai-skills/${created.skillId}?tab=versions&expand=${expand}`
+        );
+      } catch (err) {
+        const msg = skillErrorMessage(this, err);
+        this.showSnackbar({ text: msg, color: 'error' });
+      } finally {
+        this.saving = false;
+      }
+    },
+  },
+};
+</script>
+
+<template>
+  <div>
+    <p class="tab-intro">
+      {{ $t('aiSkills.skill.intro') }}
+    </p>
+
+    <div class="filters-row">
+      <v-text-field
+        v-model="search"
+        :label="$t('global.search')"
+        dense
+        outlined
+        hide-details
+        clearable
+        class="filter-field filter-field--search"
+      />
+      <v-select
+        v-model="filterCategory"
+        :items="categoryOptions"
+        item-text="text"
+        item-value="value"
+        :label="$t('aiSkills.filters.category')"
+        dense
+        outlined
+        hide-details
+        clearable
+        class="filter-field"
+        @change="fetchData"
+      />
+      <v-select
+        v-model="filterStatus"
+        :items="statusOptions"
+        item-text="text"
+        item-value="value"
+        :label="$t('aiSkills.filters.status')"
+        dense
+        outlined
+        hide-details
+        clearable
+        class="filter-field"
+        @change="fetchData"
+      />
+    </div>
+
+    <bs-data-table
+      :headers="tableHeaders"
+      :items="filteredItems"
+      :loading="loading"
+      item-key="skillId"
+      clickable
+      @click:row="openSkill"
+    >
+      <template #item.title="{ item }">
+        <span class="font-weight-medium">{{ item.title }}</span>
+      </template>
+      <template #item.skillId="{ item }">
+        <span class="text-caption text--secondary">{{ item.skillId }}</span>
+      </template>
+      <template #item.status="{ item }">
+        <v-chip
+          small
+          :color="statusColor(item.status)"
+          :outlined="item.status !== 'ACTIVE'"
+          :dark="item.status === 'ACTIVE'"
+        >
+          {{ statusLabel(item.status) }}
+        </v-chip>
+      </template>
+      <template #item.category="{ item }">
+        <v-chip x-small outlined color="grey">
+          {{ categoryLabel(item.category) }}
+        </v-chip>
+      </template>
+      <template #item.activeVersion="{ item }">
+        <span v-if="item.activeVersion && item.activeVersion.major != null">
+          v{{ item.activeVersion.major }}.{{ item.activeVersion.minor || 0 }}
+        </span>
+        <span v-else class="text--disabled">—</span>
+      </template>
+      <template #item.updatedAt="{ item }">
+        <bs-timestamp :value="item.updatedAt" />
+      </template>
+      <template #no-data>
+        <div class="text-center pa-6">
+          <lucide-sparkles :size="48" class="grey--text text--lighten-1" />
+          <p class="text-body-1 grey--text mt-4">
+            {{ $t('aiSkills.skill.noSkills') }}
+          </p>
+        </div>
+      </template>
+    </bs-data-table>
+
+    <bs-ai-skill-create-modal
+      ref="createModal"
+      :loading="saving"
+      @submit="createSkill"
+    />
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.tab-intro {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+  max-width: 760px;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.filter-field {
+  max-width: 220px;
+}
+.filter-field--search {
+  max-width: 280px;
+}
+</style>

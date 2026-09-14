@@ -5,13 +5,27 @@ const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
+
+/**
+ * Reasons a feature cannot be used. Consumers that only need "usable or not"
+ * should call getActiveFeatureWithIntegration instead.
+ */
+const FeatureResolutionReasons = Object.freeze({
+  NO_CONFIG: 'NO_CONFIG',
+  FEATURE_INACTIVE: 'FEATURE_INACTIVE',
+  NO_INTEGRATION: 'NO_INTEGRATION',
+  INTEGRATION_INACTIVE: 'INTEGRATION_INACTIVE',
+});
 
 module.exports = {
   getOrCreateConfig,
   updateFeatureConfig,
   getFeatureConfig,
   getActiveFeatureWithIntegration,
+  resolveActiveFeature,
+  FeatureResolutionReasons,
 };
 
 /**
@@ -26,21 +40,33 @@ async function getOrCreateConfig({ groupId }) {
 
   if (!config) {
     // Create default config with all feature types
-    const defaultFeatures = AIFeatureTypeValues.map((featureType) => ({
-      featureType,
-      integration: null,
-      isActive: false,
-      config: {
-        availableLanguages: [],
-        defaultSourceLanguage: 'auto',
-      },
-    }));
-
     config = await AIFeatureConfigs.create({
       _company: Types.ObjectId(groupId),
-      features: defaultFeatures,
+      features: AIFeatureTypeValues.map(defaultFeature),
     });
 
+    config = await AIFeatureConfigs.findById(config._id).populate(
+      'features.integration'
+    );
+    return config;
+  }
+
+  // Backfill feature types added to the enum AFTER this config was created
+  // (e.g. 'skill' on configs that predate it). Without this, a missing feature
+  // can't be configured: updateFeatureConfig's findIndex returns -1 and the
+  // write is lost. Idempotent — only adds the truly missing ones.
+  const present = new Set(config.features.map((f) => f.featureType));
+  const missing = AIFeatureTypeValues.filter((t) => !present.has(t));
+  if (missing.length) {
+    // Conditional push per type: the `$ne` filter makes each insert a no-op if
+    // the type is already there, so two concurrent getOrCreateConfig calls can't
+    // double-insert the same feature.
+    for (const featureType of missing) {
+      await AIFeatureConfigs.updateOne(
+        { _id: config._id, 'features.featureType': { $ne: featureType } },
+        { $push: { features: defaultFeature(featureType) } }
+      );
+    }
     config = await AIFeatureConfigs.findById(config._id).populate(
       'features.integration'
     );
@@ -49,8 +75,23 @@ async function getOrCreateConfig({ groupId }) {
   return config;
 }
 
+function defaultFeature(featureType) {
+  return {
+    featureType,
+    integration: null,
+    isActive: false,
+    config: {
+      availableLanguages: [],
+      defaultSourceLanguage: 'auto',
+    },
+  };
+}
+
 /**
- * Validate that integration exists and belongs to the group
+ * Validate that integration exists, belongs to the group, and is an AI
+ * integration. The type check matters: without it a `dashboard` (Metabase) or
+ * `data_feed` (RSS) integration can be wired as an AI engine — the client-side
+ * `type=ai` filter on the selectors is a convenience, not a guarantee.
  */
 async function validateIntegrationOwnership({ integrationId, groupId }) {
   const integration = await Integrations.findOne({
@@ -59,6 +100,9 @@ async function validateIntegrationOwnership({ integrationId, groupId }) {
   });
   if (!integration) {
     throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+  if (integration.type !== IntegrationTypes.AI) {
+    throw new BadRequest(ERROR_CODES.UNAUTHORIZED_INTEGRATION_TYPE);
   }
 }
 
@@ -156,28 +200,58 @@ async function getFeatureConfig({ groupId, featureType }) {
 }
 
 /**
- * Get active feature configuration with its integration (for actual use)
- * Returns null if feature is not active or no integration configured
+ * Resolve a Group's feature and its integration, saying WHY when it cannot.
+ *
+ * The single place that knows how to walk Group → AIFeatureConfig →
+ * Integration. Every module needing an AI engine goes through here rather than
+ * re-querying the three collections, which is how the two paths that used to
+ * exist had already drifted apart (cf. review A2).
+ *
+ * @returns {Promise<{ok: true, feature: Object, integration: Object} |
+ *                   {ok: false, reason: string}>}
  */
-async function getActiveFeatureWithIntegration({ groupId, featureType }) {
+async function resolveActiveFeature({ groupId, featureType }) {
   const aiConfig = await AIFeatureConfigs.findOne({
     _company: Types.ObjectId(groupId),
   }).populate('features.integration');
 
   if (!aiConfig) {
-    return null;
+    return { ok: false, reason: FeatureResolutionReasons.NO_CONFIG };
   }
 
-  const feature = aiConfig.features.find(
-    (f) => f.featureType === featureType && f.isActive && f.integration
+  // A usable entry wins over a stale duplicate, preserving the behaviour of the
+  // single `find` this replaced; the fallback exists only to report a reason.
+  const candidates = (aiConfig.features || []).filter(
+    (f) => f.featureType === featureType
   );
+  const feature =
+    candidates.find((f) => f.isActive && f.integration) || candidates[0];
 
-  if (!feature || !feature.integration || !feature.integration.isActive) {
-    return null;
+  if (!feature || !feature.isActive) {
+    return { ok: false, reason: FeatureResolutionReasons.FEATURE_INACTIVE };
+  }
+  if (!feature.integration) {
+    return { ok: false, reason: FeatureResolutionReasons.NO_INTEGRATION };
+  }
+  if (!feature.integration.isActive) {
+    return { ok: false, reason: FeatureResolutionReasons.INTEGRATION_INACTIVE };
   }
 
+  return { ok: true, feature, integration: feature.integration };
+}
+
+/**
+ * Get active feature configuration with its integration (for actual use).
+ * Returns null if the feature is not active or no integration is configured —
+ * call resolveActiveFeature when the reason matters.
+ */
+async function getActiveFeatureWithIntegration({ groupId, featureType }) {
+  const resolved = await resolveActiveFeature({ groupId, featureType });
+  if (!resolved.ok) {
+    return null;
+  }
   return {
-    feature,
-    integration: feature.integration,
+    feature: resolved.feature,
+    integration: resolved.integration,
   };
 }

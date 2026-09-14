@@ -1,13 +1,13 @@
 <script>
 export default {
-  name: `bs-template-cover-image`,
+  name: 'BsTemplateCoverImage',
   props: {
-    src: { type: String, default: `` },
+    src: { type: String, default: '' },
     fitCover: { type: Boolean, default: false },
   },
   computed: {
     hasImage() {
-      return this.src !== ``;
+      return this.src !== '';
     },
     componentClasses() {
       return { 'bs-template-cover-image--cover': this.fitCover };

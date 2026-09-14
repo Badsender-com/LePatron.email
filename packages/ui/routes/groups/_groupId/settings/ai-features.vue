@@ -57,7 +57,10 @@ export default {
     </bs-page-header>
     <v-container fluid>
       <div class="settings-content">
-        <bs-group-ai-features-tab :active="true" />
+        <bs-group-ai-features-tab
+          :active="true"
+          :is-platform="!!group.isPlatform"
+        />
       </div>
     </v-container>
   </div>

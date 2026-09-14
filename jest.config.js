@@ -80,8 +80,13 @@ module.exports = {
   //   "node"
   // ],
 
-  // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  // moduleNameMapper: {},
+  // Nuxt's `~` alias points at packages/ui. Without this, any UI helper that
+  // imports a sibling through `~/helpers/...` cannot be required from a test —
+  // which is why `schema-descriptor.js` had no tests despite its header saying
+  // it was extracted to be testable.
+  moduleNameMapper: {
+    '^~/(.*)$': '<rootDir>/packages/ui/$1',
+  },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],

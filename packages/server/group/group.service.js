@@ -11,6 +11,8 @@ const {
   Profiles,
   Templates,
   EmailsGroups,
+  AISkillInvocations,
+  AIPlaygroundScenarios,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
@@ -163,6 +165,15 @@ async function deleteGroup(groupId) {
     EmailsGroups.deleteMany({
       _company: mongoose.Types.ObjectId(groupId),
     }),
+    AISkillInvocations.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    // Playground scenarios survive a Group delete; they just lose their
+    // groupContext pointer.
+    AIPlaygroundScenarios.updateMany(
+      { groupContext: mongoose.Types.ObjectId(groupId) },
+      { $set: { groupContext: null } }
+    ),
     Groups.deleteOne({
       _id: mongoose.Types.ObjectId(groupId),
     }),

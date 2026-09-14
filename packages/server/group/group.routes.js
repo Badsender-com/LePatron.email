@@ -17,6 +17,7 @@ const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
+router.put('/:groupId/platform', GUARD_ADMIN, groups.setPlatform);
 router.delete('/:groupId', GUARD_ADMIN, groups.deleteGroup);
 router.post('/seed-groups', GUARD_ADMIN, groups.seedGroups);
 

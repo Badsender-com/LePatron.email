@@ -4,6 +4,13 @@ dist/
 .nuxt
 *.min.*
 
+# Vendored third-party sources — Smart HTML Elements, shipped as-is under
+# public/source. 3 881 of the 3 930 errors `yarn code:lint` reported came from
+# these two files, which made both `code:lint` and the pre-commit hook
+# unusable. They are not ours to fix. (Introduced by 57621654.)
+public/source/components/smart.ui.tree.js
+public/source/modules/smart.tree.js
+
 # Per packages overrides
 packages/editor/*
 public/lang/*

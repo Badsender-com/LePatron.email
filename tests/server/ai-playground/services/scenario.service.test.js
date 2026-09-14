@@ -1,0 +1,290 @@
+'use strict';
+
+const { Types } = require('mongoose');
+
+jest.mock('../../../../packages/server/common/models.common', () => ({
+  AIPlaygroundScenarios: {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    countDocuments: jest.fn(),
+    create: jest.fn(),
+    deleteOne: jest.fn(),
+    distinct: jest.fn(),
+  },
+  AIPlaygroundRuns: { deleteMany: jest.fn(), aggregate: jest.fn() },
+  LePatronSkills: { findOne: jest.fn() },
+  Expertises: { findOne: jest.fn() },
+}));
+
+const scenarioService = require('../../../../packages/server/ai-playground/services/scenario.service');
+const {
+  AIPlaygroundScenarios,
+  AIPlaygroundRuns,
+  LePatronSkills,
+} = require('../../../../packages/server/common/models.common');
+
+function mockSkillLean(value) {
+  LePatronSkills.findOne.mockReturnValue({
+    lean: () => Promise.resolve(value),
+  });
+}
+// Expertises is mocked at the top of the file; its findOne is reachable via
+// `Expertises.findOne` when a test needs to seed an expertise. Not used by
+// the current cases but kept available for future ones.
+
+beforeEach(() => jest.clearAllMocks());
+
+describe('scenario.service', () => {
+  describe('listScenarios', () => {
+    it('decorates each scenario with lastRunAt / lastRunStatus / runCount', async () => {
+      const id = new Types.ObjectId();
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => Promise.resolve([{ _id: id, scenarioId: 's1' }]),
+            }),
+          }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(1);
+      AIPlaygroundRuns.aggregate.mockResolvedValue([
+        {
+          _id: id,
+          lastRunAt: new Date(0),
+          lastRunStatus: 'SUCCESS',
+          runCount: 3,
+        },
+      ]);
+      const res = await scenarioService.listScenarios({});
+      expect(res.items[0].runCount).toBe(3);
+      expect(res.items[0].lastRunStatus).toBe('SUCCESS');
+      expect(res.items[0].lastRunAt).toBeInstanceOf(Date);
+    });
+
+    it('sets zero/null decoration for a scenario with no runs', async () => {
+      const id = new Types.ObjectId();
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => Promise.resolve([{ _id: id, scenarioId: 's1' }]),
+            }),
+          }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(1);
+      AIPlaygroundRuns.aggregate.mockResolvedValue([]);
+      const res = await scenarioService.listScenarios({});
+      expect(res.items[0].runCount).toBe(0);
+      expect(res.items[0].lastRunStatus).toBeNull();
+      expect(res.items[0].lastRunAt).toBeNull();
+    });
+
+    // Non-regression on the wiring of the three list filters (§6): each maps to
+    // the expected Mongo query clause.
+    it('wires skillId / tag / search into the query', async () => {
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({ limit: () => ({ lean: () => Promise.resolve([]) }) }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(0);
+      await scenarioService.listScenarios({
+        skillId: 'qc.subject',
+        tag: 'promo',
+        search: 'hello',
+      });
+      const query = AIPlaygroundScenarios.find.mock.calls[0][0];
+      expect(query['skillRef.skillId']).toBe('qc.subject');
+      expect(query.tags).toBe('promo');
+      expect(query.$or).toEqual([
+        { name: expect.any(RegExp) },
+        { description: expect.any(RegExp) },
+        { scenarioId: expect.any(RegExp) },
+      ]);
+      // Search is a case-insensitive match on the raw term.
+      expect(query.$or[0].name.test('say HELLO now')).toBe(true);
+    });
+  });
+
+  describe('getScenarioFacets', () => {
+    it('returns sorted distinct skillIds and tags', async () => {
+      AIPlaygroundScenarios.distinct.mockImplementation((field) =>
+        Promise.resolve(
+          field === 'tags'
+            ? ['promo', 'newsletter', '', null]
+            : ['qc.subject', 'redaction.cta']
+        )
+      );
+      const facets = await scenarioService.getScenarioFacets();
+      expect(facets.skillIds).toEqual(['qc.subject', 'redaction.cta']);
+      expect(facets.tags).toEqual(['newsletter', 'promo']);
+    });
+  });
+
+  describe('createScenario', () => {
+    it('throws 400 when the referenced skill does not exist', async () => {
+      mockSkillLean(null);
+      await expect(
+        scenarioService.createScenario(
+          { scenarioId: 'a', name: 'a', skillRef: { skillId: 'nope' } },
+          null
+        )
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('throws 400 when the referenced skill is not ACTIVE', async () => {
+      mockSkillLean({ skillId: 's', status: 'DRAFT', versions: [] });
+      await expect(
+        scenarioService.createScenario(
+          { scenarioId: 'a', name: 'a', skillRef: { skillId: 's' } },
+          null
+        )
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('throws 400 when a pinned skill version does not exist', async () => {
+      mockSkillLean({
+        skillId: 's',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+      await expect(
+        scenarioService.createScenario(
+          {
+            scenarioId: 'a',
+            name: 'a',
+            skillRef: {
+              skillId: 's',
+              mode: 'pinned',
+              versionMajor: 9,
+              versionMinor: 0,
+            },
+          },
+          null
+        )
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('creates when references are valid', async () => {
+      mockSkillLean({
+        skillId: 's',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+      AIPlaygroundScenarios.create.mockResolvedValue({ scenarioId: 'a' });
+      const userId = new Types.ObjectId();
+      await scenarioService.createScenario(
+        { scenarioId: 'a', name: 'a', skillRef: { skillId: 's' } },
+        userId
+      );
+      const payload = AIPlaygroundScenarios.create.mock.calls[0][0];
+      expect(payload.owner).toBe(userId);
+      expect(payload.updatedBy).toBe(userId);
+    });
+
+    it('rethrows 409 on duplicate scenarioId', async () => {
+      mockSkillLean({
+        skillId: 's',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+      AIPlaygroundScenarios.create.mockRejectedValue({ code: 11000 });
+      await expect(
+        scenarioService.createScenario(
+          { scenarioId: 'a', name: 'a', skillRef: { skillId: 's' } },
+          null
+        )
+      ).rejects.toMatchObject({ status: 409 });
+    });
+  });
+
+  describe('deleteScenario', () => {
+    it('removes the scenario and its runs', async () => {
+      const oid = new Types.ObjectId();
+      AIPlaygroundScenarios.findOne.mockResolvedValue({
+        _id: oid,
+        toObject() {
+          return { _id: oid };
+        },
+      });
+      AIPlaygroundRuns.deleteMany.mockResolvedValue({});
+      AIPlaygroundScenarios.deleteOne.mockResolvedValue({});
+      await scenarioService.deleteScenario('a');
+      expect(AIPlaygroundRuns.deleteMany).toHaveBeenCalledWith({
+        _scenario: oid,
+      });
+      expect(AIPlaygroundScenarios.deleteOne).toHaveBeenCalledWith({
+        _id: oid,
+      });
+    });
+  });
+  describe('updateScenario', () => {
+    function mockDoc(over = {}) {
+      const obj = {
+        scenarioId: 'demo',
+        name: 'Demo',
+        skillRef: { skillId: 'generic.text', mode: 'active' },
+        expertiseRefs: [],
+        ...over,
+      };
+      return {
+        ...obj,
+        toObject: () => obj,
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+    }
+
+    // The ACTIVE requirement used to be re-asserted on the merged document, so
+    // archiving a skill made every one of its scenarios unmodifiable — even a
+    // rename — while the picker could not offer a replacement either.
+    it('lets a patch that does not touch skillRef through on an archived skill', async () => {
+      const doc = mockDoc();
+      AIPlaygroundScenarios.findOne.mockResolvedValue(doc);
+      mockSkillLean({
+        skillId: 'generic.text',
+        status: 'ARCHIVED',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+
+      const updated = await scenarioService.updateScenario('demo', {
+        name: 'Renamed',
+      });
+
+      expect(updated.name).toBe('Renamed');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('still refuses a patch that points skillRef at a non-ACTIVE skill', async () => {
+      AIPlaygroundScenarios.findOne.mockResolvedValue(mockDoc());
+      mockSkillLean({
+        skillId: 'other.skill',
+        status: 'ARCHIVED',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0 }],
+      });
+
+      await expect(
+        scenarioService.updateScenario('demo', {
+          skillRef: { skillId: 'other.skill', mode: 'active' },
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('still refuses a patch pointing at a skill that does not exist', async () => {
+      AIPlaygroundScenarios.findOne.mockResolvedValue(mockDoc());
+      mockSkillLean(null);
+
+      await expect(
+        scenarioService.updateScenario('demo', {
+          skillRef: { skillId: 'ghost', mode: 'active' },
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+});
