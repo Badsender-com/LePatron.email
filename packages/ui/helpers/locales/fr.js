@@ -817,6 +817,12 @@ export default {
     deleteConfirmMessage: 'La typologie « {label} » sera supprimée.',
     deleteConfirmHint:
       'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+    loadError: {
+      title: 'Impossible de charger vos typologies',
+      description:
+        "La liste n'a pas pu être lue. Rien n'est perdu — réessayez.",
+      action: 'Réessayer',
+    },
     empty: {
       action: 'Créer une typologie',
       title: 'Aucune typologie pour le moment',
