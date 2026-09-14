@@ -69,7 +69,7 @@ module.exports = `
               class="email-metadata__select"
               v-model="emailTypeId"
               :disabled="emailTypes.length === 0"
-              aria-describedby="email-metadata-typology-hint">
+              :aria-describedby="emailTypes.length === 0 ? 'email-metadata-typology-hint' : null">
         <option v-for="choice in typologyChoices"
                 :key="choice.value"
                 :value="choice.value">{{ choice.text }}</option>

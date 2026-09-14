@@ -160,4 +160,39 @@ describe('email metadata store', () => {
       expect(seen).toEqual([false]);
     });
   });
+
+  describe('a save that overlaps with typing', () => {
+    beforeEach(() => {
+      store.reset(FORM);
+    });
+
+    // The loss this pins: markSaved used to reset to whatever `current` held when
+    // the response came back. An edit made during the request was then recorded as
+    // saved, the button went quiet, and the correction was never sent.
+    it('keeps the edit made while the request was in flight', () => {
+      store.setCurrent({ ...FORM, subject: 'Premier objet' });
+      const sent = store.snapshot();
+
+      // The user keeps typing before the response lands.
+      store.setCurrent({ ...FORM, subject: 'Objet corrigé' });
+      store.markSaved(sent);
+
+      expect(store.isDirty()).toBe(true);
+      expect(store.payload().subject).toBe('Objet corrigé');
+    });
+
+    it('goes clean when nothing changed during the request', () => {
+      store.setCurrent({ ...FORM, subject: 'Premier objet' });
+      const sent = store.snapshot();
+      store.markSaved(sent);
+      expect(store.isDirty()).toBe(false);
+    });
+
+    it('snapshot does not alias the live state', () => {
+      store.setCurrent({ ...FORM, subject: 'Premier objet' });
+      const sent = store.snapshot();
+      store.setCurrent({ ...FORM, subject: 'Objet corrigé' });
+      expect(sent.subject).toBe('Premier objet');
+    });
+  });
 });
