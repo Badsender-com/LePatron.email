@@ -987,7 +987,7 @@ export default {
       promo: 'Promotional',
       newsletter: 'Newsletter',
       transactional: 'Transactional',
-      trigger: 'Trigger',
+      'marketing-automation': 'Marketing Automation',
     },
     form: {
       createTitle: 'New email type',
@@ -1208,7 +1208,7 @@ export default {
       promo: 'Promotional',
       newsletter: 'Newsletter',
       transactional: 'Transactional',
-      trigger: 'Trigger',
+      'marketing-automation': 'Marketing Automation',
     },
     statuses: {
       DRAFT: 'Draft',
