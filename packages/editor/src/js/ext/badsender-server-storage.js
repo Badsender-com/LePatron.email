@@ -42,17 +42,7 @@ function loader(opts) {
     const saveCmd = {
       name: 'Save', // l10n happens in the template
       enabled: ko.observable(true),
-      // Drives the dot on the Save button. The email settings have no save button
-      // of their own any more, so without this the user types a subject line, gets
-      // no signal at all, and leaves.
-      hasPendingChanges: ko.observable(false),
     };
-
-    // Kept for the lifetime of the editor: the store is reset, not rebuilt, when
-    // the template is swapped.
-    emailMetadataStore.onChange(function (dirty) {
-      saveCmd.hasPendingChanges(dirty);
-    });
 
     /**
      * The email settings, PATCHed on their own route, before the email itself.
@@ -90,7 +80,7 @@ function loader(opts) {
         data: JSON.stringify(emailMetadataStore.payload()),
       }).then(function () {
         // Only on success: a failed PATCH leaves the state dirty on purpose, so
-        // the button keeps saying there is something to retry.
+        // the next Save sends it again instead of considering it written.
         emailMetadataStore.markSaved(sent);
       });
     }

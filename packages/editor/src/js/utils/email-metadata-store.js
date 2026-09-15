@@ -4,11 +4,11 @@
  * The bridge between the metadata section (Vue) and the editor's Save command
  * (Knockout).
  *
- * The section no longer has a save button of its own: metadata are written by the
- * editor's Save, with everything else. That means two frameworks that know nothing
- * about each other need to agree on one question — "is there anything unsaved?" —
- * and on one payload. Rather than have the save command reach into a Vue instance,
- * or the component reach into a Knockout observable, both talk to this store.
+ * The section has no save button of its own: metadata are written by the editor's
+ * Save, with everything else. That means two frameworks that know nothing about
+ * each other need to agree on one payload, and on whether it is worth sending.
+ * Rather than have the save command reach into a Vue instance, or the component
+ * reach into a Knockout observable, both talk to this store.
  *
  * It holds two snapshots: what the section opened with, and what it holds now.
  * Everything else is derived, which is why this file is testable and the component
@@ -24,7 +24,6 @@ const {
 // command must then behave exactly as it did before this feature existed.
 let initial = null;
 let current = null;
-const listeners = [];
 
 /** Whether a metadata section is mounted at all. */
 function isActive() {
@@ -38,21 +37,20 @@ function isActive() {
 function reset(formState) {
   initial = { ...formState };
   current = { ...formState };
-  notify();
 }
 
 /** Called by the component on every edit. */
 function setCurrent(formState) {
   if (!isActive()) return;
   current = { ...formState };
-  notify();
 }
 
 /**
- * Whether the metadata carry unsaved edits.
+ * Whether the metadata carry unsaved edits, i.e. whether the PATCH is worth
+ * sending at all.
  *
- * False when no section is mounted, so an opted-out company never marks the Save
- * button as dirty on account of a feature it does not have.
+ * False when no section is mounted, so an opted-out company never sends a request
+ * on account of a feature it does not have.
  */
 function isDirty() {
   if (!isActive()) return false;
@@ -77,8 +75,8 @@ function snapshot() {
  * the correction was never sent, and it is gone on the next reload with no signal
  * at all. Measured against the wrong state, a save silently eats an edit.
  *
- * Deliberately NOT called on failure: the state stays dirty so the Save button
- * keeps signalling there is something to retry.
+ * Deliberately NOT called on failure: the state stays dirty so the next Save sends
+ * the payload again instead of treating it as written.
  *
  * @param {Object} [sent] the state handed to the server; defaults to the current
  *   one, which is only correct when nothing can have changed since.
@@ -86,34 +84,12 @@ function snapshot() {
 function markSaved(sent) {
   if (!isActive()) return;
   initial = { ...(sent || current) };
-  notify();
 }
 
 /** Torn down with the section when the editor swaps templates. */
 function dispose() {
   initial = null;
   current = null;
-  notify();
-}
-
-/**
- * Subscribe to dirtiness changes. Returns an unsubscribe function.
- *
- * The listener is called on every edit, not only when the boolean flips: the save
- * command's observable does its own equality check, and a store that tried to be
- * clever here would have to duplicate the comparison it already does in isDirty.
- */
-function onChange(listener) {
-  listeners.push(listener);
-  return function unsubscribe() {
-    const index = listeners.indexOf(listener);
-    if (index !== -1) listeners.splice(index, 1);
-  };
-}
-
-function notify() {
-  const dirty = isDirty();
-  listeners.slice().forEach((listener) => listener(dirty));
 }
 
 module.exports = {
@@ -125,5 +101,4 @@ module.exports = {
   snapshot,
   markSaved,
   dispose,
-  onChange,
 };

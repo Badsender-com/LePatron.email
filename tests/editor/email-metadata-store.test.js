@@ -115,52 +115,6 @@ describe('email metadata store', () => {
     });
   });
 
-  describe('subscriptions', () => {
-    it('reports dirtiness to its listeners', () => {
-      const seen = [];
-      store.onChange((dirty) => seen.push(dirty));
-
-      store.reset(FORM);
-      store.setCurrent({ ...FORM, subject: 'Autre objet' });
-      store.markSaved();
-
-      expect(seen).toEqual([false, true, false]);
-    });
-
-    it('stops calling a listener once unsubscribed', () => {
-      const seen = [];
-      const unsubscribe = store.onChange((dirty) => seen.push(dirty));
-
-      store.reset(FORM);
-      unsubscribe();
-      store.setCurrent({ ...FORM, subject: 'Autre objet' });
-
-      expect(seen).toEqual([false]);
-    });
-
-    // The template loader disposes the section when the editor swaps templates.
-    // The save command subscribed once for the lifetime of the editor, so it has
-    // to be told the fields are gone — otherwise the button keeps a stale dot.
-    it('reports clean when the section is disposed while dirty', () => {
-      const seen = [];
-      store.reset(FORM);
-      store.setCurrent({ ...FORM, subject: 'Autre objet' });
-      store.onChange((dirty) => seen.push(dirty));
-
-      store.dispose();
-
-      expect(seen).toEqual([false]);
-      expect(store.isActive()).toBe(false);
-    });
-
-    it('survives a listener added before the store was ever armed', () => {
-      const seen = [];
-      store.onChange((dirty) => seen.push(dirty));
-      store.reset(FORM);
-      expect(seen).toEqual([false]);
-    });
-  });
-
   describe('a save that overlaps with typing', () => {
     beforeEach(() => {
       store.reset(FORM);

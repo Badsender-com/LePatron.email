@@ -193,14 +193,16 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
    phrase d'explication sous les champs, aucun compteur de caractères.**
 4. **Attendu** : aucun bouton d'enregistrement dans la section.
 
-### E2. Enregistrement et pastille
+### E2. Enregistrement
 
-1. Saisir un objet. **Attendu** : une **pastille** apparaît sur le bouton Save en
-   haut à droite.
-2. **Survoler le bouton Save.** **Attendu** : la pastille reste nettement visible —
-   le bouton change de couleur au survol, et c'est le cas où l'anneau disparaissait.
-3. Cliquer **Save**. **Attendu** : message de succès, la pastille s'éteint.
-4. Recharger la page. **Attendu** : l'objet est là.
+1. Saisir un objet, cliquer **Save**. **Attendu** : message de succès.
+2. Recharger la page. **Attendu** : l'objet est là.
+3. Modifier **un bloc** de l'email **et** l'objet, cliquer **Save**, recharger.
+   **Attendu** : les deux sont enregistrés.
+
+> Il n'y a **aucun indicateur visuel** de modification non enregistrée, ni pour les
+> métadonnées ni pour le contenu. C'est volontaire : un signal qui ne couvrirait
+> que les métadonnées mentirait par omission sur tout le reste de l'éditeur.
 
 ### E3. Le cas critique — échec des métadonnées
 
@@ -212,19 +214,24 @@ prend plus le contenu de l'email en otage.
    (Paramètres → Email Builder → Configuration).
 3. Revenir à l'éditeur, cliquer **Save**.
 4. **Attendu** : un message d'erreur nommant le problème de métadonnées, **et
-   l'email lui-même est enregistré**. La pastille **reste allumée**.
-5. Recharger. **Attendu** : les modifications de contenu sont là.
+   l'email lui-même est enregistré**. Pas de message de succès à côté de l'erreur.
+5. Recharger. **Attendu** : les modifications de contenu sont là. L'objet, non.
 6. **À ne surtout PAS voir** : un email qu'on ne peut plus jamais enregistrer,
    chaque clic échouant à l'identique.
-7. Réactiver le flag, re-sauvegarder : l'objet passe, la pastille s'éteint.
+7. Réactiver le flag, rouvrir l'email, resaisir l'objet, **Save**, recharger.
+   **Attendu** : l'objet est enregistré.
 
 ### E4. Course frappe / enregistrement
 
 1. Saisir un objet, cliquer **Save**, puis **continuer à taper immédiatement**
    pendant que la requête part.
-2. **Attendu** : la pastille **reste allumée** après la réponse — la frappe faite
-   pendant la requête n'a pas été envoyée et est signalée comme telle.
-3. Re-cliquer Save, recharger. **Attendu** : la dernière version saisie est en base.
+2. Attendre la fin de la requête, **sans rien faire d'autre**. Recharger.
+   **Attendu** : la base porte l'objet **tel qu'il était au moment du clic** — la
+   frappe suivante n'a pas été envoyée, ce qui est normal.
+3. Re-cliquer **Save**, recharger. **Attendu** : la dernière version saisie est en
+   base. C'est l'étape qui compte : si l'état modifié n'avait pas survécu à la
+   première sauvegarde, ce second Save n'aurait rien envoyé et la correction
+   serait perdue.
 
 ### E5. Date d'envoi prévue
 
@@ -261,8 +268,8 @@ docker exec lepatron_mongo_container mongo --quiet --port 27019 lepatron --eval 
 1. Ouvrir un email de **Test Group** ou **Demo company**.
 2. **Attendu** : **aucune** section « Paramètres de l'email ». L'onglet Contenu est
    celui d'avant.
-3. Modifier du contenu, enregistrer. **Attendu** : fonctionne normalement, aucune
-   pastille, aucune requête vers `/metadata` dans l'onglet Réseau.
+3. Modifier du contenu, enregistrer. **Attendu** : fonctionne normalement, et
+   **aucune requête vers `/metadata`** dans l'onglet Réseau.
 
 ### E9. Bloc sélectionné
 

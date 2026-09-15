@@ -179,36 +179,3 @@
     background-position: right 10px center;
   }
 }
-
-/**
- * The editor's Save button, when the email settings carry unsaved edits.
- *
- * These fields lost their own save button — the editor's Save writes them now —
- * and without a signal here the user types a subject line, sees nothing change,
- * and leaves. A dot, not a colour change: the button is already accent-coloured,
- * and the state must not read as "disabled" or "error".
- *
- * Not nested in `.mo`: the button is in the top bar (tmpl/main.tmpl.html:88),
- * outside `#main-toolbox`.
- */
-.primaryButton.has-unsaved-metadata {
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: white;
-    // A DARK ring, not the accent one. The button turns `--v-accent-base`
-    // (#00acdc) on hover and when pressed — the accent ring then sits on its own
-    // colour at 1:1 and vanishes, and the white dot drops to 2.65:1, under the
-    // 3:1 WCAG 2.2 asks for non-text components. Hover is precisely when the user
-    // is looking at the button. The dark ring holds on both grounds: 13.8:1 at
-    // rest, 5.2:1 on hover.
-    box-shadow: 0 0 0 2px var(--v-primary-base, #093040);
-  }
-}
