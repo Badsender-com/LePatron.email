@@ -121,7 +121,10 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
 1. **Le flag protège l'écriture.** Sur une company **désactivée**, un `PATCH` sur
    `/api/mailings/<id>/metadata` doit répondre **403**.
 2. **Les clés inconnues sont refusées.** Un `PATCH` portant une clé qui n'existe
-   pas doit répondre **422**, pas 200.
+   pas doit répondre **422**, pas 200. Le corps accepte exactement trois clés :
+   `subject`, `plannedSendDate`, `emailTypeId` — les mêmes noms que la réponse.
+   `_emailType`, l'ancien nom, doit désormais être refusé comme n'importe quelle
+   clé inconnue.
 3. **La date est normalisée.** Envoyer une date à n'importe quelle heure, relire en
    base : elle doit être stockée à **12:00:00.000Z**, quelle que soit l'heure
    envoyée.
