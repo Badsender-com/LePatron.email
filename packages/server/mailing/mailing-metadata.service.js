@@ -11,13 +11,49 @@ const modelsUtils = require('../utils/model.js');
 // A subject ends up in an email header; a client has no reason to store more.
 const MAX_SUBJECT_LENGTH = 255;
 
+// The whole endpoint contract. A key outside this list is refused rather than
+// dropped: `preheader` is the case that matters — a client still sending it would
+// otherwise get a 200 and believe it saved something.
+const KNOWN_FIELDS = Object.freeze([
+  'subject',
+  'plannedSendDate',
+  'emailTypeId',
+]);
+
 module.exports = {
   validateMetadataPayload,
   applyMetadataToMailing,
   MAX_SUBJECT_LENGTH,
+  KNOWN_FIELDS,
 };
 
 const isDefined = (value) => value !== undefined;
+
+/**
+ * A planned send date is a calendar day, not an instant: it has no time field in
+ * the interface, and it must read back as the same day for every teammate.
+ *
+ * The editor already sends noon UTC, but it is not the only writer — the creation
+ * modal and the listing are coming, and the ESP export will read this back. The
+ * invariant belongs here, where every client passes, rather than in each of them.
+ *
+ * Noon UTC rather than midnight: midnight UTC is the previous day everywhere west
+ * of Greenwich, so a range query on `plannedSendDate` would put a send on the
+ * wrong side of a day boundary. Noon holds for every offset from -11 to +11.
+ */
+function toNoonUtc(date) {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      12,
+      0,
+      0,
+      0
+    )
+  );
+}
 
 const invalid = () =>
   new UnprocessableEntity(ERROR_CODES.INVALID_EMAIL_METADATA);
@@ -28,6 +64,11 @@ const invalid = () =>
  *
  * `null` is meaningful and distinct from `undefined`: it clears the field.
  *
+ * An unknown key is a 422, like taxonomy.service.js does on the neighbouring
+ * service. Two guarantees follow: no caller is silently ignored, and `validated`
+ * is built field by field — so nothing from the payload can reach the mailing on
+ * its own, not `data`, not `_company`, not a Mongo operator.
+ *
  * @param {Object} payload raw body
  * @param {Object} options
  * @param {string|ObjectId|null} options.companyId company the mailing belongs to
@@ -35,6 +76,13 @@ const invalid = () =>
  */
 async function validateMetadataPayload(payload = {}, { companyId } = {}) {
   const validated = {};
+
+  const unknown = Object.keys(payload || {}).filter(
+    (key) => !KNOWN_FIELDS.includes(key)
+  );
+  if (unknown.length > 0) {
+    throw invalid();
+  }
 
   if (isDefined(payload.subject)) {
     if (payload.subject !== null && typeof payload.subject !== 'string') {
@@ -57,7 +105,7 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
       if (Number.isNaN(date.getTime())) {
         throw invalid();
       }
-      validated.plannedSendDate = date;
+      validated.plannedSendDate = toNoonUtc(date);
     }
   }
 

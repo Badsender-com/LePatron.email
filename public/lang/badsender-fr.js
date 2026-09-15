@@ -292,4 +292,22 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  // email metadata section of the Content tab
+  'email-metadata-title': "Paramètres de l'email",
+  'email-metadata-subject': "Objet de l'email",
+  'email-metadata-subject-placeholder':
+    'Ex. : Découvrez nos nouveautés de la rentrée',
+  'email-metadata-planned-date': "Date d'envoi prévue",
+  'email-metadata-typology': 'Typologie',
+  'email-metadata-typology-none': 'Aucune',
+  'email-metadata-typology-empty':
+    'Aucune typologie active pour votre entreprise. Elles se configurent dans Paramètres → Général → Typologies.',
+  'email-metadata-error': "L'enregistrement des métadonnées a échoué",
+  'email-metadata-error-disabled':
+    'Les métadonnées ne sont pas activées pour cette entreprise',
+  'email-metadata-error-typology': "Cette typologie n'est plus disponible",
+  'email-metadata-typology-missing': 'Typologie désactivée',
+  'email-metadata-error-no-company':
+    "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
+  'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
 };

@@ -283,4 +283,22 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  // email metadata section of the Content tab
+  'email-metadata-title': 'Email settings',
+  'email-metadata-subject': 'Subject line',
+  'email-metadata-subject-placeholder': 'E.g. Discover our new autumn range',
+  'email-metadata-planned-date': 'Planned send date',
+  // "Typology" is a false friend in a marketing interface — the English for what
+  // the French calls « typologie » is simply the email's type.
+  'email-metadata-typology': 'Email type',
+  'email-metadata-typology-none': 'None',
+  'email-metadata-typology-empty':
+    'No active email type for your company. They are configured under Settings → General → Email types.',
+  'email-metadata-error': 'Could not save the metadata',
+  'email-metadata-error-disabled': 'Metadata is not enabled for this company',
+  'email-metadata-error-typology': 'This email type is no longer available',
+  'email-metadata-typology-missing': 'Deactivated email type',
+  'email-metadata-error-no-company':
+    'This email belongs to no company: the email type cannot be saved',
+  'email-metadata-error-invalid': 'One of the values was refused',
 };

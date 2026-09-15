@@ -27,11 +27,14 @@ module.exports = {
  * @apiSuccess {Date} plannedSendDate
  * @apiSuccess {String} emailTypeId
  *
- * @apiDescription The preheader is NOT part of this endpoint. It is a template
- *   property, edited where it always has been — the template's own options in the
- *   editor — and persisted with the email. Wiring it through here would mean
- *   changing how our templates declare it, which is a product question still to be
- *   settled.
+ * @apiDescription Only the three fields above are accepted; any other key in the
+ *   body is a 422 `INVALID_EMAIL_METADATA`, so a caller is never silently ignored.
+ *
+ *   The preheader is NOT part of this endpoint — `{"preheader": "..."}` is refused.
+ *   It is a template property, edited where it always has been (the template's own
+ *   options in the editor) and persisted with the email. Wiring it through here
+ *   would mean changing how our templates declare it, which is a product question
+ *   still to be settled.
  */
 
 async function updateMetadata(req, res) {
