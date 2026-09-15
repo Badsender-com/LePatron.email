@@ -14,7 +14,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const EMAIL_METADATA_FIELDS = Object.freeze([
   'subject',
   'plannedSendDate',
-  'emailType',
+  'emailTypeId',
 ]);
 
 /**

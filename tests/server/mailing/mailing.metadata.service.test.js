@@ -2,7 +2,8 @@
 
 // Validation of the editorial metadata (subject, planned send date, typology).
 //
-// The `_emailType` reference is the sensitive part: it points at a TaxonomyItem,
+// The email type reference is the sensitive part: it points at a TaxonomyItem,
+// read as `emailTypeId` and stored as `_emailType`,
 // which is a per-company object. A caller who can guess an id of another company
 // must not be able to attach it, so the lookup is scoped by `_company` AND by
 // taxonomy `type`. The DB mock below honours both filters exactly like MongoDB
@@ -151,10 +152,10 @@ describe('validateMetadataPayload — plannedSendDate', () => {
   );
 });
 
-describe('validateMetadataPayload — _emailType scoping', () => {
+describe('validateMetadataPayload — emailTypeId scoping', () => {
   it('accepts a typology of the mailing company', async () => {
     const result = await validateMetadataPayload(
-      { _emailType: TYPE_A },
+      { emailTypeId: TYPE_A },
       { companyId: COMPANY_A }
     );
     expect(String(result._emailType)).toBe(TYPE_A);
@@ -162,7 +163,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 
   it('refuses a typology of another company', async () => {
     await expect(
-      validateMetadataPayload({ _emailType: TYPE_B }, { companyId: COMPANY_A })
+      validateMetadataPayload({ emailTypeId: TYPE_B }, { companyId: COMPANY_A })
     ).rejects.toMatchObject({
       status: 404,
       message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
@@ -171,7 +172,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 
   it('refuses an item of the right company but the wrong taxonomy', async () => {
     await expect(
-      validateMetadataPayload({ _emailType: LANG_A }, { companyId: COMPANY_A })
+      validateMetadataPayload({ emailTypeId: LANG_A }, { companyId: COMPANY_A })
     ).rejects.toMatchObject({
       status: 404,
       message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
@@ -180,7 +181,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 
   it('scopes the query by company AND type, not by id alone', async () => {
     await validateMetadataPayload(
-      { _emailType: TYPE_A },
+      { emailTypeId: TYPE_A },
       { companyId: COMPANY_A }
     );
 
@@ -192,7 +193,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
   it('reports an unknown id as not found, like a foreign one', async () => {
     await expect(
       validateMetadataPayload(
-        { _emailType: UNKNOWN_ID },
+        { emailTypeId: UNKNOWN_ID },
         { companyId: COMPANY_A }
       )
     ).rejects.toMatchObject({
@@ -204,7 +205,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
   it('refuses a malformed id without querying the DB', async () => {
     await expect(
       validateMetadataPayload(
-        { _emailType: 'not-an-objectid' },
+        { emailTypeId: 'not-an-objectid' },
         { companyId: COMPANY_A }
       )
     ).rejects.toMatchObject({
@@ -216,9 +217,9 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 
   it.each([[null], ['']])(
     'detaches the typology with %p',
-    async (_emailType) => {
+    async (emailTypeId) => {
       const result = await validateMetadataPayload(
-        { _emailType },
+        { emailTypeId },
         { companyId: COMPANY_A }
       );
       expect('_emailType' in result).toBe(true);
@@ -229,7 +230,7 @@ describe('validateMetadataPayload — _emailType scoping', () => {
 
   it('refuses a typology on a mailing with no company (super admin case)', async () => {
     await expect(
-      validateMetadataPayload({ _emailType: TYPE_A }, { companyId: null })
+      validateMetadataPayload({ emailTypeId: TYPE_A }, { companyId: null })
     ).rejects.toMatchObject({
       status: 403,
       message: ERROR_CODES.EMAIL_TYPE_COMPANY_MISSING,
@@ -278,7 +279,7 @@ describe('applyMetadataToMailing', () => {
       plannedSendDate: 'kept-too',
     });
 
-    await applyMetadataToMailing(mailing, { _emailType: TYPE_A });
+    await applyMetadataToMailing(mailing, { emailTypeId: TYPE_A });
 
     expect(mailing.subject).toBe('kept');
     expect(mailing.plannedSendDate).toBe('kept-too');
@@ -289,7 +290,7 @@ describe('applyMetadataToMailing', () => {
     const mailing = makeMailing();
 
     await expect(
-      applyMetadataToMailing(mailing, { _emailType: TYPE_B })
+      applyMetadataToMailing(mailing, { emailTypeId: TYPE_B })
     ).rejects.toMatchObject({
       message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
     });

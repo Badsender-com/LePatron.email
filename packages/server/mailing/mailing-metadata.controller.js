@@ -19,7 +19,7 @@ module.exports = {
  *
  * @apiParam (Body) {String} [subject] the email subject line, `null` to clear
  * @apiParam (Body) {String} [plannedSendDate] ISO date, `null` to clear
- * @apiParam (Body) {String} [_emailType] a taxonomy item of the same company,
+ * @apiParam (Body) {String} [emailTypeId] a taxonomy item of the same company,
  *   `null` to detach
  *
  * @apiSuccess {String} id

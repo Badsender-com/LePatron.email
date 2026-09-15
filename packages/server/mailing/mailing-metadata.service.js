@@ -61,8 +61,12 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
     }
   }
 
-  if (isDefined(payload._emailType)) {
-    validated._emailType = await validateEmailType(payload._emailType, {
+  // Read as `emailTypeId`, stored as `_emailType`. The underscore prefix is
+  // reserved for Mongoose references by AGENTS.md; it has no business in a public
+  // request body, and the response has always answered `emailTypeId`. Renamed
+  // while no external client exists.
+  if (isDefined(payload.emailTypeId)) {
+    validated._emailType = await validateEmailType(payload.emailTypeId, {
       companyId,
     });
   }
