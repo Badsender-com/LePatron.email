@@ -300,6 +300,179 @@ describe('AIFeatureService', () => {
         expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
       }
     );
+
+    // The model field is free-typed (models released after a deploy, Azure
+    // deployment names, self-hosted endpoints), so these cover the format
+    // guard that replaces the closed list, not a whitelist.
+    describe('model identifier', () => {
+      function arrangeConfig() {
+        const existingConfig = {
+          _id: mockConfigId,
+          _company: mockGroupId,
+          // Both enum types present: a missing one triggers the backfill in
+          // getOrCreateConfig, which re-reads through findById.
+          features: [
+            {
+              featureType: 'skill',
+              integration: null,
+              isActive: false,
+              config: {},
+            },
+            {
+              featureType: 'translation',
+              integration: null,
+              isActive: false,
+              config: {},
+            },
+          ],
+        };
+        groupService.findById.mockResolvedValue({ _id: mockGroupId });
+        AIFeatureConfigs.findOne.mockReturnValue({
+          populate: jest.fn().mockResolvedValue(existingConfig),
+        });
+        AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+          populate: jest.fn().mockResolvedValue(existingConfig),
+        });
+      }
+
+      function modelWrittenBy(call) {
+        return call[1].$set['features.0.config.model'];
+      }
+
+      it.each([
+        ['gpt-4o-mini'],
+        ['mistral-large-latest'],
+        ['claude-opus-4-20250514'],
+        ['gemini-2.0-flash'],
+        // Real identifiers use these separators.
+        ['accounts/fireworks/models/llama-v3'],
+        ['mistral:7b'],
+      ])('accepts %s', async (model) => {
+        arrangeConfig();
+
+        await aiFeatureService.updateFeatureConfig({
+          groupId: mockGroupId,
+          featureType: 'skill',
+          config: { model },
+        });
+
+        expect(
+          modelWrittenBy(AIFeatureConfigs.findByIdAndUpdate.mock.calls[0])
+        ).toBe(model);
+      });
+
+      it.each([
+        ['gpt 4o'],
+        ['gpt-4o\ninjected: true'],
+        ['"gpt-4o"'],
+        ['-leading-dash'],
+        ['x'.repeat(129)],
+      ])('rejects %j', async (model) => {
+        arrangeConfig();
+
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType: 'skill',
+            config: { model },
+          })
+        ).rejects.toThrow('INVALID_MODEL_ID');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      });
+
+      // The combobox yields '' when the field is cleared. '' is neither
+      // undefined nor null, so without this it survives the resolver chain and
+      // is sent to the provider as the group's chosen model.
+      it('maps an empty string back to null', async () => {
+        arrangeConfig();
+
+        await aiFeatureService.updateFeatureConfig({
+          groupId: mockGroupId,
+          featureType: 'skill',
+          config: { model: '' },
+        });
+
+        expect(
+          modelWrittenBy(AIFeatureConfigs.findByIdAndUpdate.mock.calls[0])
+        ).toBeNull();
+      });
+
+      it('trims surrounding whitespace', async () => {
+        arrangeConfig();
+
+        await aiFeatureService.updateFeatureConfig({
+          groupId: mockGroupId,
+          featureType: 'skill',
+          config: { model: '  gpt-4o  ' },
+        });
+
+        expect(
+          modelWrittenBy(AIFeatureConfigs.findByIdAndUpdate.mock.calls[0])
+        ).toBe('gpt-4o');
+      });
+
+      it('leaves an explicit null alone', async () => {
+        arrangeConfig();
+
+        await aiFeatureService.updateFeatureConfig({
+          groupId: mockGroupId,
+          featureType: 'skill',
+          config: { model: null },
+        });
+
+        expect(
+          modelWrittenBy(AIFeatureConfigs.findByIdAndUpdate.mock.calls[0])
+        ).toBeNull();
+      });
+    });
+
+    // Persisted since the formality fix: the select was rendered, DeepL knew
+    // how to read the value, but nothing ever wrote it.
+    it('persists the translation formality', async () => {
+      const existingConfig = {
+        _id: mockConfigId,
+        _company: mockGroupId,
+        // Both enum types present → no backfill (see above).
+        features: [
+          {
+            featureType: 'translation',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
+          },
+          {
+            featureType: 'skill',
+            integration: null,
+            isActive: false,
+            config: {},
+          },
+        ],
+      };
+
+      groupService.findById.mockResolvedValue({ _id: mockGroupId });
+      AIFeatureConfigs.findOne.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(existingConfig),
+      });
+      AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(existingConfig),
+      });
+
+      await aiFeatureService.updateFeatureConfig({
+        groupId: mockGroupId,
+        featureType: 'translation',
+        config: { formality: 'prefer_more' },
+      });
+
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalledWith(
+        mockConfigId,
+        {
+          $set: expect.objectContaining({
+            'features.0.config.formality': 'prefer_more',
+          }),
+        },
+        expect.anything()
+      );
+    });
   });
 
   describe('getFeatureConfig', () => {
