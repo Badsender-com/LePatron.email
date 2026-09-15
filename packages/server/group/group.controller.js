@@ -24,6 +24,9 @@ const {
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
+const {
+  sanitizeEmailMetadata,
+} = require('../utils/sanitize-email-metadata.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -143,8 +146,18 @@ async function create(req, res) {
     groupFtpService.validateSshKeyOrThrow(req.body.ftpSshKey);
   }
 
+  const groupToCreate = { ...req.body };
+
+  // The update path is not the only write path: without this, a company could be
+  // created with a shape the update path would have refused.
+  if ('emailMetadata' in groupToCreate) {
+    groupToCreate.emailMetadata = sanitizeEmailMetadata(
+      groupToCreate.emailMetadata
+    );
+  }
+
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
-  const newGroup = await groupService.createGroup(req.body);
+  const newGroup = await groupService.createGroup(groupToCreate);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
   res.json(groupFtpService.maskFtpCredentials(newGroup));
@@ -440,9 +453,12 @@ async function update(req, res) {
     groupFtpService.validateSshKeyOrThrow(processedBody.ftpSshKey);
   }
 
+  // The `id` comes last on purpose: the group being updated is the one named by
+  // the URL — the only value the route guard checked — so a payload carrying its
+  // own `id` cannot redirect the write elsewhere.
   let groupToUpdate = {
-    id: req.params.groupId,
     ...processedBody,
+    id: req.params.groupId,
   };
 
   // Validate/normalize the tracking config shape before persisting (the UI
@@ -453,13 +469,36 @@ async function update(req, res) {
     );
   }
 
+  // Same reasoning as trackingConfig: shape guaranteed server-side, and only
+  // when the payload actually carries it (partial updates are the norm here).
+  // `in` rather than `!= null`, so an explicit null goes through the sanitizer
+  // and yields the default sub-object instead of being stored as null.
+  // The stored config is read first, and only when the payload carries the key,
+  // following the `previousRetention` pattern below: the sanitizer returns the
+  // whole sub-object, so without it a partial update would resolve the missing
+  // keys to their defaults and switch the feature off for the company.
+  if ('emailMetadata' in groupToUpdate) {
+    const storedMetadata = (
+      await Groups.findById(req.params.groupId, { emailMetadata: 1 }).lean()
+    )?.emailMetadata;
+    groupToUpdate.emailMetadata = sanitizeEmailMetadata(
+      groupToUpdate.emailMetadata,
+      storedMetadata
+    );
+  }
+
   if (user.isGroupAdmin) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
-      'id',
       'colorScheme',
       'trackingConfig',
+      // Without this, a company admin cannot configure the email metadata
+      // feature at all — the field would be silently dropped here.
+      'emailMetadata',
     ]);
+    // Reinstated after the pick, from the URL, so the whitelist never has to
+    // carry the id of the target.
+    groupToUpdate.id = req.params.groupId;
   }
 
   // Read the retention before the write, and only when the payload carries it,
