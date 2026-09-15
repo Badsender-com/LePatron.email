@@ -17,7 +17,7 @@ const MAX_SUBJECT_LENGTH = 255;
 const KNOWN_FIELDS = Object.freeze([
   'subject',
   'plannedSendDate',
-  '_emailType',
+  'emailTypeId',
 ]);
 
 module.exports = {

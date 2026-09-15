@@ -70,7 +70,7 @@ describe('email metadata store', () => {
       expect(store.payload()).toEqual({
         subject: 'Objet espacé',
         plannedSendDate: '2026-09-01T12:00:00.000Z',
-        _emailType: 'abc123',
+        emailTypeId: 'abc123',
       });
     });
 
@@ -83,7 +83,7 @@ describe('email metadata store', () => {
       expect(store.payload()).toEqual({
         subject: null,
         plannedSendDate: null,
-        _emailType: null,
+        emailTypeId: null,
       });
     });
 

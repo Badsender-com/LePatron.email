@@ -105,7 +105,7 @@ describe('buildMetadataPayload', () => {
 
     expect(payload.subject).toBe('Soldes');
     expect(payload.plannedSendDate).toMatch(/^2026-09-01T/);
-    expect(payload._emailType).toBe('507f1f77bcf86cd799439101');
+    expect(payload.emailTypeId).toBe('507f1f77bcf86cd799439101');
   });
 
   // The preheader is not part of the metadata at all in this phase: it is a
@@ -118,7 +118,7 @@ describe('buildMetadataPayload', () => {
 
     expect(payload).not.toHaveProperty('preheader');
     expect(Object.keys(payload).sort()).toEqual([
-      '_emailType',
+      'emailTypeId',
       'plannedSendDate',
       'subject',
     ]);
@@ -140,7 +140,7 @@ describe('buildMetadataPayload', () => {
   it.each([[''], [null], [undefined]])(
     'sends null for an emptied typology (%p)',
     (emailTypeId) => {
-      expect(buildMetadataPayload({ emailTypeId })._emailType).toBeNull();
+      expect(buildMetadataPayload({ emailTypeId }).emailTypeId).toBeNull();
     }
   );
 });
