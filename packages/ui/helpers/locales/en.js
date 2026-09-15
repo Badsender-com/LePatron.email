@@ -949,6 +949,99 @@ export default {
       recommended: 'recommended',
     }
   },
+  emailBuilderSettings: {
+    title: 'Email Builder settings',
+    sidebarLabel: 'Settings',
+    metadata: {
+      sectionTitle: 'Email metadata',
+      sectionDescription:
+        'Lets your team set a subject, a preheader, a planned send date and an email type on each email, instead of retyping them on every send.',
+      enabled: 'Enable email metadata',
+      enabledHint:
+        'While the option is off, these fields appear nowhere and the API refuses them; data already entered is kept.',
+      taxonomyAction: 'Manage email types',
+      taxonomyHint:
+        'Email types are configured under Settings → General → Email types, independently of this option.',
+    },
+    snackbars: {
+      invalid: 'The settings sent were not accepted.',
+      updated: 'Email Builder settings updated',
+      error: 'Could not update the settings',
+    },
+  },
+  taxonomy: {
+    active: 'Active',
+    inactive: 'Inactive',
+    title: 'Email types',
+    sidebarLabel: 'Email types',
+    description:
+      'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI.',
+    table: {
+      label: 'Label',
+      description: 'Definition',
+      canonicalType: 'AI mapping',
+      order: 'Order',
+      isActive: 'Status',
+    },
+    canonicalTypes: {
+      promo: 'Promotional',
+      newsletter: 'Newsletter',
+      transactional: 'Transactional',
+      'marketing-automation': 'Marketing Automation',
+    },
+    form: {
+      createTitle: 'New email type',
+      editTitle: 'Edit email type',
+      label: 'Label',
+      labelPlaceholder: 'Weekly newsletter',
+      labelHint: 'The name your team actually uses.',
+      labelRequired: 'A label is required',
+      labelTooLong: 'The label cannot exceed {max} characters',
+      description: 'Definition',
+      descriptionPlaceholder:
+        'Thursday morning send to the whole base: news and new products.',
+      descriptionHint:
+        'What this email type is for in your company, and when to use it. This text is what will guide the AI.',
+      descriptionTooLong: 'The definition cannot exceed {max} characters',
+      canonicalType: 'Matching AI email type',
+      canonicalTypePlaceholder: 'None',
+      canonicalTypeHint:
+        'Optional. Bridges onto the AI vocabulary, so the right expertise loads whatever name you chose.',
+      order: 'Order',
+      orderHint: 'Display order in the lists.',
+      status: 'Status',
+      isActive: 'Active',
+      isActiveHint:
+        'A deactivated email type disappears from the pickers, but emails already using it keep it.',
+    },
+    deleteConfirmTitle: 'Delete this email type?',
+    deleteConfirmMessage: 'The email type "{label}" will be deleted.',
+    deleteConfirmHint:
+      'If emails use it, the deletion will be refused — deactivate it instead.',
+    loadError: {
+      title: 'Could not load your email types',
+      description:
+        'The list could not be read. Nothing has been lost — try again.',
+      action: 'Retry',
+    },
+    empty: {
+      action: 'Create an email type',
+      title: 'No email type yet',
+      description:
+        'Create your first email types: nothing is pre-filled, these are your own words.',
+    },
+    errors: {
+      limitReached: 'You have reached the maximum number of email types for this company.',
+      labelAlreadyExists: 'An email type already uses this label.',
+      inUse:
+        'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
+    },
+    snackbars: {
+      created: 'Email type created',
+      updated: 'Email type updated',
+      deleted: 'Email type deleted',
+    },
+  },
   feedMappings: {
     title: 'Content Feeds',
     template: 'Template',
@@ -1121,6 +1214,7 @@ export default {
       promo: 'Promotional',
       newsletter: 'Newsletter',
       transactional: 'Transactional',
+      'marketing-automation': 'Marketing Automation',
     },
     statuses: {
       DRAFT: 'Draft',
@@ -1181,7 +1275,7 @@ export default {
       scopeHelp:
         'Loading key: features fetch expertise by scope before calling the AI (e.g. CTA generation loads the "cta" scope).',
       emailTypeHelp:
-        'Restricts the expertise to some typologies (e.g. "promo"). Empty = all types.',
+        'Restricts the expertise to some email types (e.g. "promo"). Empty = all types.',
       languageHelp:
         'Languages of the content this know-how applies to — e.g. a French risky-words list only applies to FR content. Empty = all.',
       descriptionHelp:

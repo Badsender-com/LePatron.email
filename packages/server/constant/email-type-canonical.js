@@ -22,6 +22,15 @@ const EmailTypeCanonical = Object.freeze({
   PROMO: 'promo',
   NEWSLETTER: 'newsletter',
   TRANSACTIONAL: 'transactional',
+  // Scenario-driven sends — abandoned cart, birthday, welcome sequence, lifecycle
+  // nurturing. Neither promotional nor transactional in the AI's sense: the intent
+  // is commercial, but the send is fired by the contact's own behaviour rather
+  // than by a campaign calendar.
+  //
+  // The stored value is the vocabulary the AI receives, so it says what the user
+  // picked: an expertise tagged `marketing-automation` is the one that should load
+  // for an email the user filed under "Marketing Automation".
+  MARKETING_AUTOMATION: 'marketing-automation',
 });
 
 const EmailTypeCanonicalValues = Object.freeze(
