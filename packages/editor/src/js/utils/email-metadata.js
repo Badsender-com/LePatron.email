@@ -80,7 +80,7 @@ function buildMetadataPayload(form) {
   return {
     subject: subject === '' ? null : subject,
     plannedSendDate: fromDateInputValue(form.plannedSendDate),
-    _emailType: form.emailTypeId ? form.emailTypeId : null,
+    emailTypeId: form.emailTypeId ? form.emailTypeId : null,
   };
 }
 
