@@ -1,12 +1,7 @@
 <script>
 import BsCombobox from '~/components/form/bs-combobox';
 import * as apiRoutes from '~/helpers/api-routes';
-
-// Mirrors MODEL_ID_PATTERN in ai-feature.service.js. Duplicated on purpose:
-// the server guard is the one that matters, but without a client-side check
-// the only feedback on a typo is the generic "an error occurred" snackbar
-// these tabs raise for any failed save — which says nothing about what to fix.
-const MODEL_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$/;
+import { toModelId, isValidModelId } from '~/helpers/ai-model-picker';
 
 /**
  * BsAiModelPicker - model selection for one AI feature.
@@ -53,39 +48,34 @@ export default {
         return this.value;
       },
       set(next) {
-        // The combobox yields '' when cleared and null when the clear icon is
-        // used. Both mean "provider default"; '' would otherwise be persisted
-        // and win over the default downstream.
-        const trimmed = typeof next === 'string' ? next.trim() : next;
-        if (trimmed && !MODEL_ID_PATTERN.test(trimmed)) {
+        const modelId = toModelId(next);
+        if (!isValidModelId(modelId)) {
           // Held back rather than sent: the save would fail server-side, and
           // the tab would report it as a generic error.
-          this.invalidInput = trimmed;
+          this.invalidInput = modelId;
           return;
         }
         this.invalidInput = null;
-        this.$emit('input', trimmed || null);
+        this.$emit('input', modelId);
       },
     },
     supportsModelSelection() {
       return this.capabilities?.supportsModelSelection || false;
     },
+    // Plain identifiers, not { value, text } objects. v-combobox ignores
+    // `item-value` and hands the whole item back on selection, so objects here
+    // meant an object reached the parent and was persisted as "[object
+    // Object]". Strings also keep the field showing the identifier itself,
+    // which is what the user edits when typing one by hand; the readable name
+    // is rendered in the dropdown through the #item slot.
     items() {
-      return this.models.map((model) => {
-        const name = model.name || model.label || model.id;
-        const description = model.descriptionKey
-          ? this.$t(model.descriptionKey)
-          : '';
-        const suffix = model.deprecated
-          ? ` — ${this.$t('aiFeatures.model.deprecated')}`
-          : '';
-        return {
-          value: model.id,
-          text: description
-            ? `${name} (${description})${suffix}`
-            : `${name}${suffix}`,
-        };
-      });
+      return this.models.map((model) => model.id);
+    },
+    modelsById() {
+      return this.models.reduce((acc, model) => {
+        acc[model.id] = model;
+        return acc;
+      }, {});
     },
     placeholder() {
       return this.defaultModel
@@ -121,6 +111,19 @@ export default {
     },
   },
   methods: {
+    labelFor(modelId) {
+      const model = this.modelsById[modelId];
+      if (!model) return modelId;
+      const name = model.name || model.label || model.id;
+      return model.deprecated
+        ? `${name} — ${this.$t('aiFeatures.model.deprecated')}`
+        : name;
+    },
+    descriptionFor(modelId) {
+      const model = this.modelsById[modelId];
+      return model && model.descriptionKey ? this.$t(model.descriptionKey) : '';
+    },
+
     reset() {
       this.models = [];
       this.defaultModel = null;
@@ -176,9 +179,19 @@ export default {
     :placeholder="placeholder"
     :disabled="disabled || loading"
     :loading="loading"
-    item-text="text"
-    item-value="value"
-    :return-object="false"
     clearable
-  />
+  >
+    <!-- The stored value is the identifier; the readable name lives here so
+         the two never diverge. -->
+    <template #item="{ item, on, attrs }">
+      <v-list-item v-bind="attrs" v-on="on">
+        <v-list-item-content>
+          <v-list-item-title>{{ labelFor(item) }}</v-list-item-title>
+          <v-list-item-subtitle v-if="descriptionFor(item)">
+            {{ descriptionFor(item) }}
+          </v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+    </template>
+  </bs-combobox>
 </template>
