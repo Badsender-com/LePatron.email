@@ -92,7 +92,11 @@ export default {
     effectiveHint() {
       if (this.loadError) return this.$t('aiFeatures.model.loadFailed');
       if (this.isCustomValue) return this.$t('aiFeatures.model.customHint');
-      return this.hint;
+      // Describe the chosen model when we can. Providers differ: Mistral and
+      // Gemini ship a written description, OpenAI and Anthropic ship none, so
+      // the generic sentence stays as the fallback rather than leaving the
+      // line empty half the time.
+      return this.descriptionFor(this.value) || this.hint;
     },
     errorMessages() {
       return this.invalidInput ? this.$t('aiFeatures.model.invalidId') : '';
@@ -119,9 +123,15 @@ export default {
         ? `${name} — ${this.$t('aiFeatures.model.deprecated')}`
         : name;
     },
+    /**
+     * Written by the provider when it offers one, otherwise our own i18n key
+     * for the models the catalogue describes.
+     */
     descriptionFor(modelId) {
       const model = this.modelsById[modelId];
-      return model && model.descriptionKey ? this.$t(model.descriptionKey) : '';
+      if (!model) return '';
+      if (model.description) return model.description;
+      return model.descriptionKey ? this.$t(model.descriptionKey) : '';
     },
 
     reset() {
