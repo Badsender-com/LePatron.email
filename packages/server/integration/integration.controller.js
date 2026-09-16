@@ -8,6 +8,7 @@ const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
+const modelListingService = require('../integration-providers/ai/model-listing.service.js');
 const { ProviderError } = require('../integration-providers/provider-error.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -328,12 +329,22 @@ async function getDashboardCount(req, res) {
  *
  * @apiParam {String} integrationId Integration ID
  *
- * @apiSuccess {Array} models List of available models
- * @apiSuccess {Boolean} dynamic Whether the list was fetched dynamically from the provider
+ * @apiQuery {Boolean} [refresh] Bypass the listing cache and re-query the provider
+ *
+ * @apiSuccess {Array} models List of available models. Each carries `id`,
+ *   `label` (`name` is kept as an alias for older clients), an optional
+ *   `descriptionKey`, and the `known` / `remote` flags saying whether the
+ *   model is described by our catalogue and whether the provider reported it.
+ * @apiSuccess {String} source `merged` when the provider's own listing was
+ *   used, `catalog` when it was unavailable and the curated list took over
+ * @apiSuccess {Boolean} dynamic Deprecated alias for `source !== 'catalog'`
+ * @apiSuccess {Boolean} allowCustomModel Whether the UI may accept a
+ *   hand-typed identifier
  * @apiSuccess {String} defaultModel Model the provider falls back to when none is configured (null if it has none)
+ * @apiSuccess {String} [error] Why the provider listing could not be used
  */
 async function getModels(req, res) {
-  const { user, params } = req;
+  const { user, params, query } = req;
   const { integrationId } = params;
 
   const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
@@ -347,32 +358,28 @@ async function getModels(req, res) {
   const capabilities = provider.getCapabilities();
   const defaultModel = resolveDefaultModel(provider);
 
-  try {
-    // If the provider supports live model listing (e.g. fetches from the provider API)
-    if (typeof provider.getAvailableModels === 'function') {
-      const models = await provider.getAvailableModels();
-      return res.json({ models, dynamic: true, capabilities, defaultModel });
-    }
+  // Never throws: an unreachable provider degrades to the curated catalogue so
+  // the settings screen stays usable, and says so through `error`.
+  const {
+    models,
+    source,
+    error,
+  } = await modelListingService.listModelsForIntegration(integration, {
+    refresh: query.refresh === 'true',
+  });
 
-    // Otherwise delegate to the provider's own static list
-    const staticModels = provider.getStaticModels();
-    return res.json({
-      models: staticModels,
-      dynamic: false,
-      capabilities,
-      defaultModel,
-    });
-  } catch (error) {
-    logger.error('Error fetching models:', error.message);
-    // Return empty model list but preserve capabilities so the UI stays coherent
-    return res.json({
-      models: [],
-      dynamic: false,
-      capabilities,
-      defaultModel,
-      error: 'Failed to fetch models from provider',
-    });
-  }
+  return res.json({
+    models,
+    source,
+    dynamic: source !== 'catalog',
+    capabilities,
+    defaultModel,
+    // Free typing is what covers models released after this deploy, Azure
+    // deployment names, and self-hosted endpoints — anywhere the list cannot
+    // be exhaustive. The server validates the shape, not the membership.
+    allowCustomModel: capabilities.supportsModelSelection,
+    ...(error ? { error } : {}),
+  });
 }
 
 /**
