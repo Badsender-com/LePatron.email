@@ -1040,8 +1040,13 @@ export default {
       enableLabel: 'Activer le moteur Skills',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
-      modelDefaultOption: 'Par défaut du fournisseur ({model})',
-      modelDefaultOptionUnknown: 'Par défaut du fournisseur'
+    },
+    model: {
+      defaultOption: 'Par défaut du fournisseur ({model})',
+      defaultOptionUnknown: 'Par défaut du fournisseur',
+      deprecated: 'obsolète',
+      customHint: 'Modèle saisi manuellement : il n\'a pas été vérifié auprès du fournisseur.',
+      loadFailed: 'Liste des modèles indisponible : seuls les modèles connus sont proposés. Vous pouvez saisir un identifiant.',
     },
     textGeneration: {
       title: 'Génération de texte',
@@ -1050,9 +1055,6 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
     }
   },
   colors: {
