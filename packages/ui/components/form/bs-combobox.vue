@@ -42,7 +42,16 @@ export default {
       set(val) {
         // Clear the typed search once a value is committed so it doesn't
         // linger in the field after a selection (§2).
-        this.searchInput = '';
+        //
+        // Multiple only. With chips the committed value leaves the text input,
+        // so whatever was typed has to go. With a single value the input IS
+        // where the value is displayed: blanking it wipes the selection from
+        // view, and v-combobox then reads the empty input as the field having
+        // been cleared and emits null on blur — a picked value silently
+        // reverting to none.
+        if (this.multiple) {
+          this.searchInput = '';
+        }
         this.$emit('input', val);
       },
     },
@@ -86,10 +95,13 @@ export default {
           if (!current.includes(pending)) {
             this.localValue = [...current, pending];
           }
-        } else {
+          this.searchInput = '';
+        } else if (pending !== this.localValue) {
+          // Only when it actually differs: on a single value the input still
+          // holds the current selection at blur, so committing unconditionally
+          // re-emits it and makes the parent save the same value again.
           this.localValue = pending;
         }
-        this.searchInput = '';
       }
       this.$emit('blur', event);
     },
