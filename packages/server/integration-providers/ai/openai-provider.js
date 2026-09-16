@@ -1,12 +1,19 @@
 'use strict';
 
 const fetch = require('node-fetch');
+const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
 const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
 
-const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_API_HOST = 'https://api.openai.com';
+// Short on purpose: this runs while a group admin waits on the settings
+// screen, and a slow provider must degrade to the catalogue, not hang the UI.
+const MODELS_TIMEOUT_MS = 5000;
 
 /**
  * OpenAI provider implementation
@@ -22,28 +29,36 @@ class OpenAIProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
-  _getDefaultModel() {
-    return DEFAULT_MODEL;
-  }
+  /**
+   * OpenAI lists every model family at once — embeddings, TTS, whisper, image
+   * and moderation models alongside the chat ones — with no field saying
+   * which is which. The noise filter lives in the catalogue rather than here,
+   * so the rules sit next to the curated entries they defer to.
+   */
+  async listRemoteModels() {
+    await assertOutboundHostAllowed(this.baseUrl);
 
-  getStaticModels() {
-    return [
-      {
-        id: 'gpt-4o-mini',
-        name: 'GPT-4o Mini',
-        descriptionKey: 'integrations.models.fastEconomical',
-      },
-      {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        descriptionKey: 'integrations.models.balanced',
-      },
-      {
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        descriptionKey: 'integrations.models.powerful',
-      },
-    ];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/models`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new ProviderError(
+          `OpenAI models listing failed: ${response.status}`,
+          response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
+        );
+      }
+
+      const payload = await response.json();
+      return (payload.data || []).map((model) => ({ id: model.id }));
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async validateCredentials() {
