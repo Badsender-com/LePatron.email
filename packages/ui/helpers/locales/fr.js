@@ -1153,6 +1153,7 @@ export default {
       defaultOption: 'Par défaut du fournisseur ({model})',
       defaultOptionUnknown: 'Par défaut du fournisseur',
       deprecated: 'obsolète',
+      invalidId: 'Identifiant de modèle invalide : lettres, chiffres et . _ - : / @ uniquement, sans espace.',
       customHint: 'Modèle saisi manuellement : il n\'a pas été vérifié auprès du fournisseur.',
       loadFailed: 'Liste des modèles indisponible : seuls les modèles connus sont proposés. Vous pouvez saisir un identifiant.',
     },
