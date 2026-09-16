@@ -11,6 +11,14 @@ const {
 } = require('../provider-error.js');
 
 const DEFAULT_API_HOST = 'https://api.openai.com';
+
+// Model families that moved to the newer chat-completions contract: they
+// rejected `max_tokens` in favour of `max_completion_tokens`, and they refuse
+// any temperature other than their own default. Verified against a live
+// account — gpt-4o and gpt-4.1 still accept both, gpt-5 and the o-series do
+// not. There is no metadata in the listing to detect this, so the model name
+// is the only signal available.
+const NEW_CONTRACT_MODELS = /^(gpt-5|o\d)/;
 // Short on purpose: this runs while a group admin waits on the settings
 // screen, and a slow provider must degrade to the catalogue, not hang the UI.
 const MODELS_TIMEOUT_MS = 5000;
@@ -27,6 +35,16 @@ class OpenAIProvider extends BaseLLMProvider {
   constructor(integration) {
     super(integration);
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
+  }
+
+  _maxTokensParamName(model) {
+    return NEW_CONTRACT_MODELS.test(model || '')
+      ? 'max_completion_tokens'
+      : 'max_tokens';
+  }
+
+  _supportsTemperature(model) {
+    return !NEW_CONTRACT_MODELS.test(model || '');
   }
 
   /**
