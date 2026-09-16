@@ -44,7 +44,8 @@ describe('OpenAIProvider', () => {
 
   describe('getDefaultTranslationModel', () => {
     it('should return default model when not configured', () => {
-      expect(provider.getDefaultTranslationModel()).toBe('gpt-4o-mini');
+      // Comes from the central catalogue now, not a constant in this class.
+      expect(provider.getDefaultTranslationModel()).toBe('gpt-5-mini');
     });
 
     it('should return configured model', () => {
