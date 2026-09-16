@@ -733,6 +733,30 @@ export default {
       productId: 'Product ID',
       productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
     },
+    anthropic: {
+      apiKeyPlaceholder: 'Votre clé API Anthropic',
+      apiHostHint: 'Laissez vide pour l\'API publique Anthropic ; à renseigner uniquement si vous passez par une passerelle d\'entreprise.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Votre clé API Google AI Studio',
+      apiHostHint: 'Laissez vide pour l\'API publique Gemini.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Votre clé API Azure OpenAI',
+      apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'La clé API de votre endpoint',
+      apiHostHint: 'Tout endpoint compatible avec l\'API OpenAI. Les adresses privées et locales sont refusées pour des raisons de sécurité.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Votre clé API Scaleway',
+      apiHostHint: 'Laissez vide sauf si votre compte impose une URL propre à un projet.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Votre clé API OVHcloud',
+      apiHostHint: 'Laissez vide pour les AI Endpoints publics d\'OVHcloud.'
+    },
     deepl: {
       apiKeyPlaceholder: 'Votre clé API DeepL',
       apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
