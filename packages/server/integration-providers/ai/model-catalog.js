@@ -128,6 +128,60 @@ const CATALOG = {
   // endpoint returns full names (e.g. "swiss-ai/Apertus-70B-Instruct-2509").
   // The provider therefore has no usable listing and this list is its only
   // source — the clearest justification for keeping a catalogue at all.
+  // Anthropic lists its chat models cleanly, with display names, so the
+  // catalogue here is thin on purpose: it exists to name a default and to
+  // qualify the main tiers. The listing is what keeps it current.
+  //
+  // TODO(verify): no Anthropic account was available while writing this.
+  // Confirm these ids and the default against a real key before announcing
+  // the connector — the listing endpoint answers without spending tokens.
+  anthropic: {
+    default: 'claude-haiku-4-5-20251001',
+    models: [
+      {
+        id: 'claude-haiku-4-5-20251001',
+        label: 'Claude Haiku 4.5',
+        descriptionKey: 'integrations.models.fastEconomical',
+        order: 10,
+      },
+      {
+        id: 'claude-sonnet-5',
+        label: 'Claude Sonnet 5',
+        descriptionKey: 'integrations.models.balanced',
+        order: 20,
+      },
+      {
+        id: 'claude-opus-5',
+        label: 'Claude Opus 5',
+        descriptionKey: 'integrations.models.powerful',
+        order: 30,
+      },
+    ],
+  },
+
+  // Gemini's listing carries both a display name and a written description,
+  // and is filtered at the source on generateContent support, so this only
+  // needs to name a default.
+  //
+  // TODO(verify): same as Anthropic — no Google account was available.
+  gemini: {
+    default: 'gemini-2.5-flash',
+    models: [
+      {
+        id: 'gemini-2.5-flash',
+        label: 'Gemini 2.5 Flash',
+        descriptionKey: 'integrations.models.fastEconomical',
+        order: 10,
+      },
+      {
+        id: 'gemini-2.5-pro',
+        label: 'Gemini 2.5 Pro',
+        descriptionKey: 'integrations.models.powerful',
+        order: 20,
+      },
+    ],
+  },
+
   infomaniak: {
     // Verified against a live account: of the seven aliases this list used to
     // carry, only these three are still accepted — `mixtral`, `llama3`,

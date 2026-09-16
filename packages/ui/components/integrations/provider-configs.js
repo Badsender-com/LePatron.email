@@ -70,6 +70,63 @@ export const providerConfigs = {
     showProductId: false,
   },
 
+  anthropic: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.anthropic.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://api.anthropic.com',
+    apiHostHintKey: 'integrations.anthropic.apiHostHint',
+    showProductId: false,
+  },
+
+  gemini: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.gemini.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://generativelanguage.googleapis.com',
+    apiHostHintKey: 'integrations.gemini.apiHostHint',
+    showProductId: false,
+  },
+
+  azure_openai: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.azureOpenai.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://mon-instance.openai.azure.com',
+    apiHostHintKey: 'integrations.azureOpenai.apiHostHint',
+    // The resource host is what the deployment path is built from.
+    apiHostRequired: true,
+    showProductId: false,
+  },
+
+  openai_compatible: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.openaiCompatible.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://mon-endpoint.example.com',
+    apiHostHintKey: 'integrations.openaiCompatible.apiHostHint',
+    apiHostRequired: true,
+    showProductId: false,
+  },
+
+  scaleway: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.scaleway.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://api.scaleway.ai',
+    apiHostHintKey: 'integrations.scaleway.apiHostHint',
+    showProductId: false,
+  },
+
+  ovh: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.ovh.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://oai.endpoints.kepler.ai.cloud.ovh.net',
+    apiHostHintKey: 'integrations.ovh.apiHostHint',
+    showProductId: false,
+  },
+
   infomaniak: {
     category: 'aiGeneration',
     type: 'ai',
@@ -121,6 +178,12 @@ export const providerLabels = {
   openai: 'OpenAI',
   mistral: 'Mistral AI',
   infomaniak: 'Infomaniak AI Tools',
+  anthropic: 'Anthropic (Claude)',
+  gemini: 'Google Gemini',
+  azure_openai: 'Azure OpenAI',
+  openai_compatible: 'Compatible OpenAI',
+  scaleway: 'Scaleway',
+  ovh: 'OVHcloud',
   // AI - Translation
   deepl: 'DeepL',
   // Content feed
