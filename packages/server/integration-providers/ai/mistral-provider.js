@@ -57,9 +57,17 @@ class MistralProvider extends BaseLLMProvider {
       }
 
       const payload = await response.json();
+      // Mistral is the richest of the three listings: it carries a written
+      // description, a deprecation date and the model meant to replace it.
       return (payload.data || [])
         .filter((model) => model.capabilities?.completion_chat)
-        .map((model) => ({ id: model.id, label: model.name }));
+        .map((model) => ({
+          id: model.id,
+          label: model.name,
+          description: model.description || null,
+          shutdownDate: model.deprecation || null,
+          replacedBy: model.deprecation_replacement_model || null,
+        }));
     } finally {
       clearTimeout(timeoutId);
     }

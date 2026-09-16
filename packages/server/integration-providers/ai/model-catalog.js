@@ -130,13 +130,18 @@ const REMOTE_FILTERS = {
       /^tts-/,
       /^whisper/,
       /^dall-e/,
-      /^gpt-image/,
+      // Covers gpt-image-* and chatgpt-image-*, which the positive guard below
+      // would otherwise wave through on its "chatgpt" prefix.
+      /(^|-)image(-|$)/,
       /moderation/,
       /^davinci/,
       /^babbage/,
       /^sora/,
       /^codex-/,
       /-(audio|realtime|transcribe|tts)(-|$)/,
+      // Completion models, not chat ones: they answer on /completions and
+      // reject the messages payload every caller here sends.
+      /-instruct(-|$)/,
     ],
     // Positive guard: OpenAI keeps adding model families, and an unknown one
     // is likelier to be noise than a chat model we want to surface silently.

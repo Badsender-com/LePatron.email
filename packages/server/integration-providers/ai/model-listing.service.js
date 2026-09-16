@@ -116,15 +116,32 @@ function merge(providerKey, catalogModels, remoteModels) {
     if (seen.has(remote.id)) continue;
     seen.add(remote.id);
     if (!passesRemoteFilter(providerKey, remote.id)) continue;
+    // Already withdrawn: offering it would only produce a failing call.
+    if (isRetired(remote.shutdownDate)) continue;
 
+    const retiring = !!remote.shutdownDate;
     const entry = getCatalogEntry(providerKey, remote.id);
     if (entry) {
-      known.push(decorate(entry, { known: true, remote: true }));
+      known.push(
+        decorate(
+          { ...entry, description: remote.description || null },
+          {
+            known: true,
+            remote: true,
+            deprecated: entry.deprecated || retiring,
+          }
+        )
+      );
     } else {
       remoteOnly.push(
         decorate(
-          { id: remote.id, label: remote.label || remote.id, order: 0 },
-          { known: false, remote: true }
+          {
+            id: remote.id,
+            label: remote.label || remote.id,
+            description: remote.description || null,
+            order: 0,
+          },
+          { known: false, remote: true, deprecated: retiring }
         )
       );
     }
@@ -136,9 +153,28 @@ function merge(providerKey, catalogModels, remoteModels) {
 
   return [
     ...sortForDisplay(known),
-    ...remoteOnly.sort((a, b) => a.id.localeCompare(b.id)),
+    // Alphabetical within the group, but models on their way out go last here
+    // too — this is where most of them are, since we describe few of them.
+    ...remoteOnly.sort((a, b) => {
+      if (!!a.deprecated !== !!b.deprecated) return a.deprecated ? 1 : -1;
+      return a.id.localeCompare(b.id);
+    }),
     ...sortForDisplay(unseen),
   ];
+}
+
+/**
+ * Whether the provider says the model is already gone.
+ *
+ * OpenAI publishes `shutdown_date` and Mistral `deprecation`, so the list of
+ * dead models does not have to be curated by hand — which is the only way it
+ * would stay accurate.
+ */
+function isRetired(shutdownDate) {
+  if (!shutdownDate) return false;
+  const date = new Date(shutdownDate);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() <= Date.now();
 }
 
 /** Deprecated models stay available but never lead the list. */
@@ -155,16 +191,19 @@ function sortForDisplay(models) {
  * @param {boolean} flags.known  the catalogue describes this model
  * @param {boolean} flags.remote the provider reported it
  */
-function decorate(model, { known, remote }) {
+function decorate(model, { known, remote, deprecated }) {
   return {
     id: model.id,
     label: model.label,
+    // Written by the provider when it offers one (Mistral, Gemini). OpenAI and
+    // Anthropic do not, which is why the catalogue's own i18n key stays.
+    description: model.description || null,
     // `name` is the field the settings screens read (`m.name || m.id`).
     // Kept as an alias so the endpoint stays usable by a UI deployed before
     // this change.
     name: model.label,
     descriptionKey: model.descriptionKey,
-    deprecated: !!model.deprecated,
+    deprecated: deprecated === undefined ? !!model.deprecated : !!deprecated,
     order: model.order,
     known,
     remote,

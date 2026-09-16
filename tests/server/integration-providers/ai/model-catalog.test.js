@@ -83,6 +83,13 @@ describe('model-catalog', () => {
       'gpt-4o-audio-preview',
       'gpt-4o-realtime-preview',
       'gpt-4o-transcribe',
+      // Completion models: they answer on /completions and reject the
+      // messages payload every caller here sends.
+      'gpt-3.5-turbo-instruct',
+      'gpt-3.5-turbo-instruct-0914',
+      // Image model whose name starts with "chatgpt", so the positive guard
+      // would otherwise wave it through.
+      'chatgpt-image-latest',
     ])('filters out %s', (id) => {
       expect(catalog.passesRemoteFilter('openai', id)).toBe(false);
     });

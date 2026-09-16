@@ -145,6 +145,91 @@ describe('model-listing.service', () => {
     });
   });
 
+  // OpenAI publishes `shutdown_date`, Mistral `deprecation`. Using them means
+  // the list of dead models stays accurate without anyone curating it.
+  describe('models the provider is retiring', () => {
+    const PAST = '2020-01-01';
+    const FUTURE = '2099-01-01';
+
+    it('drops a model whose shutdown date has passed', async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([
+          { id: 'gpt-4o' },
+          { id: 'gpt-legacy', shutdownDate: PAST },
+        ])
+      );
+
+      expect(ids(await listModelsForIntegration(integration()))).not.toContain(
+        'gpt-legacy'
+      );
+    });
+
+    it('keeps a model still scheduled for retirement, but flags it', async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([{ id: 'gpt-soon', shutdownDate: FUTURE }])
+      );
+
+      const model = (await listModelsForIntegration(integration())).models.find(
+        (m) => m.id === 'gpt-soon'
+      );
+
+      expect(model).toBeDefined();
+      expect(model.deprecated).toBe(true);
+    });
+
+    it('sorts retiring models after the rest of their group', async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([
+          { id: 'gpt-aaa', shutdownDate: FUTURE },
+          { id: 'gpt-zzz' },
+        ])
+      );
+
+      const listed = ids(await listModelsForIntegration(integration()));
+
+      expect(listed.indexOf('gpt-zzz')).toBeLessThan(listed.indexOf('gpt-aaa'));
+    });
+
+    it('ignores an unparseable date rather than hiding the model', async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([{ id: 'gpt-4o', shutdownDate: 'not a date' }])
+      );
+
+      expect(ids(await listModelsForIntegration(integration()))).toContain(
+        'gpt-4o'
+      );
+    });
+  });
+
+  describe('descriptions', () => {
+    it("passes through the provider's own description", async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([
+          { id: 'mistral-small-latest', description: 'Notre modèle rapide.' },
+        ])
+      );
+
+      const model = (
+        await listModelsForIntegration(integration({ provider: 'mistral' }))
+      ).models.find((m) => m.id === 'mistral-small-latest');
+
+      expect(model.description).toBe('Notre modèle rapide.');
+      // The catalogue key stays alongside it: OpenAI and Anthropic send no
+      // description, so the UI still needs something to fall back on.
+      expect(model.descriptionKey).toBeTruthy();
+    });
+
+    it('leaves description null when the provider sends none', async () => {
+      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-4o' }]));
+
+      const model = (await listModelsForIntegration(integration())).models.find(
+        (m) => m.id === 'gpt-4o'
+      );
+
+      expect(model.description).toBeNull();
+    });
+  });
+
   describe('degraded modes', () => {
     // A provider being unreachable must not read as "this account has no
     // models": the screen stays usable on the catalogue.

@@ -55,7 +55,13 @@ class OpenAIProvider extends BaseLLMProvider {
       }
 
       const payload = await response.json();
-      return (payload.data || []).map((model) => ({ id: model.id }));
+      // `shutdown_date` is OpenAI telling us when a model goes away. It is the
+      // only usable metadata here — the listing carries no description and no
+      // pricing — and it saves us from curating a list of dead models by hand.
+      return (payload.data || []).map((model) => ({
+        id: model.id,
+        shutdownDate: model.shutdown_date || null,
+      }));
     } finally {
       clearTimeout(timeoutId);
     }
