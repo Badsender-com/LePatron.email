@@ -84,10 +84,14 @@ describe('DeepLProvider', () => {
     });
   });
 
-  describe('getAvailableModels', () => {
-    it('should return empty array (DeepL does not use models)', async () => {
-      const result = await provider.getAvailableModels();
-      expect(result).toEqual([]);
+  // DeepL is not an LLM: it exposes no model selection at all, which is what
+  // `supportsModelSelection: false` above tells the UI. The old
+  // getAvailableModels() stub returning [] was removed with the listing
+  // rework — it said "this account has no models" where the honest answer is
+  // "this provider has no notion of one".
+  describe('model listing', () => {
+    it('does not expose a remote listing', () => {
+      expect(provider.listRemoteModels).toBeUndefined();
     });
   });
 

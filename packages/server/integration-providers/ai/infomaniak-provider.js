@@ -8,24 +8,7 @@ const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
 
-const DEFAULT_MODEL = 'mixtral';
 const API_BASE = 'https://api.infomaniak.com';
-
-// Valid model aliases for Infomaniak chat completions API
-// The /models endpoint returns full model names, but chat API only accepts these aliases
-const VALID_CHAT_MODELS = [
-  {
-    id: 'mixtral',
-    name: 'Mixtral',
-    descriptionKey: 'integrations.models.recommended',
-  },
-  { id: 'llama3', name: 'LLaMA 3' },
-  { id: 'granite', name: 'Granite' },
-  { id: 'mistral24b', name: 'Mistral 24B' },
-  { id: 'mistral3', name: 'Mistral 3' },
-  { id: 'qwen3', name: 'Qwen 3' },
-  { id: 'gemma3n', name: 'Gemma 3n' },
-];
 
 /**
  * Infomaniak AI Tools provider implementation
@@ -48,10 +31,6 @@ class InfomaniakProvider extends BaseLLMProvider {
       );
     }
     this.baseUrl = `${API_BASE}/1/ai/${this.productId}/openai`;
-  }
-
-  _getDefaultModel() {
-    return DEFAULT_MODEL;
   }
 
   _getChatCompletionsUrl() {
@@ -87,16 +66,13 @@ class InfomaniakProvider extends BaseLLMProvider {
   }
 
   /**
-   * Static list of valid chat model aliases.
-   * Note: The /models endpoint returns full model names (e.g. "swiss-ai/Apertus-70B-Instruct-2509")
-   * but the chat completions API only accepts short aliases (e.g. "mixtral", "llama3").
+   * Deliberately no `listRemoteModels()` override: the /models endpoint
+   * returns full model names (e.g. "swiss-ai/Apertus-70B-Instruct-2509")
+   * while the chat completions API only accepts short aliases ("mixtral",
+   * "llama3"). Listing them would offer the admin models every call would
+   * then reject. The base class returns null — "no usable listing" — and the
+   * catalogue stays the only source for this provider.
    */
-  getStaticModels() {
-    return VALID_CHAT_MODELS.map((model) => ({
-      id: model.id,
-      name: model.name,
-    }));
-  }
 }
 
 module.exports = InfomaniakProvider;

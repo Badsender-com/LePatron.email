@@ -9,6 +9,10 @@ const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
+const {
+  getCatalogModels,
+  getCatalogDefaultModel,
+} = require('./model-catalog.js');
 
 /**
  * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
@@ -25,7 +29,10 @@ const {
  *   - _getMaxTokens() → number          — provider token limit
  *   - _buildTranslationPrompt()         — for provider-specific prompt tuning
  *   - _getSystemPrompt()                — for provider-specific system prompt
- *   - getStaticModels()                 — static fallback model list
+ *   - listRemoteModels()                — live model listing from the provider
+ *
+ * Curated model lists and defaults come from model-catalog.js, not from the
+ * subclasses.
  */
 class BaseLLMProvider extends AIProviderInterface {
   /**
@@ -40,11 +47,28 @@ class BaseLLMProvider extends AIProviderInterface {
   }
 
   /**
-   * Static fallback models shown when dynamic listing fails.
-   * Subclasses with a well-known model list should override this.
+   * Curated models for this provider, from the central catalogue.
+   *
+   * Used as the fallback when the remote listing fails, and as the only
+   * source for providers that have no usable one (see model-catalog.js).
+   * Subclasses no longer carry their own list.
    */
   getStaticModels() {
-    return [];
+    return getCatalogModels(this.getProviderType());
+  }
+
+  /**
+   * Models the provider itself reports, or `null` when it offers no usable
+   * listing — which is different from `[]`, "the account has no model".
+   *
+   * Implementations are expected to throw on a network or auth failure: the
+   * listing service catches it and falls back to the catalogue, so a provider
+   * being unreachable must not read as "this account has no models".
+   *
+   * @returns {Promise<Array<{ id: string, label?: string }>|null>}
+   */
+  async listRemoteModels() {
+    return null;
   }
 
   /**
@@ -57,8 +81,17 @@ class BaseLLMProvider extends AIProviderInterface {
 
   // ─── hooks ────────────────────────────────────────────────────────────────
 
-  /** @abstract */
+  /**
+   * The model used when the group configured none.
+   *
+   * Reads the catalogue rather than a per-class constant. Stays synchronous:
+   * `chatComplete` and `getDefaultTranslationModel` both call it inline.
+   * Subclasses whose model is not a catalogue entry (a customer-chosen Azure
+   * deployment, say) override this.
+   */
   _getDefaultModel() {
+    const fromCatalog = getCatalogDefaultModel(this.getProviderType());
+    if (fromCatalog) return fromCatalog;
     throw new Error('_getDefaultModel() must be implemented by subclass');
   }
 

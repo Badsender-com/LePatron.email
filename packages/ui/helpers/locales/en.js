@@ -1027,8 +1027,14 @@ export default {
       enableLabel: 'Enable the Skills engine',
       model: 'AI model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
-      modelDefaultOption: 'Provider default ({model})',
-      modelDefaultOptionUnknown: 'Provider default'
+    },
+    model: {
+      defaultOption: 'Provider default ({model})',
+      defaultOptionUnknown: 'Provider default',
+      deprecated: 'deprecated',
+      invalidId: 'Invalid model identifier: letters, digits and . _ - : / @ only, no spaces.',
+      customHint: 'Hand-typed model: it has not been checked against the provider.',
+      loadFailed: 'Model list unavailable: only known models are offered. You can type an identifier.',
     },
     textGeneration: {
       title: 'Text generation',
@@ -1037,9 +1043,6 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Unable to load available models.',
     }
   },
   colors: {

@@ -1,12 +1,18 @@
 'use strict';
 
 const fetch = require('node-fetch');
+const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
 const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
 
-const DEFAULT_MODEL = 'mistral-small-latest';
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
+// See OpenAIProvider: this blocks a settings screen, so it must fail fast.
+const MODELS_TIMEOUT_MS = 5000;
 
 /**
  * Mistral AI provider implementation
@@ -26,28 +32,45 @@ class MistralProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
-  _getDefaultModel() {
-    return DEFAULT_MODEL;
-  }
+  /**
+   * Unlike OpenAI, Mistral tags each model with its capabilities, so the chat
+   * models can be told apart at the source and no pattern matching is needed
+   * downstream.
+   */
+  async listRemoteModels() {
+    await assertOutboundHostAllowed(this.baseUrl);
 
-  getStaticModels() {
-    return [
-      {
-        id: 'mistral-small-latest',
-        name: 'Mistral Small',
-        descriptionKey: 'integrations.models.fast',
-      },
-      {
-        id: 'mistral-medium-latest',
-        name: 'Mistral Medium',
-        descriptionKey: 'integrations.models.balanced',
-      },
-      {
-        id: 'mistral-large-latest',
-        name: 'Mistral Large',
-        descriptionKey: 'integrations.models.powerful',
-      },
-    ];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/models`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new ProviderError(
+          `Mistral models listing failed: ${response.status}`,
+          response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
+        );
+      }
+
+      const payload = await response.json();
+      // Mistral is the richest of the three listings: it carries a written
+      // description, a deprecation date and the model meant to replace it.
+      return (payload.data || [])
+        .filter((model) => model.capabilities?.completion_chat)
+        .map((model) => ({
+          id: model.id,
+          label: model.name,
+          description: model.description || null,
+          shutdownDate: model.deprecation || null,
+          replacedBy: model.deprecation_replacement_model || null,
+        }));
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async validateCredentials() {
