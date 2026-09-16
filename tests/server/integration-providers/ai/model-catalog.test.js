@@ -15,15 +15,34 @@ function lookup(locale, key) {
 }
 
 describe('model-catalog', () => {
-  // These are the values that were hardcoded in the provider classes. Every
-  // group that never picked a model runs on them today, so a change here
-  // silently repoints production traffic to another model.
+  // Every group that never picked a model runs on these, so a change here
+  // silently repoints production traffic. The test exists to make that a
+  // deliberate edit rather than a side effect — which is what it just forced.
+  //
+  // openai: moved off gpt-4o-mini, a pinned generation with no self-updating
+  //   alias to ride.
+  // mistral: unchanged, and deliberately so — `-latest` already tracks the
+  //   current generation (it resolves to Mistral Small 4 today).
+  // infomaniak: moved off mixtral, which a live account now answers 422 for.
+  //   The default was calling a model that no longer exists.
   it.each([
-    ['openai', 'gpt-4o-mini'],
+    ['openai', 'gpt-5-mini'],
     ['mistral', 'mistral-small-latest'],
-    ['infomaniak', 'mixtral'],
-  ])('%s still defaults to %s', (provider, expected) => {
+    ['infomaniak', 'mistral3'],
+  ])('%s defaults to %s', (provider, expected) => {
     expect(catalog.getCatalogDefaultModel(provider)).toBe(expected);
+  });
+
+  // Verified by calling the chat endpoint of a live Infomaniak account: these
+  // three answered 200, while mixtral / llama3 / granite / gemma3n answered
+  // 422. This provider has no remote listing to catch that drift, so the list
+  // is the only guard.
+  it('only offers Infomaniak aliases the chat API still accepts', () => {
+    expect(catalog.getCatalogModels('infomaniak').map((m) => m.id)).toEqual([
+      'mistral3',
+      'mistral24b',
+      'qwen3',
+    ]);
   });
 
   it.each(PROVIDERS)('%s default is itself a catalogue entry', (provider) => {
@@ -66,7 +85,7 @@ describe('model-catalog', () => {
   it('hands out copies, so callers cannot mutate the catalogue', () => {
     catalog.getCatalogModels('openai')[0].label = 'mutated';
 
-    expect(catalog.getCatalogModels('openai')[0].label).toBe('GPT-4o Mini');
+    expect(catalog.getCatalogModels('openai')[0].label).toBe('GPT-5 Mini');
   });
 
   describe('passesRemoteFilter', () => {
@@ -96,7 +115,7 @@ describe('model-catalog', () => {
 
     // The whole point of listing remotely: a model released after this deploy
     // must reach the admin without a release of LePatron.
-    it.each(['gpt-4o', 'gpt-5', 'gpt-5-turbo', 'o3-mini', 'chatgpt-4o-latest'])(
+    it.each(['gpt-4o', 'gpt-6', 'gpt-5-turbo', 'o3-mini', 'chatgpt-4o-latest'])(
       'keeps %s',
       (id) => {
         expect(catalog.passesRemoteFilter('openai', id)).toBe(true);

@@ -41,25 +41,53 @@
 // introduces this file.
 const CATALOG = {
   openai: {
-    default: 'gpt-4o-mini',
+    // OpenAI has no self-updating alias the way Mistral has `-latest`, so this
+    // name pins a generation and has to be moved deliberately.
+    default: 'gpt-5-mini',
     models: [
+      {
+        id: 'gpt-5-mini',
+        label: 'GPT-5 Mini',
+        descriptionKey: 'integrations.models.fastEconomical',
+        order: 10,
+      },
+      {
+        id: 'gpt-5',
+        label: 'GPT-5',
+        descriptionKey: 'integrations.models.powerful',
+        order: 20,
+      },
+      {
+        id: 'gpt-4.1-mini',
+        label: 'GPT-4.1 Mini',
+        descriptionKey: 'integrations.models.fast',
+        order: 30,
+      },
+      {
+        id: 'gpt-4.1',
+        label: 'GPT-4.1',
+        descriptionKey: 'integrations.models.balanced',
+        order: 40,
+      },
+      // Kept although superseded: groups that picked them explicitly still run
+      // on them, and dropping an entry only removes its curated label.
       {
         id: 'gpt-4o-mini',
         label: 'GPT-4o Mini',
         descriptionKey: 'integrations.models.fastEconomical',
-        order: 10,
+        order: 50,
       },
       {
         id: 'gpt-4o',
         label: 'GPT-4o',
         descriptionKey: 'integrations.models.balanced',
-        order: 20,
+        order: 60,
       },
       {
         id: 'gpt-4-turbo',
         label: 'GPT-4 Turbo',
-        descriptionKey: 'integrations.models.powerful',
-        order: 30,
+        deprecated: true,
+        order: 70,
       },
     ],
   },
@@ -93,20 +121,25 @@ const CATALOG = {
   // The provider therefore has no usable listing and this list is its only
   // source — the clearest justification for keeping a catalogue at all.
   infomaniak: {
-    default: 'mixtral',
+    // Verified against a live account: of the seven aliases this list used to
+    // carry, only these three are still accepted — `mixtral`, `llama3`,
+    // `granite` and `gemma3n` now answer 422. `mixtral` was the default, so
+    // every group that had not picked a model was calling a dead one.
+    //
+    // Their /models endpoint is no help here: it advertises full names
+    // (mistralai/Mistral-Small-4-119B-2603) that the chat API itself rejects,
+    // which is why this provider has no remote listing and relies on the list
+    // below. Worth re-testing when Infomaniak rotates its line-up again.
+    default: 'mistral3',
     models: [
       {
-        id: 'mixtral',
-        label: 'Mixtral',
+        id: 'mistral3',
+        label: 'Mistral 3',
         descriptionKey: 'integrations.models.recommended',
         order: 10,
       },
-      { id: 'llama3', label: 'LLaMA 3', order: 20 },
-      { id: 'granite', label: 'Granite', order: 30 },
-      { id: 'mistral24b', label: 'Mistral 24B', order: 40 },
-      { id: 'mistral3', label: 'Mistral 3', order: 50 },
-      { id: 'qwen3', label: 'Qwen 3', order: 60 },
-      { id: 'gemma3n', label: 'Gemma 3n', order: 70 },
+      { id: 'mistral24b', label: 'Mistral 24B', order: 20 },
+      { id: 'qwen3', label: 'Qwen 3', order: 30 },
     ],
   },
 };
