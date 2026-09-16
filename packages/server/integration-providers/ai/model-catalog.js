@@ -43,6 +43,14 @@ const CATALOG = {
   openai: {
     // OpenAI has no self-updating alias the way Mistral has `-latest`, so this
     // name pins a generation and has to be moved deliberately.
+    //
+    // gpt-5-mini is a reasoning model: it spends tokens thinking before it
+    // answers. Measured against a live account on a translation batch, it runs
+    // about twice as slow as gpt-4.1-mini (8.9s vs 4.2s for 20 blocks, so
+    // roughly 45s vs 21s for the 100-block batch getBatchLimits allows), for
+    // the same output. The trade is deliberate — better reasoning on the
+    // skills side, at a cost on bulk translation. Worth revisiting if the
+    // 30s skill invocation timeout starts being hit.
     default: 'gpt-5-mini',
     models: [
       {

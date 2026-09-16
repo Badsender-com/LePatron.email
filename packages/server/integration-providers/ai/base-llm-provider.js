@@ -110,6 +110,24 @@ class BaseLLMProvider extends AIProviderInterface {
     return 16000;
   }
 
+  /**
+   * Name of the output-length parameter for this model.
+   *
+   * Providers have started renaming it per model generation, so it cannot be
+   * a constant in the request body any more.
+   */
+  _maxTokensParamName() {
+    return 'max_tokens';
+  }
+
+  /**
+   * Whether the model accepts an explicit temperature. Some newer models only
+   * run at their own default and reject any other value outright.
+   */
+  _supportsTemperature() {
+    return true;
+  }
+
   // ─── translation ──────────────────────────────────────────────────────────
 
   async translateBatch({ texts, sourceLanguage, targetLanguage }) {
@@ -299,9 +317,15 @@ OUTPUT (valid JSON only):`;
       const requestBody = {
         model,
         messages,
-        temperature,
-        max_tokens: maxTokens || this._getMaxTokens(),
+        [this._maxTokensParamName(model)]: maxTokens || this._getMaxTokens(),
       };
+
+      // Omitted rather than defaulted: a model that rejects an explicit
+      // temperature rejects the request outright, and its own default is the
+      // only value it will run at.
+      if (temperature !== undefined && this._supportsTemperature(model)) {
+        requestBody.temperature = temperature;
+      }
 
       if (responseFormat) {
         requestBody.response_format = responseFormat;
