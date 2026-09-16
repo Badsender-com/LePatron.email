@@ -2,6 +2,12 @@
 import BsCombobox from '~/components/form/bs-combobox';
 import * as apiRoutes from '~/helpers/api-routes';
 
+// Mirrors MODEL_ID_PATTERN in ai-feature.service.js. Duplicated on purpose:
+// the server guard is the one that matters, but without a client-side check
+// the only feedback on a typo is the generic "an error occurred" snackbar
+// these tabs raise for any failed save — which says nothing about what to fix.
+const MODEL_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$/;
+
 /**
  * BsAiModelPicker - model selection for one AI feature.
  *
@@ -37,6 +43,8 @@ export default {
       capabilities: null,
       loading: false,
       loadError: null,
+      // Last rejected entry, kept only to explain itself on the field.
+      invalidInput: null,
     };
   },
   computed: {
@@ -49,6 +57,13 @@ export default {
         // used. Both mean "provider default"; '' would otherwise be persisted
         // and win over the default downstream.
         const trimmed = typeof next === 'string' ? next.trim() : next;
+        if (trimmed && !MODEL_ID_PATTERN.test(trimmed)) {
+          // Held back rather than sent: the save would fail server-side, and
+          // the tab would report it as a generic error.
+          this.invalidInput = trimmed;
+          return;
+        }
+        this.invalidInput = null;
         this.$emit('input', trimmed || null);
       },
     },
@@ -88,6 +103,9 @@ export default {
       if (this.loadError) return this.$t('aiFeatures.model.loadFailed');
       if (this.isCustomValue) return this.$t('aiFeatures.model.customHint');
       return this.hint;
+    },
+    errorMessages() {
+      return this.invalidInput ? this.$t('aiFeatures.model.invalidId') : '';
     },
   },
   watch: {
@@ -154,6 +172,7 @@ export default {
     :items="items"
     :label="label"
     :hint="effectiveHint"
+    :error-messages="errorMessages"
     :placeholder="placeholder"
     :disabled="disabled || loading"
     :loading="loading"
