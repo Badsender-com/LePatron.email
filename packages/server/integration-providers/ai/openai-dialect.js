@@ -99,6 +99,11 @@ const openAIDialect = {
     };
   },
 
+  _getFinishReason(data) {
+    const choice = (data.choices || [])[0];
+    return choice && choice.finish_reason === 'length' ? 'length' : null;
+  },
+
   /**
    * Map an HTTP status onto our own error vocabulary. Dialects differ on which
    * status means what — Google answers 400 for an invalid key, Anthropic 403 —

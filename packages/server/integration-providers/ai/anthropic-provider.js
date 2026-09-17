@@ -140,15 +140,6 @@ class AnthropicProvider extends BaseLLMProvider {
           .map((block) => block.text)
           .join('');
 
-    // Truncation guarantees malformed JSON downstream, so it is worth a line
-    // in the log rather than surfacing as an unexplained parse failure.
-    if (data.stop_reason === 'max_tokens') {
-      logger.error(
-        'anthropic response hit max_tokens — output is truncated',
-        `model: ${data.model}`
-      );
-    }
-
     const usage = data.usage || {};
     const promptTokens = usage.input_tokens || 0;
     const completionTokens = usage.output_tokens || 0;
@@ -162,6 +153,10 @@ class AnthropicProvider extends BaseLLMProvider {
         cachedTokens: usage.cache_read_input_tokens || 0,
       },
     };
+  }
+
+  _getFinishReason(data) {
+    return data.stop_reason === 'max_tokens' ? 'length' : null;
   }
 
   _mapErrorToCode(status) {
