@@ -515,6 +515,19 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     translationFeatureConfig.integration.isActive
   );
 
+  // Editorial metadata for the editor's email-settings section, when the company
+  // opted in. The policy — which company the typology list is scoped to, what to
+  // do when the mailing and its template disagree — belongs with the write path
+  // that has to stay consistent with it, not in this schema.
+  //
+  // Lazy require to avoid a circular dependency, like aiFeatureService above:
+  // the service reaches models.common, which reaches back here.
+  const mailingMetadataService = require('./mailing-metadata.service.js');
+  const editorMetadata = await mailingMetadataService.buildEditorMetadata({
+    mailing,
+    group,
+  });
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -568,6 +581,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
+      // Spread so both keys are simply absent when the company opted out, rather
+      // than present and undefined — the editor tests for presence.
+      ...(editorMetadata || {}),
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata
