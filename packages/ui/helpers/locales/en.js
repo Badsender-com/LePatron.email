@@ -1173,7 +1173,7 @@ export default {
       defaultOption: 'Provider default ({model})',
       defaultOptionUnknown: 'Provider default',
       deprecated: 'deprecated',
-      invalidId: 'Invalid model identifier: letters, digits and . _ - : / @ only, no spaces.',
+      invalidId: 'Not saved — model identifiers accept letters, digits and . _ - : / @ only, no spaces.',
       customHint: 'Hand-typed model: it has not been checked against the provider.',
       loadFailed: 'Model list unavailable: only known models are offered. You can type an identifier.',
     },

@@ -1,10 +1,8 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { guardedFetch } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
   ProviderError,
@@ -136,11 +134,14 @@ class GeminiProvider extends BaseLLMProvider {
 
   async validateCredentials() {
     try {
-      await assertOutboundHostAllowed(this.baseUrl);
-      const response = await fetch(`${this.baseUrl}/${API_VERSION}/models`, {
-        method: 'GET',
-        headers: this._buildHeaders(),
-      });
+      const response = await guardedFetch(
+        `${this.baseUrl}/${API_VERSION}/models`,
+        {
+          method: 'GET',
+          headers: this._buildHeaders(),
+          timeoutMs: MODELS_TIMEOUT_MS,
+        }
+      );
       return response.ok;
     } catch (error) {
       logger.error('Gemini validation error:', error.message);
@@ -150,39 +151,34 @@ class GeminiProvider extends BaseLLMProvider {
 
   /** Filtered at the source: the listing mixes in embedding and imaging models. */
   async listRemoteModels() {
-    await assertOutboundHostAllowed(this.baseUrl);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${this.baseUrl}/${API_VERSION}/models`, {
+    const response = await guardedFetch(
+      `${this.baseUrl}/${API_VERSION}/models`,
+      {
         method: 'GET',
         headers: this._buildHeaders(),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new ProviderError(
-          `Gemini models listing failed: ${response.status}`,
-          this._mapErrorToCode(response.status)
-        );
+        timeoutMs: MODELS_TIMEOUT_MS,
       }
+    );
 
-      const payload = await response.json();
-      return (payload.models || [])
-        .filter((model) =>
-          (model.supportedGenerationMethods || []).includes('generateContent')
-        )
-        .map((model) => ({
-          // Reported as "models/gemini-...", but the id used everywhere else
-          // is the bare name.
-          id: String(model.name || '').replace(/^models\//, ''),
-          label: model.displayName || null,
-          description: model.description || null,
-        }));
-    } finally {
-      clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new ProviderError(
+        `Gemini models listing failed: ${response.status}`,
+        this._mapErrorToCode(response.status)
+      );
     }
+
+    const payload = await response.json();
+    return (payload.models || [])
+      .filter((model) =>
+        (model.supportedGenerationMethods || []).includes('generateContent')
+      )
+      .map((model) => ({
+        // Reported as "models/gemini-...", but the id used everywhere else
+        // is the bare name.
+        id: String(model.name || '').replace(/^models\//, ''),
+        label: model.displayName || null,
+        description: model.description || null,
+      }));
   }
 }
 
