@@ -11,7 +11,6 @@ jest.mock('../../../../packages/server/utils/logger.js', () => ({
 }));
 
 const AnthropicProvider = require('../../../../packages/server/integration-providers/ai/anthropic-provider');
-const logger = require('../../../../packages/server/utils/logger.js');
 const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../../../../packages/server/integration-providers/provider-error.js');
@@ -301,21 +300,12 @@ describe('AnthropicProvider', () => {
     });
 
     // Truncation guarantees malformed JSON downstream, so it must not pass
-    // unnoticed.
-    it('logs a truncated response', async () => {
-      mockFetch.mockResolvedValue(
-        reply(messageResponse({ stop_reason: 'max_tokens' }))
+    // unnoticed. Reported to the base class, which logs it for every dialect.
+    it('reports truncation as a length finish', () => {
+      expect(provider._getFinishReason({ stop_reason: 'max_tokens' })).toBe(
+        'length'
       );
-
-      await provider.chatComplete({
-        model: 'claude-x',
-        messages: [{ role: 'user', content: 'x' }],
-      });
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('max_tokens'),
-        expect.anything()
-      );
+      expect(provider._getFinishReason({ stop_reason: 'end_turn' })).toBeNull();
     });
 
     it('rejects a payload with no content array', async () => {

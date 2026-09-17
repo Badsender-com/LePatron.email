@@ -83,6 +83,18 @@ class BaseLLMProvider extends AIProviderInterface {
   // ─── hooks ────────────────────────────────────────────────────────────────
 
   /**
+   * Why the model stopped, normalised to `'length'` when it ran out of output
+   * budget. Dialects name this differently; the base class only needs to tell
+   * truncation from a normal stop.
+   *
+   * @returns {string|null}
+   */
+  // eslint-disable-next-line no-unused-vars
+  _getFinishReason(data) {
+    return null;
+  }
+
+  /**
    * The model used when the group configured none.
    *
    * Reads the catalogue rather than a per-class constant. Stays synchronous:
@@ -236,8 +248,12 @@ class BaseLLMProvider extends AIProviderInterface {
           response.status,
           sanitizedMessage
         );
+        // The sanitised text, not the raw one: this message is persisted on
+        // skill invocations and shown to the user, while only the log line was
+        // being masked. An upstream 401 body can echo part of the key, and a
+        // self-hosted gateway can echo far more.
         throw new ProviderError(
-          `${providerName} API error: ${response.status} - ${errorMessage}`,
+          `${providerName} API error: ${response.status} - ${sanitizedMessage}`,
           this._mapErrorToCode(response.status, parsedError)
         );
       }
@@ -246,6 +262,17 @@ class BaseLLMProvider extends AIProviderInterface {
       // The request is handed over too: a dialect may have shaped it in a way
       // that changes how the answer must be read (Anthropic prefills).
       const result = this._parseResponse(data, requestBody);
+
+      // Truncation guarantees malformed JSON downstream, and the only trace
+      // otherwise is a parse error blaming the model. Checked here rather than
+      // per dialect: three dialects had three behaviours, and the one serving
+      // six providers silently did nothing.
+      if (this._getFinishReason(data) === 'length') {
+        logger.error(
+          `${providerName} response was truncated (output token limit reached)`,
+          `model: ${model}`
+        );
+      }
 
       // Content length stays in the log: a response that arrives empty is
       // otherwise indistinguishable from a normal one here.

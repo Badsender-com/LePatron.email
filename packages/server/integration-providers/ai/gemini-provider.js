@@ -85,21 +85,29 @@ class GeminiProvider extends BaseLLMProvider {
     }
 
     const candidate = (data.candidates || [])[0];
-    if (!candidate || !candidate.content) {
+
+    // Checked before the structure test, not after: a thinking model that
+    // spends its whole budget returns a candidate with no content at all, and
+    // reporting that as "invalid response structure" sent the admin looking
+    // for a bug where there was only a token limit.
+    if (candidate && candidate.finishReason === 'MAX_TOKENS') {
       throw new ProviderError(
-        'Invalid response structure from gemini',
+        'Gemini ran out of output tokens before answering',
         CODES.INVALID_RESPONSE
       );
     }
-
-    if (candidate.finishReason === 'SAFETY') {
+    if (candidate && candidate.finishReason === 'SAFETY') {
       throw new ProviderError(
         'Gemini stopped on a safety filter',
         CODES.INVALID_RESPONSE
       );
     }
-    if (candidate.finishReason === 'MAX_TOKENS') {
-      logger.error('gemini response hit maxOutputTokens — output is truncated');
+
+    if (!candidate || !candidate.content) {
+      throw new ProviderError(
+        'Invalid response structure from gemini',
+        CODES.INVALID_RESPONSE
+      );
     }
 
     const content = (candidate.content.parts || [])
@@ -132,6 +140,22 @@ class GeminiProvider extends BaseLLMProvider {
     return CODES.API_ERROR;
   }
 
+  _getFinishReason(data) {
+    const candidate = (data.candidates || [])[0];
+    return candidate && candidate.finishReason === 'MAX_TOKENS'
+      ? 'length'
+      : null;
+  }
+
+  /**
+   * Lower than the OpenAI default: the `-latest` aliases point at thinking
+   * models, whose reasoning comes out of the same output budget as the answer.
+   * Anthropic lowered its limits for the same reason.
+   */
+  getBatchLimits() {
+    return { maxKeys: 80, maxChars: 30000 };
+  }
+
   async validateCredentials() {
     try {
       const response = await guardedFetch(
@@ -151,8 +175,10 @@ class GeminiProvider extends BaseLLMProvider {
 
   /** Filtered at the source: the listing mixes in embedding and imaging models. */
   async listRemoteModels() {
+    // Paginated, 50 per page by default — without a size the listing silently
+    // truncates and reads as "the provider dropped that model".
     const response = await guardedFetch(
-      `${this.baseUrl}/${API_VERSION}/models`,
+      `${this.baseUrl}/${API_VERSION}/models?pageSize=1000`,
       {
         method: 'GET',
         headers: this._buildHeaders(),
