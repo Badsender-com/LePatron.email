@@ -683,6 +683,16 @@ export default {
     }
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'Cette adresse est privée ou locale. Pour des raisons de sécurité, LePatron n\'appelle que des adresses publiques : une IA hébergée sur votre réseau interne n\'est pas joignable depuis le serveur.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'Ce nom de domaine est introuvable. Vérifiez l\'orthographe de l\'URL.',
+      INTEGRATION_HOST_INVALID:
+        'Cette URL n\'est pas valide. Attendu : une adresse commençant par https://',
+    },
     title: 'Intégrations',
     name: 'Nom',
     provider: 'Fournisseur',
