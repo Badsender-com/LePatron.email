@@ -8,6 +8,21 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+// Hides an element from sight while leaving it in the accessibility tree —
+// for labels a design calls redundant (a table column header repeats them) but
+// that a screen reader still needs to name the field.
+.bs-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .table-column-action {
   text-align: center;
   width: 1%;

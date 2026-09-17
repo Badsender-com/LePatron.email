@@ -213,6 +213,7 @@ export default {
         <div class="params-table__col params-table__col--key">
           <bs-text-field
             :value="param.key"
+            :label="$t('trackingConfig.key')"
             :error-messages="keyError(index) ? [keyError(index)] : []"
             placeholder="utm_source"
             hide-label
@@ -223,6 +224,7 @@ export default {
         <div class="params-table__col params-table__col--values">
           <bs-text-field
             :value="valuesInputs[index]"
+            :label="$t('trackingConfig.values')"
             :placeholder="$t('trackingConfig.valuesHint')"
             hide-label
             dense

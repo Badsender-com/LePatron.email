@@ -7,7 +7,9 @@ const router = express.Router();
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
+const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
+const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
@@ -39,6 +41,12 @@ router.post(
 
 router.post('/download-multiple-zip', GUARD_USER, mailings.downloadMultipleZip);
 
+router.patch(
+  '/:mailingId/metadata',
+  GUARD_USER,
+  GUARD_EMAIL_METADATA,
+  mailingMetadata.updateMetadata
+);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);

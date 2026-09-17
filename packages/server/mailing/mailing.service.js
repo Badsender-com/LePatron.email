@@ -60,6 +60,8 @@ module.exports = {
   findTags,
   findOne,
   findOneForUser,
+  assertUserCanEditMailing,
+  buildMailingCopy,
   renameMailing,
   deleteMailing,
   deleteOne,
@@ -249,6 +251,74 @@ async function findOneForUser(mailingId, user) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
   return mailing;
+}
+
+/**
+ * Belonging to the company is not enough to edit a mailing: the user must have
+ * access to the workspace or the folder holding it.
+ *
+ * Extracted verbatim from the controller so `updateMosaico` and the metadata
+ * endpoint cannot drift apart. Behaviour is deliberately unchanged, including the
+ * case where both `_parentFolder` and `_workspace` are set — unreachable through
+ * creation, which sets exactly one of them.
+ *
+ * @param {Object} user
+ * @param {Object} mailing a Mailings document
+ * @throws {Forbidden} when the user has access to neither
+ */
+async function assertUserCanEditMailing(user, mailing) {
+  if (user.isAdmin) return;
+
+  const { _workspace, _parentFolder } = mailing;
+
+  let hasAccess;
+
+  if (_parentFolder) {
+    hasAccess = await folderService.hasAccess(_parentFolder, user);
+  }
+
+  if (_workspace) {
+    hasAccess = await workspaceService.hasAccess(user, _workspace);
+  }
+
+  if (!hasAccess) {
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+// Fields a copy must never inherit: identity, timestamps, authorship, ESP ids,
+// and the source location (real fields plus their aliases/virtuals, since the
+// copy is built from a plain object). `plannedSendDate` is here because it
+// belongs to one campaign — a copy silently carrying yesterday's send date is a
+// planning bug nobody would look for. `subject` and `_emailType` are absent on
+// purpose: they describe the email and follow the copy.
+const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
+  '_id',
+  'id',
+  'createdAt',
+  'updatedAt',
+  '_user',
+  'userId',
+  'author',
+  'userName',
+  'espIds',
+  '_workspace',
+  'workspace',
+  '_parentFolder',
+  '__v',
+  'plannedSendDate',
+]);
+
+/**
+ * Strip from a mailing the fields a copy must not inherit. Shared by `copyMailing`
+ * and `duplicateWithTranslatedData`, which used to carry the same list twice —
+ * and so could drift apart on the next field added.
+ *
+ * @param {Object} source a mailing as a plain object (`mailing.toObject()`)
+ * @returns {Object} the copy, with the destination still to be set
+ */
+function buildMailingCopy(source) {
+  return omit(source, MAILING_COPY_OMITTED_FIELDS);
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
@@ -716,7 +786,9 @@ async function getMailByMailingIdAndUser({ mailingId, user }) {
 async function getMailNameAndCompanyByMailingIdAndUser({ mailingId, user }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   const mailing = await Mailings.findOne(query)
-    .select({ name: 1, _company: 1 })
+    // `subject` so a test send can carry the real subject line rather than the
+    // internal mailing name; the caller falls back on the name when it is empty.
+    .select({ name: 1, subject: 1, _company: 1 })
     .lean();
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
@@ -1174,21 +1246,7 @@ async function copyMailing(mailingId, destination, user) {
   // their aliases/virtuals.
   const source = mailing.toObject();
 
-  const copy = omit(source, [
-    '_id',
-    'id',
-    'createdAt',
-    'updatedAt',
-    '_user',
-    'userId',
-    'author',
-    'userName',
-    'espIds',
-    '_workspace',
-    'workspace',
-    '_parentFolder',
-    '__v',
-  ]);
+  const copy = buildMailingCopy(source);
 
   if (workspaceId) {
     const destination = await workspaceService.getWorkspace(workspaceId);
@@ -1272,21 +1330,7 @@ async function duplicateWithTranslatedData({
   // source location (`_workspace`/`workspace`/`_parentFolder`).
   const source = mailing.toObject();
 
-  const copy = omit(source, [
-    '_id',
-    'id',
-    'createdAt',
-    'updatedAt',
-    '_user',
-    'userId',
-    'author',
-    'userName',
-    'espIds',
-    '_workspace',
-    'workspace',
-    '_parentFolder',
-    '__v',
-  ]);
+  const copy = buildMailingCopy(source);
 
   // Set new name
   copy.name = newName || `${mailing.name} - Translated`;

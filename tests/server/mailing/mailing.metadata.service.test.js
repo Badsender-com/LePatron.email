@@ -1,0 +1,433 @@
+'use strict';
+
+// Validation of the editorial metadata (subject, planned send date, typology).
+//
+// The email type reference is the sensitive part: it points at a TaxonomyItem,
+// read as `emailTypeId` and stored as `_emailType`,
+// which is a per-company object. A caller who can guess an id of another company
+// must not be able to attach it, so the lookup is scoped by `_company` AND by
+// taxonomy `type`. The DB mock below honours both filters exactly like MongoDB
+// would (same approach as tests/server/security/exploit-f2-idor-cross-tenant),
+// otherwise the test would pass on unscoped code too.
+
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  TaxonomyItems: { findOne: jest.fn() },
+  Mailings: {},
+  Groups: {},
+}));
+
+const mongoose = require('mongoose');
+const {
+  TaxonomyItems,
+} = require('../../../packages/server/common/models.common.js');
+const {
+  validateMetadataPayload,
+  applyMetadataToMailing,
+} = require('../../../packages/server/mailing/mailing-metadata.service.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+
+const COMPANY_A = '507f1f77bcf86cd799439a01';
+const COMPANY_B = '507f1f77bcf86cd799439b01';
+
+const TYPE_A = '507f1f77bcf86cd799439101'; // emailType of company A
+const TYPE_B = '507f1f77bcf86cd799439102'; // emailType of company B
+const LANG_A = '507f1f77bcf86cd799439103'; // company A, but another taxonomy
+const UNKNOWN_ID = '507f1f77bcf86cd7994399ff';
+
+const DB = [
+  { _id: TYPE_A, _company: COMPANY_A, type: 'emailType', label: 'Infolettre' },
+  { _id: TYPE_B, _company: COMPANY_B, type: 'emailType', label: 'Newsletter' },
+  { _id: LANG_A, _company: COMPANY_A, type: 'language', label: 'fr' },
+];
+
+function dbFindOne(query) {
+  const id = query._id ? String(query._id) : null;
+  const company = query._company ? String(query._company) : null;
+  const type = query.type || null;
+  return (
+    DB.find(
+      (item) =>
+        (!id || String(item._id) === id) &&
+        (!company || String(item._company) === company) &&
+        (!type || item.type === type)
+    ) || null
+  );
+}
+
+beforeEach(() => {
+  TaxonomyItems.findOne.mockReset();
+  TaxonomyItems.findOne.mockImplementation(async (query) => dbFindOne(query));
+});
+
+describe('validateMetadataPayload — omitted vs cleared', () => {
+  it('returns nothing for an empty payload, so a PATCH never clears untouched fields', async () => {
+    await expect(
+      validateMetadataPayload({}, { companyId: COMPANY_A })
+    ).resolves.toEqual({});
+    await expect(
+      validateMetadataPayload(undefined, { companyId: COMPANY_A })
+    ).resolves.toEqual({});
+  });
+
+  it('distinguishes an omitted field from an explicit null', async () => {
+    const omitted = await validateMetadataPayload(
+      { subject: 'hello' },
+      { companyId: COMPANY_A }
+    );
+    expect('plannedSendDate' in omitted).toBe(false);
+
+    const cleared = await validateMetadataPayload(
+      { plannedSendDate: null },
+      { companyId: COMPANY_A }
+    );
+    expect('plannedSendDate' in cleared).toBe(true);
+    expect(cleared.plannedSendDate).toBeUndefined();
+  });
+});
+
+describe('validateMetadataPayload — subject', () => {
+  it('trims the subject', async () => {
+    const result = await validateMetadataPayload(
+      { subject: '  Soldes d’été  ' },
+      { companyId: COMPANY_A }
+    );
+    expect(result.subject).toBe('Soldes d’été');
+  });
+
+  it('clears the subject with null', async () => {
+    const result = await validateMetadataPayload(
+      { subject: null },
+      { companyId: COMPANY_A }
+    );
+    expect('subject' in result).toBe(true);
+    expect(result.subject).toBeUndefined();
+  });
+
+  it.each([[42], [{}], [[]], [true]])(
+    'refuses a non-string subject (%p)',
+    async (subject) => {
+      await expect(
+        validateMetadataPayload({ subject }, { companyId: COMPANY_A })
+      ).rejects.toMatchObject({
+        status: 422,
+        message: ERROR_CODES.INVALID_EMAIL_METADATA,
+      });
+    }
+  );
+});
+
+describe('validateMetadataPayload — plannedSendDate', () => {
+  // The field is a day, not an instant. Midnight UTC reads back as the previous
+  // day everywhere west of Greenwich, so the day is pinned to noon UTC — the
+  // only hour that survives a timezone change both ways.
+  it.each([
+    ['2026-09-01', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T08:00:00.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T23:30:00.000Z', '2026-09-01T12:00:00.000Z'],
+  ])('pins %p to noon UTC', async (plannedSendDate, expected) => {
+    const result = await validateMetadataPayload(
+      { plannedSendDate },
+      { companyId: COMPANY_A }
+    );
+    expect(result.plannedSendDate.toISOString()).toBe(expected);
+  });
+
+  // The regression this guards: a date-only string parses as midnight UTC, and
+  // a client in any negative offset would read it back as the day before.
+  it('reads back as the same day from a timezone west of Greenwich', async () => {
+    const result = await validateMetadataPayload(
+      { plannedSendDate: '2026-09-01' },
+      { companyId: COMPANY_A }
+    );
+    // -11h is the westernmost inhabited offset.
+    const asSeenFarWest = new Date(
+      result.plannedSendDate.getTime() - 11 * 60 * 60 * 1000
+    );
+    expect(asSeenFarWest.toISOString().slice(0, 10)).toBe('2026-09-01');
+  });
+
+  // The field has no time input: what is stored is a calendar day. Pinning the
+  // time here rather than trusting each client keeps the planning view's range
+  // queries honest — the editor, the creation modal and the ESP export all write
+  // through this function.
+  it.each([
+    ['2026-09-01T00:00:00.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T23:59:59.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01', '2026-09-01T12:00:00.000Z'],
+    ['2026-12-31T18:30:00.000Z', '2026-12-31T12:00:00.000Z'],
+  ])('normalises %p to %p', async (sent, stored) => {
+    const result = await validateMetadataPayload(
+      { plannedSendDate: sent },
+      { companyId: COMPANY_A }
+    );
+    expect(result.plannedSendDate.toISOString()).toBe(stored);
+  });
+
+  it.each([['not a date'], ['2026-13-45'], [{}]])(
+    'refuses an invalid date (%p)',
+    async (plannedSendDate) => {
+      await expect(
+        validateMetadataPayload({ plannedSendDate }, { companyId: COMPANY_A })
+      ).rejects.toMatchObject({
+        status: 422,
+        message: ERROR_CODES.INVALID_EMAIL_METADATA,
+      });
+    }
+  );
+
+  it.each([[null], ['']])(
+    'clears the date with %p',
+    async (plannedSendDate) => {
+      const result = await validateMetadataPayload(
+        { plannedSendDate },
+        { companyId: COMPANY_A }
+      );
+      expect('plannedSendDate' in result).toBe(true);
+      expect(result.plannedSendDate).toBeUndefined();
+    }
+  );
+});
+
+describe('validateMetadataPayload — emailTypeId scoping', () => {
+  it('accepts a typology of the mailing company', async () => {
+    const result = await validateMetadataPayload(
+      { emailTypeId: TYPE_A },
+      { companyId: COMPANY_A }
+    );
+    expect(String(result._emailType)).toBe(TYPE_A);
+  });
+
+  it('refuses a typology of another company', async () => {
+    await expect(
+      validateMetadataPayload({ emailTypeId: TYPE_B }, { companyId: COMPANY_A })
+    ).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
+    });
+  });
+
+  it('refuses an item of the right company but the wrong taxonomy', async () => {
+    await expect(
+      validateMetadataPayload({ emailTypeId: LANG_A }, { companyId: COMPANY_A })
+    ).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
+    });
+  });
+
+  it('scopes the query by company AND type, not by id alone', async () => {
+    await validateMetadataPayload(
+      { emailTypeId: TYPE_A },
+      { companyId: COMPANY_A }
+    );
+
+    const query = TaxonomyItems.findOne.mock.calls[0][0];
+    expect(query).toHaveProperty('_company');
+    expect(query.type).toBe('emailType');
+  });
+
+  it('reports an unknown id as not found, like a foreign one', async () => {
+    await expect(
+      validateMetadataPayload(
+        { emailTypeId: UNKNOWN_ID },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.toMatchObject({
+      status: 404,
+      message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
+    });
+  });
+
+  it('refuses a malformed id without querying the DB', async () => {
+    await expect(
+      validateMetadataPayload(
+        { emailTypeId: 'not-an-objectid' },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+    expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
+  });
+
+  it.each([[null], ['']])(
+    'detaches the typology with %p',
+    async (emailTypeId) => {
+      const result = await validateMetadataPayload(
+        { emailTypeId },
+        { companyId: COMPANY_A }
+      );
+      expect('_emailType' in result).toBe(true);
+      expect(result._emailType).toBeUndefined();
+      expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
+    }
+  );
+
+  it('refuses a typology on a mailing with no company (super admin case)', async () => {
+    await expect(
+      validateMetadataPayload({ emailTypeId: TYPE_A }, { companyId: null })
+    ).rejects.toMatchObject({
+      status: 403,
+      message: ERROR_CODES.EMAIL_TYPE_COMPANY_MISSING,
+    });
+    expect(TaxonomyItems.findOne).not.toHaveBeenCalled();
+  });
+
+  // The security property of this endpoint. `validated` is built field by field,
+  // AND an unknown key is refused outright — so a payload can neither smuggle a
+  // mailing field through nor be silently half-honoured.
+  it.each([
+    ['data', { data: { preheaderText: 'injected' } }],
+    ['previewHtml', { previewHtml: '<script>alert(1)</script>' }],
+    ['_company', { _company: COMPANY_B }],
+    ['name', { name: 'renamed' }],
+    ['$set', { $set: { _company: COMPANY_B } }],
+    // The one a real client might still send, and the reason this is a 422 rather
+    // than a silent drop: it would otherwise get a 200 and believe it saved.
+    ['preheader', { preheader: 'no longer a metadata' }],
+  ])('refuses a payload carrying %s', async (_name, extra) => {
+    await expect(
+      validateMetadataPayload(
+        { subject: 'ok', ...extra },
+        {
+          companyId: COMPANY_A,
+        }
+      )
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+  });
+
+  it('still lets a company-less mailing set a subject and a date', async () => {
+    const result = await validateMetadataPayload(
+      { subject: 'ok', plannedSendDate: '2026-09-01T08:00:00.000Z' },
+      { companyId: null }
+    );
+    expect(result.subject).toBe('ok');
+    expect(result.plannedSendDate).toBeInstanceOf(Date);
+  });
+});
+
+// The contract is exactly three keys. Anything else is refused rather than
+// ignored: a 200 answering with the other fields reads as a success, so a client
+// sending a key the server does not honour would never learn it was dropped.
+describe('validateMetadataPayload — unknown keys', () => {
+  it.each([['preheader'], ['_emailType'], ['name'], ['__proto__']])(
+    'refuses the unknown key %p',
+    async (key) => {
+      await expect(
+        validateMetadataPayload(
+          { subject: 'ok', [key]: 'whatever' },
+          { companyId: COMPANY_A }
+        )
+      ).rejects.toMatchObject({
+        status: 422,
+        message: ERROR_CODES.INVALID_EMAIL_METADATA,
+      });
+    }
+  );
+
+  it('names the accepted fields without echoing the offending one', async () => {
+    await expect(
+      validateMetadataPayload(
+        { preheader: 'secret-value' },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.toMatchObject({
+      details: expect.stringContaining('subject, plannedSendDate, emailTypeId'),
+    });
+
+    await expect(
+      validateMetadataPayload(
+        { preheader: 'secret-value' },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.not.toMatchObject({
+      details: expect.stringContaining('secret-value'),
+    });
+  });
+
+  it('accepts the three keys together', async () => {
+    const result = await validateMetadataPayload(
+      {
+        subject: 'ok',
+        plannedSendDate: '2026-09-01',
+        emailTypeId: TYPE_A,
+      },
+      { companyId: COMPANY_A }
+    );
+
+    expect(Object.keys(result).sort()).toEqual([
+      '_emailType',
+      'plannedSendDate',
+      'subject',
+    ]);
+  });
+});
+
+describe('applyMetadataToMailing', () => {
+  function makeMailing(overrides = {}) {
+    return {
+      _company: mongoose.Types.ObjectId(COMPANY_A),
+      data: { preheaderText: 'template property, untouched' },
+      ...overrides,
+    };
+  }
+
+  // The preheader is not part of this endpoint: it is a template property, and
+  // wiring it through here would mean changing how our templates declare it. The
+  // refusal happens in the validation, so nothing reaches `data` — the field this
+  // endpoint used to write into.
+  it('refuses a payload carrying a preheader, leaving data untouched', async () => {
+    const mailing = makeMailing();
+
+    await expect(
+      applyMetadataToMailing(mailing, {
+        subject: 'Soldes',
+        preheader: 'no longer a metadata',
+      })
+    ).rejects.toMatchObject({ status: 422 });
+
+    expect(mailing.subject).toBeUndefined();
+    expect(mailing.data).toEqual({
+      preheaderText: 'template property, untouched',
+    });
+  });
+
+  // Emptying a field must clear it, not store a blank. The service assigns
+  // `undefined`, which mongoose turns into an $unset at save — the one subtle
+  // behaviour left in the function now that markModified is gone.
+  it('clears a field by assigning undefined rather than an empty string', async () => {
+    const mailing = makeMailing({ subject: 'à effacer' });
+
+    await applyMetadataToMailing(mailing, { subject: '' });
+
+    expect('subject' in mailing).toBe(true);
+    expect(mailing.subject).toBeUndefined();
+  });
+
+  it('assigns only the fields the payload carries', async () => {
+    const mailing = makeMailing({
+      subject: 'kept',
+      plannedSendDate: 'kept-too',
+    });
+
+    await applyMetadataToMailing(mailing, { emailTypeId: TYPE_A });
+
+    expect(mailing.subject).toBe('kept');
+    expect(mailing.plannedSendDate).toBe('kept-too');
+    expect(String(mailing._emailType)).toBe(TYPE_A);
+  });
+
+  it('refuses a foreign typology through the mailing company, not the caller', async () => {
+    const mailing = makeMailing();
+
+    await expect(
+      applyMetadataToMailing(mailing, { emailTypeId: TYPE_B })
+    ).rejects.toMatchObject({
+      message: ERROR_CODES.EMAIL_TYPE_NOT_FOUND,
+    });
+  });
+});

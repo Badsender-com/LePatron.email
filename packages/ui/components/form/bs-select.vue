@@ -14,8 +14,11 @@
  *   :error-messages="errors"
  * />
  */
+import mixinInputId from '~/helpers/mixins/mixin-input-id.js';
+
 export default {
   name: 'BsSelect',
+  mixins: [mixinInputId],
   inheritAttrs: false,
   props: {
     value: { type: [String, Number, Array, Object], default: null },
@@ -67,12 +70,16 @@ export default {
     class="bs-select"
     :class="{ 'bs-select--error': hasError, 'bs-select--disabled': disabled }"
   >
-    <label v-if="label" class="bs-select__label">
+    <label v-if="label" :for="inputId" class="bs-select__label">
       {{ label }}
       <span v-if="required" class="bs-select__required">*</span>
     </label>
     <v-select
+      :id="inputId"
       v-model="localValue"
+      :aria-required="required ? 'true' : null"
+      :aria-invalid="hasError ? 'true' : null"
+      :aria-describedby="describedBy"
       v-bind="$attrs"
       :items="items"
       :placeholder="placeholder"
@@ -87,8 +94,16 @@ export default {
       v-on="$listeners"
       @focus="onFocus"
       @blur="onBlur"
-    />
-    <div v-if="hint && !hasError" class="bs-select__hint">
+    >
+      <!-- Vuetify already flags the message container `role="alert"`; the id
+           is ours to add, so `aria-describedby` has something to point at.
+           Only the first message is tagged: `error-count` defaults to 1, and a
+           caller raising it must not produce duplicate ids. -->
+      <template #message="{ message, key }">
+        <span :id="key === 0 ? errorId : null">{{ message }}</span>
+      </template>
+    </v-select>
+    <div v-if="hint && !hasError" :id="hintId" class="bs-select__hint">
       {{ hint }}
     </div>
   </div>

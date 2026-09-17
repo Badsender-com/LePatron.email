@@ -239,6 +239,7 @@ export default {
         <div class="variables-table__col variables-table__col--label">
           <bs-text-field
             :value="variable.label"
+            :label="$t('personalizedVariables.label')"
             :error-messages="validationErrors(index, 'label')"
             :disabled="loading || variable.deleting"
             hide-label
@@ -250,6 +251,7 @@ export default {
         <div class="variables-table__col variables-table__col--variable">
           <bs-text-field
             :value="variable.variable"
+            :label="$t('personalizedVariables.variable')"
             :error-messages="validationErrors(index, 'variable')"
             :disabled="loading || variable.deleting"
             hide-label
