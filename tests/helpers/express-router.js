@@ -23,9 +23,7 @@
 function layerFor(router, method, path) {
   const layer = router.stack.find(
     (candidate) =>
-      candidate.route &&
-      candidate.route.path === path &&
-      candidate.route.methods[method]
+      candidate.route?.path === path && candidate.route.methods[method]
   );
   if (!layer) {
     throw new Error(`no ${method.toUpperCase()} ${path} route declared`);
