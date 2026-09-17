@@ -171,4 +171,16 @@ describe.each([
   it('uses the configured model', () => {
     expect(build()._getDefaultModel()).toBe('m');
   });
+
+  // Both answer 403 for an invalid key, not the 401 the OpenAI dialect
+  // expects — verified by calling them. Left to the default it surfaces as a
+  // generic API error, sending the admin looking anywhere but at the key.
+  it('reads a 403 as invalid credentials', () => {
+    expect(build()._mapErrorToCode(403, {})).toBe(CODES.INVALID_CREDENTIALS);
+  });
+
+  it('still defers to the dialect for the other statuses', () => {
+    expect(build()._mapErrorToCode(429, {})).toBe(CODES.QUOTA_EXCEEDED);
+    expect(build()._mapErrorToCode(500, {})).toBe(CODES.API_ERROR);
+  });
 });
