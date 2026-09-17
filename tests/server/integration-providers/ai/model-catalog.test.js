@@ -6,7 +6,7 @@ const catalog = require('../../../../packages/server/integration-providers/ai/mo
 const fr = require('../../../../packages/ui/helpers/locales/fr').default;
 const en = require('../../../../packages/ui/helpers/locales/en').default;
 
-const PROVIDERS = ['openai', 'mistral', 'infomaniak'];
+const PROVIDERS = ['openai', 'mistral', 'infomaniak', 'anthropic', 'gemini'];
 
 function lookup(locale, key) {
   return key
@@ -25,10 +25,15 @@ describe('model-catalog', () => {
   //   current generation (it resolves to Mistral Small 4 today).
   // infomaniak: moved off mixtral, which a live account now answers 422 for.
   //   The default was calling a model that no longer exists.
+  // anthropic / gemini: both verified by a real call. Gemini's matters most —
+  // every dated id its own listing advertises answers 404 for new accounts,
+  // so only the `-latest` aliases are callable.
   it.each([
     ['openai', 'gpt-5-mini'],
     ['mistral', 'mistral-small-latest'],
     ['infomaniak', 'mistral3'],
+    ['anthropic', 'claude-haiku-4-5-20251001'],
+    ['gemini', 'gemini-flash-latest'],
   ])('%s defaults to %s', (provider, expected) => {
     expect(catalog.getCatalogDefaultModel(provider)).toBe(expected);
   });
@@ -37,6 +42,16 @@ describe('model-catalog', () => {
   // three answered 200, while mixtral / llama3 / granite / gemma3n answered
   // 422. This provider has no remote listing to catch that drift, so the list
   // is the only guard.
+  // Same shape of trap as Infomaniak: what the listing advertises and what the
+  // API accepts differ, and only a real call tells them apart.
+  it('only offers Gemini aliases, the dated ids being refused', () => {
+    expect(catalog.getCatalogModels('gemini').map((m) => m.id)).toEqual([
+      'gemini-flash-latest',
+      'gemini-flash-lite-latest',
+      'gemini-pro-latest',
+    ]);
+  });
+
   it('only offers Infomaniak aliases the chat API still accepts', () => {
     expect(catalog.getCatalogModels('infomaniak').map((m) => m.id)).toEqual([
       'mistral3',
@@ -125,6 +140,25 @@ describe('model-catalog', () => {
     it('keeps a catalogue entry even when a pattern would exclude it', () => {
       // Hypothetical, but the rule matters: curation beats pattern matching.
       expect(catalog.passesRemoteFilter('openai', 'gpt-4-turbo')).toBe(true);
+    });
+
+    // Gemini reports speech and image models as supporting generateContent,
+    // so filtering on that method alone lets them through.
+    it.each([
+      'gemini-2.5-flash-preview-tts',
+      'gemini-2.5-flash-image',
+      'imagen-4.0-generate-001',
+      'veo-3.0-generate-001',
+    ])('filters %s out of a Gemini listing', (id) => {
+      expect(catalog.passesRemoteFilter('gemini', id)).toBe(false);
+    });
+
+    it.each([
+      'gemini-flash-latest',
+      'gemini-3-flash-preview',
+      'gemma-4-31b-it',
+    ])('keeps %s', (id) => {
+      expect(catalog.passesRemoteFilter('gemini', id)).toBe(true);
     });
 
     // Azure deployment names and self-hosted endpoints are chosen by the

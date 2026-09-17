@@ -884,6 +884,16 @@ export default {
     contactBadsender: 'Contact Badsender',
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'This address is private or local. For security reasons LePatron only calls public addresses: an AI hosted on your internal network cannot be reached from the server.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'This domain name cannot be found. Check the spelling of the URL.',
+      INTEGRATION_HOST_INVALID:
+        'This URL is not valid. Expected an address starting with https://',
+    },
     title: 'Integrations',
     name: 'Name',
     provider: 'Provider',
@@ -933,6 +943,30 @@ export default {
       apiKeyPlaceholder: 'Your Infomaniak API key',
       productId: 'Product ID',
       productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+    },
+    anthropic: {
+      apiKeyPlaceholder: 'Your Anthropic API key',
+      apiHostHint: 'Leave empty for the public Anthropic API; set it only if you go through a corporate gateway.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Your Google AI Studio API key',
+      apiHostHint: 'Leave empty for the public Gemini API.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Your Azure OpenAI API key',
+      apiHostHint: 'Your Azure resource URL, e.g. https://my-instance.openai.azure.com. The deployment name stands in for the model.'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'Your endpoint API key',
+      apiHostHint: 'Any endpoint speaking the OpenAI API. Private and loopback addresses are refused for security reasons.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Your Scaleway API key',
+      apiHostHint: 'Leave empty unless your account requires a project-scoped URL.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Your OVHcloud API key',
+      apiHostHint: 'Leave empty for the public OVHcloud AI Endpoints.'
     },
     deepl: {
       apiKeyPlaceholder: 'Your DeepL API key',
@@ -1032,7 +1066,7 @@ export default {
       defaultOption: 'Provider default ({model})',
       defaultOptionUnknown: 'Provider default',
       deprecated: 'deprecated',
-      invalidId: 'Invalid model identifier: letters, digits and . _ - : / @ only, no spaces.',
+      invalidId: 'Not saved — model identifiers accept letters, digits and . _ - : / @ only, no spaces.',
       customHint: 'Hand-typed model: it has not been checked against the provider.',
       loadFailed: 'Model list unavailable: only known models are offered. You can type an identifier.',
     },

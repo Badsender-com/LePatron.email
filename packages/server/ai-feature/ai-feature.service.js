@@ -140,6 +140,26 @@ function normalizeModelId(featureConfig) {
   featureConfig.model = model;
 }
 
+// Mirrors the enum on FeatureConfigSchema.config.formality. Duplicated on
+// purpose: updateFeatureConfig writes through findByIdAndUpdate + $set, which
+// does not run schema validators, so the enum alone never fires on this path.
+// An arbitrary value would reach DeepL and make it reject every subsequent
+// translation for the group — on the one connector actually in production.
+const FORMALITY_VALUES = [
+  'default',
+  'more',
+  'less',
+  'prefer_more',
+  'prefer_less',
+];
+
+function validateFormality(featureConfig) {
+  if (!featureConfig || featureConfig.formality === undefined) return;
+  if (!FORMALITY_VALUES.includes(featureConfig.formality)) {
+    throw new BadRequest(ERROR_CODES.INVALID_FORMALITY);
+  }
+}
+
 // Config sub-fields that can be partially updated via $set
 const FEATURE_CONFIG_FIELDS = [
   'availableLanguages',
@@ -174,6 +194,7 @@ async function updateFeatureConfig({
   }
 
   normalizeModelId(featureConfig);
+  validateFormality(featureConfig);
 
   // Validate minimum 2 languages when provided
   if (featureConfig?.availableLanguages) {

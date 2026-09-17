@@ -51,7 +51,10 @@ export default {
         const modelId = toModelId(next);
         if (!isValidModelId(modelId)) {
           // Held back rather than sent: the save would fail server-side, and
-          // the tab would report it as a generic error.
+          // the tab would report it as a generic error. Saving is implicit
+          // here — there is no button to grey out — so the message has to say
+          // outright that nothing was recorded, or the admin walks away
+          // believing the previous value was replaced.
           this.invalidInput = modelId;
           return;
         }
@@ -158,10 +161,20 @@ export default {
       } catch (error) {
         // Shown on the field rather than raised as a snackbar: both sections
         // mount at once, and two stacked snackbars said nothing the field
-        // could not. Free typing still works, so this is not a dead end.
+        // could not.
+        //
+        // Capabilities are deliberately NOT cleared here. They drive whether
+        // this field is rendered at all, so dropping them on a failed load
+        // unmounted the component — taking the error message with it and
+        // removing the free-typing fallback, the one way out. It also hid the
+        // DeepL formality select, which rides on the same payload. Assume the
+        // provider supports model selection so the admin keeps a usable field.
         this.models = [];
         this.defaultModel = null;
-        this.capabilities = null;
+        this.capabilities = this.capabilities || {
+          supportsModelSelection: true,
+          supportsFormality: false,
+        };
         this.loadError = error.message || 'error';
       } finally {
         this.loading = false;
@@ -180,7 +193,7 @@ export default {
 
 <template>
   <bs-combobox
-    v-if="integrationId && supportsModelSelection"
+    v-if="integrationId && (supportsModelSelection || loadError)"
     v-model="localValue"
     :items="items"
     :label="label"
