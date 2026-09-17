@@ -5,8 +5,11 @@
  * Design system compliant textarea that displays the label above
  * the input, mirroring the BsTextField pattern.
  */
+import mixinInputId from '~/helpers/mixins/mixin-input-id.js';
+
 export default {
   name: 'BsTextarea',
+  mixins: [mixinInputId],
   inheritAttrs: false,
   props: {
     value: { type: [String, Number], default: '' },
@@ -22,16 +25,6 @@ export default {
     monospace: { type: Boolean, default: false },
   },
   computed: {
-    // A label without `for` is decoration: clicking it does not focus the field,
-    // and a screen reader announces an unnamed control.
-    //
-    // The caller's own id wins when there is one — `users/form.vue` passes
-    // `id="email"`, `id="lang"` and others, and overriding those would break
-    // whatever relies on them. Ours is only the fallback, and the label follows
-    // either way.
-    inputId() {
-      return this.$attrs.id || `bs-textarea-${this._uid}`;
-    },
     localValue: {
       get() {
         return this.value;
@@ -69,18 +62,13 @@ export default {
       {{ label }}
       <span v-if="required" class="bs-textarea__required">*</span>
     </label>
-    <!-- `v-bind="$attrs"` deliberately keeps its position, which
-         vue/attributes-order would move to the front: in Vue 2 the order decides
-         precedence for an object v-bind, and hoisting it would make every
-         individual binding below win over what a caller passes. A style rule is
-         not worth a behaviour change for every consumer. -->
-    <!-- eslint-disable vue/attributes-order -->
     <v-textarea
-      v-model="localValue"
-      v-bind="$attrs"
       :id="inputId"
+      v-model="localValue"
       :aria-required="required ? 'true' : null"
       :aria-invalid="hasError ? 'true' : null"
+      :aria-describedby="describedBy"
+      v-bind="$attrs"
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
@@ -92,9 +80,16 @@ export default {
       hide-details="auto"
       class="bs-textarea__input"
       v-on="$listeners"
-    />
-    <!-- eslint-enable vue/attributes-order -->
-    <div v-if="hint && !hasError" class="bs-textarea__hint">
+    >
+      <!-- Vuetify already flags the message container `role="alert"`; the id
+           is ours to add, so `aria-describedby` has something to point at.
+           Only the first message is tagged: `error-count` defaults to 1, and a
+           caller raising it must not produce duplicate ids. -->
+      <template #message="{ message, key }">
+        <span :id="key === 0 ? errorId : null">{{ message }}</span>
+      </template>
+    </v-textarea>
+    <div v-if="hint && !hasError" :id="hintId" class="bs-textarea__hint">
       {{ hint }}
     </div>
   </div>
