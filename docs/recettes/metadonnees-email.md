@@ -202,7 +202,9 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
 
 > Il n'y a **aucun indicateur visuel** de modification non enregistrée, ni pour les
 > métadonnées ni pour le contenu. C'est volontaire : un signal qui ne couvrirait
-> que les métadonnées mentirait par omission sur tout le reste de l'éditeur.
+> que les métadonnées mentirait par omission sur tout le reste de l'éditeur. La
+> seule exception est la confirmation à la fermeture de l'onglet (§E3 ter), qui ne
+> ment sur rien parce qu'elle n'affirme rien tant qu'elle ne se déclenche pas.
 
 ### E3. Le cas critique — échec des métadonnées
 
@@ -213,13 +215,48 @@ prend plus le contenu de l'email en otage.
 2. Dans un autre onglet, **désactiver le flag** de la company
    (Paramètres → Email Builder → Configuration).
 3. Revenir à l'éditeur, cliquer **Save**.
-4. **Attendu** : un message d'erreur nommant le problème de métadonnées, **et
-   l'email lui-même est enregistré**. Pas de message de succès à côté de l'erreur.
+4. **Attendu** : un message d'avertissement qui dit les **deux** choses —
+   « L'email a été sauvegardé, mais les paramètres de l'email n'ont pas pu être
+   enregistrés : <raison> ». Pas de message de succès seul, et pas d'erreur seule
+   non plus : le contenu EST passé, et ne pas le dire pousse l'utilisateur à
+   recliquer Save, ce qui rejoue exactement le même échec.
 5. Recharger. **Attendu** : les modifications de contenu sont là. L'objet, non.
 6. **À ne surtout PAS voir** : un email qu'on ne peut plus jamais enregistrer,
    chaque clic échouant à l'identique.
 7. Réactiver le flag, rouvrir l'email, resaisir l'objet, **Save**, recharger.
    **Attendu** : l'objet est enregistré.
+8. **Les deux en échec** : couper le réseau et cliquer **Save**. **Attendu** :
+   deux messages — celui des métadonnées, puis l'erreur d'enregistrement
+   générique. Le message générique seul ne dirait rien d'une typologie retirée.
+
+### E3 bis. Le PATCH ne porte que ce qui a changé
+
+Ce que ça évite : deux personnes ouvrent le même email ; celle qui ne touche
+qu'à la typologie renvoyait aussi l'objet **tel qu'il était à SON ouverture**, et
+effaçait la modification de l'autre sans conflit ni message.
+
+1. Ouvrir le même email dans **deux onglets** (A et B).
+2. Dans A, modifier **l'objet**, **Save**.
+3. Dans B — ouvert avant, donc porteur de l'ancien objet — modifier **uniquement
+   la typologie**, **Save**.
+4. Recharger. **Attendu** : la typologie de B **et** l'objet de A. B n'a pas
+   renvoyé l'objet.
+5. Variante à vérifier aussi : un email dont la typologie a été **supprimée** en
+   base. Modifier **uniquement l'objet**, **Save**. **Attendu** : l'objet est
+   enregistré — la typologie périmée ne part pas dans la requête, donc elle ne
+   peut plus faire échouer un champ que l'utilisateur n'a pas touché.
+
+### E3 ter. Fermeture avec des métadonnées non enregistrées
+
+1. Modifier l'objet, **sans enregistrer**, fermer l'onglet (ou recharger).
+   **Attendu** : le navigateur demande confirmation.
+2. Enregistrer, puis fermer l'onglet. **Attendu** : **aucune** confirmation.
+3. Ne rien modifier du tout et fermer. **Attendu** : aucune confirmation.
+
+> C'est une confirmation **à la sortie**, pas un indicateur permanent. La pastille
+> sur le bouton Save a été retirée volontairement parce qu'elle couvrait les
+> métadonnées et rien d'autre ; celle-ci ne se déclenche que quand les trois
+> champs sont réellement modifiés, et se tait le reste du temps.
 
 ### E4. Course frappe / enregistrement
 

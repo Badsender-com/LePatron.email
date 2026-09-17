@@ -14,8 +14,19 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
 }));
+// The policy itself lives in mailing-metadata.service.js, which findOneForMosaico
+// delegates to; it reads the taxonomy through models.common like the rest of that
+// service, so that is what these tests stub.
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
+  Mailings: {},
+  Groups: {},
+}));
 
 const mongoose = require('mongoose');
+const {
+  TaxonomyItems,
+} = require('../../../packages/server/common/models.common.js');
 const MailingSchema = require('../../../packages/server/mailing/mailing.schema');
 
 const findOneForMosaico = MailingSchema.statics.findOneForMosaico;
@@ -71,7 +82,9 @@ function makeContext({
     }),
   };
 
-  const taxonomyFind = jest.fn().mockReturnValue({
+  const taxonomyFind = TaxonomyItems.find;
+  taxonomyFind.mockReset();
+  taxonomyFind.mockReturnValue({
     select: jest.fn().mockReturnValue({
       sort: jest.fn().mockReturnValue({
         lean: jest.fn().mockResolvedValue(taxonomy),
@@ -91,7 +104,6 @@ function makeContext({
 
   mongoose.models = {
     Company: { findById },
-    TaxonomyItem: { find: taxonomyFind },
     Comment: null,
   };
 

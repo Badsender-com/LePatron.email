@@ -67,21 +67,70 @@ function fromDateInputValue(value) {
 }
 
 /**
+ * The three fields the PATCH owns, described once.
+ *
+ * "Has this changed" and "what do we send for it" were two separate lists before,
+ * and they have to agree: a field counted as changed but not serialised is an edit
+ * silently dropped, and the reverse is a field overwritten although the user never
+ * touched it. One table, both answers derived from it.
+ */
+const METADATA_FIELDS = [
+  {
+    key: 'subject',
+    toPayload: (form) => {
+      const subject = String(form.subject == null ? '' : form.subject).trim();
+      return subject === '' ? null : subject;
+    },
+  },
+  {
+    key: 'plannedSendDate',
+    toPayload: (form) => fromDateInputValue(form.plannedSendDate),
+  },
+  {
+    key: 'emailTypeId',
+    toPayload: (form) => (form.emailTypeId ? form.emailTypeId : null),
+  },
+];
+
+const sameValue = (a, b) =>
+  String(a == null ? '' : a) === String(b == null ? '' : b);
+
+/** The fields whose value differs from the state the section opened with. */
+function changedFields(form, initial) {
+  const before = initial || {};
+  return METADATA_FIELDS.filter(
+    (field) => !sameValue(form[field.key], before[field.key])
+  );
+}
+
+/**
  * The PATCH payload for subject, planned send date and typology.
  *
- * `null` clears a field, and the server reads it that way.
+ * `null` clears a field, and the server reads it that way. A field ABSENT from the
+ * body is left alone — `validateMetadataPayload` guards every field with
+ * `isDefined` — which is the whole point of only sending what changed.
+ *
+ * Sending all three every time cost us two distinct defects:
+ *
+ *   - A colleague edits the subject while this editor is open; the user here
+ *     changes only the typology; the PATCH carries the subject as it stood when
+ *     THIS editor opened and silently reverts their change.
+ *   - A field the user never touched can fail the ones they did: an `_emailType`
+ *     pointing at a deleted taxonomy item answers EMAIL_TYPE_NOT_FOUND, and the
+ *     subject they just typed goes down with it.
  *
  * @param {Object} form { subject, plannedSendDate, emailTypeId }
+ * @param {Object} [initial] the state the section opened with. Omitted, every
+ *   field is sent — which is only correct when there is nothing to compare against.
  * @returns {Object}
  */
-function buildMetadataPayload(form) {
-  const subject = String(form.subject == null ? '' : form.subject).trim();
+function buildMetadataPayload(form, initial) {
+  const fields = initial ? changedFields(form, initial) : METADATA_FIELDS;
 
-  return {
-    subject: subject === '' ? null : subject,
-    plannedSendDate: fromDateInputValue(form.plannedSendDate),
-    emailTypeId: form.emailTypeId ? form.emailTypeId : null,
-  };
+  return fields.reduce((payload, field) => {
+    payload[field.key] = field.toPayload(form);
+    return payload;
+  }, {});
 }
 
 /**
@@ -116,10 +165,14 @@ function toFormState(emailMetadata) {
  * @returns {Array<{value: string, text: string, missing?: boolean}>}
  */
 function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
-  const options = (emailTypes || []).map((item) => ({
-    value: String(item.id || item._id),
-    text: item.label,
-  }));
+  // An item with no id would become an option valued `'undefined'`: selectable,
+  // and refused by the server on save with no way for the user to understand why.
+  const options = (emailTypes || [])
+    .filter((item) => item && (item.id || item._id))
+    .map((item) => ({
+      value: String(item.id || item._id),
+      text: item.label,
+    }));
 
   if (currentId && !options.some((o) => o.value === String(currentId))) {
     options.push({
@@ -143,12 +196,7 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
  * @returns {boolean}
  */
 function hasMetadataChanges(form, initial) {
-  return (
-    String(form.subject || '') !== String(initial.subject || '') ||
-    String(form.plannedSendDate || '') !==
-      String(initial.plannedSendDate || '') ||
-    String(form.emailTypeId || '') !== String(initial.emailTypeId || '')
-  );
+  return changedFields(form, initial).length > 0;
 }
 
 /**
@@ -188,6 +236,7 @@ function errorKeyFor(error) {
 
 module.exports = {
   SUBJECT_HARD_LIMIT,
+  METADATA_FIELDS,
   errorKeyFor,
   toDateInputValue,
   fromDateInputValue,
