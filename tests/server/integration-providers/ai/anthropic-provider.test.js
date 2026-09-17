@@ -142,6 +142,111 @@ describe('AnthropicProvider', () => {
 
       expect(sentBody().response_format).toBeUndefined();
     });
+
+    // There is no response_format on this endpoint, and an instruction alone
+    // does not hold: a skill whose prompt asked for "du texte simple" got
+    // prose back and failed at OUTPUT_PARSE. Prefilling an assistant turn was
+    // tried and is refused by generation 5, so a forced tool call is what
+    // holds the format on both generations.
+    describe('forced JSON', () => {
+      it('forces a tool call when JSON is asked for', async () => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+          responseFormat: { type: 'json_object' },
+        });
+
+        expect(sentBody().tool_choice).toEqual({
+          type: 'tool',
+          name: 'emit_json',
+        });
+        // Left open on purpose: the real schema is in the output contract
+        // already injected into the prompt, out of this class's reach.
+        expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
+      });
+
+      it('declares no tool when no JSON is asked for', async () => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+        });
+
+        expect(sentBody().tools).toBeUndefined();
+        expect(sentBody().tool_choice).toBeUndefined();
+      });
+
+      // The tool input arrives parsed; callers expect a JSON string.
+      it('re-serialises the tool input as the content', async () => {
+        mockFetch.mockResolvedValue(
+          reply(
+            messageResponse({
+              content: [
+                {
+                  type: 'tool_use',
+                  id: 't1',
+                  name: 'emit_json',
+                  input: { text: 'Bonjour' },
+                },
+              ],
+            })
+          )
+        );
+
+        const result = await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+          responseFormat: { type: 'json_object' },
+        });
+
+        expect(JSON.parse(result.content)).toEqual({ text: 'Bonjour' });
+      });
+
+      it('still reads a plain text answer when no tool was used', async () => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        const result = await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+        });
+
+        expect(result.content).toBe('bonjour');
+      });
+    });
+
+    // Generation 5 dropped temperature and answers 400 when it is sent.
+    describe('temperature', () => {
+      it('omits it on generation 5', async () => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model: 'claude-sonnet-5',
+          messages: [{ role: 'user', content: 'x' }],
+          temperature: 0.3,
+        });
+
+        expect(sentBody().temperature).toBeUndefined();
+      });
+
+      // claude-haiku-4-5 has a 5 in its id but is a 4.x model: it takes one.
+      it.each(['claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929'])(
+        'keeps it on %s',
+        async (model) => {
+          mockFetch.mockResolvedValue(reply(messageResponse()));
+
+          await provider.chatComplete({
+            model,
+            messages: [{ role: 'user', content: 'x' }],
+            temperature: 0.3,
+          });
+
+          expect(sentBody().temperature).toBe(0.3);
+        }
+      );
+    });
   });
 
   describe('response reading', () => {
@@ -261,8 +366,10 @@ describe('AnthropicProvider', () => {
     });
   });
 
-  it('translates through the inherited path, with no JSON mode', async () => {
-    expect(provider.supportsJsonResponseFormat()).toBe(false);
+  // Translation does not go through the prefill: it sets no responseFormat,
+  // relying on the prompt and the fence-stripping parser instead.
+  it('translates through the inherited path', async () => {
+    expect(provider._supportsResponseFormat()).toBe(false);
     mockFetch.mockResolvedValue(
       reply(
         messageResponse({

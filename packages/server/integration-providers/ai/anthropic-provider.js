@@ -20,6 +20,13 @@ const API_VERSION = '2023-06-01';
 const DEFAULT_MAX_TOKENS = 8192;
 const MODELS_TIMEOUT_MS = 5000;
 
+// Generation 5 dropped the temperature parameter and answers 400 when it is
+// sent; 4.x still takes it. Verified against a live account. The pattern
+// matches the family digit right after the tier name, so claude-haiku-4-5 —
+// a 4.x model whose id also contains a 5 — is correctly left out.
+const NO_TEMPERATURE_MODELS = /^claude-[a-z]+-5(-|$)/;
+const JSON_TOOL_NAME = 'emit_json';
+
 /**
  * Anthropic (Claude), on the Messages API.
  *
@@ -33,10 +40,13 @@ class AnthropicProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
-  // No native JSON mode: the repair pass in skill-invocation stays the
-  // defence, which is exactly what it was written for.
+  // Claimed through the forced tool call below rather than a response_format
+  // flag. Without it the model is free to answer in prose — which it does: a
+  // skill whose prompt asked for "du texte simple" got prose back and failed
+  // at OUTPUT_PARSE, because the injected JSON contract and the skill's own
+  // wording pull in opposite directions and nothing settled the conflict.
   supportsJsonResponseFormat() {
-    return false;
+    return true;
   }
 
   _supportsResponseFormat() {
@@ -45,6 +55,10 @@ class AnthropicProvider extends BaseLLMProvider {
 
   _getMaxTokens() {
     return DEFAULT_MAX_TOKENS;
+  }
+
+  _supportsTemperature(model) {
+    return !NO_TEMPERATURE_MODELS.test(model || '');
   }
 
   _getEndpointUrl() {
@@ -61,7 +75,13 @@ class AnthropicProvider extends BaseLLMProvider {
     };
   }
 
-  _buildRequestBody({ model, messages, temperature, maxTokens }) {
+  _buildRequestBody({
+    model,
+    messages,
+    temperature,
+    maxTokens,
+    responseFormat,
+  }) {
     const { system, conversation } = splitSystemMessages(messages);
 
     const body = {
@@ -70,12 +90,36 @@ class AnthropicProvider extends BaseLLMProvider {
       max_tokens: maxTokens || this._getMaxTokens(),
     };
     if (system) body.system = system;
-    if (temperature !== undefined) body.temperature = temperature;
+    if (temperature !== undefined && this._supportsTemperature(model)) {
+      body.temperature = temperature;
+    }
+
+    // Forcing a tool call is what actually holds the format here. Two other
+    // routes were tried against a live account and rejected by the API:
+    // response_format does not exist on this endpoint, and prefilling an
+    // assistant turn with `{` is refused outright by generation 5 ("does not
+    // support assistant message prefill"). A forced tool works on both
+    // generations, and hands back a parsed object rather than text to repair.
+    //
+    if (responseFormat && responseFormat.type === 'json_object') {
+      body.tools = [
+        {
+          name: JSON_TOOL_NAME,
+          description: 'Emit the JSON object required by the output contract.',
+          // The real schema when the caller supplies one. Left open, the
+          // model invents a shape: observed live, one answer came back
+          // wrapped in `parameters`, another nested `text` inside `text`.
+          input_schema: responseFormat.schema || { type: 'object' },
+        },
+      ];
+      body.tool_choice = { type: 'tool', name: JSON_TOOL_NAME };
+    }
 
     return body;
   }
 
-  _parseResponse(data) {
+  // eslint-disable-next-line no-unused-vars
+  _parseResponse(data, requestBody) {
     if (!Array.isArray(data.content)) {
       throw new ProviderError(
         'Invalid response structure from anthropic',
@@ -85,10 +129,18 @@ class AnthropicProvider extends BaseLLMProvider {
 
     // Filtered on type: a response can also carry thinking or tool-use blocks,
     // and concatenating those would put reasoning into the output.
-    const content = data.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('');
+    // A forced tool call comes back already parsed, so it is re-serialised
+    // rather than read as text: the callers expect a JSON string, and this
+    // way nothing has to survive a round trip through prose.
+    const toolUse = data.content.find(
+      (block) => block.type === 'tool_use' && block.name === JSON_TOOL_NAME
+    );
+    const content = toolUse
+      ? JSON.stringify(toolUse.input)
+      : data.content
+          .filter((block) => block.type === 'text')
+          .map((block) => block.text)
+          .join('');
 
     // Truncation guarantees malformed JSON downstream, so it is worth a line
     // in the log rather than surfacing as an unexplained parse failure.
