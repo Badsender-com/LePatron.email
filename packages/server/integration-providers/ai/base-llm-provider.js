@@ -248,7 +248,9 @@ class BaseLLMProvider extends AIProviderInterface {
       }
 
       const data = await response.json();
-      const result = this._parseResponse(data);
+      // The request is handed over too: a dialect may have shaped it in a way
+      // that changes how the answer must be read (Anthropic prefills).
+      const result = this._parseResponse(data, requestBody);
 
       // Content length stays in the log: a response that arrives empty is
       // otherwise indistinguishable from a normal one here.

@@ -62,7 +62,9 @@ const openAIDialect = {
     }
 
     if (responseFormat && this._supportsResponseFormat()) {
-      body.response_format = responseFormat;
+      // Only the type: callers may attach the JSON schema for providers that
+      // can enforce it, and OpenAI rejects unknown keys in this object.
+      body.response_format = { type: responseFormat.type };
     }
 
     return body;
@@ -73,7 +75,8 @@ const openAIDialect = {
    *
    * @returns {{ content: string, usage: { promptTokens, completionTokens, totalTokens, cachedTokens } }}
    */
-  _parseResponse(data) {
+  // eslint-disable-next-line no-unused-vars
+  _parseResponse(data, requestBody) {
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new ProviderError(
         `Invalid response structure from ${this.getProviderType()}`,
