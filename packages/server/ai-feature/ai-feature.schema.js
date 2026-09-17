@@ -48,6 +48,15 @@ const FeatureConfigSchema = Schema(
         type: String,
         default: null,
       },
+      // Tone of the translation, for providers that expose it (DeepL only so
+      // far — see DeepLProvider.getCapabilities). The enum mirrors the values
+      // the provider accepts: anything else is rejected upstream anyway, and
+      // the select that feeds this field offers exactly these five.
+      formality: {
+        type: String,
+        enum: ['default', 'more', 'less', 'prefer_more', 'prefer_less'],
+        default: 'default',
+      },
       // For future features (text_generation, etc.)
       // editorialGuidelines: String,
       // customInstructions: String,

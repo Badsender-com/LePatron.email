@@ -81,7 +81,15 @@ export default {
         return this.translationFeature?.integration?.id || null;
       },
       set(value) {
-        this.updateFeature('translation', { integrationId: value });
+        // Clearing the model in the same call is required: updateFeatureConfig
+        // only writes the fields it receives, so an OpenAI `gpt-4o` would
+        // survive a switch to Mistral and be sent to the wrong provider. The
+        // skills engine section already does this (R5); the translation tab
+        // was missed.
+        this.updateFeature('translation', {
+          integrationId: value,
+          config: { model: null },
+        });
       },
     },
     translationIsActive: {
