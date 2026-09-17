@@ -61,10 +61,22 @@ export default {
       return this.isEditing ? this.$t('global.save') : this.$t('global.create');
     },
     canonicalTypeItems() {
-      return CANONICAL_TYPES.map((value) => ({
+      const items = CANONICAL_TYPES.map((value) => ({
         value,
         text: this.$t(`taxonomy.canonicalTypes.${value}`),
       }));
+
+      // The server takes any string here on purpose, so an item may carry a value
+      // this list does not offer — an import, or a newer skills vocabulary. Left
+      // out, the select finds nothing to match and falls back to its placeholder
+      // ("None"), which reads as "no mapping" while the value is in fact still
+      // there and still sent on save. Shown raw, the way the table shows it.
+      const current = this.form.canonicalType;
+      if (current && !CANONICAL_TYPES.includes(current)) {
+        items.push({ value: current, text: current });
+      }
+
+      return items;
     },
     labelErrors() {
       const errors = [];
@@ -198,12 +210,18 @@ export default {
          like the fields above it rather than as a stray switch. -->
     <div class="taxonomy-form__row">
       <div class="taxonomy-form__col">
+        <!-- `min`/`step` rather than a free number: an order the server refuses
+             comes back as a generic 400, which the snackbar can only render as
+             "an error occurred" — no message next to the field to fix.
+             buildTaxonomyPayload does the rest, so nothing unusable is sent. -->
         <bs-text-field
           v-model="form.order"
           :label="$t('taxonomy.form.order')"
           :hint="$t('taxonomy.form.orderHint')"
           :disabled="loading"
           type="number"
+          min="0"
+          step="1"
         />
       </div>
 
