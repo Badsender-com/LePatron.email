@@ -1,0 +1,194 @@
+'use strict';
+
+// The company config is submitted by the settings page, but a page is bypassable:
+// the server is what guarantees the stored shape. Same contract as
+// sanitizeTrackingConfig — reconstruct the object rather than trust it, and reject
+// a `requiredFields` entry that is not a known field, since an unknown name would
+// silently never be enforced.
+
+const {
+  sanitizeEmailMetadata,
+  EMAIL_METADATA_FIELDS,
+} = require('../../../packages/server/utils/sanitize-email-metadata.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+
+describe('sanitizeEmailMetadata — shape', () => {
+  it.each([[undefined], [null], [{}], ['a string'], [42]])(
+    'returns a disabled config with no required fields for %p',
+    (input) => {
+      expect(sanitizeEmailMetadata(input)).toEqual({
+        enabled: false,
+        requiredFields: [],
+      });
+    }
+  );
+
+  it.each([
+    [true, true],
+    ['on', true],
+    [1, true],
+    [false, false],
+    [undefined, false],
+    ['', false],
+    [0, false],
+  ])('coerces enabled %p to %p', (enabled, expected) => {
+    expect(sanitizeEmailMetadata({ enabled }).enabled).toBe(expected);
+  });
+
+  it('drops unknown keys instead of storing them', () => {
+    const result = sanitizeEmailMetadata({
+      enabled: true,
+      requiredFields: [],
+      somethingElse: 'ignored',
+      __proto__polluted: true,
+    });
+
+    expect(Object.keys(result).sort()).toEqual(['enabled', 'requiredFields']);
+  });
+});
+
+describe('sanitizeEmailMetadata — requiredFields', () => {
+  it.each(EMAIL_METADATA_FIELDS)('accepts the known field %s', (field) => {
+    expect(
+      sanitizeEmailMetadata({ requiredFields: [field] }).requiredFields
+    ).toEqual([field]);
+  });
+
+  it('accepts every known field at once', () => {
+    const result = sanitizeEmailMetadata({
+      enabled: true,
+      requiredFields: [...EMAIL_METADATA_FIELDS],
+    });
+    expect(result.requiredFields).toEqual([...EMAIL_METADATA_FIELDS]);
+  });
+
+  it('trims the field names', () => {
+    expect(
+      sanitizeEmailMetadata({ requiredFields: ['  subject  '] }).requiredFields
+    ).toEqual(['subject']);
+  });
+
+  // `preheader` was a known field until the preheader left this phase. Pinned by
+  // name rather than only through the EMAIL_METADATA_FIELDS iteration above:
+  // dropping a value from that constant fails no test on its own, so nothing would
+  // notice if it came back.
+  it.each([['preheader'], ['language'], ['brand'], ['SUBJECT'], ['']])(
+    'refuses the unknown field %p',
+    (field) => {
+      expect(() => sanitizeEmailMetadata({ requiredFields: [field] })).toThrow(
+        ERROR_CODES.INVALID_EMAIL_METADATA
+      );
+    }
+  );
+
+  it('does not echo the rejected value back to the caller', () => {
+    try {
+      sanitizeEmailMetadata({ requiredFields: ['<script>alert(1)</script>'] });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.details).not.toContain('script');
+      expect(error.details).toContain('subject');
+    }
+  });
+
+  it.each([[42], [null], [{}], [['nested']]])(
+    'refuses a non-string entry (%p)',
+    (field) => {
+      expect(() => sanitizeEmailMetadata({ requiredFields: [field] })).toThrow(
+        ERROR_CODES.INVALID_EMAIL_METADATA
+      );
+    }
+  );
+
+  it('refuses a duplicate, which would be a UI bug worth surfacing', () => {
+    expect(() =>
+      sanitizeEmailMetadata({ requiredFields: ['subject', 'subject'] })
+    ).toThrow(ERROR_CODES.INVALID_EMAIL_METADATA);
+  });
+
+  it.each([['a string'], [42], [{}]])(
+    'refuses a non-array requiredFields (%p)',
+    (requiredFields) => {
+      expect(() => sanitizeEmailMetadata({ requiredFields })).toThrow(
+        ERROR_CODES.INVALID_EMAIL_METADATA
+      );
+    }
+  );
+
+  it.each([[null], [undefined]])(
+    'treats %p as an empty list',
+    (requiredFields) => {
+      expect(sanitizeEmailMetadata({ requiredFields }).requiredFields).toEqual(
+        []
+      );
+    }
+  );
+
+  // One (code, status) pair for the whole feature: the mailing-side validation
+  // raises the same 422 with the same code, so the front has a single case.
+  it('carries the error code and status the API layer needs', () => {
+    try {
+      sanitizeEmailMetadata({ requiredFields: ['nope'] });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(ERROR_CODES.INVALID_EMAIL_METADATA);
+      expect(error.statusCode).toBe(422);
+      expect(error.details).toBeTruthy();
+    }
+  });
+});
+
+describe('sanitizeEmailMetadata — partial payloads', () => {
+  // The bug this guards against: the function returns the WHOLE sub-object, so a
+  // payload carrying only `requiredFields` resolved `enabled` to
+  // `Boolean(undefined)` — false. A company that had the feature on lost it, in a
+  // 200 response, and every open editor became unable to save.
+  const STORED = { enabled: true, requiredFields: ['subject'] };
+
+  it('keeps `enabled` when the payload does not carry it', () => {
+    const result = sanitizeEmailMetadata({ requiredFields: [] }, STORED);
+    expect(result.enabled).toBe(true);
+    expect(result.requiredFields).toEqual([]);
+  });
+
+  it('keeps `requiredFields` when the payload does not carry it', () => {
+    const result = sanitizeEmailMetadata({ enabled: false }, STORED);
+    expect(result.enabled).toBe(false);
+    expect(result.requiredFields).toEqual(['subject']);
+  });
+
+  it('replaces both when the payload carries both', () => {
+    const result = sanitizeEmailMetadata(
+      { enabled: false, requiredFields: [] },
+      STORED
+    );
+    expect(result).toEqual({ enabled: false, requiredFields: [] });
+  });
+
+  // An explicit `enabled: false` must win over a stored `true` — the distinction
+  // is between "absent" and "false", not between falsy and truthy.
+  it('honours an explicit false rather than treating it as absent', () => {
+    expect(sanitizeEmailMetadata({ enabled: false }, STORED).enabled).toBe(
+      false
+    );
+  });
+
+  it('falls back to the defaults when nothing is stored yet', () => {
+    expect(sanitizeEmailMetadata({ requiredFields: ['subject'] })).toEqual({
+      enabled: false,
+      requiredFields: ['subject'],
+    });
+    expect(sanitizeEmailMetadata({}, undefined)).toEqual({
+      enabled: false,
+      requiredFields: [],
+    });
+  });
+
+  // A company created with the key, where there is nothing stored to carry over.
+  it('treats a null stored config as absent', () => {
+    expect(sanitizeEmailMetadata({ requiredFields: [] }, null)).toEqual({
+      enabled: false,
+      requiredFields: [],
+    });
+  });
+});

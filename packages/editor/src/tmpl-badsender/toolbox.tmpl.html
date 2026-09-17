@@ -117,6 +117,31 @@
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
+    <!-- Email settings: a document-level setting, so it belongs in this tab with
+         the template's own options rather than in a panel of its own.
+
+         Placed AFTER those options, and styled to continue them: the two read as
+         one panel. An earlier revision put this block FIRST, because it then had a
+         save button of its own that fell off a 900px screen. That button is gone —
+         the editor's Save writes the metadata now — so the reason to jump the
+         queue went with it, and the template options keep the position users know.
+
+         What could NOT be done: rename the heading above. "Template Options" is
+         declared in each client template's own markup (`@supports -ko-blockdefs`),
+         not here — 6 of the 7 templates in the dev database use that exact string
+         and Ouest France has no such block at all. Hence two headings joined by a
+         frame, rather than one renamed section.
+
+         `hasEmailMetadata` is set once in the plugin's `viewModel` hook and never
+         written again, so this `if` renders once and never re-runs. That matters:
+         `new Vue({el})` REPLACES the node Knockout thinks it owns, so a reactive
+         observable here would tear the mount down without remounting it. Do not
+         make it reactive without moving the mount. -->
+    <!-- ko if: $root.hasEmailMetadata() -->
+    <div id="email-metadata-section">
+      <email-metadata-plugin />
+    </div>
+    <!-- /ko -->
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>

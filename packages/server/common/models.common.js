@@ -34,6 +34,7 @@ const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
+const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 
 /// ///
 // EXPORTS
@@ -107,6 +108,10 @@ const AIPlaygroundRuns = mongoose.model(
   modelNames.AIPlaygroundRunModel,
   AIPlaygroundRunSchema
 );
+const TaxonomyItems = mongoose.model(
+  modelNames.TaxonomyItemModel,
+  TaxonomyItemSchema
+);
 
 module.exports = {
   mongoose,
@@ -139,4 +144,5 @@ module.exports = {
   AISkillInvocations,
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
+  TaxonomyItems,
 };

@@ -1,0 +1,181 @@
+/**
+ * Email settings block (#email-metadata-section)
+ *
+ * The second half of one continuous panel: it follows the template's own options
+ * in the Content tab and is styled to read as their continuation.
+ *
+ * Why two headings and not one. The decision was to merge both into a single
+ * section renamed "Email settings" — that turned out to be impossible. The
+ * "Template Options" heading above is not ours: it is declared in each client
+ * template's markup, in its `@supports -ko-blockdefs` block (6 of the 7 templates
+ * in the dev database carry that exact string, and Ouest France has no such block
+ * at all). Renaming it would mean editing customer-owned data. So `__title` below
+ * reproduces `.objLabel.level0` (style_mosaico_tools.less:279) declaration for
+ * declaration — same grey band, same 3px accent rule, same weight — and the two
+ * headings read as two labelled groups of one panel instead of two panels.
+ *
+ * EVERYTHING IS NESTED IN `.mo`, and that is not cosmetic. The editor declares
+ * generic element rules under that class — `.mo h3 { font-size: 1.3em }`,
+ * `.mo select { height: auto; background: white }` (the shorthand wipes a
+ * background-image), `.mo p { margin: 1em 0 }` — all at specificity (0,1,1). A bare
+ * `.email-metadata__title` is (0,1,0) and loses: the title rendered ~18px instead of
+ * 13px, the select lost its chevron and its height, and every hint carried a 1em
+ * margin. `#main-toolbox` carries `class="mo"` (tmpl/main.tmpl.html:100), so the
+ * extra level costs nothing and puts these rules at (0,2,0).
+ *
+ * The fields are styled here rather than reusing `bs-form-field`: that class is
+ * imported INSIDE badsender-modal.less, so it only exists under a modal scope and
+ * reaches nothing here. The look follows the same rules — 12px label above a 40px
+ * input — without depending on a scope this section is not in.
+ *
+ * Colours come from the tokens the EDITOR declares (badsender-editor.less:44-73):
+ * --gray-*, --error, --success, --accent. The Nuxt app's --field-border, --r-sm,
+ * --color-error and friends do not exist here, so referencing them would mean
+ * shipping a file that never applies its own tokens.
+ */
+
+// Text input and select share their whole box: same height, same border, same
+// focus ring. Two copies of eight declarations drifted the moment one was touched.
+.metadata-field-box() {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--gray-900, #212121);
+  background-color: white;
+  border: 1px solid var(--gray-300, #e0e0e0);
+  border-radius: 4px;
+
+  &:hover:not(:disabled) {
+    border-color: var(--gray-400, #bdbdbd);
+  }
+
+  // The editor's own focus ring (badsender-editor.less:551-555). A border colour
+  // alone is a weak focus indicator; nesting in `.mo` means we now outrank
+  // `.mo select:focus`, so we have to carry the ring ourselves.
+  // `--accent` (#00acdc) against the panel ground is 2.60:1, under the 3:1 of
+  // WCAG 2.2 SC 1.4.11, and a 10% halo is invisible. The darker accent is 3.29:1
+  // and the halo is thick enough to be seen.
+  &:focus {
+    outline: none;
+    border-color: var(--v-accent-darken1, #0097c4);
+    box-shadow: 0 0 0 3px rgba(0, 151, 196, 0.35);
+  }
+
+  // `!important` because style_elements.less:537 carries one:
+  // `input:disabled, select:disabled, textarea:disabled { opacity: .5 !important }`.
+  // Without this the declarations below are applied and then diluted by half —
+  // measured at 1.65:1 on the rendered select, against the 4.5:1 the text needs.
+  &:disabled {
+    opacity: 1 !important;
+    background-color: var(--gray-100, #f5f5f5);
+    color: var(--gray-700, #616161);
+    cursor: not-allowed;
+  }
+}
+
+.mo .email-metadata {
+  // `.objEdit.level0`'s own top margin (style_mosaico_tools.less:275), so the gap
+  // above this heading equals the gap above the template's own one.
+  margin-top: 20px;
+  margin-bottom: 24px;
+  // No horizontal padding on the block itself: the heading has to break out to
+  // full width exactly like `.objLabel.level0` does. The fields carry the 16px
+  // inset instead (see `__field`).
+  padding: 0;
+  border-bottom: none;
+
+  // A copy of `.objLabel.level0` (style_mosaico_tools.less:279). Copied rather
+  // than shared: that selector belongs to the template's generated markup, and
+  // extending it from here would bind our heading to a rule whose owner has no
+  // idea we depend on it.
+  //
+  // TWO rules define that heading, not one. The second is
+  // `#main-toolbox .objLabel.level0 { font-size: 1em }`
+  // (style_mosaico_tools.less:17) at specificity (1,1,0), which beats the
+  // `0.9375rem` of `.mo .objLabel.level0` at (0,2,0). The neighbour therefore
+  // renders at 1em of `.mo` — 13.6px — and copying the declared 0.9375rem gave
+  // us 15px: two headings meant to read as one panel, at two sizes and two
+  // heights. Measured at 13.6px / 35px against 15px / 37px before this fix.
+  &__title {
+    display: block;
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #f5f5f5;
+    font-weight: 600;
+    font-size: 1em;
+    border: none;
+    border-left: 3px solid var(--accent, #00acdc);
+    border-radius: 0;
+    padding: 10px 12px;
+    margin: 0 0 12px;
+    text-transform: none;
+    letter-spacing: 0.01em;
+  }
+
+  // 16px matches the inset the editor gives every level0 property row
+  // (style_mosaico_tools.less:337), so the label column lines up with the
+  // template options above instead of stepping sideways.
+  &__field {
+    margin-bottom: 18px;
+    padding: 0 16px;
+  }
+
+  // Kept as a row even though it holds only the label now: the three fields share
+  // this structure, and a field-level control may well come back here.
+  &__label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+
+    > label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-700, #616161);
+      margin: 0;
+      // The editor's global styles set a width on labels in some panes; this
+      // section puts the label on its own line, so it takes the room it needs.
+      width: auto;
+      float: none;
+      text-align: left;
+    }
+  }
+
+  &__input {
+    .metadata-field-box();
+    display: block;
+    padding: 0 12px;
+
+    &::placeholder {
+      color: var(--gray-600, #757575);
+    }
+
+    // The native date control needs its own room for the picker glyph.
+    &--date {
+      padding-right: 8px;
+    }
+  }
+
+  &__hint {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--gray-700, #616161);
+    margin: 4px 0 0 0;
+  }
+
+  // Native select boxed like the text inputs: the editor has no select component,
+  // and a custom one here would drift from the rest of the tab.
+  &__select {
+    .metadata-field-box();
+    padding: 0 32px 0 12px;
+    appearance: none;
+    // Same chevron the editor draws on its own selects
+    // (badsender-editor.less:703-713), same grey.
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+}
