@@ -1,6 +1,7 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const { omit } = require('lodash');
 
 const taxonomyService = require('./taxonomy.service.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
@@ -20,9 +21,9 @@ const DEFAULT_TYPE = TaxonomyTypes.EMAIL_TYPE;
 
 // A query-string boolean arrives as a string; `?activeOnly=1` meaning the opposite
 // of what it says would be a trap.
-const TRUTHY_QUERY_VALUES = ['true', '1', 'yes'];
+const TRUTHY_QUERY_VALUES = new Set(['true', '1', 'yes']);
 const wantsActiveOnly = (req) =>
-  TRUTHY_QUERY_VALUES.includes(String(req.query.activeOnly).toLowerCase());
+  TRUTHY_QUERY_VALUES.has(String(req.query.activeOnly).toLowerCase());
 
 /**
  * @api {get} /taxonomy-items list the caller company's taxonomy items
@@ -116,7 +117,7 @@ async function createTaxonomyItem(req, res) {
 async function updateTaxonomyItem(req, res) {
   // `groupId` and `type` are dropped rather than passed on: they are the two
   // fields that must not move once emails point at the item.
-  const { groupId: _groupId, type: _type, ...payload } = req.body;
+  const payload = omit(req.body, ['groupId', 'type']);
 
   const item = await taxonomyService.updateTaxonomyItem({
     user: req.user,
