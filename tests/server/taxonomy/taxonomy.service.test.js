@@ -437,7 +437,7 @@ describe('createTaxonomyItem', () => {
 });
 
 describe('updateTaxonomyItem', () => {
-  it('refuses to edit another company\'s item, reading it as not found', async () => {
+  it("refuses to edit another company's item, reading it as not found", async () => {
     await expect(
       taxonomyService.updateTaxonomyItem({
         user: userA,
@@ -603,7 +603,7 @@ describe('updateTaxonomyItem', () => {
 });
 
 describe('deleteTaxonomyItem', () => {
-  it('refuses to delete another company\'s item', async () => {
+  it("refuses to delete another company's item", async () => {
     await expect(
       taxonomyService.deleteTaxonomyItem({ user: userA, itemId: ITEM_B })
     ).rejects.toMatchObject({

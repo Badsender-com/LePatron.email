@@ -15,6 +15,10 @@ import {
   TAXONOMY_LIMITS,
 } from '../../../packages/ui/helpers/taxonomy.js';
 
+const {
+  TaxonomyLimits,
+} = require('../../../packages/server/constant/taxonomy-type.js');
+
 const axiosError = (message, details) => ({
   response: { data: { message, ...(details ? { details } : {}) } },
 });
@@ -185,19 +189,51 @@ describe('buildTaxonomyPayload', () => {
     expect(buildTaxonomyPayload({ label: 'X', order: 'abc' }).order).toBe(0);
   });
 
+  // `1e400` is four keystrokes in a number input. Sent on, the server refuses a
+  // non-finite order with a generic 400, which the screen can only render as
+  // "an error occurred" — no message next to the field to fix.
+  it('never sends an order the server would refuse', () => {
+    expect(buildTaxonomyPayload({ label: 'X', order: '1e400' }).order).toBe(0);
+    expect(buildTaxonomyPayload({ label: 'X', order: Infinity }).order).toBe(0);
+    expect(buildTaxonomyPayload({ label: 'X', order: NaN }).order).toBe(0);
+  });
+
+  it('truncates a decimal order rather than sending it as typed', () => {
+    expect(buildTaxonomyPayload({ label: 'X', order: '2.7' }).order).toBe(2);
+    expect(buildTaxonomyPayload({ label: 'X', order: '-2.7' }).order).toBe(-2);
+  });
+
   it('defaults isActive to true, the state a new typology is created in', () => {
     expect(buildTaxonomyPayload({ label: 'X' }).isActive).toBe(true);
   });
 });
 
 describe('TAXONOMY_LIMITS', () => {
-  // Mirrors TaxonomyLimits in packages/server/constant/taxonomy-type.js. If the
-  // two drift, the form lets the user type something the server refuses.
+  // Compared to the server constant rather than to a copy of its numbers: the
+  // form must refuse exactly what the API refuses, and pinning both sides by hand
+  // means a server-side change leaves this green while the two have drifted.
   it('matches the server-side bounds', () => {
+    expect(TAXONOMY_LIMITS).toEqual({
+      LABEL: TaxonomyLimits.LABEL,
+      DESCRIPTION: TaxonomyLimits.DESCRIPTION,
+      CANONICAL_TYPE: TaxonomyLimits.CANONICAL_TYPE,
+    });
+  });
+
+  // Pinned as well as compared: the assertion above stays green if both sides are
+  // changed together by accident, and these three bounds are a product decision.
+  it('holds the bounds the product defines', () => {
     expect(TAXONOMY_LIMITS).toEqual({
       LABEL: 120,
       DESCRIPTION: 2000,
       CANONICAL_TYPE: 60,
     });
+  });
+
+  // The cap has no UI counterpart to compare against — it only ever surfaces as
+  // a 409 — so it is pinned here to keep it in sight of the other three.
+  it('leaves the per-company cap to the server alone', () => {
+    expect(TAXONOMY_LIMITS.ITEMS_PER_COMPANY).toBeUndefined();
+    expect(TaxonomyLimits.ITEMS_PER_COMPANY).toBe(200);
   });
 });
