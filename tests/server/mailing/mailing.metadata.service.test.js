@@ -117,14 +117,33 @@ describe('validateMetadataPayload — subject', () => {
 });
 
 describe('validateMetadataPayload — plannedSendDate', () => {
-  it('accepts an ISO date', async () => {
+  // The field is a day, not an instant. Midnight UTC reads back as the previous
+  // day everywhere west of Greenwich, so the day is pinned to noon UTC — the
+  // only hour that survives a timezone change both ways.
+  it.each([
+    ['2026-09-01', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T08:00:00.000Z', '2026-09-01T12:00:00.000Z'],
+    ['2026-09-01T23:30:00.000Z', '2026-09-01T12:00:00.000Z'],
+  ])('pins %p to noon UTC', async (plannedSendDate, expected) => {
     const result = await validateMetadataPayload(
-      { plannedSendDate: '2026-09-01T08:00:00.000Z' },
+      { plannedSendDate },
       { companyId: COMPANY_A }
     );
-    expect(result.plannedSendDate.toISOString()).toBe(
-      '2026-09-01T08:00:00.000Z'
+    expect(result.plannedSendDate.toISOString()).toBe(expected);
+  });
+
+  // The regression this guards: a date-only string parses as midnight UTC, and
+  // a client in any negative offset would read it back as the day before.
+  it('reads back as the same day from a timezone west of Greenwich', async () => {
+    const result = await validateMetadataPayload(
+      { plannedSendDate: '2026-09-01' },
+      { companyId: COMPANY_A }
     );
+    // -11h is the westernmost inhabited offset.
+    const asSeenFarWest = new Date(
+      result.plannedSendDate.getTime() - 11 * 60 * 60 * 1000
+    );
+    expect(asSeenFarWest.toISOString().slice(0, 10)).toBe('2026-09-01');
   });
 
   it.each([['not a date'], ['2026-13-45'], [{}]])(
@@ -248,18 +267,82 @@ describe('validateMetadataPayload — emailTypeId scoping', () => {
   });
 });
 
+// The contract is exactly three keys. Anything else is refused rather than
+// ignored: a 200 answering with the other fields reads as a success, so a client
+// sending a key the server does not honour would never learn it was dropped.
+describe('validateMetadataPayload — unknown keys', () => {
+  it.each([['preheader'], ['_emailType'], ['name'], ['__proto__']])(
+    'refuses the unknown key %p',
+    async (key) => {
+      await expect(
+        validateMetadataPayload(
+          { subject: 'ok', [key]: 'whatever' },
+          { companyId: COMPANY_A }
+        )
+      ).rejects.toMatchObject({
+        status: 422,
+        message: ERROR_CODES.INVALID_EMAIL_METADATA,
+      });
+    }
+  );
+
+  it('names the accepted fields without echoing the offending one', async () => {
+    await expect(
+      validateMetadataPayload(
+        { preheader: 'secret-value' },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.toMatchObject({
+      details: expect.stringContaining('subject, plannedSendDate, emailTypeId'),
+    });
+
+    await expect(
+      validateMetadataPayload(
+        { preheader: 'secret-value' },
+        { companyId: COMPANY_A }
+      )
+    ).rejects.not.toMatchObject({
+      details: expect.stringContaining('secret-value'),
+    });
+  });
+
+  it('accepts the three keys together', async () => {
+    const result = await validateMetadataPayload(
+      {
+        subject: 'ok',
+        plannedSendDate: '2026-09-01',
+        emailTypeId: TYPE_A,
+      },
+      { companyId: COMPANY_A }
+    );
+
+    expect(Object.keys(result).sort()).toEqual([
+      '_emailType',
+      'plannedSendDate',
+      'subject',
+    ]);
+  });
+});
+
 describe('applyMetadataToMailing', () => {
   // The preheader is not part of this endpoint: it is a template property, and
   // wiring it through here would mean changing how our templates declare it.
-  it('ignores a preheader in the payload and leaves data untouched', async () => {
+  // It is REFUSED rather than ignored — a 200 carrying the other fields looks
+  // like a success, so a client sending it would never learn it was dropped.
+  it('refuses a preheader in the payload and leaves the mailing untouched', async () => {
     const mailing = makeMailing();
 
-    await applyMetadataToMailing(mailing, {
-      subject: 'Soldes',
-      preheader: 'ne doit rien faire',
+    await expect(
+      applyMetadataToMailing(mailing, {
+        subject: 'Soldes',
+        preheader: 'should do nothing',
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
     });
 
-    expect(mailing.subject).toBe('Soldes');
+    expect(mailing.subject).toBeUndefined();
     expect(mailing.data).toEqual({ preheaderText: 'old' });
     expect(mailing.markModified).not.toHaveBeenCalled();
   });

@@ -11,10 +11,33 @@ const modelsUtils = require('../utils/model.js');
 // A subject ends up in an email header; a client has no reason to store more.
 const MAX_SUBJECT_LENGTH = 255;
 
+/**
+ * The exact keys this endpoint honours — the same names it answers with.
+ *
+ * Anything else is refused rather than ignored: a client sending a key the
+ * server does not honour must learn it, not receive a 200 that stored nothing.
+ * The preheader is the case this exists for — it was dropped from the metadata
+ * (see the note on `applyMetadataToMailing`) and a payload still carrying it is
+ * a client that needs fixing, not a payload to silently drop.
+ */
+const ALLOWED_METADATA_KEYS = Object.freeze([
+  'subject',
+  'plannedSendDate',
+  'emailTypeId',
+]);
+
+// The field is a day, not an instant: it has no time, and what is stored must
+// read back as the same day from any timezone. Midnight UTC is the day before
+// everywhere west of Greenwich, so days are pinned to noon UTC. Normalised here,
+// at the common point of passage, rather than in each client.
+const PINNED_HOUR_UTC = 12;
+
 module.exports = {
   validateMetadataPayload,
   applyMetadataToMailing,
+  normalizePlannedSendDate,
   MAX_SUBJECT_LENGTH,
+  ALLOWED_METADATA_KEYS,
 };
 
 const isDefined = (value) => value !== undefined;
@@ -34,6 +57,8 @@ const invalid = () =>
  * @returns {Promise<Object>} the validated subset, ready to assign
  */
 async function validateMetadataPayload(payload = {}, { companyId } = {}) {
+  assertNoUnknownKey(payload);
+
   const validated = {};
 
   if (isDefined(payload.subject)) {
@@ -53,11 +78,9 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
     if (payload.plannedSendDate === null || payload.plannedSendDate === '') {
       validated.plannedSendDate = undefined;
     } else {
-      const date = new Date(payload.plannedSendDate);
-      if (Number.isNaN(date.getTime())) {
-        throw invalid();
-      }
-      validated.plannedSendDate = date;
+      validated.plannedSendDate = normalizePlannedSendDate(
+        payload.plannedSendDate
+      );
     }
   }
 
@@ -72,6 +95,57 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
   }
 
   return validated;
+}
+
+/**
+ * Refuse a payload carrying a key this endpoint does not honour.
+ *
+ * Ignoring it would answer 200 to a client whose value was never stored — the
+ * one outcome a partial-update endpoint must not produce, since the response
+ * carries the other fields and therefore looks like a success.
+ *
+ * @param {Object} payload raw body
+ * @throws {UnprocessableEntity}
+ */
+function assertNoUnknownKey(payload) {
+  const unknown = Object.keys(payload).find(
+    (key) => !ALLOWED_METADATA_KEYS.includes(key)
+  );
+  if (unknown) {
+    // The offending key is not echoed back: nothing user-supplied travels out
+    // through an error message. The list of accepted names is what helps.
+    const err = invalid();
+    err.details = `unknown field. Allowed: ${ALLOWED_METADATA_KEYS.join(', ')}`;
+    throw err;
+  }
+}
+
+/**
+ * Turn a client date into the day it denotes, pinned to noon UTC.
+ *
+ * A date-only string parses as midnight UTC, which reads back as the previous
+ * day everywhere west of Greenwich — the field has no time, so the stored value
+ * must survive a timezone change. Noon is the only hour that does, both ways.
+ *
+ * @param {string|Date} rawDate
+ * @returns {Date}
+ * @throws {UnprocessableEntity} on an unparseable date
+ */
+function normalizePlannedSendDate(rawDate) {
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) {
+    throw invalid();
+  }
+  // Read back in UTC: the day the client meant is the UTC day of what it sent,
+  // which is what a date-only string and an ISO instant agree on.
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      PINNED_HOUR_UTC
+    )
+  );
 }
 
 /**
