@@ -127,25 +127,19 @@ async function listTags(req, res) {
 
 async function create(req, res) {
   const { user } = req;
-  const {
-    templateId,
-    workspaceId,
-    parentFolderId,
-    mailingName,
-    subject,
-    plannedSendDate,
-    _emailType,
-  } = req.body;
+  const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
+  // Editorial metadata does NOT enter here. The creation path was removed with
+  // the listing filters: no screen fills it, and this route carries no
+  // GUARD_EMAIL_METADATA, so a payload reaching it would be stored outside the
+  // flag. The only write path is PATCH /mailings/:mailingId/metadata; PR4 will
+  // re-add a creation path together with the screen that calls it.
   const response = await mailingService.createInsideWorkspaceOrFolder({
     templateId,
     workspaceId,
     parentFolderId,
     mailingName,
     user,
-    // Optional editorial metadata, filled in by the creation modal when the
-    // company has the feature enabled.
-    metadata: { subject, plannedSendDate, _emailType },
   });
 
   res.json(response);
