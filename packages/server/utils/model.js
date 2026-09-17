@@ -94,28 +94,44 @@ const FILTER_SHAPES = {
 // is a cheap way to make the database do a lot of work.
 const MAX_FILTER_ARRAY_LENGTH = 200;
 
+// Each validator answers with the error to raise, or null when the value passes.
+// Shape and size are distinguished on purpose: an over-long list is well formed,
+// so reporting it as a format error sends whoever reads the log looking for a
+// malformation that is not there.
 const FILTER_VALIDATORS = {
-  array: (value) =>
-    Array.isArray(value) && value.length <= MAX_FILTER_ARRAY_LENGTH,
-  objectIdArray: (value) =>
-    Array.isArray(value) &&
-    value.length <= MAX_FILTER_ARRAY_LENGTH &&
-    value.every(
-      (item) =>
-        typeof item === 'string' && mongoose.Types.ObjectId.isValid(item)
-    ),
-  date: (value) =>
-    typeof value === 'string' && !Number.isNaN(new Date(value).getTime()),
+  array: (value, key) => {
+    if (!Array.isArray(value)) {
+      return badFilters(
+        ERROR_CODES.BAD_FORMAT_FILTERS,
+        `${key} must be an array`
+      );
+    }
+    if (value.length > MAX_FILTER_ARRAY_LENGTH) {
+      return badFilters(
+        ERROR_CODES.FILTER_TOO_MANY_VALUES,
+        `${key}: ${value.length} entries, maximum is ${MAX_FILTER_ARRAY_LENGTH}`
+      );
+    }
+    return null;
+  },
 };
+
+// Same contract as sanitizeEmailMetadata: the code is what the front switches
+// on, the human-readable reason travels in `.details` so a support ticket
+// becomes a log read.
+function badFilters(code, details) {
+  const err = new BadRequest(code);
+  err.details = details;
+  return err;
+}
 
 // Validate the filters JSON
 function validateFiltersJSON(filters) {
   if (filters) {
     Object.entries(FILTER_SHAPES).forEach(([key, shape]) => {
       if (filters[key] == null) return;
-      if (!FILTER_VALIDATORS[shape](filters[key])) {
-        throw new BadRequest(ERROR_CODES.BAD_FORMAT_FILTERS);
-      }
+      const error = FILTER_VALIDATORS[shape](filters[key], key);
+      if (error) throw error;
     });
   }
   return filters;

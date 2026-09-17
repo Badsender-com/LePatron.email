@@ -105,6 +105,10 @@ module.exports = {
   // PAGINATION
   BAD_FORMAT_PAGINATION: 'BAD_FORMAT_PAGINATION',
   BAD_FORMAT_FILTERS: 'BAD_FORMAT_FILTERS',
+  // Distinct from BAD_FORMAT_FILTERS: the list is well formed, only too long.
+  // A dedicated code lets the front say "select fewer than N tags" instead of a
+  // generic "invalid filter" the user can do nothing about.
+  FILTER_TOO_MANY_VALUES: 'FILTER_TOO_MANY_VALUES',
   UNEXPECTED_SERVER_ERROR: 'UNEXPECTED_SERVER_ERROR',
 
   // TAGS
