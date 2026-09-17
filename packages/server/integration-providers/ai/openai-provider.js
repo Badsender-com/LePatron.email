@@ -1,9 +1,8 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
+const { guardedFetch } = require('../provider-http.js');
 const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
   ProviderError,
@@ -54,35 +53,27 @@ class OpenAIProvider extends BaseLLMProvider {
    * so the rules sit next to the curated entries they defer to.
    */
   async listRemoteModels() {
-    await assertOutboundHostAllowed(this.baseUrl);
+    const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${this.apiKey}` },
+      timeoutMs: MODELS_TIMEOUT_MS,
+    });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new ProviderError(
-          `OpenAI models listing failed: ${response.status}`,
-          response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
-        );
-      }
-
-      const payload = await response.json();
-      // `shutdown_date` is OpenAI telling us when a model goes away. It is the
-      // only usable metadata here — the listing carries no description and no
-      // pricing — and it saves us from curating a list of dead models by hand.
-      return (payload.data || []).map((model) => ({
-        id: model.id,
-        shutdownDate: model.shutdown_date || null,
-      }));
-    } finally {
-      clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new ProviderError(
+        `OpenAI models listing failed: ${response.status}`,
+        response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
+      );
     }
+
+    const payload = await response.json();
+    // `shutdown_date` is OpenAI telling us when a model goes away. It is the
+    // only usable metadata here — the listing carries no description and no
+    // pricing — and it saves us from curating a list of dead models by hand.
+    return (payload.data || []).map((model) => ({
+      id: model.id,
+      shutdownDate: model.shutdown_date || null,
+    }));
   }
 
   async validateCredentials() {
@@ -90,7 +81,7 @@ class OpenAIProvider extends BaseLLMProvider {
       // SSRF guard: never send the Bearer key to a private/internal host.
       await assertOutboundHostAllowed(this.baseUrl);
 
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
+      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,

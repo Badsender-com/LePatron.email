@@ -1,8 +1,8 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
+const { guardedFetch } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -51,7 +51,7 @@ class InfomaniakProvider extends BaseLLMProvider {
    */
   async validateCredentials() {
     try {
-      const response = await fetch(`${API_BASE}/1/ai`, {
+      const response = await guardedFetch(`${API_BASE}/1/ai`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,

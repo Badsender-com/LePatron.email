@@ -1,8 +1,8 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const OpenAIProvider = require('./openai-provider');
 const logger = require('../../utils/logger.js');
+const { guardedFetch } = require('../provider-http.js');
 const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
   ProviderError,
@@ -70,7 +70,7 @@ class AzureOpenAIProvider extends OpenAIProvider {
   async validateCredentials() {
     try {
       await assertOutboundHostAllowed(this.baseUrl);
-      const response = await fetch(
+      const response = await guardedFetch(
         `${this.baseUrl}/openai/deployments?api-version=${this.apiVersion}`,
         { method: 'GET', headers: this._buildHeaders() }
       );

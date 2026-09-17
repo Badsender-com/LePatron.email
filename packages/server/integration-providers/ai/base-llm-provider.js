@@ -1,10 +1,9 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { guardedFetch } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -198,10 +197,6 @@ class BaseLLMProvider extends AIProviderInterface {
     const startTime = Date.now();
 
     try {
-      // SSRF guard at call time (TOCTOU): re-validate the host right before the
-      // outbound request, in case DNS changed since the integration was saved.
-      await assertOutboundHostAllowed(this.baseUrl);
-
       const requestBody = this._buildRequestBody({
         model,
         messages,
@@ -210,7 +205,7 @@ class BaseLLMProvider extends AIProviderInterface {
         responseFormat,
       });
 
-      const response = await fetch(this._getEndpointUrl(model), {
+      const response = await guardedFetch(this._getEndpointUrl(model), {
         method: 'POST',
         headers: this._buildHeaders(),
         body: JSON.stringify(requestBody),

@@ -1,10 +1,8 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { guardedFetch } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
   ProviderError,
@@ -181,10 +179,10 @@ class AnthropicProvider extends BaseLLMProvider {
    */
   async validateCredentials() {
     try {
-      await assertOutboundHostAllowed(this.baseUrl);
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
+      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
         method: 'GET',
         headers: this._buildHeaders(),
+        timeoutMs: MODELS_TIMEOUT_MS,
       });
       return response.ok;
     } catch (error) {
@@ -195,32 +193,24 @@ class AnthropicProvider extends BaseLLMProvider {
 
   /** Anthropic lists chat models only, with a display name — no filtering needed. */
   async listRemoteModels() {
-    await assertOutboundHostAllowed(this.baseUrl);
+    const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
+      method: 'GET',
+      headers: this._buildHeaders(),
+      timeoutMs: MODELS_TIMEOUT_MS,
+    });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: this._buildHeaders(),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new ProviderError(
-          `Anthropic models listing failed: ${response.status}`,
-          this._mapErrorToCode(response.status)
-        );
-      }
-
-      const payload = await response.json();
-      return (payload.data || []).map((model) => ({
-        id: model.id,
-        label: model.display_name || model.id,
-      }));
-    } finally {
-      clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new ProviderError(
+        `Anthropic models listing failed: ${response.status}`,
+        this._mapErrorToCode(response.status)
+      );
     }
+
+    const payload = await response.json();
+    return (payload.data || []).map((model) => ({
+      id: model.id,
+      label: model.display_name || model.id,
+    }));
   }
 
   /**
