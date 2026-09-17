@@ -6,7 +6,8 @@ export const ERROR_CODES = {
   API_PROVIDER_NOT_DEFINED: 'API_PROVIDER_NOT_DEFINED',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
 
-  // Taxonomy — KEEP IN SYNC with packages/server/constant/error-codes.js
+  // Taxonomy — kept in sync with packages/server/constant/error-codes.js by
+  // tests/ui/helpers/error-codes-sync.test.js, not by this comment.
   TAXONOMY_ITEM_NOT_FOUND: 'TAXONOMY_ITEM_NOT_FOUND',
   TAXONOMY_ITEM_LABEL_ALREADY_EXISTS: 'TAXONOMY_ITEM_LABEL_ALREADY_EXISTS',
   TAXONOMY_ITEM_IN_USE: 'TAXONOMY_ITEM_IN_USE',

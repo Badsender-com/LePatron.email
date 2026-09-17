@@ -150,6 +150,20 @@ export function buildTaxonomyPayload(form) {
     description: form.description ? form.description : null,
     canonicalType: form.canonicalType || null,
     isActive: form.isActive !== false,
-    order: Number(form.order) || 0,
+    order: toOrder(form.order),
   };
+}
+
+/**
+ * A finite whole number, always. The server refuses anything else with a generic
+ * 400 that the screen can only show as "an error occurred", and a number input
+ * hands back a string that `1e400` turns into `Infinity`.
+ *
+ * @param {*} value
+ * @returns {number}
+ */
+function toOrder(value) {
+  const order = Number(value);
+  if (!Number.isFinite(order)) return 0;
+  return Math.trunc(order);
 }
