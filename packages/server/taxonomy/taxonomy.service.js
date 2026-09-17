@@ -141,7 +141,7 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     // actually holds. Without this, two concurrent creations of the same label
     // answer a 500 carrying the raw Mongo error — collection and index names
     // included — instead of the conflict the caller can act on.
-    if (error && error.code === 11000) {
+    if (error?.code === 11000) {
       throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
     }
     throw error;
@@ -168,7 +168,7 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
   try {
     await item.save();
   } catch (error) {
-    if (error && error.code === 11000) {
+    if (error?.code === 11000) {
       throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
     }
     throw error;

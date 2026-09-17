@@ -15,25 +15,10 @@ const {
 const {
   GUARD_EMAIL_METADATA,
 } = require('../../../packages/server/mailing/email-metadata.guard.js');
+const { routeInspector } = require('../../helpers/express-router.js');
 const router = require('../../../packages/server/mailing/mailing.routes.js');
 
-function layerFor(method, path) {
-  const layer = router.stack.find(
-    (candidate) =>
-      candidate.route &&
-      candidate.route.path === path &&
-      candidate.route.methods[method]
-  );
-  if (!layer) {
-    throw new Error(`no ${method.toUpperCase()} ${path} route declared`);
-  }
-  return layer;
-}
-
-const guardsOf = (method, path) =>
-  layerFor(method, path)
-    .route.stack.map((handler) => handler.handle)
-    .slice(0, -1);
+const { layerFor, guardsOf } = routeInspector(router);
 
 describe('mailing routes — the metadata endpoint is behind the flag', () => {
   it('declares PATCH /:mailingId/metadata', () => {

@@ -59,7 +59,7 @@ export function canonicalTypeLabelKey(canonicalType) {
  *   `field` names the form field the message belongs next to, when there is one.
  */
 export function taxonomyErrorFor(error) {
-  const data = (error && error.response && error.response.data) || {};
+  const data = error?.response?.data || {};
   const generic = {
     key: 'global.errors.errorOccured',
     params: {},
@@ -79,7 +79,7 @@ export function taxonomyErrorFor(error) {
       };
 
     case ERROR_CODES.TAXONOMY_ITEM_IN_USE: {
-      const count = (data.details && data.details.usageCount) || 0;
+      const count = data.details?.usageCount || 0;
       return {
         key: 'taxonomy.errors.inUse',
         params: { count },
@@ -108,7 +108,7 @@ export function taxonomyErrorFor(error) {
  * @returns {string} an i18n key
  */
 export function emailMetadataErrorKeyFor(error) {
-  const data = (error && error.response && error.response.data) || {};
+  const data = error?.response?.data || {};
 
   if (data.message === ERROR_CODES.INVALID_EMAIL_METADATA) {
     return 'emailBuilderSettings.snackbars.invalid';
@@ -127,7 +127,7 @@ export function emailMetadataErrorKeyFor(error) {
  */
 export function nextOrder(items = []) {
   const orders = items
-    .map((item) => item && item.order)
+    .map((item) => item?.order)
     .filter((order) => typeof order === 'number' && Number.isFinite(order));
 
   if (orders.length === 0) return 0;
