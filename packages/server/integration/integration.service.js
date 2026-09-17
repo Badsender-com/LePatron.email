@@ -9,6 +9,7 @@ const { Types } = require('mongoose');
 const {
   NotFound,
   Conflict,
+  BadRequest,
   InternalServerError,
   Unauthorized,
 } = require('http-errors');
@@ -17,7 +18,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
-const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const {
+  assertOutboundHostAllowed,
+  OUTBOUND_HOST_ERRORS,
+} = require('../utils/outbound-host.js');
 
 module.exports = {
   createIntegration,
@@ -59,8 +63,18 @@ async function validateApiHost(apiHost) {
   if (!apiHost) return;
   try {
     await assertOutboundHostAllowed(apiHost);
-  } catch {
-    throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
+  } catch (error) {
+    // A private address is the one refusal an admin can neither guess nor fix
+    // by retrying: it is a deliberate rule, not a mistake in what they typed.
+    // Collapsing it into the generic failure left them with a bare error code
+    // on screen and nothing to act on.
+    if (error.code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_NOT_PUBLIC);
+    }
+    if (error.code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_UNREACHABLE);
+    }
+    throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_INVALID);
   }
 }
 

@@ -22,6 +22,24 @@
 const dns = require('dns').promises;
 const ipaddr = require('ipaddr.js');
 
+/**
+ * Why a host was refused. Callers map these onto messages an admin can act on:
+ * "the address is private" and "the name does not resolve" call for opposite
+ * fixes, and collapsing them into one failure leaves nothing to go on.
+ */
+const OUTBOUND_HOST_ERRORS = Object.freeze({
+  INVALID_URL: 'OUTBOUND_HOST_INVALID_URL',
+  INVALID_PROTOCOL: 'OUTBOUND_HOST_INVALID_PROTOCOL',
+  PRIVATE_ADDRESS: 'OUTBOUND_HOST_PRIVATE_ADDRESS',
+  DNS_FAILED: 'OUTBOUND_HOST_DNS_FAILED',
+});
+
+function outboundHostError(message, code) {
+  const error = new Error(message);
+  error.code = code;
+  return error;
+}
+
 // IPv4/IPv6 range names (from ipaddr.js `.range()`) that must never be the
 // target of a server-side request. Anything not in the public unicast space.
 const BLOCKED_RANGES = new Set([
@@ -74,27 +92,43 @@ async function assertOutboundHostAllowed(apiHost, options = {}) {
   const { httpsOnly = false } = options;
 
   if (!apiHost || typeof apiHost !== 'string') {
-    throw new Error('Invalid apiHost');
+    throw outboundHostError(
+      'Invalid apiHost',
+      OUTBOUND_HOST_ERRORS.INVALID_URL
+    );
   }
 
   let parsed;
   try {
     parsed = new URL(apiHost);
   } catch (_) {
-    throw new Error('Invalid apiHost URL');
+    throw outboundHostError(
+      'Invalid apiHost URL',
+      OUTBOUND_HOST_ERRORS.INVALID_URL
+    );
   }
 
   const allowedProtocols = httpsOnly ? ['https:'] : ['http:', 'https:'];
   if (!allowedProtocols.includes(parsed.protocol)) {
-    throw new Error('Invalid protocol');
+    throw outboundHostError(
+      'Invalid protocol',
+      OUTBOUND_HOST_ERRORS.INVALID_PROTOCOL
+    );
   }
 
-  const hostname = parsed.hostname;
+  // URL keeps IPv6 literals in their brackets ("[::1]"), which ipaddr cannot
+  // parse — so those used to fall through to the DNS branch and were only
+  // refused because the lookup failed, not because they are loopback. Blocked
+  // either way in practice, but by accident rather than by the rule.
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
 
   // If the hostname is already a literal IP, classify it directly.
   if (ipaddr.isValid(hostname)) {
     if (isBlockedAddress(hostname)) {
-      throw new Error('Host resolves to a disallowed address range');
+      throw outboundHostError(
+        'Host resolves to a disallowed address range',
+        OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS
+      );
     }
     return;
   }
@@ -105,22 +139,32 @@ async function assertOutboundHostAllowed(apiHost, options = {}) {
   try {
     addresses = await dns.lookup(hostname, { all: true });
   } catch (_) {
-    throw new Error('Host DNS resolution failed');
+    throw outboundHostError(
+      'Host DNS resolution failed',
+      OUTBOUND_HOST_ERRORS.DNS_FAILED
+    );
   }
 
   if (!addresses || addresses.length === 0) {
-    throw new Error('Host did not resolve');
+    throw outboundHostError(
+      'Host did not resolve',
+      OUTBOUND_HOST_ERRORS.DNS_FAILED
+    );
   }
 
   for (const { address } of addresses) {
     if (isBlockedAddress(address)) {
-      throw new Error('Host resolves to a disallowed address range');
+      throw outboundHostError(
+        'Host resolves to a disallowed address range',
+        OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS
+      );
     }
   }
 }
 
 module.exports = {
   assertOutboundHostAllowed,
+  OUTBOUND_HOST_ERRORS,
   // exported for testing
   isBlockedAddress,
 };

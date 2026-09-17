@@ -884,6 +884,16 @@ export default {
     contactBadsender: 'Contact Badsender',
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'This address is private or local. For security reasons LePatron only calls public addresses: an AI hosted on your internal network cannot be reached from the server.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'This domain name cannot be found. Check the spelling of the URL.',
+      INTEGRATION_HOST_INVALID:
+        'This URL is not valid. Expected an address starting with https://',
+    },
     title: 'Integrations',
     name: 'Name',
     provider: 'Provider',
