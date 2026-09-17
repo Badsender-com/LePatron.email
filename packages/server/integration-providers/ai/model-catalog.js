@@ -39,6 +39,11 @@
 // that were hardcoded in the provider classes and are live for every group
 // that never picked a model — they must not drift in the same change that
 // introduces this file.
+const {
+  getRemoteModelFilter,
+  matchesRemoteFilter,
+} = require('./model-filters.js');
+
 const CATALOG = {
   openai: {
     // OpenAI has no self-updating alias the way Mistral has `-latest`, so this
@@ -128,13 +133,10 @@ const CATALOG = {
   // endpoint returns full names (e.g. "swiss-ai/Apertus-70B-Instruct-2509").
   // The provider therefore has no usable listing and this list is its only
   // source — the clearest justification for keeping a catalogue at all.
-  // Anthropic lists its chat models cleanly, with display names, so the
-  // catalogue here is thin on purpose: it exists to name a default and to
-  // qualify the main tiers. The listing is what keeps it current.
-  //
-  // TODO(verify): no Anthropic account was available while writing this.
-  // Confirm these ids and the default against a real key before announcing
-  // the connector — the listing endpoint answers without spending tokens.
+  // Anthropic lists its chat models cleanly, with display names and nothing
+  // else mixed in, so the catalogue here is thin on purpose: it names a
+  // default and qualifies the main tiers, and the listing keeps it current.
+  // Ids and default verified against a live account.
   anthropic: {
     default: 'claude-haiku-4-5-20251001',
     models: [
@@ -159,25 +161,35 @@ const CATALOG = {
     ],
   },
 
-  // Gemini's listing carries both a display name and a written description,
-  // and is filtered at the source on generateContent support, so this only
-  // needs to name a default.
+  // Only the `-latest` aliases, and that is not a preference.
   //
-  // TODO(verify): same as Anthropic — no Google account was available.
+  // Verified against a live account: every dated id the listing advertises
+  // (gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite) answers 404
+  // with "no longer available to new users" when actually called. The
+  // listing announces them all the same — the same trap as Infomaniak, where
+  // what is advertised and what is callable differ — so the aliases are the
+  // only ids that can be relied on. They also track generations on their own,
+  // as Mistral's `-latest` do.
   gemini: {
-    default: 'gemini-2.5-flash',
+    default: 'gemini-flash-latest',
     models: [
       {
-        id: 'gemini-2.5-flash',
-        label: 'Gemini 2.5 Flash',
-        descriptionKey: 'integrations.models.fastEconomical',
+        id: 'gemini-flash-latest',
+        label: 'Gemini Flash',
+        descriptionKey: 'integrations.models.balanced',
         order: 10,
       },
       {
-        id: 'gemini-2.5-pro',
-        label: 'Gemini 2.5 Pro',
-        descriptionKey: 'integrations.models.powerful',
+        id: 'gemini-flash-lite-latest',
+        label: 'Gemini Flash-Lite',
+        descriptionKey: 'integrations.models.fastEconomical',
         order: 20,
+      },
+      {
+        id: 'gemini-pro-latest',
+        label: 'Gemini Pro',
+        descriptionKey: 'integrations.models.powerful',
+        order: 30,
       },
     ],
   },
@@ -206,46 +218,6 @@ const CATALOG = {
   },
 };
 
-/**
- * Per-provider noise filters applied to a remote listing.
- *
- * Only providers whose listing endpoint mixes model families need one. Where
- * the API exposes usable metadata the provider filters at the source instead
- * (Mistral on `capabilities.completion_chat`), and providers whose model names
- * are chosen by the customer (Azure deployments, self-hosted endpoints) must
- * never be filtered — any guess would be wrong.
- *
- * `exclude` wins over `include`. A model already in the catalogue bypasses
- * both: curation beats pattern matching.
- */
-const REMOTE_FILTERS = {
-  openai: {
-    exclude: [
-      /^(text-)?embedding/,
-      /^tts-/,
-      /^whisper/,
-      /^dall-e/,
-      // Covers gpt-image-* and chatgpt-image-*, which the positive guard below
-      // would otherwise wave through on its "chatgpt" prefix.
-      /(^|-)image(-|$)/,
-      /moderation/,
-      /^davinci/,
-      /^babbage/,
-      /^sora/,
-      /^codex-/,
-      /-(audio|realtime|transcribe|tts)(-|$)/,
-      // Completion models, not chat ones: they answer on /completions and
-      // reject the messages payload every caller here sends.
-      /-instruct(-|$)/,
-    ],
-    // Positive guard: OpenAI keeps adding model families, and an unknown one
-    // is likelier to be noise than a chat model we want to surface silently.
-    include: [/^(gpt|o\d|chatgpt)/],
-  },
-};
-
-const EMPTY_FILTER = { exclude: [], include: [] };
-
 function getCatalogModels(providerKey) {
   const entry = CATALOG[providerKey];
   if (!entry) return [];
@@ -270,23 +242,13 @@ function isModelKnown(providerKey, modelId) {
   return getCatalogEntry(providerKey, modelId) !== null;
 }
 
-function getRemoteModelFilter(providerKey) {
-  return REMOTE_FILTERS[providerKey] || EMPTY_FILTER;
-}
-
 /**
  * Whether a model id returned by a provider's listing should be offered.
- * Catalogue entries always pass.
+ * Catalogue entries always pass: curation beats pattern matching.
  */
 function passesRemoteFilter(providerKey, modelId) {
   if (isModelKnown(providerKey, modelId)) return true;
-
-  const { exclude, include } = getRemoteModelFilter(providerKey);
-  if (exclude.some((pattern) => pattern.test(modelId))) return false;
-  if (include.length > 0 && !include.some((pattern) => pattern.test(modelId))) {
-    return false;
-  }
-  return true;
+  return matchesRemoteFilter(providerKey, modelId);
 }
 
 module.exports = {
