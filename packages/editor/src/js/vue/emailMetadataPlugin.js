@@ -7,12 +7,21 @@ const {
   typologyOptions,
   SUBJECT_HARD_LIMIT,
 } = require('../utils/email-metadata');
-const store = require('../utils/email-metadata-store');
+const {
+  createEmailMetadataStore,
+} = require('../utils/email-metadata-store');
 const template = require('./components/email-metadata/email-metadata.template');
 
 // The mounted Vue instance, kept so `dispose` can tear it down when the editor
 // swaps templates (template-loader.js:623 calls the hook).
 let app = null;
+// The beforeunload guard, kept for the same reason: a listener left on `window`
+// would outlive the section and warn about a form that is no longer on screen.
+let unloadGuard = null;
+// The store this plugin armed. The state itself lives on the viewModel; this is
+// only a handle for teardown, because template-loader calls `dispose` with no
+// arguments (`pluginsCall(plugins, 'dispose', undefined, true)`).
+let activeStore = null;
 
 /**
  * The email settings of the Content tab: subject, planned send date, typology.
@@ -43,11 +52,21 @@ module.exports = {
     // company gets neither key from findOneForMosaico, so nothing is rendered.
     const config = (vm.metadata && vm.metadata.emailMetadataConfig) || null;
     vm.hasEmailMetadata = ko.observable(Boolean(config && config.enabled));
+
+    // Hung off the viewModel like the three other plugins' state, rather than held
+    // at module scope. Created unconditionally and left unarmed for an opted-out
+    // company: the save command then finds a store that answers "not dirty", which
+    // is the same path it took before this feature existed, without having to test
+    // for the store's existence.
+    vm.emailMetadataStore = createEmailMetadataStore();
   },
 
   init(vm) {
     const config = (vm.metadata && vm.metadata.emailMetadataConfig) || null;
     if (!config || !config.enabled) return;
+
+    const store = vm.emailMetadataStore;
+    activeStore = store;
 
     const values = (vm.metadata && vm.metadata.emailMetadata) || {};
     const initialForm = toFormState(values);
@@ -105,13 +124,40 @@ module.exports = {
     });
 
     app = new Vue({ el: '#email-metadata-section' });
+
+    // These three fields are the only plain form inputs in the editor, and a form
+    // input is where a user expects their typing to survive. Everything else here
+    // is written through a command; the subject someone types and then closes the
+    // tab on is gone with nothing said.
+    //
+    // A prompt on the way out, not a permanent indicator: the unsaved-state dot was
+    // removed on purpose because it covered the metadata and nothing else, and a
+    // signal that stays dark for a modified block tells the user their work is
+    // safe. This fires only when the metadata are actually dirty, and says nothing
+    // the rest of the time.
+    unloadGuard = function (event) {
+      if (!store.isDirty()) return undefined;
+      // Browsers ignore the string and show their own wording; both forms are
+      // still required for the prompt to appear at all.
+      event.preventDefault();
+      event.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', unloadGuard);
   },
 
   // Called by the template loader when the editor swaps templates. Without it the
   // Vue instance outlives its node and keeps a closure over a stale config — and
   // the store would keep answering for fields that are no longer on screen.
   dispose() {
-    store.dispose();
+    if (unloadGuard) {
+      window.removeEventListener('beforeunload', unloadGuard);
+      unloadGuard = null;
+    }
+    if (activeStore) {
+      activeStore.dispose();
+      activeStore = null;
+    }
     if (app) {
       app.$destroy();
       app = null;

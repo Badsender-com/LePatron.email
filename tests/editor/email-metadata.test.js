@@ -96,6 +96,67 @@ describe('fromDateInputValue', () => {
 });
 
 describe('buildMetadataPayload', () => {
+  // Called with a comparison base — which is how the store calls it — the body
+  // carries the changed fields and nothing else. An absent field is left alone by
+  // the endpoint (every field there is guarded by `isDefined`), and that is what
+  // keeps two editors open on the same email from overwriting each other, and a
+  // stale typology from failing the subject the user has just typed.
+  describe('against the state the section opened with', () => {
+    const INITIAL = {
+      subject: 'Soldes',
+      plannedSendDate: '2026-09-01',
+      emailTypeId: '507f1f77bcf86cd799439101',
+    };
+
+    it('carries only the field that moved', () => {
+      expect(
+        buildMetadataPayload(
+          { ...INITIAL, subject: 'Soldes prolongés' },
+          INITIAL
+        )
+      ).toEqual({ subject: 'Soldes prolongés' });
+    });
+
+    it('leaves a typology the user never opened out of the body', () => {
+      const payload = buildMetadataPayload(
+        { ...INITIAL, plannedSendDate: '2026-10-15' },
+        INITIAL
+      );
+      expect(payload).not.toHaveProperty('emailTypeId');
+      expect(payload).not.toHaveProperty('subject');
+    });
+
+    it('carries a cleared field as null rather than dropping it', () => {
+      expect(
+        buildMetadataPayload({ ...INITIAL, emailTypeId: '' }, INITIAL)
+      ).toEqual({ emailTypeId: null });
+    });
+
+    it('carries several fields when several moved', () => {
+      expect(
+        Object.keys(
+          buildMetadataPayload(
+            { ...INITIAL, subject: 'Autre', emailTypeId: 'x' },
+            INITIAL
+          )
+        ).sort()
+      ).toEqual(['emailTypeId', 'subject']);
+    });
+
+    it('is empty when nothing moved', () => {
+      expect(buildMetadataPayload({ ...INITIAL }, INITIAL)).toEqual({});
+    });
+
+    // Same table drives both, so a field can never be counted as changed and then
+    // left out of the body — an edit that would be silently dropped.
+    it('agrees with hasMetadataChanges', () => {
+      const form = { ...INITIAL, subject: 'Autre' };
+      expect(Object.keys(buildMetadataPayload(form, INITIAL)).length > 0).toBe(
+        hasMetadataChanges(form, INITIAL)
+      );
+    });
+  });
+
   it('carries the three fields the PATCH owns', () => {
     const payload = buildMetadataPayload({
       subject: 'Soldes',
@@ -186,6 +247,18 @@ describe('typologyOptions', () => {
       'Infolettre',
       'Promo',
     ]);
+  });
+
+  // Defensive: the server always sends `id`. An item without one used to become an
+  // option valued `'undefined'` — selectable, and refused on save with nothing on
+  // screen explaining why.
+  it('drops an item that carries no id at all', () => {
+    const options = typologyOptions(
+      [{ id: 'a1', label: 'Infolettre' }, { label: 'Sans id' }, null],
+      '',
+      'Aucune'
+    );
+    expect(options.map((o) => o.text)).toEqual(['Aucune', 'Infolettre']);
   });
 
   it('accepts _id as well as id', () => {

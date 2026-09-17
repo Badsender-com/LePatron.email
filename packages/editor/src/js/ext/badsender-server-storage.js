@@ -9,7 +9,6 @@ const {
   EDITOR_ONLY_METADATA_KEYS,
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
-const emailMetadataStore = require('../utils/email-metadata-store');
 const {
   getErrorsForControlQuality,
   displayErrors,
@@ -64,37 +63,48 @@ function loader(opts) {
      * follows exactly the path it did before this feature existed.
      */
     function saveMetadata() {
-      if (!metadataRoute || !emailMetadataStore.isDirty()) {
+      // Armed by emailMetadataPlugin's `viewModel` hook. Absent only if that
+      // plugin is not in the build at all, which the guard below covers.
+      const store = viewModel.emailMetadataStore;
+
+      if (!metadataRoute || !store || !store.isDirty()) {
         return $.Deferred().resolve().promise();
       }
 
       // Captured before the request, and handed back on success. Marking the
       // state at response time would swallow whatever the user typed while it was
       // in flight: their correction would never be sent and never be flagged.
-      const sent = emailMetadataStore.snapshot();
+      const sent = store.snapshot();
 
       return $.ajax({
         url: metadataRoute,
         method: 'PATCH',
         contentType: 'application/json',
-        data: JSON.stringify(emailMetadataStore.payload()),
+        // Only the fields that changed. The endpoint leaves an absent field
+        // alone, so an untouched typology cannot fail the subject the user just
+        // typed, and this editor cannot revert a concurrent edit to a field
+        // nobody here has opened.
+        data: JSON.stringify(store.payload()),
       }).then(function () {
         // Only on success: a failed PATCH leaves the state dirty on purpose, so
         // the next Save sends it again instead of considering it written.
-        emailMetadataStore.markSaved(sent);
+        store.markSaved(sent);
       });
     }
 
     saveCmd.execute = function () {
       saveCmd.enabled(false);
-      // Read by onPostSuccess: a "saved" toast shown next to a metadata error
-      // would tell the user their subject line is safe when it is not.
-      let metadataFailed = false;
+      // The i18n key naming what the metadata route refused, or null. Read by
+      // onPostSuccess and onPostError, which are the only two places that know
+      // whether the email itself went through — and therefore the only two that
+      // can phrase the outcome correctly.
+      let metadataErrorKey = null;
 
       saveMetadata()
         .fail(function (jqXHR) {
-          metadataFailed = true;
-          onMetadataError(jqXHR);
+          metadataErrorKey = errorKeyFor({
+            response: { data: (jqXHR && jqXHR.responseJSON) || null },
+          });
         })
         // `always`, not `done`: the email content is never held hostage by the
         // metadata route. See saveMetadata's header for what that cost before.
@@ -124,26 +134,30 @@ function loader(opts) {
       // use callback for easier jQuery updates
       // => Deprecation notice for .success(), .error(), and .complete()
       function onPostSuccess(data, textStatus, jqXHR) {
-        if (metadataFailed) return;
+        // The email content IS saved here, metadata failure or not. Showing the
+        // metadata error alone would leave the user reading a failure with no way
+        // to know their work went through — and the natural reaction, clicking
+        // Save again, only replays the same failing PATCH.
+        if (metadataErrorKey) {
+          viewModel.notifier.warning(
+            viewModel.t('save-message-success-metadata-error', {
+              reason: viewModel.t(metadataErrorKey),
+            })
+          );
+          return;
+        }
         viewModel.notifier.success(viewModel.t('save-message-success'));
       }
 
       function onPostError(jqXHR, textStatus, errorThrown) {
         console.log('save error');
         console.log(errorThrown);
+        // Both went down: name the metadata failure too, since the generic save
+        // message says nothing about a withdrawn typology or a refused subject.
+        if (metadataErrorKey) {
+          viewModel.notifier.error(viewModel.t(metadataErrorKey));
+        }
         viewModel.notifier.error(viewModel.t('save-message-error'));
-      }
-
-      // The email itself is saved either way; this names what did NOT go through.
-      // A withdrawn typology reads very differently from a generic save failure.
-      function onMetadataError(jqXHR) {
-        viewModel.notifier.error(
-          viewModel.t(
-            errorKeyFor({
-              response: { data: (jqXHR && jqXHR.responseJSON) || null },
-            })
-          )
-        );
       }
 
       function onPostComplete() {

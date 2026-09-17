@@ -292,6 +292,8 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'save-message-success-metadata-error':
+    "L'email a été sauvegardé, mais les paramètres de l'email n'ont pas pu être enregistrés : __reason__",
   // email metadata section of the Content tab
   'email-metadata-title': "Paramètres de l'email",
   'email-metadata-subject': "Objet de l'email",

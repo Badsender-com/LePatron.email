@@ -1,6 +1,8 @@
 'use strict';
 
-const store = require('../../packages/editor/src/js/utils/email-metadata-store');
+const {
+  createEmailMetadataStore,
+} = require('../../packages/editor/src/js/utils/email-metadata-store');
 
 const FORM = {
   subject: 'Nos nouveautés',
@@ -9,8 +11,13 @@ const FORM = {
 };
 
 describe('email metadata store', () => {
-  afterEach(() => {
-    store.dispose();
+  // One store per test, which is the point of the factory: the state used to live
+  // at module scope, so every test had to remember to tear it down and a forgotten
+  // dispose() leaked into the next one.
+  let store;
+
+  beforeEach(() => {
+    store = createEmailMetadataStore();
   });
 
   describe('before the section is mounted', () => {
@@ -67,14 +74,44 @@ describe('email metadata store', () => {
 
     it('builds the PATCH body from the current state, not the initial one', () => {
       store.setCurrent({ ...FORM, subject: '  Objet espacé  ' });
+      expect(store.payload().subject).toBe('Objet espacé');
+    });
+
+    // What this pins: sending the untouched fields too let this editor revert a
+    // colleague's concurrent edit to a field nobody here had opened, and let a
+    // stale typology fail the subject the user had just typed. The endpoint leaves
+    // an absent field alone, so only what changed goes on the wire.
+    it('sends only the fields that changed', () => {
+      store.setCurrent({ ...FORM, subject: 'Autre objet' });
+      expect(store.payload()).toEqual({ subject: 'Autre objet' });
+    });
+
+    it('sends the date alone when only the date moved', () => {
+      store.setCurrent({ ...FORM, plannedSendDate: '2026-10-15' });
       expect(store.payload()).toEqual({
-        subject: 'Objet espacé',
-        plannedSendDate: '2026-09-01T12:00:00.000Z',
-        emailTypeId: 'abc123',
+        plannedSendDate: '2026-10-15T12:00:00.000Z',
       });
     });
 
-    it('sends null for an emptied subject and typology', () => {
+    it('sends nothing at all when nothing changed', () => {
+      store.setCurrent({ ...FORM });
+      expect(store.payload()).toEqual({});
+    });
+
+    // The comparison base moves with each successful save, so the second PATCH of
+    // a session carries the second edit only — not the first one again.
+    it('measures the payload against what the last save wrote', () => {
+      store.setCurrent({ ...FORM, subject: 'Premier objet' });
+      store.markSaved();
+      store.setCurrent({
+        ...FORM,
+        subject: 'Premier objet',
+        emailTypeId: 'def456',
+      });
+      expect(store.payload()).toEqual({ emailTypeId: 'def456' });
+    });
+
+    it('sends null for each field the user emptied', () => {
       store.setCurrent({
         subject: '   ',
         plannedSendDate: '',

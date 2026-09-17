@@ -283,6 +283,8 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  'save-message-success-metadata-error':
+    'The email was saved, but the email settings could not be: __reason__',
   // email metadata section of the Content tab
   'email-metadata-title': 'Email settings',
   'email-metadata-subject': 'Subject line',
