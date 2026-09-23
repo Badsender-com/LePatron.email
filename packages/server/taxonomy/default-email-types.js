@@ -135,8 +135,75 @@ function buildDefaultEmailTypes(lang) {
   }));
 }
 
+// Two labels are "the same" for this comparison when they differ only by case or
+// surrounding space. The unique index is stricter than that — it would happily
+// take "éditorial" beside "Éditorial" — which is exactly why the comparison here
+// is looser: the point is to avoid handing a company two rows that read alike,
+// not merely to avoid a write error.
+const labelKey = (label) =>
+  String(label == null ? '' : label)
+    .trim()
+    .toLowerCase();
+
+/**
+ * Which default types a company is missing, and which cannot be added.
+ *
+ * Pure: takes the company's current items, returns what would be written.
+ * `previewMissingDefaultEmailTypes` and `addMissingDefaultEmailTypes` both go
+ * through it, so what the confirmation dialog announces is computed by the same
+ * code that performs the write — not by a second implementation that can drift
+ * from it.
+ *
+ * Missing is decided on `canonicalType`, not on the label, because the label is
+ * the company's to change: an admin who renamed "Éditorial" to "Contenu de marque"
+ * still has the editorial type, and re-creating it would be the tool undoing their
+ * work. A company that mapped nothing gets everything back — which is the correct
+ * reading of "this company has no Badsender type".
+ *
+ * A type whose label is already taken is reported as skipped rather than created
+ * under a mangled name. "Éditorial (2)" is not a thing anyone asked for, and the
+ * admin who has a different "Éditorial" is better told than worked around.
+ *
+ * `order` keeps the doctrine's value rather than being appended at the end: the
+ * point of restoring a default type is to put it back where it belongs. Orders are
+ * a sort key and need not be unique, so this cannot fail — it can only place the
+ * restored item among the others rather than after them.
+ *
+ * @param {Array<{label: string, canonicalType: string}>} existingItems the
+ *   company's current email types, active or not
+ * @param {string} [lang] `fr` or `en`; anything else falls back to `en`
+ * @returns {{toCreate: Array<Object>, skipped: Array<{canonicalType: string, label: string}>}}
+ */
+function planMissingDefaultEmailTypes(existingItems, lang) {
+  const items = existingItems || [];
+  const mapped = new Set(
+    items.map((item) => item && item.canonicalType).filter(Boolean)
+  );
+  const takenLabels = new Set(
+    items.map((item) => labelKey(item && item.label))
+  );
+
+  const toCreate = [];
+  const skipped = [];
+
+  for (const candidate of buildDefaultEmailTypes(lang)) {
+    if (mapped.has(candidate.canonicalType)) continue;
+    if (takenLabels.has(labelKey(candidate.label))) {
+      skipped.push({
+        canonicalType: candidate.canonicalType,
+        label: candidate.label,
+      });
+      continue;
+    }
+    toCreate.push(candidate);
+  }
+
+  return { toCreate, skipped };
+}
+
 module.exports = {
   DEFAULT_EMAIL_TYPES,
+  planMissingDefaultEmailTypes,
   DEFAULT_SEED_LANG,
   SEED_LANGS,
   buildDefaultEmailTypes,

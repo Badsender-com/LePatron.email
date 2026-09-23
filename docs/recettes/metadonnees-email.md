@@ -190,7 +190,38 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
    anglais (Editorial → Institutional).
 3. Renommer une typologie, en désactiver une, en supprimer une. **Attendu** :
    ce sont des typologies ordinaires, rien ne les protège.
-4. Companies **existantes** — exécuter d'abord en lecture seule :
+
+### D5 bis. Le bouton « Typologies par défaut »
+
+Le seed automatique ne tourne qu'à la création d'une company. Ce bouton est ce qui
+rattrape les companies plus anciennes, et répare une suppression.
+
+1. Sur une company **sans aucune typologie**, ouvrir Réglages → Général →
+   Typologies. **Attendu** : le bouton est présent **deux fois** — dans l'en-tête
+   de page, et dans l'état vide à côté de « Créer une typologie ».
+2. Cliquer. **Attendu** : une modale **nomme** les six typologies qui vont être
+   créées, dans la langue de votre compte. Valider. **Attendu** : elles
+   apparaissent, et un message dit combien ont été créées.
+3. **Recliquer.** **Attendu** : la modale dit qu'il n'y a rien à ajouter, et le
+   bouton de validation **disparaît** — on ne valide pas une action sans effet.
+4. **Réparation d'une suppression** : supprimer « Serviciel », recliquer.
+   **Attendu** : seule celle-là est proposée, et elle revient **à sa place dans
+   l'ordre** (3ᵉ), pas à la fin.
+5. **Typologie renommée** : renommer « Éditorial » en « Contenu de marque » en
+   **gardant** la correspondance IA `editorial`, recliquer. **Attendu** : elle
+   n'est **pas** recréée. C'est la correspondance qui fait foi, pas le libellé —
+   l'outil ne défait pas le travail de l'admin.
+6. **Libellé déjà pris** : créer à la main une typologie nommée « Suivi » **sans**
+   correspondance IA, recliquer. **Attendu** : la modale signale que « Suivi » ne
+   sera pas créée, son libellé étant déjà utilisé, et crée les autres. Pas de
+   « Suivi (2) ».
+7. **Cloisonnement** : en tant qu'admin d'une company, appeler
+   `GET /api/taxonomy-items/default-email-types?groupId=<autre company>`.
+   **Attendu** : **403**. Idem sur le POST avec un `groupId` étranger dans le corps.
+
+### D5 ter. Le script, pour traiter tout le parc d'un coup
+
+1. En lecture seule d'abord :
 
    ```bash
    node scripts/seed-default-email-types.js --dry-run --lang=fr
@@ -198,12 +229,16 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
 
    **Attendu** : il liste les companies sans aucune typologie, et compte les
    autres en « already had their own ». Puis l'exécuter pour de vrai, et le
-   relancer : **le second passage ne fait rien** (0 company à semer).
+   relancer : **le second passage ne fait rien**.
 
-5. Sur une company de recette qui a **déjà** des typologies créées à la main,
-   vérifier qu'elle est laissée **intacte** — ni complétée, ni dupliquée. C'est
-   la propriété importante : compléter une liste que l'admin a organisée
-   ressusciterait ce qu'il a supprimé exprès.
+2. Sur une company qui a **déjà** des typologies créées à la main, vérifier
+   qu'elle est laissée **intacte** — ni complétée, ni dupliquée.
+
+   C'est là que le script et le bouton **diffèrent volontairement** : le script
+   balaie tout le parc sans que personne regarde, donc il renonce dès qu'une
+   typologie existe ; le bouton est réclamé explicitement par quelqu'un qui a la
+   liste sous les yeux, donc il complète. Sur une company vide, les deux font
+   exactement la même chose.
 
 ### D6. Expertises IA taguées avec l'ancien vocabulaire
 

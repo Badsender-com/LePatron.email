@@ -837,6 +837,19 @@ export default {
       inUse:
         'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
     },
+    defaults: {
+      action: 'Typologies par défaut',
+      confirmTitle: 'Ajouter les typologies Badsender manquantes',
+      confirmIntro:
+        'Les typologies suivantes vont être créées. Vous pourrez ensuite les renommer, préciser leur définition ou les désactiver.',
+      confirmNothing:
+        'Vos typologies couvrent déjà les six types Badsender : il n\'y a rien à ajouter.',
+      confirmSkipped:
+        'Non créées, leur libellé est déjà utilisé par une de vos typologies : {labels}.',
+      snackbarCreated:
+        '{count} typologie créée | {count} typologies créées',
+      snackbarNone: 'Aucune typologie à ajouter',
+    },
     snackbars: {
       created: 'Typologie créée',
       updated: 'Typologie mise à jour',

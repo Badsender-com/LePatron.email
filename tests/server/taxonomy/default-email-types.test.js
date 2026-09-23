@@ -31,6 +31,7 @@ const taxonomyService = require('../../../packages/server/taxonomy/taxonomy.serv
 const {
   DEFAULT_EMAIL_TYPES,
   buildDefaultEmailTypes,
+  planMissingDefaultEmailTypes,
 } = require('../../../packages/server/taxonomy/default-email-types.js');
 const {
   EmailTypeCanonicalValues,
@@ -175,5 +176,223 @@ describe('seedDefaultEmailTypes', () => {
     await expect(
       taxonomyService.seedDefaultEmailTypes({ companyId: COMPANY })
     ).rejects.toThrow('connection lost');
+  });
+});
+
+// The button an admin clicks to repair a company: one created before the seed
+// existed, or one where a type was deleted by mistake. Deliberately NOT the same
+// rule as the seed — which gives up the moment it finds anything — so the two
+// rules are what these tests separate.
+describe('planMissingDefaultEmailTypes', () => {
+  const canonicalsOf = (items) => items.map((item) => item.canonicalType);
+
+  it('proposes all six to a company with nothing', () => {
+    const { toCreate, skipped } = planMissingDefaultEmailTypes([], 'fr');
+
+    expect(canonicalsOf(toCreate)).toEqual([...EmailTypeCanonicalValues]);
+    expect(skipped).toEqual([]);
+  });
+
+  // The label belongs to the company. An admin who renamed "Éditorial" to
+  // "Contenu de marque" still has the editorial type, and re-creating it would be
+  // the tool undoing their work.
+  it('recognises a renamed type by its canonical mapping', () => {
+    const { toCreate } = planMissingDefaultEmailTypes(
+      [{ label: 'Contenu de marque', canonicalType: 'editorial' }],
+      'fr'
+    );
+
+    expect(canonicalsOf(toCreate)).not.toContain('editorial');
+    expect(toCreate).toHaveLength(5);
+  });
+
+  it('restores a single deleted type and leaves the rest alone', () => {
+    const all = buildDefaultEmailTypes('fr');
+    const existing = all.filter((item) => item.canonicalType !== 'service');
+
+    const { toCreate } = planMissingDefaultEmailTypes(existing, 'fr');
+
+    expect(canonicalsOf(toCreate)).toEqual(['service']);
+  });
+
+  it('proposes nothing to a company that has them all', () => {
+    const { toCreate, skipped } = planMissingDefaultEmailTypes(
+      buildDefaultEmailTypes('en'),
+      'en'
+    );
+
+    expect(toCreate).toEqual([]);
+    expect(skipped).toEqual([]);
+  });
+
+  // A company that mapped nothing gets everything back: that is the correct
+  // reading of "this company has no Badsender type", however its items are named.
+  it('ignores items carrying no canonical mapping', () => {
+    const { toCreate } = planMissingDefaultEmailTypes(
+      [
+        { label: 'Black Friday', canonicalType: null },
+        { label: 'Relance panier' },
+      ],
+      'fr'
+    );
+
+    expect(toCreate).toHaveLength(6);
+  });
+
+  // "Éditorial (2)" is not a thing anyone asked for. The admin who already has a
+  // different "Éditorial" is better told than worked around.
+  it('skips a type whose label is already taken, rather than mangling it', () => {
+    const { toCreate, skipped } = planMissingDefaultEmailTypes(
+      [{ label: 'Éditorial', canonicalType: null }],
+      'fr'
+    );
+
+    expect(canonicalsOf(toCreate)).not.toContain('editorial');
+    expect(skipped).toEqual([
+      { canonicalType: 'editorial', label: 'Éditorial' },
+    ]);
+  });
+
+  // Looser than the unique index on purpose: the index would happily take
+  // "éditorial" beside "Éditorial", and the point is to avoid handing a company
+  // two rows that read alike, not merely to avoid a write error.
+  it.each([['éditorial'], ['  Éditorial  '], ['ÉDITORIAL']])(
+    'treats %p as the same label',
+    (label) => {
+      const { skipped } = planMissingDefaultEmailTypes(
+        [{ label, canonicalType: null }],
+        'fr'
+      );
+
+      expect(canonicalsOf(skipped)).toEqual(['editorial']);
+    }
+  );
+
+  it('keeps the doctrine order rather than appending at the end', () => {
+    const all = buildDefaultEmailTypes('fr');
+    const existing = all.filter((item) => item.canonicalType !== 'editorial');
+
+    const { toCreate } = planMissingDefaultEmailTypes(existing, 'fr');
+
+    expect(toCreate[0].order).toBe(1);
+  });
+
+  it.each([[undefined], [null], [[]]])('survives %p', (existing) => {
+    expect(planMissingDefaultEmailTypes(existing, 'en').toCreate).toHaveLength(
+      6
+    );
+  });
+});
+
+describe('addMissingDefaultEmailTypes', () => {
+  const user = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY } };
+
+  const mockExisting = (items) => {
+    TaxonomyItems.find.mockReturnValue({
+      select: () => ({ lean: async () => items }),
+    });
+  };
+
+  beforeEach(() => {
+    mockExisting([]);
+  });
+
+  it('creates what is missing, scoped to the company and the taxonomy', async () => {
+    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+      user,
+      groupId: COMPANY,
+      lang: 'fr',
+    });
+
+    expect(created).toHaveLength(6);
+    const [items] = TaxonomyItems.insertMany.mock.calls[0];
+    for (const item of items) {
+      // String(): this path goes through resolveCompanyId, which hands back an
+      // ObjectId rather than the string the caller passed.
+      expect(String(item._company)).toBe(COMPANY);
+      expect(item.type).toBe('emailType');
+    }
+  });
+
+  // Unlike seedDefaultEmailTypes, which gives up here. This one is asked for
+  // explicitly by someone looking at the list, so it repairs.
+  it('adds the missing one to a company that already has the others', async () => {
+    const all = buildDefaultEmailTypes('fr');
+    mockExisting(all.filter((item) => item.canonicalType !== 'notification'));
+
+    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+      user,
+      groupId: COMPANY,
+    });
+
+    expect(created).toHaveLength(1);
+  });
+
+  it('writes nothing when there is nothing to add', async () => {
+    mockExisting(buildDefaultEmailTypes('en'));
+
+    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+      user,
+      groupId: COMPANY,
+    });
+
+    expect(created).toEqual([]);
+    expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses to push the company past its item cap', async () => {
+    mockExisting(
+      Array.from({ length: TaxonomyLimits.ITEMS_PER_COMPANY }, (_, i) => ({
+        label: `Typologie ${i}`,
+        canonicalType: null,
+      }))
+    );
+
+    await expect(
+      taxonomyService.addMissingDefaultEmailTypes({ user, groupId: COMPANY })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
+  });
+
+  // The label comparison in the plan is looser than the index, so this is the
+  // narrower case it cannot see: two admins clicking the button at once.
+  it('treats a duplicate-key race as nothing left to do', async () => {
+    TaxonomyItems.insertMany.mockRejectedValue(
+      Object.assign(new Error('E11000'), { code: 11000 })
+    );
+
+    await expect(
+      taxonomyService.addMissingDefaultEmailTypes({ user, groupId: COMPANY })
+    ).resolves.toMatchObject({ created: [] });
+  });
+
+  // The whole point of the company-scoped guard: a group admin naming someone
+  // else's company is refused, not quietly redirected to their own.
+  it('refuses a company that is not the callers own', async () => {
+    await expect(
+      taxonomyService.addMissingDefaultEmailTypes({
+        user,
+        groupId: '507f1f77bcf86cd799439b01',
+      })
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe('previewMissingDefaultEmailTypes', () => {
+  const user = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY } };
+
+  it('answers what would be created, and writes nothing', async () => {
+    TaxonomyItems.find.mockReturnValue({
+      select: () => ({ lean: async () => [] }),
+    });
+
+    const plan = await taxonomyService.previewMissingDefaultEmailTypes({
+      user,
+      groupId: COMPANY,
+      lang: 'fr',
+    });
+
+    expect(plan.toCreate).toHaveLength(6);
+    expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
   });
 });

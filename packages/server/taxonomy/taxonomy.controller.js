@@ -12,6 +12,8 @@ module.exports = {
   createTaxonomyItem: asyncHandler(createTaxonomyItem),
   updateTaxonomyItem: asyncHandler(updateTaxonomyItem),
   deleteTaxonomyItem: asyncHandler(deleteTaxonomyItem),
+  previewDefaultEmailTypes: asyncHandler(previewDefaultEmailTypes),
+  restoreDefaultEmailTypes: asyncHandler(restoreDefaultEmailTypes),
 };
 
 // Phase 1 has a single taxonomy, so a caller that does not name one gets it.
@@ -24,6 +26,62 @@ const DEFAULT_TYPE = TaxonomyTypes.EMAIL_TYPE;
 const TRUTHY_QUERY_VALUES = new Set(['true', '1', 'yes']);
 const wantsActiveOnly = (req) =>
   TRUTHY_QUERY_VALUES.has(String(req.query.activeOnly).toLowerCase());
+
+// The language of the labels to create. Taken from the caller's own account
+// rather than a query parameter: a TaxonomyItem stores one label, and the person
+// clicking the button is reading the screen in that language — offering them a
+// list in the other one would be a choice nobody asked to make.
+const seedLangOf = (req) => (req.user && req.user.lang) || undefined;
+
+/**
+ * @api {get} /taxonomy-items/default-email-types what restoring the defaults would create
+ * @apiPermission group_admin
+ * @apiName PreviewDefaultEmailTypes
+ * @apiGroup TaxonomyItems
+ *
+ * @apiParam (Query) {String} [groupId] super admin only, the target company
+ *
+ * @apiSuccess {Object[]} toCreate the default types the company does not have
+ * @apiSuccess {Object[]} skipped types whose label is already taken by another item
+ *
+ * @apiDescription Writes nothing. Feeds the confirmation dialog, so that it names
+ *   the typologies it is about to create rather than announcing a count.
+ */
+async function previewDefaultEmailTypes(req, res) {
+  const plan = await taxonomyService.previewMissingDefaultEmailTypes({
+    user: req.user,
+    groupId: req.query.groupId,
+    lang: seedLangOf(req),
+  });
+
+  res.json(plan);
+}
+
+/**
+ * @api {post} /taxonomy-items/default-email-types create the missing default types
+ * @apiPermission group_admin
+ * @apiName RestoreDefaultEmailTypes
+ * @apiGroup TaxonomyItems
+ *
+ * @apiParam (Body) {String} [groupId] super admin only, the target company
+ *
+ * @apiSuccess {taxonomyItem[]} created
+ * @apiSuccess {Object[]} skipped types whose label is already taken by another item
+ *
+ * @apiDescription Additive and idempotent: a type the company already maps is left
+ *   alone, so clicking twice creates nothing the second time. The body carries no
+ *   list of items — what to create is recomputed server-side, never taken from the
+ *   caller.
+ */
+async function restoreDefaultEmailTypes(req, res) {
+  const result = await taxonomyService.addMissingDefaultEmailTypes({
+    user: req.user,
+    groupId: req.body.groupId,
+    lang: seedLangOf(req),
+  });
+
+  res.json(result);
+}
 
 /**
  * @api {get} /taxonomy-items list the caller company's taxonomy items

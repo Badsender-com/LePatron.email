@@ -21,6 +21,7 @@ const {
 const {
   GUARD_CAN_ACCESS_GROUP,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
 } = require('../../../packages/server/group/group.guard.js');
 const {
   GUARD_EMAIL_METADATA,
@@ -34,6 +35,8 @@ describe('taxonomy routes — declared surface', () => {
   it.each([
     ['get', ''],
     ['get', '/groups/:groupId'],
+    ['get', '/default-email-types'],
+    ['post', '/default-email-types'],
     ['post', ''],
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
@@ -48,6 +51,18 @@ describe('taxonomy routes — declared surface', () => {
 
     // Otherwise "groups" would be captured as an itemId.
     expect(paths.indexOf('/groups/:groupId')).toBeLessThan(
+      paths.indexOf('/:itemId')
+    );
+  });
+
+  it('declares /default-email-types before /:itemId', () => {
+    const paths = router.stack
+      .filter((layer) => layer.route)
+      .map((layer) => layer.route.path);
+
+    // Same trap: "default-email-types" would otherwise be read as an item id, and
+    // the preview would answer a 404 about an email type nobody asked for.
+    expect(paths.indexOf('/default-email-types')).toBeLessThan(
       paths.indexOf('/:itemId')
     );
   });
@@ -79,12 +94,31 @@ describe('taxonomy routes — guards', () => {
     expect(guardsOf(method, path)).toEqual([GUARD_GROUP_ADMIN]);
   });
 
+  // Company admin on the READ too, unlike the listing above. This one answers what
+  // a company does NOT have, which is a configuration question — not something a
+  // user filling in an email's metadata has any use for.
+  it('reserves the defaults preview to a company admin, and checks the query company', () => {
+    expect(guardsOf('get', '/default-email-types')).toEqual([
+      GUARD_GROUP_ADMIN,
+      GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
+    ]);
+  });
+
+  it('reserves the defaults restore to a company admin, and checks the body company', () => {
+    expect(guardsOf('post', '/default-email-types')).toEqual([
+      GUARD_GROUP_ADMIN,
+      GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+    ]);
+  });
+
   // The taxonomy stays usable whether or not a company switched the metadata on:
   // typologies have to be preparable first, and CRM Governance will read them
   // regardless of the email builder.
   it.each([
     ['get', ''],
     ['get', '/groups/:groupId'],
+    ['get', '/default-email-types'],
+    ['post', '/default-email-types'],
     ['post', ''],
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
@@ -94,6 +128,7 @@ describe('taxonomy routes — guards', () => {
 
   it.each([
     ['post', ''],
+    ['post', '/default-email-types'],
     ['patch', '/:itemId'],
     ['delete', '/:itemId'],
   ])('never leaves %s %s guarded by GUARD_USER alone', (method, path) => {

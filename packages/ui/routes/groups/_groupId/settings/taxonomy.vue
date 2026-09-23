@@ -6,7 +6,7 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
 import { IS_ADMIN, USER } from '~/store/user';
-import { Plus } from 'lucide-vue';
+import { Plus, RotateCcw } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsTaxonomy',
@@ -14,6 +14,7 @@ export default {
     BsPageHeader,
     BsGroupTaxonomyTab,
     LucidePlus: Plus,
+    LucideRotateCcw: RotateCcw,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -56,6 +57,15 @@ export default {
         </v-chip>
       </template>
       <template #actions>
+        <v-btn
+          color="accent"
+          outlined
+          class="mr-2"
+          @click="$refs.taxonomyTab.openRestoreDefaults()"
+        >
+          <lucide-rotate-ccw :size="18" class="mr-2" />
+          {{ $t('taxonomy.defaults.action') }}
+        </v-btn>
         <v-btn
           color="accent"
           elevation="0"

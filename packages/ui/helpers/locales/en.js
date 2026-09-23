@@ -1038,6 +1038,18 @@ export default {
       inUse:
         'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
     },
+    defaults: {
+      action: 'Default email types',
+      confirmTitle: 'Add the missing Badsender email types',
+      confirmIntro:
+        'The following email types will be created. You can then rename them, refine their definition, or deactivate them.',
+      confirmNothing:
+        'Your email types already cover the six Badsender types: there is nothing to add.',
+      confirmSkipped:
+        'Not created, one of your email types already uses their label: {labels}.',
+      snackbarCreated: '{count} email type created | {count} email types created',
+      snackbarNone: 'No email type to add',
+    },
     snackbars: {
       created: 'Email type created',
       updated: 'Email type updated',

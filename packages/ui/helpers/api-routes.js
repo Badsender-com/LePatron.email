@@ -382,6 +382,16 @@ export function taxonomyItemsItem(itemId) {
   return `/taxonomy-items/${itemId}`;
 }
 
+// The company is named in the query here and in the body of the POST below,
+// matching the two guards those routes carry.
+export function taxonomyDefaultEmailTypes(groupId) {
+  return `/taxonomy-items/default-email-types?groupId=${groupId}`;
+}
+
+export function taxonomyDefaultEmailTypesRestore() {
+  return '/taxonomy-items/default-email-types';
+}
+
 /// ///
 // AI FEATURES
 /// ///

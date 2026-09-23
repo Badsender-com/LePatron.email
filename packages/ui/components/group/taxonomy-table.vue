@@ -164,9 +164,17 @@ export default {
         <p class="text-body-2 grey--text text--darken-1">
           {{ $t('taxonomy.empty.description') }}
         </p>
-        <v-btn color="accent" elevation="0" @click="$emit('create')">
-          {{ $t('taxonomy.empty.action') }}
-        </v-btn>
+        <div class="d-flex justify-center flex-wrap" style="gap: 0.5rem">
+          <v-btn color="accent" elevation="0" @click="$emit('create')">
+            {{ $t('taxonomy.empty.action') }}
+          </v-btn>
+          <!-- The likeliest reason this screen is empty: a company created
+               before the defaults were seeded. Offering the rebuild here, where
+               the user actually is, rather than only in the page header. -->
+          <v-btn color="accent" outlined @click="$emit('restore-defaults')">
+            {{ $t('taxonomy.defaults.action') }}
+          </v-btn>
+        </div>
       </div>
     </template>
   </bs-data-table>
