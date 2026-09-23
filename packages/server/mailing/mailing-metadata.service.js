@@ -308,7 +308,11 @@ async function buildEditorMetadata({ mailing, group }) {
         type: TaxonomyTypes.EMAIL_TYPE,
         isActive: true,
       })
-        .select({ label: 1, canonicalType: 1, order: 1 })
+        // `description` is the company's own definition of the typology, seeded
+        // with the Badsender one. It travels to the editor so the picker can say
+        // what a typology means to someone choosing between six of them, rather
+        // than only naming them.
+        .select({ label: 1, canonicalType: 1, order: 1, description: 1 })
         .sort({ order: 1, label: 1 })
         .lean()
     : [];
@@ -329,6 +333,7 @@ async function buildEditorMetadata({ mailing, group }) {
         id: item._id,
         label: item.label,
         canonicalType: item.canonicalType,
+        description: item.description,
       })),
       // The two values the trigger select offers. Sent rather than hard-coded in
       // the editor so the doctrine's vocabulary has one source; the editor

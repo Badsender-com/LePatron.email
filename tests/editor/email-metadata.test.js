@@ -12,6 +12,7 @@ const {
   toFormState,
   typologyOptions,
   triggerOptions,
+  selectedDescription,
   hasMetadataChanges,
   errorKeyFor,
   SUBJECT_HARD_LIMIT,
@@ -241,13 +242,17 @@ describe('toFormState', () => {
 
 describe('typologyOptions', () => {
   const types = [
-    { id: 'a1', label: 'Infolettre' },
+    {
+      id: 'a1',
+      label: 'Infolettre',
+      description: 'Notre rendez-vous mensuel.',
+    },
     { id: 'a2', label: 'Promo' },
   ];
 
   it('offers an explicit empty choice first', () => {
     const options = typologyOptions(types, '', 'Aucune');
-    expect(options[0]).toEqual({ value: '', text: 'Aucune' });
+    expect(options[0]).toEqual({ value: '', text: 'Aucune', description: '' });
     expect(options.map((o) => o.text)).toEqual([
       'Aucune',
       'Infolettre',
@@ -273,6 +278,7 @@ describe('typologyOptions', () => {
     ).toEqual({
       value: 'b1',
       text: 'X',
+      description: '',
     });
   });
 
@@ -302,8 +308,59 @@ describe('typologyOptions', () => {
 
   it.each([[undefined], [null], [[]]])('survives %p', (list) => {
     expect(typologyOptions(list, '', 'Aucune')).toEqual([
-      { value: '', text: 'Aucune' },
+      { value: '', text: 'Aucune', description: '' },
     ]);
+  });
+
+  // The company's own definition, shown under the field once a typology is picked.
+  // Kept OUT of the option text, unlike the trigger's: this is a free field of up
+  // to 2000 characters.
+  it('carries the definition of each typology', () => {
+    const options = typologyOptions(types, '', 'Aucune');
+
+    expect(options[1].description).toBe('Notre rendez-vous mensuel.');
+    expect(options[1].text).toBe('Infolettre');
+  });
+
+  it('gives a typology without a definition an empty one, never undefined', () => {
+    expect(typologyOptions(types, '', 'Aucune')[2].description).toBe('');
+  });
+});
+
+describe('selectedDescription', () => {
+  const options = [
+    { value: '', text: 'Aucune', description: '' },
+    {
+      value: 'a1',
+      text: 'Infolettre',
+      description: 'Notre rendez-vous mensuel.',
+    },
+    { value: 'a2', text: 'Promo', description: '' },
+  ];
+
+  it('answers the definition of the selected option', () => {
+    expect(selectedDescription(options, 'a1')).toBe(
+      'Notre rendez-vous mensuel.'
+    );
+  });
+
+  // "nothing selected" and "selected, but no definition" have to resolve to the
+  // same thing — an empty hint, not the word "undefined" under the field.
+  it.each([[''], [null], [undefined], ['a2'], ['gone']])(
+    'answers an empty string for %p',
+    (value) => {
+      expect(selectedDescription(options, value)).toBe('');
+    }
+  );
+
+  it.each([[undefined], [null], [[]]])('survives %p', (list) => {
+    expect(selectedDescription(list, 'a1')).toBe('');
+  });
+
+  it('compares values as strings, as the select hands them back', () => {
+    expect(
+      selectedDescription([{ value: 12, description: 'douze' }], '12')
+    ).toBe('douze');
   });
 });
 
@@ -359,6 +416,53 @@ describe('triggerOptions', () => {
       value: 'adhoc',
       text: 'adhoc',
     });
+  });
+
+  // The definition goes INSIDE the option, unlike the typology's: these labels are
+  // ours and each definition is half a line, so the list itself says what the two
+  // values mean while someone is choosing between them.
+  it('puts the definition in the option text', () => {
+    const describe = (value) =>
+      value === 'adhoc' ? "décidé par l'équipe, pour cette fois" : '';
+
+    const [, adhoc] = triggerOptions(
+      ['adhoc'],
+      'Aucun',
+      labelFor,
+      null,
+      describe
+    );
+
+    expect(adhoc.text).toBe("Ad hoc — décidé par l'équipe, pour cette fois");
+  });
+
+  // vm.t returns the key itself when it knows nothing, so a locale missing the
+  // description must leave the label alone rather than print a key after a dash.
+  it.each([[() => ''], [undefined]])(
+    'keeps the bare label when there is no definition (%p)',
+    (describe) => {
+      const [, adhoc] = triggerOptions(
+        ['adhoc'],
+        'Aucun',
+        labelFor,
+        null,
+        describe
+      );
+
+      expect(adhoc.text).toBe('Ad hoc');
+    }
+  );
+
+  it('leaves the empty choice without a dash', () => {
+    const [none] = triggerOptions(
+      ['adhoc'],
+      'Aucun',
+      labelFor,
+      null,
+      () => 'quelque chose'
+    );
+
+    expect(none.text).toBe('Aucun');
   });
 });
 

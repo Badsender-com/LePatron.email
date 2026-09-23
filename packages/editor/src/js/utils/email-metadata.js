@@ -167,7 +167,7 @@ function toFormState(emailMetadata) {
  * @param {string} [missingLabel] translated label for a deactivated typology;
  *   distinct from `noneLabel`, otherwise the select shows two identical options
  *   and the user cannot tell their email points at a withdrawn typology
- * @returns {Array<{value: string, text: string, missing?: boolean}>}
+ * @returns {Array<{value: string, text: string, description: string, missing?: boolean}>}
  */
 function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
   // An item with no id would become an option valued `'undefined'`: selectable,
@@ -177,17 +177,24 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
     .map((item) => ({
       value: String(item.id || item._id),
       text: item.label,
+      // The company's own definition of this typology. Carried on the option so
+      // the section can show it for whichever one is selected, and hang it off
+      // the option as a tooltip. Not folded into `text` like the trigger's: this
+      // one is a free field of up to 2000 characters, and an option is not where
+      // ten lines of prose belong.
+      description: item.description || '',
     }));
 
   if (currentId && !options.some((o) => o.value === String(currentId))) {
     options.push({
       value: String(currentId),
       text: missingLabel || noneLabel,
+      description: '',
       missing: true,
     });
   }
 
-  return [{ value: '', text: noneLabel }].concat(
+  return [{ value: '', text: noneLabel, description: '' }].concat(
     options.filter((o) => o.value !== '')
   );
 }
@@ -203,13 +210,26 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
  * reasoning as `typologyOptions`: silently omitting the option an email points at
  * would rewrite its trigger on the next save.
  *
+ * The definition goes INSIDE the option text, unlike the typology's: these two
+ * labels are ours and each definition is half a line, so the list itself can say
+ * what "Ad hoc" and "Automated" mean. Someone meeting this field for the first
+ * time reads the difference while choosing, which is the only moment it helps.
+ *
  * @param {Array<string>} triggers metadata.emailMetadataConfig.triggers
  * @param {string} noneLabel translated label for "no trigger"
  * @param {function(string): string} labelFor translates one trigger value
  * @param {string} [currentValue] the trigger the email carries
+ * @param {function(string): string} [descriptionFor] the short definition of one
+ *   value; a value with none keeps its bare label rather than a dangling dash
  * @returns {Array<{value: string, text: string}>}
  */
-function triggerOptions(triggers, noneLabel, labelFor, currentValue) {
+function triggerOptions(
+  triggers,
+  noneLabel,
+  labelFor,
+  currentValue,
+  descriptionFor
+) {
   const known = (triggers || []).filter(Boolean).map(String);
 
   const values =
@@ -218,8 +238,34 @@ function triggerOptions(triggers, noneLabel, labelFor, currentValue) {
       : known;
 
   return [{ value: '', text: noneLabel }].concat(
-    values.map((value) => ({ value, text: labelFor(value) || value }))
+    values.map((value) => {
+      const label = labelFor(value) || value;
+      const description = descriptionFor ? descriptionFor(value) : '';
+      return {
+        value,
+        text: description ? `${label} — ${description}` : label,
+      };
+    })
   );
+}
+
+/**
+ * The description of the currently selected option, or '' when there is none.
+ *
+ * Here rather than in the component for the reason the file header gives, and
+ * because "none selected" and "selected, but no description" have to resolve to
+ * the same thing: an empty hint, not the word "undefined" under the field.
+ *
+ * @param {Array<{value: string, description?: string}>} options
+ * @param {string} value the selected option's value
+ * @returns {string}
+ */
+function selectedDescription(options, value) {
+  if (!value) return '';
+  const selected = (options || []).find(
+    (option) => option && String(option.value) === String(value)
+  );
+  return (selected && selected.description) || '';
 }
 
 /**
@@ -279,5 +325,6 @@ module.exports = {
   toFormState,
   typologyOptions,
   triggerOptions,
+  selectedDescription,
   hasMetadataChanges,
 };

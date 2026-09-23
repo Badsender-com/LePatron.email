@@ -45,6 +45,7 @@ const ACTIVE_TYPES = [
     label: 'Infolettre',
     canonicalType: 'newsletter',
     order: 0,
+    description: 'Notre rendez-vous mensuel.',
   },
   { _id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'), label: 'Promo' },
 ];
@@ -246,12 +247,22 @@ describe('findOneForMosaico — company opted in', () => {
 
     expect(emailMetadataConfig.enabled).toBe(true);
     expect(emailMetadataConfig.requiredFields).toEqual(['subject']);
+    // `description` travels too: it is the company's own definition of the
+    // typology, and the editor shows it under the field for whichever one is
+    // selected. A typology without one exposes `undefined`, which the editor
+    // resolves to an empty hint rather than the word "undefined".
     expect(emailMetadataConfig.emailTypes).toEqual([
-      { id: TYPE_ACTIVE, label: 'Infolettre', canonicalType: 'newsletter' },
+      {
+        id: TYPE_ACTIVE,
+        label: 'Infolettre',
+        canonicalType: 'newsletter',
+        description: 'Notre rendez-vous mensuel.',
+      },
       {
         id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'),
         label: 'Promo',
         canonicalType: undefined,
+        description: undefined,
       },
     ]);
     expect(emailMetadataConfig.url.update).toBe(

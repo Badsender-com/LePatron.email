@@ -6,6 +6,7 @@ const {
   toFormState,
   typologyOptions,
   triggerOptions,
+  selectedDescription,
   SUBJECT_HARD_LIMIT,
 } = require('../utils/email-metadata');
 const {
@@ -103,8 +104,32 @@ module.exports = {
             this.triggers,
             vm.t('email-metadata-trigger-none'),
             (value) => vm.t(`email-metadata-trigger-${value}`),
-            this.trigger
+            this.trigger,
+            // A value the locale has no description for falls back to its bare
+            // label: vm.t returns the key itself when it knows nothing, which
+            // would otherwise print the key after a dash.
+            (value) => {
+              const key = `email-metadata-trigger-${value}-description`;
+              const text = vm.t(key);
+              return text === key ? '' : text;
+            }
           );
+        },
+        // The company's own definition of the selected typology. Shown under the
+        // field rather than inside the option, because this text is a free field
+        // of up to 2000 characters — it is the one place in this section where
+        // the content belongs to the client, not to us.
+        typologyDescription() {
+          return selectedDescription(this.typologyChoices, this.emailTypeId);
+        },
+        // Null rather than the id when neither hint renders: an aria-describedby
+        // pointing at an element that is not there is read as nothing by some
+        // screen readers and as an error by others.
+        typologyHintId() {
+          if (this.emailTypes.length === 0 || this.typologyDescription) {
+            return 'email-metadata-typology-hint';
+          }
+          return null;
         },
         // Watched rather than pushed field by field: one watcher, and the store
         // receives a complete snapshot every time instead of four partial ones.

@@ -302,8 +302,13 @@ module.exports = {
   'email-metadata-typology-missing': 'Deactivated email type',
   'email-metadata-trigger': 'Trigger',
   'email-metadata-trigger-none': 'None',
-  'email-metadata-trigger-adhoc': 'Ad hoc',
+  'email-metadata-trigger-adhoc': 'One Shot',
   'email-metadata-trigger-automated': 'Automated',
+  // Shown after the label, inside the option itself: the point is to help someone
+  // choose while reading the list, not to explain after they already have.
+  'email-metadata-trigger-adhoc-description': 'decided by the team, this once',
+  'email-metadata-trigger-automated-description':
+    'decided by a rule, every time',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',

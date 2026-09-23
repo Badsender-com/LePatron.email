@@ -25,9 +25,12 @@
  * each. `maxlength` still mirrors the server's hard limit, which is a rule rather
  * than advice.
  *
- * One hint survives, and it is not an explanation: when the company has configured
- * no email type, the select is empty and disabled, and nothing on screen says what
- * to do about it. That one says where to create them.
+ * Two hints, and neither is a paragraph of instructions. When the company has
+ * configured no email type, the select is empty and disabled and nothing on screen
+ * says what to do about it: that one says where to create them. Otherwise the
+ * selected typology's own definition is shown — the company's words, not ours,
+ * changing with the choice rather than sitting there permanently. The trigger needs
+ * no hint: its two definitions are short enough to live inside the options.
  *
  * No required markers. `requiredFields` is stored but nothing enforces it in this
  * phase, and an asterisk promising a check that does not exist is worse than no
@@ -69,18 +72,27 @@ module.exports = `
               class="email-metadata__select"
               v-model="emailTypeId"
               :disabled="emailTypes.length === 0"
-              :aria-describedby="emailTypes.length === 0 ? 'email-metadata-typology-hint' : null">
+              :aria-describedby="typologyHintId">
+        <!-- `title` puts the definition within reach while the list is open. It
+             is a hover affordance and nothing depends on it: the same text is
+             rendered below for whichever option is selected. -->
         <option v-for="choice in typologyChoices"
                 :key="choice.value"
-                :value="choice.value">{{ choice.text }}</option>
+                :value="choice.value"
+                :title="choice.description || null">{{ choice.text }}</option>
       </select>
-      <!-- The one surviving hint, and not an explanation: with no type configured
-           the select is empty AND disabled, which tells the user nothing about
-           what to do. It says where to create them. -->
+      <!-- Two hints, never both: with no type configured the select is empty AND
+           disabled and says where to create them; otherwise it shows the
+           company's own definition of what they just picked. -->
       <p v-if="emailTypes.length === 0"
          id="email-metadata-typology-hint"
          class="email-metadata__hint">
         {{ t('email-metadata-typology-empty') }}
+      </p>
+      <p v-else-if="typologyDescription"
+         id="email-metadata-typology-hint"
+         class="email-metadata__hint">
+        {{ typologyDescription }}
       </p>
     </div>
 
