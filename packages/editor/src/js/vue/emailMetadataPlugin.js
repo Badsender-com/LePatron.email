@@ -115,12 +115,15 @@ module.exports = {
             }
           );
         },
-        // The company's own definition of the selected typology. Shown under the
-        // field rather than inside the option, because this text is a free field
-        // of up to 2000 characters — it is the one place in this section where
-        // the content belongs to the client, not to us.
+        // Both selects show the definition of the selected value UNDER the field,
+        // never inside the option: a native select repeats the chosen option's
+        // full text once closed, so a definition folded into it would sit in the
+        // field permanently.
         typologyDescription() {
           return selectedDescription(this.typologyChoices, this.emailTypeId);
+        },
+        triggerDescription() {
+          return selectedDescription(this.triggerChoices, this.trigger);
         },
         // Null rather than the id when neither hint renders: an aria-describedby
         // pointing at an element that is not there is read as nothing by some
@@ -130,6 +133,9 @@ module.exports = {
             return 'email-metadata-typology-hint';
           }
           return null;
+        },
+        triggerHintId() {
+          return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
         },
         // Watched rather than pushed field by field: one watcher, and the store
         // receives a complete snapshot every time instead of four partial ones.

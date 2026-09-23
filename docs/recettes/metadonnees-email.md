@@ -301,11 +301,11 @@ docker exec lepatron_mongo_container mongo --quiet --port 27019 lepatron --eval 
 1. Le select « Déclenchement » / « Trigger » propose exactement deux valeurs et
    « Aucun ». Il n'est **jamais désactivé** — elles ne dépendent pas de la
    company, contrairement aux typologies.
-2. **Chaque option porte sa définition** : « Ad hoc — décidé par l'équipe, pour
-   cette fois » et « Automatisé — décidé par une règle, à chaque fois ». C'est
-   dans la liste, avant de choisir, que ça doit se lire.
-3. **En anglais**, le premier se lit **« One Shot »**, pas « Ad hoc » :
-   « One Shot — decided by the team, this once ».
+2. **En anglais**, le premier se lit **« One Shot »**, pas « Ad hoc ».
+3. **Le select ne contient que le libellé court.** La définition s'affiche
+   **sous le champ** une fois la valeur choisie — « Un envoi décidé par l'équipe,
+   pour cette fois. » — et en infobulle au survol des options. Exactement le même
+   motif que la typologie (E6 ter). Sur « Aucun », **aucune ligne** ne s'affiche.
 4. Choisir **Automatisé**, enregistrer avec le Save de l'éditeur, recharger.
    **Attendu** : conservé. Remettre sur « Aucun », enregistrer, recharger :
    **Attendu** : effacé.
@@ -321,11 +321,12 @@ docker exec lepatron_mongo_container mongo --quiet --port 27019 lepatron --eval 
    **Attendu** : `422 INVALID_EMAIL_METADATA`. Idem pour `"ADHOC"` et
    `"marketing-automation"`.
 
-### E6 ter. Définition de la typologie sélectionnée
+### E6 ter. Définition de la valeur sélectionnée
 
-Les deux champs n'affichent pas leur aide au même endroit, et c'est voulu : les
-libellés du déclenchement sont les nôtres et tiennent en une demi-ligne, la
-définition d'une typologie appartient à la company et peut faire dix lignes.
+Les deux selects se comportent pareil : libellé court dans le champ, définition
+en dessous. La différence est l'origine du texte — celle de la typologie
+appartient à la company et peut faire dix lignes, celle du déclenchement est la
+nôtre et vit dans les locales de l'éditeur.
 
 1. Choisir une typologie. **Attendu** : sa **définition** apparaît sous le champ —
    celle que porte la typologie dans les réglages, pas un texte générique.

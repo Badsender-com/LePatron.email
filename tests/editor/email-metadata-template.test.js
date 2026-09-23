@@ -77,6 +77,28 @@ describe('email metadata template', () => {
     expect(template).toContain('v-else-if="typologyDescription"');
   });
 
+  // Both selects show their definition under the field and never inside the
+  // option: a native select repeats the chosen option's full text once closed, so
+  // a definition folded into it would sit in the field permanently. That was the
+  // first implementation of the trigger, and it had to be undone.
+  it.each([
+    ['typology', 'typologyDescription'],
+    ['trigger', 'triggerDescription'],
+  ])('renders the %s definition under the field', (field, binding) => {
+    expect(template).toContain(`id="email-metadata-${field}-hint"`);
+    expect(template).toContain(`{{ ${binding} }}`);
+    expect(template).toContain(`:aria-describedby="${field}HintId"`);
+  });
+
+  it.each([['typology'], ['trigger']])(
+    'hangs the definition off each %s option as a tooltip',
+    () => {
+      expect(
+        template.match(/:title="choice\.description \|\| null"/g)
+      ).toHaveLength(2);
+    }
+  );
+
   // The trigger select is never disabled: its values are the doctrine's, not the
   // company's, so there is no "none configured" state to guard against.
   it('never disables the trigger select', () => {

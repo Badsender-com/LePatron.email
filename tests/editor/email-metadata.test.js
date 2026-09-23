@@ -370,9 +370,9 @@ describe('triggerOptions', () => {
 
   it('offers the empty choice first, then the values the server sent', () => {
     expect(triggerOptions(['adhoc', 'automated'], 'Aucun', labelFor)).toEqual([
-      { value: '', text: 'Aucun' },
-      { value: 'adhoc', text: 'Ad hoc' },
-      { value: 'automated', text: 'Automatisé' },
+      { value: '', text: 'Aucun', description: '' },
+      { value: 'adhoc', text: 'Ad hoc', description: '' },
+      { value: 'automated', text: 'Automatisé', description: '' },
     ]);
   });
 
@@ -389,7 +389,11 @@ describe('triggerOptions', () => {
   it('adds back a value it has no label for, shown raw', () => {
     expect(
       triggerOptions(['adhoc'], 'Aucun', labelFor, 'scheduled')
-    ).toContainEqual({ value: 'scheduled', text: 'scheduled' });
+    ).toContainEqual({
+      value: 'scheduled',
+      text: 'scheduled',
+      description: '',
+    });
   });
 
   it('does not duplicate the value the email already carries', () => {
@@ -407,7 +411,7 @@ describe('triggerOptions', () => {
   // a select that looks broken.
   it.each([[[]], [undefined], [null]])('survives %p', (triggers) => {
     expect(triggerOptions(triggers, 'Aucun', labelFor)).toEqual([
-      { value: '', text: 'Aucun' },
+      { value: '', text: 'Aucun', description: '' },
     ]);
   });
 
@@ -415,15 +419,17 @@ describe('triggerOptions', () => {
     expect(triggerOptions(['adhoc'], 'Aucun', () => '')).toContainEqual({
       value: 'adhoc',
       text: 'adhoc',
+      description: '',
     });
   });
 
-  // The definition goes INSIDE the option, unlike the typology's: these labels are
-  // ours and each definition is half a line, so the list itself says what the two
-  // values mean while someone is choosing between them.
-  it('puts the definition in the option text', () => {
+  // The definition rides ALONGSIDE the label, never inside it. Folding it into the
+  // option text was tried and undone: a native select repeats the chosen option's
+  // full text once closed, so the field read "Automatisé — décidé par une règle, à
+  // chaque fois" permanently. Same treatment as the typology now.
+  it('carries the definition without touching the label', () => {
     const describe = (value) =>
-      value === 'adhoc' ? "décidé par l'équipe, pour cette fois" : '';
+      value === 'adhoc' ? "Un envoi décidé par l'équipe, pour cette fois." : '';
 
     const [, adhoc] = triggerOptions(
       ['adhoc'],
@@ -433,13 +439,14 @@ describe('triggerOptions', () => {
       describe
     );
 
-    expect(adhoc.text).toBe("Ad hoc — décidé par l'équipe, pour cette fois");
+    expect(adhoc.text).toBe('Ad hoc');
+    expect(adhoc.description).toBe(
+      "Un envoi décidé par l'équipe, pour cette fois."
+    );
   });
 
-  // vm.t returns the key itself when it knows nothing, so a locale missing the
-  // description must leave the label alone rather than print a key after a dash.
-  it.each([[() => ''], [undefined]])(
-    'keeps the bare label when there is no definition (%p)',
+  it.each([[() => ''], [undefined], [() => undefined]])(
+    'gives an empty description, never undefined (%p)',
     (describe) => {
       const [, adhoc] = triggerOptions(
         ['adhoc'],
@@ -450,10 +457,11 @@ describe('triggerOptions', () => {
       );
 
       expect(adhoc.text).toBe('Ad hoc');
+      expect(adhoc.description).toBe('');
     }
   );
 
-  it('leaves the empty choice without a dash', () => {
+  it('leaves the empty choice without a description', () => {
     const [none] = triggerOptions(
       ['adhoc'],
       'Aucun',
@@ -462,7 +470,7 @@ describe('triggerOptions', () => {
       () => 'quelque chose'
     );
 
-    expect(none.text).toBe('Aucun');
+    expect(none).toEqual({ value: '', text: 'Aucun', description: '' });
   });
 });
 

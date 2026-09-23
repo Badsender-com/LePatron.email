@@ -313,12 +313,12 @@ module.exports = {
   'email-metadata-trigger-none': 'Aucun',
   'email-metadata-trigger-adhoc': 'Ad hoc',
   'email-metadata-trigger-automated': 'Automatisé',
-  // Affichées à la suite du libellé, dans l'option elle-même : elles servent à
-  // choisir en parcourant la liste, pas à expliquer une fois le choix fait.
+  // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les
+  // options. Des phrases complètes : elles ne suivent plus un libellé.
   'email-metadata-trigger-adhoc-description':
-    "décidé par l'équipe, pour cette fois",
+    "Un envoi décidé par l'équipe, pour cette fois.",
   'email-metadata-trigger-automated-description':
-    'décidé par une règle, à chaque fois',
+    'Un envoi décidé par une règle, à chaque fois.',
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',

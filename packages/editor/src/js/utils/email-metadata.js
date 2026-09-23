@@ -210,18 +210,19 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
  * reasoning as `typologyOptions`: silently omitting the option an email points at
  * would rewrite its trigger on the next save.
  *
- * The definition goes INSIDE the option text, unlike the typology's: these two
- * labels are ours and each definition is half a line, so the list itself can say
- * what "Ad hoc" and "Automated" mean. Someone meeting this field for the first
- * time reads the difference while choosing, which is the only moment it helps.
+ * The definition rides ALONGSIDE the label, never inside it. Folding it into the
+ * option text did put it in front of someone browsing the list — but a native
+ * select shows the chosen option's full text once it is closed, so the field then
+ * read "Automated — decided by a rule, every time" permanently. The definition
+ * belongs under the field, the same place and the same way as the typology's.
  *
  * @param {Array<string>} triggers metadata.emailMetadataConfig.triggers
  * @param {string} noneLabel translated label for "no trigger"
  * @param {function(string): string} labelFor translates one trigger value
  * @param {string} [currentValue] the trigger the email carries
  * @param {function(string): string} [descriptionFor] the short definition of one
- *   value; a value with none keeps its bare label rather than a dangling dash
- * @returns {Array<{value: string, text: string}>}
+ *   value; a value with none gets an empty string, never `undefined`
+ * @returns {Array<{value: string, text: string, description: string}>}
  */
 function triggerOptions(
   triggers,
@@ -237,20 +238,20 @@ function triggerOptions(
       ? known.concat(String(currentValue))
       : known;
 
-  return [{ value: '', text: noneLabel }].concat(
-    values.map((value) => {
-      const label = labelFor(value) || value;
-      const description = descriptionFor ? descriptionFor(value) : '';
-      return {
-        value,
-        text: description ? `${label} — ${description}` : label,
-      };
-    })
+  return [{ value: '', text: noneLabel, description: '' }].concat(
+    values.map((value) => ({
+      value,
+      text: labelFor(value) || value,
+      description: (descriptionFor && descriptionFor(value)) || '',
+    }))
   );
 }
 
 /**
  * The description of the currently selected option, or '' when there is none.
+ *
+ * Shared by both selects: the typology's definition comes from the company, the
+ * trigger's from the editor's locales, and below the field they behave the same.
  *
  * Here rather than in the component for the reason the file header gives, and
  * because "none selected" and "selected, but no description" have to resolve to

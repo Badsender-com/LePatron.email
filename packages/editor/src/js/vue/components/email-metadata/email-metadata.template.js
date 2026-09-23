@@ -25,12 +25,17 @@
  * each. `maxlength` still mirrors the server's hard limit, which is a rule rather
  * than advice.
  *
- * Two hints, and neither is a paragraph of instructions. When the company has
+ * Hints, and none of them is a paragraph of instructions. When the company has
  * configured no email type, the select is empty and disabled and nothing on screen
- * says what to do about it: that one says where to create them. Otherwise the
- * selected typology's own definition is shown — the company's words, not ours,
- * changing with the choice rather than sitting there permanently. The trigger needs
- * no hint: its two definitions are short enough to live inside the options.
+ * says what to do about it: that one says where to create them. Otherwise each
+ * select shows the definition of the value that is currently chosen — the
+ * company's words for the typology, ours for the trigger — changing with the
+ * choice rather than sitting there permanently.
+ *
+ * The definition is never folded into the option text. It was, for the trigger, and
+ * it had to be undone: a native select repeats the chosen option's full text once
+ * closed, so the field read "Automated — decided by a rule, every time" for as long
+ * as the email existed.
  *
  * No required markers. `requiredFields` is stored but nothing enforces it in this
  * phase, and an asterisk promising a check that does not exist is worse than no
@@ -78,8 +83,8 @@ module.exports = `
              a template literal, and one would end it. Covered by
              tests/editor/email-metadata-template.test.js, which exists because
              that happened. The attribute is a hover affordance and nothing
-             depends on it: the same text is rendered below for whichever option
-             is selected. -->
+             depends on it: the same text is rendered below the field for
+             whichever option is selected. -->
         <option v-for="choice in typologyChoices"
                 :key="choice.value"
                 :value="choice.value"
@@ -110,11 +115,18 @@ module.exports = `
       </div>
       <select id="email-metadata-trigger"
               class="email-metadata__select"
-              v-model="trigger">
+              v-model="trigger"
+              :aria-describedby="triggerHintId">
         <option v-for="choice in triggerChoices"
                 :key="choice.value"
-                :value="choice.value">{{ choice.text }}</option>
+                :value="choice.value"
+                :title="choice.description || null">{{ choice.text }}</option>
       </select>
+      <p v-if="triggerDescription"
+         id="email-metadata-trigger-hint"
+         class="email-metadata__hint">
+        {{ triggerDescription }}
+      </p>
     </div>
   </section>
 `;

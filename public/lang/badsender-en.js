@@ -304,11 +304,12 @@ module.exports = {
   'email-metadata-trigger-none': 'None',
   'email-metadata-trigger-adhoc': 'One Shot',
   'email-metadata-trigger-automated': 'Automated',
-  // Shown after the label, inside the option itself: the point is to help someone
-  // choose while reading the list, not to explain after they already have.
-  'email-metadata-trigger-adhoc-description': 'decided by the team, this once',
+  // Shown under the field for the selected value, and as a tooltip on the options.
+  // Full sentences: they stand on their own rather than trailing a label.
+  'email-metadata-trigger-adhoc-description':
+    'A send the team decided on, this once.',
   'email-metadata-trigger-automated-description':
-    'decided by a rule, every time',
+    'A send a rule decides, every time.',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
