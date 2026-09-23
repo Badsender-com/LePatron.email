@@ -73,9 +73,13 @@ module.exports = `
               v-model="emailTypeId"
               :disabled="emailTypes.length === 0"
               :aria-describedby="typologyHintId">
-        <!-- `title` puts the definition within reach while the list is open. It
-             is a hover affordance and nothing depends on it: the same text is
-             rendered below for whichever option is selected. -->
+        <!-- The title attribute puts the definition within reach while the list
+             is open. NOTE: no backtick may appear anywhere in this markup — it is
+             a template literal, and one would end it. Covered by
+             tests/editor/email-metadata-template.test.js, which exists because
+             that happened. The attribute is a hover affordance and nothing
+             depends on it: the same text is rendered below for whichever option
+             is selected. -->
         <option v-for="choice in typologyChoices"
                 :key="choice.value"
                 :value="choice.value"
