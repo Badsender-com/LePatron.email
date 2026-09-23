@@ -1,4 +1,5 @@
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
+import { EMAIL_TYPES } from '~/helpers/email-types.js';
 
 /**
  * Pure helpers for the taxonomy screens.
@@ -20,18 +21,16 @@ export const TAXONOMY_LIMITS = Object.freeze({
 });
 
 /**
- * The AI skills vocabulary a company may map its own typology onto. Mirrors
- * `EmailTypeCanonical` in packages/server/constant/email-type-canonical.js.
+ * The vocabulary a company may map its own typology onto — the six Badsender
+ * types. Re-exported from `EMAIL_TYPES` rather than copied: the list lived in
+ * three places (here, email-types.js, and the server constant), and a third copy
+ * is a second chance to disagree. The server constant carries the definitions.
  *
- * Neither side constrains the stored value: this list evolves with the skills,
- * which already fall back on the raw string. Hence `canonicalTypeLabelKey` below.
+ * Neither side constrains the stored value: this list evolves with the doctrine,
+ * and the skills already fall back on the raw string. Hence `canonicalTypeLabelKey`
+ * below.
  */
-export const CANONICAL_TYPES = Object.freeze([
-  'promo',
-  'newsletter',
-  'transactional',
-  'marketing-automation',
-]);
+export const CANONICAL_TYPES = Object.freeze([...EMAIL_TYPES]);
 
 /**
  * The i18n key for a canonical type, or null when the value is not one we know.

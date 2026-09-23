@@ -774,7 +774,7 @@ export default {
     title: 'Typologies d\'email',
     sidebarLabel: 'Typologies',
     description:
-      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA.',
+      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
     table: {
       label: 'Libellé',
       description: 'Définition',
@@ -783,10 +783,12 @@ export default {
       isActive: 'Statut',
     },
     canonicalTypes: {
-      promo: 'Promotionnel',
-      newsletter: 'Infolettre',
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
       transactional: 'Transactionnel',
-      'marketing-automation': 'Marketing Automation',
+      institutional: 'Institutionnel',
     },
     form: {
       createTitle: 'Nouvelle typologie',
@@ -827,7 +829,7 @@ export default {
       action: 'Créer une typologie',
       title: 'Aucune typologie pour le moment',
       description:
-        'Créez vos premières typologies : rien n\'est prérempli, ce sont vos mots.',
+        'Créez les typologies dont vos équipes ont besoin : leur libellé et leur définition sont les vôtres.',
     },
     errors: {
       limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
@@ -1224,10 +1226,12 @@ export default {
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
     },
     emailTypes: {
-      promo: 'Promotionnel',
-      newsletter: 'Newsletter',
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
       transactional: 'Transactionnel',
-      'marketing-automation': 'Marketing Automation',
+      institutional: 'Institutionnel',
     },
     statuses: {
       DRAFT: 'Brouillon',

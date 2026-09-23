@@ -8,11 +8,14 @@ const {
 } = require('../../../packages/server/constant/email-type-canonical.js');
 
 /**
- * The canonical email-type vocabulary lives in three places that must agree:
- * the server constant, the taxonomy screens' list, and the AI skills' list. Each
- * file says "keep in sync" in a comment, and a comment has never kept anything in
- * sync — adding `marketing-automation` meant editing five files, and nothing would
- * have failed had one been missed.
+ * The canonical email-type vocabulary lives in two places that must agree: the
+ * server constant and the UI list. Each file says "keep in sync" in a comment, and
+ * a comment has never kept anything in sync — nothing would fail if one were
+ * missed.
+ *
+ * It used to live in THREE: the taxonomy screens carried their own copy. They now
+ * re-export the skills' list, which is why the assertion below reads as a tautology
+ * — it is the guard that keeps it one, should someone paste the literal back.
  *
  * Nothing constrains the STORED value on purpose (the schema takes any string, the
  * skills fall back to the raw one), so a divergence never raises an error. It just
@@ -34,14 +37,31 @@ describe('canonical email type vocabulary', () => {
 
   // Pinned rather than derived: an accidental deletion would keep every other
   // assertion here green, since they all compare the lists to each other.
-  it('holds the four types the product defines', () => {
+  //
+  // These are the six types of the Badsender classification doctrine, and the list
+  // is closed by design: a seventh type only exists if it changes a rule. What a
+  // company calls them is its own business — that is what the taxonomy is for.
+  it('holds the six types the doctrine defines', () => {
     expect([...CANONICAL_TYPES].sort()).toEqual([
-      'marketing-automation',
-      'newsletter',
-      'promo',
+      'editorial',
+      'institutional',
+      'notification',
+      'promotional',
+      'service',
       'transactional',
     ]);
   });
+
+  // The values that used to be here and must not come back. `newsletter` was a
+  // free tag, not a type; `marketing-automation` was a trigger, which is now its
+  // own independent dimension. Both are the kind of thing a well-meaning revert
+  // reintroduces.
+  it.each(['newsletter', 'promo', 'marketing-automation'])(
+    'no longer carries %s',
+    (retired) => {
+      expect(CANONICAL_TYPES).not.toContain(retired);
+    }
+  );
 
   describe.each([
     ['en', en],

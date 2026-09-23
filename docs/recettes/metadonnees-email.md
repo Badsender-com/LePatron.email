@@ -1,4 +1,4 @@
-# Recette — Métadonnées email (PR #1081 · #1083 · #1085)
+# Recette — Métadonnées email (PR #1081 · #1083 · #1085, puis vocabulaire Badsender)
 
 Guide de recette manuelle de la phase 1 « métadonnées email ». Il couvre les trois
 PR empilées, plus les deux PR extraites qui doivent être vérifiées **avant** elles.
@@ -175,8 +175,50 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
    entrée de sidebar, titre, formulaire, états vides, erreurs. **Aucun**
    « Typology ».
 2. Repasser en **français**. **Attendu** : « Typologie » / « Typologies ».
-3. Dans l'écran des **expertises IA**, le filtre par type propose bien
-   **Marketing Automation**.
+3. Dans l'écran des **expertises IA**, le filtre par type propose les **six**
+   types Badsender : Éditorial, Promotionnel, Serviciel, Suivi, Transactionnel,
+   Institutionnel. **Aucun** « Newsletter », « Promo » ni « Marketing Automation »
+   — sauf en valeur héritée, cf. D6.
+
+### D5. Typologies par défaut — le seed
+
+1. Créer une company **depuis un compte dont la langue est le français**.
+   Réglages → Général → Typologies. **Attendu** : les **six** typologies
+   Badsender, dans l'ordre, en français (Éditorial → Institutionnel), chacune
+   avec sa définition et sa correspondance IA.
+2. Recommencer **depuis un compte en anglais**. **Attendu** : les mêmes six, en
+   anglais (Editorial → Institutional).
+3. Renommer une typologie, en désactiver une, en supprimer une. **Attendu** :
+   ce sont des typologies ordinaires, rien ne les protège.
+4. Companies **existantes** — exécuter d'abord en lecture seule :
+
+   ```bash
+   node scripts/seed-default-email-types.js --dry-run --lang=fr
+   ```
+
+   **Attendu** : il liste les companies sans aucune typologie, et compte les
+   autres en « already had their own ». Puis l'exécuter pour de vrai, et le
+   relancer : **le second passage ne fait rien** (0 company à semer).
+
+5. Sur une company de recette qui a **déjà** des typologies créées à la main,
+   vérifier qu'elle est laissée **intacte** — ni complétée, ni dupliquée. C'est
+   la propriété importante : compléter une liste que l'admin a organisée
+   ressusciterait ce qu'il a supprimé exprès.
+
+### D6. Expertises IA taguées avec l'ancien vocabulaire
+
+Le changement de vocabulaire **n'a pas été migré**, c'est un choix. Conséquence à
+vérifier, et à traiter **avant la mise en production** :
+
+1. Ouvrir la liste des **expertises IA**. Repérer celles dont le champ « types
+   d'email » porte `promo`, `newsletter` ou `marketing-automation`.
+2. **Attendu** : ces valeurs restent **visibles et sélectionnables** dans le
+   combobox, affichées telles quelles (non traduites). C'est ce qui rend le
+   retagage possible depuis l'écran.
+3. **Attendu, et c'est le piège** : tant qu'elles ne sont pas retaguées, ces
+   expertises **ne se chargent plus** pour un email dont la typologie pointe vers
+   le nouveau vocabulaire — silencieusement, le filtre étant une égalité de
+   chaîne. Les retaguer sur le type Badsender correspondant.
 
 ---
 

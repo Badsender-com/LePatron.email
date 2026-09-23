@@ -11,7 +11,11 @@ const {
 
 const { TaxonomyItems, Mailings } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { TaxonomyLimits } = require('../constant/taxonomy-type.js');
+const {
+  TaxonomyLimits,
+  TaxonomyTypes,
+} = require('../constant/taxonomy-type.js');
+const { buildDefaultEmailTypes } = require('./default-email-types.js');
 const {
   isObjectId,
   validateType,
@@ -25,6 +29,7 @@ module.exports = {
   updateTaxonomyItem,
   deleteTaxonomyItem,
   resolveCompanyId,
+  seedDefaultEmailTypes,
 };
 
 /**
@@ -101,6 +106,57 @@ async function listTaxonomyItems({ user, groupId, type, activeOnly = false }) {
   }
 
   return TaxonomyItems.find(query).sort({ order: 1, label: 1 });
+}
+
+/**
+ * Creates the six Badsender email types for a company that has none.
+ *
+ * Idempotent, and deliberately all-or-nothing on "does this company already have
+ * email types": if there is even one, the company has started its own vocabulary
+ * and the seed stays out of it. Topping up a partial list would resurrect items an
+ * admin deleted on purpose, and could collide with the unique index on
+ * `{_company, type, label}` — a renamed "Éditorial" leaves the label free.
+ *
+ * Callers must treat a failure as non-fatal: a company that exists without its
+ * default typologies is a nuisance an admin fixes in one screen, or the seeding
+ * script fixes in bulk. A company creation that fails because of it is not.
+ *
+ * @param {Object} params
+ * @param {ObjectId|string} params.companyId
+ * @param {string} [params.lang] `fr` or `en`; anything else falls back to `en`
+ * @returns {Promise<Array>} the items created — empty when the company already had some
+ */
+async function seedDefaultEmailTypes({ companyId, lang }) {
+  logger.log('taxonomyService:seedDefaultEmailTypes');
+
+  const type = TaxonomyTypes.EMAIL_TYPE;
+
+  const existingCount = await TaxonomyItems.countDocuments({
+    _company: companyId,
+    type,
+  });
+
+  if (existingCount > 0) return [];
+
+  const items = buildDefaultEmailTypes(lang).map((item) => ({
+    ...item,
+    _company: companyId,
+    type,
+  }));
+
+  try {
+    return await TaxonomyItems.insertMany(items, { ordered: true });
+  } catch (error) {
+    // Two creations racing on the same brand-new company. The unique index holds,
+    // the loser has nothing left to do: the types are there either way.
+    if (error?.code === 11000) {
+      logger.warn(
+        `taxonomyService:seedDefaultEmailTypes: already seeded for company ${companyId}`
+      );
+      return [];
+    }
+    throw error;
+  }
 }
 
 async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
