@@ -28,6 +28,9 @@ const {
   TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
 const MailingSchema = require('../../../packages/server/mailing/mailing.schema');
+const {
+  EmailTriggerValues,
+} = require('../../../packages/server/constant/email-trigger.js');
 
 const findOneForMosaico = MailingSchema.statics.findOneForMosaico;
 
@@ -256,6 +259,17 @@ describe('findOneForMosaico — company opted in', () => {
     );
   });
 
+  // The trigger vocabulary is the doctrine's, not the company's, so it is sent
+  // whatever the taxonomy holds — including to a company with no email type at
+  // all. The editor translates the values; what it must not do is invent them.
+  it('sends the trigger values, the same two for every company', async () => {
+    const { emailMetadataConfig } = (
+      await call(makeContext({ companyFlag: flag }))
+    ).metadata;
+
+    expect(emailMetadataConfig.triggers).toEqual(EmailTriggerValues);
+  });
+
   it('reads the typologies of that company only, active ones only', async () => {
     const context = makeContext({ companyFlag: flag });
 
@@ -281,6 +295,7 @@ describe('findOneForMosaico — company opted in', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'trigger',
     ]);
   });
 

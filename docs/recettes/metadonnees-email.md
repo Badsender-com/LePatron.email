@@ -292,6 +292,30 @@ docker exec lepatron_mongo_container mongo --quiet --port 27019 lepatron --eval 
 3. **Typologie retirée** : désactiver dans les réglages une typologie portée par un
    email, rouvrir cet email. **Attendu** : le select affiche « Typologie
    désactivée » — l'email ne perd pas silencieusement sa typologie.
+4. **Duplication** : dupliquer un email portant objet, typologie, déclenchement et
+   date d'envoi prévue. **Attendu** : les trois premiers suivent la copie, la date
+   **non** — elle appartient à une campagne.
+
+### E6 bis. Déclenchement
+
+1. Le select « Déclenchement » / « Trigger » propose exactement **Ad hoc**,
+   **Automatisé** et « Aucun ». Aucune autre valeur, et il n'est **jamais
+   désactivé** — ces deux valeurs ne dépendent pas de la company, contrairement
+   aux typologies.
+2. Choisir **Automatisé**, enregistrer avec le Save de l'éditeur, recharger.
+   **Attendu** : conservé. Remettre sur « Aucun », enregistrer, recharger :
+   **Attendu** : effacé.
+3. Les deux dimensions sont **indépendantes** : un email peut être
+   Transactionnel × Automatisé, et rien dans l'interface ne les lie. (La matrice
+   de cohérence — les croisements douteux — n'est pas dans ce lot.)
+4. **Refus serveur** — hors interface, envoyer
+
+   ```
+   PATCH /api/mailings/:id/metadata   {"trigger": "scheduled"}
+   ```
+
+   **Attendu** : `422 INVALID_EMAIL_METADATA`. Idem pour `"ADHOC"` et
+   `"marketing-automation"`.
 
 ### E7. Company sans typologie configurée
 

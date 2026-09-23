@@ -21,7 +21,7 @@
  *
  * No explanatory sentence under any field, and no character counter on the
  * subject: all removed on request, to be reconsidered only if users ask for them.
- * Three labelled fields in a panel titled "Email settings" do not need a paragraph
+ * Labelled fields in a panel titled "Email settings" do not need a paragraph
  * each. `maxlength` still mirrors the server's hard limit, which is a rule rather
  * than advice.
  *
@@ -82,6 +82,23 @@ module.exports = `
          class="email-metadata__hint">
         {{ t('email-metadata-typology-empty') }}
       </p>
+    </div>
+
+    <!-- The second classification dimension, independent of the type: is there a
+         human decision for THIS send? Never disabled, unlike the typology — its
+         two values are the doctrine's, not the company's, so there is no state in
+         which none is configured. -->
+    <div class="email-metadata__field">
+      <div class="email-metadata__label-row">
+        <label for="email-metadata-trigger">{{ t('email-metadata-trigger') }}</label>
+      </div>
+      <select id="email-metadata-trigger"
+              class="email-metadata__select"
+              v-model="trigger">
+        <option v-for="choice in triggerChoices"
+                :key="choice.value"
+                :value="choice.value">{{ choice.text }}</option>
+      </select>
     </div>
   </section>
 `;

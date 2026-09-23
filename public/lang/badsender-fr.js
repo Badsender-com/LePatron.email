@@ -309,6 +309,10 @@ module.exports = {
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
   'email-metadata-typology-missing': 'Typologie désactivée',
+  'email-metadata-trigger': 'Déclenchement',
+  'email-metadata-trigger-none': 'Aucun',
+  'email-metadata-trigger-adhoc': 'Ad hoc',
+  'email-metadata-trigger-automated': 'Automatisé',
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',

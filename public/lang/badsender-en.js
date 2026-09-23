@@ -300,6 +300,10 @@ module.exports = {
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
+  'email-metadata-trigger': 'Trigger',
+  'email-metadata-trigger-none': 'None',
+  'email-metadata-trigger-adhoc': 'Ad hoc',
+  'email-metadata-trigger-automated': 'Automated',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',

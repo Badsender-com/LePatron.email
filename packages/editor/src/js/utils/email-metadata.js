@@ -67,7 +67,7 @@ function fromDateInputValue(value) {
 }
 
 /**
- * The three fields the PATCH owns, described once.
+ * The four fields the PATCH owns, described once.
  *
  * "Has this changed" and "what do we send for it" were two separate lists before,
  * and they have to agree: a field counted as changed but not serialised is an edit
@@ -90,6 +90,10 @@ const METADATA_FIELDS = [
     key: 'emailTypeId',
     toPayload: (form) => (form.emailTypeId ? form.emailTypeId : null),
   },
+  {
+    key: 'trigger',
+    toPayload: (form) => (form.trigger ? form.trigger : null),
+  },
 ];
 
 const sameValue = (a, b) =>
@@ -104,7 +108,7 @@ function changedFields(form, initial) {
 }
 
 /**
- * The PATCH payload for subject, planned send date and typology.
+ * The PATCH payload for subject, planned send date, typology and trigger.
  *
  * `null` clears a field, and the server reads it that way. A field ABSENT from the
  * body is left alone — `validateMetadataPayload` guards every field with
@@ -119,7 +123,7 @@ function changedFields(form, initial) {
  *     pointing at a deleted taxonomy item answers EMAIL_TYPE_NOT_FOUND, and the
  *     subject they just typed goes down with it.
  *
- * @param {Object} form { subject, plannedSendDate, emailTypeId }
+ * @param {Object} form { subject, plannedSendDate, emailTypeId, trigger }
  * @param {Object} [initial] the state the section opened with. Omitted, every
  *   field is sent — which is only correct when there is nothing to compare against.
  * @returns {Object}
@@ -137,7 +141,7 @@ function buildMetadataPayload(form, initial) {
  * The form state the section opens with, from what the server exposed.
  *
  * @param {Object} [emailMetadata] metadata.emailMetadata
- * @returns {{subject: string, plannedSendDate: string, emailTypeId: string}}
+ * @returns {{subject: string, plannedSendDate: string, emailTypeId: string, trigger: string}}
  */
 function toFormState(emailMetadata) {
   const values = emailMetadata || {};
@@ -146,6 +150,7 @@ function toFormState(emailMetadata) {
     subject: values.subject || '',
     plannedSendDate: toDateInputValue(values.plannedSendDate),
     emailTypeId: values.emailTypeId ? String(values.emailTypeId) : '',
+    trigger: values.trigger ? String(values.trigger) : '',
   };
 }
 
@@ -184,6 +189,36 @@ function typologyOptions(emailTypes, currentId, noneLabel, missingLabel) {
 
   return [{ value: '', text: noneLabel }].concat(
     options.filter((o) => o.value !== '')
+  );
+}
+
+/**
+ * Options for the trigger select, with an explicit empty choice.
+ *
+ * Unlike the typology, this vocabulary is closed and is not per-company: the two
+ * values come from the server so the doctrine has one source, but their labels are
+ * the editor's own — they are product wording, not client data.
+ *
+ * A value the editor has no label for is shown raw rather than dropped, on the same
+ * reasoning as `typologyOptions`: silently omitting the option an email points at
+ * would rewrite its trigger on the next save.
+ *
+ * @param {Array<string>} triggers metadata.emailMetadataConfig.triggers
+ * @param {string} noneLabel translated label for "no trigger"
+ * @param {function(string): string} labelFor translates one trigger value
+ * @param {string} [currentValue] the trigger the email carries
+ * @returns {Array<{value: string, text: string}>}
+ */
+function triggerOptions(triggers, noneLabel, labelFor, currentValue) {
+  const known = (triggers || []).filter(Boolean).map(String);
+
+  const values =
+    currentValue && !known.includes(String(currentValue))
+      ? known.concat(String(currentValue))
+      : known;
+
+  return [{ value: '', text: noneLabel }].concat(
+    values.map((value) => ({ value, text: labelFor(value) || value }))
   );
 }
 
@@ -243,5 +278,6 @@ module.exports = {
   buildMetadataPayload,
   toFormState,
   typologyOptions,
+  triggerOptions,
   hasMetadataChanges,
 };

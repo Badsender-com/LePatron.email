@@ -16,6 +16,7 @@ const {
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
+const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 
 const { Schema, Types } = mongoose;
@@ -119,6 +120,17 @@ const MailingSchema = Schema(
       type: ObjectId,
       ref: TaxonomyItemModel,
     },
+    // The second classification dimension: is there a human decision for this
+    // particular send? Independent of the type — a password reset is
+    // transactional AND automated. Two closed values, so unlike the type this one
+    // is an enum and not a taxonomy: a company may not add a third.
+    //
+    // No index: nothing filters on it yet, and #1081 removed exactly this kind of
+    // index-with-no-reader.
+    trigger: {
+      type: String,
+      enum: EmailTriggerValues,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -147,8 +159,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   this.name = `${this.name.trim()} copy`;
   this.isNew = true;
   this.espIds = [];
-  // The subject and the typology describe the email and are worth keeping; a
-  // planned send date belongs to one campaign and must not be inherited.
+  // The subject, the typology and the trigger describe the email and are worth
+  // keeping — a copy of an automated transactional email is still one; a planned
+  // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();

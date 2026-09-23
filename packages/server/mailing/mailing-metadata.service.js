@@ -6,6 +6,7 @@ const { UnprocessableEntity, NotFound, Forbidden } = require('http-errors');
 const { TaxonomyItems } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
+const { EmailTriggerValues } = require('../constant/email-trigger.js');
 const modelsUtils = require('../utils/model.js');
 const logger = require('../utils/logger.js');
 
@@ -25,6 +26,7 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   'subject',
   'plannedSendDate',
   'emailTypeId',
+  'trigger',
 ]);
 
 // The field is a day, not an instant: it has no time, and what is stored must
@@ -99,6 +101,21 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
     validated._emailType = await validateEmailType(payload.emailTypeId, {
       companyId,
     });
+  }
+
+  // The trigger is a closed pair, checked here and not only by the schema enum: a
+  // Mongoose enum violation surfaces as a ValidationError at save time, several
+  // frames away from the field that caused it and after the other metadata have
+  // already been assigned. The caller gets the same 422 as for any other bad
+  // value, naming nothing the client did not send.
+  if (isDefined(payload.trigger)) {
+    if (payload.trigger === null || payload.trigger === '') {
+      validated.trigger = undefined;
+    } else if (!EmailTriggerValues.includes(payload.trigger)) {
+      throw invalid();
+    } else {
+      validated.trigger = payload.trigger;
+    }
   }
 
   return validated;
@@ -301,6 +318,7 @@ async function buildEditorMetadata({ mailing, group }) {
       subject: mailing.subject,
       plannedSendDate: mailing.plannedSendDate,
       emailTypeId: mailing._emailType,
+      trigger: mailing.trigger,
     },
     emailMetadataConfig: {
       enabled: true,
@@ -312,6 +330,10 @@ async function buildEditorMetadata({ mailing, group }) {
         label: item.label,
         canonicalType: item.canonicalType,
       })),
+      // The two values the trigger select offers. Sent rather than hard-coded in
+      // the editor so the doctrine's vocabulary has one source; the editor
+      // translates them from its own locale files.
+      triggers: [...EmailTriggerValues],
       url: { update: `/api/mailings/${mailingId}/metadata` },
     },
   };

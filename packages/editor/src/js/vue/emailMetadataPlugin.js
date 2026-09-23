@@ -5,6 +5,7 @@ const Vue = require('vue/dist/vue.common');
 const {
   toFormState,
   typologyOptions,
+  triggerOptions,
   SUBJECT_HARD_LIMIT,
 } = require('../utils/email-metadata');
 const {
@@ -24,7 +25,8 @@ let unloadGuard = null;
 let activeStore = null;
 
 /**
- * The email settings of the Content tab: subject, planned send date, typology.
+ * The email settings of the Content tab: subject, planned send date, typology,
+ * trigger.
  *
  * A group of fields, not a panel. The first implementation followed the comments
  * panel — a slidebar opened from the top bar — and that was the wrong precedent:
@@ -81,7 +83,9 @@ module.exports = {
         subject: initialForm.subject,
         plannedSendDate: initialForm.plannedSendDate,
         emailTypeId: initialForm.emailTypeId,
+        trigger: initialForm.trigger,
         emailTypes: config.emailTypes || [],
+        triggers: config.triggers || [],
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -94,13 +98,22 @@ module.exports = {
             vm.t('email-metadata-typology-missing')
           );
         },
+        triggerChoices() {
+          return triggerOptions(
+            this.triggers,
+            vm.t('email-metadata-trigger-none'),
+            (value) => vm.t(`email-metadata-trigger-${value}`),
+            this.trigger
+          );
+        },
         // Watched rather than pushed field by field: one watcher, and the store
-        // receives a complete snapshot every time instead of three partial ones.
+        // receives a complete snapshot every time instead of four partial ones.
         formState() {
           return {
             subject: this.subject,
             plannedSendDate: this.plannedSendDate,
             emailTypeId: this.emailTypeId,
+            trigger: this.trigger,
           };
         },
       },
@@ -125,7 +138,7 @@ module.exports = {
 
     app = new Vue({ el: '#email-metadata-section' });
 
-    // These three fields are the only plain form inputs in the editor, and a form
+    // These fields are the only plain form inputs in the editor, and a form
     // input is where a user expects their typing to survive. Everything else here
     // is written through a command; the subject someone types and then closes the
     // tab on is gone with nothing said.

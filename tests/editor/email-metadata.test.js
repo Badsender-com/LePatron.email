@@ -11,6 +11,7 @@ const {
   buildMetadataPayload,
   toFormState,
   typologyOptions,
+  triggerOptions,
   hasMetadataChanges,
   errorKeyFor,
   SUBJECT_HARD_LIMIT,
@@ -106,6 +107,7 @@ describe('buildMetadataPayload', () => {
       subject: 'Soldes',
       plannedSendDate: '2026-09-01',
       emailTypeId: '507f1f77bcf86cd799439101',
+      trigger: 'adhoc',
     };
 
     it('carries only the field that moved', () => {
@@ -182,6 +184,7 @@ describe('buildMetadataPayload', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'trigger',
     ]);
   });
 
@@ -213,11 +216,13 @@ describe('toFormState', () => {
         subject: 'Soldes',
         plannedSendDate: '2026-09-01T08:00:00.000Z',
         emailTypeId: '507f1f77bcf86cd799439101',
+        trigger: 'automated',
       })
     ).toEqual({
       subject: 'Soldes',
       plannedSendDate: '2026-09-01',
       emailTypeId: '507f1f77bcf86cd799439101',
+      trigger: 'automated',
     });
   });
 
@@ -228,6 +233,7 @@ describe('toFormState', () => {
         subject: '',
         plannedSendDate: '',
         emailTypeId: '',
+        trigger: '',
       });
     }
   );
@@ -298,6 +304,61 @@ describe('typologyOptions', () => {
     expect(typologyOptions(list, '', 'Aucune')).toEqual([
       { value: '', text: 'Aucune' },
     ]);
+  });
+});
+
+describe('triggerOptions', () => {
+  const labels = { adhoc: 'Ad hoc', automated: 'Automatisé' };
+  const labelFor = (value) => labels[value];
+
+  it('offers the empty choice first, then the values the server sent', () => {
+    expect(triggerOptions(['adhoc', 'automated'], 'Aucun', labelFor)).toEqual([
+      { value: '', text: 'Aucun' },
+      { value: 'adhoc', text: 'Ad hoc' },
+      { value: 'automated', text: 'Automatisé' },
+    ]);
+  });
+
+  it('keeps the order the server sent rather than sorting', () => {
+    const texts = triggerOptions(['automated', 'adhoc'], 'Aucun', labelFor).map(
+      (option) => option.value
+    );
+
+    expect(texts).toEqual(['', 'automated', 'adhoc']);
+  });
+
+  // Same reasoning as typologyOptions: dropping the value the email points at
+  // would silently rewrite its trigger on the next save.
+  it('adds back a value it has no label for, shown raw', () => {
+    expect(
+      triggerOptions(['adhoc'], 'Aucun', labelFor, 'scheduled')
+    ).toContainEqual({ value: 'scheduled', text: 'scheduled' });
+  });
+
+  it('does not duplicate the value the email already carries', () => {
+    const options = triggerOptions(
+      ['adhoc', 'automated'],
+      'Aucun',
+      labelFor,
+      'adhoc'
+    );
+
+    expect(options.filter((o) => o.value === 'adhoc')).toHaveLength(1);
+  });
+
+  // A server that sent nothing leaves the user with one honest choice rather than
+  // a select that looks broken.
+  it.each([[[]], [undefined], [null]])('survives %p', (triggers) => {
+    expect(triggerOptions(triggers, 'Aucun', labelFor)).toEqual([
+      { value: '', text: 'Aucun' },
+    ]);
+  });
+
+  it('falls back to the raw value when the label is missing', () => {
+    expect(triggerOptions(['adhoc'], 'Aucun', () => '')).toContainEqual({
+      value: 'adhoc',
+      text: 'adhoc',
+    });
   });
 });
 
