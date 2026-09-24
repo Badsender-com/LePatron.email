@@ -1,8 +1,11 @@
 'use strict';
 
+const dns = require('dns');
 const {
   assertOutboundHostAllowed,
   isBlockedAddress,
+  guardedLookup,
+  BLOCKED_HOST_ERROR_CODE,
 } = require('../../../packages/server/utils/outbound-host.js');
 
 describe('outbound-host SSRF guard', () => {
@@ -76,6 +79,74 @@ describe('outbound-host SSRF guard', () => {
       await expect(assertOutboundHostAllowed('')).rejects.toThrow();
       await expect(assertOutboundHostAllowed('not a url')).rejects.toThrow();
       await expect(assertOutboundHostAllowed(null)).rejects.toThrow();
+    });
+  });
+
+  // The resolution the socket connects with — what closes DNS rebinding.
+  describe('guardedLookup', () => {
+    function resolvesTo(addresses) {
+      jest
+        .spyOn(dns, 'lookup')
+        .mockImplementation((hostname, options, cb) => cb(null, addresses));
+    }
+
+    function lookup(options) {
+      return new Promise((resolve) => {
+        guardedLookup('api.example.com', options, (err, address, family) =>
+          resolve({ err, address, family })
+        );
+      });
+    }
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('hands back a validated address (Node 18 asks for one)', async () => {
+      resolvesTo([{ address: '93.184.216.34', family: 4 }]);
+
+      const { err, address, family } = await lookup({ family: 0 });
+
+      expect(err).toBeNull();
+      expect(address).toBe('93.184.216.34');
+      expect(family).toBe(4);
+    });
+
+    it('hands back every address when asked for all', async () => {
+      const addresses = [
+        { address: '93.184.216.34', family: 4 },
+        { address: '2606:2800:220:1::1', family: 6 },
+      ];
+      resolvesTo(addresses);
+
+      const { err, address } = await lookup({ all: true });
+
+      expect(err).toBeNull();
+      expect(address).toEqual(addresses);
+    });
+
+    // One internal record is enough: the socket may pick any of them.
+    it('refuses the name when any address is blocked', async () => {
+      resolvesTo([
+        { address: '93.184.216.34', family: 4 },
+        { address: '127.0.0.1', family: 4 },
+      ]);
+
+      const { err } = await lookup({});
+
+      expect(err.code).toBe(BLOCKED_HOST_ERROR_CODE);
+    });
+
+    it('passes a resolution failure through', async () => {
+      jest.spyOn(dns, 'lookup').mockImplementation((hostname, options, cb) => {
+        const error = new Error('nope');
+        error.code = 'ENOTFOUND';
+        cb(error);
+      });
+
+      const { err } = await lookup({});
+
+      expect(err.code).toBe('ENOTFOUND');
     });
   });
 });
