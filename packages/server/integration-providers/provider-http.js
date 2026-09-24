@@ -101,6 +101,13 @@ function isRedirect(response) {
   return response.status >= 300 && response.status < 400;
 }
 
+// A response whose body is never read keeps its socket until it is collected.
+function discardBody(response) {
+  if (response.body && typeof response.body.resume === 'function') {
+    response.body.resume();
+  }
+}
+
 async function fetchOnce(url, options, label) {
   try {
     // Still needed alongside guardedLookup: a literal IP host never goes
@@ -153,20 +160,22 @@ async function guardedFetch(
     throw new TypeError('guardedFetch follows redirects for bare GETs only');
   }
 
-  const options = {
-    method,
-    headers,
-    body,
-    size: maxBytes,
-    timeout: timeoutMs,
-    signal,
-  };
+  const options = { method, headers, body, size: maxBytes, signal };
+  // One budget for the whole chain, not one per hop: three redirects must not
+  // turn a 15 s read into a minute.
+  const deadline = timeoutMs ? Date.now() + timeoutMs : null;
 
   let currentUrl = url;
   for (let hop = 0; ; hop += 1) {
-    const response = await fetchOnce(currentUrl, options, label);
+    const timeout = deadline ? Math.max(1, deadline - Date.now()) : 0;
+    const response = await fetchOnce(
+      currentUrl,
+      { ...options, timeout },
+      label
+    );
     if (!isRedirect(response)) return response;
 
+    discardBody(response);
     const location =
       response.headers && typeof response.headers.get === 'function'
         ? response.headers.get('location')

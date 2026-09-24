@@ -170,6 +170,26 @@ describe('provider-http', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
+    // One budget for the whole chain, not one per hop.
+    it('shares the timeout across hops', async () => {
+      const mockFetch = jest.fn().mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return mockFetch.mock.calls.length === 1
+          ? redirect('https://1.1.1.1/feed.xml')
+          : response(200);
+      });
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await guardedFetch('https://8.8.8.8/feed.xml', {
+        maxRedirects: 3,
+        timeoutMs: 1000,
+      });
+
+      const [first, second] = mockFetch.mock.calls.map((c) => c[1].timeout);
+      expect(first).toBeLessThanOrEqual(1000);
+      expect(second).toBeLessThan(first);
+    });
+
     it('stops after maxRedirects hops', async () => {
       const mockFetch = jest
         .fn()
