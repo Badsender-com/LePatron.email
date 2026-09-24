@@ -4,6 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { groupCreationPayload } from '~/helpers/taxonomy.js';
 import BsGroupLoading from '~/components/loadingBar';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
@@ -226,7 +227,10 @@ export default {
     async createGroup(group) {
       try {
         this.modalLoading = true;
-        const createdGroup = await this.$axios.$post(apiRoutes.groups(), group);
+        const createdGroup = await this.$axios.$post(
+          apiRoutes.groups(),
+          groupCreationPayload(group, this.$i18n.locale)
+        );
         this.$refs.createGroupModal.close();
         this.showSnackbar({
           text: this.$t('snackbars.created'),

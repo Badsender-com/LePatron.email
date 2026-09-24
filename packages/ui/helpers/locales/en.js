@@ -975,7 +975,7 @@ export default {
     title: 'Email types',
     sidebarLabel: 'Email types',
     description:
-      'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI.',
+      'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI. The six Badsender types are your starting point: rename them, narrow them, deactivate the ones you do not use.',
     table: {
       label: 'Label',
       description: 'Definition',
@@ -984,10 +984,12 @@ export default {
       isActive: 'Status',
     },
     canonicalTypes: {
-      promo: 'Promotional',
-      newsletter: 'Newsletter',
+      editorial: 'Editorial',
+      promotional: 'Promotional',
+      service: 'Service',
+      notification: 'Notification',
       transactional: 'Transactional',
-      'marketing-automation': 'Marketing Automation',
+      institutional: 'Institutional',
     },
     form: {
       createTitle: 'New email type',
@@ -1028,13 +1030,25 @@ export default {
       action: 'Create an email type',
       title: 'No email type yet',
       description:
-        'Create your first email types: nothing is pre-filled, these are your own words.',
+        'Create the email types your team needs: the label and the definition are yours.',
     },
     errors: {
       limitReached: 'You have reached the maximum number of email types for this company.',
       labelAlreadyExists: 'An email type already uses this label.',
       inUse:
         'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
+    },
+    defaults: {
+      action: 'Default email types',
+      confirmTitle: 'Add the missing Badsender email types',
+      confirmIntro:
+        'The following email types will be created. You can then rename them, refine their definition, or deactivate them.',
+      confirmNothing:
+        'Your email types already cover the six Badsender types: there is nothing to add.',
+      confirmSkipped:
+        'Not created, one of your email types already uses their label: {labels}.',
+      snackbarCreated: '{count} email type created | {count} email types created',
+      snackbarNone: 'No email type to add',
     },
     snackbars: {
       created: 'Email type created',
@@ -1166,6 +1180,13 @@ export default {
     previewDescription: 'Preview of the rendered template',
     regeneratePreview: 'Regenerate preview',
     filesAvailableAfterCreation: 'You can upload the HTML markup and images after creating the template.',
+    advancedOptions: 'Advanced options',
+    advancedOptionsDescription: 'Features you can enable on a per-template basis',
+    htmlBlock: {
+      name: 'HTML code block',
+      description: 'Allows pasting free HTML code between two template blocks.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',
@@ -1211,10 +1232,12 @@ export default {
         'The schema accepts expertises but the template does not insert them: they would be ignored at invocation.',
     },
     emailTypes: {
-      promo: 'Promotional',
-      newsletter: 'Newsletter',
+      editorial: 'Editorial',
+      promotional: 'Promotional',
+      service: 'Service',
+      notification: 'Notification',
       transactional: 'Transactional',
-      'marketing-automation': 'Marketing Automation',
+      institutional: 'Institutional',
     },
     statuses: {
       DRAFT: 'Draft',

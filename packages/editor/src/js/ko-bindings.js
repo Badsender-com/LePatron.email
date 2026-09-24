@@ -14,6 +14,7 @@ require('./bindings/preloader.js');
 require('./bindings/fileupload.js');
 require('./bindings/badsender-fileupload-extension.js');
 require('./bindings/virtuals.js');
+require('./bindings/html-code-block.js');
 require('./bindings/wysiwygs.js');
 require('./bindings/scrollfix.js');
 require('./bindings/if-subs.js');

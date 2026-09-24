@@ -95,8 +95,10 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
+# Every variant, including local backups: one was committed by accident once.
 .env
-.env.test
+.env.*
+!.env.example
 
 .DS_Store
 

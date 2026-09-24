@@ -21,13 +21,21 @@
  *
  * No explanatory sentence under any field, and no character counter on the
  * subject: all removed on request, to be reconsidered only if users ask for them.
- * Three labelled fields in a panel titled "Email settings" do not need a paragraph
+ * Labelled fields in a panel titled "Email settings" do not need a paragraph
  * each. `maxlength` still mirrors the server's hard limit, which is a rule rather
  * than advice.
  *
- * One hint survives, and it is not an explanation: when the company has configured
- * no email type, the select is empty and disabled, and nothing on screen says what
- * to do about it. That one says where to create them.
+ * Hints, and none of them is a paragraph of instructions. When the company has
+ * configured no email type, the select is empty and disabled and nothing on screen
+ * says what to do about it: that one says where to create them. Otherwise each
+ * select shows the definition of the value that is currently chosen — the
+ * company's words for the typology, ours for the trigger — changing with the
+ * choice rather than sitting there permanently.
+ *
+ * The definition is never folded into the option text. It was, for the trigger, and
+ * it had to be undone: a native select repeats the chosen option's full text once
+ * closed, so the field read "Automated — decided by a rule, every time" for as long
+ * as the email existed.
  *
  * No required markers. `requiredFields` is stored but nothing enforces it in this
  * phase, and an asterisk promising a check that does not exist is worse than no
@@ -69,18 +77,55 @@ module.exports = `
               class="email-metadata__select"
               v-model="emailTypeId"
               :disabled="emailTypes.length === 0"
-              :aria-describedby="emailTypes.length === 0 ? 'email-metadata-typology-hint' : null">
+              :aria-describedby="typologyHintId">
+        <!-- The title attribute puts the definition within reach while the list
+             is open. NOTE: no backtick may appear anywhere in this markup — it is
+             a template literal, and one would end it. Covered by
+             tests/editor/email-metadata-template.test.js, which exists because
+             that happened. The attribute is a hover affordance and nothing
+             depends on it: the same text is rendered below the field for
+             whichever option is selected. -->
         <option v-for="choice in typologyChoices"
                 :key="choice.value"
-                :value="choice.value">{{ choice.text }}</option>
+                :value="choice.value"
+                :title="choice.description || null">{{ choice.text }}</option>
       </select>
-      <!-- The one surviving hint, and not an explanation: with no type configured
-           the select is empty AND disabled, which tells the user nothing about
-           what to do. It says where to create them. -->
+      <!-- Two hints, never both: with no type configured the select is empty AND
+           disabled and says where to create them; otherwise it shows the
+           company's own definition of what they just picked. -->
       <p v-if="emailTypes.length === 0"
          id="email-metadata-typology-hint"
          class="email-metadata__hint">
         {{ t('email-metadata-typology-empty') }}
+      </p>
+      <p v-else-if="typologyDescription"
+         id="email-metadata-typology-hint"
+         class="email-metadata__hint">
+        {{ typologyDescription }}
+      </p>
+    </div>
+
+    <!-- The second classification dimension, independent of the type: is there a
+         human decision for THIS send? Never disabled, unlike the typology — its
+         two values are the doctrine's, not the company's, so there is no state in
+         which none is configured. -->
+    <div class="email-metadata__field">
+      <div class="email-metadata__label-row">
+        <label for="email-metadata-trigger">{{ t('email-metadata-trigger') }}</label>
+      </div>
+      <select id="email-metadata-trigger"
+              class="email-metadata__select"
+              v-model="trigger"
+              :aria-describedby="triggerHintId">
+        <option v-for="choice in triggerChoices"
+                :key="choice.value"
+                :value="choice.value"
+                :title="choice.description || null">{{ choice.text }}</option>
+      </select>
+      <p v-if="triggerDescription"
+         id="email-metadata-trigger-hint"
+         class="email-metadata__hint">
+        {{ triggerDescription }}
       </p>
     </div>
   </section>

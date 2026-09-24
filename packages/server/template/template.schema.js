@@ -17,6 +17,7 @@ const { GroupModel } = require('../constant/model.names');
  * @apiSuccess {Date} createdAt creation date
  * @apiSuccess {Date} updatedAt last update date
  * @apiSuccess {Boolean} hasMarkup whereas this template has a mosaico's template uploaded or not
+ * @apiSuccess {Boolean} htmlBlockEnabled whereas the generic "HTML code" block is available in this template
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
  * @apiSuccess {String} group.name
@@ -32,6 +33,7 @@ const { GroupModel } = require('../constant/model.names');
  * @apiSuccess {Boolean} hasMarkup whereas this template has a mosaico's template uploaded or not
  * @apiSuccess {String} markup the template's markup
  * @apiSuccess {Object} assets all the images with `key` the image name at the upload & `value` the name once uploaded
+ * @apiSuccess {Boolean} htmlBlockEnabled whereas the generic "HTML code" block is available in this template
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
  * @apiSuccess {String} group.name
@@ -96,6 +98,16 @@ const TemplateSchema = Schema(
         },
       ],
     },
+    // Super-admin only: makes the generic "HTML code" block available in this
+    // template's block palette. The block definition itself is always injected
+    // client-side (see docs/plans/html-code-block.md): this flag only drives
+    // palette visibility, never the existence of the block type — removing a
+    // block type from the definitions would make checkmodel.js splice already
+    // stored blocks out of existing mailings.
+    htmlBlockEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true, getters: true } }
 );
@@ -125,6 +137,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     _company: 1,
     assets: 1,
     trackingConfig: 1,
+    htmlBlockEnabled: 1,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })

@@ -300,7 +300,35 @@ module.exports = {
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
+  'email-metadata-trigger': 'Trigger',
+  'email-metadata-trigger-none': 'None',
+  'email-metadata-trigger-adhoc': 'One Shot',
+  'email-metadata-trigger-automated': 'Automated',
+  // Shown under the field for the selected value, and as a tooltip on the options.
+  // Full sentences: they stand on their own rather than trailing a label.
+  'email-metadata-trigger-adhoc-description':
+    'A send the team decided on, this once.',
+  'email-metadata-trigger-automated-description':
+    'A send a rule decides, every time.',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
+  // HTML code block
+  'html-code-block-name': 'HTML code',
+  'html-code-block-empty': 'HTML code block — click to edit',
+  'widget-code-edit': 'Edit HTML code',
+  'html-code-modal-title': 'HTML code',
+  'html-code-modal-apply': 'Apply',
+  'html-code-modal-cancel': 'Cancel',
+  'html-code-placeholder':
+    'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
+  'html-code-too-large':
+    'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
+  'widget-code-disabled':
+    'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
+  'save-message-html-code-disabled':
+    'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-html-code-too-large':
+    'Save refused: an HTML code block exceeds the maximum size.',
+  'save-message-preview-too-large': 'Save refused: the email is too large.',
 };

@@ -309,7 +309,36 @@ module.exports = {
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
   'email-metadata-typology-missing': 'Typologie désactivée',
+  'email-metadata-trigger': 'Déclenchement',
+  'email-metadata-trigger-none': 'Aucun',
+  'email-metadata-trigger-adhoc': 'Ad hoc',
+  'email-metadata-trigger-automated': 'Automatisé',
+  // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les
+  // options. Des phrases complètes : elles ne suivent plus un libellé.
+  'email-metadata-trigger-adhoc-description':
+    "Un envoi décidé par l'équipe, pour cette fois.",
+  'email-metadata-trigger-automated-description':
+    'Un envoi décidé par une règle, à chaque fois.',
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
+  // HTML code block
+  'html-code-block-name': 'Code HTML',
+  'html-code-block-empty': 'Bloc Code HTML — cliquez pour éditer',
+  'widget-code-edit': 'Éditer le code HTML',
+  'html-code-modal-title': 'Code HTML',
+  'html-code-modal-apply': 'Appliquer',
+  'html-code-modal-cancel': 'Annuler',
+  'html-code-placeholder':
+    'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
+  'html-code-too-large':
+    "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'widget-code-disabled':
+    "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
+  'save-message-html-code-disabled':
+    "Enregistrement refusé : le bloc Code HTML n'est pas activé sur ce template.",
+  'save-message-html-code-too-large':
+    'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
+  'save-message-preview-too-large':
+    "Enregistrement refusé : l'email est trop volumineux.",
 };
