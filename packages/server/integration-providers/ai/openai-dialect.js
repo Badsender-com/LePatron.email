@@ -1,5 +1,7 @@
 'use strict';
 
+const logger = require('../../utils/logger.js');
+const { fetchProviderJson } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -32,6 +34,37 @@ const openAIDialect = {
   // eslint-disable-next-line no-unused-vars
   _getEndpointUrl(model) {
     return this._getChatCompletionsUrl();
+  },
+
+  /**
+   * Endpoint listing the models, also used as the cheapest credential check.
+   * Overridden by the dialects that put it elsewhere.
+   */
+  _getModelsUrl() {
+    return `${this.baseUrl}/v1/models`;
+  },
+
+  /**
+   * Cheaper and safer than a real completion: it spends no tokens.
+   *
+   * Shared rather than per provider — every implementation was the same four
+   * lines differing only by the name in the log line, which is also what the
+   * duplication gate was counting.
+   */
+  async validateCredentials() {
+    try {
+      await fetchProviderJson(this._getModelsUrl(), {
+        headers: this._buildHeaders(),
+        label: 'credentials check',
+      });
+      return true;
+    } catch (error) {
+      logger.error(
+        `${this.getProviderType()} validation error:`,
+        error.message
+      );
+      return false;
+    }
   },
 
   _buildHeaders() {

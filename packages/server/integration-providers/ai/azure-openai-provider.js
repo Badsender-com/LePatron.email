@@ -1,9 +1,6 @@
 'use strict';
 
 const OpenAIProvider = require('./openai-provider');
-const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -59,26 +56,17 @@ class AzureOpenAIProvider extends OpenAIProvider {
     )}/chat/completions?api-version=${this.apiVersion}`;
   }
 
+  /** Azure lists deployments, not models. */
+  _getModelsUrl() {
+    return `${this.baseUrl}/openai/deployments?api-version=${this.apiVersion}`;
+  }
+
   _buildHeaders() {
     return {
       'Content-Type': 'application/json',
       // Not Authorization/Bearer: Azure answers 401 with nothing actionable.
       'api-key': this.apiKey,
     };
-  }
-
-  async validateCredentials() {
-    try {
-      await assertOutboundHostAllowed(this.baseUrl);
-      const response = await guardedFetch(
-        `${this.baseUrl}/openai/deployments?api-version=${this.apiVersion}`,
-        { method: 'GET', headers: this._buildHeaders() }
-      );
-      return response.ok;
-    } catch (error) {
-      logger.error('Azure OpenAI validation error:', error.message);
-      return false;
-    }
   }
 
   /**

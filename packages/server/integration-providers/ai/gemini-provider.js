@@ -1,7 +1,6 @@
 'use strict';
 
 const BaseLLMProvider = require('./base-llm-provider');
-const logger = require('../../utils/logger.js');
 const { fetchProviderJson } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
@@ -38,6 +37,10 @@ class GeminiProvider extends BaseLLMProvider {
     return `${this.baseUrl}/${API_VERSION}/models/${encodeURIComponent(
       model
     )}:generateContent`;
+  }
+
+  _getModelsUrl() {
+    return `${this.baseUrl}/${API_VERSION}/models`;
   }
 
   _buildHeaders() {
@@ -152,19 +155,6 @@ class GeminiProvider extends BaseLLMProvider {
    */
   getBatchLimits() {
     return { maxKeys: 80, maxChars: 30000 };
-  }
-
-  async validateCredentials() {
-    try {
-      await fetchProviderJson(`${this.baseUrl}/${API_VERSION}/models`, {
-        headers: this._buildHeaders(),
-        label: 'credentials check',
-      });
-      return true;
-    } catch (error) {
-      logger.error('gemini validation error:', error.message);
-      return false;
-    }
   }
 
   /** Filtered at the source: the listing mixes in embedding and imaging models. */

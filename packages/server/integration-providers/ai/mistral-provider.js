@@ -48,19 +48,6 @@ class MistralProvider extends BaseLLMProvider {
       }));
   }
 
-  async validateCredentials() {
-    try {
-      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
-        headers: this._buildHeaders(),
-        label: 'credentials check',
-      });
-      return true;
-    } catch (error) {
-      logger.error('mistral validation error:', error.message);
-      return false;
-    }
-  }
-
   _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {
     const inputJson = JSON.stringify(texts, null, 2);
     logger.log(

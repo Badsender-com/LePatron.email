@@ -1,7 +1,6 @@
 'use strict';
 
 const BaseLLMProvider = require('./base-llm-provider');
-const logger = require('../../utils/logger.js');
 const { fetchProviderJson } = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.openai.com';
@@ -57,19 +56,6 @@ class OpenAIProvider extends BaseLLMProvider {
       id: model.id,
       shutdownDate: model.shutdown_date || null,
     }));
-  }
-
-  async validateCredentials() {
-    try {
-      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
-        headers: this._buildHeaders(),
-        label: 'credentials check',
-      });
-      return true;
-    } catch (error) {
-      logger.error('openai validation error:', error.message);
-      return false;
-    }
   }
 }
 

@@ -1,7 +1,6 @@
 'use strict';
 
 const BaseLLMProvider = require('./base-llm-provider');
-const logger = require('../../utils/logger.js');
 const { fetchProviderJson } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
@@ -164,23 +163,6 @@ class AnthropicProvider extends BaseLLMProvider {
     if (status === 401 || status === 403) return CODES.INVALID_CREDENTIALS;
     if (status === 429) return CODES.QUOTA_EXCEEDED;
     return CODES.API_ERROR;
-  }
-
-  /**
-   * Cheaper and safer than a real completion: lists models without spending
-   * tokens.
-   */
-  async validateCredentials() {
-    try {
-      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
-        headers: this._buildHeaders(),
-        label: 'credentials check',
-      });
-      return true;
-    } catch (error) {
-      logger.error('anthropic validation error:', error.message);
-      return false;
-    }
   }
 
   /** Anthropic lists chat models only, with a display name — no filtering needed. */
