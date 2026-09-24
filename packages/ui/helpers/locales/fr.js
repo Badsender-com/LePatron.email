@@ -695,6 +695,8 @@ export default {
       INTEGRATION_API_KEY_REQUIRED:
         'L\'adresse de l\'API a changé : saisissez à nouveau la clé API.',
       INVALID_PRODUCT_ID: 'Le Product ID ne contient que des chiffres.',
+      INTEGRATION_CONFIG_INVALID:
+        'Un réglage de l\'intégration n\'est pas valide pour ce fournisseur.',
     },
     apiKeyRequiredOnHostChange:
       'L\'adresse de l\'API a changé : saisissez à nouveau la clé pour confirmer qu\'elle doit y être envoyée.',
@@ -759,11 +761,15 @@ export default {
     },
     azureOpenai: {
       apiKeyPlaceholder: 'Votre clé API Azure OpenAI',
-      apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.'
+      apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.',
+      reasoningModel: 'Le déploiement utilise un modèle de raisonnement (gpt-5, série o)',
+      reasoningModelHint: 'À cocher si le déploiement tourne sur gpt-5, o1, o3 ou o4 : ces modèles refusent la température et max_tokens, et le nom du déploiement ne permet pas de le deviner.'
     },
     openaiCompatible: {
       apiKeyPlaceholder: 'La clé API de votre endpoint',
-      apiHostHint: 'Tout endpoint compatible avec l\'API OpenAI. Les adresses privées et locales sont refusées pour des raisons de sécurité.'
+      apiHostHint: 'Tout endpoint compatible avec l\'API OpenAI. Les adresses privées et locales sont refusées pour des raisons de sécurité.',
+      supportsJsonMode: 'L\'endpoint gère le mode JSON (response_format)',
+      supportsJsonModeHint: 'À cocher seulement si l\'endpoint garantit une réponse JSON valide : les skills s\'appuient alors dessus. Sinon, la réponse est réparée après coup.'
     },
     scaleway: {
       apiKeyPlaceholder: 'Votre clé API Scaleway',

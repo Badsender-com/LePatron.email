@@ -34,6 +34,26 @@ class AzureOpenAIProvider extends OpenAIProvider {
     this.apiVersion = this.config.apiVersion || DEFAULT_API_VERSION;
   }
 
+  /**
+   * A deployment is named by the customer, so `prod-chat` may well run gpt-5:
+   * the name says nothing, and guessing wrong is a 400 on every call. The
+   * admin says so with `config.reasoningModel`; a deployment named after its
+   * model still works without it.
+   */
+  _isNewContractModel(model) {
+    return (
+      this.config.reasoningModel === true || super._isNewContractModel(model)
+    );
+  }
+
+  /**
+   * Never sent here: Azure only accepts it from API versions later than the
+   * pinned default, and an unknown parameter fails the request.
+   */
+  _supportsReasoningEffort() {
+    return false;
+  }
+
   /** The deployment name doubles as the model name. */
   _getDeployment(model) {
     return this.config.deployment || model || this.config.model;
@@ -53,12 +73,14 @@ class AzureOpenAIProvider extends OpenAIProvider {
   _getEndpointUrl(model) {
     return `${this.baseUrl}/openai/deployments/${encodeURIComponent(
       this._getDeployment(model)
-    )}/chat/completions?api-version=${this.apiVersion}`;
+    )}/chat/completions?api-version=${encodeURIComponent(this.apiVersion)}`;
   }
 
   /** Azure lists deployments, not models. */
   _getModelsUrl() {
-    return `${this.baseUrl}/openai/deployments?api-version=${this.apiVersion}`;
+    return `${this.baseUrl}/openai/deployments?api-version=${encodeURIComponent(
+      this.apiVersion
+    )}`;
   }
 
   _buildHeaders() {

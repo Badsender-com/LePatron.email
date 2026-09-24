@@ -26,19 +26,28 @@ class OpenAIProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
+  /**
+   * Whether the model speaks the newer contract. Read from the name, the only
+   * signal a model id carries; subclasses whose "model" is a name the
+   * customer chose (Azure deployments) add their own.
+   */
+  _isNewContractModel(model) {
+    return NEW_CONTRACT_MODELS.test(model || '');
+  }
+
   _maxTokensParamName(model) {
-    return NEW_CONTRACT_MODELS.test(model || '')
+    return this._isNewContractModel(model)
       ? 'max_completion_tokens'
       : 'max_tokens';
   }
 
   _supportsTemperature(model) {
-    return !NEW_CONTRACT_MODELS.test(model || '');
+    return !this._isNewContractModel(model);
   }
 
   // Same families: the reasoning models are the ones on the newer contract.
   _supportsReasoningEffort(model) {
-    return NEW_CONTRACT_MODELS.test(model || '');
+    return this._isNewContractModel(model);
   }
 
   /**

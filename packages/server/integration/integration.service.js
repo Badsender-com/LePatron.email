@@ -25,6 +25,7 @@ const {
 const {
   normalizeProductId,
   assertApiKeyResent,
+  validateIntegrationConfig,
 } = require('./integration.validation.js');
 
 module.exports = {
@@ -110,7 +111,7 @@ async function createIntegration({
     apiKey,
     apiHost,
     productId: normalizedProductId,
-    config: config || {},
+    config: validateIntegrationConfig(provider, config),
     _company,
     isActive: true,
     validationStatus: 'pending',
@@ -150,6 +151,10 @@ async function updateIntegration({
   await validateApiHost(apiHost);
   const normalizedProductId = normalizeProductId(productId);
   assertApiKeyResent({ integration, provider, apiHost, apiKey });
+  const validatedConfig =
+    config === undefined
+      ? undefined
+      : validateIntegrationConfig(provider || integration.provider, config);
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
@@ -158,7 +163,7 @@ async function updateIntegration({
   if (apiKey !== undefined) integration.apiKey = apiKey;
   if (apiHost !== undefined) integration.apiHost = apiHost;
   if (productId !== undefined) integration.productId = normalizedProductId;
-  if (config !== undefined) integration.config = config;
+  if (validatedConfig !== undefined) integration.config = validatedConfig;
   if (isActive !== undefined) integration.isActive = isActive;
 
   // Reset validation status if credentials changed

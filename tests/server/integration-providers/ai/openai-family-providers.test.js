@@ -95,6 +95,69 @@ describe('AzureOpenAIProvider', () => {
   });
 });
 
+// A deployment name says nothing about the model behind it: `prod-chat` may
+// run gpt-5, which refuses max_tokens and any explicit temperature.
+describe('AzureOpenAIProvider on a reasoning deployment', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  function build(config) {
+    return new AzureOpenAIProvider({
+      provider: 'azure_openai',
+      apiKey: 'azure-key',
+      apiHost: 'https://my-instance.openai.azure.com',
+      config: { deployment: 'prod-chat', ...config },
+    });
+  }
+
+  async function sentBody(provider) {
+    mockFetch.mockResolvedValueOnce(reply(chatResponse));
+    await provider.chatComplete({
+      messages: [{ role: 'user', content: 'Hi' }],
+      temperature: 0.3,
+    });
+    return JSON.parse(mockFetch.mock.calls[0][1].body);
+  }
+
+  it('speaks the newer contract when the admin says so', async () => {
+    const body = await sentBody(build({ reasoningModel: true }));
+
+    expect(body.max_completion_tokens).toBeGreaterThan(0);
+    expect(body).not.toHaveProperty('max_tokens');
+    expect(body).not.toHaveProperty('temperature');
+  });
+
+  it('keeps the older contract otherwise', async () => {
+    const body = await sentBody(build({}));
+
+    expect(body.max_tokens).toBeGreaterThan(0);
+    expect(body.temperature).toBe(0.3);
+  });
+
+  // The pinned api-version predates reasoning_effort on Azure.
+  it('never sends a reasoning effort', async () => {
+    const provider = build({ reasoningModel: true });
+    mockFetch.mockResolvedValueOnce(reply(chatResponse));
+
+    await provider
+      .translateBatch({
+        texts: { text: 'Bonjour' },
+        sourceLanguage: 'fr',
+        targetLanguage: 'en',
+      })
+      .catch(() => {});
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body).not.toHaveProperty('reasoning_effort');
+  });
+
+  it('encodes the api-version in the query', () => {
+    const provider = build({ apiVersion: '2024-10-21' });
+    provider.apiVersion = 'x&y=1#z';
+
+    expect(provider._getEndpointUrl()).toContain('api-version=x%26y%3D1%23z');
+  });
+});
+
 describe('OpenAICompatibleProvider', () => {
   beforeEach(() => jest.clearAllMocks());
 

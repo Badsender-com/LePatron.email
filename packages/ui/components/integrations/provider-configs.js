@@ -38,6 +38,15 @@ export const providerCategories = {
 /**
  * Provider configurations with category assignment.
  */
+// Whether the endpoint honours `response_format: json_object`. Off by default:
+// promising it to an endpoint that ignores it makes skills fail at output
+// parsing instead of falling back to the repair pass.
+const JSON_MODE_FIELD = {
+  key: 'supportsJsonMode',
+  labelKey: 'integrations.openaiCompatible.supportsJsonMode',
+  hintKey: 'integrations.openaiCompatible.supportsJsonModeHint',
+};
+
 export const providerConfigs = {
   // BI & Analytics providers
   metabase: {
@@ -97,6 +106,13 @@ export const providerConfigs = {
     // The resource host is what the deployment path is built from.
     apiHostRequired: true,
     showProductId: false,
+    configFields: [
+      {
+        key: 'reasoningModel',
+        labelKey: 'integrations.azureOpenai.reasoningModel',
+        hintKey: 'integrations.azureOpenai.reasoningModelHint',
+      },
+    ],
   },
 
   openai_compatible: {
@@ -107,6 +123,7 @@ export const providerConfigs = {
     apiHostHintKey: 'integrations.openaiCompatible.apiHostHint',
     apiHostRequired: true,
     showProductId: false,
+    configFields: [JSON_MODE_FIELD],
   },
 
   scaleway: {
@@ -116,6 +133,7 @@ export const providerConfigs = {
     apiHostPlaceholder: 'https://api.scaleway.ai',
     apiHostHintKey: 'integrations.scaleway.apiHostHint',
     showProductId: false,
+    configFields: [JSON_MODE_FIELD],
   },
 
   ovh: {
@@ -125,6 +143,7 @@ export const providerConfigs = {
     apiHostPlaceholder: 'https://oai.endpoints.kepler.ai.cloud.ovh.net',
     apiHostHintKey: 'integrations.ovh.apiHostHint',
     showProductId: false,
+    configFields: [JSON_MODE_FIELD],
   },
 
   infomaniak: {

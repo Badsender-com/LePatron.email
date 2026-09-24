@@ -896,6 +896,8 @@ export default {
       INTEGRATION_API_KEY_REQUIRED:
         'The API address changed: enter the API key again.',
       INVALID_PRODUCT_ID: 'The Product ID contains digits only.',
+      INTEGRATION_CONFIG_INVALID:
+        'One of the integration settings is not valid for this provider.',
     },
     apiKeyRequiredOnHostChange:
       'The API address changed: enter the key again to confirm it should be sent there.',
@@ -960,11 +962,15 @@ export default {
     },
     azureOpenai: {
       apiKeyPlaceholder: 'Your Azure OpenAI API key',
-      apiHostHint: 'Your Azure resource URL, e.g. https://my-instance.openai.azure.com. The deployment name stands in for the model.'
+      apiHostHint: 'Your Azure resource URL, e.g. https://my-instance.openai.azure.com. The deployment name stands in for the model.',
+      reasoningModel: 'The deployment runs a reasoning model (gpt-5, o-series)',
+      reasoningModelHint: 'Tick it if the deployment runs gpt-5, o1, o3 or o4: these models refuse temperature and max_tokens, and the deployment name gives no way to tell.'
     },
     openaiCompatible: {
       apiKeyPlaceholder: 'Your endpoint API key',
-      apiHostHint: 'Any endpoint speaking the OpenAI API. Private and loopback addresses are refused for security reasons.'
+      apiHostHint: 'Any endpoint speaking the OpenAI API. Private and loopback addresses are refused for security reasons.',
+      supportsJsonMode: 'The endpoint supports JSON mode (response_format)',
+      supportsJsonModeHint: 'Tick it only if the endpoint guarantees a valid JSON answer: skills then rely on it. Otherwise the answer is repaired afterwards.'
     },
     scaleway: {
       apiKeyPlaceholder: 'Your Scaleway API key',

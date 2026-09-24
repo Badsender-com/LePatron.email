@@ -172,6 +172,8 @@ module.exports = {
   INVALID_PRODUCT_ID: 'INVALID_PRODUCT_ID',
   // The host or provider changed without the key being entered again.
   INTEGRATION_API_KEY_REQUIRED: 'INTEGRATION_API_KEY_REQUIRED',
+  // A `config` key the provider does not read, or a value of the wrong shape.
+  INTEGRATION_CONFIG_INVALID: 'INTEGRATION_CONFIG_INVALID',
   UNAUTHORIZED_INTEGRATION_TYPE: 'UNAUTHORIZED_INTEGRATION_TYPE',
 
   // LePatron Skills IA

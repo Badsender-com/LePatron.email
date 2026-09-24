@@ -8,6 +8,7 @@ import {
 } from './provider-configs';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
+import BsIntegrationConfigFields from './bs-integration-config-fields';
 import { Eye, EyeOff } from 'lucide-vue';
 
 export default {
@@ -15,6 +16,7 @@ export default {
   components: {
     BsTextField,
     BsSelect,
+    BsIntegrationConfigFields,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
   },
@@ -42,6 +44,7 @@ export default {
         apiKey: '',
         apiHost: '',
         productId: '',
+        config: {},
         isActive: true,
       },
       showApiKey: false,
@@ -97,6 +100,9 @@ export default {
     isApiKeyRequired() {
       return this.selectedProviderConfig.apiKeyRequired !== false;
     },
+    configFields() {
+      return this.selectedProviderConfig.configFields || [];
+    },
     // Mirrors the server: pointing a stored key at a new host requires the key
     // itself, so that nobody redirects a key they could not read.
     apiHostChanged() {
@@ -121,6 +127,8 @@ export default {
             apiKey: '', // Never pre-fill API key for security
             apiHost: val.apiHost || '',
             productId: val.productId || '',
+            // Kept whole: saving sends back the keys the form does not show.
+            config: { ...(val.config || {}) },
             isActive: val.isActive !== false,
           };
         } else {
@@ -137,6 +145,8 @@ export default {
         } else {
           this.form.type = 'ai'; // Default to 'ai' for AI providers
         }
+        // Settings belong to one provider: the server refuses another's keys.
+        this.form.config = {};
       }
     },
   },
@@ -167,6 +177,7 @@ export default {
         apiKey: '',
         apiHost: '',
         productId: '',
+        config: {},
         isActive: true,
       };
       this.$v.$reset();
@@ -211,6 +222,11 @@ export default {
       // Include productId for Infomaniak
       if (this.form.productId) {
         data.productId = this.form.productId;
+      }
+
+      // Only for providers with settings: the others keep what they have.
+      if (this.configFields.length > 0) {
+        data.config = { ...this.form.config };
       }
 
       this.$emit('save', data);
@@ -316,6 +332,12 @@ export default {
               ? $t(selectedProviderConfig.apiHostHintKey)
               : ''
           "
+          :disabled="loading"
+        />
+
+        <bs-integration-config-fields
+          v-model="form.config"
+          :fields="configFields"
           :disabled="loading"
         />
 
