@@ -21,6 +21,9 @@ const {
   endExportSubstitution,
   substituteMarkers,
 } = require('./ext/html-code-block/export-substitution.js');
+const {
+  injectHeadCss,
+} = require('../../../shared/head-css/inject-head-css.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -360,6 +363,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       index: blockIndex,
     });
   };
+
+  // Stylesheet injected into the <head> of every export this editor produces.
+  // Lives on the mailing rather than in the content model: Mosaico's checkModel
+  // splices out any property the block definitions do not declare. Seeded from
+  // `metadata.headCss` once the mailing is loaded (template-loader.js) and sent
+  // back with the content on save (ext/badsender-server-storage.js).
+  viewModel.headCss = ko.observable('');
 
   // toggleTranslateBlockModal will be set by the Vue component
   viewModel.toggleTranslateBlockModal = ko.observable(null);
@@ -793,7 +803,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // LAST step, on purpose: put the pasted markup of every HTML code block back,
     // byte for byte, now that none of the transformations above can reach it.
-    return substituteMarkers(content);
+    content = substituteMarkers(content);
+
+    // After the substitution, so the stylesheet cannot be mistaken for a marker,
+    // and after every regex above, so it reaches the export exactly as written.
+    // A mailing without head CSS gets the very same string as before.
+    return injectHeadCss(content, viewModel.headCss());
   };
 
   // The substitution session opens BEFORE the frame is bound: from then on the
