@@ -314,4 +314,11 @@ module.exports = {
     'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
   'html-code-too-large':
     'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
+  'widget-code-disabled':
+    'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
+  'save-message-html-code-disabled':
+    'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-html-code-too-large':
+    'Save refused: an HTML code block exceeds the maximum size.',
+  'save-message-preview-too-large': 'Save refused: the email is too large.',
 };

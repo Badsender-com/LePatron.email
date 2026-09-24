@@ -13,11 +13,18 @@
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
+//
+// With the template flag off, the block stays — the server keeps accepting the
+// markup already stored, so the email remains savable — but it cannot be edited:
+// the server refuses any markup the mailing did not already hold
+// (packages/server/mailing/html-code-block-guard.js). The button gives way to a
+// sentence saying so, rather than letting the user edit and then fail to save.
 function html(propAccessor, onfocusbinding, parameters) {
   return `
     <input type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
     <div class="html-code-widget">
-      <button class="html-code-widget__button" data-bind="button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
+      <button class="html-code-widget__button" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
+      <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
     </div>
   `;
 }
@@ -37,7 +44,12 @@ module.exports = () => {
     // modal mounts is a no-op rather than a TypeError.
     vm.toggleHtmlCodeModal = null;
 
+    vm.isHtmlBlockEditable = function () {
+      return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
+    };
+
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {
+      if (!vm.isHtmlBlockEditable()) return;
       if (typeof vm.toggleHtmlCodeModal !== 'function') return;
       if (!blockProperties || !blockProperties[propAccessor]) return;
 

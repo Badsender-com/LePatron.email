@@ -323,4 +323,12 @@ module.exports = {
     'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'widget-code-disabled':
+    "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
+  'save-message-html-code-disabled':
+    "Enregistrement refusé : le bloc Code HTML n'est pas activé sur ce template.",
+  'save-message-html-code-too-large':
+    'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
+  'save-message-preview-too-large':
+    "Enregistrement refusé : l'email est trop volumineux.",
 };

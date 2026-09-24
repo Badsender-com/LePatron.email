@@ -92,3 +92,119 @@ describe('html code block guard', () => {
     });
   });
 });
+
+// The flag only hides the palette entry in the editor, and the block definition
+// is injected into every template: on its own it stopped no hand-written request.
+describe('html code block guard — the template flag', () => {
+  const {
+    findHtmlCodeBlocks,
+    bringsDisallowedHtmlCode,
+    assertHtmlCodeBlockContentAllowed,
+    hasHtmlCodeBlock,
+  } = require('../../../packages/server/mailing/html-code-block-guard.js');
+
+  describe('findHtmlCodeBlocks', () => {
+    it('finds blocks in every container, not only mainBlocks', () => {
+      const data = {
+        titleText: 'x',
+        mainBlocks: { blocks: [htmlBlock('a')] },
+        footerBlocks: { blocks: [{ type: 'textBlock' }, htmlBlock('b')] },
+      };
+      expect(findHtmlCodeBlocks(data).map((b) => b.htmlCode)).toEqual([
+        'a',
+        'b',
+      ]);
+    });
+
+    it('measures the size across containers too', () => {
+      const data = { footerBlocks: { blocks: [htmlBlock('x'.repeat(10))] } };
+      expect(validateHtmlCodeBlocks(data, 5).valid).toBe(false);
+    });
+  });
+
+  describe('bringsDisallowedHtmlCode', () => {
+    const check = (data, previousData, htmlBlockEnabled) =>
+      bringsDisallowedHtmlCode({ data, previousData, htmlBlockEnabled });
+
+    it('allows anything when the template enables the block', () => {
+      expect(check(dataWith(htmlBlock('<p>new</p>')), dataWith(), true)).toBe(
+        false
+      );
+    });
+
+    it('refuses new markup when the template does not', () => {
+      expect(check(dataWith(htmlBlock('<p>new</p>')), dataWith(), false)).toBe(
+        true
+      );
+    });
+
+    it('refuses changed markup', () => {
+      expect(
+        check(
+          dataWith(htmlBlock('<p>changed</p>')),
+          dataWith(htmlBlock('<p>stored</p>')),
+          false
+        )
+      ).toBe(true);
+    });
+
+    // Turning the flag off must not lock anyone out of their own email.
+    it('keeps accepting markup already stored, moved or duplicated', () => {
+      const stored = dataWith(htmlBlock('<p>a</p>'), htmlBlock('<p>b</p>'));
+      const reordered = dataWith(
+        htmlBlock('<p>b</p>'),
+        { type: 'textBlock' },
+        htmlBlock('<p>a</p>'),
+        htmlBlock('<p>a</p>')
+      );
+      expect(check(reordered, stored, false)).toBe(false);
+    });
+
+    it('accepts an empty block, which renders nothing', () => {
+      expect(check(dataWith(htmlBlock('')), dataWith(), false)).toBe(false);
+    });
+
+    it('treats a missing stored model as holding nothing', () => {
+      expect(check(dataWith(htmlBlock('x')), undefined, false)).toBe(true);
+    });
+  });
+
+  describe('assertHtmlCodeBlockContentAllowed (personalized blocks)', () => {
+    it('refuses an HTML code block on a template without the flag', () => {
+      expect(() =>
+        assertHtmlCodeBlockContentAllowed({
+          content: htmlBlock('<p>x</p>'),
+          htmlBlockEnabled: false,
+        })
+      ).toThrow(expect.objectContaining({ status: 403 }));
+    });
+
+    it('accepts the stored block unchanged', () => {
+      expect(() =>
+        assertHtmlCodeBlockContentAllowed({
+          content: htmlBlock('<p>x</p>'),
+          previousContent: htmlBlock('<p>x</p>'),
+          htmlBlockEnabled: false,
+        })
+      ).not.toThrow();
+    });
+
+    it('accepts any other block', () => {
+      expect(() =>
+        assertHtmlCodeBlockContentAllowed({
+          content: { type: 'textBlock', text: '<p>x</p>' },
+          htmlBlockEnabled: false,
+        })
+      ).not.toThrow();
+    });
+  });
+
+  describe('hasHtmlCodeBlock', () => {
+    it('recognizes a model and a single block', () => {
+      expect(hasHtmlCodeBlock(dataWith(htmlBlock('x')))).toBe(true);
+      expect(hasHtmlCodeBlock(htmlBlock('x'))).toBe(true);
+      expect(hasHtmlCodeBlock(dataWith({ type: 'textBlock' }))).toBe(false);
+      expect(hasHtmlCodeBlock(undefined)).toBe(false);
+    });
+  });
+});

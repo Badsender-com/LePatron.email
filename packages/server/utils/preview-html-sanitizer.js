@@ -10,9 +10,10 @@
  *    prompt injection from the email content. There it runs BEFORE storage.
  *
  * 2. Serving a preview (mailing.service.js previewMail): previewHtml is served
- *    as `text/html` and rendered in an iframe `:srcDoc` without `sandbox`, so
- *    anything scriptable in it executes with the session of whoever opens the
- *    preview. The HTML code block lets a user paste a `<script>` where TinyMCE
+ *    as `text/html` and rendered in an iframe `:srcDoc`, so anything scriptable
+ *    in it would execute with the session of whoever opens the preview. That
+ *    iframe is sandboxed and the response carries a CSP `sandbox` too; this is
+ *    the layer that does not depend on the client. The HTML code block lets a user paste a `<script>` where TinyMCE
  *    used to filter it out. There it runs ON THE WAY OUT, never on the stored
  *    value: previewHtml is also the body of the multi-mailing ZIP export
  *    (mailing.service.js downloadMultipleZip), which must stay verbatim.
@@ -65,4 +66,11 @@ function sanitizePreviewHtml(previewHtml) {
   }
 }
 
-module.exports = { sanitizePreviewHtml };
+// Upper bound on a stored previewHtml, in characters, enforced on save
+// (mailing.controller.js updateMosaico). Sanitizing is synchronous and roughly
+// linear — about a second per megabyte — so an unbounded preview is an easy way
+// to stall the server. Real previews are a few hundred KB at most (the largest in
+// the dev database is 116KB; Gmail clips above 102KB).
+const PREVIEW_HTML_MAX_LENGTH = 5 * 1024 * 1024;
+
+module.exports = { sanitizePreviewHtml, PREVIEW_HTML_MAX_LENGTH };
