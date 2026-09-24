@@ -692,7 +692,12 @@ export default {
         'Ce nom de domaine est introuvable. Vérifiez l\'orthographe de l\'URL.',
       INTEGRATION_HOST_INVALID:
         'Cette URL n\'est pas valide. Attendu : une adresse commençant par https://',
+      INTEGRATION_API_KEY_REQUIRED:
+        'L\'adresse de l\'API a changé : saisissez à nouveau la clé API.',
+      INVALID_PRODUCT_ID: 'Le Product ID ne contient que des chiffres.',
     },
+    apiKeyRequiredOnHostChange:
+      'L\'adresse de l\'API a changé : saisissez à nouveau la clé pour confirmer qu\'elle doit y être envoyée.',
     title: 'Intégrations',
     name: 'Nom',
     provider: 'Fournisseur',

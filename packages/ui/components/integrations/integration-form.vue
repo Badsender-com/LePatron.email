@@ -97,6 +97,17 @@ export default {
     isApiKeyRequired() {
       return this.selectedProviderConfig.apiKeyRequired !== false;
     },
+    // Mirrors the server: pointing a stored key at a new host requires the key
+    // itself, so that nobody redirects a key they could not read.
+    apiHostChanged() {
+      return (
+        this.isEdit &&
+        (this.form.apiHost || '') !== (this.integration.apiHost || '')
+      );
+    },
+    mustReenterApiKey() {
+      return this.isApiKeyRequired && this.apiHostChanged;
+    },
   },
   watch: {
     integration: {
@@ -138,7 +149,7 @@ export default {
     };
     // API key required only for new integrations, and only for providers
     // that actually need one (e.g. public RSS feeds don't)
-    if (!this.isEdit && this.isApiKeyRequired) {
+    if ((!this.isEdit && this.isApiKeyRequired) || this.mustReenterApiKey) {
       rules.form.apiKey = { required };
     }
     if (this.showProductIdField) {
@@ -166,6 +177,9 @@ export default {
     fieldErrors(fieldName) {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
+      if (!field.required && fieldName === 'apiKey' && this.mustReenterApiKey) {
+        return [this.$t('integrations.apiKeyRequiredOnHostChange')];
+      }
       if (!field.required) return [this.$t('global.errors.required')];
       if (field.numeric === false) {
         return [this.$t('integrations.infomaniak.productIdInvalid')];
@@ -241,7 +255,7 @@ export default {
           <label class="bs-text-field__label">
             {{ apiKeyLabel }}
             <span
-              v-if="!isEdit && isApiKeyRequired"
+              v-if="(!isEdit && isApiKeyRequired) || mustReenterApiKey"
               class="bs-text-field__required"
               >*</span
             >
@@ -269,7 +283,10 @@ export default {
               </v-btn>
             </template>
           </v-text-field>
-          <div v-if="isEdit" class="bs-text-field__hint">
+          <div v-if="mustReenterApiKey" class="bs-text-field__hint">
+            {{ $t('integrations.apiKeyRequiredOnHostChange') }}
+          </div>
+          <div v-else-if="isEdit" class="bs-text-field__hint">
             {{ $t('integrations.apiKeyHintEdit') }}
           </div>
         </div>

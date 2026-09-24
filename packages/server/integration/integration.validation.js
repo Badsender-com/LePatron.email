@@ -6,6 +6,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   normalizeProductId,
+  assertApiKeyResent,
 };
 
 // Infomaniak builds its base URL from productId (`/1/ai/{productId}/openai`),
@@ -25,4 +26,31 @@ function normalizeProductId(productId) {
     throw new BadRequest(ERROR_CODES.INVALID_PRODUCT_ID);
   }
   return trimmed;
+}
+
+const sameHost = (a, b) => (a || null) === (b || null);
+
+/**
+ * Refuse to point a stored key at a new destination without the key itself.
+ *
+ * The stored key is decrypted and sent with every call, to whatever host the
+ * integration names. Letting an update change the host or the provider alone
+ * meant any admin of the group could send a key someone else entered — one
+ * they cannot read on screen — to a server of their own. Asking for the key
+ * again closes that: whoever redirects it must already know it.
+ *
+ * Only when a key is stored: without one (a public RSS feed) there is nothing
+ * to send.
+ */
+function assertApiKeyResent({ integration, provider, apiHost, apiKey }) {
+  if (!integration.apiKey || apiKey) return;
+
+  const providerChanged =
+    provider !== undefined && provider !== integration.provider;
+  const hostChanged =
+    apiHost !== undefined && !sameHost(apiHost, integration.apiHost);
+
+  if (providerChanged || hostChanged) {
+    throw new BadRequest(ERROR_CODES.INTEGRATION_API_KEY_REQUIRED);
+  }
 }

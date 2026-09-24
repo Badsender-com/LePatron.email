@@ -893,7 +893,12 @@ export default {
         'This domain name cannot be found. Check the spelling of the URL.',
       INTEGRATION_HOST_INVALID:
         'This URL is not valid. Expected an address starting with https://',
+      INTEGRATION_API_KEY_REQUIRED:
+        'The API address changed: enter the API key again.',
+      INVALID_PRODUCT_ID: 'The Product ID contains digits only.',
     },
+    apiKeyRequiredOnHostChange:
+      'The API address changed: enter the key again to confirm it should be sent there.',
     title: 'Integrations',
     name: 'Name',
     provider: 'Provider',

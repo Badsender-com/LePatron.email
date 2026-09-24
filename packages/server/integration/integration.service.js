@@ -22,7 +22,10 @@ const {
   assertOutboundHostAllowed,
   OUTBOUND_HOST_ERRORS,
 } = require('../utils/outbound-host.js');
-const { normalizeProductId } = require('./integration.validation.js');
+const {
+  normalizeProductId,
+  assertApiKeyResent,
+} = require('./integration.validation.js');
 
 module.exports = {
   createIntegration,
@@ -146,6 +149,7 @@ async function updateIntegration({
 
   await validateApiHost(apiHost);
   const normalizedProductId = normalizeProductId(productId);
+  assertApiKeyResent({ integration, provider, apiHost, apiKey });
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
