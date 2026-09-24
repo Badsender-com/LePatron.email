@@ -40,6 +40,10 @@ function cacheKey(integration) {
   return `${integration._id}:${updatedAt}`;
 }
 
+function keyFor(integration) {
+  return cacheKey(integration);
+}
+
 function get(integration) {
   const entry = store.get(cacheKey(integration));
   if (!entry) return null;
@@ -74,4 +78,4 @@ function clear() {
   store.clear();
 }
 
-module.exports = { get, set, clear, TTL_MS, ERROR_TTL_MS };
+module.exports = { get, set, clear, keyFor, TTL_MS, ERROR_TTL_MS };

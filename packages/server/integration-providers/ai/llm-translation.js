@@ -38,6 +38,12 @@ const translationMethods = {
         { role: 'user', content: prompt },
       ],
       temperature: 0.3,
+      // Translating a batch needs little reasoning, and a reasoning model
+      // spends its thinking out of the same output budget and wall clock:
+      // measured at twice gpt-4.1-mini's latency on gpt-5-mini's default
+      // effort. `low` rather than `minimal`, which the o-series rejects.
+      // Dialects without the notion ignore it.
+      reasoningEffort: 'low',
     };
 
     if (this._supportsResponseFormat()) {

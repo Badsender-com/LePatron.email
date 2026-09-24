@@ -80,6 +80,7 @@ const openAIDialect = {
     temperature,
     maxTokens,
     responseFormat,
+    reasoningEffort,
   }) {
     const body = {
       model,
@@ -92,6 +93,10 @@ const openAIDialect = {
     // only value it will run at.
     if (temperature !== undefined && this._supportsTemperature(model)) {
       body.temperature = temperature;
+    }
+
+    if (reasoningEffort && this._supportsReasoningEffort(model)) {
+      body.reasoning_effort = reasoningEffort;
     }
 
     if (responseFormat && this._supportsResponseFormat()) {
@@ -157,6 +162,14 @@ const openAIDialect = {
   /** Whether the model accepts an explicit temperature. */
   _supportsTemperature() {
     return true;
+  },
+
+  /**
+   * Whether the model takes a reasoning effort. Only reasoning models do, and
+   * the others reject the parameter.
+   */
+  _supportsReasoningEffort() {
+    return false;
   },
 
   /** Whether the provider accepts the response_format parameter. */

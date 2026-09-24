@@ -1,6 +1,6 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
+import { required, numeric } from 'vuelidate/lib/validators';
 import {
   getProviderFormConfig,
   getProviderLabel,
@@ -142,7 +142,8 @@ export default {
       rules.form.apiKey = { required };
     }
     if (this.showProductIdField) {
-      rules.form.productId = { required };
+      // Digits only, as on the server: Infomaniak builds its API path from it.
+      rules.form.productId = { required, numeric };
     }
     return rules;
   },
@@ -166,6 +167,9 @@ export default {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
       if (!field.required) return [this.$t('global.errors.required')];
+      if (field.numeric === false) {
+        return [this.$t('integrations.infomaniak.productIdInvalid')];
+      }
       return [];
     },
 
@@ -239,7 +243,8 @@ export default {
             <span
               v-if="!isEdit && isApiKeyRequired"
               class="bs-text-field__required"
-            >*</span>
+              >*</span
+            >
           </label>
           <v-text-field
             v-model="form.apiKey"

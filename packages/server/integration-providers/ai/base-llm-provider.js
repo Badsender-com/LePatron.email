@@ -1,9 +1,8 @@
 'use strict';
 
-const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
+const { guardedFetch, toProviderError } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -35,6 +34,12 @@ const {
  * Curated model lists and defaults come from model-catalog.js, not from the
  * subclasses.
  */
+// A whole mailing translates in batches of this, and reasoning models take
+// their time: generous, but no longer unbounded while the body is read.
+const CHAT_TIMEOUT_MS = 5 * 60 * 1000;
+// A translation batch answers in well under a megabyte.
+const CHAT_MAX_BYTES = 10 * 1024 * 1024;
+
 class BaseLLMProvider extends AIProviderInterface {
   /**
    * Get provider capabilities for the frontend.
@@ -167,12 +172,19 @@ class BaseLLMProvider extends AIProviderInterface {
   // ─── API call ─────────────────────────────────────────────────────────────
 
   // Legacy translation code path: content string only.
-  async _callChatCompletion({ model, messages, temperature, responseFormat }) {
+  async _callChatCompletion({
+    model,
+    messages,
+    temperature,
+    responseFormat,
+    reasoningEffort,
+  }) {
     const { content } = await this._callChatCompletionRaw({
       model,
       messages,
       temperature,
       responseFormat,
+      reasoningEffort,
     });
     return content;
   }
@@ -193,6 +205,7 @@ class BaseLLMProvider extends AIProviderInterface {
     temperature,
     maxTokens,
     responseFormat,
+    reasoningEffort,
   }) {
     const providerName = this.getProviderType();
     logger.log(
@@ -201,10 +214,6 @@ class BaseLLMProvider extends AIProviderInterface {
       'at',
       this.baseUrl
     );
-
-    const TIMEOUT_MS = 300000; // 5 minutes
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     const startTime = Date.now();
 
@@ -215,16 +224,21 @@ class BaseLLMProvider extends AIProviderInterface {
         temperature,
         maxTokens,
         responseFormat,
+        reasoningEffort,
       });
 
+      // The timeout is node-fetch's own, not an AbortController cleared once
+      // the headers are in: it also bounds the body read, which is where a
+      // slow endpoint would otherwise hold the request forever.
       const response = await guardedFetch(this._getEndpointUrl(model), {
         method: 'POST',
         headers: this._buildHeaders(),
         body: JSON.stringify(requestBody),
-        signal: controller.signal,
+        timeoutMs: CHAT_TIMEOUT_MS,
+        maxBytes: CHAT_MAX_BYTES,
+        label: `${providerName} API`,
       });
 
-      clearTimeout(timeoutId);
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
       if (!response.ok) {
@@ -283,13 +297,18 @@ class BaseLLMProvider extends AIProviderInterface {
       );
 
       return result;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      if (error.name === 'AbortError') {
+    } catch (caught) {
+      // Body reads fail as raw FetchErrors (size, timeout): typed like the
+      // request itself, with no address in the message.
+      const error =
+        caught && caught.name === 'FetchError'
+          ? toProviderError(caught, `${providerName} API`)
+          : caught;
+      if (error.code === CODES.TIMEOUT) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         logger.error(
           `${providerName} API timeout after ${elapsed}s (limit: ${
-            TIMEOUT_MS / 1000
+            CHAT_TIMEOUT_MS / 1000
           }s)`
         );
         throw new ProviderError(

@@ -28,7 +28,12 @@ class InfomaniakProvider extends BaseLLMProvider {
         CODES.CONFIG_ERROR
       );
     }
-    this.baseUrl = `${API_BASE}/1/ai/${this.productId}/openai`;
+    // Encoded although the service only lets digits through: this is the path
+    // the API key is sent to, and an integration saved before that check
+    // would otherwise still reshape it.
+    this.baseUrl = `${API_BASE}/1/ai/${encodeURIComponent(
+      this.productId
+    )}/openai`;
   }
 
   /**

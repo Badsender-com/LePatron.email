@@ -36,6 +36,11 @@ class OpenAIProvider extends BaseLLMProvider {
     return !NEW_CONTRACT_MODELS.test(model || '');
   }
 
+  // Same families: the reasoning models are the ones on the newer contract.
+  _supportsReasoningEffort(model) {
+    return NEW_CONTRACT_MODELS.test(model || '');
+  }
+
   /**
    * OpenAI lists every model family at once — embeddings, TTS, whisper, image
    * and moderation models alongside the chat ones — with no field saying

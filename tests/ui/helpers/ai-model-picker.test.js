@@ -3,7 +3,19 @@
 const {
   toModelId,
   isValidModelId,
+  MODEL_ID_PATTERN,
 } = require('../../../packages/ui/helpers/ai-model-picker');
+const {
+  MODEL_ID_PATTERN: SERVER_MODEL_ID_PATTERN,
+} = require('../../../packages/server/ai-feature/ai-feature.validation');
+
+// The field holds back what the server would refuse, so the two patterns must
+// not drift: a looser UI means a save that fails with a generic error, a
+// stricter one refuses identifiers the server accepts.
+it('uses the same model id pattern as the server', () => {
+  expect(MODEL_ID_PATTERN.source).toBe(SERVER_MODEL_ID_PATTERN.source);
+  expect(MODEL_ID_PATTERN.flags).toBe(SERVER_MODEL_ID_PATTERN.flags);
+});
 
 describe('toModelId', () => {
   // The regression this guards against: v-combobox, unlike v-select, ignores

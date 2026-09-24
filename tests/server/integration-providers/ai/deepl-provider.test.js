@@ -244,10 +244,16 @@ describe('DeepLProvider', () => {
       );
     });
 
-    it('should pass formality when configured', async () => {
+    // The lenient variants, never the strict ones: DeepL rejects a strict
+    // `more`/`less` for target languages without formality (English,
+    // Chinese…), and the setting applies to every language of the group.
+    it.each([
+      ['more', 'prefer_more'],
+      ['less', 'prefer_less'],
+    ])('sends formality %s as %s', async (formality, expected) => {
       const formalProvider = new DeepLProvider({
         ...mockIntegration,
-        config: { formality: 'more' },
+        config: { formality },
       });
 
       deepl.__mocks__.mockTranslateText.mockResolvedValueOnce([
@@ -265,10 +271,23 @@ describe('DeepLProvider', () => {
         expect.any(Array),
         'EN',
         'FR',
-        expect.objectContaining({
-          formality: 'more',
-        })
+        expect.objectContaining({ formality: expected })
       );
+    });
+
+    it('sends no formality for the default tone', async () => {
+      deepl.__mocks__.mockTranslateText.mockResolvedValueOnce([
+        { text: 'Bonjour' },
+      ]);
+
+      await provider.translateBatch({
+        texts: { text: 'Hello' },
+        sourceLanguage: 'en',
+        targetLanguage: 'fr',
+      });
+
+      const options = deepl.__mocks__.mockTranslateText.mock.calls[0][3];
+      expect(options).not.toHaveProperty('formality');
     });
 
     it('should handle single result (non-array)', async () => {
