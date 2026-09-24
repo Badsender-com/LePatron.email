@@ -16,10 +16,15 @@ const API_VERSION = '2023-06-01';
 // default" to fall back on, so this is a real ceiling rather than a guard.
 const DEFAULT_MAX_TOKENS = 8192;
 // Generation 5 dropped the temperature parameter and answers 400 when it is
-// sent; 4.x still takes it. Verified against a live account. The pattern
-// matches the family digit right after the tier name, so claude-haiku-4-5 —
-// a 4.x model whose id also contains a 5 — is correctly left out.
-const NO_TEMPERATURE_MODELS = /^claude-[a-z]+-5(-|$)/;
+// sent; 3.x and 4.x still take it. Verified against a live account.
+//
+// An allow list of the generations known to take it, not a deny list of those
+// known to refuse it: translation always sends one, so under a deny list the
+// first new generation typed in failed every call, as 5 did. Now it just runs
+// at its own default. Both id styles are matched on the family digit —
+// `claude-3-5-sonnet-…` and `claude-haiku-4-5-…` — so the 5 in either is not
+// mistaken for generation 5.
+const TEMPERATURE_MODELS = /^claude-(3|[a-z]+-[34])(-|$)/;
 const JSON_TOOL_NAME = 'emit_json';
 
 /**
@@ -53,7 +58,7 @@ class AnthropicProvider extends BaseLLMProvider {
   }
 
   _supportsTemperature(model) {
-    return !NO_TEMPERATURE_MODELS.test(model || '');
+    return TEMPERATURE_MODELS.test(model || '');
   }
 
   _getEndpointUrl() {
@@ -104,7 +109,12 @@ class AnthropicProvider extends BaseLLMProvider {
           // The real schema when the caller supplies one. Left open, the
           // model invents a shape: observed live, one answer came back
           // wrapped in `parameters`, another nested `text` inside `text`.
-          input_schema: responseFormat.schema || { type: 'object' },
+          // Anthropic requires an object at the top: any other shape would
+          // be a 400 on every call, so it falls back to the open object.
+          input_schema:
+            responseFormat.schema && responseFormat.schema.type === 'object'
+              ? responseFormat.schema
+              : { type: 'object' },
         },
       ];
       body.tool_choice = { type: 'tool', name: JSON_TOOL_NAME };

@@ -161,8 +161,40 @@ describe('AnthropicProvider', () => {
           type: 'tool',
           name: 'emit_json',
         });
-        // Left open on purpose: the real schema is in the output contract
-        // already injected into the prompt, out of this class's reach.
+        // Open when the caller sends no schema.
+        expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
+      });
+
+      it('passes the output schema to the tool', async () => {
+        const schema = {
+          type: 'object',
+          properties: { text: { type: 'string' } },
+          required: ['text'],
+        };
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+          responseFormat: { type: 'json_object', schema },
+        });
+
+        expect(sentBody().tools[0].input_schema).toEqual(schema);
+      });
+
+      // Anthropic answers 400 to any input_schema that is not an object.
+      it('falls back to an open object for a schema of another shape', async () => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+          responseFormat: {
+            type: 'json_object',
+            schema: { type: 'array', items: { type: 'string' } },
+          },
+        });
+
         expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
       });
 
@@ -230,9 +262,10 @@ describe('AnthropicProvider', () => {
         expect(sentBody().temperature).toBeUndefined();
       });
 
-      // claude-haiku-4-5 has a 5 in its id but is a 4.x model: it takes one.
-      it.each(['claude-haiku-4-5-20251001', 'claude-sonnet-4-5-20250929'])(
-        'keeps it on %s',
+      // A generation we do not know yet loses temperature rather than failing
+      // every translation call on it.
+      it.each(['claude-opus-5-5', 'claude-sonnet-6', 'claude-future'])(
+        'omits it on %s',
         async (model) => {
           mockFetch.mockResolvedValue(reply(messageResponse()));
 
@@ -242,9 +275,29 @@ describe('AnthropicProvider', () => {
             temperature: 0.3,
           });
 
-          expect(sentBody().temperature).toBe(0.3);
+          expect(sentBody().temperature).toBeUndefined();
         }
       );
+
+      // claude-haiku-4-5 and claude-3-5-sonnet have a 5 in their id but are
+      // 4.x and 3.x models: they take one.
+      it.each([
+        'claude-haiku-4-5-20251001',
+        'claude-sonnet-4-5-20250929',
+        'claude-opus-4-1-20250805',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+      ])('keeps it on %s', async (model) => {
+        mockFetch.mockResolvedValue(reply(messageResponse()));
+
+        await provider.chatComplete({
+          model,
+          messages: [{ role: 'user', content: 'x' }],
+          temperature: 0.3,
+        });
+
+        expect(sentBody().temperature).toBe(0.3);
+      });
     });
   });
 
