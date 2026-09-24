@@ -9,7 +9,10 @@ const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const modelListingService = require('../integration-providers/ai/model-listing.service.js');
-const { ProviderError } = require('../integration-providers/provider-error.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES,
+} = require('../integration-providers/provider-error.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 
@@ -329,8 +332,6 @@ async function getDashboardCount(req, res) {
  *
  * @apiParam {String} integrationId Integration ID
  *
- * @apiQuery {Boolean} [refresh] Bypass the listing cache and re-query the provider
- *
  * @apiSuccess {Array} models List of available models. Each carries `id`,
  *   `label` (`name` is kept as an alias for older clients), an optional
  *   `descriptionKey`, and the `known` / `remote` flags saying whether the
@@ -341,10 +342,11 @@ async function getDashboardCount(req, res) {
  * @apiSuccess {Boolean} allowCustomModel Whether the UI may accept a
  *   hand-typed identifier
  * @apiSuccess {String} defaultModel Model the provider falls back to when none is configured (null if it has none)
- * @apiSuccess {String} [error] Why the provider listing could not be used
+ * @apiSuccess {String} [error] Why the provider listing could not be used,
+ *   as a PROVIDER_ERROR_CODES value
  */
 async function getModels(req, res) {
-  const { user, params, query } = req;
+  const { user, params } = req;
   const { integrationId } = params;
 
   const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
@@ -354,7 +356,26 @@ async function getModels(req, res) {
     }
   );
 
-  const provider = ProviderFactory.createProvider(integration);
+  // A provider can throw from its constructor when its configuration is
+  // incomplete — Infomaniak without a productId, which is every Infomaniak
+  // integration saved while that field was being dropped. Unguarded, that is
+  // a 500 on the one screen where the admin could fix it.
+  let provider;
+  try {
+    provider = ProviderFactory.createProvider(integration);
+  } catch (error) {
+    logger.error('Cannot build provider for model listing:', error.message);
+    return res.json({
+      models: [],
+      source: 'catalog',
+      dynamic: false,
+      capabilities: { supportsModelSelection: true, supportsFormality: false },
+      defaultModel: null,
+      allowCustomModel: true,
+      error: PROVIDER_ERROR_CODES.CONFIG_ERROR,
+    });
+  }
+
   const capabilities = provider.getCapabilities();
   const defaultModel = resolveDefaultModel(provider);
 
@@ -364,9 +385,7 @@ async function getModels(req, res) {
     models,
     source,
     error,
-  } = await modelListingService.listModelsForIntegration(integration, {
-    refresh: query.refresh === 'true',
-  });
+  } = await modelListingService.listModelsForIntegration(integration);
 
   return res.json({
     models,

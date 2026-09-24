@@ -15,11 +15,15 @@
  * range, for both IPv4 and IPv6 (including IPv4-mapped IPv6).
  *
  * Note on TOCTOU: DNS can change between validation and the actual request.
- * Re-run `assertOutboundHostAllowed` immediately before the outbound call (the
- * resolution cost is small), or layer an explicit host allowlist on top.
+ * `assertOutboundHostAllowed` alone does not close that window — the request
+ * resolves the name again. Outbound calls that carry a secret go through
+ * `guardedLookup` (see integration-providers/provider-http.js), which checks
+ * the very addresses the socket then connects to.
  */
 
 const dns = require('dns').promises;
+// Callback API, read at call time (not destructured) so tests can stub it.
+const dnsCallbacks = require('dns');
 const ipaddr = require('ipaddr.js');
 
 // IPv4/IPv6 range names (from ipaddr.js `.range()`) that must never be the
@@ -119,8 +123,59 @@ async function assertOutboundHostAllowed(apiHost, options = {}) {
   }
 }
 
+// Set on the error guardedLookup refuses with, so callers can tell a refused
+// host from a network failure.
+const BLOCKED_HOST_ERROR_CODE = 'EBLOCKEDHOST';
+
+/**
+ * `lookup` for the HTTP agents of outbound calls: resolves the name once,
+ * refuses it if ANY address is blocked, and hands the socket only addresses it
+ * validated.
+ *
+ * Validating in `assertOutboundHostAllowed` and letting the request resolve
+ * again leaves a gap a TTL-0 domain can use to answer a public address to the
+ * check and 127.0.0.1 to the request (DNS rebinding). Here the check and the
+ * connection share one resolution, so there is no gap.
+ *
+ * Node calls it for hostnames only — a literal IP never reaches it, which is
+ * why `assertOutboundHostAllowed` still runs before each request.
+ *
+ * Same signature as `dns.lookup`: Node 18 asks for one address, newer versions
+ * (autoSelectFamily) ask for `all`.
+ */
+function guardedLookup(hostname, options, callback) {
+  const cb = typeof options === 'function' ? options : callback;
+  const opts = typeof options === 'function' || !options ? {} : options;
+  const lookupOptions =
+    typeof opts === 'number' ? { family: opts } : { ...opts };
+
+  dnsCallbacks.lookup(
+    hostname,
+    { ...lookupOptions, all: true },
+    (err, addresses) => {
+      if (err) return cb(err);
+      if (!addresses || addresses.length === 0) {
+        const notFound = new Error(`Host did not resolve: ${hostname}`);
+        notFound.code = 'ENOTFOUND';
+        return cb(notFound);
+      }
+      if (addresses.some(({ address }) => isBlockedAddress(address))) {
+        const blocked = new Error(
+          'Host resolves to a disallowed address range'
+        );
+        blocked.code = BLOCKED_HOST_ERROR_CODE;
+        return cb(blocked);
+      }
+      if (lookupOptions.all) return cb(null, addresses);
+      return cb(null, addresses[0].address, addresses[0].family);
+    }
+  );
+}
+
 module.exports = {
   assertOutboundHostAllowed,
+  guardedLookup,
+  BLOCKED_HOST_ERROR_CODE,
   // exported for testing
   isBlockedAddress,
 };

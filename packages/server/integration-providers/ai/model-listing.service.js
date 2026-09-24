@@ -4,6 +4,10 @@ const logger = require('../../utils/logger.js');
 const ProviderFactory = require('../provider-factory.js');
 const cache = require('./model-listing.cache.js');
 const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
+const {
   getCatalogModels,
   getCatalogEntry,
   passesRemoteFilter,
@@ -27,17 +31,27 @@ const SOURCES = {
   CATALOG: 'catalog',
 };
 
+// Bounds what one listing may keep in the cache, whatever the endpoint sends.
+// The largest real listing (OpenAI) is well under this.
+const MAX_REMOTE_MODELS = 500;
+
+// Listings in progress, by cache key. Both settings sections mount at once and
+// ask for the same integration: without this, both miss the cache and the
+// provider is called twice.
+const inFlight = new Map();
+
 /**
  * @param {Object} integration Mongoose integration document
- * @param {Object} [options]
- * @param {boolean} [options.refresh] skip the cache and re-query the provider
  * @returns {Promise<{models: Array, source: string, error: string|null}>}
+ *   `error` is a PROVIDER_ERROR_CODES value, never a raw message: it reaches
+ *   the client, and a network error's message carries the address and port
+ *   that were tried.
  */
-async function listModelsForIntegration(integration, options = {}) {
+async function listModelsForIntegration(integration) {
   const providerKey = integration.provider;
   const catalogModels = getCatalogModels(providerKey);
 
-  const { remoteModels, error } = await loadRemoteModels(integration, options);
+  const { remoteModels, error } = await loadRemoteModels(integration);
 
   if (!remoteModels) {
     return {
@@ -63,14 +77,23 @@ async function listModelsForIntegration(integration, options = {}) {
  * "the call failed" — the caller falls back to the catalogue either way, and
  * `error` is what distinguishes them for the UI.
  */
-async function loadRemoteModels(integration, { refresh = false } = {}) {
-  if (!refresh) {
-    const cached = cache.get(integration);
-    if (cached) {
-      return { remoteModels: cached.models, error: cached.error };
-    }
+async function loadRemoteModels(integration) {
+  const cached = cache.get(integration);
+  if (cached) {
+    return { remoteModels: cached.models, error: cached.error };
   }
 
+  const key = cache.keyFor(integration);
+  if (inFlight.has(key)) return inFlight.get(key);
+
+  const pending = queryProvider(integration).finally(() =>
+    inFlight.delete(key)
+  );
+  inFlight.set(key, pending);
+  return pending;
+}
+
+async function queryProvider(integration) {
   let provider;
   try {
     provider = ProviderFactory.createProvider(integration);
@@ -78,7 +101,11 @@ async function loadRemoteModels(integration, { refresh = false } = {}) {
     // A provider that cannot even be constructed (missing productId, missing
     // host) is a configuration problem, not a transient one: surface it rather
     // than silently showing the catalogue as if all were well.
-    return { remoteModels: null, error: err.message };
+    logger.error(
+      `Model listing: cannot build the ${integration.provider} provider:`,
+      err.message
+    );
+    return { remoteModels: null, error: CODES.CONFIG_ERROR };
   }
 
   if (typeof provider.listRemoteModels !== 'function') {
@@ -86,7 +113,9 @@ async function loadRemoteModels(integration, { refresh = false } = {}) {
   }
 
   try {
-    const remoteModels = await provider.listRemoteModels();
+    const remoteModels = sanitizeRemoteModels(
+      await provider.listRemoteModels()
+    );
     cache.set(integration, { models: remoteModels });
     return { remoteModels, error: null };
   } catch (err) {
@@ -94,9 +123,44 @@ async function loadRemoteModels(integration, { refresh = false } = {}) {
       `Model listing failed for ${integration.provider}:`,
       err.message
     );
-    cache.set(integration, { error: err.message });
-    return { remoteModels: null, error: err.message };
+    const error = toErrorCode(err);
+    cache.set(integration, { error });
+    return { remoteModels: null, error };
   }
+}
+
+function toErrorCode(err) {
+  if (err instanceof ProviderError && err.code) return err.code;
+  return CODES.API_ERROR;
+}
+
+/**
+ * Keep what the rest of this module can rely on. The listing comes from an
+ * endpoint the group admin chose, so its shape is not ours to assume: an id
+ * that is not a string would make the sort throw, and an unbounded list would
+ * sit in the cache for ten minutes.
+ *
+ * `null` passes through: it means "no usable listing", not "empty".
+ */
+function sanitizeRemoteModels(models) {
+  if (models === null || models === undefined) return null;
+  if (!Array.isArray(models)) return [];
+
+  const text = (value) => (typeof value === 'string' ? value : null);
+  // Passed through as the provider sent it: read by isRetired, which accepts
+  // whatever Date does.
+  const date = (value) =>
+    typeof value === 'string' || typeof value === 'number' ? value : null;
+  return models
+    .filter((model) => model && typeof model.id === 'string' && model.id)
+    .slice(0, MAX_REMOTE_MODELS)
+    .map((model) => ({
+      id: model.id,
+      label: text(model.label),
+      description: text(model.description),
+      shutdownDate: date(model.shutdownDate),
+      replacedBy: text(model.replacedBy),
+    }));
 }
 
 /**

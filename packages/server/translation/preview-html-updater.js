@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  transformOutsideHtmlCodeBlocks,
+} = require('./html-code-block-protection.js');
+
 /**
  * Updates a previewHtml string by replacing original texts with their translations.
  *
@@ -17,12 +21,17 @@
  * @param {string} previewHtml - The original rendered HTML
  * @param {Object} originalTexts - Map of key → original text (from mosaico-text-extractor)
  * @param {Object} translations  - Map of key → translated text (from translation provider)
+ * @param {Object} [options]
+ * @param {string[]} [options.htmlCodes] the markup of the mailing's HTML code
+ *   blocks, in order: lets their zones be matched exactly rather than by
+ *   counting `<div>` (see html-code-block-protection.js)
  * @returns {string} Updated HTML with translations applied
  */
 function updatePreviewWithTranslations(
   previewHtml,
   originalTexts,
-  translations
+  translations,
+  { htmlCodes } = {}
 ) {
   if (
     !previewHtml ||
@@ -57,10 +66,20 @@ function updatePreviewWithTranslations(
     }
   }
 
-  let html = previewHtml;
-  html = replaceAllFromLookup(html, directLookup);
-  html = replaceAllFromLookup(html, encodedLookup);
-  return html;
+  // Never replace inside an "HTML code" block: its markup is excluded from
+  // translation everywhere (see html-code-block-protection.js). Without this
+  // guard, previewHtml — which feeds the preview and the multi-mailing ZIP — got
+  // translated while the editor export, regenerated from `data`, did not.
+  return transformOutsideHtmlCodeBlocks(
+    previewHtml,
+    (segment) => {
+      let html = segment;
+      html = replaceAllFromLookup(html, directLookup);
+      html = replaceAllFromLookup(html, encodedLookup);
+      return html;
+    },
+    htmlCodes
+  );
 }
 
 /**

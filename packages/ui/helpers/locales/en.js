@@ -932,7 +932,8 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Your Infomaniak API key',
       productId: 'Product ID',
-      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools',
+      productIdInvalid: 'The Product ID contains digits only'
     },
     deepl: {
       apiKeyPlaceholder: 'Your DeepL API key',
@@ -1121,12 +1122,10 @@ export default {
       languagesHint: 'Select at least 2 languages (source and target)',
       minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
-      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityHint: 'Applied to target languages that distinguish formal and informal address. Other languages keep a neutral tone.',
       formalityDefault: 'Default',
       formalityMore: 'Formal',
-      formalityLess: 'Informal',
-      formalityPreferMore: 'Prefer formal',
-      formalityPreferLess: 'Prefer informal'
+      formalityLess: 'Informal'
     },
     skill: {
       title: 'Skills engine',
@@ -1183,6 +1182,13 @@ export default {
     previewDescription: 'Preview of the rendered template',
     regeneratePreview: 'Regenerate preview',
     filesAvailableAfterCreation: 'You can upload the HTML markup and images after creating the template.',
+    advancedOptions: 'Advanced options',
+    advancedOptionsDescription: 'Features you can enable on a per-template basis',
+    htmlBlock: {
+      name: 'HTML code block',
+      description: 'Allows pasting free HTML code between two template blocks.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',

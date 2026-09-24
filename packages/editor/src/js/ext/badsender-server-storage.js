@@ -9,6 +9,7 @@ const {
   EDITOR_ONLY_METADATA_KEYS,
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
+const { saveErrorKeyFor } = require('./html-code-block/save-error.js');
 const {
   getErrorsForControlQuality,
   displayErrors,
@@ -157,7 +158,11 @@ function loader(opts) {
         if (metadataErrorKey) {
           viewModel.notifier.error(viewModel.t(metadataErrorKey));
         }
-        viewModel.notifier.error(viewModel.t('save-message-error'));
+        // A refusal that names its reason (the HTML code block is disabled on
+        // the template, or too large) says so instead of the generic message.
+        viewModel.notifier.error(
+          viewModel.t(saveErrorKeyFor(jqXHR) || 'save-message-error')
+        );
       }
 
       function onPostComplete() {

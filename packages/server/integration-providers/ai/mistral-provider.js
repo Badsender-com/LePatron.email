@@ -1,18 +1,14 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
-  ProviderError,
-  PROVIDER_ERROR_CODES: CODES,
-} = require('../provider-error.js');
+  guardedFetch,
+  fetchProviderJson,
+  LISTING_TIMEOUT_MS,
+} = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
-// See OpenAIProvider: this blocks a settings screen, so it must fail fast.
-const MODELS_TIMEOUT_MS = 5000;
 
 /**
  * Mistral AI provider implementation
@@ -38,51 +34,30 @@ class MistralProvider extends BaseLLMProvider {
    * downstream.
    */
   async listRemoteModels() {
-    await assertOutboundHostAllowed(this.baseUrl);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), MODELS_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new ProviderError(
-          `Mistral models listing failed: ${response.status}`,
-          response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
-        );
-      }
-
-      const payload = await response.json();
-      // Mistral is the richest of the three listings: it carries a written
-      // description, a deprecation date and the model meant to replace it.
-      return (payload.data || [])
-        .filter((model) => model.capabilities?.completion_chat)
-        .map((model) => ({
-          id: model.id,
-          label: model.name,
-          description: model.description || null,
-          shutdownDate: model.deprecation || null,
-          replacedBy: model.deprecation_replacement_model || null,
-        }));
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+      headers: { Authorization: `Bearer ${this.apiKey}` },
+      label: 'Mistral models listing',
+    });
+    // Mistral is the richest of the three listings: it carries a written
+    // description, a deprecation date and the model meant to replace it.
+    return (payload.data || [])
+      .filter((model) => model.capabilities?.completion_chat)
+      .map((model) => ({
+        id: model.id,
+        label: model.name,
+        description: model.description || null,
+        shutdownDate: model.deprecation || null,
+        replacedBy: model.deprecation_replacement_model || null,
+      }));
   }
 
   async validateCredentials() {
     try {
-      // SSRF guard: never send the Bearer key to a private/internal host.
-      await assertOutboundHostAllowed(this.baseUrl);
-
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
+      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        timeoutMs: LISTING_TIMEOUT_MS,
+        label: 'Mistral credentials check',
       });
 
       return response.ok;

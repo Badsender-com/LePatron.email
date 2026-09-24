@@ -731,7 +731,8 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Votre clé API Infomaniak',
       productId: 'Product ID',
-      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools',
+      productIdInvalid: 'Le Product ID ne contient que des chiffres'
     },
     deepl: {
       apiKeyPlaceholder: 'Votre clé API DeepL',
@@ -1135,12 +1136,10 @@ export default {
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
       formalityDefault: 'Par défaut',
       formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
+      formalityLess: 'Informel'
     },
     skill: {
       title: 'Moteur Skills',
@@ -1197,6 +1196,13 @@ export default {
     previewDescription: 'Aperçu du template rendu',
     regeneratePreview: 'Régénérer l\'aperçu',
     filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
+    advancedOptions: 'Options avancées',
+    advancedOptionsDescription: 'Fonctionnalités activables template par template',
+    htmlBlock: {
+      name: 'Bloc Code HTML',
+      description: 'Permet de coller du code HTML libre entre deux blocs du template.',
+      hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',

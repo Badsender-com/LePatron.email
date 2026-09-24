@@ -5,10 +5,23 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const {
+  validateHtmlCodeBlocks,
+  hasHtmlCodeBlock,
+  assertHtmlCodeAllowed,
+} = require('./html-code-block-guard.js');
+const {
+  PREVIEW_HTML_MAX_LENGTH,
+} = require('../utils/preview-html-sanitizer.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
-const { Mailings, Galleries, Users } = require('../common/models.common.js');
+const {
+  Mailings,
+  Galleries,
+  Users,
+  Templates,
+} = require('../common/models.common.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const {
   downloadZip,
@@ -378,7 +391,11 @@ async function duplicate(req, res) {
 
 async function previewHtml(req, res) {
   const { mailingId } = req.params;
-  const previewMailHtml = await mailingService.previewMail(mailingId);
+  const previewMailHtml = await mailingService.previewMail(mailingId, req.user);
+  // Opened directly in a tab, the document runs in an opaque origin with no
+  // script: whatever the sanitizer missed cannot reach the session. Does not
+  // apply to the modal, which fetches the text and sandboxes its own iframe.
+  res.set('Content-Security-Policy', 'sandbox');
   res.send(previewMailHtml);
 }
 
@@ -406,6 +423,36 @@ async function updateMosaico(req, res) {
   }
 
   await mailingService.assertUserCanEditMailing(user, mailing);
+
+  // The editor enforces this too, but `data` is an unvalidated Mixed field and
+  // `previewHtml` duplicates the markup in the same document, against Mongo's
+  // 16MB per-document limit.
+  const htmlCodeCheck = validateHtmlCodeBlocks(req.body.data);
+  if (!htmlCodeCheck.valid) {
+    throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
+  }
+
+  // The template flag, enforced here: the editor only hides the palette entry,
+  // and a hand-written request could add the block to any template. Loaded only
+  // when there is a block to check, so a mailing without one costs no query.
+  if (hasHtmlCodeBlock(req.body.data)) {
+    const template = await Templates.findById(mailing._wireframe)
+      .select({ htmlBlockEnabled: 1 })
+      .lean();
+    assertHtmlCodeAllowed({
+      data: req.body.data,
+      previousData: mailing.data,
+      htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+    });
+  }
+
+  // `previewHtml` is served and sanitized on every preview request, and stored in
+  // the same document as `data`. The largest real one is two orders of magnitude
+  // below this; the bound is what keeps a crafted one from costing seconds of CPU
+  // per request.
+  if (requestHtml && requestHtml.length > PREVIEW_HTML_MAX_LENGTH) {
+    throw new BadRequest(ERROR_CODES.PREVIEW_HTML_TOO_LARGE);
+  }
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
