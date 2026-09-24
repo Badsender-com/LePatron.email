@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Grep, Glob, Bash
+name: security-review
 description: Security-focused review of code changes
 ---
 
@@ -9,6 +9,7 @@ Changes:
 !`git diff`
 
 Check for:
+
 1. Hardcoded secrets or credentials
 2. Input validation issues
 3. Injection vulnerabilities
