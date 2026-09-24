@@ -63,6 +63,23 @@ const BLOCKED_RANGES = new Set([
   'teredo',
 ]);
 
+// Ranges ipaddr.js 1.9 classifies as plain `unicast` although nothing public
+// lives there. A deny list, so it is kept next to the ranges it completes.
+const BLOCKED_CIDRS = [
+  '::/96', // IPv4-compatible IPv6 (deprecated): ::a9fe:a9fe is 169.254.169.254
+  '64:ff9b:1::/48', // local-use NAT64 (RFC 8215): maps onto internal IPv4
+  'fec0::/10', // site-local (deprecated), still routed on some networks
+  '100::/64', // discard-only
+  '198.18.0.0/15', // benchmarking, used for internal lab networks
+].map((cidr) => ipaddr.parseCIDR(cidr));
+
+function inBlockedCidr(parsed) {
+  return BLOCKED_CIDRS.some(
+    ([network, bits]) =>
+      parsed.kind() === network.kind() && parsed.match(network, bits)
+  );
+}
+
 /**
  * @param {string} hostname
  * @returns {boolean} true if the resolved address falls in a blocked range
@@ -80,7 +97,7 @@ function isBlockedAddress(address) {
   if (parsed.kind() === 'ipv6' && parsed.isIPv4MappedAddress()) {
     parsed = parsed.toIPv4Address();
   }
-  return BLOCKED_RANGES.has(parsed.range());
+  return BLOCKED_RANGES.has(parsed.range()) || inBlockedCidr(parsed);
 }
 
 /**
