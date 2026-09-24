@@ -17,6 +17,7 @@ import {
   Download,
   ExternalLink,
   Trash2,
+  Code2,
 } from 'lucide-vue';
 
 const SUPPORTED_IMAGES_FORMAT = '.png,.gif,.jpg,.webp';
@@ -36,6 +37,7 @@ export default {
     LucideDownload: Download,
     LucideExternalLink: ExternalLink,
     LucideTrash2: Trash2,
+    LucideCode2: Code2,
   },
   mixins: [validationMixin],
   SUPPORTED_IMAGES_FORMAT,
@@ -52,6 +54,7 @@ export default {
         name: '',
         description: '',
         groupId: '',
+        htmlBlockEnabled: false,
         ...this.template,
       },
       markup: null,
@@ -195,6 +198,15 @@ export default {
         this.images.forEach((image) => {
           formData.append('images', image, image.name);
         });
+      }
+
+      if (this.isEditMode) {
+        // FormData stringifies everything: send an explicit 'true'/'false' that
+        // the server coerces back (see normalize-multipart-booleans.js).
+        formData.append(
+          'htmlBlockEnabled',
+          this.localTemplate.htmlBlockEnabled ? 'true' : 'false'
+        );
       }
 
       this.$emit('submit', formData);
@@ -368,7 +380,9 @@ export default {
         <div class="file-upload-field">
           <label class="file-upload-field__label">
             {{ $t('templates.markup') }}
-            <span v-if="!isEditMode" class="file-upload-field__required">*</span>
+            <span v-if="!isEditMode" class="file-upload-field__required"
+              >*</span
+            >
           </label>
 
           <!-- Show existing markup info if in edit mode -->
@@ -443,7 +457,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onMarkupFileChange"
-            >
+            />
           </div>
         </div>
 
@@ -481,7 +495,7 @@ export default {
                   :alt="image.originalName"
                   loading="lazy"
                   class="images-existing__thumb"
-                >
+                />
                 <span class="images-existing__name">{{
                   image.originalName
                 }}</span>
@@ -540,7 +554,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onImagesFileChange"
-            >
+            />
           </div>
         </div>
       </bs-form-section>
@@ -556,6 +570,47 @@ export default {
         <template #description>
           {{ $t('templates.filesAvailableAfterCreation') }}
         </template>
+      </bs-form-section>
+
+      <!-- Advanced options (edit mode only, super-admin page) -->
+      <bs-form-section v-if="isEditMode">
+        <template #icon>
+          <lucide-code2 :size="20" />
+        </template>
+        <template #title>
+          {{ $t('templates.advancedOptions') }}
+        </template>
+        <template #description>
+          {{ $t('templates.advancedOptionsDescription') }}
+        </template>
+
+        <div class="option-card">
+          <div class="option-card__content">
+            <div class="option-card__icon">
+              <lucide-code2 :size="28" color="#00acdc" />
+            </div>
+            <div class="option-card__info">
+              <div class="option-card__name">
+                {{ $t('templates.htmlBlock.name') }}
+              </div>
+              <div class="option-card__description">
+                {{ $t('templates.htmlBlock.description') }}
+              </div>
+              <div
+                v-if="localTemplate.htmlBlockEnabled"
+                class="option-card__hint"
+              >
+                {{ $t('templates.htmlBlock.hint') }}
+              </div>
+            </div>
+          </div>
+          <v-switch
+            v-model="localTemplate.htmlBlockEnabled"
+            hide-details
+            :disabled="disabled"
+            class="option-card__switch"
+          />
+        </div>
       </bs-form-section>
 
       <!-- Preview Section (only in edit mode with markup) -->
@@ -574,7 +629,7 @@ export default {
             :src="coverSrc"
             alt="Template preview"
             class="template-preview__image"
-          >
+          />
         </div>
       </bs-form-section>
     </v-card-text>
@@ -610,6 +665,67 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// Same visual language as the group form's module cards
+// (packages/ui/components/group/form.vue).
+.option-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: rgba(0, 172, 220, 0.4);
+  }
+
+  &__content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 172, 220, 0.1);
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 1rem;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.25rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.5rem;
+  }
+
+  &__switch {
+    flex-shrink: 0;
+  }
+}
+
 // Textarea styling (matches design system)
 .bs-textarea {
   margin-bottom: 1rem;
