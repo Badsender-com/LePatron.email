@@ -2,13 +2,12 @@
 
 const Vue = require('vue/dist/vue.common');
 
+const { toFormState, SUBJECT_HARD_LIMIT } = require('../utils/email-metadata');
 const {
-  toFormState,
   typologyOptions,
   triggerOptions,
   selectedDescription,
-  SUBJECT_HARD_LIMIT,
-} = require('../utils/email-metadata');
+} = require('../utils/email-metadata-options');
 const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
