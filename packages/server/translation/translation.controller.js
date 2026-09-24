@@ -6,6 +6,13 @@ const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
 const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
+const {
+  transformDocumentKeepingHtmlCodeBlocks,
+} = require('./html-code-block-protection.js');
+const {
+  findHtmlCodeBlocks,
+  HTML_CODE_PROPERTY,
+} = require('../mailing/html-code-block-guard.js');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
@@ -188,15 +195,28 @@ async function processTranslationAsync({
         logger.log(
           '[Translation] Updating preview HTML via string replacement...'
         );
+        // The pasted markup of every HTML code block, in order: the exact bytes
+        // the export put in previewHtml, so their zones are found exactly.
+        const htmlCodes = findHtmlCodeBlocks(originalMailing.data).map(
+          (block) => block[HTML_CODE_PROPERTY]
+        );
         const previewHtml = updatePreviewWithTranslations(
           originalMailing.previewHtml,
           originalTexts,
-          translations
+          translations,
+          { htmlCodes }
         );
         // Provider output was injected into previewHtml above; sanitize the
         // final document before persisting it (stored-XSS protection — the
-        // preview is later served as text/html).
-        const safePreviewHtml = sanitizePreviewHtml(previewHtml);
+        // preview is later served as text/html). The HTML code blocks are put
+        // back as stored: they hold no provider output, and sanitizing them
+        // stripped the ESP scripts they exist for, so the copy's ZIP no longer
+        // matched its export. Serving the preview sanitizes it again.
+        const safePreviewHtml = transformDocumentKeepingHtmlCodeBlocks(
+          previewHtml,
+          sanitizePreviewHtml,
+          htmlCodes
+        );
         await mailingService.updatePreviewHtml(
           duplicatedMailing._id,
           safePreviewHtml

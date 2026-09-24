@@ -64,7 +64,7 @@ describe('HTML code block protection in previewHtml translation', () => {
   });
 
   it('protects an ESP tag inside the block that also appears outside', () => {
-    const pasted = '<td><%@ include view=\'CLAAUT_unsubLink\' %></td>';
+    const pasted = "<td><%@ include view='CLAAUT_unsubLink' %></td>";
     const result = updatePreviewWithTranslations(
       buildPreview('Unsubscribe', pasted),
       { k: 'Unsubscribe' },
@@ -189,5 +189,105 @@ describe('transformOutsideHtmlCodeBlocks', () => {
   it('passes through empty and non-string input', () => {
     expect(transformOutsideHtmlCodeBlocks('', shout)).toBe('');
     expect(transformOutsideHtmlCodeBlocks(null, shout)).toBeNull();
+  });
+});
+
+// The marker's opening tag used to be found by one regex with a lookahead over
+// the attribute list, which backtracked quadratically: seconds of blocked event
+// loop for 100KB of `<div class="`, run synchronously on a duplicate-translate.
+describe('findHtmlCodeBlockRanges on crafted input', () => {
+  it.each([
+    ['unterminated class attributes', '<div class="'.repeat(40000)],
+    [
+      'the class name repeated in text',
+      `<div x="${'lp-html-block '.repeat(40000)}`,
+    ],
+    ['unclosed tags', '<div '.repeat(100000)],
+  ])('stays linear on %s', (_label, crafted) => {
+    const started = Date.now();
+    findHtmlCodeBlockRanges(crafted);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+});
+
+// Counting `<div>` cannot tell where pasted markup ends when it is unbalanced —
+// an extra `</div>` closed the zone early and left the rest of the pasted markup
+// to the string replacement. The stored markup says exactly where it ends.
+describe('findHtmlCodeBlockRanges with the stored markup', () => {
+  const pasted = '<p>Hello</p></div><p>Hello again</p>';
+  const html = `<p>Hello</p><div class="lp-html-block">${pasted}</div><p>Hello</p>`;
+
+  it('covers the whole pasted markup, an extra </div> included', () => {
+    const [range] = findHtmlCodeBlockRanges(html, [pasted]);
+    expect(html.slice(range.start, range.end)).toBe(
+      `<div class="lp-html-block">${pasted}</div>`
+    );
+  });
+
+  it('keeps it untranslated, and translates around it', () => {
+    const result = updatePreviewWithTranslations(
+      html,
+      { k: 'Hello' },
+      { k: 'Bonjour' },
+      { htmlCodes: [pasted] }
+    );
+    expect(result).toBe(
+      `<p>Bonjour</p><div class="lp-html-block">${pasted}</div><p>Bonjour</p>`
+    );
+  });
+
+  it('matches two identical blocks in turn', () => {
+    const twice = `<div class="lp-html-block">${pasted}</div>x<div class="lp-html-block">${pasted}</div>`;
+    const ranges = findHtmlCodeBlockRanges(twice, [pasted, pasted]);
+    expect(ranges).toHaveLength(2);
+    expect(twice.slice(ranges[1].start, ranges[1].end)).toBe(
+      `<div class="lp-html-block">${pasted}</div>`
+    );
+  });
+
+  it('falls back on counting divs when the stored markup does not match', () => {
+    const [
+      range,
+    ] = findHtmlCodeBlockRanges('a<div class="lp-html-block"><b>x</b></div>b', [
+      '<i>other</i>',
+    ]);
+    expect(range).toEqual({ start: 1, end: 42 });
+  });
+});
+
+// The translated copy's previewHtml is sanitized before storage. Sanitizing the
+// pasted markup with it stripped the ESP scripts the block exists for, so the
+// copy's ZIP no longer matched its export.
+describe('transformDocumentKeepingHtmlCodeBlocks', () => {
+  const {
+    transformDocumentKeepingHtmlCodeBlocks,
+  } = require('../../../packages/server/translation/html-code-block-protection.js');
+  const {
+    sanitizePreviewHtml,
+  } = require('../../../packages/server/utils/preview-html-sanitizer.js');
+
+  const pasted = '<script>espTracking("$&")</script><p>kept</p>';
+  const html = [
+    '<html><head></head><body>',
+    '<p>translated<img src="x" onerror="alert(1)"></p>',
+    `<div class="lp-html-block-root"><div class="lp-html-block">${pasted}</div></div>`,
+    '</body></html>',
+  ].join('');
+
+  it('sanitizes the document but puts the pasted markup back byte for byte', () => {
+    const result = transformDocumentKeepingHtmlCodeBlocks(
+      html,
+      sanitizePreviewHtml,
+      [pasted]
+    );
+    expect(result).not.toMatch(/onerror/);
+    expect(result).toContain(`<div class="lp-html-block">${pasted}</div>`);
+  });
+
+  it('is the plain transform without any block', () => {
+    const shout = (s) => s.toUpperCase();
+    expect(transformDocumentKeepingHtmlCodeBlocks('<p>a</p>', shout)).toBe(
+      '<P>A</P>'
+    );
   });
 });
