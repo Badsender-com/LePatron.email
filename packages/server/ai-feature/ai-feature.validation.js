@@ -7,10 +7,6 @@ const {
   TranslationFormalityValues,
 } = require('../constant/translation-formality.js');
 
-module.exports = {
-  validateFeatureConfig,
-};
-
 // Shape of an accepted model identifier. Deliberately a format check and not
 // a whitelist: free typing is a product requirement (models released after a
 // deploy, Azure deployment names, self-hosted OpenAI-compatible endpoints), so
@@ -82,3 +78,10 @@ function validateFeatureConfig(featureConfig) {
   validateFormality(featureConfig);
   validateAvailableLanguages(featureConfig);
 }
+
+module.exports = {
+  validateFeatureConfig,
+  // Mirrored by the model picker (ui/helpers/ai-model-picker.js); a test keeps
+  // the two identical.
+  MODEL_ID_PATTERN,
+};

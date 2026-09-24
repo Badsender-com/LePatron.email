@@ -40,6 +40,11 @@ export default {
       loadError: null,
       // Last rejected entry, kept only to explain itself on the field.
       invalidInput: null,
+      // Bumped on every load and reset: only the latest request may write its
+      // answer. Switching integrations quickly otherwise let a slower, older
+      // response land last — the list and capabilities of the previous
+      // provider shown for the new one, formality select included.
+      loadSeq: 0,
     };
   },
   computed: {
@@ -135,6 +140,8 @@ export default {
     },
 
     reset() {
+      this.loadSeq += 1;
+      this.loading = false;
       this.models = [];
       this.defaultModel = null;
       this.capabilities = null;
@@ -142,36 +149,45 @@ export default {
       this.$emit('capabilities', null);
     },
 
-    async loadModels(integrationId, { refresh = false } = {}) {
+    async loadModels(integrationId) {
+      this.loadSeq += 1;
+      const seq = this.loadSeq;
+      const isStale = () => seq !== this.loadSeq;
+
       this.loading = true;
       this.loadError = null;
       try {
-        const route = apiRoutes.integrationModels(integrationId);
         const response = await this.$axios.$get(
-          refresh ? `${route}?refresh=true` : route
+          apiRoutes.integrationModels(integrationId)
         );
+        if (isStale()) return;
         this.models = response.models || [];
         this.defaultModel = response.defaultModel || null;
         this.capabilities = response.capabilities || null;
         // Reported by the server when it had to fall back to the catalogue.
         this.loadError = response.error || null;
       } catch (error) {
+        if (isStale()) return;
         // Shown on the field rather than raised as a snackbar: both sections
         // mount at once, and two stacked snackbars said nothing the field
         // could not. Free typing still works, so this is not a dead end.
+        //
+        // Capabilities are unknown here, and null would unmount the field —
+        // taking the error message and the free-typing fallback with it. Nor
+        // may the previous integration's be kept: they belong to another
+        // provider. Model selection is assumed, so the admin keeps a field.
         this.models = [];
         this.defaultModel = null;
-        this.capabilities = null;
+        this.capabilities = {
+          supportsModelSelection: true,
+          supportsFormality: false,
+        };
         this.loadError = error.message || 'error';
       } finally {
-        this.loading = false;
-        this.$emit('capabilities', this.capabilities);
-      }
-    },
-
-    refresh() {
-      if (this.integrationId) {
-        this.loadModels(this.integrationId, { refresh: true });
+        if (!isStale()) {
+          this.loading = false;
+          this.$emit('capabilities', this.capabilities);
+        }
       }
     },
   },
