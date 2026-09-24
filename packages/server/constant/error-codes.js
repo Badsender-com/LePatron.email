@@ -164,7 +164,16 @@ module.exports = {
   INTEGRATION_NOT_FOUND: 'INTEGRATION_NOT_FOUND',
   INTEGRATION_NAME_ALREADY_EXIST: 'INTEGRATION_NAME_ALREADY_EXIST',
   INTEGRATION_VALIDATION_FAILED: 'INTEGRATION_VALIDATION_FAILED',
+  // Why an apiHost was refused. Kept apart because the fixes differ: a private
+  // address is a deliberate rule, an unresolvable name is a typo or an outage.
+  INTEGRATION_HOST_NOT_PUBLIC: 'INTEGRATION_HOST_NOT_PUBLIC',
+  INTEGRATION_HOST_UNREACHABLE: 'INTEGRATION_HOST_UNREACHABLE',
+  INTEGRATION_HOST_INVALID: 'INTEGRATION_HOST_INVALID',
   INVALID_PRODUCT_ID: 'INVALID_PRODUCT_ID',
+  // The host or provider changed without the key being entered again.
+  INTEGRATION_API_KEY_REQUIRED: 'INTEGRATION_API_KEY_REQUIRED',
+  // A `config` key the provider does not read, or a value of the wrong shape.
+  INTEGRATION_CONFIG_INVALID: 'INTEGRATION_CONFIG_INVALID',
   UNAUTHORIZED_INTEGRATION_TYPE: 'UNAUTHORIZED_INTEGRATION_TYPE',
 
   // LePatron Skills IA

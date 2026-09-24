@@ -356,10 +356,10 @@ async function getModels(req, res) {
     }
   );
 
-  // A provider can throw from its constructor when its configuration is
-  // incomplete — Infomaniak without a productId, which is every Infomaniak
-  // integration saved while that field was being dropped. Unguarded, that is
-  // a 500 on the one screen where the admin could fix it.
+  // Three providers now throw from their constructor when their configuration
+  // is incomplete (Azure without a host, a compatible endpoint without one,
+  // Infomaniak without a productId). Unguarded, that surfaced as a 500 and
+  // left the settings screen blank — the one place the admin could fix it.
   let provider;
   try {
     provider = ProviderFactory.createProvider(integration);

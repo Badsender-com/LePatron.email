@@ -35,6 +35,10 @@ export default {
     return {
       models: [],
       defaultModel: null,
+      // Whether `defaultModel` comes from an answer of the server, as opposed
+      // to "unknown" after a failed load: only the first can say that the
+      // provider has no default.
+      defaultKnown: false,
       capabilities: null,
       loading: false,
       loadError: null,
@@ -56,16 +60,33 @@ export default {
         const modelId = toModelId(next);
         if (!isValidModelId(modelId)) {
           // Held back rather than sent: the save would fail server-side, and
-          // the tab would report it as a generic error.
+          // the tab would report it as a generic error. Saving is implicit
+          // here — there is no button to grey out — so the message has to say
+          // outright that nothing was recorded, or the admin walks away
+          // believing the previous value was replaced.
           this.invalidInput = modelId;
           return;
         }
+        // Clearing means "provider default", which does not exist here: the
+        // cleared value would be saved and every call would fail on it.
+        if (!modelId && this.requiresModel) return;
         this.invalidInput = null;
         this.$emit('input', modelId);
       },
     },
     supportsModelSelection() {
       return this.capabilities?.supportsModelSelection || false;
+    },
+    /**
+     * The provider has no default to fall back on — Scaleway, OVHcloud, a
+     * generic endpoint, Azure without a deployment: their models depend on the
+     * account. Leaving the field empty would fail every call, so it is not an
+     * option the field offers.
+     */
+    requiresModel() {
+      return (
+        this.supportsModelSelection && this.defaultKnown && !this.defaultModel
+      );
     },
     // Plain identifiers, not { value, text } objects. v-combobox ignores
     // `item-value` and hands the whole item back on selection, so objects here
@@ -83,6 +104,8 @@ export default {
       }, {});
     },
     placeholder() {
+      if (this.requiresModel)
+        return this.$t('aiFeatures.model.requiredPlaceholder');
       return this.defaultModel
         ? this.$t('aiFeatures.model.defaultOption', {
             model: this.defaultModel,
@@ -104,7 +127,11 @@ export default {
       return this.descriptionFor(this.value) || this.hint;
     },
     errorMessages() {
-      return this.invalidInput ? this.$t('aiFeatures.model.invalidId') : '';
+      if (this.invalidInput) return this.$t('aiFeatures.model.invalidId');
+      if (this.requiresModel && !this.value && !this.loading) {
+        return this.$t('aiFeatures.model.required');
+      }
+      return '';
     },
   },
   watch: {
@@ -144,6 +171,7 @@ export default {
       this.loading = false;
       this.models = [];
       this.defaultModel = null;
+      this.defaultKnown = false;
       this.capabilities = null;
       this.loadError = null;
       this.$emit('capabilities', null);
@@ -163,6 +191,7 @@ export default {
         if (isStale()) return;
         this.models = response.models || [];
         this.defaultModel = response.defaultModel || null;
+        this.defaultKnown = true;
         this.capabilities = response.capabilities || null;
         // Reported by the server when it had to fall back to the catalogue.
         this.loadError = response.error || null;
@@ -178,6 +207,7 @@ export default {
         // provider. Model selection is assumed, so the admin keeps a field.
         this.models = [];
         this.defaultModel = null;
+        this.defaultKnown = false;
         this.capabilities = {
           supportsModelSelection: true,
           supportsFormality: false,
@@ -196,7 +226,7 @@ export default {
 
 <template>
   <bs-combobox
-    v-if="integrationId && supportsModelSelection"
+    v-if="integrationId && (supportsModelSelection || loadError)"
     v-model="localValue"
     :items="items"
     :label="label"
@@ -205,7 +235,7 @@ export default {
     :placeholder="placeholder"
     :disabled="disabled || loading"
     :loading="loading"
-    clearable
+    :clearable="!requiresModel"
   >
     <!-- The stored value is the identifier; the readable name lives here so
          the two never diverge. -->

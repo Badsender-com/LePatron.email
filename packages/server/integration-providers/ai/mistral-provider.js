@@ -2,14 +2,9 @@
 
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const {
-  guardedFetch,
-  fetchProviderJson,
-  LISTING_TIMEOUT_MS,
-} = require('../provider-http.js');
+const { fetchProviderJson } = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
-
 /**
  * Mistral AI provider implementation
  *
@@ -35,9 +30,11 @@ class MistralProvider extends BaseLLMProvider {
    */
   async listRemoteModels() {
     const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
+      headers: this._buildHeaders(),
       label: 'Mistral models listing',
+      mapErrorToCode: (status) => this._mapErrorToCode(status),
     });
+
     // Mistral is the richest of the three listings: it carries a written
     // description, a deprecation date and the model meant to replace it.
     return (payload.data || [])
@@ -49,22 +46,6 @@ class MistralProvider extends BaseLLMProvider {
         shutdownDate: model.deprecation || null,
         replacedBy: model.deprecation_replacement_model || null,
       }));
-  }
-
-  async validateCredentials() {
-    try {
-      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-        timeoutMs: LISTING_TIMEOUT_MS,
-        label: 'Mistral credentials check',
-      });
-
-      return response.ok;
-    } catch (error) {
-      logger.error('Mistral validation error:', error.message);
-      return false;
-    }
   }
 
   _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {

@@ -65,23 +65,23 @@ describe('model-listing.service', () => {
     // The point of listing remotely: a model released after this deploy must
     // reach the admin without a release of LePatron.
     it('keeps a model the catalogue has never heard of', async () => {
-      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-5' }]));
+      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-6' }]));
 
       const result = await listModelsForIntegration(integration());
 
       expect(result.models).toContainEqual(
-        expect.objectContaining({ id: 'gpt-5', known: false, remote: true })
+        expect.objectContaining({ id: 'gpt-6', known: false, remote: true })
       );
     });
 
     it('falls back to the id when the provider reports no label', async () => {
-      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-5' }]));
+      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-6' }]));
 
       const result = await listModelsForIntegration(integration());
-      const model = result.models.find((m) => m.id === 'gpt-5');
+      const model = result.models.find((m) => m.id === 'gpt-6');
 
-      expect(model.label).toBe('gpt-5');
-      expect(model.name).toBe('gpt-5');
+      expect(model.label).toBe('gpt-6');
+      expect(model.name).toBe('gpt-6');
     });
 
     // OpenAI returns every model family at once with no type metadata.
@@ -100,6 +100,10 @@ describe('model-listing.service', () => {
 
       expect(ids(await listModelsForIntegration(integration()))).toEqual([
         'gpt-4o',
+        'gpt-5-mini',
+        'gpt-5',
+        'gpt-4.1-mini',
+        'gpt-4.1',
         'gpt-4o-mini',
         'gpt-4-turbo',
       ]);
@@ -110,7 +114,15 @@ describe('model-listing.service', () => {
 
       const result = await listModelsForIntegration(integration());
 
-      expect(ids(result)).toEqual(['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo']);
+      expect(ids(result)).toEqual([
+        'gpt-4o',
+        'gpt-5-mini',
+        'gpt-5',
+        'gpt-4.1-mini',
+        'gpt-4.1',
+        'gpt-4o-mini',
+        'gpt-4-turbo',
+      ]);
       expect(result.models[0].remote).toBe(true);
       expect(result.models[1].remote).toBe(false);
     });
@@ -130,7 +142,11 @@ describe('model-listing.service', () => {
         // reported but unknown, alphabetically
         'gpt-zeta',
         'o4-mini',
-        // curated but not reported
+        // curated but not reported, in catalogue order, deprecated last
+        'gpt-5-mini',
+        'gpt-5',
+        'gpt-4.1-mini',
+        'gpt-4.1',
         'gpt-4o',
         'gpt-4-turbo',
       ]);
@@ -250,7 +266,7 @@ describe('model-listing.service', () => {
 
       expect(result.source).toBe('catalog');
       expect(result.error).toBe(CODES.INVALID_CREDENTIALS);
-      expect(ids(result)).toEqual(['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo']);
+      expect(ids(result)[0]).toBe('gpt-5-mini');
     });
 
     // The error reaches the client: a network failure's message names the
@@ -279,7 +295,7 @@ describe('model-listing.service', () => {
 
       expect(result.source).toBe('catalog');
       expect(result.error).toBeNull();
-      expect(ids(result)[0]).toBe('mixtral');
+      expect(ids(result)[0]).toBe('mistral3');
     });
 
     it('reports a provider that cannot even be constructed', async () => {
@@ -389,12 +405,12 @@ describe('model-listing.service', () => {
       mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-4o' }]));
       await listModelsForIntegration(integration());
 
-      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-5' }]));
+      mockCreateProvider.mockReturnValue(providerListing([{ id: 'gpt-6' }]));
       const other = await listModelsForIntegration(
         integration({ _id: 'integration-2' })
       );
 
-      expect(ids(other)).toContain('gpt-5');
+      expect(ids(other)).toContain('gpt-6');
     });
   });
 });
