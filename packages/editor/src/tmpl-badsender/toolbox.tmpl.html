@@ -171,6 +171,22 @@
       <!-- ko block: content --><!-- /ko -->
     </div>
     <!-- /ko -->
+
+    <!-- Head CSS: a stylesheet for the whole email, not a block property, so it
+         lives with the global style options rather than in a block panel.
+         Shown under the same flag as the HTML code block it exists to style. -->
+    <!-- ko if: $root.metadata && $root.metadata.htmlBlockEnabled -->
+    <div class="head-css-section">
+      <h3 class="head-css-section__title" data-bind="text: $root.t('head-css-section-title')">Custom CSS</h3>
+      <p class="head-css-section__hint" data-bind="text: $root.t('head-css-section-hint')"></p>
+      <button
+        type="button"
+        class="head-css-section__button"
+        data-bind="click: $root.openHeadCssEditor, text: $root.t('head-css-section-button')">
+        Edit the CSS
+      </button>
+    </div>
+    <!-- /ko -->
   </div>
 </div>
 
