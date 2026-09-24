@@ -473,6 +473,25 @@ describe('AIFeatureService', () => {
         expect.anything()
       );
     });
+
+    // $set skips schema validators, so the enum alone would let these through
+    // — and DeepL would then reject every translation of the group. The
+    // prefer_* values are DeepL's, not ours: the provider maps onto them.
+    it.each([['formal'], ['prefer_more'], ['']])(
+      'rejects the formality %j',
+      async (formality) => {
+        groupService.findById.mockResolvedValue({ _id: mockGroupId });
+
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType: 'translation',
+            config: { formality },
+          })
+        ).rejects.toThrow('INVALID_FORMALITY');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('getFeatureConfig', () => {
