@@ -128,4 +128,32 @@ describe('mailingService.previewMail', () => {
     );
     expect(sanitizePreviewHtml).toHaveBeenCalledTimes(2);
   });
+
+  // Bounded by size, not by count: twenty previews at the 5MB limit would be
+  // hundreds of MB held per worker.
+  it('does not hold on to a very large preview', async () => {
+    const doc = mockPreview({ previewHtml: 'x'.repeat(1024 * 1024) });
+
+    await mailingService.previewMail(doc._id, user);
+    await mailingService.previewMail(doc._id, user);
+
+    expect(sanitizePreviewHtml).toHaveBeenCalledTimes(2);
+  });
+
+  it('evicts the oldest previews once the budget is spent', async () => {
+    const first = mockPreview({ previewHtml: 'a'.repeat(700 * 1024) });
+    await mailingService.previewMail(first._id, user);
+
+    // Twelve more of the same size exceed the 8M-character budget.
+    for (let i = 0; i < 12; i += 1) {
+      const next = mockPreview({ previewHtml: 'b'.repeat(700 * 1024) });
+      await mailingService.previewMail(next._id, user);
+    }
+    sanitizePreviewHtml.mockClear();
+
+    mockPreview({ _id: first._id, previewHtml: 'a'.repeat(700 * 1024) });
+    await mailingService.previewMail(first._id, user);
+
+    expect(sanitizePreviewHtml).toHaveBeenCalledTimes(1);
+  });
 });

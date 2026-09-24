@@ -1423,9 +1423,22 @@ async function deleteOne(mailing) {
 
 // Sanitized previews, keyed on the mailing and its last write. DOMPurify on a
 // whole document costs real CPU, synchronously, and a preview is opened far more
-// often than it changes. Bounded, so it cannot grow with the number of mailings.
-const PREVIEW_CACHE_SIZE = 20;
+// often than it changes.
+//
+// Bounded by the total size held, not by a number of entries: previewHtml can
+// weigh up to PREVIEW_HTML_MAX_LENGTH, and twenty of those would be hundreds of MB
+// per worker. Real previews are around 50KB, so the budget holds a few hundred of
+// them; a preview larger than a tenth of it is sanitized every time instead.
+const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
+const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
 const sanitizedPreviews = new Map();
+let sanitizedPreviewsSize = 0;
+
+function evictOldestPreview() {
+  const [oldestKey, oldestHtml] = sanitizedPreviews.entries().next().value;
+  sanitizedPreviews.delete(oldestKey);
+  sanitizedPreviewsSize -= oldestHtml.length;
+}
 
 function sanitizePreviewCached(mailing) {
   const updatedAt = mailing.updatedAt
@@ -1442,9 +1455,12 @@ function sanitizePreviewCached(mailing) {
   }
 
   const html = sanitizePreviewHtml(mailing.previewHtml);
+  if (html.length > PREVIEW_CACHE_MAX_ENTRY) return html;
+
   sanitizedPreviews.set(key, html);
-  if (sanitizedPreviews.size > PREVIEW_CACHE_SIZE) {
-    sanitizedPreviews.delete(sanitizedPreviews.keys().next().value);
+  sanitizedPreviewsSize += html.length;
+  while (sanitizedPreviewsSize > PREVIEW_CACHE_BUDGET) {
+    evictOldestPreview();
   }
   return html;
 }
