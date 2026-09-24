@@ -97,6 +97,25 @@ function mapHttpStatusToCode(status) {
   return CODES.API_ERROR;
 }
 
+function isRedirect(response) {
+  return response.status >= 300 && response.status < 400;
+}
+
+async function fetchOnce(url, options, label) {
+  try {
+    // Still needed alongside guardedLookup: a literal IP host never goes
+    // through a DNS lookup.
+    await assertOutboundHostAllowed(url);
+    return await fetch(url, {
+      ...options,
+      agent: agentFor,
+      redirect: 'manual',
+    });
+  } catch (error) {
+    throw toProviderError(error, label);
+  }
+}
+
 /**
  * @param {string} url
  * @param {Object} options
@@ -107,6 +126,9 @@ function mapHttpStatusToCode(status) {
  * @param {number} [options.maxBytes] ceiling on the body size
  * @param {AbortSignal} [options.signal] caller-owned signal, honoured as well
  * @param {string} [options.label='provider'] names the call in errors
+ * @param {number} [options.maxRedirects=0] redirects to follow, each hop
+ *   re-checked. Only for a plain GET carrying no header at all — a public
+ *   RSS feed moving to https. Anything with a key refuses them: see above.
  * @returns {Promise<Response>}
  * @throws {ProviderError} on a refused host, a redirect or a network failure
  */
@@ -120,34 +142,43 @@ async function guardedFetch(
     maxBytes = DEFAULT_MAX_BYTES,
     signal,
     label = 'provider',
+    maxRedirects = 0,
   } = {}
 ) {
-  let response;
-  try {
-    // Still needed alongside guardedLookup: a literal IP host never goes
-    // through a DNS lookup.
-    await assertOutboundHostAllowed(url);
-    response = await fetch(url, {
-      method,
-      headers,
-      body,
-      agent: agentFor,
-      redirect: 'manual',
-      size: maxBytes,
-      timeout: timeoutMs,
-      signal,
-    });
-  } catch (error) {
-    throw toProviderError(error, label);
+  const carriesSomething =
+    method !== 'GET' || body !== undefined || Object.keys(headers || {}).length;
+  if (maxRedirects > 0 && carriesSomething) {
+    // A programming error, not a runtime condition: following redirects is
+    // exactly what hands a key to the host a redirect names.
+    throw new TypeError('guardedFetch follows redirects for bare GETs only');
   }
 
-  if (response.status >= 300 && response.status < 400) {
-    throw new ProviderError(
-      `${label}: answered with a redirect (${response.status}), not followed`,
-      CODES.API_ERROR
-    );
+  const options = {
+    method,
+    headers,
+    body,
+    size: maxBytes,
+    timeout: timeoutMs,
+    signal,
+  };
+
+  let currentUrl = url;
+  for (let hop = 0; ; hop += 1) {
+    const response = await fetchOnce(currentUrl, options, label);
+    if (!isRedirect(response)) return response;
+
+    const location =
+      response.headers && typeof response.headers.get === 'function'
+        ? response.headers.get('location')
+        : null;
+    if (hop >= maxRedirects || !location) {
+      throw new ProviderError(
+        `${label}: answered with a redirect (${response.status}), not followed`,
+        CODES.API_ERROR
+      );
+    }
+    currentUrl = new URL(location, currentUrl).toString();
   }
-  return response;
 }
 
 /**

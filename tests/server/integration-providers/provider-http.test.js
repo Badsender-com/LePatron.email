@@ -119,6 +119,85 @@ describe('provider-http', () => {
     });
   });
 
+  // Only for a bare GET: a public RSS feed moving to https. The host is
+  // checked again on every hop.
+  describe('guardedFetch with maxRedirects', () => {
+    function redirect(location, status = 301) {
+      return {
+        status,
+        ok: false,
+        headers: { get: (name) => (name === 'location' ? location : null) },
+      };
+    }
+
+    function loadWithRealGuard(mockFetch) {
+      let loaded;
+      jest.isolateModules(() => {
+        jest.doMock('node-fetch', () => mockFetch);
+        jest.dontMock(OUTBOUND_HOST);
+        loaded = require(PROVIDER_HTTP);
+      });
+      return loaded;
+    }
+
+    it('follows a redirect to a public host', async () => {
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValueOnce(redirect('https://1.1.1.1/feed.xml'))
+        .mockResolvedValueOnce(response(200));
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      const result = await guardedFetch('http://8.8.8.8/feed.xml', {
+        maxRedirects: 3,
+      });
+
+      expect(result.status).toBe(200);
+      expect(mockFetch.mock.calls.map((c) => c[0])).toEqual([
+        'http://8.8.8.8/feed.xml',
+        'https://1.1.1.1/feed.xml',
+      ]);
+    });
+
+    it('refuses a hop to a private address', async () => {
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValueOnce(redirect('http://169.254.169.254/latest/'));
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await expect(
+        guardedFetch('http://8.8.8.8/feed.xml', { maxRedirects: 3 })
+      ).rejects.toMatchObject({ name: 'ProviderError' });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops after maxRedirects hops', async () => {
+      const mockFetch = jest
+        .fn()
+        .mockResolvedValue(redirect('https://8.8.8.8/loop'));
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await expect(
+        guardedFetch('https://8.8.8.8/feed.xml', { maxRedirects: 2 })
+      ).rejects.toThrow(/redirect/);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+
+    // Following redirects is exactly what hands a key to the host a redirect
+    // names: a call carrying anything is refused before it is made.
+    it.each([
+      [{ headers: { Authorization: 'Bearer k' } }],
+      [{ method: 'POST', body: '{}' }],
+    ])('refuses to follow redirects for %j', async (options) => {
+      const mockFetch = jest.fn();
+      const { guardedFetch } = loadWithRealGuard(mockFetch);
+
+      await expect(
+        guardedFetch('https://8.8.8.8/', { ...options, maxRedirects: 1 })
+      ).rejects.toThrow(TypeError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
+
   describe('fetchProviderJson', () => {
     it('returns the parsed body', async () => {
       const { fetchProviderJson } = loadWithFetch(
