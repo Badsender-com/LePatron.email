@@ -149,6 +149,12 @@ describe('model-catalog', () => {
       'gemini-2.5-flash-image',
       'imagen-4.0-generate-001',
       'veo-3.0-generate-001',
+      // Listed, but closed to new accounts: 404 when called.
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
     ])('filters %s out of a Gemini listing', (id) => {
       expect(catalog.passesRemoteFilter('gemini', id)).toBe(false);
     });

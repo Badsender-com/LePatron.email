@@ -15,8 +15,18 @@
 const REMOTE_FILTERS = {
   // Gemini's listing reports speech and image models as supporting
   // generateContent, so filtering on that method alone lets them through.
+  //
+  // It also still advertises the generations closed to new accounts: every
+  // gemini-2.5-* id it lists answered 404 "no longer available to new users"
+  // when called. Offering them only sets the admin up for a failing call.
   gemini: {
-    exclude: [/-tts$/, /(^|-)image(-|$)/, /^imagen/, /^veo/],
+    exclude: [
+      /-tts$/,
+      /(^|-)image(-|$)/,
+      /^imagen/,
+      /^veo/,
+      /^gemini-(1\.\d|2\.0|2\.5)(-|$)/,
+    ],
     include: [],
   },
 
