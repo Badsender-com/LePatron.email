@@ -37,6 +37,7 @@ const IMAGES_FOLDER = 'images';
 
 const createPromise = require('../helpers/create-promise.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
+const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
 const Ftp = require('./ftp-client.service.js');
 
 const request = require('request');
@@ -1420,14 +1421,73 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
-async function previewMail(mailingId) {
-  const mailWithPreview = await Mailings.findById(mailingId, {
+// Sanitized previews, keyed on the mailing and its last write. DOMPurify on a
+// whole document costs real CPU, synchronously, and a preview is opened far more
+// often than it changes.
+//
+// Bounded by the total size held, not by a number of entries: previewHtml can
+// weigh up to PREVIEW_HTML_MAX_LENGTH, and twenty of those would be hundreds of MB
+// per worker. Real previews are around 50KB, so the budget holds a few hundred of
+// them; a preview larger than a tenth of it is sanitized every time instead.
+const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
+const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
+const sanitizedPreviews = new Map();
+let sanitizedPreviewsSize = 0;
+
+function evictOldestPreview() {
+  const [oldestKey, oldestHtml] = sanitizedPreviews.entries().next().value;
+  sanitizedPreviews.delete(oldestKey);
+  sanitizedPreviewsSize -= oldestHtml.length;
+}
+
+function sanitizePreviewCached(mailing) {
+  const updatedAt = mailing.updatedAt
+    ? new Date(mailing.updatedAt).getTime()
+    : 0;
+  const key = `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
+
+  if (sanitizedPreviews.has(key)) {
+    const html = sanitizedPreviews.get(key);
+    // Refresh its position: the Map iterates in insertion order, oldest first.
+    sanitizedPreviews.delete(key);
+    sanitizedPreviews.set(key, html);
+    return html;
+  }
+
+  const html = sanitizePreviewHtml(mailing.previewHtml);
+  if (html.length > PREVIEW_CACHE_MAX_ENTRY) return html;
+
+  sanitizedPreviews.set(key, html);
+  sanitizedPreviewsSize += html.length;
+  while (sanitizedPreviewsSize > PREVIEW_CACHE_BUDGET) {
+    evictOldestPreview();
+  }
+  return html;
+}
+
+async function previewMail(mailingId, user) {
+  // Scoped like every other mailing read: the company first, then the workspace
+  // or folder. `findById` alone let any signed-in user read any mailing's preview
+  // by id, across companies.
+  const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
+  const mailWithPreview = await Mailings.findOne(query, {
     previewHtml: 1,
+    updatedAt: 1,
+    _workspace: 1,
+    _parentFolder: 1,
   }).lean();
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  await assertUserCanEditMailing(user, mailWithPreview);
   if (!mailWithPreview.previewHtml)
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  return mailWithPreview.previewHtml;
+  // Sanitized on the way out only. This response is served as `text/html`, so
+  // anything scriptable would run with the session of whoever opens the preview
+  // — and the HTML code block lets a user paste a `<script>` where TinyMCE used to
+  // filter it out. Defense in depth: the controller also serves it under a CSP
+  // `sandbox`, and the preview modal's iframe is sandboxed.
+  // The stored value and every deliverable stay verbatim: downloadZip and
+  // downloadMultipleZip read previewHtml straight from the document.
+  return sanitizePreviewCached(mailWithPreview);
 }
 
 async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {

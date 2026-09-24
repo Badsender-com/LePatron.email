@@ -9,6 +9,18 @@ const {
 } = require('./utils/editor-only-metadata-keys');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
+const {
+  isHtmlCodeBlock,
+  isEmptyHtmlCodeBlock,
+} = require('./ext/html-code-block/block-state.js');
+const {
+  stripEmptyHtmlCodeBlocks,
+} = require('./ext/html-code-block/strip-empty-blocks.js');
+const {
+  beginExportSubstitution,
+  endExportSubstitution,
+  substituteMarkers,
+} = require('./ext/html-code-block/export-substitution.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -113,6 +125,19 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
   viewModel.blockDefs = blockDefs;
+
+  // The "HTML code" block is injected by LePatron rather than declared by the
+  // template, so it has no `edres/<type>.png` thumbnail in any client template.
+  // The palette falls back to an icon and a translated label for it.
+  viewModel.isSyntheticBlock = isHtmlCodeBlock;
+
+  // An "HTML code" block with no markup yet renders nothing at all — its
+  // content is wrapped in a `ko if` by data-ko-display — and
+  // `#main-edit-area .editable` has no min-height, so the block would be flat
+  // and impossible to click. block-wysiwyg.tmpl.html uses this to show a
+  // clickable placeholder instead. Edit mode only: that template is never used
+  // for the export, which resolves `<type>-show`.
+  viewModel.isEmptyHtmlBlock = isEmptyHtmlCodeBlock;
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
@@ -641,12 +666,27 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     );
   }
 
-  viewModel.exportHTML = function () {
+  // The body of exportHTML, run inside a substitution session (see below).
+  var exportHTMLInSession = function () {
     var id = 'exportframe';
-    $('body').append(
-      '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'
-    );
-    var frameEl = global.document.getElementById(id);
+    // sandbox="allow-same-origin" hardens this frame: it is a LIVE, same-origin
+    // document, so a <script> reaching it would run in the app's context with the
+    // exporting user's session — and the HTML code block lets one be pasted.
+    // Without `allow-scripts` nothing in the frame executes, while
+    // `allow-same-origin` keeps contentWindow.document readable from here, which
+    // the inlining and the serialization below both need.
+    // This changes no byte of the serialized output: the attribute lives on the
+    // frame element, in the parent document, never in what gets exported.
+    //
+    // The frame is kept by reference, never looked up by id: getElementById
+    // returns the FIRST element carrying the id, and the canvas — which comes
+    // earlier in the document — renders markup users paste. An element there
+    // named `exportframe` would be the one bound below.
+    var frameEl = $(
+      '<iframe id="' +
+        id +
+        '" sandbox="allow-same-origin" data-bind="bindIframe: $data"></iframe>'
+    ).appendTo('body')[0];
     ko.applyBindings(viewModel, frameEl);
 
     ko.cleanNode(frameEl);
@@ -678,6 +718,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     content = content.replace(/ data-bind="[^"]*"/gm, '');
     // Remove trash leftover by TinyMCE
     content = content.replace(/ data-mce-(href|src|style)="[^"]*"/gm, '');
+
+    // Drop the leftover root of an EMPTY "HTML code" block. Its payload is
+    // already gone (data-ko-display), but Mosaico never lets a block root
+    // disappear, so an untouched block would ship an empty div. Runs after the
+    // data-bind removal above, so the root is bare by now, and only ever matches
+    // an empty root of ours — a mail without such a block is unchanged.
+    content = stripEmptyHtmlCodeBlocks(content);
 
     // Replace "replacedstyle" to "style" attributes (chrome puts replacedstyle after style)
     content = content.replace(
@@ -744,7 +791,25 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var blackLinesRegex = /^\s*[\r\n]/gm;
     content = content.replace(blackLinesRegex, '');
 
-    return content;
+    // LAST step, on purpose: put the pasted markup of every HTML code block back,
+    // byte for byte, now that none of the transformations above can reach it.
+    return substituteMarkers(content);
+  };
+
+  // The substitution session opens BEFORE the frame is bound: from then on the
+  // HTML code block renders an inert marker instead of the pasted markup, and the
+  // raw bytes are put back at the very end of the export — after every regex has
+  // run. See ext/html-code-block/export-substitution.js.
+  //
+  // Closed in a `finally`: an export that throws halfway must not leave the
+  // session open, or every later render outside an export would get markers.
+  viewModel.exportHTML = function () {
+    beginExportSubstitution();
+    try {
+      return exportHTMLInSession();
+    } finally {
+      endExportSubstitution();
+    }
   };
 
   viewModel.exportHTMLtoTextarea = function (textareaid) {

@@ -19,6 +19,9 @@ const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
+const {
+  normalizeMultipartBooleans,
+} = require('../utils/normalize-multipart-booleans.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -134,6 +137,9 @@ async function readMarkup(req, res) {
   res.end();
 }
 
+// Boolean fields of this resource that are sent through `multipart/form-data`.
+const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled'];
+
 /**
  * @api {put} /templates/:templateId template update
  * @apiPermission admin
@@ -146,6 +152,7 @@ async function readMarkup(req, res) {
  * @apiParam (Body) {String} [description]
  * @apiParam (Body) {File} [markup] HTML Form-based File Upload
  * @apiParam (Body) {File[]} [images] Images Form-based File Upload
+ * @apiParam (Body) {Boolean} [htmlBlockEnabled] make the generic "HTML code" block available
  *
  * @apiUse template
  */
@@ -162,7 +169,10 @@ async function update(req, res) {
   // custom update function
   const updatedTemplate = _.assignIn(
     template,
-    _.omit(body, ['images', 'assets'])
+    _.omit(normalizeMultipartBooleans(body, MULTIPART_BOOLEAN_FIELDS), [
+      'images',
+      'assets',
+    ])
   );
   updatedTemplate.assets = _.assign(
     {},

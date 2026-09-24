@@ -313,4 +313,22 @@ module.exports = {
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
+  // HTML code block
+  'html-code-block-name': 'HTML code',
+  'html-code-block-empty': 'HTML code block — click to edit',
+  'widget-code-edit': 'Edit HTML code',
+  'html-code-modal-title': 'HTML code',
+  'html-code-modal-apply': 'Apply',
+  'html-code-modal-cancel': 'Cancel',
+  'html-code-placeholder':
+    'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
+  'html-code-too-large':
+    'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
+  'widget-code-disabled':
+    'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
+  'save-message-html-code-disabled':
+    'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-html-code-too-large':
+    'Save refused: an HTML code block exceeds the maximum size.',
+  'save-message-preview-too-large': 'Save refused: the email is too large.',
 };
