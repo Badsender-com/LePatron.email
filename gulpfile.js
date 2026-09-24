@@ -145,6 +145,20 @@ const mosaicoLibList = [
   'node_modules/codemirror/addon/display/placeholder.js',
 ];
 
+// CodeMirror ships no minified build, and its ~500KB of source would otherwise
+// land unminified in every editor load, whether or not the template enables the
+// HTML code block. Concatenated in load order — the modes and the addon register
+// themselves on the global CodeMirror — then minified as one file.
+const codemirrorLibList = [
+  'node_modules/codemirror/lib/codemirror.js',
+  'node_modules/codemirror/mode/xml/xml.js',
+  'node_modules/codemirror/mode/javascript/javascript.js',
+  'node_modules/codemirror/mode/css/css.js',
+  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
+  'node_modules/codemirror/addon/display/placeholder.js',
+];
+const CODEMIRROR_MIN_BUNDLE = 'codemirror.bundle.min.js';
+
 // TODO: minifiy not minfied libs!
 const mosaicoLibListMin = [
   'node_modules/jquery/dist/jquery.min.js',
@@ -163,13 +177,8 @@ const mosaicoLibListMin = [
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
   'node_modules/tinymce/tinymce.min.js',
   'node_modules/dompurify/dist/purify.min.js',
-  // CodeMirror ships no minified build; same order constraint as above.
-  'node_modules/codemirror/lib/codemirror.js',
-  'node_modules/codemirror/mode/xml/xml.js',
-  'node_modules/codemirror/mode/javascript/javascript.js',
-  'node_modules/codemirror/mode/css/css.js',
-  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
-  'node_modules/codemirror/addon/display/placeholder.js',
+  // CodeMirror, minified by mosaicoLib below into this single file.
+  CODEMIRROR_MIN_BUNDLE,
 ];
 
 const orderLibs = (lib) => /[^/]*\.js$/.exec(lib)[0];
@@ -179,8 +188,15 @@ function mosaicoLib() {
     .src(mosaicoLibList)
     .pipe($.order(mosaicoLibList.map(orderLibs)))
     .pipe($.concat('badsender-lib-editor.js'));
-  const prodLibs = gulp
-    .src(mosaicoLibListMin)
+  const codemirrorMin = gulp
+    .src(codemirrorLibList)
+    .pipe($.order(codemirrorLibList.map(orderLibs)))
+    .pipe($.concat(CODEMIRROR_MIN_BUNDLE))
+    .pipe($.uglify());
+  const prodLibs = mergeStream(
+    gulp.src(mosaicoLibListMin.filter((lib) => lib !== CODEMIRROR_MIN_BUNDLE)),
+    codemirrorMin
+  )
     .pipe($.order(mosaicoLibListMin.map(orderLibs)))
     .pipe($.concat('badsender-lib-editor.min.js'));
 
@@ -471,7 +487,7 @@ function rev() {
     .pipe(gulp.dest(SERVER_DIR));
 }
 rev.description =
-  'generate hash from mosaico\'s build files. This will help us to leverage browser caching';
+  "generate hash from mosaico's build files. This will help us to leverage browser caching";
 
 /// /////
 // DEV

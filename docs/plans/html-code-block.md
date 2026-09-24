@@ -321,8 +321,18 @@ Route déjà protégée : `router.put('/:templateId', GUARD_ADMIN, templates.upd
 
 **Piège de cast** : `template.controller.js:153` fait
 `_.assignIn(template, _.omit(body, ['images','assets']))` sur un body **multipart**, où
-les booléens arrivent en `"true"`/`"false"`. Mongoose casterait la chaîne `"false"` en
-`true`. Normalisation explicite obligatoire.
+les booléens arrivent en chaînes. Mongoose 5 caste lui-même `"true"`/`"false"`, mais
+une autre valeur (`""`, `"on"`) échoue au `save()` en erreur brute : la normalisation
+ramène tout à un vrai booléen avant.
+
+**Le flag est appliqué côté serveur.** La définition du bloc étant injectée dans tous les
+templates, le flag ne masquait que la palette : une requête écrite à la main ajoutait le
+bloc n'importe où. `mailing/html-code-block-guard.js` refuse (403
+`HTML_CODE_BLOCK_DISABLED`), quand le template n'a pas le flag, tout code HTML que le
+mailing ne contenait pas déjà **mot pour mot** — sur `PUT /mailings/:id/mosaico` et sur la
+création / modification de blocs personnalisés. Le code déjà stocké reste accepté : une
+créa écrite avant la désactivation du flag reste enregistrable, son bloc est conservé
+mais n'est plus modifiable (l'éditeur remplace le bouton par un message).
 
 ### 4.8 Substitution par marqueur à l'export
 
@@ -396,6 +406,32 @@ document** et le journalise : une créa dont la fin n'est pas traduite est un pr
 visible et réparable, du HTML collé corrompu en silence ne l'est pas.
 
 ---
+
+### 4.10 Sécurité — ce que la neutralisation ne suffisait pas à couvrir
+
+Retours de review, corrigés dans la PR :
+
+- **Canvas** (`neutralize-html.js`) : DOMPurify gardait `id` et `data-*`. L'éditeur
+  retrouve ses propres nœuds par id (frame d'export, templates Knockout, formulaire de
+  téléchargement) et `getElementById` renvoie le premier : un `id="exportframe"` collé
+  était lié par `exportHTML`, qui faisait exécuter à Knockout ses `data-bind` avec la
+  session de la personne qui enregistre. Désormais `ALLOW_DATA_ATTR: false` et
+  `SANITIZE_NAMED_PROPS: true` (ids et names préfixés `user-content-`, **canvas
+  seulement** : l'export garde les ids collés), et la frame d'export est gardée par
+  référence. Le binding neutralise aussi par défaut hors canvas et hors export.
+- **CSS collé** : `transform` sur `.lp-html-block` dans le canvas, pour qu'un élément
+  `position: fixed` reste dans son bloc au lieu de recouvrir l'éditeur. Les règles d'un
+  `<style>` collé s'appliquent encore à tout le document de l'éditeur : l'isolation
+  complète (iframe sandbox pour le canvas du bloc) est une piste V2.
+- **Contrôle qualité** : les libellés de liens cités sont affichés en texte, plus en HTML.
+- **Aperçu** : `GET /mailings/:id/preview` est limité à la company et au workspace du
+  lecteur (il ne l'était pas), servi sous CSP `sandbox`, affiché dans une iframe
+  `sandbox` sans `allow-scripts`, nettoyé une fois par version (cache), et
+  `htmlToExport` est borné à 5 Mo.
+- **Traduction** : la zone protégée est trouvée par un parcours linéaire (l'ancienne regex
+  était quadratique) et, quand le mailing est connu, sur le code stocké exact — un
+  `</div>` en trop dans le code collé ne ferme plus la zone. La copie traduite garde son
+  bloc intact dans `previewHtml` au lieu de le passer au sanitizer.
 
 ## 5. Feuille de route (une branche, un commit par étape)
 
@@ -511,3 +547,17 @@ Sur un template versafix, flag activé :
     HTML partageant le même texte, lancer la traduction de l'email complet → le bloc
     natif est traduit, le contenu du bloc Code HTML est **inchangé**, et l'aperçu, le
     ZIP multiple et l'export éditeur montrent **le même** HTML de bloc.
+17. **Id collé** : coller `<div id="exportframe"><p>x</p></div>` puis enregistrer,
+    télécharger, envoyer un test → tout fonctionne ; dans le canvas, l'élément porte
+    `id="user-content-exportframe"` (inspecteur) ; dans le ZIP, `id="exportframe"`.
+18. **Flag désactivé après coup** : sur une créa contenant un bloc Code HTML, désactiver
+    le flag du template → la créa s'ouvre et **s'enregistre** ; le panneau du bloc
+    affiche le message « n'est plus activé » à la place du bouton.
+19. **Overlay** : coller `<a href="#" style="position:fixed;inset:0;background:red">x</a>`
+    → le rouge reste dans le bloc, la barre d'outils et le panneau restent cliquables.
+20. **Contrôle qualité** : un lien `#toreplace` dont le libellé contient
+    `&lt;b&gt;gras&lt;/b&gt;` → la ligne d'erreur affiche le texte `<b>gras</b>`, pas du gras.
+21. **Aperçu depuis la liste des emails** : il s'affiche, les liens s'ouvrent dans un
+    nouvel onglet ; un `<script>alert(1)</script>` collé ne s'exécute pas.
+22. **Traduction, balise en trop** : un bloc Code HTML contenant `</div>` en trop et un
+    texte partagé avec un bloc natif → après traduction, le bloc est inchangé en entier.
