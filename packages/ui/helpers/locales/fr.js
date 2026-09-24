@@ -1135,12 +1135,10 @@ export default {
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
       formalityDefault: 'Par défaut',
       formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
+      formalityLess: 'Informel'
     },
     skill: {
       title: 'Moteur Skills',

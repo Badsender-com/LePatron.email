@@ -4,6 +4,9 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { GroupModel, IntegrationModel } = require('../constant/model.names.js');
 const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const TranslationFormalities = require('../constant/translation-formality.js');
+
+const { TranslationFormalityValues } = TranslationFormalities;
 
 /**
  * @apiDefine aiFeatureConfig
@@ -49,13 +52,12 @@ const FeatureConfigSchema = Schema(
         default: null,
       },
       // Tone of the translation, for providers that expose it (DeepL only so
-      // far — see DeepLProvider.getCapabilities). The enum mirrors the values
-      // the provider accepts: anything else is rejected upstream anyway, and
-      // the select that feeds this field offers exactly these five.
+      // far — see DeepLProvider.getCapabilities). Three levels on purpose, see
+      // constant/translation-formality.js.
       formality: {
         type: String,
-        enum: ['default', 'more', 'less', 'prefer_more', 'prefer_less'],
-        default: 'default',
+        enum: TranslationFormalityValues,
+        default: TranslationFormalities.DEFAULT,
       },
       // For future features (text_generation, etc.)
       // editorialGuidelines: String,

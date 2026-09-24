@@ -9,18 +9,13 @@ import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsAiFeatureSkillEngineSection from '~/components/group/BsAiFeatureSkillEngineSection.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
+// Three levels, mirroring packages/server/constant/translation-formality.js:
+// the server sends them to DeepL as "where the language allows it", so a
+// separate strict level would only fail on languages without formality.
 const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
   { value: 'more', textKey: 'aiFeatures.translation.formalityMore' },
   { value: 'less', textKey: 'aiFeatures.translation.formalityLess' },
-  {
-    value: 'prefer_more',
-    textKey: 'aiFeatures.translation.formalityPreferMore',
-  },
-  {
-    value: 'prefer_less',
-    textKey: 'aiFeatures.translation.formalityPreferLess',
-  },
 ];
 
 export default {

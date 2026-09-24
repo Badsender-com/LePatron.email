@@ -1121,12 +1121,10 @@ export default {
       languagesHint: 'Select at least 2 languages (source and target)',
       minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
-      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityHint: 'Applied to target languages that distinguish formal and informal address. Other languages keep a neutral tone.',
       formalityDefault: 'Default',
       formalityMore: 'Formal',
-      formalityLess: 'Informal',
-      formalityPreferMore: 'Prefer formal',
-      formalityPreferLess: 'Prefer informal'
+      formalityLess: 'Informal'
     },
     skill: {
       title: 'Skills engine',

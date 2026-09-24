@@ -460,14 +460,14 @@ describe('AIFeatureService', () => {
       await aiFeatureService.updateFeatureConfig({
         groupId: mockGroupId,
         featureType: 'translation',
-        config: { formality: 'prefer_more' },
+        config: { formality: 'more' },
       });
 
       expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalledWith(
         mockConfigId,
         {
           $set: expect.objectContaining({
-            'features.0.config.formality': 'prefer_more',
+            'features.0.config.formality': 'more',
           }),
         },
         expect.anything()
