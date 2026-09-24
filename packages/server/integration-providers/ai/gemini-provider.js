@@ -141,13 +141,6 @@ class GeminiProvider extends BaseLLMProvider {
     return CODES.API_ERROR;
   }
 
-  _getFinishReason(data) {
-    const candidate = (data.candidates || [])[0];
-    return candidate && candidate.finishReason === 'MAX_TOKENS'
-      ? 'length'
-      : null;
-  }
-
   /**
    * Lower than the OpenAI default: the `-latest` aliases point at thinking
    * models, whose reasoning comes out of the same output budget as the answer.

@@ -129,10 +129,6 @@ const CATALOG = {
     ],
   },
 
-  // Infomaniak's chat API only accepts these short aliases, while its /models
-  // endpoint returns full names (e.g. "swiss-ai/Apertus-70B-Instruct-2509").
-  // The provider therefore has no usable listing and this list is its only
-  // source — the clearest justification for keeping a catalogue at all.
   // Anthropic lists its chat models cleanly, with display names and nothing
   // else mixed in, so the catalogue here is thin on purpose: it names a
   // default and qualifies the main tiers, and the listing keeps it current.
@@ -194,6 +190,10 @@ const CATALOG = {
     ],
   },
 
+  // Infomaniak's chat API only accepts these short aliases, while its /models
+  // endpoint returns full names (e.g. "swiss-ai/Apertus-70B-Instruct-2509").
+  // The provider therefore has no usable listing and this list is its only
+  // source — the clearest justification for keeping a catalogue at all.
   infomaniak: {
     // Verified against a live account: of the seven aliases this list used to
     // carry, only these three are still accepted — `mixtral`, `llama3`,
