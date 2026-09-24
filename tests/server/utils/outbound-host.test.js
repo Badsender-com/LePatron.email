@@ -23,12 +23,26 @@ describe('outbound-host SSRF guard', () => {
       ['fd00::1', 'unique-local v6'],
       ['::ffff:127.0.0.1', 'ipv4-mapped loopback'],
       ['::ffff:169.254.169.254', 'ipv4-mapped metadata'],
+      // ipaddr.js calls these plain unicast.
+      ['::a9fe:a9fe', 'ipv4-compatible metadata'],
+      ['::7f00:1', 'ipv4-compatible loopback'],
+      ['64:ff9b:1::a9fe:a9fe', 'local-use NAT64 to metadata'],
+      ['fec0::1', 'site-local v6'],
+      ['100::1', 'discard-only v6'],
+      ['198.18.0.1', 'benchmarking'],
+      ['198.19.255.254', 'benchmarking, upper half'],
     ];
     test.each(blocked)('blocks %s (%s)', (ip) => {
       expect(isBlockedAddress(ip)).toBe(true);
     });
 
-    const allowed = [['8.8.8.8'], ['1.1.1.1'], ['93.184.216.34']];
+    const allowed = [
+      ['8.8.8.8'],
+      ['1.1.1.1'],
+      ['93.184.216.34'],
+      ['198.20.0.1'],
+      ['2606:4700::1111'],
+    ];
     test.each(allowed)('allows public unicast %s', (ip) => {
       expect(isBlockedAddress(ip)).toBe(false);
     });

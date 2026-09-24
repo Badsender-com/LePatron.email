@@ -1,39 +1,37 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { guardedFetch, toProviderError } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
+const { translationMethods } = require('./llm-translation.js');
+const { readProviderError } = require('./provider-error-body.js');
+const { openAIDialect } = require('./openai-dialect.js');
 const {
   getCatalogModels,
   getCatalogDefaultModel,
 } = require('./model-catalog.js');
 
 /**
- * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
- * All three share the same OpenAI-compatible chat completions API contract.
+ * Base class for LLM providers. It keeps what must never be duplicated per
+ * provider — the guarded call, its bounds, error masking and typing — and
+ * takes the rest from two mixins applied at the bottom of this file: the
+ * translation behaviour (llm-translation.js), and the OpenAI dialect as the
+ * default request shaping (openai-dialect.js), whose hooks Anthropic and
+ * Gemini override where they differ.
  *
- * Subclasses must implement:
- *   - constructor: set this.baseUrl
- *   - validateCredentials()
- *   - _getDefaultModel() → string
- *
- * Subclasses may override:
- *   - _getChatCompletionsUrl() — for providers with non-standard endpoint paths
- *   - _supportsResponseFormat() → bool  — false for providers that ignore response_format
- *   - _getMaxTokens() → number          — provider token limit
- *   - _buildTranslationPrompt()         — for provider-specific prompt tuning
- *   - _getSystemPrompt()                — for provider-specific system prompt
- *   - listRemoteModels()                — live model listing from the provider
- *
- * Curated model lists and defaults come from model-catalog.js, not from the
- * subclasses.
+ * Subclasses set `this.baseUrl`. Curated models and defaults come from
+ * model-catalog.js; `listRemoteModels()` asks the provider itself.
  */
+// A whole mailing translates in batches of this, and reasoning models take
+// their time: generous, but no longer unbounded while the body is read.
+const CHAT_TIMEOUT_MS = 5 * 60 * 1000;
+// A translation batch answers in well under a megabyte.
+const CHAT_MAX_BYTES = 10 * 1024 * 1024;
+
 class BaseLLMProvider extends AIProviderInterface {
   /**
    * Get provider capabilities for the frontend.
@@ -82,6 +80,18 @@ class BaseLLMProvider extends AIProviderInterface {
   // ─── hooks ────────────────────────────────────────────────────────────────
 
   /**
+   * Why the model stopped, normalised to `'length'` when it ran out of output
+   * budget. Dialects name this differently; the base class only needs to tell
+   * truncation from a normal stop.
+   *
+   * @returns {string|null}
+   */
+  // eslint-disable-next-line no-unused-vars
+  _getFinishReason(data) {
+    return null;
+  }
+
+  /**
    * The model used when the group configured none.
    *
    * Reads the catalogue rather than a per-class constant. Stays synchronous:
@@ -93,136 +103,6 @@ class BaseLLMProvider extends AIProviderInterface {
     const fromCatalog = getCatalogDefaultModel(this.getProviderType());
     if (fromCatalog) return fromCatalog;
     throw new Error('_getDefaultModel() must be implemented by subclass');
-  }
-
-  /** URL for the chat completions endpoint. Override for non-standard paths. */
-  _getChatCompletionsUrl() {
-    return `${this.baseUrl}/v1/chat/completions`;
-  }
-
-  /** Whether the provider accepts the response_format parameter. */
-  _supportsResponseFormat() {
-    return true;
-  }
-
-  /** Maximum tokens to request. */
-  _getMaxTokens() {
-    return 16000;
-  }
-
-  /**
-   * Name of the output-length parameter for this model.
-   *
-   * Providers have started renaming it per model generation, so it cannot be
-   * a constant in the request body any more.
-   */
-  _maxTokensParamName() {
-    return 'max_tokens';
-  }
-
-  /**
-   * Whether the model accepts an explicit temperature. Some newer models only
-   * run at their own default and reject any other value outright.
-   */
-  _supportsTemperature() {
-    return true;
-  }
-
-  /**
-   * Whether the model takes a reasoning effort. Only reasoning models do, and
-   * the others reject the parameter.
-   */
-  _supportsReasoningEffort() {
-    return false;
-  }
-
-  // ─── translation ──────────────────────────────────────────────────────────
-
-  async translateBatch({ texts, sourceLanguage, targetLanguage }) {
-    const model = this.getDefaultTranslationModel();
-    const sourceDesc =
-      sourceLanguage === 'auto' ? 'the original language' : sourceLanguage;
-
-    const prompt = this._buildTranslationPrompt({
-      texts,
-      sourceDesc,
-      targetLanguage,
-    });
-
-    const completionOptions = {
-      model,
-      messages: [
-        { role: 'system', content: this._getSystemPrompt() },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.3,
-      // Translating a batch needs little reasoning, and a reasoning model
-      // spends its thinking out of the same output budget and wall clock:
-      // measured at twice gpt-4.1-mini's latency on gpt-5-mini's default
-      // effort. `low` rather than `minimal`, which the o-series rejects.
-      reasoningEffort: 'low',
-    };
-
-    if (this._supportsResponseFormat()) {
-      completionOptions.responseFormat = { type: 'json_object' };
-    }
-
-    const response = await this._callChatCompletion(completionOptions);
-    return this._parseTranslationResponse(response);
-  }
-
-  async translateText({ text, sourceLanguage, targetLanguage }) {
-    const result = await this.translateBatch({
-      texts: { text },
-      sourceLanguage,
-      targetLanguage,
-    });
-    return result.text;
-  }
-
-  // ─── prompt building ──────────────────────────────────────────────────────
-
-  _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {
-    const inputJson = JSON.stringify(texts, null, 2);
-    logger.log(
-      'Translation input - keys count:',
-      Object.keys(texts).length,
-      '- size:',
-      inputJson.length,
-      'chars'
-    );
-
-    return `Translate the following JSON object values from ${sourceDesc} to ${targetLanguage}.
-
-IMPORTANT RULES:
-1. Return ONLY a valid JSON object with the exact same keys
-2. Translate only the values, never the keys
-3. Preserve all dynamic variables exactly as they are:
-   - %%VARIABLE%%, {{variable}}, <%=variable%>, @[variable]
-4. Do not translate URLs or email addresses
-5. Do not add any explanation, comments or markdown - just the JSON object
-
-INPUT JSON:
-${inputJson}
-
-OUTPUT (valid JSON only):`;
-  }
-
-  _getSystemPrompt() {
-    return 'You are a JSON translation API. You receive a JSON object and return the same JSON object with translated values. You MUST return valid JSON only, no markdown, no explanation. Keep the exact same structure and keys.';
-  }
-
-  /**
-   * Sanitize log messages to prevent leaking sensitive data (API keys, tokens).
-   * Truncates long messages and masks potential secrets.
-   */
-  _sanitizeLogMessage(message) {
-    if (!message) return 'Unknown error';
-    const str = String(message);
-    // Truncate to 300 chars max
-    const truncated = str.length > 300 ? str.substring(0, 300) + '...' : str;
-    // Mask potential API keys/tokens (long alphanumeric strings)
-    return truncated.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[REDACTED]');
   }
 
   /**
@@ -259,28 +139,13 @@ OUTPUT (valid JSON only):`;
     maxTokens,
     responseFormat,
   }) {
-    const resolvedModel = model || this._getDefaultModel();
-    const data = await this._callChatCompletionRaw({
-      model: resolvedModel,
+    return this._callChatCompletionRaw({
+      model: model || this._getDefaultModel(),
       messages,
       temperature,
       maxTokens,
       responseFormat,
     });
-    const content = data.choices[0].message.content;
-    const usage = data.usage || {};
-    return {
-      content,
-      usage: {
-        promptTokens: usage.prompt_tokens || 0,
-        completionTokens: usage.completion_tokens || 0,
-        totalTokens: usage.total_tokens || 0,
-        cachedTokens:
-          (usage.prompt_tokens_details &&
-            usage.prompt_tokens_details.cached_tokens) ||
-          0,
-      },
-    };
   }
 
   // ─── API call ─────────────────────────────────────────────────────────────
@@ -293,20 +158,25 @@ OUTPUT (valid JSON only):`;
     responseFormat,
     reasoningEffort,
   }) {
-    const data = await this._callChatCompletionRaw({
+    const { content } = await this._callChatCompletionRaw({
       model,
       messages,
       temperature,
       responseFormat,
       reasoningEffort,
     });
-    return data.choices[0].message.content;
+    return content;
   }
 
   /**
-   * Returns the full parsed response (choices + usage). Used by chatComplete()
-   * which needs token-usage metadata; kept separate from _callChatCompletion()
-   * to preserve the legacy translation code path.
+   * Performs the call and returns the normalized `{ content, usage }` its
+   * dialect produced — never the raw payload, so callers stay independent of
+   * which provider answered.
+   *
+   * Everything that must not be duplicated per provider lives here: the SSRF
+   * re-check immediately before the request, the timeout, the log sanitising
+   * that masks keys, and the mapping onto our error vocabulary. A dialect
+   * changes what is sent and how the answer is read, never this.
    */
   async _callChatCompletionRaw({
     model,
@@ -324,112 +194,80 @@ OUTPUT (valid JSON only):`;
       this.baseUrl
     );
 
-    const TIMEOUT_MS = 300000; // 5 minutes
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
     const startTime = Date.now();
 
     try {
-      // SSRF guard at call time (TOCTOU): re-validate the host right before the
-      // outbound request, in case DNS changed since the integration was saved.
-      await assertOutboundHostAllowed(this.baseUrl);
-
-      const requestBody = {
+      const requestBody = this._buildRequestBody({
         model,
         messages,
-        [this._maxTokensParamName(model)]: maxTokens || this._getMaxTokens(),
-      };
-
-      // Omitted rather than defaulted: a model that rejects an explicit
-      // temperature rejects the request outright, and its own default is the
-      // only value it will run at.
-      if (temperature !== undefined && this._supportsTemperature(model)) {
-        requestBody.temperature = temperature;
-      }
-
-      if (reasoningEffort && this._supportsReasoningEffort(model)) {
-        requestBody.reasoning_effort = reasoningEffort;
-      }
-
-      if (responseFormat) {
-        requestBody.response_format = responseFormat;
-      }
-
-      const response = await fetch(this._getChatCompletionsUrl(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
+        temperature,
+        maxTokens,
+        responseFormat,
+        reasoningEffort,
       });
 
-      clearTimeout(timeoutId);
+      // The timeout is node-fetch's own, not an AbortController cleared once
+      // the headers are in: it also bounds the body read, which is where a
+      // slow endpoint would otherwise hold the request forever.
+      const response = await guardedFetch(this._getEndpointUrl(model), {
+        method: 'POST',
+        headers: this._buildHeaders(),
+        body: JSON.stringify(requestBody),
+        timeoutMs: CHAT_TIMEOUT_MS,
+        maxBytes: CHAT_MAX_BYTES,
+        label: `${providerName} API`,
+      });
+
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        let errorMessage = 'Unknown error';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage =
-            (errorData.error && errorData.error.message) ||
-            errorData.message ||
-            (errorData.result && errorData.result.message) ||
-            'Unknown error';
-        } catch {
-          errorMessage = errorText || 'Unknown error';
-        }
-        // Sanitize error message to prevent logging sensitive data
-        const sanitizedMessage = this._sanitizeLogMessage(errorMessage);
-        logger.error(
-          `${providerName} API error:`,
-          response.status,
-          sanitizedMessage
-        );
-        const code =
-          response.status === 401
-            ? CODES.INVALID_CREDENTIALS
-            : response.status === 429
-            ? CODES.QUOTA_EXCEEDED
-            : CODES.API_ERROR;
+        // Sanitised, not raw: this message is persisted on skill invocations
+        // and shown to the user, not only logged.
+        const { parsedError, message } = await readProviderError(response);
+        logger.error(`${providerName} API error:`, response.status, message);
         throw new ProviderError(
-          `${providerName} API error: ${response.status} - ${errorMessage}`,
-          code
+          `${providerName} API error: ${response.status} - ${message}`,
+          this._mapErrorToCode(response.status, parsedError)
         );
       }
 
       const data = await response.json();
+      // The request is handed over too: a dialect may have shaped it in a way
+      // that changes how the answer must be read.
+      const result = this._parseResponse(data, requestBody);
 
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        logger.error(`Invalid ${providerName} response structure`);
-        throw new ProviderError(
-          `Invalid response structure from ${providerName}`,
-          CODES.INVALID_RESPONSE
+      // Truncation guarantees malformed JSON downstream, and the only trace
+      // otherwise is a parse error blaming the model. Checked here rather than
+      // per dialect: three dialects had three behaviours, and the one serving
+      // six providers silently did nothing.
+      if (this._getFinishReason(data) === 'length') {
+        logger.error(
+          `${providerName} response was truncated (output token limit reached)`,
+          `model: ${model}`
         );
       }
 
-      const usage = data.usage || {};
-      // Content length stays in the log even though this returns the whole
-      // payload now (chatComplete needs the usage): a response that arrives
-      // empty is otherwise indistinguishable from a normal one here.
-      const content = data.choices[0].message.content;
+      // Content length stays in the log: a response that arrives empty is
+      // otherwise indistinguishable from a normal one here.
       logger.log(
         `${providerName} response received in ${elapsed}s - length: ${
-          content ? content.length : 0
-        } chars, tokens: ${usage.total_tokens || 'N/A'}`
+          result.content ? result.content.length : 0
+        } chars, tokens: ${result.usage.totalTokens || 'N/A'}`
       );
 
-      return data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      if (error.name === 'AbortError') {
+      return result;
+    } catch (caught) {
+      // Body reads fail as raw FetchErrors (size, timeout): typed like the
+      // request itself, with no address in the message.
+      const error =
+        caught && caught.name === 'FetchError'
+          ? toProviderError(caught, `${providerName} API`)
+          : caught;
+      if (error.code === CODES.TIMEOUT) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         logger.error(
           `${providerName} API timeout after ${elapsed}s (limit: ${
-            TIMEOUT_MS / 1000
+            CHAT_TIMEOUT_MS / 1000
           }s)`
         );
         throw new ProviderError(
@@ -440,47 +278,14 @@ OUTPUT (valid JSON only):`;
       throw error;
     }
   }
-
-  // ─── response parsing ─────────────────────────────────────────────────────
-
-  _parseTranslationResponse(responseContent) {
-    const providerName = this.getProviderType();
-    try {
-      if (!responseContent) {
-        logger.error(`${providerName} returned empty response`);
-        throw new ProviderError(
-          `Empty response from ${providerName}`,
-          CODES.INVALID_RESPONSE
-        );
-      }
-
-      logger.log(
-        `${providerName} raw response (first 500 chars):`,
-        responseContent.substring(0, 500)
-      );
-
-      // Extract JSON from markdown code fences if present (e.g. ```json ... ```)
-      const codeFenceMatch = responseContent.match(
-        /```(?:json)?\s*\n?([\s\S]*?)```/i
-      );
-      const cleanedContent = (codeFenceMatch
-        ? codeFenceMatch[1]
-        : responseContent
-      ).trim();
-
-      return JSON.parse(cleanedContent);
-    } catch (error) {
-      // Log truncated response to avoid leaking sensitive data
-      const truncated = responseContent
-        ? responseContent.substring(0, 200) + '...'
-        : '[empty]';
-      logger.error(`Failed to parse ${providerName} response:`, truncated);
-      throw new ProviderError(
-        `Failed to parse translation response: ${error.message}`,
-        CODES.INVALID_RESPONSE
-      );
-    }
-  }
 }
+
+// Translation lives in its own module; applied here so subclasses keep
+// overriding `_buildTranslationPrompt` / `_getSystemPrompt` as before.
+//
+// The OpenAI dialect is applied the same way, as the default request shaping
+// and response reading. Providers speaking it inherit these untouched;
+// Anthropic and Gemini override the handful that differ.
+Object.assign(BaseLLMProvider.prototype, translationMethods, openAIDialect);
 
 module.exports = BaseLLMProvider;

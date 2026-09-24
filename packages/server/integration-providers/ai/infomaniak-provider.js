@@ -1,8 +1,6 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
-const logger = require('../../utils/logger.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -38,6 +36,14 @@ class InfomaniakProvider extends BaseLLMProvider {
     )}/openai`;
   }
 
+  /**
+   * The product inventory, not a model list: this endpoint answers for the
+   * account rather than the product, which is what a credential check needs.
+   */
+  _getModelsUrl() {
+    return `${API_BASE}/1/ai`;
+  }
+
   _getChatCompletionsUrl() {
     // Infomaniak omits the /v1/ prefix
     return `${this.baseUrl}/chat/completions`;
@@ -49,25 +55,6 @@ class InfomaniakProvider extends BaseLLMProvider {
 
   _getMaxTokens() {
     return 5000; // Infomaniak limit: 1-5000
-  }
-
-  /**
-   * Validate Infomaniak credentials by listing AI products
-   */
-  async validateCredentials() {
-    try {
-      const response = await fetch(`${API_BASE}/1/ai`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-      });
-
-      return response.ok;
-    } catch (error) {
-      logger.error('Infomaniak validation error:', error.message);
-      return false;
-    }
   }
 
   /**

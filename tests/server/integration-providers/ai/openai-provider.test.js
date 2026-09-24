@@ -73,7 +73,10 @@ describe('OpenAIProvider', () => {
         'https://api.openai.com/v1/models',
         expect.objectContaining({
           method: 'GET',
-          headers: { Authorization: 'Bearer sk-test-key-12345' },
+          // Built by the dialect now, so it also carries Content-Type.
+          headers: expect.objectContaining({
+            Authorization: 'Bearer sk-test-key-12345',
+          }),
         })
       );
     });
@@ -224,6 +227,31 @@ describe('OpenAIProvider', () => {
       });
 
       expect(result).toBe('Hello');
+    });
+  });
+
+  // Truncation used to pass unnoticed on this dialect, which backs six
+  // providers: Anthropic and Gemini both reported it, OpenAI did not. It
+  // matters more since gpt-5-mini became the default — a reasoning model
+  // spends output budget before it answers.
+  describe('truncation', () => {
+    it('reports a length finish as truncation', () => {
+      expect(
+        provider._getFinishReason({ choices: [{ finish_reason: 'length' }] })
+      ).toBe('length');
+    });
+
+    it.each([['stop'], ['tool_calls'], [undefined]])(
+      'does not report %s as truncation',
+      (reason) => {
+        expect(
+          provider._getFinishReason({ choices: [{ finish_reason: reason }] })
+        ).toBeNull();
+      }
+    );
+
+    it('tolerates a payload with no choices', () => {
+      expect(provider._getFinishReason({})).toBeNull();
     });
   });
 

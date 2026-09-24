@@ -280,6 +280,82 @@ describe('IntegrationService', () => {
     });
   });
 
+  // The stored key is sent to whatever host the integration names: moving it
+  // elsewhere must require knowing it.
+  describe('changing where a stored key is sent', () => {
+    function stored(overrides = {}) {
+      const integration = {
+        _id: mockIntegrationId,
+        name: 'Endpoint',
+        type: 'ai',
+        provider: 'openai_compatible',
+        apiHost: 'https://93.184.216.34',
+        apiKey: 'stored-secret',
+        _company: mockGroupId,
+        save: jest.fn().mockResolvedValue(),
+        ...overrides,
+      };
+      Integrations.findById.mockResolvedValue(integration);
+      return integration;
+    }
+
+    function update(fields) {
+      return integrationService.updateIntegration({
+        integrationId: mockIntegrationId,
+        ...fields,
+      });
+    }
+
+    it('refuses a new host without the key', async () => {
+      const integration = stored();
+
+      await expect(update({ apiHost: 'https://1.1.1.1' })).rejects.toThrow(
+        'INTEGRATION_API_KEY_REQUIRED'
+      );
+      expect(integration.save).not.toHaveBeenCalled();
+    });
+
+    it('refuses a new provider without the key', async () => {
+      const integration = stored({ provider: 'deepl', apiHost: null });
+
+      await expect(update({ provider: 'openai_compatible' })).rejects.toThrow(
+        'INTEGRATION_API_KEY_REQUIRED'
+      );
+      expect(integration.save).not.toHaveBeenCalled();
+    });
+
+    it('accepts a new host when the key comes with it', async () => {
+      const integration = stored();
+
+      await update({ apiHost: 'https://8.8.8.8', apiKey: 'new-key' });
+
+      expect(integration.save).toHaveBeenCalled();
+      expect(integration.apiHost).toBe('https://8.8.8.8');
+    });
+
+    // The form sends the host back on every save.
+    it('accepts the same host sent back unchanged', async () => {
+      const integration = stored();
+
+      await update({ apiHost: 'https://93.184.216.34', name: 'Renamed' });
+
+      expect(integration.save).toHaveBeenCalled();
+    });
+
+    it('does not ask for a key when none is stored (public RSS feed)', async () => {
+      const integration = stored({
+        type: 'data_feed',
+        provider: 'rss',
+        apiKey: undefined,
+        apiHost: 'https://1.0.0.1/feed',
+      });
+
+      await update({ apiHost: 'https://1.0.0.1/other-feed' });
+
+      expect(integration.save).toHaveBeenCalled();
+    });
+  });
+
   describe('deleteIntegration', () => {
     it('should delete integration successfully', async () => {
       Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });
