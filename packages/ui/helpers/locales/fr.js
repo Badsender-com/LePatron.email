@@ -769,7 +769,7 @@ export default {
       apiKeyPlaceholder: 'Votre clé API Azure OpenAI',
       apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.',
       reasoningModel: 'Le déploiement utilise un modèle de raisonnement (gpt-5, série o)',
-      reasoningModelHint: 'À cocher si le déploiement tourne sur gpt-5, o1, o3 ou o4 : ces modèles refusent la température et max_tokens, et le nom du déploiement ne permet pas de le deviner.'
+      reasoningModelHint: 'À cocher si le déploiement tourne sur gpt-5, o1, o3 ou o4 : ces modèles refusent la température et max_tokens, et le nom du déploiement ne permet pas de le deviner. Le réglage vaut pour tous les déploiements utilisés avec cette intégration : si l\'un d\'eux est un modèle de raisonnement, cochez-le, les autres modèles fonctionnent aussi (ils perdent seulement le réglage de température).'
     },
     openaiCompatible: {
       apiKeyPlaceholder: 'La clé API de votre endpoint',
