@@ -342,6 +342,30 @@ describe('IntegrationService', () => {
       expect(integration.save).toHaveBeenCalled();
     });
 
+    // Only reachable through the API: the form locks the provider on edit.
+    it('drops the previous provider settings when the provider changes', async () => {
+      const integration = stored({
+        provider: 'azure_openai',
+        config: { deployment: 'prod-chat', reasoningModel: true },
+      });
+
+      await update({ provider: 'openai_compatible', apiKey: 'new-key' });
+
+      expect(integration.config).toEqual({});
+    });
+
+    it('checks a config sent with a new provider against that provider', async () => {
+      stored({ provider: 'azure_openai' });
+
+      await expect(
+        update({
+          provider: 'openai_compatible',
+          apiKey: 'new-key',
+          config: { deployment: 'prod-chat' },
+        })
+      ).rejects.toThrow('INTEGRATION_CONFIG_INVALID');
+    });
+
     it('does not ask for a key when none is stored (public RSS feed)', async () => {
       const integration = stored({
         type: 'data_feed',

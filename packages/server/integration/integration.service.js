@@ -151,10 +151,19 @@ async function updateIntegration({
   await validateApiHost(apiHost);
   const normalizedProductId = normalizeProductId(productId);
   assertApiKeyResent({ integration, provider, apiHost, apiKey });
-  const validatedConfig =
-    config === undefined
-      ? undefined
-      : validateIntegrationConfig(provider || integration.provider, config);
+  const providerChanged =
+    provider !== undefined && provider !== integration.provider;
+  let validatedConfig;
+  if (config !== undefined) {
+    validatedConfig = validateIntegrationConfig(
+      provider || integration.provider,
+      config
+    );
+  } else if (providerChanged) {
+    // The old provider's settings mean nothing to the new one, and were only
+    // ever checked against the old one.
+    validatedConfig = {};
+  }
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
