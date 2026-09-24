@@ -40,6 +40,7 @@ describe('MailingSchema.methods.duplicate', () => {
       espIds: [{ id: 'esp-1' }],
       subject: 'Soldes: -50%',
       _emailType: mongoose.Types.ObjectId('507f1f77bcf86cd799439101'),
+      trigger: 'automated',
       plannedSendDate: new Date('2026-07-01T08:00:00.000Z'),
       data: null,
       markModified: jest.fn(),
@@ -55,7 +56,7 @@ describe('MailingSchema.methods.duplicate', () => {
     expect(doc.plannedSendDate).toBeUndefined();
   });
 
-  it('keeps the subject and the typology', () => {
+  it('keeps the subject, the typology and the trigger', () => {
     const doc = makeDoc();
     const emailType = doc._emailType;
 
@@ -63,6 +64,9 @@ describe('MailingSchema.methods.duplicate', () => {
 
     expect(doc.subject).toBe('Soldes: -50%');
     expect(doc._emailType).toBe(emailType);
+    // A copy of an automated transactional email is still one. Only the planned
+    // send date belongs to a single campaign.
+    expect(doc.trigger).toBe('automated');
   });
 
   it('still does what it did before: new id, "copy" name, no esp ids', () => {
@@ -95,6 +99,7 @@ describe('buildMailingCopy', () => {
     updatedAt: new Date('2026-01-02'),
     subject: 'Soldes: -50%',
     _emailType: 'type-a',
+    trigger: 'automated',
     plannedSendDate: new Date('2026-07-01'),
   };
 
@@ -102,10 +107,13 @@ describe('buildMailingCopy', () => {
     expect(buildMailingCopy(source)).not.toHaveProperty('plannedSendDate');
   });
 
-  it('keeps the subject and the typology', () => {
+  it('keeps the subject, the typology and the trigger', () => {
     const copy = buildMailingCopy(source);
     expect(copy.subject).toBe('Soldes: -50%');
     expect(copy._emailType).toBe('type-a');
+    // This path copies by omission, so a new metadata field is kept unless it is
+    // named — the assertion is what makes that a decision rather than an accident.
+    expect(copy.trigger).toBe('automated');
   });
 
   it('still drops identity, authorship, esp ids and the source location', () => {

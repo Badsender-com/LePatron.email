@@ -28,6 +28,9 @@ const {
   TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
 const MailingSchema = require('../../../packages/server/mailing/mailing.schema');
+const {
+  EmailTriggerValues,
+} = require('../../../packages/server/constant/email-trigger.js');
 
 const findOneForMosaico = MailingSchema.statics.findOneForMosaico;
 
@@ -42,6 +45,7 @@ const ACTIVE_TYPES = [
     label: 'Infolettre',
     canonicalType: 'newsletter',
     order: 0,
+    description: 'Notre rendez-vous mensuel.',
   },
   { _id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'), label: 'Promo' },
 ];
@@ -243,17 +247,38 @@ describe('findOneForMosaico — company opted in', () => {
 
     expect(emailMetadataConfig.enabled).toBe(true);
     expect(emailMetadataConfig.requiredFields).toEqual(['subject']);
+    // `description` travels too: it is the company's own definition of the
+    // typology, and the editor shows it under the field for whichever one is
+    // selected. A typology without one exposes `undefined`, which the editor
+    // resolves to an empty hint rather than the word "undefined".
     expect(emailMetadataConfig.emailTypes).toEqual([
-      { id: TYPE_ACTIVE, label: 'Infolettre', canonicalType: 'newsletter' },
+      {
+        id: TYPE_ACTIVE,
+        label: 'Infolettre',
+        canonicalType: 'newsletter',
+        description: 'Notre rendez-vous mensuel.',
+      },
       {
         id: mongoose.Types.ObjectId('507f1f77bcf86cd799439102'),
         label: 'Promo',
         canonicalType: undefined,
+        description: undefined,
       },
     ]);
     expect(emailMetadataConfig.url.update).toBe(
       `/api/mailings/${MAILING}/metadata`
     );
+  });
+
+  // The trigger vocabulary is the doctrine's, not the company's, so it is sent
+  // whatever the taxonomy holds — including to a company with no email type at
+  // all. The editor translates the values; what it must not do is invent them.
+  it('sends the trigger values, the same two for every company', async () => {
+    const { emailMetadataConfig } = (
+      await call(makeContext({ companyFlag: flag }))
+    ).metadata;
+
+    expect(emailMetadataConfig.triggers).toEqual(EmailTriggerValues);
   });
 
   it('reads the typologies of that company only, active ones only', async () => {
@@ -281,6 +306,7 @@ describe('findOneForMosaico — company opted in', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'trigger',
     ]);
   });
 

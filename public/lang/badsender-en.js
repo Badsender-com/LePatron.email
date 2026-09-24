@@ -300,6 +300,16 @@ module.exports = {
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
+  'email-metadata-trigger': 'Trigger',
+  'email-metadata-trigger-none': 'None',
+  'email-metadata-trigger-adhoc': 'One Shot',
+  'email-metadata-trigger-automated': 'Automated',
+  // Shown under the field for the selected value, and as a tooltip on the options.
+  // Full sentences: they stand on their own rather than trailing a label.
+  'email-metadata-trigger-adhoc-description':
+    'A send the team decided on, this once.',
+  'email-metadata-trigger-automated-description':
+    'A send a rule decides, every time.',
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',

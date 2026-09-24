@@ -15,6 +15,7 @@ const EMAIL_METADATA_FIELDS = Object.freeze([
   'subject',
   'plannedSendDate',
   'emailTypeId',
+  'trigger',
 ]);
 
 /**

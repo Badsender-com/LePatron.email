@@ -309,6 +309,16 @@ module.exports = {
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
   'email-metadata-typology-missing': 'Typologie désactivée',
+  'email-metadata-trigger': 'Déclenchement',
+  'email-metadata-trigger-none': 'Aucun',
+  'email-metadata-trigger-adhoc': 'Ad hoc',
+  'email-metadata-trigger-automated': 'Automatisé',
+  // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les
+  // options. Des phrases complètes : elles ne suivent plus un libellé.
+  'email-metadata-trigger-adhoc-description':
+    "Un envoi décidé par l'équipe, pour cette fois.",
+  'email-metadata-trigger-automated-description':
+    'Un envoi décidé par une règle, à chaque fois.',
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',

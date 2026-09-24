@@ -382,6 +382,54 @@ docker exec lepatron_mongo_container mongo --quiet --port 27019 lepatron --eval 
 3. **Typologie retirée** : désactiver dans les réglages une typologie portée par un
    email, rouvrir cet email. **Attendu** : le select affiche « Typologie
    désactivée » — l'email ne perd pas silencieusement sa typologie.
+4. **Duplication** : dupliquer un email portant objet, typologie, déclenchement et
+   date d'envoi prévue. **Attendu** : les trois premiers suivent la copie, la date
+   **non** — elle appartient à une campagne.
+
+### E6 bis. Déclenchement
+
+1. Le select « Déclenchement » / « Trigger » propose exactement deux valeurs et
+   « Aucun ». Il n'est **jamais désactivé** — elles ne dépendent pas de la
+   company, contrairement aux typologies.
+2. **En anglais**, le premier se lit **« One Shot »**, pas « Ad hoc ».
+3. **Le select ne contient que le libellé court.** La définition s'affiche
+   **sous le champ** une fois la valeur choisie — « Un envoi décidé par l'équipe,
+   pour cette fois. » — et en infobulle au survol des options. Exactement le même
+   motif que la typologie (E6 ter). Sur « Aucun », **aucune ligne** ne s'affiche.
+4. Choisir **Automatisé**, enregistrer avec le Save de l'éditeur, recharger.
+   **Attendu** : conservé. Remettre sur « Aucun », enregistrer, recharger :
+   **Attendu** : effacé.
+5. Les deux dimensions sont **indépendantes** : un email peut être
+   Transactionnel × Automatisé, et rien dans l'interface ne les lie. (La matrice
+   de cohérence — les croisements douteux — n'est pas dans ce lot.)
+6. **Refus serveur** — hors interface, envoyer
+
+   ```
+   PATCH /api/mailings/:id/metadata   {"trigger": "scheduled"}
+   ```
+
+   **Attendu** : `422 INVALID_EMAIL_METADATA`. Idem pour `"ADHOC"` et
+   `"marketing-automation"`.
+
+### E6 ter. Définition de la valeur sélectionnée
+
+Les deux selects se comportent pareil : libellé court dans le champ, définition
+en dessous. La différence est l'origine du texte — celle de la typologie
+appartient à la company et peut faire dix lignes, celle du déclenchement est la
+nôtre et vit dans les locales de l'éditeur.
+
+1. Choisir une typologie. **Attendu** : sa **définition** apparaît sous le champ —
+   celle que porte la typologie dans les réglages, pas un texte générique.
+2. Changer de typologie. **Attendu** : la définition **suit le choix**.
+3. Repasser sur « Aucune ». **Attendu** : la ligne **disparaît**. Elle ne doit en
+   aucun cas afficher « undefined ».
+4. Survoler les options de la liste ouverte. **Attendu** : la définition apparaît
+   en infobulle. (Confort seulement — le même texte se lit sous le champ.)
+5. Vider la définition d'une typologie dans les réglages, revenir sur l'email et
+   la sélectionner. **Attendu** : pas de ligne vide sous le champ.
+6. **Lecteur d'écran** : le champ Typologie annonce sa définition
+   (`aria-describedby`). Quand il n'y a ni définition ni typologie configurée, il
+   ne pointe vers **rien** plutôt que vers un élément absent.
 
 ### E7. Company sans typologie configurée
 

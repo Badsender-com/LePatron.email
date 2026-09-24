@@ -2,11 +2,12 @@
 
 const Vue = require('vue/dist/vue.common');
 
+const { toFormState, SUBJECT_HARD_LIMIT } = require('../utils/email-metadata');
 const {
-  toFormState,
   typologyOptions,
-  SUBJECT_HARD_LIMIT,
-} = require('../utils/email-metadata');
+  triggerOptions,
+  selectedDescription,
+} = require('../utils/email-metadata-options');
 const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
@@ -24,7 +25,8 @@ let unloadGuard = null;
 let activeStore = null;
 
 /**
- * The email settings of the Content tab: subject, planned send date, typology.
+ * The email settings of the Content tab: subject, planned send date, typology,
+ * trigger.
  *
  * A group of fields, not a panel. The first implementation followed the comments
  * panel — a slidebar opened from the top bar — and that was the wrong precedent:
@@ -81,7 +83,9 @@ module.exports = {
         subject: initialForm.subject,
         plannedSendDate: initialForm.plannedSendDate,
         emailTypeId: initialForm.emailTypeId,
+        trigger: initialForm.trigger,
         emailTypes: config.emailTypes || [],
+        triggers: config.triggers || [],
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -94,13 +98,52 @@ module.exports = {
             vm.t('email-metadata-typology-missing')
           );
         },
+        triggerChoices() {
+          return triggerOptions(
+            this.triggers,
+            vm.t('email-metadata-trigger-none'),
+            (value) => vm.t(`email-metadata-trigger-${value}`),
+            this.trigger,
+            // A value the locale has no description for falls back to its bare
+            // label: vm.t returns the key itself when it knows nothing, which
+            // would otherwise print the key after a dash.
+            (value) => {
+              const key = `email-metadata-trigger-${value}-description`;
+              const text = vm.t(key);
+              return text === key ? '' : text;
+            }
+          );
+        },
+        // Both selects show the definition of the selected value UNDER the field,
+        // never inside the option: a native select repeats the chosen option's
+        // full text once closed, so a definition folded into it would sit in the
+        // field permanently.
+        typologyDescription() {
+          return selectedDescription(this.typologyChoices, this.emailTypeId);
+        },
+        triggerDescription() {
+          return selectedDescription(this.triggerChoices, this.trigger);
+        },
+        // Null rather than the id when neither hint renders: an aria-describedby
+        // pointing at an element that is not there is read as nothing by some
+        // screen readers and as an error by others.
+        typologyHintId() {
+          if (this.emailTypes.length === 0 || this.typologyDescription) {
+            return 'email-metadata-typology-hint';
+          }
+          return null;
+        },
+        triggerHintId() {
+          return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
+        },
         // Watched rather than pushed field by field: one watcher, and the store
-        // receives a complete snapshot every time instead of three partial ones.
+        // receives a complete snapshot every time instead of four partial ones.
         formState() {
           return {
             subject: this.subject,
             plannedSendDate: this.plannedSendDate,
             emailTypeId: this.emailTypeId,
+            trigger: this.trigger,
           };
         },
       },
@@ -125,7 +168,7 @@ module.exports = {
 
     app = new Vue({ el: '#email-metadata-section' });
 
-    // These three fields are the only plain form inputs in the editor, and a form
+    // These fields are the only plain form inputs in the editor, and a form
     // input is where a user expects their typing to survive. Everything else here
     // is written through a command; the subject someone types and then closes the
     // tab on is gone with nothing said.

@@ -336,7 +336,9 @@ describe('validateMetadataPayload — unknown keys', () => {
         { companyId: COMPANY_A }
       )
     ).rejects.toMatchObject({
-      details: expect.stringContaining('subject, plannedSendDate, emailTypeId'),
+      details: expect.stringContaining(
+        'subject, plannedSendDate, emailTypeId, trigger'
+      ),
     });
 
     await expect(
@@ -349,12 +351,13 @@ describe('validateMetadataPayload — unknown keys', () => {
     });
   });
 
-  it('accepts the three keys together', async () => {
+  it('accepts the four keys together', async () => {
     const result = await validateMetadataPayload(
       {
         subject: 'ok',
         plannedSendDate: '2026-09-01',
         emailTypeId: TYPE_A,
+        trigger: 'adhoc',
       },
       { companyId: COMPANY_A }
     );
@@ -363,7 +366,73 @@ describe('validateMetadataPayload — unknown keys', () => {
       '_emailType',
       'plannedSendDate',
       'subject',
+      'trigger',
     ]);
+  });
+});
+
+// The second classification dimension. Unlike the email type it is a closed pair
+// with no per-company vocabulary, so the interesting cases are the values that are
+// NOT in it — including the ones the previous vocabulary would suggest.
+describe('validateMetadataPayload — trigger', () => {
+  it.each([['adhoc'], ['automated']])('accepts %p', async (trigger) => {
+    const result = await validateMetadataPayload(
+      { trigger },
+      { companyId: COMPANY_A }
+    );
+
+    expect(result.trigger).toBe(trigger);
+  });
+
+  it.each([
+    ['scheduled'],
+    ['ADHOC'],
+    ['ad-hoc'],
+    ['marketing-automation'],
+    ['trigger'],
+    [42],
+    [true],
+    [{ value: 'adhoc' }],
+  ])('refuses %p', async (trigger) => {
+    await expect(
+      validateMetadataPayload({ trigger }, { companyId: COMPANY_A })
+    ).rejects.toMatchObject({
+      status: 422,
+      message: ERROR_CODES.INVALID_EMAIL_METADATA,
+    });
+  });
+
+  // Same contract as every other field: null and '' clear it, absent leaves it be.
+  // Without the explicit branch, '' would fall through to the enum check and 422 a
+  // user who simply emptied the select.
+  it.each([[null], ['']])('clears the field on %p', async (value) => {
+    const result = await validateMetadataPayload(
+      { trigger: value },
+      { companyId: COMPANY_A }
+    );
+
+    expect('trigger' in result).toBe(true);
+    expect(result.trigger).toBeUndefined();
+  });
+
+  it('leaves the field alone when the key is absent', async () => {
+    const result = await validateMetadataPayload(
+      { subject: 'ok' },
+      { companyId: COMPANY_A }
+    );
+
+    expect('trigger' in result).toBe(false);
+  });
+
+  // No company needed, unlike the typology: the values are the doctrine's, not the
+  // company's, so a super admin's mailing can carry one.
+  it('needs no company to validate', async () => {
+    const result = await validateMetadataPayload(
+      { trigger: 'automated' },
+      { companyId: null }
+    );
+
+    expect(result.trigger).toBe('automated');
   });
 });
 

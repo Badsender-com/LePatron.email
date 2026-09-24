@@ -21,13 +21,15 @@ module.exports = {
  * @apiParam (Body) {String} [plannedSendDate] ISO date, `null` to clear
  * @apiParam (Body) {String} [emailTypeId] a taxonomy item of the same company,
  *   `null` to detach
+ * @apiParam (Body) {String} [trigger] `adhoc` or `automated`, `null` to clear
  *
  * @apiSuccess {String} id
  * @apiSuccess {String} subject
  * @apiSuccess {Date} plannedSendDate
  * @apiSuccess {String} emailTypeId
+ * @apiSuccess {String} trigger
  *
- * @apiDescription Only the three fields above are accepted; any other key in the
+ * @apiDescription Only the four fields above are accepted; any other key in the
  *   body is a 422 `INVALID_EMAIL_METADATA`, so a caller is never silently ignored.
  *
  *   The preheader is NOT part of this endpoint — `{"preheader": "..."}` is refused.
@@ -56,6 +58,7 @@ async function updateMetadata(req, res) {
     subject: mailing.subject,
     plannedSendDate: mailing.plannedSendDate,
     emailTypeId: mailing._emailType,
+    trigger: mailing.trigger,
     updatedAt: mailing.updatedAt,
   });
 }
