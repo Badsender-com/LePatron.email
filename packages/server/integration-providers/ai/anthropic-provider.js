@@ -2,7 +2,7 @@
 
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
+const { fetchProviderJson } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
   ProviderError,
@@ -16,8 +16,6 @@ const API_VERSION = '2023-06-01';
 // Anthropic requires max_tokens on every request — there is no "model
 // default" to fall back on, so this is a real ceiling rather than a guard.
 const DEFAULT_MAX_TOKENS = 8192;
-const MODELS_TIMEOUT_MS = 5000;
-
 // Generation 5 dropped the temperature parameter and answers 400 when it is
 // sent; 4.x still takes it. Verified against a live account. The pattern
 // matches the family digit right after the tier name, so claude-haiku-4-5 —
@@ -174,34 +172,28 @@ class AnthropicProvider extends BaseLLMProvider {
    */
   async validateCredentials() {
     try {
-      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
+      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
         headers: this._buildHeaders(),
-        timeoutMs: MODELS_TIMEOUT_MS,
+        label: 'credentials check',
       });
-      return response.ok;
+      return true;
     } catch (error) {
-      logger.error('Anthropic validation error:', error.message);
+      logger.error('anthropic validation error:', error.message);
       return false;
     }
   }
 
   /** Anthropic lists chat models only, with a display name — no filtering needed. */
   async listRemoteModels() {
-    const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-      method: 'GET',
-      headers: this._buildHeaders(),
-      timeoutMs: MODELS_TIMEOUT_MS,
-    });
+    const payload = await fetchProviderJson(
+      `${this.baseUrl}/v1/models?limit=1000`,
+      {
+        headers: this._buildHeaders(),
+        label: 'Anthropic models listing',
+        mapErrorToCode: (status) => this._mapErrorToCode(status),
+      }
+    );
 
-    if (!response.ok) {
-      throw new ProviderError(
-        `Anthropic models listing failed: ${response.status}`,
-        this._mapErrorToCode(response.status)
-      );
-    }
-
-    const payload = await response.json();
     return (payload.data || []).map((model) => ({
       id: model.id,
       label: model.display_name || model.id,

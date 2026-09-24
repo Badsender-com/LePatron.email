@@ -2,17 +2,9 @@
 
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
-const {
-  ProviderError,
-  PROVIDER_ERROR_CODES: CODES,
-} = require('../provider-error.js');
+const { fetchProviderJson } = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
-// See OpenAIProvider: this blocks a settings screen, so it must fail fast.
-const MODELS_TIMEOUT_MS = 5000;
-
 /**
  * Mistral AI provider implementation
  *
@@ -37,20 +29,12 @@ class MistralProvider extends BaseLLMProvider {
    * downstream.
    */
   async listRemoteModels() {
-    const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-      timeoutMs: MODELS_TIMEOUT_MS,
+    const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+      headers: this._buildHeaders(),
+      label: 'Mistral models listing',
+      mapErrorToCode: (status) => this._mapErrorToCode(status),
     });
 
-    if (!response.ok) {
-      throw new ProviderError(
-        `Mistral models listing failed: ${response.status}`,
-        response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
-      );
-    }
-
-    const payload = await response.json();
     // Mistral is the richest of the three listings: it carries a written
     // description, a deprecation date and the model meant to replace it.
     return (payload.data || [])
@@ -66,19 +50,13 @@ class MistralProvider extends BaseLLMProvider {
 
   async validateCredentials() {
     try {
-      // SSRF guard: never send the Bearer key to a private/internal host.
-      await assertOutboundHostAllowed(this.baseUrl);
-
-      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
+      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+        headers: this._buildHeaders(),
+        label: 'credentials check',
       });
-
-      return response.ok;
+      return true;
     } catch (error) {
-      logger.error('Mistral validation error:', error.message);
+      logger.error('mistral validation error:', error.message);
       return false;
     }
   }

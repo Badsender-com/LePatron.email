@@ -73,7 +73,10 @@ describe('OpenAIProvider', () => {
         'https://api.openai.com/v1/models',
         expect.objectContaining({
           method: 'GET',
-          headers: { Authorization: 'Bearer sk-test-key-12345' },
+          // Built by the dialect now, so it also carries Content-Type.
+          headers: expect.objectContaining({
+            Authorization: 'Bearer sk-test-key-12345',
+          }),
         })
       );
     });

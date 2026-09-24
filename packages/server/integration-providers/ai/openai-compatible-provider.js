@@ -54,6 +54,18 @@ class OpenAICompatibleProvider extends OpenAIProvider {
   }
 
   /**
+   * A 403 is read as invalid credentials rather than a generic API error.
+   * Verified by calling both sovereign endpoints: Scaleway and OVHcloud answer
+   * 403 for a bad key where OpenAI answers 401. For an unknown endpoint the
+   * same reading is the useful one — "forbidden" almost always means the key,
+   * and "check your key" beats "API error" for the admin who just pasted one.
+   */
+  _mapErrorToCode(status, errorData) {
+    if (status === 403) return CODES.INVALID_CREDENTIALS;
+    return super._mapErrorToCode(status, errorData);
+  }
+
+  /**
    * Opt-in, defaulting to false: we cannot promise JSON mode on an endpoint we
    * know nothing about, and a false promise makes skills fail at output
    * parsing rather than degrade to the repair pass.

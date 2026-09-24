@@ -2,7 +2,7 @@
 
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
+const { fetchProviderJson } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
 const {
   ProviderError,
@@ -11,8 +11,6 @@ const {
 
 const DEFAULT_API_HOST = 'https://generativelanguage.googleapis.com';
 const API_VERSION = 'v1beta';
-const MODELS_TIMEOUT_MS = 5000;
-
 /**
  * Google Gemini, on generateContent.
  *
@@ -158,42 +156,28 @@ class GeminiProvider extends BaseLLMProvider {
 
   async validateCredentials() {
     try {
-      const response = await guardedFetch(
-        `${this.baseUrl}/${API_VERSION}/models`,
-        {
-          method: 'GET',
-          headers: this._buildHeaders(),
-          timeoutMs: MODELS_TIMEOUT_MS,
-        }
-      );
-      return response.ok;
+      await fetchProviderJson(`${this.baseUrl}/${API_VERSION}/models`, {
+        headers: this._buildHeaders(),
+        label: 'credentials check',
+      });
+      return true;
     } catch (error) {
-      logger.error('Gemini validation error:', error.message);
+      logger.error('gemini validation error:', error.message);
       return false;
     }
   }
 
   /** Filtered at the source: the listing mixes in embedding and imaging models. */
   async listRemoteModels() {
-    // Paginated, 50 per page by default — without a size the listing silently
-    // truncates and reads as "the provider dropped that model".
-    const response = await guardedFetch(
+    const payload = await fetchProviderJson(
       `${this.baseUrl}/${API_VERSION}/models?pageSize=1000`,
       {
-        method: 'GET',
         headers: this._buildHeaders(),
-        timeoutMs: MODELS_TIMEOUT_MS,
+        label: 'Gemini models listing',
+        mapErrorToCode: (status) => this._mapErrorToCode(status),
       }
     );
 
-    if (!response.ok) {
-      throw new ProviderError(
-        `Gemini models listing failed: ${response.status}`,
-        this._mapErrorToCode(response.status)
-      );
-    }
-
-    const payload = await response.json();
     return (payload.models || [])
       .filter((model) =>
         (model.supportedGenerationMethods || []).includes('generateContent')

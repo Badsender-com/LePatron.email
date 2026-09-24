@@ -2,12 +2,7 @@
 
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
-const {
-  ProviderError,
-  PROVIDER_ERROR_CODES: CODES,
-} = require('../provider-error.js');
+const { fetchProviderJson } = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.openai.com';
 
@@ -18,10 +13,6 @@ const DEFAULT_API_HOST = 'https://api.openai.com';
 // not. There is no metadata in the listing to detect this, so the model name
 // is the only signal available.
 const NEW_CONTRACT_MODELS = /^(gpt-5|o\d)/;
-// Short on purpose: this runs while a group admin waits on the settings
-// screen, and a slow provider must degrade to the catalogue, not hang the UI.
-const MODELS_TIMEOUT_MS = 5000;
-
 /**
  * OpenAI provider implementation
  */
@@ -53,20 +44,12 @@ class OpenAIProvider extends BaseLLMProvider {
    * so the rules sit next to the curated entries they defer to.
    */
   async listRemoteModels() {
-    const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-      timeoutMs: MODELS_TIMEOUT_MS,
+    const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+      headers: this._buildHeaders(),
+      label: 'OpenAI models listing',
+      mapErrorToCode: (status) => this._mapErrorToCode(status),
     });
 
-    if (!response.ok) {
-      throw new ProviderError(
-        `OpenAI models listing failed: ${response.status}`,
-        response.status === 401 ? CODES.INVALID_CREDENTIALS : CODES.API_ERROR
-      );
-    }
-
-    const payload = await response.json();
     // `shutdown_date` is OpenAI telling us when a model goes away. It is the
     // only usable metadata here — the listing carries no description and no
     // pricing — and it saves us from curating a list of dead models by hand.
@@ -78,19 +61,13 @@ class OpenAIProvider extends BaseLLMProvider {
 
   async validateCredentials() {
     try {
-      // SSRF guard: never send the Bearer key to a private/internal host.
-      await assertOutboundHostAllowed(this.baseUrl);
-
-      const response = await guardedFetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
+      await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+        headers: this._buildHeaders(),
+        label: 'credentials check',
       });
-
-      return response.ok;
+      return true;
     } catch (error) {
-      logger.error('OpenAI validation error:', error.message);
+      logger.error('openai validation error:', error.message);
       return false;
     }
   }

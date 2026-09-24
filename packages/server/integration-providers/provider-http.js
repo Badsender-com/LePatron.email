@@ -25,6 +25,11 @@ const {
 
 const MAX_REDIRECTS = 5;
 
+// Short on purpose: these calls run while a group admin waits on the settings
+// screen, and a slow provider must degrade to the catalogue rather than hang
+// the page.
+const LISTING_TIMEOUT_MS = 5000;
+
 /**
  * @param {string} url
  * @param {Object} options
@@ -89,4 +94,49 @@ async function guardedFetch(
   throw new ProviderError(`Too many redirects from ${url}`, CODES.API_ERROR);
 }
 
-module.exports = { guardedFetch, MAX_REDIRECTS };
+/**
+ * GET a provider endpoint and return its parsed JSON.
+ *
+ * Every provider listing and credential check was repeating the same four
+ * steps — guarded fetch, status check, typed error, parse — with the timeout
+ * on some and not others. Four near-identical copies is also what the
+ * duplication gate was failing on.
+ *
+ * @param {string} url
+ * @param {Object} options
+ * @param {Object} options.headers
+ * @param {string} options.label     provider name, for the error message
+ * @param {Function} [options.mapErrorToCode] status → PROVIDER_ERROR_CODES
+ * @param {number} [options.timeoutMs]
+ * @returns {Promise<Object>} the parsed body
+ * @throws {ProviderError} on any non-2xx
+ */
+async function fetchProviderJson(
+  url,
+  { headers, label, mapErrorToCode, timeoutMs = LISTING_TIMEOUT_MS } = {}
+) {
+  const response = await guardedFetch(url, {
+    method: 'GET',
+    headers,
+    timeoutMs,
+  });
+
+  if (!response.ok) {
+    const code = mapErrorToCode
+      ? mapErrorToCode(response.status)
+      : CODES.API_ERROR;
+    throw new ProviderError(
+      `${label} request failed: ${response.status}`,
+      code
+    );
+  }
+
+  return response.json();
+}
+
+module.exports = {
+  guardedFetch,
+  fetchProviderJson,
+  LISTING_TIMEOUT_MS,
+  MAX_REDIRECTS,
+};
