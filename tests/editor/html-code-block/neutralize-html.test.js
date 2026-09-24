@@ -101,11 +101,14 @@ describe('neutralizeHtmlForPreview', () => {
       expect(result).toContain('target="_blank"');
     });
 
-    // The pasted markup is never parsed by Knockout (controlsDescendantBindings),
-    // so a data-bind is inert; it is kept because we neutralize execution only.
-    it('leaves a pasted data-bind alone', () => {
+    // The block's own binding never applies bindings to the pasted nodes
+    // (controlsDescendantBindings) — but anything that binds an ancestor does,
+    // and exportHTML did exactly that once a pasted id stood in for its frame.
+    // See canvas-hijack.test.js.
+    it('drops a pasted data-bind', () => {
       const result = neutralize('<div data-bind="text: 1">x</div>');
-      expect(result).toContain('data-bind');
+      expect(result).not.toContain('data-bind');
+      expect(result).toContain('x');
     });
   });
 

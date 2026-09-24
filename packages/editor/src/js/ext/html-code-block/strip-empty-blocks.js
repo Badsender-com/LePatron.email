@@ -15,20 +15,30 @@ const { HTML_CODE_ROOT_CLASS } = require('./constants.js');
 // children at that point and is left completely alone. With no HTML code block in
 // the mail there is no match at all, so the exported bytes are unchanged.
 
-// An opening <div> carrying our root class, with no content before its closing
-// tag. Attribute order is not assumed: `class` comes from the injected markup
-// while `id` is added later by Knockout, and browsers serialize in insertion
-// order, but a future Mosaico version could add its own attribute first.
+// An opening <div> carrying our root class, with nothing but whitespace before
+// its closing tag. Attribute order is not assumed: `class` comes from the
+// injected markup while `id` is added later by Knockout, and browsers serialize
+// in insertion order, but a future Mosaico version could add its own attribute
+// first.
 //
-// The class name is delimited on whitespace, NOT with `\b`: regex word
+// A linear scan rather than one regex: a lookahead over the attribute list
+// (`<div(?=[^>]*class="...")[^>]*>`) backtracks quadratically on a long run of
+// unterminated `<div class="`, and this runs on every export, in the browser.
+const DIV_OPEN = /<div\s/gi;
+const EMPTY_CLOSE = /^\s*<\/div>/;
+
+// Longer than this, an opening tag is not the block root, whose attributes are a
+// class and an id.
+const MAX_TAG_LENGTH = 4096;
+
+// The class is matched as a whole token of the class list, NOT with `\b`: word
 // boundaries treat `-` as a separator, so `\blp-html-block-root\b` also matches
 // inside `not-lp-html-block-root-either`.
-const EMPTY_ROOT = new RegExp(
-  '<div(?=[^>]*\\bclass="(?:[^"]*\\s)?' +
-    HTML_CODE_ROOT_CLASS +
-    '(?:\\s[^"]*)?")[^>]*>\\s*</div>',
-  'g'
-);
+function hasRootClass(tag) {
+  const classAttr = /\sclass="([^"]*)"/.exec(tag);
+  return Boolean(classAttr) &&
+    classAttr[1].split(/\s+/).includes(HTML_CODE_ROOT_CLASS);
+}
 
 /**
  * @param {string} html serialized export HTML
@@ -36,7 +46,31 @@ const EMPTY_ROOT = new RegExp(
  */
 function stripEmptyHtmlCodeBlocks(html) {
   if (!html || typeof html !== 'string') return html;
-  return html.replace(EMPTY_ROOT, '');
+  // Nothing to do, and nothing to scan, in a mail without the block.
+  if (html.indexOf(HTML_CODE_ROOT_CLASS) === -1) return html;
+
+  let result = '';
+  let cursor = 0;
+  DIV_OPEN.lastIndex = 0;
+  let open;
+  while ((open = DIV_OPEN.exec(html))) {
+    const start = open.index;
+    const close = html.indexOf('>', start);
+    if (close === -1) break;
+    const tagEnd = close + 1;
+    // Nothing between here and that `>` opens a real tag: resume after it.
+    DIV_OPEN.lastIndex = tagEnd;
+    if (tagEnd - start > MAX_TAG_LENGTH) continue;
+    if (!hasRootClass(html.slice(start, tagEnd))) continue;
+
+    const empty = EMPTY_CLOSE.exec(html.slice(tagEnd, tagEnd + MAX_TAG_LENGTH));
+    if (!empty) continue;
+
+    result += html.slice(cursor, start);
+    cursor = tagEnd + empty[0].length;
+    DIV_OPEN.lastIndex = cursor;
+  }
+  return result + html.slice(cursor);
 }
 
 module.exports = { stripEmptyHtmlCodeBlocks };

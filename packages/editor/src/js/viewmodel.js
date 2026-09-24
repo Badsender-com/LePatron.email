@@ -666,13 +666,9 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     );
   }
 
-  viewModel.exportHTML = function () {
+  // The body of exportHTML, run inside a substitution session (see below).
+  var exportHTMLInSession = function () {
     var id = 'exportframe';
-    // Open the substitution session BEFORE the frame is bound: from here on, the
-    // HTML code block renders an inert marker instead of the pasted markup, and
-    // the raw bytes are put back at the very end of this function — after every
-    // regex below has run. See ext/html-code-block/export-substitution.js.
-    beginExportSubstitution();
     // sandbox="allow-same-origin" hardens this frame: it is a LIVE, same-origin
     // document, so a <script> reaching it would run in the app's context with the
     // exporting user's session — and the HTML code block lets one be pasted.
@@ -681,12 +677,16 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // the inlining and the serialization below both need.
     // This changes no byte of the serialized output: the attribute lives on the
     // frame element, in the parent document, never in what gets exported.
-    $('body').append(
+    //
+    // The frame is kept by reference, never looked up by id: getElementById
+    // returns the FIRST element carrying the id, and the canvas — which comes
+    // earlier in the document — renders markup users paste. An element there
+    // named `exportframe` would be the one bound below.
+    var frameEl = $(
       '<iframe id="' +
         id +
         '" sandbox="allow-same-origin" data-bind="bindIframe: $data"></iframe>'
-    );
-    var frameEl = global.document.getElementById(id);
+    ).appendTo('body')[0];
     ko.applyBindings(viewModel, frameEl);
 
     ko.cleanNode(frameEl);
@@ -793,10 +793,23 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // LAST step, on purpose: put the pasted markup of every HTML code block back,
     // byte for byte, now that none of the transformations above can reach it.
-    content = substituteMarkers(content);
-    endExportSubstitution();
+    return substituteMarkers(content);
+  };
 
-    return content;
+  // The substitution session opens BEFORE the frame is bound: from then on the
+  // HTML code block renders an inert marker instead of the pasted markup, and the
+  // raw bytes are put back at the very end of the export — after every regex has
+  // run. See ext/html-code-block/export-substitution.js.
+  //
+  // Closed in a `finally`: an export that throws halfway must not leave the
+  // session open, or every later render outside an export would get markers.
+  viewModel.exportHTML = function () {
+    beginExportSubstitution();
+    try {
+      return exportHTMLInSession();
+    } finally {
+      endExportSubstitution();
+    }
   };
 
   viewModel.exportHTMLtoTextarea = function (textareaid) {

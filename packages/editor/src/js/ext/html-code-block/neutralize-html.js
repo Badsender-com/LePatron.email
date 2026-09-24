@@ -33,6 +33,18 @@ const SANITIZE_CONFIG = {
   FORBID_ATTR: ['srcset', 'formaction'],
   ALLOW_UNKNOWN_PROTOCOLS: false,
   ADD_ATTR: ['target'],
+  // No `data-*` at all, `data-bind` first among them. Knockout evaluates a
+  // `data-bind` as JavaScript as soon as anything applies bindings to an ancestor
+  // of the pasted nodes, and the canvas is the editor's own document.
+  ALLOW_DATA_ATTR: false,
+  // Every pasted `id` and `name` is prefixed with `user-content-`. The editor
+  // finds its own nodes by id — the export frame, the Knockout templates
+  // (bindings/script-template.js), the download form — and getElementById
+  // returns the FIRST match in the document. An unprefixed pasted id could stand
+  // in for any of them: bound as the export frame, it had Knockout run the pasted
+  // bindings with the session of whoever saved. Canvas only: the stored markup
+  // and the export keep the ids as pasted.
+  SANITIZE_NAMED_PROPS: true,
 };
 
 /**

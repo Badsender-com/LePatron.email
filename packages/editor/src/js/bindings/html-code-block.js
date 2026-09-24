@@ -18,9 +18,10 @@ const {
 //
 // In the canvas (`templateMode === 'wysiwyg'`) the markup is neutralized before
 // being injected, because that DOM is the editor's own document and same-origin
-// with the user's session. Every other mode — most importantly the export frame
-// built by viewModel.exportHTML — receives the markup untouched, so the
-// downloaded HTML, the test send and the ESP exports keep it exactly as pasted.
+// with the user's session. The export frame built by viewModel.exportHTML
+// renders an inert marker instead, swapped back for the raw bytes at the end of
+// the export, so the downloaded HTML, the test send and the ESP exports keep the
+// markup exactly as pasted. Any other mode gets the neutralized markup too.
 //
 // The neutralized markup is derived on the fly and never written back to the
 // model: the stored value stays the pasted markup, byte for byte.
@@ -45,8 +46,12 @@ ko.bindingHandlers[HTML_CODE_BINDING] = {
       // back at the end of the cascade, so the markup never goes through the DOM
       // or the shared regexes. Outside an export there is no session and the
       // markup is rendered directly, exactly as before.
+      //
+      // Outside both, the markup is neutralized as in the canvas: no rendering
+      // path is known to reach this today, and one added later must not get raw
+      // markup into the editor's document by default.
       const marker = registerMarkup(html);
-      rendered = marker === null ? html : marker;
+      rendered = marker === null ? neutralizeHtmlForPreview(html) : marker;
     }
 
     return ko.bindingHandlers.html.update(element, function () {

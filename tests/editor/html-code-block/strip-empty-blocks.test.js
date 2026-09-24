@@ -129,3 +129,15 @@ describe('stripEmptyHtmlCodeBlocks', () => {
     });
   });
 });
+
+// This runs on every export, in the browser. The previous single regex, a
+// lookahead over the attribute list, took seconds on a long run of unterminated
+// `<div class="`.
+describe('stripEmptyHtmlCodeBlocks on crafted input', () => {
+  it('stays linear', () => {
+    const crafted = '<div class="lp-html-block-root '.repeat(100000);
+    const started = Date.now();
+    stripEmptyHtmlCodeBlocks(crafted);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+});

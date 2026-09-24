@@ -25,6 +25,17 @@
   cursor: pointer;
 }
 
+/* Pasted markup of an "HTML code" block, in the canvas only. `transform` makes
+   the block the containing block of anything the markup positions `fixed` or
+   `absolute`, and a stacking context for its z-index: pasted CSS can no longer
+   lay a full-page layer over the editor, such as a link covering the toolbox.
+   No clipping (no `overflow`, no `contain: paint`): a table wider than the
+   email must still be seen overflowing, as it will in the inbox. Scoped to
+   #main-edit-area, which never exists in the exported HTML. */
+#main-edit-area .lp-html-block {
+  transform: translateZ(0);
+}
+
 /* minimum size for empty dropzones */
 #main-edit-area .sortable-blocks-edit.empty {
   min-height: 200px;
