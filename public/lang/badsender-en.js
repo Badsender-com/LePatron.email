@@ -331,4 +331,16 @@ module.exports = {
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',
+  // Head CSS — a stylesheet for the whole email, gated by the same flag
+  'head-css-section-title': 'Custom CSS',
+  'head-css-section-hint':
+    'Added to the <head> of the exported email. Useful to make markup pasted in an HTML code block responsive.',
+  'head-css-section-button': 'Edit the CSS',
+  'head-css-modal-title': 'Custom CSS (email <head>)',
+  'head-css-placeholder':
+    'Write your CSS here. It is added to the <head> of the exported email, as written, and is not applied to the template blocks.',
+  'head-css-too-large':
+    'The CSS is over the __max__ character limit. Shorten it before applying.',
+  'save-message-head-css-too-large':
+    'Saving refused: the custom CSS is over the maximum size.',
 };

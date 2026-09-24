@@ -12,6 +12,18 @@ const {
 const getCodeMirror = () =>
   typeof window !== 'undefined' ? window.CodeMirror : null;
 
+// What the caller may override when opening the editor. The defaults are the
+// HTML code block, so `toggleHtmlCodeModal(true, { accessor })` behaves exactly
+// as it did before this became reusable. The head CSS editor passes its own
+// mode, labels and bound (see viewModel.openHeadCssEditor).
+const DEFAULT_OPTIONS = {
+  mode: 'htmlmixed',
+  titleKey: 'html-code-modal-title',
+  placeholderKey: 'html-code-placeholder',
+  tooLargeKey: 'html-code-too-large',
+  maxLength: HTML_CODE_MAX_LENGTH,
+};
+
 const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
   components: {
     ModalComponent,
@@ -24,7 +36,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
     editor: null,
     tooLong: false,
     length: 0,
-    maxLength: HTML_CODE_MAX_LENGTH,
+    options: { ...DEFAULT_OPTIONS },
   }),
   mounted() {
     this.vm.toggleHtmlCodeModal = this.handleToggle;
@@ -38,7 +50,9 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
         this.closeModal();
         return;
       }
-      this.accessor = data && data.accessor;
+      const { accessor, ...overrides } = data || {};
+      this.accessor = accessor;
+      this.options = { ...DEFAULT_OPTIONS, ...overrides };
       this.$refs.modalRef?.openModal();
       // The <textarea> only exists once the modal is rendered.
       this.$nextTick(this.createEditor);
@@ -51,7 +65,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
 
       const value = this.accessor ? this.accessor() || '' : '';
       this.editor = CodeMirror.fromTextArea(textarea, {
-        mode: 'htmlmixed',
+        mode: this.options.mode,
         lineNumbers: true,
         lineWrapping: true,
         tabSize: 2,
@@ -60,7 +74,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
         autoCloseTags: false,
         electricChars: false,
         // Hint only, never persisted in the model (addon/display/placeholder.js).
-        placeholder: this.vm.t('html-code-placeholder'),
+        placeholder: this.vm.t(this.options.placeholderKey),
       });
       this.editor.setValue(value);
       this.editor.on('change', this.handleChange);
@@ -78,7 +92,10 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
 
     handleChange() {
       if (!this.editor) return;
-      const result = validateHtmlCodeLength(this.editor.getValue());
+      const result = validateHtmlCodeLength(
+        this.editor.getValue(),
+        this.options.maxLength
+      );
       this.length = result.length;
       this.tooLong = !result.valid;
     },
@@ -86,10 +103,10 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
     handleApply() {
       if (!this.editor || !this.accessor) return;
       const value = this.editor.getValue();
-      const result = validateHtmlCodeLength(value);
+      const result = validateHtmlCodeLength(value, this.options.maxLength);
       if (!result.valid) {
         this.vm.notifier.error(
-          this.vm.t('html-code-too-large', { max: result.maxLength })
+          this.vm.t(this.options.tooLargeKey, { max: result.maxLength })
         );
         return;
       }
@@ -105,6 +122,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
     closeModal() {
       this.destroyEditor();
       this.accessor = null;
+      this.options = { ...DEFAULT_OPTIONS };
       this.tooLong = false;
       this.length = 0;
       this.$refs.modalRef?.closeModal();
@@ -112,12 +130,12 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
   },
   template: `<modal-component ref="modalRef" :is-full-width="true" :on-close="destroyEditor">
   <div class="modal-content html-code-modal">
-    <h5 class="html-code-modal__title">{{ vm.t('html-code-modal-title') }}</h5>
+    <h5 class="html-code-modal__title">{{ vm.t(options.titleKey) }}</h5>
     <div class="html-code-modal__editor">
       <textarea ref="codeArea"></textarea>
     </div>
     <p class="html-code-modal__counter" :class="{ 'html-code-modal__counter--error': tooLong }">
-      {{ length }} / {{ maxLength }}
+      {{ length }} / {{ options.maxLength }}
     </p>
   </div>
   <div class="modal-footer">

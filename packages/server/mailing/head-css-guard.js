@@ -3,6 +3,7 @@
 const { Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
 // template allows it at all.
@@ -17,11 +18,6 @@ const ERROR_CODES = require('../constant/error-codes.js');
 // only the ability to restyle the whole email from outside the design system.
 // If the two ever need to be granted separately, splitting the flag is an
 // addition, not a migration.
-
-// A stylesheet is far more compact than the markup it styles. This bound is
-// generous for responsive email CSS and keeps the stored copy — doubled by
-// `previewHtml` — negligible against Mongo's 16MB per-document limit.
-const HEAD_CSS_MAX_LENGTH = 20000;
 
 /**
  * @param {*} css
