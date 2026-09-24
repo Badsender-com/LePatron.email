@@ -8,6 +8,7 @@ const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
 const { translationMethods } = require('./llm-translation.js');
+const { readProviderError } = require('./provider-error-body.js');
 const { openAIDialect } = require('./openai-dialect.js');
 const {
   getCatalogModels,
@@ -15,24 +16,15 @@ const {
 } = require('./model-catalog.js');
 
 /**
- * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
- * All three share the same OpenAI-compatible chat completions API contract.
+ * Base class for LLM providers. It keeps what must never be duplicated per
+ * provider — the guarded call, its bounds, error masking and typing — and
+ * takes the rest from two mixins applied at the bottom of this file: the
+ * translation behaviour (llm-translation.js), and the OpenAI dialect as the
+ * default request shaping (openai-dialect.js), whose hooks Anthropic and
+ * Gemini override where they differ.
  *
- * Subclasses must implement:
- *   - constructor: set this.baseUrl
- *   - validateCredentials()
- *   - _getDefaultModel() → string
- *
- * Subclasses may override:
- *   - _getChatCompletionsUrl() — for providers with non-standard endpoint paths
- *   - _supportsResponseFormat() → bool  — false for providers that ignore response_format
- *   - _getMaxTokens() → number          — provider token limit
- *   - _buildTranslationPrompt()         — for provider-specific prompt tuning
- *   - _getSystemPrompt()                — for provider-specific system prompt
- *   - listRemoteModels()                — live model listing from the provider
- *
- * Curated model lists and defaults come from model-catalog.js, not from the
- * subclasses.
+ * Subclasses set `this.baseUrl`. Curated models and defaults come from
+ * model-catalog.js; `listRemoteModels()` asks the provider itself.
  */
 // A whole mailing translates in batches of this, and reasoning models take
 // their time: generous, but no longer unbounded while the body is read.
@@ -111,19 +103,6 @@ class BaseLLMProvider extends AIProviderInterface {
     const fromCatalog = getCatalogDefaultModel(this.getProviderType());
     if (fromCatalog) return fromCatalog;
     throw new Error('_getDefaultModel() must be implemented by subclass');
-  }
-
-  /**
-   * Sanitize log messages to prevent leaking sensitive data (API keys, tokens).
-   * Truncates long messages and masks potential secrets.
-   */
-  _sanitizeLogMessage(message) {
-    if (!message) return 'Unknown error';
-    const str = String(message);
-    // Truncate to 300 chars max
-    const truncated = str.length > 300 ? str.substring(0, 300) + '...' : str;
-    // Mask potential API keys/tokens (long alphanumeric strings)
-    return truncated.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[REDACTED]');
   }
 
   /**
@@ -242,39 +221,19 @@ class BaseLLMProvider extends AIProviderInterface {
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        let errorMessage = 'Unknown error';
-        let parsedError = null;
-        try {
-          parsedError = JSON.parse(errorText);
-          errorMessage =
-            (parsedError.error && parsedError.error.message) ||
-            parsedError.message ||
-            (parsedError.result && parsedError.result.message) ||
-            'Unknown error';
-        } catch {
-          errorMessage = errorText || 'Unknown error';
-        }
-        // Sanitize error message to prevent logging sensitive data
-        const sanitizedMessage = this._sanitizeLogMessage(errorMessage);
-        logger.error(
-          `${providerName} API error:`,
-          response.status,
-          sanitizedMessage
-        );
-        // The sanitised text, not the raw one: this message is persisted on
-        // skill invocations and shown to the user, while only the log line was
-        // being masked. An upstream 401 body can echo part of the key, and a
-        // self-hosted gateway can echo far more.
+        // Sanitised, not raw: this message is persisted on skill invocations
+        // and shown to the user, not only logged.
+        const { parsedError, message } = await readProviderError(response);
+        logger.error(`${providerName} API error:`, response.status, message);
         throw new ProviderError(
-          `${providerName} API error: ${response.status} - ${sanitizedMessage}`,
+          `${providerName} API error: ${response.status} - ${message}`,
           this._mapErrorToCode(response.status, parsedError)
         );
       }
 
       const data = await response.json();
       // The request is handed over too: a dialect may have shaped it in a way
-      // that changes how the answer must be read (Anthropic prefills).
+      // that changes how the answer must be read.
       const result = this._parseResponse(data, requestBody);
 
       // Truncation guarantees malformed JSON downstream, and the only trace
