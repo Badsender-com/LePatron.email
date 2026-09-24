@@ -17,6 +17,10 @@ const {
   listModelsForIntegration,
 } = require('../../../../packages/server/integration-providers/ai/model-listing.service');
 const cache = require('../../../../packages/server/integration-providers/ai/model-listing.cache');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../../../../packages/server/integration-providers/provider-error');
 
 function integration(overrides = {}) {
   return {
@@ -235,14 +239,34 @@ describe('model-listing.service', () => {
     // models": the screen stays usable on the catalogue.
     it('falls back to the catalogue when the listing throws', async () => {
       mockCreateProvider.mockReturnValue({
-        listRemoteModels: jest.fn().mockRejectedValue(new Error('401 nope')),
+        listRemoteModels: jest
+          .fn()
+          .mockRejectedValue(
+            new ProviderError('401 nope', CODES.INVALID_CREDENTIALS)
+          ),
       });
 
       const result = await listModelsForIntegration(integration());
 
       expect(result.source).toBe('catalog');
-      expect(result.error).toBe('401 nope');
+      expect(result.error).toBe(CODES.INVALID_CREDENTIALS);
       expect(ids(result)).toEqual(['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo']);
+    });
+
+    // The error reaches the client: a network failure's message names the
+    // address and port that were tried, which turns the screen into a port
+    // scanner.
+    it('reports a code, never the raw message', async () => {
+      mockCreateProvider.mockReturnValue({
+        listRemoteModels: jest
+          .fn()
+          .mockRejectedValue(new Error('connect ECONNREFUSED 10.0.0.12:9200')),
+      });
+
+      const result = await listModelsForIntegration(integration());
+
+      expect(result.error).toBe(CODES.API_ERROR);
+      expect(JSON.stringify(result)).not.toContain('10.0.0.12');
     });
 
     // Infomaniak: its /models endpoint returns names its chat API refuses.
@@ -267,8 +291,33 @@ describe('model-listing.service', () => {
         integration({ provider: 'infomaniak' })
       );
 
-      expect(result.error).toMatch(/productId/);
+      expect(result.error).toBe(CODES.CONFIG_ERROR);
       expect(result.source).toBe('catalog');
+    });
+
+    // The listing comes from an endpoint the group admin chose.
+    it('drops entries whose id is not a usable string', async () => {
+      mockCreateProvider.mockReturnValue(
+        providerListing([{ id: 42 }, { id: '' }, null, { id: 'gpt-zeta' }])
+      );
+
+      const result = await listModelsForIntegration(integration());
+
+      expect(ids(result)).toContain('gpt-zeta');
+      expect(ids(result).every((id) => typeof id === 'string' && id)).toBe(
+        true
+      );
+    });
+
+    it('caps what one listing may return', async () => {
+      const many = Array.from({ length: 2000 }, (_, i) => ({
+        id: `gpt-x-${String(i).padStart(4, '0')}`,
+      }));
+      mockCreateProvider.mockReturnValue(providerListing(many));
+
+      const result = await listModelsForIntegration(integration());
+
+      expect(result.models.filter((m) => m.remote)).toHaveLength(500);
     });
 
     it('returns an empty list for a provider with neither listing nor catalogue', async () => {
@@ -308,14 +357,18 @@ describe('model-listing.service', () => {
       expect(provider.listRemoteModels).toHaveBeenCalledTimes(2);
     });
 
-    it('re-queries on an explicit refresh', async () => {
+    // Both settings sections mount at once and ask for the same integration.
+    it('queries the provider once for two concurrent calls', async () => {
       const provider = providerListing([{ id: 'gpt-4o' }]);
       mockCreateProvider.mockReturnValue(provider);
 
-      await listModelsForIntegration(integration());
-      await listModelsForIntegration(integration(), { refresh: true });
+      const [first, second] = await Promise.all([
+        listModelsForIntegration(integration()),
+        listModelsForIntegration(integration()),
+      ]);
 
-      expect(provider.listRemoteModels).toHaveBeenCalledTimes(2);
+      expect(provider.listRemoteModels).toHaveBeenCalledTimes(1);
+      expect(ids(second)).toEqual(ids(first));
     });
 
     // Keeps a reloading admin from hammering an API that is down.
@@ -329,7 +382,7 @@ describe('model-listing.service', () => {
       const second = await listModelsForIntegration(integration());
 
       expect(provider.listRemoteModels).toHaveBeenCalledTimes(1);
-      expect(second.error).toBe('boom');
+      expect(second.error).toBe(CODES.API_ERROR);
     });
 
     it('does not leak one integration listing into another', async () => {
