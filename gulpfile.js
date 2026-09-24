@@ -18,6 +18,10 @@ const log = require('fancy-log');
 const colors = require('ansi-colors');
 const Vinyl = require('vinyl');
 const mergeStream = require('merge-stream');
+const {
+  CODEMIRROR_LIBS,
+  CODEMIRROR_MIN_BUNDLE,
+} = require('./packages/editor/codemirror-libs.js');
 
 const isWatch = args.watch === true;
 const isProd = args.prod === true;
@@ -137,28 +141,12 @@ const mosaicoLibList = [
   // CodeMirror 5 for the HTML code block editor. Concatenated as globals rather
   // than required through browserify: it must load before its own modes and
   // addons, which register themselves on the global CodeMirror.
-  'node_modules/codemirror/lib/codemirror.js',
-  'node_modules/codemirror/mode/xml/xml.js',
-  'node_modules/codemirror/mode/javascript/javascript.js',
-  'node_modules/codemirror/mode/css/css.js',
-  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
-  'node_modules/codemirror/addon/display/placeholder.js',
+  ...CODEMIRROR_LIBS,
 ];
 
 // CodeMirror ships no minified build, and its ~500KB of source would otherwise
 // land unminified in every editor load, whether or not the template enables the
-// HTML code block. Concatenated in load order — the modes and the addon register
-// themselves on the global CodeMirror — then minified as one file.
-const codemirrorLibList = [
-  'node_modules/codemirror/lib/codemirror.js',
-  'node_modules/codemirror/mode/xml/xml.js',
-  'node_modules/codemirror/mode/javascript/javascript.js',
-  'node_modules/codemirror/mode/css/css.js',
-  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
-  'node_modules/codemirror/addon/display/placeholder.js',
-];
-const CODEMIRROR_MIN_BUNDLE = 'codemirror.bundle.min.js';
-
+// HTML code block. mosaicoLib minifies it into CODEMIRROR_MIN_BUNDLE.
 // TODO: minifiy not minfied libs!
 const mosaicoLibListMin = [
   'node_modules/jquery/dist/jquery.min.js',
@@ -189,8 +177,8 @@ function mosaicoLib() {
     .pipe($.order(mosaicoLibList.map(orderLibs)))
     .pipe($.concat('badsender-lib-editor.js'));
   const codemirrorMin = gulp
-    .src(codemirrorLibList)
-    .pipe($.order(codemirrorLibList.map(orderLibs)))
+    .src(CODEMIRROR_LIBS)
+    .pipe($.order(CODEMIRROR_LIBS.map(orderLibs)))
     .pipe($.concat(CODEMIRROR_MIN_BUNDLE))
     .pipe($.uglify());
   const prodLibs = mergeStream(
