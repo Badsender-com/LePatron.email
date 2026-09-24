@@ -87,7 +87,12 @@ export default {
     // Two calls, not one: the dialog announces what the server computed, and the
     // write recomputes it. Sending back a list of items to create would let the
     // client decide what goes into the taxonomy.
+    //
+    // Ignored while a read or a write is in flight: the page header's button is
+    // not bound to this component's state, and a double click would otherwise
+    // fire two previews and open the dialog on whichever answers last.
     async openRestoreDefaults() {
+      if (this.loading || this.saving) return;
       try {
         this.loading = true;
         this.defaultsPlan = await this.$axios.$get(

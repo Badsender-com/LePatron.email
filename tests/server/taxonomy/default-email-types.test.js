@@ -27,7 +27,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   TaxonomyItems,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyService = require('../../../packages/server/taxonomy/taxonomy.service.js');
+const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
 const {
   DEFAULT_EMAIL_TYPES,
   buildDefaultEmailTypes,
@@ -114,7 +114,7 @@ describe('buildDefaultEmailTypes', () => {
 
 describe('seedDefaultEmailTypes', () => {
   it('creates the six types, scoped to the company and the emailType taxonomy', async () => {
-    const created = await taxonomyService.seedDefaultEmailTypes({
+    const created = await taxonomyDefaultsService.seedDefaultEmailTypes({
       companyId: COMPANY,
       lang: 'fr',
     });
@@ -142,7 +142,7 @@ describe('seedDefaultEmailTypes', () => {
   it('leaves a company that already has one email type alone', async () => {
     TaxonomyItems.countDocuments.mockResolvedValue(1);
 
-    const created = await taxonomyService.seedDefaultEmailTypes({
+    const created = await taxonomyDefaultsService.seedDefaultEmailTypes({
       companyId: COMPANY,
     });
 
@@ -151,7 +151,7 @@ describe('seedDefaultEmailTypes', () => {
   });
 
   it('counts only the emailType taxonomy of that company', async () => {
-    await taxonomyService.seedDefaultEmailTypes({ companyId: COMPANY });
+    await taxonomyDefaultsService.seedDefaultEmailTypes({ companyId: COMPANY });
 
     expect(TaxonomyItems.countDocuments).toHaveBeenCalledWith({
       _company: COMPANY,
@@ -166,7 +166,7 @@ describe('seedDefaultEmailTypes', () => {
     TaxonomyItems.insertMany.mockRejectedValue(duplicate);
 
     await expect(
-      taxonomyService.seedDefaultEmailTypes({ companyId: COMPANY })
+      taxonomyDefaultsService.seedDefaultEmailTypes({ companyId: COMPANY })
     ).resolves.toEqual([]);
   });
 
@@ -174,7 +174,7 @@ describe('seedDefaultEmailTypes', () => {
     TaxonomyItems.insertMany.mockRejectedValue(new Error('connection lost'));
 
     await expect(
-      taxonomyService.seedDefaultEmailTypes({ companyId: COMPANY })
+      taxonomyDefaultsService.seedDefaultEmailTypes({ companyId: COMPANY })
     ).rejects.toThrow('connection lost');
   });
 });
@@ -298,7 +298,9 @@ describe('addMissingDefaultEmailTypes', () => {
   });
 
   it('creates what is missing, scoped to the company and the taxonomy', async () => {
-    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+    const {
+      created,
+    } = await taxonomyDefaultsService.addMissingDefaultEmailTypes({
       user,
       groupId: COMPANY,
       lang: 'fr',
@@ -320,7 +322,9 @@ describe('addMissingDefaultEmailTypes', () => {
     const all = buildDefaultEmailTypes('fr');
     mockExisting(all.filter((item) => item.canonicalType !== 'notification'));
 
-    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+    const {
+      created,
+    } = await taxonomyDefaultsService.addMissingDefaultEmailTypes({
       user,
       groupId: COMPANY,
     });
@@ -331,7 +335,9 @@ describe('addMissingDefaultEmailTypes', () => {
   it('writes nothing when there is nothing to add', async () => {
     mockExisting(buildDefaultEmailTypes('en'));
 
-    const { created } = await taxonomyService.addMissingDefaultEmailTypes({
+    const {
+      created,
+    } = await taxonomyDefaultsService.addMissingDefaultEmailTypes({
       user,
       groupId: COMPANY,
     });
@@ -349,7 +355,10 @@ describe('addMissingDefaultEmailTypes', () => {
     );
 
     await expect(
-      taxonomyService.addMissingDefaultEmailTypes({ user, groupId: COMPANY })
+      taxonomyDefaultsService.addMissingDefaultEmailTypes({
+        user,
+        groupId: COMPANY,
+      })
     ).rejects.toMatchObject({ status: 409 });
     expect(TaxonomyItems.insertMany).not.toHaveBeenCalled();
   });
@@ -362,15 +371,34 @@ describe('addMissingDefaultEmailTypes', () => {
     );
 
     await expect(
-      taxonomyService.addMissingDefaultEmailTypes({ user, groupId: COMPANY })
+      taxonomyDefaultsService.addMissingDefaultEmailTypes({
+        user,
+        groupId: COMPANY,
+      })
     ).resolves.toMatchObject({ created: [] });
+  });
+
+  // An ordered insert keeps what it wrote before the duplicate: those are reported
+  // as created, otherwise the snackbar says nothing was added while some were.
+  it('reports the items written before a duplicate-key race', async () => {
+    const written = [{ label: 'Editorial' }, { label: 'Promotional' }];
+    TaxonomyItems.insertMany.mockRejectedValue(
+      Object.assign(new Error('E11000'), { code: 11000, insertedDocs: written })
+    );
+
+    await expect(
+      taxonomyDefaultsService.addMissingDefaultEmailTypes({
+        user,
+        groupId: COMPANY,
+      })
+    ).resolves.toMatchObject({ created: written });
   });
 
   // The whole point of the company-scoped guard: a group admin naming someone
   // else's company is refused, not quietly redirected to their own.
   it('refuses a company that is not the callers own', async () => {
     await expect(
-      taxonomyService.addMissingDefaultEmailTypes({
+      taxonomyDefaultsService.addMissingDefaultEmailTypes({
         user,
         groupId: '507f1f77bcf86cd799439b01',
       })
@@ -386,7 +414,7 @@ describe('previewMissingDefaultEmailTypes', () => {
       select: () => ({ lean: async () => [] }),
     });
 
-    const plan = await taxonomyService.previewMissingDefaultEmailTypes({
+    const plan = await taxonomyDefaultsService.previewMissingDefaultEmailTypes({
       user,
       groupId: COMPANY,
       lang: 'fr',

@@ -14,7 +14,7 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
-const taxonomyService = require('../taxonomy/taxonomy.service.js');
+const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const logger = require('../utils/logger.js');
 
 const {
@@ -168,7 +168,7 @@ async function create(req, res) {
   // or scripts/seed-default-email-types.js — adds the types afterwards. Losing a
   // company over its default vocabulary would be the worse trade.
   try {
-    await taxonomyService.seedDefaultEmailTypes({
+    await taxonomyDefaultsService.seedDefaultEmailTypes({
       companyId: newGroup._id,
       lang: req.user?.lang,
     });

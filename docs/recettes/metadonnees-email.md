@@ -245,8 +245,16 @@ rattrape les companies plus anciennes, et répare une suppression.
 Le changement de vocabulaire **n'a pas été migré**, c'est un choix. Conséquence à
 vérifier, et à traiter **avant la mise en production** :
 
-1. Ouvrir la liste des **expertises IA**. Repérer celles dont le champ « types
-   d'email » porte `promo`, `newsletter` ou `marketing-automation`.
+1. Lister les expertises concernées :
+
+   ```bash
+   node scripts/report-legacy-expertise-email-types.js
+   ```
+
+   Il affiche chaque expertise dont le champ « types d'email » porte `promo`,
+   `newsletter` ou `marketing-automation`, avec la valeur à mettre à la place, et
+   sort en code 1 tant qu'il en reste. Lecture seule.
+
 2. **Attendu** : ces valeurs restent **visibles et sélectionnables** dans le
    combobox, affichées telles quelles (non traduites). C'est ce qui rend le
    retagage possible depuis l'écran.
@@ -254,6 +262,8 @@ vérifier, et à traiter **avant la mise en production** :
    expertises **ne se chargent plus** pour un email dont la typologie pointe vers
    le nouveau vocabulaire — silencieusement, le filtre étant une égalité de
    chaîne. Les retaguer sur le type Badsender correspondant.
+4. Relancer le script. **Attendu** : « No expertise tagged with the retired
+   vocabulary. », code de sortie 0.
 
 ---
 

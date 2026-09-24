@@ -51,13 +51,21 @@ const { TaxonomyTypes } = require(path.resolve(
   'constant',
   'taxonomy-type.js'
 ));
-const taxonomyService = require(path.resolve(
+const { DEFAULT_EMAIL_TYPES } = require(path.resolve(
   __dirname,
   '..',
   'packages',
   'server',
   'taxonomy',
-  'taxonomy.service.js'
+  'default-email-types.js'
+));
+const taxonomyDefaultsService = require(path.resolve(
+  __dirname,
+  '..',
+  'packages',
+  'server',
+  'taxonomy',
+  'taxonomy-defaults.service.js'
 ));
 
 const DRY = process.argv.includes('--dry-run');
@@ -116,10 +124,10 @@ async function main() {
     for (const company of toSeed) {
       if (DRY) {
         console.log(
-          `[dry] would seed 6 email types on "${company.name}" (${company.id})`
+          `[dry] would seed ${DEFAULT_EMAIL_TYPES.length} email types on "${company.name}" (${company.id})`
         );
       } else {
-        const created = await taxonomyService.seedDefaultEmailTypes({
+        const created = await taxonomyDefaultsService.seedDefaultEmailTypes({
           companyId: company.id,
           lang: LANG,
         });

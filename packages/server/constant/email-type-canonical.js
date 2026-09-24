@@ -17,7 +17,7 @@
  *   - `newsletter` was a free tag, not a type. A newsletter is `editorial` when
  *     it carries content worth reading, `promotional` when its main block sells.
  *   - `marketing-automation` was a *trigger* dressed up as a type. How a send is
- *     decided is the second, INDEPENDENT dimension — see constant/email-trigger.js.
+ *     decided is the second, INDEPENDENT dimension — the email trigger (#1116).
  *     A password reset is transactional × automated; a birthday email is
  *     promotional × automated. Folding the two into one list forced a choice
  *     between them.

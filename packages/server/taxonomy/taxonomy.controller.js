@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const { omit } = require('lodash');
 
 const taxonomyService = require('./taxonomy.service.js');
+const taxonomyDefaultsService = require('./taxonomy-defaults.service.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 
 module.exports = {
@@ -48,7 +49,7 @@ const seedLangOf = (req) => (req.user && req.user.lang) || undefined;
  *   the typologies it is about to create rather than announcing a count.
  */
 async function previewDefaultEmailTypes(req, res) {
-  const plan = await taxonomyService.previewMissingDefaultEmailTypes({
+  const plan = await taxonomyDefaultsService.previewMissingDefaultEmailTypes({
     user: req.user,
     groupId: req.query.groupId,
     lang: seedLangOf(req),
@@ -74,7 +75,7 @@ async function previewDefaultEmailTypes(req, res) {
  *   caller.
  */
 async function restoreDefaultEmailTypes(req, res) {
-  const result = await taxonomyService.addMissingDefaultEmailTypes({
+  const result = await taxonomyDefaultsService.addMissingDefaultEmailTypes({
     user: req.user,
     groupId: req.body.groupId,
     lang: seedLangOf(req),
