@@ -59,7 +59,7 @@ class OpenAIProvider extends BaseLLMProvider {
   async listRemoteModels() {
     const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
       headers: this._buildHeaders(),
-      label: 'OpenAI models listing',
+      label: `${this.getProviderType()} models listing`,
       mapErrorToCode: (status) => this._mapErrorToCode(status),
     });
 
