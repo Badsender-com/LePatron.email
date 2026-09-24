@@ -47,6 +47,16 @@ const MailingSchema = Schema(
     previewHtml: {
       type: String,
     },
+    // Stylesheet injected into the <head> of this mailing's export, so pasted
+    // markup can carry responsive rules the template's own CSS does not
+    // provide. Stored outside `data` on purpose: Mosaico's checkModel splices
+    // out any property its block definitions do not declare, and this one
+    // belongs to the mailing rather than to a block.
+    // Guarded by head-css-guard.js; injected by packages/shared/head-css.
+    headCss: {
+      type: String,
+      default: '',
+    },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
@@ -468,6 +478,7 @@ const translations = {
  * @apiSuccess {String} metadata.name name
  * @apiSuccess {String} metadata.template the URL where Mosaico will fetch the markup
  * @apiSuccess {Boolean} metadata.htmlBlockEnabled whereas the "HTML code" block shows up in the palette
+ * @apiSuccess {String} metadata.headCss stylesheet injected into the &lt;head&gt; of this mailing's export
  * @apiSuccess {Object} metadata.url an object of useful urls for Mosaico
  * @apiSuccess {String} metadata.url.update update URL
  * @apiSuccess {String} metadata.url.send send by mail URL
@@ -576,6 +587,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       // block definition is always injected client-side. See
       // docs/plans/html-code-block.md
       htmlBlockEnabled: !!mailing._wireframe.htmlBlockEnabled,
+      // The editor injects this into the <head> of every export it produces.
+      // Gated by the same flag as the HTML code block it exists to style.
+      headCss: mailing.headCss || '',
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {
