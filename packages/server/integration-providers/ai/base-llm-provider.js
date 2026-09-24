@@ -128,6 +128,14 @@ class BaseLLMProvider extends AIProviderInterface {
     return true;
   }
 
+  /**
+   * Whether the model takes a reasoning effort. Only reasoning models do, and
+   * the others reject the parameter.
+   */
+  _supportsReasoningEffort() {
+    return false;
+  }
+
   // ─── translation ──────────────────────────────────────────────────────────
 
   async translateBatch({ texts, sourceLanguage, targetLanguage }) {
@@ -148,6 +156,11 @@ class BaseLLMProvider extends AIProviderInterface {
         { role: 'user', content: prompt },
       ],
       temperature: 0.3,
+      // Translating a batch needs little reasoning, and a reasoning model
+      // spends its thinking out of the same output budget and wall clock:
+      // measured at twice gpt-4.1-mini's latency on gpt-5-mini's default
+      // effort. `low` rather than `minimal`, which the o-series rejects.
+      reasoningEffort: 'low',
     };
 
     if (this._supportsResponseFormat()) {
@@ -273,12 +286,19 @@ OUTPUT (valid JSON only):`;
   // ─── API call ─────────────────────────────────────────────────────────────
 
   // Legacy translation code path: content string only.
-  async _callChatCompletion({ model, messages, temperature, responseFormat }) {
+  async _callChatCompletion({
+    model,
+    messages,
+    temperature,
+    responseFormat,
+    reasoningEffort,
+  }) {
     const data = await this._callChatCompletionRaw({
       model,
       messages,
       temperature,
       responseFormat,
+      reasoningEffort,
     });
     return data.choices[0].message.content;
   }
@@ -294,6 +314,7 @@ OUTPUT (valid JSON only):`;
     temperature,
     maxTokens,
     responseFormat,
+    reasoningEffort,
   }) {
     const providerName = this.getProviderType();
     logger.log(
@@ -325,6 +346,10 @@ OUTPUT (valid JSON only):`;
       // only value it will run at.
       if (temperature !== undefined && this._supportsTemperature(model)) {
         requestBody.temperature = temperature;
+      }
+
+      if (reasoningEffort && this._supportsReasoningEffort(model)) {
+        requestBody.reasoning_effort = reasoningEffort;
       }
 
       if (responseFormat) {
