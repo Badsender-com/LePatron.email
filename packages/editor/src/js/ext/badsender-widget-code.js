@@ -1,0 +1,66 @@
+'use strict';
+
+// Widget for the `code` property type, declared by the injected block
+// definitions as `htmlCode { widget: code; }`.
+//
+// Mosaico passes any unknown declaration straight through to `_widget`
+// (converter/stylesheet.js), and plugin widgets are looked up before the native
+// ones (converter/editor.js #_propInput), so no converter change is needed.
+//
+// The editing surface is not in this panel: #main-toolbox is 400px wide, which is
+// unusable for HTML. The button opens the CodeMirror modal instead — same shape
+// as badsender-widget-bgimage.js, whose button opens the gallery dialog.
+
+// The hidden input keeps the property bound (and focus-tracked) the way native
+// widgets do, so selecting the block still highlights it in the canvas.
+//
+// With the template flag off, the block stays — the server keeps accepting the
+// markup already stored, so the email remains savable — but it cannot be edited:
+// the server refuses any markup the mailing did not already hold
+// (packages/server/mailing/html-code-block-guard.js). The button gives way to a
+// sentence saying so, rather than letting the user edit and then fail to save.
+function html(propAccessor, onfocusbinding, parameters) {
+  return `
+    <input type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
+    <div class="html-code-widget">
+      <button class="html-code-widget__button" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
+      <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
+    </div>
+  `;
+}
+
+module.exports = () => {
+  function widget() {
+    return {
+      widget: 'code',
+      defaultParameters: Object.freeze({}),
+      html,
+    };
+  }
+
+  function viewModel(vm) {
+    // Set by the Vue modal once it is mounted (same handshake as
+    // vm.toggleSaveBlockModal in save-modal.js). Guarded so a click before the
+    // modal mounts is a no-op rather than a TypeError.
+    vm.toggleHtmlCodeModal = null;
+
+    vm.isHtmlBlockEditable = function () {
+      return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
+    };
+
+    vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {
+      if (!vm.isHtmlBlockEditable()) return;
+      if (typeof vm.toggleHtmlCodeModal !== 'function') return;
+      if (!blockProperties || !blockProperties[propAccessor]) return;
+
+      // Hand over the accessor rather than the value, so the modal writes back
+      // to the very property the user clicked — same approach as
+      // badsender-widget-bgimage.js's currentBgimage.
+      vm.toggleHtmlCodeModal(true, {
+        accessor: blockProperties[propAccessor].bind(blockProperties),
+      });
+    };
+  }
+
+  return { widget, viewModel };
+};

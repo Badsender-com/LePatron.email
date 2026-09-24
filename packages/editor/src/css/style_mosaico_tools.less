@@ -865,6 +865,24 @@
     }
   }
 
+  // Thumbnail stand-in for blocks LePatron injects rather than the template
+  // declaring them (the "HTML code" block): there is no
+  // `edres/<type>.png` for them in any client template, so we show an icon.
+  .block-synthetic-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 5rem;
+    background: #fafafa;
+    border: 1px dashed rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    color: var(--v-accent-base, #00acdc);
+
+    .lucide {
+      font-size: 32px;
+    }
+  }
+
   // Custom-block card: light gray surface so it stands out from the white
   // sidebar background — template-block cards keep the white surface from
   // .draggable-item since they have their own image preview that fills it.
