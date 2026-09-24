@@ -96,7 +96,9 @@ export default {
       try {
         this.loading = true;
         this.defaultsPlan = await this.$axios.$get(
-          apiRoutes.taxonomyDefaultEmailTypes(this.groupId)
+          apiRoutes.taxonomyDefaultEmailTypes(this.groupId, {
+            lang: this.$i18n.locale,
+          })
         );
         this.$refs.defaultsModal.open();
       } catch (error) {
@@ -113,7 +115,7 @@ export default {
           created,
         } = await this.$axios.$post(
           apiRoutes.taxonomyDefaultEmailTypesRestore(),
-          { groupId: this.groupId }
+          { groupId: this.groupId, lang: this.$i18n.locale }
         );
         const count = (created || []).length;
         this.showSnackbar({

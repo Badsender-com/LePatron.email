@@ -182,12 +182,15 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
 
 ### D5. Typologies par défaut — le seed
 
-1. Créer une company **depuis un compte dont la langue est le français**.
+1. En **super admin**, interface en **français**, créer une company — depuis la
+   liste des companies **et** depuis `/groups/new`, les deux écrans créent.
    Réglages → Général → Typologies. **Attendu** : les **six** typologies
    Badsender, dans l'ordre, en français (Éditorial → Institutionnel), chacune
    avec sa définition et sa correspondance IA.
-2. Recommencer **depuis un compte en anglais**. **Attendu** : les mêmes six, en
-   anglais (Editorial → Institutional).
+2. Recommencer avec l'interface en **anglais**. **Attendu** : les mêmes six, en
+   anglais (Editorial → Institutional). C'est la langue de l'**interface** qui
+   compte : la session super admin n'a pas de langue à elle, et sans ce que
+   l'écran envoie toutes les companies démarraient en anglais.
 3. Renommer une typologie, en désactiver une, en supprimer une. **Attendu** :
    ce sont des typologies ordinaires, rien ne les protège.
 
@@ -200,7 +203,7 @@ rattrape les companies plus anciennes, et répare une suppression.
    Typologies. **Attendu** : le bouton est présent **deux fois** — dans l'en-tête
    de page, et dans l'état vide à côté de « Créer une typologie ».
 2. Cliquer. **Attendu** : une modale **nomme** les six typologies qui vont être
-   créées, dans la langue de votre compte. Valider. **Attendu** : elles
+   créées, dans la langue de l'interface. Valider. **Attendu** : elles
    apparaissent, et un message dit combien ont été créées.
 3. **Recliquer.** **Attendu** : la modale dit qu'il n'y a rien à ajouter, et le
    bouton de validation **disparaît** — on ne valide pas une action sans effet.

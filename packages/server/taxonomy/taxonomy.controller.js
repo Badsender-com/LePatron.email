@@ -5,6 +5,7 @@ const { omit } = require('lodash');
 
 const taxonomyService = require('./taxonomy.service.js');
 const taxonomyDefaultsService = require('./taxonomy-defaults.service.js');
+const { pickSeedLang } = require('./default-email-types.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 
 module.exports = {
@@ -28,11 +29,12 @@ const TRUTHY_QUERY_VALUES = new Set(['true', '1', 'yes']);
 const wantsActiveOnly = (req) =>
   TRUTHY_QUERY_VALUES.has(String(req.query.activeOnly).toLowerCase());
 
-// The language of the labels to create. Taken from the caller's own account
-// rather than a query parameter: a TaxonomyItem stores one label, and the person
-// clicking the button is reading the screen in that language — offering them a
-// list in the other one would be a choice nobody asked to make.
-const seedLangOf = (req) => (req.user && req.user.lang) || undefined;
+// The language of the labels to create: the one the screen is displayed in, sent
+// by the client, then the caller's account. A TaxonomyItem stores one label, and
+// the person clicking the button is reading the screen in that language. The
+// preview and the write must receive the same one, or the dialog would name
+// typologies in one language and create them in the other.
+const seedLangOf = (req, requested) => pickSeedLang(requested, req.user?.lang);
 
 /**
  * @api {get} /taxonomy-items/default-email-types what restoring the defaults would create
@@ -41,6 +43,8 @@ const seedLangOf = (req) => (req.user && req.user.lang) || undefined;
  * @apiGroup TaxonomyItems
  *
  * @apiParam (Query) {String} [groupId] super admin only, the target company
+ * @apiParam (Query) {String} [lang] `fr` or `en`, the language the screen is
+ *   displayed in; the caller's account otherwise
  *
  * @apiSuccess {Object[]} toCreate the default types the company does not have
  * @apiSuccess {Object[]} skipped types whose label is already taken by another item
@@ -52,7 +56,7 @@ async function previewDefaultEmailTypes(req, res) {
   const plan = await taxonomyDefaultsService.previewMissingDefaultEmailTypes({
     user: req.user,
     groupId: req.query.groupId,
-    lang: seedLangOf(req),
+    lang: seedLangOf(req, req.query.lang),
   });
 
   res.json(plan);
@@ -65,6 +69,8 @@ async function previewDefaultEmailTypes(req, res) {
  * @apiGroup TaxonomyItems
  *
  * @apiParam (Body) {String} [groupId] super admin only, the target company
+ * @apiParam (Body) {String} [lang] same as the preview's, and it must be the same
+ *   value
  *
  * @apiSuccess {taxonomyItem[]} created
  * @apiSuccess {Object[]} skipped types whose label is already taken by another item
@@ -78,7 +84,7 @@ async function restoreDefaultEmailTypes(req, res) {
   const result = await taxonomyDefaultsService.addMissingDefaultEmailTypes({
     user: req.user,
     groupId: req.body.groupId,
-    lang: seedLangOf(req),
+    lang: seedLangOf(req, req.body.lang),
   });
 
   res.json(result);

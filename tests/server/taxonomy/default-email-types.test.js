@@ -30,6 +30,7 @@ const {
 const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
 const {
   DEFAULT_EMAIL_TYPES,
+  pickSeedLang,
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
 } = require('../../../packages/server/taxonomy/default-email-types.js');
@@ -46,6 +47,29 @@ beforeEach(() => {
   jest.clearAllMocks();
   TaxonomyItems.countDocuments.mockResolvedValue(0);
   TaxonomyItems.insertMany.mockImplementation(async (items) => items);
+});
+
+// A super admin's session has no `lang`, and a super admin is who creates
+// companies: reading the account alone seeded every company in English. The
+// interface language is passed first for that reason.
+describe('pickSeedLang', () => {
+  it('prefers the interface language over the account one', () => {
+    expect(pickSeedLang('fr', 'en')).toBe('fr');
+  });
+
+  it('falls back on the account when the interface sends nothing', () => {
+    expect(pickSeedLang(undefined, 'fr')).toBe('fr');
+  });
+
+  it('skips a language the seed has no labels for', () => {
+    expect(pickSeedLang('de', 'fr')).toBe('fr');
+    expect(pickSeedLang('__proto__', 'constructor')).toBe('en');
+  });
+
+  it('seeds in English when nothing usable is given', () => {
+    expect(pickSeedLang()).toBe('en');
+    expect(pickSeedLang(null, undefined)).toBe('en');
+  });
 });
 
 describe('buildDefaultEmailTypes', () => {

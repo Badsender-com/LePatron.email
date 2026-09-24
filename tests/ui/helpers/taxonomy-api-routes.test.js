@@ -71,6 +71,12 @@ describe('taxonomy default email types', () => {
     );
   });
 
+  it('carries the interface language on the preview when given', () => {
+    expect(taxonomyDefaultEmailTypes(GROUP_ID, { lang: 'fr' })).toBe(
+      `/taxonomy-items/default-email-types?groupId=${GROUP_ID}&lang=fr`
+    );
+  });
+
   it('carries no query on the restore, which names the company in its body', () => {
     expect(taxonomyDefaultEmailTypesRestore()).toBe(
       '/taxonomy-items/default-email-types'

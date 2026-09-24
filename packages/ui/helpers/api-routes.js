@@ -383,9 +383,14 @@ export function taxonomyItemsItem(itemId) {
 }
 
 // The company is named in the query here and in the body of the POST below,
-// matching the two guards those routes carry.
-export function taxonomyDefaultEmailTypes(groupId) {
-  return `/taxonomy-items/default-email-types?groupId=${groupId}`;
+// matching the two guards those routes carry. `lang` is the language the defaults
+// are named in, and must be the one the POST sends.
+export function taxonomyDefaultEmailTypes(groupId, { lang } = {}) {
+  const params = new URLSearchParams({ groupId });
+  if (lang) {
+    params.set('lang', lang);
+  }
+  return `/taxonomy-items/default-email-types?${params.toString()}`;
 }
 
 export function taxonomyDefaultEmailTypesRestore() {

@@ -166,3 +166,20 @@ function toOrder(value) {
   if (!Number.isFinite(order)) return 0;
   return Math.trunc(order);
 }
+
+/**
+ * The body of a company creation, with the language its default email types are
+ * seeded in.
+ *
+ * The server cannot tell on its own: only a super admin creates companies, and
+ * their session carries no language. The screen they are reading is the only
+ * answer. Two screens create companies (the list's modal and /groups/new), hence
+ * one helper naming the key both send.
+ *
+ * @param {Object} group the company fields from the form
+ * @param {string} locale the interface language, `$i18n.locale`
+ * @returns {Object}
+ */
+export function groupCreationPayload(group, locale) {
+  return { ...group, defaultEmailTypesLang: locale };
+}

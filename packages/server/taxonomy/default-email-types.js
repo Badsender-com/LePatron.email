@@ -116,6 +116,27 @@ const DEFAULT_SEED_LANG = 'en';
 const SEED_LANGS = Object.freeze(['fr', 'en']);
 
 /**
+ * The language to seed in: the first candidate the seed has labels for.
+ *
+ * Callers pass the language the interface is displayed in first, then the
+ * account's. The interface comes first because it is the only one a super admin
+ * has: their session is not a User and carries no `lang`, yet they are the one
+ * who creates companies — reading the account alone made every seed English.
+ * For a regular user the two agree anyway: the interface follows `User.lang`.
+ *
+ * Anything that is not a supported language is skipped, so a client can name a
+ * language but never make the seed read a key that does not exist.
+ *
+ * @param {...*} candidates in order of preference
+ * @returns {string} `fr` or `en`
+ */
+function pickSeedLang(...candidates) {
+  return (
+    candidates.find((lang) => SEED_LANGS.includes(lang)) || DEFAULT_SEED_LANG
+  );
+}
+
+/**
  * The taxonomy items to create for a company, in the given language.
  *
  * Pure: takes no database, returns plain objects. The caller adds `_company` and
@@ -206,5 +227,6 @@ module.exports = {
   planMissingDefaultEmailTypes,
   DEFAULT_SEED_LANG,
   SEED_LANGS,
+  pickSeedLang,
   buildDefaultEmailTypes,
 };
