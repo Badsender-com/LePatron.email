@@ -686,6 +686,12 @@ export default {
     // Keyed by the server error code, so a failed save can say what to fix
     // instead of showing the raw code.
     errors: {
+      INTEGRATION_NAME_ALREADY_EXIST:
+        'Une intégration porte déjà ce nom dans ce groupe. Choisissez-en un autre.',
+      INTEGRATION_NOT_FOUND:
+        'Cette intégration n\'existe plus : elle a peut-être été supprimée. Rechargez la page.',
+      FORBIDDEN_INTEGRATION_ACCESS:
+        'Vous n\'avez pas accès à cette intégration.',
       INTEGRATION_HOST_NOT_PUBLIC:
         'Cette adresse est privée ou locale. Pour des raisons de sécurité, LePatron n\'appelle que des adresses publiques : une IA hébergée sur votre réseau interne n\'est pas joignable depuis le serveur.',
       INTEGRATION_HOST_UNREACHABLE:

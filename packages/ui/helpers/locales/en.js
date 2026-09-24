@@ -887,6 +887,11 @@ export default {
     // Keyed by the server error code, so a failed save can say what to fix
     // instead of showing the raw code.
     errors: {
+      INTEGRATION_NAME_ALREADY_EXIST:
+        'An integration of this group already has this name. Pick another one.',
+      INTEGRATION_NOT_FOUND:
+        'This integration no longer exists: it may have been deleted. Reload the page.',
+      FORBIDDEN_INTEGRATION_ACCESS: 'You do not have access to this integration.',
       INTEGRATION_HOST_NOT_PUBLIC:
         'This address is private or local. For security reasons LePatron only calls public addresses: an AI hosted on your internal network cannot be reached from the server.',
       INTEGRATION_HOST_UNREACHABLE:
