@@ -170,6 +170,70 @@ describe('IntegrationService', () => {
     });
   });
 
+  // Infomaniak builds the path the API key is sent to from productId.
+  describe('productId', () => {
+    function arrangeCreate() {
+      Integrations.exists.mockResolvedValue(false);
+      Integrations.create.mockImplementation(async (data) => data);
+    }
+
+    function create(productId) {
+      return integrationService.createIntegration({
+        name: 'Infomaniak',
+        type: 'ai',
+        provider: 'infomaniak',
+        apiKey: 'key',
+        productId,
+        _company: mockGroupId,
+      });
+    }
+
+    it('keeps a numeric id, trimmed', async () => {
+      arrangeCreate();
+
+      const result = await create(' 104807 ');
+
+      expect(result.productId).toBe('104807');
+    });
+
+    it('stores null rather than an empty string', async () => {
+      arrangeCreate();
+
+      const result = await create('');
+
+      expect(result.productId).toBeNull();
+    });
+
+    it.each([['../../2/profile?x='], ['104807/'], ['12 34'], ['abc']])(
+      'rejects %j',
+      async (productId) => {
+        arrangeCreate();
+
+        await expect(create(productId)).rejects.toThrow('INVALID_PRODUCT_ID');
+        expect(Integrations.create).not.toHaveBeenCalled();
+      }
+    );
+
+    it('rejects it on update too', async () => {
+      const existingIntegration = {
+        _id: mockIntegrationId,
+        name: 'Infomaniak',
+        type: 'ai',
+        _company: mockGroupId,
+        save: jest.fn().mockResolvedValue(),
+      };
+      Integrations.findById.mockResolvedValue(existingIntegration);
+
+      await expect(
+        integrationService.updateIntegration({
+          integrationId: mockIntegrationId,
+          productId: '../x',
+        })
+      ).rejects.toThrow('INVALID_PRODUCT_ID');
+      expect(existingIntegration.save).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateIntegration', () => {
     it('should update integration fields', async () => {
       const existingIntegration = {

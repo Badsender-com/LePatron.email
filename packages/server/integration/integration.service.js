@@ -18,6 +18,7 @@ const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const { normalizeProductId } = require('./integration.validation.js');
 
 module.exports = {
   createIntegration,
@@ -78,6 +79,7 @@ async function createIntegration({
   _company,
 }) {
   await validateApiHost(apiHost);
+  const normalizedProductId = normalizeProductId(productId);
 
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
@@ -90,7 +92,7 @@ async function createIntegration({
     provider,
     apiKey,
     apiHost,
-    productId,
+    productId: normalizedProductId,
     config: config || {},
     _company,
     isActive: true,
@@ -129,6 +131,7 @@ async function updateIntegration({
   }
 
   await validateApiHost(apiHost);
+  const normalizedProductId = normalizeProductId(productId);
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
@@ -136,7 +139,7 @@ async function updateIntegration({
   if (provider !== undefined) integration.provider = provider;
   if (apiKey !== undefined) integration.apiKey = apiKey;
   if (apiHost !== undefined) integration.apiHost = apiHost;
-  if (productId !== undefined) integration.productId = productId;
+  if (productId !== undefined) integration.productId = normalizedProductId;
   if (config !== undefined) integration.config = config;
   if (isActive !== undefined) integration.isActive = isActive;
 

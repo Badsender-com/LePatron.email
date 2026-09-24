@@ -731,7 +731,8 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Votre clé API Infomaniak',
       productId: 'Product ID',
-      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools',
+      productIdInvalid: 'Le Product ID ne contient que des chiffres'
     },
     deepl: {
       apiKeyPlaceholder: 'Votre clé API DeepL',
