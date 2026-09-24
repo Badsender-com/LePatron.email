@@ -14,6 +14,9 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
+const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
+const { pickSeedLang } = require('../taxonomy/default-email-types.js');
+const logger = require('../utils/logger.js');
 
 const {
   Groups,
@@ -146,7 +149,8 @@ async function create(req, res) {
     groupFtpService.validateSshKeyOrThrow(req.body.ftpSshKey);
   }
 
-  const groupToCreate = { ...req.body };
+  // Not a company field: the language the default email types are seeded in.
+  const { defaultEmailTypesLang, ...groupToCreate } = req.body;
 
   // The update path is not the only write path: without this, a company could be
   // created with a shape the update path would have refused.
@@ -160,6 +164,25 @@ async function create(req, res) {
   const newGroup = await groupService.createGroup(groupToCreate);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
+
+  // The six Badsender email types, in the language the creator's screen is
+  // displayed in. Only a super admin creates a company, and their session carries
+  // no `lang`: without the one the client sends, every company started in English.
+  // A failure here must not fail the creation: the company exists, and an admin —
+  // or scripts/seed-default-email-types.js — adds the types afterwards. Losing a
+  // company over its default vocabulary would be the worse trade.
+  try {
+    await taxonomyDefaultsService.seedDefaultEmailTypes({
+      companyId: newGroup._id,
+      lang: pickSeedLang(defaultEmailTypesLang, req.user?.lang),
+    });
+  } catch (error) {
+    logger.error(
+      `group.controller:create: seeding default email types failed for company ${newGroup.id}`,
+      error
+    );
+  }
+
   res.json(groupFtpService.maskFtpCredentials(newGroup));
 }
 

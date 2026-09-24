@@ -13,10 +13,23 @@ describe('emailTypeItems', () => {
   });
 
   it('appends facet values that are not canonical, sorted', () => {
-    expect(emailTypeItems(['relance', 'promo', 'abandon'])).toEqual([
+    expect(emailTypeItems(['relance', 'abandon'])).toEqual([
       ...EMAIL_TYPES,
       'abandon',
       'relance',
+    ]);
+  });
+
+  // The vocabulary moved to the six Badsender types, and no migration re-tagged
+  // the expertise that carried the previous one. This is what makes that
+  // survivable: an expertise tagged `promo` keeps showing up in the selector —
+  // under its raw value — so it can be re-tagged by hand instead of disappearing
+  // from the screen that would let someone fix it.
+  it('keeps the retired vocabulary visible, as a facet value', () => {
+    expect(emailTypeItems(['promo', 'marketing-automation'])).toEqual([
+      ...EMAIL_TYPES,
+      'marketing-automation',
+      'promo',
     ]);
   });
 
@@ -38,11 +51,12 @@ describe('emailTypeLabel', () => {
   // Stands in for the component instance: mimics vue-i18n returning the key
   // itself when there is no translation for it.
   const vm = {
-    $t: (key) => (key === 'aiSkills.emailTypes.promo' ? 'Promotionnel' : key),
+    $t: (key) =>
+      key === 'aiSkills.emailTypes.promotional' ? 'Promotionnel' : key,
   };
 
   it('translates a canonical type', () => {
-    expect(emailTypeLabel(vm, 'promo')).toBe('Promotionnel');
+    expect(emailTypeLabel(vm, 'promotional')).toBe('Promotionnel');
   });
 
   it('falls back to the raw value for a custom type', () => {

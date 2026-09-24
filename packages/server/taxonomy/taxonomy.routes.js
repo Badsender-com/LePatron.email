@@ -9,6 +9,7 @@ const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
 const {
   GUARD_CAN_ACCESS_GROUP,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
 } = require('../group/group.guard.js');
 const taxonomy = require('./taxonomy.controller.js');
 
@@ -32,6 +33,23 @@ router.get(
   GUARD_USER,
   GUARD_CAN_ACCESS_GROUP,
   taxonomy.listTaxonomyItemsForGroup
+);
+
+// Both must come before '/:itemId', otherwise "default-email-types" is captured as
+// an itemId. Group admin on the read too, unlike the listing: this one answers what
+// the company does NOT have, which is a configuration question, not something a
+// user filling in an email needs.
+router.get(
+  '/default-email-types',
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
+  taxonomy.previewDefaultEmailTypes
+);
+router.post(
+  '/default-email-types',
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  taxonomy.restoreDefaultEmailTypes
 );
 
 // The service resolves the company itself and never trusts `groupId`, but the

@@ -11,6 +11,7 @@ import {
   canonicalTypeLabelKey,
   nextOrder,
   buildTaxonomyPayload,
+  groupCreationPayload,
   CANONICAL_TYPES,
   TAXONOMY_LIMITS,
 } from '../../../packages/ui/helpers/taxonomy.js';
@@ -235,5 +236,22 @@ describe('TAXONOMY_LIMITS', () => {
   it('leaves the per-company cap to the server alone', () => {
     expect(TAXONOMY_LIMITS.ITEMS_PER_COMPANY).toBeUndefined();
     expect(TaxonomyLimits.ITEMS_PER_COMPANY).toBe(200);
+  });
+});
+
+// The server seeds the default email types in this language: without it, a
+// company created by a super admin always started in English.
+describe('groupCreationPayload', () => {
+  it('adds the interface language to the company fields', () => {
+    expect(groupCreationPayload({ name: 'Acme' }, 'fr')).toEqual({
+      name: 'Acme',
+      defaultEmailTypesLang: 'fr',
+    });
+  });
+
+  it('leaves the form object untouched', () => {
+    const group = { name: 'Acme' };
+    groupCreationPayload(group, 'fr');
+    expect(group).toEqual({ name: 'Acme' });
   });
 });

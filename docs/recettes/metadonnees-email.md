@@ -1,4 +1,4 @@
-# Recette — Métadonnées email (PR #1081 · #1083 · #1085)
+# Recette — Métadonnées email (PR #1081 · #1083 · #1085, puis vocabulaire Badsender)
 
 Guide de recette manuelle de la phase 1 « métadonnées email ». Il couvre les trois
 PR empilées, plus les deux PR extraites qui doivent être vérifiées **avant** elles.
@@ -175,8 +175,98 @@ Rien à cliquer : cette PR n'a pas d'interface. Elle se vérifie par l'API.
    entrée de sidebar, titre, formulaire, états vides, erreurs. **Aucun**
    « Typology ».
 2. Repasser en **français**. **Attendu** : « Typologie » / « Typologies ».
-3. Dans l'écran des **expertises IA**, le filtre par type propose bien
-   **Marketing Automation**.
+3. Dans l'écran des **expertises IA**, le filtre par type propose les **six**
+   types Badsender : Éditorial, Promotionnel, Serviciel, Suivi, Transactionnel,
+   Institutionnel. **Aucun** « Newsletter », « Promo » ni « Marketing Automation »
+   — sauf en valeur héritée, cf. D6.
+
+### D5. Typologies par défaut — le seed
+
+1. En **super admin**, interface en **français**, créer une company — depuis la
+   liste des companies **et** depuis `/groups/new`, les deux écrans créent.
+   Réglages → Général → Typologies. **Attendu** : les **six** typologies
+   Badsender, dans l'ordre, en français (Éditorial → Institutionnel), chacune
+   avec sa définition et sa correspondance IA.
+2. Recommencer avec l'interface en **anglais**. **Attendu** : les mêmes six, en
+   anglais (Editorial → Institutional). C'est la langue de l'**interface** qui
+   compte : la session super admin n'a pas de langue à elle, et sans ce que
+   l'écran envoie toutes les companies démarraient en anglais.
+3. Renommer une typologie, en désactiver une, en supprimer une. **Attendu** :
+   ce sont des typologies ordinaires, rien ne les protège.
+
+### D5 bis. Le bouton « Typologies par défaut »
+
+Le seed automatique ne tourne qu'à la création d'une company. Ce bouton est ce qui
+rattrape les companies plus anciennes, et répare une suppression.
+
+1. Sur une company **sans aucune typologie**, ouvrir Réglages → Général →
+   Typologies. **Attendu** : le bouton est présent **deux fois** — dans l'en-tête
+   de page, et dans l'état vide à côté de « Créer une typologie ».
+2. Cliquer. **Attendu** : une modale **nomme** les six typologies qui vont être
+   créées, dans la langue de l'interface. Valider. **Attendu** : elles
+   apparaissent, et un message dit combien ont été créées.
+3. **Recliquer.** **Attendu** : la modale dit qu'il n'y a rien à ajouter, et le
+   bouton de validation **disparaît** — on ne valide pas une action sans effet.
+4. **Réparation d'une suppression** : supprimer « Serviciel », recliquer.
+   **Attendu** : seule celle-là est proposée, et elle revient **à sa place dans
+   l'ordre** (3ᵉ), pas à la fin.
+5. **Typologie renommée** : renommer « Éditorial » en « Contenu de marque » en
+   **gardant** la correspondance IA `editorial`, recliquer. **Attendu** : elle
+   n'est **pas** recréée. C'est la correspondance qui fait foi, pas le libellé —
+   l'outil ne défait pas le travail de l'admin.
+6. **Libellé déjà pris** : créer à la main une typologie nommée « Suivi » **sans**
+   correspondance IA, recliquer. **Attendu** : la modale signale que « Suivi » ne
+   sera pas créée, son libellé étant déjà utilisé, et crée les autres. Pas de
+   « Suivi (2) ».
+7. **Cloisonnement** : en tant qu'admin d'une company, appeler
+   `GET /api/taxonomy-items/default-email-types?groupId=<autre company>`.
+   **Attendu** : **403**. Idem sur le POST avec un `groupId` étranger dans le corps.
+
+### D5 ter. Le script, pour traiter tout le parc d'un coup
+
+1. En lecture seule d'abord :
+
+   ```bash
+   node scripts/seed-default-email-types.js --dry-run --lang=fr
+   ```
+
+   **Attendu** : il liste les companies sans aucune typologie, et compte les
+   autres en « already had their own ». Puis l'exécuter pour de vrai, et le
+   relancer : **le second passage ne fait rien**.
+
+2. Sur une company qui a **déjà** des typologies créées à la main, vérifier
+   qu'elle est laissée **intacte** — ni complétée, ni dupliquée.
+
+   C'est là que le script et le bouton **diffèrent volontairement** : le script
+   balaie tout le parc sans que personne regarde, donc il renonce dès qu'une
+   typologie existe ; le bouton est réclamé explicitement par quelqu'un qui a la
+   liste sous les yeux, donc il complète. Sur une company vide, les deux font
+   exactement la même chose.
+
+### D6. Expertises IA taguées avec l'ancien vocabulaire
+
+Le changement de vocabulaire **n'a pas été migré**, c'est un choix. Conséquence à
+vérifier, et à traiter **avant la mise en production** :
+
+1. Lister les expertises concernées :
+
+   ```bash
+   node scripts/report-legacy-expertise-email-types.js
+   ```
+
+   Il affiche chaque expertise dont le champ « types d'email » porte `promo`,
+   `newsletter` ou `marketing-automation`, avec la valeur à mettre à la place, et
+   sort en code 1 tant qu'il en reste. Lecture seule.
+
+2. **Attendu** : ces valeurs restent **visibles et sélectionnables** dans le
+   combobox, affichées telles quelles (non traduites). C'est ce qui rend le
+   retagage possible depuis l'écran.
+3. **Attendu, et c'est le piège** : tant qu'elles ne sont pas retaguées, ces
+   expertises **ne se chargent plus** pour un email dont la typologie pointe vers
+   le nouveau vocabulaire — silencieusement, le filtre étant une égalité de
+   chaîne. Les retaguer sur le type Badsender correspondant.
+4. Relancer le script. **Attendu** : « No expertise tagged with the retired
+   vocabulary. », code de sortie 0.
 
 ---
 

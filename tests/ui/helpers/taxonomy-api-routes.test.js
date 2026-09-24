@@ -8,6 +8,8 @@
 
 import {
   taxonomyItems,
+  taxonomyDefaultEmailTypes,
+  taxonomyDefaultEmailTypesRestore,
   taxonomyItemsCreate,
   taxonomyItemsItem,
 } from '../../../packages/ui/helpers/api-routes.js';
@@ -56,5 +58,37 @@ describe('taxonomyItemsCreate / taxonomyItemsItem', () => {
 
   it('addresses a single item by id', () => {
     expect(taxonomyItemsItem(ITEM_ID)).toBe(`/taxonomy-items/${ITEM_ID}`);
+  });
+});
+
+// The two defaults routes name the company on different sides — query for the
+// read, body for the write — because that is what their guards check. Getting the
+// side wrong means a 403 no test elsewhere would catch.
+describe('taxonomy default email types', () => {
+  it('names the company in the query on the preview', () => {
+    expect(taxonomyDefaultEmailTypes(GROUP_ID)).toBe(
+      `/taxonomy-items/default-email-types?groupId=${GROUP_ID}`
+    );
+  });
+
+  it('carries the interface language on the preview when given', () => {
+    expect(taxonomyDefaultEmailTypes(GROUP_ID, { lang: 'fr' })).toBe(
+      `/taxonomy-items/default-email-types?groupId=${GROUP_ID}&lang=fr`
+    );
+  });
+
+  it('carries no query on the restore, which names the company in its body', () => {
+    expect(taxonomyDefaultEmailTypesRestore()).toBe(
+      '/taxonomy-items/default-email-types'
+    );
+  });
+
+  // Both must stay under the collection path and NOT under /:itemId, which is what
+  // the server-side ordering test guards from the other end.
+  it.each([
+    taxonomyDefaultEmailTypes(GROUP_ID),
+    taxonomyDefaultEmailTypesRestore(),
+  ])('%s targets the defaults sub-resource', (url) => {
+    expect(url.startsWith('/taxonomy-items/default-email-types')).toBe(true);
   });
 });

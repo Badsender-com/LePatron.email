@@ -3,6 +3,7 @@ import { mapMutations } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { groupCreationPayload } from '~/helpers/taxonomy.js';
 import BsGroupForm from '~/components/group/form.vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
@@ -51,7 +52,10 @@ export default {
       const { $axios } = this;
       try {
         this.loading = true;
-        const group = await $axios.$post(apiRoutes.groups(), this.newGroup);
+        const group = await $axios.$post(
+          apiRoutes.groups(),
+          groupCreationPayload(this.newGroup, this.$i18n.locale)
+        );
         this.$router.push(apiRoutes.groupsItem({ groupId: group.id }));
       } catch (error) {
         this.showSnackbar({
