@@ -1182,6 +1182,8 @@ export default {
     model: {
       defaultOption: 'Provider default ({model})',
       defaultOptionUnknown: 'Provider default',
+      requiredPlaceholder: 'Type or pick a model',
+      required: 'This provider has no default model: pick one, or every call will fail.',
       deprecated: 'deprecated',
       invalidId: 'Not saved — model identifiers accept letters, digits and . _ - : / @ only, no spaces.',
       customHint: 'Hand-typed model: it has not been checked against the provider.',

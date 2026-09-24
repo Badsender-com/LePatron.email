@@ -1196,6 +1196,8 @@ export default {
     model: {
       defaultOption: 'Par défaut du fournisseur ({model})',
       defaultOptionUnknown: 'Par défaut du fournisseur',
+      requiredPlaceholder: 'Saisissez ou choisissez un modèle',
+      required: 'Ce fournisseur n\'a pas de modèle par défaut : choisissez-en un, sans quoi les appels échoueront.',
       deprecated: 'obsolète',
       invalidId: 'Non enregistré : un identifiant de modèle accepte uniquement lettres, chiffres et . _ - : / @, sans espace.',
       customHint: 'Modèle saisi manuellement : il n\'a pas été vérifié auprès du fournisseur.',
