@@ -341,4 +341,16 @@ module.exports = {
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-preview-too-large':
     "Enregistrement refusé : l'email est trop volumineux.",
+  // Head CSS — a stylesheet for the whole email, gated by the same flag
+  'head-css-section-title': 'CSS personnalisé',
+  'head-css-section-hint':
+    "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML.",
+  'head-css-section-button': 'Éditer le CSS',
+  'head-css-modal-title': "CSS personnalisé (<head> de l'email)",
+  'head-css-placeholder':
+    "Écrivez ici votre CSS. Il sera ajouté dans le <head> de l'email exporté, tel quel, sans être appliqué aux blocs du template.",
+  'head-css-too-large':
+    "Le CSS dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'save-message-head-css-too-large':
+    'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
 };

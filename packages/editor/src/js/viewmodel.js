@@ -24,6 +24,9 @@ const {
 const {
   injectHeadCss,
 } = require('../../../shared/head-css/inject-head-css.js');
+const {
+  HEAD_CSS_MAX_LENGTH,
+} = require('../../../shared/head-css/constants.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -370,6 +373,21 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // `metadata.headCss` once the mailing is loaded (template-loader.js) and sent
   // back with the content on save (ext/badsender-server-storage.js).
   viewModel.headCss = ko.observable('');
+
+  // Opens the shared CodeMirror modal on the stylesheet instead of a block
+  // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
+  // guarded because the palette button exists before Vue has bound.
+  viewModel.openHeadCssEditor = function () {
+    if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
+    viewModel.toggleHtmlCodeModal(true, {
+      accessor: viewModel.headCss,
+      mode: 'css',
+      titleKey: 'head-css-modal-title',
+      placeholderKey: 'head-css-placeholder',
+      tooLargeKey: 'head-css-too-large',
+      maxLength: HEAD_CSS_MAX_LENGTH,
+    });
+  };
 
   // toggleTranslateBlockModal will be set by the Vue component
   viewModel.toggleTranslateBlockModal = ko.observable(null);
