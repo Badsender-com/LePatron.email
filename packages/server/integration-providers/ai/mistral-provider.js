@@ -1,13 +1,10 @@
 'use strict';
 
-const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { fetchProviderJson } = require('../provider-http.js');
 
-const DEFAULT_MODEL = 'mistral-small-latest';
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
-
 /**
  * Mistral AI provider implementation
  *
@@ -26,47 +23,29 @@ class MistralProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
-  _getDefaultModel() {
-    return DEFAULT_MODEL;
-  }
+  /**
+   * Unlike OpenAI, Mistral tags each model with its capabilities, so the chat
+   * models can be told apart at the source and no pattern matching is needed
+   * downstream.
+   */
+  async listRemoteModels() {
+    const payload = await fetchProviderJson(`${this.baseUrl}/v1/models`, {
+      headers: this._buildHeaders(),
+      label: 'Mistral models listing',
+      mapErrorToCode: (status) => this._mapErrorToCode(status),
+    });
 
-  getStaticModels() {
-    return [
-      {
-        id: 'mistral-small-latest',
-        name: 'Mistral Small',
-        descriptionKey: 'integrations.models.fast',
-      },
-      {
-        id: 'mistral-medium-latest',
-        name: 'Mistral Medium',
-        descriptionKey: 'integrations.models.balanced',
-      },
-      {
-        id: 'mistral-large-latest',
-        name: 'Mistral Large',
-        descriptionKey: 'integrations.models.powerful',
-      },
-    ];
-  }
-
-  async validateCredentials() {
-    try {
-      // SSRF guard: never send the Bearer key to a private/internal host.
-      await assertOutboundHostAllowed(this.baseUrl);
-
-      const response = await fetch(`${this.baseUrl}/v1/models`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-      });
-
-      return response.ok;
-    } catch (error) {
-      logger.error('Mistral validation error:', error.message);
-      return false;
-    }
+    // Mistral is the richest of the three listings: it carries a written
+    // description, a deprecation date and the model meant to replace it.
+    return (payload.data || [])
+      .filter((model) => model.capabilities?.completion_chat)
+      .map((model) => ({
+        id: model.id,
+        label: model.name,
+        description: model.description || null,
+        shutdownDate: model.deprecation || null,
+        replacedBy: model.deprecation_replacement_model || null,
+      }));
   }
 
   _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {

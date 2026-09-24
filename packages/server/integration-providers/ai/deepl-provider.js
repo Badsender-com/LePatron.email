@@ -99,13 +99,6 @@ class DeepLProvider extends BaseProvider {
   }
 
   /**
-   * DeepL doesn't have models to list
-   */
-  async getAvailableModels() {
-    return [];
-  }
-
-  /**
    * Get available languages from DeepL
    */
   async getAvailableLanguages() {

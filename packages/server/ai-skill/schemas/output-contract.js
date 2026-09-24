@@ -20,7 +20,19 @@ const { getSchema } = require('./index.js');
  * @returns {string|null} the contract block, or null when the schema is
  *   unknown/absent (no injection, current behaviour preserved).
  */
-function buildOutputContract(outputSchemaId) {
+/**
+ * The output schema as JSON Schema, or null when it cannot be represented.
+ *
+ * Separate from the prompt block because some providers can enforce it rather
+ * than merely be asked: Anthropic takes it as the input schema of a forced
+ * tool call. Handed a bare `{type:'object'}` instead, the model invents a
+ * shape — observed live: one wrapped the answer in `parameters`, another
+ * nested `text` inside `text`.
+ *
+ * @param {string} outputSchemaId
+ * @returns {Object|null}
+ */
+function buildOutputJsonSchema(outputSchemaId) {
   const schema = outputSchemaId && getSchema(outputSchemaId);
   if (!schema) return null;
 
@@ -34,6 +46,12 @@ function buildOutputContract(outputSchemaId) {
   }
   // The $schema meta key is spec noise for an LLM — drop it for brevity.
   delete jsonSchema.$schema;
+  return jsonSchema;
+}
+
+function buildOutputContract(outputSchemaId) {
+  const jsonSchema = buildOutputJsonSchema(outputSchemaId);
+  if (!jsonSchema) return null;
 
   return [
     '## Format de sortie (obligatoire)',
@@ -48,4 +66,4 @@ function buildOutputContract(outputSchemaId) {
   ].join('\n');
 }
 
-module.exports = { buildOutputContract };
+module.exports = { buildOutputContract, buildOutputJsonSchema };

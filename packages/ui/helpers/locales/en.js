@@ -884,6 +884,23 @@ export default {
     contactBadsender: 'Contact Badsender',
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'This address is private or local. For security reasons LePatron only calls public addresses: an AI hosted on your internal network cannot be reached from the server.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'This domain name cannot be found. Check the spelling of the URL.',
+      INTEGRATION_HOST_INVALID:
+        'This URL is not valid. Expected an address starting with https://',
+      INTEGRATION_API_KEY_REQUIRED:
+        'The API address changed: enter the API key again.',
+      INVALID_PRODUCT_ID: 'The Product ID contains digits only.',
+      INTEGRATION_CONFIG_INVALID:
+        'One of the integration settings is not valid for this provider.',
+    },
+    apiKeyRequiredOnHostChange:
+      'The API address changed: enter the key again to confirm it should be sent there.',
     title: 'Integrations',
     name: 'Name',
     provider: 'Provider',
@@ -934,6 +951,34 @@ export default {
       productId: 'Product ID',
       productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools',
       productIdInvalid: 'The Product ID contains digits only'
+    },
+    anthropic: {
+      apiKeyPlaceholder: 'Your Anthropic API key',
+      apiHostHint: 'Leave empty for the public Anthropic API; set it only if you go through a corporate gateway.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Your Google AI Studio API key',
+      apiHostHint: 'Leave empty for the public Gemini API.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Your Azure OpenAI API key',
+      apiHostHint: 'Your Azure resource URL, e.g. https://my-instance.openai.azure.com. The deployment name stands in for the model.',
+      reasoningModel: 'The deployment runs a reasoning model (gpt-5, o-series)',
+      reasoningModelHint: 'Tick it if the deployment runs gpt-5, o1, o3 or o4: these models refuse temperature and max_tokens, and the deployment name gives no way to tell.'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'Your endpoint API key',
+      apiHostHint: 'Any endpoint speaking the OpenAI API. Private and loopback addresses are refused for security reasons.',
+      supportsJsonMode: 'The endpoint supports JSON mode (response_format)',
+      supportsJsonModeHint: 'Tick it only if the endpoint guarantees a valid JSON answer: skills then rely on it. Otherwise the answer is repaired afterwards.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Your Scaleway API key',
+      apiHostHint: 'Leave empty unless your account requires a project-scoped URL.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Your OVHcloud API key',
+      apiHostHint: 'Leave empty for the public OVHcloud AI Endpoints.'
     },
     deepl: {
       apiKeyPlaceholder: 'Your DeepL API key',
@@ -1133,8 +1178,16 @@ export default {
       enableLabel: 'Enable the Skills engine',
       model: 'AI model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
-      modelDefaultOption: 'Provider default ({model})',
-      modelDefaultOptionUnknown: 'Provider default'
+    },
+    model: {
+      defaultOption: 'Provider default ({model})',
+      defaultOptionUnknown: 'Provider default',
+      requiredPlaceholder: 'Type or pick a model',
+      required: 'This provider has no default model: pick one, or every call will fail.',
+      deprecated: 'deprecated',
+      invalidId: 'Not saved — model identifiers accept letters, digits and . _ - : / @ only, no spaces.',
+      customHint: 'Hand-typed model: it has not been checked against the provider.',
+      loadFailed: 'Model list unavailable: only known models are offered. You can type an identifier.',
     },
     textGeneration: {
       title: 'Text generation',
@@ -1143,9 +1196,6 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Unable to load available models.',
     }
   },
   colors: {
