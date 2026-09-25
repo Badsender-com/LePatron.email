@@ -34,6 +34,18 @@ const HTML_CODE_MARKER_CLASS = 'lp-html-block';
 // about unknown `data-*` attributes but ignores classes.
 const HTML_CODE_ROOT_CLASS = 'lp-html-block-root';
 
+// Second property of the block: the block builder's state, as a serialised JSON
+// string. A STRING and not an object, deliberately — checkmodel.js compares the
+// stored value's type against the generated model's and flags a mismatch as an
+// obsolete template, which greets the user with a scary dialog. And it must be
+// DECLARED in the block definitions, or the reverse pass deletes it from the
+// stored content on the next load ("found in model is not defined by template:
+// removing it!").
+//
+// Never rendered in the markup, so `_usecount` stays undefined and the property
+// editor returns '' — it exists in the model without showing up in the panel.
+const BUILDER_STATE_PROPERTY = 'builderState';
+
 // Knockout binding rendering the pasted markup.
 const HTML_CODE_BINDING = 'lpHtmlCode';
 
@@ -45,6 +57,7 @@ const HTML_CODE_MAX_LENGTH = 100000;
 module.exports = {
   HTML_CODE_BLOCK_TYPE,
   HTML_CODE_PROPERTY,
+  BUILDER_STATE_PROPERTY,
   HTML_CODE_MARKER_CLASS,
   HTML_CODE_ROOT_CLASS,
   HTML_CODE_BINDING,

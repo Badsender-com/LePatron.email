@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  BUILDER_STATE_PROPERTY,
+} = require('./html-code-block/constants.js');
+
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
 //
@@ -70,8 +74,18 @@ module.exports = () => {
       if (typeof vm.toggleBlockBuilderModal !== 'function') return;
       if (!blockProperties || !blockProperties[propAccessor]) return;
 
+      // Two accessors: the markup the block exports, and the state the builder
+      // reopens from. The second is declared in the injected block definitions
+      // (see inject-html-code-block.js) and is absent only on a block stored
+      // before it existed — which the modal treats as "nothing to reopen".
+      const stateProperty = blockProperties[BUILDER_STATE_PROPERTY];
+
       vm.toggleBlockBuilderModal(true, {
         accessor: blockProperties[propAccessor].bind(blockProperties),
+        stateAccessor:
+          typeof stateProperty === 'function'
+            ? stateProperty.bind(blockProperties)
+            : null,
       });
     };
 
