@@ -28,6 +28,15 @@ const DOCUMENT_SELECTORS = new Set(['html', 'body', ':root', '*']);
 // At-rules whose inner blocks hold selectors to rewrite.
 const NESTING_AT_RULES = new Set(['media', 'supports', 'document']);
 
+// A condition that is always true, used to make mobile rules apply while the
+// mobile preview is on. Same value, and same blunt approach, as
+// badsender-screen-preview.js uses on the template's own stylesheet: EVERY
+// media query is forced, not only the `max-width` ones. A desktop-only
+// `min-width` query would therefore apply too — wrong in theory, but it is the
+// behaviour the template already has, and diverging would be worse than
+// matching it.
+const ALWAYS_TRUE_MEDIA = 'only screen and (min-width: 0px)';
+
 /**
  * Splits a selector list on its top-level commas only.
  *
@@ -87,7 +96,7 @@ function scopeSelector(selector, prefix) {
  * @param {Array} rules mensch AST nodes
  * @param {string} prefix
  */
-function scopeRules(rules, prefix) {
+function scopeRules(rules, prefix, forceMedia) {
   if (!Array.isArray(rules)) return;
 
   rules.forEach((rule) => {
@@ -101,17 +110,27 @@ function scopeRules(rules, prefix) {
       return;
     }
 
-    if (NESTING_AT_RULES.has(rule.type)) scopeRules(rule.rules, prefix);
+    if (NESTING_AT_RULES.has(rule.type)) {
+      // The canvas is a div, so a media query is evaluated against the browser
+      // window, never against the canvas width. Shrinking the canvas to 350px
+      // for the mobile preview therefore triggers nothing on its own: the
+      // condition has to be neutralised for the rules to show.
+      if (rule.type === 'media' && forceMedia) rule.name = ALWAYS_TRUE_MEDIA;
+      scopeRules(rule.rules, prefix, forceMedia);
+    }
   });
 }
 
 /**
  * @param {string} css the author's stylesheet
  * @param {string} prefix the selector everything must live under
+ * @param {Object} [options]
+ * @param {boolean} [options.forceMedia] make every media query apply, for the
+ *   mobile preview
  * @returns {string|null} the scoped stylesheet, or null when the CSS cannot be
  *   parsed — the caller then applies nothing rather than something wrong
  */
-function scopeCss(css, prefix) {
+function scopeCss(css, prefix, options) {
   if (typeof css !== 'string' || css.trim() === '') return '';
   if (typeof prefix !== 'string' || prefix.trim() === '') return null;
 
@@ -130,7 +149,11 @@ function scopeCss(css, prefix) {
 
   if (!sheet || sheet.type !== 'stylesheet' || !sheet.stylesheet) return null;
 
-  scopeRules(sheet.stylesheet.rules, prefix.trim());
+  scopeRules(
+    sheet.stylesheet.rules,
+    prefix.trim(),
+    Boolean(options && options.forceMedia)
+  );
 
   try {
     return cssStringify(sheet, { indentation: '' });

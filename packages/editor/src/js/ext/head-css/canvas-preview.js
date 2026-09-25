@@ -46,12 +46,15 @@ function ensureStyleElement(doc) {
 /**
  * @param {Document} doc
  * @param {string} css
+ * @param {string} [previewMode] `desktop`, `mobile` or `both`
  */
-function renderPreview(doc, css) {
+function renderPreview(doc, css, previewMode) {
   const element = ensureStyleElement(doc);
   if (!element) return;
 
-  const scoped = scopeCss(css, CANVAS_SELECTOR);
+  const scoped = scopeCss(css, CANVAS_SELECTOR, {
+    forceMedia: previewMode === 'mobile',
+  });
 
   // `null` means the CSS could not be scoped. Leaving the previous rules in
   // place would show the author a canvas that no longer matches what they
@@ -73,11 +76,30 @@ function attachHeadCssPreview(viewModel, doc) {
     return null;
   }
 
-  renderPreview(target, viewModel.headCss());
+  const currentMode = () =>
+    typeof viewModel.previewMode === 'function'
+      ? viewModel.previewMode()
+      : undefined;
 
-  return viewModel.headCss.subscribe(function (css) {
-    renderPreview(target, css);
-  });
+  const render = () => renderPreview(target, viewModel.headCss(), currentMode());
+
+  render();
+
+  // Re-rendered from the source on every change rather than rewritten in the
+  // CSSOM the way badsender-screen-preview.js does for the template. That
+  // module builds its index of media rules once, when a template loads; this
+  // sheet is rebuilt on every keystroke, so it could never stay in such an
+  // index. Regenerating is both simpler and correct by construction.
+  const subscriptions = [viewModel.headCss.subscribe(render)];
+  if (typeof viewModel.previewMode === 'function') {
+    subscriptions.push(viewModel.previewMode.subscribe(render));
+  }
+
+  return {
+    dispose() {
+      subscriptions.forEach((subscription) => subscription.dispose());
+    },
+  };
 }
 
 // Plugin shape expected by template-loader.js: `init` runs after Knockout has

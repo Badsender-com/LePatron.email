@@ -46,14 +46,15 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 ## 4. Décisions
 
-| Sujet             | Décision                                                                                                                                                                                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portée            | Par créa. Le CSS accompagne l'email, pas le template                                                                                                                                                                                                                                                          |
-| Flag              | **Réutilise `htmlBlockEnabled`.** Le CSS existe pour styler du markup collé dans un bloc Code HTML ; un client sans ce bloc n'aurait rien à styler et gagnerait seulement le pouvoir de restyler tout l'email hors design system. Découpler plus tard est un ajout, pas une migration                         |
-| Limite            | 20 000 caractères. Une feuille est bien plus compacte que le markup qu'elle style ; la copie stockée, doublée par `previewHtml`, reste négligeable contre la limite de 16 Mo par document                                                                                                                     |
-| Surface d'édition | La modale CodeMirror du bloc Code HTML, rendue paramétrable (mode, libellés, borne) plutôt que dupliquée                                                                                                                                                                                                      |
-| Emplacement       | **Deux points d'entrée, une seule valeur** : bas de l'onglet **Style** global (où le CSS appartient logiquement), et un second bouton dans le panneau du bloc Code HTML (où on le cherche réellement, juste après avoir collé du markup). Une phrase sous ce bouton rappelle que la portée est l'email entier |
-| Constantes        | `packages/shared/head-css/constants.js`, requis par l'éditeur **et** le serveur. Le bloc Code HTML duplique les siennes avec un test de synchro parce que le serveur ne doit pas dépendre d'un bundle navigateur ; ici les deux côtés partagent déjà un module                                                |
+| Sujet             | Décision                                                                                                                                                                                                                                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Portée            | Par créa. Le CSS accompagne l'email, pas le template                                                                                                                                                                                                                                                                                       |
+| Flag              | **Réutilise `htmlBlockEnabled`.** Le CSS existe pour styler du markup collé dans un bloc Code HTML ; un client sans ce bloc n'aurait rien à styler et gagnerait seulement le pouvoir de restyler tout l'email hors design system. Découpler plus tard est un ajout, pas une migration                                                      |
+| Limite            | 20 000 caractères. Une feuille est bien plus compacte que le markup qu'elle style ; la copie stockée, doublée par `previewHtml`, reste négligeable contre la limite de 16 Mo par document                                                                                                                                                  |
+| Surface d'édition | La modale CodeMirror du bloc Code HTML, rendue paramétrable (mode, libellés, borne) plutôt que dupliquée                                                                                                                                                                                                                                   |
+| Emplacement       | **Deux points d'entrée, une seule valeur** : bas de l'onglet **Style** global (où le CSS appartient logiquement), et un second bouton dans le panneau du bloc Code HTML (où on le cherche réellement, juste après avoir collé du markup). Une phrase sous ce bouton rappelle que la portée est l'email entier                              |
+| Aperçu mobile     | La feuille est **régénérée depuis la source** à chaque changement de CSS ou de mode, plutôt que réécrite dans la CSSOM comme le fait `badsender-screen-preview.js` pour le template. Ce module construit son index de media rules une fois, au chargement d'un template ; une feuille reconstruite à chaque frappe n'y aurait pas sa place |
+| Constantes        | `packages/shared/head-css/constants.js`, requis par l'éditeur **et** le serveur. Le bloc Code HTML duplique les siennes avec un test de synchro parce que le serveur ne doit pas dépendre d'un bundle navigateur ; ici les deux côtés partagent déjà un module                                                                             |
 
 ## 5. Sécurité
 
@@ -64,8 +65,7 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 ## 6. Limites connues
 
-- **Les `@media` ne suivent pas encore la bascule mobile.** Les règles simples s'appliquent au canvas, mais `badsender-screen-preview.js` ne réécrit les media queries que de la feuille `template-stylesheet`, et reconstruit son index au seul chargement d'un template. La feuille d'aperçu ne revendique donc pas ce titre : elle serait dans ses pattes sans être indexée.
-- **La bascule mobile ne le pilotera pas** tant qu'on n'aura pas étendu `badsender-screen-preview.js`, qui ne réécrit les `@media` que de la feuille dont `stylesheet.title === 'template-stylesheet'`. À traiter quand le Block Builder en dépendra.
+- **Toutes les media queries sont neutralisées en aperçu mobile, pas seulement les `max-width`.** Une règle `@media (min-width: 700px)` s'appliquerait donc à tort dans cet aperçu. C'est le comportement qu'a déjà `badsender-screen-preview.js` sur le CSS du template : s'en écarter serait plus déroutant que s'y conformer.
 - **`he.encode` côté serveur** encode les non-ASCII en entités décimales, y compris dans le `<style>`. Un `content: "é"` ou un commentaire accentué en souffrira. Même limite que le bloc Code HTML, documentée là-bas.
 
 ## 7. Recette manuelle
@@ -77,6 +77,7 @@ Non-régression d'abord, le reste ensuite.
 3. Flag ON → la section apparaît ; le bouton ouvre la modale en coloration CSS.
    3bis. Sélectionner un bloc Code HTML → le panneau offre « Éditer le CSS de l'email » sous le bouton HTML, avec la mention de portée. Les deux entrées ouvrent le même contenu.
    3ter. **Aperçu canvas** : coller `<p class="classred">Coucou</p>` dans un bloc, écrire `.classred{color:red}` dans le CSS, appliquer → le texte passe en rouge **dans l'éditeur**, sans que la toolbox ni les panneaux changent d'aspect.
+   3quater. **Aperçu mobile** : ajouter `@media (max-width:600px){.classred{color:blue}}` → le texte reste rouge en aperçu Bureau, passe en bleu en aperçu Mobile, et redevient rouge au retour.
 4. Écrire `.foo{color:red}`, appliquer, sauvegarder, recharger → le CSS est retrouvé.
 5. Exporter → `<style type="text/css" data-lp-head-css="true">` est présent dans le `<head>`, juste avant `</head>`, contenu intact.
 6. Envoi de test et export ESP → même présence.

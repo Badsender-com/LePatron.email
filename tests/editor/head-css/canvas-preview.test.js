@@ -16,8 +16,11 @@ const {
   STYLE_ELEMENT_ID,
 } = require('../../../packages/editor/src/js/ext/head-css/canvas-preview.js');
 
-function setup(initialCss) {
-  const viewModel = { headCss: ko.observable(initialCss || '') };
+function setup(initialCss, previewMode) {
+  const viewModel = {
+    headCss: ko.observable(initialCss || ''),
+    previewMode: ko.observable(previewMode || 'desktop'),
+  };
   const subscription = attachHeadCssPreview(viewModel, document);
   return {
     viewModel,
@@ -79,6 +82,40 @@ describe('attachHeadCssPreview', () => {
       renderPreview,
     } = require('../../../packages/editor/src/js/ext/head-css/canvas-preview.js');
     expect(() => renderPreview({}, '.a{color:red}')).not.toThrow();
+  });
+
+  describe('the mobile toggle', () => {
+    const MEDIA = '@media (max-width:600px){.a{width:100%}}';
+
+    it('keeps the condition in desktop preview', () => {
+      const { sheet } = setup(MEDIA, 'desktop');
+      expect(sheet().textContent).toContain('@media (max-width:600px)');
+    });
+
+    it('neutralises it when switching to mobile', () => {
+      const { viewModel, sheet } = setup(MEDIA, 'desktop');
+
+      viewModel.previewMode('mobile');
+
+      expect(sheet().textContent).toContain('min-width: 0px');
+      expect(sheet().textContent).not.toContain('max-width:600px');
+    });
+
+    it('restores it when switching back', () => {
+      const { viewModel, sheet } = setup(MEDIA, 'mobile');
+
+      viewModel.previewMode('desktop');
+
+      expect(sheet().textContent).toContain('@media (max-width:600px)');
+    });
+  });
+
+  it('works without a previewMode observable', () => {
+    const viewModel = { headCss: ko.observable('.a{color:red}') };
+    expect(() => attachHeadCssPreview(viewModel, document)).not.toThrow();
+    expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toContain(
+      '#main-wysiwyg-area .a'
+    );
   });
 
   it('does nothing without a headCss observable', () => {
