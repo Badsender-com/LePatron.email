@@ -59,6 +59,36 @@ describe('scopeCss', () => {
     );
   });
 
+  describe('the mobile preview', () => {
+    // The canvas is a div: a media query is evaluated against the browser
+    // window, never against the shrunk canvas. Without neutralising the
+    // condition, mobile rules would never show.
+    it('neutralises the condition so mobile rules apply', () => {
+      const out = flat(
+        scopeCss('@media (max-width:600px){.a{width:100%}}', AREA, {
+          forceMedia: true,
+        })
+      );
+      expect(out).toBe(
+        '@media only screen and (min-width: 0px) { #main-wysiwyg-area .a { width: 100%; } }'
+      );
+    });
+
+    it('leaves the condition alone otherwise', () => {
+      const out = flat(
+        scopeCss('@media (max-width:600px){.a{width:100%}}', AREA)
+      );
+      expect(out).toContain('@media (max-width:600px)');
+    });
+
+    it('still scopes the rules it neutralises', () => {
+      const out = flat(
+        scopeCss('@media screen{.a{color:red}}', AREA, { forceMedia: true })
+      );
+      expect(out).toContain('#main-wysiwyg-area .a');
+    });
+  });
+
   // Percentages and from/to are not selectors — prefixing them breaks the
   // animation outright.
   it('leaves keyframe steps alone', () => {
