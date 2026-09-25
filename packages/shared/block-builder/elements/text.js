@@ -7,9 +7,9 @@
 // cell rather than margins on the paragraph, and the font stack repeated inline
 // because most clients drop what is not on the element itself.
 //
-// `content` is plain TEXT for now, so `<strong>` would come out escaped. Rich
-// text needs an allow-list sanitiser rather than an escaper, which is a
-// security brick of its own — see the RICH_TEXT note in slot-contexts.js.
+// `content` is RICH_TEXT: bold, italic, underline, links and line breaks pass
+// through, everything else is dropped. That is an allow-list rebuild, not an
+// escape — see rich-text.js.
 
 const { defineTemplate } = require('../template.js');
 
@@ -24,7 +24,7 @@ const render = defineTemplate(
     ' line-height:[[lineHeight|PX|21]]px;',
     ' color:[[color|COLOR|#000000]];',
     ' mso-line-height-rule:exactly;">',
-    '[[content|TEXT]]',
+    '[[content|RICH_TEXT]]',
     '</td>',
     '</tr>',
     '</table>',
