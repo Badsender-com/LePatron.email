@@ -118,7 +118,11 @@ function loader(opts) {
 
         data = {
           ...data,
-          htmlToExport: viewModel.exportHTML()
+          htmlToExport: viewModel.exportHTML(),
+          // Stored on the mailing, not in the content model — see
+          // viewModel.headCss. Always sent, so clearing it is a save like any
+          // other; the server only writes the field when it is present.
+          headCss: viewModel.headCss(),
         };
         // force JSON for bodyparser to catch up
         // => keep types server side

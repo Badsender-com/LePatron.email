@@ -1,6 +1,7 @@
 'use strict';
 
-// PUT /mailings/:mailingId/mosaico is where the HTML code block becomes content.
+// PUT /mailings/:mailingId/mosaico is where the HTML code block — and the head
+// CSS written to style it — become content.
 // The editor hides the block when the template flag is off, but the block
 // definition is injected into every template, so a hand-written request could
 // add one anywhere: this endpoint is the gate. It must also keep every existing
@@ -43,6 +44,9 @@ const controller = require('../../../packages/server/mailing/mailing.controller.
 const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');
+const {
+  HEAD_CSS_MAX_LENGTH,
+} = require('../../../packages/shared/head-css/constants.js');
 
 const MAILING_ID = '507f1f77bcf86cd799439001';
 const TEMPLATE_ID = '507f1f77bcf86cd799439002';
@@ -56,11 +60,12 @@ const user = {
 const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
 const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
 
-function mockMailing(storedData) {
+function mockMailing(storedData, storedHeadCss) {
   const mailing = {
     _id: MAILING_ID,
     _wireframe: TEMPLATE_ID,
     data: storedData,
+    headCss: storedHeadCss,
     save: jest.fn().mockResolvedValue(undefined),
     markModified: jest.fn(),
   };
@@ -178,6 +183,80 @@ describe('PUT /mailings/:mailingId/mosaico — sizes', () => {
 
     expect(error).toMatchObject({ message: 'PREVIEW_HTML_TOO_LARGE' });
     expect(mailing.save).not.toHaveBeenCalled();
+  });
+});
+
+// Head CSS rides the same route, under the same flag, and is stored outside
+// `data`. What needs pinning is the same asymmetry as above — the flag going
+// off must not lock an author out — plus one thing the block does not have: a
+// client that says nothing about the CSS must not erase it.
+describe('PUT /mailings/:mailingId/mosaico — head CSS', () => {
+  const EMPTY = dataWith();
+
+  it('stores the stylesheet when the template enables it', async () => {
+    const mailing = mockMailing(EMPTY, '');
+    mockTemplateFlag(true);
+
+    expect(await save({ data: EMPTY, headCss: '.a{color:red}' })).toBeNull();
+    expect(mailing.headCss).toBe('.a{color:red}');
+  });
+
+  it('refuses a new stylesheet when the template does not enable it', async () => {
+    const mailing = mockMailing(EMPTY, '');
+    mockTemplateFlag(false);
+
+    const error = await save({ data: EMPTY, headCss: '.a{color:red}' });
+
+    expect(error).toMatchObject({
+      status: 403,
+      message: 'HTML_CODE_BLOCK_DISABLED',
+    });
+    expect(mailing.save).not.toHaveBeenCalled();
+  });
+
+  it('keeps the mailing savable when the stored stylesheet is unchanged', async () => {
+    const mailing = mockMailing(EMPTY, '.a{color:red}');
+    mockTemplateFlag(false);
+
+    expect(await save({ data: EMPTY, headCss: '.a{color:red}' })).toBeNull();
+    expect(mailing.save).toHaveBeenCalled();
+  });
+
+  it('lets the author clear it even with the flag off', async () => {
+    const mailing = mockMailing(EMPTY, '.a{color:red}');
+    mockTemplateFlag(false);
+
+    expect(await save({ data: EMPTY, headCss: '' })).toBeNull();
+    expect(mailing.headCss).toBe('');
+  });
+
+  it('refuses a stylesheet past the limit', async () => {
+    const mailing = mockMailing(EMPTY, '');
+    mockTemplateFlag(true);
+
+    const error = await save({
+      data: EMPTY,
+      headCss: 'a'.repeat(HEAD_CSS_MAX_LENGTH + 1),
+    });
+
+    expect(error).toMatchObject({ message: 'HEAD_CSS_TOO_LARGE' });
+    expect(mailing.save).not.toHaveBeenCalled();
+  });
+
+  // An older editor bundle, or the metadata route, says nothing about headCss.
+  it('leaves the stored stylesheet alone when the field is absent', async () => {
+    const mailing = mockMailing(EMPTY, '.a{color:red}');
+    mockTemplateFlag(true);
+
+    expect(await save({ data: EMPTY })).toBeNull();
+    expect(mailing.headCss).toBe('.a{color:red}');
+  });
+
+  it('loads the template once for both guards, and only when needed', async () => {
+    mockMailing(EMPTY, '');
+
+    expect(await save({ data: EMPTY })).toBeNull();
+    expect(Templates.findById).not.toHaveBeenCalled();
   });
 });
 

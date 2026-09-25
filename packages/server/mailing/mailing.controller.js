@@ -11,6 +11,11 @@ const {
   assertHtmlCodeAllowed,
 } = require('./html-code-block-guard.js');
 const {
+  validateHeadCss,
+  assertHeadCssAllowed,
+  hasHeadCss,
+} = require('./head-css-guard.js');
+const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../utils/preview-html-sanitizer.js');
 
@@ -432,17 +437,30 @@ async function updateMosaico(req, res) {
     throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
   }
 
+  const { headCss } = req.body;
+  const headCssCheck = validateHeadCss(headCss);
+  if (!headCssCheck.valid) {
+    throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);
+  }
+
   // The template flag, enforced here: the editor only hides the palette entry,
   // and a hand-written request could add the block to any template. Loaded only
-  // when there is a block to check, so a mailing without one costs no query.
-  if (hasHtmlCodeBlock(req.body.data)) {
+  // when there is something to check, so a mailing without either costs no
+  // query — and loaded once for both guards, which share the flag.
+  if (hasHtmlCodeBlock(req.body.data) || hasHeadCss(headCss)) {
     const template = await Templates.findById(mailing._wireframe)
       .select({ htmlBlockEnabled: 1 })
       .lean();
+    const htmlBlockEnabled = Boolean(template && template.htmlBlockEnabled);
     assertHtmlCodeAllowed({
       data: req.body.data,
       previousData: mailing.data,
-      htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+      htmlBlockEnabled,
+    });
+    assertHeadCssAllowed({
+      css: headCss,
+      previousCss: mailing.headCss,
+      htmlBlockEnabled,
     });
   }
 
@@ -463,6 +481,12 @@ async function updateMosaico(req, res) {
 
   if (requestHtml) {
     mailing.previewHtml = requestHtml;
+  }
+
+  // Only when the field is part of the request: an older editor bundle, or any
+  // client that does not know about head CSS, must not silently wipe it.
+  if (typeof headCss === 'string') {
+    mailing.headCss = headCss;
   }
 
   await mailing.save();

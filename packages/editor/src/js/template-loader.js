@@ -566,6 +566,15 @@ var templateCompiler = function (
   }
 
   viewModel.metadata = metadata;
+
+  // Seeded here rather than declared in the content model: head CSS belongs to
+  // the mailing, and checkModel would splice an undeclared content property out.
+  if (typeof viewModel.headCss === 'function') {
+    viewModel.headCss(
+      typeof metadata.headCss === 'string' ? metadata.headCss : ''
+    );
+  }
+
   // let's run some version check on template and editor used to build the model being loaded.
   // This will be replaced by browserify-versionify during the build
   var editver = '__VERSION__';

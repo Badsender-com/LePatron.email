@@ -38,6 +38,8 @@ function renderPanel(htmlBlockEnabled) {
     vm,
     toggle,
     button: host.querySelector('.html-code-widget__button'),
+    cssButton: host.querySelector('.html-code-widget__button--secondary'),
+    cssHint: host.querySelector('.html-code-widget__hint'),
     message: host.querySelector('.html-code-widget__disabled'),
   };
 }
@@ -58,6 +60,21 @@ describe('HTML code widget', () => {
     expect(button.style.display).toBe('none');
     expect(message.style.display).not.toBe('none');
     expect(message.textContent).toBe('widget-code-disabled');
+  });
+
+  // The head CSS has a second entry point here, because this is where someone
+  // who just pasted markup looks for a way to make it responsive. It follows
+  // the same flag as the block: with editing off, there is nothing to style.
+  it('offers the email CSS alongside, with its scope spelled out', () => {
+    const { cssButton, cssHint } = renderPanel(true);
+    expect(cssButton.style.display).not.toBe('none');
+    expect(cssHint.textContent).toBe('widget-code-css-hint');
+  });
+
+  it('hides the email CSS when the block cannot be edited', () => {
+    const { cssButton, cssHint } = renderPanel(false);
+    expect(cssButton.style.display).toBe('none');
+    expect(cssHint.style.display).toBe('none');
   });
 
   it('does not open the editor when the block cannot be edited', () => {
