@@ -8,6 +8,10 @@ const {
 const {
   ELEMENTS,
 } = require('../../../../../../shared/block-builder/elements/index.js');
+const {
+  parseState,
+  serialiseState,
+} = require('../../../../../../shared/block-builder/state.js');
 
 // The composing surface of the block builder.
 //
@@ -48,6 +52,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   },
   data: () => ({
     accessor: null,
+    stateAccessor: null,
+    // True when the block holds markup but no state the builder can reopen —
+    // written by hand, or by a version of the builder that did not store one.
+    // Composing then REPLACES that markup, which the user has to be told.
+    replacesExistingMarkup: false,
     state: emptyState(),
     selectedId: null,
     palette: PALETTE,
@@ -87,10 +96,19 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         return;
       }
       this.accessor = data && data.accessor;
-      // Always a fresh composition for now. Re-opening an existing block needs
-      // the stored builderState, which is the next step.
-      this.state = emptyState();
-      this.selectedId = null;
+      this.stateAccessor = (data && data.stateAccessor) || null;
+
+      const stored = this.stateAccessor ? this.stateAccessor() : null;
+      const restored = parseState(stored);
+      const existingMarkup = this.accessor ? this.accessor() : '';
+
+      this.state = restored || emptyState();
+      // Markup with no state behind it: composing would throw it away.
+      this.replacesExistingMarkup =
+        !restored && typeof existingMarkup === 'string' && existingMarkup !== '';
+      this.selectedId = this.state.elements.length
+        ? this.state.elements[0].id
+        : null;
       this.previewWidth = DESKTOP_WIDTH;
       this.$refs.modalRef?.openModal();
       this.$nextTick(this.renderPreview);
@@ -179,15 +197,20 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     handleApply() {
       if (!this.accessor) return;
       // One undo step for the whole composition — same reason as the HTML code
-      // modal: the undo stack copies the model on every entry.
+      // modal: the undo stack copies the model on every entry. Both writes go
+      // inside it, so markup and state can never land in separate steps and
+      // drift apart under an undo.
       this.vm.startMultiple();
       this.accessor(this.html);
+      if (this.stateAccessor) this.stateAccessor(serialiseState(this.state));
       this.vm.stopMultiple();
       this.closeModal();
     },
 
     closeModal() {
       this.accessor = null;
+      this.stateAccessor = null;
+      this.replacesExistingMarkup = false;
       this.state = emptyState();
       this.selectedId = null;
       this.$refs.modalRef?.closeModal();
@@ -196,6 +219,10 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   template: `<modal-component ref="modalRef" :is-full-width="true">
   <div class="modal-content bb-modal">
     <h5 class="bb-modal__title">{{ vm.t('block-builder-modal-title') }}</h5>
+
+    <p v-if="replacesExistingMarkup" class="bb-modal__warning">
+      {{ vm.t('block-builder-replaces-markup') }}
+    </p>
 
     <div class="bb-modal__layout">
       <div class="bb-modal__column bb-modal__column--left">

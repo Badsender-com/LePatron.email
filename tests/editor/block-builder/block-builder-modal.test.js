@@ -38,15 +38,37 @@ function mountModal() {
   return { vm, modal: app.$children[0] };
 }
 
-/** Opens the modal on a fake Knockout accessor and returns both. */
-function open() {
-  const written = [];
-  const accessor = jest.fn((value) => written.push(value));
+/**
+ * A stand-in for a Knockout observable: called with no argument it reads,
+ * called with one it writes. The modal reads both accessors when it opens, so a
+ * mock that recorded every call as a write would count those reads too.
+ */
+function makeAccessor(initial) {
+  const writes = [];
+  let value = initial === undefined ? '' : initial;
+  const accessor = (next) => {
+    if (next === undefined) return value;
+    value = next;
+    writes.push(next);
+    return value;
+  };
+  accessor.writes = writes;
+  return accessor;
+}
+
+/**
+ * Opens the modal on a pair of accessors.
+ *
+ * @param {Object} [stored] `{ markup, state }` already on the block
+ */
+function open(stored) {
+  const accessor = makeAccessor((stored && stored.markup) || '');
+  const stateAccessor = makeAccessor((stored && stored.state) || '');
   const { vm, modal } = mountModal();
 
-  modal.handleToggle(true, { accessor });
+  modal.handleToggle(true, { accessor, stateAccessor });
 
-  return { vm, modal, accessor, written };
+  return { vm, modal, accessor, stateAccessor, written: accessor.writes };
 }
 
 afterEach(() => {
@@ -174,13 +196,13 @@ describe('reordering and removing', () => {
 
 describe('applying', () => {
   it('writes the generated markup through the accessor', () => {
-    const { modal, accessor, written } = open();
+    const { modal, written } = open();
     modal.addElement('text');
     modal.applySetting({ key: 'content', value: 'Bonjour' });
 
     modal.handleApply();
 
-    expect(accessor).toHaveBeenCalled();
+    expect(written).toHaveLength(1);
     expect(written[0]).toContain('Bonjour');
     expect(written[0]).toContain('<table role="presentation"');
   });
@@ -198,12 +220,13 @@ describe('applying', () => {
   });
 
   it('writes nothing when closed without applying', () => {
-    const { modal, accessor } = open();
+    const { modal, written, stateAccessor } = open();
     modal.addElement('text');
 
     modal.closeModal();
 
-    expect(accessor).not.toHaveBeenCalled();
+    expect(written).toEqual([]);
+    expect(stateAccessor.writes).toEqual([]);
   });
 
   it('forgets the composition once closed', () => {
@@ -214,6 +237,81 @@ describe('applying', () => {
 
     expect(modal.state.elements).toEqual([]);
     expect(modal.selected).toBeNull();
+  });
+});
+
+describe('re-opening a block', () => {
+  /**
+   * The state a previous session actually stored — taken from what the accessor
+   * received, not re-serialised after the fact: applying closes the modal and
+   * resets its state, so reading it afterwards would capture an empty one.
+   */
+  function composedState() {
+    const { modal, stateAccessor } = open();
+    modal.addElement('text');
+    modal.applySetting({ key: 'content', value: 'Déjà écrit' });
+    modal.addElement('divider');
+    modal.handleApply();
+    return stateAccessor.writes[0];
+  }
+
+  it('restores what was composed before', () => {
+    const { modal } = open({ markup: '<p>x</p>', state: composedState() });
+
+    expect(modal.state.elements.map((e) => e.type)).toEqual([
+      'text',
+      'divider',
+    ]);
+    expect(modal.state.elements[0].content).toBe('Déjà écrit');
+  });
+
+  it('selects the first element, so the panel is not empty', () => {
+    const { modal } = open({ markup: '<p>x</p>', state: composedState() });
+
+    expect(modal.selected).not.toBeNull();
+  });
+
+  it('writes both the markup and the state when applied', () => {
+    const { modal, written, stateAccessor } = open();
+    modal.addElement('text');
+
+    modal.handleApply();
+
+    expect(written).toHaveLength(1);
+    expect(stateAccessor.writes).toHaveLength(1);
+    expect(JSON.parse(stateAccessor.writes[0]).elements).toHaveLength(1);
+  });
+
+  // The case a user meets the first time they compose on a block they had
+  // written by hand: the composition replaces that markup, and saying so before
+  // they click is the whole point.
+  describe('markup with no state behind it', () => {
+    it('warns that composing would replace it', () => {
+      const { modal } = open({ markup: '<p>écrit à la main</p>', state: '' });
+
+      expect(modal.replacesExistingMarkup).toBe(true);
+      expect(modal.state.elements).toEqual([]);
+    });
+
+    it('says nothing on an empty block', () => {
+      const { modal } = open({ markup: '', state: '' });
+
+      expect(modal.replacesExistingMarkup).toBe(false);
+    });
+
+    it('says nothing when the state restores', () => {
+      const { modal } = open({ markup: '<p>x</p>', state: composedState() });
+
+      expect(modal.replacesExistingMarkup).toBe(false);
+    });
+
+    // Unreadable state and existing markup: the composition is gone either way,
+    // so the warning must still show.
+    it('warns when the stored state cannot be read', () => {
+      const { modal } = open({ markup: '<p>x</p>', state: '{broken' });
+
+      expect(modal.replacesExistingMarkup).toBe(true);
+    });
   });
 });
 

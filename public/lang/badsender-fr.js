@@ -337,6 +337,8 @@ module.exports = {
   'widget-code-css-hint':
     "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création.",
   // Block builder
+  'block-builder-replaces-markup':
+    "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
   'widget-code-compose': 'Composer visuellement',
   'block-builder-modal-title': 'Composer un bloc',
   'block-builder-add': 'Ajouter',
