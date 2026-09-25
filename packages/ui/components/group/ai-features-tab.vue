@@ -5,28 +5,25 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsAiFeatureSkillEngineSection from '~/components/group/BsAiFeatureSkillEngineSection.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
+// Three levels, mirroring packages/server/constant/translation-formality.js:
+// the server sends them to DeepL as "where the language allows it", so a
+// separate strict level would only fail on languages without formality.
 const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
   { value: 'more', textKey: 'aiFeatures.translation.formalityMore' },
   { value: 'less', textKey: 'aiFeatures.translation.formalityLess' },
-  {
-    value: 'prefer_more',
-    textKey: 'aiFeatures.translation.formalityPreferMore',
-  },
-  {
-    value: 'prefer_less',
-    textKey: 'aiFeatures.translation.formalityPreferLess',
-  },
 ];
 
 export default {
   name: 'BsGroupAiFeaturesTab',
   components: {
     BsSelect,
+    BsAiModelPicker,
     BsFormSection,
     BsAiFeatureSkillEngineSection,
     LucideLanguages: Languages,
@@ -50,11 +47,12 @@ export default {
     return {
       loading: false,
       saving: false,
-      loadingModels: false,
       config: null,
       integrations: [],
       languageOptions: LANGUAGE_OPTIONS,
-      dynamicModels: [],
+      // Reported by the model picker. Still needed here even though the model
+      // field moved out: DeepL is the one provider with supportsFormality, and
+      // that flag rides on the same payload.
       capabilities: null,
     };
   },
@@ -81,7 +79,15 @@ export default {
         return this.translationFeature?.integration?.id || null;
       },
       set(value) {
-        this.updateFeature('translation', { integrationId: value });
+        // Clearing the model in the same call is required: updateFeatureConfig
+        // only writes the fields it receives, so an OpenAI `gpt-4o` would
+        // survive a switch to Mistral and be sent to the wrong provider. The
+        // skills engine section already does this (R5); the translation tab
+        // was missed.
+        this.updateFeature('translation', {
+          integrationId: value,
+          config: { model: null },
+        });
       },
     },
     translationIsActive: {
@@ -115,27 +121,17 @@ export default {
       const integration = this.translationFeature?.integration;
       return integration && integration.isActive;
     },
-    supportsModelSelection() {
-      return this.capabilities?.supportsModelSelection || false;
-    },
     supportsFormality() {
       return this.capabilities?.supportsFormality || false;
+    },
+    supportsModelSelection() {
+      return this.capabilities?.supportsModelSelection || false;
     },
     formalityOptions() {
       return FORMALITY_OPTIONS.map((opt) => ({
         value: opt.value,
         text: this.$t(opt.textKey),
       }));
-    },
-    modelOptions() {
-      return this.dynamicModels.map((m) => {
-        const name = m.name || m.id;
-        const description = m.descriptionKey ? this.$t(m.descriptionKey) : '';
-        return {
-          value: m.id,
-          text: description ? `${name} (${description})` : name,
-        };
-      });
     },
     selectedModel: {
       get() {
@@ -155,24 +151,6 @@ export default {
         this.updateFeature('translation', {
           config: { formality: value },
         });
-      },
-    },
-  },
-  watch: {
-    // Note: a watch on `active` would re-fetch when the tab is re-shown, but
-    // every current consumer binds :active="true" statically, so the watcher
-    // would never fire — keeping it would just be dead weight on every render.
-    // If real tab switching is introduced later, reinstate it with an
-    // immediate-skip flag so it doesn't double-fetch with mounted().
-    selectedIntegrationId: {
-      immediate: true,
-      handler(newId) {
-        if (newId) {
-          this.loadModelsForIntegration(newId);
-        } else {
-          this.dynamicModels = [];
-          this.capabilities = null;
-        }
       },
     },
   },
@@ -226,26 +204,6 @@ export default {
     },
 
     getProviderLabel,
-
-    async loadModelsForIntegration(integrationId) {
-      try {
-        this.loadingModels = true;
-        const response = await this.$axios.$get(
-          apiRoutes.integrationModels(integrationId)
-        );
-        this.dynamicModels = response.models || [];
-        this.capabilities = response.capabilities || null;
-      } catch (error) {
-        this.dynamicModels = [];
-        this.capabilities = null;
-        this.showSnackbar({
-          text: this.$t('aiFeatures.errors.loadModelsFailed'),
-          color: 'error',
-        });
-      } finally {
-        this.loadingModels = false;
-      }
-    },
   },
 };
 </script>
@@ -312,20 +270,18 @@ export default {
               />
             </v-col>
 
-            <v-col
-              v-if="
-                supportsModelSelection &&
-                (modelOptions.length > 0 || loadingModels)
-              "
-              cols="12"
-              md="6"
-            >
-              <bs-select
+            <!-- v-show, not v-if: the picker is what reports the provider
+                 capabilities, and `supportsFormality` below rides on them. A
+                 v-if would unmount it on a provider without model selection
+                 (DeepL) and take the formality select down with it. -->
+            <v-col v-show="supportsModelSelection" cols="12" md="6">
+              <bs-ai-model-picker
                 v-model="selectedModel"
-                :items="modelOptions"
+                :integration-id="selectedIntegrationId"
                 :label="$t('aiFeatures.translation.model')"
                 :hint="$t('aiFeatures.translation.modelHint')"
-                :disabled="saving || !selectedIntegrationId || loadingModels"
+                :disabled="saving"
+                @capabilities="capabilities = $event"
               />
             </v-col>
 

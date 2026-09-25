@@ -683,6 +683,31 @@ export default {
     }
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_NAME_ALREADY_EXIST:
+        'Une intégration porte déjà ce nom dans ce groupe. Choisissez-en un autre.',
+      INTEGRATION_NOT_FOUND:
+        'Cette intégration n\'existe plus : elle a peut-être été supprimée. Rechargez la page.',
+      FORBIDDEN_INTEGRATION_ACCESS:
+        'Vous n\'avez pas accès à cette intégration.',
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'Cette adresse est privée ou locale. Pour des raisons de sécurité, LePatron n\'appelle que des adresses publiques : une IA hébergée sur votre réseau interne n\'est pas joignable depuis le serveur.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'Ce nom de domaine est introuvable. Vérifiez l\'orthographe de l\'URL.',
+      INTEGRATION_HOST_INVALID:
+        'Cette URL n\'est pas valide. Attendu : une adresse complète, par exemple https://exemple.com',
+      INTEGRATION_HOST_HTTPS_REQUIRED:
+        'Cette adresse doit commencer par https:// : l\'intégration y envoie une clé, qui circulerait en clair en http.',
+      INTEGRATION_API_KEY_REQUIRED:
+        'L\'adresse de l\'API a changé : saisissez à nouveau la clé API.',
+      INVALID_PRODUCT_ID: 'Le Product ID ne contient que des chiffres.',
+      INTEGRATION_CONFIG_INVALID:
+        'Un réglage de l\'intégration n\'est pas valide pour ce fournisseur.',
+    },
+    apiKeyRequiredOnHostChange:
+      'L\'adresse de l\'API a changé : saisissez à nouveau la clé pour confirmer qu\'elle doit y être envoyée.',
     title: 'Intégrations',
     name: 'Nom',
     provider: 'Fournisseur',
@@ -731,7 +756,36 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Votre clé API Infomaniak',
       productId: 'Product ID',
-      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools',
+      productIdInvalid: 'Le Product ID ne contient que des chiffres'
+    },
+    anthropic: {
+      apiKeyPlaceholder: 'Votre clé API Anthropic',
+      apiHostHint: 'Laissez vide pour l\'API publique Anthropic ; à renseigner uniquement si vous passez par une passerelle d\'entreprise.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Votre clé API Google AI Studio',
+      apiHostHint: 'Laissez vide pour l\'API publique Gemini.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Votre clé API Azure OpenAI',
+      apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.',
+      reasoningModel: 'Le déploiement utilise un modèle de raisonnement (gpt-5, série o)',
+      reasoningModelHint: 'À cocher si le déploiement tourne sur gpt-5, o1, o3 ou o4 : ces modèles refusent la température et max_tokens, et le nom du déploiement ne permet pas de le deviner. Le réglage vaut pour tous les déploiements utilisés avec cette intégration : si l\'un d\'eux est un modèle de raisonnement, cochez-le, les autres modèles fonctionnent aussi (ils perdent seulement le réglage de température).'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'La clé API de votre endpoint',
+      apiHostHint: 'Tout endpoint compatible avec l\'API OpenAI. Les adresses privées et locales sont refusées pour des raisons de sécurité.',
+      supportsJsonMode: 'L\'endpoint gère le mode JSON (response_format)',
+      supportsJsonModeHint: 'À cocher seulement si l\'endpoint garantit une réponse JSON valide : les skills s\'appuient alors dessus. Sinon, la réponse est réparée après coup.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Votre clé API Scaleway',
+      apiHostHint: 'Laissez vide sauf si votre compte impose une URL propre à un projet.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Votre clé API OVHcloud',
+      apiHostHint: 'Laissez vide pour les AI Endpoints publics d\'OVHcloud.'
     },
     deepl: {
       apiKeyPlaceholder: 'Votre clé API DeepL',
@@ -1135,12 +1189,10 @@ export default {
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
       formalityDefault: 'Par défaut',
       formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
+      formalityLess: 'Informel'
     },
     skill: {
       title: 'Moteur Skills',
@@ -1148,8 +1200,16 @@ export default {
       enableLabel: 'Activer le moteur Skills',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
-      modelDefaultOption: 'Par défaut du fournisseur ({model})',
-      modelDefaultOptionUnknown: 'Par défaut du fournisseur'
+    },
+    model: {
+      defaultOption: 'Par défaut du fournisseur ({model})',
+      defaultOptionUnknown: 'Par défaut du fournisseur',
+      requiredPlaceholder: 'Saisissez ou choisissez un modèle',
+      required: 'Ce fournisseur n\'a pas de modèle par défaut : choisissez-en un, sans quoi les appels échoueront.',
+      deprecated: 'obsolète',
+      invalidId: 'Non enregistré : un identifiant de modèle accepte uniquement lettres, chiffres et . _ - : / @, sans espace.',
+      customHint: 'Modèle saisi manuellement : il n\'a pas été vérifié auprès du fournisseur.',
+      loadFailed: 'Liste des modèles indisponible : seuls les modèles connus sont proposés. Vous pouvez saisir un identifiant.',
     },
     textGeneration: {
       title: 'Génération de texte',
@@ -1158,9 +1218,6 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
     }
   },
   colors: {

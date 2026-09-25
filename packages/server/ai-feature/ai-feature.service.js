@@ -5,6 +5,7 @@ const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const { validateFeatureConfig } = require('./ai-feature.validation.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
 
@@ -111,6 +112,7 @@ const FEATURE_CONFIG_FIELDS = [
   'availableLanguages',
   'defaultSourceLanguage',
   'model',
+  'formality',
 ];
 
 /**
@@ -138,13 +140,7 @@ async function updateFeatureConfig({
     await validateIntegrationOwnership({ integrationId, groupId });
   }
 
-  // Validate minimum 2 languages when provided
-  if (featureConfig?.availableLanguages) {
-    const langs = featureConfig.availableLanguages;
-    if (langs.length > 0 && langs.length < 2) {
-      throw new BadRequest(ERROR_CODES.MIN_LANGUAGES_REQUIRED);
-    }
-  }
+  validateFeatureConfig(featureConfig);
 
   let aiConfig = await getOrCreateConfig({ groupId });
 

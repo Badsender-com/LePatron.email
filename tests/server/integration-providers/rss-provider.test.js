@@ -106,6 +106,33 @@ describe('RssProvider.fetchItems', () => {
     expect(items[0].description).toBe('Atom summary');
   });
 
+  // Feeds move to https and say so with a redirect; each hop is re-checked.
+  it('follows a redirect to the feed', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        status: 301,
+        ok: false,
+        headers: {
+          get: (name) =>
+            name === 'location' ? 'https://feed.example.com/rss.xml' : null,
+        },
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        ok: true,
+        text: () => Promise.resolve(RSS_XML),
+      });
+
+    const items = await makeProvider(
+      'http://feed.example.com/rss'
+    ).fetchItems();
+
+    expect(items.length).toBeGreaterThan(0);
+    expect(assertOutboundHostAllowed).toHaveBeenCalledWith(
+      'https://feed.example.com/rss.xml'
+    );
+  });
+
   it('throws on a non-ok HTTP response', async () => {
     mockFetchText('', { ok: false, status: 404 });
     await expect(makeProvider().fetchItems()).rejects.toThrow();
