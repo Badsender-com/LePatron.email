@@ -281,6 +281,7 @@
     "code:lint": "yarn eslint .",
     "code:fix": "yarn code:lint --fix && yarn code:pretty",
     "test": "jest --watch",
+    "block-builder:gallery": "node scripts/build-block-builder-gallery.js",
     "test-ci": "jest",
     "check-skills": "node scripts/check-skill-usage.js --dry",
     "check-models": "node scripts/check-model-conformance.js --dry",
