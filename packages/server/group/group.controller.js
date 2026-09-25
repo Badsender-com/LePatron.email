@@ -17,6 +17,7 @@ const invocationLogService = require('../ai-skill/services/invocation-log.servic
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
+const { normalizeIdpCert } = require('../account/saml-config.js');
 
 const {
   Groups,
@@ -151,6 +152,10 @@ async function create(req, res) {
 
   // Not a company field: the language the default email types are seeded in.
   const { defaultEmailTypesLang, ...groupToCreate } = req.body;
+
+  if ('idpCert' in groupToCreate) {
+    groupToCreate.idpCert = normalizeIdpCert(groupToCreate.idpCert);
+  }
 
   // The update path is not the only write path: without this, a company could be
   // created with a shape the update path would have refused.
@@ -508,6 +513,11 @@ async function update(req, res) {
       groupToUpdate.emailMetadata,
       storedMetadata
     );
+  }
+
+  // Only reachable by a super admin: the pick below drops it for a company admin.
+  if ('idpCert' in groupToUpdate) {
+    groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
   }
 
   if (user.isGroupAdmin) {

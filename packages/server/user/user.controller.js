@@ -15,6 +15,7 @@ const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const { isSamlConfigured } = require('../account/saml-config.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -372,13 +373,14 @@ async function getPublicProfile(req, res) {
   });
 
   const { name, email, isDeactivated } = user;
-  const { name: groupName, entryPoint, issuer } = group;
 
   return res.json({
     name,
     email,
     isDeactivated,
-    group: { name: groupName, isSAMLAuthentication: entryPoint && issuer },
+    // SSO is offered only when it can be verified: a company without its
+    // identity provider's certificate signs in with a password.
+    group: { name: group.name, isSAMLAuthentication: isSamlConfigured(group) },
   });
 }
 
