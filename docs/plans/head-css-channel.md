@@ -64,7 +64,7 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 ## 6. Limites connues
 
-- **Le CSS n'apparaît pas dans le canvas de l'éditeur.** Il est dans l'export et dans l'aperçu serveur, mais la zone d'édition ne le reflète pas. Pour du CSS responsive, l'effet n'est de toute façon visible qu'en bascule mobile.
+- **Les `@media` ne suivent pas encore la bascule mobile.** Les règles simples s'appliquent au canvas, mais `badsender-screen-preview.js` ne réécrit les media queries que de la feuille `template-stylesheet`, et reconstruit son index au seul chargement d'un template. La feuille d'aperçu ne revendique donc pas ce titre : elle serait dans ses pattes sans être indexée.
 - **La bascule mobile ne le pilotera pas** tant qu'on n'aura pas étendu `badsender-screen-preview.js`, qui ne réécrit les `@media` que de la feuille dont `stylesheet.title === 'template-stylesheet'`. À traiter quand le Block Builder en dépendra.
 - **`he.encode` côté serveur** encode les non-ASCII en entités décimales, y compris dans le `<style>`. Un `content: "é"` ou un commentaire accentué en souffrira. Même limite que le bloc Code HTML, documentée là-bas.
 
@@ -76,6 +76,7 @@ Non-régression d'abord, le reste ensuite.
 2. Flag OFF → la section « CSS personnalisé » n'apparaît pas dans l'onglet Style.
 3. Flag ON → la section apparaît ; le bouton ouvre la modale en coloration CSS.
    3bis. Sélectionner un bloc Code HTML → le panneau offre « Éditer le CSS de l'email » sous le bouton HTML, avec la mention de portée. Les deux entrées ouvrent le même contenu.
+   3ter. **Aperçu canvas** : coller `<p class="classred">Coucou</p>` dans un bloc, écrire `.classred{color:red}` dans le CSS, appliquer → le texte passe en rouge **dans l'éditeur**, sans que la toolbox ni les panneaux changent d'aspect.
 4. Écrire `.foo{color:red}`, appliquer, sauvegarder, recharger → le CSS est retrouvé.
 5. Exporter → `<style type="text/css" data-lp-head-css="true">` est présent dans le `<head>`, juste avant `</head>`, contenu intact.
 6. Envoi de test et export ESP → même présence.
