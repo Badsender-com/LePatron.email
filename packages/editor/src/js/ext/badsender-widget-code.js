@@ -34,6 +34,7 @@ function html(propAccessor, onfocusbinding, parameters) {
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
       <p class="html-code-widget__hint" data-bind="visible: $root.isHtmlBlockEditable(), text: $root.t('widget-code-css-hint')"></p>
+      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-layout-template' } }, text: $root.t('widget-code-compose'), click: function(blockProperties, evt) { $root.openBlockBuilder('${propAccessor}', blockProperties); }">Compose a block</button>
     </div>
   `;
 }
@@ -55,6 +56,23 @@ module.exports = () => {
 
     vm.isHtmlBlockEditable = function () {
       return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
+    };
+
+    // Set by the Vue modal when it mounts, like toggleHtmlCodeModal above.
+    vm.toggleBlockBuilderModal = null;
+
+    // The builder writes generated markup into the very same property the code
+    // editor writes by hand. One block type, two ways to fill it — so export,
+    // the inliner's protected zone, the sanitised preview and the template flag
+    // are the machinery already in production.
+    vm.openBlockBuilder = function (propAccessor, blockProperties) {
+      if (!vm.isHtmlBlockEditable()) return;
+      if (typeof vm.toggleBlockBuilderModal !== 'function') return;
+      if (!blockProperties || !blockProperties[propAccessor]) return;
+
+      vm.toggleBlockBuilderModal(true, {
+        accessor: blockProperties[propAccessor].bind(blockProperties),
+      });
     };
 
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {

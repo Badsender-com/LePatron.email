@@ -336,6 +336,16 @@ module.exports = {
   'widget-code-edit-css': "Éditer le CSS de l'email",
   'widget-code-css-hint':
     "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création.",
+  // Block builder
+  'widget-code-compose': 'Composer visuellement',
+  'block-builder-modal-title': 'Composer un bloc',
+  'block-builder-add': 'Ajouter',
+  'block-builder-elements': 'Éléments',
+  'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
+  'block-builder-desktop': 'Bureau',
+  'block-builder-mobile': 'Mobile',
+  'block-builder-preview-hint':
+    'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
