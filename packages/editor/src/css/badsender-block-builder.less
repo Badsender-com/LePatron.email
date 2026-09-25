@@ -1,0 +1,233 @@
+// Block builder modal.
+//
+// Three columns: what you can add and what you have added on the left, the
+// preview in the middle at the template's real width, the settings of the
+// selected element on the right. The preview is the widest column on purpose —
+// it is the thing being judged.
+
+.bb-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+
+  &__title {
+    margin: 0 0 1rem;
+  }
+
+  &__layout {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+    min-height: 60vh;
+  }
+
+  &__column {
+    display: flex;
+    flex-direction: column;
+
+    &--left {
+      flex: 0 0 220px;
+      overflow-y: auto;
+    }
+
+    &--preview {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    &--right {
+      flex: 0 0 280px;
+      overflow-y: auto;
+      border-left: 1px solid rgba(0, 0, 0, 0.12);
+      padding-left: 1rem;
+    }
+  }
+
+  &__section {
+    margin: 0.75rem 0 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(0, 0, 0, 0.54);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  &__add {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    text-align: left;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    border-radius: 2px;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    padding: 0.4375rem 0.625rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border-radius: 2px;
+    // A long text label must not push the column wider.
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+
+    &--on {
+      background: rgba(0, 172, 220, 0.12);
+      font-weight: 500;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+
+    button {
+      flex: 1;
+      padding: 0.25rem;
+      cursor: pointer;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      border-radius: 2px;
+
+      &:hover {
+        background: #f5f5f5;
+      }
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+
+    button {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      border-radius: 2px;
+    }
+  }
+
+  &__toggle--on {
+    background: rgba(0, 172, 220, 0.12) !important;
+    font-weight: 500;
+  }
+
+  &__stage {
+    display: flex;
+    justify-content: center;
+    flex: 1 1 auto;
+    padding: 1rem;
+    overflow: auto;
+    background: #eeeeee;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  // The preview must not inherit the editor's own styling: it shows what the
+  // email will look like, not what the editor looks like.
+  &__frame {
+    height: 100%;
+    min-height: 50vh;
+    background: #fff;
+    border: none;
+  }
+
+  &__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.6875rem;
+    color: rgba(0, 0, 0, 0.54);
+  }
+}
+
+.bb-settings {
+  &__empty {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  &__field {
+    margin-bottom: 0.75rem;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.62);
+  }
+
+  &__input {
+    width: 100%;
+    padding: 0.375rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.24);
+    border-radius: 2px;
+    box-sizing: border-box;
+
+    &--area {
+      resize: vertical;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.75rem;
+    }
+
+    &--color {
+      height: 32px;
+      padding: 2px;
+    }
+  }
+
+  &__group {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  &__choice {
+    flex: 1;
+    padding: 0.3125rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    border-radius: 2px;
+
+    &--on {
+      background: rgba(0, 172, 220, 0.12);
+      font-weight: 500;
+    }
+  }
+}
