@@ -46,14 +46,14 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 ## 4. Décisions
 
-| Sujet             | Décision                                                                                                                                                                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portée            | Par créa. Le CSS accompagne l'email, pas le template                                                                                                                                                                                                                                  |
-| Flag              | **Réutilise `htmlBlockEnabled`.** Le CSS existe pour styler du markup collé dans un bloc Code HTML ; un client sans ce bloc n'aurait rien à styler et gagnerait seulement le pouvoir de restyler tout l'email hors design system. Découpler plus tard est un ajout, pas une migration |
-| Limite            | 20 000 caractères. Une feuille est bien plus compacte que le markup qu'elle style ; la copie stockée, doublée par `previewHtml`, reste négligeable contre la limite de 16 Mo par document                                                                                             |
-| Surface d'édition | La modale CodeMirror du bloc Code HTML, rendue paramétrable (mode, libellés, borne) plutôt que dupliquée                                                                                                                                                                              |
-| Emplacement       | Bas de l'onglet **Style** global, pas un panneau de bloc                                                                                                                                                                                                                              |
-| Constantes        | `packages/shared/head-css/constants.js`, requis par l'éditeur **et** le serveur. Le bloc Code HTML duplique les siennes avec un test de synchro parce que le serveur ne doit pas dépendre d'un bundle navigateur ; ici les deux côtés partagent déjà un module                        |
+| Sujet             | Décision                                                                                                                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portée            | Par créa. Le CSS accompagne l'email, pas le template                                                                                                                                                                                                                                                          |
+| Flag              | **Réutilise `htmlBlockEnabled`.** Le CSS existe pour styler du markup collé dans un bloc Code HTML ; un client sans ce bloc n'aurait rien à styler et gagnerait seulement le pouvoir de restyler tout l'email hors design system. Découpler plus tard est un ajout, pas une migration                         |
+| Limite            | 20 000 caractères. Une feuille est bien plus compacte que le markup qu'elle style ; la copie stockée, doublée par `previewHtml`, reste négligeable contre la limite de 16 Mo par document                                                                                                                     |
+| Surface d'édition | La modale CodeMirror du bloc Code HTML, rendue paramétrable (mode, libellés, borne) plutôt que dupliquée                                                                                                                                                                                                      |
+| Emplacement       | **Deux points d'entrée, une seule valeur** : bas de l'onglet **Style** global (où le CSS appartient logiquement), et un second bouton dans le panneau du bloc Code HTML (où on le cherche réellement, juste après avoir collé du markup). Une phrase sous ce bouton rappelle que la portée est l'email entier |
+| Constantes        | `packages/shared/head-css/constants.js`, requis par l'éditeur **et** le serveur. Le bloc Code HTML duplique les siennes avec un test de synchro parce que le serveur ne doit pas dépendre d'un bundle navigateur ; ici les deux côtés partagent déjà un module                                                |
 
 ## 5. Sécurité
 
@@ -75,6 +75,7 @@ Non-régression d'abord, le reste ensuite.
 1. **Flag OFF, aucune créa touchée** : exporter un email sans CSS → le ZIP est binairement identique à celui d'avant la branche.
 2. Flag OFF → la section « CSS personnalisé » n'apparaît pas dans l'onglet Style.
 3. Flag ON → la section apparaît ; le bouton ouvre la modale en coloration CSS.
+   3bis. Sélectionner un bloc Code HTML → le panneau offre « Éditer le CSS de l'email » sous le bouton HTML, avec la mention de portée. Les deux entrées ouvrent le même contenu.
 4. Écrire `.foo{color:red}`, appliquer, sauvegarder, recharger → le CSS est retrouvé.
 5. Exporter → `<style type="text/css" data-lp-head-css="true">` est présent dans le `<head>`, juste avant `</head>`, contenu intact.
 6. Envoi de test et export ESP → même présence.

@@ -324,6 +324,9 @@ module.exports = {
     'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
   'html-code-too-large':
     'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
+  'widget-code-edit-css': 'Edit the email CSS',
+  'widget-code-css-hint':
+    'Added to the <head> of the exported email. Shared by every block of this mailing.',
   'widget-code-disabled':
     'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'save-message-html-code-disabled':
