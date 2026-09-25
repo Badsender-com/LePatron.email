@@ -333,6 +333,16 @@ module.exports = {
     'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  // Block builder
+  'widget-code-compose': 'Composer visuellement',
+  'block-builder-modal-title': 'Composer un bloc',
+  'block-builder-add': 'Ajouter',
+  'block-builder-elements': 'Éléments',
+  'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
+  'block-builder-desktop': 'Bureau',
+  'block-builder-mobile': 'Mobile',
+  'block-builder-preview-hint':
+    'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
