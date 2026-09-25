@@ -70,14 +70,24 @@ describe('text', () => {
     );
   });
 
-  // Rich text needs an allow-list sanitiser, not an escaper. Until then, markup
-  // in a text element is shown, not interpreted.
-  it('escapes markup rather than interpreting it', () => {
+  // The content slot is RICH_TEXT: an allow-list rebuild, not an escape.
+  it('keeps the formatting a writer expects', () => {
     const html = text.render({
       ...text.defaults,
-      content: '<strong>a</strong>',
+      content: '<strong>gras</strong> et <a href="https://e.com">un lien</a>',
     });
-    expect(html).toContain('&lt;strong&gt;');
+    expect(html).toContain('<strong>gras</strong>');
+    expect(html).toContain('<a href="https://e.com">un lien</a>');
+  });
+
+  it('drops everything else, keeping the words', () => {
+    const html = text.render({
+      ...text.defaults,
+      content: '<span style="color:red">a</span><script>alert(1)</script>b',
+    });
+    expect(html).toContain('>ab<');
+    expect(html).not.toContain('<span');
+    expect(html).not.toContain('<script');
   });
 
   it('keeps ESP personalisation readable', () => {

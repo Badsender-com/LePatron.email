@@ -28,6 +28,7 @@ const {
   COLOR,
   PX,
   CSS_VALUE,
+  RICH_TEXT,
 } = require('./slot-contexts.js');
 
 // `[[name|CONTEXT|fallback]]`. Double brackets rather than `{{ }}` or `%% %%`:
@@ -35,7 +36,15 @@ const {
 // which must pass through untouched.
 const PLACEHOLDER = /\[\[([^\]]*)\]\]/g;
 
-const KNOWN_CONTEXTS = new Set([TEXT, ATTR, URL, COLOR, PX, CSS_VALUE]);
+const KNOWN_CONTEXTS = new Set([
+  TEXT,
+  ATTR,
+  URL,
+  COLOR,
+  PX,
+  CSS_VALUE,
+  RICH_TEXT,
+]);
 
 /**
  * @param {string} descriptor the inside of a placeholder

@@ -13,38 +13,23 @@
 // from a free input or from a template token is the caller's business — the
 // generator knows nothing about themes.
 
+const {
+  asString,
+  escapeText,
+  escapeAttribute,
+  isSafeUrl,
+} = require('./escape-primitives.js');
+const { sanitizeRichText } = require('./rich-text.js');
+
 const TEXT = 'TEXT';
 const ATTR = 'ATTR';
 const URL = 'URL';
 const COLOR = 'COLOR';
 const PX = 'PX';
 const CSS_VALUE = 'CSS_VALUE';
-
-// `&` first, or it would double-escape what the later replacements introduce.
-const TEXT_ENTITIES = [
-  [/&/g, '&amp;'],
-  [/</g, '&lt;'],
-  [/>/g, '&gt;'],
-];
-
-// Inside an attribute, quotes end it early — which is how a value becomes a new
-// attribute, and a new attribute becomes an event handler.
-const ATTR_ENTITIES = TEXT_ENTITIES.concat([
-  [/"/g, '&quot;'],
-  [/'/g, '&#39;'],
-]);
-
-// What may open a URL. `javascript:` and `data:` are absent on purpose: the
-// first executes, and the second carries a whole document.
-const SAFE_URL_SCHEME = /^(https?:|mailto:|tel:)/i;
-
-// ESP personalisation, which is a URL the provider fills in later. Same three
-// families the editor already accepts (badsender-extensions.js): `<% %>`,
-// `{{ }}`, `%% %%`, plus the `[unsubscribe]` style of bracketed token.
-const ESP_TOKEN = /(<%|\{\{|%%|^\[)/;
-
-// A relative path, for assets served alongside the email.
-const RELATIVE_URL = /^[./#?]/;
+// The only context that lets markup through, and the only one backed by an
+// allow-list rather than an escape. See rich-text.js.
+const RICH_TEXT = 'RICH_TEXT';
 
 // CSS values may not end a declaration, close the block, or open a new tag —
 // nor call `url()` or `expression()`, which load and execute.
@@ -54,43 +39,6 @@ const UNSAFE_CSS = /[;}<>]|url\s*\(|expression\s*\(|@import/i;
 const COLOR_VALUE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i;
 
 /**
- * @param {*} value
- * @returns {string}
- */
-function asString(value) {
-  if (value === null || typeof value === 'undefined') return '';
-  return String(value);
-}
-
-/**
- * @param {string} value
- * @param {Array} replacements
- * @returns {string}
- */
-function applyEntities(value, replacements) {
-  return replacements.reduce(
-    (escaped, [pattern, entity]) => escaped.replace(pattern, entity),
-    value
-  );
-}
-
-/**
- * Whether a URL may be emitted as written.
- *
- * @param {string} url
- * @returns {boolean}
- */
-function isSafeUrl(url) {
-  const trimmed = url.trim();
-  if (trimmed === '') return false;
-  return (
-    SAFE_URL_SCHEME.test(trimmed) ||
-    ESP_TOKEN.test(trimmed) ||
-    RELATIVE_URL.test(trimmed)
-  );
-}
-
-/**
  * Escapes a value for the place it is about to land in.
  *
  * Refused values become an empty string — or, for a colour or a size, the
@@ -98,7 +46,7 @@ function isSafeUrl(url) {
  * value the user typed takes the whole canvas down with it.
  *
  * @param {*} value
- * @param {string} context one of TEXT, ATTR, URL, COLOR, PX, CSS_VALUE
+ * @param {string} context one of TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT
  * @param {*} [fallback] used when the value is refused
  * @returns {string}
  */
@@ -107,15 +55,16 @@ function escapeForContext(value, context, fallback) {
 
   switch (context) {
     case TEXT:
-      return applyEntities(raw, TEXT_ENTITIES);
+      return escapeText(raw);
 
     case ATTR:
-      return applyEntities(raw, ATTR_ENTITIES);
+      return escapeAttribute(raw);
+
+    case RICH_TEXT:
+      return sanitizeRichText(raw);
 
     case URL:
-      return isSafeUrl(raw)
-        ? applyEntities(raw.trim(), ATTR_ENTITIES)
-        : asString(fallback);
+      return isSafeUrl(raw) ? escapeAttribute(raw.trim()) : asString(fallback);
 
     case COLOR:
       return COLOR_VALUE.test(raw.trim()) ? raw.trim() : asString(fallback);
@@ -132,7 +81,7 @@ function escapeForContext(value, context, fallback) {
       // An unknown context is a template bug. Escaping as an attribute is the
       // strictest option, so the mistake shows up as over-escaped output rather
       // than as an injection.
-      return applyEntities(raw, ATTR_ENTITIES);
+      return escapeAttribute(raw);
   }
 }
 
@@ -145,4 +94,5 @@ module.exports = {
   COLOR,
   PX,
   CSS_VALUE,
+  RICH_TEXT,
 };
