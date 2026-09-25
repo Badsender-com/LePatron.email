@@ -333,6 +333,9 @@ module.exports = {
     'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'widget-code-edit-css': "Éditer le CSS de l'email",
+  'widget-code-css-hint':
+    "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création.",
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
