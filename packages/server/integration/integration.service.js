@@ -9,7 +9,6 @@ const { Types } = require('mongoose');
 const {
   NotFound,
   Conflict,
-  BadRequest,
   InternalServerError,
   Unauthorized,
 } = require('http-errors');
@@ -19,13 +18,11 @@ const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const {
-  assertOutboundHostAllowed,
-  OUTBOUND_HOST_ERRORS,
-} = require('../utils/outbound-host.js');
-const {
   normalizeProductId,
   assertApiKeyResent,
   validateIntegrationConfig,
+  validateApiHost,
+  isHostChange,
 } = require('./integration.validation.js');
 
 module.exports = {
@@ -59,31 +56,6 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
- * Validate that a URL uses an allowed scheme AND does not resolve to an
- * internal/private address (SSRF guard). `apiHost` becomes the target of
- * server-side requests carrying the integration's secret, so a bare scheme
- * check is not enough — see utils/outbound-host.js.
- */
-async function validateApiHost(apiHost) {
-  if (!apiHost) return;
-  try {
-    await assertOutboundHostAllowed(apiHost);
-  } catch (error) {
-    // A private address is the one refusal an admin can neither guess nor fix
-    // by retrying: it is a deliberate rule, not a mistake in what they typed.
-    // Collapsing it into the generic failure left them with a bare error code
-    // on screen and nothing to act on.
-    if (error.code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS) {
-      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_NOT_PUBLIC);
-    }
-    if (error.code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
-      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_UNREACHABLE);
-    }
-    throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_INVALID);
-  }
-}
-
-/**
  * Create a new integration
  */
 async function createIntegration({
@@ -96,7 +68,7 @@ async function createIntegration({
   config,
   _company,
 }) {
-  await validateApiHost(apiHost);
+  await validateApiHost(apiHost, { type });
   const normalizedProductId = normalizeProductId(productId);
 
   // Check for duplicates
@@ -148,7 +120,12 @@ async function updateIntegration({
     }
   }
 
-  await validateApiHost(apiHost);
+  // Only a new host is checked: one saved before a rule tightened (an AI
+  // endpoint on http://) must stay editable — renamed, switched off — without
+  // being refused over a host nobody touched.
+  if (isHostChange({ integration, apiHost })) {
+    await validateApiHost(apiHost, { type: type || integration.type });
+  }
   const normalizedProductId = normalizeProductId(productId);
   assertApiKeyResent({ integration, provider, apiHost, apiKey });
   const providerChanged =

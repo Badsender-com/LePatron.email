@@ -380,6 +380,100 @@ describe('IntegrationService', () => {
     });
   });
 
+  // A key (AI) or a signed token (Metabase) is sent to the host: over http it
+  // travels in clear. A public RSS feed sends nothing. Literal public IPs, so
+  // the SSRF guard needs no DNS.
+  describe('https for the types that send a secret', () => {
+    function create(type, provider, apiHost) {
+      Integrations.exists.mockResolvedValue(false);
+      Integrations.create.mockImplementation(async (data) => data);
+      return integrationService.createIntegration({
+        name: 'x',
+        type,
+        provider,
+        apiKey: 'k'.repeat(32),
+        apiHost,
+        _company: mockGroupId,
+      });
+    }
+
+    it.each([
+      ['ai', 'openai_compatible'],
+      ['dashboard', 'metabase'],
+    ])('refuses http for %s', async (type, provider) => {
+      await expect(
+        create(type, provider, 'http://93.184.216.34')
+      ).rejects.toThrow('INTEGRATION_HOST_HTTPS_REQUIRED');
+      expect(Integrations.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts https for ai', async () => {
+      await create('ai', 'openai_compatible', 'https://93.184.216.34');
+
+      expect(Integrations.create).toHaveBeenCalled();
+    });
+
+    it('accepts http for a public RSS feed', async () => {
+      await create('data_feed', 'rss', 'http://93.184.216.34/feed.xml');
+
+      expect(Integrations.create).toHaveBeenCalled();
+    });
+
+    // The address is what cannot be fixed by switching to https.
+    it('reports a private http host as private, not as needing https', async () => {
+      await expect(
+        create('ai', 'openai_compatible', 'http://10.0.0.5')
+      ).rejects.toThrow('INTEGRATION_HOST_NOT_PUBLIC');
+    });
+
+    // Saved before the rule: must stay editable without touching the host.
+    it('lets an existing http integration be renamed', async () => {
+      const integration = {
+        _id: mockIntegrationId,
+        name: 'Old',
+        type: 'ai',
+        provider: 'openai_compatible',
+        apiHost: 'http://93.184.216.34',
+        apiKey: 'stored',
+        _company: mockGroupId,
+        save: jest.fn().mockResolvedValue(),
+      };
+      Integrations.findById.mockResolvedValue(integration);
+      Integrations.exists.mockResolvedValue(false);
+
+      await integrationService.updateIntegration({
+        integrationId: mockIntegrationId,
+        name: 'New',
+        apiHost: 'http://93.184.216.34',
+      });
+
+      expect(integration.save).toHaveBeenCalled();
+    });
+
+    it('refuses to move an existing integration to an http host', async () => {
+      const integration = {
+        _id: mockIntegrationId,
+        name: 'Old',
+        type: 'ai',
+        provider: 'openai_compatible',
+        apiHost: 'https://93.184.216.34',
+        apiKey: 'stored',
+        _company: mockGroupId,
+        save: jest.fn().mockResolvedValue(),
+      };
+      Integrations.findById.mockResolvedValue(integration);
+
+      await expect(
+        integrationService.updateIntegration({
+          integrationId: mockIntegrationId,
+          apiHost: 'http://8.8.8.8',
+          apiKey: 'new-key',
+        })
+      ).rejects.toThrow('INTEGRATION_HOST_HTTPS_REQUIRED');
+      expect(integration.save).not.toHaveBeenCalled();
+    });
+  });
+
   describe('deleteIntegration', () => {
     it('should delete integration successfully', async () => {
       Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });

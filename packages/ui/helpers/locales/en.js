@@ -897,7 +897,9 @@ export default {
       INTEGRATION_HOST_UNREACHABLE:
         'This domain name cannot be found. Check the spelling of the URL.',
       INTEGRATION_HOST_INVALID:
-        'This URL is not valid. Expected an address starting with https://',
+        'This URL is not valid. Expected a full address, e.g. https://example.com',
+      INTEGRATION_HOST_HTTPS_REQUIRED:
+        'This address must start with https://: the integration sends a key there, which would travel in clear over http.',
       INTEGRATION_API_KEY_REQUIRED:
         'The API address changed: enter the API key again.',
       INVALID_PRODUCT_ID: 'The Product ID contains digits only.',

@@ -3,12 +3,19 @@
 const { BadRequest } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const IntegrationTypes = require('../constant/integration-type.js');
+const {
+  assertOutboundHostAllowed,
+  OUTBOUND_HOST_ERRORS,
+} = require('../utils/outbound-host.js');
 const { MODEL_ID_PATTERN } = require('../ai-feature/ai-feature.validation.js');
 
 module.exports = {
   normalizeProductId,
   assertApiKeyResent,
   validateIntegrationConfig,
+  validateApiHost,
+  isHostChange,
 };
 
 // Infomaniak builds its base URL from productId (`/1/ai/{productId}/openai`),
@@ -32,6 +39,55 @@ function normalizeProductId(productId) {
 
 const sameHost = (a, b) => (a || null) === (b || null);
 
+/** Whether an update points the integration at a different host. */
+function isHostChange({ integration, apiHost }) {
+  return apiHost !== undefined && !sameHost(apiHost, integration.apiHost);
+}
+
+// Types that send a secret to their host: an AI key with every call, a signed
+// Metabase token in every embed URL. Over http both travel in clear, and can
+// be read or altered on the way. A public RSS feed sends nothing, and many are
+// still served over http.
+const HTTPS_ONLY_TYPES = [IntegrationTypes.AI, IntegrationTypes.DASHBOARD];
+
+/**
+ * Check a host before it is saved: allowed scheme, public address (SSRF
+ * guard), and https for the types that send a secret.
+ *
+ * Metabase already refused http when embedding; accepting it here saved an
+ * integration that could never display, behind a generic 500.
+ *
+ * @param {string} apiHost
+ * @param {Object} options
+ * @param {string} options.type integration type
+ * @throws {BadRequest} with the reason, so the form can say what to fix
+ */
+async function validateApiHost(apiHost, { type } = {}) {
+  if (!apiHost) return;
+  try {
+    await assertOutboundHostAllowed(apiHost);
+  } catch (error) {
+    // A private address is the one refusal an admin can neither guess nor fix
+    // by retrying: it is a deliberate rule, not a mistake in what they typed.
+    if (error.code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_NOT_PUBLIC);
+    }
+    if (error.code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_UNREACHABLE);
+    }
+    throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_INVALID);
+  }
+
+  // After the SSRF guard, not before: `http://127.0.0.1` is refused as a
+  // private address, which switching to https would not fix.
+  if (
+    HTTPS_ONLY_TYPES.includes(type) &&
+    new URL(apiHost).protocol !== 'https:'
+  ) {
+    throw new BadRequest(ERROR_CODES.INTEGRATION_HOST_HTTPS_REQUIRED);
+  }
+}
+
 /**
  * Refuse to point a stored key at a new destination without the key itself.
  *
@@ -49,10 +105,8 @@ function assertApiKeyResent({ integration, provider, apiHost, apiKey }) {
 
   const providerChanged =
     provider !== undefined && provider !== integration.provider;
-  const hostChanged =
-    apiHost !== undefined && !sameHost(apiHost, integration.apiHost);
 
-  if (providerChanged || hostChanged) {
+  if (providerChanged || isHostChange({ integration, apiHost })) {
     throw new BadRequest(ERROR_CODES.INTEGRATION_API_KEY_REQUIRED);
   }
 }

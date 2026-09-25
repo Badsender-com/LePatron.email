@@ -114,6 +114,14 @@ export default {
     mustReenterApiKey() {
       return this.isApiKeyRequired && this.apiHostChanged;
     },
+    // Mirrors the server: a key (AI) or a signed token (Metabase) is sent to
+    // this host, so http is refused. Only for a new or changed host, so an
+    // integration saved before the rule can still be renamed.
+    mustUseHttps() {
+      return (
+        this.form.type !== 'data_feed' && (!this.isEdit || this.apiHostChanged)
+      );
+    },
   },
   watch: {
     integration: {
@@ -162,6 +170,11 @@ export default {
     if ((!this.isEdit && this.isApiKeyRequired) || this.mustReenterApiKey) {
       rules.form.apiKey = { required };
     }
+    if (this.mustUseHttps) {
+      rules.form.apiHost = {
+        https: (value) => !value || /^https:\/\//i.test(value.trim()),
+      };
+    }
     if (this.showProductIdField) {
       // Digits only, as on the server: Infomaniak builds its API path from it.
       rules.form.productId = { required, numeric };
@@ -188,12 +201,21 @@ export default {
     fieldErrors(fieldName) {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
-      if (!field.required && fieldName === 'apiKey' && this.mustReenterApiKey) {
+      // `=== false`, not `!`: a field without a required rule (the host) has
+      // `field.required` undefined, and must not read as "required".
+      if (
+        field.required === false &&
+        fieldName === 'apiKey' &&
+        this.mustReenterApiKey
+      ) {
         return [this.$t('integrations.apiKeyRequiredOnHostChange')];
       }
-      if (!field.required) return [this.$t('global.errors.required')];
+      if (field.required === false) return [this.$t('global.errors.required')];
       if (field.numeric === false) {
         return [this.$t('integrations.infomaniak.productIdInvalid')];
+      }
+      if (field.https === false) {
+        return [this.$t('integrations.errors.INTEGRATION_HOST_HTTPS_REQUIRED')];
       }
       return [];
     },
@@ -326,6 +348,7 @@ export default {
           v-if="selectedProviderConfig.apiHostPlaceholder"
           v-model="form.apiHost"
           :label="$t('integrations.apiHost')"
+          :error-messages="fieldErrors('apiHost')"
           :placeholder="selectedProviderConfig.apiHostPlaceholder"
           :hint="
             selectedProviderConfig.apiHostHintKey
@@ -333,6 +356,7 @@ export default {
               : ''
           "
           :disabled="loading"
+          @blur="$v.form.apiHost && $v.form.apiHost.$touch()"
         />
 
         <bs-integration-config-fields

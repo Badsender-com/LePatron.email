@@ -697,7 +697,9 @@ export default {
       INTEGRATION_HOST_UNREACHABLE:
         'Ce nom de domaine est introuvable. Vérifiez l\'orthographe de l\'URL.',
       INTEGRATION_HOST_INVALID:
-        'Cette URL n\'est pas valide. Attendu : une adresse commençant par https://',
+        'Cette URL n\'est pas valide. Attendu : une adresse complète, par exemple https://exemple.com',
+      INTEGRATION_HOST_HTTPS_REQUIRED:
+        'Cette adresse doit commencer par https:// : l\'intégration y envoie une clé, qui circulerait en clair en http.',
       INTEGRATION_API_KEY_REQUIRED:
         'L\'adresse de l\'API a changé : saisissez à nouveau la clé API.',
       INVALID_PRODUCT_ID: 'Le Product ID ne contient que des chiffres.',
