@@ -1,4 +1,5 @@
 const Vue = require('vue/dist/vue.common');
+const { RichTextFieldComponent } = require('./rich-text-field');
 
 // The settings panel of the selected element.
 //
@@ -47,6 +48,7 @@ const ALIGNMENTS = [
 ];
 
 const ElementSettingsComponent = Vue.component('ElementSettings', {
+  components: { RichTextField: RichTextFieldComponent },
   props: {
     element: { type: Object, default: null },
   },
@@ -75,12 +77,11 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
     <div v-for="field in fields" :key="field.key" class="bb-settings__field">
       <label class="bb-settings__label">{{ field.label }}</label>
 
-      <textarea
+      <rich-text-field
         v-if="field.type === 'richtext'"
-        class="bb-settings__input bb-settings__input--area"
-        rows="4"
+        :key="element.id"
         :value="element[field.key]"
-        @input="update(field.key, $event.target.value)"></textarea>
+        @input="update(field.key, $event)" />
 
       <input
         v-else-if="field.type === 'text'"

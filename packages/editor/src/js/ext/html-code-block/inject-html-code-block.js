@@ -3,6 +3,7 @@
 const {
   HTML_CODE_BLOCK_TYPE,
   HTML_CODE_PROPERTY,
+  BUILDER_STATE_PROPERTY,
   HTML_CODE_MARKER_CLASS,
   HTML_CODE_ROOT_CLASS,
   HTML_CODE_BINDING,
@@ -36,8 +37,13 @@ const BLOCK_DEFS_STYLE = [
     HTML_CODE_BLOCK_TYPE +
     ' { label: HTML code; properties: ' +
     HTML_CODE_PROPERTY +
+    ' ' +
+    BUILDER_STATE_PROPERTY +
     '; }',
   '  ' + HTML_CODE_PROPERTY + ' { label: HTML code; widget: code; }',
+  '  ' +
+    BUILDER_STATE_PROPERTY +
+    ' { label: Block builder state; widget: hidden; }',
   '}',
   '</style>',
 ].join('\n');
