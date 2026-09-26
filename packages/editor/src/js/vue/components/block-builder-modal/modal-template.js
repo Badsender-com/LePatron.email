@@ -37,6 +37,7 @@ module.exports = `<modal-component
           :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
           draggable="true"
           @dragstart="handleDragStart(item.type, $event)"
+          @drag="handleDrag"
           @dragend="handleDragEnd"
           @click.prevent="addElement(item.type)">+ {{ vm.t(item.labelKey) }}</button>
 
