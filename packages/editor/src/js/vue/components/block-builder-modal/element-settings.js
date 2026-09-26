@@ -20,7 +20,7 @@ const FIELDS = {
     { key: 'color', label: 'Couleur', type: 'color' },
   ],
   image: [
-    { key: 'src', label: 'Adresse de l’image', type: 'text' },
+    { key: 'src', label: 'Image', type: 'image' },
     { key: 'alt', label: 'Texte alternatif', type: 'text' },
     { key: 'href', label: 'Lien (optionnel)', type: 'text' },
     { key: 'width', label: 'Largeur', type: 'number', min: 20, max: 600 },
@@ -70,6 +70,11 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
       const parsed = Number.parseInt(event.target.value, 10);
       if (Number.isFinite(parsed)) this.update(field.key, parsed);
     },
+    // Handled by the modal, which is the one holding the view-model the
+    // gallery dialog lives on.
+    pickImage(key) {
+      this.$emit('pick-image', key);
+    },
   },
   template: `<div class="bb-settings">
   <p v-if="!element" class="bb-settings__empty">Sélectionnez un élément pour le régler.</p>
@@ -82,6 +87,17 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
         :key="element.id"
         :value="element[field.key]"
         @input="update(field.key, $event)" />
+
+      <div v-else-if="field.type === 'image'" class="bb-settings__image">
+        <div
+          v-if="element[field.key]"
+          class="bb-settings__thumb"
+          :style="{ backgroundImage: 'url(' + element[field.key] + ')' }"></div>
+        <button
+          type="button"
+          class="bb-settings__pick"
+          @click.prevent="pickImage(field.key)">{{ element[field.key] ? 'Changer l\'image' : 'Choisir une image' }}</button>
+      </div>
 
       <input
         v-else-if="field.type === 'text'"
