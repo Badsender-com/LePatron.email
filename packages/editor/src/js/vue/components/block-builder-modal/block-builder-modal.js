@@ -368,7 +368,16 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // The drag carries its type in `dataTransfer` as well as in component
     // state. The state is what the drop reads — both ends are ours — but
     // `setData` is not optional: without it Firefox never starts the drag.
+    //
+    // THE EVENT MUST NOT REACH `window`. Mosaico installs listeners there that
+    // cancel `dragstart` and `drag` outright (template-loader.js
+    // `fixPageEvents`, called from app.js), so that the browser's native drag
+    // cannot fight the jQuery UI sortable driving the canvas. That protection
+    // is right for the rest of the page and wrong for this palette, which is
+    // the one place a native drag is wanted — so the event is stopped here
+    // rather than the protection weakened there.
     handleDragStart(type, event) {
+      event.stopPropagation();
       this.draggingType = type;
       if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'copy';
@@ -376,6 +385,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       }
       const doc = this.previewDocument();
       if (doc && doc.body) doc.body.classList.add(DRAGGING_CLASS);
+    },
+
+    // `drag` fires continuously at the source for the whole gesture, and
+    // cancelling it cancels the drop — so Mosaico's window listener has to be
+    // kept away from this one too, not just from `dragstart`.
+    handleDrag(event) {
+      event.stopPropagation();
     },
 
     handleDragEnd() {
@@ -569,6 +585,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
           :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
           draggable="true"
           @dragstart="handleDragStart(item.type, $event)"
+          @drag="handleDrag"
           @dragend="handleDragEnd"
           @click.prevent="addElement(item.type)">+ {{ item.label }}</button>
 
