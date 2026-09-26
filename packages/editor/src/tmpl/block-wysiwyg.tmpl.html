@@ -33,11 +33,13 @@
     <!-- /ko -->
   </div>
   <!-- ko block: $data --><!-- /ko -->
-  <!-- Placeholder for an empty HTML code block: its content is hidden by a
-       `ko if` until markup is pasted, leaving nothing to click on. This template
-       is only used in edit mode (the export resolves `<type>-show`), so it can
-       never leak into the exported HTML. -->
+  <!-- Placeholder for an empty synthetic block: its content is hidden by a
+       `ko if` until it holds markup, leaving nothing to click on. The wording
+       comes from the block's own descriptor — "paste some HTML" and "compose a
+       block" are different invitations. This template is only used in edit mode
+       (the export resolves `<type>-show`), so it can never leak into the
+       exported HTML. -->
   <!-- ko if: $root.isEmptyHtmlBlock && $root.isEmptyHtmlBlock($rawData) -->
-  <div class="lp-html-block-empty" data-bind="text: $root.t('html-code-block-empty')"></div>
+  <div class="lp-html-block-empty" data-bind="text: $root.t($root.emptyBlockLabelKey($rawData))"></div>
   <!-- /ko -->
 </div>

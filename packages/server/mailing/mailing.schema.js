@@ -468,6 +468,7 @@ const translations = {
  * @apiSuccess {String} metadata.name name
  * @apiSuccess {String} metadata.template the URL where Mosaico will fetch the markup
  * @apiSuccess {Boolean} metadata.htmlBlockEnabled whereas the "HTML code" block shows up in the palette
+ * @apiSuccess {Boolean} metadata.blockBuilderEnabled whereas the block builder shows up in the palette
  * @apiSuccess {Object} metadata.url an object of useful urls for Mosaico
  * @apiSuccess {String} metadata.url.update update URL
  * @apiSuccess {String} metadata.url.send send by mail URL
@@ -503,6 +504,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         assets: 1,
         trackingConfig: 1,
         htmlBlockEnabled: 1,
+        blockBuilderEnabled: 1,
       },
     });
   if (!mailing) return mailing;
@@ -572,10 +574,11 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
       hasTranslationFeature,
-      // Drives palette visibility of the generic "HTML code" block only — the
-      // block definition is always injected client-side. See
-      // docs/plans/html-code-block.md
+      // Drive palette visibility of the two synthetic blocks only — their
+      // definitions are always injected client-side. Independent of each other.
+      // See docs/plans/html-code-block.md
       htmlBlockEnabled: !!mailing._wireframe.htmlBlockEnabled,
+      blockBuilderEnabled: !!mailing._wireframe.blockBuilderEnabled,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

@@ -16,10 +16,10 @@ global.$ = global.jQuery = jQuery;
 global.ko = ko;
 
 const {
-  injectHtmlCodeBlock,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-html-code-block.js');
+  injectSyntheticBlocks,
+} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
 const {
-  stripEmptyHtmlCodeBlocks,
+  stripEmptySyntheticBlocks,
 } = require('../../../packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 
@@ -77,7 +77,7 @@ function compile(templateHtml) {
 let showTemplate;
 
 beforeAll(() => {
-  showTemplate = compile(injectHtmlCodeBlock(BARE_TEMPLATE))[
+  showTemplate = compile(injectSyntheticBlocks(BARE_TEMPLATE))[
     'htmlCodeBlock-show'
   ];
 });
@@ -139,7 +139,7 @@ describe('the exported markup of an HTML code block', () => {
         .replace(/<!-- ko ((?!--).)*? -->/g, '')
         .replace(/<!-- \/ko -->/g, '')
         .replace(/ data-bind="[^"]*"/g, '');
-      return stripEmptyHtmlCodeBlocks(serialized);
+      return stripEmptySyntheticBlocks(serialized);
     };
 
     // The requirement: an empty block ships nothing whatsoever.
@@ -205,7 +205,7 @@ describe('templates that do not use the block', () => {
 
   beforeAll(() => {
     withoutInjection = compile(TEMPLATE_WITH_NATIVE_BLOCK);
-    withInjection = compile(injectHtmlCodeBlock(TEMPLATE_WITH_NATIVE_BLOCK));
+    withInjection = compile(injectSyntheticBlocks(TEMPLATE_WITH_NATIVE_BLOCK));
   });
 
   it('generates a byte-identical template for a native block', () => {

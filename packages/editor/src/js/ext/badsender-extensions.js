@@ -32,6 +32,7 @@ const comments = require('./badsender-comments.js');
 // https://github.com/voidlabs/mosaico/wiki/Mosaico-Plugins#widget-plugins
 var widgetBgImage = require('./badsender-widget-bgimage');
 var widgetCode = require('./badsender-widget-code');
+var widgetBlockBuilder = require('./badsender-widget-block-builder');
 
 function editorIcon(opts) {
   const { editorIcon } = opts.metadata;
@@ -85,6 +86,7 @@ function extendViewModel(opts, customExtensions) {
   // template-loader.js#pluginsCall
   customExtensions.push(widgetBgImage(opts));
   customExtensions.push(widgetCode(opts));
+  customExtensions.push(widgetBlockBuilder(opts));
   // fix duplicated blocks items
   customExtensions.push(selectItem);
 

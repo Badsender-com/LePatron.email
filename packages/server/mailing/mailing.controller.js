@@ -6,10 +6,11 @@ const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
-  validateHtmlCodeBlocks,
-  hasHtmlCodeBlock,
-  assertHtmlCodeAllowed,
-} = require('./html-code-block-guard.js');
+  validateSyntheticBlocks,
+  hasSyntheticBlock,
+  assertSyntheticHtmlAllowed,
+  TEMPLATE_FLAG_PROJECTION,
+} = require('./synthetic-block-guard.js');
 const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../utils/preview-html-sanitizer.js');
@@ -427,22 +428,23 @@ async function updateMosaico(req, res) {
   // The editor enforces this too, but `data` is an unvalidated Mixed field and
   // `previewHtml` duplicates the markup in the same document, against Mongo's
   // 16MB per-document limit.
-  const htmlCodeCheck = validateHtmlCodeBlocks(req.body.data);
+  const htmlCodeCheck = validateSyntheticBlocks(req.body.data);
   if (!htmlCodeCheck.valid) {
     throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
   }
 
-  // The template flag, enforced here: the editor only hides the palette entry,
-  // and a hand-written request could add the block to any template. Loaded only
-  // when there is a block to check, so a mailing without one costs no query.
-  if (hasHtmlCodeBlock(req.body.data)) {
+  // The template flags, enforced here: the editor only hides the palette
+  // entries, and a hand-written request could add either block to any template.
+  // Loaded only when there is a block to check, so a mailing without one costs
+  // no query — and in one query for both, since a mailing may hold both.
+  if (hasSyntheticBlock(req.body.data)) {
     const template = await Templates.findById(mailing._wireframe)
-      .select({ htmlBlockEnabled: 1 })
+      .select(TEMPLATE_FLAG_PROJECTION)
       .lean();
-    assertHtmlCodeAllowed({
+    assertSyntheticHtmlAllowed({
       data: req.body.data,
       previousData: mailing.data,
-      htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+      flags: template || {},
     });
   }
 

@@ -10,9 +10,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
 const logger = require('../utils/logger');
 const {
-  hasHtmlCodeBlock,
-  assertHtmlCodeBlockContentAllowed,
-} = require('../mailing/html-code-block-guard.js');
+  hasSyntheticBlock,
+  assertSyntheticBlockContentAllowed,
+  TEMPLATE_FLAG_PROJECTION,
+} = require('../mailing/synthetic-block-guard.js');
 
 module.exports = {
   getPersonalizedBlocks,
@@ -81,28 +82,28 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
 }
 
 /**
- * Refuses HTML code the block's template does not allow. A personalized block is
+ * Refuses markup the block's template does not allow. A personalized block is
  * shared with the whole company and dropped into other people's mailings, so it
- * gets the same gate as the mailing save (see mailing/html-code-block-guard.js).
- * Loads the template only when the content holds an HTML code block.
+ * gets the same gate as the mailing save (see mailing/synthetic-block-guard.js).
+ * Loads the template only when the content holds a synthetic block.
  */
 async function assertBlockHtmlCodeAllowed({
   content,
   previousContent,
   templateId,
 }) {
-  if (!hasHtmlCodeBlock(content)) return;
+  if (!hasSyntheticBlock(content)) return;
 
   const template = templateId
     ? await Templates.findById(templateId)
-        .select({ htmlBlockEnabled: 1 })
+        .select(TEMPLATE_FLAG_PROJECTION)
         .lean()
     : null;
 
-  assertHtmlCodeBlockContentAllowed({
+  assertSyntheticBlockContentAllowed({
     content,
     previousContent,
-    htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+    flags: template || {},
   });
 }
 
@@ -121,7 +122,7 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 }
 
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
-  if (hasHtmlCodeBlock(updatedBlock.content)) {
+  if (hasSyntheticBlock(updatedBlock.content)) {
     const existing = await PersonalizedBlocks.findById(
       mongoose.Types.ObjectId(id)
     )

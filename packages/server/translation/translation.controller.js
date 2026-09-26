@@ -10,9 +10,9 @@ const {
   transformDocumentKeepingHtmlCodeBlocks,
 } = require('./html-code-block-protection.js');
 const {
-  findHtmlCodeBlocks,
-  HTML_CODE_PROPERTY,
-} = require('../mailing/html-code-block-guard.js');
+  findSyntheticBlocks,
+  SYNTHETIC_BLOCKS,
+} = require('../mailing/synthetic-block-guard.js');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
@@ -195,10 +195,17 @@ async function processTranslationAsync({
         logger.log(
           '[Translation] Updating preview HTML via string replacement...'
         );
-        // The pasted markup of every HTML code block, in order: the exact bytes
-        // the export put in previewHtml, so their zones are found exactly.
-        const htmlCodes = findHtmlCodeBlocks(originalMailing.data).map(
-          (block) => block[HTML_CODE_PROPERTY]
+        // The markup of every synthetic block, in order: the exact bytes the
+        // export put in previewHtml, so their zones are found exactly. Both
+        // block types, and in one list — the zones are matched positionally, so
+        // leaving one type out would shift every following pairing by one.
+        const htmlCodes = findSyntheticBlocks(originalMailing.data).map(
+          (block) => {
+            const descriptor = SYNTHETIC_BLOCKS.find(
+              (candidate) => candidate.type === block.type
+            );
+            return block[descriptor.htmlProperty];
+          }
         );
         const previewHtml = updatePreviewWithTranslations(
           originalMailing.previewHtml,

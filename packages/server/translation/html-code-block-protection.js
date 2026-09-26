@@ -28,10 +28,17 @@ const logger = require('../utils/logger.js');
 // with a lookahead over its attributes (`<div(?=[^>]*class=...)`) backtracked
 // quadratically on crafted input — seconds of blocked event loop per 100KB.
 
-// Keep in sync with packages/editor/src/js/ext/html-code-block/constants.js.
+// Keep in sync with packages/editor/src/js/ext/html-code-block/block-types.js.
 // Not imported from there: that package is a browser bundle. Enforced by
 // tests/editor/html-code-block/constants-sync.test.js.
+//
+// Both synthetic blocks are protected. The builder's markup carries no ESP
+// script to lose, but its zones must be recognised all the same: the zone list
+// is what pairs each stored block with its place in previewHtml, and a zone
+// missed here would shift every following pairing by one.
 const HTML_CODE_MARKER_CLASS = 'lp-html-block';
+const BLOCK_BUILDER_MARKER_CLASS = 'lp-builder-block';
+const MARKER_CLASSES = [HTML_CODE_MARKER_CLASS, BLOCK_BUILDER_MARKER_CLASS];
 
 // A candidate opening tag longer than this is not LePatron's marker element,
 // whose attributes are a class and, at most, an id.
@@ -51,9 +58,8 @@ const DIV_OR_COMMENT = /<!--|-->|<div\b|<\/div\s*>/gi;
 function hasMarkerClass(tag) {
   const classAttr = /\sclass\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
   if (!classAttr) return false;
-  return (classAttr[1] || classAttr[2] || '')
-    .split(/\s+/)
-    .includes(HTML_CODE_MARKER_CLASS);
+  const classes = (classAttr[1] || classAttr[2] || '').split(/\s+/);
+  return MARKER_CLASSES.some((marker) => classes.includes(marker));
 }
 
 /**
@@ -247,4 +253,5 @@ module.exports = {
   transformDocumentKeepingHtmlCodeBlocks,
   findHtmlCodeBlockRanges,
   HTML_CODE_MARKER_CLASS,
+  BLOCK_BUILDER_MARKER_CLASS,
 };
