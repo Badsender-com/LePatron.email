@@ -71,6 +71,19 @@
     &:hover {
       background: #f5f5f5;
     }
+
+    // `grab` rather than `move`: the entry is not being taken out of the
+    // palette, a copy of it is being placed.
+    &:active {
+      cursor: grabbing;
+    }
+
+    // The entry being dragged, so the palette shows what is in flight — the
+    // drag image itself is the browser's, and we do not control it.
+    &--dragging {
+      opacity: 0.5;
+      border-color: #00acdc;
+    }
   }
 
   &__empty {

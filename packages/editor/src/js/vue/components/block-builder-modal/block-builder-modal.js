@@ -48,21 +48,50 @@ const MOBILE_WIDTH = 350;
 // document that also holds the user's own markup.
 const SELECTED_CLASS = 'lp-bb-selected';
 
+// Set on the body while something is being dragged, and on the row the drop
+// would land against.
+const DRAGGING_CLASS = 'lp-bb-dragging';
+const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
+const DROP_AFTER_CLASS = 'lp-bb-drop-after';
+
+// The drop target of a block that holds nothing yet.
+const EMPTY_DROP_ID = 'lp-bb-empty-drop';
+
 // Set on the preview document once it has been written and wired up.
 const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
 
 // The preview document's own chrome. It is never exported — only the generated
-// markup is — so these rules exist purely to make the surface usable: no body
-// margin so the block sits at the real template width, and an outline plus a
-// pointer cursor so the rows read as clickable.
+// markup is — so these rules exist purely to make the surface usable.
+//
+// `min-height` matters more than it looks: an element dropped before it holds
+// anything (an image with no source yet) renders nothing at all, so without it
+// the row is zero pixels tall and cannot be clicked. The same trap as the empty
+// block placeholder in the canvas.
+//
+// The insertion line is an inset box-shadow rather than a border: a border
+// would change the row's height mid-drag and make the rows shift under the
+// cursor.
 const PREVIEW_DOCUMENT = [
   '<!DOCTYPE html><html><head><meta charset="utf-8" /><style>',
   'body{margin:0;padding:0;background:#ffffff;}',
   'table{border-collapse:collapse;}',
   'img{max-width:100%;}',
-  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;}`,
+  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;min-height:24px;}`,
   `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
   'outline:2px solid #00acdc;outline-offset:-2px;}',
+  // While dragging, every row shows where it begins and ends, so the insertion
+  // point is read against a visible structure rather than guessed.
+  `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]:not(.${SELECTED_CLASS}){`,
+  'outline:1px dashed #b5b5b5;outline-offset:-1px;}',
+  `[${ELEMENT_ATTRIBUTE}].${DROP_BEFORE_CLASS}{`,
+  'box-shadow:inset 0 3px 0 0 #00acdc;}',
+  `[${ELEMENT_ATTRIBUTE}].${DROP_AFTER_CLASS}{`,
+  'box-shadow:inset 0 -3px 0 0 #00acdc;}',
+  `#${EMPTY_DROP_ID}{`,
+  'margin:24px;padding:32px 16px;border:2px dashed #c7c7c7;border-radius:4px;',
+  'text-align:center;color:#8c8c8c;font:14px Arial,Helvetica,sans-serif;}',
+  `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
+  'border-color:#00acdc;color:#00acdc;}',
   '</style></head><body></body></html>',
 ].join('');
 
@@ -72,6 +101,22 @@ const nextId = () => `el-${Date.now().toString(36)}-${++sequence}`;
 const defaultsFor = (type) => {
   const definition = ELEMENTS.find((element) => element.type === type);
   return definition ? { ...definition.defaults } : {};
+};
+
+// What a brand new element says before anyone types into it.
+//
+// Here and not in the generator's defaults, on purpose: those defaults are the
+// fallback for a stored state that is missing a key, so seeding them would put
+// the placeholder back into a text the user had deliberately emptied, on every
+// reload.
+//
+// An element that renders nothing appears nowhere — that is the whole reason
+// this exists. The image has no seed because there is nothing honest to put in
+// it; the preview's `min-height` keeps its slot visible and clickable until a
+// picture is chosen.
+const SEED_KEYS = {
+  text: { key: 'content', label: 'block-builder-seed-text' },
+  button: { key: 'label', label: 'block-builder-seed-button' },
 };
 
 const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
@@ -94,6 +139,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     palette: PALETTE,
     previewWidth: DESKTOP_WIDTH,
     frameRequest: null,
+    // The palette entry currently being dragged, and where it would land.
+    draggingType: null,
+    dropIndex: null,
+    // A render that fell due mid-drag and was held back.
+    renderHeldDuringDrag: false,
   }),
   computed: {
     selected() {
@@ -174,10 +224,31 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       return name;
     },
 
-    addElement(type) {
+    // Builds an element, seeded so it is visible the moment it lands.
+    buildElement(type) {
       const element = { id: nextId(), type, ...defaultsFor(type) };
-      this.state.elements.push(element);
+      const seed = SEED_KEYS[type];
+      if (seed) element[seed.key] = this.vm.t(seed.label);
+      return element;
+    },
+
+    // Clicking a palette entry appends. It stays alongside the drag: it is the
+    // quick path, it is what a keyboard reaches, and it is the fallback when a
+    // drag is dropped somewhere that refuses it.
+    addElement(type) {
+      this.insertElement(type, this.state.elements.length);
+    },
+
+    insertElement(type, index) {
+      if (!PALETTE.some((item) => item.type === type)) return null;
+
+      const element = this.buildElement(type);
+      const at = Math.max(0, Math.min(index, this.state.elements.length));
+      this.state.elements.splice(at, 0, element);
+      // Selected on arrival, so the settings panel is already on it — dropping
+      // and editing are one gesture, not two.
       this.selectedId = element.id;
+      return element;
     },
 
     removeSelected() {
@@ -227,6 +298,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     scheduleRender() {
+      // Replacing the body mid-drag destroys the very nodes the cursor is over:
+      // the drop target vanishes, and the drag ends on nothing. Held until the
+      // drag is done, then rendered once.
+      if (this.draggingType) {
+        this.renderHeldDuringDrag = true;
+        return;
+      }
       if (this.frameRequest) return;
       this.frameRequest = window.requestAnimationFrame(() => {
         this.frameRequest = null;
@@ -256,6 +334,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       const doc = frame.contentDocument;
       doc[PREVIEW_READY_FLAG] = true;
       doc.addEventListener('click', this.handlePreviewClick);
+      // `dragover` has to cancel the event on every move, or the browser
+      // refuses the drop outright — the one rule of the HTML5 drag API that
+      // everybody forgets.
+      doc.addEventListener('dragenter', this.handlePreviewDragOver);
+      doc.addEventListener('dragover', this.handlePreviewDragOver);
+      doc.addEventListener('drop', this.handlePreviewDrop);
+      doc.addEventListener('dragleave', this.handlePreviewDragLeave);
       return doc;
     },
 
@@ -266,8 +351,154 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       // Replacing the body, never the document: reloading is what makes images
       // flicker and the scroll jump.
       doc.body.innerHTML = this.html;
+      // An empty block generates nothing at all, so there would be no surface
+      // to drop onto — and no way to start. This target is preview chrome: it
+      // lives in the iframe only, never in what the generator produces.
+      if (this.isEmpty) {
+        const zone = doc.createElement('div');
+        zone.id = EMPTY_DROP_ID;
+        zone.textContent = this.vm.t('block-builder-drop-here');
+        doc.body.appendChild(zone);
+      }
       this.applySelectionHighlight();
     },
+
+    // ---- dragging from the palette into the preview -----------------------
+
+    // The drag carries its type in `dataTransfer` as well as in component
+    // state. The state is what the drop reads — both ends are ours — but
+    // `setData` is not optional: without it Firefox never starts the drag.
+    //
+    // THE EVENT MUST NOT REACH `window`. Mosaico installs listeners there that
+    // cancel `dragstart` and `drag` outright (template-loader.js
+    // `fixPageEvents`, called from app.js), so that the browser's native drag
+    // cannot fight the jQuery UI sortable driving the canvas. That protection
+    // is right for the rest of the page and wrong for this palette, which is
+    // the one place a native drag is wanted — so the event is stopped here
+    // rather than the protection weakened there.
+    handleDragStart(type, event) {
+      event.stopPropagation();
+      this.draggingType = type;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.setData('text/plain', type);
+      }
+      const doc = this.previewDocument();
+      if (doc && doc.body) doc.body.classList.add(DRAGGING_CLASS);
+    },
+
+    // `drag` fires continuously at the source for the whole gesture, and
+    // cancelling it cancels the drop — so Mosaico's window listener has to be
+    // kept away from this one too, not just from `dragstart`.
+    handleDrag(event) {
+      event.stopPropagation();
+    },
+
+    handleDragEnd() {
+      this.draggingType = null;
+      this.dropIndex = null;
+      this.clearDropIndicator();
+      const doc = this.previewDocument();
+      if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
+      // Renders were held while the rows had to stay still under the cursor.
+      if (this.renderHeldDuringDrag) {
+        this.renderHeldDuringDrag = false;
+        this.renderPreview();
+      }
+    },
+
+    handlePreviewDragOver(event) {
+      if (!this.draggingType) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+
+      const doc = this.previewDocument();
+      if (!doc || !doc.body) return;
+      doc.body.classList.add(DRAGGING_CLASS);
+
+      this.dropIndex = this.dropIndexAt(doc, event.clientY);
+      this.showDropIndicator(doc, this.dropIndex);
+    },
+
+    // Leaving the iframe entirely, rather than crossing between two rows:
+    // `relatedTarget` is null (or outside the document) only for the former.
+    //
+    // Firefox leaves `relatedTarget` null on `dragleave` more often than that,
+    // so crossing a row boundary there clears the indicator — and the very next
+    // `dragover` puts it back. A frame of flicker at worst; doing better means
+    // counting enters and leaves, which is its own source of stuck state.
+    handlePreviewDragLeave(event) {
+      const leaving = event.relatedTarget;
+      const doc = this.previewDocument();
+      if (!doc) return;
+      if (leaving && doc.contains(leaving)) return;
+      this.dropIndex = null;
+      this.clearDropIndicator();
+    },
+
+    handlePreviewDrop(event) {
+      if (!this.draggingType) return;
+      event.preventDefault();
+
+      const doc = this.previewDocument();
+      const index = doc ? this.dropIndexAt(doc, event.clientY) : 0;
+      const type = this.draggingType;
+
+      this.handleDragEnd();
+      this.insertElement(type, index);
+    },
+
+    /**
+     * Where an element dropped at this height would go.
+     *
+     * Measured against each row's midpoint: above it the element goes before,
+     * below it after. Past the last row, at the end.
+     *
+     * @returns {number} an index in `state.elements`
+     */
+    dropIndexAt(doc, clientY) {
+      const rows = this.previewRows(doc);
+      for (let i = 0; i < rows.length; i++) {
+        const box = rows[i].getBoundingClientRect();
+        if (clientY < box.top + box.height / 2) return i;
+      }
+      return rows.length;
+    },
+
+    previewRows(doc) {
+      if (!doc || !doc.body) return [];
+      return Array.prototype.slice.call(
+        doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`)
+      );
+    },
+
+    showDropIndicator(doc, index) {
+      const rows = this.previewRows(doc);
+      this.clearDropIndicator();
+      if (!rows.length) return;
+
+      if (index < rows.length) {
+        rows[index].classList.add(DROP_BEFORE_CLASS);
+      } else {
+        rows[rows.length - 1].classList.add(DROP_AFTER_CLASS);
+      }
+    },
+
+    clearDropIndicator() {
+      this.previewRows(this.previewDocument()).forEach((row) => {
+        row.classList.remove(DROP_BEFORE_CLASS);
+        row.classList.remove(DROP_AFTER_CLASS);
+      });
+    },
+
+    /** The preview document, only if it has already been written. */
+    previewDocument() {
+      const frame = this.$refs.previewFrame;
+      const doc = frame && frame.contentDocument;
+      return doc && doc[PREVIEW_READY_FLAG] ? doc : null;
+    },
+
+    // ---- selecting ---------------------------------------------------------
 
     // Selecting by clicking the rendered block, rather than only through the
     // list on the left. `closest` walks up from whatever was actually clicked —
@@ -324,6 +555,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     closeModal() {
+      this.draggingType = null;
+      this.dropIndex = null;
+      this.renderHeldDuringDrag = false;
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
@@ -348,6 +582,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
           :key="item.type"
           type="button"
           class="bb-modal__add"
+          :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
+          draggable="true"
+          @dragstart="handleDragStart(item.type, $event)"
+          @drag="handleDrag"
+          @dragend="handleDragEnd"
           @click.prevent="addElement(item.type)">+ {{ item.label }}</button>
 
         <p class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
