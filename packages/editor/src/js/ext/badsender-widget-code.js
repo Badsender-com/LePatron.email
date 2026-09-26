@@ -31,7 +31,7 @@ const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
 // With the template flag off, the block stays — the server keeps accepting the
 // markup already stored, so the email remains savable — but it cannot be edited:
 // the server refuses any markup the mailing did not already hold
-// (packages/server/mailing/html-code-block-guard.js). The button gives way to a
+// (packages/server/mailing/synthetic-block-guard.js). The button gives way to a
 // sentence saying so, rather than letting the user edit and then fail to save.
 function html(propAccessor, onfocusbinding, parameters) {
   return `
