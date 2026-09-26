@@ -6,10 +6,11 @@ const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
-  validateHtmlCodeBlocks,
-  hasHtmlCodeBlock,
-  assertHtmlCodeAllowed,
-} = require('./html-code-block-guard.js');
+  validateSyntheticBlocks,
+  hasSyntheticBlock,
+  assertSyntheticHtmlAllowed,
+  TEMPLATE_FLAG_PROJECTION,
+} = require('./synthetic-block-guard.js');
 const {
   validateHeadCss,
   assertHeadCssAllowed,
@@ -432,7 +433,7 @@ async function updateMosaico(req, res) {
   // The editor enforces this too, but `data` is an unvalidated Mixed field and
   // `previewHtml` duplicates the markup in the same document, against Mongo's
   // 16MB per-document limit.
-  const htmlCodeCheck = validateHtmlCodeBlocks(req.body.data);
+  const htmlCodeCheck = validateSyntheticBlocks(req.body.data);
   if (!htmlCodeCheck.valid) {
     throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
   }
@@ -443,24 +444,28 @@ async function updateMosaico(req, res) {
     throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);
   }
 
-  // The template flag, enforced here: the editor only hides the palette entry,
-  // and a hand-written request could add the block to any template. Loaded only
-  // when there is something to check, so a mailing without either costs no
-  // query — and loaded once for both guards, which share the flag.
-  if (hasHtmlCodeBlock(req.body.data) || hasHeadCss(headCss)) {
+  // The template flags, enforced here: the editor only hides the palette
+  // entries, and a hand-written request could add either block, or a stylesheet,
+  // to any template. Loaded only when there is something to check, so a mailing
+  // without any of it costs no query — and loaded once for every guard, since a
+  // mailing may hold all of it at the same time.
+  if (hasSyntheticBlock(req.body.data) || hasHeadCss(headCss)) {
     const template = await Templates.findById(mailing._wireframe)
-      .select({ htmlBlockEnabled: 1 })
+      .select(TEMPLATE_FLAG_PROJECTION)
       .lean();
-    const htmlBlockEnabled = Boolean(template && template.htmlBlockEnabled);
-    assertHtmlCodeAllowed({
+    const flags = template || {};
+    assertSyntheticHtmlAllowed({
       data: req.body.data,
       previousData: mailing.data,
-      htmlBlockEnabled,
+      flags,
     });
+    // The stylesheet rides on the HTML code block's flag: it exists to style
+    // pasted markup, and the builder generates its own CSS rather than writing
+    // it here.
     assertHeadCssAllowed({
       css: headCss,
       previousCss: mailing.headCss,
-      htmlBlockEnabled,
+      htmlBlockEnabled: Boolean(flags.htmlBlockEnabled),
     });
   }
 

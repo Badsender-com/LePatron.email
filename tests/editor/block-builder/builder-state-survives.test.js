@@ -33,11 +33,13 @@ global.$ = global.jQuery = jQuery;
 global.ko = ko;
 
 const {
-  injectHtmlCodeBlock,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-html-code-block.js');
+  injectSyntheticBlocks,
+} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
 const {
   HTML_CODE_BLOCK_TYPE,
   HTML_CODE_PROPERTY,
+  BLOCK_BUILDER_BLOCK_TYPE,
+  BLOCK_BUILDER_HTML_PROPERTY,
   BUILDER_STATE_PROPERTY,
 } = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
@@ -61,42 +63,52 @@ let templateDef;
 beforeAll(() => {
   templateDef = converter.translateTemplate(
     'template',
-    markStructuralTags(injectHtmlCodeBlock(TEMPLATE)),
+    markStructuralTags(injectSyntheticBlocks(TEMPLATE)),
     () => null,
     (html, name, mode) => (name && mode ? `${name}-${mode}` : name || 'anon')
   );
 });
 
-/** The model Mosaico generates for one HTML code block. */
-const generatedBlock = () =>
-  modelDef.generateModel(templateDef._defs, HTML_CODE_BLOCK_TYPE);
+/** The model Mosaico generates for one block of the given synthetic type. */
+const generatedBlock = (type = BLOCK_BUILDER_BLOCK_TYPE) =>
+  modelDef.generateModel(templateDef._defs, type);
 
 /**
  * checkModel as the editor calls it (template-loader.js): the GENERATED model
  * first, the STORED content third. Getting that order wrong tests nothing.
  */
-const check = (stored) =>
-  converter.checkModel(generatedBlock(), templateDef._defs, stored);
+const check = (stored, type) =>
+  converter.checkModel(generatedBlock(type), templateDef._defs, stored);
 
 describe('the block definitions', () => {
-  it('declare the builder state alongside the pasted markup', () => {
+  it('declare the builder state alongside the generated markup', () => {
     const block = generatedBlock();
 
-    expect(block).toHaveProperty(HTML_CODE_PROPERTY);
+    expect(block).toHaveProperty(BLOCK_BUILDER_HTML_PROPERTY);
     expect(block).toHaveProperty(BUILDER_STATE_PROPERTY);
   });
 
   // The default every property gets, and the reason a stored string is safe.
   it('generates it as null, like every other property', () => {
     expect(generatedBlock()[BUILDER_STATE_PROPERTY]).toBeNull();
-    expect(generatedBlock()[HTML_CODE_PROPERTY]).toBeNull();
+    expect(generatedBlock()[BLOCK_BUILDER_HTML_PROPERTY]).toBeNull();
+  });
+
+  // The builder lives in a block of its own, so the HTML code block must not
+  // carry a state property it has no use for — and the reverse pass would
+  // delete it from stored content anyway, on every load.
+  it('keeps the builder state off the HTML code block', () => {
+    const block = generatedBlock(HTML_CODE_BLOCK_TYPE);
+
+    expect(block).toHaveProperty(HTML_CODE_PROPERTY);
+    expect(block).not.toHaveProperty(BUILDER_STATE_PROPERTY);
   });
 });
 
 describe('checkModel', () => {
   const stored = (extra) => ({
-    type: HTML_CODE_BLOCK_TYPE,
-    [HTML_CODE_PROPERTY]: '<p>generated</p>',
+    type: BLOCK_BUILDER_BLOCK_TYPE,
+    [BLOCK_BUILDER_HTML_PROPERTY]: '<p>generated</p>',
     ...extra,
   });
 
@@ -134,11 +146,24 @@ describe('checkModel', () => {
     expect(content[BUILDER_STATE_PROPERTY]).toBe('{}');
   });
 
-  // Every mailing written before this commit is in exactly this state.
-  it('accepts a block stored before the state existed', () => {
+  // A block whose state failed to serialise, or one from a version that kept
+  // none.
+  it('accepts a block with no state at all', () => {
     const content = stored();
 
     expect(check(content)).toBeLessThan(2);
-    expect(content[HTML_CODE_PROPERTY]).toBe('<p>generated</p>');
+    expect(content[BLOCK_BUILDER_HTML_PROPERTY]).toBe('<p>generated</p>');
+  });
+
+  // The HTML code block shipped before the builder existed, and its stored
+  // blocks must survive the builder's arrival untouched.
+  it('leaves an HTML code block stored before the builder existed alone', () => {
+    const content = {
+      type: HTML_CODE_BLOCK_TYPE,
+      [HTML_CODE_PROPERTY]: '<p>pasted</p>',
+    };
+
+    expect(check(content, HTML_CODE_BLOCK_TYPE)).toBeLessThan(2);
+    expect(content[HTML_CODE_PROPERTY]).toBe('<p>pasted</p>');
   });
 });

@@ -333,7 +333,11 @@ module.exports = {
   'block-builder-change-image': 'Change the image',
   'block-builder-replaces-markup':
     'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
-  'widget-code-compose': 'Compose visually',
+  'block-builder-block-name': 'Composed block',
+  'block-builder-block-empty': 'Composed block — click to compose',
+  'widget-block-builder-compose': 'Compose a block',
+  'widget-block-builder-disabled':
+    'The block builder is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'block-builder-modal-title': 'Compose a block',
   'block-builder-add': 'Add',
   'block-builder-elements': 'Elements',
@@ -346,6 +350,8 @@ module.exports = {
     'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'save-message-html-code-disabled':
     'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-block-builder-disabled':
+    'Save refused: the block builder is not enabled on this template.',
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',

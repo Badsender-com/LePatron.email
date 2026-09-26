@@ -54,9 +54,9 @@
             <!-- /ko -->
             <!-- ko if: $root.isSyntheticBlock($data) -->
             <div class="block-synthetic-thumb">
-              <span class="lucide lucide-code-2"></span>
+              <span class="lucide" data-bind="css: $root.syntheticBlockIcon($data)"></span>
             </div>
-            <span class="block-name" data-bind="text: $root.t('html-code-block-name')">HTML code</span>
+            <span class="block-name" data-bind="text: $root.t($root.syntheticBlockLabelKey($data))">HTML code</span>
             <!-- /ko -->
             <!-- ko ifnot: $root.isSyntheticBlock($data) -->
             <img

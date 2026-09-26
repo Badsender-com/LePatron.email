@@ -1187,6 +1187,12 @@ export default {
       description: 'Allows pasting free HTML code between two template blocks.',
       hint: 'The block will show up at the end of the editor palette.',
     },
+    blockBuilder: {
+      name: 'Block builder',
+      description:
+        'Lets users compose a block visually. LePatron writes the HTML.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',

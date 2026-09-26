@@ -5,16 +5,23 @@ const path = require('path');
 const ko = require('knockout');
 
 const {
-  injectHtmlCodeBlock,
+  injectSyntheticBlocks,
   orderPaletteBlockDefs,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-html-code-block.js');
+} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
 const {
   HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_ROOT_CLASS,
 } = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+const {
+  SYNTHETIC_BLOCKS,
+  HTML_CODE_BLOCK,
+  BLOCK_BUILDER_BLOCK,
+} = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
 
-// The block's opening tag, as the injector emits it.
-const BLOCK_OPEN = `<div class="${HTML_CODE_ROOT_CLASS}" data-ko-block="${HTML_CODE_BLOCK_TYPE}">`;
+// A block's opening tag, as the injector emits it.
+const openingTagOf = (descriptor) =>
+  `<div class="${descriptor.rootClass}" data-ko-block="${descriptor.type}">`;
+
+const BLOCK_OPEN = openingTagOf(HTML_CODE_BLOCK);
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -39,14 +46,14 @@ const MINIMAL_TEMPLATE = [
   '</html>',
 ].join('\n');
 
-describe('injectHtmlCodeBlock', () => {
+describe('injectSyntheticBlocks', () => {
   describe.each(FIXTURES)('on %s', (relative) => {
     let source;
     let injected;
 
     beforeAll(() => {
       source = readFixture(relative);
-      injected = injectHtmlCodeBlock(source);
+      injected = injectSyntheticBlocks(source);
     });
 
     it('injects the block definition and its markup', () => {
@@ -56,7 +63,7 @@ describe('injectHtmlCodeBlock', () => {
     });
 
     it('is idempotent', () => {
-      expect(injectHtmlCodeBlock(injected)).toBe(injected);
+      expect(injectSyntheticBlocks(injected)).toBe(injected);
     });
 
     it('inserts the markup inside the drag-and-drop container', () => {
@@ -76,31 +83,31 @@ describe('injectHtmlCodeBlock', () => {
     // backtracking pattern here froze the editor on large templates.
     it('runs in well under a second', () => {
       const start = Date.now();
-      injectHtmlCodeBlock(source);
+      injectSyntheticBlocks(source);
       expect(Date.now() - start).toBeLessThan(500);
     });
   });
 
   it('injects into a minimal template', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     expect(result).toContain(`data-ko-block="${HTML_CODE_BLOCK_TYPE}"`);
     expect(result).toContain('widget: code');
   });
 
   it('places the markup right after the container opening tag', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     expect(result).toContain(`<div data-ko-container="main">${BLOCK_OPEN}`);
   });
 
   it('puts the block definitions before </head>', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     const defsIndex = result.indexOf(`${HTML_CODE_BLOCK_TYPE} { label:`);
     expect(defsIndex).toBeGreaterThan(-1);
     expect(defsIndex).toBeLessThan(result.indexOf('</head>'));
   });
 
   it('marks the pasted-markup holder with the CSS class, not a data-* attribute', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     expect(result).toContain('class="lp-html-block"');
     expect(result).not.toContain('data-lp-html-block');
   });
@@ -108,7 +115,7 @@ describe('injectHtmlCodeBlock', () => {
   // data-ko-display must sit on a descendant: a scoped jQuery selector would not
   // match the block root, and the attribute would leak into the export.
   it('keeps data-ko-display off the block root', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     const root = /<div[^>]*data-ko-block="htmlCodeBlock"[^>]*>/.exec(result);
     expect(root[0]).not.toContain('data-ko-display');
     expect(result).toContain('data-ko-display="htmlCode"');
@@ -116,7 +123,7 @@ describe('injectHtmlCodeBlock', () => {
 
   // TinyMCE would attach to a data-ko-editable field and rewrite the markup.
   it('never uses data-ko-editable', () => {
-    const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
+    const result = injectSyntheticBlocks(MINIMAL_TEMPLATE);
     const block = result.slice(result.indexOf(BLOCK_OPEN));
     expect(block).not.toContain('data-ko-editable');
   });
@@ -124,13 +131,13 @@ describe('injectHtmlCodeBlock', () => {
   describe('when it cannot inject safely', () => {
     it('leaves markup without a container untouched', () => {
       const markup = '<html><head></head><body><div></div></body></html>';
-      expect(injectHtmlCodeBlock(markup)).toBe(markup);
+      expect(injectSyntheticBlocks(markup)).toBe(markup);
     });
 
     it('leaves markup without a closing head untouched', () => {
       const markup =
         '<html><body><div data-ko-container="main"></div></body></html>';
-      expect(injectHtmlCodeBlock(markup)).toBe(markup);
+      expect(injectSyntheticBlocks(markup)).toBe(markup);
     });
 
     it('does not inject twice when a template ships its own block', () => {
@@ -138,13 +145,13 @@ describe('injectHtmlCodeBlock', () => {
         'data-ko-block="textBlock"',
         `data-ko-block="${HTML_CODE_BLOCK_TYPE}"`
       );
-      expect(injectHtmlCodeBlock(markup)).toBe(markup);
+      expect(injectSyntheticBlocks(markup)).toBe(markup);
     });
 
     it('passes through empty and non-string input', () => {
-      expect(injectHtmlCodeBlock('')).toBe('');
-      expect(injectHtmlCodeBlock(null)).toBeNull();
-      expect(injectHtmlCodeBlock(undefined)).toBeUndefined();
+      expect(injectSyntheticBlocks('')).toBe('');
+      expect(injectSyntheticBlocks(null)).toBeNull();
+      expect(injectSyntheticBlocks(undefined)).toBeUndefined();
     });
   });
 
@@ -154,7 +161,7 @@ describe('injectHtmlCodeBlock', () => {
       '<div style="font: a > b" data-ko-container="main">',
       '<div data-ko-block="textBlock"></div></div></body></html>',
     ].join('');
-    const result = injectHtmlCodeBlock(markup);
+    const result = injectSyntheticBlocks(markup);
     // The block must land after the full opening tag, not in the middle of it.
     expect(result).toContain(
       `<div style="font: a > b" data-ko-container="main">${BLOCK_OPEN}`
@@ -168,7 +175,7 @@ describe('injectHtmlCodeBlock', () => {
       '<div data-ko-container="main"></div>',
       '</body></html>',
     ].join('');
-    const result = injectHtmlCodeBlock(markup);
+    const result = injectSyntheticBlocks(markup);
     expect(result).toContain(`<div data-ko-container="main">${BLOCK_OPEN}`);
     expect(result).toContain('<div data-ko-container="preheader"></div>');
   });
@@ -177,64 +184,97 @@ describe('injectHtmlCodeBlock', () => {
 describe('orderPaletteBlockDefs', () => {
   const textBlock = { type: 'textBlock' };
   const imageBlock = { type: 'imageBlock' };
-  const htmlBlock = { type: HTML_CODE_BLOCK_TYPE };
+  const htmlBlock = { type: HTML_CODE_BLOCK.type };
+  const builderBlock = { type: BLOCK_BUILDER_BLOCK.type };
 
-  it('drops the HTML block when the flag is off', () => {
+  const both = { htmlBlockEnabled: true, blockBuilderEnabled: true };
+
+  it('drops both synthetic blocks when neither flag is on', () => {
     const result = orderPaletteBlockDefs(
-      [textBlock, htmlBlock, imageBlock],
-      false
+      [textBlock, htmlBlock, builderBlock, imageBlock],
+      {}
     );
     expect(result).toEqual([textBlock, imageBlock]);
   });
 
-  it('moves the HTML block to the very end when the flag is on', () => {
+  it('moves the enabled blocks to the very end', () => {
     const result = orderPaletteBlockDefs(
-      [htmlBlock, textBlock, imageBlock],
-      true
+      [htmlBlock, textBlock, builderBlock, imageBlock],
+      both
     );
-    expect(result).toEqual([textBlock, imageBlock, htmlBlock]);
+    expect(result).toEqual([textBlock, imageBlock, htmlBlock, builderBlock]);
+  });
+
+  // The whole point of two flags: a client can be given the builder and its
+  // guard rails without being handed responsibility for raw HTML.
+  it('shows the builder alone when only its flag is on', () => {
+    const result = orderPaletteBlockDefs([htmlBlock, builderBlock, textBlock], {
+      blockBuilderEnabled: true,
+    });
+    expect(result).toEqual([textBlock, builderBlock]);
+  });
+
+  it('shows the HTML block alone when only its flag is on', () => {
+    const result = orderPaletteBlockDefs([htmlBlock, builderBlock, textBlock], {
+      htmlBlockEnabled: true,
+    });
+    expect(result).toEqual([textBlock, htmlBlock]);
+  });
+
+  // Declaration order, so the palette reads the same in every template whatever
+  // order the definitions came back in.
+  it('orders the synthetic blocks the same way regardless of input order', () => {
+    const result = orderPaletteBlockDefs([builderBlock, htmlBlock], both);
+    expect(result).toEqual([htmlBlock, builderBlock]);
   });
 
   // A real observable, not a bare function: ko.utils.unwrapObservable only
   // unwraps things ko.isObservable recognises.
   it('unwraps an observable type', () => {
     const observableTyped = { type: ko.observable(HTML_CODE_BLOCK_TYPE) };
-    const result = orderPaletteBlockDefs([observableTyped, textBlock], false);
+    const result = orderPaletteBlockDefs([observableTyped, textBlock], {});
     expect(result).toEqual([textBlock]);
   });
 
   it('never mutates the input array', () => {
     const input = [htmlBlock, textBlock];
-    orderPaletteBlockDefs(input, true);
+    orderPaletteBlockDefs(input, both);
     expect(input).toEqual([htmlBlock, textBlock]);
   });
 
-  it('tolerates a template that has no HTML block at all', () => {
-    expect(orderPaletteBlockDefs([textBlock], true)).toEqual([textBlock]);
-    expect(orderPaletteBlockDefs([], true)).toEqual([]);
+  it('tolerates a template that has no synthetic block at all', () => {
+    expect(orderPaletteBlockDefs([textBlock], both)).toEqual([textBlock]);
+    expect(orderPaletteBlockDefs([], both)).toEqual([]);
   });
 
-  it('tolerates null entries and a non-array input', () => {
-    expect(orderPaletteBlockDefs([null, textBlock], true)).toEqual([
+  it('tolerates null entries, missing metadata and a non-array input', () => {
+    expect(orderPaletteBlockDefs([null, textBlock], both)).toEqual([
       null,
       textBlock,
     ]);
-    expect(orderPaletteBlockDefs(undefined, true)).toBeUndefined();
+    expect(orderPaletteBlockDefs([htmlBlock, textBlock], null)).toEqual([
+      textBlock,
+    ]);
+    expect(orderPaletteBlockDefs(undefined, both)).toBeUndefined();
   });
 });
 
-const INJECTED_BLOCK_OPENING = BLOCK_OPEN;
 const INJECTED_BLOCK_CLOSING = '</div></div>';
 
+// Every synthetic block, not just the first: the injector emits one per
+// descriptor, and leaving one behind would let this test pass while the
+// template gained markup nobody checked.
 function removeInjectedBlock(markup) {
-  // Anchor on the injected block's exact opening tag; real templates are full
-  // of <div>s of their own.
-  const start = markup.indexOf(INJECTED_BLOCK_OPENING);
-  expect(start).toBeGreaterThan(-1);
-  const end =
-    markup.indexOf(INJECTED_BLOCK_CLOSING, start) +
-    INJECTED_BLOCK_CLOSING.length;
-  return markup.slice(0, start) + markup.slice(end);
+  return SYNTHETIC_BLOCKS.reduce((rest, descriptor) => {
+    // Anchor on that block's exact opening tag; real templates are full of
+    // <div>s of their own.
+    const start = rest.indexOf(openingTagOf(descriptor));
+    expect(start).toBeGreaterThan(-1);
+    const end =
+      rest.indexOf(INJECTED_BLOCK_CLOSING, start) +
+      INJECTED_BLOCK_CLOSING.length;
+    return rest.slice(0, start) + rest.slice(end);
+  }, markup);
 }
 
 function removeInjectedStyle(markup) {
