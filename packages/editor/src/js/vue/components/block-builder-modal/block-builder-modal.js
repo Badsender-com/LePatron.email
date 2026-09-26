@@ -4,6 +4,7 @@ const { ElementSettingsComponent } = require('./element-settings');
 const {
   generate,
   emptyState,
+  ELEMENT_ATTRIBUTE,
 } = require('../../../../../../shared/block-builder/generate.js');
 const {
   ELEMENTS,
@@ -15,16 +16,22 @@ const {
 
 // The composing surface of the block builder.
 //
-// It writes into the `htmlCode` of an HTML code block, which means everything
-// downstream — export fidelity, the inliner's protected zone, the sanitised
-// preview, the template flag — is the machinery already in production. The
-// builder produces markup; it does not produce a new kind of block.
+// It writes the generated markup and the state into a block of its own
+// (`blockBuilderBlock`), which shares every downstream mechanism with the HTML
+// code block — export fidelity, the inliner's protected zone, the sanitised
+// preview, a template flag. The builder produces markup; the machinery that
+// carries it is the one already in production.
 //
 // The preview is an iframe, and it is refreshed by replacing the body rather
 // than reloading the document: `srcdoc` would flash white and refetch every
 // image on each keystroke. Renders are coalesced on requestAnimationFrame
 // rather than debounced — the generator is a join of strings, so the cost is
 // the reflow, and a timed debounce is exactly what reads as lag.
+//
+// The preview is also a selection surface: clicking an element there selects
+// it. That is what `data-lp-el` on each generated row is for. The iframe is
+// same-origin (no `src`, and `sandbox` keeps `allow-same-origin`), so the
+// parent can listen on its document even though scripts inside it cannot run.
 
 const PALETTE = [
   { type: 'text', label: 'Texte' },
@@ -36,6 +43,28 @@ const PALETTE = [
 
 const DESKTOP_WIDTH = 600;
 const MOBILE_WIDTH = 350;
+
+// Marks the selected row inside the preview. Prefixed, because it lands in a
+// document that also holds the user's own markup.
+const SELECTED_CLASS = 'lp-bb-selected';
+
+// Set on the preview document once it has been written and wired up.
+const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
+
+// The preview document's own chrome. It is never exported — only the generated
+// markup is — so these rules exist purely to make the surface usable: no body
+// margin so the block sits at the real template width, and an outline plus a
+// pointer cursor so the rows read as clickable.
+const PREVIEW_DOCUMENT = [
+  '<!DOCTYPE html><html><head><meta charset="utf-8" /><style>',
+  'body{margin:0;padding:0;background:#ffffff;}',
+  'table{border-collapse:collapse;}',
+  'img{max-width:100%;}',
+  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;}`,
+  `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
+  'outline:2px solid #00acdc;outline-offset:-2px;}',
+  '</style></head><body></body></html>',
+].join('');
 
 let sequence = 0;
 const nextId = () => `el-${Date.now().toString(36)}-${++sequence}`;
@@ -93,6 +122,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   watch: {
     html() {
       this.scheduleRender();
+    },
+    // Only the outline moves, so the body is left alone — re-rendering it would
+    // refetch the images on every change of selection.
+    selectedId() {
+      this.applySelectionHighlight();
     },
   },
   mounted() {
@@ -200,24 +234,80 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       });
     },
 
+    // The preview document, written once and then only ever refilled.
+    //
+    // Guarded by a flag on the document rather than by `!doc.body`: a fresh
+    // src-less iframe is already at about:blank *with* an empty body, so that
+    // test skipped the write — and with it the stylesheet. The flag disappears
+    // with the document, and the modal destroys its content on close
+    // (`v-if="isOpen"`), so a reopened modal writes a new one.
+    ensurePreviewDocument() {
+      const frame = this.$refs.previewFrame;
+      if (!frame || !frame.contentDocument) return null;
+      if (frame.contentDocument[PREVIEW_READY_FLAG]) {
+        return frame.contentDocument;
+      }
+
+      frame.contentDocument.open();
+      frame.contentDocument.write(PREVIEW_DOCUMENT);
+      frame.contentDocument.close();
+
+      // Re-read it: `close()` can hand back a different document object.
+      const doc = frame.contentDocument;
+      doc[PREVIEW_READY_FLAG] = true;
+      doc.addEventListener('click', this.handlePreviewClick);
+      return doc;
+    },
+
     renderPreview() {
+      const doc = this.ensurePreviewDocument();
+      if (!doc || !doc.body) return;
+
+      // Replacing the body, never the document: reloading is what makes images
+      // flicker and the scroll jump.
+      doc.body.innerHTML = this.html;
+      this.applySelectionHighlight();
+    },
+
+    // Selecting by clicking the rendered block, rather than only through the
+    // list on the left. `closest` walks up from whatever was actually clicked —
+    // a word inside a paragraph, a pixel of an image — to the row that carries
+    // the element id.
+    handlePreviewClick(event) {
+      // The preview holds real links: a button renders an `<a href>`, and
+      // clicking one would navigate the iframe away from the composition.
+      event.preventDefault();
+
+      const target = event.target;
+      const row =
+        target && typeof target.closest === 'function'
+          ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
+          : null;
+      if (!row) return;
+
+      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
+      if (this.state.elements.some((element) => element.id === id)) {
+        this.selectedId = id;
+      }
+    },
+
+    // Marks the selected row in the preview, so the selection reads the same on
+    // both sides. Re-applied after every render, since replacing the body drops
+    // the class with everything else.
+    //
+    // Compared attribute by attribute rather than through a CSS selector: the
+    // id comes from stored state, which is treated as hostile everywhere else
+    // (see state.js), and there are at most a handful of rows.
+    applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
       const doc = frame && frame.contentDocument;
-      if (!doc) return;
+      if (!doc || !doc.body) return;
 
-      // Written once: replacing the whole document on every render is what
-      // makes images flicker and the scroll jump.
-      if (!doc.body) {
-        doc.open();
-        doc.write(
-          '<!DOCTYPE html><html><head><meta charset="utf-8" />' +
-            '<style>body{margin:0;padding:0;background:#ffffff;}' +
-            'table{border-collapse:collapse;}img{max-width:100%;}</style>' +
-            '</head><body></body></html>'
-        );
-        doc.close();
-      }
-      doc.body.innerHTML = this.html;
+      const rows = doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`);
+      Array.prototype.forEach.call(rows, (row) => {
+        const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedId;
+        row.classList.toggle(SELECTED_CLASS, selected);
+      });
     },
 
     handleApply() {
