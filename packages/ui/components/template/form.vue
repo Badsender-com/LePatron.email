@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Trash2,
   Code2,
+  LayoutTemplate,
 } from 'lucide-vue';
 
 const SUPPORTED_IMAGES_FORMAT = '.png,.gif,.jpg,.webp';
@@ -38,6 +39,7 @@ export default {
     LucideExternalLink: ExternalLink,
     LucideTrash2: Trash2,
     LucideCode2: Code2,
+    LucideLayoutTemplate: LayoutTemplate,
   },
   mixins: [validationMixin],
   SUPPORTED_IMAGES_FORMAT,
@@ -55,6 +57,7 @@ export default {
         description: '',
         groupId: '',
         htmlBlockEnabled: false,
+        blockBuilderEnabled: false,
         ...this.template,
       },
       markup: null,
@@ -206,6 +209,10 @@ export default {
         formData.append(
           'htmlBlockEnabled',
           this.localTemplate.htmlBlockEnabled ? 'true' : 'false'
+        );
+        formData.append(
+          'blockBuilderEnabled',
+          this.localTemplate.blockBuilderEnabled ? 'true' : 'false'
         );
       }
 
@@ -606,6 +613,36 @@ export default {
           </div>
           <v-switch
             v-model="localTemplate.htmlBlockEnabled"
+            hide-details
+            :disabled="disabled"
+            class="option-card__switch"
+          />
+        </div>
+
+        <!-- Independent of the one above: a client can be given the builder,
+             and its guard rails, without being handed raw HTML. -->
+        <div class="option-card">
+          <div class="option-card__content">
+            <div class="option-card__icon">
+              <lucide-layout-template :size="28" color="#00acdc" />
+            </div>
+            <div class="option-card__info">
+              <div class="option-card__name">
+                {{ $t('templates.blockBuilder.name') }}
+              </div>
+              <div class="option-card__description">
+                {{ $t('templates.blockBuilder.description') }}
+              </div>
+              <div
+                v-if="localTemplate.blockBuilderEnabled"
+                class="option-card__hint"
+              >
+                {{ $t('templates.blockBuilder.hint') }}
+              </div>
+            </div>
+          </div>
+          <v-switch
+            v-model="localTemplate.blockBuilderEnabled"
             hide-details
             :disabled="disabled"
             class="option-card__switch"

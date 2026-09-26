@@ -1,19 +1,21 @@
 'use strict';
 
 const {
-  validateHtmlCodeBlocks,
-  findLongestHtmlCodeBlock,
+  validateSyntheticBlocks,
+  findLongestSyntheticBlock,
   HTML_CODE_MAX_LENGTH,
-} = require('../../../packages/server/mailing/html-code-block-guard.js');
+} = require('../../../packages/server/mailing/synthetic-block-guard.js');
 
 const htmlBlock = (html) => ({ type: 'htmlCodeBlock', htmlCode: html });
 const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
 
 describe('html code block guard', () => {
-  describe('findLongestHtmlCodeBlock', () => {
+  describe('findLongestSyntheticBlock', () => {
     it('returns 0 when there is no HTML code block', () => {
       expect(
-        findLongestHtmlCodeBlock(dataWith({ type: 'textBlock', text: 'hello' }))
+        findLongestSyntheticBlock(
+          dataWith({ type: 'textBlock', text: 'hello' })
+        )
       ).toBe(0);
     });
 
@@ -24,35 +26,35 @@ describe('html code block guard', () => {
         htmlBlock('abcd'),
         htmlBlock('abc')
       );
-      expect(findLongestHtmlCodeBlock(data)).toBe(4);
+      expect(findLongestSyntheticBlock(data)).toBe(4);
     });
 
     it('ignores a non-string value', () => {
       expect(
-        findLongestHtmlCodeBlock(dataWith({ type: 'htmlCodeBlock' }))
+        findLongestSyntheticBlock(dataWith({ type: 'htmlCodeBlock' }))
       ).toBe(0);
       expect(
-        findLongestHtmlCodeBlock(
+        findLongestSyntheticBlock(
           dataWith({ type: 'htmlCodeBlock', htmlCode: 42 })
         )
       ).toBe(0);
     });
 
     it('tolerates malformed or missing data', () => {
-      expect(findLongestHtmlCodeBlock(undefined)).toBe(0);
-      expect(findLongestHtmlCodeBlock(null)).toBe(0);
-      expect(findLongestHtmlCodeBlock({})).toBe(0);
-      expect(findLongestHtmlCodeBlock({ mainBlocks: {} })).toBe(0);
-      expect(findLongestHtmlCodeBlock({ mainBlocks: { blocks: null } })).toBe(
+      expect(findLongestSyntheticBlock(undefined)).toBe(0);
+      expect(findLongestSyntheticBlock(null)).toBe(0);
+      expect(findLongestSyntheticBlock({})).toBe(0);
+      expect(findLongestSyntheticBlock({ mainBlocks: {} })).toBe(0);
+      expect(findLongestSyntheticBlock({ mainBlocks: { blocks: null } })).toBe(
         0
       );
-      expect(findLongestHtmlCodeBlock(dataWith(null, undefined))).toBe(0);
+      expect(findLongestSyntheticBlock(dataWith(null, undefined))).toBe(0);
     });
   });
 
-  describe('validateHtmlCodeBlocks', () => {
+  describe('validateSyntheticBlocks', () => {
     it('accepts a mailing with no HTML code block', () => {
-      const result = validateHtmlCodeBlocks(
+      const result = validateSyntheticBlocks(
         dataWith({ type: 'textBlock', text: 'hello' })
       );
       expect(result.valid).toBe(true);
@@ -61,12 +63,12 @@ describe('html code block guard', () => {
 
     it('accepts a block exactly at the limit', () => {
       const data = dataWith(htmlBlock('x'.repeat(HTML_CODE_MAX_LENGTH)));
-      expect(validateHtmlCodeBlocks(data).valid).toBe(true);
+      expect(validateSyntheticBlocks(data).valid).toBe(true);
     });
 
     it('rejects a block one character over the limit', () => {
       const data = dataWith(htmlBlock('x'.repeat(HTML_CODE_MAX_LENGTH + 1)));
-      const result = validateHtmlCodeBlocks(data);
+      const result = validateSyntheticBlocks(data);
       expect(result.valid).toBe(false);
       expect(result.length).toBe(HTML_CODE_MAX_LENGTH + 1);
     });
@@ -78,17 +80,17 @@ describe('html code block guard', () => {
         htmlBlock('small'),
         htmlBlock('x'.repeat(HTML_CODE_MAX_LENGTH + 1))
       );
-      expect(validateHtmlCodeBlocks(data).valid).toBe(false);
+      expect(validateSyntheticBlocks(data).valid).toBe(false);
     });
 
     it('honours an explicit limit', () => {
       const data = dataWith(htmlBlock('abcdef'));
-      expect(validateHtmlCodeBlocks(data, 5).valid).toBe(false);
-      expect(validateHtmlCodeBlocks(data, 6).valid).toBe(true);
+      expect(validateSyntheticBlocks(data, 5).valid).toBe(false);
+      expect(validateSyntheticBlocks(data, 6).valid).toBe(true);
     });
 
     it('accepts an absent payload, so a save without data is untouched', () => {
-      expect(validateHtmlCodeBlocks(undefined).valid).toBe(true);
+      expect(validateSyntheticBlocks(undefined).valid).toBe(true);
     });
   });
 });
@@ -97,20 +99,20 @@ describe('html code block guard', () => {
 // is injected into every template: on its own it stopped no hand-written request.
 describe('html code block guard — the template flag', () => {
   const {
-    findHtmlCodeBlocks,
-    bringsDisallowedHtmlCode,
-    assertHtmlCodeBlockContentAllowed,
-    hasHtmlCodeBlock,
-  } = require('../../../packages/server/mailing/html-code-block-guard.js');
+    findSyntheticBlocks,
+    bringsDisallowedSyntheticHtml,
+    assertSyntheticBlockContentAllowed,
+    hasSyntheticBlock,
+  } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 
-  describe('findHtmlCodeBlocks', () => {
+  describe('findSyntheticBlocks', () => {
     it('finds blocks in every container, not only mainBlocks', () => {
       const data = {
         titleText: 'x',
         mainBlocks: { blocks: [htmlBlock('a')] },
         footerBlocks: { blocks: [{ type: 'textBlock' }, htmlBlock('b')] },
       };
-      expect(findHtmlCodeBlocks(data).map((b) => b.htmlCode)).toEqual([
+      expect(findSyntheticBlocks(data).map((b) => b.htmlCode)).toEqual([
         'a',
         'b',
       ]);
@@ -118,13 +120,17 @@ describe('html code block guard — the template flag', () => {
 
     it('measures the size across containers too', () => {
       const data = { footerBlocks: { blocks: [htmlBlock('x'.repeat(10))] } };
-      expect(validateHtmlCodeBlocks(data, 5).valid).toBe(false);
+      expect(validateSyntheticBlocks(data, 5).valid).toBe(false);
     });
   });
 
-  describe('bringsDisallowedHtmlCode', () => {
+  describe('bringsDisallowedSyntheticHtml', () => {
     const check = (data, previousData, htmlBlockEnabled) =>
-      bringsDisallowedHtmlCode({ data, previousData, htmlBlockEnabled });
+      bringsDisallowedSyntheticHtml({
+        data,
+        previousData,
+        flags: { htmlBlockEnabled },
+      });
 
     it('allows anything when the template enables the block', () => {
       expect(check(dataWith(htmlBlock('<p>new</p>')), dataWith(), true)).toBe(
@@ -169,42 +175,42 @@ describe('html code block guard — the template flag', () => {
     });
   });
 
-  describe('assertHtmlCodeBlockContentAllowed (personalized blocks)', () => {
+  describe('assertSyntheticBlockContentAllowed (personalized blocks)', () => {
     it('refuses an HTML code block on a template without the flag', () => {
       expect(() =>
-        assertHtmlCodeBlockContentAllowed({
+        assertSyntheticBlockContentAllowed({
           content: htmlBlock('<p>x</p>'),
-          htmlBlockEnabled: false,
+          flags: { htmlBlockEnabled: false },
         })
       ).toThrow(expect.objectContaining({ status: 403 }));
     });
 
     it('accepts the stored block unchanged', () => {
       expect(() =>
-        assertHtmlCodeBlockContentAllowed({
+        assertSyntheticBlockContentAllowed({
           content: htmlBlock('<p>x</p>'),
           previousContent: htmlBlock('<p>x</p>'),
-          htmlBlockEnabled: false,
+          flags: { htmlBlockEnabled: false },
         })
       ).not.toThrow();
     });
 
     it('accepts any other block', () => {
       expect(() =>
-        assertHtmlCodeBlockContentAllowed({
+        assertSyntheticBlockContentAllowed({
           content: { type: 'textBlock', text: '<p>x</p>' },
-          htmlBlockEnabled: false,
+          flags: { htmlBlockEnabled: false },
         })
       ).not.toThrow();
     });
   });
 
-  describe('hasHtmlCodeBlock', () => {
+  describe('hasSyntheticBlock', () => {
     it('recognizes a model and a single block', () => {
-      expect(hasHtmlCodeBlock(dataWith(htmlBlock('x')))).toBe(true);
-      expect(hasHtmlCodeBlock(htmlBlock('x'))).toBe(true);
-      expect(hasHtmlCodeBlock(dataWith({ type: 'textBlock' }))).toBe(false);
-      expect(hasHtmlCodeBlock(undefined)).toBe(false);
+      expect(hasSyntheticBlock(dataWith(htmlBlock('x')))).toBe(true);
+      expect(hasSyntheticBlock(htmlBlock('x'))).toBe(true);
+      expect(hasSyntheticBlock(dataWith({ type: 'textBlock' }))).toBe(false);
+      expect(hasSyntheticBlock(undefined)).toBe(false);
     });
   });
 });

@@ -327,10 +327,31 @@ module.exports = {
   'widget-code-edit-css': 'Edit the email CSS',
   'widget-code-css-hint':
     'Added to the <head> of the exported email. Shared by every block of this mailing.',
+  // Block builder
+  'block-builder-select-element': 'Select an element to edit it.',
+  'block-builder-choose-image': 'Choose an image',
+  'block-builder-change-image': 'Change the image',
+  'block-builder-replaces-markup':
+    'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
+  'block-builder-block-name': 'Composed block',
+  'block-builder-block-empty': 'Composed block — click to compose',
+  'widget-block-builder-compose': 'Compose a block',
+  'widget-block-builder-disabled':
+    'The block builder is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
+  'block-builder-modal-title': 'Compose a block',
+  'block-builder-add': 'Add',
+  'block-builder-elements': 'Elements',
+  'block-builder-empty': 'No element yet. Add one to start.',
+  'block-builder-desktop': 'Desktop',
+  'block-builder-mobile': 'Mobile',
+  'block-builder-preview-hint':
+    'Indicative preview — browser rendering, not mail client rendering.',
   'widget-code-disabled':
     'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'save-message-html-code-disabled':
     'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-block-builder-disabled':
+    'Save refused: the block builder is not enabled on this template.',
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',

@@ -1201,6 +1201,12 @@ export default {
       description: 'Permet de coller du code HTML libre entre deux blocs du template.',
       hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
     },
+    blockBuilder: {
+      name: 'Composer un bloc',
+      description:
+        'Permet de composer un bloc visuellement. C\'est LePatron qui écrit le HTML.',
+      hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',

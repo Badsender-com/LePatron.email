@@ -138,7 +138,7 @@ async function readMarkup(req, res) {
 }
 
 // Boolean fields of this resource that are sent through `multipart/form-data`.
-const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled'];
+const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled', 'blockBuilderEnabled'];
 
 /**
  * @api {put} /templates/:templateId template update
@@ -153,6 +153,7 @@ const MULTIPART_BOOLEAN_FIELDS = ['htmlBlockEnabled'];
  * @apiParam (Body) {File} [markup] HTML Form-based File Upload
  * @apiParam (Body) {File[]} [images] Images Form-based File Upload
  * @apiParam (Body) {Boolean} [htmlBlockEnabled] make the generic "HTML code" block available
+ * @apiParam (Body) {Boolean} [blockBuilderEnabled] make the block builder available
  *
  * @apiUse template
  */

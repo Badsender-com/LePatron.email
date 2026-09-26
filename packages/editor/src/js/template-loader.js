@@ -8,7 +8,7 @@ var templateConverter = require('./converter/main.js');
 var console = require('console');
 var initializeViewmodel = require('./viewmodel.js');
 var templateSystem = require('./bindings/choose-template.js');
-var htmlCodeBlockInjector = require('./ext/html-code-block/inject-html-code-block.js');
+var syntheticBlockInjector = require('./ext/html-code-block/inject-synthetic-blocks.js');
 
 if (!$.ui.version.match(/^1\.11\..*$/))
   throw (
@@ -257,12 +257,12 @@ if (process.env.MOSAICO) {
       // Make the generic "HTML code" block available in every template, without
       // touching any client template. Unconditional on purpose: gating the block
       // definition would make checkModel splice already stored blocks out of
-      // existing mailings. See ext/html-code-block/inject-html-code-block.js.
+      // existing mailings. See ext/html-code-block/inject-synthetic-blocks.js.
       var res = templateCompiler(
         performanceAwareCaller,
         templateUrlConverter,
         'template',
-        htmlCodeBlockInjector.injectHtmlCodeBlock(templatecode),
+        syntheticBlockInjector.injectSyntheticBlocks(templatecode),
         jsorjson,
         metadata,
         extensions,
@@ -496,13 +496,14 @@ var templateCompiler = function (
   plugins.push(iFramePlugin);
   plugins.push(templatesPlugin);
 
-  // Palette contents. The synthetic "HTML code" block always goes last, and is
-  // hidden altogether when the template flag is off. `blockDefs` itself stays
-  // untouched: checkModel (above) must keep seeing every known block type, or it
-  // would splice stored blocks out of the user's content.
-  var paletteBlockDefs = htmlCodeBlockInjector.orderPaletteBlockDefs(
+  // Palette contents. The synthetic blocks always go last, and each is hidden
+  // altogether when its own template flag is off — they are independent, so a
+  // client can have the builder without the raw HTML block. `blockDefs` itself
+  // stays untouched: checkModel (above) must keep seeing every known block type,
+  // or it would splice stored blocks out of the user's content.
+  var paletteBlockDefs = syntheticBlockInjector.orderPaletteBlockDefs(
     blockDefs,
-    !!(metadata && metadata.htmlBlockEnabled)
+    metadata
   );
 
   // initialize the viewModel object based on the content model.
