@@ -325,6 +325,9 @@ module.exports = {
   'html-code-too-large':
     'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
   // Block builder
+  'block-builder-select-element': 'Select an element to edit it.',
+  'block-builder-choose-image': 'Choose an image',
+  'block-builder-change-image': 'Change the image',
   'block-builder-replaces-markup':
     'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
   'widget-code-compose': 'Compose visually',

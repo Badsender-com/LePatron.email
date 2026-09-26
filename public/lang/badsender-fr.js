@@ -334,6 +334,9 @@ module.exports = {
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
   // Block builder
+  'block-builder-select-element': 'Sélectionnez un élément pour le régler.',
+  'block-builder-choose-image': 'Choisir une image',
+  'block-builder-change-image': "Changer l'image",
   'block-builder-replaces-markup':
     "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
   'widget-code-compose': 'Composer visuellement',
