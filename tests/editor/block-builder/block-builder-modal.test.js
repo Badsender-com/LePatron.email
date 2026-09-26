@@ -8,9 +8,10 @@
 // what gets added, selected, moved, removed, and what finally lands in the
 // block — rather than the pixels, which the gallery covers in real clients.
 //
-// The one contract worth stating out loud: the builder writes into the SAME
-// property the code editor writes by hand. Everything downstream is the
-// machinery already in production, and this test pins that it stays so.
+// The one contract worth stating out loud: the builder writes markup and state
+// through the accessors it is handed, and writes them in a single undo step.
+// Everything downstream is the machinery already in production, and this test
+// pins that it stays so.
 
 const Vue = require('vue/dist/vue.common');
 
