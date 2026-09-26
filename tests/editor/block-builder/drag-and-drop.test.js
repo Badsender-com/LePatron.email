@@ -126,9 +126,37 @@ const drop = (modal, doc, clientY) => {
   return event;
 };
 
+const PALETTE_TYPES = ['text', 'image', 'button', 'divider', 'spacer'];
+
+/**
+ * Starts a drag the way the browser does: a real event, dispatched on the real
+ * palette entry.
+ *
+ * Calling the handler with a hand-made object instead is what let the whole
+ * feature ship broken — a plain object has no `stopPropagation`, and no
+ * ancestor ever sees the event, so the host page's guard was invisible here.
+ */
+/**
+ * The palette entry for a type.
+ *
+ * Queried on the document rather than through the component's `$el`: its root
+ * is a `<modal-component>` whose own root sits behind a `v-if`, so Vue 2 leaves
+ * that reference pointing at the placeholder comment until something forces
+ * another render — which made it work in some tests and throw in others.
+ */
+const paletteEntry = (type) =>
+  document.querySelectorAll('.bb-modal__add')[PALETTE_TYPES.indexOf(type)];
+
 const startDrag = (modal, type) => {
-  const event = { dataTransfer: transfer() };
-  modal.handleDragStart(type, event);
+  const entry = paletteEntry(type);
+  expect(entry).toBeTruthy();
+
+  const event = new window.Event('dragstart', {
+    bubbles: true,
+    cancelable: true,
+  });
+  event.dataTransfer = transfer();
+  entry.dispatchEvent(event);
   return event;
 };
 
@@ -147,6 +175,61 @@ describe('starting a drag from the palette', () => {
     expect(event.dataTransfer.getData('text/plain')).toBe('image');
     expect(event.dataTransfer.effectAllowed).toBe('copy');
     expect(doc.body.classList.contains(DRAGGING)).toBe(true);
+  });
+});
+
+// The bug this file did not catch the first time.
+//
+// Mosaico's `fixPageEvents` (template-loader.js, called from app.js on every
+// editor load) puts listeners on `window` that cancel `dragstart` and `drag`
+// outright, so that the browser's native drag cannot fight the jQuery UI
+// sortable driving the canvas. A native drag therefore cannot start anywhere on
+// the editor page unless the event is kept away from `window`.
+//
+// Nothing here simulated the host page, so D2 passed its tests and did nothing
+// in the browser. These two do simulate it.
+describe('the editor page cancels native drags, and the palette survives it', () => {
+  /** What fixPageEvents installs, near enough for this. */
+  function installMosaicoDragGuard() {
+    const cancel = (event) => event.preventDefault();
+    window.addEventListener('dragstart', cancel, false);
+    window.addEventListener('drag', cancel, false);
+    return () => {
+      window.removeEventListener('dragstart', cancel, false);
+      window.removeEventListener('drag', cancel, false);
+    };
+  }
+
+  function dispatchOnPalette(modal, type) {
+    const entry = paletteEntry('text');
+    expect(entry).toBeTruthy();
+    const event = new window.Event(type, { bubbles: true, cancelable: true });
+    event.dataTransfer = transfer();
+    entry.dispatchEvent(event);
+    return event;
+  }
+
+  let uninstall;
+  beforeEach(() => {
+    uninstall = installMosaicoDragGuard();
+  });
+  afterEach(() => uninstall());
+
+  it('starts the drag even though window cancels dragstart', async () => {
+    const { modal } = await open([]);
+
+    const event = dispatchOnPalette(modal, 'dragstart');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(modal.draggingType).toBe('text');
+  });
+
+  // `drag` fires for the whole gesture, and cancelling it cancels the drop.
+  it('keeps the drag alive, since cancelling `drag` would end it', async () => {
+    const { modal } = await open([]);
+    dispatchOnPalette(modal, 'dragstart');
+
+    expect(dispatchOnPalette(modal, 'drag').defaultPrevented).toBe(false);
   });
 });
 
