@@ -34,6 +34,10 @@ module.exports = `<modal-component
           :key="item.type"
           type="button"
           class="bb-modal__add"
+          :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
+          draggable="true"
+          @dragstart="handleDragStart(item.type, $event)"
+          @dragend="handleDragEnd"
           @click.prevent="addElement(item.type)">+ {{ vm.t(item.labelKey) }}</button>
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>

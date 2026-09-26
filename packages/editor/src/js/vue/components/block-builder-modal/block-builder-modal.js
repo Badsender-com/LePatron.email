@@ -4,6 +4,7 @@ const { ElementSettingsComponent, LABEL_KEYS } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
+const { DragSurfaceMixin } = require('./drag-surface.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -44,9 +45,15 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // The preview is a surface of its own — writing the iframe document,
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
-  // element-list.js. And Escape or a backdrop click ask before losing work —
+  // element-list.js. The drag adds the gesture on top of the preview — see
+  // drag-surface.js. And Escape or a backdrop click ask before losing work —
   // see dismissal.js.
-  mixins: [PreviewSurfaceMixin, ElementListMixin, DismissalMixin],
+  mixins: [
+    PreviewSurfaceMixin,
+    ElementListMixin,
+    DragSurfaceMixin,
+    DismissalMixin,
+  ],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -74,6 +81,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
     frameRequest: null,
+    // The palette entry currently being dragged, and where it would land.
+    draggingType: null,
+    dropIndex: null,
+    // A render that fell due mid-drag and was held back.
+    renderHeldDuringDrag: false,
   }),
   computed: {
     selected() {
@@ -209,6 +221,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // Also what the modal calls once dismissed (`on-close`), since a dismissal
     // closes it without going through closeModal().
     resetComposition() {
+      this.draggingType = null;
+      this.dropIndex = null;
+      this.renderHeldDuringDrag = false;
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
