@@ -51,6 +51,9 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
   components: { RichTextField: RichTextFieldComponent },
   props: {
     element: { type: Object, default: null },
+    // Translated by the modal, which holds the view-model. Passing the strings
+    // down keeps this component free of the editor's i18n plumbing.
+    labels: { type: Object, default: () => ({}) },
   },
   data: () => ({ alignments: ALIGNMENTS }),
   computed: {
@@ -75,9 +78,17 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
     pickImage(key) {
       this.$emit('pick-image', key);
     },
+    // A method rather than a ternary in the template: an apostrophe inside a
+    // Vue expression cannot be escaped when the template is itself a JS
+    // template literal — `\'` becomes `'` before Vue ever sees it, and the
+    // expression fails to compile, taking the whole panel down with it.
+    pickLabel(field) {
+      const key = this.element[field.key] ? 'change' : 'choose';
+      return this.labels[key];
+    },
   },
   template: `<div class="bb-settings">
-  <p v-if="!element" class="bb-settings__empty">Sélectionnez un élément pour le régler.</p>
+  <p v-if="!element" class="bb-settings__empty">{{ labels.empty }}</p>
   <div v-else>
     <div v-for="field in fields" :key="field.key" class="bb-settings__field">
       <label class="bb-settings__label">{{ field.label }}</label>
@@ -96,7 +107,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
         <button
           type="button"
           class="bb-settings__pick"
-          @click.prevent="pickImage(field.key)">{{ element[field.key] ? 'Changer l\'image' : 'Choisir une image' }}</button>
+          @click.prevent="pickImage(field.key)">{{ pickLabel(field) }}</button>
       </div>
 
       <input

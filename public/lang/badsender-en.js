@@ -328,6 +328,9 @@ module.exports = {
   'widget-code-css-hint':
     'Added to the <head> of the exported email. Shared by every block of this mailing.',
   // Block builder
+  'block-builder-select-element': 'Select an element to edit it.',
+  'block-builder-choose-image': 'Choose an image',
+  'block-builder-change-image': 'Change the image',
   'block-builder-replaces-markup':
     'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
   'widget-code-compose': 'Compose visually',

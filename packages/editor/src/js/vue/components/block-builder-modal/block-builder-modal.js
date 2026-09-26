@@ -77,6 +77,15 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     isEmpty() {
       return this.state.elements.length === 0;
     },
+    // Translated here, where the view-model is, and handed to the settings
+    // panel as plain strings.
+    settingsLabels() {
+      return {
+        empty: this.vm.t('block-builder-select-element'),
+        choose: this.vm.t('block-builder-choose-image'),
+        change: this.vm.t('block-builder-change-image'),
+      };
+    },
   },
   watch: {
     html() {
@@ -288,7 +297,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       </div>
 
       <div class="bb-modal__column bb-modal__column--right">
-        <element-settings :element="selected" @change="applySetting" @pick-image="pickImage" />
+        <element-settings :element="selected" :labels="settingsLabels" @change="applySetting" @pick-image="pickImage" />
       </div>
     </div>
   </div>
