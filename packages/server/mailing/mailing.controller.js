@@ -6,10 +6,11 @@ const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
-  validateHtmlCodeBlocks,
-  hasHtmlCodeBlock,
-  assertHtmlCodeAllowed,
-} = require('./html-code-block-guard.js');
+  validateSyntheticBlocks,
+  hasSyntheticBlock,
+  assertSyntheticHtmlAllowed,
+  TEMPLATE_FLAG_PROJECTION,
+} = require('./synthetic-block-guard.js');
 const {
   isHeadCssEnabled,
   validateHeadCss,
@@ -406,7 +407,7 @@ async function previewHtml(req, res) {
 }
 
 /**
- * Throws when the HTML code blocks or the head CSS of the request are past
+ * Throws when the synthetic blocks or the head CSS of the request are past
  * their limit.
  *
  * The editor enforces both too, but `data` is an unvalidated Mixed field and
@@ -417,7 +418,7 @@ async function previewHtml(req, res) {
  * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE or HEAD_CSS_TOO_LARGE
  */
 function assertPastedContentSizes(body) {
-  if (!validateHtmlCodeBlocks(body.data).valid) {
+  if (!validateSyntheticBlocks(body.data).valid) {
     throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
   }
   if (!validateHeadCss(body.headCss).valid) {
@@ -452,29 +453,34 @@ function applyMosaicoUpdate(mailing, body, user) {
 }
 
 /**
- * Throws when the request brings an HTML code block or head CSS the mailing's
+ * Throws when the request brings a synthetic block or head CSS the mailing's
  * template does not allow.
  *
  * Enforced here because the editor only hides the entry points, and a
- * hand-written request could add either to any template. The template is
- * loaded only when there is something to check, so a mailing without either
- * costs no query — and loaded once for both guards, which share the flag.
+ * hand-written request could add either block, or a stylesheet, to any
+ * template. The template is loaded only when there is something to check, so a
+ * mailing without any of it costs no query — and loaded once for every guard,
+ * since a mailing may hold all of it at the same time.
  *
  * @param {Object} body the updateMosaico request body
  * @param {Object} mailing the stored mailing, before this update
- * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED or HEAD_CSS_DISABLED
+ * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED, BLOCK_BUILDER_DISABLED or
+ *   HEAD_CSS_DISABLED
  */
 async function assertTemplateFlags(body, mailing) {
-  if (!hasHtmlCodeBlock(body.data) && !hasHeadCss(body.headCss)) return;
+  if (!hasSyntheticBlock(body.data) && !hasHeadCss(body.headCss)) return;
 
   const template = await Templates.findById(mailing._wireframe)
-    .select({ htmlBlockEnabled: 1 })
+    .select(TEMPLATE_FLAG_PROJECTION)
     .lean();
-  assertHtmlCodeAllowed({
+  assertSyntheticHtmlAllowed({
     data: body.data,
     previousData: mailing.data,
-    htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+    flags: template || {},
   });
+  // The stylesheet rides on the HTML code block's flag: it exists to style
+  // pasted markup, and the builder generates its own CSS rather than writing
+  // it here.
   assertHeadCssAllowed({
     css: body.headCss,
     previousCss: mailing.headCss,

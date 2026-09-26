@@ -1,8 +1,6 @@
 'use strict';
 
-const {
-  BUILDER_STATE_PROPERTY,
-} = require('./html-code-block/constants.js');
+const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
 
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
@@ -25,6 +23,11 @@ const {
 // the Style tab. With the flag off, CSS the email still exports is offered
 // read-only instead, with its delete (`viewModel.isHeadCssReadOnly`), the way
 // this block itself stays without being editable.
+//
+// The block builder is NOT here. It has a block type of its own, and its own
+// widget (badsender-widget-block-builder.js): offering "compose visually" from
+// inside a block named "HTML code" made the choice between the two invisible at
+// the only moment it matters — when the user picks a block from the palette.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
@@ -44,7 +47,6 @@ function html(propAccessor, onfocusbinding, parameters) {
       <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary html-code-widget__button--view-css" data-bind="visible: $root.isHeadCssReadOnly(), button: { icons: { primary: 'lucide lucide-eye' } }, text: $root.t('widget-code-view-css'), click: function() { $root.openHeadCssViewer(); }">View the email CSS</button>
       <p class="html-code-widget__hint html-code-widget__hint--read-only" data-bind="visible: $root.isHeadCssReadOnly(), text: $root.t('head-css-read-only-hint')"></p>
-      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-layout-template' } }, text: $root.t('widget-code-compose'), click: function(blockProperties, evt) { $root.openBlockBuilder('${propAccessor}', blockProperties); }">Compose a block</button>
     </div>
   `;
 }
@@ -52,7 +54,7 @@ function html(propAccessor, onfocusbinding, parameters) {
 module.exports = () => {
   function widget() {
     return {
-      widget: 'code',
+      widget: HTML_CODE_BLOCK.widget,
       defaultParameters: Object.freeze({}),
       html,
     };
@@ -65,34 +67,7 @@ module.exports = () => {
     vm.toggleHtmlCodeModal = null;
 
     vm.isHtmlBlockEditable = function () {
-      return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
-    };
-
-    // Set by the Vue modal when it mounts, like toggleHtmlCodeModal above.
-    vm.toggleBlockBuilderModal = null;
-
-    // The builder writes generated markup into the very same property the code
-    // editor writes by hand. One block type, two ways to fill it — so export,
-    // the inliner's protected zone, the sanitised preview and the template flag
-    // are the machinery already in production.
-    vm.openBlockBuilder = function (propAccessor, blockProperties) {
-      if (!vm.isHtmlBlockEditable()) return;
-      if (typeof vm.toggleBlockBuilderModal !== 'function') return;
-      if (!blockProperties || !blockProperties[propAccessor]) return;
-
-      // Two accessors: the markup the block exports, and the state the builder
-      // reopens from. The second is declared in the injected block definitions
-      // (see inject-html-code-block.js) and is absent only on a block stored
-      // before it existed — which the modal treats as "nothing to reopen".
-      const stateProperty = blockProperties[BUILDER_STATE_PROPERTY];
-
-      vm.toggleBlockBuilderModal(true, {
-        accessor: blockProperties[propAccessor].bind(blockProperties),
-        stateAccessor:
-          typeof stateProperty === 'function'
-            ? stateProperty.bind(blockProperties)
-            : null,
-      });
+      return Boolean(vm.metadata && vm.metadata[HTML_CODE_BLOCK.flag]);
     };
 
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {

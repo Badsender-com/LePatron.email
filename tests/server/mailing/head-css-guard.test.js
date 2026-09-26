@@ -198,6 +198,21 @@ describe('headCssToExport', () => {
     expect(headCssToExport({ data: undefined, headCss: CSS })).toBe('');
   });
 
+  // The builder's block writes its own styles inline: on its own, it does not
+  // keep the head CSS exported.
+  test('is nothing with a block builder block only', () => {
+    expect(
+      headCssToExport({
+        data: {
+          mainBlocks: {
+            blocks: [{ type: 'blockBuilderBlock', builderHtml: '<p>x</p>' }],
+          },
+        },
+        headCss: CSS,
+      })
+    ).toBe('');
+  });
+
   test('is nothing when no CSS is stored', () => {
     expect(
       headCssToExport({

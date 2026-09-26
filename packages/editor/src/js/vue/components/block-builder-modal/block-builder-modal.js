@@ -53,9 +53,12 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   data: () => ({
     accessor: null,
     stateAccessor: null,
-    // True when the block holds markup but no state the builder can reopen —
-    // written by hand, or by a version of the builder that did not store one.
-    // Composing then REPLACES that markup, which the user has to be told.
+    // True when the block holds markup but no state the builder can reopen.
+    // Since the builder has a block type of its own, nobody can have written
+    // that markup by hand: what remains is a state that failed to serialise
+    // (serialiseState returns '' rather than half a state) or one stored by a
+    // version that did not keep one. Composing REPLACES that markup, so the
+    // user is told before they lose it.
     replacesExistingMarkup: false,
     state: emptyState(),
     selectedId: null,

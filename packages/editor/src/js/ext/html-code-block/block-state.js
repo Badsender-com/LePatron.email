@@ -1,10 +1,10 @@
 'use strict';
 
 const ko = require('knockout');
-const { HTML_CODE_BLOCK_TYPE, HTML_CODE_PROPERTY } = require('./constants.js');
+const { SYNTHETIC_BLOCKS, descriptorForType } = require('./block-types.js');
 
-// Predicates about an "HTML code" block, used by the view-model and the
-// wysiwyg block template.
+// Predicates about a synthetic block, used by the view-model and the wysiwyg
+// block template.
 //
 // Every level has to be unwrapped explicitly. Depending on where a block comes
 // from it is either a plain object (a palette definition, straight out of
@@ -17,18 +17,30 @@ const { HTML_CODE_BLOCK_TYPE, HTML_CODE_PROPERTY } = require('./constants.js');
 const unwrap = (value) => ko.utils.unwrapObservable(value);
 
 /**
+ * The descriptor of a block, or null when it is one of the template's own.
+ *
  * @param {Object} block palette definition or block instance, wrapped or not
- * @returns {boolean}
+ * @returns {Object|null}
  */
-function isHtmlCodeBlock(block) {
-  if (!block) return false;
+function descriptorFor(block) {
+  if (!block) return null;
   const unwrapped = unwrap(block);
-  if (!unwrapped) return false;
-  return unwrap(unwrapped.type) === HTML_CODE_BLOCK_TYPE;
+  if (!unwrapped) return null;
+  return descriptorForType(unwrap(unwrapped.type));
 }
 
 /**
- * True for an HTML code block whose markup is still empty.
+ * True for either synthetic block — the pasted one and the composed one.
+ *
+ * @param {Object} block
+ * @returns {boolean}
+ */
+function isSyntheticBlock(block) {
+  return descriptorFor(block) !== null;
+}
+
+/**
+ * True for a synthetic block whose markup is still empty.
  *
  * Such a block renders nothing at all — its content sits behind the `ko if` that
  * data-ko-display generates — and `#main-edit-area .editable` has no min-height,
@@ -37,11 +49,66 @@ function isHtmlCodeBlock(block) {
  * @param {Object} block
  * @returns {boolean}
  */
-function isEmptyHtmlCodeBlock(block) {
-  if (!isHtmlCodeBlock(block)) return false;
+function isEmptySyntheticBlock(block) {
+  const descriptor = descriptorFor(block);
+  if (!descriptor) return false;
   const unwrapped = unwrap(block);
-  const html = unwrap(unwrapped[HTML_CODE_PROPERTY]);
-  return !html;
+  return !unwrap(unwrapped[descriptor.htmlProperty]);
 }
 
-module.exports = { isHtmlCodeBlock, isEmptyHtmlCodeBlock };
+/**
+ * The i18n key of the placeholder to show in an empty synthetic block, or ''.
+ *
+ * Returned as a key rather than resolved here: this module is required by the
+ * binding layer, which has no view-model and therefore no `t`.
+ *
+ * @param {Object} block
+ * @returns {string}
+ */
+function emptyLabelKeyFor(block) {
+  const descriptor = descriptorFor(block);
+  return descriptor ? descriptor.emptyLabelKey : '';
+}
+
+/**
+ * The i18n key of a synthetic block's palette entry, or ''.
+ *
+ * @param {Object} block
+ * @returns {string}
+ */
+function paletteLabelKeyFor(block) {
+  const descriptor = descriptorFor(block);
+  return descriptor ? descriptor.paletteLabelKey : '';
+}
+
+/**
+ * The palette icon class of a synthetic block, or ''.
+ *
+ * @param {Object} block
+ * @returns {string}
+ */
+function paletteIconFor(block) {
+  const descriptor = descriptorFor(block);
+  return descriptor ? descriptor.paletteIcon : '';
+}
+
+/**
+ * A predicate matching one specific synthetic block type.
+ *
+ * @param {Object} descriptor one of SYNTHETIC_BLOCKS
+ * @returns {Function}
+ */
+function matching(descriptor) {
+  return (block) => descriptorFor(block) === descriptor;
+}
+
+module.exports = {
+  descriptorFor,
+  isSyntheticBlock,
+  isEmptySyntheticBlock,
+  emptyLabelKeyFor,
+  paletteLabelKeyFor,
+  paletteIconFor,
+  matching,
+  SYNTHETIC_BLOCKS,
+};

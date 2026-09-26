@@ -41,6 +41,10 @@ const DOC =
 
 const htmlBlock = () => ({ type: 'htmlCodeBlock', htmlCode: '<p>x</p>' });
 const textBlock = () => ({ type: 'textBlock', text: 'Hello' });
+const builderBlock = () => ({
+  type: 'blockBuilderBlock',
+  builderHtml: '<p>x</p>',
+});
 
 // The shape Mosaico gives the content once instrumented: every level an
 // observable, `type` included (see html-code-block/block-state.js).
@@ -121,6 +125,17 @@ describe('hasHtmlCodeBlock', () => {
     expect(hasHtmlCodeBlock({ titleText: 'htmlCodeBlock' })).toBe(false);
     expect(hasHtmlCodeBlock(null)).toBe(false);
     expect(hasHtmlCodeBlock(undefined)).toBe(false);
+  });
+
+  // The builder's block writes its own styles inline: it has nothing for the
+  // head CSS to style, so it does not keep it exported.
+  it('does not count the block builder', () => {
+    expect(hasHtmlCodeBlock({ mainBlocks: { blocks: [builderBlock()] } })).toBe(
+      false
+    );
+    expect(hasHtmlCodeBlock(wrapModel({ mainBlocks: [builderBlock()] }))).toBe(
+      false
+    );
   });
 
   it('reads the instrumented model the editor holds', () => {
@@ -221,6 +236,7 @@ describe('the server counterpart', () => {
       { mainBlocks: { blocks: [{ type: 'htmlCodeBlock', htmlCode: '' }] } },
     ],
     ['no block', { mainBlocks: { blocks: [textBlock()] } }],
+    ['a builder block only', { mainBlocks: { blocks: [builderBlock()] } }],
     ['no container', { titleText: 'htmlCodeBlock' }],
     ['no content', undefined],
   ])('agrees on %s', (_label, data) => {
