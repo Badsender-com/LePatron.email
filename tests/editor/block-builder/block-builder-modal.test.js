@@ -18,11 +18,17 @@ const {
   BlockBuilderModalComponent,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
 
-function mountModal() {
+function mountModal(overrides) {
+  // `currentBgimage` and `showDialogGallery` are the editor's own gallery
+  // dialog, set up by the background image widget. The builder borrows them
+  // rather than shipping a picker of its own.
   const vm = {
     t: (key) => key,
     startMultiple: jest.fn(),
     stopMultiple: jest.fn(),
+    currentBgimage: jest.fn(),
+    showDialogGallery: jest.fn(),
+    ...overrides,
   };
 
   const host = document.createElement('div');
@@ -312,6 +318,47 @@ describe('re-opening a block', () => {
 
       expect(modal.replacesExistingMarkup).toBe(true);
     });
+  });
+});
+
+describe('choosing an image', () => {
+  it('hands the gallery a setter for the selected element', () => {
+    const { vm, modal } = open();
+    modal.addElement('image');
+
+    modal.pickImage('src');
+
+    expect(vm.showDialogGallery).toHaveBeenCalledWith(true);
+    expect(vm.currentBgimage).toHaveBeenCalledTimes(1);
+
+    // The gallery calls the setter with the absolute URL it built.
+    const setter = vm.currentBgimage.mock.calls[0][0];
+    setter('https://images.example.com/visual.png');
+
+    expect(modal.selected.src).toBe('https://images.example.com/visual.png');
+  });
+
+  it('writes the chosen image into the markup', () => {
+    const { vm, modal, written } = open();
+    modal.addElement('image');
+    modal.pickImage('src');
+    vm.currentBgimage.mock.calls[0][0]('https://images.example.com/v.png');
+
+    modal.handleApply();
+
+    expect(written[0]).toContain('src="https://images.example.com/v.png"');
+  });
+
+  // An older editor bundle, or a build without the background image widget.
+  it('does nothing when the gallery is not available', () => {
+    const { modal } = mountModal({
+      currentBgimage: undefined,
+      showDialogGallery: undefined,
+    });
+    modal.handleToggle(true, { accessor: makeAccessor('') });
+    modal.addElement('image');
+
+    expect(() => modal.pickImage('src')).not.toThrow();
   });
 });
 

@@ -158,6 +158,20 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       );
     },
 
+    // Opens the editor's own image gallery — the same dialog the background
+    // image widget uses — rather than a picker of our own. Two reasons: it
+    // already carries the uploads, the two tabs and the loading states, and an
+    // image chosen there gets the absolute URL the ZIP export and the test send
+    // both need. A free URL field would bypass all of that.
+    pickImage(key) {
+      const vm = this.vm;
+      if (typeof vm.currentBgimage !== 'function') return;
+      if (typeof vm.showDialogGallery !== 'function') return;
+
+      vm.currentBgimage((url) => this.applySetting({ key, value: url }));
+      vm.showDialogGallery(true);
+    },
+
     applySetting({ key, value }) {
       const element = this.selected;
       if (!element) return;
@@ -274,7 +288,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       </div>
 
       <div class="bb-modal__column bb-modal__column--right">
-        <element-settings :element="selected" @change="applySetting" />
+        <element-settings :element="selected" @change="applySetting" @pick-image="pickImage" />
       </div>
     </div>
   </div>
