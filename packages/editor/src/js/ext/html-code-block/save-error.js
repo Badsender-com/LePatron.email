@@ -1,11 +1,16 @@
 'use strict';
 
-// Messages for the save refusals that concern the "HTML code" block. Without
+// Messages for the save refusals that concern the synthetic blocks. Without
 // them the user reads the generic "an error occurred while saving", with nothing
 // telling them the template flag or a size limit is the reason.
+//
+// The two blocks get two messages: a client may have the builder and not the
+// HTML code block, and being told the wrong feature is disabled is worse than
+// being told nothing.
 
 const SAVE_ERROR_KEYS = Object.freeze({
   HTML_CODE_BLOCK_DISABLED: 'save-message-html-code-disabled',
+  BLOCK_BUILDER_DISABLED: 'save-message-block-builder-disabled',
   HTML_CODE_BLOCK_TOO_LARGE: 'save-message-html-code-too-large',
   // Head CSS shares HTML_CODE_BLOCK_DISABLED above — one flag, one message.
   HEAD_CSS_TOO_LARGE: 'save-message-head-css-too-large',

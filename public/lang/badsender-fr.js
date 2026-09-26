@@ -342,7 +342,11 @@ module.exports = {
   'block-builder-change-image': "Changer l'image",
   'block-builder-replaces-markup':
     "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
-  'widget-code-compose': 'Composer visuellement',
+  'block-builder-block-name': 'Bloc composé',
+  'block-builder-block-empty': 'Bloc composé — cliquez pour composer',
+  'widget-block-builder-compose': 'Composer un bloc',
+  'widget-block-builder-disabled':
+    "Le block builder n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'block-builder-modal-title': 'Composer un bloc',
   'block-builder-add': 'Ajouter',
   'block-builder-elements': 'Éléments',
@@ -355,6 +359,8 @@ module.exports = {
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
     "Enregistrement refusé : le bloc Code HTML n'est pas activé sur ce template.",
+  'save-message-block-builder-disabled':
+    "Enregistrement refusé : le block builder n'est pas activé sur ce template.",
   'save-message-html-code-too-large':
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-preview-too-large':

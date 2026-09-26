@@ -10,11 +10,14 @@ const {
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 const {
-  isHtmlCodeBlock,
-  isEmptyHtmlCodeBlock,
+  isSyntheticBlock,
+  isEmptySyntheticBlock,
+  emptyLabelKeyFor,
+  paletteLabelKeyFor,
+  paletteIconFor,
 } = require('./ext/html-code-block/block-state.js');
 const {
-  stripEmptyHtmlCodeBlocks,
+  stripEmptySyntheticBlocks,
 } = require('./ext/html-code-block/strip-empty-blocks.js');
 const {
   beginExportSubstitution,
@@ -132,18 +135,22 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.content = content;
   viewModel.blockDefs = blockDefs;
 
-  // The "HTML code" block is injected by LePatron rather than declared by the
-  // template, so it has no `edres/<type>.png` thumbnail in any client template.
-  // The palette falls back to an icon and a translated label for it.
-  viewModel.isSyntheticBlock = isHtmlCodeBlock;
+  // The synthetic blocks are injected by LePatron rather than declared by the
+  // template, so neither has an `edres/<type>.png` thumbnail in any client
+  // template. The palette falls back to an icon and a translated label, both
+  // taken from the block's own descriptor so the two never show up as one.
+  viewModel.isSyntheticBlock = isSyntheticBlock;
+  viewModel.syntheticBlockLabelKey = paletteLabelKeyFor;
+  viewModel.syntheticBlockIcon = paletteIconFor;
 
-  // An "HTML code" block with no markup yet renders nothing at all — its
-  // content is wrapped in a `ko if` by data-ko-display — and
+  // A synthetic block with no markup yet renders nothing at all — its content
+  // is wrapped in a `ko if` by data-ko-display — and
   // `#main-edit-area .editable` has no min-height, so the block would be flat
   // and impossible to click. block-wysiwyg.tmpl.html uses this to show a
   // clickable placeholder instead. Edit mode only: that template is never used
   // for the export, which resolves `<type>-show`.
-  viewModel.isEmptyHtmlBlock = isEmptyHtmlCodeBlock;
+  viewModel.isEmptyHtmlBlock = isEmptySyntheticBlock;
+  viewModel.emptyBlockLabelKey = emptyLabelKeyFor;
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
@@ -747,12 +754,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // Remove trash leftover by TinyMCE
     content = content.replace(/ data-mce-(href|src|style)="[^"]*"/gm, '');
 
-    // Drop the leftover root of an EMPTY "HTML code" block. Its payload is
+    // Drop the leftover root of an EMPTY synthetic block. Its payload is
     // already gone (data-ko-display), but Mosaico never lets a block root
     // disappear, so an untouched block would ship an empty div. Runs after the
     // data-bind removal above, so the root is bare by now, and only ever matches
     // an empty root of ours — a mail without such a block is unchanged.
-    content = stripEmptyHtmlCodeBlocks(content);
+    content = stripEmptySyntheticBlocks(content);
 
     // Replace "replacedstyle" to "style" attributes (chrome puts replacedstyle after style)
     content = content.replace(
