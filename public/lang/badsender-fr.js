@@ -339,6 +339,9 @@ module.exports = {
   'widget-code-css-hint':
     "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   // Block builder
+  'block-builder-select-element': 'Sélectionnez un élément pour le régler.',
+  'block-builder-choose-image': 'Choisir une image',
+  'block-builder-change-image': "Changer l'image",
   'block-builder-replaces-markup':
     "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
   'widget-code-compose': 'Composer visuellement',
