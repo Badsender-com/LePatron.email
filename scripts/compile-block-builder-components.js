@@ -33,7 +33,7 @@ const path = require('path');
 const postcss = require('postcss');
 const tailwind = require('tailwindcss');
 const juice = require('juice');
-const { parse } = require('@vue/compiler-sfc');
+const { parse, compileScript } = require('@vue/compiler-sfc');
 const { createSSRApp } = require('vue3');
 const { renderToString } = require('vue3/server-renderer');
 
@@ -99,7 +99,12 @@ function loadComponent(name) {
   }
 
   // eslint-disable-next-line import/no-dynamic-require, global-require
-  const slots = require(manifestPath);
+  const manifest = require(manifestPath);
+  const slots = manifest.slots || {};
+
+  if (Object.keys(slots).length === 0) {
+    throw new Error(`${name}.slots.js exports no slots.`);
+  }
 
   Object.entries(slots).forEach(([slotName, slot]) => {
     if (!slot || !slot.context) {
@@ -109,7 +114,52 @@ function loadComponent(name) {
     }
   });
 
-  return { template: descriptor.template.content, slots, sfcPath };
+  // A component with no variants compiles to one template. With variants it
+  // compiles to one per entry, each rendered with those props FIXED — which is
+  // how a `v-if` is allowed to exist at all: the generator joins strings, it
+  // never branches, so every branch has to be resolved here.
+  //
+  // `{ default: {} }` keeps the two cases on the same path.
+  const variants = manifest.variants || { default: {} };
+
+  assertPropsDeclared(name, descriptor, slots, variants);
+
+  return { template: descriptor.template.content, slots, variants, sfcPath };
+}
+
+/**
+ * Every prop the component declares must be a slot or a variant prop.
+ *
+ * Without this, a prop the manifest forgot renders as `undefined`: Vue drops
+ * the attribute, no sentinel is created, nothing survives to be caught, and the
+ * component compiles to markup with a hole silently missing. A colour that
+ * never reaches the style, a width that never reaches the tag — and the only
+ * symptom is an email that looks wrong in production.
+ *
+ * `defineProps` is the right place to read it from: it is what the author
+ * already writes, so the two lists cannot drift without one of them being edited.
+ */
+function assertPropsDeclared(name, descriptor, slots, variants) {
+  if (!descriptor.scriptSetup) return;
+
+  const { bindings } = compileScript(descriptor, { id: name });
+  const declared = Object.entries(bindings || {})
+    .filter(([, kind]) => kind === 'props')
+    .map(([prop]) => prop);
+
+  const known = new Set(Object.keys(slots));
+  Object.values(variants).forEach((fixed) =>
+    Object.keys(fixed).forEach((prop) => known.add(prop))
+  );
+
+  const undeclared = declared.filter((prop) => !known.has(prop));
+  if (undeclared.length) {
+    throw new Error(
+      `${name}.vue declares ${undeclared.map((p) => `"${p}"`).join(', ')}, ` +
+        `which ${name}.slots.js neither lists as a slot nor fixes in a ` +
+        'variant. A prop with no context would render as nothing at all.'
+    );
+  }
 }
 
 /**
@@ -117,14 +167,23 @@ function loadComponent(name) {
  *
  * @returns {Promise<string>} HTML still carrying the sentinels
  */
-async function renderWithSentinels({ template, slots }) {
-  const names = Object.keys(slots);
-  const props = names.reduce((all, name) => {
+async function renderWithSentinels({ template, slots }, fixed) {
+  const slotNames = Object.keys(slots);
+  const fixedNames = Object.keys(fixed);
+
+  const props = slotNames.reduce((all, name) => {
     all[name] = sentinelFor(name);
     return all;
   }, {});
 
-  const app = createSSRApp({ props: names, template }, props);
+  // The variant's own props are real values, not sentinels: they are what the
+  // `v-if` reads, and they must not survive into the output.
+  Object.assign(props, fixed);
+
+  const app = createSSRApp(
+    { props: slotNames.concat(fixedNames), template },
+    props
+  );
   return renderToString(app);
 }
 
@@ -159,7 +218,40 @@ async function inlineStyles(html) {
     );
   }
 
-  return inlined.replace(/\s+class="[^"]*"/g, '');
+  return closeVoidTags(
+    reEncodeEntities(inlined.replace(/\s+class="[^"]*"/g, ''))
+  );
+}
+
+/**
+ * Puts back the entities Vue decoded on its way through.
+ *
+ * `&nbsp;` in a template becomes a raw U+00A0 in the render, and the raw
+ * character is not the same thing downstream: the export pipeline encodes
+ * non-ASCII to numeric entities, so what a recipient receives would depend on
+ * which path produced it. The spacer and the divider both rely on that
+ * character keeping a cell from collapsing, so it is written back explicitly
+ * rather than left to whatever runs next.
+ */
+function reEncodeEntities(html) {
+  return html.replace(/\u00a0/g, '&nbsp;');
+}
+
+// Void elements, as HTML5 spells them.
+const VOID_TAG = /<(img|br|hr|input|meta|link|area|base|col|source|track|wbr)\b([^>]*?)\s*\/?>/gi;
+
+/**
+ * Closes void tags the XHTML way.
+ *
+ * Vue's SSR emits `<img …>`, which is right for HTML5 and wrong for the
+ * document these fragments land in: the export declares an XHTML transitional
+ * doctype, as email templates generally do. Every client parses either, so this
+ * is not a rendering fix — it keeps the generated markup consistent with the
+ * document that carries it, and with what the hand-written templates emitted
+ * before they were converted.
+ */
+function closeVoidTags(html) {
+  return html.replace(VOID_TAG, (match, tag, attrs) => `<${tag}${attrs} />`);
 }
 
 /**
@@ -171,15 +263,12 @@ async function inlineStyles(html) {
  */
 function substitutePlaceholders(html, slots, name) {
   let out = html;
+  const used = [];
 
   Object.entries(slots).forEach(([slotName, slot]) => {
     const sentinel = sentinelFor(slotName);
-    if (!out.includes(sentinel)) {
-      throw new Error(
-        `${name}.vue: slot "${slotName}" is declared but never rendered. ` +
-          `Either use it in the template or drop it from ${name}.slots.js.`
-      );
-    }
+    if (!out.includes(sentinel)) return;
+    used.push(slotName);
     out = out.split(sentinel).join(placeholderFor(slotName, slot));
   });
 
@@ -191,7 +280,10 @@ function substitutePlaceholders(html, slots, name) {
     );
   }
 
-  return out;
+  // A slot missing from THIS variant is normal — an image with no link does
+  // not render an `href`. A slot missing from EVERY variant is a dead entry in
+  // the manifest, and that is checked once all of them are compiled.
+  return { html: out, used };
 }
 
 const banner = (name) =>
@@ -207,21 +299,61 @@ const banner = (name) =>
 
 async function compile(name) {
   const component = loadComponent(name);
-  const rendered = await renderWithSentinels(component);
-  const inlined = await inlineStyles(rendered);
-  const template = substitutePlaceholders(inlined, component.slots, name);
+  const variantNames = Object.keys(component.variants);
+  const templates = {};
+  const everUsed = new Set();
 
-  // Compiled by the real engine before being written. It is the engine that
-  // knows which contexts exist, and it throws on one it does not — so an
-  // unknown context fails the build here rather than shipping a template the
-  // editor cannot render. The invariant is checked too, since everything
-  // downstream relies on it.
-  const compiled = compileTemplate(template);
-  if (compiled.chunks.length !== compiled.slots.length + 1) {
-    throw new Error(`${name}: compiled template is inconsistent.`);
+  for (const variant of variantNames) {
+    // eslint-disable-next-line no-await-in-loop
+    const rendered = await renderWithSentinels(
+      component,
+      component.variants[variant]
+    );
+    // eslint-disable-next-line no-await-in-loop
+    const inlined = await inlineStyles(rendered);
+    const { html, used } = substitutePlaceholders(
+      inlined,
+      component.slots,
+      `${name} (${variant})`
+    );
+
+    used.forEach((slot) => everUsed.add(slot));
+
+    // Compiled by the real engine before being written. It is the engine that
+    // knows which contexts exist, and it throws on one it does not — so an
+    // unknown context fails the build here rather than shipping a template the
+    // editor cannot render. The invariant is checked too, since everything
+    // downstream relies on it.
+    const compiled = compileTemplate(html);
+    if (compiled.chunks.length !== compiled.slots.length + 1) {
+      throw new Error(
+        `${name} (${variant}): compiled template is inconsistent.`
+      );
+    }
+
+    templates[variant] = html;
   }
 
-  return `${banner(name)}module.exports = ${JSON.stringify(template)};\n`;
+  const dead = Object.keys(component.slots).filter(
+    (slot) => !everUsed.has(slot)
+  );
+  if (dead.length) {
+    throw new Error(
+      `${name}.slots.js declares ${dead.map((d) => `"${d}"`).join(', ')}, ` +
+        'which no variant renders. Use them or drop them.'
+    );
+  }
+
+  const payload =
+    variantNames.length === 1 && variantNames[0] === 'default'
+      ? templates.default
+      : templates;
+
+  return `${banner(name)}module.exports = ${JSON.stringify(
+    payload,
+    null,
+    2
+  )};\n`;
 }
 
 async function main() {
