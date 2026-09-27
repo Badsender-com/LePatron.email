@@ -16,24 +16,29 @@
 // `fallback` is what the generator substitutes when a value is refused at
 // render time (a `javascript:` href, a colour that is not one). It must be a
 // string: it lands verbatim in the compiled template.
+//
+// A component whose markup branches also declares `variants` here — see
+// image.slots.js. The button has one shape, so it has none.
 
 module.exports = {
-  label: { context: 'TEXT' },
-  href: { context: 'URL', fallback: '#' },
-  align: { context: 'ATTR', fallback: 'center' },
-  backgroundColor: { context: 'COLOR', fallback: '#000000' },
-  color: { context: 'COLOR', fallback: '#ffffff' },
-  borderRadius: { context: 'PX', fallback: '4' },
-  fontFamily: {
-    context: 'CSS_VALUE',
-    fallback: 'Arial, Helvetica, sans-serif',
+  slots: {
+    label: { context: 'TEXT' },
+    href: { context: 'URL', fallback: '#' },
+    align: { context: 'ATTR', fallback: 'center' },
+    backgroundColor: { context: 'COLOR', fallback: '#000000' },
+    color: { context: 'COLOR', fallback: '#ffffff' },
+    borderRadius: { context: 'PX', fallback: '4' },
+    fontFamily: {
+      context: 'CSS_VALUE',
+      fallback: 'Arial, Helvetica, sans-serif',
+    },
+    fontSize: { context: 'PX', fallback: '16' },
+    lineHeight: { context: 'PX', fallback: '20' },
+    verticalPadding: { context: 'PX', fallback: '14' },
+    horizontalPadding: { context: 'PX', fallback: '28' },
+    paddingTop: { context: 'PX', fallback: '8' },
+    paddingRight: { context: 'PX', fallback: '24' },
+    paddingBottom: { context: 'PX', fallback: '8' },
+    paddingLeft: { context: 'PX', fallback: '24' },
   },
-  fontSize: { context: 'PX', fallback: '16' },
-  lineHeight: { context: 'PX', fallback: '20' },
-  verticalPadding: { context: 'PX', fallback: '14' },
-  horizontalPadding: { context: 'PX', fallback: '28' },
-  paddingTop: { context: 'PX', fallback: '8' },
-  paddingRight: { context: 'PX', fallback: '24' },
-  paddingBottom: { context: 'PX', fallback: '8' },
-  paddingLeft: { context: 'PX', fallback: '24' },
 };
