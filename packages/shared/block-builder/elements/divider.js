@@ -8,22 +8,15 @@
 
 const { defineTemplate } = require('../template.js');
 
-const render = defineTemplate(
-  [
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    '<tr>',
-    '<td style="padding:[[paddingTop|PX|8]]px [[paddingRight|PX|24]]px [[paddingBottom|PX|8]]px [[paddingLeft|PX|24]]px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="[[width|CSS_VALUE|100%]]" align="center">',
-    '<tr>',
-    '<td style="border-top:[[thickness|PX|1]]px solid [[color|COLOR|#cccccc]];',
-    ' font-size:0; line-height:0;">&nbsp;</td>',
-    '</tr>',
-    '</table>',
-    '</td>',
-    '</tr>',
-    '</table>',
-  ].join('')
-);
+// The markup is not written here any more. It is compiled from
+// components/divider.vue by `yarn block-builder:compile`, so the people who own the
+// email HTML can write it as a Vue component — the dialect they already use on
+// client templates — instead of a string of placeholders.
+//
+// What arrives here is the same thing it always was: email HTML with typed
+// `[[name|CONTEXT|fallback]]` holes. The engine, the escaping and the runtime
+// are untouched; only the authoring moved.
+const render = defineTemplate(require('../components/divider.compiled.js'));
 
 const defaults = {
   color: '#cccccc',
