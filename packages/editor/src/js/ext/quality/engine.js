@@ -20,15 +20,6 @@ const DEFAULT_RULES = [
   htmlSize,
 ];
 
-const SEVERITIES = ['error', 'warning', 'info'];
-const CATEGORIES = [
-  'technical',
-  'content',
-  'accessibility',
-  'copy',
-  'performance',
-];
-
 // djb2: enough to tell two values apart in a fingerprint, not a security hash.
 function hashString(value) {
   const str = String(value === undefined || value === null ? '' : value);
@@ -133,7 +124,4 @@ function runQualityChecks(viewModel, options = {}) {
 module.exports = {
   runQualityChecks,
   DEFAULT_RULES,
-  SEVERITIES,
-  CATEGORIES,
-  hashString,
 };

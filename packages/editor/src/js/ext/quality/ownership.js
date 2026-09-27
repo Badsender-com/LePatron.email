@@ -39,7 +39,6 @@ function isImageUnset(value, templateDefault) {
 }
 
 module.exports = {
-  TRANSPARENT_GIF,
   getBlockDefault,
   isImageUnset,
 };
