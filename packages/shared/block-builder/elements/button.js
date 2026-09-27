@@ -21,37 +21,16 @@
 
 const { defineTemplate } = require('../template.js');
 
-const render = defineTemplate(
-  [
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    '<tr>',
-    '<td align="[[align|ATTR|center]]"',
-    ' style="padding:[[paddingTop|PX|8]]px [[paddingRight|PX|24]]px [[paddingBottom|PX|8]]px [[paddingLeft|PX|24]]px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0">',
-    '<tr>',
-    '<td align="center" bgcolor="[[backgroundColor|COLOR|#000000]]"',
-    ' style="background-color:[[backgroundColor|COLOR|#000000]];',
-    ' border-radius:[[borderRadius|PX|4]]px;">',
-    '<a href="[[href|URL|#]]" target="_blank"',
-    ' style="display:inline-block;',
-    ' padding:[[verticalPadding|PX|14]]px [[horizontalPadding|PX|28]]px;',
-    ' font-family:[[fontFamily|CSS_VALUE|Arial, Helvetica, sans-serif]];',
-    ' font-size:[[fontSize|PX|16]]px;',
-    ' line-height:[[lineHeight|PX|20]]px;',
-    ' color:[[color|COLOR|#ffffff]];',
-    ' text-decoration:none;',
-    ' border-radius:[[borderRadius|PX|4]]px;',
-    ' mso-line-height-rule:exactly;">',
-    '[[label|TEXT]]',
-    '</a>',
-    '</td>',
-    '</tr>',
-    '</table>',
-    '</td>',
-    '</tr>',
-    '</table>',
-  ].join('')
-);
+// The markup is not written here any more. It is compiled from
+// components/button.vue by `yarn block-builder:compile`, so the people who own
+// the email HTML can write it as a Vue component with Tailwind classes — the
+// dialect they already use on client templates — instead of a string of
+// placeholders.
+//
+// What arrives here is the same thing it always was: email HTML with typed
+// `[[name|CONTEXT|fallback]]` holes. The engine, the escaping and the runtime
+// are untouched; only the authoring moved.
+const render = defineTemplate(require('../components/button.compiled.js'));
 
 const defaults = {
   label: '',
