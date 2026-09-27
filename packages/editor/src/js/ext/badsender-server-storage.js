@@ -213,8 +213,9 @@ function loader(opts) {
       }
 
       // ====================================
-      // Check for missing input values
-      const errors = getErrorsForControlQuality(viewModel);
+      // Check for missing input values, on the same export the ZIP is built from
+      const html = viewModel.exportHTML();
+      const errors = getErrorsForControlQuality(viewModel, { html });
       if (errors && errors.length > 0) {
         displayErrors(errors, viewModel);
         // Scroll to top so the user can see warnings if there is any
@@ -235,7 +236,7 @@ function loader(opts) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-          html: viewModel.exportHTML(),
+          html,
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
