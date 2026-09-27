@@ -13,25 +13,16 @@
 
 const { defineTemplate } = require('../template.js');
 
-const render = defineTemplate(
-  [
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    '<tr>',
-    '<td align="[[align|ATTR|left]]"',
-    ' style="padding:[[paddingTop|PX|0]]px [[paddingRight|PX|0]]px [[paddingBottom|PX|0]]px [[paddingLeft|PX|0]]px;',
-    ' font-family:[[fontFamily|CSS_VALUE|Arial, Helvetica, sans-serif]];',
-    ' font-size:[[fontSize|PX|14]]px;',
-    ' line-height:[[lineHeight|PX|21]]px;',
-    ' color:[[color|COLOR|#000000]];',
-    ' mso-line-height-rule:exactly;">',
-    '[[content|RICH_TEXT]]',
-    '</td>',
-    '</tr>',
-    '</table>',
-  ].join('')
-);
+// The markup is not written here any more. It is compiled from
+// components/text.vue by `yarn block-builder:compile`, so the people who own the
+// email HTML can write it as a Vue component — the dialect they already use on
+// client templates — instead of a string of placeholders.
+//
+// What arrives here is the same thing it always was: email HTML with typed
+// `[[name|CONTEXT|fallback]]` holes. The engine, the escaping and the runtime
+// are untouched; only the authoring moved.
+const render = defineTemplate(require('../components/text.compiled.js'));
 
-// What the editor starts a new element with, and what the gallery renders.
 const defaults = {
   content: '',
   align: 'left',

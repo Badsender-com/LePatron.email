@@ -46,25 +46,47 @@ describe('the compiled components match their sources', () => {
   }, 60000);
 });
 
+/**
+ * The templates a component ships: one, or one per variant.
+ *
+ * A component whose markup branches compiles to an object — the branch is
+ * resolved at build time, once per variant, because the generator joins strings
+ * and never branches. Both shapes have to satisfy everything below.
+ */
+function templatesOf(name) {
+  const compiled = require(path.join(COMPONENTS, `${name}.compiled.js`));
+  return typeof compiled === 'string' ? { default: compiled } : compiled;
+}
+
 describe('every component ships what the generator needs', () => {
   test.each(componentNames)('%s', (name) => {
-    const compiled = require(path.join(COMPONENTS, `${name}.compiled.js`));
+    const templates = templatesOf(name);
+    expect(Object.keys(templates).length).toBeGreaterThan(0);
 
-    expect(typeof compiled).toBe('string');
-    expect(compiled).not.toBe('');
+    Object.values(templates).forEach((compiled) => {
+      expect(typeof compiled).toBe('string');
+      expect(compiled).not.toBe('');
 
-    // Inlining is the whole point of the build step: a block lands in other
-    // people's templates and can rely on no stylesheet but its own.
-    expect(compiled).not.toMatch(/\sclass="/);
+      // Inlining is the whole point of the build step: a block lands in other
+      // people's templates and can rely on no stylesheet but its own.
+      expect(compiled).not.toMatch(/\sclass="/);
 
-    // Vue leaves these behind when a component has several roots or a v-if it
-    // could not resolve. Either would end up in a real email.
-    expect(compiled).not.toContain('<!--[-->');
-    expect(compiled).not.toContain('data-v-');
+      // Vue leaves these behind when a component has several roots or a v-if it
+      // could not resolve. Either would end up in a real email.
+      expect(compiled).not.toContain('<!--[-->');
+      expect(compiled).not.toContain('data-v-');
 
-    // A sentinel that survived means a prop was rendered that no slot declares,
-    // which would ship a placeholder string to a recipient.
-    expect(compiled).not.toMatch(/LPSLOT[A-Za-z0-9]/);
+      // A sentinel that survived means a prop was rendered that no slot declares,
+      // which would ship a placeholder string to a recipient.
+      expect(compiled).not.toMatch(/LPSLOT[A-Za-z0-9]/);
+
+      // Vue decodes `&nbsp;` into a raw U+00A0 on its way through, and the raw
+      // character is not the same thing downstream — the export encodes
+      // non-ASCII to numeric entities, so what a recipient receives would depend
+      // on which path produced it. The spacer and the divider both rely on that
+      // character keeping a cell from collapsing.
+      expect(compiled).not.toMatch(/[\u0080-\uFFFF]/);
+    });
   });
 
   // The manifest is where the escaping context lives now that the markup is
@@ -72,8 +94,9 @@ describe('every component ships what the generator needs', () => {
   // what refuses to emit — but nothing stops someone deleting the check, so the
   // outcome is pinned here too.
   test.each(componentNames)('%s declares a context for every hole', (name) => {
-    const compiled = require(path.join(COMPONENTS, `${name}.compiled.js`));
-    const holes = compiled.match(/\[\[[^\]]*\]\]/g) || [];
+    const holes = Object.values(templatesOf(name)).flatMap(
+      (compiled) => compiled.match(/\[\[[^\]]*\]\]/g) || []
+    );
 
     expect(holes.length).toBeGreaterThan(0);
     holes.forEach((hole) => {

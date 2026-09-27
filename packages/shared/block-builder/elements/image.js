@@ -7,9 +7,8 @@
 // and everything else reads the style; `max-width` plus `width:100%` so the
 // image shrinks with its column instead of overflowing it.
 //
-// Two templates rather than one conditional: the engine renders slots, it does
-// not branch. An image with no link must not ship an empty `<a>`, which some
-// clients render as a focusable, underlined gap.
+// An image with no link must not ship an empty `<a>`, which some clients render
+// as a focusable, underlined gap — hence the two variants.
 //
 // The `src` is expected to come from the editor's gallery, which is what
 // rewrites URLs for the CDN and the FTP export at download time. A free URL
@@ -17,28 +16,19 @@
 
 const { defineTemplate } = require('../template.js');
 
-const IMG =
-  '<img src="[[src|URL|]]" alt="[[alt|ATTR]]" width="[[width|PX|600]]"' +
-  ' style="display:block; border:none; outline:none; text-decoration:none;' +
-  ' width:100%; max-width:[[width|PX|600]]px; height:auto;" />';
+// The markup is not written here any more. It is compiled from
+// components/image.vue by `yarn block-builder:compile`, so the people who own
+// the email HTML can write it as a Vue component — the dialect they already use
+// on client templates — instead of a string of placeholders.
+//
+// Two compiled variants rather than one conditional: the engine renders slots,
+// it does not branch. The `v-if` lives in the component and is resolved at
+// build time, once per variant, so nothing is left to decide here but which of
+// the two to use.
+const templates = require('../components/image.compiled.js');
 
-const CELL_OPEN =
-  '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
-  '<tr>' +
-  '<td align="[[align|ATTR|center]]"' +
-  ' style="padding:[[paddingTop|PX|0]]px [[paddingRight|PX|0]]px [[paddingBottom|PX|0]]px [[paddingLeft|PX|0]]px;">';
-
-const CELL_CLOSE = '</td></tr></table>';
-
-const renderPlain = defineTemplate(CELL_OPEN + IMG + CELL_CLOSE);
-
-const renderLinked = defineTemplate(
-  CELL_OPEN +
-    '<a href="[[href|URL|#]]" target="_blank" style="text-decoration:none;">' +
-    IMG +
-    '</a>' +
-    CELL_CLOSE
-);
+const renderPlain = defineTemplate(templates.plain);
+const renderLinked = defineTemplate(templates.linked);
 
 /**
  * @param {Object} [values]
