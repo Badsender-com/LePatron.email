@@ -97,6 +97,14 @@ describe('unreplaced-images', () => {
     });
   });
 
+  it('leaves the transparent GIF templates use as a spacer alone', () => {
+    const blocks = [{ id: 'b1', type: 'spacerBlock' }];
+    const gif =
+      'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+    const html = exportOf({ b1: `<img src="${gif}" width="1" height="20">` });
+    expect(findingsOf(unreplacedImages, { blocks, html })).toEqual([]);
+  });
+
   it("never judges the template's own images, outside every block", () => {
     const html = exportOf({}, { frame: `<img src="${PLACEHOLDER}">` });
     expect(findingsOf(unreplacedImages, { html })).toEqual([]);
