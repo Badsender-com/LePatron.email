@@ -145,4 +145,13 @@ describe('insecure-urls', () => {
       linkFindings(insecureUrls, '', { frame: a('http://brand.com') })
     ).toEqual([]);
   });
+
+  it("leaves LePatron's own image backend alone: the export rehosts it", () => {
+    expect(
+      linkFindings(
+        insecureUrls,
+        '<img src="http://localhost:3000/api/images/cover/600xnull/a.png">'
+      )
+    ).toEqual([]);
+  });
 });
