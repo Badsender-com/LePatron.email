@@ -253,5 +253,19 @@
   "Emojis": "Emojis",
   "Emojis sit at the end of sentences": "Les emojis sont placés en fin de phrase",
   "Several emojis in a row: screen readers read each name": "Plusieurs emojis d'affilée : les lecteurs d'écran lisent le nom de chacun",
-  "Emoji in the middle of a sentence: screen readers read its name there": "Emoji au milieu d'une phrase : les lecteurs d'écran y lisent son nom"
+  "Emoji in the middle of a sentence: screen readers read its name there": "Emoji au milieu d'une phrase : les lecteurs d'écran y lisent son nom",
+  "Forbidden code": "Code interdit",
+  "No code the email clients refuse": "Aucun code refusé par les clients mail",
+  "Code that email clients never run, and filters distrust: __code__": "Code que les clients mail n'exécutent jamais et dont les filtres se méfient : __code__",
+  "HTML structure": "Structure HTML",
+  "The code of HTML code blocks is well formed": "Le code des blocs de code HTML est bien formé",
+  "Tag never closed in the HTML code: <__tag__>": "Balise jamais fermée dans le code HTML : <__tag__>",
+  "Closing tag with no opening one in the HTML code: </__tag__>": "Balise fermante sans ouverture dans le code HTML : </__tag__>",
+  "Email-safe code": "Code compatible email",
+  "The code of HTML code blocks only uses what email clients support": "Le code des blocs de code HTML n'utilise que ce que les clients mail prennent en charge",
+  "HTML code uses what some email clients ignore: __features__": "Le code HTML utilise des fonctions ignorées par certains clients mail : __features__",
+  "Addresses and colours in HTML code": "Adresses et couleurs du code HTML",
+  "The HTML code uses full addresses and valid colours": "Le code HTML utilise des adresses complètes et des couleurs valides",
+  "Relative address in the HTML code, it only works on its original site: __urls__": "Adresse relative dans le code HTML, elle ne fonctionne que sur son site d'origine : __urls__",
+  "Colour an email client cannot read in the HTML code: __colors__": "Couleur illisible par les clients mail dans le code HTML : __colors__"
 }
