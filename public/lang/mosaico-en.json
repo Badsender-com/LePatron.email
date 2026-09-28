@@ -253,5 +253,19 @@
   "Emojis": "Emojis",
   "Emojis sit at the end of sentences": "Emojis sit at the end of sentences",
   "Several emojis in a row: screen readers read each name": "Several emojis in a row: screen readers read each name",
-  "Emoji in the middle of a sentence: screen readers read its name there": "Emoji in the middle of a sentence: screen readers read its name there"
+  "Emoji in the middle of a sentence: screen readers read its name there": "Emoji in the middle of a sentence: screen readers read its name there",
+  "Forbidden code": "Forbidden code",
+  "No code the email clients refuse": "No code the email clients refuse",
+  "Code that email clients never run, and filters distrust: __code__": "Code that email clients never run, and filters distrust: __code__",
+  "HTML structure": "HTML structure",
+  "The code of HTML code blocks is well formed": "The code of HTML code blocks is well formed",
+  "Tag never closed in the HTML code: <__tag__>": "Tag never closed in the HTML code: <__tag__>",
+  "Closing tag with no opening one in the HTML code: </__tag__>": "Closing tag with no opening one in the HTML code: </__tag__>",
+  "Email-safe code": "Email-safe code",
+  "The code of HTML code blocks only uses what email clients support": "The code of HTML code blocks only uses what email clients support",
+  "HTML code uses what some email clients ignore: __features__": "HTML code uses what some email clients ignore: __features__",
+  "Addresses and colours in HTML code": "Addresses and colours in HTML code",
+  "The HTML code uses full addresses and valid colours": "The HTML code uses full addresses and valid colours",
+  "Relative address in the HTML code, it only works on its original site: __urls__": "Relative address in the HTML code, it only works on its original site: __urls__",
+  "Colour an email client cannot read in the HTML code: __colors__": "Colour an email client cannot read in the HTML code: __colors__"
 }
