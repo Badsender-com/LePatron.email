@@ -143,3 +143,27 @@ describe('isEmptySyntheticBlock', () => {
     expect(isEmptySyntheticBlock({})).toBe(false);
   });
 });
+
+// Étape 5 made composed blocks translatable: the server rebuilds their markup
+// from the translated state with the same generator the editor uses. The HTML
+// code block stays out — translating pasted markup would rewrite it, which is
+// the one thing that block promises never happens.
+describe('which blocks may be translated', () => {
+  const {
+    isTranslatableBlock,
+  } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+
+  it('offers it on a composed block', () => {
+    expect(isTranslatableBlock({ type: 'blockBuilderBlock' })).toBe(true);
+  });
+
+  it('refuses it on the HTML code block', () => {
+    expect(isTranslatableBlock({ type: 'htmlCodeBlock' })).toBe(false);
+  });
+
+  // A template's own blocks have always been translatable and must stay so.
+  it("leaves a template's own blocks alone", () => {
+    expect(isTranslatableBlock({ type: 'textBlock' })).toBe(true);
+    expect(isTranslatableBlock(null)).toBe(true);
+  });
+});

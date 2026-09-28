@@ -15,6 +15,10 @@ const {
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const { headCssToExport } = require('../mailing/head-css-guard.js');
+const {
+  builderMarkups,
+  swapBuilderMarkup,
+} = require('./builder-block-texts.js');
 const translationJobs = require('./translation-jobs');
 const {
   runTranslationStep,
@@ -212,13 +216,29 @@ async function processTranslationAsync({
         // one of them, looking a few blocks ahead; a zone whose markup is
         // missing here falls back to counting `<div>`, which pasted markup can
         // defeat — so both block types go in, in one list.
-        const htmlCodes = findSyntheticBlocks(originalMailing.data).map(htmlOf);
-        const previewHtml = await runTranslationStep('updatePreview', () =>
+        const markupsOf = (data) => findSyntheticBlocks(data).map(htmlOf);
+
+        const htmlCodes = markupsOf(originalMailing.data);
+        const translated = await runTranslationStep('updatePreview', () =>
           updatePreviewWithTranslations(
             originalMailing.previewHtml,
             originalTexts,
             translations,
             { htmlCodes }
+          )
+        );
+
+        // A composed block's markup is protected from the string replacement
+        // above — it is generated, and a replacement loose inside it would
+        // corrupt markup nobody typed. It was rebuilt from the translated
+        // state instead, so the zone is swapped wholesale here. Without this
+        // the preview would keep showing the source language while the stored
+        // block had already moved on.
+        const previewHtml = await runTranslationStep('swapBuilderMarkup', () =>
+          swapBuilderMarkup(
+            translated,
+            builderMarkups(originalMailing.data),
+            builderMarkups(translatedData.data)
           )
         );
         // Provider output was injected into previewHtml above; sanitize the
@@ -233,6 +253,11 @@ async function processTranslationAsync({
         // is what its multi-mailing ZIP exports. Only while the copy holds an
         // HTML code block, as in the editor's export: without one, the CSS
         // has nothing to style and is left out (head-css-guard.js).
+        //
+        // Located on what the document holds NOW: the composed blocks carry
+        // their rebuilt markup since the swap above, so matching on the stored
+        // originals would miss them and let the sanitiser into a generated
+        // zone.
         const safePreviewHtml = await runTranslationStep(
           'sanitizePreview',
           () =>
@@ -240,7 +265,7 @@ async function processTranslationAsync({
               transformDocumentKeepingHtmlCodeBlocks(
                 previewHtml,
                 sanitizePreviewHtml,
-                htmlCodes
+                markupsOf(translatedData.data)
               ),
               headCssToExport({
                 data: translatedData.data,

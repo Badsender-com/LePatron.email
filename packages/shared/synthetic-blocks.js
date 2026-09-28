@@ -76,6 +76,12 @@ const HTML_CODE_BLOCK = Object.freeze({
 
   // The template flag revealing it in the palette.
   flag: 'htmlBlockEnabled',
+
+  // The AI translation would rewrite markup the user pasted, and the block's
+  // whole promise is that its HTML is never altered. `htmlCode` is excluded
+  // engine-side too (mosaico-text-extractor.js); this is what hides the button,
+  // so nobody is offered something that will not happen.
+  translatable: false,
 });
 
 /**
@@ -121,6 +127,12 @@ const BLOCK_BUILDER_BLOCK = Object.freeze({
   emptyLabelKey: 'block-builder-block-empty',
 
   flag: 'blockBuilderEnabled',
+
+  // Composed blocks ARE translated, since the server rebuilds their markup from
+  // the translated state with the same generator the editor uses
+  // (packages/server/translation/builder-block-texts.js). The generated HTML is
+  // never sent anywhere — only the prose inside the state is.
+  translatable: true,
 });
 
 const SYNTHETIC_BLOCKS = Object.freeze([HTML_CODE_BLOCK, BLOCK_BUILDER_BLOCK]);
