@@ -63,6 +63,7 @@ function completeFinding(rule, finding, ctx) {
   return {
     ruleId: rule.id,
     category: rule.category,
+    titleKey: rule.titleKey,
     severity: finding.severity || rule.severity,
     messageKey: finding.messageKey,
     params: finding.params || {},
@@ -99,22 +100,29 @@ function runQualityChecks(viewModel, options = {}) {
   const checks = [];
 
   rules.forEach((rule) => {
+    const check = {
+      ruleId: rule.id,
+      category: rule.category,
+      titleKey: rule.titleKey,
+    };
     let ruleFindings;
     try {
       ruleFindings = rule.run(ctx) || [];
     } catch (err) {
       // One broken rule must never stop the export or the other checks.
       console.error(`Quality check "${rule.id}" failed`, err);
-      checks.push({ ruleId: rule.id, category: rule.category, status: 'error' });
+      checks.push({ ...check, status: 'error' });
       return;
     }
     const completed = ruleFindings.map((f) => completeFinding(rule, f, ctx));
     findings.push(...completed);
     checks.push({
-      ruleId: rule.id,
-      category: rule.category,
+      ...check,
       status: completed.length ? 'failed' : 'passed',
       count: completed.length,
+      // What a passed check says: "Every link has a destination".
+      passKey: rule.passKey,
+      passParams: rule.passParams ? rule.passParams(ctx) : {},
     });
   });
 
