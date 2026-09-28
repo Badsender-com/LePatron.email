@@ -664,4 +664,13 @@ module.exports = {
     'Relative address in the HTML code, it only works on its original site: __urls__',
   'Colour an email client cannot read in the HTML code: __colors__':
     'Colour an email client cannot read in the HTML code: __colors__',
+  'Send a test': 'Send a test',
+  '__count__ errors are still to fix: you can send a test anyway':
+    '__count__ errors are still to fix: you can send a test anyway',
+  'See the results': 'See the results',
+  'The quality checks have not run on this version yet':
+    'The quality checks have not run on this version yet',
+  'Separate addresses with a semicolon': 'Separate addresses with a semicolon',
+  'Saved list of addresses': 'Saved list of addresses',
+  'Send the test email': 'Send the test email',
 };
