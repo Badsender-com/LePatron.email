@@ -101,7 +101,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
           />
         </div>
 
-        <button type="submit" class="qc-button qc-button--cta qc-button--grow" :disabled="!canSend">
+        <button type="submit" class="qc-button qc-button--cta qc-send__submit" :disabled="!canSend">
           <span class="lucide lucide-send" aria-hidden="true"></span>
           {{ isSending ? t('sending-test-mails') : t('Send the test email') }}
         </button>
