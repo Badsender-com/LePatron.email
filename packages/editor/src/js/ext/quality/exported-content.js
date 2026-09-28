@@ -69,4 +69,24 @@ function blockImages(ctx) {
   return ctx.cache.blockImages;
 }
 
-module.exports = { blockLinks, blockImages, isDynamic, parseUrl, textOf };
+/**
+ * Whether an image is served by LePatron's own image backend
+ * (`metadata.imagesUrl`: images, cover, crop, placeholder). Such an address is
+ * not where the image ends up: the export rehosts it (ZIP, CDN, FTP), so its
+ * scheme and host say nothing about the email that is sent.
+ */
+function isPlatformImage(ctx, src) {
+  const imagesUrl = ctx.config.imagesUrl || {};
+  return Object.values(imagesUrl).some(
+    (prefix) => typeof prefix === 'string' && prefix && (src || '').startsWith(prefix)
+  );
+}
+
+module.exports = {
+  blockLinks,
+  blockImages,
+  isDynamic,
+  isPlatformImage,
+  parseUrl,
+  textOf,
+};
