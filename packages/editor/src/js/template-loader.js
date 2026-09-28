@@ -417,6 +417,11 @@ var templateCompiler = function (
     )
   );
 
+  // The template's own values for the whole email (preheader, root texts…),
+  // before the saved content replaces them: quality control compares with it
+  // to tell what the client changed from what the template shipped.
+  var templateDefaults = content._unwrap();
+
   var incompatibleTemplate = false;
   if (typeof jsorjson !== 'undefined' && jsorjson !== null) {
     var unwrapped;
@@ -578,6 +583,7 @@ var templateCompiler = function (
     );
   }
 
+  viewModel.templateDefaults = templateDefaults;
   // let's run some version check on template and editor used to build the model being loaded.
   // This will be replaced by browserify-versionify during the build
   var editver = '__VERSION__';
