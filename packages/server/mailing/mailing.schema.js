@@ -203,6 +203,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   // keeping — a copy of an automated transactional email is still one; a planned
   // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
