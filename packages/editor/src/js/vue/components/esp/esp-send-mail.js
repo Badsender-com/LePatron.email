@@ -238,8 +238,9 @@ const EspComponent = Vue.component('EspForm', {
             this.fetchedProfile?.contentSendType?.toString().toLowerCase() +
             '-success-esp-send';
           this.vm.notifier.success(this.vm.t(successText));
-          // Judge the HTML that was sent rather than export the email again.
-          this.vm.quality.review({ html: unprocessedHtml });
+          // Judge the HTML that was sent rather than export the email again,
+          // and never let the review stand in the way of the send confirmation.
+          if (this.vm.quality) this.vm.quality.review({ html: unprocessedHtml });
           this.closeModal();
         })
         .catch((error) => {
