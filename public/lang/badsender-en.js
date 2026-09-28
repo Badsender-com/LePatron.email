@@ -551,4 +551,50 @@ module.exports = {
     'Every image uses a format email clients show',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF',
+  Subject: 'Subject',
+  'The subject is filled in and __count__ characters long':
+    'The subject is filled in and __count__ characters long',
+  'No subject': 'No subject',
+  'Subject too long (__count__ characters): cut in almost every inbox':
+    'Subject too long (__count__ characters): cut in almost every inbox',
+  'Long subject (__count__ characters): may be cut on mobile and in Outlook':
+    'Long subject (__count__ characters): may be cut on mobile and in Outlook',
+  'Subject starts like a reply or a forward (__prefix__) without being one':
+    'Subject starts like a reply or a forward (__prefix__) without being one',
+  'Subject mostly in capital letters': 'Subject mostly in capital letters',
+  'Subject repeats punctuation (!!, ??, $$)':
+    'Subject repeats punctuation (!!, ??, $$)',
+  'Subject has more than one emoji': 'Subject has more than one emoji',
+  Preheader: 'Preheader',
+  'The preheader is filled in and __count__ characters long':
+    'The preheader is filled in and __count__ characters long',
+  'No preheader: inboxes show the first words of the body instead':
+    'No preheader: inboxes show the first words of the body instead',
+  'Preheader too short (__count__ characters)':
+    'Preheader too short (__count__ characters)',
+  'Short preheader (__count__ characters): some inboxes complete it with the body':
+    'Short preheader (__count__ characters): some inboxes complete it with the body',
+  'Preheader too long (__count__ characters): inboxes cut it well before':
+    'Preheader too long (__count__ characters): inboxes cut it well before',
+  'Long preheader (__count__ characters): its end will rarely be seen':
+    'Long preheader (__count__ characters): its end will rarely be seen',
+  'Personalization tags': 'Personalization tags',
+  'Every personalization tag is closed': 'Every personalization tag is closed',
+  'Personalization tag not closed (__token__): __excerpt__':
+    'Personalization tag not closed (__token__): __excerpt__',
+  'Personalization tag not closed in the subject (__token__): __excerpt__':
+    'Personalization tag not closed in the subject (__token__): __excerpt__',
+  'Personalization tag not closed in the preheader (__token__): __excerpt__':
+    'Personalization tag not closed in the preheader (__token__): __excerpt__',
+  'Empty blocks': 'Empty blocks',
+  'Every block shows something': 'Every block shows something',
+  'Empty block: it shows no text and no image':
+    'Empty block: it shows no text and no image',
+  'Capital letters': 'Capital letters',
+  'No long passage is written in capital letters':
+    'No long passage is written in capital letters',
+  'Long passage in capital letters (__count__ words): __excerpt__':
+    'Long passage in capital letters (__count__ words): __excerpt__',
+  'Preheader still the sample text of the template: __text__':
+    'Preheader still the sample text of the template: __text__',
 };

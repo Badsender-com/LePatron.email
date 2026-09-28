@@ -568,4 +568,52 @@ module.exports = {
     'Toutes les images utilisent un format affiché par les clients mail',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
+  Subject: 'Objet',
+  'The subject is filled in and __count__ characters long':
+    "L'objet est renseigné et fait __count__ caractères",
+  'No subject': "Pas d'objet",
+  'Subject too long (__count__ characters): cut in almost every inbox':
+    'Objet trop long (__count__ caractères) : coupé dans presque toutes les boîtes de réception',
+  'Long subject (__count__ characters): may be cut on mobile and in Outlook':
+    'Objet long (__count__ caractères) : il peut être coupé sur mobile et dans Outlook',
+  'Subject starts like a reply or a forward (__prefix__) without being one':
+    "L'objet commence comme une réponse ou un transfert (__prefix__) sans en être un",
+  'Subject mostly in capital letters':
+    'Objet presque entièrement en majuscules',
+  'Subject repeats punctuation (!!, ??, $$)':
+    "L'objet répète de la ponctuation (!!, ??, $$)",
+  'Subject has more than one emoji': "L'objet contient plus d'un emoji",
+  Preheader: 'Préheader',
+  'The preheader is filled in and __count__ characters long':
+    'Le préheader est renseigné et fait __count__ caractères',
+  'No preheader: inboxes show the first words of the body instead':
+    'Pas de préheader : les boîtes de réception affichent les premiers mots du corps à la place',
+  'Preheader too short (__count__ characters)':
+    'Préheader trop court (__count__ caractères)',
+  'Short preheader (__count__ characters): some inboxes complete it with the body':
+    'Préheader court (__count__ caractères) : certaines boîtes de réception le complètent avec le corps',
+  'Preheader too long (__count__ characters): inboxes cut it well before':
+    'Préheader trop long (__count__ caractères) : les boîtes de réception le coupent bien avant',
+  'Long preheader (__count__ characters): its end will rarely be seen':
+    'Préheader long (__count__ caractères) : sa fin sera rarement lue',
+  'Personalization tags': 'Variables de personnalisation',
+  'Every personalization tag is closed':
+    'Toutes les variables de personnalisation sont bien fermées',
+  'Personalization tag not closed (__token__): __excerpt__':
+    'Variable de personnalisation non fermée (__token__) : __excerpt__',
+  'Personalization tag not closed in the subject (__token__): __excerpt__':
+    "Variable de personnalisation non fermée dans l'objet (__token__) : __excerpt__",
+  'Personalization tag not closed in the preheader (__token__): __excerpt__':
+    'Variable de personnalisation non fermée dans le préheader (__token__) : __excerpt__',
+  'Empty blocks': 'Blocs vides',
+  'Every block shows something': 'Tous les blocs affichent du contenu',
+  'Empty block: it shows no text and no image':
+    "Bloc vide : il n'affiche ni texte ni image",
+  'Capital letters': 'Majuscules',
+  'No long passage is written in capital letters':
+    "Aucun long passage n'est écrit en majuscules",
+  'Long passage in capital letters (__count__ words): __excerpt__':
+    'Long passage en majuscules (__count__ mots) : __excerpt__',
+  'Preheader still the sample text of the template: __text__':
+    "Le préheader est resté au texte d'exemple du template : __text__",
 };
