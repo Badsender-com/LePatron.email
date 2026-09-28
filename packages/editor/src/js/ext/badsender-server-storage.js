@@ -11,8 +11,6 @@ const {
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./html-code-block/save-error.js');
 const {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 } = require('../ext/badsender-control-quality');
@@ -213,19 +211,10 @@ function loader(opts) {
       }
 
       // ====================================
-      // Check for missing input values, on the same export the ZIP is built from
+      // Quality review of the same export the ZIP is built from: the drawer
+      // opens when there is something to see, the download goes on anyway.
       const html = viewModel.exportHTML();
-      const errors = getErrorsForControlQuality(viewModel, { html });
-      if (errors && errors.length > 0) {
-        displayErrors(errors, viewModel);
-        // Scroll to top so the user can see warnings if there is any
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        })
-      } else {
-        $('.error-message').remove();
-      }
+      viewModel.quality.review({ html });
 
       downloadCmd.enabled(false);
 
