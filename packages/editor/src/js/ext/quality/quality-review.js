@@ -37,13 +37,25 @@ function installQualityReview(viewModel, ko, deps = {}) {
   }
 
   viewModel.showQuality = ko.observable(false);
+  // The drawer's tab: the checks, or sending a test.
+  const tab = ko.observable('checks');
 
   viewModel.quality = {
     status,
     findings,
     checks,
     ranAt,
+    tab,
     ruleCount: DEFAULT_RULES.length,
+    errorCount: ko.pureComputed(
+      () => findings().filter((f) => f.severity === 'error').length
+    ),
+
+    /** Opens the drawer on a tab: 'checks' or 'send'. */
+    open(name = 'checks') {
+      tab(name);
+      viewModel.showQuality(true);
+    },
     // What the toolbar badge counts: what should be fixed, not the infos.
     issueCount: ko.pureComputed(
       () =>
@@ -82,7 +94,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
       runId++;
       try {
         const result = apply(run(viewModel, options));
-        if (result.findings.length) viewModel.showQuality(true);
+        if (result.findings.length) viewModel.quality.open('checks');
         return result;
       } catch (err) {
         console.error('Quality review failed', err);
