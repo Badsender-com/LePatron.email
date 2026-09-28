@@ -180,6 +180,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   // keeping — a copy of an automated transactional email is still one; a planned
   // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -233,7 +236,9 @@ MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { previewHtml: 0, data: 0 });
+  // qualityIgnores is the editor's business (up to 500 entries per email):
+  // the mosaico metadata carries it, the lists never need it.
+  return this.find(query, { previewHtml: 0, data: 0, qualityIgnores: 0 });
 };
 
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
