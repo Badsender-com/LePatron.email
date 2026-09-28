@@ -10,6 +10,7 @@ const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
 const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
+const mailingQuality = require('./mailing-quality.controller.js');
 const translation = require('../translation/translation.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
@@ -46,6 +47,11 @@ router.patch(
   GUARD_USER,
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
+);
+router.patch(
+  '/:mailingId/quality-ignores',
+  GUARD_USER,
+  mailingQuality.updateQualityIgnores
 );
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);

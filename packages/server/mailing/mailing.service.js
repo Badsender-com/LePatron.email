@@ -308,6 +308,9 @@ const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
   '_parentFolder',
   '__v',
   'plannedSendDate',
+  // Ignoring a quality finding is a decision about one email, made by its
+  // authors: a copy (a translated one first) starts its review afresh.
+  'qualityIgnores',
 ]);
 
 /**

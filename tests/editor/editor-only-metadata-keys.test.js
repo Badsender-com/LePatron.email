@@ -11,12 +11,15 @@ const {
 } = require('../../packages/editor/src/js/utils/editor-only-metadata-keys.js');
 
 describe('EDITOR_ONLY_METADATA_KEYS', () => {
-  it.each(['urlConverter', 'template', 'emailMetadata', 'emailMetadataConfig'])(
-    'excludes %s',
-    (key) => {
-      expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
-    }
-  );
+  it.each([
+    'urlConverter',
+    'template',
+    'emailMetadata',
+    'emailMetadataConfig',
+    'qualityIgnores',
+  ])('excludes %s', (key) => {
+    expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
+  });
 
   it('leaves everything the server does read', () => {
     const metadata = {
