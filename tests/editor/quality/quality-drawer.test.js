@@ -183,6 +183,58 @@ describe('QualityDrawer', () => {
     expect(vm.quality.tab()).toBe('send');
   });
 
+  it('ignores a finding, keeps it apart, and undoes it', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding],
+      checks: [],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    const ignore = Array.from(
+      el.querySelectorAll('.qc-row__actions button')
+    ).find((b) => b.textContent.trim() === 'Ignore');
+    ignore.click();
+    await Vue.nextTick();
+
+    expect(vm.quality.ignored()).toEqual([linkFinding.fingerprint]);
+    expect(
+      el.querySelector('.qc-group--ignored .qc-group__count').textContent
+    ).toBe('1');
+    expect(el.querySelector('.qc-undo')).not.toBeNull();
+
+    el.querySelector('.qc-undo .qc-link-button').click();
+    await Vue.nextTick();
+    expect(vm.quality.ignored()).toEqual([]);
+    expect(el.querySelector('.qc-group--ignored')).toBeNull();
+  });
+
+  it('turns a finding into a comment draft', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding],
+      checks: [],
+    });
+    vm.createCommentFromQc = jest.fn();
+    vm.quality.run();
+    await Vue.nextTick();
+
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    Array.from(el.querySelectorAll('.qc-row__actions button'))
+      .find((b) => b.textContent.trim() === 'Add comment')
+      .click();
+
+    expect(vm.createCommentFromQc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blockId: 'b1',
+        severity: 'blocking',
+        category: 'content',
+      })
+    );
+  });
+
   it('closes on Escape', async () => {
     const { vm, el } = await mountDrawer({ findings: [], checks: [] });
     vm.showQuality(true);

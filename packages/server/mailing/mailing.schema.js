@@ -154,6 +154,23 @@ const MailingSchema = Schema(
       type: String,
       enum: EmailTriggerValues,
     },
+    // Quality control findings the team chose to ignore on this email (the
+    // quality drawer's "Ignore"). Keyed by the finding's fingerprint — rule,
+    // block, property and a hash of the faulty value — so an ignored finding
+    // comes back on its own once its content changes. Shared by everyone who
+    // edits the email. Bounded by MAX_QUALITY_IGNORES in mailing-quality.service.
+    qualityIgnores: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true, maxlength: 512 },
+          ruleId: { type: String, maxlength: 64 },
+          _user: { type: ObjectId, ref: UserModel },
+          ignoredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -613,7 +630,12 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
+        qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
       },
+      // Fingerprints of the quality findings ignored on this email.
+      qualityIgnores: (mailing.qualityIgnores || []).map(
+        (ignore) => ignore.fingerprint
+      ),
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
         cdnButtonLabel: group.cdnButtonLabel,

@@ -694,4 +694,12 @@ module.exports = {
     'Séparez les adresses par un point-virgule',
   'Saved list of addresses': "Liste d'adresses enregistrée",
   'Send the test email': "Envoyer l'email de test",
+  'Add comment': 'Ajouter un commentaire',
+  Ignore: 'Ignorer',
+  'Stop ignoring': 'Ne plus ignorer',
+  Ignored: 'Ignorés',
+  'Ignored: __title__': 'Ignoré : __title__',
+  Undo: 'Annuler',
+  'The change could not be saved':
+    "La modification n'a pas pu être enregistrée",
 };
