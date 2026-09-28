@@ -10,14 +10,30 @@ const unfilledLinks = require('./rules/unfilled-links');
 const imagesWithoutLink = require('./rules/images-without-link');
 const unreplacedImages = require('./rules/unreplaced-images');
 const backgroundImages = require('./rules/background-images');
+const malformedLinks = require('./rules/malformed-links');
+const displayedUrls = require('./rules/displayed-urls');
+const suspiciousLinks = require('./rules/suspicious-links');
+const insecureUrls = require('./rules/insecure-urls');
+const unnamedImageLinks = require('./rules/unnamed-image-links');
+const altTextQuality = require('./rules/alt-text-quality');
+const imageOnlyEmail = require('./rules/image-only-email');
+const unsupportedImageFormats = require('./rules/unsupported-image-formats');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
   trackingParams,
   unfilledLinks,
+  malformedLinks,
+  displayedUrls,
+  suspiciousLinks,
   imagesWithoutLink,
+  unnamedImageLinks,
   unreplacedImages,
+  altTextQuality,
   backgroundImages,
+  unsupportedImageFormats,
+  imageOnlyEmail,
+  insecureUrls,
   htmlSize,
 ];
 
