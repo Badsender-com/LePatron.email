@@ -2,6 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
 const { ElementSettingsComponent } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
+const { DragSurfaceMixin } = require('./drag-surface.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   generate,
@@ -54,11 +55,27 @@ const defaultsFor = (type) => {
   return definition ? { ...definition.defaults } : {};
 };
 
+// What a brand new element says before anyone types into it.
+//
+// Here and not in the generator's defaults, on purpose: those defaults are the
+// fallback for a stored state that is missing a key, so seeding them would put
+// the placeholder back into a text the user had deliberately emptied, on every
+// reload.
+//
+// An element that renders nothing appears nowhere — that is the whole reason
+// this exists. The image has no seed because there is nothing honest to put in
+// it; the preview's `min-height` keeps its slot visible and clickable until a
+// picture is chosen.
+const SEED_KEYS = {
+  text: { key: 'content', label: 'block-builder-seed-text' },
+  button: { key: 'label', label: 'block-builder-seed-button' },
+};
+
 const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   components: { ModalComponent, ElementSettings: ElementSettingsComponent },
-  // The preview is a surface of its own — writing the iframe document,
-  // rendering into it, and the selection it carries. See preview-surface.js.
-  mixins: [PreviewSurfaceMixin],
+  // Two surfaces, each with its own file: the preview writes the iframe and
+  // carries the selection, the drag adds the gesture on top of it.
+  mixins: [PreviewSurfaceMixin, DragSurfaceMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -77,6 +94,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     palette: PALETTE,
     previewWidth: DESKTOP_WIDTH,
     frameRequest: null,
+    // The palette entry currently being dragged, and where it would land.
+    draggingType: null,
+    dropIndex: null,
+    // A render that fell due mid-drag and was held back.
+    renderHeldDuringDrag: false,
   }),
   computed: {
     selected() {
@@ -167,10 +189,31 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       return name;
     },
 
-    addElement(type) {
+    // Builds an element, seeded so it is visible the moment it lands.
+    buildElement(type) {
       const element = { id: nextId(), type, ...defaultsFor(type) };
-      this.state.elements.push(element);
+      const seed = SEED_KEYS[type];
+      if (seed) element[seed.key] = this.vm.t(seed.label);
+      return element;
+    },
+
+    // Clicking a palette entry appends. It stays alongside the drag: it is the
+    // quick path, it is what a keyboard reaches, and it is the fallback when a
+    // drag is dropped somewhere that refuses it.
+    addElement(type) {
+      this.insertElement(type, this.state.elements.length);
+    },
+
+    insertElement(type, index) {
+      if (!PALETTE.some((item) => item.type === type)) return null;
+
+      const element = this.buildElement(type);
+      const at = Math.max(0, Math.min(index, this.state.elements.length));
+      this.state.elements.splice(at, 0, element);
+      // Selected on arrival, so the settings panel is already on it — dropping
+      // and editing are one gesture, not two.
       this.selectedId = element.id;
+      return element;
     },
 
     removeSelected() {
@@ -233,6 +276,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     closeModal() {
+      this.draggingType = null;
+      this.dropIndex = null;
+      this.renderHeldDuringDrag = false;
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
