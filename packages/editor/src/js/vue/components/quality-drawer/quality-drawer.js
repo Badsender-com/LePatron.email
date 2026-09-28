@@ -37,6 +37,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     ranAt: null,
     expandedId: null,
     subscriptions: [],
+    // Constants the template reads.
+    severityOrder: SEVERITY_ORDER,
+    severityMeta: SEVERITY_META,
   }),
   computed: {
     items() {
@@ -178,7 +181,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
           <p class="qc-drawer__eyebrow">{{ t('Test your email') }}</p>
           <h2 id="qc-drawer-title" class="qc-drawer__title">{{ t('Quality control') }}</h2>
         </div>
-        <button ref="close" type="button" class="qc-icon-button" :aria-label="t('Close')" @click="close">
+        <button ref="close" type="button" class="qc-icon-button" :aria-label="t('Close')" :title="t('Close')" @click="close">
           <span class="lucide lucide-x" aria-hidden="true"></span>
         </button>
       </header>
@@ -203,14 +206,14 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         <div v-if="hasIssues" class="qc-drawer__summary">
           <span class="qc-pills">
             <span
-              v-for="severity in ['error', 'warning', 'info', 'success']"
+              v-for="severity in severityOrder"
               :key="severity"
               class="qc-pill"
               :class="['qc-pill--' + severity, { 'qc-pill--empty': !counts[severity] }]"
             >
-              <span :class="['lucide', SEVERITY_META[severity].icon]" aria-hidden="true"></span>
+              <span :class="['lucide', severityMeta[severity].icon]" aria-hidden="true"></span>
               <span aria-hidden="true">{{ counts[severity] }}</span>
-              <span class="qc-sr-only">{{ t(SEVERITY_META[severity].countKey, { count: counts[severity] }) }}</span>
+              <span class="qc-sr-only">{{ t(severityMeta[severity].countKey, { count: counts[severity] }) }}</span>
             </span>
           </span>
           <button type="button" class="qc-link-button" @click="run">
@@ -257,9 +260,6 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       <p class="qc-sr-only" aria-live="polite" aria-atomic="false">{{ liveMessage }}</p>
     </section>
   `,
-  created() {
-    this.SEVERITY_META = SEVERITY_META;
-  },
 });
 
 module.exports = { QualityDrawer };
