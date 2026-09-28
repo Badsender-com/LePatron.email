@@ -501,4 +501,71 @@ module.exports = {
   'Email weight': "Poids de l'email",
   'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit':
     'Le HTML exporté pèse __size__ Ko, sous la limite de 102 Ko de Gmail',
+  'Link addresses': 'Adresses des liens',
+  'Every link address is well formed':
+    'Toutes les adresses de liens sont bien formées',
+  'Link URL contains a space: __url__':
+    "L'adresse du lien contient une espace : __url__",
+  'Link URL misses http:// or https://: __url__':
+    "Il manque http:// ou https:// à l'adresse du lien : __url__",
+  'Link URL is not a full address: __url__':
+    "L'adresse du lien est incomplète : __url__",
+  'Link URL has an unknown protocol: __url__':
+    "Le protocole de l'adresse du lien est inconnu : __url__",
+  'Email link has no valid address: __url__':
+    "Le lien email n'a pas d'adresse valide : __url__",
+  'Phone link has no valid number: __url__':
+    "Le lien téléphone n'a pas de numéro valide : __url__",
+  'Addresses shown as link text': 'Adresses affichées en texte de lien',
+  'No link shows an address as its text':
+    "Aucun lien n'affiche une adresse comme texte",
+  'Link text is an address (__label__): once the ESP rewrites links for tracking, it no longer matches its destination and can look like phishing':
+    "Le texte du lien est une adresse (__label__) : une fois les liens réécrits par l'ESP pour le tracking, elle ne correspondra plus à la destination et pourra ressembler à du phishing",
+  'Link domains': 'Domaines des liens',
+  'No link points to a suspicious domain':
+    'Aucun lien ne pointe vers un domaine suspect',
+  'Link address hides an identity before its domain: __host__':
+    "L'adresse du lien cache un identifiant avant le domaine : __host__",
+  'Link points to an IP address instead of a domain: __host__':
+    "Le lien pointe vers une adresse IP au lieu d'un domaine : __host__",
+  'Link points to a test environment: __host__':
+    'Le lien pointe vers un environnement de test : __host__',
+  'Link points to an example domain: __host__':
+    "Le lien pointe vers un domaine d'exemple : __host__",
+  'Public URL shortener: __host__': "Raccourcisseur d'URL public : __host__",
+  'Domain extension often used for spam: __host__':
+    'Extension de domaine souvent utilisée pour le spam : __host__',
+  'Internationalized domain, check it is the expected one: __host__':
+    "Domaine internationalisé, vérifiez qu'il s'agit du bon : __host__",
+  'Secure addresses': 'Adresses sécurisées',
+  'Every link and image uses https':
+    'Tous les liens et toutes les images utilisent https',
+  'Link is not secure (http): __url__':
+    "Le lien n'est pas sécurisé (http) : __url__",
+  'Image is not secure (http) and may not load: __url__':
+    "L'image n'est pas sécurisée (http) et risque de ne pas s'afficher : __url__",
+  'Linked images': 'Images avec lien',
+  'Every linked image has an alternative text':
+    'Toutes les images avec lien ont un texte alternatif',
+  'Linked image has no alternative text: screen readers announce a link with no name':
+    "L'image avec lien n'a pas de texte alternatif : les lecteurs d'écran annoncent un lien sans nom",
+  'Alternative texts': 'Textes alternatifs',
+  'Alternative texts look like descriptions':
+    'Les textes alternatifs ressemblent à des descriptions',
+  'Alternative text is an address: __alt__':
+    'Le texte alternatif est une adresse : __alt__',
+  'Alternative text looks like a file name: __alt__':
+    'Le texte alternatif ressemble à un nom de fichier : __alt__',
+  'Alternative text is too long (__count__ characters): keep it to a short description':
+    'Le texte alternatif est trop long (__count__ caractères) : limitez-le à une courte description',
+  'Readable text': 'Texte lisible',
+  'The email has text to read when images are blocked':
+    "L'email reste lisible quand les images sont bloquées",
+  'The email has almost no text besides its images (__count__ characters): with images blocked, nothing can be read':
+    "L'email n'a presque pas de texte en dehors de ses images (__count__ caractères) : si les images sont bloquées, rien n'est lisible",
+  'Image formats': "Formats d'image",
+  'Every image uses a format email clients show':
+    'Toutes les images utilisent un format affiché par les clients mail',
+  'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
+    "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
 };
