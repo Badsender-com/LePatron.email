@@ -79,11 +79,56 @@ function isPlatformImage(ctx, src) {
   );
 }
 
+// Inline styles that hide an element. The export has no stylesheet applied
+// (DOMParser renders nothing), so class-based hiding is out of reach.
+const HIDDEN_STYLE = /(^|;)\s*(display\s*:\s*none|visibility\s*:\s*hidden|mso-hide\s*:\s*all|opacity\s*:\s*0(\.0+)?\s*(;|$)|max-height\s*:\s*0(px)?\s*(;|$))/i;
+
+const isHidden = (el) =>
+  el.nodeType === 1 && HIDDEN_STYLE.test(el.getAttribute('style') || '');
+
+/**
+ * The text a reader sees in an element: hidden descendants, scripts and styles
+ * left out, whitespace collapsed.
+ */
+function visibleTextOf(root) {
+  const parts = [];
+  (function walk(node) {
+    if (node.nodeType === 3) parts.push(node.nodeValue);
+    if (node.nodeType !== 1 && node.nodeType !== 9) return;
+    if (node.nodeType === 1) {
+      if (/^(script|style|template)$/i.test(node.tagName) || isHidden(node)) {
+        return;
+      }
+      // Block-level breaks keep words of two cells apart.
+      if (/^(br|p|div|td|tr|li|h[1-6])$/i.test(node.tagName)) parts.push(' ');
+    }
+    Array.from(node.childNodes).forEach(walk);
+  })(root);
+  return parts.join('').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The visible text of each of the client's blocks, by block id.
+ * @returns {Object<string, string>}
+ */
+function blockTexts(ctx) {
+  if (!ctx.cache.blockTexts) {
+    ctx.cache.blockTexts = {};
+    ctx.blocks.forEach((block) => {
+      const root = block && ctx.doc.getElementById(block.id);
+      if (root) ctx.cache.blockTexts[block.id] = visibleTextOf(root);
+    });
+  }
+  return ctx.cache.blockTexts;
+}
+
 module.exports = {
   blockLinks,
   blockImages,
+  blockTexts,
   isDynamic,
   isPlatformImage,
   parseUrl,
   textOf,
+  visibleTextOf,
 };
