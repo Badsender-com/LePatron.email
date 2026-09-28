@@ -1,8 +1,13 @@
 'use strict';
 
+const { blockLinks } = require('../exported-content');
+
 // `#toreplace` is the default URL our templates give a link the client must
-// fill in. An empty href or a bare `#` leads nowhere either.
+// fill in. An empty href, a bare `#` or a `javascript:` URL leads nowhere
+// either: email clients do not run scripts.
 const UNFILLED_HREFS = new Set(['#toreplace', '#', '']);
+const isUnfilled = (href) =>
+  UNFILLED_HREFS.has(href) || /^javascript:/i.test(href);
 
 /**
  * Links of the client's blocks that still lead nowhere, read from the export:
@@ -11,14 +16,13 @@ const UNFILLED_HREFS = new Set(['#toreplace', '#', '']);
  * @returns {Array<{ anchor: Element, blockId: string, label: string }>}
  */
 function findUnfilledAnchors(ctx) {
-  return Array.from(ctx.doc.querySelectorAll('a[href]'))
-    .filter((a) => UNFILLED_HREFS.has(a.getAttribute('href').trim()))
-    .map((anchor) => ({
-      anchor,
-      blockId: ctx.blockIdOf(anchor),
-      label: (anchor.textContent || '').replace(/\s+/g, ' ').trim(),
-    }))
-    .filter((link) => link.blockId);
+  return blockLinks(ctx)
+    .filter((link) => isUnfilled(link.href))
+    .map((link) => ({
+      anchor: link.anchor,
+      blockId: link.blockId,
+      label: link.text,
+    }));
 }
 
 module.exports = {
@@ -26,6 +30,7 @@ module.exports = {
   category: 'content',
   severity: 'error',
   findUnfilledAnchors,
+  isUnfilled,
   run(ctx) {
     // A linked image without text is reported by "images-without-link".
     return findUnfilledAnchors(ctx)
