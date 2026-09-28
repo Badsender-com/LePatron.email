@@ -31,6 +31,10 @@ const indistinctLinks = require('./rules/indistinct-links');
 const headings = require('./rules/headings');
 const altRedundant = require('./rules/alt-redundant');
 const emojiPlacement = require('./rules/emoji-placement');
+const forbiddenCode = require('./rules/forbidden-code');
+const malformedHtml = require('./rules/malformed-html');
+const unsupportedCode = require('./rules/unsupported-code');
+const looseCode = require('./rules/loose-code');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -60,6 +64,10 @@ const DEFAULT_RULES = [
   unsupportedImageFormats,
   imageOnlyEmail,
   insecureUrls,
+  forbiddenCode,
+  malformedHtml,
+  unsupportedCode,
+  looseCode,
   htmlSize,
 ];
 
