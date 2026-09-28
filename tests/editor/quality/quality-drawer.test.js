@@ -4,6 +4,12 @@
 
 'use strict';
 
+// The "Send a test" tab loads the saved lists of addresses when it mounts.
+jest.mock('axios', () => ({
+  get: jest.fn(() => Promise.resolve({ data: { items: [] } })),
+  post: jest.fn(() => Promise.resolve({})),
+}));
+
 const ko = require('knockout');
 const Vue = require('vue/dist/vue.common');
 const {
@@ -147,6 +153,34 @@ describe('QualityDrawer', () => {
       '2 of 2 checks'
     );
     expect(el.querySelector('.qc-drawer__summary')).toBeNull();
+  });
+
+  it('takes the user from the results to the "Send a test" tab', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding],
+      checks: [],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+
+    el.querySelector('.qc-drawer__footer .qc-button--cta').click();
+    await Vue.nextTick();
+
+    expect(vm.quality.tab()).toBe('send');
+    expect(el.querySelector('#qc-tab-send').getAttribute('aria-selected')).toBe(
+      'true'
+    );
+    expect(el.querySelector('#qc-tabpanel-send').style.display).toBe('');
+    expect(el.querySelector('#qc-tabpanel-checks').style.display).toBe('none');
+  });
+
+  it('moves between tabs with the arrow keys', async () => {
+    const { vm, el } = await mountDrawer({ findings: [], checks: [] });
+    el.querySelector('.qc-tabs').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+    );
+    await Vue.nextTick();
+    expect(vm.quality.tab()).toBe('send');
   });
 
   it('closes on Escape', async () => {
