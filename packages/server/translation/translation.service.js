@@ -18,6 +18,11 @@ const {
 } = require('./mosaico-text-injector.js');
 const { parseProtectionConfig } = require('./template-protection-parser.js');
 const {
+  extractBuilderTexts,
+  splitBuilderTranslations,
+  injectBuilderTexts,
+} = require('./builder-block-texts.js');
+const {
   splitIntoBatches,
   translateInBatches,
 } = require('./translation-batch.utils.js');
@@ -79,7 +84,15 @@ async function translateMailing({
     : null;
 
   // Extract texts from mailing (respecting protection config)
-  const textsToTranslate = extractTexts(mailing, protectionConfig);
+  //
+  // Composed blocks need a pass of their own: everything the user wrote is
+  // inside `builderState`, one JSON string the generic walker cannot see into.
+  // Without this, a mailing with composed blocks came back from translation
+  // with those blocks still in the source language, and nothing said so.
+  const textsToTranslate = {
+    ...extractTexts(mailing, protectionConfig),
+    ...extractBuilderTexts(mailing.data),
+  };
   const stats = getExtractionStats(textsToTranslate);
 
   if (stats.fieldCount === 0) {
@@ -152,10 +165,29 @@ async function translateMailing({
   }
 
   // Inject translations back into mailing
+  //
+  // The two kinds of key are separated first: a builder key is not a path into
+  // the model, so the generic injector would walk into nothing and report a
+  // failure nobody can act on.
+  const { builder, rest } = splitBuilderTranslations(translations);
+
   const { mailing: translatedMailing, stats: injectionStats } = injectTexts(
     mailing,
-    translations
+    rest
   );
+
+  // Composed blocks are not just written back, they are REBUILT: `builderHtml`
+  // is what gets exported, so leaving it alone would ship an email whose stored
+  // markup is still in the source language while its state says otherwise.
+  // Same generator as the editor — which is why it is a shared module.
+  const builderStats = injectBuilderTexts(translatedMailing.data, builder);
+
+  if (builderStats.skipped.length > 0) {
+    logger.warn(
+      `[Translation] ${builderStats.skipped.length} composed-block key(s) dropped: ` +
+        builderStats.skipped.join(', ')
+    );
+  }
 
   return {
     mailing: translatedMailing,
@@ -163,8 +195,9 @@ async function translateMailing({
       fieldsExtracted: stats.fieldCount,
       charactersExtracted: stats.totalCharacters,
       fieldsTranslated: validation.translatedCount,
-      fieldsInjected: injectionStats.injected,
+      fieldsInjected: injectionStats.injected + builderStats.applied,
       failedInjections: injectionStats.failed,
+      composedBlocksRebuilt: builderStats.blocksUpdated,
     },
     originalTexts: textsToTranslate,
     translations,
