@@ -19,146 +19,23 @@
 //   - clicking the palette still appends, which is the quick path, the
 //     keyboard path, and the fallback.
 
-const Vue = require('vue/dist/vue.common');
-
 const {
-  BlockBuilderModalComponent,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
-const {
-  ELEMENT_ATTRIBUTE,
-} = require('../../../packages/shared/block-builder/generate.js');
+  openModal,
+  transfer,
+  rowsOf,
+  layOutRows,
+  fireIn,
+  startPaletteDrag,
+  paletteEntry,
+  DRAGGING_CLASS,
+  DROP_BEFORE_CLASS,
+  DROP_AFTER_CLASS,
+  SELECTED_CLASS,
+  EMPTY_DROP_ID,
+} = require('./drag-helpers.js');
 
-const DROP_BEFORE = 'lp-bb-drop-before';
-const DROP_AFTER = 'lp-bb-drop-after';
-const DRAGGING = 'lp-bb-dragging';
-const SELECTED = 'lp-bb-selected';
-
-function accessorOf(initial) {
-  let value = initial === undefined ? '' : initial;
-  return (next) => {
-    if (next === undefined) return value;
-    value = next;
-    return value;
-  };
-}
-
-async function open(types) {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-
-  const app = new Vue({
-    el: host,
-    components: { BlockBuilderModal: BlockBuilderModalComponent },
-    data: {
-      vm: {
-        t: (key) => key,
-        startMultiple: jest.fn(),
-        stopMultiple: jest.fn(),
-      },
-    },
-    template: '<block-builder-modal :vm="vm" />',
-  });
-
-  const modal = app.$children[0];
-  modal.handleToggle(true, {
-    accessor: accessorOf(''),
-    stateAccessor: accessorOf(''),
-  });
-  await Vue.nextTick();
-
-  (types || []).forEach((type) => modal.addElement(type));
-  modal.renderPreview();
-
-  return { modal, doc: modal.$refs.previewFrame.contentDocument };
-}
-
-/** A stand-in for the DataTransfer the browser hands a real drag. */
-const transfer = () => ({
-  effectAllowed: null,
-  dropEffect: null,
-  data: {},
-  setData(type, value) {
-    this.data[type] = value;
-  },
-  getData(type) {
-    return this.data[type];
-  },
-});
-
-const rows = (doc) =>
-  Array.prototype.slice.call(
-    doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`)
-  );
-
-/**
- * jsdom lays nothing out, so every box is zero. Each row is given a height and
- * a position so the midpoint arithmetic has something real to work on.
- */
-function layOutRows(doc, height) {
-  rows(doc).forEach((row, index) => {
-    row.getBoundingClientRect = () => ({
-      top: index * height,
-      bottom: (index + 1) * height,
-      height,
-    });
-  });
-}
-
-const dragOver = (modal, doc, clientY) => {
-  const event = new doc.defaultView.Event('dragover', {
-    bubbles: true,
-    cancelable: true,
-  });
-  event.clientY = clientY;
-  event.dataTransfer = transfer();
-  doc.body.dispatchEvent(event);
-  return event;
-};
-
-const drop = (modal, doc, clientY) => {
-  const event = new doc.defaultView.Event('drop', {
-    bubbles: true,
-    cancelable: true,
-  });
-  event.clientY = clientY;
-  event.dataTransfer = transfer();
-  doc.body.dispatchEvent(event);
-  return event;
-};
-
-const PALETTE_TYPES = ['text', 'image', 'button', 'divider', 'spacer'];
-
-/**
- * Starts a drag the way the browser does: a real event, dispatched on the real
- * palette entry.
- *
- * Calling the handler with a hand-made object instead is what let the whole
- * feature ship broken — a plain object has no `stopPropagation`, and no
- * ancestor ever sees the event, so the host page's guard was invisible here.
- */
-/**
- * The palette entry for a type.
- *
- * Queried on the document rather than through the component's `$el`: its root
- * is a `<modal-component>` whose own root sits behind a `v-if`, so Vue 2 leaves
- * that reference pointing at the placeholder comment until something forces
- * another render — which made it work in some tests and throw in others.
- */
-const paletteEntry = (type) =>
-  document.querySelectorAll('.bb-modal__add')[PALETTE_TYPES.indexOf(type)];
-
-const startDrag = (modal, type) => {
-  const entry = paletteEntry(type);
-  expect(entry).toBeTruthy();
-
-  const event = new window.Event('dragstart', {
-    bubbles: true,
-    cancelable: true,
-  });
-  event.dataTransfer = transfer();
-  entry.dispatchEvent(event);
-  return event;
-};
+const dragOverAt = (doc, clientY) => fireIn(doc, 'dragover', doc.body, clientY);
+const dropAt = (doc, clientY) => fireIn(doc, 'drop', doc.body, clientY);
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -167,14 +44,14 @@ afterEach(() => {
 describe('starting a drag from the palette', () => {
   // `setData` is not optional: without it Firefox never starts the drag at all.
   it('records the type, puts it on the dataTransfer, and marks it a copy', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
 
-    const event = startDrag(modal, 'image');
+    const event = startPaletteDrag('image');
 
     expect(modal.draggingType).toBe('image');
     expect(event.dataTransfer.getData('text/plain')).toBe('image');
     expect(event.dataTransfer.effectAllowed).toBe('copy');
-    expect(doc.body.classList.contains(DRAGGING)).toBe(true);
+    expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(true);
   });
 });
 
@@ -216,7 +93,7 @@ describe('the editor page cancels native drags, and the palette survives it', ()
   afterEach(() => uninstall());
 
   it('starts the drag even though window cancels dragstart', async () => {
-    const { modal } = await open([]);
+    const { modal } = await openModal([]);
 
     const event = dispatchOnPalette(modal, 'dragstart');
 
@@ -226,7 +103,7 @@ describe('the editor page cancels native drags, and the palette survives it', ()
 
   // `drag` fires for the whole gesture, and cancelling it cancels the drop.
   it('keeps the drag alive, since cancelling `drag` would end it', async () => {
-    const { modal } = await open([]);
+    const { modal } = await openModal([]);
     dispatchOnPalette(modal, 'dragstart');
 
     expect(dispatchOnPalette(modal, 'drag').defaultPrevented).toBe(false);
@@ -237,65 +114,65 @@ describe('the insertion point follows the cursor', () => {
   // The one rule of the HTML5 drag API everybody forgets: without this the
   // browser refuses the drop outright.
   it('cancels dragover, or no drop is possible at all', async () => {
-    const { modal, doc } = await open(['text']);
+    const { doc } = await openModal(['text']);
     layOutRows(doc, 100);
-    startDrag(modal, 'image');
+    startPaletteDrag('image');
 
-    expect(dragOver(modal, doc, 10).defaultPrevented).toBe(true);
+    expect(dragOverAt(doc, 10).defaultPrevented).toBe(true);
   });
 
   it('ignores a drag that did not start in our palette', async () => {
-    const { modal, doc } = await open(['text']);
+    const { doc } = await openModal(['text']);
     layOutRows(doc, 100);
 
-    expect(dragOver(modal, doc, 10).defaultPrevented).toBe(false);
+    expect(dragOverAt(doc, 10).defaultPrevented).toBe(false);
   });
 
   it('marks the row the element would land before', async () => {
-    const { modal, doc } = await open(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    startDrag(modal, 'image');
+    startPaletteDrag('image');
 
     // Above the midpoint of the second row.
-    dragOver(modal, doc, 120);
+    dragOverAt(doc, 120);
 
     expect(modal.dropIndex).toBe(1);
-    expect(rows(doc)[1].classList.contains(DROP_BEFORE)).toBe(true);
-    expect(rows(doc)[0].classList.contains(DROP_BEFORE)).toBe(false);
+    expect(rowsOf(doc)[1].classList.contains(DROP_BEFORE_CLASS)).toBe(true);
+    expect(rowsOf(doc)[0].classList.contains(DROP_BEFORE_CLASS)).toBe(false);
   });
 
   it('marks the last row below it when the cursor is past everything', async () => {
-    const { modal, doc } = await open(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    startDrag(modal, 'image');
+    startPaletteDrag('image');
 
-    dragOver(modal, doc, 190);
+    dragOverAt(doc, 190);
 
     expect(modal.dropIndex).toBe(2);
-    expect(rows(doc)[1].classList.contains(DROP_AFTER)).toBe(true);
+    expect(rowsOf(doc)[1].classList.contains(DROP_AFTER_CLASS)).toBe(true);
   });
 
   it('shows one indicator at a time', async () => {
-    const { modal, doc } = await open(['text', 'button']);
+    const { doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    startDrag(modal, 'image');
+    startPaletteDrag('image');
 
-    dragOver(modal, doc, 10);
-    dragOver(modal, doc, 190);
+    dragOverAt(doc, 10);
+    dragOverAt(doc, 190);
 
-    expect(doc.body.querySelectorAll(`.${DROP_BEFORE}`)).toHaveLength(0);
-    expect(doc.body.querySelectorAll(`.${DROP_AFTER}`)).toHaveLength(1);
+    expect(doc.body.querySelectorAll(`.${DROP_BEFORE_CLASS}`)).toHaveLength(0);
+    expect(doc.body.querySelectorAll(`.${DROP_AFTER_CLASS}`)).toHaveLength(1);
   });
 });
 
 describe('dropping', () => {
   it('inserts at the cursor, not at the end', async () => {
-    const { modal, doc } = await open(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    startDrag(modal, 'divider');
+    startPaletteDrag('divider');
 
     // Above the midpoint of the first row: before everything.
-    drop(modal, doc, 10);
+    dropAt(doc, 10);
 
     expect(modal.state.elements.map((element) => element.type)).toEqual([
       'divider',
@@ -305,11 +182,11 @@ describe('dropping', () => {
   });
 
   it('inserts between two elements', async () => {
-    const { modal, doc } = await open(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
-    startDrag(modal, 'divider');
+    startPaletteDrag('divider');
 
-    drop(modal, doc, 120);
+    dropAt(doc, 120);
 
     expect(modal.state.elements.map((element) => element.type)).toEqual([
       'text',
@@ -319,11 +196,11 @@ describe('dropping', () => {
   });
 
   it('appends when dropped past the last element', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
     layOutRows(doc, 100);
-    startDrag(modal, 'spacer');
+    startPaletteDrag('spacer');
 
-    drop(modal, doc, 90);
+    dropAt(doc, 90);
 
     expect(modal.state.elements.map((element) => element.type)).toEqual([
       'text',
@@ -333,34 +210,34 @@ describe('dropping', () => {
 
   // Dropping and editing should be one gesture, not two.
   it('selects what was dropped', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
     layOutRows(doc, 100);
-    startDrag(modal, 'button');
+    startPaletteDrag('button');
 
-    drop(modal, doc, 90);
+    dropAt(doc, 90);
 
     expect(modal.selected.type).toBe('button');
   });
 
   it('clears the drag state and every indicator', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
     layOutRows(doc, 100);
-    startDrag(modal, 'button');
-    dragOver(modal, doc, 10);
+    startPaletteDrag('button');
+    dragOverAt(doc, 10);
 
-    drop(modal, doc, 10);
+    dropAt(doc, 10);
 
     expect(modal.draggingType).toBeNull();
-    expect(doc.body.classList.contains(DRAGGING)).toBe(false);
-    expect(doc.body.querySelectorAll(`.${DROP_BEFORE}`)).toHaveLength(0);
+    expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(false);
+    expect(doc.body.querySelectorAll(`.${DROP_BEFORE_CLASS}`)).toHaveLength(0);
   });
 
   it('ignores a drop carrying a type the palette does not offer', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
     layOutRows(doc, 100);
     modal.draggingType = 'iframe';
 
-    drop(modal, doc, 10);
+    dropAt(doc, 10);
 
     expect(modal.state.elements).toHaveLength(1);
   });
@@ -373,7 +250,7 @@ describe('a dropped element says something', () => {
     ['text', 'content', 'block-builder-seed-text'],
     ['button', 'label', 'block-builder-seed-button'],
   ])('seeds a %s', async (type, key, translation) => {
-    const { modal } = await open([]);
+    const { modal } = await openModal([]);
 
     modal.addElement(type);
 
@@ -381,7 +258,7 @@ describe('a dropped element says something', () => {
   });
 
   it('renders that seed, so the element is visible at once', async () => {
-    const { modal } = await open(['text']);
+    const { modal } = await openModal(['text']);
 
     expect(modal.html).toContain('block-builder-seed-text');
   });
@@ -389,7 +266,7 @@ describe('a dropped element says something', () => {
   // Nothing honest to put in an image; the preview's min-height keeps its slot
   // visible and clickable instead.
   it('leaves the image empty', async () => {
-    const { modal } = await open([]);
+    const { modal } = await openModal([]);
 
     modal.addElement('image');
 
@@ -401,8 +278,8 @@ describe('the preview holds still during a drag', () => {
   // Replacing the body mid-drag destroys the nodes the cursor is over: the drop
   // target vanishes and the drag ends on nothing.
   it('holds a render that falls due mid-drag', async () => {
-    const { modal, doc } = await open(['text']);
-    startDrag(modal, 'image');
+    const { modal, doc } = await openModal(['text']);
+    startPaletteDrag('image');
     const before = doc.body.innerHTML;
 
     modal.scheduleRender();
@@ -412,8 +289,8 @@ describe('the preview holds still during a drag', () => {
   });
 
   it('renders once the drag is over', async () => {
-    const { modal, doc } = await open(['text']);
-    startDrag(modal, 'image');
+    const { modal, doc } = await openModal(['text']);
+    startPaletteDrag('image');
     modal.state.elements[0].content = 'changé après coup';
     modal.scheduleRender();
 
@@ -426,25 +303,25 @@ describe('the preview holds still during a drag', () => {
 
 describe('an empty block still offers somewhere to drop', () => {
   it('shows a drop target when there is nothing yet', async () => {
-    const { doc } = await open([]);
+    const { doc } = await openModal([]);
 
-    const zone = doc.getElementById('lp-bb-empty-drop');
+    const zone = doc.getElementById(EMPTY_DROP_ID);
     expect(zone).not.toBeNull();
     expect(zone.textContent).toBe('block-builder-drop-here');
   });
 
   it('takes the target away once something is there', async () => {
-    const { modal, doc } = await open([]);
+    const { modal, doc } = await openModal([]);
 
     modal.addElement('text');
     modal.renderPreview();
 
-    expect(doc.getElementById('lp-bb-empty-drop')).toBeNull();
+    expect(doc.getElementById(EMPTY_DROP_ID)).toBeNull();
   });
 
   // The target is preview chrome. It must never reach the generated markup.
   it('keeps it out of what the generator produces', async () => {
-    const { modal } = await open([]);
+    const { modal } = await openModal([]);
 
     expect(modal.html).toBe('');
     modal.addElement('text');
@@ -454,7 +331,7 @@ describe('an empty block still offers somewhere to drop', () => {
 
 describe('clicking the palette still works', () => {
   it('appends, and selects what it appended', async () => {
-    const { modal } = await open(['text']);
+    const { modal } = await openModal(['text']);
 
     modal.addElement('divider');
 
@@ -466,12 +343,12 @@ describe('clicking the palette still works', () => {
   });
 
   it('marks the selection in the preview too', async () => {
-    const { modal, doc } = await open(['text']);
+    const { modal, doc } = await openModal(['text']);
 
     modal.addElement('divider');
     modal.renderPreview();
 
-    const last = rows(doc)[1];
-    expect(last.classList.contains(SELECTED)).toBe(true);
+    const last = rowsOf(doc)[1];
+    expect(last.classList.contains(SELECTED_CLASS)).toBe(true);
   });
 });
