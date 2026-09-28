@@ -238,7 +238,8 @@ const EspComponent = Vue.component('EspForm', {
             this.fetchedProfile?.contentSendType?.toString().toLowerCase() +
             '-success-esp-send';
           this.vm.notifier.success(this.vm.t(successText));
-          this.vm.quality.review();
+          // Never let the review stand in the way of the send confirmation.
+          if (this.vm.quality) this.vm.quality.review();
           this.closeModal();
         })
         .catch((error) => {
