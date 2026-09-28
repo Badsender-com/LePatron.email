@@ -23,6 +23,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     tab: 'checks',
     status: 'idle',
     findings: [],
+    ignoredFindings: [],
     checks: [],
     ranAt: null,
     errorCount: 0,
@@ -56,6 +57,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       q.tab,
       q.status,
       q.findings,
+      q.ignored,
       q.checks,
       q.ranAt,
     ].map((observable) => observable.subscribe(this.sync));
@@ -72,7 +74,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       this.open = this.vm.showQuality();
       this.tab = q.tab();
       this.status = q.status();
-      this.findings = q.findings();
+      this.findings = q.activeFindings();
+      this.ignoredFindings = q.ignoredFindings();
       this.checks = q.checks();
       this.ranAt = q.ranAt();
       this.errorCount = q.errorCount();
@@ -141,6 +144,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :vm="vm"
         :status="status"
         :findings="findings"
+        :ignored-findings="ignoredFindings"
         :checks="checks"
         :ran-at="ranAt"
         @send-test="select('send')"
