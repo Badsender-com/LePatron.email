@@ -97,6 +97,30 @@ describe('unreplaced-images', () => {
     });
   });
 
+  it("reports LePatron's own placeholder route, as the editor exports it", () => {
+    const blocks = [{ id: 'b1', type: 'textimageBlock' }];
+    const html = exportOf({
+      b1:
+        '<img src="http://localhost:3000/api/images/placeholder/300x360.png" width="300">',
+    });
+    const findings = findingsOf(unreplacedImages, { blocks, html });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      blockId: 'b1',
+      messageKey: 'Image not replaced',
+    });
+  });
+
+  it('keeps real images of the image backend out of the placeholders', () => {
+    const blocks = [{ id: 'b1', type: 'imageBlock' }];
+    const html = exportOf({
+      b1:
+        '<img src="http://localhost:3000/api/images/cover/600x300/photo.jpg">',
+    });
+    expect(findingsOf(unreplacedImages, { blocks, html })).toEqual([]);
+  });
+
   it('leaves the transparent GIF templates use as a spacer alone', () => {
     const blocks = [{ id: 'b1', type: 'spacerBlock' }];
     const gif =
