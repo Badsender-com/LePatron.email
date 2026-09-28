@@ -2,6 +2,8 @@
 
 // Severities are fixed and always listed in this order (Error → Warning → Info
 // → Passed). Colour is never the only signal: each has an icon and a label.
+// `collapsed`: the group starts folded, so that what needs fixing comes first
+// and the list stays short (most checks pass).
 const SEVERITY_ORDER = ['error', 'warning', 'info', 'success'];
 
 const SEVERITY_META = {
@@ -22,12 +24,14 @@ const SEVERITY_META = {
     labelKey: 'Info',
     groupKey: 'Infos',
     countKey: '__count__ infos',
+    collapsed: true,
   },
   success: {
     icon: 'lucide-check-circle',
     labelKey: 'Check passed',
     groupKey: 'Passed',
     countKey: '__count__ checks passed',
+    collapsed: true,
   },
 };
 
