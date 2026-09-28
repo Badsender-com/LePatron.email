@@ -37,6 +37,11 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
   },
   data: () => ({
     expandedId: null,
+    // Which groups are unfolded, by severity. Kept across re-runs.
+    openGroups: SEVERITY_ORDER.reduce((acc, severity) => {
+      acc[severity] = !SEVERITY_META[severity].collapsed;
+      return acc;
+    }, {}),
     showIgnored: false,
     undo: null,
     undoTimer: null,
@@ -100,6 +105,9 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     run() {
       clearHighlight();
       this.vm.quality.run();
+    },
+    toggleGroup(severity) {
+      this.openGroups[severity] = !this.openGroups[severity];
     },
     toggle(item) {
       this.expandedId = this.expandedId === item.id ? null : item.id;
@@ -178,22 +186,27 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         <div class="qc-drawer__list">
           <div v-for="group in groups" :key="group.severity" class="qc-group">
             <h3 class="qc-group__header">
-              <span :class="['lucide', group.meta.icon, 'qc-sev--' + group.severity]" aria-hidden="true"></span>
-              <span class="qc-group__label">{{ t(group.meta.groupKey) }}</span>
-              <span class="qc-group__count">{{ group.items.length }}</span>
+              <button type="button" class="qc-group__toggle" :aria-expanded="openGroups[group.severity] ? 'true' : 'false'" @click="toggleGroup(group.severity)">
+                <span :class="['lucide', group.meta.icon, 'qc-sev--' + group.severity]" aria-hidden="true"></span>
+                <span class="qc-group__label">{{ t(group.meta.groupKey) }}</span>
+                <span class="qc-group__count">{{ group.items.length }}</span>
+                <span :class="['lucide', openGroups[group.severity] ? 'lucide-chevron-up' : 'lucide-chevron-down']" aria-hidden="true"></span>
+              </button>
             </h3>
-            <quality-issue-row
-              v-for="item in group.items"
-              :key="item.id"
-              :item="item"
-              :t="t"
-              :can-comment="canComment"
-              :expanded="expandedId === item.id"
-              @toggle="toggle(item)"
-              @locate="locate(item)"
-              @comment="comment(item)"
-              @ignore="ignore(item)"
-            ></quality-issue-row>
+            <template v-if="openGroups[group.severity]">
+              <quality-issue-row
+                v-for="item in group.items"
+                :key="item.id"
+                :item="item"
+                :t="t"
+                :can-comment="canComment"
+                :expanded="expandedId === item.id"
+                @toggle="toggle(item)"
+                @locate="locate(item)"
+                @comment="comment(item)"
+                @ignore="ignore(item)"
+              ></quality-issue-row>
+            </template>
           </div>
 
           <div v-if="ignoredItems.length" class="qc-group qc-group--ignored">
