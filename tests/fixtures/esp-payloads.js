@@ -39,13 +39,13 @@ const ESP_PAYLOADS = [
   // block's fidelity guarantee.
   {
     key: 'jssp-include-unsub',
-    html: '<td><%@ include view=\'CLAAUT_unsubLink\' %></td>',
+    html: "<td><%@ include view='CLAAUT_unsubLink' %></td>",
     preserved: true,
     espCritical: true,
   },
   {
     key: 'jssp-include-mirror',
-    html: '<td><%@ include view=\'MirrorPageUrl\' %></td>',
+    html: "<td><%@ include view='MirrorPageUrl' %></td>",
     preserved: true,
     espCritical: true,
   },
@@ -61,8 +61,8 @@ const ESP_PAYLOADS = [
     // everything between the FIRST `<%` and the LAST `%>` as one span.
     key: 'jssp-two-tags-one-line',
     html:
-      '<td><%@ include view=\'CLAAUT_unsubLink\' %> | ' +
-      '<%@ include view=\'MirrorPageUrl\' %></td>',
+      "<td><%@ include view='CLAAUT_unsubLink' %> | " +
+      "<%@ include view='MirrorPageUrl' %></td>",
     preserved: true,
     espCritical: true,
   },
@@ -70,7 +70,7 @@ const ESP_PAYLOADS = [
     // Same trap across lines: `.` does not cross newlines, so this was never
     // restored at all.
     key: 'jssp-multiline',
-    html: '<td><%@ include\n  view=\'CLAAUT_unsubLink\'\n%></td>',
+    html: "<td><%@ include\n  view='CLAAUT_unsubLink'\n%></td>",
     preserved: true,
     espCritical: true,
   },
@@ -99,13 +99,13 @@ const ESP_PAYLOADS = [
     key: 'dollar-patterns',
     // Every String.replace special pattern: these break a naive replacement
     // string, which is why the export code must use a replacer function.
-    html: '<td>$& $1 $` $\' cost $5</td>',
+    html: "<td>$& $1 $` $' cost $5</td>",
     preserved: true,
   },
   { key: 'cdata-close', html: '<td>a ]]> b</td>', preserved: true },
   {
     key: 'quotes-mixed',
-    html: '<td><a href=\'https://a.test\' title="single \'quoted\'">x</a></td>',
+    html: "<td><a href='https://a.test' title=\"single 'quoted'\">x</a></td>",
     preserved: true,
   },
   {

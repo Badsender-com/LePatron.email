@@ -76,7 +76,10 @@ describe('MistralProvider', () => {
         'https://api.mistral.ai/v1/models',
         expect.objectContaining({
           method: 'GET',
-          headers: { Authorization: 'Bearer mistral-test-key-12345' },
+          // Built by the dialect now, so it also carries Content-Type.
+          headers: expect.objectContaining({
+            Authorization: 'Bearer mistral-test-key-12345',
+          }),
         })
       );
     });

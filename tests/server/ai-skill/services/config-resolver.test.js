@@ -34,6 +34,23 @@ describe('config-resolver', () => {
     expect(cfg.source.model).toBe('skill');
   });
 
+  // Documents why the empty string is normalized to null before it reaches
+  // persistence (ai-feature.service.normalizeModelId). The resolver only skips
+  // undefined and null, so a stored '' wins over the skill hint and the
+  // default, and reaches the provider as the group's chosen model. This test
+  // is the guard: if the resolver ever starts treating '' as unset, the
+  // normalization can be revisited — until then it must stay.
+  it('model: an empty string would be taken as a real group value', () => {
+    const cfg = resolveConfig({
+      integration,
+      groupFeatureConfig: { model: '' },
+      skillModelHints: { model: 'gpt-4o-mini' },
+      defaults: { model: 'gpt-3.5' },
+    });
+    expect(cfg.model).toBe('');
+    expect(cfg.source.model).toBe('group');
+  });
+
   it('model: falls back to default when neither set', () => {
     const cfg = resolveConfig({
       integration,

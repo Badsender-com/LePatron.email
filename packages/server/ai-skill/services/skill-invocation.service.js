@@ -36,7 +36,10 @@ const { FeatureResolutionReasons } = aiFeatureService;
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const { getSchema } = require('../schemas');
-const { buildOutputContract } = require('../schemas/output-contract.js');
+const {
+  buildOutputContract,
+  buildOutputJsonSchema,
+} = require('../schemas/output-contract.js');
 const {
   SkillStatuses,
   InvocationStatuses,
@@ -226,10 +229,16 @@ async function invoke({
   // produce raw newlines / unescaped quotes inside long strings (two real QC
   // runs failed in OUTPUT_PARSE). The repair pass in parseJsonFromLLM stays as
   // defense-in-depth for providers without JSON mode.
+  // The schema rides along: providers that can enforce a shape rather than
+  // ask for one need it (Anthropic forces a tool call built from it). Those
+  // that cannot simply ignore the extra field.
   const responseFormat =
     typeof provider.supportsJsonResponseFormat === 'function' &&
     provider.supportsJsonResponseFormat()
-      ? { type: 'json_object' }
+      ? {
+          type: 'json_object',
+          schema: buildOutputJsonSchema(version.outputSchemaId),
+        }
       : undefined;
   let providerResponse;
   try {

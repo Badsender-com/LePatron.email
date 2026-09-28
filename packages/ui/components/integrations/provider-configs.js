@@ -38,6 +38,15 @@ export const providerCategories = {
 /**
  * Provider configurations with category assignment.
  */
+// Whether the endpoint honours `response_format: json_object`. Off by default:
+// promising it to an endpoint that ignores it makes skills fail at output
+// parsing instead of falling back to the repair pass.
+const JSON_MODE_FIELD = {
+  key: 'supportsJsonMode',
+  labelKey: 'integrations.openaiCompatible.supportsJsonMode',
+  hintKey: 'integrations.openaiCompatible.supportsJsonModeHint',
+};
+
 export const providerConfigs = {
   // BI & Analytics providers
   metabase: {
@@ -68,6 +77,73 @@ export const providerConfigs = {
     apiHostPlaceholder: 'https://api.mistral.ai',
     apiHostHintKey: 'integrations.mistral.apiHostHint',
     showProductId: false,
+  },
+
+  anthropic: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.anthropic.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://api.anthropic.com',
+    apiHostHintKey: 'integrations.anthropic.apiHostHint',
+    showProductId: false,
+  },
+
+  gemini: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.gemini.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://generativelanguage.googleapis.com',
+    apiHostHintKey: 'integrations.gemini.apiHostHint',
+    showProductId: false,
+  },
+
+  azure_openai: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.azureOpenai.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://mon-instance.openai.azure.com',
+    apiHostHintKey: 'integrations.azureOpenai.apiHostHint',
+    // The resource host is what the deployment path is built from.
+    apiHostRequired: true,
+    showProductId: false,
+    configFields: [
+      {
+        key: 'reasoningModel',
+        labelKey: 'integrations.azureOpenai.reasoningModel',
+        hintKey: 'integrations.azureOpenai.reasoningModelHint',
+      },
+    ],
+  },
+
+  openai_compatible: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.openaiCompatible.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://mon-endpoint.example.com',
+    apiHostHintKey: 'integrations.openaiCompatible.apiHostHint',
+    apiHostRequired: true,
+    showProductId: false,
+    configFields: [JSON_MODE_FIELD],
+  },
+
+  scaleway: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.scaleway.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://api.scaleway.ai',
+    apiHostHintKey: 'integrations.scaleway.apiHostHint',
+    showProductId: false,
+    configFields: [JSON_MODE_FIELD],
+  },
+
+  ovh: {
+    category: 'aiGeneration',
+    type: 'ai',
+    apiKeyPlaceholderKey: 'integrations.ovh.apiKeyPlaceholder',
+    apiHostPlaceholder: 'https://oai.endpoints.kepler.ai.cloud.ovh.net',
+    apiHostHintKey: 'integrations.ovh.apiHostHint',
+    showProductId: false,
+    configFields: [JSON_MODE_FIELD],
   },
 
   infomaniak: {
@@ -121,6 +197,12 @@ export const providerLabels = {
   openai: 'OpenAI',
   mistral: 'Mistral AI',
   infomaniak: 'Infomaniak AI Tools',
+  anthropic: 'Anthropic (Claude)',
+  gemini: 'Google Gemini',
+  azure_openai: 'Azure OpenAI',
+  openai_compatible: 'Compatible OpenAI',
+  scaleway: 'Scaleway',
+  ovh: 'OVHcloud',
   // AI - Translation
   deepl: 'DeepL',
   // Content feed

@@ -143,13 +143,27 @@ export default {
         await this.fetchData();
       } catch (error) {
         const errorResponse = error.response && error.response.data;
-        const message =
-          (errorResponse && errorResponse.message) ||
-          this.$t('global.errors.errorOccured');
-        this.showSnackbar({ text: message, color: 'error' });
+        this.showSnackbar({
+          text: this.translateServerError(errorResponse),
+          color: 'error',
+        });
       } finally {
         this.loading = false;
       }
+    },
+
+    /**
+     * The server answers with an error code, and this used to be shown as is —
+     * an admin saving a private host read "INTEGRATION_HOST_NOT_PUBLIC" on
+     * screen. Translated when we have wording for the code, left as the
+     * generic message otherwise, so an unknown code degrades rather than
+     * leaking an identifier.
+     */
+    translateServerError(errorResponse) {
+      const code = errorResponse && errorResponse.message;
+      const key = `integrations.errors.${code}`;
+      if (code && this.$te(key)) return this.$t(key);
+      return this.$t('global.errors.errorOccured');
     },
 
     async confirmDelete(integration) {
