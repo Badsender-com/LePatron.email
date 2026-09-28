@@ -48,9 +48,33 @@ describe('generate', () => {
     expect(html.indexOf('First')).toBeLessThan(html.indexOf('Second'));
   });
 
-  it('tags each element so the canvas can find it', () => {
+  // Element ids are editing chrome. What `generate` returns by default is what
+  // gets stored and mailed, and an internal id in a recipient's inbox is noise
+  // — the markup is substituted verbatim at the very end of the export, so
+  // nothing downstream would ever strip it.
+  it('ships no element id by default', () => {
     const html = generate(stateWith(textElement({ id: 'e42' })));
+    expect(html).not.toContain(ELEMENT_ATTRIBUTE);
+  });
+
+  it('tags each element when the preview asks for it', () => {
+    const html = generate(stateWith(textElement({ id: 'e42' })), {
+      elementIds: true,
+    });
     expect(html).toContain(`${ELEMENT_ATTRIBUTE}="e42"`);
+  });
+
+  // `.map(generateElement)` hands the index as a second argument, which is
+  // exactly where the options go: every element after the first would take its
+  // `elementIds` from a number.
+  it('tags every element, not just the first', () => {
+    const html = generate(
+      stateWith(textElement({ id: 'a' }), textElement({ id: 'b' })),
+      { elementIds: true }
+    );
+
+    expect(html).toContain(`${ELEMENT_ATTRIBUTE}="a"`);
+    expect(html).toContain(`${ELEMENT_ATTRIBUTE}="b"`);
   });
 
   it('paints the block background on the attribute and the style', () => {
@@ -115,7 +139,8 @@ describe('generate', () => {
 
   it('escapes a hostile element id', () => {
     const html = generate(
-      stateWith(textElement({ id: '"><script>x</script>' }))
+      stateWith(textElement({ id: '"><script>x</script>' })),
+      { elementIds: true }
     );
 
     expect(html).not.toContain('<script>');
@@ -125,10 +150,18 @@ describe('generate', () => {
 
 describe('generateElement', () => {
   it('renders one element on its own, for a targeted canvas patch', () => {
-    const html = generateElement(textElement({ content: 'Solo' }));
+    const html = generateElement(textElement({ content: 'Solo' }), {
+      elementIds: true,
+    });
 
     expect(html).toContain('Solo');
     expect(html).toContain(ELEMENT_ATTRIBUTE);
+  });
+
+  it('leaves the id out unless asked, like generate does', () => {
+    expect(generateElement(textElement({ content: 'Solo' }))).not.toContain(
+      ELEMENT_ATTRIBUTE
+    );
   });
 
   test.each([
