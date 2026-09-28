@@ -3,12 +3,29 @@
 const _ = require('lodash');
 const { getBlockDefault } = require('../ownership');
 
-// An editable image left empty is exported as the image backend's placeholder
-// (`…?method=placeholder&params=W,H`, see app.js), or without any src. Not the
-// transparent GIF: that is a background "blank", and templates use it as a
-// spacer inside blocks.
-function isPlaceholderSrc(src) {
-  return !src || /[?&]method=placeholder\b/.test(src);
+const pathnameOf = (url) => {
+  try {
+    return new URL(url, 'http://placeholder.invalid').pathname;
+  } catch (e) {
+    return null;
+  }
+};
+
+/**
+ * An editable image left empty is exported as the image backend's placeholder,
+ * or without any src. LePatron serves it under its own route
+ * (`metadata.imagesUrl.placeholder`, e.g. /api/images/placeholder/300x360.png,
+ * see badsender-extensions.js); stock Mosaico as `…?method=placeholder`.
+ * Not the transparent GIF: that is a background "blank", and templates use it
+ * as a spacer inside blocks.
+ * @param {string|null} src
+ * @param {string|null} [placeholderUrl] - the editor's placeholder route
+ */
+function isPlaceholderSrc(src, placeholderUrl) {
+  if (!src) return true;
+  if (/[?&]method=placeholder\b/.test(src)) return true;
+  const placeholderPath = placeholderUrl && pathnameOf(placeholderUrl);
+  return Boolean(placeholderPath) && pathnameOf(src).startsWith(placeholderPath);
 }
 
 // Every image of a block model: objects carrying a `src` (image widgets).
@@ -43,11 +60,15 @@ module.exports = {
   isPlaceholderSrc,
   run(ctx) {
     const shownByBlock = exportedImagesByBlock(ctx);
+    const placeholderUrl = _.get(
+      ctx.viewModel,
+      'metadata.imagesUrl.placeholder'
+    );
 
     // Placeholders actually shown in the client's blocks.
     const placeholders = _.flatMap(Object.values(shownByBlock), (images) =>
       images
-        .filter((img) => isPlaceholderSrc(img.src))
+        .filter((img) => isPlaceholderSrc(img.src, placeholderUrl))
         .map((img) => ({
           messageKey: 'Image not replaced',
           blockId: img.blockId,
