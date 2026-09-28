@@ -175,8 +175,9 @@ function loader(opts) {
       name: 'Test', // l10n happens in the template
       enabled: ko.observable(true),
     };
+    // Sending a test lives in the quality drawer, next to the checks.
     testCmd.execute = function () {
-      viewModel.openTestModal(true);
+      if (viewModel.quality) viewModel.quality.open('send');
     };
 
     /// ///

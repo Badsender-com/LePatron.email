@@ -75,7 +75,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     debug: ko.observable(false),
     contentListeners: ko.observable(0),
     loadedTemplate: ko.observable(false),
-    openTestModal: ko.observable(false),
     logoPath: 'rs/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico',
