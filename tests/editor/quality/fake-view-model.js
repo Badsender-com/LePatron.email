@@ -24,7 +24,11 @@ function fakeViewModel({
   html = '<html><body></body></html>',
   trackingConfig,
   trackingUrls = [],
-  imagesUrl = { placeholder: 'http://localhost:3000/api/images/placeholder/' },
+  // As the editor gets it from the server (mailing.schema.js, imagesUrl).
+  imagesUrl = {
+    images: 'http://localhost:3000/api/images/',
+    placeholder: 'http://localhost:3000/api/images/placeholder/',
+  },
   containers = {},
 } = {}) {
   const exportHTML = jest.fn(() => html);

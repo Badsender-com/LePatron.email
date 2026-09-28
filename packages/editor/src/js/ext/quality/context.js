@@ -53,6 +53,8 @@ function buildContext(viewModel, html) {
     // The editor's configuration, read once: rules never reach the view model.
     config: {
       placeholderUrl: _.get(viewModel, 'metadata.imagesUrl.placeholder'),
+      // Every route of LePatron's image backend: images, cover, crop, placeholder.
+      imagesUrl: _.get(viewModel, 'metadata.imagesUrl') || {},
       trackingConfig: _.get(viewModel, 'metadata.trackingConfig'),
     },
     // The block root keeps its `id` in the export (uniqueId + attr:{id}).

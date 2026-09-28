@@ -1,11 +1,17 @@
 'use strict';
 
-const { blockLinks, blockImages, isDynamic } = require('../exported-content');
+const {
+  blockLinks,
+  blockImages,
+  isDynamic,
+  isPlatformImage,
+} = require('../exported-content');
 
 const isHttp = (value) => /^http:\/\//i.test(value || '');
 
 // Plain http: a link warns the reader in some clients; an image may not load
-// at all, since clients fetch images over https only.
+// at all, since clients fetch images over https only. Images of LePatron's own
+// backend are left out: the export rehosts them, their address is not final.
 module.exports = {
   id: 'insecure-urls',
   category: 'technical',
@@ -22,7 +28,12 @@ module.exports = {
         value: link.href,
       }));
     const images = blockImages(ctx)
-      .filter((image) => !isDynamic(image.src) && isHttp(image.src))
+      .filter(
+        (image) =>
+          !isDynamic(image.src) &&
+          isHttp(image.src) &&
+          !isPlatformImage(ctx, image.src)
+      )
       .map((image) => ({
         messageKey: 'Image is not secure (http) and may not load: __url__',
         severity: 'warning',
