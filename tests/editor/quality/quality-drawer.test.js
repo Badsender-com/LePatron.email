@@ -86,6 +86,29 @@ describe('QualityDrawer', () => {
     );
     expect(groups).toEqual(['Errors', 'Passed']);
     expect(el.querySelector('.qc-row__block').textContent).toContain('Hero');
+  });
+
+  it('folds the passed checks and the infos, and unfolds them on demand', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [linkFinding],
+      checks: [{ ...sizeCheck }],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+
+    const toggles = el.querySelectorAll('.qc-group__toggle');
+    expect(toggles[0].getAttribute('aria-expanded')).toBe('true');
+    expect(toggles[1].getAttribute('aria-expanded')).toBe('false');
+    expect(el.textContent).not.toContain('Weighs 40 KB');
+
+    toggles[1].click();
+    await Vue.nextTick();
+    expect(toggles[1].getAttribute('aria-expanded')).toBe('true');
+    expect(el.textContent).toContain('Weighs 40 KB');
+
+    // A re-run keeps the groups as the user left them.
+    vm.quality.run();
+    await Vue.nextTick();
     expect(el.textContent).toContain('Weighs 40 KB');
   });
 
@@ -111,8 +134,10 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.textContent).toContain('This check could not run');
     expect(el.querySelector('.qc-group__label').textContent).toBe('Infos');
+    el.querySelector('.qc-group__toggle').click();
+    await Vue.nextTick();
+    expect(el.textContent).toContain('This check could not run');
   });
 
   it('expands a row and takes the user to its block', async () => {
