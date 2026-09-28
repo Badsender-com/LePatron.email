@@ -103,8 +103,16 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         ) || null
       );
     },
+    // What the block will actually store and mail: no element ids, which are
+    // editing chrome and have no business in a recipient's inbox.
     html() {
       return generate(this.state);
+    },
+
+    // What the preview renders. Same markup plus the ids the selection and the
+    // drag need — they never leave this iframe.
+    previewMarkup() {
+      return generate(this.state, { elementIds: true });
     },
     isEmpty() {
       return this.state.elements.length === 0;
@@ -120,7 +128,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
   },
   watch: {
-    html() {
+    // Watching what the preview actually renders, not what the block will
+    // store: the two differ by the element ids now.
+    previewMarkup() {
       this.scheduleRender();
     },
     // Only the outline moves, so the body is left alone — re-rendering it would
@@ -265,7 +275,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
 
       // Replacing the body, never the document: reloading is what makes images
       // flicker and the scroll jump.
-      doc.body.innerHTML = this.html;
+      doc.body.innerHTML = this.previewMarkup;
       this.applySelectionHighlight();
     },
 

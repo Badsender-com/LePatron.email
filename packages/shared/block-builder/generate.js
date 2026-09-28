@@ -22,9 +22,17 @@ const STATE_VERSION = 1;
 // on its own.
 const GENERATOR_VERSION = '1.0.0';
 
-// Identifies an element in the rendered markup, so the canvas can later patch
-// one subtree instead of replacing the whole block, and so a click can select
-// the element it landed on.
+// Identifies an element in the rendered markup, so a click can select the one it
+// landed on and a drag can pick it up.
+//
+// OFF BY DEFAULT, and that is the point: this is editing chrome, and what
+// `generate` returns is what gets stored and mailed. An internal id in a
+// recipient's inbox is noise at best — it survives the export untouched, since
+// the markup is substituted verbatim after every other pass has run, so nothing
+// downstream would ever strip it.
+//
+// The preview asks for it explicitly (`{ elementIds: true }`); the apply path,
+// the gallery and the server's regeneration do not.
 const ELEMENT_ATTRIBUTE = 'data-lp-el';
 
 const DEFAULT_BLOCK = {
@@ -35,9 +43,10 @@ const DEFAULT_BLOCK = {
 
 /**
  * @param {Object} element one entry of `state.elements`
- * @returns {string} the element's markup, wrapped in its identified row
+ * @param {Object} [options] see generate
+ * @returns {string} the element's markup
  */
-function generateElement(element) {
+function generateElement(element, options) {
   if (!element || typeof element !== 'object') return '';
 
   const definition = elementFor(element.type);
@@ -46,7 +55,8 @@ function generateElement(element) {
   if (!definition) return '';
 
   const values = { ...definition.defaults, ...element };
-  const id = escapeForContext(element.id, ATTR);
+  const id =
+    options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
 
   return (
     `<tr><td${id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : ''}>` +
@@ -57,12 +67,20 @@ function generateElement(element) {
 
 /**
  * @param {Object} state
+ * @param {Object} [options]
+ * @param {boolean} [options.elementIds] mark each row with its element id.
+ *   Editing chrome — see ELEMENT_ATTRIBUTE. Off unless the preview asks.
  * @returns {string} the block's markup, or an empty string for an empty state
  */
-function generate(state) {
+function generate(state, options) {
   if (!state || !Array.isArray(state.elements)) return '';
 
-  const rows = state.elements.map(generateElement).join('');
+  // `.map(generateElement)` would hand the index as a second argument, which is
+  // exactly where the options go — every element after the first would get
+  // `elementIds` from a number.
+  const rows = state.elements
+    .map((element) => generateElement(element, options))
+    .join('');
   // An empty block exports nothing at all — same rule as the HTML code block,
   // whose empty root had to be stripped to avoid shipping a bare <div>.
   if (rows === '') return '';
