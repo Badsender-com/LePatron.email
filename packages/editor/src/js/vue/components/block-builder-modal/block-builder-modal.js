@@ -54,6 +54,10 @@ const DRAGGING_CLASS = 'lp-bb-dragging';
 const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
 const DROP_AFTER_CLASS = 'lp-bb-drop-after';
 
+// The row currently being moved, dimmed so the cursor is not carrying an
+// invisible thing.
+const MOVING_CLASS = 'lp-bb-moving';
+
 // The drop target of a block that holds nothing yet.
 const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
@@ -92,6 +96,7 @@ const PREVIEW_DOCUMENT = [
   'text-align:center;color:#8c8c8c;font:14px Arial,Helvetica,sans-serif;}',
   `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
   'border-color:#00acdc;color:#00acdc;}',
+  `[${ELEMENT_ATTRIBUTE}].${MOVING_CLASS}{opacity:0.4;}`,
   '</style></head><body></body></html>',
 ].join('');
 
@@ -139,8 +144,10 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     palette: PALETTE,
     previewWidth: DESKTOP_WIDTH,
     frameRequest: null,
-    // The palette entry currently being dragged, and where it would land.
+    // What is being dragged: a palette entry to insert, or an element already
+    // in the block to move. Never both.
     draggingType: null,
+    draggingId: null,
     dropIndex: null,
     // A render that fell due mid-drag and was held back.
     renderHeldDuringDrag: false,
@@ -297,11 +304,16 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.$set(element, key, value);
     },
 
+    /** True while either kind of drag is under way. */
+    isDragging() {
+      return Boolean(this.draggingType || this.draggingId);
+    },
+
     scheduleRender() {
       // Replacing the body mid-drag destroys the very nodes the cursor is over:
       // the drop target vanishes, and the drag ends on nothing. Held until the
       // drag is done, then rendered once.
-      if (this.draggingType) {
+      if (this.isDragging()) {
         this.renderHeldDuringDrag = true;
         return;
       }
@@ -337,6 +349,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       // `dragover` has to cancel the event on every move, or the browser
       // refuses the drop outright — the one rule of the HTML5 drag API that
       // everybody forgets.
+      // Reordering starts inside the iframe, so its `dragstart` never reaches
+      // the parent window — and therefore never meets Mosaico's guard, which
+      // is why this one needs no stopPropagation while the palette's does.
+      doc.addEventListener('dragstart', this.handlePreviewDragStart);
+      doc.addEventListener('dragend', this.handleDragEnd);
       doc.addEventListener('dragenter', this.handlePreviewDragOver);
       doc.addEventListener('dragover', this.handlePreviewDragOver);
       doc.addEventListener('drop', this.handlePreviewDrop);
@@ -360,6 +377,12 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         zone.textContent = this.vm.t('block-builder-drop-here');
         doc.body.appendChild(zone);
       }
+      // Preview chrome, set on the nodes rather than written into the markup:
+      // `draggable` has no business in an email, and the generated HTML is what
+      // ships.
+      this.previewRows(doc).forEach((row) => {
+        row.draggable = true;
+      });
       this.applySelectionHighlight();
     },
 
@@ -394,12 +417,47 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       event.stopPropagation();
     },
 
+    // ---- reordering inside the preview ------------------------------------
+
+    // Dragging a row that is already in the block moves it. Same indicator,
+    // same drop maths as an insertion — only what happens on drop differs.
+    handlePreviewDragStart(event) {
+      const doc = this.previewDocument();
+      const target = event.target;
+      const row =
+        target && typeof target.closest === 'function'
+          ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
+          : null;
+
+      if (!row || !doc) return;
+
+      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
+      if (!this.state.elements.some((element) => element.id === id)) return;
+
+      this.draggingId = id;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', id);
+      }
+      // Selecting what is being moved, so the settings panel follows the thing
+      // under the cursor rather than staying on whatever was selected before.
+      this.selectedId = id;
+      row.classList.add(MOVING_CLASS);
+      doc.body.classList.add(DRAGGING_CLASS);
+    },
+
     handleDragEnd() {
       this.draggingType = null;
+      this.draggingId = null;
       this.dropIndex = null;
       this.clearDropIndicator();
       const doc = this.previewDocument();
-      if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
+      if (doc && doc.body) {
+        doc.body.classList.remove(DRAGGING_CLASS);
+        this.previewRows(doc).forEach((row) =>
+          row.classList.remove(MOVING_CLASS)
+        );
+      }
       // Renders were held while the rows had to stay still under the cursor.
       if (this.renderHeldDuringDrag) {
         this.renderHeldDuringDrag = false;
@@ -408,9 +466,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     handlePreviewDragOver(event) {
-      if (!this.draggingType) return;
+      if (!this.isDragging()) return;
       event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = this.draggingId ? 'move' : 'copy';
+      }
 
       const doc = this.previewDocument();
       if (!doc || !doc.body) return;
@@ -437,15 +497,41 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     handlePreviewDrop(event) {
-      if (!this.draggingType) return;
+      if (!this.isDragging()) return;
       event.preventDefault();
 
       const doc = this.previewDocument();
       const index = doc ? this.dropIndexAt(doc, event.clientY) : 0;
       const type = this.draggingType;
+      const id = this.draggingId;
 
       this.handleDragEnd();
-      this.insertElement(type, index);
+
+      if (id) this.moveElementTo(id, index);
+      else this.insertElement(type, index);
+    },
+
+    /**
+     * Moves an element to the position the cursor was over.
+     *
+     * `index` counts rows as they are laid out NOW, with the dragged element
+     * still among them. Taking it out first shifts everything after it up by
+     * one, so a target past its old position has to come down by one — the
+     * classic off-by-one of every reorder, and the reason dropping an element
+     * just below itself would otherwise move it one row too far.
+     */
+    moveElementTo(id, index) {
+      const from = this.state.elements.findIndex(
+        (element) => element.id === id
+      );
+      if (from === -1) return;
+
+      const to = index > from ? index - 1 : index;
+      if (to === from) return;
+
+      const [element] = this.state.elements.splice(from, 1);
+      this.state.elements.splice(to, 0, element);
+      this.selectedId = element.id;
     },
 
     /**
@@ -556,6 +642,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
 
     closeModal() {
       this.draggingType = null;
+      this.draggingId = null;
       this.dropIndex = null;
       this.renderHeldDuringDrag = false;
       this.accessor = null;
