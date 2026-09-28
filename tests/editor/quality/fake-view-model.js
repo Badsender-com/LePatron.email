@@ -13,6 +13,7 @@ function fakeViewModel({
   html = '<html><body></body></html>',
   trackingConfig,
   trackingUrls = [],
+  imagesUrl = { placeholder: 'http://localhost:3000/api/images/placeholder/' },
 } = {}) {
   const exportHTML = jest.fn(() => html);
   return {
@@ -23,7 +24,7 @@ function fakeViewModel({
       ),
     exportHTML,
     blockDefs,
-    metadata: { trackingConfig },
+    metadata: { trackingConfig, imagesUrl },
     content: () => ({
       mainBlocks: () => ({
         blocks: ko.observableArray(blocks.map((b) => ko.observable(b))),
