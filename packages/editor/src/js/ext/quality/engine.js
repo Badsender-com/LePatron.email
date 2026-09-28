@@ -23,6 +23,14 @@ const sampleText = require('./rules/sample-text');
 const mergeTags = require('./rules/merge-tags');
 const emptyBlocks = require('./rules/empty-blocks');
 const uppercaseText = require('./rules/uppercase-text');
+const smallFont = require('./rules/small-font');
+const hiddenText = require('./rules/hidden-text');
+const colorContrast = require('./rules/color-contrast');
+const textLayout = require('./rules/text-layout');
+const indistinctLinks = require('./rules/indistinct-links');
+const headings = require('./rules/headings');
+const altRedundant = require('./rules/alt-redundant');
+const emojiPlacement = require('./rules/emoji-placement');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -32,6 +40,14 @@ const DEFAULT_RULES = [
   mergeTags,
   emptyBlocks,
   uppercaseText,
+  hiddenText,
+  smallFont,
+  colorContrast,
+  textLayout,
+  indistinctLinks,
+  headings,
+  altRedundant,
+  emojiPlacement,
   trackingParams,
   unfilledLinks,
   malformedLinks,
