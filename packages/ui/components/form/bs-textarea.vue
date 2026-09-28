@@ -5,8 +5,11 @@
  * Design system compliant textarea that displays the label above
  * the input, mirroring the BsTextField pattern.
  */
+import mixinInputId from '~/helpers/mixins/mixin-input-id.js';
+
 export default {
   name: 'BsTextarea',
+  mixins: [mixinInputId],
   inheritAttrs: false,
   props: {
     value: { type: [String, Number], default: '' },
@@ -55,12 +58,16 @@ export default {
       'bs-textarea--monospace': monospace,
     }"
   >
-    <label v-if="label" class="bs-textarea__label">
+    <label v-if="label" :for="inputId" class="bs-textarea__label">
       {{ label }}
       <span v-if="required" class="bs-textarea__required">*</span>
     </label>
     <v-textarea
+      :id="inputId"
       v-model="localValue"
+      :aria-required="required ? 'true' : null"
+      :aria-invalid="hasError ? 'true' : null"
+      :aria-describedby="describedBy"
       v-bind="$attrs"
       :placeholder="placeholder"
       :disabled="disabled"
@@ -73,8 +80,16 @@ export default {
       hide-details="auto"
       class="bs-textarea__input"
       v-on="$listeners"
-    />
-    <div v-if="hint && !hasError" class="bs-textarea__hint">
+    >
+      <!-- Vuetify already flags the message container `role="alert"`; the id
+           is ours to add, so `aria-describedby` has something to point at.
+           Only the first message is tagged: `error-count` defaults to 1, and a
+           caller raising it must not produce duplicate ids. -->
+      <template #message="{ message, key }">
+        <span :id="key === 0 ? errorId : null">{{ message }}</span>
+      </template>
+    </v-textarea>
+    <div v-if="hint && !hasError" :id="hintId" class="bs-textarea__hint">
       {{ hint }}
     </div>
   </div>

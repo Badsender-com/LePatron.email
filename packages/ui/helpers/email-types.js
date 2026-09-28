@@ -1,7 +1,23 @@
-// Canonical email types. Values are stored RAW (promo/newsletter/transactional);
-// only the display is translated via aiSkills.emailTypes.*. Free/unknown values
-// (facet inputs allow custom entries) fall back to their raw string.
-export const EMAIL_TYPES = ['promo', 'newsletter', 'transactional'];
+// Canonical email types — the Badsender classification doctrine. Six types, each
+// answering one question: what does this email bring to the person receiving it?
+//
+// Values are stored RAW; only the display is translated via aiSkills.emailTypes.*.
+// Free/unknown values (facet inputs allow custom entries) fall back to their raw
+// string — which is what keeps an expertise tagged with the previous vocabulary
+// (promo, newsletter, marketing-automation) visible and re-taggable instead of
+// silently vanishing from the selector.
+//
+// KEEP IN SYNC with `EmailTypeCanonical` in
+// packages/server/constant/email-type-canonical.js, which carries the definitions
+// and the reasoning. Enforced by tests/ui/helpers/email-type-vocabulary.test.js.
+export const EMAIL_TYPES = [
+  'editorial',
+  'promotional',
+  'service',
+  'notification',
+  'transactional',
+  'institutional',
+];
 
 // `vm` is the component instance (for $t). Returns the translated label for a
 // known type, or the raw value otherwise.

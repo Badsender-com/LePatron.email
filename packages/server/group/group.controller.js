@@ -14,6 +14,9 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
+const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
+const { pickSeedLang } = require('../taxonomy/default-email-types.js');
+const logger = require('../utils/logger.js');
 
 const {
   Groups,
@@ -24,6 +27,9 @@ const {
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
+const {
+  sanitizeEmailMetadata,
+} = require('../utils/sanitize-email-metadata.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -143,10 +149,40 @@ async function create(req, res) {
     groupFtpService.validateSshKeyOrThrow(req.body.ftpSshKey);
   }
 
+  // Not a company field: the language the default email types are seeded in.
+  const { defaultEmailTypesLang, ...groupToCreate } = req.body;
+
+  // The update path is not the only write path: without this, a company could be
+  // created with a shape the update path would have refused.
+  if ('emailMetadata' in groupToCreate) {
+    groupToCreate.emailMetadata = sanitizeEmailMetadata(
+      groupToCreate.emailMetadata
+    );
+  }
+
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
-  const newGroup = await groupService.createGroup(req.body);
+  const newGroup = await groupService.createGroup(groupToCreate);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
+
+  // The six Badsender email types, in the language the creator's screen is
+  // displayed in. Only a super admin creates a company, and their session carries
+  // no `lang`: without the one the client sends, every company started in English.
+  // A failure here must not fail the creation: the company exists, and an admin —
+  // or scripts/seed-default-email-types.js — adds the types afterwards. Losing a
+  // company over its default vocabulary would be the worse trade.
+  try {
+    await taxonomyDefaultsService.seedDefaultEmailTypes({
+      companyId: newGroup._id,
+      lang: pickSeedLang(defaultEmailTypesLang, req.user?.lang),
+    });
+  } catch (error) {
+    logger.error(
+      `group.controller:create: seeding default email types failed for company ${newGroup.id}`,
+      error
+    );
+  }
+
   res.json(groupFtpService.maskFtpCredentials(newGroup));
 }
 
@@ -440,9 +476,12 @@ async function update(req, res) {
     groupFtpService.validateSshKeyOrThrow(processedBody.ftpSshKey);
   }
 
+  // The `id` comes last on purpose: the group being updated is the one named by
+  // the URL — the only value the route guard checked — so a payload carrying its
+  // own `id` cannot redirect the write elsewhere.
   let groupToUpdate = {
-    id: req.params.groupId,
     ...processedBody,
+    id: req.params.groupId,
   };
 
   // Validate/normalize the tracking config shape before persisting (the UI
@@ -453,13 +492,36 @@ async function update(req, res) {
     );
   }
 
+  // Same reasoning as trackingConfig: shape guaranteed server-side, and only
+  // when the payload actually carries it (partial updates are the norm here).
+  // `in` rather than `!= null`, so an explicit null goes through the sanitizer
+  // and yields the default sub-object instead of being stored as null.
+  // The stored config is read first, and only when the payload carries the key,
+  // following the `previousRetention` pattern below: the sanitizer returns the
+  // whole sub-object, so without it a partial update would resolve the missing
+  // keys to their defaults and switch the feature off for the company.
+  if ('emailMetadata' in groupToUpdate) {
+    const storedMetadata = (
+      await Groups.findById(req.params.groupId, { emailMetadata: 1 }).lean()
+    )?.emailMetadata;
+    groupToUpdate.emailMetadata = sanitizeEmailMetadata(
+      groupToUpdate.emailMetadata,
+      storedMetadata
+    );
+  }
+
   if (user.isGroupAdmin) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
-      'id',
       'colorScheme',
       'trackingConfig',
+      // Without this, a company admin cannot configure the email metadata
+      // feature at all — the field would be silently dropped here.
+      'emailMetadata',
     ]);
+    // Reinstated after the pick, from the URL, so the whitelist never has to
+    // carry the id of the target.
+    groupToUpdate.id = req.params.groupId;
   }
 
   // Read the retention before the write, and only when the payload carries it,

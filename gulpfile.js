@@ -18,6 +18,10 @@ const log = require('fancy-log');
 const colors = require('ansi-colors');
 const Vinyl = require('vinyl');
 const mergeStream = require('merge-stream');
+const {
+  CODEMIRROR_LIBS,
+  CODEMIRROR_MIN_BUNDLE,
+} = require('./packages/editor/codemirror-libs.js');
 
 const isWatch = args.watch === true;
 const isProd = args.prod === true;
@@ -130,8 +134,19 @@ const mosaicoLibList = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js',
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js',
   'node_modules/tinymce/tinymce.js',
+  // Global, like tinymce above: used to neutralize the canvas preview of the
+  // HTML code block (see ext/html-code-block/neutralize-html.js). Not bundled
+  // through browserify so it stays out of the editor bundle's require graph.
+  'node_modules/dompurify/dist/purify.js',
+  // CodeMirror 5 for the HTML code block editor. Concatenated as globals rather
+  // than required through browserify: it must load before its own modes and
+  // addons, which register themselves on the global CodeMirror.
+  ...CODEMIRROR_LIBS,
 ];
 
+// CodeMirror ships no minified build, and its ~500KB of source would otherwise
+// land unminified in every editor load, whether or not the template enables the
+// HTML code block. mosaicoLib minifies it into CODEMIRROR_MIN_BUNDLE.
 // TODO: minifiy not minfied libs!
 const mosaicoLibListMin = [
   'node_modules/jquery/dist/jquery.min.js',
@@ -149,6 +164,9 @@ const mosaicoLibListMin = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js', // no min files
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
   'node_modules/tinymce/tinymce.min.js',
+  'node_modules/dompurify/dist/purify.min.js',
+  // CodeMirror, minified by mosaicoLib below into this single file.
+  CODEMIRROR_MIN_BUNDLE,
 ];
 
 const orderLibs = (lib) => /[^/]*\.js$/.exec(lib)[0];
@@ -158,8 +176,15 @@ function mosaicoLib() {
     .src(mosaicoLibList)
     .pipe($.order(mosaicoLibList.map(orderLibs)))
     .pipe($.concat('badsender-lib-editor.js'));
-  const prodLibs = gulp
-    .src(mosaicoLibListMin)
+  const codemirrorMin = gulp
+    .src(CODEMIRROR_LIBS)
+    .pipe($.order(CODEMIRROR_LIBS.map(orderLibs)))
+    .pipe($.concat(CODEMIRROR_MIN_BUNDLE))
+    .pipe($.uglify());
+  const prodLibs = mergeStream(
+    gulp.src(mosaicoLibListMin.filter((lib) => lib !== CODEMIRROR_MIN_BUNDLE)),
+    codemirrorMin
+  )
     .pipe($.order(mosaicoLibListMin.map(orderLibs)))
     .pipe($.concat('badsender-lib-editor.min.js'));
 

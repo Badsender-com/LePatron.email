@@ -81,9 +81,15 @@ export default {
         </div>
         <div v-else>
           <v-skeleton-loader v-show="loading" type="image, image" />
+          <!-- sandbox without allow-scripts: the preview is the email's own
+               markup, HTML code blocks included, and must never run in the
+               app's origin. allow-same-origin only so resizeIframe can read the
+               document height; allow-popups so a link opened in a new tab still
+               opens, outside the sandbox. -->
           <iframe
             v-show="!loading"
             ref="iframePreview"
+            sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             width="100%"
             scrolling="no"
             :height="iframeHeight"

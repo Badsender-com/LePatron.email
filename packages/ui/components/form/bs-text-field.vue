@@ -13,8 +13,11 @@
  *   :error-messages="errors"
  * />
  */
+import mixinInputId from '~/helpers/mixins/mixin-input-id.js';
+
 export default {
   name: 'BsTextField',
+  mixins: [mixinInputId],
   inheritAttrs: false,
   props: {
     value: { type: [String, Number], default: '' },
@@ -75,12 +78,23 @@ export default {
       'bs-text-field--dense': dense,
     }"
   >
-    <label v-if="label && !hideLabel" class="bs-text-field__label">
+    <!-- `hide-label` hides the label from sight, not from the accessibility
+         tree: a field with no name at all is what this component was fixing. -->
+    <label
+      v-if="label"
+      :for="inputId"
+      class="bs-text-field__label"
+      :class="{ 'bs-visually-hidden': hideLabel }"
+    >
       {{ label }}
       <span v-if="required" class="bs-text-field__required">*</span>
     </label>
     <v-text-field
+      :id="inputId"
       v-model="localValue"
+      :aria-required="required ? 'true' : null"
+      :aria-invalid="hasError ? 'true' : null"
+      :aria-describedby="describedBy"
       v-bind="$attrs"
       :type="type"
       :placeholder="placeholder"
@@ -95,8 +109,16 @@ export default {
       v-on="$listeners"
       @focus="onFocus"
       @blur="onBlur"
-    />
-    <div v-if="hint && !hasError" class="bs-text-field__hint">
+    >
+      <!-- Vuetify already flags the message container `role="alert"`; the id
+           is ours to add, so `aria-describedby` has something to point at.
+           Only the first message is tagged: `error-count` defaults to 1, and a
+           caller raising it must not produce duplicate ids. -->
+      <template #message="{ message, key }">
+        <span :id="key === 0 ? errorId : null">{{ message }}</span>
+      </template>
+    </v-text-field>
+    <div v-if="hint && !hasError" :id="hintId" class="bs-text-field__hint">
       {{ hint }}
     </div>
   </div>

@@ -101,7 +101,10 @@ function displayErrors (errors, viewModel) {
 
   const $errorMessageTitle = $(`<h3>${viewModel.t('Your email was successfully exported')}</h3>`);
   const $errorMessageDescription = $(`<p>${viewModel.t('We noticed some missing details while executing quality controls:')}</p>`);
-  const $errorLines = errors.map(error => $(`<li>${error}</li>`));
+  // As text, never as markup: an error line quotes the label of a link, which is
+  // the email's own content — an HTML code block can put anything there, and
+  // `textContent` has already decoded its entities.
+  const $errorLines = errors.map(error => $('<li></li>').text(error));
   const $errorsDiv = $('<ul></ul>').append($errorLines);
 
   const $errorMessageDiv = $('<div class="error-message"></div>');

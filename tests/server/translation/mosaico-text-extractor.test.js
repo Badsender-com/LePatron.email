@@ -32,6 +32,12 @@ describe('MosaicoTextExtractor', () => {
       expect(isTranslatableFieldName('borderColor')).toBe(false);
     });
 
+    // The HTML code block's whole promise is that its markup is never altered;
+    // handing it to the LLM would have it rewritten.
+    it('should return false for the HTML code block markup', () => {
+      expect(isTranslatableFieldName('htmlCode')).toBe(false);
+    });
+
     it('should return false for URL fields', () => {
       expect(isTranslatableFieldName('href')).toBe(false);
       expect(isTranslatableFieldName('buttonLink')).toBe(false);

@@ -1053,6 +1053,28 @@ Based on the versafix-1 template, these are commonly available blocks:
 | `preheaderBlock` | Preheader text area          |
 | `footerBlock`    | Footer with unsubscribe      |
 
+### Where the preheader actually lives
+
+The property is always named `preheaderText`, but **its location varies from one
+template to the next**, and there is no convention to fall back on. A survey of the
+templates in the development database (August 2026):
+
+| Location                            | Templates                                                       |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `data.preheaderText` (root)         | Badsender News, Challenges confidentiel, Badsender and comments |
+| `data.preheaderBlock.preheaderText` | Clarins (×2), Shine, Ouest France                               |
+
+Some templates go further: Clarins declares **29 per-market variants** of the
+property (`autPreheaderText`, `bel_frPreheaderText`, …), each bound to its own market
+block.
+
+This is written down because it is not derivable from the code: anything reading or
+writing a preheader generically has to probe both locations, and the per-market
+templates fit neither. It is also the reason the preheader is **not** part of the
+email metadata this phase introduced — the metadata endpoint writes mailing fields,
+and reaching into the template's own `data` would mean settling on a declaration
+convention first.
+
 ---
 
 ## Best Practices

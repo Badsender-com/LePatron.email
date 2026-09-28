@@ -748,6 +748,114 @@ export default {
       recommended: 'recommandé',
     }
   },
+  emailBuilderSettings: {
+    title: 'Réglages Email Builder',
+    sidebarLabel: 'Configuration',
+    metadata: {
+      sectionTitle: 'Métadonnées des emails',
+      sectionDescription:
+        'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
+      enabled: 'Activer les métadonnées des emails',
+      enabledHint:
+        'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
+      taxonomyAction: 'Gérer les typologies',
+      taxonomyHint:
+        'Les typologies d\'email se configurent dans Paramètres → Général → Typologies, indépendamment de cette option.',
+    },
+    snackbars: {
+      invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
+      updated: 'Réglages Email Builder mis à jour',
+      error: 'La mise à jour des réglages a échoué',
+    },
+  },
+  taxonomy: {
+    active: 'Actif',
+    inactive: 'Inactif',
+    title: 'Typologies d\'email',
+    sidebarLabel: 'Typologies',
+    description:
+      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
+    table: {
+      label: 'Libellé',
+      description: 'Définition',
+      canonicalType: 'Correspondance IA',
+      order: 'Ordre',
+      isActive: 'Statut',
+    },
+    canonicalTypes: {
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
+      transactional: 'Transactionnel',
+      institutional: 'Institutionnel',
+    },
+    form: {
+      createTitle: 'Nouvelle typologie',
+      editTitle: 'Modifier la typologie',
+      label: 'Libellé',
+      labelPlaceholder: 'Infolettre hebdomadaire',
+      labelHint: 'Le nom que vos équipes utilisent réellement.',
+      labelRequired: 'Le libellé est obligatoire',
+      labelTooLong: 'Le libellé ne peut pas dépasser {max} caractères',
+      description: 'Définition',
+      descriptionPlaceholder:
+        'Envoi du jeudi matin à toute la base, actualités et nouveautés produits.',
+      descriptionHint:
+        'À quoi sert cette typologie chez vous, et quand l\'utiliser. C\'est ce texte qui guidera l\'IA.',
+      descriptionTooLong: 'La définition ne peut pas dépasser {max} caractères',
+      canonicalType: 'Typologie IA correspondante',
+      canonicalTypePlaceholder: 'Aucune',
+      canonicalTypeHint:
+        'Facultatif. Fait le lien avec le vocabulaire de l\'IA, pour charger la bonne expertise quel que soit le nom que vous avez choisi.',
+      order: 'Ordre',
+      orderHint: 'Ordre d\'affichage dans les listes.',
+      status: 'Statut',
+      isActive: 'Actif',
+      isActiveHint:
+        'Une typologie désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
+    },
+    deleteConfirmTitle: 'Supprimer cette typologie ?',
+    deleteConfirmMessage: 'La typologie « {label} » sera supprimée.',
+    deleteConfirmHint:
+      'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+    loadError: {
+      title: 'Impossible de charger vos typologies',
+      description:
+        "La liste n'a pas pu être lue. Rien n'est perdu — réessayez.",
+      action: 'Réessayer',
+    },
+    empty: {
+      action: 'Créer une typologie',
+      title: 'Aucune typologie pour le moment',
+      description:
+        'Créez les typologies dont vos équipes ont besoin : leur libellé et leur définition sont les vôtres.',
+    },
+    errors: {
+      limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
+      labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
+      inUse:
+        'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
+    },
+    defaults: {
+      action: 'Typologies par défaut',
+      confirmTitle: 'Ajouter les typologies Badsender manquantes',
+      confirmIntro:
+        'Les typologies suivantes vont être créées. Vous pourrez ensuite les renommer, préciser leur définition ou les désactiver.',
+      confirmNothing:
+        'Vos typologies couvrent déjà les six types Badsender : il n\'y a rien à ajouter.',
+      confirmSkipped:
+        'Non créées, leur libellé est déjà utilisé par une de vos typologies : {labels}.',
+      snackbarCreated:
+        '{count} typologie créée | {count} typologies créées',
+      snackbarNone: 'Aucune typologie à ajouter',
+    },
+    snackbars: {
+      created: 'Typologie créée',
+      updated: 'Typologie mise à jour',
+      deleted: 'Typologie supprimée',
+    },
+  },
   feedMappings: {
     title: 'Flux de contenu',
     template: 'Template',
@@ -1086,6 +1194,13 @@ export default {
     previewDescription: 'Aperçu du template rendu',
     regeneratePreview: 'Régénérer l\'aperçu',
     filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
+    advancedOptions: 'Options avancées',
+    advancedOptionsDescription: 'Fonctionnalités activables template par template',
+    htmlBlock: {
+      name: 'Bloc Code HTML',
+      description: 'Permet de coller du code HTML libre entre deux blocs du template.',
+      hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',
@@ -1131,9 +1246,12 @@ export default {
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
     },
     emailTypes: {
-      promo: 'Promotionnel',
-      newsletter: 'Newsletter',
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
       transactional: 'Transactionnel',
+      institutional: 'Institutionnel',
     },
     statuses: {
       DRAFT: 'Brouillon',

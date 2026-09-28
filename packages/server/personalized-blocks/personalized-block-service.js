@@ -1,10 +1,18 @@
 'use strict';
 
-const { PersonalizedBlocks, Users } = require('../common/models.common.js');
+const {
+  PersonalizedBlocks,
+  Users,
+  Templates,
+} = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
 const logger = require('../utils/logger');
+const {
+  hasHtmlCodeBlock,
+  assertHtmlCodeBlockContentAllowed,
+} = require('../mailing/html-code-block-guard.js');
 
 module.exports = {
   getPersonalizedBlocks,
@@ -72,7 +80,35 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
   }
 }
 
+/**
+ * Refuses HTML code the block's template does not allow. A personalized block is
+ * shared with the whole company and dropped into other people's mailings, so it
+ * gets the same gate as the mailing save (see mailing/html-code-block-guard.js).
+ * Loads the template only when the content holds an HTML code block.
+ */
+async function assertBlockHtmlCodeAllowed({
+  content,
+  previousContent,
+  templateId,
+}) {
+  if (!hasHtmlCodeBlock(content)) return;
+
+  const template = templateId
+    ? await Templates.findById(templateId)
+        .select({ htmlBlockEnabled: 1 })
+        .lean()
+    : null;
+
+  assertHtmlCodeBlockContentAllowed({
+    content,
+    previousContent,
+    htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+  });
+}
+
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
+  await assertBlockHtmlCodeAllowed({ content: block.content, templateId });
+
   const newBlock = await PersonalizedBlocks.create({
     ...block,
     _group: mongoose.Types.ObjectId(groupId),
@@ -85,6 +121,22 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 }
 
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
+  if (hasHtmlCodeBlock(updatedBlock.content)) {
+    const existing = await PersonalizedBlocks.findById(
+      mongoose.Types.ObjectId(id)
+    )
+      .select({ content: 1, _template: 1 })
+      .lean();
+    if (!existing) {
+      throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);
+    }
+    await assertBlockHtmlCodeAllowed({
+      content: updatedBlock.content,
+      previousContent: existing.content,
+      templateId: existing._template,
+    });
+  }
+
   const updated = await PersonalizedBlocks.findByIdAndUpdate(
     mongoose.Types.ObjectId(id),
     { ...updatedBlock, _group: mongoose.Types.ObjectId(groupId) },

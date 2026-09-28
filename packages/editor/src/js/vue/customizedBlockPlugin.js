@@ -11,6 +11,9 @@ const {
 const {
   ContentFeedModalComponent,
 } = require('./components/content-feed-modal/content-feed-modal');
+const {
+  HtmlCodeModalComponent,
+} = require('./components/html-code-modal/html-code-modal');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -22,6 +25,7 @@ module.exports = {
         DeleteBlockModalComponent,
         TranslateBlockModalComponent,
         ContentFeedModalComponent,
+        HtmlCodeModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -32,6 +36,7 @@ module.exports = {
           <delete-block-modal :vm="viewModel"></delete-block-modal>
           <translate-block-modal :vm="viewModel"></translate-block-modal>
           <content-feed-modal :vm="viewModel"></content-feed-modal>
+          <html-code-modal :vm="viewModel"></html-code-modal>
         </div>
       `,
     });
