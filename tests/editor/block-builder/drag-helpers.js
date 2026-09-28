@@ -192,6 +192,23 @@ function startPaletteDrag(type) {
   return event;
 }
 
+/**
+ * A dragover on the editor page, outside the preview — over the settings
+ * panel, where the TinyMCE field a stray drop would paste into lives.
+ */
+function dragOverPage() {
+  const event = new window.Event('dragover', {
+    bubbles: true,
+    cancelable: true,
+  });
+  event.dataTransfer = transfer();
+  document.querySelector('.bb-settings').dispatchEvent(event);
+  return event;
+}
+
+/** Resolves on the next task: after what a handler deferred with setTimeout. */
+const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 /** The insertion line, or null when none is drawn. */
 const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
 
@@ -211,6 +228,8 @@ module.exports = {
   dropAt,
   paletteEntry,
   startPaletteDrag,
+  dragOverPage,
+  nextTask,
   typesOf,
   dropLineOf,
   ELEMENT_ATTRIBUTE,
