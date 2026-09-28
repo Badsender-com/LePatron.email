@@ -261,6 +261,11 @@
   font: inherit;
   cursor: pointer;
 
+  // The chevron sits at the far end of the header.
+  > .lucide:last-child {
+    margin-left: auto;
+  }
+
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
