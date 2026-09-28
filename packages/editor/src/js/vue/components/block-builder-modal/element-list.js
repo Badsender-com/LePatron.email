@@ -121,6 +121,31 @@ const ElementListMixin = {
       this.state.elements.splice(target, 0, element);
     },
 
+    /**
+     * Moves an element to a drop position — the reorder drag's `move`.
+     *
+     * `index` counts rows as they are laid out NOW, with the dragged element
+     * still among them. Taking it out first shifts everything after it up by
+     * one, so a target past its old position has to come down by one — the
+     * classic off-by-one of every reorder, and the reason dropping an element
+     * just below itself would otherwise move it one row too far.
+     *
+     * The moved element ends up selected, so the settings panel stays on it.
+     */
+    moveElementTo(id, index) {
+      const from = this.state.elements.findIndex(
+        (element) => element.id === id
+      );
+      if (from === -1) return;
+
+      this.selectedId = id;
+      const to = index > from ? index - 1 : index;
+      if (to === from) return;
+
+      const [element] = this.state.elements.splice(from, 1);
+      this.state.elements.splice(to, 0, element);
+    },
+
     // Whether the selected element can move by `offset`, so the buttons are
     // disabled at the ends of the list rather than silently doing nothing.
     canMove(offset) {

@@ -30,8 +30,10 @@ const {
   fireIn,
   typesOf,
   dropLineOf,
+  ELEMENT_ATTRIBUTE,
   DRAGGING_CLASS,
   DROP_LINE_ID,
+  EMPTY_DROP_ID,
 } = require('./drag-helpers.js');
 
 afterEach(unmountAll);
@@ -111,15 +113,40 @@ describe('the insertion point follows the cursor', () => {
 // The preview holds real images and links, natively draggable, and the browser's
 // default for a drop is to open what was dropped — in the iframe, which takes
 // the composition away. Files and links dragged in from outside do the same.
+//
+// The one drag the preview starts is a row's, to move it — an image or a link
+// inside a row included (reorder-drag.test.js). Anything else is cancelled.
 describe('a drag that is not ours never reaches the browser', () => {
-  it('cancels a drag starting on an image or a link in the preview', async () => {
-    const { doc } = await openModal(['image', 'button']);
+  it('cancels a drag starting outside any row', async () => {
+    const { doc } = await openModal([]);
 
-    const image = fireIn(doc, 'dragstart', doc.body.querySelector('img'));
-    const link = fireIn(doc, 'dragstart', doc.body.querySelector('a'));
+    const event = fireIn(doc, 'dragstart', doc.getElementById(EMPTY_DROP_ID));
 
-    expect(image.defaultPrevented).toBe(true);
-    expect(link.defaultPrevented).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  // A text node has no `closest`: what a dragged selection starts from.
+  it('cancels a drag of selected text', async () => {
+    const { modal, doc } = await openModal(['text']);
+    const text = document.createTreeWalker(rowsOf(doc)[0], 4).nextNode();
+    expect(text).toBeTruthy();
+
+    const event = fireIn(doc, 'dragstart', text);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(modal.draggingId).toBeNull();
+  });
+
+  it('cancels one starting on a row the block does not hold', async () => {
+    const { modal, doc } = await openModal(['text']);
+    const stray = doc.createElement('div');
+    stray.setAttribute(ELEMENT_ATTRIBUTE, 'not-an-element');
+    doc.body.appendChild(stray);
+
+    const event = fireIn(doc, 'dragstart', stray);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(modal.draggingId).toBeNull();
   });
 
   it('refuses it over the preview, without drawing an insertion point', async () => {

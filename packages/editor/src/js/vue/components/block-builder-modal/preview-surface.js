@@ -22,8 +22,9 @@ const {
 // `previewMarkup`, `vm`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
-// generic: the event below, to listen on a freshly written document, and
-// freezeRender / thawRender, to keep the rows still under the cursor. The class
+// generic: the events below, to listen on a freshly written document and to
+// dress the rows of each render, and freezeRender / thawRender, to keep the
+// rows still under the cursor. The class
 // names live here too, because this is what owns the stylesheet they appear
 // in; drag-surface.js imports them.
 
@@ -33,6 +34,10 @@ const SELECTED_CLASS = 'lp-bb-selected';
 
 // Set on the body while something is being dragged.
 const DRAGGING_CLASS = 'lp-bb-dragging';
+
+// The row being moved by a reorder drag, dimmed so the cursor is not carrying
+// an invisible thing.
+const MOVING_CLASS = 'lp-bb-moving';
 
 // The insertion line: one element over the whole preview, placed at the edge
 // the drop would land on (drag-surface.js), in pixels.
@@ -50,6 +55,11 @@ const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
 // it listens for. A component event rather than a method to override: any
 // number of mixins can subscribe, and their order does not matter.
 const PREVIEW_READY_EVENT = 'preview-document-ready';
+
+// Emitted the same way after every render, once the new rows are in: whatever
+// another surface sets on the rendered nodes — preview chrome that the
+// generated markup must never carry — is gone with the old body.
+const PREVIEW_RENDERED_EVENT = 'preview-rendered';
 
 // The preview document's own chrome. It is never exported — only the generated
 // markup is — so these rules exist purely to make the surface usable.
@@ -102,6 +112,7 @@ const PREVIEW_DOCUMENT = [
   // point is read against a visible structure rather than guessed.
   `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]:not(.${SELECTED_CLASS}){`,
   'outline:1px dashed #757575;outline-offset:-1px;}',
+  `[${ELEMENT_ATTRIBUTE}].${MOVING_CLASS}{opacity:0.4;}`,
   `#${DROP_LINE_ID}{position:absolute;left:0;right:0;margin:0;`,
   `height:${DROP_LINE_HEIGHT}px;background:#265090;`,
   'pointer-events:none;z-index:2147483647;}',
@@ -203,6 +214,7 @@ const PreviewSurfaceMixin = {
         doc.body.appendChild(zone);
       }
       this.applySelectionHighlight();
+      this.$emit(PREVIEW_RENDERED_EVENT, doc);
     },
 
     previewRows(doc) {
@@ -270,7 +282,9 @@ module.exports = {
   DRAGGING_CLASS,
   DROP_LINE_ID,
   DROP_LINE_HEIGHT,
+  MOVING_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_FLAG,
   PREVIEW_READY_EVENT,
+  PREVIEW_RENDERED_EVENT,
 };
