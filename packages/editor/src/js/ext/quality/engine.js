@@ -17,9 +17,21 @@ const unnamedImageLinks = require('./rules/unnamed-image-links');
 const altTextQuality = require('./rules/alt-text-quality');
 const imageOnlyEmail = require('./rules/image-only-email');
 const unsupportedImageFormats = require('./rules/unsupported-image-formats');
+const subject = require('./rules/subject');
+const preheader = require('./rules/preheader');
+const sampleText = require('./rules/sample-text');
+const mergeTags = require('./rules/merge-tags');
+const emptyBlocks = require('./rules/empty-blocks');
+const uppercaseText = require('./rules/uppercase-text');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
+  subject,
+  preheader,
+  sampleText,
+  mergeTags,
+  emptyBlocks,
+  uppercaseText,
   trackingParams,
   unfilledLinks,
   malformedLinks,
