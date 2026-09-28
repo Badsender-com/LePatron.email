@@ -15,10 +15,8 @@ const {
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const { headCssToExport } = require('../mailing/head-css-guard.js');
-const {
-  builderMarkups,
-  swapBuilderMarkup,
-} = require('./builder-block-texts.js');
+const { builderMarkups } = require('./builder-block-texts.js');
+const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const translationJobs = require('./translation-jobs');
 const {
   runTranslationStep,

@@ -19,9 +19,11 @@ const {
   splitBuilderTranslations,
   injectBuilderTexts,
   builderMarkups,
-  swapBuilderMarkup,
   BUILDER_KEY_PREFIX,
 } = require('../../../packages/server/translation/builder-block-texts.js');
+const {
+  swapBuilderMarkup,
+} = require('../../../packages/server/translation/builder-preview-swap.js');
 const {
   generate,
   emptyState,
