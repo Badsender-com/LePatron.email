@@ -1,14 +1,14 @@
 const Vue = require('vue/dist/vue.common');
 const { QualityIssueRow } = require('./quality-issue-row');
-const {
-  SEVERITY_ORDER,
-  SEVERITY_META,
-  CATEGORY_KEYS,
-} = require('./quality-meta');
+const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
+const { findingItems, checkItems } = require('./quality-items');
+const { commentDraftFor } = require('./quality-actions');
 const { goToBlock } = require('../../../ext/block-navigation');
 const { formatCommentDate } = require('../../../ext/comments-utils');
 
 const HIGHLIGHT_CLASS = 'qc-highlight';
+// How long "Ignored. Undo" stays under the list.
+const UNDO_DELAY_MS = 8000;
 
 function clearHighlight() {
   document
@@ -22,53 +22,34 @@ function clearHighlight() {
 }
 
 // The "Checks" tab of the quality drawer: runs the checks, lists their
-// results by severity and takes the user to the block of each one.
+// results by severity and acts on each one: go to its block, turn it into a
+// comment, or ignore it (the ignored ones wait in their own group).
 const QualityChecksPanel = Vue.component('QualityChecksPanel', {
   components: { QualityIssueRow },
   props: {
     vm: { type: Object, required: true },
     status: { type: String, default: 'idle' },
+    // The findings still to deal with, and those the team ignored.
     findings: { type: Array, default: () => [] },
+    ignoredFindings: { type: Array, default: () => [] },
     checks: { type: Array, default: () => [] },
     ranAt: { type: Date, default: null },
   },
   data: () => ({
     expandedId: null,
+    showIgnored: false,
+    undo: null,
+    undoTimer: null,
     // Constants the template reads.
     severityOrder: SEVERITY_ORDER,
     severityMeta: SEVERITY_META,
   }),
   computed: {
     items() {
-      const seen = {};
-      const findingItems = this.findings.map((f) => {
-        seen[f.fingerprint] = (seen[f.fingerprint] || 0) + 1;
-        return {
-          id: `${f.fingerprint}#${seen[f.fingerprint]}`,
-          severity: f.severity,
-          title: this.t(f.titleKey),
-          description: this.t(f.messageKey, f.params),
-          category: this.t(CATEGORY_KEYS[f.category]),
-          blockId: f.blockId,
-          blockLabel: f.blockLabel,
-        };
-      });
-      const checkItems = this.checks
-        .filter((c) => c.status !== 'failed')
-        .map((c) => ({
-          id: `check:${c.ruleId}`,
-          // A check that could not run is shown, never counted as passed.
-          severity: c.status === 'passed' ? 'success' : 'info',
-          title: this.t(c.titleKey),
-          description:
-            c.status === 'passed'
-              ? this.t(c.passKey, c.passParams)
-              : this.t('This check could not run'),
-          category: this.t(CATEGORY_KEYS[c.category]),
-          blockId: null,
-          blockLabel: null,
-        }));
-      return findingItems.concat(checkItems);
+      return findingItems(this.findings, this.t).concat(checkItems(this.checks, this.t));
+    },
+    ignoredItems() {
+      return findingItems(this.ignoredFindings, this.t);
     },
     groups() {
       return SEVERITY_ORDER.map((severity) => ({
@@ -86,6 +67,9 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     hasIssues() {
       return this.findings.length > 0;
     },
+    canComment() {
+      return typeof this.vm.createCommentFromQc === 'function';
+    },
     lastRunLabel() {
       return this.ranAt ? formatCommentDate(this.ranAt.toISOString(), this.t) : '';
     },
@@ -99,13 +83,15 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
   },
   watch: {
     items(items) {
-      if (!items.some((item) => item.id === this.expandedId)) {
+      const all = items.concat(this.ignoredItems);
+      if (!all.some((item) => item.id === this.expandedId)) {
         this.expandedId = null;
       }
     },
   },
   beforeDestroy() {
     clearHighlight();
+    clearTimeout(this.undoTimer);
   },
   methods: {
     t(key, params) {
@@ -124,6 +110,25 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         element.classList.add(HIGHLIGHT_CLASS, `${HIGHLIGHT_CLASS}--${item.severity}`)
       );
       if (!found) this.vm.notifier.warning(this.t('comments-block-deleted'));
+    },
+    comment(item) {
+      this.vm.createCommentFromQc(commentDraftFor(item, this.t));
+    },
+    ignore(item) {
+      this.vm.quality.ignore(item.finding);
+      clearTimeout(this.undoTimer);
+      this.undo = item;
+      this.undoTimer = setTimeout(() => {
+        this.undo = null;
+      }, UNDO_DELAY_MS);
+    },
+    unignore(item) {
+      this.vm.quality.unignore(item.finding);
+    },
+    undoIgnore() {
+      clearTimeout(this.undoTimer);
+      this.unignore(this.undo);
+      this.undo = null;
     },
   },
   template: `
@@ -182,11 +187,45 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
               :key="item.id"
               :item="item"
               :t="t"
+              :can-comment="canComment"
               :expanded="expandedId === item.id"
               @toggle="toggle(item)"
               @locate="locate(item)"
+              @comment="comment(item)"
+              @ignore="ignore(item)"
             ></quality-issue-row>
           </div>
+
+          <div v-if="ignoredItems.length" class="qc-group qc-group--ignored">
+            <h3 class="qc-group__header">
+              <button type="button" class="qc-group__toggle" :aria-expanded="showIgnored ? 'true' : 'false'" @click="showIgnored = !showIgnored">
+                <span class="lucide lucide-ban" aria-hidden="true"></span>
+                <span class="qc-group__label">{{ t('Ignored') }}</span>
+                <span class="qc-group__count">{{ ignoredItems.length }}</span>
+                <span :class="['lucide', showIgnored ? 'lucide-chevron-up' : 'lucide-chevron-down']" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <template v-if="showIgnored">
+              <quality-issue-row
+                v-for="item in ignoredItems"
+                :key="item.id"
+                :item="item"
+                :t="t"
+                ignored
+                :can-comment="canComment"
+                :expanded="expandedId === item.id"
+                @toggle="toggle(item)"
+                @locate="locate(item)"
+                @comment="comment(item)"
+                @unignore="unignore(item)"
+              ></quality-issue-row>
+            </template>
+          </div>
+        </div>
+
+        <div v-if="undo" class="qc-undo" role="status">
+          <span>{{ t('Ignored: __title__', { title: undo.title }) }}</span>
+          <button type="button" class="qc-link-button" @click="undoIgnore">{{ t('Undo') }}</button>
         </div>
 
         <footer class="qc-drawer__footer">
