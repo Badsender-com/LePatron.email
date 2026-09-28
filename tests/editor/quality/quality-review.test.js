@@ -72,6 +72,26 @@ describe('installQualityReview', () => {
     expect(vm.showQuality()).toBe(true);
   });
 
+  it('opens the drawer on a tab, and an export review on the results', () => {
+    const { vm } = setup({ findings: [finding('warning')], checks: [] });
+    vm.quality.open('send');
+    expect(vm.showQuality()).toBe(true);
+    expect(vm.quality.tab()).toBe('send');
+
+    vm.quality.review();
+    expect(vm.quality.tab()).toBe('checks');
+  });
+
+  it('counts the errors left, for the "Send a test" tab', () => {
+    const { vm, flush } = setup({
+      findings: [finding('error'), finding('error'), finding('warning')],
+      checks: [],
+    });
+    vm.quality.run();
+    flush();
+    expect(vm.quality.errorCount()).toBe(2);
+  });
+
   it('leaves the drawer closed when an export has nothing to show', () => {
     const { vm } = setup({ findings: [], checks: [{ status: 'passed' }] });
     vm.quality.review();
