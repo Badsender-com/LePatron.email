@@ -1,7 +1,8 @@
 const Vue = require('vue/dist/vue.common');
 const EspComponent = require('./components/esp/esp-send-mail');
-const { TestModalComponent } = require('./components/send-test/test-modal');
 
+// Sending a test is no longer a modal: it is a tab of the quality drawer
+// (vue/components/quality-drawer/send-test-panel.js).
 module.exports = {
   viewModel(vm, ko) {},
   init(vm) {
@@ -10,7 +11,6 @@ module.exports = {
     Vue.component('EspPlugin', {
       components: {
         EspComponent,
-        TestModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -18,7 +18,6 @@ module.exports = {
       template: `
         <div>
           <esp-form :vm="viewModel"></esp-form>
-          <test-modal-component :vm="viewModel"></test-modal-component>
         </div>
       `,
     });
