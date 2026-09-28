@@ -1,10 +1,11 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
 const { ElementSettingsComponent } = require('./element-settings');
+const { PreviewSurfaceMixin } = require('./preview-surface.js');
+const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   generate,
   emptyState,
-  ELEMENT_ATTRIBUTE,
 } = require('../../../../../../shared/block-builder/generate.js');
 const {
   ELEMENTS,
@@ -44,27 +45,6 @@ const PALETTE = [
 const DESKTOP_WIDTH = 600;
 const MOBILE_WIDTH = 350;
 
-// Marks the selected row inside the preview. Prefixed, because it lands in a
-// document that also holds the user's own markup.
-const SELECTED_CLASS = 'lp-bb-selected';
-
-// Set on the preview document once it has been written and wired up.
-const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
-
-// The preview document's own chrome. It is never exported — only the generated
-// markup is — so these rules exist purely to make the surface usable: no body
-// margin so the block sits at the real template width, and an outline plus a
-// pointer cursor so the rows read as clickable.
-const PREVIEW_DOCUMENT = [
-  '<!DOCTYPE html><html><head><meta charset="utf-8" /><style>',
-  'body{margin:0;padding:0;background:#ffffff;}',
-  'table{border-collapse:collapse;}',
-  'img{max-width:100%;}',
-  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;}`,
-  `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
-  'outline:2px solid #00acdc;outline-offset:-2px;}',
-  '</style></head><body></body></html>',
-].join('');
 
 let sequence = 0;
 const nextId = () => `el-${Date.now().toString(36)}-${++sequence}`;
@@ -76,6 +56,9 @@ const defaultsFor = (type) => {
 
 const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   components: { ModalComponent, ElementSettings: ElementSettingsComponent },
+  // The preview is a surface of its own — writing the iframe document,
+  // rendering into it, and the selection it carries. See preview-surface.js.
+  mixins: [PreviewSurfaceMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -236,90 +219,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.$set(element, key, value);
     },
 
-    scheduleRender() {
-      if (this.frameRequest) return;
-      this.frameRequest = window.requestAnimationFrame(() => {
-        this.frameRequest = null;
-        this.renderPreview();
-      });
-    },
-
-    // The preview document, written once and then only ever refilled.
-    //
-    // Guarded by a flag on the document rather than by `!doc.body`: a fresh
-    // src-less iframe is already at about:blank *with* an empty body, so that
-    // test skipped the write — and with it the stylesheet. The flag disappears
-    // with the document, and the modal destroys its content on close
-    // (`v-if="isOpen"`), so a reopened modal writes a new one.
-    ensurePreviewDocument() {
-      const frame = this.$refs.previewFrame;
-      if (!frame || !frame.contentDocument) return null;
-      if (frame.contentDocument[PREVIEW_READY_FLAG]) {
-        return frame.contentDocument;
-      }
-
-      frame.contentDocument.open();
-      frame.contentDocument.write(PREVIEW_DOCUMENT);
-      frame.contentDocument.close();
-
-      // Re-read it: `close()` can hand back a different document object.
-      const doc = frame.contentDocument;
-      doc[PREVIEW_READY_FLAG] = true;
-      doc.addEventListener('click', this.handlePreviewClick);
-      return doc;
-    },
-
-    renderPreview() {
-      const doc = this.ensurePreviewDocument();
-      if (!doc || !doc.body) return;
-
-      // Replacing the body, never the document: reloading is what makes images
-      // flicker and the scroll jump.
-      doc.body.innerHTML = this.previewMarkup;
-      this.applySelectionHighlight();
-    },
-
-    // Selecting by clicking the rendered block, rather than only through the
-    // list on the left. `closest` walks up from whatever was actually clicked —
-    // a word inside a paragraph, a pixel of an image — to the row that carries
-    // the element id.
-    handlePreviewClick(event) {
-      // The preview holds real links: a button renders an `<a href>`, and
-      // clicking one would navigate the iframe away from the composition.
-      event.preventDefault();
-
-      const target = event.target;
-      const row =
-        target && typeof target.closest === 'function'
-          ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
-          : null;
-      if (!row) return;
-
-      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      if (this.state.elements.some((element) => element.id === id)) {
-        this.selectedId = id;
-      }
-    },
-
-    // Marks the selected row in the preview, so the selection reads the same on
-    // both sides. Re-applied after every render, since replacing the body drops
-    // the class with everything else.
-    //
-    // Compared attribute by attribute rather than through a CSS selector: the
-    // id comes from stored state, which is treated as hostile everywhere else
-    // (see state.js), and there are at most a handful of rows.
-    applySelectionHighlight() {
-      const frame = this.$refs.previewFrame;
-      const doc = frame && frame.contentDocument;
-      if (!doc || !doc.body) return;
-
-      const rows = doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`);
-      Array.prototype.forEach.call(rows, (row) => {
-        const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedId;
-        row.classList.toggle(SELECTED_CLASS, selected);
-      });
-    },
-
     handleApply() {
       if (!this.accessor) return;
       // One undo step for the whole composition — same reason as the HTML code
@@ -342,82 +241,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.$refs.modalRef?.closeModal();
     },
   },
-  template: `<modal-component ref="modalRef" :is-full-width="true">
-  <div class="modal-content bb-modal">
-    <h5 class="bb-modal__title">{{ vm.t('block-builder-modal-title') }}</h5>
-
-    <p v-if="replacesExistingMarkup" class="bb-modal__warning">
-      {{ vm.t('block-builder-replaces-markup') }}
-    </p>
-
-    <div class="bb-modal__layout">
-      <div class="bb-modal__column bb-modal__column--left">
-        <p class="bb-modal__section">{{ vm.t('block-builder-add') }}</p>
-        <button
-          v-for="item in palette"
-          :key="item.type"
-          type="button"
-          class="bb-modal__add"
-          @click.prevent="addElement(item.type)">+ {{ item.label }}</button>
-
-        <p class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
-        <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
-        <ul v-else class="bb-modal__list">
-          <li
-            v-for="element in state.elements"
-            :key="element.id"
-            class="bb-modal__item"
-            :class="{ 'bb-modal__item--on': element.id === selectedId }"
-            @click="selectedId = element.id">{{ labelFor(element) }}</li>
-        </ul>
-        <div v-if="selected" class="bb-modal__actions">
-          <button type="button" @click.prevent="move(-1)" title="Monter">↑</button>
-          <button type="button" @click.prevent="move(1)" title="Descendre">↓</button>
-          <button type="button" @click.prevent="removeSelected" title="Supprimer">✕</button>
-        </div>
-      </div>
-
-      <div class="bb-modal__column bb-modal__column--preview">
-        <div class="bb-modal__toolbar">
-          <button
-            type="button"
-            :class="{ 'bb-modal__toggle--on': previewWidth === 600 }"
-            @click.prevent="previewWidth = 600">{{ vm.t('block-builder-desktop') }}</button>
-          <button
-            type="button"
-            :class="{ 'bb-modal__toggle--on': previewWidth === 350 }"
-            @click.prevent="previewWidth = 350">{{ vm.t('block-builder-mobile') }}</button>
-        </div>
-        <div class="bb-modal__stage">
-          <iframe
-            ref="previewFrame"
-            class="bb-modal__frame"
-            :style="{ width: previewWidth + 'px' }"
-            sandbox="allow-same-origin"
-            title="Aperçu"></iframe>
-        </div>
-        <p class="bb-modal__hint">{{ vm.t('block-builder-preview-hint') }}</p>
-      </div>
-
-      <div class="bb-modal__column bb-modal__column--right">
-        <element-settings :element="selected" :labels="settingsLabels" @change="applySetting" @pick-image="pickImage" />
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button @click.prevent="closeModal" class="btn-flat waves-effect waves-light" name="closeAction">
-      {{ vm.t('html-code-modal-cancel') }}
-    </button>
-    <button
-      @click.prevent="handleApply"
-      :disabled="isEmpty"
-      class="btn waves-effect waves-light"
-      type="submit"
-      name="submitAction">
-      {{ vm.t('html-code-modal-apply') }}
-    </button>
-  </div>
-</modal-component>`,
+  template: MODAL_TEMPLATE,
 });
 
 module.exports = { BlockBuilderModalComponent };
