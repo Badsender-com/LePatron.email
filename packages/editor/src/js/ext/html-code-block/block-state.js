@@ -93,6 +93,20 @@ function paletteIconFor(block) {
 }
 
 /**
+ * Whether a block can be translated.
+ *
+ * True for everything a template ships — only a synthetic block can say no, and
+ * only the HTML code block does.
+ *
+ * @param {Object} block
+ * @returns {boolean}
+ */
+function isTranslatableBlock(block) {
+  const descriptor = descriptorFor(block);
+  return descriptor ? descriptor.translatable === true : true;
+}
+
+/**
  * A predicate matching one specific synthetic block type.
  *
  * @param {Object} descriptor one of SYNTHETIC_BLOCKS
@@ -105,6 +119,7 @@ function matching(descriptor) {
 module.exports = {
   descriptorFor,
   isSyntheticBlock,
+  isTranslatableBlock,
   isEmptySyntheticBlock,
   emptyLabelKeyFor,
   paletteLabelKeyFor,
