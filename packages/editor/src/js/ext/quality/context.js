@@ -48,6 +48,8 @@ function buildContext(viewModel, html) {
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
     trackingUrls: readTrackingUrls(viewModel),
+    // Shared by the rules of one run: what they read from the export once.
+    cache: {},
     // The editor's configuration, read once: rules never reach the view model.
     config: {
       placeholderUrl: _.get(viewModel, 'metadata.imagesUrl.placeholder'),
