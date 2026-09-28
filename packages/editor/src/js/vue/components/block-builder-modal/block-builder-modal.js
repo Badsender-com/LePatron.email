@@ -94,8 +94,10 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     palette: PALETTE,
     previewWidth: DESKTOP_WIDTH,
     frameRequest: null,
-    // The palette entry currently being dragged, and where it would land.
+    // What is being dragged: a palette entry to insert, or an element already
+    // in the block to move. Never both.
     draggingType: null,
+    draggingId: null,
     dropIndex: null,
     // A render that fell due mid-drag and was held back.
     renderHeldDuringDrag: false,
@@ -277,6 +279,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
 
     closeModal() {
       this.draggingType = null;
+      this.draggingId = null;
       this.dropIndex = null;
       this.renderHeldDuringDrag = false;
       this.accessor = null;

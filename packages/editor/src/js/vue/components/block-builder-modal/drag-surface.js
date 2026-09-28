@@ -4,7 +4,11 @@ const {
   DRAGGING_CLASS,
   DROP_BEFORE_CLASS,
   DROP_AFTER_CLASS,
+  MOVING_CLASS,
 } = require('./preview-surface.js');
+const {
+  ELEMENT_ATTRIBUTE,
+} = require('../../../../../../shared/block-builder/generate.js');
 
 // Dragging an element from the palette into the preview.
 //
@@ -19,8 +23,10 @@ const {
 
 const DragSurfaceMixin = {
   methods: {
-
-    // ---- dragging from the palette into the preview -----------------------
+    /** True while either kind of drag is under way. */
+    isDragging() {
+      return Boolean(this.draggingType || this.draggingId);
+    },
 
     // The drag carries its type in `dataTransfer` as well as in component
     // state. The state is what the drop reads — both ends are ours — but
@@ -51,12 +57,45 @@ const DragSurfaceMixin = {
       event.stopPropagation();
     },
 
+    // Dragging a row that is already in the block moves it. Same indicator,
+    // same drop maths as an insertion — only what happens on drop differs.
+    handlePreviewDragStart(event) {
+      const doc = this.previewDocument();
+      const target = event.target;
+      const row =
+        target && typeof target.closest === 'function'
+          ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
+          : null;
+
+      if (!row || !doc) return;
+
+      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
+      if (!this.state.elements.some((element) => element.id === id)) return;
+
+      this.draggingId = id;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', id);
+      }
+      // Selecting what is being moved, so the settings panel follows the thing
+      // under the cursor rather than staying on whatever was selected before.
+      this.selectedId = id;
+      row.classList.add(MOVING_CLASS);
+      doc.body.classList.add(DRAGGING_CLASS);
+    },
+
     handleDragEnd() {
       this.draggingType = null;
+      this.draggingId = null;
       this.dropIndex = null;
       this.clearDropIndicator();
       const doc = this.previewDocument();
-      if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
+      if (doc && doc.body) {
+        doc.body.classList.remove(DRAGGING_CLASS);
+        this.previewRows(doc).forEach((row) =>
+          row.classList.remove(MOVING_CLASS)
+        );
+      }
       // Renders were held while the rows had to stay still under the cursor.
       if (this.renderHeldDuringDrag) {
         this.renderHeldDuringDrag = false;
@@ -64,11 +103,12 @@ const DragSurfaceMixin = {
       }
     },
 
-
     handlePreviewDragOver(event) {
-      if (!this.draggingType) return;
+      if (!this.isDragging()) return;
       event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = this.draggingId ? 'move' : 'copy';
+      }
 
       const doc = this.previewDocument();
       if (!doc || !doc.body) return;
@@ -77,7 +117,6 @@ const DragSurfaceMixin = {
       this.dropIndex = this.dropIndexAt(doc, event.clientY);
       this.showDropIndicator(doc, this.dropIndex);
     },
-
 
     // Leaving the iframe entirely, rather than crossing between two rows:
     // `relatedTarget` is null (or outside the document) only for the former.
@@ -95,19 +134,43 @@ const DragSurfaceMixin = {
       this.clearDropIndicator();
     },
 
-
     handlePreviewDrop(event) {
-      if (!this.draggingType) return;
+      if (!this.isDragging()) return;
       event.preventDefault();
 
       const doc = this.previewDocument();
       const index = doc ? this.dropIndexAt(doc, event.clientY) : 0;
       const type = this.draggingType;
+      const id = this.draggingId;
 
       this.handleDragEnd();
-      this.insertElement(type, index);
+
+      if (id) this.moveElementTo(id, index);
+      else this.insertElement(type, index);
     },
 
+    /**
+     * Moves an element to the position the cursor was over.
+     *
+     * `index` counts rows as they are laid out NOW, with the dragged element
+     * still among them. Taking it out first shifts everything after it up by
+     * one, so a target past its old position has to come down by one — the
+     * classic off-by-one of every reorder, and the reason dropping an element
+     * just below itself would otherwise move it one row too far.
+     */
+    moveElementTo(id, index) {
+      const from = this.state.elements.findIndex(
+        (element) => element.id === id
+      );
+      if (from === -1) return;
+
+      const to = index > from ? index - 1 : index;
+      if (to === from) return;
+
+      const [element] = this.state.elements.splice(from, 1);
+      this.state.elements.splice(to, 0, element);
+      this.selectedId = element.id;
+    },
 
     /**
      * Where an element dropped at this height would go.
@@ -126,7 +189,6 @@ const DragSurfaceMixin = {
       return rows.length;
     },
 
-
     showDropIndicator(doc, index) {
       const rows = this.previewRows(doc);
       this.clearDropIndicator();
@@ -138,7 +200,6 @@ const DragSurfaceMixin = {
         rows[rows.length - 1].classList.add(DROP_AFTER_CLASS);
       }
     },
-
 
     clearDropIndicator() {
       this.previewRows(this.previewDocument()).forEach((row) => {
