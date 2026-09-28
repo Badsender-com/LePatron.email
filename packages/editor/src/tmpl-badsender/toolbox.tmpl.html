@@ -261,6 +261,14 @@
   <!-- /ko -->
 </div>
 
+<!-- Quality drawer: Vue component mounted by vue/qualityDrawerPlugin.js.
+     Inert while hidden, so Tab never reaches a panel that is off screen. -->
+<div id="toolquality" class="slidebar" data-bind="css: { hidden: $root.showQuality() === false }, attr: { inert: !$root.showQuality() }">
+  <div id="quality-drawer">
+    <quality-drawer-plugin />
+  </div>
+</div>
+
 <!-- Comments Panel -->
 <div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>

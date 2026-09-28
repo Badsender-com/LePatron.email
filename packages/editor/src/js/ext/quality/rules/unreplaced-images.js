@@ -57,6 +57,8 @@ module.exports = {
   id: 'unreplaced-images',
   category: 'content',
   severity: 'error',
+  titleKey: 'Images',
+  passKey: 'Every image has been replaced',
   isPlaceholderSrc,
   run(ctx) {
     const shownByBlock = exportedImagesByBlock(ctx);
