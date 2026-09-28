@@ -13,10 +13,8 @@ const {
   findSyntheticBlocks,
   SYNTHETIC_BLOCKS,
 } = require('../mailing/synthetic-block-guard.js');
-const {
-  builderMarkups,
-  swapBuilderMarkup,
-} = require('./builder-block-texts.js');
+const { builderMarkups } = require('./builder-block-texts.js');
+const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
