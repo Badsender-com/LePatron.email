@@ -6,6 +6,8 @@ module.exports = {
   id: 'unfilled-links',
   category: 'content',
   severity: 'error',
+  titleKey: 'Links',
+  passKey: 'Every link has a destination',
   run(ctx) {
     // A linked image without text is reported by "images-without-link".
     return findUnfilledAnchors(ctx)

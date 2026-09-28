@@ -43,6 +43,7 @@ function completeFinding(rule, finding, ctx) {
   return {
     ruleId: rule.id,
     category: rule.category,
+    titleKey: rule.titleKey,
     severity: finding.severity || rule.severity,
     messageKey: finding.messageKey,
     params: finding.params || {},
@@ -63,6 +64,7 @@ function completeFinding(rule, finding, ctx) {
 const failedCheck = (rule) => ({
   ruleId: rule.id,
   category: rule.category,
+  titleKey: rule.titleKey,
   status: 'error',
 });
 
@@ -89,8 +91,12 @@ function runRule(rule, ctx) {
       check: {
         ruleId: rule.id,
         category: rule.category,
+        titleKey: rule.titleKey,
         status,
         count: findings.length,
+        // What a passed check says: "Every link has a destination".
+        passKey: rule.passKey,
+        passParams: rule.passParams ? rule.passParams(ctx) : {},
       },
     };
   } catch (err) {
@@ -133,4 +139,6 @@ function runQualityChecks(viewModel, options = {}) {
 
 module.exports = {
   runQualityChecks,
+  // The drawer announces how many checks it runs.
+  DEFAULT_RULES,
 };
