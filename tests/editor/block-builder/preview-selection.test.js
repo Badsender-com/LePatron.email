@@ -20,66 +20,9 @@
 
 const Vue = require('vue/dist/vue.common');
 
-const {
-  BlockBuilderModalComponent,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
-const {
-  ELEMENT_ATTRIBUTE,
-} = require('../../../packages/shared/block-builder/generate.js');
+const { openModal, rowOf, SELECTED_CLASS } = require('./drag-helpers.js');
 
-const SELECTED_CLASS = 'lp-bb-selected';
-
-function accessorOf(initial) {
-  let value = initial === undefined ? '' : initial;
-  return (next) => {
-    if (next === undefined) return value;
-    value = next;
-    return value;
-  };
-}
-
-/**
- * Opens the modal, composes, and renders the preview.
- *
- * `renderPreview` is called directly rather than waited for: the real path goes
- * through a requestAnimationFrame, and what is under test is the selection, not
- * the scheduling.
- */
-async function openWith(types) {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-
-  const app = new Vue({
-    el: host,
-    components: { BlockBuilderModal: BlockBuilderModalComponent },
-    data: {
-      vm: {
-        t: (key) => key,
-        startMultiple: jest.fn(),
-        stopMultiple: jest.fn(),
-      },
-    },
-    template: '<block-builder-modal :vm="vm" />',
-  });
-
-  const modal = app.$children[0];
-  modal.handleToggle(true, {
-    accessor: accessorOf(''),
-    stateAccessor: accessorOf(''),
-  });
-  await Vue.nextTick();
-
-  (types || []).forEach((type) => modal.addElement(type));
-  modal.renderPreview();
-
-  const doc = modal.$refs.previewFrame.contentDocument;
-  return { modal, doc };
-}
-
-/** The rendered row carrying an element's id. */
-const rowOf = (doc, id) =>
-  doc.body.querySelector(`[${ELEMENT_ATTRIBUTE}="${id}"]`);
-
+/** Dispatches a real click inside the preview document. */
 function clickIn(doc, element) {
   const event = new doc.defaultView.MouseEvent('click', {
     bubbles: true,
@@ -98,14 +41,14 @@ describe('the preview document', () => {
   // guarding the write on `!doc.body` skipped it — and skipped the stylesheet
   // with it.
   it('is written by us, stylesheet included', async () => {
-    const { doc } = await openWith(['text']);
+    const { doc } = await openModal(['text']);
 
     expect(doc.querySelector('style')).not.toBeNull();
     expect(doc.querySelector('style').textContent).toContain(SELECTED_CLASS);
   });
 
   it('is written once, not on every render', async () => {
-    const { modal, doc } = await openWith(['text']);
+    const { modal, doc } = await openModal(['text']);
     const first = doc.querySelector('style');
 
     modal.renderPreview();
@@ -119,7 +62,7 @@ describe('the preview document', () => {
 
 describe('clicking an element in the preview', () => {
   it('selects the one that was clicked', async () => {
-    const { modal, doc } = await openWith(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     const [, second] = modal.state.elements;
     modal.selectedId = null;
 
@@ -131,7 +74,7 @@ describe('clicking an element in the preview', () => {
 
   // Nobody clicks the row: they click a word, or a pixel of an image.
   it('selects it from a click on something inside it', async () => {
-    const { modal, doc } = await openWith(['button']);
+    const { modal, doc } = await openModal(['button']);
     const [element] = modal.state.elements;
     modal.selectedId = null;
 
@@ -145,7 +88,7 @@ describe('clicking an element in the preview', () => {
   // A button renders a real `<a href>`. An uncancelled click navigates the
   // iframe, and the composition is gone.
   it('cancels the click, so a link cannot navigate the preview', async () => {
-    const { doc } = await openWith(['button']);
+    const { doc } = await openModal(['button']);
 
     const event = clickIn(doc, doc.body.querySelector('a'));
 
@@ -153,7 +96,7 @@ describe('clicking an element in the preview', () => {
   });
 
   it('keeps the current selection when the click lands on nothing', async () => {
-    const { modal, doc } = await openWith(['text']);
+    const { modal, doc } = await openModal(['text']);
     const [element] = modal.state.elements;
 
     clickIn(doc, doc.body);
@@ -164,7 +107,7 @@ describe('clicking an element in the preview', () => {
 
 describe('the selected element is outlined in the preview', () => {
   it('marks the selected row and no other', async () => {
-    const { modal, doc } = await openWith(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     const [first, second] = modal.state.elements;
 
     // addElement selected the last one.
@@ -175,7 +118,7 @@ describe('the selected element is outlined in the preview', () => {
   // Selection moves from the list on the left; only the outline should move,
   // without the body being rewritten — rewriting it refetches every image.
   it('follows a selection made outside the preview', async () => {
-    const { modal, doc } = await openWith(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     const [first, second] = modal.state.elements;
     const row = rowOf(doc, first.id);
 
@@ -190,7 +133,7 @@ describe('the selected element is outlined in the preview', () => {
   });
 
   it('survives a re-render, which replaces the body', async () => {
-    const { modal, doc } = await openWith(['text', 'button']);
+    const { modal, doc } = await openModal(['text', 'button']);
     const [, second] = modal.state.elements;
 
     modal.renderPreview();
@@ -199,7 +142,7 @@ describe('the selected element is outlined in the preview', () => {
   });
 
   it('outlines nothing when nothing is selected', async () => {
-    const { modal, doc } = await openWith(['text']);
+    const { modal, doc } = await openModal(['text']);
 
     modal.selectedId = null;
     await Vue.nextTick();
