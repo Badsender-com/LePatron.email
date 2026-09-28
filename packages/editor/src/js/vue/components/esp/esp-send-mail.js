@@ -8,8 +8,6 @@ const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
 const { ESP_TYPE } = require('../../constant/esp-type');
 const {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 } = require('../../../ext/badsender-control-quality');
@@ -241,14 +239,7 @@ const EspComponent = Vue.component('EspForm', {
             '-success-esp-send';
           this.vm.notifier.success(this.vm.t(successText));
           // Judge the HTML that was sent rather than export the email again.
-          const errors = getErrorsForControlQuality(this.vm, {
-            html: unprocessedHtml,
-          });
-          if (errors && errors.length > 0) {
-            displayErrors(errors, this.vm);
-          } else {
-            $('.error-message').remove();
-          }
+          this.vm.quality.review({ html: unprocessedHtml });
           this.closeModal();
         })
         .catch((error) => {

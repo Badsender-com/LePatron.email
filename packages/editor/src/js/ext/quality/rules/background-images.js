@@ -27,6 +27,8 @@ module.exports = {
   id: 'background-images',
   category: 'content',
   severity: 'warning',
+  titleKey: 'Background images',
+  passKey: 'Every background image turned on is set',
   run(ctx) {
     return _.flatMap(ctx.blocks, (block) => {
       const options = block && block.bgOptions;

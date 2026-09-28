@@ -23,6 +23,7 @@ const customizedBlockPlugin = require('./vue/customizedBlockPlugin');
 const personalizedBlocksPlugin = require('./vue/personalizedBlocksPlugin.js');
 const trackingParamsPlugin = require('./vue/trackingParamsPlugin');
 const emailMetadataPlugin = require('./vue/emailMetadataPlugin');
+const qualityDrawerPlugin = require('./vue/qualityDrawerPlugin');
 // registers the `vueGalleryPanel` Knockout binding of the gallery panes
 require('./vue/galleryPlugin');
 
@@ -238,6 +239,7 @@ var start = function (
     personalizedBlocksPlugin,
     trackingParamsPlugin,
     emailMetadataPlugin,
+    qualityDrawerPlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)

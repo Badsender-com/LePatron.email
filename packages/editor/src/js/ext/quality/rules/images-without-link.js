@@ -9,6 +9,8 @@ module.exports = {
   id: 'images-without-link',
   category: 'content',
   severity: 'warning',
+  titleKey: 'Clickable images',
+  passKey: 'Every clickable image has a link',
   run(ctx) {
     const { placeholderUrl } = ctx.config;
     return (

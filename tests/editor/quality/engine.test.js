@@ -91,10 +91,27 @@ describe('runQualityChecks', () => {
       rules: [reportEveryBlock, passing],
     });
 
-    expect(checks).toEqual([
+    expect(checks).toMatchObject([
       { ruleId: 'fake', category: 'content', status: 'failed', count: 2 },
       { ruleId: 'passing', category: 'content', status: 'passed', count: 0 },
     ]);
+  });
+
+  it('says what a passed check found, with its parameters', () => {
+    const passing = {
+      ...reportEveryBlock,
+      titleKey: 'Weight',
+      passKey: 'Weighs __size__ KB',
+      passParams: () => ({ size: 12 }),
+      run: () => [],
+    };
+    const { checks } = runQualityChecks(fakeViewModel(), { rules: [passing] });
+
+    expect(checks[0]).toMatchObject({
+      titleKey: 'Weight',
+      passKey: 'Weighs __size__ KB',
+      passParams: { size: 12 },
+    });
   });
 
   it('keeps running the other checks when one of them throws', () => {
@@ -112,11 +129,7 @@ describe('runQualityChecks', () => {
     });
 
     expect(findings).toHaveLength(2);
-    expect(checks[0]).toEqual({
-      ruleId: 'broken',
-      category: 'content',
-      status: 'error',
-    });
+    expect(checks[0]).toMatchObject({ ruleId: 'broken', status: 'error' });
     console.error.mockRestore();
   });
 
@@ -161,12 +174,18 @@ describe('runQualityChecks', () => {
     const vm = fakeViewModel();
     vm.content = () => ({ tracking: () => ({ trackingUrls: () => [] }) });
 
-    expect(runQualityChecks(vm, { rules: [reportEveryBlock] })).toEqual({
-      findings: [],
-      checks: [
-        { ruleId: 'fake', category: 'content', status: 'passed', count: 0 },
-      ],
+    const { findings, checks } = runQualityChecks(vm, {
+      rules: [reportEveryBlock],
     });
+    expect(findings).toEqual([]);
+    expect(checks).toEqual([
+      expect.objectContaining({
+        ruleId: 'fake',
+        category: 'content',
+        status: 'passed',
+        count: 0,
+      }),
+    ]);
   });
 
   describe('when the engine itself fails', () => {
