@@ -1,55 +1,11 @@
 const $ = require('jquery');
-const { runQualityChecks } = require('./quality/engine');
 const {
   checkRequiredTrackingParams,
 } = require('./quality/rules/tracking-params');
 
-// Façade over the quality engine (./quality): download and ESP send still show
-// the findings as a list above the email until the quality drawer replaces it.
-
-/**
- * One finding as a translated line, prefixed with the block it lives in.
- */
-function formatFinding(finding, viewModel) {
-  const message = viewModel.t(finding.messageKey, finding.params);
-  return finding.blockLabel ? `${finding.blockLabel} · ${message}` : message;
-}
-
-/**
- * The quality findings of the current email, as translated lines.
- * @param {Object} viewModel
- * @param {Object} [options]
- * @param {string} [options.html] - the already exported HTML, to export only once
- * @returns {string[]}
- */
-function getErrorsForControlQuality(viewModel, options = {}) {
-  const { findings } = runQualityChecks(viewModel, options);
-  return findings.map((finding) => formatFinding(finding, viewModel));
-}
-
-function displayErrors(errors, viewModel) {
-  $('.error-message').remove();
-
-  const $errorMessageTitle = $('<h3></h3>').text(viewModel.t('Quality control'));
-  const $errorMessageDescription = $('<p></p>').text(
-    viewModel.t(
-      'We noticed some missing details while executing quality controls:'
-    )
-  );
-  // As text, never as markup: an error line quotes the label of a link, which is
-  // the email's own content — an HTML code block can put anything there, and
-  // `textContent` has already decoded its entities.
-  const $errorLines = errors.map((error) => $('<li></li>').text(error));
-  const $errorsDiv = $('<ul></ul>').append($errorLines);
-
-  const $errorMessageDiv = $('<div class="error-message"></div>');
-  $errorMessageDiv.insertBefore('replacedbody');
-  $errorMessageDiv.append(
-    $errorMessageTitle,
-    $errorMessageDescription,
-    $errorsDiv
-  );
-}
+// The one quality check that blocks: download and ESP send refuse to go on
+// while a required tracking parameter is missing. Every other check is shown
+// in the quality drawer (ext/quality, vue/components/quality-drawer).
 
 /**
  * Display a blocking-style modal when required tracking params are missing.
@@ -120,8 +76,6 @@ function displayTrackingError(missingKeys, viewModel) {
 }
 
 module.exports = {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 };

@@ -36,6 +36,8 @@ module.exports = {
   id: 'tracking-params',
   category: 'content',
   severity: 'error',
+  titleKey: 'Required tracking parameters',
+  passKey: 'All required tracking parameters are filled in',
   run(ctx) {
     const missing = missingRequiredKeys(
       ctx.config.trackingConfig,
