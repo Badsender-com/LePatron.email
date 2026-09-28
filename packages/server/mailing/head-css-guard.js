@@ -8,7 +8,7 @@ const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 // Server-side guards for the per-mailing head CSS: its size, and whether the
 // template allows it at all.
 //
-// Same reasoning as html-code-block-guard.js, for the same reasons: the editor
+// Same reasoning as synthetic-block-guard.js, for the same reasons: the editor
 // checks both, but the route accepts hand-written requests, and `previewHtml`
 // stores a second copy of whatever is injected in the same document.
 //
