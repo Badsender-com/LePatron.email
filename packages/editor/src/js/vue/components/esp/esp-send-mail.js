@@ -8,8 +8,6 @@ const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
 const { ESP_TYPE } = require('../../constant/esp-type');
 const {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 } = require('../../../ext/badsender-control-quality');
@@ -240,12 +238,7 @@ const EspComponent = Vue.component('EspForm', {
             this.fetchedProfile?.contentSendType?.toString().toLowerCase() +
             '-success-esp-send';
           this.vm.notifier.success(this.vm.t(successText));
-          const errors = getErrorsForControlQuality(this.vm);
-          if (errors && errors.length > 0) {
-            displayErrors(errors, this.vm);
-          } else {
-            $('.error-message').remove();
-          }
+          this.vm.quality.review();
           this.closeModal();
         })
         .catch((error) => {

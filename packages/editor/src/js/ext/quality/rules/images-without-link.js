@@ -8,6 +8,8 @@ module.exports = {
   id: 'images-without-link',
   category: 'content',
   severity: 'warning',
+  titleKey: 'Clickable images',
+  passKey: 'Every clickable image has a link',
   run(ctx) {
     return findUnfilledAnchors(ctx)
       .filter((link) => !link.label && link.anchor.querySelector('img'))
