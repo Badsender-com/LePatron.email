@@ -206,6 +206,13 @@ async function translateMailing({
     injectBuilderTexts(translatedMailing.data, builder)
   );
 
+  if (builderStats.oversized > 0) {
+    logger.warn(
+      `[Translation] ${builderStats.oversized} composed block(s) left untranslated: ` +
+        'the rebuilt markup would exceed the stored size limit.'
+    );
+  }
+
   if (builderStats.skipped.length > 0) {
     logger.warn(
       `[Translation] ${builderStats.skipped.length} composed-block key(s) dropped: ` +
@@ -222,6 +229,7 @@ async function translateMailing({
       fieldsInjected: injectionStats.injected + builderStats.applied,
       failedInjections: injectionStats.failed,
       composedBlocksRebuilt: builderStats.blocksUpdated,
+      composedBlocksOversized: builderStats.oversized,
     },
     originalTexts: textsToTranslate,
     translations,

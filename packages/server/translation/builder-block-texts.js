@@ -12,6 +12,7 @@ const {
   isTranslatableFieldName,
   isTranslatableValue,
 } = require('./mosaico-text-extractor.js');
+const { HTML_CODE_MAX_LENGTH } = require('../mailing/synthetic-block-guard.js');
 
 // Translation for the block builder.
 //
@@ -157,15 +158,29 @@ function parseKey(key) {
  * Mutates `data` in place: the caller already works on a clone (the generic
  * injector deep-clones before it starts).
  *
+ * A block whose rebuilt markup would blow past the size the save route
+ * enforces is left exactly as it was. That route never sees this write — the
+ * translated copy is persisted by `duplicateWithTranslatedData` — so the limit
+ * has to hold here too, and the value it bounds now comes from a provider's
+ * response rather than from something a user typed in the editor. `previewHtml`
+ * stores a second copy in the same document, against Mongo's 16MB per-document
+ * ceiling.
+ *
+ * Refusing the block rather than the whole translation, and refusing rather
+ * than truncating: a block left in the source language is visible and
+ * recoverable, and half a table is not.
+ *
  * @param {Object} data mailing.data
  * @param {Object} translations builder keys only
- * @returns {{ blocksUpdated: number, applied: number, skipped: string[] }}
+ * @returns {{ blocksUpdated: number, applied: number, skipped: string[],
+ *   oversized: number }}
  */
 function injectBuilderTexts(data, translations) {
   const entries = Object.entries(translations || {});
   const skipped = [];
+  let oversized = 0;
   if (entries.length === 0) {
-    return { blocksUpdated: 0, applied: 0, skipped };
+    return { blocksUpdated: 0, applied: 0, skipped, oversized };
   }
 
   // Parse each block's state once, apply everything, then regenerate once.
@@ -222,12 +237,18 @@ function injectBuilderTexts(data, translations) {
     // which is the recoverable failure.
     if (serialised === '') return;
 
+    const markup = generate(state);
+    if (markup.length > HTML_CODE_MAX_LENGTH) {
+      oversized += 1;
+      return;
+    }
+
     block[STATE_PROPERTY] = serialised;
-    block[HTML_PROPERTY] = generate(state);
+    block[HTML_PROPERTY] = markup;
     blocksUpdated += 1;
   });
 
-  return { blocksUpdated, applied, skipped };
+  return { blocksUpdated, applied, skipped, oversized };
 }
 
 /**
