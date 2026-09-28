@@ -11,6 +11,7 @@ var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 const {
   isSyntheticBlock,
+  isTranslatableBlock,
   isEmptySyntheticBlock,
   emptyLabelKeyFor,
   paletteLabelKeyFor,
@@ -140,6 +141,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // template. The palette falls back to an icon and a translated label, both
   // taken from the block's own descriptor so the two never show up as one.
   viewModel.isSyntheticBlock = isSyntheticBlock;
+
+  // The HTML code block hides the translate button; a composed block shows it,
+  // because the server rebuilds its markup from the translated state.
+  viewModel.isTranslatableBlock = isTranslatableBlock;
   viewModel.syntheticBlockLabelKey = paletteLabelKeyFor;
   viewModel.syntheticBlockIcon = paletteIconFor;
 
