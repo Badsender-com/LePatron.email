@@ -178,6 +178,13 @@
     &:hover { background: var(--gray-100); }
   }
 
+  &--ghost {
+    background: transparent;
+    color: var(--gray-700);
+
+    &:hover { background: var(--gray-100); }
+  }
+
   &--sm {
     height: 28px;
     padding: 0 10px;
@@ -231,4 +238,44 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+// ===== Ignored findings =====
+.qc-row--ignored {
+  .qc-row__title,
+  .qc-row__desc,
+  .qc-row__icon {
+    color: var(--gray-600);
+  }
+}
+
+.qc-group__toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+// "Ignored. Undo", under the list for a few seconds.
+.qc-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  font-size: 12px;
+  color: var(--gray-800);
 }
