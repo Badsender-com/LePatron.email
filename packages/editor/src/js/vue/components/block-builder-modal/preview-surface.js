@@ -30,6 +30,10 @@ const DRAGGING_CLASS = 'lp-bb-dragging';
 const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
 const DROP_AFTER_CLASS = 'lp-bb-drop-after';
 
+// The row currently being moved, dimmed so the cursor is not carrying an
+// invisible thing.
+const MOVING_CLASS = 'lp-bb-moving';
+
 // The drop target of a block that holds nothing yet.
 const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
@@ -68,6 +72,7 @@ const PREVIEW_DOCUMENT = [
   'text-align:center;color:#8c8c8c;font:14px Arial,Helvetica,sans-serif;}',
   `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
   'border-color:#00acdc;color:#00acdc;}',
+  `[${ELEMENT_ATTRIBUTE}].${MOVING_CLASS}{opacity:0.4;}`,
   '</style></head><body></body></html>',
 ].join('');
 
@@ -77,7 +82,7 @@ const PreviewSurfaceMixin = {
       // Replacing the body mid-drag destroys the very nodes the cursor is over:
       // the drop target vanishes, and the drag ends on nothing. Held until the
       // drag is done, then rendered once.
-      if (this.draggingType) {
+      if (this.isDragging()) {
         this.renderHeldDuringDrag = true;
         return;
       }
@@ -87,7 +92,6 @@ const PreviewSurfaceMixin = {
         this.renderPreview();
       });
     },
-
 
     // The preview document, written once and then only ever refilled.
     //
@@ -114,13 +118,17 @@ const PreviewSurfaceMixin = {
       // `dragover` has to cancel the event on every move, or the browser
       // refuses the drop outright — the one rule of the HTML5 drag API that
       // everybody forgets.
+      // Reordering starts inside the iframe, so its `dragstart` never reaches
+      // the parent window — and therefore never meets Mosaico's guard, which
+      // is why this one needs no stopPropagation while the palette's does.
+      doc.addEventListener('dragstart', this.handlePreviewDragStart);
+      doc.addEventListener('dragend', this.handleDragEnd);
       doc.addEventListener('dragenter', this.handlePreviewDragOver);
       doc.addEventListener('dragover', this.handlePreviewDragOver);
       doc.addEventListener('drop', this.handlePreviewDrop);
       doc.addEventListener('dragleave', this.handlePreviewDragLeave);
       return doc;
     },
-
 
     renderPreview() {
       const doc = this.ensurePreviewDocument();
@@ -138,9 +146,14 @@ const PreviewSurfaceMixin = {
         zone.textContent = this.vm.t('block-builder-drop-here');
         doc.body.appendChild(zone);
       }
+      // Preview chrome, set on the nodes rather than written into the markup:
+      // `draggable` has no business in an email, and the generated HTML is what
+      // ships.
+      this.previewRows(doc).forEach((row) => {
+        row.draggable = true;
+      });
       this.applySelectionHighlight();
     },
-
 
     previewRows(doc) {
       if (!doc || !doc.body) return [];
@@ -149,16 +162,12 @@ const PreviewSurfaceMixin = {
       );
     },
 
-
     /** The preview document, only if it has already been written. */
     previewDocument() {
       const frame = this.$refs.previewFrame;
       const doc = frame && frame.contentDocument;
       return doc && doc[PREVIEW_READY_FLAG] ? doc : null;
     },
-
-
-    // ---- selecting ---------------------------------------------------------
 
     // Selecting by clicking the rendered block, rather than only through the
     // list on the left. `closest` walks up from whatever was actually clicked —
@@ -181,7 +190,6 @@ const PreviewSurfaceMixin = {
         this.selectedId = id;
       }
     },
-
 
     // Marks the selected row in the preview, so the selection reads the same on
     // both sides. Re-applied after every render, since replacing the body drops
@@ -210,6 +218,7 @@ module.exports = {
   DRAGGING_CLASS,
   DROP_BEFORE_CLASS,
   DROP_AFTER_CLASS,
+  MOVING_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_FLAG,
 };
