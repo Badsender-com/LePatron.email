@@ -702,4 +702,43 @@ module.exports = {
   Undo: 'Annuler',
   'The change could not be saved':
     "La modification n'a pas pu être enregistrée",
+  'Broken links': 'Liens cassés',
+  'Links checked: __count__, all answer':
+    'Liens vérifiés : __count__, tous répondent',
+  'Broken link (__status__): __label__': 'Lien cassé (__status__) : __label__',
+  'Link to a domain that does not exist: __label__':
+    "Lien vers un domaine qui n'existe pas : __label__",
+  'Link did not answer in time, check it by hand: __label__':
+    "Le lien n'a pas répondu à temps, vérifiez-le vous-même : __label__",
+  'Link could not be checked (__status__), check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié (__status__), vérifiez-le vous-même : __label__",
+  'Link could not be checked, check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié, vérifiez-le vous-même : __label__",
+  'Image weight': 'Poids des images',
+  'Images checked: __count__, each under 500 KB':
+    'Images vérifiées : __count__, chacune sous 500 Ko',
+  'Image could not be downloaded: the export will leave it out (__name__)':
+    "Image impossible à télécharger : l'export la laissera de côté (__name__)",
+  'Heavy GIF (__size__ KB): keep it under 1 MB':
+    'GIF lourd (__size__ Ko) : restez sous 1 Mo',
+  'Heavy image (__size__ KB): keep it under 500 KB':
+    'Image lourde (__size__ Ko) : restez sous 500 Ko',
+  'Total image weight': 'Poids total des images',
+  'Images weigh __size__ KB in all, under 500 KB':
+    'Les images pèsent __size__ Ko au total, sous les 500 Ko',
+  'Images weigh __size__ KB in all: over 1 MB':
+    'Les images pèsent __size__ Ko au total : plus de 1 Mo',
+  'Images weigh __size__ KB in all: over 500 KB':
+    'Les images pèsent __size__ Ko au total : plus de 500 Ko',
+  'Image dimensions': 'Dimensions des images',
+  'No image is much larger than it is shown':
+    "Aucune image n'est beaucoup plus grande que sa taille d'affichage",
+  'Image is __width__ px wide, shown at __shown__ px':
+    'Image de __width__ px de large, affichée en __shown__ px',
+  'Blocklisted domains': 'Domaines sur liste noire',
+  'No link points to a blocklisted domain':
+    'Aucun lien ne pointe vers un domaine sur liste noire',
+  'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
+    "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
+  'Checking links and images…': 'Vérification des liens et des images…',
 };
