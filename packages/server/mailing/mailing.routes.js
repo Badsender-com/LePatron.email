@@ -70,6 +70,11 @@ router.patch(
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
   mailingQuality.updateQualityIgnores
 );
+router.post(
+  '/:mailingId/quality/resources',
+  GUARD_USER,
+  mailingQuality.checkResources
+);
 router.put(
   '/:mailingId/mosaico',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
