@@ -40,6 +40,7 @@ const imageWeight = require('./rules/image-weight');
 const imagesTotalWeight = require('./rules/images-total-weight');
 const oversizedImages = require('./rules/oversized-images');
 const domainBlocklists = require('./rules/domain-blocklists');
+const dangerousLinks = require('./rules/dangerous-links');
 const { collectResources } = require('./resources');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
@@ -82,6 +83,7 @@ const DEFAULT_RULES = [
 // server has answered, on the same export as the rules above.
 const REMOTE_RULES = [
   brokenLinks,
+  dangerousLinks,
   domainBlocklists,
   imageWeight,
   imagesTotalWeight,
