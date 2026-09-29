@@ -1,0 +1,66 @@
+//- Public preview of an email (share-link.controller.js). The email is shown
+//- in an iframe with no permission at all (sandbox=""): no script, an opaque
+//- origin. Every value below is escaped by Pug, the email included (srcdoc).
+doctype html
+html(lang=lang)
+  head
+    meta(charset="utf-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    meta(name="robots" content="noindex, nofollow, noarchive")
+    meta(name="referrer" content="no-referrer")
+    title= title
+    style.
+      :root {
+        --ink: #1f2933;
+        --muted: #52606d;
+        --line: #e4e7eb;
+        --paper: #f5f7fa;
+        --brand: #093040;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 16px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+      }
+      .bar__name { margin: 0; font-size: 15px; font-weight: 600; }
+      .bar__meta { color: var(--muted); font-size: 13px; }
+      .bar__brand { margin-left: auto; color: var(--brand); font-size: 12px; font-weight: 600; }
+      .email { flex: 1; width: 100%; border: 0; background: #fff; }
+      .notice {
+        max-width: 480px;
+        margin: 15vh auto 0;
+        padding: 0 16px;
+        text-align: center;
+      }
+      .notice h1 { font-size: 20px; }
+      .notice p { color: var(--muted); line-height: 1.5; }
+  body
+    if html
+      header.bar
+        h1.bar__name= name
+        span.bar__meta= meta
+        span.bar__brand LePatron
+      iframe.email(
+        title=name
+        sandbox=""
+        referrerpolicy="no-referrer"
+        srcdoc=html
+      )
+    else
+      main.notice
+        h1= title
+        p= message
