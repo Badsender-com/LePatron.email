@@ -144,3 +144,66 @@
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+// ===== "Share a preview", under the send form =====
+.qc-share {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+
+  &__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  &__create,
+  &__url {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  &__expiry {
+    flex: 1;
+  }
+
+  // As tall as the fields beside it.
+  &__button {
+    flex-shrink: 0;
+    height: 40px;
+  }
+
+  &__created {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: @qc-radius;
+    background: @qc-tint-success;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--gray-200);
+    font-size: 12px;
+  }
+
+  &__meta {
+    color: var(--gray-700);
+  }
+}

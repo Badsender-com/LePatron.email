@@ -162,6 +162,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :vm="vm"
         :status="status"
         :error-count="errorCount"
+        :active="open && tab === 'send'"
         @show-results="select('checks')"
         @run-checks="runFromSend"
       ></send-test-panel>
