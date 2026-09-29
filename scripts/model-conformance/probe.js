@@ -101,8 +101,20 @@ async function probeTranslationPath(provider, model, integration) {
   // translateBatch resolves its own model from config, so the provider has to
   // be built with the model under test rather than told about it per call.
   const scoped = ProviderFactory.createProvider(integration, { model });
+  // Shaped like a real email block, not a minimal pair. An earlier version
+  // sent two two-word strings under `data.a` / `data.b` and claude-fable-5
+  // declined it outright — reproducibly, while the same model translates real
+  // content without trouble. A probe that does not look like production
+  // measures the probe, not the product.
+  const texts = {
+    'data.header.titleText': 'Découvrez notre collection de printemps',
+    'data.body.text':
+      'Des pièces légères et des couleurs franches, disponibles dès maintenant sur la boutique.',
+    'data.cta.label': 'Voir la collection',
+  };
+
   const translated = await scoped.translateBatch({
-    texts: { 'data.a': 'Bonjour', 'data.b': 'En profiter' },
+    texts,
     sourceLanguage: 'fr',
     targetLanguage: 'en',
   });
@@ -110,7 +122,7 @@ async function probeTranslationPath(provider, model, integration) {
   // A model can return valid JSON in the wrong shape — nested instead of the
   // flat dotted keys the extractor produced. That is a failure of this path,
   // not a success.
-  for (const key of ['data.a', 'data.b']) {
+  for (const key of Object.keys(texts)) {
     if (typeof translated[key] !== 'string' || !translated[key].trim()) {
       throw new Error(`missing or non-string key ${key}`);
     }
@@ -193,14 +205,33 @@ async function runProbe({
     };
   }
 
+  // A model the key is not entitled to is not an incompatibility: the listing
+  // offers it, the subscription does not cover it. Reporting that as a failure
+  // would bury the real ones.
+  if (isUnentitled(lastError)) {
+    return { verdict: VERDICTS.SKIPPED, detail: shortMessage(lastError) };
+  }
+
   return {
     verdict: isTransient(lastError) ? VERDICTS.TRANSIENT : VERDICTS.FAIL,
     detail: shortMessage(lastError),
   };
 }
 
+function isUnentitled(error) {
+  if (!error) return false;
+  if (error.code === 'PROVIDER_INVALID_CREDENTIALS') return true;
+  return /\b40[13]\b/.test(error.message || '');
+}
+
 function shortMessage(error) {
   return String((error && error.message) || 'unknown').slice(0, 90);
 }
 
-module.exports = { runProbe, PROBES, DEFAULT_MAX_TOKENS, isTransient };
+module.exports = {
+  runProbe,
+  PROBES,
+  DEFAULT_MAX_TOKENS,
+  isTransient,
+  isUnentitled,
+};

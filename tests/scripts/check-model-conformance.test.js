@@ -212,3 +212,45 @@ describe('formatReport', () => {
     expect(formatReport(results)).not.toContain('65f1aaaa1c9');
   });
 });
+
+// Classifying the failure is what keeps the report readable: a sweep that
+// reports every refusal as FAIL is one nobody reads twice.
+describe('error classification', () => {
+  const {
+    isTransient,
+    isUnentitled,
+  } = require('../../scripts/model-conformance/probe');
+
+  it.each([
+    [
+      'PROVIDER_INVALID_CREDENTIALS code',
+      { code: 'PROVIDER_INVALID_CREDENTIALS' },
+    ],
+    // Mistral answers 403 for a model outside the subscription, not 401.
+    [
+      'a 403 on a model the plan excludes',
+      { message: 'Mistral API error: 403 not entitled' },
+    ],
+    ['a 401', { message: 'API error: 401 unauthorized' }],
+  ])('skips %s', (_label, error) => {
+    expect(isUnentitled(error)).toBe(true);
+  });
+
+  it.each([
+    [
+      'a refused parameter',
+      { message: "400 Unsupported parameter: 'max_tokens'" },
+    ],
+    ['nothing at all', null],
+    // The digits must stand alone: a model id is not a status.
+    ['a model id that contains 403', { message: 'model glm-403b failed' }],
+  ])('does not skip %s', (_label, error) => {
+    expect(isUnentitled(error)).toBe(false);
+  });
+
+  it('separates the transient class from the entitlement one', () => {
+    const rateLimited = { message: 'API error: 429 rate limited' };
+    expect(isTransient(rateLimited)).toBe(true);
+    expect(isUnentitled(rateLimited)).toBe(false);
+  });
+});

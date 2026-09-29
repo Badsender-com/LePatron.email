@@ -672,9 +672,10 @@ l'inverse de `yarn check-skills`, qui tourne à sec.
 > clés de cet environnement. Vérifiez où vous pointez avant de le lancer sans
 > `--dry`.
 
-### Ce qu'il a trouvé à sa première exécution
+### Ce qu'il a trouvé à ses premières exécutions
 
-Trois défauts qu'aucun test unitaire ne pouvait voir :
+Des défauts qu'aucun test unitaire ne pouvait voir, parce qu'ils ne sont
+visibles que dans la réponse du vrai fournisseur :
 
 - `gpt-3.5-turbo` et `gpt-4-turbo` plafonnent les complétions à 4096 jetons,
   alors que la traduction envoie le défaut de 16000 — **ces modèles ne
@@ -682,6 +683,31 @@ Trois défauts qu'aucun test unitaire ne pouvait voir :
   désormais respecté automatiquement.
 - `gpt-5.3-codex` et `gpt-live-1` étaient proposés dans la liste mais ne
   répondent pas sur l'endpoint de conversation. Filtrés.
-- `claude-fable-5` refuse le prompt de traduction (`stop_reason: refusal`), ce
-  qui était rapporté comme une « réponse vide » et envoyait chercher un bug
-  d'analyse syntaxique. Le refus est maintenant nommé.
+- `zai-glm-5` renvoie son `content` en **tableau de blocs** et non en chaîne,
+  parce qu'il y joint son raisonnement. Le dialecte OpenAI supposait une
+  chaîne et plantait sur `content.trim is not a function` — une erreur
+  JavaScript qui n'apprend rien à qui lit le journal.
+- Gemini annonce `generateContent` pour `antigravity`, `deep-research`,
+  `omni` et `lyria`, qui répondent ensuite « This model only supports
+  Interactions API ». Filtrés. **Troisième occurrence du même schéma** après
+  les alias Infomaniak et les identifiants datés de Gemini : un listing dit ce
+  qu'un modèle est, jamais ce que l'endpoint accepte.
+
+### Un faux positif, et ce qu'il a appris
+
+La première exécution rapportait `claude-fable-5` en échec sur la traduction
+(`stop_reason: refusal`). Jonathan a signalé que la traduction de bloc
+fonctionne sans problème sur staging avec ce modèle.
+
+Vérification faite : sur quatre configurations de contenu, trois passent. Le
+refus dépendait du contenu artificiel de la sonde — deux chaînes de deux mots
+sous les clés `data.a` / `data.b`, qui ne ressemblent à rien qu'un client
+enverrait. **La sonde mesurait la sonde, pas le produit.**
+
+La sonde de traduction envoie désormais un bloc d'e-mail réaliste
+(`data.header.titleText`, `data.body.text`, `data.cta.label`). Fable 5 passe
+les deux chemins.
+
+À retenir pour qui étend ce script : **une sonde doit ressembler à ce que le
+produit envoie.** Un verdict d'échec sur un contenu que personne n'enverrait
+coûte plus cher qu'une absence de test, parce qu'on le croit.

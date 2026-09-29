@@ -230,6 +230,38 @@ describe('OpenAIProvider', () => {
     });
   });
 
+  // A reasoning model served over an OpenAI-compatible API returns blocks
+  // rather than a string. Assuming a string crashed with
+  // `content.trim is not a function` — a JavaScript error with nothing in it
+  // for whoever reads the log. Found on Mistral's zai-glm-5.
+  describe('content shape', () => {
+    function parse(content) {
+      return provider._parseResponse({
+        choices: [{ message: { content } }],
+        usage: {},
+      }).content;
+    }
+
+    it('reads a plain string', () => {
+      expect(parse('hello')).toBe('hello');
+    });
+
+    it('concatenates text blocks and drops the reasoning', () => {
+      expect(
+        parse([
+          { type: 'thinking', thinking: [{ type: 'text', text: 'internal' }] },
+          { type: 'text', text: 'Hello ' },
+          { type: 'text', text: 'world' },
+        ])
+      ).toBe('Hello world');
+    });
+
+    it('survives a shape it cannot read', () => {
+      expect(parse(null)).toBe('');
+      expect(parse(undefined)).toBe('');
+    });
+  });
+
   // Truncation used to pass unnoticed on this dialect, which backs six
   // providers: Anthropic and Gemini both reported it, OpenAI did not. It
   // matters more since gpt-5-mini became the default — a reasoning model
