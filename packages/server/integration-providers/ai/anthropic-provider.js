@@ -125,6 +125,16 @@ class AnthropicProvider extends BaseLLMProvider {
 
   // eslint-disable-next-line no-unused-vars
   _parseResponse(data, requestBody) {
+    // The model declining is not a technical failure, and reporting it as an
+    // empty response sent us looking for a parser bug. Gemini's equivalent
+    // (finishReason SAFETY) was already named; this one was not.
+    if (data.stop_reason === 'refusal') {
+      throw new ProviderError(
+        'Anthropic declined to answer this prompt',
+        CODES.INVALID_RESPONSE
+      );
+    }
+
     if (!Array.isArray(data.content)) {
       throw new ProviderError(
         'Invalid response structure from anthropic',

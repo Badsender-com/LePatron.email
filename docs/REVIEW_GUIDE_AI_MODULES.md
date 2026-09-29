@@ -597,3 +597,91 @@ dans `userIdOf`. À rediscuter.
 Le gate d'activation ne vérifie pas `hasSchema` : passé de HIGH à LOW, le hook
 `pre('validate')` empêchant la persistance d'un id inconnu et le null-check
 d'`outputSchemaId` transformant le résidu en 500 propre avant tout appel facturé.
+
+---
+
+## 9. Conformité des modèles — `yarn check-models`
+
+### Pourquoi
+
+La liste des modèles est récupérée **en direct** chez le fournisseur : l'écran
+propose donc des modèles dont personne ici ne connaît le contrat d'appel.
+`gpt-6-astra` est arrivé en staging et a échoué sur un nom de paramètre, parce
+qu'un motif écrit à la main (`NEW_CONTRACT_MODELS`) décidait seul de la forme
+de la requête.
+
+Deux réponses, toutes deux en place :
+
+- **À l'exécution**, un refus de paramètre est corrigé et rejoué
+  (`adaptive-chat-call.js`), et la correction est mémorisée par modèle. Le
+  produit ne tombe plus sur un modèle inconnu.
+- **En amont**, ce script dit _quels_ modèles ont besoin de cette correction,
+  et lesquels échouent pour une raison que rien ne peut rattraper.
+
+### Les deux chemins, et pourquoi les deux
+
+Le chemin des skills et celui de la traduction **n'envoient pas la même
+requête** :
+
+| Paramètre          | Skill                                       | Traduction                          |
+| ------------------ | ------------------------------------------- | ----------------------------------- |
+| `temperature`      | souvent absente                             | toujours 0,3                        |
+| `reasoning_effort` | jamais                                      | toujours `low`                      |
+| `max_tokens`       | explicite                                   | jamais (donc le plafond par défaut) |
+| `response_format`  | avec schéma (force un outil chez Anthropic) | sans schéma, absent chez Anthropic  |
+
+Un modèle peut passer l'un et échouer l'autre. C'est exactement ce qui s'est
+produit : le Playground seul n'aurait pas reproduit la panne de staging.
+
+### Usage
+
+```bash
+yarn check-models                      # plan et coût, n'appelle rien
+node scripts/check-model-conformance.js --provider=openai
+node scripts/check-model-conformance.js --model=gpt-6-astra --samples=3
+node scripts/check-model-conformance.js --all --max-calls=400
+```
+
+Options : `--provider=` · `--model=` · `--path=skill|translation` ·
+`--samples=` · `--retries=` · `--max-calls=` · `--all` · `--dry`.
+
+Codes de sortie : `0` conforme · `1` refus structurel · `2` avertissements.
+
+### Lire le rapport
+
+| Verdict     | Ce que ça veut dire                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| `OK`        | rien à signaler                                                                                         |
+| `ADAPTED`   | fonctionne, mais a coûté une requête refusée — le motif de raccourci est en retard, il peut être élargi |
+| `FAIL`      | refus reproductible : à traiter                                                                         |
+| `FLAKY`     | les tentatives se contredisent — **jamais arbitré automatiquement**                                     |
+| `TRANSIENT` | aléa fournisseur après ré-essais                                                                        |
+| `SKIPPED`   | clé refusée, ou plafond d'appels atteint                                                                |
+
+### Quand le lancer — et quand surtout pas
+
+**Avant une livraison touchant à l'intégration IA**, à l'ajout d'un fournisseur
+ou d'un modèle, et quand un fournisseur annonce une génération.
+
+**Jamais en intégration continue.** Il dépense de l'argent réel, prend
+plusieurs minutes, et dépend de fournisseurs qui répondent parfois
+différemment au même appel — il produirait des échecs fantômes. C'est
+l'inverse de `yarn check-skills`, qui tourne à sec.
+
+> ⚠️ Il lit les intégrations de **la base à laquelle il se connecte**, donc les
+> clés de cet environnement. Vérifiez où vous pointez avant de le lancer sans
+> `--dry`.
+
+### Ce qu'il a trouvé à sa première exécution
+
+Trois défauts qu'aucun test unitaire ne pouvait voir :
+
+- `gpt-3.5-turbo` et `gpt-4-turbo` plafonnent les complétions à 4096 jetons,
+  alors que la traduction envoie le défaut de 16000 — **ces modèles ne
+  pouvaient pas traduire du tout**. Le plafond annoncé par le fournisseur est
+  désormais respecté automatiquement.
+- `gpt-5.3-codex` et `gpt-live-1` étaient proposés dans la liste mais ne
+  répondent pas sur l'endpoint de conversation. Filtrés.
+- `claude-fable-5` refuse le prompt de traduction (`stop_reason: refusal`), ce
+  qui était rapporté comme une « réponse vide » et envoyait chercher un bug
+  d'analyse syntaxique. Le refus est maintenant nommé.

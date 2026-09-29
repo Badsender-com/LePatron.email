@@ -40,6 +40,11 @@ const REMOTE_FILTERS = {
       // would otherwise wave through on its "chatgpt" prefix.
       /(^|-)image(-|$)/,
       /moderation/,
+      // Answer on their own endpoints, not chat completions: both 404 with
+      // "not supported in the v1/chat/completions endpoint" when picked.
+      // Found by the conformance script, not by reading the docs.
+      /-codex(-|$)/,
+      /(^|-)live(-|$)/,
       /^davinci/,
       /^babbage/,
       /^sora/,

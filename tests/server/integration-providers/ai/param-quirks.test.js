@@ -68,6 +68,39 @@ describe('detectParamQuirk', () => {
       });
     });
 
+    // Older models cap completions well below our default, and the
+    // translation path sends that default because it passes none of its own —
+    // so gpt-4-turbo could not translate at all. The provider names the
+    // ceiling, which is what makes clamping safe rather than a guess.
+    it('clamps a token limit the model says is too large', () => {
+      const body = {
+        error: {
+          message:
+            'max_tokens is too large: 16000. This model supports at most 4096 completion tokens.',
+          param: 'max_tokens',
+          code: 'invalid_value',
+        },
+      };
+
+      expect(detectParamQuirk(400, body)).toEqual({
+        param: 'max_tokens',
+        action: 'clamp',
+        value: 4096,
+      });
+    });
+
+    it('ignores an invalid_value it cannot read a ceiling from', () => {
+      const body = {
+        error: {
+          message: 'temperature must be between 0 and 2',
+          param: 'temperature',
+          code: 'invalid_value',
+        },
+      };
+
+      expect(detectParamQuirk(400, body)).toBeNull();
+    });
+
     it('falls back to the message when the payload names no param', () => {
       const body = {
         error: {
@@ -168,6 +201,23 @@ describe('applyQuirks', () => {
     applyQuirks(body, [{ param: 'temperature', action: 'drop' }]);
 
     expect(body).toEqual({ model: 'm', temperature: 0.3 });
+  });
+
+  it('clamps down to the stated ceiling', () => {
+    expect(
+      applyQuirks({ model: 'm', max_tokens: 16000 }, [
+        { param: 'max_tokens', action: 'clamp', value: 4096 },
+      ])
+    ).toEqual({ model: 'm', max_tokens: 4096 });
+  });
+
+  // A stale ceiling must never raise a request.
+  it('never clamps upwards', () => {
+    expect(
+      applyQuirks({ model: 'm', max_tokens: 500 }, [
+        { param: 'max_tokens', action: 'clamp', value: 4096 },
+      ])
+    ).toEqual({ model: 'm', max_tokens: 500 });
   });
 
   it('ignores a quirk for a parameter that is not there', () => {

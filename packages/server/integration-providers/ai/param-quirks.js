@@ -24,6 +24,13 @@ const UNSUPPORTED_CODES = new Set([
   'unsupported_value',
 ]);
 
+// A value the model will not take, but which it tells us how to fix — as
+// opposed to a parameter it refuses outright.
+const INVALID_VALUE_CODE = 'invalid_value';
+
+// "max_tokens is too large: 16000. This model supports at most 4096 …"
+const TOO_LARGE = /is too large[^.]*\.\s*This model supports at most (\d+)/i;
+
 /**
  * The only parameters we accept to adapt, and how.
  *
@@ -58,12 +65,25 @@ function paramFromMessage(message) {
  * @param {number} status
  * @param {Object|null} parsedError  provider error body, already parsed
  * @param {string} [message]         sanitised message, used as a fallback
- * @returns {{param: string, action: 'drop'|'rename', to?: string}|null}
+ * @returns {{param, action: 'drop'|'rename'|'clamp', to?, value?}|null}
  */
 function detectParamQuirk(status, parsedError, message) {
   if (!REFUSAL_STATUSES.has(status)) return null;
 
   const error = (parsedError && parsedError.error) || {};
+
+  // A ceiling the model states outright. Older models cap completions well
+  // below our default, and the translation path sends that default because it
+  // passes no maxTokens of its own — so gpt-4-turbo could not translate at
+  // all. Clamping is safe because the provider named the limit.
+  if (error.code === INVALID_VALUE_CODE) {
+    const limit = TOO_LARGE.exec(error.message || message || '');
+    if (limit && error.param && error.param.startsWith('max_')) {
+      return { param: error.param, action: 'clamp', value: Number(limit[1]) };
+    }
+    return null;
+  }
+
   // A code we do not know means we do not know what a retry would change.
   if (error.code && !UNSUPPORTED_CODES.has(error.code)) return null;
 
@@ -89,6 +109,13 @@ function applyQuirks(body, quirks) {
 
   for (const quirk of quirks || []) {
     if (!(quirk.param in next)) continue;
+
+    if (quirk.action === 'clamp') {
+      // Only ever downwards: a stale ceiling must not raise a request.
+      next[quirk.param] = Math.min(next[quirk.param], quirk.value);
+      continue;
+    }
+
     const value = next[quirk.param];
     delete next[quirk.param];
     if (quirk.action === 'rename' && quirk.to) next[quirk.to] = value;
