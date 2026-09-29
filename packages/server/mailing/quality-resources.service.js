@@ -5,6 +5,7 @@ const createError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { probeUrl, PROBE_FAILURES } = require('../utils/url-probe.js');
 const blocklists = require('./quality-blocklists.service.js');
+const webRisk = require('./quality-web-risk.service.js');
 const images = require('./quality-images.service.js');
 const {
   cached,
@@ -151,6 +152,8 @@ const DEFAULT_DEPS = {
   fetchOwn: (url, timeoutMs) => images.fetchOwn(url, timeoutMs),
   resolve4: blocklists.resolve4,
   zones: () => blocklists.blocklistZones(),
+  webRiskKey: () => webRisk.apiKey(),
+  webRiskLookup: (url, key) => webRisk.lookup(url, key),
 };
 
 const byKey = (keys, values) =>
@@ -178,6 +181,24 @@ async function checkDomains(links, zones, key, deps) {
   return { enabled: true, listed };
 }
 
+// Links Google lists as phishing, malware or unwanted software. A failed
+// lookup is not judged, and not kept for the next runs.
+async function checkThreats(links, apiKey, key, deps) {
+  if (!apiKey) return { enabled: false, threats: {} };
+  const results = await mapLimited(links, CONCURRENCY, (url) =>
+    cached(
+      key('webrisk', url),
+      () => deps.webRiskLookup(url, apiKey),
+      (types) => types !== null
+    )
+  );
+  const threats = byKey(links, results);
+  Object.keys(threats).forEach((url) => {
+    if (!threats[url] || !threats[url].length) delete threats[url];
+  });
+  return { enabled: true, threats };
+}
+
 /**
  * @param {{ links: string[], images: string[] }} resources - validated
  * @param {Object} context
@@ -185,8 +206,9 @@ async function checkDomains(links, zones, key, deps) {
  * @param {string} context.cacheScope - answers are shared within this scope
  *   only (the company): another company must not learn what was checked
  * @param {string[]} [context.ownHosts] - the hosts the editor reaches us at
- * @returns {Promise<{ links: Object, images: Object, blocklists: Object }>}
- *   results keyed by URL; blocklists: `{ enabled, listed: { domain: names } }`
+ * @returns {Promise<{ links: Object, images: Object, blocklists: Object,
+ *   webRisk: Object }>} results keyed by URL; blocklists: `{ enabled, listed:
+ *   { domain: names } }`; webRisk: `{ enabled, threats: { url: types } }`
  */
 function checkResources(
   resources,
@@ -197,7 +219,7 @@ function checkResources(
     const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
 
-    const [linkResults, imageResults, domains] = await Promise.all([
+    const [linkResults, imageResults, domains, threats] = await Promise.all([
       mapLimited(resources.links, CONCURRENCY, (url) =>
         cached(
           key('link', url),
@@ -216,12 +238,14 @@ function checkResources(
         );
       }),
       checkDomains(resources.links, deps.zones(), key, deps),
+      checkThreats(resources.links, deps.webRiskKey(), key, deps),
     ]);
 
     return {
       links: byKey(resources.links, linkResults),
       images: byKey(resources.images, imageResults),
       blocklists: domains,
+      webRisk: threats,
     };
   });
 }

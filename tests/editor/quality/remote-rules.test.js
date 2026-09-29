@@ -23,6 +23,7 @@ const imageWeight = require(`${RULES}/image-weight`);
 const imagesTotalWeight = require(`${RULES}/images-total-weight`);
 const oversizedImages = require(`${RULES}/oversized-images`);
 const domainBlocklists = require(`${RULES}/domain-blocklists`);
+const dangerousLinks = require(`${RULES}/dangerous-links`);
 
 const blocks = [{ id: 'b1', type: 'textBlock' }];
 const KB = 1024;
@@ -232,6 +233,42 @@ describe('image weight', () => {
     expect(findings).toEqual([
       expect.objectContaining({ params: { width: 1200, shown: 300 } }),
     ]);
+  });
+});
+
+describe('dangerous-links', () => {
+  const html = '<a href="https://bad.test/login">Log in</a>';
+
+  it('is not listed where no Web Risk key is configured', () => {
+    expect(check(dangerousLinks, html, remoteOf()).checks).toEqual([]);
+  });
+
+  it('names the worst threat Google lists the link under', () => {
+    const { findings } = check(dangerousLinks, html, {
+      ...remoteOf(),
+      webRisk: {
+        enabled: true,
+        threats: {
+          'https://bad.test/login': ['MALWARE', 'SOCIAL_ENGINEERING'],
+        },
+      },
+    });
+    expect(findings).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        messageKey: 'Google lists this link as phishing: __label__',
+        params: { label: 'Log in' },
+        blockId: 'b1',
+      }),
+    ]);
+  });
+
+  it('passes when Google lists none', () => {
+    const { checks } = check(dangerousLinks, html, {
+      ...remoteOf(),
+      webRisk: { enabled: true, threats: {} },
+    });
+    expect(checks[0].status).toBe('passed');
   });
 });
 
