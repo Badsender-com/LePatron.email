@@ -46,7 +46,7 @@ function shareUrl(req, token) {
  *
  * @apiParam (Body) {Number} [expiresInDays=7] 1, 7 or 30
  * @apiSuccess {String} id
- * @apiSuccess {String} url the link, returned this once: only a hash is kept
+ * @apiSuccess {String} url the link
  * @apiSuccess {Date} createdAt
  * @apiSuccess {Date} expiresAt
  * @apiSuccess {String} createdBy
@@ -69,6 +69,8 @@ async function create(req, res) {
     // As the list will show it: the admin's links have no author.
     createdBy: link._user ? req.user.name || null : null,
     url: shareUrl(req, token),
+    // Whether the list will offer to copy it again.
+    copyable: Boolean(link.tokenEncrypted),
   });
 }
 
@@ -77,11 +79,18 @@ async function create(req, res) {
  * @apiPermission user
  * @apiName ListMailingShareLinks
  * @apiGroup Mailings
- * @apiSuccess {Object[]} items `{ id, createdAt, expiresAt, createdBy }`
+ * @apiSuccess {Object[]} items `{ id, createdAt, expiresAt, createdBy, url }`,
+ *   `url` null for a link that cannot be shown again
  */
 async function list(req, res) {
   const mailing = await editableMailing(req);
-  res.json({ items: await shareLinkService.listActiveLinks(mailing._id) });
+  // Working links: never cached on the way.
+  res.set('Cache-Control', 'private, no-store');
+  res.json({
+    items: await shareLinkService.listActiveLinks(mailing._id, (token) =>
+      shareUrl(req, token)
+    ),
+  });
 }
 
 /**

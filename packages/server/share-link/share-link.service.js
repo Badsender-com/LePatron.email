@@ -5,12 +5,15 @@ const createError = require('http-errors');
 
 const { ShareLinks } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
+const { encrypt, decrypt } = require('../utils/crypto.js');
 
 /**
  * Public preview links of an email (quality drawer, "Share a preview").
  *
  * A token is 32 random bytes, base64url (43 characters): unguessable, so the
- * link is the only credential. Only its SHA-256 is stored.
+ * link is the only credential. It is found by its SHA-256, and kept encrypted
+ * so that the editors can copy it again.
  */
 
 const EXPIRY_DAYS = [1, 7, 30];
@@ -26,6 +29,29 @@ const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
 
 const generateToken = () => crypto.randomBytes(32).toString('base64url');
+
+// Without a key (or with a broken one), a link is still created: it is only
+// shown once instead.
+function sealToken(token) {
+  try {
+    return encrypt(token);
+  } catch (error) {
+    logger.warn('[SHARE] token not encrypted, the link will be shown once', {
+      error: error.message,
+    });
+    return undefined;
+  }
+}
+
+function openToken(tokenEncrypted) {
+  if (!tokenEncrypted) return null;
+  try {
+    const token = decrypt(tokenEncrypted);
+    return TOKEN_SHAPE.test(token) ? token : null;
+  } catch (error) {
+    return null;
+  }
+}
 
 /**
  * @param {Object} body - `{ expiresInDays }`, 1, 7 or 30 (7 when absent)
@@ -54,19 +80,27 @@ const activeQuery = (mailingId, now = new Date()) => ({
   expiresAt: { $gt: now },
 });
 
-// What the editor shows of a link: never its token, which is not stored.
-function toApi(link) {
-  return {
+/**
+ * What the editor shows of a link: never its hash or its sealed token.
+ * @param {Function} [urlOf] - token → address; with it, `url` is the link to
+ *   copy again (null when it cannot be opened)
+ */
+function toApi(link, urlOf) {
+  const api = {
     id: String(link._id),
     createdAt: link.createdAt,
     expiresAt: link.expiresAt,
     createdBy: link._user && link._user.name ? link._user.name : null,
   };
+  if (urlOf) {
+    const token = openToken(link.tokenEncrypted);
+    api.url = token ? urlOf(token) : null;
+  }
+  return api;
 }
 
 /**
- * @returns {Promise<{ link: Object, token: string }>} the token is only ever
- *   returned here
+ * @returns {Promise<{ link: Object, token: string }>}
  */
 async function createShareLink({ mailing, user, expiresInDays }) {
   const active = await ShareLinks.countDocuments(activeQuery(mailing._id));
@@ -78,6 +112,7 @@ async function createShareLink({ mailing, user, expiresInDays }) {
   const token = generateToken();
   const link = await ShareLinks.create({
     tokenHash: hashToken(token),
+    tokenEncrypted: sealToken(token),
     _mailing: mailing._id,
     _company: mailing._company,
     _user: user.isAdmin ? undefined : user.id,
@@ -87,12 +122,13 @@ async function createShareLink({ mailing, user, expiresInDays }) {
   return { link, token };
 }
 
-async function listActiveLinks(mailingId) {
+/** @param {Function} urlOf - token → address, for the links to copy again */
+async function listActiveLinks(mailingId, urlOf) {
   const links = await ShareLinks.find(activeQuery(mailingId))
     .sort({ createdAt: -1 })
     .populate('_user', 'name')
     .lean();
-  return links.map(toApi);
+  return links.map((link) => toApi(link, urlOf));
 }
 
 /** Revokes a link of this email; a link of another email is a 404. */
