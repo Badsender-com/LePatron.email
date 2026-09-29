@@ -329,5 +329,6 @@
   "Created __created__ by __name__, until __date__": "Créé le __created__ par __name__, jusqu'au __date__",
   "Created __created__, until __date__": "Créé le __created__, jusqu'au __date__",
   "Turn off the link: __link__": "Désactiver le lien : __link__",
-  "This email already has __count__ active links: turn one off first": "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord"
+  "This email already has __count__ active links: turn one off first": "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
+  "Copy the link: __link__": "Copier le lien : __link__"
 }
