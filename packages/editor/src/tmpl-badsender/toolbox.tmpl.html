@@ -337,7 +337,7 @@
         <span class="comment-badge comment-badge-important"><span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'blocking' -->
-        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-ban"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
+        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
         <!-- /ko -->
         <!-- Category badge in header (always visible, even when collapsed) -->
         <!-- ko if: category === 'general' || !category -->
@@ -507,7 +507,7 @@
           <span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span>
         </span>
         <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="lucide lucide-circle-slash"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
+          <span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
         </span>
       </div>
 
