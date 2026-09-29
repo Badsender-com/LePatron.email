@@ -1,5 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { SimpleSelect } = require('../select/simpleSelect');
+const { ShareLinkPanel } = require('./share-link-panel');
 const {
   areEmails,
   fetchEmailGroups,
@@ -10,12 +11,14 @@ const {
 // saved list, and a word on what the quality review found. Errors never stop
 // the send: they are only recalled, with a way back to the results.
 const SendTestPanel = Vue.component('SendTestPanel', {
-  components: { SimpleSelect },
+  components: { SimpleSelect, ShareLinkPanel },
   props: {
     vm: { type: Object, required: true },
     // What the last review found: status and error count.
     status: { type: String, default: 'idle' },
     errorCount: { type: Number, default: 0 },
+    // The tab is shown.
+    active: { type: Boolean, default: false },
   },
   data: () => ({
     recipients: '',
@@ -106,6 +109,8 @@ const SendTestPanel = Vue.component('SendTestPanel', {
           {{ isSending ? t('sending-test-mails') : t('Send the test email') }}
         </button>
       </form>
+
+      <share-link-panel :vm="vm" :active="active"></share-link-panel>
     </div>
   `,
 });
