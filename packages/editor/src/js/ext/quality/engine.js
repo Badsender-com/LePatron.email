@@ -35,6 +35,13 @@ const forbiddenCode = require('./rules/forbidden-code');
 const malformedHtml = require('./rules/malformed-html');
 const unsupportedCode = require('./rules/unsupported-code');
 const looseCode = require('./rules/loose-code');
+const brokenLinks = require('./rules/broken-links');
+const imageWeight = require('./rules/image-weight');
+const imagesTotalWeight = require('./rules/images-total-weight');
+const oversizedImages = require('./rules/oversized-images');
+const domainBlocklists = require('./rules/domain-blocklists');
+const dangerousLinks = require('./rules/dangerous-links');
+const { collectResources } = require('./resources');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -72,6 +79,18 @@ const DEFAULT_RULES = [
   htmlSize,
 ];
 
+// Rules that read what the server found (`options.remote`): links that do not
+// answer, image weight once exported, blocklisted domains. They run once the
+// server has answered, on the same export as the rules above.
+const REMOTE_RULES = [
+  brokenLinks,
+  dangerousLinks,
+  domainBlocklists,
+  imageWeight,
+  imagesTotalWeight,
+  oversizedImages,
+];
+
 // djb2: enough to tell two values apart in a fingerprint, not a security hash.
 function hashString(value) {
   const str = String(value === undefined || value === null ? '' : value);
@@ -86,7 +105,7 @@ function hashString(value) {
  * Builds what every rule reads: the exported HTML (exported and parsed once),
  * the plain content model and a way to trace an exported node back to its block.
  */
-function buildContext(viewModel, html) {
+function buildContext(viewModel, html, remote) {
   const blocks = ko.toJS(viewModel.content().mainBlocks().blocks) || [];
   const blockIds = new Set(blocks.map((block) => block && block.id));
   // An inert document: unlike $.parseHTML, DOMParser never fetches the images.
@@ -98,6 +117,8 @@ function buildContext(viewModel, html) {
     doc,
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
+    // What the server said about the links and images, for REMOTE_RULES.
+    remote: remote || null,
     // Shared by the rules of one run: what they read from the export once.
     cache: {},
     // The block root keeps its `id` in the export (uniqueId + attr:{id}).
@@ -141,19 +162,24 @@ function completeFinding(rule, finding, ctx) {
  * @param {Object} [options]
  * @param {string} [options.html] - an already exported HTML, to avoid exporting twice
  * @param {Array} [options.rules] - rules to run instead of the default set
- * @returns {{ findings: Array, checks: Array }} findings to show, and one entry
- *   per check with its status, so passed checks can be listed too
+ * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
+ * @returns {{ findings: Array, checks: Array, html: string, resources: Object }}
+ *   findings to show, one entry per check with its status (so passed checks
+ *   can be listed too), the HTML checked, and the links and images to ask the
+ *   server about
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
     typeof options.html === 'string' ? options.html : viewModel.exportHTML();
   const rules = options.rules || DEFAULT_RULES;
-  const ctx = buildContext(viewModel, html);
+  const ctx = buildContext(viewModel, html, options.remote);
 
   const findings = [];
   const checks = [];
 
   rules.forEach((rule) => {
+    // A check that cannot apply (a blocklist nobody subscribed to) is not listed.
+    if (rule.enabled && !rule.enabled(ctx)) return;
     const check = {
       ruleId: rule.id,
       category: rule.category,
@@ -180,10 +206,11 @@ function runQualityChecks(viewModel, options = {}) {
     });
   });
 
-  return { findings, checks };
+  return { findings, checks, html, resources: collectResources(ctx) };
 }
 
 module.exports = {
   runQualityChecks,
   DEFAULT_RULES,
+  REMOTE_RULES,
 };
