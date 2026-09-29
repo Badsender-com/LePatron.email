@@ -741,4 +741,15 @@ module.exports = {
   'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
     "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
   'Checking links and images…': 'Vérification des liens et des images…',
+  'Dangerous links': 'Liens dangereux',
+  'Google lists none of the links as dangerous':
+    'Google ne signale aucun des liens comme dangereux',
+  'Google lists this link as phishing: __label__':
+    "Google signale ce lien comme de l'hameçonnage : __label__",
+  'Google lists this link as malware: __label__':
+    'Google signale ce lien comme un logiciel malveillant : __label__',
+  'Google lists this link as unwanted software: __label__':
+    'Google signale ce lien comme un logiciel indésirable : __label__',
+  'Google lists this link as unsafe: __label__':
+    'Google signale ce lien comme dangereux : __label__',
 };
