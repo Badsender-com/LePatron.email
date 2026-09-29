@@ -17,8 +17,9 @@ const KEEP_EXPIRED_SECONDS = 30 * 24 * 60 * 60;
  * A public link to the preview of an email: whoever holds it sees the last
  * saved version, without an account, until it expires or is revoked.
  *
- * Only a hash of the token is stored: the link is shown once, to the person
- * who creates it, and a copy of the database gives no working link.
+ * The token is looked up by its hash, and kept encrypted with the platform's
+ * key (utils/crypto.js) so that the email's editors can copy the link again:
+ * a copy of the database without the key gives no working link.
  */
 const ShareLinkSchema = new Schema(
   {
@@ -27,6 +28,11 @@ const ShareLinkSchema = new Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    // AES-256 with ENCRYPTION_KEY. Absent where no key is configured: the
+    // link is then shown once, when it is created.
+    tokenEncrypted: {
+      type: String,
     },
     _mailing: {
       type: ObjectId,
