@@ -2,6 +2,7 @@
 
 const logger = require('../../utils/logger.js');
 const { fetchProviderJson } = require('../provider-http.js');
+const { detectParamQuirk } = require('./param-quirks.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -140,6 +141,18 @@ const openAIDialect = {
   _getFinishReason(data) {
     const choice = (data.choices || [])[0];
     return choice && choice.finish_reason === 'length' ? 'length' : null;
+  },
+
+  /**
+   * Which parameter a refusal names, if it is one we know how to adapt.
+   *
+   * A hook rather than a shared table, for the same reason as
+   * `_mapErrorToCode`: each dialect words its refusals differently. Anthropic
+   * and Gemini inherit this and match nothing, which is the intended
+   * behaviour until their own wording is added.
+   */
+  _detectParamQuirk(status, parsedError, message) {
+    return detectParamQuirk(status, parsedError, message);
   },
 
   /**

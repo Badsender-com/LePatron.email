@@ -30,6 +30,16 @@ class OpenAIProvider extends BaseLLMProvider {
    * Whether the model speaks the newer contract. Read from the name, the only
    * signal a model id carries; subclasses whose "model" is a name the
    * customer chose (Azure deployments) add their own.
+   *
+   * A fast path, not a contract. The source of truth is what the provider
+   * answers: a model this pattern does not recognise is corrected on the fly
+   * by the adaptation layer (adaptive-chat-call.js) and the correction is
+   * remembered. `gpt-6-astra` reached staging and failed because this pattern
+   * was the only thing deciding, which is no longer the case.
+   *
+   * Worth widening when the conformance script reports a family adapting on
+   * every call — that costs one refused request per model per worker — but
+   * never widen it blind.
    */
   _isNewContractModel(model) {
     return NEW_CONTRACT_MODELS.test(model || '');
