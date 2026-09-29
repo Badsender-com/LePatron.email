@@ -754,4 +754,5 @@ module.exports = {
   'Turn off the link: __link__': 'Turn off the link: __link__',
   'This email already has __count__ active links: turn one off first':
     'This email already has __count__ active links: turn one off first',
+  'Copy the link: __link__': 'Copy the link: __link__',
 };
