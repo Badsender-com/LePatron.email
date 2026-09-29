@@ -50,6 +50,7 @@ beforeEach(() => {
           createdBy: 'Ana',
           createdAt: '2026-09-29T15:20:00Z',
           expiresAt: '2026-10-06T00:00:00Z',
+          url: 'https://app.test/share/old',
         },
       ],
     },
@@ -63,7 +64,9 @@ describe('ShareLinkPanel', () => {
     expect(el.querySelectorAll('.qc-share__item')).toHaveLength(1);
     expect(el.textContent).toMatch(/Created .+ by Ana, until/);
     expect(
-      el.querySelector('.qc-share__item button').getAttribute('aria-label')
+      el
+        .querySelector('.qc-share__item button:last-of-type')
+        .getAttribute('aria-label')
     ).toMatch(/^Turn off the link: Created /);
     expect(el.querySelector('.qc-share__created')).toBeNull();
   });
@@ -95,7 +98,9 @@ describe('ShareLinkPanel', () => {
   it('turns a link off', async () => {
     axios.delete.mockResolvedValue({});
     const { el } = await mount();
-    el.querySelector('.qc-share__item button').click();
+    Array.from(el.querySelectorAll('.qc-share__item button'))
+      .find((b) => /^Turn off/.test(b.getAttribute('aria-label')))
+      .click();
     await flush();
     expect(axios.delete).toHaveBeenCalledWith(`${URL}/l1`);
     expect(el.querySelectorAll('.qc-share__item')).toHaveLength(0);
@@ -113,6 +118,26 @@ describe('ShareLinkPanel', () => {
     );
   });
 
+  it('copies an active link again', async () => {
+    Object.defineProperty(window, 'isSecureContext', {
+      value: true,
+      configurable: true,
+    });
+    const writeText = jest.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    const { el } = await mount();
+    const copy = Array.from(
+      el.querySelectorAll('.qc-share__item button')
+    ).find((b) => /^Copy the link/.test(b.getAttribute('aria-label')));
+    copy.click();
+    await flush();
+    expect(writeText).toHaveBeenCalledWith('https://app.test/share/old');
+    expect(copy.textContent.trim()).toBe('Copied');
+  });
+
   it('loads the list only once its tab is shown', async () => {
     await mount(URL, false);
     expect(axios.get).not.toHaveBeenCalled();
@@ -126,7 +151,9 @@ describe('ShareLinkPanel', () => {
       })
     );
     const { el } = await mount();
-    const button = el.querySelector('.qc-share__item button');
+    const button = Array.from(
+      el.querySelectorAll('.qc-share__item button')
+    ).find((b) => /^Turn off/.test(b.getAttribute('aria-label')));
     button.click();
     button.click();
     expect(axios.delete).toHaveBeenCalledTimes(1);
