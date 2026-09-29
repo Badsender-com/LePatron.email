@@ -75,6 +75,7 @@ module.exports = {
   listMailingForWorkspaceOrFolder,
   listTagsForWorkspaceOrFolder,
   previewMail,
+  sanitizePreviewCached,
   downloadZip,
   downloadMultipleZip,
   validateMailExist,
