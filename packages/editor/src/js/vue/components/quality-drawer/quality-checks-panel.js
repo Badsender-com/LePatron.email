@@ -29,6 +29,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
   props: {
     vm: { type: Object, required: true },
     status: { type: String, default: 'idle' },
+    // The server's checks (links, image weight), which come after the others.
+    remoteStatus: { type: String, default: 'idle' },
     // The findings still to deal with, and those the team ignored.
     findings: { type: Array, default: () => [] },
     ignoredFindings: { type: Array, default: () => [] },
@@ -80,6 +82,9 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     },
     liveMessage() {
       if (this.status === 'running') return this.t('Running checks…');
+      if (this.remoteStatus === 'running') {
+        return this.t('Checking links and images…');
+      }
       if (this.status !== 'done') return '';
       return SEVERITY_ORDER.map((s) =>
         this.t(SEVERITY_META[s].countKey, { count: this.counts[s] })
@@ -175,13 +180,17 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
           </button>
         </div>
-        <div v-else class="qc-drawer__clean">
+        <div v-else-if="remoteStatus !== 'running'" class="qc-drawer__clean">
           <span class="qc-drawer__clean-icon" aria-hidden="true"><span class="lucide lucide-check"></span></span>
           <p class="qc-drawer__clean-title">{{ t('All checks passed') }}</p>
           <p class="qc-drawer__clean-text">
             {{ t('__passed__ of __total__ checks · __when__', { passed: counts.success, total: checks.length, when: lastRunLabel }) }}
           </p>
         </div>
+
+        <p v-if="remoteStatus === 'running'" class="qc-remote">
+          <span class="qc-spinner" aria-hidden="true"></span>{{ t('Checking links and images…') }}
+        </p>
 
         <div class="qc-drawer__list">
           <div v-for="group in groups" :key="group.severity" class="qc-group">

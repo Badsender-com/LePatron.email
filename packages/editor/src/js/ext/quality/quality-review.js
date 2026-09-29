@@ -1,11 +1,14 @@
 'use strict';
 
 const axios = require('axios');
-const { runQualityChecks, DEFAULT_RULES } = require('./engine');
+const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = require('./engine');
+const { hasResources } = require('./resources');
 
 // The state of the last quality review, shared by the drawer, the toolbar
 // button and the commands that export the email (download, ESP send).
 //   status: 'idle' (never run) | 'running' | 'done'
+//   remoteStatus: the checks the server runs (links, image weight), which
+//     come after the others: 'idle' | 'running' | 'done' | 'error'
 // Findings the team ignored are kept apart: they are stored on the email
 // (PATCH /mailings/:id/quality-ignores) and shared by everyone who edits it.
 
@@ -13,6 +16,29 @@ const { runQualityChecks, DEFAULT_RULES } = require('./engine');
 function patchIgnore(url, change) {
   return axios.patch(url, change).then((response) => response.data.qualityIgnores);
 }
+
+// The server answers within 20 s (quality-resources.service.js): past this,
+// something went wrong on the way.
+const RESOURCES_TIMEOUT_MS = 40000;
+const RETRY_DELAY_MS = 3000;
+
+// Asks the server about the links and images; resolves with its answer. A 429
+// (another tab of the same user is checking) is tried once more, a bit later.
+function postResources(url, resources, retried = false) {
+  return axios
+    .post(url, resources, { timeout: RESOURCES_TIMEOUT_MS })
+    .then((response) => response.data)
+    .catch((err) => {
+      if (retried || !err.response || err.response.status !== 429) throw err;
+      return new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS)).then(
+        () => postResources(url, resources, true)
+      );
+    });
+}
+
+// The server's checks that are always listed; a blocklist is only where the
+// platform subscribed to one.
+const listedRemoteRules = REMOTE_RULES.filter((rule) => !rule.optional);
 
 /**
  * Adds `viewModel.showQuality` and `viewModel.quality` to the editor.
@@ -25,16 +51,22 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // Lets the drawer paint its "running" state before a synchronous run.
   const defer = deps.defer || ((fn) => setTimeout(fn, 0));
   const persist = deps.persist || patchIgnore;
+  const checkResources = deps.checkResources || postResources;
   const metadata = viewModel.metadata || {};
   const ignoreUrl = metadata.url && metadata.url.qualityIgnores;
+  const resourcesUrl = metadata.url && metadata.url.qualityResources;
 
   const status = ko.observable('idle');
   const findings = ko.observableArray([]);
   const checks = ko.observableArray([]);
   const ranAt = ko.observable(null);
+  const remoteStatus = ko.observable('idle');
   const ignored = ko.observableArray((metadata.qualityIgnores || []).slice());
   // Bumped by every run and cancel: a result that comes back late is dropped.
   let runId = 0;
+  // The server runs one check at a time per user: a request waits for the
+  // previous one, and is not sent at all if a newer run replaced it.
+  let inFlight = Promise.resolve();
 
   const isIgnored = (finding) => ignored.indexOf(finding.fingerprint) !== -1;
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));
@@ -53,6 +85,62 @@ function installQualityReview(viewModel, ko, deps = {}) {
 
   function settle() {
     status(ranAt() ? 'done' : 'idle');
+  }
+
+  // The server's checks, on the export the local ones just read. Their
+  // results join the others when they come back, unless a newer run started.
+  // After an export, the drawer opens if they find something to fix.
+  function runRemote(id, local, { openOnIssues = false } = {}) {
+    if (!resourcesUrl || !hasResources(local.resources)) {
+      remoteStatus('idle');
+      return Promise.resolve();
+    }
+    remoteStatus('running');
+    const request = inFlight
+      .catch(() => {})
+      .then(() =>
+        id === runId ? checkResources(resourcesUrl, local.resources) : null
+      );
+    inFlight = request;
+    return request
+      .then((remote) => {
+        if (id !== runId) return;
+        const result = run(viewModel, {
+          html: local.html,
+          rules: REMOTE_RULES,
+          remote,
+        });
+        findings(local.findings.concat(result.findings));
+        checks(local.checks.concat(result.checks));
+        remoteStatus('done');
+        const issues = result.findings.filter(
+          (f) => !isIgnored(f) && (f.severity === 'error' || f.severity === 'warning')
+        );
+        if (openOnIssues && issues.length) viewModel.quality.open('checks');
+      })
+      .catch((err) => {
+        if (id !== runId) return;
+        console.error('Quality checks on the server failed', err);
+        // Listed as checks that could not run, never as passed. A blocklist
+        // may not even be configured: it is left out.
+        const failed = listedRemoteRules.map(
+          (rule) => ({
+            ruleId: rule.id,
+            category: rule.category,
+            titleKey: rule.titleKey,
+            status: 'error',
+          })
+        );
+        checks(local.checks.concat(failed));
+        remoteStatus('error');
+      });
+  }
+
+  // Runs the local checks at once, then the server's in the background.
+  function runAll(id, options, remoteOptions) {
+    const local = apply(run(viewModel, options));
+    runRemote(id, local, remoteOptions);
+    return local;
   }
 
   // Shown at once, stored in the background, put back as it was on failure.
@@ -85,7 +173,10 @@ function installQualityReview(viewModel, ko, deps = {}) {
     ranAt,
     tab,
     ignored,
-    ruleCount: DEFAULT_RULES.length,
+    remoteStatus,
+    // Blocklists are left out: they only run where they are configured.
+    ruleCount:
+      DEFAULT_RULES.length + (resourcesUrl ? listedRemoteRules.length : 0),
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
@@ -111,7 +202,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
       defer(() => {
         if (id !== runId) return;
         try {
-          apply(run(viewModel));
+          runAll(id);
         } catch (err) {
           console.error('Quality review failed', err);
           settle();
@@ -121,18 +212,20 @@ function installQualityReview(viewModel, ko, deps = {}) {
 
     cancel() {
       runId++;
+      if (remoteStatus() === 'running') remoteStatus('idle');
       settle();
     },
 
     /**
      * Reviews the HTML an export is about to send, and opens the drawer when
-     * there is something to see. Never blocks the export: a failure is logged.
+     * there is something to see. Never blocks the export: a failure is logged,
+     * and the server's checks come back in the background, after the export.
      * @param {Object} [options] - `html`: the HTML already exported
      */
     review(options) {
-      runId++;
+      const id = ++runId;
       try {
-        const result = apply(run(viewModel, options));
+        const result = runAll(id, options, { openOnIssues: true });
         if (active().length) viewModel.quality.open('checks');
         return result;
       } catch (err) {
