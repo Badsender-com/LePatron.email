@@ -12,9 +12,9 @@ const EXPIRY_OPTIONS = [1, 7, 30];
 const MAX_ACTIVE_LINKS = 20;
 
 // "Share a preview", under the send form of the drawer: a link anyone can
-// open without an account, to the last saved version of the email. A link is
-// shown once, when it is created (only a hash is kept); the active ones are
-// listed so they can be turned off.
+// open without an account, to the last saved version of the email. The active
+// links are listed, to copy again or to turn off. A link the server cannot
+// show again (no encryption key configured) is shown once, when created.
 const ShareLinkPanel = Vue.component('ShareLinkPanel', {
   components: { SimpleSelect },
   props: {
@@ -27,7 +27,8 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     expiry: null,
     links: [],
     created: null,
-    copied: false,
+    // The link whose address was just copied: its button says so.
+    copiedId: null,
     busy: false,
     // Links being turned off: a second click must not send a second request.
     revoking: [],
@@ -92,8 +93,10 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
       createShareLink(this.url, this.days)
         .then((link) => {
           this.created = link;
-          this.copied = false;
-          this.links = [link].concat(this.links);
+          this.copiedId = null;
+          this.links = [{ ...link, url: link.copyable ? link.url : null }].concat(
+            this.links
+          );
           this.$nextTick(() => this.$refs.createdUrl && this.$refs.createdUrl.focus());
         })
         .catch((error) => {
@@ -110,9 +113,9 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
           this.busy = false;
         });
     },
-    copy() {
-      copyText(this.created.url, this.$refs.createdUrl).then((ok) => {
-        this.copied = ok;
+    copy(link, field) {
+      copyText(link.url, field).then((ok) => {
+        this.copiedId = ok ? link.id : null;
         if (!ok) this.vm.notifier.error(this.t('Copy failed: select the link and copy it'));
       });
     },
@@ -156,16 +159,33 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             :aria-label="t('Preview link')"
             @focus="$event.target.select()"
           >
-          <button type="button" class="qc-button qc-button--cta qc-share__button" @click="copy">
-            <span :class="['lucide', copied ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copied ? t('Copied') : t('Copy link') }}
+          <button type="button" class="qc-button qc-button--cta qc-share__button" @click="copy(created, $refs.createdUrl)">
+            <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('Copied') : t('Copy link') }}
           </button>
         </div>
-        <p class="qc-field__help">{{ t('Copy it now: it will not be shown again.') }}</p>
+        <p v-if="!created.copyable" class="qc-field__help">{{ t('Copy it now: it will not be shown again.') }}</p>
       </div>
 
       <ul v-if="links.length" class="qc-share__list" :aria-label="t('Active links')">
         <li v-for="link in links" :key="link.id" class="qc-share__item">
           <span class="qc-share__meta">{{ describe(link) }}</span>
+          <button
+            v-if="link.url"
+            type="button"
+            class="qc-link-button"
+            :aria-label="t('Copy the link: __link__', { link: describe(link) })"
+            @click="copy(link, $refs['url-' + link.id][0])"
+          >{{ copiedId === link.id ? t('Copied') : t('Copy link') }}</button>
+          <input
+            v-if="link.url"
+            :ref="'url-' + link.id"
+            class="qc-sr-only"
+            type="text"
+            readonly
+            tabindex="-1"
+            aria-hidden="true"
+            :value="link.url"
+          >
           <button
             type="button"
             class="qc-link-button"
