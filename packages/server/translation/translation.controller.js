@@ -13,6 +13,8 @@ const {
   findSyntheticBlocks,
   SYNTHETIC_BLOCKS,
 } = require('../mailing/synthetic-block-guard.js');
+const { builderMarkups } = require('./builder-block-texts.js');
+const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
@@ -199,19 +201,32 @@ async function processTranslationAsync({
         // export put in previewHtml, so their zones are found exactly. Both
         // block types, and in one list — the zones are matched positionally, so
         // leaving one type out would shift every following pairing by one.
-        const htmlCodes = findSyntheticBlocks(originalMailing.data).map(
-          (block) => {
+        const markupsOf = (data) =>
+          findSyntheticBlocks(data).map((block) => {
             const descriptor = SYNTHETIC_BLOCKS.find(
               (candidate) => candidate.type === block.type
             );
             return block[descriptor.htmlProperty];
-          }
-        );
-        const previewHtml = updatePreviewWithTranslations(
+          });
+
+        const htmlCodes = markupsOf(originalMailing.data);
+        const translated = updatePreviewWithTranslations(
           originalMailing.previewHtml,
           originalTexts,
           translations,
           { htmlCodes }
+        );
+
+        // A composed block's markup is protected from the string replacement
+        // above — it is generated, and a replacement loose inside it would
+        // corrupt markup nobody typed. It was rebuilt from the translated
+        // state instead, so the zone is swapped wholesale here. Without this
+        // the preview would keep showing the source language while the stored
+        // block had already moved on.
+        const previewHtml = swapBuilderMarkup(
+          translated,
+          builderMarkups(originalMailing.data),
+          builderMarkups(translatedData.data)
         );
         // Provider output was injected into previewHtml above; sanitize the
         // final document before persisting it (stored-XSS protection — the
@@ -219,10 +234,14 @@ async function processTranslationAsync({
         // back as stored: they hold no provider output, and sanitizing them
         // stripped the ESP scripts they exist for, so the copy's ZIP no longer
         // matched its export. Serving the preview sanitizes it again.
+        // Located on what the document holds NOW: the composed blocks carry
+        // their rebuilt markup since the swap above, so matching on the stored
+        // originals would miss them and let the sanitiser into a generated
+        // zone.
         const safePreviewHtml = transformDocumentKeepingHtmlCodeBlocks(
           previewHtml,
           sanitizePreviewHtml,
-          htmlCodes
+          markupsOf(translatedData.data)
         );
         await mailingService.updatePreviewHtml(
           duplicatedMailing._id,
