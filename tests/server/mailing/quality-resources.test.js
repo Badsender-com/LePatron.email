@@ -46,6 +46,8 @@ function deps(overrides = {}) {
       throw error;
     }),
     zones: () => [],
+    webRiskKey: () => null,
+    webRiskLookup: jest.fn(),
     ...overrides,
   };
 }
