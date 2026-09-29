@@ -33,6 +33,7 @@ const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playgroun
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 const SecurityEventSchema = require('../two-factor/security-event.schema.js');
+const ShareLinkSchema = require('../share-link/share-link.schema.js');
 
 /// ///
 // EXPORTS
@@ -108,6 +109,7 @@ const SecurityEvents = mongoose.model(
   modelNames.SecurityEventModel,
   SecurityEventSchema
 );
+const ShareLinks = mongoose.model(modelNames.ShareLinkModel, ShareLinkSchema);
 
 module.exports = {
   mongoose,
@@ -127,6 +129,7 @@ module.exports = {
   Galleries,
   Tags,
   Comments,
+  ShareLinks,
   Integrations,
   Dashboards,
   AIFeatureConfigs,
