@@ -607,6 +607,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
         qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
+        qualityResources: `/api/mailings/${mailingId}/quality/resources`,
       },
       // Fingerprints of the quality findings ignored on this email.
       qualityIgnores: (mailing.qualityIgnores || []).map(

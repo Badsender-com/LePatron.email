@@ -22,6 +22,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     open: false,
     tab: 'checks',
     status: 'idle',
+    remoteStatus: 'idle',
     findings: [],
     ignoredFindings: [],
     checks: [],
@@ -56,6 +57,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       this.vm.showQuality,
       q.tab,
       q.status,
+      q.remoteStatus,
       q.findings,
       q.ignored,
       q.checks,
@@ -74,6 +76,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       this.open = this.vm.showQuality();
       this.tab = q.tab();
       this.status = q.status();
+      this.remoteStatus = q.remoteStatus();
       this.findings = q.activeFindings();
       this.ignoredFindings = q.ignoredFindings();
       this.checks = q.checks();
@@ -143,6 +146,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         class="qc-drawer__tabpanel"
         :vm="vm"
         :status="status"
+        :remote-status="remoteStatus"
         :findings="findings"
         :ignored-findings="ignoredFindings"
         :checks="checks"
