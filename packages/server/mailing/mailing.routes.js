@@ -61,6 +61,11 @@ router.patch(
   GUARD_USER,
   mailingQuality.updateQualityIgnores
 );
+router.post(
+  '/:mailingId/quality/resources',
+  GUARD_USER,
+  mailingQuality.checkResources
+);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);
