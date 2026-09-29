@@ -39,7 +39,7 @@ const PAGES = {
       message: "L'aperçu n'a pas pu être affiché. Réessayez dans un moment.",
     },
     meta: (date) =>
-      `Aperçu de la dernière version enregistrée · lien valable jusqu'au ${date} · les liens de l'email ne sont pas cliquables`,
+      `Aperçu de la dernière version enregistrée · lien valable jusqu'au ${date} · les liens de l'email s'ouvrent dans un nouvel onglet`,
   },
   en: {
     unknown: {
@@ -66,7 +66,7 @@ const PAGES = {
       message: 'The preview could not be shown. Try again in a moment.',
     },
     meta: (date) =>
-      `Preview of the last saved version · link valid until ${date} · links in the email are not clickable`,
+      `Preview of the last saved version · link valid until ${date} · links in the email open in a new tab`,
   },
 };
 
@@ -129,10 +129,22 @@ const PAGE_CACHE_BUDGET = 16 * 1024 * 1024; // characters
 const pages = new Map();
 let pagesSize = 0;
 
+// Every link of the email opens in a new tab: inside the frame a page could
+// not load (the CSP allows no frame), and a reader wants to try the links.
+// A <base> without href: `base-uri 'none'` only restricts its address. The
+// new tab gets no referrer, the policy of the page being inherited.
+const LINKS_IN_NEW_TAB = '<base target="_blank">';
+
+function withLinksInNewTab(html) {
+  return /<head[^>]*>/i.test(html)
+    ? html.replace(/<head[^>]*>/i, (head) => `${head}${LINKS_IN_NEW_TAB}`)
+    : `${LINKS_IN_NEW_TAB}${html}`;
+}
+
 function sanitizedPage(mailing) {
   const key = `${mailing._id}:${new Date(mailing.updatedAt || 0).getTime()}`;
   if (pages.has(key)) return pages.get(key);
-  const html = mailingService.sanitizePreviewCached(mailing);
+  const html = withLinksInNewTab(mailingService.sanitizePreviewCached(mailing));
   pages.set(key, html);
   pagesSize += html.length;
   while (pagesSize > PAGE_CACHE_BUDGET && pages.size > 1) {

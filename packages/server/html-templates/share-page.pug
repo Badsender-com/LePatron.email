@@ -1,6 +1,8 @@
-//- Public preview of an email (share-link.controller.js). The email is shown
-//- in an iframe with no permission at all (sandbox=""): no script, an opaque
-//- origin. Every value below is escaped by Pug, the email included (srcdoc).
+//- Public preview of an email (share-page.controller.js). The email is shown
+//- in an iframe that may only open its links in a new tab (allow-popups…):
+//- no script, no form, an opaque origin, and the tab it opens is an ordinary
+//- one, outside the sandbox. Every value below is escaped by Pug, the email
+//- included (srcdoc).
 doctype html
 html(lang=lang)
   head
@@ -56,7 +58,7 @@ html(lang=lang)
         span.bar__brand LePatron
       iframe.email(
         title=name
-        sandbox=""
+        sandbox="allow-popups allow-popups-to-escape-sandbox"
         referrerpolicy="no-referrer"
         srcdoc=html
       )
