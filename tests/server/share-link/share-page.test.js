@@ -108,7 +108,9 @@ describe('GET /share/:token', () => {
     });
     const [view, locals] = res.render.mock.calls[0];
     expect(view).toBe('share-page');
-    expect(locals).toMatchObject({ name: 'Soldes', html: 'clean:<p>hi</p>' });
+    expect(locals).toMatchObject({ name: 'Soldes' });
+    // Sanitized, with every link opening in a new tab.
+    expect(locals.html).toBe('<base target="_blank">clean:<p>hi</p>');
     expect(res.headers['Content-Security-Policy']).toContain(
       "default-src 'none'"
     );
@@ -208,6 +210,7 @@ describe('share-page.pug', () => {
     );
 
   it('keeps the email inside a sandboxed srcdoc, escaped, and runs no script', () => {
+    // Links open in a new tab, outside the sandbox; nothing else is allowed.
     const page = render({
       lang: 'fr',
       title: '"><script>alert(1)</script>',
@@ -216,7 +219,9 @@ describe('share-page.pug', () => {
       html: '<p class="x">Hello</p>"><script>alert(2)</script>',
     });
     expect(page).not.toMatch(/<script/i);
-    expect(page).toMatch(/<iframe[^>]*sandbox=""/);
+    expect(page).toMatch(
+      /<iframe[^>]*sandbox="allow-popups allow-popups-to-escape-sandbox"/
+    );
     expect(page).toMatch(/<iframe[^>]*referrerpolicy="no-referrer"/);
     expect(page).toContain('srcdoc="&lt;p class=&quot;x&quot;&gt;Hello');
   });
@@ -236,6 +241,32 @@ describe('request logs', () => {
   it('leave every other address alone', () => {
     expect(logger.loggedUrl(tokens('/api/mailings/m1/share-links'))).toBe(
       '/api/mailings/m1/share-links'
+    );
+  });
+});
+
+describe('links of the shared email', () => {
+  it('open in a new tab, the <base> right after <head>', async () => {
+    ShareLinks.findOne.mockReturnValue(
+      lean({
+        _id: '507f1f77bcf86cd799439033',
+        _mailing: MAILING_ID,
+        lang: 'fr',
+        expiresAt: new Date(Date.now() + 3600 * 1000),
+      })
+    );
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: 'withhead',
+        name: 'x',
+        previewHtml: '<html><head lang="fr"><title>x</title></head></html>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: 'c'.repeat(43) },
+    });
+    expect(res.render.mock.calls[0][1].html).toBe(
+      'clean:<html><head lang="fr"><base target="_blank"><title>x</title></head></html>'
     );
   });
 });
