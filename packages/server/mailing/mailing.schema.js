@@ -635,6 +635,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
         qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
         qualityResources: `/api/mailings/${mailingId}/quality/resources`,
+        shareLinks: `/api/mailings/${mailingId}/share-links`,
       },
       // Fingerprints of the quality findings ignored on this email.
       qualityIgnores: (mailing.qualityIgnores || []).map(
