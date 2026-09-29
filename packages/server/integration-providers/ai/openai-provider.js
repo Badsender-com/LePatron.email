@@ -5,13 +5,25 @@ const { fetchProviderJson } = require('../provider-http.js');
 
 const DEFAULT_API_HOST = 'https://api.openai.com';
 
-// Model families that moved to the newer chat-completions contract: they
-// rejected `max_tokens` in favour of `max_completion_tokens`, and they refuse
-// any temperature other than their own default. Verified against a live
-// account — gpt-4o and gpt-4.1 still accept both, gpt-5 and the o-series do
-// not. There is no metadata in the listing to detect this, so the model name
-// is the only signal available.
-const NEW_CONTRACT_MODELS = /^(gpt-5|o\d)/;
+// The newer chat-completions contract: `max_completion_tokens` instead of
+// `max_tokens`, and no temperature other than the model's own default.
+// Verified against a live account — gpt-4o and gpt-4.1 still accept both,
+// gpt-5 and the o-series do not. The listing carries no metadata saying
+// which, so the model name is the only signal available.
+//
+// Read as a generation number rather than a list of names. The literal
+// pattern this replaces (`/^(gpt-5|o\d)/`) is what let `gpt-6-astra` through
+// to staging, and a literal pattern would have missed gpt-7 the same way.
+// Every generation since gpt-5 has kept the newer contract, so the useful
+// question is "at least 5?", not "which names do I know?".
+//
+// A guess, and a safe one: if a future generation went back, the adaptation
+// layer renames the parameter the other way round — its table is symmetric —
+// and the conformance script reports it. Being wrong here costs one refused
+// request per model, never a broken feature.
+const NEW_CONTRACT_GENERATION = 5;
+const GPT_GENERATION = /^gpt-(\d+)/;
+const REASONING_SERIES = /^o\d/;
 /**
  * OpenAI provider implementation
  */
@@ -37,12 +49,18 @@ class OpenAIProvider extends BaseLLMProvider {
    * remembered. `gpt-6-astra` reached staging and failed because this pattern
    * was the only thing deciding, which is no longer the case.
    *
-   * Worth widening when the conformance script reports a family adapting on
-   * every call — that costs one refused request per model per worker — but
-   * never widen it blind.
+   * Widened once already, on what the conformance script reported: the whole
+   * gpt-6 family adapted on every call, on both paths. Widen it again the
+   * same way — on a sweep that names the family, never blind.
    */
   _isNewContractModel(model) {
-    return NEW_CONTRACT_MODELS.test(model || '');
+    const id = model || '';
+    if (REASONING_SERIES.test(id)) return true;
+
+    const generation = GPT_GENERATION.exec(id);
+    return generation
+      ? Number(generation[1]) >= NEW_CONTRACT_GENERATION
+      : false;
   }
 
   _maxTokensParamName(model) {

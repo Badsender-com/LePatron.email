@@ -230,6 +230,40 @@ describe('OpenAIProvider', () => {
     });
   });
 
+  // The pattern that let gpt-6-astra reach staging. Reading the generation
+  // rather than listing names is what stops the next one repeating it.
+  describe('new-contract detection', () => {
+    it.each(['gpt-5', 'gpt-5-mini', 'gpt-5.6-luna', 'gpt-6-astra', 'o1', 'o3'])(
+      'sends max_completion_tokens for %s',
+      (model) => {
+        expect(provider._maxTokensParamName(model)).toBe(
+          'max_completion_tokens'
+        );
+        expect(provider._supportsTemperature(model)).toBe(false);
+      }
+    );
+
+    it.each(['gpt-4o', 'gpt-4.1', 'gpt-4-turbo', 'gpt-3.5-turbo'])(
+      'keeps max_tokens for %s',
+      (model) => {
+        expect(provider._maxTokensParamName(model)).toBe('max_tokens');
+        expect(provider._supportsTemperature(model)).toBe(true);
+      }
+    );
+
+    // The reason this reads a number: a character class would stop at gpt-9.
+    it('covers a generation that does not exist yet', () => {
+      expect(provider._isNewContractModel('gpt-7-nova')).toBe(true);
+      expect(provider._isNewContractModel('gpt-12')).toBe(true);
+    });
+
+    it('claims nothing about a name it cannot read', () => {
+      expect(provider._isNewContractModel('mistral-small')).toBe(false);
+      expect(provider._isNewContractModel('')).toBe(false);
+      expect(provider._isNewContractModel(undefined)).toBe(false);
+    });
+  });
+
   // A reasoning model served over an OpenAI-compatible API returns blocks
   // rather than a string. Assuming a string crashed with
   // `content.trim is not a function` — a JavaScript error with nothing in it

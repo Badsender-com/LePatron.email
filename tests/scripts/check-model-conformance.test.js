@@ -254,3 +254,24 @@ describe('error classification', () => {
     expect(isUnentitled(rateLimited)).toBe(false);
   });
 });
+
+// The clamp label was wrong in the first version: anything that was not a
+// rename printed as "drop", so the one finding that was a production bug —
+// a completion ceiling — was reported as the wrong kind of problem.
+describe('describeQuirk', () => {
+  const { describeQuirk } = require('../../scripts/model-conformance/probe');
+
+  it.each([
+    [
+      { action: 'rename', param: 'max_tokens', to: 'max_completion_tokens' },
+      'rename max_tokens→max_completion_tokens',
+    ],
+    [
+      { action: 'clamp', param: 'max_tokens', value: 4096 },
+      'clamp max_tokens→4096',
+    ],
+    [{ action: 'drop', param: 'temperature' }, 'drop temperature'],
+  ])('names %j', (quirk, expected) => {
+    expect(describeQuirk(quirk)).toBe(expected);
+  });
+});

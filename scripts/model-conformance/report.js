@@ -86,10 +86,21 @@ function formatReport(results) {
   for (const row of results.filter((r) => r.verdict === VERDICTS.FAIL)) {
     lines.push(`  ✗ ${row.provider}/${row.model} ${row.path} — ${row.detail}`);
   }
+  // Naming them is the whole point of the warning. A bare count said
+  // "widen the patterns" without saying which, so the first sweep's warning
+  // got read and not acted on.
   const adapted = results.filter((r) => r.verdict === VERDICTS.ADAPTED);
   if (adapted.length) {
     lines.push(
-      `  ⚠ ${adapted.length} probe(s) needed runtime adaptation — consider widening the fast-path patterns`
+      `  ⚠ ${adapted.length} probe(s) needed runtime adaptation — one refused request per model per worker:`
+    );
+    for (const row of adapted) {
+      lines.push(
+        `      ${row.provider}/${row.model} ${row.path} — ${row.detail}`
+      );
+    }
+    lines.push(
+      '      A rename or a dropped parameter means the fast-path pattern is behind; a clamp is the model stating its own ceiling and needs nothing.'
     );
   }
 

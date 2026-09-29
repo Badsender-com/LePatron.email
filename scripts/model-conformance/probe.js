@@ -187,13 +187,7 @@ async function runProbe({
     return learned.length
       ? {
           verdict: VERDICTS.ADAPTED,
-          detail: learned
-            .map((q) =>
-              q.action === 'rename'
-                ? `rename ${q.param}→${q.to}`
-                : `drop ${q.param}`
-            )
-            .join('; '),
+          detail: learned.map(describeQuirk).join('; '),
         }
       : { verdict: VERDICTS.OK, detail: '' };
   }
@@ -224,6 +218,18 @@ function isUnentitled(error) {
   return /\b40[13]\b/.test(error.message || '');
 }
 
+/**
+ * Name the adaptation exactly. The first version printed anything that was
+ * not a rename as "drop", so a ceiling clamped to 4096 was reported as a
+ * dropped parameter — the report named the wrong cause for the one finding
+ * that was a production bug.
+ */
+function describeQuirk(quirk) {
+  if (quirk.action === 'rename') return `rename ${quirk.param}→${quirk.to}`;
+  if (quirk.action === 'clamp') return `clamp ${quirk.param}→${quirk.value}`;
+  return `drop ${quirk.param}`;
+}
+
 function shortMessage(error) {
   return String((error && error.message) || 'unknown').slice(0, 90);
 }
@@ -234,4 +240,5 @@ module.exports = {
   DEFAULT_MAX_TOKENS,
   isTransient,
   isUnentitled,
+  describeQuirk,
 };
