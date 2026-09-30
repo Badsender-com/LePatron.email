@@ -275,3 +275,25 @@ describe('describeQuirk', () => {
     expect(describeQuirk(quirk)).toBe(expected);
   });
 });
+
+// The report is read as a diff between two runs, so the order must not
+// depend on the machine. localeCompare — which the linter suggests — would
+// make it depend on the ICU data installed there.
+describe('byCodeUnit', () => {
+  const { byCodeUnit } = require('../../scripts/model-conformance/plan');
+
+  it('orders by code unit, not by collation', () => {
+    // A locale-aware sort treats these as equal or nearly so; this one does
+    // not, and gives the same answer on every machine.
+    expect(byCodeUnit('a', 'B')).toBe(1);
+    expect(byCodeUnit('B', 'a')).toBe(-1);
+    expect(byCodeUnit('gpt-5', 'gpt-5')).toBe(0);
+  });
+
+  it('sorts a model list the same way whatever the input order', () => {
+    const ids = ['o3', 'gpt-4o', 'gpt-5-mini', 'gpt-4.1'];
+    const expected = ['gpt-4.1', 'gpt-4o', 'gpt-5-mini', 'o3'];
+    expect([...ids].sort(byCodeUnit)).toEqual(expected);
+    expect([...ids].reverse().sort(byCodeUnit)).toEqual(expected);
+  });
+});

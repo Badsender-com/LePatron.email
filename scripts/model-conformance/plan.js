@@ -48,6 +48,22 @@ function familyOf(id) {
  * @param {string[]} [params.only]         explicit ids, short-circuits the rest
  * @returns {string[]} sorted, deduplicated
  */
+/**
+ * Sort model ids the same way on every machine.
+ *
+ * Explicit rather than a bare `.sort()`, and deliberately **not**
+ * `localeCompare`, which is what the linter suggests: locale-aware collation
+ * depends on the ICU data of the machine running the sweep, so the same
+ * models could come out in a different order on a colleague's laptop. The
+ * report exists to be diffed between runs; an order that is arbitrary but
+ * identical everywhere is worth more here than one that is alphabetically
+ * pleasing.
+ */
+function byCodeUnit(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 function selectModels({
   catalogIds = [],
   configuredIds = [],
@@ -55,20 +71,20 @@ function selectModels({
   all = false,
   only = null,
 }) {
-  if (only && only.length) return [...new Set(only)].sort();
-  if (all) return [...new Set([...catalogIds, ...listedIds])].sort();
+  if (only && only.length) return [...new Set(only)].sort(byCodeUnit);
+  if (all) return [...new Set([...catalogIds, ...listedIds])].sort(byCodeUnit);
 
   const picked = new Set([...catalogIds, ...configuredIds]);
 
   const seenFamilies = new Set([...picked].map(familyOf));
-  for (const id of [...listedIds].sort()) {
+  for (const id of [...listedIds].sort(byCodeUnit)) {
     const family = familyOf(id);
     if (seenFamilies.has(family)) continue;
     seenFamilies.add(family);
     picked.add(id);
   }
 
-  return [...picked].sort();
+  return [...picked].sort(byCodeUnit);
 }
 
 /**
@@ -86,4 +102,4 @@ function estimateCalls(perIntegration, pathCount, samples = 1) {
   return probes * pathCount * samples;
 }
 
-module.exports = { familyOf, selectModels, estimateCalls };
+module.exports = { familyOf, selectModels, estimateCalls, byCodeUnit };

@@ -8,6 +8,8 @@
  * useless and nobody compares anything.
  */
 
+const { byCodeUnit } = require('./plan.js');
+
 const VERDICTS = Object.freeze({
   OK: 'OK',
   // Worked, but the request had to be corrected on the fly. Counted as a
@@ -59,8 +61,11 @@ function formatReport(results) {
       )}DETAIL`
     );
 
+    // Same comparator as the plan, and for the same reason: this output is
+    // read as a diff between two runs, so its order must not depend on the
+    // locale of the machine that produced it.
     const sorted = [...group].sort(
-      (a, b) => a.model.localeCompare(b.model) || a.path.localeCompare(b.path)
+      (a, b) => byCodeUnit(a.model, b.model) || byCodeUnit(a.path, b.path)
     );
     for (const row of sorted) {
       lines.push(
