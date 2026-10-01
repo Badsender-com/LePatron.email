@@ -35,6 +35,7 @@ const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 const SecurityEventSchema = require('../two-factor/security-event.schema.js');
 const ShareLinkSchema = require('../share-link/share-link.schema.js');
 const { QualityBudgetSchema } = require('../mailing/quality-budget.schema.js');
+const AIUsageCounterSchema = require('../ai-usage/ai-usage-counter.schema.js');
 
 /// ///
 // EXPORTS
@@ -115,6 +116,10 @@ const QualityBudgets = mongoose.model(
   modelNames.QualityBudgetModel,
   QualityBudgetSchema
 );
+const AIUsageCounters = mongoose.model(
+  modelNames.AIUsageCounterModel,
+  AIUsageCounterSchema
+);
 
 module.exports = {
   mongoose,
@@ -148,4 +153,5 @@ module.exports = {
   AIPlaygroundRuns,
   TaxonomyItems,
   SecurityEvents,
+  AIUsageCounters,
 };
