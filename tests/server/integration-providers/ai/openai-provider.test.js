@@ -319,6 +319,40 @@ describe('OpenAIProvider', () => {
     it('tolerates a payload with no choices', () => {
       expect(provider._getFinishReason({})).toBeNull();
     });
+
+    it('types a cut translation as truncation', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            { message: { content: '{"a": "Bonj' }, finish_reason: 'length' },
+          ],
+        }),
+      });
+
+      await expect(
+        provider.translateBatch({
+          texts: { a: 'Hello' },
+          sourceLanguage: 'en',
+          targetLanguage: 'fr',
+        })
+      ).rejects.toMatchObject({ code: 'PROVIDER_OUTPUT_TRUNCATED' });
+    });
+
+    it('reports a complete answer as not truncated', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+        }),
+      });
+
+      const result = await provider.chatComplete({
+        messages: [{ role: 'user', content: 'x' }],
+      });
+
+      expect(result.truncated).toBe(false);
+    });
   });
 
   // gpt-5 and the o-series reject `max_tokens` and any explicit temperature

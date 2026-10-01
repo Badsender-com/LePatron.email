@@ -50,8 +50,21 @@ const translationMethods = {
       completionOptions.responseFormat = { type: 'json_object' };
     }
 
-    const response = await this._callChatCompletion(completionOptions);
-    return this._parseTranslationResponse(response);
+    const { content, truncated } = await this._callChatCompletionRaw(
+      completionOptions
+    );
+    // A cut answer is a JSON prefix: parsing it fails with "Unexpected end of
+    // JSON input", which blames the model. Typed instead, so the batch loop
+    // knows a smaller batch would fit.
+    if (truncated) {
+      throw new ProviderError(
+        `${this.getProviderType()} response was truncated (${
+          Object.keys(texts).length
+        } keys in the batch)`,
+        CODES.OUTPUT_TRUNCATED
+      );
+    }
+    return this._parseTranslationResponse(content);
   },
 
   async translateText({ text, sourceLanguage, targetLanguage }) {

@@ -14,6 +14,10 @@ const {
   HTML_CODE_PROPERTY,
 } = require('../mailing/html-code-block-guard.js');
 const translationJobs = require('./translation-jobs');
+const {
+  runTranslationStep,
+  TRANSLATION_CANCELLED,
+} = require('./translation-step.utils.js');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -107,12 +111,16 @@ async function processTranslationAsync({
   folderId,
 }) {
   try {
+    const assertNotCancelled = async () => {
+      if (await translationJobs.isCancelled(jobId)) {
+        throw new Error(TRANSLATION_CANCELLED);
+      }
+    };
+
     // Progress callback to update job status and check for cancellation
     const onBatchProgress = async (batchNumber, keysInBatch) => {
       // Check if job was cancelled before processing next batch
-      if (await translationJobs.isCancelled(jobId)) {
-        throw new Error('TRANSLATION_CANCELLED');
-      }
+      await assertNotCancelled();
       await translationJobs.updateBatchProgress(
         jobId,
         batchNumber,
@@ -132,9 +140,8 @@ async function processTranslationAsync({
     // Group-scoped load: the source mailing must belong to the caller's group
     // (or caller is super admin). Without this filter a group admin could
     // translate+duplicate a mailing of another group by id (cross-tenant IDOR).
-    const originalMailing = await mailingService.findOneForUser(
-      mailingId,
-      user
+    const originalMailing = await runTranslationStep('loadMailing', () =>
+      mailingService.findOneForUser(mailingId, user)
     );
 
     const groupId =
@@ -143,15 +150,17 @@ async function processTranslationAsync({
 
     let templateMarkup = null;
     if (originalMailing._wireframe) {
-      const template = await Templates.findById(originalMailing._wireframe, {
-        markup: 1,
-      });
+      const template = await runTranslationStep('loadTemplate', () =>
+        Templates.findById(originalMailing._wireframe, { markup: 1 })
+      );
       templateMarkup = template?.markup || null;
     }
 
     const detectedSourceLanguage =
       sourceLanguage === 'auto'
-        ? translationService.detectSourceLanguage(originalMailing)
+        ? await runTranslationStep('detectSourceLanguage', () =>
+            translationService.detectSourceLanguage(originalMailing)
+          )
         : sourceLanguage;
 
     // Translate the mailing
@@ -173,6 +182,7 @@ async function processTranslationAsync({
       onTotalsKnown: ({ totalKeys, totalBatches }) =>
         translationJobs.setTotals(jobId, { totalKeys, totalBatches }),
       onBatchProgress,
+      assertNotCancelled,
     });
 
     // Generate new name
@@ -200,11 +210,13 @@ async function processTranslationAsync({
         const htmlCodes = findHtmlCodeBlocks(originalMailing.data).map(
           (block) => block[HTML_CODE_PROPERTY]
         );
-        const previewHtml = updatePreviewWithTranslations(
-          originalMailing.previewHtml,
-          originalTexts,
-          translations,
-          { htmlCodes }
+        const previewHtml = await runTranslationStep('updatePreview', () =>
+          updatePreviewWithTranslations(
+            originalMailing.previewHtml,
+            originalTexts,
+            translations,
+            { htmlCodes }
+          )
         );
         // Provider output was injected into previewHtml above; sanitize the
         // final document before persisting it (stored-XSS protection — the
@@ -212,10 +224,14 @@ async function processTranslationAsync({
         // back as stored: they hold no provider output, and sanitizing them
         // stripped the ESP scripts they exist for, so the copy's ZIP no longer
         // matched its export. Serving the preview sanitizes it again.
-        const safePreviewHtml = transformDocumentKeepingHtmlCodeBlocks(
-          previewHtml,
-          sanitizePreviewHtml,
-          htmlCodes
+        const safePreviewHtml = await runTranslationStep(
+          'sanitizePreview',
+          () =>
+            transformDocumentKeepingHtmlCodeBlocks(
+              previewHtml,
+              sanitizePreviewHtml,
+              htmlCodes
+            )
         );
         await mailingService.updatePreviewHtml(
           duplicatedMailing._id,
@@ -249,7 +265,7 @@ async function processTranslationAsync({
     });
   } catch (error) {
     // Handle cancellation gracefully
-    if (error.message === 'TRANSLATION_CANCELLED') {
+    if (error.message === TRANSLATION_CANCELLED) {
       logger.log(`[Translation] Job ${jobId} was cancelled by user`);
       return;
     }
