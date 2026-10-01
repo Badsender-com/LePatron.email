@@ -333,6 +333,9 @@ module.exports = {
     'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'widget-code-edit-css': "Éditer le CSS de l'email",
+  'widget-code-css-hint':
+    "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création.",
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
@@ -341,4 +344,16 @@ module.exports = {
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-preview-too-large':
     "Enregistrement refusé : l'email est trop volumineux.",
+  // Head CSS — a stylesheet for the whole email, gated by the same flag
+  'head-css-section-title': 'CSS personnalisé',
+  'head-css-section-hint':
+    "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML.",
+  'head-css-section-button': 'Éditer le CSS',
+  'head-css-modal-title': "CSS personnalisé (<head> de l'email)",
+  'head-css-placeholder':
+    "Écrivez ici votre CSS. Il sera ajouté dans le <head> de l'email exporté, tel quel, sans être appliqué aux blocs du template.",
+  'head-css-too-large':
+    "Le CSS dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'save-message-head-css-too-large':
+    'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
 };

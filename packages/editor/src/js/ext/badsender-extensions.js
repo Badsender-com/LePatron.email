@@ -26,6 +26,9 @@ const currentMailing = require('./badsender-current-mailing.js');
 const contentFeedMappings = require('./badsender-content-feed-mappings.js');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
+const {
+  headCssPreviewPlugin,
+} = require('./head-css/canvas-preview.js');
 const comments = require('./badsender-comments.js');
 
 // widgets
@@ -80,6 +83,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
+  customExtensions.push(headCssPreviewPlugin);
   customExtensions.push(comments(opts));
   // widget should be differentiating of VM extensions by
   // template-loader.js#pluginsCall

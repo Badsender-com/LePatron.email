@@ -89,3 +89,70 @@
     }
   }
 }
+
+// Head CSS: a stylesheet for the whole email, offered at the bottom of the
+// global Style tab rather than in a block panel — it belongs to no block.
+//
+// Styled here, next to the modal it opens, because both exist for the same
+// feature; the tab itself is laid out by style_mosaico_tools.less.
+.head-css-section {
+  padding: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: none;
+  }
+
+  &__hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  // Same shape as the widget button of the HTML code block, so the two ways of
+  // opening the code editor look like one feature.
+  &__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.24);
+    border-radius: 2px;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+}
+
+// The second entry point to the head CSS, in the block panel. Visually
+// subordinate to the HTML button above it: same shape, lighter weight, so the
+// primary action stays the primary action.
+.html-code-widget {
+  &__button--secondary {
+    margin-top: 0.5rem;
+    font-weight: 400;
+    background: transparent;
+  }
+
+  &__hint {
+    margin: 0.375rem 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.54);
+  }
+}

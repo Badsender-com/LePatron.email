@@ -21,6 +21,12 @@ const {
   endExportSubstitution,
   substituteMarkers,
 } = require('./ext/html-code-block/export-substitution.js');
+const {
+  injectHeadCss,
+} = require('../../../shared/head-css/inject-head-css.js');
+const {
+  HEAD_CSS_MAX_LENGTH,
+} = require('../../../shared/head-css/constants.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -358,6 +364,28 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       blockObservable: blockData, // Keep reference to observable for updates
       parent: parent,
       index: blockIndex,
+    });
+  };
+
+  // Stylesheet injected into the <head> of every export this editor produces.
+  // Lives on the mailing rather than in the content model: Mosaico's checkModel
+  // splices out any property the block definitions do not declare. Seeded from
+  // `metadata.headCss` once the mailing is loaded (template-loader.js) and sent
+  // back with the content on save (ext/badsender-server-storage.js).
+  viewModel.headCss = ko.observable('');
+
+  // Opens the shared CodeMirror modal on the stylesheet instead of a block
+  // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
+  // guarded because the palette button exists before Vue has bound.
+  viewModel.openHeadCssEditor = function () {
+    if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
+    viewModel.toggleHtmlCodeModal(true, {
+      accessor: viewModel.headCss,
+      mode: 'css',
+      titleKey: 'head-css-modal-title',
+      placeholderKey: 'head-css-placeholder',
+      tooLargeKey: 'head-css-too-large',
+      maxLength: HEAD_CSS_MAX_LENGTH,
     });
   };
 
@@ -793,7 +821,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // LAST step, on purpose: put the pasted markup of every HTML code block back,
     // byte for byte, now that none of the transformations above can reach it.
-    return substituteMarkers(content);
+    content = substituteMarkers(content);
+
+    // After the substitution, so the stylesheet cannot be mistaken for a marker,
+    // and after every regex above, so it reaches the export exactly as written.
+    // A mailing without head CSS gets the very same string as before.
+    return injectHeadCss(content, viewModel.headCss());
   };
 
   // The substitution session opens BEFORE the frame is bound: from then on the
