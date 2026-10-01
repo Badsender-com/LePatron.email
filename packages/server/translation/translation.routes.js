@@ -8,6 +8,7 @@ const translation = require('./translation.controller.js');
 
 const { GUARD_USER, GUARD_CAN } = require('../account/auth.guard.js');
 const { CAPABILITIES: C } = require('../../shared/access/roles.js');
+const { aiRateLimit } = require('../ai-usage/ai-rate-limit.js');
 
 // Get available languages for the user's group
 router.get('/languages', GUARD_USER, translation.getLanguages);
@@ -16,6 +17,7 @@ router.get('/languages', GUARD_USER, translation.getLanguages);
 router.post(
   '/text',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  aiRateLimit(),
   translation.translateText
 );
 
@@ -23,6 +25,7 @@ router.post(
 router.post(
   '/block',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  aiRateLimit(),
   translation.translateBlock
 );
 
