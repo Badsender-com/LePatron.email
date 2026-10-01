@@ -66,6 +66,7 @@ async function logInvocation(params) {
     _company: params.groupId,
     _user: params.userId || null,
     invocationSource: params.invocationSource || null,
+    expertiseConsumed: params.expertiseConsumed || [],
     variantPath: params.variantPath || [],
     provider: params.resolvedConfig ? params.resolvedConfig.provider : null,
     model: params.resolvedConfig ? params.resolvedConfig.model : null,
