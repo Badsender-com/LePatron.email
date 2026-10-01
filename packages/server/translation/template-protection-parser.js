@@ -17,7 +17,10 @@
  * - _protectedFields: Map of { 'blockName.fieldName': false } for field-level protection
  */
 
-const cheerio = require('cheerio');
+const {
+  parseElementTree,
+  getAttribute,
+} = require('./template-element-tree.js');
 
 /**
  * Parse the template HTML markup to extract protection configuration
@@ -33,84 +36,75 @@ function parseProtectionConfig(markup) {
     return { _protectedBlocks: [], _protectedFields: {} };
   }
 
-  const $ = cheerio.load(markup);
   const protectedBlocks = new Set();
+  const editables = [];
+
+  // One walk in document order. Each element inherits the closest block
+  // (itself included) and the closest data-translate value; an element
+  // carrying either attribute overrides it for itself and its descendants.
+  // Iterative: a deeply nested template must not exhaust the stack. The
+  // content of a <template> element is not walked, as the browser does not
+  // expose it to the editor either.
+  const stack = [{ node: parseElementTree(markup) }];
+  while (stack.length > 0) {
+    const { node, blockName, translateAttr } = stack.pop();
+    let ownBlockName = blockName;
+    let ownTranslateAttr = translateAttr;
+
+    if (node.attrs) {
+      const nodeBlockName = getAttribute(node, 'data-ko-block');
+      const nodeTranslateAttr = getAttribute(node, 'data-translate');
+
+      // A block with data-translate="false" is fully protected
+      if (nodeBlockName !== undefined) {
+        ownBlockName = nodeBlockName;
+        if (nodeTranslateAttr === 'false') protectedBlocks.add(nodeBlockName);
+      }
+      if (nodeTranslateAttr !== undefined) ownTranslateAttr = nodeTranslateAttr;
+
+      const fieldName = getAttribute(node, 'data-ko-editable');
+      if (fieldName) {
+        editables.push({
+          fieldName,
+          blockName: ownBlockName || '_root',
+          // No attribute anywhere up the tree: translatable by default.
+          // Otherwise "true" means translate, anything else means don't.
+          shouldTranslate:
+            ownTranslateAttr === undefined || ownTranslateAttr === 'true',
+        });
+      }
+    }
+
+    const children = node.childNodes || [];
+    for (let i = children.length - 1; i >= 0; i--) {
+      stack.push({
+        node: children[i],
+        blockName: ownBlockName,
+        translateAttr: ownTranslateAttr,
+      });
+    }
+  }
+
+  // Resolved once every block is known: a block name protected further down
+  // the document protects the fields of its earlier instances too.
   const protectedFields = {};
-
-  // First pass: find all blocks with data-translate="false" at block level
-  $('[data-ko-block]').each((_, element) => {
-    const $block = $(element);
-    const blockName = $block.attr('data-ko-block');
-    const translateAttr = $block.attr('data-translate');
-
-    if (translateAttr === 'false') {
-      protectedBlocks.add(blockName);
-    }
-  });
-
-  // Second pass: find field-level protection (fields inside protected blocks
-  // that have data-translate="true" override, or fields with direct protection)
-  $('[data-ko-editable]').each((_, element) => {
-    const $el = $(element);
-    const fieldName = $el.attr('data-ko-editable');
-
-    if (!fieldName) {
-      return;
-    }
-
-    // Find parent block
-    const $parentBlock = $el.closest('[data-ko-block]');
-    const blockName = $parentBlock.attr('data-ko-block') || '_root';
-
-    // Resolve translation state by walking up the DOM tree
-    const shouldTranslate = resolveTranslateAttribute($, $el);
-
-    // Check if this is an exception inside a protected block
+  for (const { fieldName, blockName, shouldTranslate } of editables) {
     if (protectedBlocks.has(blockName)) {
-      // Block is protected - check if this field has an explicit override
+      // Block is protected - only an explicit data-translate="true" is an
+      // exception worth storing; otherwise inherited from the block
       if (shouldTranslate) {
-        // Field has data-translate="true" - it's an exception, store it
-        protectedFields[`${blockName}.${fieldName}`] = true; // translatable exception
+        protectedFields[`${blockName}.${fieldName}`] = true;
       }
-      // Otherwise, inherited from block - no need to store
-    } else {
-      // Block is not protected - check if field has direct protection
-      if (!shouldTranslate) {
-        protectedFields[`${blockName}.${fieldName}`] = false;
-      }
+    } else if (!shouldTranslate) {
+      // Block is not protected - the field itself is
+      protectedFields[`${blockName}.${fieldName}`] = false;
     }
-  });
+  }
 
   return {
     _protectedBlocks: Array.from(protectedBlocks),
     _protectedFields: protectedFields,
   };
-}
-
-/**
- * Resolve the data-translate attribute by walking up the DOM tree.
- * The first ancestor (including self) with the attribute determines the value.
- *
- * @param {CheerioStatic} $ - Cheerio instance
- * @param {Cheerio} $element - Starting element
- * @returns {boolean} true if translatable, false if protected
- */
-function resolveTranslateAttribute($, $element) {
-  let $current = $element;
-
-  while ($current.length > 0) {
-    const attr = $current.attr('data-translate');
-
-    if (attr !== undefined) {
-      // Found the attribute - "true" means translate, anything else means don't
-      return attr === 'true';
-    }
-
-    $current = $current.parent();
-  }
-
-  // No attribute found anywhere in the tree → default is translatable
-  return true;
 }
 
 /**
@@ -158,6 +152,4 @@ function isFieldProtected(path, fieldName, protectionConfig) {
 module.exports = {
   parseProtectionConfig,
   isFieldProtected,
-  // Exported for testing
-  resolveTranslateAttribute,
 };
