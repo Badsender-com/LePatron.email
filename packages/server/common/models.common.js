@@ -35,6 +35,7 @@ const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
+const AIUsageCounterSchema = require('../ai-usage/ai-usage-counter.schema.js');
 
 /// ///
 // EXPORTS
@@ -112,6 +113,10 @@ const TaxonomyItems = mongoose.model(
   modelNames.TaxonomyItemModel,
   TaxonomyItemSchema
 );
+const AIUsageCounters = mongoose.model(
+  modelNames.AIUsageCounterModel,
+  AIUsageCounterSchema
+);
 
 module.exports = {
   mongoose,
@@ -145,4 +150,5 @@ module.exports = {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,
+  AIUsageCounters,
 };

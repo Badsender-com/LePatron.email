@@ -22,15 +22,10 @@ const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes.js');
 
-// TODO(security): /translation/block, /translation/text and
-// /mailings/:id/duplicate-translate forward arbitrary user payloads to the
-// external LLM/DeepL provider with no payload-size cap and no rate limit.
-// A malicious user can burn provider quota / generate cost by submitting
-// very large blobs or by hammering the endpoint. Two follow-ups are needed:
-//   1. Add per-user rate limiting (needs an infra decision: in-memory vs Redis).
-//   2. Cap blockContent / text payload size (50 KB / 100 keys / 10 000 chars)
-//      once we know how big legitimate translations get in practice.
-// Tracked separately so this review PR stays focused.
+// /translation/block, /translation/text and /mailings/:id/duplicate-translate
+// forward user payloads to an external provider: their routes go through
+// aiRateLimit (ai-usage/ai-rate-limit.js), which caps the payload size and
+// counts each request against per-user and per-group windows.
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
