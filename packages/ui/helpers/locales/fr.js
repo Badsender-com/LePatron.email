@@ -180,6 +180,8 @@ export default {
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
       issuerHint: 'Identifiant unique de votre application chez le fournisseur',
+      idpCertHint:
+        'Certificat de signature du fournisseur d\'identité (PEM), présent dans ses métadonnées SAML. Obligatoire : sans lui, la connexion SSO n\'est pas proposée.',
       dangerZone: {
         title: 'Zone de danger',
         description: 'Les actions dans cette zone sont irréversibles. Procédez avec prudence.',
@@ -226,6 +228,7 @@ export default {
       ftpConnectionSuccess: 'Connexion réussie',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
+      idpCert: 'Certificat du fournisseur d\'identité',
       userHasAccessToAllWorkspaces:
         'Donner accès à tous les workspaces aux utilisateurs standards',
     },

@@ -248,7 +248,9 @@
     "vue-server-renderer": "2.6.14",
     "@types/bson": "4.0.5",
     "@types/minimatch": "5.1.2",
-    "jsonwebtoken": "9.0.2"
+    "jsonwebtoken": "9.0.2",
+    "xml-crypto": "2.1.6",
+    "xmldom": "npm:@xmldom/xmldom@0.7.13"
   },
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",

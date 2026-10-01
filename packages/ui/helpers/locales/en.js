@@ -180,6 +180,8 @@ export default {
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',
+      idpCertHint:
+        'Signing certificate of the identity provider (PEM), found in its SAML metadata. Required: without it, SSO sign-in is not offered.',
       dangerZone: {
         title: 'Danger zone',
         description: 'Actions in this zone are irreversible. Proceed with caution.',
@@ -226,6 +228,7 @@ export default {
       ftpConnectionSuccess: 'Connection successful',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
+      idpCert: 'Identity provider certificate',
       userHasAccessToAllWorkspaces:
         'Give access to all workspaces to regular users',
     },
