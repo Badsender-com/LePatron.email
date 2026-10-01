@@ -51,9 +51,9 @@ const chatCallMethods = {
   },
 
   /**
-   * Performs the call and returns the normalized `{ content, usage }` its
-   * dialect produced — never the raw payload, so callers stay independent of
-   * which provider answered.
+   * Performs the call and returns the normalized `{ content, usage, truncated }`
+   * its dialect produced — never the raw payload, so callers stay independent
+   * of which provider answered.
    *
    * Everything that must not be duplicated per provider lives here: the SSRF
    * re-check immediately before the request, the timeout, the log sanitising
@@ -133,7 +133,12 @@ const chatCallMethods = {
       // otherwise is a parse error blaming the model. Checked here rather than
       // per dialect: three dialects had three behaviours, and the one serving
       // six providers silently did nothing.
-      if (this._getFinishReason(data) === 'length') {
+      //
+      // Reported on the result rather than thrown: a skill answering in prose
+      // can still use a cut answer, while translation cannot and splits the
+      // batch instead (translation-batch.utils.js).
+      result.truncated = this._getFinishReason(data) === 'length';
+      if (result.truncated) {
         logger.error(
           `${providerName} response was truncated (output token limit reached)`,
           `model: ${model}`

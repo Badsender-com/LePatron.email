@@ -223,9 +223,15 @@ class AnthropicProvider extends BaseLLMProvider {
     return 'You are a JSON translation API. You receive a JSON object and return the same JSON object with translated values. Return valid JSON only: no preamble, no explanation, no markdown fences. The first character of your reply must be {.';
   }
 
-  /** Lower than the OpenAI default, in step with the 8192-token output ceiling. */
+  /**
+   * Sized on the 8192-token output ceiling, which a mailing's HTML-heavy
+   * texts fill at about 2.3 characters a token: a 30 000-character batch
+   * answered 19 174 characters and was cut. 12 000, keys included, leaves room
+   * for a target language that runs longer than the source; a batch that still
+   * overflows is split rather than failed.
+   */
   getBatchLimits() {
-    return { maxKeys: 80, maxChars: 30000 };
+    return { maxKeys: 80, maxChars: 12000 };
   }
 }
 

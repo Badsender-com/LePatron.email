@@ -108,8 +108,8 @@ class BaseLLMProvider extends AIProviderInterface {
   /**
    * Public chat-completion entry point used by the LePatron Skills IA module.
    *
-   * Unlike _callChatCompletion (which returns only the content string), this
-   * returns both the content and token usage so callers can log invocations.
+   * Returns the content and token usage so callers can log invocations, and
+   * whether the answer was cut at the output token ceiling.
    *
    * @param {Object} params
    * @param {string} [params.model] — defaults to provider's default model
@@ -117,7 +117,7 @@ class BaseLLMProvider extends AIProviderInterface {
    * @param {number} [params.temperature]
    * @param {number} [params.maxTokens]
    * @param {Object} [params.responseFormat]
-   * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number, totalTokens: number, cachedTokens: number } }>}
+   * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number, totalTokens: number, cachedTokens: number }, truncated: boolean }>}
    */
   async chatComplete({
     model,
@@ -133,26 +133,6 @@ class BaseLLMProvider extends AIProviderInterface {
       maxTokens,
       responseFormat,
     });
-  }
-
-  // ─── API call ─────────────────────────────────────────────────────────────
-
-  // Legacy translation code path: content string only.
-  async _callChatCompletion({
-    model,
-    messages,
-    temperature,
-    responseFormat,
-    reasoningEffort,
-  }) {
-    const { content } = await this._callChatCompletionRaw({
-      model,
-      messages,
-      temperature,
-      responseFormat,
-      reasoningEffort,
-    });
-    return content;
   }
 }
 
