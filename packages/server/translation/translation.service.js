@@ -21,6 +21,10 @@ const {
   splitIntoBatches,
   translateInBatches,
 } = require('./translation-batch.utils.js');
+const {
+  runTranslationStep,
+  TRANSLATION_CANCELLED,
+} = require('./translation-step.utils.js');
 
 module.exports = {
   translateMailing,
@@ -41,6 +45,7 @@ module.exports = {
  * @param {string} [params.templateMarkup] - Template HTML markup for protection config
  * @param {Function} [params.onTotalsKnown] - Callback invoked once with ({ totalKeys, totalBatches }) before any provider call
  * @param {Function} [params.onBatchProgress] - Callback for batch progress (batchNumber, keysInBatch)
+ * @param {Function} [params.assertNotCancelled] - Throws TRANSLATION_CANCELLED once the job is cancelled
  * @returns {Promise<Object>} Translated mailing data
  */
 async function translateMailing({
@@ -51,6 +56,7 @@ async function translateMailing({
   templateMarkup,
   onTotalsKnown,
   onBatchProgress,
+  assertNotCancelled,
 }) {
   // Get active translation feature with integration
   const featureConfig = await aiFeatureService.getActiveFeatureWithIntegration({
@@ -75,11 +81,15 @@ async function translateMailing({
 
   // Parse protection config from template markup (if provided)
   const protectionConfig = templateMarkup
-    ? parseProtectionConfig(templateMarkup)
+    ? await runTranslationStep('parseProtectionConfig', () =>
+        parseProtectionConfig(templateMarkup)
+      )
     : null;
 
   // Extract texts from mailing (respecting protection config)
-  const textsToTranslate = extractTexts(mailing, protectionConfig);
+  const textsToTranslate = await runTranslationStep('extractTexts', () =>
+    extractTexts(mailing, protectionConfig)
+  );
   const stats = getExtractionStats(textsToTranslate);
 
   if (stats.fieldCount === 0) {
@@ -110,7 +120,9 @@ async function translateMailing({
   const batchLimits = provider.getBatchLimits
     ? provider.getBatchLimits()
     : undefined;
-  const batches = splitIntoBatches(textsToTranslate, batchLimits);
+  const batches = await runTranslationStep('splitIntoBatches', () =>
+    splitIntoBatches(textsToTranslate, batchLimits)
+  );
 
   if (onTotalsKnown) {
     await onTotalsKnown({
@@ -121,7 +133,9 @@ async function translateMailing({
 
   // Extract full context for DeepL (improves translation quality)
   // LLM providers will ignore this parameter
-  const context = extractFullContext(textsToTranslate);
+  const context = await runTranslationStep('extractFullContext', () =>
+    extractFullContext(textsToTranslate)
+  );
 
   let translations;
   try {
@@ -132,8 +146,12 @@ async function translateMailing({
       targetLanguage,
       context,
       onBatchProgress,
+      assertNotCancelled,
     });
   } catch (error) {
+    // Passed through as is: wrapped as a provider error, the job was marked
+    // failed over its cancelled status.
+    if (error.message === TRANSLATION_CANCELLED) throw error;
     logger.error(`[Translation] Translation error: ${error.message}`);
     const status = error instanceof ProviderError ? error.httpStatus : 400;
     throw createError(
@@ -152,9 +170,11 @@ async function translateMailing({
   }
 
   // Inject translations back into mailing
-  const { mailing: translatedMailing, stats: injectionStats } = injectTexts(
-    mailing,
-    translations
+  const {
+    mailing: translatedMailing,
+    stats: injectionStats,
+  } = await runTranslationStep('injectTexts', () =>
+    injectTexts(mailing, translations)
   );
 
   return {

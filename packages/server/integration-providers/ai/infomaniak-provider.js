@@ -16,7 +16,7 @@ const API_BASE = 'https://api.infomaniak.com';
  * Differences from the OpenAI base:
  *   - Endpoint path: /chat/completions (no /v1/ prefix)
  *   - Does NOT support response_format parameter
- *   - max_tokens capped at 5000
+ *   - max_tokens capped at 5000, so translation batches are smaller
  */
 class InfomaniakProvider extends BaseLLMProvider {
   constructor(integration) {
@@ -55,6 +55,15 @@ class InfomaniakProvider extends BaseLLMProvider {
 
   _getMaxTokens() {
     return 5000; // Infomaniak limit: 1-5000
+  }
+
+  /**
+   * Far below the default, which was sized for a 16 000-token ceiling: at
+   * about 2.3 characters a token, 5 000 tokens is under 12 000 characters of
+   * answer. Same margin as Anthropic, keys included.
+   */
+  getBatchLimits() {
+    return { maxKeys: 50, maxChars: 8000 };
   }
 
   /**

@@ -5,6 +5,7 @@ const {
   getExtractionStats,
   isTranslatableFieldName,
   isTranslatableValue,
+  isEmailAddress,
 } = require('../../../packages/server/translation/mosaico-text-extractor');
 
 describe('MosaicoTextExtractor', () => {
@@ -81,6 +82,16 @@ describe('MosaicoTextExtractor', () => {
 
     it('should return false for email addresses', () => {
       expect(isTranslatableValue('test@example.com')).toBe(false);
+    });
+
+    // The regex this replaced backtracked quadratically on such a value:
+    // 1.3 s for 40 000 characters, on the event loop (#1140).
+    it('tests a long value with an @ and many dots in linear time', () => {
+      const value = `a@${'b.'.repeat(50000)}@`;
+      const startedAt = Date.now();
+
+      expect(isTranslatableValue(value)).toBe(true);
+      expect(Date.now() - startedAt).toBeLessThan(100);
     });
 
     it('should return false for color values', () => {
@@ -461,6 +472,30 @@ describe('MosaicoTextExtractor', () => {
 
       expect(result._name).toBe('Test');
       expect(result['data.block.titleText']).toBe('Hello');
+    });
+  });
+
+  // Must accept exactly what /^[^\s@]+@[^\s@]+\.[^\s@]+$/ did, without its
+  // quadratic backtracking.
+  describe('isEmailAddress', () => {
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    it.each([
+      'a@b.c',
+      'first.last@sub.example.com',
+      '@b.c',
+      'a@.c',
+      'a@b.',
+      'a@b..c',
+      'a@.b.c',
+      'a@@b.c',
+      'a@b.c@d.e',
+      'a b@c.d',
+      'a@b\tc.d',
+      'a@bc',
+      'plain text',
+    ])('agrees with the former pattern on %j', (value) => {
+      expect(isEmailAddress(value)).toBe(EMAIL_PATTERN.test(value));
     });
   });
 });

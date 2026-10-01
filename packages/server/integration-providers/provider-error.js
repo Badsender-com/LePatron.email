@@ -6,6 +6,9 @@ const PROVIDER_ERROR_CODES = Object.freeze({
   TIMEOUT: 'PROVIDER_TIMEOUT',
   API_ERROR: 'PROVIDER_API_ERROR',
   INVALID_RESPONSE: 'PROVIDER_INVALID_RESPONSE',
+  // The answer stopped at the output token ceiling: what came back is a
+  // prefix, and a smaller request would fit where retrying the same would not.
+  OUTPUT_TRUNCATED: 'PROVIDER_OUTPUT_TRUNCATED',
   CONFIG_ERROR: 'PROVIDER_CONFIG_ERROR',
 });
 
