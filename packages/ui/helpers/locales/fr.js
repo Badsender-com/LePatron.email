@@ -1220,7 +1220,10 @@ export default {
     },
     textGeneration: {
       title: 'Génération de texte',
-      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+      description: 'Propose dans l\'éditeur un objet et un preheader rédigés à partir du contenu de l\'email, selon les recommandations de rédaction de Badsender.',
+      enableLabel: 'Activer la génération de texte',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
     },
     qualityCheck: {
       title: 'Contrôle qualité',
