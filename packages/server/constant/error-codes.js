@@ -237,4 +237,6 @@ module.exports = {
   // NOT when the typology belongs to another company, which reads as NOT_FOUND so
   // that no code tells a caller what exists elsewhere.
   EMAIL_TYPE_COMPANY_MISSING: 'EMAIL_TYPE_COMPANY_MISSING',
+  AI_RATE_LIMITED: 'AI_RATE_LIMITED',
+  AI_PAYLOAD_TOO_LARGE: 'AI_PAYLOAD_TOO_LARGE',
 };
