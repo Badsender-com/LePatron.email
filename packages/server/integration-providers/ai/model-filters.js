@@ -25,7 +25,17 @@ const REMOTE_FILTERS = {
       /(^|-)image(-|$)/,
       /^imagen/,
       /^veo/,
+      // Music generation, advertised alongside the chat models.
+      /^lyria/,
       /^gemini-(1\.\d|2\.0|2\.5)(-|$)/,
+      // Advertised with generateContent, then refused with "This model only
+      // supports Interactions API" — the listing does not describe what the
+      // API accepts. Third time on this integration: Infomaniak's aliases and
+      // Gemini's dated ids were the first two. Found by the conformance
+      // script, which is the only thing that can find it.
+      /^antigravity/,
+      /(^|-)deep-research(-|$)/,
+      /(^|-)omni(-|$)/,
     ],
     include: [],
   },
@@ -40,6 +50,11 @@ const REMOTE_FILTERS = {
       // would otherwise wave through on its "chatgpt" prefix.
       /(^|-)image(-|$)/,
       /moderation/,
+      // Answer on their own endpoints, not chat completions: both 404 with
+      // "not supported in the v1/chat/completions endpoint" when picked.
+      // Found by the conformance script, not by reading the docs.
+      /-codex(-|$)/,
+      /(^|-)live(-|$)/,
       /^davinci/,
       /^babbage/,
       /^sora/,

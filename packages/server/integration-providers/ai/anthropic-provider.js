@@ -125,6 +125,16 @@ class AnthropicProvider extends BaseLLMProvider {
 
   // eslint-disable-next-line no-unused-vars
   _parseResponse(data, requestBody) {
+    // The model declining is not a technical failure, and reporting it as an
+    // empty response sent us looking for a parser bug. Gemini's equivalent
+    // (finishReason SAFETY) was already named; this one was not.
+    if (data.stop_reason === 'refusal') {
+      throw new ProviderError(
+        'Anthropic declined to answer this prompt',
+        CODES.INVALID_RESPONSE
+      );
+    }
+
     if (!Array.isArray(data.content)) {
       throw new ProviderError(
         'Invalid response structure from anthropic',
@@ -164,6 +174,18 @@ class AnthropicProvider extends BaseLLMProvider {
 
   _getFinishReason(data) {
     return data.stop_reason === 'max_tokens' ? 'length' : null;
+  }
+
+  /**
+   * Never adapt. Anthropic words its refusals its own way ("temperature:
+   * Extra inputs are not permitted"), so the OpenAI detection inherited from
+   * the dialect would match nothing anyway — but by luck of the wording, not
+   * by design. Stated here so it stays that way until Anthropic's own
+   * refusals are taught.
+   */
+  // eslint-disable-next-line no-unused-vars
+  _detectParamQuirk(status, parsedError, message) {
+    return null;
   }
 
   _mapErrorToCode(status) {

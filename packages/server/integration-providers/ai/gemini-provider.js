@@ -128,6 +128,18 @@ class GeminiProvider extends BaseLLMProvider {
     };
   }
 
+  /**
+   * Never adapt. Gemini's `error.code` is the HTTP status as a number and its
+   * refusals are not worded like OpenAI's, so the detection inherited from
+   * the dialect would match nothing anyway — but by luck of the error shape,
+   * not by design. Stated here so it stays that way until Gemini's own
+   * refusals are taught.
+   */
+  // eslint-disable-next-line no-unused-vars
+  _detectParamQuirk(status, parsedError, message) {
+    return null;
+  }
+
   _mapErrorToCode(status, errorData) {
     if (status === 403) return CODES.INVALID_CREDENTIALS;
     if (status === 429) return CODES.QUOTA_EXCEEDED;

@@ -159,6 +159,18 @@ describe('model-catalog', () => {
       expect(catalog.passesRemoteFilter('gemini', id)).toBe(false);
     });
 
+    // Advertised with generateContent, then refused with "This model only
+    // supports Interactions API". The listing says what a model is, never
+    // what the endpoint accepts — only a real call finds these.
+    it.each([
+      'antigravity-preview-05-2026',
+      'gemini-3-deep-research-preview',
+      'gemini-omni-flash-preview',
+      'lyria-002',
+    ])('filters %s, which answers on another API', (id) => {
+      expect(catalog.passesRemoteFilter('gemini', id)).toBe(false);
+    });
+
     it.each([
       'gemini-flash-latest',
       'gemini-3-flash-preview',
