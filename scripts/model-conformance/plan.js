@@ -29,6 +29,22 @@ function familyOf(id) {
 }
 
 /**
+ * Sort model ids the same way on every machine.
+ *
+ * Explicit rather than a bare `.sort()`, and deliberately **not**
+ * `localeCompare`, which is what the linter suggests: locale-aware collation
+ * depends on the ICU data of the machine running the sweep, so the same
+ * models could come out in a different order on a colleague's laptop. The
+ * report exists to be diffed between runs; an order that is arbitrary but
+ * identical everywhere is worth more here than one that is alphabetically
+ * pleasing.
+ */
+function byCodeUnit(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+/**
  * Models worth probing for one integration.
  *
  * Three sets, unioned:
@@ -48,22 +64,6 @@ function familyOf(id) {
  * @param {string[]} [params.only]         explicit ids, short-circuits the rest
  * @returns {string[]} sorted, deduplicated
  */
-/**
- * Sort model ids the same way on every machine.
- *
- * Explicit rather than a bare `.sort()`, and deliberately **not**
- * `localeCompare`, which is what the linter suggests: locale-aware collation
- * depends on the ICU data of the machine running the sweep, so the same
- * models could come out in a different order on a colleague's laptop. The
- * report exists to be diffed between runs; an order that is arbitrary but
- * identical everywhere is worth more here than one that is alphabetically
- * pleasing.
- */
-function byCodeUnit(a, b) {
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
-}
-
 function selectModels({
   catalogIds = [],
   configuredIds = [],
@@ -102,4 +102,50 @@ function estimateCalls(perIntegration, pathCount, samples = 1) {
   return probes * pathCount * samples;
 }
 
-module.exports = { familyOf, selectModels, estimateCalls, byCodeUnit };
+/**
+ * What makes two integrations hit the same endpoint: the provider, its host,
+ * Infomaniak's product, Azure's deployment and api-version. The key is not
+ * part of it — two keys on one endpoint answer with the same contract.
+ */
+function endpointKey(integration) {
+  const config = integration.config || {};
+  return [
+    integration.provider,
+    integration.apiHost || '',
+    integration.productId || '',
+    config.deployment || '',
+    config.apiVersion || '',
+  ].join('|');
+}
+
+/**
+ * One integration per endpoint: probing the same models twice through two
+ * keys buys nothing and pays twice. The first one wins, so the caller decides
+ * the order.
+ *
+ * @returns {{kept: Object[], duplicates: Object[]}}
+ */
+function dedupeIntegrations(integrations) {
+  const seen = new Set();
+  const kept = [];
+  const duplicates = [];
+  for (const integration of integrations) {
+    const key = endpointKey(integration);
+    if (seen.has(key)) {
+      duplicates.push(integration);
+      continue;
+    }
+    seen.add(key);
+    kept.push(integration);
+  }
+  return { kept, duplicates };
+}
+
+module.exports = {
+  familyOf,
+  selectModels,
+  estimateCalls,
+  byCodeUnit,
+  endpointKey,
+  dedupeIntegrations,
+};

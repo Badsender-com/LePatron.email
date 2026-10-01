@@ -640,10 +640,24 @@ yarn check-models                      # plan et coût, n'appelle rien
 node scripts/check-model-conformance.js --provider=openai
 node scripts/check-model-conformance.js --model=gpt-6-astra --samples=3
 node scripts/check-model-conformance.js --all --max-calls=400
+node scripts/check-model-conformance.js --integration=<id>   # hors groupe plateforme
 ```
 
-Options : `--provider=` · `--model=` · `--path=skill|translation` ·
-`--samples=` · `--retries=` · `--max-calls=` · `--all` · `--dry`.
+Options : `--provider=` · `--model=` · `--integration=` ·
+`--path=skill|translation` · `--samples=` · `--retries=` · `--max-calls=` ·
+`--all` · `--dry`.
+
+**Périmètre** : par défaut, seules les intégrations du **groupe plateforme**
+(`yarn flag-platform-group`) sont sondées. Lancé contre la prod, le script
+facturerait sinon les comptes OpenAI, Anthropic ou Mistral des clients. Sonder
+une autre intégration demande de la nommer avec `--integration=<id>`. Deux
+intégrations sur le même point d'appel (fournisseur, hôte, produit, déploiement
+Azure) ne sont sondées qu'une fois.
+
+**Plafond** : `--max-calls` compte les requêtes de complétion **réellement
+envoyées**, ré-essais, rejeux d'adaptation et lots de traduction compris. Une
+fois atteint, plus rien ne part et les sondes restantes sont `SKIPPED`. Le
+chiffre affiché par le plan est une estimation basse.
 
 Codes de sortie : `0` conforme · `1` refus structurel · `2` avertissements.
 
@@ -656,7 +670,7 @@ Codes de sortie : `0` conforme · `1` refus structurel · `2` avertissements.
 | `FAIL`      | refus reproductible : à traiter                                                                         |
 | `FLAKY`     | les tentatives se contredisent — **jamais arbitré automatiquement**                                     |
 | `TRANSIENT` | aléa fournisseur après ré-essais                                                                        |
-| `SKIPPED`   | clé refusée, ou plafond d'appels atteint                                                                |
+| `SKIPPED`   | clé refusée, modèle hors abonnement, ou plafond d'appels atteint                                        |
 
 ### Quand le lancer — et quand surtout pas
 
@@ -670,7 +684,8 @@ l'inverse de `yarn check-skills`, qui tourne à sec.
 
 > ⚠️ Il lit les intégrations de **la base à laquelle il se connecte**, donc les
 > clés de cet environnement. Vérifiez où vous pointez avant de le lancer sans
-> `--dry`.
+> `--dry`. Le périmètre affiché en tête de sortie dit quelles clés seront
+> utilisées.
 
 ### Ce qu'il a trouvé à ses premières exécutions
 

@@ -255,27 +255,6 @@ describe('error classification', () => {
   });
 });
 
-// The clamp label was wrong in the first version: anything that was not a
-// rename printed as "drop", so the one finding that was a production bug —
-// a completion ceiling — was reported as the wrong kind of problem.
-describe('describeQuirk', () => {
-  const { describeQuirk } = require('../../scripts/model-conformance/probe');
-
-  it.each([
-    [
-      { action: 'rename', param: 'max_tokens', to: 'max_completion_tokens' },
-      'rename max_tokens→max_completion_tokens',
-    ],
-    [
-      { action: 'clamp', param: 'max_tokens', value: 4096 },
-      'clamp max_tokens→4096',
-    ],
-    [{ action: 'drop', param: 'temperature' }, 'drop temperature'],
-  ])('names %j', (quirk, expected) => {
-    expect(describeQuirk(quirk)).toBe(expected);
-  });
-});
-
 // The report is read as a diff between two runs, so the order must not
 // depend on the machine. localeCompare — which the linter suggests — would
 // make it depend on the ICU data installed there.
@@ -295,5 +274,127 @@ describe('byCodeUnit', () => {
     const expected = ['gpt-4.1', 'gpt-4o', 'gpt-5-mini', 'o3'];
     expect([...ids].sort(byCodeUnit)).toEqual(expected);
     expect([...ids].reverse().sort(byCodeUnit)).toEqual(expected);
+  });
+});
+
+// Probing the same endpoint through two keys buys nothing and pays twice.
+describe('dedupeIntegrations', () => {
+  const {
+    dedupeIntegrations,
+  } = require('../../scripts/model-conformance/plan');
+
+  it('keeps the first integration per endpoint', () => {
+    const a = { _id: 'a', provider: 'openai' };
+    const b = { _id: 'b', provider: 'openai' };
+    const c = { _id: 'c', provider: 'mistral' };
+
+    const { kept, duplicates } = dedupeIntegrations([a, b, c]);
+
+    expect(kept).toEqual([a, c]);
+    expect(duplicates).toEqual([b]);
+  });
+
+  // On Azure the deployment is the model: two of them on one resource are
+  // two different things to probe.
+  it('separates two Azure deployments on one resource', () => {
+    const host = 'https://shared.openai.azure.com';
+    const { kept } = dedupeIntegrations([
+      { provider: 'azure_openai', apiHost: host, config: { deployment: 'x' } },
+      { provider: 'azure_openai', apiHost: host, config: { deployment: 'y' } },
+    ]);
+
+    expect(kept).toHaveLength(2);
+  });
+
+  it('separates two hosts on the same provider', () => {
+    const { kept } = dedupeIntegrations([
+      { provider: 'openai_compatible', apiHost: 'https://a.example' },
+      { provider: 'openai_compatible', apiHost: 'https://b.example' },
+    ]);
+
+    expect(kept).toHaveLength(2);
+  });
+});
+
+// The plan counts one call per probe; retries, replays and translation
+// batches can multiply that. The cap has to hold where requests leave.
+describe('meterChatCalls', () => {
+  const {
+    meterChatCalls,
+    isCapReached,
+  } = require('../../scripts/model-conformance/meter');
+
+  class FakeProvider {
+    async _attemptChatCompletion() {
+      return { ok: true, data: {} };
+    }
+  }
+
+  it('counts every attempt and refuses past the cap', async () => {
+    const meter = meterChatCalls(FakeProvider, 2);
+    const provider = new FakeProvider();
+
+    try {
+      await provider._attemptChatCompletion();
+      await provider._attemptChatCompletion();
+      const error = await provider._attemptChatCompletion().catch((e) => e);
+
+      expect(meter.calls).toBe(2);
+      expect(isCapReached(error)).toBe(true);
+    } finally {
+      meter.restore();
+    }
+  });
+
+  it('leaves the prototype as it found it', async () => {
+    const original = FakeProvider.prototype._attemptChatCompletion;
+    meterChatCalls(FakeProvider, 0).restore();
+
+    expect(FakeProvider.prototype._attemptChatCompletion).toBe(original);
+  });
+});
+
+// Running out of budget mid-probe says nothing about the model.
+describe('runProbe when the cap is reached', () => {
+  const { runProbe } = require('../../scripts/model-conformance/probe');
+  const { CALL_CAP_REACHED } = require('../../scripts/model-conformance/meter');
+
+  it('reports the probe as skipped, not failed', async () => {
+    const provider = {
+      getProviderType: () => 'openai',
+      _getEndpointUrl: () => 'https://api.openai.com/v1/chat/completions',
+      chatComplete: jest
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error('cap'), { code: CALL_CAP_REACHED })
+        ),
+    };
+
+    const outcome = await runProbe({
+      provider,
+      model: 'gpt-4o',
+      pathName: 'skill',
+      retries: 0,
+    });
+
+    expect(outcome).toEqual({
+      verdict: VERDICTS.SKIPPED,
+      detail: 'call cap reached',
+    });
+  });
+});
+
+// Probing a client's integration is a decision, not a default.
+describe('parseArgs', () => {
+  const { parseArgs } = require('../../scripts/check-model-conformance');
+
+  it('reads explicit integrations', () => {
+    expect(
+      parseArgs(['node', 'script', '--integration=aaa,bbb']).integrations
+    ).toEqual(['aaa', 'bbb']);
+  });
+
+  it('names none by default, so the platform group applies', () => {
+    expect(parseArgs(['node', 'script']).integrations).toBeNull();
   });
 });

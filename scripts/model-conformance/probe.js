@@ -21,7 +21,7 @@ const quirksCache = require(path.resolve(
   'ai',
   'param-quirks.cache.js'
 ));
-const { quirkKey } = require(path.resolve(
+const { quirkKey, describeQuirk } = require(path.resolve(
   __dirname,
   '..',
   '..',
@@ -32,6 +32,7 @@ const { quirkKey } = require(path.resolve(
   'param-quirks.js'
 ));
 const { VERDICTS } = require('./report.js');
+const { isCapReached } = require('./meter.js');
 
 /**
  * Running one model through one code path, for real.
@@ -154,7 +155,7 @@ async function runProbe({
 }) {
   const key = quirkKey({
     providerType: provider.getProviderType(),
-    baseUrl: provider.baseUrl,
+    endpoint: provider._getEndpointUrl(model),
     model,
   });
   quirksCache.clear();
@@ -192,6 +193,11 @@ async function runProbe({
       : { verdict: VERDICTS.OK, detail: '' };
   }
 
+  // Not a verdict on the model: the run ran out of budget mid-probe.
+  if (isCapReached(lastError)) {
+    return { verdict: VERDICTS.SKIPPED, detail: 'call cap reached' };
+  }
+
   if (succeeded > 0) {
     return {
       verdict: VERDICTS.FLAKY,
@@ -218,18 +224,6 @@ function isUnentitled(error) {
   return /\b40[13]\b/.test(error.message || '');
 }
 
-/**
- * Name the adaptation exactly. The first version printed anything that was
- * not a rename as "drop", so a ceiling clamped to 4096 was reported as a
- * dropped parameter — the report named the wrong cause for the one finding
- * that was a production bug.
- */
-function describeQuirk(quirk) {
-  if (quirk.action === 'rename') return `rename ${quirk.param}→${quirk.to}`;
-  if (quirk.action === 'clamp') return `clamp ${quirk.param}→${quirk.value}`;
-  return `drop ${quirk.param}`;
-}
-
 function shortMessage(error) {
   return String((error && error.message) || 'unknown').slice(0, 90);
 }
@@ -240,5 +234,4 @@ module.exports = {
   DEFAULT_MAX_TOKENS,
   isTransient,
   isUnentitled,
-  describeQuirk,
 };

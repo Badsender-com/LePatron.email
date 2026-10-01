@@ -5,7 +5,7 @@ const path = require('path');
 const resolveServer = (...parts) =>
   require(path.resolve(__dirname, '..', '..', 'packages', 'server', ...parts));
 
-const { Integrations, AIFeatureConfigs } = resolveServer(
+const { Integrations, AIFeatureConfigs, Groups } = resolveServer(
   'common',
   'models.common.js'
 );
@@ -20,7 +20,7 @@ const modelListing = resolveServer(
   'model-listing.service.js'
 );
 
-const { selectModels } = require('./plan.js');
+const { selectModels, dedupeIntegrations } = require('./plan.js');
 
 /**
  * Working out what to probe: reads the integrations, asks each provider what
@@ -66,18 +66,55 @@ async function configuredModels(integrationIds) {
   return [...models];
 }
 
-async function buildPlan(options) {
+/**
+ * Whose keys a run may spend on.
+ *
+ * The platform group's by default: a run against production would otherwise
+ * bill every client's OpenAI or Anthropic account for our own tests. Anything
+ * beyond takes an explicit `--integration=<id>`, which is a decision someone
+ * made, not a default they forgot.
+ *
+ * @returns {Promise<{query: Object, scope: string}>}
+ */
+async function integrationScope(options) {
   const query = { type: 'ai', isActive: true };
   if (options.providers) query.provider = { $in: options.providers };
 
+  if (options.integrations) {
+    query._id = { $in: options.integrations };
+    return {
+      query,
+      scope: `integration(s) ${options.integrations.join(', ')}`,
+    };
+  }
+
+  const platform = await Groups.findOne(
+    { isPlatform: true },
+    { _id: 1, name: 1 }
+  ).lean();
+  if (!platform) {
+    throw new Error(
+      'No platform group: run `yarn flag-platform-group` and configure its AI ' +
+        'integrations, or name the integrations to probe with --integration=<id>.'
+    );
+  }
+  query._company = platform._id;
+  return { query, scope: `platform group "${platform.name}"` };
+}
+
+async function buildPlan(options) {
+  const { query, scope } = await integrationScope(options);
+
   // Through the model, never .collection: the encryption plugin's post-find
-  // hook is what decrypts apiKey.
-  const integrations = (await Integrations.find(query)).filter(
+  // hook is what decrypts apiKey. Sorted so that which duplicate wins is the
+  // same on every run.
+  const found = (await Integrations.find(query).sort({ _id: 1 })).filter(
     (integration) => !NON_LLM.has(integration.provider)
   );
+  const { kept, duplicates } = dedupeIntegrations(found);
 
   const plan = [];
-  for (const integration of integrations) {
+  for (const integration of kept) {
     const listing = await modelListing.listModelsForIntegration(integration);
     const configured = await configuredModels([integration._id]);
 
@@ -93,7 +130,7 @@ async function buildPlan(options) {
       listingError: listing.error || null,
     });
   }
-  return plan;
+  return { plan, scope, duplicates };
 }
 
 /** Providers with no active integration here, so nothing could be probed. */
