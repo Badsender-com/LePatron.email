@@ -176,6 +176,18 @@ class AnthropicProvider extends BaseLLMProvider {
     return data.stop_reason === 'max_tokens' ? 'length' : null;
   }
 
+  /**
+   * Never adapt. Anthropic words its refusals its own way ("temperature:
+   * Extra inputs are not permitted"), so the OpenAI detection inherited from
+   * the dialect would match nothing anyway — but by luck of the wording, not
+   * by design. Stated here so it stays that way until Anthropic's own
+   * refusals are taught.
+   */
+  // eslint-disable-next-line no-unused-vars
+  _detectParamQuirk(status, parsedError, message) {
+    return null;
+  }
+
   _mapErrorToCode(status) {
     // 403 is Anthropic's permission_error, which in practice means the key is
     // not valid for this call — closer to invalid credentials than to a

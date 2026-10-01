@@ -169,8 +169,7 @@ const openAIDialect = {
    *
    * A hook rather than a shared table, for the same reason as
    * `_mapErrorToCode`: each dialect words its refusals differently. Anthropic
-   * and Gemini inherit this and match nothing, which is the intended
-   * behaviour until their own wording is added.
+   * and Gemini override it to never adapt, until their own wording is added.
    */
   _detectParamQuirk(status, parsedError, message) {
     return detectParamQuirk(status, parsedError, message);

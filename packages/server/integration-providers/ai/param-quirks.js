@@ -87,7 +87,19 @@ function detectParamQuirk(status, parsedError, message) {
   // A code we do not know means we do not know what a retry would change.
   if (error.code && !UNSUPPORTED_CODES.has(error.code)) return null;
 
-  const param = error.param || paramFromMessage(message);
+  const fromMessage = paramFromMessage(message || error.message);
+
+  // No code at all: `param` alone proves nothing. OpenAI-compatible gateways
+  // (vLLM, LiteLLM) answer `code: null` with a `param` on an ordinary value
+  // error, and dropping that parameter would hide a real misconfiguration —
+  // then remember it for every group on that host. OpenAI's own wording is
+  // the only evidence accepted, and it must name the same parameter.
+  if (!error.code) {
+    if (!fromMessage) return null;
+    if (error.param && error.param !== fromMessage) return null;
+  }
+
+  const param = error.param || fromMessage;
   if (!param) return null;
 
   const rule = ADAPTABLE_PARAMS[param];
@@ -125,20 +137,34 @@ function applyQuirks(body, quirks) {
 }
 
 /**
+ * Name the adaptation exactly. Anything that was not a rename used to be
+ * printed as "drop", so a ceiling clamped to 4096 — the one production bug the
+ * sweep found — was reported with the wrong cause.
+ */
+function describeQuirk(quirk) {
+  if (quirk.action === 'rename') return `rename ${quirk.param}→${quirk.to}`;
+  if (quirk.action === 'clamp') return `clamp ${quirk.param}→${quirk.value}`;
+  return `drop ${quirk.param}`;
+}
+
+/**
  * Cache key for a learned quirk.
  *
- * Keyed on the model at this host, not on the integration: the quirk is a
+ * Keyed on the model at this endpoint, not on the integration: the quirk is a
  * property of the model, so two groups calling the same endpoint share what
- * either one discovers. The host matters because an OpenAI-compatible
- * endpoint can serve the same model id under a different contract.
+ * either one discovers. The endpoint, not just the host: an OpenAI-compatible
+ * host can serve the same model id under a different contract, and on Azure
+ * the deployment and the api-version live in the URL — two integrations on
+ * one resource can run different models under the same `model` value.
  */
-function quirkKey({ providerType, baseUrl, model }) {
-  return `${providerType}|${baseUrl}|${model}`;
+function quirkKey({ providerType, endpoint, model }) {
+  return `${providerType}|${endpoint}|${model}`;
 }
 
 module.exports = {
   detectParamQuirk,
   applyQuirks,
+  describeQuirk,
   quirkKey,
   ADAPTABLE_PARAMS,
   REFUSAL_STATUSES,

@@ -154,17 +154,6 @@ class BaseLLMProvider extends AIProviderInterface {
     });
     return content;
   }
-
-  /**
-   * Performs the call and returns the normalized `{ content, usage }` its
-   * dialect produced — never the raw payload, so callers stay independent of
-   * which provider answered.
-   *
-   * Everything that must not be duplicated per provider lives here: the SSRF
-   * re-check immediately before the request, the timeout, the log sanitising
-   * that masks keys, and the mapping onto our error vocabulary. A dialect
-   * changes what is sent and how the answer is read, never this.
-   */
 }
 
 // Translation lives in its own module; applied here so subclasses keep

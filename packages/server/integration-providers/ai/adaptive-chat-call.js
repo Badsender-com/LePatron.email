@@ -1,7 +1,7 @@
 'use strict';
 
 const logger = require('../../utils/logger.js');
-const { applyQuirks } = require('./param-quirks.js');
+const { applyQuirks, describeQuirk } = require('./param-quirks.js');
 const quirksCache = require('./param-quirks.cache.js');
 
 /**
@@ -34,8 +34,10 @@ const MIN_ATTEMPT_TIMEOUT_MS = 1000;
  * @param {string} params.key cache key for this model
  * @param {number} params.deadlineAt absolute deadline for the whole sequence
  * @param {string} params.label provider/model, for the log line
- * @returns {Promise<{data: Object, body: Object}>}
- * @throws the last refusal, untouched, when nothing more can be adapted
+ * @returns {Promise<{data: Object, body: Object}|{failure: Object, body: Object}>}
+ *   `data` on success; otherwise `failure`, the last refusal untouched, once
+ *   nothing more can be adapted. Never throws on a refusal — raising is the
+ *   caller's decision. `body` is the request as last sent.
  */
 async function callWithParamAdaptation({
   performAttempt,
@@ -73,14 +75,11 @@ async function callWithParamAdaptation({
     quirksCache.add(key, quirk);
     currentBody = applyQuirks(currentBody, [quirk]);
 
-    // Warn, not log: an adaptation that fires on every call means the
-    // fast-path patterns are behind, and that has to be visible.
-    logger.error(
-      `${label}: adapting request — ${
-        quirk.action === 'rename'
-          ? `rename ${quirk.param} → ${quirk.to}`
-          : `drop ${quirk.param}`
-      } (memorised)`
+    // Warn, not log: this is the only trace. Once memorised, the adaptation is
+    // applied silently, so the line comes back once per worker and per TTL —
+    // which is what says a fast-path pattern is behind.
+    logger.warn(
+      `${label}: adapting request — ${describeQuirk(quirk)} (memorised)`
     );
   }
 

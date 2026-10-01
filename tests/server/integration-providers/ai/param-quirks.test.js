@@ -3,6 +3,7 @@
 const {
   detectParamQuirk,
   applyQuirks,
+  describeQuirk,
   quirkKey,
 } = require('../../../../packages/server/integration-providers/ai/param-quirks');
 
@@ -142,6 +143,42 @@ describe('detectParamQuirk', () => {
       expect(detectParamQuirk(status, body)).toBeNull();
     });
 
+    // OpenAI-compatible gateways answer an ordinary value error with
+    // `code: null` and a `param`. Trusting `param` there would drop a
+    // parameter the user set on purpose, and memorise it for the host.
+    describe('when the payload carries no code', () => {
+      it('does not trust param alone', () => {
+        const body = {
+          error: {
+            message: 'temperature must be between 0 and 2',
+            param: 'temperature',
+            code: null,
+          },
+        };
+
+        expect(detectParamQuirk(400, body, body.error.message)).toBeNull();
+      });
+
+      it("adapts on OpenAI's own wording", () => {
+        const message =
+          "Unsupported parameter: 'max_tokens' is not supported with this model.";
+        const body = { error: { message, param: 'max_tokens' } };
+
+        expect(detectParamQuirk(400, body, message)).toMatchObject({
+          param: 'max_tokens',
+          action: 'rename',
+        });
+      });
+
+      it('refuses when param and message disagree', () => {
+        const message =
+          "Unsupported parameter: 'max_tokens' is not supported with this model.";
+        const body = { error: { message, param: 'temperature' } };
+
+        expect(detectParamQuirk(400, body, message)).toBeNull();
+      });
+    });
+
     it.each([
       ['unauthorized', 401],
       ['forbidden', 403],
@@ -230,16 +267,16 @@ describe('applyQuirks', () => {
 });
 
 describe('quirkKey', () => {
-  // Keyed on the model at this host: what one group discovers helps the next.
-  it('is the same for two integrations on the same host and model', () => {
+  // Keyed on the model at this endpoint: what one group discovers helps the next.
+  it('is the same for two integrations on the same endpoint and model', () => {
     const a = quirkKey({
       providerType: 'openai',
-      baseUrl: 'https://api.openai.com',
+      endpoint: 'https://api.openai.com/v1/chat/completions',
       model: 'gpt-6-astra',
     });
     const b = quirkKey({
       providerType: 'openai',
-      baseUrl: 'https://api.openai.com',
+      endpoint: 'https://api.openai.com/v1/chat/completions',
       model: 'gpt-6-astra',
     });
 
@@ -247,19 +284,39 @@ describe('quirkKey', () => {
   });
 
   // The same id can be served under a different contract elsewhere.
-  it('separates two hosts serving the same model id', () => {
+  it('separates two endpoints serving the same model id', () => {
     expect(
       quirkKey({
         providerType: 'openai_compatible',
-        baseUrl: 'https://a.example',
+        endpoint: 'https://a.example/v1/chat/completions',
         model: 'gpt-6-astra',
       })
     ).not.toBe(
       quirkKey({
         providerType: 'openai_compatible',
-        baseUrl: 'https://b.example',
+        endpoint: 'https://b.example/v1/chat/completions',
         model: 'gpt-6-astra',
       })
     );
+  });
+});
+
+// The clamp label was wrong in the first version: anything that was not a
+// rename printed as "drop", so the one finding that was a production bug —
+// a completion ceiling — was reported as the wrong kind of problem. Shared by
+// the runtime log line and the sweep report.
+describe('describeQuirk', () => {
+  it.each([
+    [
+      { action: 'rename', param: 'max_tokens', to: 'max_completion_tokens' },
+      'rename max_tokens→max_completion_tokens',
+    ],
+    [
+      { action: 'clamp', param: 'max_tokens', value: 4096 },
+      'clamp max_tokens→4096',
+    ],
+    [{ action: 'drop', param: 'temperature' }, 'drop temperature'],
+  ])('names %j', (quirk, expected) => {
+    expect(describeQuirk(quirk)).toBe(expected);
   });
 });

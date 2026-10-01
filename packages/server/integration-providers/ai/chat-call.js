@@ -1,9 +1,8 @@
 'use strict';
 
 const logger = require('../../utils/logger.js');
-const { guardedFetch } = require('../provider-http.js');
+const { guardedFetch, toProviderError } = require('../provider-http.js');
 const { readProviderError } = require('./provider-error-body.js');
-const { toProviderError } = require('./provider-error-body.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -11,10 +10,11 @@ const {
 const { callWithParamAdaptation } = require('./adaptive-chat-call.js');
 const { quirkKey } = require('./param-quirks.js');
 
-// Five minutes: long enough for a slow provider on a large batch, short enough
-// that a wedged connection does not hold a request forever.
-const CHAT_TIMEOUT_MS = 300000;
-const CHAT_MAX_BYTES = 8 * 1024 * 1024;
+// A whole mailing translates in batches of this, and reasoning models take
+// their time: generous, but no longer unbounded while the body is read.
+const CHAT_TIMEOUT_MS = 5 * 60 * 1000;
+// A translation batch answers in well under a megabyte.
+const CHAT_MAX_BYTES = 10 * 1024 * 1024;
 
 /**
  * Performing a chat completion: one attempt, and the loop that adapts the
@@ -50,6 +50,17 @@ const chatCallMethods = {
     return { ok: false, status: response.status, parsedError, message };
   },
 
+  /**
+   * Performs the call and returns the normalized `{ content, usage }` its
+   * dialect produced — never the raw payload, so callers stay independent of
+   * which provider answered.
+   *
+   * Everything that must not be duplicated per provider lives here: the SSRF
+   * re-check immediately before the request, the timeout, the log sanitising
+   * that masks keys, the parameter adaptation, and the mapping onto our error
+   * vocabulary. A dialect changes what is sent and how the answer is read,
+   * never this.
+   */
   async _callChatCompletionRaw({
     model,
     messages,
@@ -82,7 +93,7 @@ const chatCallMethods = {
       // model list is fetched live, so it offers models whose contract this
       // code has never seen. One budget for the whole sequence — three
       // attempts must not mean three times the timeout.
-      const { data, failure } = await callWithParamAdaptation({
+      const { data, failure, body: sentBody } = await callWithParamAdaptation({
         performAttempt: (body, timeoutMs) =>
           this._attemptChatCompletion(body, model, timeoutMs),
         body: requestBody,
@@ -90,7 +101,7 @@ const chatCallMethods = {
           this._detectParamQuirk(status, parsedError, message),
         key: quirkKey({
           providerType: providerName,
-          baseUrl: this.baseUrl,
+          endpoint: this._getEndpointUrl(model),
           model,
         }),
         deadlineAt: startTime + CHAT_TIMEOUT_MS,
@@ -114,8 +125,9 @@ const chatCallMethods = {
       }
 
       // The request is handed over too: a dialect may have shaped it in a way
-      // that changes how the answer must be read.
-      const result = this._parseResponse(data, requestBody);
+      // that changes how the answer must be read. The one actually sent, not
+      // the one built — adaptation may have dropped `response_format`.
+      const result = this._parseResponse(data, sentBody);
 
       // Truncation guarantees malformed JSON downstream, and the only trace
       // otherwise is a parse error blaming the model. Checked here rather than
