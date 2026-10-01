@@ -35,6 +35,8 @@ const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
 const { FeatureResolutionReasons } = aiFeatureService;
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
+
+const { AIFeatureTypeValues } = AIFeatureTypes;
 const { getSchema } = require('../schemas');
 const {
   buildOutputContract,
@@ -70,11 +72,11 @@ const DEFAULT_TIMEOUT_MS = 30000;
  *     ANALYTICS only ('playground' | a productive feature name). Stored on
  *     AISkillInvocation and used to include/exclude rows from analytics. It does
  *     NOT influence which LLM engine is used.
- *   • [étape 2] `categoryOverride`: ENGINE RESOLUTION. Defaults to skill.category,
- *     overridable by the consuming feature. It selects which AIFeatureConfig
- *     featureType powers the call (redaction/qc/… → fallback 'skill'). See
- *     resolveGroupIntegration().
- *   The two used to share the name `featureType`, an invariant held by
+ *   • `featureType`: ENGINE RESOLUTION. The AIFeatureConfig entry whose
+ *     integration and model power the call — 'skill' by default, the consuming
+ *     feature's own type otherwise ('text_generation'). It says nothing about
+ *     analytics. See resolveGroupIntegration().
+ *   `featureType` once named the analytics tag too, an invariant held by
  *   documentation alone; the distinct names are the invariant now.
  *
  * @param {Object} params
@@ -83,6 +85,14 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * @param {import('mongoose').Types.ObjectId | string} params.groupId
  * @param {import('mongoose').Types.ObjectId | string} [params.userId]
  * @param {string} [params.invocationSource] ANALYTICS source tag only — see contract above.
+ * @param {string} [params.featureType='skill'] ENGINE RESOLUTION: the
+ *   AIFeatureConfig entry whose integration and model power the call. A client
+ *   feature passes its own ('text_generation'), so a group opens it without
+ *   opening every skill; the playground keeps the generic 'skill' engine.
+ * @param {Array<{expertiseId: string, versionMajor: number, versionMinor: number}>} [params.expertiseConsumed]
+ *   The expertise versions the caller composed into `input`. invoke() cannot
+ *   tell them from the input (only ids and bodies travel there), so the caller
+ *   says which versions it injected; they are logged for traceability.
  * @param {string[]} [params.variantPath]
  * @param {{major: number, minor?: number}} [params.version] Pin a specific
  *   version instead of the active one (the playground's "pinned" mode). The
@@ -98,11 +108,22 @@ async function invoke({
   groupId,
   userId,
   invocationSource,
+  featureType = AIFeatureTypes.SKILL,
+  expertiseConsumed = [],
   variantPath,
   version: versionRef,
   options = {},
 }) {
   const startedAt = new Date();
+
+  if (!AIFeatureTypeValues.includes(featureType)) {
+    throw configError(500, `Unknown AI feature type "${featureType}"`);
+  }
+  const consumed = expertiseConsumed.map((e) => ({
+    expertiseId: e.expertiseId,
+    versionMajor: e.versionMajor,
+    versionMinor: e.versionMinor,
+  }));
 
   // ─── 1. Load the skill and pick the version (pinned or active) ─────────
   const skill = await LePatronSkills.findOne(
@@ -164,6 +185,7 @@ async function invoke({
       groupId,
       userId,
       invocationSource,
+      expertiseConsumed: consumed,
       variantPath,
       input,
       startedAt,
@@ -185,7 +207,7 @@ async function invoke({
     integration,
     groupFeatureConfig,
     group,
-  } = await resolveGroupIntegration(groupId);
+  } = await resolveGroupIntegration(groupId, featureType);
   // Group-level content-logging opt-out — applies to success AND failure
   // paths below. (The INPUT_VALIDATION failure above happens before the
   // group is resolved; nothing was sent to a provider at that point.)
@@ -260,6 +282,7 @@ async function invoke({
       groupId,
       userId,
       invocationSource,
+      expertiseConsumed: consumed,
       variantPath,
       input: inputParse.data,
       startedAt,
@@ -290,6 +313,7 @@ async function invoke({
       groupId,
       userId,
       invocationSource,
+      expertiseConsumed: consumed,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -312,6 +336,7 @@ async function invoke({
       groupId,
       userId,
       invocationSource,
+      expertiseConsumed: consumed,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -339,6 +364,7 @@ async function invoke({
     groupId,
     userId,
     invocationSource,
+    expertiseConsumed: consumed,
     variantPath,
     input: inputParse.data,
     output: outputParse.data,
@@ -367,10 +393,9 @@ async function invoke({
  * Resolve the Integration to use for a Group via the AIFeatureConfig.
  *
  * ENGINE RESOLUTION axis (NOT analytics — that is invoke()'s
- * `invocationSource` param). Today this resolves
- * the single generic 'skill' engine. [étape 2] it will take the skill's
- * category (or a caller `categoryOverride`) and resolve in cascade:
- *   category featureType (redaction/qc/…) → fallback 'skill' → CONFIG_ERROR.
+ * `invocationSource` param). Resolves exactly the feature type the caller
+ * names, with no fallback to 'skill': a group that has not enabled a client
+ * feature must not get it through the generic engine.
  *
  * Throws a CONFIG_ERROR if not configured.
  */
@@ -396,17 +421,17 @@ function configError(status, message) {
 // return a bare null, and these distinct messages are the reason ai-skill had
 // reimplemented the walk in the first place.
 const ENGINE_ERROR_MESSAGES = {
-  [FeatureResolutionReasons.NO_CONFIG]: (groupId) =>
-    `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`,
-  [FeatureResolutionReasons.FEATURE_INACTIVE]: (groupId) =>
-    `Group ${groupId} has no active 'skill' feature configuration`,
-  [FeatureResolutionReasons.NO_INTEGRATION]: (groupId) =>
-    `Group ${groupId} has an active 'skill' feature but no integration selected`,
-  [FeatureResolutionReasons.INTEGRATION_INACTIVE]: (groupId) =>
-    `Group ${groupId} has a 'skill' integration that is inactive`,
+  [FeatureResolutionReasons.NO_CONFIG]: (groupId, featureType) =>
+    `Group ${groupId} has no AIFeatureConfig — configure a '${featureType}' integration`,
+  [FeatureResolutionReasons.FEATURE_INACTIVE]: (groupId, featureType) =>
+    `Group ${groupId} has no active '${featureType}' feature configuration`,
+  [FeatureResolutionReasons.NO_INTEGRATION]: (groupId, featureType) =>
+    `Group ${groupId} has an active '${featureType}' feature but no integration selected`,
+  [FeatureResolutionReasons.INTEGRATION_INACTIVE]: (groupId, featureType) =>
+    `Group ${groupId} has a '${featureType}' integration that is inactive`,
 };
 
-async function resolveGroupIntegration(groupId) {
+async function resolveGroupIntegration(groupId, featureType) {
   // The Group document itself stays this module's business: it carries the RGPD
   // content opt-out and the log retention window, neither of which the shared
   // feature helper knows or should know about.
@@ -417,16 +442,20 @@ async function resolveGroupIntegration(groupId) {
 
   const resolved = await aiFeatureService.resolveActiveFeature({
     groupId,
-    featureType: AIFeatureTypes.SKILL,
+    featureType,
   });
   if (!resolved.ok) {
     const toMessage = ENGINE_ERROR_MESSAGES[resolved.reason];
-    throw configError(
+    const err = configError(
       400,
       toMessage
-        ? toMessage(groupId)
-        : `Group ${groupId} has no usable 'skill' engine (${resolved.reason})`
+        ? toMessage(groupId, featureType)
+        : `Group ${groupId} has no usable '${featureType}' engine (${resolved.reason})`
     );
+    // Lets a client feature tell "not enabled for this group" apart from any
+    // other configuration failure, without parsing the message.
+    err.featureResolutionReason = resolved.reason;
+    throw err;
   }
 
   return {
