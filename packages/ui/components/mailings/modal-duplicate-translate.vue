@@ -10,6 +10,11 @@ import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { Languages, FolderOpen, Folder, Users } from 'lucide-vue';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { escapeHtml } from '~/helpers/escape-html';
+import {
+  POLL_INTERVAL_MS,
+  POLL_REQUEST_TIMEOUT_MS,
+  nextPollDelay,
+} from '~/helpers/poll-delay';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
@@ -38,7 +43,13 @@ export default {
       },
       // Progress tracking
       jobId: null,
-      pollInterval: null,
+      polling: false,
+      // Bumped on every stop: a poll that answers after a stop and restart
+      // must not start a second chain.
+      pollGeneration: 0,
+      pollTimer: null,
+      pollDelay: POLL_INTERVAL_MS,
+      destroyed: false,
       progress: {
         status: null,
         currentBatch: 0,
@@ -125,8 +136,9 @@ export default {
     },
   },
   beforeDestroy() {
-    // Otherwise the 2s polling interval keeps hitting the API after the user
-    // navigates away from a translation in progress.
+    // Otherwise polling keeps hitting the API after the user navigates away
+    // from a translation in progress.
+    this.destroyed = true;
     this.stopPolling();
   },
   methods: {
@@ -163,27 +175,42 @@ export default {
 
     startPolling(jobId) {
       this.jobId = jobId;
-      this.pollInterval = setInterval(() => this.pollJobStatus(), 2000);
-      // Also poll immediately
+      this.polling = true;
+      this.pollDelay = POLL_INTERVAL_MS;
       this.pollJobStatus();
     },
 
     stopPolling() {
-      if (this.pollInterval) {
-        clearInterval(this.pollInterval);
-        this.pollInterval = null;
+      this.polling = false;
+      this.pollGeneration += 1;
+      if (this.pollTimer) {
+        clearTimeout(this.pollTimer);
+        this.pollTimer = null;
       }
     },
 
-    async pollJobStatus() {
-      if (!this.jobId) return;
+    // Chained rather than on an interval: the next poll leaves once the
+    // previous one has answered, so a busy server gets one request at a time.
+    scheduleNextPoll({ failed }) {
+      if (!this.polling) return;
+      this.pollDelay = nextPollDelay(this.pollDelay, { failed });
+      this.pollTimer = setTimeout(() => this.pollJobStatus(), this.pollDelay);
+    },
 
+    async pollJobStatus() {
+      this.pollTimer = null;
+      if (!this.jobId || !this.polling) return;
+
+      const generation = this.pollGeneration;
+      let failed = false;
       try {
         // Disable Nuxt progress bar for polling requests
         const job = await this.$axios.$get(
           apiRoutes.translationJobStatus(this.jobId),
-          { progress: false }
+          { progress: false, timeout: POLL_REQUEST_TIMEOUT_MS }
         );
+        // Stopped while the request was in flight: closed or cancelled.
+        if (generation !== this.pollGeneration) return;
 
         // Track batch times for estimation
         const previousBatch = this.progress.currentBatch;
@@ -217,8 +244,10 @@ export default {
         }
       } catch (error) {
         console.error('Error polling job status:', error);
-        // Don't stop polling on network errors, keep trying
+        // Don't stop polling on network errors, keep trying, less often
+        failed = true;
       }
+      if (generation === this.pollGeneration) this.scheduleNextPoll({ failed });
     },
 
     calculateEstimate() {
@@ -262,8 +291,10 @@ export default {
 
       try {
         this.cancelling = true;
-        await this.$axios.$post(apiRoutes.translationJobCancel(this.jobId));
+        // Polling paused first: no new poll competes with the cancel for a
+        // connection while the server is busy. Resumed if the cancel fails.
         this.stopPolling();
+        await this.$axios.$post(apiRoutes.translationJobCancel(this.jobId));
         this.showSnackbar({
           text: this.$t('translation.cancelled'),
           color: 'info',
@@ -276,6 +307,7 @@ export default {
           color: 'error',
         });
         this.cancelling = false;
+        if (!this.destroyed) this.startPolling(this.jobId);
       }
     },
 
