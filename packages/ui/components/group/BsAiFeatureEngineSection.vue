@@ -1,14 +1,17 @@
 <script>
 /**
- * BsAiFeatureSkillEngineSection
+ * BsAiFeatureEngineSection
  *
- * Configures the generic "Skills" AI engine (AIFeatureConfig featureType
- * 'skill') for a group: integration + optional model + activation. This is the
- * engine every skill invocation resolves by default — and what the super-admin
- * AI Playground uses via the platform group.
+ * Configures one skill-backed AI feature of a group (an AIFeatureConfig entry):
+ * integration + optional model + activation. Used for:
+ * - 'skill', the engine skill invocations resolve by default — and what the
+ *   super-admin AI Playground uses via the platform group;
+ * - 'text_generation', the engine of the editor's text generation (subject,
+ *   preheader).
  *
  * Self-contained: fetches its own config / integrations / models so the parent
- * tab only needs to drop <bs-ai-feature-skill-engine-section :group-id="..."/>.
+ * tab only needs to drop
+ * <bs-ai-feature-engine-section feature-type="..." labels="..." :group-id="..."/>.
  * Mirrors the translation section; when the étape 2bis hierarchy refactor lands,
  * the translation block can be extracted on the same model.
  */
@@ -21,10 +24,8 @@ import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Cpu } from 'lucide-vue';
 
-const FEATURE_TYPE = 'skill';
-
 export default {
-  name: 'BsAiFeatureSkillEngineSection',
+  name: 'BsAiFeatureEngineSection',
   components: {
     BsSelect,
     BsAiModelPicker,
@@ -33,6 +34,11 @@ export default {
   },
   props: {
     groupId: { type: String, required: true },
+    // The AIFeatureConfig entry this section edits.
+    featureType: { type: String, required: true },
+    // Locale namespace holding title, description, enableLabel, model and
+    // modelHint (e.g. 'aiFeatures.skill').
+    labels: { type: String, required: true },
     // When true, this section is the last in the tab (no bottom separator).
     last: { type: Boolean, default: false },
   },
@@ -47,8 +53,10 @@ export default {
     };
   },
   computed: {
-    skillFeature() {
-      return this.config?.features?.find((f) => f.featureType === FEATURE_TYPE);
+    feature() {
+      return this.config?.features?.find(
+        (f) => f.featureType === this.featureType
+      );
     },
     integrationOptions() {
       return [
@@ -60,7 +68,7 @@ export default {
       ];
     },
     hasActiveIntegration() {
-      const integration = this.skillFeature?.integration;
+      const integration = this.feature?.integration;
       return integration && integration.isActive;
     },
     supportsModelSelection() {
@@ -68,7 +76,7 @@ export default {
     },
     selectedIntegrationId: {
       get() {
-        return this.skillFeature?.integration?._id || null;
+        return this.feature?.integration?._id || null;
       },
       set(value) {
         // Clearing the model in the same call is required: updateFeatureConfig
@@ -77,10 +85,10 @@ export default {
         this.updateFeature({ integrationId: value, config: { model: null } });
       },
     },
-    skillIsActive: {
+    featureIsActive: {
       get() {
         if (!this.hasActiveIntegration) return false;
-        return this.skillFeature?.isActive || false;
+        return this.feature?.isActive || false;
       },
       set(value) {
         this.updateFeature({ isActive: value });
@@ -88,7 +96,7 @@ export default {
     },
     selectedModel: {
       get() {
-        return this.skillFeature?.config?.model || null;
+        return this.feature?.config?.model || null;
       },
       set(value) {
         this.updateFeature({ config: { model: value } });
@@ -124,7 +132,7 @@ export default {
       try {
         this.saving = true;
         const result = await this.$axios.$put(
-          apiRoutes.aiFeaturesItem(this.groupId, FEATURE_TYPE),
+          apiRoutes.aiFeaturesItem(this.groupId, this.featureType),
           data
         );
         this.config = result;
@@ -149,13 +157,15 @@ export default {
 <template>
   <bs-form-section :last="last">
     <template #icon>
-      <lucide-cpu :size="20" />
+      <slot name="icon">
+        <lucide-cpu :size="20" />
+      </slot>
     </template>
     <template #title>
-      {{ $t('aiFeatures.skill.title') }}
+      {{ $t(`${labels}.title`) }}
     </template>
     <template #description>
-      {{ $t('aiFeatures.skill.description') }}
+      {{ $t(`${labels}.description`) }}
     </template>
 
     <v-skeleton-loader v-if="loading" type="article" />
@@ -164,8 +174,8 @@ export default {
       <!-- Activation switch -->
       <div class="activation-row mb-4">
         <v-switch
-          v-model="skillIsActive"
-          :label="$t('aiFeatures.skill.enableLabel')"
+          v-model="featureIsActive"
+          :label="$t(`${labels}.enableLabel`)"
           :disabled="saving || !hasActiveIntegration"
           :loading="saving"
           color="accent"
@@ -199,8 +209,8 @@ export default {
           <bs-ai-model-picker
             v-model="selectedModel"
             :integration-id="selectedIntegrationId"
-            :label="$t('aiFeatures.skill.model')"
-            :hint="$t('aiFeatures.skill.modelHint')"
+            :label="$t(`${labels}.model`)"
+            :hint="$t(`${labels}.modelHint`)"
             :disabled="saving"
             @capabilities="capabilities = $event"
           />
