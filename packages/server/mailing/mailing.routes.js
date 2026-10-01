@@ -17,6 +17,7 @@ const mailings = require('./mailing.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
+const { aiRateLimit } = require('../ai-usage/ai-rate-limit.js');
 
 // All routes below require an authenticated user AND the Email Builder module
 // to be enabled on the user's group (super admins bypass the flag check).
@@ -74,6 +75,8 @@ router.post(
 router.post(
   '/:mailingId/duplicate-translate',
   GUARD_CAN(C.MAILING_ORGANIZE),
+  // One request starts a whole-email job: it counts once, like the others.
+  aiRateLimit(),
   translation.duplicateAndTranslate
 );
 router.post(
