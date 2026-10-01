@@ -7,6 +7,7 @@ jest.mock('../../../../packages/server/utils/outbound-host.js', () => ({
 }));
 jest.mock('../../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 }));
 

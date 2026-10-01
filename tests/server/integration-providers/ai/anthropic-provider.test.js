@@ -7,6 +7,7 @@ jest.mock('../../../../packages/server/utils/outbound-host.js', () => ({
 }));
 jest.mock('../../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 }));
 
@@ -359,6 +360,21 @@ describe('AnthropicProvider', () => {
         'length'
       );
       expect(provider._getFinishReason({ stop_reason: 'end_turn' })).toBeNull();
+    });
+
+    // Found by the conformance script: claude-fable-5 declines the translation
+    // prompt outright. Reported as an empty response, it read as a parser bug.
+    it('names a refusal rather than calling it an empty response', async () => {
+      mockFetch.mockResolvedValue(
+        reply(messageResponse({ content: [], stop_reason: 'refusal' }))
+      );
+
+      await expect(
+        provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+        })
+      ).rejects.toThrow(/declined/i);
     });
 
     it('rejects a payload with no content array', async () => {

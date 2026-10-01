@@ -1,37 +1,24 @@
 'use strict';
 
 const AIProviderInterface = require('./ai-provider.interface');
-const logger = require('../../utils/logger.js');
-const { guardedFetch, toProviderError } = require('../provider-http.js');
-const {
-  ProviderError,
-  PROVIDER_ERROR_CODES: CODES,
-} = require('../provider-error.js');
 const { translationMethods } = require('./llm-translation.js');
-const { readProviderError } = require('./provider-error-body.js');
 const { openAIDialect } = require('./openai-dialect.js');
+const { chatCallMethods } = require('./chat-call.js');
 const {
   getCatalogModels,
   getCatalogDefaultModel,
 } = require('./model-catalog.js');
 
 /**
- * Base class for LLM providers. It keeps what must never be duplicated per
- * provider — the guarded call, its bounds, error masking and typing — and
- * takes the rest from two mixins applied at the bottom of this file: the
- * translation behaviour (llm-translation.js), and the OpenAI dialect as the
- * default request shaping (openai-dialect.js), whose hooks Anthropic and
- * Gemini override where they differ.
+ * Base class for LLM providers. The behaviour comes from three mixins applied
+ * at the bottom of this file: the translation path (llm-translation.js), the
+ * guarded call and its parameter adaptation (chat-call.js), and the OpenAI
+ * dialect as the default request shaping (openai-dialect.js), whose hooks
+ * Anthropic and Gemini override where they differ.
  *
  * Subclasses set `this.baseUrl`. Curated models and defaults come from
  * model-catalog.js; `listRemoteModels()` asks the provider itself.
  */
-// A whole mailing translates in batches of this, and reasoning models take
-// their time: generous, but no longer unbounded while the body is read.
-const CHAT_TIMEOUT_MS = 5 * 60 * 1000;
-// A translation batch answers in well under a megabyte.
-const CHAT_MAX_BYTES = 10 * 1024 * 1024;
-
 class BaseLLMProvider extends AIProviderInterface {
   /**
    * Get provider capabilities for the frontend.
@@ -167,117 +154,6 @@ class BaseLLMProvider extends AIProviderInterface {
     });
     return content;
   }
-
-  /**
-   * Performs the call and returns the normalized `{ content, usage }` its
-   * dialect produced — never the raw payload, so callers stay independent of
-   * which provider answered.
-   *
-   * Everything that must not be duplicated per provider lives here: the SSRF
-   * re-check immediately before the request, the timeout, the log sanitising
-   * that masks keys, and the mapping onto our error vocabulary. A dialect
-   * changes what is sent and how the answer is read, never this.
-   */
-  async _callChatCompletionRaw({
-    model,
-    messages,
-    temperature,
-    maxTokens,
-    responseFormat,
-    reasoningEffort,
-  }) {
-    const providerName = this.getProviderType();
-    logger.log(
-      `Calling ${providerName} API with model:`,
-      model,
-      'at',
-      this.baseUrl
-    );
-
-    const startTime = Date.now();
-
-    try {
-      const requestBody = this._buildRequestBody({
-        model,
-        messages,
-        temperature,
-        maxTokens,
-        responseFormat,
-        reasoningEffort,
-      });
-
-      // The timeout is node-fetch's own, not an AbortController cleared once
-      // the headers are in: it also bounds the body read, which is where a
-      // slow endpoint would otherwise hold the request forever.
-      const response = await guardedFetch(this._getEndpointUrl(model), {
-        method: 'POST',
-        headers: this._buildHeaders(),
-        body: JSON.stringify(requestBody),
-        timeoutMs: CHAT_TIMEOUT_MS,
-        maxBytes: CHAT_MAX_BYTES,
-        label: `${providerName} API`,
-      });
-
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
-      if (!response.ok) {
-        // Sanitised, not raw: this message is persisted on skill invocations
-        // and shown to the user, not only logged.
-        const { parsedError, message } = await readProviderError(response);
-        logger.error(`${providerName} API error:`, response.status, message);
-        throw new ProviderError(
-          `${providerName} API error: ${response.status} - ${message}`,
-          this._mapErrorToCode(response.status, parsedError)
-        );
-      }
-
-      const data = await response.json();
-      // The request is handed over too: a dialect may have shaped it in a way
-      // that changes how the answer must be read.
-      const result = this._parseResponse(data, requestBody);
-
-      // Truncation guarantees malformed JSON downstream, and the only trace
-      // otherwise is a parse error blaming the model. Checked here rather than
-      // per dialect: three dialects had three behaviours, and the one serving
-      // six providers silently did nothing.
-      if (this._getFinishReason(data) === 'length') {
-        logger.error(
-          `${providerName} response was truncated (output token limit reached)`,
-          `model: ${model}`
-        );
-      }
-
-      // Content length stays in the log: a response that arrives empty is
-      // otherwise indistinguishable from a normal one here.
-      logger.log(
-        `${providerName} response received in ${elapsed}s - length: ${
-          result.content ? result.content.length : 0
-        } chars, tokens: ${result.usage.totalTokens || 'N/A'}`
-      );
-
-      return result;
-    } catch (caught) {
-      // Body reads fail as raw FetchErrors (size, timeout): typed like the
-      // request itself, with no address in the message.
-      const error =
-        caught && caught.name === 'FetchError'
-          ? toProviderError(caught, `${providerName} API`)
-          : caught;
-      if (error.code === CODES.TIMEOUT) {
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        logger.error(
-          `${providerName} API timeout after ${elapsed}s (limit: ${
-            CHAT_TIMEOUT_MS / 1000
-          }s)`
-        );
-        throw new ProviderError(
-          `${providerName} API timeout - the request took too long.`,
-          CODES.TIMEOUT
-        );
-      }
-      throw error;
-    }
-  }
 }
 
 // Translation lives in its own module; applied here so subclasses keep
@@ -286,6 +162,11 @@ class BaseLLMProvider extends AIProviderInterface {
 // The OpenAI dialect is applied the same way, as the default request shaping
 // and response reading. Providers speaking it inherit these untouched;
 // Anthropic and Gemini override the handful that differ.
-Object.assign(BaseLLMProvider.prototype, translationMethods, openAIDialect);
+Object.assign(
+  BaseLLMProvider.prototype,
+  translationMethods,
+  chatCallMethods,
+  openAIDialect
+);
 
 module.exports = BaseLLMProvider;

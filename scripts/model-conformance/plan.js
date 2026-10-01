@@ -1,0 +1,151 @@
+'use strict';
+
+/**
+ * Deciding which models to probe, and what that will cost.
+ *
+ * Pure: no Mongo, no network, no clock. This is the part worth testing, and
+ * the part that decides how much a run spends.
+ */
+
+/**
+ * Family of a model id, used to pick one representative rather than probing
+ * every variant of the same contract.
+ *
+ * `gpt-4o-2024-08-06` and `gpt-4o` answer the same way; testing both buys
+ * nothing. Dated suffixes and channel markers are stripped, then the first two
+ * segments are kept — enough to separate gpt-5 from gpt-6, which is exactly
+ * the distinction that mattered.
+ */
+function familyOf(id) {
+  const base = String(id || '')
+    .replace(/-\d{4}-\d{2}-\d{2}$/, '')
+    .replace(/-(latest|preview|exp)$/, '');
+  const parts = base.split('-');
+  // The o-series names its generation in one segment (o3, o4) where gpt needs
+  // two (gpt-5, gpt-4o). Keeping two for both would split o3 from o3-mini,
+  // which share a contract.
+  const width = /^o\d+$/.test(parts[0]) ? 1 : 2;
+  return parts.slice(0, width).join('-') || base;
+}
+
+/**
+ * Sort model ids the same way on every machine.
+ *
+ * Explicit rather than a bare `.sort()`, and deliberately **not**
+ * `localeCompare`, which is what the linter suggests: locale-aware collation
+ * depends on the ICU data of the machine running the sweep, so the same
+ * models could come out in a different order on a colleague's laptop. The
+ * report exists to be diffed between runs; an order that is arbitrary but
+ * identical everywhere is worth more here than one that is alphabetically
+ * pleasing.
+ */
+function byCodeUnit(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+/**
+ * Models worth probing for one integration.
+ *
+ * Three sets, unioned:
+ *  - the catalogue, which is what the picker puts forward;
+ *  - what groups actually configured, where a breakage is live today;
+ *  - one representative per family among what the provider currently lists,
+ *    which is where an unknown contract shows up first.
+ *
+ * Deterministic throughout: the representative is the first id in sort order,
+ * never a random pick, so two runs are comparable.
+ *
+ * @param {Object} params
+ * @param {string[]} params.catalogIds
+ * @param {string[]} params.configuredIds  models set on a feature in DB
+ * @param {string[]} params.listedIds      what listRemoteModels returned
+ * @param {boolean} [params.all]           every listed model
+ * @param {string[]} [params.only]         explicit ids, short-circuits the rest
+ * @returns {string[]} sorted, deduplicated
+ */
+function selectModels({
+  catalogIds = [],
+  configuredIds = [],
+  listedIds = [],
+  all = false,
+  only = null,
+}) {
+  if (only && only.length) return [...new Set(only)].sort(byCodeUnit);
+  if (all) return [...new Set([...catalogIds, ...listedIds])].sort(byCodeUnit);
+
+  const picked = new Set([...catalogIds, ...configuredIds]);
+
+  const seenFamilies = new Set([...picked].map(familyOf));
+  for (const id of [...listedIds].sort(byCodeUnit)) {
+    const family = familyOf(id);
+    if (seenFamilies.has(family)) continue;
+    seenFamilies.add(family);
+    picked.add(id);
+  }
+
+  return [...picked].sort(byCodeUnit);
+}
+
+/**
+ * How many calls a plan will make, so it can be shown before spending it.
+ *
+ * @param {Array<{models: string[]}>} perIntegration
+ * @param {number} pathCount 1 or 2
+ * @param {number} samples
+ */
+function estimateCalls(perIntegration, pathCount, samples = 1) {
+  const probes = perIntegration.reduce(
+    (total, entry) => total + entry.models.length,
+    0
+  );
+  return probes * pathCount * samples;
+}
+
+/**
+ * What makes two integrations hit the same endpoint: the provider, its host,
+ * Infomaniak's product, Azure's deployment and api-version. The key is not
+ * part of it — two keys on one endpoint answer with the same contract.
+ */
+function endpointKey(integration) {
+  const config = integration.config || {};
+  return [
+    integration.provider,
+    integration.apiHost || '',
+    integration.productId || '',
+    config.deployment || '',
+    config.apiVersion || '',
+  ].join('|');
+}
+
+/**
+ * One integration per endpoint: probing the same models twice through two
+ * keys buys nothing and pays twice. The first one wins, so the caller decides
+ * the order.
+ *
+ * @returns {{kept: Object[], duplicates: Object[]}}
+ */
+function dedupeIntegrations(integrations) {
+  const seen = new Set();
+  const kept = [];
+  const duplicates = [];
+  for (const integration of integrations) {
+    const key = endpointKey(integration);
+    if (seen.has(key)) {
+      duplicates.push(integration);
+      continue;
+    }
+    seen.add(key);
+    kept.push(integration);
+  }
+  return { kept, duplicates };
+}
+
+module.exports = {
+  familyOf,
+  selectModels,
+  estimateCalls,
+  byCodeUnit,
+  endpointKey,
+  dedupeIntegrations,
+};
