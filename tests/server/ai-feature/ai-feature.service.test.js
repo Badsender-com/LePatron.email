@@ -55,6 +55,11 @@ describe('AIFeatureService', () => {
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
@@ -309,7 +314,7 @@ describe('AIFeatureService', () => {
         const existingConfig = {
           _id: mockConfigId,
           _company: mockGroupId,
-          // Both enum types present: a missing one triggers the backfill in
+          // Every enum type present: a missing one triggers the backfill in
           // getOrCreateConfig, which re-reads through findById.
           features: [
             {
@@ -323,6 +328,11 @@ describe('AIFeatureService', () => {
               integration: null,
               isActive: false,
               config: {},
+            },
+            {
+              featureType: 'text_generation',
+              integration: null,
+              isActive: false,
             },
           ],
         };
@@ -432,7 +442,7 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
-        // Both enum types present → no backfill (see above).
+        // Every enum type present → no backfill (see above).
         features: [
           {
             featureType: 'translation',
@@ -445,6 +455,11 @@ describe('AIFeatureService', () => {
             integration: null,
             isActive: false,
             config: {},
+          },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
           },
         ],
       };
@@ -516,6 +531,11 @@ describe('AIFeatureService', () => {
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
@@ -542,6 +562,11 @@ describe('AIFeatureService', () => {
         features: [
           { featureType: 'translation', integration: null, isActive: false },
           { featureType: 'skill', integration: null, isActive: false },
+          {
+            featureType: 'text_generation',
+            integration: null,
+            isActive: false,
+          },
         ],
       };
 
