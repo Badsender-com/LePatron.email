@@ -25,7 +25,7 @@ const { isFieldProtected } = require('./template-protection-parser');
 // Patterns for content that should NOT be translated
 const NON_TRANSLATABLE_PATTERNS = [
   /^(https?:\/\/|mailto:|tel:)/i, // URLs
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Email addresses
+  // Email addresses: see isEmailAddress, not a pattern
   /^(#[0-9a-f]{3,8}|rgba?\([^)]+\)|transparent)$/i, // Color values
   /^@\[[^\]]+\]$/, // Pure Mosaico variables (keeps mixed content like "Hello @[name]")
   /^-?\d+(\.\d+)?(px|em|rem|%)?$/, // Numeric values
@@ -107,6 +107,22 @@ function isTranslatableFieldName(fieldName) {
 }
 
 /**
+ * Whether the value matches /^[^\s@]+@[^\s@]+\.[^\s@]+$/, tested without
+ * that regex: it backtracks quadratically on a long value holding an @, many
+ * dots and no space (1.3 s for 40 000 characters), and it runs on every text
+ * of the mailing while the event loop waits.
+ */
+function isEmailAddress(value) {
+  if (/\s/.test(value)) return false;
+  const at = value.indexOf('@');
+  if (at < 1 || value.indexOf('@', at + 1) !== -1) return false;
+  // The domain needs a dot with at least one character on each side.
+  const domain = value.slice(at + 1);
+  const dot = domain.indexOf('.', 1);
+  return dot !== -1 && dot < domain.length - 1;
+}
+
+/**
  * Check if a value should be translated
  */
 function isTranslatableValue(value) {
@@ -115,6 +131,7 @@ function isTranslatableValue(value) {
   }
 
   const trimmed = value.trim();
+  if (isEmailAddress(trimmed)) return false;
   return !NON_TRANSLATABLE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
@@ -237,4 +254,5 @@ module.exports = {
   // Exported for testing
   isTranslatableFieldName,
   isTranslatableValue,
+  isEmailAddress,
 };
