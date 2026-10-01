@@ -36,6 +36,7 @@ const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playgroun
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 const ShareLinkSchema = require('../share-link/share-link.schema.js');
+const AIUsageCounterSchema = require('../ai-usage/ai-usage-counter.schema.js');
 
 /// ///
 // EXPORTS
@@ -114,6 +115,10 @@ const TaxonomyItems = mongoose.model(
   TaxonomyItemSchema
 );
 const ShareLinks = mongoose.model(modelNames.ShareLinkModel, ShareLinkSchema);
+const AIUsageCounters = mongoose.model(
+  modelNames.AIUsageCounterModel,
+  AIUsageCounterSchema
+);
 
 module.exports = {
   mongoose,
@@ -148,4 +153,5 @@ module.exports = {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,
+  AIUsageCounters,
 };
