@@ -169,6 +169,18 @@ function fireIn(doc, type, target, clientY) {
 const dragOverAt = (doc, clientY) => fireIn(doc, 'dragover', doc.body, clientY);
 const dropAt = (doc, clientY) => fireIn(doc, 'drop', doc.body, clientY);
 
+/**
+ * A reorder's drop as a browser delivers it: a dragover at the same height
+ * first — no drop comes without one, and a dragover left uncancelled would
+ * have refused it — then the drop itself.
+ */
+function moveTo(doc, clientY) {
+  const over = dragOverAt(doc, clientY);
+  expect(over.defaultPrevented).toBe(true);
+  expect(over.dataTransfer.dropEffect).toBe('move');
+  return dropAt(doc, clientY);
+}
+
 /** The palette entry for a type, queried on the document. */
 const paletteEntry = (type) =>
   document.querySelectorAll('.bb-modal__add')[PALETTE_TYPES.indexOf(type)];
@@ -226,6 +238,7 @@ module.exports = {
   fireIn,
   dragOverAt,
   dropAt,
+  moveTo,
   paletteEntry,
   startPaletteDrag,
   dragOverPage,
