@@ -180,3 +180,47 @@ describe('adversarial input stays linear', () => {
     );
   });
 });
+
+// TinyMCE writes markup: `&nbsp;`, `&amp;`. A character reference is text the
+// browser decodes, so it is kept as written — escaped again, it showed up as
+// `&nbsp;` in the preview and broke every link with a query string.
+describe('character references', () => {
+  it.each([
+    ['a named one', 'espace&nbsp;', 'espace&nbsp;'],
+    ['an accented one', '&eacute;t&eacute;', '&eacute;t&eacute;'],
+    ['a decimal one', '&#233;', '&#233;'],
+    ['a hexadecimal one', '&#xE9;', '&#xE9;'],
+    ['an escaped tag', '&lt;b&gt;', '&lt;b&gt;'],
+    ['an escaped ampersand', 'a &amp; b', 'a &amp; b'],
+  ])('keeps %s in text', (_label, input, expected) => {
+    expect(sanitizeRichText(input)).toBe(expected);
+  });
+
+  it.each([
+    ['a bare ampersand', 'a & b', 'a &amp; b'],
+    ['something that is not a reference', '&bogus x', '&amp;bogus x'],
+    ['an unterminated one', '&nbsp', '&amp;nbsp'],
+  ])('escapes %s', (_label, input, expected) => {
+    expect(sanitizeRichText(input)).toBe(expected);
+  });
+
+  it('keeps the query string of a link as TinyMCE wrote it', () => {
+    expect(sanitizeRichText('<a href="https://e.com/?a=1&amp;b=2">x</a>')).toBe(
+      '<a href="https://e.com/?a=1&amp;b=2">x</a>'
+    );
+  });
+
+  // The URL is judged once decoded: a reference cannot spell out a scheme or
+  // a host the check would have refused written plainly.
+  it.each([
+    ['an encoded scheme letter', 'jav&#97;script:x'],
+    ['an encoded leading letter', '&#106;avascript:x'],
+    ['a hexadecimal one', '&#x6A;avascript:x'],
+  ])('drops a link whose decoded URL is refused (%s)', (_label, href) => {
+    expect(sanitizeRichText(`<a href="${href}">x</a>`)).toBe('<a>x</a>');
+  });
+
+  it('drops a NUL from the text', () => {
+    expect(sanitizeRichText('a\u0000b')).toBe('ab');
+  });
+});

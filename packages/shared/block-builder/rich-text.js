@@ -59,6 +59,46 @@ const isNameChar = (code) => isNameStart(code) || (code >= 48 && code <= 57);
 const ATTRIBUTE = /([a-zA-Z-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/y;
 const ATTRIBUTE_NAME = /[a-zA-Z-]+/g;
 
+// The input is markup — TinyMCE writes `&nbsp;`, `&amp;` — so a character
+// reference in it is text the browser will decode, not something to show.
+// Kept as written in text; any other `&` is escaped. A reference only ever
+// decodes to text, never to markup.
+const CHARACTER_REFERENCE = /&(?:[a-z][a-z0-9]{1,31}|#\d{1,7}|#x[0-9a-f]{1,6});/gi;
+// Holds each reference's place while the rest is escaped. A NUL has no
+// business in an email text, so one already there is dropped.
+const HOLD = String.fromCharCode(0);
+
+function escapeMarkupText(text) {
+  const references = [];
+  const held = text
+    .split(HOLD)
+    .join('')
+    .replace(CHARACTER_REFERENCE, (reference) => {
+      references.push(reference);
+      return HOLD;
+    });
+  return escapeText(held)
+    .split(HOLD)
+    .reduce((out, part, index) => out + references[index - 1] + part);
+}
+
+// The references an href carries in practice. Decoded before the URL is
+// judged, so the check sees what the browser will follow; anything else stays
+// as written and is escaped with the rest — inert text in the URL.
+const URL_REFERENCES = /&(amp|lt|gt|quot|apos|#\d{1,7}|#x[0-9a-f]{1,6});/gi;
+const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+
+function decodeUrlReferences(value) {
+  return value.replace(URL_REFERENCES, (match, ref) => {
+    if (ref[0] !== '#') return NAMED[ref.toLowerCase()];
+    const code =
+      ref[1] === 'x' || ref[1] === 'X'
+        ? parseInt(ref.slice(2), 16)
+        : parseInt(ref.slice(1), 10);
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
+  });
+}
+
 /**
  * @param {string} name a lowercased attribute name
  * @param {string} value its raw value
@@ -69,7 +109,8 @@ function safeAttributeValue(name, value) {
   // execute. A refused URL drops the attribute rather than the link, so the
   // words stay readable.
   if (name !== 'href') return escapeAttribute(value);
-  return isSafeUrl(value) ? escapeAttribute(value.trim()) : '';
+  const url = decodeUrlReferences(value).trim();
+  return isSafeUrl(url) ? escapeAttribute(url) : '';
 }
 
 /**
@@ -226,7 +267,7 @@ function sanitizeRichText(html) {
       continue;
     }
 
-    if (!dropping) out += escapeText(html.slice(lastIndex, start));
+    if (!dropping) out += escapeMarkupText(html.slice(lastIndex, start));
     lastIndex = token.end;
 
     if (dropping) {
@@ -240,7 +281,7 @@ function sanitizeRichText(html) {
     start = html.indexOf('<', token.end);
   }
 
-  if (!dropping) out += escapeText(html.slice(lastIndex));
+  if (!dropping) out += escapeMarkupText(html.slice(lastIndex));
 
   // Close what the input left open, so a block cannot bleed formatting into the
   // rest of the email.
