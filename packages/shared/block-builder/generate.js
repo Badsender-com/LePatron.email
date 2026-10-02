@@ -31,8 +31,8 @@ const GENERATOR_VERSION = '1.0.0';
 // the markup is substituted verbatim after every other pass has run, so nothing
 // downstream would ever strip it.
 //
-// The preview asks for it explicitly (`{ elementIds: true }`); the apply path,
-// the gallery and the server's regeneration do not.
+// The preview asks for it explicitly (`{ elementIds: true }`); the apply path
+// and the control gallery do not.
 const ELEMENT_ATTRIBUTE = 'data-lp-el';
 
 const DEFAULT_BLOCK = {
