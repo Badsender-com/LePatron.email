@@ -338,6 +338,51 @@ describe('a translation that does not fit is dropped, never guessed', () => {
   });
 });
 
+// The stored markup is frozen when written; a block applied with another
+// generator version renders differently today. It is still translated — the
+// rebuild follows the current generator — but it is counted, so the user can
+// be told to check it.
+describe('a block written by another generator version', () => {
+  const stale = () => ({
+    ...composedBlock([text('Bonjour')]),
+    builderHtml: '<table><tr><td>Bonjour (older generator)</td></tr></table>',
+  });
+
+  it('is counted', () => {
+    const data = modelWith(stale(), composedBlock([text('Salut')]));
+
+    const result = injectBuilderTexts(data, {
+      'builderBlock.mainBlocks.0.0.content': 'Hello',
+      'builderBlock.mainBlocks.1.0.content': 'Hi',
+    });
+
+    expect(result.outdated).toBe(1);
+  });
+
+  it('is translated all the same, with the current generator', () => {
+    const data = modelWith(stale());
+
+    const result = injectBuilderTexts(data, {
+      'builderBlock.mainBlocks.0.0.content': 'Hello',
+    });
+
+    expect(result.blocksUpdated).toBe(1);
+    expect(data.mainBlocks.blocks[0].builderHtml).toBe(
+      composedBlock([text('Hello')]).builderHtml
+    );
+  });
+
+  it('is not suspected when the stored markup is what the generator makes', () => {
+    const data = modelWith(composedBlock([text('Bonjour')]));
+
+    expect(
+      injectBuilderTexts(data, {
+        'builderBlock.mainBlocks.0.0.content': 'Hello',
+      }).outdated
+    ).toBe(0);
+  });
+});
+
 describe('a translation that would blow past the size limit', () => {
   const {
     HTML_CODE_MAX_LENGTH,

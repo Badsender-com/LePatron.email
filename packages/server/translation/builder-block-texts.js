@@ -146,6 +146,90 @@ function parseKey(key) {
 }
 
 /**
+ * A composed block's state, parsed once, and whether its stored markup is what
+ * the current generator makes of it.
+ *
+ * It is not when the block was applied with another generator version: the
+ * markup is frozen when written (see generate.js), and the rebuild below will
+ * follow the current templates rather than the ones the client approved. The
+ * block is still translated — refusing it would leave it in the source
+ * language for a difference nobody can act on — but it is counted, so the
+ * user is told to check it.
+ */
+function readBlock(block) {
+  const state = parseState(block[STATE_PROPERTY]);
+  const outdated = state !== null && generate(state) !== block[HTML_PROPERTY];
+  return { block, state, outdated };
+}
+
+/**
+ * Writes each translation into its block's parsed state.
+ *
+ * @returns {{ states: Map, applied: number, skipped: string[] }}
+ */
+function applyToStates(data, entries) {
+  const blocks = new Map(
+    findBuilderBlocks(data).map(({ container, index, block }) => [
+      `${container}.${index}`,
+      block,
+    ])
+  );
+  const states = new Map();
+  const skipped = [];
+  let applied = 0;
+
+  entries.forEach(([key, value]) => {
+    const parsed = parseKey(key);
+    const id = parsed && `${parsed.container}.${parsed.blockIndex}`;
+    const block = id && blocks.get(id);
+    if (!block || typeof value !== 'string') {
+      skipped.push(key);
+      return;
+    }
+
+    if (!states.has(id)) states.set(id, readBlock(block));
+    const { state } = states.get(id);
+    const element = state && state.elements[parsed.elementIndex];
+    // The field must already exist. A translation that invents one would add a
+    // key the element's template never renders, and `cleanElement` would drop
+    // it on the next load anyway.
+    if (!element || !(parsed.field in element)) {
+      skipped.push(key);
+      return;
+    }
+
+    element[parsed.field] = value;
+    applied += 1;
+  });
+
+  return { states, applied, skipped };
+}
+
+/**
+ * Regenerates one block from its translated state.
+ *
+ * @returns {'updated'|'oversized'|'unchanged'}
+ */
+function rebuildBlock({ block, state }) {
+  if (!state) return 'unchanged';
+
+  const serialised = serialiseState(state);
+  // An empty string means the state would not serialise. Defensive: a state
+  // that came back from `parseState` is plain JSON and cannot be cyclic, so
+  // there is no honest test for this. Writing '' would lose the composition;
+  // leaving both fields as they were keeps the block untranslated but intact,
+  // which is the recoverable failure.
+  if (serialised === '') return 'unchanged';
+
+  const markup = generate(state);
+  if (markup.length > HTML_CODE_MAX_LENGTH) return 'oversized';
+
+  block[STATE_PROPERTY] = serialised;
+  block[HTML_PROPERTY] = markup;
+  return 'updated';
+}
+
+/**
  * Writes translations back, and REBUILDS the markup from the result.
  *
  * Regenerating is the whole point. Translating the state and leaving
@@ -171,82 +255,28 @@ function parseKey(key) {
  * @param {Object} data mailing.data
  * @param {Object} translations builder keys only
  * @returns {{ blocksUpdated: number, applied: number, skipped: string[],
- *   oversized: number }}
+ *   oversized: number, outdated: number }} `outdated` counts the blocks whose
+ *   stored markup another generator version wrote (see readBlock)
  */
 function injectBuilderTexts(data, translations) {
   const entries = Object.entries(translations || {});
-  const skipped = [];
-  let oversized = 0;
-  if (entries.length === 0) {
-    return { blocksUpdated: 0, applied: 0, skipped, oversized };
-  }
+  const { states, applied, skipped } = applyToStates(data, entries);
 
-  // Parse each block's state once, apply everything, then regenerate once.
-  const states = new Map();
-  const blocks = new Map(
-    findBuilderBlocks(data).map(({ container, index, block }) => [
-      `${container}.${index}`,
-      block,
-    ])
-  );
-
-  let applied = 0;
-
-  entries.forEach(([key, value]) => {
-    const parsed = parseKey(key);
-    if (!parsed || typeof value !== 'string') {
-      skipped.push(key);
-      return;
-    }
-
-    const id = `${parsed.container}.${parsed.blockIndex}`;
-    const block = blocks.get(id);
-    if (!block) {
-      skipped.push(key);
-      return;
-    }
-
-    if (!states.has(id))
-      states.set(id, { block, state: parseState(block[STATE_PROPERTY]) });
-
-    const { state } = states.get(id);
-    const element = state && state.elements[parsed.elementIndex];
-    // The field must already exist. A translation that invents one would add a
-    // key the element's template never renders, and `cleanElement` would drop
-    // it on the next load anyway.
-    if (!element || !(parsed.field in element)) {
-      skipped.push(key);
-      return;
-    }
-
-    element[parsed.field] = value;
-    applied += 1;
+  const result = {
+    blocksUpdated: 0,
+    applied,
+    skipped,
+    oversized: 0,
+    outdated: 0,
+  };
+  states.forEach((entry) => {
+    if (entry.outdated) result.outdated += 1;
+    const outcome = rebuildBlock(entry);
+    if (outcome === 'updated') result.blocksUpdated += 1;
+    if (outcome === 'oversized') result.oversized += 1;
   });
 
-  let blocksUpdated = 0;
-  states.forEach(({ block, state }) => {
-    if (!state) return;
-
-    const serialised = serialiseState(state);
-    // An empty string means the state would not serialise. Defensive: a state
-    // that came back from `parseState` is plain JSON and cannot be cyclic, so
-    // there is no honest test for this. Writing '' would lose the composition;
-    // leaving both fields as they were keeps the block untranslated but intact,
-    // which is the recoverable failure.
-    if (serialised === '') return;
-
-    const markup = generate(state);
-    if (markup.length > HTML_CODE_MAX_LENGTH) {
-      oversized += 1;
-      return;
-    }
-
-    block[STATE_PROPERTY] = serialised;
-    block[HTML_PROPERTY] = markup;
-    blocksUpdated += 1;
-  });
-
-  return { blocksUpdated, applied, skipped, oversized };
+  return result;
 }
 
 module.exports = {

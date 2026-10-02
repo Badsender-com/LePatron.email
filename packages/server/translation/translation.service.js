@@ -211,6 +211,13 @@ async function translateMailing({
     );
   }
 
+  if (builderStats.outdated > 0) {
+    logger.warn(
+      `[Translation] ${builderStats.outdated} composed block(s) written by another generator version: ` +
+        'their rebuilt markup follows the current one.'
+    );
+  }
+
   if (builderStats.skipped.length > 0) {
     logger.warn(
       `[Translation] ${builderStats.skipped.length} composed-block key(s) dropped: ` +
@@ -228,6 +235,7 @@ async function translateMailing({
       failedInjections: injectionStats.failed,
       composedBlocksRebuilt: builderStats.blocksUpdated,
       composedBlocksOversized: builderStats.oversized,
+      composedBlocksOutdated: builderStats.outdated,
     },
     originalTexts: textsToTranslate,
     translations,
