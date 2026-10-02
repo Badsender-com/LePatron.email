@@ -194,9 +194,7 @@ async function translateMailing({
   const {
     mailing: translatedMailing,
     stats: injectionStats,
-  } = await runTranslationStep('injectTexts', () =>
-    injectTexts(mailing, rest)
-  );
+  } = await runTranslationStep('injectTexts', () => injectTexts(mailing, rest));
 
   // Composed blocks are not just written back, they are REBUILT: `builderHtml`
   // is what gets exported, so leaving it alone would ship an email whose stored
