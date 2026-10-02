@@ -199,6 +199,18 @@ viser l'inline directement. Je recommande de **garder la modale** — la largeur
 utile (#main-toolbox fait 400 px) et l'absence d'interaction avec le sortable de
 Mosaico restent des arguments forts, et l'ordre proposé ne jette rien.
 
+## Déploiement et retour arrière
+
+**Les définitions partent avant tout flag.** Une fois qu'un bloc composé existe
+dans une créa, revenir à une version sans la définition injectée de
+`blockBuilderBlock` le fait disparaître : `checkModel` (checkmodel.js) retire du
+contenu stocké tout bloc dont il ne trouve pas le type, et l'autosave suivant
+enregistre cette perte. Un retour arrière n'est donc sans risque qu'**avant**
+d'activer `blockBuilderEnabled` sur un template. Après, il faut une version qui
+garde la définition — c'est pour cela qu'elle est injectée sans condition, et
+qu'un type livré une fois doit rester déclaré pour toujours
+(packages/shared/synthetic-blocks.js).
+
 ## Ce qui reste à trancher
 
 1. **Structures multi-colonnes** : Stripo sépare _Mises en page_ et _éléments_.
