@@ -11,6 +11,18 @@ const pathnameOf = (url) => {
   }
 };
 
+// The file name ends the only part of an image URL that survives the image
+// backend: LePatron exports `${imagesUrl.cover}WxH/<file name>` whatever the
+// image's original URL (convertedUrl, badsender-extensions.js).
+const fileNameOf = (url) => {
+  const name = url ? (pathnameOf(url) || '').split('/').pop() : '';
+  try {
+    return decodeURIComponent(name) || null;
+  } catch (e) {
+    return name || null;
+  }
+};
+
 /**
  * An editable image left empty is exported as the image backend's placeholder,
  * or without any src. LePatron serves it under its own route
@@ -82,12 +94,19 @@ module.exports = {
       const def = getBlockDefault(ctx.blockDefs, block && block.type);
       const shown = shownByBlock[block && block.id] || [];
       if (!def || !shown.length) return [];
+      const isShown = (src) => {
+        const fileName = fileNameOf(src);
+        return (
+          Boolean(fileName) &&
+          shown.some((img) => fileNameOf(img.src) === fileName)
+        );
+      };
       return collectImages(block)
         .filter(
           (image) =>
             image.src &&
             image.src === _.get(def, image.path.concat('src')) &&
-            shown.some((img) => (img.src || '').startsWith(image.src))
+            isShown(image.src)
         )
         .map((image) => ({
           messageKey: 'Template sample image not replaced',
