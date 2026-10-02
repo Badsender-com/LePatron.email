@@ -933,7 +933,9 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
 // Our own image endpoint, whatever the file extension. The extension-based
 // regex below cannot match a file stored as `.bin` or `.false`, and those are
 // precisely the ones that escaped the transfer in production.
-const OWN_IMAGES_URL_REGEX = /https?:\/\/\S*\/api\/images\/[^\s"'<>)]+/g;
+// The host part stops at the same delimiters as the path: with `\S*`, a line
+// of minified CSS matched from an earlier url() up to our `/api/images/`.
+const OWN_IMAGES_URL_REGEX = /https?:\/\/[^\s"'()<>]*\/api\/images\/[^\s"'<>)]+/g;
 
 async function handleRelativeOrFtpImages({
   html,

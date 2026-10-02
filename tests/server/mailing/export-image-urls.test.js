@@ -75,6 +75,13 @@ describe("collecte des URLs d'images à l'export", () => {
     ).toBeNull();
   });
 
+  it('ne remonte pas jusqu’à une url() précédente du CSS minifié', () => {
+    const line =
+      '.a{background:url(https://cdn.example/a.png)}' +
+      `.b{background:url(${OURS}/b.bin)}`;
+    expect(line.match(ownImages)).toEqual([`${OURS}/b.bin`]);
+  });
+
   it('s’arrête aux délimiteurs de balise', () => {
     const [url] = `<img src="${OURS}/a.bin" width="10">`.match(ownImages);
     expect(url).toBe(`${OURS}/a.bin`);
