@@ -83,6 +83,15 @@ const DragSurfaceMixin = {
       return Boolean(this.draggingType || this.draggingId);
     },
 
+    // Never both. WebKit can lose the dragend of a drag that crossed the
+    // iframe's edge, and a drag whose end never came is still "under way"
+    // when the next one starts: its id would be read by the next drop, which
+    // would move the old row instead of inserting. So each drag starts by
+    // ending whatever the last one left behind.
+    endLostDrag() {
+      if (this.isDragging()) this.handleDragEnd();
+    },
+
     // ---- dragging from the palette into the preview -----------------------
 
     // The drag carries its type in `dataTransfer` as well as in component
@@ -99,6 +108,7 @@ const DragSurfaceMixin = {
     // rather than the protection weakened there.
     handleDragStart(type, event) {
       event.stopPropagation();
+      this.endLostDrag();
       this.draggingType = type;
       this.freezeRender();
       if (event.dataTransfer) {
@@ -199,6 +209,7 @@ const DragSurfaceMixin = {
         return;
       }
 
+      this.endLostDrag();
       const id = row.getAttribute(ELEMENT_ATTRIBUTE);
       this.draggingId = id;
       this.freezeRender();

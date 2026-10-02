@@ -270,6 +270,42 @@ describe('a reorder and an insertion do not get confused', () => {
     expect(modal.state.elements).toHaveLength(2);
   });
 
+  // WebKit can lose the dragend of a drag that crossed the iframe's edge. The
+  // reorder's id, left set, would have the next palette drop move the old row
+  // instead of inserting.
+  it('inserts after a reorder whose dragend never came', async () => {
+    const { modal, doc } = await openModal(['text', 'button']);
+    layOutRows(doc, 100);
+    const before = modal.state.elements.map((element) => element.id);
+
+    fireIn(doc, 'dragstart', rowsOf(doc)[1]);
+    startPaletteDrag('divider');
+    dragOverAt(doc, 10);
+    dropAt(doc, 10);
+
+    expect(typesOf(modal)).toEqual(['divider', 'text', 'button']);
+    expect(modal.state.elements.slice(1).map((element) => element.id)).toEqual(
+      before
+    );
+    expect(modal.selected.type).toBe('divider');
+  });
+
+  it('moves after a palette drag whose dragend never came', async () => {
+    const { modal, doc } = await openModal(['text', 'button']);
+    layOutRows(doc, 100);
+
+    startPaletteDrag('divider');
+    await nextTask();
+    fireIn(doc, 'dragstart', rowsOf(doc)[1]);
+
+    // The entry the lost drag faded is back as it was.
+    expect(modal.draggingType).toBeNull();
+    expect(modal.fadedType).toBeNull();
+    dragOverAt(doc, 10);
+    dropAt(doc, 10);
+    expect(typesOf(modal)).toEqual(['button', 'text']);
+  });
+
   // The preview must hold still for a reorder exactly as it does for an
   // insertion: replacing the body destroys the row under the cursor.
   it('holds renders for the duration of a reorder', async () => {
