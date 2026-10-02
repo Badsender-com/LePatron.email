@@ -6,10 +6,6 @@
 // and everything else reads the style; `max-width` plus `width:100%` so the
 // image shrinks with its column instead of overflowing it.
 //
-// The `src` is expected to come from the editor's gallery, which is what
-// rewrites URLs for the CDN and the FTP export at download time. A free URL
-// field would bypass that — a point for whoever wires the panel.
-//
 // The `v-if` on `linked` is the one kind this codebase allows: it tests a prop
 // the MANIFEST fixes, not a value the user types. The compiler renders the
 // component once per variant with that prop set, so the branch is gone by the
