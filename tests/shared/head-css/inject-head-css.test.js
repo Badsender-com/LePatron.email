@@ -70,6 +70,17 @@ describe('injectHeadCss', () => {
       expect(out).toContain('.a{color:red}</style>' + closing);
     });
 
+    test.each(['$&', "$'", '$`', '$1', '$$'])(
+      'inserts %s in the CSS literally, not as a replacement pattern',
+      (pattern) => {
+        const css = '.a::after{content:"' + pattern + '"}';
+        const out = injectHeadCss(DOC, css);
+        expect(out).toContain('="true">' + css + '</style></head>');
+        // Same on the replacing path.
+        expect(injectHeadCss(out, css)).toBe(out);
+      }
+    );
+
     test('leaves a document without a <head> untouched', () => {
       const fragment = '<div>just a fragment</div>';
       expect(injectHeadCss(fragment, '.a{color:red}')).toBe(fragment);
@@ -115,6 +126,43 @@ describe('injectHeadCss', () => {
     test('clearing the CSS removes the element and restores the original export', () => {
       const once = injectHeadCss(DOC, '.a{color:red}');
       expect(injectHeadCss(once, '')).toBe(DOC);
+    });
+
+    test('still finds its element when the CSS contains </head>', () => {
+      const once = injectHeadCss(DOC, '/* </head> */.a{color:red}');
+      const twice = injectHeadCss(once, '.b{color:blue}');
+
+      expect(twice.match(/<style/g)).toHaveLength(1);
+      expect(twice.replace(/<style[\s\S]*?<\/style>/, '')).toBe(DOC);
+    });
+
+    test('finds its element with the attributes reordered by a sanitizer', () => {
+      const sanitized = DOC.replace(
+        '</head>',
+        '<style ' +
+          MARKER_ATTRIBUTE +
+          '="true" type="text/css">.a{}</style></head>'
+      );
+      expect(injectHeadCss(sanitized, '')).toBe(DOC);
+    });
+  });
+
+  describe('an HTML code block in the body', () => {
+    // A block may hold a pasted element carrying the marker: it belongs to the
+    // author, and the block promises to export it byte for byte.
+    const pasted =
+      '<style type="text/css" ' + MARKER_ATTRIBUTE + '="true">.x{}</style>';
+    const withBlock = DOC.replace('<p>Body</p>', pasted);
+
+    test('is left untouched when there is no CSS', () => {
+      expect(injectHeadCss(withBlock, '')).toBe(withBlock);
+    });
+
+    test('is left untouched when CSS is injected in the head', () => {
+      const out = injectHeadCss(withBlock, '.a{color:red}');
+
+      expect(out).toContain('<body>' + pasted + '</body>');
+      expect(out).toContain('.a{color:red}</style></head>');
     });
   });
 });

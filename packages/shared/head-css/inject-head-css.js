@@ -23,8 +23,9 @@
 // Matches the closing </head>, whatever its casing and inner whitespace.
 const HEAD_CLOSE = /<\/head\s*>/i;
 
-// Marks the injected element, so a second pass replaces it instead of stacking
-// a duplicate. An attribute rather than a class: this element is never styled,
+// Marks the injected element, so a second pass over a stored copy (the
+// translated duplicate's previewHtml) replaces it instead of stacking a
+// duplicate. An attribute rather than a class: this element is never styled,
 // and the export cascade only warns about unknown `data-*` attributes on
 // template markup, not on a <style> we add after the cascade has run.
 const MARKER_ATTRIBUTE = 'data-lp-head-css';
@@ -38,7 +39,8 @@ const STYLE_CLOSE = /<\/style/gi;
 const OPENING_TAG = '<style type="text/css" ' + MARKER_ATTRIBUTE + '="true">';
 const CLOSING_TAG = '</style>';
 
-// Matches a previously injected element, including its content.
+// Matches an injected element, including its content. Only ever trusted when
+// it opens inside the <head>: see findInjectedElement.
 const INJECTED_ELEMENT = new RegExp(
   '<style[^>]*\\s' +
     MARKER_ATTRIBUTE +
@@ -57,6 +59,30 @@ function neutralizeStyleClose(css) {
 }
 
 /**
+ * The element a previous pass injected, if it opens inside the <head>.
+ *
+ * Anything after the first </head> is the body, where an HTML code block may
+ * hold a pasted `data-lp-head-css` element of its own: it belongs to the
+ * author, and that block promises to export it byte for byte. Comparing the
+ * opening tag, rather than searching the head segment only, keeps the element
+ * found when the CSS itself contains `</head>`.
+ *
+ * @param {string} html
+ * @param {number} headEnd index of the first </head>
+ * @returns {RegExpExecArray|null}
+ */
+function findInjectedElement(html, headEnd) {
+  const match = INJECTED_ELEMENT.exec(html);
+  return match && match.index < headEnd ? match : null;
+}
+
+/**
+ * Places the stylesheet just before </head>, or in place of the one a previous
+ * pass injected.
+ *
+ * Built by slicing rather than `String#replace` with a string: the CSS is user
+ * input, and `$&`, `` $` `` or `$'` in it would be read as replacement patterns.
+ *
  * @param {string} html a complete exported document
  * @param {string} css the stylesheet to place in its <head>
  * @returns {string} the document with the stylesheet injected, or the input
@@ -65,7 +91,12 @@ function neutralizeStyleClose(css) {
 function injectHeadCss(html, css) {
   if (typeof html !== 'string' || html === '') return html;
 
-  const previous = INJECTED_ELEMENT.test(html);
+  // No </head> means this is not a document we can safely edit — an export is
+  // never worth breaking over a stylesheet.
+  const headEnd = html.search(HEAD_CLOSE);
+  if (headEnd === -1) return html;
+
+  const previous = findInjectedElement(html, headEnd);
   const hasCss = typeof css === 'string' && css.trim() !== '';
 
   // Nothing to add and nothing to clean up: return the very same string, so an
@@ -73,17 +104,15 @@ function injectHeadCss(html, css) {
   if (!hasCss && !previous) return html;
 
   // Dropping the CSS must also drop the element it used to live in.
-  if (!hasCss) return html.replace(INJECTED_ELEMENT, '');
+  const element = hasCss
+    ? OPENING_TAG + neutralizeStyleClose(css) + CLOSING_TAG
+    : '';
 
-  const element = OPENING_TAG + neutralizeStyleClose(css) + CLOSING_TAG;
-
-  if (previous) return html.replace(INJECTED_ELEMENT, element);
-
-  // No </head> means this is not a document we can safely edit — an export is
-  // never worth breaking over a stylesheet.
-  if (!HEAD_CLOSE.test(html)) return html;
-
-  return html.replace(HEAD_CLOSE, (match) => element + match);
+  if (previous) {
+    const end = previous.index + previous[0].length;
+    return html.slice(0, previous.index) + element + html.slice(end);
+  }
+  return html.slice(0, headEnd) + element + html.slice(headEnd);
 }
 
 module.exports = {
