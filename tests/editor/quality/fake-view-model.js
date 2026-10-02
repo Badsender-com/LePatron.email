@@ -1,14 +1,22 @@
 'use strict';
 
 const ko = require('knockout');
+const { mapValues } = require('lodash');
 const {
   runQualityChecks,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 
+// A container of the content model, as Mosaico wraps it.
+const container = (blocks) =>
+  ko.observable({
+    blocks: ko.observableArray(blocks.map((b) => ko.observable(b))),
+  });
+
 /**
  * A view model shaped like the editor's, reduced to what quality checks read:
- * the blocks of the content model, the template's block definitions, the
- * exported HTML and the tracking configuration.
+ * the blocks of the content model (`blocks` fill `mainBlocks`, `containers`
+ * add others, e.g. `{ footerBlocks: [...] }`), the template's block
+ * definitions, the exported HTML and the tracking configuration.
  */
 function fakeViewModel({
   blocks = [],
@@ -17,6 +25,7 @@ function fakeViewModel({
   trackingConfig,
   trackingUrls = [],
   imagesUrl = { placeholder: 'http://localhost:3000/api/images/placeholder/' },
+  containers = {},
 } = {}) {
   const exportHTML = jest.fn(() => html);
   return {
@@ -29,9 +38,7 @@ function fakeViewModel({
     blockDefs,
     metadata: { trackingConfig, imagesUrl },
     content: () => ({
-      mainBlocks: () => ({
-        blocks: ko.observableArray(blocks.map((b) => ko.observable(b))),
-      }),
+      ...mapValues({ mainBlocks: blocks, ...containers }, container),
       tracking: () => ({ trackingUrls: () => trackingUrls }),
     }),
   };
