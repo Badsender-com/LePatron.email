@@ -80,12 +80,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     previewWidth: DESKTOP_WIDTH,
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
-    frameRequest: null,
-    // The palette entry currently being dragged, and where it would land.
-    draggingType: null,
-    dropIndex: null,
-    // A render that fell due mid-drag and was held back.
-    renderHeldDuringDrag: false,
   }),
   computed: {
     selected() {
@@ -137,9 +131,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   },
   mounted() {
     this.vm.toggleBlockBuilderModal = this.handleToggle;
-  },
-  beforeDestroy() {
-    if (this.frameRequest) window.cancelAnimationFrame(this.frameRequest);
   },
   methods: {
     handleToggle(value, data) {
@@ -221,9 +212,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // Also what the modal calls once dismissed (`on-close`), since a dismissal
     // closes it without going through closeModal().
     resetComposition() {
-      this.draggingType = null;
-      this.dropIndex = null;
-      this.renderHeldDuringDrag = false;
+      // A drag the closing modal cut short: no dragend will come for it.
+      this.handleDragEnd();
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;

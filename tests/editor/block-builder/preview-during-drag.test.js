@@ -37,7 +37,7 @@ describe('the preview holds still during a drag', () => {
 
     modal.scheduleRender();
 
-    expect(modal.renderHeldDuringDrag).toBe(true);
+    expect(modal.renderHeld).toBe(true);
     expect(frame).not.toHaveBeenCalled();
   });
 
@@ -49,7 +49,7 @@ describe('the preview holds still during a drag', () => {
 
     modal.handleDragEnd();
 
-    expect(modal.renderHeldDuringDrag).toBe(false);
+    expect(modal.renderHeld).toBe(false);
     expect(doc.body.innerHTML).toContain('changé après coup');
   });
 });

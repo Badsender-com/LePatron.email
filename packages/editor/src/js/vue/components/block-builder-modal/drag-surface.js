@@ -4,21 +4,41 @@ const {
   DRAGGING_CLASS,
   DROP_BEFORE_CLASS,
   DROP_AFTER_CLASS,
+  PREVIEW_READY_EVENT,
 } = require('./preview-surface.js');
 
 // Dragging an element from the palette into the preview.
 //
 // A mixin for the same reason the preview is one: every method here reads or
-// writes the component's state — what is being dragged, where it would land,
-// whether a render is being held back.
+// writes the component's state — what is being dragged, where it would land.
+// That state is declared here, with the gesture it belongs to.
 //
 // It depends on the preview surface and not the other way round: the preview
 // owns the iframe, its stylesheet and the class names; this adds a gesture on
-// top of it. `previewDocument`, `previewRows` and `renderPreview` come from
-// there.
+// top of it, through what the preview makes public — PREVIEW_READY_EVENT to
+// listen on its document, `freezeRender` / `thawRender` to hold it still,
+// `previewDocument` and `previewRows` to measure it. `insertElement` comes from
+// the element list.
 
 const DragSurfaceMixin = {
+  data: () => ({
+    // The palette entry currently being dragged, and where it would land.
+    draggingType: null,
+    dropIndex: null,
+  }),
+  created() {
+    this.$on(PREVIEW_READY_EVENT, this.listenOnPreview);
+  },
   methods: {
+    // `dragover` has to cancel the event on every move, or the browser refuses
+    // the drop outright — the one rule of the HTML5 drag API that everybody
+    // forgets.
+    listenOnPreview(doc) {
+      doc.addEventListener('dragenter', this.handlePreviewDragOver);
+      doc.addEventListener('dragover', this.handlePreviewDragOver);
+      doc.addEventListener('drop', this.handlePreviewDrop);
+      doc.addEventListener('dragleave', this.handlePreviewDragLeave);
+    },
 
     // ---- dragging from the palette into the preview -----------------------
 
@@ -36,6 +56,7 @@ const DragSurfaceMixin = {
     handleDragStart(type, event) {
       event.stopPropagation();
       this.draggingType = type;
+      this.freezeRender();
       if (event.dataTransfer) {
         event.dataTransfer.effectAllowed = 'copy';
         event.dataTransfer.setData('text/plain', type);
@@ -58,12 +79,8 @@ const DragSurfaceMixin = {
       const doc = this.previewDocument();
       if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
       // Renders were held while the rows had to stay still under the cursor.
-      if (this.renderHeldDuringDrag) {
-        this.renderHeldDuringDrag = false;
-        this.renderPreview();
-      }
+      this.thawRender();
     },
-
 
     handlePreviewDragOver(event) {
       if (!this.draggingType) return;
@@ -77,7 +94,6 @@ const DragSurfaceMixin = {
       this.dropIndex = this.dropIndexAt(doc, event.clientY);
       this.showDropIndicator(doc, this.dropIndex);
     },
-
 
     // Leaving the iframe entirely, rather than crossing between two rows:
     // `relatedTarget` is null (or outside the document) only for the former.
@@ -95,7 +111,6 @@ const DragSurfaceMixin = {
       this.clearDropIndicator();
     },
 
-
     handlePreviewDrop(event) {
       if (!this.draggingType) return;
       event.preventDefault();
@@ -107,7 +122,6 @@ const DragSurfaceMixin = {
       this.handleDragEnd();
       this.insertElement(type, index);
     },
-
 
     /**
      * Where an element dropped at this height would go.
@@ -126,7 +140,6 @@ const DragSurfaceMixin = {
       return rows.length;
     },
 
-
     showDropIndicator(doc, index) {
       const rows = this.previewRows(doc);
       this.clearDropIndicator();
@@ -138,7 +151,6 @@ const DragSurfaceMixin = {
         rows[rows.length - 1].classList.add(DROP_AFTER_CLASS);
       }
     },
-
 
     clearDropIndicator() {
       this.previewRows(this.previewDocument()).forEach((row) => {

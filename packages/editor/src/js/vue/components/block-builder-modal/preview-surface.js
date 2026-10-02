@@ -7,8 +7,8 @@ const {
 // The preview: an iframe that shows the block, and the surface the user edits on.
 //
 // A Vue 2 mixin rather than a module of functions, because every one of these
-// needs the component's state — what is composed, what is selected, whether a
-// drag is under way. A mixin keeps `this` meaning what it means in the
+// needs the component's state — what is composed, what is selected, whether
+// renders are being held. A mixin keeps `this` meaning what it means in the
 // component, which a module of helpers taking `this` as a parameter would not.
 //
 // Two properties of this surface drive everything here. It is an IFRAME, so the
@@ -17,8 +17,14 @@ const {
 // `allow-same-origin`), so the parent can write into it and listen on it even
 // though scripts inside it cannot run.
 //
-// The class names live here rather than with the dragging, because this is what
-// owns the stylesheet they appear in. drag-surface.js imports them.
+// The component is expected to provide: `state`, `selectedId`, `isEmpty`,
+// `previewMarkup`, `vm`, and a `previewFrame` ref.
+//
+// It knows nothing of the drag. What the drag needs from it is public and
+// generic: the event below, to listen on a freshly written document, and
+// freezeRender / thawRender, to keep the rows still under the cursor. The class
+// names live here too, because this is what owns the stylesheet they appear
+// in; drag-surface.js imports them.
 
 // Marks the selected row inside the preview. Prefixed, because it lands in a
 // document that also holds the user's own markup.
@@ -35,6 +41,12 @@ const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
 // Set on the preview document once it has been written and wired up.
 const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
+
+// Emitted on the component, with the document, each time a preview document is
+// written — so another surface can listen on it without this one knowing what
+// it listens for. A component event rather than a method to override: any
+// number of mixins can subscribe, and their order does not matter.
+const PREVIEW_READY_EVENT = 'preview-document-ready';
 
 // The preview document's own chrome. It is never exported — only the generated
 // markup is — so these rules exist purely to make the surface usable.
@@ -72,13 +84,34 @@ const PREVIEW_DOCUMENT = [
 ].join('');
 
 const PreviewSurfaceMixin = {
+  data: () => ({
+    frameRequest: null,
+    // While frozen, renders are held rather than run; `renderHeld` remembers
+    // that one fell due, so thawing renders once instead of not at all.
+    renderFrozen: false,
+    renderHeld: false,
+  }),
+  beforeDestroy() {
+    if (this.frameRequest) window.cancelAnimationFrame(this.frameRequest);
+  },
   methods: {
+    // Replacing the body under a gesture destroys the very nodes the cursor is
+    // over: a drop target vanishes, and the drag ends on nothing. Whoever runs
+    // such a gesture freezes the preview for its length.
+    freezeRender() {
+      this.renderFrozen = true;
+    },
+
+    thawRender() {
+      this.renderFrozen = false;
+      if (!this.renderHeld) return;
+      this.renderHeld = false;
+      this.renderPreview();
+    },
+
     scheduleRender() {
-      // Replacing the body mid-drag destroys the very nodes the cursor is over:
-      // the drop target vanishes, and the drag ends on nothing. Held until the
-      // drag is done, then rendered once.
-      if (this.draggingType) {
-        this.renderHeldDuringDrag = true;
+      if (this.renderFrozen) {
+        this.renderHeld = true;
         return;
       }
       if (this.frameRequest) return;
@@ -87,7 +120,6 @@ const PreviewSurfaceMixin = {
         this.renderPreview();
       });
     },
-
 
     // The preview document, written once and then only ever refilled.
     //
@@ -111,16 +143,9 @@ const PreviewSurfaceMixin = {
       const doc = frame.contentDocument;
       doc[PREVIEW_READY_FLAG] = true;
       doc.addEventListener('click', this.handlePreviewClick);
-      // `dragover` has to cancel the event on every move, or the browser
-      // refuses the drop outright — the one rule of the HTML5 drag API that
-      // everybody forgets.
-      doc.addEventListener('dragenter', this.handlePreviewDragOver);
-      doc.addEventListener('dragover', this.handlePreviewDragOver);
-      doc.addEventListener('drop', this.handlePreviewDrop);
-      doc.addEventListener('dragleave', this.handlePreviewDragLeave);
+      this.$emit(PREVIEW_READY_EVENT, doc);
       return doc;
     },
-
 
     renderPreview() {
       const doc = this.ensurePreviewDocument();
@@ -141,7 +166,6 @@ const PreviewSurfaceMixin = {
       this.applySelectionHighlight();
     },
 
-
     previewRows(doc) {
       if (!doc || !doc.body) return [];
       return Array.prototype.slice.call(
@@ -149,14 +173,12 @@ const PreviewSurfaceMixin = {
       );
     },
 
-
     /** The preview document, only if it has already been written. */
     previewDocument() {
       const frame = this.$refs.previewFrame;
       const doc = frame && frame.contentDocument;
       return doc && doc[PREVIEW_READY_FLAG] ? doc : null;
     },
-
 
     // ---- selecting ---------------------------------------------------------
 
@@ -181,7 +203,6 @@ const PreviewSurfaceMixin = {
         this.selectedId = id;
       }
     },
-
 
     // Marks the selected row in the preview, so the selection reads the same on
     // both sides. Re-applied after every render, since replacing the body drops
@@ -212,4 +233,5 @@ module.exports = {
   DROP_AFTER_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_FLAG,
+  PREVIEW_READY_EVENT,
 };
