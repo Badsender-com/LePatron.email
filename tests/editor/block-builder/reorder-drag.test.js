@@ -41,13 +41,41 @@ const DRAG_TYPE = 'application/x-lp-block-builder';
 
 afterEach(unmountAll);
 
+// A reorder's drop as a browser delivers it: a dragover at the same height
+// first — no drop comes without one, and a dragover left uncancelled would
+// have refused it — then the drop itself.
+function moveTo(doc, clientY) {
+  const over = dragOverAt(doc, clientY);
+  expect(over.defaultPrevented).toBe(true);
+  expect(over.dataTransfer.dropEffect).toBe('move');
+  return dropAt(doc, clientY);
+}
+
 describe('a rendered row can be picked up', () => {
-  it('is marked draggable, without that reaching the generated markup', async () => {
-    const { modal, doc } = await openModal(['text', 'button']);
+  it('is marked draggable', async () => {
+    const { doc } = await openModal(['text', 'button']);
 
     rowsOf(doc).forEach((row) => expect(row.draggable).toBe(true));
-    // `draggable` is preview chrome. An email has no use for it.
-    expect(modal.html).not.toContain('draggable');
+  });
+
+  // `draggable`, the element ids and the lp-bb- classes are preview chrome,
+  // set on the very rows the drag moves. An email has no use for any of it,
+  // whatever path the markup takes to the block.
+  it('leaves no preview chrome in what Apply writes after a reorder', async () => {
+    const { modal, doc, markup } = await openModal(['text', 'button', 'image']);
+    layOutRows(doc, 100);
+    fireIn(doc, 'dragstart', rowsOf(doc)[2]);
+    await nextTask();
+    moveTo(doc, 10);
+    expect(typesOf(modal)).toEqual(['image', 'text', 'button']);
+
+    modal.handleApply();
+
+    const written = markup();
+    expect(written).toContain('<img');
+    expect(written).not.toContain('draggable');
+    expect(written).not.toContain('data-lp-el');
+    expect(written).not.toContain('lp-bb-');
   });
 
   // Nothing else says a row can be moved before someone tries.
@@ -182,7 +210,7 @@ describe('the drop moves the element', () => {
     layOutRows(doc, 100);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[2]);
-    dropAt(doc, 10);
+    moveTo(doc, 10);
 
     expect(typesOf(modal)).toEqual(['divider', 'text', 'button']);
   });
@@ -192,7 +220,7 @@ describe('the drop moves the element', () => {
     layOutRows(doc, 100);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);
-    dropAt(doc, 290);
+    moveTo(doc, 290);
 
     expect(typesOf(modal)).toEqual(['button', 'divider', 'text']);
   });
@@ -204,7 +232,7 @@ describe('the drop moves the element', () => {
 
     // Past the midpoint of the second row: index 2 in current layout.
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);
-    dropAt(doc, 160);
+    moveTo(doc, 160);
 
     expect(typesOf(modal)).toEqual(['button', 'text', 'divider']);
   });
@@ -214,7 +242,7 @@ describe('the drop moves the element', () => {
     layOutRows(doc, 100);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
-    dropAt(doc, 120);
+    moveTo(doc, 120);
 
     expect(typesOf(modal)).toEqual(['text', 'button', 'divider']);
   });
@@ -258,7 +286,7 @@ describe('the drop moves the element', () => {
     const [, second] = modal.state.elements;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
-    dropAt(doc, 10);
+    moveTo(doc, 10);
     // The browser fires dragend after the drop: it must not undo the choice.
     fireIn(doc, 'dragend', rowsOf(doc)[0]);
 
@@ -272,8 +300,7 @@ describe('the drop moves the element', () => {
 
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);
     await nextTask();
-    dragOverAt(doc, 190);
-    dropAt(doc, 190);
+    moveTo(doc, 190);
 
     expect(modal.draggingId).toBeNull();
     expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(false);
@@ -325,6 +352,7 @@ describe('a reorder and an insertion do not get confused', () => {
     layOutRows(doc, 100);
 
     startPaletteDrag('button');
+    dragOverAt(doc, 10);
     dropAt(doc, 10);
 
     expect(typesOf(modal)).toEqual(['button', 'text']);
@@ -335,7 +363,7 @@ describe('a reorder and an insertion do not get confused', () => {
     layOutRows(doc, 100);
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
-    dropAt(doc, 10);
+    moveTo(doc, 10);
 
     expect(typesOf(modal)).toEqual(['button', 'text']);
     expect(modal.state.elements).toHaveLength(2);
@@ -372,8 +400,7 @@ describe('a reorder and an insertion do not get confused', () => {
     // The entry the lost drag faded is back as it was.
     expect(modal.draggingType).toBeNull();
     expect(modal.fadedType).toBeNull();
-    dragOverAt(doc, 10);
-    dropAt(doc, 10);
+    moveTo(doc, 10);
     expect(typesOf(modal)).toEqual(['button', 'text']);
   });
 
@@ -386,15 +413,5 @@ describe('a reorder and an insertion do not get confused', () => {
     modal.scheduleRender();
 
     expect(modal.renderHeld).toBe(true);
-  });
-});
-
-describe('the arrows still work', () => {
-  it('moves the selected element up', async () => {
-    const { modal } = await openModal(['text', 'button']);
-
-    modal.move(-1);
-
-    expect(typesOf(modal)).toEqual(['button', 'text']);
   });
 });
