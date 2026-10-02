@@ -26,6 +26,7 @@ const {
   startPaletteDrag,
   dragOverAt,
   dropAt,
+  fireIn,
   typesOf,
   DRAGGING_CLASS,
   DROP_BEFORE_CLASS,
@@ -45,13 +46,6 @@ describe('the insertion point follows the cursor', () => {
     startPaletteDrag('image');
 
     expect(dragOverAt(doc, 10).defaultPrevented).toBe(true);
-  });
-
-  it('ignores a drag that did not start in our palette', async () => {
-    const { doc } = await openModal(['text']);
-    layOutRows(doc, 100);
-
-    expect(dragOverAt(doc, 10).defaultPrevented).toBe(false);
   });
 
   it('marks the row the element would land before', async () => {
@@ -86,6 +80,41 @@ describe('the insertion point follows the cursor', () => {
 
     expect(doc.body.querySelectorAll(`.${DROP_BEFORE_CLASS}`)).toHaveLength(0);
     expect(doc.body.querySelectorAll(`.${DROP_AFTER_CLASS}`)).toHaveLength(1);
+  });
+});
+
+// The preview holds real images and links, natively draggable, and the browser's
+// default for a drop is to open what was dropped — in the iframe, which takes
+// the composition away. Files and links dragged in from outside do the same.
+describe('a drag that is not ours never reaches the browser', () => {
+  it('cancels a drag starting on an image or a link in the preview', async () => {
+    const { doc } = await openModal(['image', 'button']);
+
+    const image = fireIn(doc, 'dragstart', doc.body.querySelector('img'));
+    const link = fireIn(doc, 'dragstart', doc.body.querySelector('a'));
+
+    expect(image.defaultPrevented).toBe(true);
+    expect(link.defaultPrevented).toBe(true);
+  });
+
+  it('refuses it over the preview, without drawing an insertion point', async () => {
+    const { doc } = await openModal(['text']);
+    layOutRows(doc, 100);
+
+    const event = dragOverAt(doc, 10);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(event.dataTransfer.dropEffect).toBe('none');
+    expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(false);
+    expect(doc.body.querySelector(`.${DROP_BEFORE_CLASS}`)).toBeNull();
+  });
+
+  it('cancels its drop, and inserts nothing', async () => {
+    const { modal, doc } = await openModal(['text']);
+    layOutRows(doc, 100);
+
+    expect(dropAt(doc, 10).defaultPrevented).toBe(true);
+    expect(typesOf(modal)).toEqual(['text']);
   });
 });
 

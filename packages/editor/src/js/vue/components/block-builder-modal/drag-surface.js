@@ -32,7 +32,13 @@ const DragSurfaceMixin = {
     // `dragover` has to cancel the event on every move, or the browser refuses
     // the drop outright — the one rule of the HTML5 drag API that everybody
     // forgets.
+    //
+    // Mosaico's page guard (see handleDragStart) lives on the editor's
+    // `window`, and events inside the iframe never reach it: the preview
+    // document needs a guard of its own, which is what `dragstart` and the
+    // unconditional cancels below are.
     listenOnPreview(doc) {
+      doc.addEventListener('dragstart', this.handlePreviewDragStart);
       doc.addEventListener('dragenter', this.handlePreviewDragOver);
       doc.addEventListener('dragover', this.handlePreviewDragOver);
       doc.addEventListener('drop', this.handlePreviewDrop);
@@ -80,9 +86,24 @@ const DragSurfaceMixin = {
       this.thawRender();
     },
 
-    handlePreviewDragOver(event) {
-      if (!this.draggingType) return;
+    // The preview's images and links are natively draggable, and a drag of one
+    // dropped back in — or a file or link dropped from outside — would have
+    // the browser open it in the iframe, navigating away from the composition.
+    // Nothing in the preview starts a builder drag (yet: reordering will have
+    // to opt in here), so every drag starting there is cancelled.
+    handlePreviewDragStart(event) {
       event.preventDefault();
+    },
+
+    // Cancelled whatever is being dragged, so the browser never applies its
+    // own default; whether it is OUR drag decides only between accepting the
+    // drop and refusing it.
+    handlePreviewDragOver(event) {
+      event.preventDefault();
+      if (!this.draggingType) {
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+        return;
+      }
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
 
       const doc = this.previewDocument();
@@ -110,8 +131,8 @@ const DragSurfaceMixin = {
     // The index is measured again rather than kept from the last dragover: the
     // drop carries its own coordinates, and they are the ones that count.
     handlePreviewDrop(event) {
-      if (!this.draggingType) return;
       event.preventDefault();
+      if (!this.draggingType) return;
 
       const doc = this.previewDocument();
       const index = doc ? this.dropIndexAt(doc, event.clientY) : 0;
