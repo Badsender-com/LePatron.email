@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const ko = require('knockout');
 const { getBlockLabelWithNumber } = require('../comments-utils');
 
@@ -31,11 +32,29 @@ function hashString(value) {
 }
 
 /**
+ * The client's blocks, from every container of the content model: the
+ * converter turns `data-ko-container="x"` into `xBlocks` (converter/parser.js).
+ * Fixed blocks, declared outside any container, are the template's own.
+ */
+function collectBlocks(viewModel) {
+  const content = viewModel.content() || {};
+  return _.flatMap(
+    Object.keys(content).filter((key) => /Blocks$/.test(key)),
+    (key) => {
+      const container = ko.toJS(content[key]);
+      return container && Array.isArray(container.blocks)
+        ? container.blocks
+        : [];
+    }
+  );
+}
+
+/**
  * Builds what every rule reads: the exported HTML (exported and parsed once),
  * the plain content model and a way to trace an exported node back to its block.
  */
 function buildContext(viewModel, html) {
-  const blocks = ko.toJS(viewModel.content().mainBlocks().blocks) || [];
+  const blocks = collectBlocks(viewModel);
   const blockIds = new Set(blocks.map((block) => block && block.id));
   // An inert document: unlike $.parseHTML, DOMParser never fetches the images.
   const doc = new DOMParser().parseFromString(html, 'text/html');
