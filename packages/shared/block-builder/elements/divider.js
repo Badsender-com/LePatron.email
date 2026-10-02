@@ -16,7 +16,9 @@ const { defineTemplate } = require('../template.js');
 // What arrives here is the same thing it always was: email HTML with typed
 // `[[name|CONTEXT|fallback]]` holes. The engine, the escaping and the runtime
 // are untouched; only the authoring moved.
-const render = defineTemplate(require('../components/divider.compiled.js'));
+const render = defineTemplate(
+  require('../components/divider.compiled.js').default
+);
 
 const defaults = {
   color: '#cccccc',

@@ -47,15 +47,12 @@ describe('the compiled components match their sources', () => {
 });
 
 /**
- * The templates a component ships: one, or one per variant.
- *
- * A component whose markup branches compiles to an object — the branch is
- * resolved at build time, once per variant, because the generator joins strings
- * and never branches. Both shapes have to satisfy everything below.
+ * The templates a component ships, keyed by variant — `default` alone when its
+ * markup does not branch. Branches are resolved at build time, once per
+ * variant, because the generator joins strings and never branches.
  */
 function templatesOf(name) {
-  const compiled = require(path.join(COMPONENTS, `${name}.compiled.js`));
-  return typeof compiled === 'string' ? { default: compiled } : compiled;
+  return require(path.join(COMPONENTS, `${name}.compiled.js`));
 }
 
 describe('every component ships what the generator needs', () => {

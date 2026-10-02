@@ -4,4 +4,6 @@
 // Editing this file by hand is caught by the golden test: it recompiles
 // the component and fails on any difference.
 'use strict';
-module.exports = "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><!-- The whitespace around &nbsp; is significant: Vue keeps it, and it\n           would land in every email that ships this block. --><!-- prettier-ignore --><td height=\"[[height|PX|24]]\" style=\"height:[[height|PX|24]]px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table>";
+module.exports = {
+  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><!-- The whitespace around &nbsp; is significant: Vue keeps it, and it\n           would land in every email that ships this block. --><!-- prettier-ignore --><td height=\"[[height|PX|24]]\" style=\"height:[[height|PX|24]]px; font-size:0; line-height:0;\" aria-hidden=\"true\">&nbsp;</td></tr></table>"
+};

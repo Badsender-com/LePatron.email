@@ -161,6 +161,9 @@ const banner = (name) =>
 /**
  * What `<name>.compiled.js` must contain.
  *
+ * Always an object keyed by variant — `default` when the component has none —
+ * so every caller reads it the same way.
+ *
  * @param {string} name
  * @param {string} [dir]
  * @returns {Promise<string>}
@@ -171,13 +174,8 @@ async function compileComponent(name, dir = COMPONENTS_DIR) {
   const manifest = require(path.join(dir, `${name}.slots.js`));
 
   const templates = await compileSource({ name, source, manifest });
-  const variantNames = Object.keys(templates);
-  const payload =
-    variantNames.length === 1 && variantNames[0] === 'default'
-      ? templates.default
-      : templates;
   return `${banner(name)}module.exports = ${JSON.stringify(
-    payload,
+    templates,
     null,
     2
   )};\n`;
