@@ -26,7 +26,7 @@ const ownImages = extract('OWN_IMAGES_URL_REGEX');
 
 const OURS = 'https://builder.badsender.com/api/images';
 
-describe('collecte des URLs d\'images à l\'export', () => {
+describe("collecte des URLs d'images à l'export", () => {
   it('collecte les extensions raster habituelles', () => {
     for (const ext of ['jpg', 'jpeg', 'png', 'gif', 'webp']) {
       expect(
@@ -44,6 +44,21 @@ describe('collecte des URLs d\'images à l\'export', () => {
   it('collecte les deux images d’une même ligne', () => {
     const line = `<img src="${OURS}/a.png"><img src="${OURS}/b.png">`;
     expect(line.match(urlsRegexUrl)).toHaveLength(2);
+  });
+
+  it('ne traverse pas le CSS minifié entre deux url() d’une même ligne', () => {
+    const line =
+      `.a{background:url(${OURS}/a.png)}` +
+      `.b{background:url('${OURS}/b.png')}`;
+    expect(line.match(urlsRegexUrl)).toEqual([
+      `${OURS}/a.png`,
+      `${OURS}/b.png`,
+    ]);
+  });
+
+  it('garde les URLs dont la query string porte un &amp;', () => {
+    const url = `${OURS}/resize?w=600&amp;src=a.png`;
+    expect(`<img src="${url}">`.match(urlsRegexUrl)).toEqual([url]);
   });
 
   it('rattrape nos URLs quelle que soit l’extension', () => {

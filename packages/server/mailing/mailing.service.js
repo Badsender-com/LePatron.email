@@ -1004,7 +1004,12 @@ async function handleRelativeOrFtpImages({
   const urlsRegexDataRaw = /data-raw/g;
   // `svg` was missing here: a perfectly well-named SVG was never collected, so
   // it was never transferred, and the delivered email kept pointing at us.
-  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp|svg)/gi;
+  // The URL stops at quotes, parentheses and tag brackets, like
+  // OWN_IMAGES_URL_REGEX: with `\S+`, minified CSS such as
+  // `url(https://x/a.png)}.b{background:url(https://x/b.png)}` matched from the
+  // first URL to the last extension, and the replace below rewrote the CSS in
+  // between. `;` is still allowed, as `&amp;` in a query string needs it.
+  const urlsRegexUrl = /https?:[^\s"'()<>]+\.(jpg|jpeg|png|gif|webp|svg)/gi;
 
   let splittedHtml = html.split('\n');
   if (!html.includes('\n')) {
