@@ -121,7 +121,6 @@ function displayTrackingError(missingKeys, viewModel) {
 
 module.exports = {
   getErrorsForControlQuality,
-  formatFinding,
   displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
