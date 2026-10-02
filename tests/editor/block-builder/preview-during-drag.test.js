@@ -8,6 +8,8 @@
 // it offers somewhere to drop when the block is empty, and none of the chrome
 // it draws for the drag ever reaches the block that gets applied.
 
+const Vue = require('vue/dist/vue.common');
+
 const {
   openModal,
   layOutRows,
@@ -28,29 +30,85 @@ afterEach(() => {
 });
 
 describe('the preview holds still during a drag', () => {
+  /** Keeps every requested frame, to be run when the test says so. */
+  function captureFrames() {
+    const frames = [];
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((run) => {
+      frames.push(run);
+      return frames.length;
+    });
+    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    return frames;
+  }
+
+  /** Opens on one text, with the frames its composing asked for already run. */
+  async function openSettled(frames) {
+    const opened = await openModal(['text']);
+    layOutRows(opened.doc, 100);
+    await Vue.nextTick();
+    frames.splice(0).forEach((run) => run());
+    return opened;
+  }
+
   // Replacing the body mid-drag destroys the nodes the cursor is over: the drop
   // target vanishes and the drag ends on nothing.
   it('holds a render that falls due mid-drag, without asking for a frame', async () => {
-    const { modal } = await openModal(['text']);
-    const frame = jest.spyOn(window, 'requestAnimationFrame');
+    const frames = captureFrames();
+    const { modal } = await openSettled(frames);
     startPaletteDrag('image');
 
     modal.scheduleRender();
 
     expect(modal.renderHeld).toBe(true);
-    expect(frame).not.toHaveBeenCalled();
+    expect(frames).toHaveLength(0);
   });
 
-  it('renders once the drag is over', async () => {
-    const { modal, doc } = await openModal(['text']);
+  // The frame was asked for before the drag; it runs during it.
+  it('holds a render whose frame was requested before the drag began', async () => {
+    const frames = captureFrames();
+    const { modal, doc } = await openSettled(frames);
+    modal.state.elements[0].content = 'changé avant le drag';
+    await Vue.nextTick();
+    expect(frames).toHaveLength(1);
+
+    startPaletteDrag('image');
+    frames[0]();
+
+    expect(doc.body.innerHTML).not.toContain('changé avant le drag');
+    expect(modal.renderHeld).toBe(true);
+  });
+
+  it('renders what was held once the drag is over', async () => {
+    const frames = captureFrames();
+    const { modal, doc } = await openSettled(frames);
     startPaletteDrag('image');
     modal.state.elements[0].content = 'changé après coup';
-    modal.scheduleRender();
+    await Vue.nextTick();
 
     modal.handleDragEnd();
+    expect(frames).toHaveLength(1);
+    frames[0]();
 
     expect(modal.renderHeld).toBe(false);
     expect(doc.body.innerHTML).toContain('changé après coup');
+  });
+
+  // The drop thaws a held render and inserts in the same task: one render
+  // covers both, not one each.
+  it('renders once after a drop that released a held render', async () => {
+    const frames = captureFrames();
+    const { modal, doc } = await openSettled(frames);
+    const render = jest.spyOn(modal, 'renderPreview');
+    startPaletteDrag('divider');
+    modal.state.elements[0].content = 'changé pendant le drag';
+    await Vue.nextTick();
+
+    dropAt(doc, 90);
+    await Vue.nextTick();
+    frames.splice(0).forEach((run) => run());
+
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(rowsOf(doc)).toHaveLength(2);
   });
 });
 

@@ -22,9 +22,8 @@ const {
 
 const DragSurfaceMixin = {
   data: () => ({
-    // The palette entry currently being dragged, and where it would land.
+    // The palette entry currently being dragged.
     draggingType: null,
-    dropIndex: null,
   }),
   created() {
     this.$on(PREVIEW_READY_EVENT, this.listenOnPreview);
@@ -74,7 +73,6 @@ const DragSurfaceMixin = {
 
     handleDragEnd() {
       this.draggingType = null;
-      this.dropIndex = null;
       this.clearDropIndicator();
       const doc = this.previewDocument();
       if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
@@ -91,8 +89,7 @@ const DragSurfaceMixin = {
       if (!doc || !doc.body) return;
       doc.body.classList.add(DRAGGING_CLASS);
 
-      this.dropIndex = this.dropIndexAt(doc, event.clientY);
-      this.showDropIndicator(doc, this.dropIndex);
+      this.showDropIndicator(doc, this.dropIndexAt(doc, event.clientY));
     },
 
     // Leaving the iframe entirely, rather than crossing between two rows:
@@ -107,10 +104,11 @@ const DragSurfaceMixin = {
       const doc = this.previewDocument();
       if (!doc) return;
       if (leaving && doc.contains(leaving)) return;
-      this.dropIndex = null;
       this.clearDropIndicator();
     },
 
+    // The index is measured again rather than kept from the last dragover: the
+    // drop carries its own coordinates, and they are the ones that count.
     handlePreviewDrop(event) {
       if (!this.draggingType) return;
       event.preventDefault();

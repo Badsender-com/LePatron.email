@@ -102,11 +102,14 @@ const PreviewSurfaceMixin = {
       this.renderFrozen = true;
     },
 
+    // Through scheduleRender rather than straight to renderPreview: a drop
+    // thaws and then changes the state in the same task, and the two renders
+    // that would cost collapse into one frame.
     thawRender() {
       this.renderFrozen = false;
       if (!this.renderHeld) return;
       this.renderHeld = false;
-      this.renderPreview();
+      this.scheduleRender();
     },
 
     scheduleRender() {
@@ -117,6 +120,12 @@ const PreviewSurfaceMixin = {
       if (this.frameRequest) return;
       this.frameRequest = window.requestAnimationFrame(() => {
         this.frameRequest = null;
+        // Checked again here: a frame requested before the gesture began
+        // still runs during it.
+        if (this.renderFrozen) {
+          this.renderHeld = true;
+          return;
+        }
         this.renderPreview();
       });
     },
