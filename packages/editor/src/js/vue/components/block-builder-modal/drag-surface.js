@@ -11,14 +11,13 @@ const {
 } = require('../../../../../../shared/block-builder/generate.js');
 const { dropIndexAt, showDropLine, clearDropLine } = require('./drop-line.js');
 
-// Dragging in the preview: an element from the palette, to insert it, or a row
-// already in the block, to move it. Same indicator, same drop maths — only what
-// happens on drop differs.
+// Dragging in the preview, two gestures in one: an element from the palette,
+// to insert it, or a row already in the block, to move it. Same indicator and
+// same drop maths; what the drop does is the difference.
 //
 // A mixin for the same reason the preview is one: every method here reads or
 // writes the component's state — what is being dragged, which entry or row
-// shows it.
-// That state is declared here, with the gesture it belongs to.
+// shows it. That state is declared here, with the gesture it belongs to.
 //
 // It depends on the preview surface and not the other way round: the preview
 // owns the iframe, its stylesheet and the names in it; this adds a gesture on
@@ -26,8 +25,8 @@ const { dropIndexAt, showDropLine, clearDropLine } = require('./drop-line.js');
 // listen on its document, PREVIEW_RENDERED_EVENT to make its rows draggable,
 // `freezeRender` / `thawRender` to hold it still, `elementRowFromEvent` to
 // find the row picked up, `previewDocument` and `previewRows` to measure it,
-// which drop-line.js turns into a drop position.
-// `insertElement` and `moveElementTo` come from the element list.
+// which drop-line.js turns into a drop position. `insertElement` and
+// `moveElementTo` come from the element list.
 
 // What either drag puts on the dataTransfer. A type of our own, never
 // `text/plain`: a drag released over the settings panel's TinyMCE field would
@@ -59,14 +58,11 @@ const DragSurfaceMixin = {
     this.releasePage();
   },
   methods: {
-    // `dragover` has to cancel the event on every move, or the browser refuses
-    // the drop outright — the one rule of the HTML5 drag API that everybody
-    // forgets.
-    //
     // Mosaico's page guard (see handleDragStart) lives on the editor's
     // `window`, and events inside the iframe never reach it: the preview
     // document needs a guard of its own, which is what refusing every
-    // `dragstart` but a row's, and the unconditional cancels below, are.
+    // `dragstart` but a row's, and the unconditional cancels of dragover and
+    // drop, are.
     //
     // `dragend` fires at the source of the drag, and the source of a reorder
     // is a row in here: the palette's own dragend is bound on its entries.
@@ -93,7 +89,7 @@ const DragSurfaceMixin = {
       if (this.isDragging()) this.handleDragEnd();
     },
 
-    // ---- dragging from the palette into the preview -----------------------
+    // ---- starting from the palette -----------------------------------------
 
     // The drag carries its type in `dataTransfer` as well as in component
     // state. The state is what the drop reads — both ends are ours — but
@@ -127,6 +123,15 @@ const DragSurfaceMixin = {
       this.holdPage();
     },
 
+    // `drag` fires continuously at the source for the whole gesture, and
+    // cancelling it cancels the drop — so Mosaico's window listener has to be
+    // kept away from this one too, not just from `dragstart`.
+    handleDrag(event) {
+      event.stopPropagation();
+    },
+
+    // ---- either drag: the page around the preview, and the end -------------
+
     // Mosaico cancels `dragover` on the whole editor window (fixPageEvents),
     // which tells the browser the entire page accepts the drop: the cursor
     // said "copy" over the palette, the settings, the backdrop. Only the
@@ -142,13 +147,6 @@ const DragSurfaceMixin = {
     refuseOutsidePreview(event) {
       event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
-    },
-
-    // `drag` fires continuously at the source for the whole gesture, and
-    // cancelling it cancels the drop — so Mosaico's window listener has to be
-    // kept away from this one too, not just from `dragstart`.
-    handleDrag(event) {
-      event.stopPropagation();
     },
 
     releasePage() {
@@ -238,9 +236,11 @@ const DragSurfaceMixin = {
 
     // ---- over the preview, and the drop -------------------------------------
 
-    // Cancelled whatever is being dragged, so the browser never applies its
-    // own default; whether it is OUR drag decides only between accepting the
-    // drop and refusing it.
+    // `dragover` has to cancel the event on every move, or the browser refuses
+    // the drop outright — the one rule of the HTML5 drag API that everybody
+    // forgets. Cancelled whatever is being dragged, so the browser never
+    // applies its own default; whether it is OUR drag decides only between
+    // accepting the drop and refusing it.
     handlePreviewDragOver(event) {
       event.preventDefault();
       if (!this.isDragging()) {
