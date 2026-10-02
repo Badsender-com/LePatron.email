@@ -153,3 +153,30 @@ describe('known bypass attempts', () => {
     expect(out).toBe('a');
   });
 });
+
+// The text comes from a paste or a stored state, and is sanitised on every
+// render of the preview. Each of these shapes took seconds per 100KB with the
+// regexes the scanner replaced: a `<` the scan read to the end of the input
+// from every start, or an attribute name read again from each of its letters.
+describe('adversarial input stays linear', () => {
+  const SIZE = 100000;
+  const BUDGET_MS = 200;
+
+  test.each([
+    ['`<a` never closed', '<a'.repeat(SIZE / 2)],
+    ['`<a ` never closed', '<a '.repeat(SIZE / 3)],
+    ['an unclosed quote in every tag', '<a "'.repeat(SIZE / 4)],
+    ['one very long attribute name', `<a ${'a'.repeat(SIZE)}>x</a>`],
+    ['mixed quotes', '<b x="\''.repeat(SIZE / 7)],
+  ])('%s', (_label, html) => {
+    const started = Date.now();
+    sanitizeRichText(html);
+    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+  });
+
+  it('still reads a well-formed tag after a run of unclosed ones', () => {
+    expect(sanitizeRichText(`${'<a '.repeat(1000)}"<b>x</b>`)).toContain(
+      '<b>x</b>'
+    );
+  });
+});
