@@ -4,6 +4,8 @@
 >
 > **Date** : 20 mars 2026
 > **Branche** : `feat/quality-control`
+>
+> **Mise à jour** : octobre 2026, QC v2 lot 1 (`feat/quality-control-v2`). Les contrôles côté éditeur passent par un moteur de règles (`packages/editor/src/js/ext/quality/`) : la section « Contrôles côté client » et l'annexe décrivent ce moteur. Le reste du document est inchangé.
 
 ---
 
@@ -29,7 +31,7 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 │                         ÉDITEUR (Client)                         │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. Utilisateur clique "Exporter"                                │
-│  2. getErrorsForControlQuality() → Vérifie taille, liens, images │
+│  2. runQualityChecks() → règles : tracking, liens, images, poids │
 │  3. Affiche warnings si problèmes détectés                       │
 │  4. Envoie requête au serveur                                    │
 └─────────────────────────────────────────────────────────────────┘
@@ -53,91 +55,49 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 
 ### Fichiers impliqués
 
-| Fichier                                                      | Rôle                       | Couche  |
-| ------------------------------------------------------------ | -------------------------- | ------- |
-| `packages/editor/src/js/ext/badsender-control-quality.js`    | Contrôle qualité principal | Client  |
-| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export  | Client  |
-| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP         | Client  |
-| `packages/server/mailing/mailing.service.js`                 | Validations métier         | Serveur |
-| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                 | Serveur |
-| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test     | Serveur |
-| `packages/server/profile/profile.service.js`                 | Validation profils ESP     | Serveur |
-| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML            | Serveur |
-| `packages/server/utils/download-zip-markdown.js`             | Notices export             | Serveur |
-| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données  | Client  |
+| Fichier                                                      | Rôle                      | Couche  |
+| ------------------------------------------------------------ | ------------------------- | ------- |
+| `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC    | Client  |
+| `packages/editor/src/js/ext/badsender-control-quality.js`    | Façade : bannière, modale | Client  |
+| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export | Client  |
+| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP        | Client  |
+| `packages/server/mailing/mailing.service.js`                 | Validations métier        | Serveur |
+| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                | Serveur |
+| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test    | Serveur |
+| `packages/server/profile/profile.service.js`                 | Validation profils ESP    | Serveur |
+| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML           | Serveur |
+| `packages/server/utils/download-zip-markdown.js`             | Notices export            | Serveur |
+| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données | Client  |
 
 ---
 
 ## Contrôles côté client (Editor)
 
-### Fichier principal : `badsender-control-quality.js`
+### Le moteur : `ext/quality/engine.js`
 
-Le contrôle qualité client est déclenché via la fonction `getErrorsForControlQuality(viewModel)` appelée lors de :
+`runQualityChecks(viewModel, { html })` est appelé au téléchargement (`badsender-server-storage.js`, sur l'export qui sert au ZIP) et après un envoi ESP (`esp-send-mail.js`, sur le HTML envoyé). `getErrorsForControlQuality()` (`badsender-control-quality.js`) en fait des lignes traduites pour la bannière « Contrôle qualité », en attendant le panneau du lot 2.
 
-- L'export d'un mailing (download)
-- L'envoi vers un ESP
+- Le HTML est exporté une fois, puis analysé une fois avec `DOMParser` (`quality/context.js`). Le contexte contient aussi les blocs de tous les conteneurs du modèle (`*Blocks`) et la configuration de l'éditeur (`ctx.config` : route des placeholders, configuration du tracking). Les règles ne lisent que ce contexte.
+- **On ne juge que l'édition du client.** Un nœud exporté est rattaché à son bloc par l'`id` de la racine du bloc, conservé dans l'export. Ce qui est hors bloc (cadre du template) n'est jamais jugé.
+- Chaque résultat porte sa règle, sa catégorie, sa sévérité, son bloc (`blockId`, libellé « Hero #2 »), le chemin de la propriété et une empreinte : `règle|bloc|propriété|hash(valeur fautive)|rang`. Le rang distingue deux résultats identiques d'un même bloc.
+- Une règle qui plante est marquée `error` sans arrêter les autres. Si le contexte ne peut pas être construit, aucun résultat : le QC ne bloque jamais l'export.
 
-#### 1. Contrôle de la taille de l'email
+### Les règles (`ext/quality/rules/`)
 
-**Fonction** : `checkAndDisplaySizeWarning(viewModel)`
+| Règle                 | Sévérité         | Ce qui est signalé                                                                                                                                                                                                                       |
+| --------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tracking-params`     | Erreur           | Paramètres de tracking obligatoires sans valeur. Bloque aussi le téléchargement et l'envoi ESP (`checkRequiredTrackingParams`)                                                                                                           |
+| `unfilled-links`      | Erreur           | Lien avec texte dans un bloc dont le `href` est `#toreplace`, `#` ou vide (y compris dans un bloc Code HTML)                                                                                                                             |
+| `images-without-link` | Warning          | Image sans texte dans un tel lien. Pas si l'image est un placeholder : `unreplaced-images` la signale déjà                                                                                                                               |
+| `unreplaced-images`   | Erreur / Warning | Erreur : `<img>` sans `src` ou placeholder (`metadata.imagesUrl.placeholder`, ou `?method=placeholder`). Warning : image d'exemple du template jamais changée, reconnue à son nom de fichier (l'export la sert en `cover/WxH/<fichier>`) |
+| `background-images`   | Warning          | Variante de fond activée (Outlook, mobile, standard) sans image : vide, `none`, GIF transparent, ou l'image par défaut du template                                                                                                       |
+| `html-size`           | Warning          | HTML exporté de plus de 102 KB (troncature Gmail)                                                                                                                                                                                        |
 
-| Paramètre | Valeur                                 |
-| --------- | -------------------------------------- |
-| Seuil     | 102 KB                                 |
-| Risque    | Clipping Gmail (troncature du contenu) |
-| Sévérité  | Warning                                |
+« Pas d'image de fond » est défini à un seul endroit, `quality/ownership.js` (`isImageUnset`). Le widget d'image de fond l'utilise aussi : le placeholder Clarins codé en dur a disparu.
 
-**Comportement** :
+### Affichage
 
-- Génère le HTML exporté en blob
-- Compare la taille au seuil de 102 KB
-- Affiche un avertissement si dépassé
-
-**Message affiché** :
-
-> "The exported HTML exceeds 102KB, which may result in clipping email on Gmail"
-
-#### 2. Contrôle des images de fond manquantes
-
-**Fonction** : Intégrée dans `getErrorsForControlQuality()`
-
-**Types d'images vérifiées** :
-
-| Type     | Condition de vérification                                     | Champ vérifié    |
-| -------- | ------------------------------------------------------------- | ---------------- |
-| Outlook  | `outlookBgImageVisible() === true`                            | `outlookBgImage` |
-| Mobile   | `mobileBgImageChoice() === 'mobile'`                          | `mobileBgimage`  |
-| Standard | `bgImageChoice() === 'custom'` OU `bgImageVisible() === true` | `bgimage`        |
-
-**Détection d'image vide** (`isElementEmpty()`) :
-
-- `null` ou chaîne vide
-- Valeur `'none'`
-- GIF transparent 1x1 : `data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==`
-- Placeholder : `https://live.lepatron.email/clarins/mastertemplate/bg.png`
-
-#### 3. Contrôle des liens incomplets
-
-**Fonction** : Intégrée dans `getErrorsForControlQuality()`
-
-**Sélecteur CSS** : `a[href="#toreplace"]`
-
-**Erreurs détectées** :
-
-| Condition                   | Message d'erreur                        |
-| --------------------------- | --------------------------------------- |
-| Lien avec href="#toreplace" | `"Missing link label: [texte du lien]"` |
-| Image sans lien             | `"Picture with no link"`                |
-
-#### 4. Affichage des erreurs
-
-**Fonction** : `displayErrors(errors, viewModel)`
-
-**Format d'affichage** :
-
-- Message de succès : "Your email was successfully exported"
-- Liste ordonnée des problèmes détectés
-- Dialog modal bloquant (notification utilisateur)
+`displayErrors(errors, viewModel)` insère la bannière « Contrôle qualité » au-dessus de l'email. Les lignes sont insérées comme texte, jamais comme HTML : elles citent le libellé des liens. Si un paramètre de tracking obligatoire manque, `displayTrackingError()` ouvre une modale bloquante.
 
 ---
 
@@ -238,22 +198,24 @@ Pipeline de traitement appliqué à tout HTML exporté :
 
 ### Contrôles par moment d'exécution
 
-| Moment          | Contrôle                  | Type    | Sévérité | Bloquant |
-| --------------- | ------------------------- | ------- | -------- | -------- |
-| **Clic Export** | Taille email (102KB)      | Client  | Warning  | Non      |
-| **Clic Export** | Images de fond manquantes | Client  | Warning  | Non      |
-| **Clic Export** | Liens incomplets          | Client  | Warning  | Non      |
-| **Clic Export** | Images sans lien          | Client  | Warning  | Non      |
-| **Download**    | Mailing existe            | Serveur | Critical | Oui      |
-| **Download**    | Accès utilisateur         | Serveur | Critical | Oui      |
-| **Download**    | Processing HTML           | Serveur | -        | Auto     |
-| **Download**    | Images HTTP 200           | Serveur | Warning  | Non      |
-| **FTP Upload**  | Config FTP                | Serveur | Critical | Oui      |
-| **FTP Upload**  | Connexion FTP             | Serveur | Critical | Oui      |
-| **Send Test**   | Format email              | Serveur | Critical | Oui      |
-| **Send ESP**    | Accès profil              | Serveur | Critical | Oui      |
-| **Send ESP**    | Profil existe             | Serveur | Critical | Oui      |
-| **Send ESP**    | Envoi dupliqué            | Serveur | Critical | Oui      |
+| Moment          | Contrôle                    | Type    | Sévérité | Bloquant |
+| --------------- | --------------------------- | ------- | -------- | -------- |
+| **Clic Export** | Tracking obligatoire        | Client  | Erreur   | Oui      |
+| **Clic Export** | Liens non renseignés        | Client  | Erreur   | Non      |
+| **Clic Export** | Images non remplacées       | Client  | Erreur   | Non      |
+| **Clic Export** | Images cliquables sans lien | Client  | Warning  | Non      |
+| **Clic Export** | Images de fond manquantes   | Client  | Warning  | Non      |
+| **Clic Export** | Taille email (102KB)        | Client  | Warning  | Non      |
+| **Download**    | Mailing existe              | Serveur | Critical | Oui      |
+| **Download**    | Accès utilisateur           | Serveur | Critical | Oui      |
+| **Download**    | Processing HTML             | Serveur | -        | Auto     |
+| **Download**    | Images HTTP 200             | Serveur | Warning  | Non      |
+| **FTP Upload**  | Config FTP                  | Serveur | Critical | Oui      |
+| **FTP Upload**  | Connexion FTP               | Serveur | Critical | Oui      |
+| **Send Test**   | Format email                | Serveur | Critical | Oui      |
+| **Send ESP**    | Accès profil                | Serveur | Critical | Oui      |
+| **Send ESP**    | Profil existe               | Serveur | Critical | Oui      |
+| **Send ESP**    | Envoi dupliqué              | Serveur | Critical | Oui      |
 
 ### Codes d'erreur par catégorie
 
@@ -338,25 +300,34 @@ Pipeline de traitement appliqué à tout HTML exporté :
 ### Où le QC est appelé
 
 ```javascript
-// Export mailing
-// packages/editor/src/js/ext/badsender-server-storage.js:95
-const errors = getErrorsForControlQuality(viewModel);
+// Téléchargement : packages/editor/src/js/ext/badsender-server-storage.js
+const html = viewModel.exportHTML();
+const errors = getErrorsForControlQuality(viewModel, { html });
 
-// Envoi ESP
-// packages/editor/src/js/vue/components/esp/esp-send-mail.js:224
-const errors = getErrorsForControlQuality(this.vm);
+// Envoi ESP : packages/editor/src/js/vue/components/esp/esp-send-mail.js
+const errors = getErrorsForControlQuality(this.vm, { html: unprocessedHtml });
 ```
 
-### Structure du rapport d'erreurs
+### Structure d'un résultat
 
 ```javascript
-// Retour de getErrorsForControlQuality()
+// runQualityChecks(viewModel, { html })
 {
-  errors: [
-    'Missing link label: Cliquez ici',
-    'Picture with no link',
-    'The exported HTML exceeds 102KB...',
-  ];
+  findings: [
+    {
+      ruleId: 'unfilled-links',
+      category: 'content',
+      severity: 'error',
+      messageKey: 'Link not filled in: __label__',
+      params: { label: 'Cliquez ici' },
+      blockId: 'ko_textBlock_3',
+      blockLabel: 'Text #2',
+      propertyPath: null,
+      fingerprint: 'unfilled-links|ko_textBlock_3|-|1x2y3z|1',
+    },
+  ],
+  // Une entrée par règle : 'passed', 'failed' (avec count) ou 'error'
+  checks: [{ ruleId: 'unfilled-links', category: 'content', status: 'failed', count: 1 }],
 }
 ```
 
