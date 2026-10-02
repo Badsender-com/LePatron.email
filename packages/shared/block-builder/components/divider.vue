@@ -6,6 +6,11 @@
 // the line is exactly the thickness asked for, and `font-size:0; line-height:0`
 // stops the `&nbsp;` from giving that cell a line box of its own.
 //
+// The `prettier-ignore` in the template guards the cell's `>&nbsp;</td>`: the
+// whitespace prettier would put around the `&nbsp;` is significant, Vue keeps
+// it, and it would land in every email that ships this block. (Template
+// comments never ship — the compiler strips them — so the note lives here.)
+//
 // See button.vue for the rules every component here obeys.
 defineProps({
   color: String,
@@ -39,8 +44,6 @@ defineProps({
           align="center"
         >
           <tr>
-            <!-- The whitespace around &nbsp; is significant: Vue keeps it, and it
-                 would land in every email that ships this block. -->
             <!-- prettier-ignore -->
             <td
               :style="`border-top:${thickness}px solid ${color}; font-size:0; line-height:0;`"

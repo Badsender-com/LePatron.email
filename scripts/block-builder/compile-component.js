@@ -9,18 +9,17 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parse } = require('@vue/compiler-sfc');
-const { createSSRApp } = require('vue3');
-const { renderToString } = require('vue3/server-renderer');
+const { parse, compileScript } = require('@vue/compiler-sfc');
 
 const {
   compileTemplate,
 } = require('../../packages/shared/block-builder/template.js');
 const {
-  sentinelFor,
+  stripComments,
   inlineStyles,
   substitutePlaceholders,
 } = require('./markup-pipeline.js');
+const { compileRender, renderWithSentinels } = require('./render-component.js');
 const { checkManifest, checkPropsDeclared } = require('./component-checks.js');
 
 const COMPONENTS_DIR = path.join(
@@ -37,7 +36,7 @@ const COMPONENTS_DIR = path.join(
  * @param {string} name e.g. `button`
  * @param {string} source the `.vue` file
  * @param {Object} manifest what its `.slots.js` exports
- * @returns {{template: string, slots: Object, variants: Object}}
+ * @returns {{ssrRender: Function, slots: Object, variants: Object}}
  */
 function loadComponent(name, source, manifest) {
   const { descriptor, errors } = parse(source, { filename: `${name}.vue` });
@@ -53,34 +52,17 @@ function loadComponent(name, source, manifest) {
   }
 
   const { slots, variants } = checkManifest(name, manifest);
-  checkPropsDeclared(name, descriptor, slots, variants);
+  const bindings = descriptor.scriptSetup
+    ? compileScript(descriptor, { id: name }).bindings || {}
+    : {};
+  checkPropsDeclared(name, bindings, slots, variants);
 
-  return { template: descriptor.template.content, slots, variants };
-}
-
-/**
- * Renders the component once, with a sentinel in place of every prop.
- *
- * @returns {Promise<string>} HTML still carrying the sentinels
- */
-async function renderWithSentinels({ template, slots }, fixed) {
-  const slotNames = Object.keys(slots);
-  const fixedNames = Object.keys(fixed);
-
-  const props = slotNames.reduce((all, name) => {
-    all[name] = sentinelFor(name);
-    return all;
-  }, {});
-
-  // The variant's own props are real values, not sentinels: they are what the
-  // `v-if` reads, and they must not survive into the output.
-  Object.assign(props, fixed);
-
-  const app = createSSRApp(
-    { props: slotNames.concat(fixedNames), template },
-    props
+  const { ssrRender } = compileRender(
+    name,
+    descriptor.template.content,
+    bindings
   );
-  return renderToString(app);
+  return { ssrRender, slots, variants };
 }
 
 /**
@@ -93,7 +75,7 @@ async function compileVariant(name, component, variant) {
     component,
     component.variants[variant]
   );
-  const inlined = await inlineStyles(rendered);
+  const inlined = await inlineStyles(stripComments(rendered));
   const { html, used } = substitutePlaceholders(
     inlined,
     component.slots,

@@ -68,6 +68,13 @@ describe('every component ships what the generator needs', () => {
       // people's templates and can rely on no stylesheet but its own.
       expect(compiled).not.toMatch(/\sclass="/);
 
+      // A comment in a component is a note for its next author. Only Outlook's
+      // conditional comments are markup, and only they may ship.
+      const outsideConditionals = compiled
+        .replace(/<!--\[if [^\]]*\]>(<!-->)?/g, '')
+        .replace(/(<!--)?<!\[endif\]-->/g, '');
+      expect(outsideConditionals).not.toContain('<!--');
+
       // Vue leaves these behind when a component has several roots or a v-if it
       // could not resolve. Either would end up in a real email.
       expect(compiled).not.toContain('<!--[-->');

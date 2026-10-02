@@ -6,8 +6,6 @@
 // plausible-looking markup with a hole silently missing — and the only symptom
 // would be an email that looks wrong in production.
 
-const { compileScript } = require('@vue/compiler-sfc');
-
 /**
  * Every prop must be declared, and every declared prop must carry a context the
  * engine knows. A prop nobody declared would otherwise render a sentinel into
@@ -53,11 +51,8 @@ function checkManifest(name, manifest) {
  * `defineProps` is the right place to read it from: it is what the author
  * already writes, so the two lists cannot drift without one of them being edited.
  */
-function checkPropsDeclared(name, descriptor, slots, variants) {
-  if (!descriptor.scriptSetup) return;
-
-  const { bindings } = compileScript(descriptor, { id: name });
-  const declared = Object.entries(bindings || {})
+function checkPropsDeclared(name, bindings, slots, variants) {
+  const declared = Object.entries(bindings)
     .filter(([, kind]) => kind === 'props')
     .map(([prop]) => prop);
 

@@ -5,5 +5,5 @@
 // the component and fails on any difference.
 'use strict';
 module.exports = {
-  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:[[paddingTop|PX|8]]px [[paddingRight|PX|24]]px [[paddingBottom|PX|8]]px [[paddingLeft|PX|24]]px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"[[width|CSS_VALUE|100%]]\" align=\"center\"><tr><!-- The whitespace around &nbsp; is significant: Vue keeps it, and it\n                 would land in every email that ships this block. --><!-- prettier-ignore --><td style=\"border-top:[[thickness|PX|1]]px solid [[color|COLOR|#cccccc]]; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table>"
+  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td style=\"padding:[[paddingTop|PX|8]]px [[paddingRight|PX|24]]px [[paddingBottom|PX|8]]px [[paddingLeft|PX|24]]px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"[[width|CSS_VALUE|100%]]\" align=\"center\"><tr><td style=\"border-top:[[thickness|PX|1]]px solid [[color|COLOR|#cccccc]]; font-size:0; line-height:0;\">&nbsp;</td></tr></table></td></tr></table>"
 };

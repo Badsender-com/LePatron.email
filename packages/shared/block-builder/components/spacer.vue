@@ -10,6 +10,11 @@
 // The height is written twice on purpose — Outlook reads the attribute, the
 // rest read the style.
 //
+// The `prettier-ignore` in the template guards the cell's `>&nbsp;</td>`: the
+// whitespace prettier would put around the `&nbsp;` is significant, Vue keeps
+// it, and it would land in every email that ships this block. (Template
+// comments never ship — the compiler strips them — so the note lives here.)
+//
 // See button.vue for the rules every component here obeys.
 defineProps({
   height: String,
@@ -25,8 +30,6 @@ defineProps({
     width="100%"
   >
     <tr>
-      <!-- The whitespace around &nbsp; is significant: Vue keeps it, and it
-           would land in every email that ships this block. -->
       <!-- prettier-ignore -->
       <td
         :height="height"

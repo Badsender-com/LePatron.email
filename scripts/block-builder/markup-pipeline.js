@@ -38,6 +38,31 @@ function placeholderFor(name, slot) {
   return `[[${name}|${slot.context}|${fallback}]]`;
 }
 
+// Outlook's conditional comments, in their three spellings:
+//
+//   <!--[if mso]> … <![endif]-->      one comment, hidden from everyone else
+//   <!--[if !mso]><!--> … <!--<![endif]-->   two, around markup the rest see
+//
+// They are markup to the clients that read them, so they are the only comments
+// that ship.
+const CONDITIONAL_COMMENT = /^(\[if\s[^\]]*\]>[\s\S]*<!\[endif\]|\[if\s[^\]]*\]><!|<!\[endif\])$/;
+
+/**
+ * Drops every comment but Outlook's conditional ones.
+ *
+ * A comment in a component is a note for whoever edits it next — why the
+ * whitespace matters, a `prettier-ignore` — and none of that belongs in the
+ * email of every user who ships the block.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+function stripComments(html) {
+  return html.replace(/<!--([\s\S]*?)-->/g, (comment, inside) =>
+    CONDITIONAL_COMMENT.test(inside) ? comment : ''
+  );
+}
+
 /**
  * Resolves the Tailwind classes the markup uses and inlines them.
  *
@@ -141,6 +166,7 @@ module.exports = {
   SENTINEL_PREFIX,
   sentinelFor,
   placeholderFor,
+  stripComments,
   inlineStyles,
   substitutePlaceholders,
 };

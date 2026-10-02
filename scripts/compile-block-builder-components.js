@@ -28,6 +28,11 @@
 // Vite toolchain, runs on the project's Node, and keeps the authoring format
 // identical — which was the point.
 
+// Vue picks its build from NODE_ENV when it is first required, and only the
+// development build reports the warnings the compiler refuses a component on.
+// Forced here so a production shell compiles the same files as a laptop.
+process.env.NODE_ENV = 'development';
+
 const fs = require('fs');
 const path = require('path');
 
