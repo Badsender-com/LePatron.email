@@ -101,7 +101,11 @@ const PREVIEW_DOCUMENT = [
   'body{margin:0;padding:0;background:#ffffff;}',
   'table{border-collapse:collapse;}',
   'img{max-width:100%;}',
-  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;height:24px;}`,
+  // A row can be clicked and picked up: `grab` says the second, which a
+  // pointer would not, and `grabbing` takes over once it is held.
+  `[${ELEMENT_ATTRIBUTE}]{cursor:grab;height:24px;}`,
+  `[${ELEMENT_ATTRIBUTE}]:active,`,
+  `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]{cursor:grabbing;}`,
   `[${STARTER_ATTRIBUTE}]>table{opacity:0.6;}`,
   `[${STARTER_ATTRIBUTE}="image"]{height:120px;`,
   `background:#eeeeee ${IMAGE_ICON} no-repeat center;}`,
@@ -271,11 +275,7 @@ const PreviewSurfaceMixin = {
     // (see state.js), and there are at most a handful of rows.
     applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
-      const doc = frame && frame.contentDocument;
-      if (!doc || !doc.body) return;
-
-      const rows = doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`);
-      Array.prototype.forEach.call(rows, (row) => {
+      this.previewRows(frame && frame.contentDocument).forEach((row) => {
         const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedId;
         row.classList.toggle(SELECTED_CLASS, selected);
       });

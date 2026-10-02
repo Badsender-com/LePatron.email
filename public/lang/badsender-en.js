@@ -379,7 +379,7 @@ module.exports = {
   'block-builder-move-down': 'Move down',
   'block-builder-remove': 'Remove',
   'block-builder-preview-hint':
-    'Indicative preview — browser rendering, not mail client rendering.',
+    'Click an element to edit it, drag it to move it. Indicative preview — browser rendering, not mail client rendering.',
   'block-builder-rebuilds-markup':
     'This block was built by an earlier version of the builder. Applying will rebuild it with the current one, and its rendering may change slightly.',
   'block-builder-discard-confirm':

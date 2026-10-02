@@ -30,6 +30,7 @@ const {
   nextTask,
   typesOf,
   dropLineOf,
+  ELEMENT_ATTRIBUTE,
   DRAGGING_CLASS,
   MOVING_CLASS,
 } = require('./drag-helpers.js');
@@ -47,6 +48,17 @@ describe('a rendered row can be picked up', () => {
     rowsOf(doc).forEach((row) => expect(row.draggable).toBe(true));
     // `draggable` is preview chrome. An email has no use for it.
     expect(modal.html).not.toContain('draggable');
+  });
+
+  // Nothing else says a row can be moved before someone tries.
+  it('shows a grab cursor on the rows, and a grabbing one during a drag', async () => {
+    const { doc } = await openModal(['text']);
+    const css = doc.querySelector('style').textContent;
+
+    expect(css).toContain(`[${ELEMENT_ATTRIBUTE}]{cursor:grab;`);
+    expect(css).toContain(
+      `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]{cursor:grabbing;}`
+    );
   });
 
   // Set on the nodes, so every render has to set it again.
