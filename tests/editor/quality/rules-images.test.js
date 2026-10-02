@@ -93,6 +93,29 @@ describe('unreplaced-images', () => {
     });
   });
 
+  // LePatron's image backend re-serves the sample under its own route: only
+  // the file name is left of the template's URL.
+  it('recognises the sample image as LePatron exports it', () => {
+    const blocks = [
+      { id: 'b1', type: 'imageBlock', image: { ...imageBlockDef.image } },
+    ];
+    const html = exportOf({
+      b1:
+        '<img src="http://localhost:3000/api/images/cover/600x300/sample.jpg">',
+    });
+    const findings = findingsOf(unreplacedImages, {
+      blocks,
+      blockDefs: [imageBlockDef],
+      html,
+    });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      messageKey: 'Template sample image not replaced',
+      propertyPath: 'image.src',
+    });
+  });
+
   it('ignores a sample image the export does not show, or a replaced one', () => {
     const sample = {
       id: 'b1',
