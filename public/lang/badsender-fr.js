@@ -351,6 +351,8 @@ module.exports = {
   'head-css-section-hint':
     "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   'head-css-section-button': 'Éditer le CSS',
+  'head-css-not-exported-hint':
+    "Non exporté pour l'instant : ce CSS n'est ajouté à l'email que tant qu'il contient un bloc Code HTML.",
   'head-css-view-button': 'Voir le CSS',
   'head-css-read-only-hint':
     'Ce template ne permet plus de modifier le CSS personnalisé. Il est conservé tel quel et toujours exporté avec les blocs Code HTML ; il peut seulement être supprimé.',

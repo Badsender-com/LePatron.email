@@ -185,6 +185,7 @@
       <h3 class="head-css-section__title" data-bind="text: $root.t('head-css-section-title')">Custom CSS</h3>
       <!-- ko if: $root.isHeadCssEditable() -->
       <p class="head-css-section__hint" data-bind="text: $root.t('head-css-section-hint')"></p>
+      <p class="head-css-section__hint head-css-section__hint--warning" data-bind="visible: $root.isHeadCssAwaitingBlock(), text: $root.t('head-css-not-exported-hint')"></p>
       <button
         type="button"
         class="head-css-section__button"

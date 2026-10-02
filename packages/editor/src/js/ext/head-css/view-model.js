@@ -68,6 +68,15 @@ function addHeadCssToViewModel(viewModel) {
     );
   };
 
+  // Whether to say the CSS is not exported for now: editable, but the mailing
+  // holds no HTML code block, so the export leaves it out (exported-css.js).
+  // Editing stays possible — the author may be writing the CSS before pasting
+  // the markup — but nobody should expect it in the email yet. Only the Style
+  // tab needs it: the block panel shows only when a block exists.
+  viewModel.isHeadCssAwaitingBlock = function () {
+    return viewModel.isHeadCssEditable() && !viewModel.hasHtmlCodeBlock();
+  };
+
   // Opens the shared CodeMirror modal on the stylesheet instead of a block
   // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
   // guarded because the palette button exists before Vue has bound.

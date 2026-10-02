@@ -127,6 +127,17 @@
     font-size: 0.75rem;
     line-height: 1.4;
     color: rgba(0, 0, 0, 0.54);
+
+    // Said while the email has no HTML code block: the CSS is kept but not
+    // exported. The warning tone the comments panel uses (@yellow), not the
+    // error one — nothing is wrong, the CSS is just waiting for a block.
+    &--warning {
+      padding: 0.5rem;
+      color: @mosaico-text-color;
+      background: fade(@yellow, 12%);
+      border-left: 3px solid @yellow;
+      border-radius: 2px;
+    }
   }
 
   // Same shape as the widget button of the HTML code block, so the two ways of

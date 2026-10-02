@@ -85,6 +85,42 @@ describe('isHeadCssReadOnly', () => {
   });
 });
 
+// Flag on, but no HTML code block: editing stays possible, and the Style tab
+// says the CSS is not exported until the email holds one.
+describe('isHeadCssAwaitingBlock', () => {
+  it('is true with the flag on and no block', () => {
+    const { viewModel } = makeViewModel({
+      htmlBlockEnabled: true,
+      withBlock: false,
+    });
+    expect(viewModel.isHeadCssAwaitingBlock()).toBe(true);
+    expect(viewModel.isHeadCssEditable()).toBe(true);
+  });
+
+  it.each([
+    ['a block is present', { htmlBlockEnabled: true }],
+    ['the flag is off', { htmlBlockEnabled: false, withBlock: false }],
+  ])('is false when %s', (_label, params) => {
+    expect(makeViewModel(params).viewModel.isHeadCssAwaitingBlock()).toBe(
+      false
+    );
+  });
+
+  it('goes away once a block is added', () => {
+    const { viewModel, blocks } = makeViewModel({
+      htmlBlockEnabled: true,
+      withBlock: false,
+    });
+    const awaiting = ko.pureComputed(viewModel.isHeadCssAwaitingBlock);
+    const seen = [];
+    awaiting.subscribe((value) => seen.push(value));
+
+    blocks.push(ko.observable({ type: ko.observable('htmlCodeBlock') }));
+
+    expect(seen).toEqual([false]);
+  });
+});
+
 describe('the openers', () => {
   it('opens the editable modal with the flag on, never the viewer', () => {
     const { viewModel } = makeViewModel({ htmlBlockEnabled: true });
@@ -140,6 +176,7 @@ describe('the labels', () => {
     'head-css-delete-confirm',
     'widget-code-view-css',
     'html-code-modal-close',
+    'head-css-not-exported-hint',
   ])('%s is translated in French and English', (key) => {
     expect(typeof fr[key]).toBe('string');
     expect(typeof en[key]).toBe('string');
