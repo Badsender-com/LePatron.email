@@ -18,6 +18,7 @@ const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
+const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -53,9 +54,14 @@ const MailingSchema = Schema(
     // out any property its block definitions do not declare, and this one
     // belongs to the mailing rather than to a block.
     // Guarded by head-css-guard.js; injected by packages/shared/head-css.
+    // Left out of every list payload (findForApi, the admin group and user
+    // listings): only the editor reads it, through findOneForMosaico.
     headCss: {
       type: String,
       default: '',
+      // The route refuses it first, with its own error code; this bound only
+      // catches a write that does not go through updateMosaico.
+      maxlength: HEAD_CSS_MAX_LENGTH,
     },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
@@ -226,7 +232,7 @@ MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { previewHtml: 0, data: 0 });
+  return this.find(query, { previewHtml: 0, data: 0, headCss: 0 });
 };
 
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(

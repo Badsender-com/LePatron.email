@@ -380,10 +380,11 @@ async function readMailings(req, res) {
     sort = { [sortKey]: direction };
   }
 
-  // Retrieve mailings excluding the 'previewHtml' and 'data' fields and their total count
+  // Retrieve mailings excluding the heavy fields the table never shows, and
+  // their total count
   const [mailings, totalItems] = await Promise.all([
     Mailings.find({ _company: groupId })
-      .select('-previewHtml -data') // Exclude the 'previewHtml' and data field
+      .select('-previewHtml -data -headCss')
       .sort(sort)
       // in case limit = -1, we want to retrieve all mailings
       .skip(skip)

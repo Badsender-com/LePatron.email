@@ -178,7 +178,7 @@ async function readMailings(req, res) {
   // Retrieve mailings and their total count
   const [mailings, totalItems] = await Promise.all([
     Mailings.find({ _user: userId })
-      .select('-previewHtml -data')
+      .select('-previewHtml -data -headCss')
       .skip(offset)
       .limit(parsedLimit),
     Mailings.countDocuments({ _user: userId }), // Count all mailings for this user
