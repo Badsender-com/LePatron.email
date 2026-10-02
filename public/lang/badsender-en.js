@@ -348,6 +348,8 @@ module.exports = {
   'block-builder-mobile': 'Mobile',
   'block-builder-preview-hint':
     'Indicative preview — browser rendering, not mail client rendering.',
+  'block-builder-too-large':
+    'This composition is too large to be saved. Remove elements or shorten the texts before applying.',
   'widget-code-disabled':
     'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'save-message-html-code-disabled':
@@ -356,6 +358,8 @@ module.exports = {
     'Save refused: the block builder is not enabled on this template.',
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
+  'save-message-block-builder-too-large':
+    'Save refused: a composed block exceeds the maximum size.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',
   // Head CSS — a stylesheet for the whole email, gated by the same flag
   'head-css-section-title': 'Custom CSS',

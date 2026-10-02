@@ -18,6 +18,9 @@ const Vue = require('vue/dist/vue.common');
 const {
   BlockBuilderModalComponent,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
+const {
+  HTML_CODE_MAX_LENGTH,
+} = require('../../../packages/shared/synthetic-blocks.js');
 
 function mountModal(overrides) {
   // `currentBgimage` and `showDialogGallery` are the editor's own gallery
@@ -224,6 +227,44 @@ describe('applying', () => {
 
     expect(vm.startMultiple).toHaveBeenCalledTimes(1);
     expect(vm.stopMultiple).toHaveBeenCalledTimes(1);
+  });
+
+  // Applied, an oversized composition would fail every autosave after it, with
+  // a message about a block the user does not have. Refused here, it can still
+  // be cut down.
+  describe('past the size limit', () => {
+    function oversized() {
+      const context = open();
+      context.modal.addElement('text');
+      context.modal.applySetting({
+        key: 'content',
+        value: 'x'.repeat(HTML_CODE_MAX_LENGTH + 1),
+      });
+      context.modal.handleApply();
+      return context;
+    }
+
+    it('writes nothing and says why', () => {
+      const { modal, written, stateAccessor } = oversized();
+
+      expect(written).toEqual([]);
+      expect(stateAccessor.writes).toEqual([]);
+      expect(modal.tooLarge).toBe(true);
+    });
+
+    it('stays open on the composition', () => {
+      const { modal } = oversized();
+
+      expect(modal.state.elements).toHaveLength(1);
+    });
+
+    it('drops the message once the composition changes', () => {
+      const { modal } = oversized();
+
+      modal.applySetting({ key: 'content', value: 'Court' });
+
+      expect(modal.tooLarge).toBe(false);
+    });
   });
 
   it('writes nothing when closed without applying', () => {

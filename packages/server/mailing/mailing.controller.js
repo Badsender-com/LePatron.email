@@ -415,11 +415,13 @@ async function previewHtml(req, res) {
  * 16MB per-document limit.
  *
  * @param {Object} body the updateMosaico request body
- * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE or HEAD_CSS_TOO_LARGE
+ * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE, BLOCK_BUILDER_TOO_LARGE or
+ *   HEAD_CSS_TOO_LARGE
  */
 function assertPastedContentSizes(body) {
-  if (!validateSyntheticBlocks(body.data).valid) {
-    throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
+  const blocks = validateSyntheticBlocks(body.data);
+  if (!blocks.valid) {
+    throw new BadRequest(blocks.errorCode);
   }
   if (!validateHeadCss(body.headCss).valid) {
     throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);

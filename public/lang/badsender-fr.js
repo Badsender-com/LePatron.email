@@ -357,6 +357,8 @@ module.exports = {
   'block-builder-mobile': 'Mobile',
   'block-builder-preview-hint':
     'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
+  'block-builder-too-large':
+    "Cette composition est trop volumineuse pour être enregistrée. Retirez des éléments ou raccourcissez les textes avant d'appliquer.",
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
@@ -365,6 +367,8 @@ module.exports = {
     "Enregistrement refusé : le block builder n'est pas activé sur ce template.",
   'save-message-html-code-too-large':
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
+  'save-message-block-builder-too-large':
+    'Enregistrement refusé : un bloc composé dépasse la taille maximale.',
   'save-message-preview-too-large':
     "Enregistrement refusé : l'email est trop volumineux.",
   // Head CSS — a stylesheet for the whole email, gated by the same flag

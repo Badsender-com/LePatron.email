@@ -4,6 +4,9 @@ const { ElementSettingsComponent } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
+  validateBlockBuilderLength,
+} = require('../../../ext/html-code-block/validate.js');
+const {
   generate,
   emptyState,
 } = require('../../../../../../shared/block-builder/generate.js');
@@ -72,6 +75,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // version that did not keep one. Composing REPLACES that markup, so the
     // user is told before they lose it.
     replacesExistingMarkup: false,
+    // The serialised state an apply was refused for, for its size. Kept rather
+    // than a boolean so the message goes as soon as the composition changes.
+    refusedState: null,
     state: emptyState(),
     selectedId: null,
     palette: PALETTE,
@@ -99,6 +105,12 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
     isEmpty() {
       return this.state.elements.length === 0;
+    },
+    tooLarge() {
+      return (
+        this.refusedState !== null &&
+        this.refusedState === serialiseState(this.state)
+      );
     },
     // Translated here, where the view-model is, and handed to the settings
     // panel as plain strings.
@@ -221,13 +233,21 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
 
     handleApply() {
       if (!this.accessor) return;
+      const html = this.html;
+      const state = serialiseState(this.state);
+      // Refused here, in the modal, where the composition can still be cut
+      // down: applied, it would make every autosave fail on the server.
+      if (!validateBlockBuilderLength(html, state).valid) {
+        this.refusedState = state;
+        return;
+      }
       // One undo step for the whole composition — same reason as the HTML code
       // modal: the undo stack copies the model on every entry. Both writes go
       // inside it, so markup and state can never land in separate steps and
       // drift apart under an undo.
       this.vm.startMultiple();
-      this.accessor(this.html);
-      if (this.stateAccessor) this.stateAccessor(serialiseState(this.state));
+      this.accessor(html);
+      if (this.stateAccessor) this.stateAccessor(state);
       this.vm.stopMultiple();
       this.closeModal();
     },
@@ -236,6 +256,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
+      this.refusedState = null;
       this.state = emptyState();
       this.selectedId = null;
       this.$refs.modalRef?.closeModal();

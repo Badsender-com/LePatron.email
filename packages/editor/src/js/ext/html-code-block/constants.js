@@ -4,6 +4,7 @@ const {
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 } = require('./block-types.js');
 
 // Named constants for the "HTML code" block, derived from its descriptor rather
@@ -37,4 +38,5 @@ module.exports = {
   BUILDER_STATE_PROPERTY,
   HTML_CODE_BINDING,
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 };

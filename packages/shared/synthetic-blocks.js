@@ -139,10 +139,18 @@ function descriptorForType(type) {
 // rendered copy in the same document, against Mongo's 16MB per-document limit.
 const HTML_CODE_MAX_LENGTH = 100000;
 
+// Maximum length of the builder's serialised state, which sits next to the
+// markup in the same block. It describes that markup — the same texts, the same
+// URLs — so it is of the same order; twice the markup bound leaves room for JSON
+// escaping while still refusing a state stuffed with what the generator would
+// never render.
+const BUILDER_STATE_MAX_LENGTH = HTML_CODE_MAX_LENGTH * 2;
+
 module.exports = {
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
   SYNTHETIC_BLOCKS,
   descriptorForType,
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 };

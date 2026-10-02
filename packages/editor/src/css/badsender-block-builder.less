@@ -246,6 +246,19 @@
   border-radius: 2px;
 }
 
+// An apply refused for size. Same place as the warning, louder: the
+// composition has to change before it can be applied at all.
+.bb-modal__error {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: @error-text-color;
+  background: fade(@error-color, 10%);
+  border: 1px solid fade(@error-color, 40%);
+  border-radius: 2px;
+}
+
 // The TinyMCE field. Inline mode styles nothing on its own, so the box has to
 // look like the other inputs of the panel.
 .bb-rich {

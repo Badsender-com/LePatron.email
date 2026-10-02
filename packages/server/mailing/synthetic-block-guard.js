@@ -8,6 +8,7 @@ const {
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 } = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the synthetic blocks — the "HTML code" block and the
@@ -33,13 +34,17 @@ const {
 // The descriptors come from the table the editor injects from
 // (packages/shared/synthetic-blocks.js), so the property read here is the one the
 // editor writes and the flag is the one the palette obeys. What only the server
-// knows is added here: the error code naming each block when it is refused.
+// knows is added here: the error codes naming each block when it is refused —
+// for its flag, and for its size. A composer told their HTML code block is too
+// large, when they have none, has nothing to act on.
 const ERROR_CODES_BY_TYPE = Object.freeze({
   [HTML_CODE_BLOCK.type]: {
     errorCode: ERROR_CODES.HTML_CODE_BLOCK_DISABLED,
+    tooLargeErrorCode: ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE,
   },
   [BLOCK_BUILDER_BLOCK.type]: {
     errorCode: ERROR_CODES.BLOCK_BUILDER_DISABLED,
+    tooLargeErrorCode: ERROR_CODES.BLOCK_BUILDER_TOO_LARGE,
   },
 });
 
@@ -113,15 +118,58 @@ function findLongestSyntheticBlock(data) {
 }
 
 /**
+ * The serialised state a synthetic block stores next to its markup, or '' for
+ * a block that keeps none.
+ *
+ * @param {Object} block
+ * @returns {string}
+ */
+function stateOf(block) {
+  const descriptor = descriptorOf(block);
+  if (!descriptor || !descriptor.stateProperty) return '';
+  const state = block[descriptor.stateProperty];
+  return typeof state === 'string' ? state : '';
+}
+
+/**
+ * The descriptor of the first synthetic block past a size limit, or null.
+ *
+ * The markup is bounded for every block; the builder's state too, since it
+ * sits in the same document and nothing else bounds it.
+ *
  * @param {Object} data mailing.data
- * @param {number} [maxLength]
- * @returns {{ valid: boolean, length: number, maxLength: number }}
+ * @param {Object} [limits]
+ * @param {number} [limits.html] maximum markup length
+ * @param {number} [limits.state] maximum serialised state length
+ * @returns {Object|null}
+ */
+function findOversizedSyntheticBlock(data, limits) {
+  const { html = HTML_CODE_MAX_LENGTH, state = BUILDER_STATE_MAX_LENGTH } =
+    limits || {};
+  const oversized = findSyntheticBlocks(data).find(
+    (block) => htmlOf(block).length > html || stateOf(block).length > state
+  );
+  return oversized ? descriptorOf(oversized) : null;
+}
+
+/**
+ * @param {Object} data mailing.data
+ * @param {number} [maxLength] maximum markup length
+ * @returns {{ valid: boolean, length: number, maxLength: number,
+ *   errorCode: string|null }} `length` is the longest markup; `errorCode`
+ *   names the refused block — its markup or, for the builder, its state.
  */
 function validateSyntheticBlocks(data, maxLength) {
   const limit =
     typeof maxLength === 'number' ? maxLength : HTML_CODE_MAX_LENGTH;
   const length = findLongestSyntheticBlock(data);
-  return { valid: length <= limit, length, maxLength: limit };
+  const refused = findOversizedSyntheticBlock(data, { html: limit });
+  return {
+    valid: refused === null,
+    length,
+    maxLength: limit,
+    errorCode: refused ? refused.tooLargeErrorCode : null,
+  };
 }
 
 /**
@@ -236,6 +284,7 @@ function hasSyntheticBlock(data) {
 module.exports = {
   validateSyntheticBlocks,
   findLongestSyntheticBlock,
+  findOversizedSyntheticBlock,
   findSyntheticBlocks,
   findDisallowedSyntheticBlock,
   bringsDisallowedSyntheticHtml,
@@ -245,4 +294,5 @@ module.exports = {
   SYNTHETIC_BLOCKS,
   TEMPLATE_FLAG_PROJECTION,
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 };
