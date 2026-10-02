@@ -99,6 +99,15 @@ async function renderWithSentinels({ ssrRender, slots }, fixed) {
     { props: slotNames.concat(Object.keys(fixed)), ssrRender },
     props
   );
+  // A warning is a component that renders, but not as written — a property
+  // the template reads and nothing defines, say. Vue would log it and carry
+  // on; here it fails the build, like everything else that would ship a hole.
+  app.config.warnHandler = (message) => {
+    throw new Error(`Vue warned while rendering: ${message}`);
+  };
+  app.config.errorHandler = (error) => {
+    throw error;
+  };
   return serverRenderer.renderToString(app);
 }
 

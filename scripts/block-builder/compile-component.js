@@ -21,6 +21,12 @@ const {
 } = require('./markup-pipeline.js');
 const { compileRender, renderWithSentinels } = require('./render-component.js');
 const { checkManifest, checkPropsDeclared } = require('./component-checks.js');
+const {
+  checkBlocks,
+  checkScriptSetup,
+  checkSingleRoot,
+  checkRendered,
+} = require('./sfc-checks.js');
 
 const COMPONENTS_DIR = path.join(
   __dirname,
@@ -47,14 +53,14 @@ function loadComponent(name, source, manifest) {
         .join('\n')}`
     );
   }
-  if (!descriptor.template) {
-    throw new Error(`${name}.vue has no <template>.`);
-  }
+  checkBlocks(name, descriptor);
+
+  const script = compileScript(descriptor, { id: name });
+  checkScriptSetup(name, script.scriptSetupAst);
+  checkSingleRoot(name, descriptor.template.ast);
 
   const { slots, variants } = checkManifest(name, manifest);
-  const bindings = descriptor.scriptSetup
-    ? compileScript(descriptor, { id: name }).bindings || {}
-    : {};
+  const bindings = script.bindings || {};
   checkPropsDeclared(name, bindings, slots, variants);
 
   const { ssrRender } = compileRender(
@@ -75,11 +81,14 @@ async function compileVariant(name, component, variant) {
     component,
     component.variants[variant]
   );
-  const inlined = await inlineStyles(stripComments(rendered));
+  const label = `${name} (${variant})`;
+  const inlined = await inlineStyles(
+    stripComments(checkRendered(label, rendered))
+  );
   const { html, used } = substitutePlaceholders(
     inlined,
     component.slots,
-    `${name} (${variant})`
+    label
   );
 
   // Compiled by the real engine before being written. It is the engine that
@@ -89,7 +98,7 @@ async function compileVariant(name, component, variant) {
   // downstream relies on it.
   const compiled = compileTemplate(html);
   if (compiled.chunks.length !== compiled.slots.length + 1) {
-    throw new Error(`${name} (${variant}): compiled template is inconsistent.`);
+    throw new Error(`${label}: compiled template is inconsistent.`);
   }
 
   return { html, used };
