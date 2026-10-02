@@ -54,10 +54,15 @@ const PREVIEW_READY_EVENT = 'preview-document-ready';
 // The preview document's own chrome. It is never exported — only the generated
 // markup is — so these rules exist purely to make the surface usable.
 //
-// `min-height` matters more than it looks: an element dropped before it holds
-// anything (an image with no source yet) renders nothing at all, so without it
-// the row is zero pixels tall and cannot be clicked. The same trap as the empty
-// block placeholder in the canvas.
+// Every row gets a `height`, which on a table cell is a floor rather than a
+// size — `min-height` does nothing on a <td>. An element that renders nothing
+// would otherwise be zero pixels tall: impossible to click, impossible to drop
+// against. The same trap as the empty block placeholder in the canvas.
+//
+// An image with no source yet goes further: it is a starter too (marked by the
+// generator, with no words to substitute), drawn here as a grey frame with a
+// picture icon, at a size that reads as "an image goes here". The icon is the
+// panel's secondary grey, 4:1 on the frame — past the 3:1 asked of an icon.
 //
 // The insertion line is an element of its own, absolutely positioned over the
 // rows: above their content, so it shows across an image too, and out of the
@@ -68,13 +73,22 @@ const PREVIEW_READY_EVENT = 'preview-document-ready';
 // faded so it reads as a placeholder, not as content. Opacity rather than a
 // colour, because it has to work on the button too: at 0.6, black text on white
 // comes out #666 (5.7:1), and the default button's white on black the same.
+const IMAGE_ICON =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'" +
+  " width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath fill='%23757575'" +
+  " d='M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0" +
+  " 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E\")";
+
 const PREVIEW_DOCUMENT = [
   '<!DOCTYPE html><html><head><meta charset="utf-8" /><style>',
   'body{margin:0;padding:0;background:#ffffff;}',
   'table{border-collapse:collapse;}',
   'img{max-width:100%;}',
-  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;min-height:24px;}`,
+  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;height:24px;}`,
   `[${STARTER_ATTRIBUTE}]>table{opacity:0.6;}`,
+  `[${STARTER_ATTRIBUTE}="image"]{height:120px;`,
+  `background:#eeeeee ${IMAGE_ICON} no-repeat center;}`,
+  `[${STARTER_ATTRIBUTE}="image"] img{display:none;}`,
   `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
   'outline:2px solid #00acdc;outline-offset:-2px;}',
   // While dragging, every row shows where it begins and ends, so the insertion

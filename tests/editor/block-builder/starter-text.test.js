@@ -81,12 +81,47 @@ describe('the preview shows a starter in it', () => {
   });
 });
 
+// An image with no source renders nothing: without a floor its row is zero
+// pixels tall — it cannot be clicked, and nothing can be dropped against it.
+describe('an empty element still takes room in the preview', () => {
+  const stylesheet = (doc) => doc.querySelector('style').textContent;
+
+  it('marks an image with no source, for the preview to frame', async () => {
+    const { modal, doc } = await openModal(['image']);
+
+    const row = rowOf(doc, modal.selected.id);
+    expect(row.getAttribute(STARTER_ATTRIBUTE)).toBe('image');
+    expect(stylesheet(doc)).toMatch(
+      new RegExp(`\\[${STARTER_ATTRIBUTE}="image"\\]\\{height:\\d+px`)
+    );
+  });
+
+  it('stops marking it once a picture is chosen', async () => {
+    const { modal, doc } = await openModal(['image']);
+
+    modal.applySetting({ key: 'src', value: 'https://cdn.example/a.png' });
+    modal.renderPreview();
+
+    expect(rowOf(doc, modal.selected.id).hasAttribute(STARTER_ATTRIBUTE)).toBe(
+      false
+    );
+  });
+
+  // `min-height` is ignored on a table cell; `height` there is the floor.
+  it('gives every row a floor that a table cell honours', async () => {
+    const { doc } = await openModal(['spacer']);
+
+    expect(stylesheet(doc)).toMatch(/\[data-lp-el\]\{[^}]*;height:\d+px/);
+    expect(stylesheet(doc)).not.toContain('min-height');
+  });
+});
+
 describe('the starter never reaches the block', () => {
-  it('applies a dropped, untouched text and button without their starters', async () => {
-    const { modal, doc, markup } = await openModal(['text']);
+  it('applies an untouched text, image and dropped button without starters', async () => {
+    const { modal, doc, markup } = await openModal(['text', 'image']);
     layOutRows(doc, 100);
     startPaletteDrag('button');
-    dropAt(doc, 90);
+    dropAt(doc, 190);
     // Shown in the preview, or this proves nothing.
     expect(modal.previewMarkup).toContain(BUTTON_STARTER);
 

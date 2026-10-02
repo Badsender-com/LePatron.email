@@ -107,12 +107,17 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         starters: this.previewStarters,
       });
     },
+    // The words a blank element shows, plus an image with no source: no words
+    // for that one, only the mark — the preview draws an empty frame for it.
     previewStarters() {
-      return Object.keys(STARTERS).reduce((starters, type) => {
-        const { key, labelKey } = STARTERS[type];
-        starters[type] = { key, text: this.vm.t(labelKey) };
-        return starters;
-      }, {});
+      return Object.keys(STARTERS).reduce(
+        (starters, type) => {
+          const { key, labelKey } = STARTERS[type];
+          starters[type] = { key, text: this.vm.t(labelKey) };
+          return starters;
+        },
+        { image: { key: 'src' } }
+      );
     },
     isEmpty() {
       return this.state.elements.length === 0;
