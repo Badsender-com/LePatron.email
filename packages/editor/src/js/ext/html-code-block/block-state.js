@@ -92,16 +92,6 @@ function paletteIconFor(block) {
   return descriptor ? descriptor.paletteIcon : '';
 }
 
-/**
- * A predicate matching one specific synthetic block type.
- *
- * @param {Object} descriptor one of SYNTHETIC_BLOCKS
- * @returns {Function}
- */
-function matching(descriptor) {
-  return (block) => descriptorFor(block) === descriptor;
-}
-
 module.exports = {
   descriptorFor,
   isSyntheticBlock,
@@ -109,6 +99,5 @@ module.exports = {
   emptyLabelKeyFor,
   paletteLabelKeyFor,
   paletteIconFor,
-  matching,
   SYNTHETIC_BLOCKS,
 };
