@@ -15,10 +15,7 @@ const {
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const { headCssToExport } = require('../mailing/head-css-guard.js');
-const {
-  builderMarkups,
-  splitBuilderTranslations,
-} = require('./builder-block-texts.js');
+const { splitBuilderTranslations } = require('./builder-block-texts.js');
 const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const translationJobs = require('./translation-jobs');
 const {
@@ -248,8 +245,8 @@ async function processTranslationAsync({
         const previewHtml = await runTranslationStep('swapBuilderMarkup', () =>
           swapBuilderMarkup(
             translated,
-            builderMarkups(originalMailing.data),
-            builderMarkups(translatedData.data)
+            htmlCodes,
+            markupsOf(translatedData.data)
           )
         );
         // Provider output was injected into previewHtml above; sanitize the

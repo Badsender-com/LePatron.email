@@ -1,9 +1,6 @@
 'use strict';
 
-const {
-  generate,
-  ELEMENT_ATTRIBUTE,
-} = require('../../shared/block-builder/generate.js');
+const { generate } = require('../../shared/block-builder/generate.js');
 const {
   parseState,
   serialiseState,
@@ -252,27 +249,10 @@ function injectBuilderTexts(data, translations) {
   return { blocksUpdated, applied, skipped, oversized };
 }
 
-/**
- * The markup every composed block should now show, in document order.
- *
- * Handed to the preview updater, which swaps each zone: a composed block's
- * markup is protected from the string replacement that translates the rest of
- * previewHtml — as it must be, it is generated — so the only way it changes
- * language is by being replaced wholesale.
- *
- * @param {Object} data mailing.data, already translated
- * @returns {string[]}
- */
-function builderMarkups(data) {
-  return findBuilderBlocks(data).map(({ block }) => block[HTML_PROPERTY] || '');
-}
-
 module.exports = {
   extractBuilderTexts,
   splitBuilderTranslations,
   injectBuilderTexts,
-  builderMarkups,
   findBuilderBlocks,
   BUILDER_KEY_PREFIX,
-  ELEMENT_ATTRIBUTE,
 };

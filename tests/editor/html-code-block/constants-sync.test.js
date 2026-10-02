@@ -115,10 +115,6 @@ describe('the composed-block translation, editor ↔ server', () => {
     ]);
   });
 
-  it('hands the preview the markup property the editor writes', () => {
-    expect(builderTexts.builderMarkups(data)).toEqual(['<table>old</table>']);
-  });
-
   it('walks the model exactly as the save guard does', () => {
     expect(
       builderTexts.findBuilderBlocks(data).map(({ block }) => block)

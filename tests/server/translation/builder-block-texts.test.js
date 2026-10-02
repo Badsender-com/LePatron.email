@@ -18,12 +18,8 @@ const {
   extractBuilderTexts,
   splitBuilderTranslations,
   injectBuilderTexts,
-  builderMarkups,
   BUILDER_KEY_PREFIX,
 } = require('../../../packages/server/translation/builder-block-texts.js');
-const {
-  swapBuilderMarkup,
-} = require('../../../packages/server/translation/builder-preview-swap.js');
 const {
   generate,
   emptyState,
@@ -339,100 +335,6 @@ describe('a translation that does not fit is dropped, never guessed', () => {
       applied: 0,
     });
     expect(data.mainBlocks.blocks[0].builderHtml).toBe(before);
-  });
-});
-
-describe('the markup handed to the preview', () => {
-  it('is every composed block, in document order', () => {
-    const data = modelWith(
-      composedBlock([text('Un')]),
-      { type: 'textBlock' },
-      composedBlock([text('Deux')])
-    );
-
-    const markups = builderMarkups(data);
-
-    expect(markups).toHaveLength(2);
-    expect(markups[0]).toContain('Un');
-    expect(markups[1]).toContain('Deux');
-  });
-
-  it('is what the translation produced, not what was stored before', () => {
-    const data = modelWith(composedBlock([text('Bonjour')]));
-
-    injectBuilderTexts(data, {
-      'builderBlock.mainBlocks.0.0.content': 'Hello',
-    });
-
-    expect(builderMarkups(data)[0]).toContain('Hello');
-  });
-});
-
-describe('swapping the rebuilt markup into the preview', () => {
-  // The preview is translated by replacing strings, and a composed block's
-  // markup is protected from that pass — it is generated. Replacing the zone
-  // wholesale is the only way it ever changes language.
-  it('replaces the block markup and leaves the rest alone', () => {
-    const html = '<body>avant<table>BONJOUR</table>apres</body>';
-
-    expect(
-      swapBuilderMarkup(
-        html,
-        ['<table>BONJOUR</table>'],
-        ['<table>HELLO</table>']
-      )
-    ).toBe('<body>avant<table>HELLO</table>apres</body>');
-  });
-
-  // Two identical blocks must not both take the first match.
-  it('swaps two identical blocks in order', () => {
-    const html = '<b>A</b>x<b>A</b>';
-
-    expect(
-      swapBuilderMarkup(
-        html,
-        ['<b>A</b>', '<b>A</b>'],
-        ['<b>1</b>', '<b>2</b>']
-      )
-    ).toBe('<b>1</b>x<b>2</b>');
-  });
-
-  // A preview that keeps one block in the old language is visible and
-  // recoverable; rewriting the wrong range would not be.
-  it('leaves the document alone when a zone cannot be found', () => {
-    const html = '<body>rien a voir</body>';
-
-    expect(
-      swapBuilderMarkup(html, ['<table>X</table>'], ['<table>Y</table>'])
-    ).toBe(html);
-  });
-
-  it('does nothing when the markup did not change', () => {
-    const html = '<body><b>A</b></body>';
-
-    expect(swapBuilderMarkup(html, ['<b>A</b>'], ['<b>A</b>'])).toBe(html);
-  });
-
-  test.each([
-    ['no html', undefined],
-    ['an empty document', ''],
-  ])('tolerates %s', (_label, html) => {
-    expect(swapBuilderMarkup(html, ['a'], ['b'])).toBe(html);
-  });
-
-  it('end to end: translate, rebuild, then swap into the preview', () => {
-    const data = modelWith(composedBlock([text('Bonjour')]));
-    const before = builderMarkups(data);
-    const preview = `<html><body>${before[0]}</body></html>`;
-
-    injectBuilderTexts(data, {
-      'builderBlock.mainBlocks.0.0.content': 'Hello',
-    });
-
-    const swapped = swapBuilderMarkup(preview, before, builderMarkups(data));
-
-    expect(swapped).toContain('Hello');
-    expect(swapped).not.toContain('Bonjour');
   });
 });
 

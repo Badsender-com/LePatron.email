@@ -1,5 +1,8 @@
 'use strict';
 
+const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
+const { findHtmlCodeBlockRanges } = require('./html-code-block-protection.js');
+
 // Putting a rebuilt composed block back into previewHtml.
 //
 // Its own file rather than sitting with the extraction and the injection,
@@ -9,7 +12,8 @@
 // comes out.
 
 /**
- * Swaps each composed block's old markup for its rebuilt one, in previewHtml.
+ * Swaps each changed composed block's markup for its rebuilt one, in
+ * previewHtml.
  *
  * The preview is translated by replacing strings in the stored document, and
  * a composed block's markup is deliberately PROTECTED from that pass — it is
@@ -17,32 +21,49 @@
  * markup nobody typed. So the only way the preview changes language is by
  * having those zones replaced wholesale, which is what this does.
  *
- * Matched on the exact bytes the export put there, scanning forward so two
- * identical blocks are swapped in order rather than both taking the first
- * match. A zone that cannot be found is left alone: a preview that keeps one
- * block in the old language is a visible, recoverable problem, and rewriting
- * the wrong range would not be.
+ * Anchored on the zones the protection itself located, not on a search for the
+ * old markup: a search over the whole document found a copy of a composed
+ * block pasted into an HTML code block before the block itself, and rewrote
+ * the copy. Only the CONTENT of a zone whose marker is the builder's, and that
+ * was matched exactly on a block whose markup changed, is replaced — the
+ * marker element and everything around it stay as they are. A changed block
+ * whose zone cannot be found is left alone: a preview that keeps one block in
+ * the old language is a visible, recoverable problem, and rewriting the wrong
+ * range would not be.
  *
  * @param {string} html previewHtml, already translated everywhere else
- * @param {string[]} before markup as stored before translation, in order
- * @param {string[]} after markup rebuilt from the translated state, in order
+ * @param {string[]} before every synthetic block's markup as stored before
+ *   translation, in document order — the list the protection matched on
+ * @param {string[]} after the same blocks' markup after translation
  * @returns {string}
  */
 function swapBuilderMarkup(html, before, after) {
   if (!html || typeof html !== 'string') return html;
 
+  const stored = before || [];
+  const rebuilt = after || [];
+  const changed = new Set(
+    stored
+      .map((_, index) => index)
+      .filter(
+        (index) =>
+          typeof rebuilt[index] === 'string' && rebuilt[index] !== stored[index]
+      )
+  );
+  if (changed.size === 0) return html;
+
+  const zones = findHtmlCodeBlockRanges(html, stored).filter(
+    (zone) =>
+      zone.markerClass === BLOCK_BUILDER_BLOCK.markerClass &&
+      changed.has(zone.matched)
+  );
+
+  // Zones come in document order and never overlap.
   let out = '';
   let cursor = 0;
-
-  (before || []).forEach((old, index) => {
-    const next = (after || [])[index];
-    if (!old || typeof next !== 'string' || old === next) return;
-
-    const at = html.indexOf(old, cursor);
-    if (at === -1) return;
-
-    out += html.slice(cursor, at) + next;
-    cursor = at + old.length;
+  zones.forEach((zone) => {
+    out += html.slice(cursor, zone.contentStart) + rebuilt[zone.matched];
+    cursor = zone.contentEnd;
   });
 
   return out + html.slice(cursor);
