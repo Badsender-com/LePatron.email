@@ -11,7 +11,7 @@ const {
 } = require('./html-code-block-protection.js');
 const {
   findSyntheticBlocks,
-  SYNTHETIC_BLOCKS,
+  htmlOf,
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const { headCssToExport } = require('../mailing/head-css-guard.js');
@@ -207,18 +207,12 @@ async function processTranslationAsync({
         logger.log(
           '[Translation] Updating preview HTML via string replacement...'
         );
-        // The markup of every synthetic block, in order: the exact bytes the
-        // export put in previewHtml, so their zones are found exactly. Both
-        // block types, and in one list — the zones are matched positionally, so
-        // leaving one type out would shift every following pairing by one.
-        const htmlCodes = findSyntheticBlocks(originalMailing.data).map(
-          (block) => {
-            const descriptor = SYNTHETIC_BLOCKS.find(
-              (candidate) => candidate.type === block.type
-            );
-            return block[descriptor.htmlProperty];
-          }
-        );
+        // The markup of every synthetic block, in document order: the exact
+        // bytes the export put in previewHtml. Each zone is matched exactly on
+        // one of them, looking a few blocks ahead; a zone whose markup is
+        // missing here falls back to counting `<div>`, which pasted markup can
+        // defeat — so both block types go in, in one list.
+        const htmlCodes = findSyntheticBlocks(originalMailing.data).map(htmlOf);
         const previewHtml = await runTranslationStep('updatePreview', () =>
           updatePreviewWithTranslations(
             originalMailing.previewHtml,

@@ -291,6 +291,7 @@ module.exports = {
   assertSyntheticHtmlAllowed,
   assertSyntheticBlockContentAllowed,
   hasSyntheticBlock,
+  htmlOf,
   SYNTHETIC_BLOCKS,
   TEMPLATE_FLAG_PROJECTION,
   HTML_CODE_MAX_LENGTH,
