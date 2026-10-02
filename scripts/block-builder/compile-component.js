@@ -20,7 +20,11 @@ const {
   substitutePlaceholders,
 } = require('./markup-pipeline.js');
 const { compileRender, renderWithSentinels } = require('./render-component.js');
-const { checkManifest, checkPropsDeclared } = require('./component-checks.js');
+const {
+  checkManifest,
+  checkPropsDeclared,
+  checkTemplateReferences,
+} = require('./component-checks.js');
 const {
   checkBlocks,
   checkScriptSetup,
@@ -63,11 +67,12 @@ function loadComponent(name, source, manifest) {
   const bindings = script.bindings || {};
   checkPropsDeclared(name, bindings, slots, variants);
 
-  const { ssrRender } = compileRender(
+  const { ssrRender, code } = compileRender(
     name,
     descriptor.template.content,
     bindings
   );
+  checkTemplateReferences(name, code);
   return { ssrRender, slots, variants };
 }
 

@@ -133,9 +133,8 @@ function closeVoidTags(html) {
 /**
  * Swaps every sentinel back for the placeholder the generator understands.
  *
- * A sentinel that did not come back means the render swallowed it — a `v-if`
- * that hid the element, a prop that was never used — and that is a bug in the
- * component, not something to paper over.
+ * A sentinel that comes back altered means the template transformed a prop,
+ * and that is a bug in the component, not something to paper over.
  */
 function substitutePlaceholders(html, slots, name) {
   let out = html;
@@ -148,11 +147,15 @@ function substitutePlaceholders(html, slots, name) {
     out = out.split(sentinel).join(placeholderFor(slotName, slot));
   });
 
-  const stray = new RegExp(`${SENTINEL_PREFIX}[A-Za-z0-9]*`).exec(out);
+  // Case-insensitive because the likeliest way to damage a sentinel is a
+  // `.toUpperCase()` or a `.toLowerCase()` in the template.
+  const stray = new RegExp(`${SENTINEL_PREFIX}[A-Za-z0-9]*`, 'i').exec(out);
   if (stray) {
     throw new Error(
-      `${name}.vue: a sentinel survived compilation (${stray[0]}). ` +
-        'A prop is rendered that no slot declares.'
+      `${name}: a prop reached the markup altered (${stray[0]}). The ` +
+        'template transforms it — a case change, a method call — instead of ' +
+        'rendering it as it is; the value is only known at render time, so ' +
+        'the transformation cannot happen here.'
     );
   }
 

@@ -41,20 +41,23 @@ function checkManifest(name, manifest) {
   return { slots, variants };
 }
 
+const quoted = (names) => names.map((n) => `"${n}"`).join(', ');
+
 /**
- * Every prop the component declares must be a slot or a variant prop.
+ * defineProps and the manifest name the same props, both ways.
  *
- * Without this, a prop the manifest forgot renders as `undefined`: Vue drops
- * the attribute, no sentinel is created, nothing survives to be caught, and the
- * component compiles to markup with a hole silently missing.
+ * - a prop defineProps declares and the manifest does not has no context: it
+ *   would get no sentinel, render as nothing, and leave a hole in the markup.
+ * - a slot the manifest declares and defineProps does not would reach the
+ *   component as a stray attribute, not as a prop the template can place.
  *
- * `defineProps` is the right place to read it from: it is what the author
- * already writes, so the two lists cannot drift without one of them being edited.
+ * Checked on the declarations themselves, not on the render: a prop with no
+ * sentinel renders nothing, so nothing in the output could reveal it.
  */
 function checkPropsDeclared(name, bindings, slots, variants) {
-  const declared = Object.entries(bindings)
-    .filter(([, kind]) => kind === 'props')
-    .map(([prop]) => prop);
+  const declared = Object.keys(bindings).filter(
+    (prop) => bindings[prop] === 'props'
+  );
 
   const known = new Set(Object.keys(slots));
   Object.values(variants).forEach((fixed) =>
@@ -64,11 +67,45 @@ function checkPropsDeclared(name, bindings, slots, variants) {
   const undeclared = declared.filter((prop) => !known.has(prop));
   if (undeclared.length) {
     throw new Error(
-      `${name}.vue declares ${undeclared.map((p) => `"${p}"`).join(', ')}, ` +
-        `which ${name}.slots.js neither lists as a slot nor fixes in a ` +
-        'variant. A prop with no context would render as nothing at all.'
+      `${name}.vue declares ${quoted(undeclared)}, which ${name}.slots.js ` +
+        'neither lists as a slot nor fixes in a variant. A prop with no ' +
+        'context would render as nothing at all.'
+    );
+  }
+
+  const missing = [...known].filter((prop) => !declared.includes(prop));
+  if (missing.length) {
+    throw new Error(
+      `${name}.slots.js names ${quoted(missing)}, which ${name}.vue does not ` +
+        'declare in defineProps.'
     );
   }
 }
 
-module.exports = { checkManifest, checkPropsDeclared };
+// How the compiled render reads what is NOT a declared prop: compiled with the
+// script's bindings, a prop is `$props.x`; anything else is `_ctx.x`, or
+// `$setup.x` for a name bound in <script setup>.
+const FOREIGN_REFERENCE = /(?:\b_ctx|\$setup)\.([A-Za-z_$][\w$]*)/;
+
+/**
+ * The template reads nothing but its props.
+ *
+ * Read from the compiled render, which has already resolved every name the
+ * template uses: an expression the compiler could not tie to a prop would
+ * render as `undefined` — or not at all — with no sentinel to give it away.
+ *
+ * @param {string} name
+ * @param {string} code the compiled render function
+ */
+function checkTemplateReferences(name, code) {
+  const foreign = FOREIGN_REFERENCE.exec(code);
+  if (foreign) {
+    throw new Error(
+      `${name}.vue: the template reads "${foreign[1]}", which is not a prop ` +
+        'declared in defineProps. Only props reach the render — write the ' +
+        'prop itself (`label`, not `props.label`).'
+    );
+  }
+}
+
+module.exports = { checkManifest, checkPropsDeclared, checkTemplateReferences };
