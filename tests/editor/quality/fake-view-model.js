@@ -1,6 +1,9 @@
 'use strict';
 
 const ko = require('knockout');
+const {
+  runQualityChecks,
+} = require('../../../packages/editor/src/js/ext/quality/engine.js');
 
 /**
  * A view model shaped like the editor's, reduced to what quality checks read:
@@ -42,4 +45,9 @@ function exportOf(blockHtmls, { frame = '' } = {}) {
   return `<!DOCTYPE html><html><body>${frame}${body}</body></html>`;
 }
 
-module.exports = { fakeViewModel, exportOf };
+// The findings of a single rule, run through the engine as the editor runs it.
+function findingsOf(rule, vmOptions) {
+  return runQualityChecks(fakeViewModel(vmOptions), { rules: [rule] }).findings;
+}
+
+module.exports = { fakeViewModel, exportOf, findingsOf };
