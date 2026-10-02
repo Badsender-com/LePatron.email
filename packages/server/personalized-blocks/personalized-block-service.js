@@ -7,13 +7,17 @@ const {
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const { NotFound, BadRequest } = require('http-errors');
 const logger = require('../utils/logger');
 const {
   hasSyntheticBlock,
+  validateSyntheticBlocks,
   assertSyntheticBlockContentAllowed,
   TEMPLATE_FLAG_PROJECTION,
 } = require('../mailing/synthetic-block-guard.js');
+const {
+  rebuildComposedMarkup,
+} = require('../mailing/builder-block-integrity.js');
 
 module.exports = {
   getPersonalizedBlocks,
@@ -82,10 +86,21 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
 }
 
 /**
+ * @param {Object} content one block
+ * @throws {BadRequest} the too-large code of the refused block
+ */
+function assertBlockSizes(content) {
+  const check = validateSyntheticBlocks({ blocks: { blocks: [content] } });
+  if (!check.valid) throw new BadRequest(check.errorCode);
+}
+
+/**
  * Refuses markup the block's template does not allow. A personalized block is
  * shared with the whole company and dropped into other people's mailings, so it
- * gets the same gate as the mailing save (see mailing/synthetic-block-guard.js).
- * Loads the template only when the content holds a synthetic block.
+ * gets the same gates as the mailing save (see mailing/synthetic-block-guard.js
+ * and mailing/builder-block-integrity.js): sizes, a composed block's markup
+ * rebuilt from its state, the template flags. Loads the template only when the
+ * content holds a synthetic block.
  */
 async function assertBlockHtmlCodeAllowed({
   content,
@@ -93,6 +108,10 @@ async function assertBlockHtmlCodeAllowed({
   templateId,
 }) {
   if (!hasSyntheticBlock(content)) return;
+
+  assertBlockSizes(content);
+  rebuildComposedMarkup(content, previousContent);
+  assertBlockSizes(content);
 
   const template = templateId
     ? await Templates.findById(templateId)

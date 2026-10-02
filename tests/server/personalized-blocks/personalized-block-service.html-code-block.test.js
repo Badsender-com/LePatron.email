@@ -112,3 +112,74 @@ describe('personalized blocks — the HTML code block flag', () => {
     expect(PersonalizedBlocks.findByIdAndUpdate).toHaveBeenCalled();
   });
 });
+
+describe('personalized blocks — sizes and composed markup', () => {
+  const {
+    generate,
+    emptyState,
+  } = require('../../../packages/shared/block-builder/generate.js');
+  const {
+    serialiseState,
+    parseState,
+  } = require('../../../packages/shared/block-builder/state.js');
+
+  const builderState = serialiseState({
+    ...emptyState(),
+    elements: [{ id: 'el-1', type: 'text', content: 'Bonjour' }],
+  });
+
+  it('refuses an oversized HTML code block before loading anything', async () => {
+    await expect(
+      service.addPersonalizedBlock(
+        { name: 'n', content: htmlBlock('x'.repeat(100001)) },
+        GROUP,
+        TEMPLATE,
+        USER
+      )
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'HTML_CODE_BLOCK_TOO_LARGE',
+    });
+    expect(Templates.findById).not.toHaveBeenCalled();
+    expect(PersonalizedBlocks.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses an oversized composed state', async () => {
+    const content = {
+      type: 'blockBuilderBlock',
+      builderHtml: '',
+      builderState: 'x'.repeat(200001),
+    };
+
+    await expect(
+      service.addPersonalizedBlock(
+        { name: 'n', content },
+        GROUP,
+        TEMPLATE,
+        USER
+      )
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'BLOCK_BUILDER_TOO_LARGE',
+    });
+  });
+
+  it('stores the markup the state generates, not the one sent', async () => {
+    Templates.findById.mockReturnValue(lean({ blockBuilderEnabled: true }));
+    const content = {
+      type: 'blockBuilderBlock',
+      builderHtml: '<p>autre chose</p>',
+      builderState,
+    };
+
+    await service.addPersonalizedBlock(
+      { name: 'n', content },
+      GROUP,
+      TEMPLATE,
+      USER
+    );
+
+    const [[saved]] = PersonalizedBlocks.create.mock.calls;
+    expect(saved.content.builderHtml).toBe(generate(parseState(builderState)));
+  });
+});
