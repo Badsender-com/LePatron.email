@@ -49,6 +49,17 @@ function addCanvasEntryToViewModel(vm) {
     vm.selectedTool(CONTENT_TOOL);
   };
 
+  // The same flag as the panel's button (vm.isBlockBuilderEditable, in
+  // badsender-widget-block-builder.js): with it off the block is kept but can
+  // no longer be edited, so the toolbar offers nothing to open.
+  vm.canComposeBlock = function (block) {
+    return (
+      isComposedBlock(block) &&
+      typeof vm.isBlockBuilderEditable === 'function' &&
+      vm.isBlockBuilderEditable()
+    );
+  };
+
   // Through vm.openBlockBuilder, exactly as the panel's button: one way into
   // the modal, so its guards (the flag, a mounted modal, the accessors) cannot
   // differ between entry points. In the canvas the block is the binding

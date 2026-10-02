@@ -347,6 +347,7 @@ module.exports = {
   'block-builder-block-name': 'Bloc composé',
   'block-builder-block-empty': 'Bloc composé — cliquez pour composer',
   'widget-block-builder-compose': 'Composer un bloc',
+  'block-builder-tool-compose': 'Composer le bloc',
   'widget-block-builder-disabled':
     "Le block builder n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'block-builder-modal-title': 'Composer un bloc',

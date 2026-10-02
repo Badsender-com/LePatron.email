@@ -15,6 +15,10 @@
     <div title="Duplicate block" class="tool clone" data-bind="attr: { title: $root.t('Duplicate block') }, click: $root.duplicateBlock.bind($element, $index, $parent)"><span class="lucide lucide-fw lucide-copy"></span></div>
     <!-- Save block to library -->
     <div title="Save block to library" class="tool save" data-bind="attr: { title: $root.t('Save block to library') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-bookmark-plus"></span></div>
+    <!-- Compose block — the composed block's builder, one click away instead of
+         in the Content tab. Hidden when the template no longer enables the
+         builder, as the panel's own button is. -->
+    <!-- ko if: $root.canComposeBlock && $root.canComposeBlock($data) --><div title="Compose block" class="tool compose" data-bind="attr: { title: $root.t('block-builder-tool-compose') }, click: $root.composeBlock.bind($element, $data)"><span class="lucide lucide-fw lucide-layout-template"></span></div><!-- /ko -->
     <!-- Comment block -->
     <div title="Comment block" class="tool comment" data-bind="attr: { title: $root.t('Comment block') }, click: $root.commentBlock.bind($element, $rawData, $parent, $index)">
       <span class="lucide lucide-message-circle"></span>

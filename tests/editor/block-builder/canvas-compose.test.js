@@ -9,7 +9,11 @@
 // calls, so the flag and the accessors are checked in one place only — these
 // tests assert on the modal toggle that function ends in, not on a stand-in.
 
+const fr = require('../../../public/lang/badsender-fr.js');
+const en = require('../../../public/lang/badsender-en.js');
+const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsender-widget-block-builder.js');
 const {
+  TEMPLATE,
   composedBlock,
   htmlCodeBlock,
   textBlock,
@@ -99,5 +103,68 @@ describe('double-clicking a block in the canvas', () => {
     const { vm, wrappers } = renderCanvas([composedBlock(), textBlock()]);
     dispatch(wrappers[0].querySelector('.tool.movedown'), 'dblclick');
     expect(vm.toggleBlockBuilderModal).not.toHaveBeenCalled();
+  });
+});
+
+describe('the Compose tool of the hover toolbar', () => {
+  const composeTool = (wrapper) => wrapper.querySelector('.tool.compose');
+
+  it('is declared next to duplicate and save, with a lucide icon', () => {
+    const line = TEMPLATE.split('\n').find((l) => l.includes('tool compose'));
+    expect(line).toMatch(
+      /ko if: \$root\.canComposeBlock && \$root\.canComposeBlock\(\$data\)/
+    );
+    expect(line).toContain('click: $root.composeBlock.bind($element, $data)');
+    expect(line).toContain('lucide-layout-template');
+    expect(TEMPLATE.indexOf('tool compose')).toBeGreaterThan(
+      TEMPLATE.indexOf('tool save')
+    );
+  });
+
+  // The panel's button wears the same icon; the two are one action.
+  it('uses the icon of the panel button', () => {
+    expect(widgetBlockBuilder().widget().html('builderHtml', '', {})).toContain(
+      'lucide-layout-template'
+    );
+  });
+
+  it('has a title translated in French and English', () => {
+    expect(TEMPLATE).toContain("$root.t('block-builder-tool-compose')");
+    expect(fr['block-builder-tool-compose']).toEqual(expect.any(String));
+    expect(en['block-builder-tool-compose']).toEqual(expect.any(String));
+  });
+
+  it('shows on a composed block only', () => {
+    const { wrappers } = renderCanvas([
+      composedBlock(),
+      htmlCodeBlock(),
+      textBlock(),
+    ]);
+    expect(wrappers.map((w) => Boolean(composeTool(w)))).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(composeTool(wrappers[0]).getAttribute('title')).toBe(
+      'block-builder-tool-compose'
+    );
+  });
+
+  it('is gone when the template no longer enables the builder', () => {
+    const { wrappers } = renderCanvas([composedBlock()], {
+      blockBuilderEnabled: false,
+    });
+    expect(composeTool(wrappers[0])).toBeNull();
+  });
+
+  it('opens the builder on its own block', () => {
+    const first = composedBlock('<p>first</p>');
+    const second = composedBlock('<p>second</p>');
+    const { vm, wrappers } = renderCanvas([first, second]);
+    dispatch(composeTool(wrappers[1]).firstElementChild, 'click');
+    expect(vm.toggleBlockBuilderModal).toHaveBeenCalledTimes(1);
+    expect(vm.toggleBlockBuilderModal.mock.calls[0][1].accessor()).toBe(
+      '<p>second</p>'
+    );
   });
 });
