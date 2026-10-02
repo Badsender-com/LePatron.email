@@ -11,10 +11,12 @@ const Vue = require('vue/dist/vue.common');
 // `forced_root_block: false` for the same reason: TinyMCE otherwise wraps
 // everything in `<p>`, which the sanitiser drops. Line breaks stay `<br>`.
 
-// Mirrors ALLOWED in rich-text.js. Kept as a literal rather than derived from
-// it: the editor bundle would otherwise pull the whole generator in just for a
-// list of six tags, and the pairing is checked by a test.
-const VALID_ELEMENTS = 'strong/b,em/i,u,a[href|target],br';
+// Mirrors ALLOWED in rich-text.js, attributes included: `href` and nothing
+// else, so no `target` — the sanitiser drops it, and a link set to open in a new
+// window would silently stop doing so on apply. Kept as a literal rather than
+// derived from it: the editor bundle would otherwise pull the whole generator in
+// just for a list of six tags, and the pairing is checked by a test.
+const VALID_ELEMENTS = 'strong/b,em/i,u,a[href],br';
 
 const getTinyMce = () =>
   typeof window !== 'undefined' ? window.tinymce : null;
@@ -72,6 +74,10 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
         toolbar: 'bold italic underline | link unlink | removeformat',
         plugins: ['link paste'],
         valid_elements: VALID_ELEMENTS,
+        // The link dialog's target and title fields would write attributes
+        // that VALID_ELEMENTS, and the sanitiser after it, both drop.
+        target_list: false,
+        link_title: false,
         forced_root_block: false,
         // Pasting from Word is the normal case, and its markup is exactly what
         // the sanitiser would throw away.

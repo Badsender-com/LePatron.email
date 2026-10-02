@@ -17,14 +17,24 @@ const {
   sanitizeRichText,
 } = require('../../../packages/shared/block-builder/rich-text.js');
 
-/** `strong/b,em/i,u,a[href|target],br` -> ['strong','b','em','i','u','a','br'] */
-function tagsOf(validElements) {
-  return validElements
-    .split(',')
-    .flatMap((rule) => rule.replace(/\[[^\]]*\]/g, '').split('/'))
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+/**
+ * `strong/b,em/i,u,a[href],br` ->
+ *   { strong: [], b: [], em: [], i: [], u: [], a: ['href'], br: [] }
+ *
+ * `strong/b` declares two tags sharing one rule, as TinyMCE reads it.
+ */
+function rulesOf(validElements) {
+  return validElements.split(',').reduce((rules, rule) => {
+    const match = /^([^[]+)(?:\[([^\]]*)\])?$/.exec(rule.trim());
+    const attributes = match[2] ? match[2].split('|').filter(Boolean) : [];
+    match[1].split('/').forEach((tag) => {
+      rules[tag.trim()] = attributes;
+    });
+    return rules;
+  }, {});
 }
+
+const tagsOf = (validElements) => Object.keys(rulesOf(validElements));
 
 describe('the editor and the sanitiser agree', () => {
   it('every tag TinyMCE may produce survives the sanitiser', () => {
@@ -41,9 +51,17 @@ describe('the editor and the sanitiser agree', () => {
     });
   });
 
+  // Same rule for attributes: one TinyMCE lets through and the sanitiser drops
+  // — a link's `target` — reads as a setting that does not stick.
+  it.each(Object.keys(ALLOWED))('allows the same attributes on %s', (tag) => {
+    expect(rulesOf(VALID_ELEMENTS)[tag].slice().sort()).toEqual(
+      ALLOWED[tag].attributes.slice().sort()
+    );
+  });
+
   // The attribute that can execute, and the only one on either list.
   it('allows href on links, on both sides', () => {
-    expect(VALID_ELEMENTS).toContain('a[href');
+    expect(rulesOf(VALID_ELEMENTS).a).toContain('href');
     expect(ALLOWED.a.attributes).toContain('href');
   });
 
