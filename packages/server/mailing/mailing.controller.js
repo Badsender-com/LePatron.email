@@ -406,6 +406,83 @@ async function previewHtml(req, res) {
 }
 
 /**
+ * Throws when the HTML code blocks or the head CSS of the request are past
+ * their limit.
+ *
+ * The editor enforces both too, but `data` is an unvalidated Mixed field and
+ * `previewHtml` duplicates the markup in the same document, against Mongo's
+ * 16MB per-document limit.
+ *
+ * @param {Object} body the updateMosaico request body
+ * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE or HEAD_CSS_TOO_LARGE
+ */
+function assertPastedContentSizes(body) {
+  if (!validateHtmlCodeBlocks(body.data).valid) {
+    throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
+  }
+  if (!validateHeadCss(body.headCss).valid) {
+    throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);
+  }
+}
+
+/**
+ * Copies an updateMosaico request onto the stored mailing, without saving it.
+ *
+ * @param {Object} mailing the Mongoose document
+ * @param {Object} body the updateMosaico request body, already validated
+ * @param {Object} user the requesting user, for the default name's language
+ */
+function applyMosaicoUpdate(mailing, body, user) {
+  mailing.data = body.data || mailing.data;
+  mailing.name =
+    modelsUtils.trimString(body.name) ||
+    simpleI18n('default-mailing-name', user.lang);
+  // http://mongoosejs.com/docs/schematypes.html#mixed
+  mailing.markModified('data');
+
+  if (body.htmlToExport) {
+    mailing.previewHtml = body.htmlToExport;
+  }
+
+  // Only when the field is part of the request: an older editor bundle, or any
+  // client that does not know about head CSS, must not silently wipe it.
+  if (typeof body.headCss === 'string') {
+    mailing.headCss = body.headCss;
+  }
+}
+
+/**
+ * Throws when the request brings an HTML code block or head CSS the mailing's
+ * template does not allow.
+ *
+ * Enforced here because the editor only hides the entry points, and a
+ * hand-written request could add either to any template. The template is
+ * loaded only when there is something to check, so a mailing without either
+ * costs no query — and loaded once for both guards, which share the flag.
+ *
+ * @param {Object} body the updateMosaico request body
+ * @param {Object} mailing the stored mailing, before this update
+ * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED or HEAD_CSS_DISABLED
+ */
+async function assertTemplateFlags(body, mailing) {
+  if (!hasHtmlCodeBlock(body.data) && !hasHeadCss(body.headCss)) return;
+
+  const template = await Templates.findById(mailing._wireframe)
+    .select({ htmlBlockEnabled: 1 })
+    .lean();
+  assertHtmlCodeAllowed({
+    data: body.data,
+    previousData: mailing.data,
+    htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+  });
+  assertHeadCssAllowed({
+    css: body.headCss,
+    previousCss: mailing.headCss,
+    headCssEnabled: isHeadCssEnabled(template),
+  });
+}
+
+/**
  * @api {put} /mailings/:mailingId/mosaico mailing update from mosaico
  * @apiPermission user
  * @apiName UpdateMailingForMosaico
@@ -430,39 +507,8 @@ async function updateMosaico(req, res) {
 
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  // The editor enforces this too, but `data` is an unvalidated Mixed field and
-  // `previewHtml` duplicates the markup in the same document, against Mongo's
-  // 16MB per-document limit.
-  const htmlCodeCheck = validateHtmlCodeBlocks(req.body.data);
-  if (!htmlCodeCheck.valid) {
-    throw new BadRequest(ERROR_CODES.HTML_CODE_BLOCK_TOO_LARGE);
-  }
-
-  const { headCss } = req.body;
-  const headCssCheck = validateHeadCss(headCss);
-  if (!headCssCheck.valid) {
-    throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);
-  }
-
-  // The template flag, enforced here: the editor only hides the palette entry,
-  // and a hand-written request could add the block to any template. Loaded only
-  // when there is something to check, so a mailing without either costs no
-  // query — and loaded once for both guards, which share the flag.
-  if (hasHtmlCodeBlock(req.body.data) || hasHeadCss(headCss)) {
-    const template = await Templates.findById(mailing._wireframe)
-      .select({ htmlBlockEnabled: 1 })
-      .lean();
-    assertHtmlCodeAllowed({
-      data: req.body.data,
-      previousData: mailing.data,
-      htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
-    });
-    assertHeadCssAllowed({
-      css: headCss,
-      previousCss: mailing.headCss,
-      headCssEnabled: isHeadCssEnabled(template),
-    });
-  }
+  assertPastedContentSizes(req.body);
+  await assertTemplateFlags(req.body, mailing);
 
   // `previewHtml` is served and sanitized on every preview request, and stored in
   // the same document as `data`. The largest real one is two orders of magnitude
@@ -472,23 +518,7 @@ async function updateMosaico(req, res) {
     throw new BadRequest(ERROR_CODES.PREVIEW_HTML_TOO_LARGE);
   }
 
-  mailing.data = req.body.data || mailing.data;
-  mailing.name =
-    modelsUtils.trimString(req.body.name) ||
-    simpleI18n('default-mailing-name', user.lang);
-  // http://mongoosejs.com/docs/schematypes.html#mixed
-  mailing.markModified('data');
-
-  if (requestHtml) {
-    mailing.previewHtml = requestHtml;
-  }
-
-  // Only when the field is part of the request: an older editor bundle, or any
-  // client that does not know about head CSS, must not silently wipe it.
-  if (typeof headCss === 'string') {
-    mailing.headCss = headCss;
-  }
-
+  applyMosaicoUpdate(mailing, req.body, user);
   await mailing.save();
 
   const mailingForMosaico = await Mailings.findOneForMosaico(

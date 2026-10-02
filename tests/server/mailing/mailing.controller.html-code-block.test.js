@@ -257,6 +257,16 @@ describe('PUT /mailings/:mailingId/mosaico — head CSS', () => {
 
     expect(await save({ data: EMPTY })).toBeNull();
     expect(Templates.findById).not.toHaveBeenCalled();
+
+    mockTemplateFlag(true);
+    expect(
+      await save({
+        data: dataWith(htmlBlock('<p class="a">new</p>')),
+        headCss: '.a{color:red}',
+      })
+    ).toBeNull();
+    expect(Templates.findById).toHaveBeenCalledTimes(1);
+    expect(Templates.findById).toHaveBeenCalledWith(TEMPLATE_ID);
   });
 });
 
