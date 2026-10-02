@@ -4,7 +4,8 @@
 // Badsender built. These helpers answer "does this value come from the client?"
 // by comparing the content model with the template's own defaults.
 
-// A 1x1 transparent GIF: templates use it as an "empty" image value.
+// A 1x1 transparent GIF: templates use it as an "empty" image value, and the
+// background image widget resets an image to it.
 const TRANSPARENT_GIF =
   'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
 
@@ -39,6 +40,7 @@ function isImageUnset(value, templateDefault) {
 }
 
 module.exports = {
+  TRANSPARENT_GIF,
   getBlockDefault,
   isImageUnset,
 };
