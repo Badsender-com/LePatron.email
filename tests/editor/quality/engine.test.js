@@ -66,6 +66,24 @@ describe('runQualityChecks', () => {
     expect(run('a')).not.toBe(run('b'));
   });
 
+  it('tells identical findings of a block apart, the same way every run', () => {
+    const twice = {
+      ...reportEveryBlock,
+      run: () => [
+        { messageKey: 'Fake', blockId: 'ko_heroBlock_1', value: 'Read more' },
+        { messageKey: 'Fake', blockId: 'ko_heroBlock_1', value: 'Read more' },
+      ],
+    };
+    const run = () =>
+      runQualityChecks(fakeViewModel({ blocks: heroBlocks }), {
+        rules: [twice],
+      }).findings.map((f) => f.fingerprint);
+
+    const [first, second] = run();
+    expect(first).not.toBe(second);
+    expect(run()).toEqual([first, second]);
+  });
+
   it('lists every check with its status, passed ones included', () => {
     const passing = { ...reportEveryBlock, id: 'passing', run: () => [] };
     const vm = fakeViewModel({ blocks: heroBlocks });
