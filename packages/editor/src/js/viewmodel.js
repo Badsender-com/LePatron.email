@@ -184,10 +184,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     if (typeof paramObj !== 'undefined')
       for (var prop in paramObj)
         if (paramObj.hasOwnProperty(prop)) {
-          key = key.replace(
-            new RegExp('__' + prop + '__', 'g'),
-            paramObj[prop]
-          );
+          // A replacer function, not the value itself: a value can be the
+          // email's own content (a link label), and `$&` or `$'` in it would
+          // be read as replacement patterns.
+          key = key.replace(new RegExp('__' + prop + '__', 'g'), function () {
+            return paramObj[prop];
+          });
         }
     return key;
   };
