@@ -12,7 +12,13 @@
 // CSS verbatim from packages/shared/head-css, untouched by any of this. If the
 // scoping ever gets a selector wrong, the canvas is wrong and the delivered
 // email is still right.
+//
+// It does follow the export's rule, though: the canvas shows the CSS only when
+// the export would carry it, that is while the mailing holds an HTML code block
+// (exported-css.js). A stylesheet still styling the canvas after the last block
+// is gone would show the author an email they will not send.
 
+const ko = require('knockout');
 const { scopeCss } = require('./scope-css.js');
 const { previewMediaFor } = require('../preview-media.js');
 
@@ -62,7 +68,8 @@ function renderPreview(doc, css, previewMode) {
 }
 
 /**
- * Mirrors `viewModel.headCss` into the canvas, and keeps it in step.
+ * Mirrors the exported head CSS (`viewModel.exportedHeadCss`) into the
+ * canvas, and keeps it in step.
  *
  * @param {Object} viewModel
  * @param {Document} [doc]
@@ -72,26 +79,37 @@ function renderPreview(doc, css, previewMode) {
 function attachHeadCssPreview(viewModel, doc) {
   const target =
     doc || (typeof global !== 'undefined' && global.document) || null;
-  if (!viewModel || typeof viewModel.headCss !== 'function' || !target) {
+  if (
+    !viewModel ||
+    typeof viewModel.exportedHeadCss !== 'function' ||
+    !target
+  ) {
     return null;
   }
+
+  // One computed over what the export would inject: it depends on the stored
+  // CSS and on the presence of an HTML code block, so adding, removing or
+  // undoing the last block re-renders the canvas — and, pure, it notifies only
+  // when that CSS actually changes, not on every edit of the content.
+  const exported = ko.pureComputed(() => viewModel.exportedHeadCss());
 
   const currentMode = () =>
     typeof viewModel.previewMode === 'function'
       ? viewModel.previewMode()
       : undefined;
 
-  const render = () => renderPreview(target, viewModel.headCss(), currentMode());
+  const render = () => renderPreview(target, exported(), currentMode());
 
   render();
 
   // Re-rendered from the source on every change rather than rewritten in the
   // CSSOM the way badsender-screen-preview.js does for the template. That
   // module builds its index of media rules once, when a template loads; this
-  // sheet is replaced on every "Apply", every undo and every preview mode
-  // change, so it could never stay in such an index. Regenerating is both
-  // simpler and correct by construction.
-  const subscriptions = [viewModel.headCss.subscribe(render)];
+  // sheet is replaced on every "Apply", every undo, every preview mode change
+  // and whenever the last HTML code block goes or comes back, so it could
+  // never stay in such an index. Regenerating is both simpler and correct by
+  // construction.
+  const subscriptions = [exported.subscribe(render)];
   if (typeof viewModel.previewMode === 'function') {
     subscriptions.push(viewModel.previewMode.subscribe(render));
   }
@@ -99,6 +117,7 @@ function attachHeadCssPreview(viewModel, doc) {
   return {
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      exported.dispose();
       const element = target.getElementById
         ? target.getElementById(STYLE_ELEMENT_ID)
         : null;

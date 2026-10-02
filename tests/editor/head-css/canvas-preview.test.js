@@ -21,11 +21,35 @@ const {
   VISIBLE_ON_BOTH_SUFFIX,
 } = require('../../../packages/editor/src/js/ext/preview-media.js');
 
-function setup(initialCss, previewMode) {
+const {
+  addHeadCssToViewModel,
+} = require('../../../packages/editor/src/js/ext/head-css/view-model.js');
+
+const htmlCodeBlock = () =>
+  ko.observable({ type: ko.observable('htmlCodeBlock') });
+const textBlock = () => ko.observable({ type: ko.observable('textBlock') });
+
+// A view model carrying the head CSS members, over a content model holding an
+// HTML code block unless told otherwise: the canvas shows the CSS only when
+// the export would carry it (exported-css.js).
+function makeViewModel(css, { previewMode, blocks } = {}) {
+  const mainBlocks = ko.observableArray(blocks || [htmlCodeBlock()]);
   const viewModel = {
-    headCss: ko.observable(initialCss || ''),
-    previewMode: ko.observable(previewMode || 'desktop'),
+    content: ko.observable({
+      mainBlocks: ko.observable({ blocks: mainBlocks }),
+    }),
+    metadata: { htmlBlockEnabled: true },
   };
+  addHeadCssToViewModel(viewModel);
+  viewModel.headCss(css || '');
+  if (previewMode !== null) {
+    viewModel.previewMode = ko.observable(previewMode || 'desktop');
+  }
+  return { viewModel, mainBlocks };
+}
+
+function setup(initialCss, previewMode) {
+  const { viewModel } = makeViewModel(initialCss, { previewMode });
   const subscription = attachHeadCssPreview(viewModel, document);
   return {
     viewModel,
@@ -127,7 +151,7 @@ describe('attachHeadCssPreview', () => {
   });
 
   it('works without a previewMode observable', () => {
-    const viewModel = { headCss: ko.observable('.a{color:red}') };
+    const { viewModel } = makeViewModel('.a{color:red}', { previewMode: null });
     expect(() => attachHeadCssPreview(viewModel, document)).not.toThrow();
     expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toContain(
       '#main-wysiwyg-area .a'
@@ -138,10 +162,7 @@ describe('attachHeadCssPreview', () => {
   // subscriptions must not outlive the view model, nor its rules the editor.
   describe('as an editor plugin', () => {
     it('starts on init and stops on dispose', () => {
-      const viewModel = {
-        headCss: ko.observable('.a{color:red}'),
-        previewMode: ko.observable('desktop'),
-      };
+      const { viewModel, mainBlocks } = makeViewModel('.a{color:red}');
       const plugin = headCssPreviewPlugin(viewModel);
 
       expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
@@ -154,6 +175,7 @@ describe('attachHeadCssPreview', () => {
       expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
       expect(viewModel.headCss.getSubscriptionsCount()).toBe(0);
       expect(viewModel.previewMode.getSubscriptionsCount()).toBe(0);
+      expect(mainBlocks.getSubscriptionsCount()).toBe(0);
 
       viewModel.headCss('.b{color:blue}');
       expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
@@ -164,7 +186,57 @@ describe('attachHeadCssPreview', () => {
     });
   });
 
-  it('does nothing without a headCss observable', () => {
+  // The canvas must show the email that will be sent: the CSS follows the HTML
+  // code blocks, exactly as the export does.
+  describe('the HTML code block rule', () => {
+    it('shows nothing while the mailing holds no HTML code block', () => {
+      const { viewModel } = makeViewModel('.a{color:red}', {
+        blocks: [textBlock()],
+      });
+      attachHeadCssPreview(viewModel, document);
+
+      expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toBe('');
+    });
+
+    it('shows it once a block is added, and drops it once removed', () => {
+      const { viewModel, mainBlocks } = makeViewModel('.a{color:red}', {
+        blocks: [textBlock()],
+      });
+      attachHeadCssPreview(viewModel, document);
+      const sheet = () => document.getElementById(STYLE_ELEMENT_ID);
+
+      mainBlocks.push(htmlCodeBlock());
+      expect(sheet().textContent).toContain('#main-wysiwyg-area .a');
+
+      mainBlocks.splice(1, 1);
+      expect(sheet().textContent).toBe('');
+      // Kept, so a block added back gets it back.
+      expect(viewModel.headCss()).toBe('.a{color:red}');
+    });
+
+    it('shows it with the template flag off, while a block is present', () => {
+      const { viewModel } = makeViewModel('.a{color:red}');
+      viewModel.metadata.htmlBlockEnabled = false;
+      attachHeadCssPreview(viewModel, document);
+
+      expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toContain(
+        '#main-wysiwyg-area .a'
+      );
+    });
+
+    it('does not re-render on a content edit that changes nothing', () => {
+      const { viewModel, mainBlocks } = makeViewModel('.a{color:red}');
+      attachHeadCssPreview(viewModel, document);
+      const sheet = document.getElementById(STYLE_ELEMENT_ID);
+      sheet.textContent = 'untouched';
+
+      mainBlocks.push(textBlock());
+
+      expect(sheet.textContent).toBe('untouched');
+    });
+  });
+
+  it('does nothing without the head CSS members', () => {
     expect(attachHeadCssPreview({}, document)).toBeNull();
     expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
   });
