@@ -111,18 +111,19 @@ const ElementListMixin = {
       this.selectedId = next ? next.id : null;
     },
 
+    // The arrows, through the drag's own move so the splice exists once.
+    // moveElementTo takes a drop position, counted with the element still in
+    // place: one row down is past the next row, two positions on.
     move(offset) {
-      const index = this.indexOfSelected();
-      const target = index + offset;
-      if (index === -1 || target < 0 || target >= this.state.elements.length) {
-        return;
-      }
-      const [element] = this.state.elements.splice(index, 1);
-      this.state.elements.splice(target, 0, element);
+      if (!this.canMove(offset)) return;
+      const target = this.indexOfSelected() + offset;
+      const position = offset > 0 ? target + 1 : target;
+      this.moveElementTo(this.selectedId, position);
     },
 
     /**
-     * Moves an element to a drop position — the reorder drag's `move`.
+     * Moves an element to a drop position — for the reorder drag, and for
+     * the arrows through `move`.
      *
      * `index` counts rows as they are laid out NOW, with the dragged element
      * still among them. Taking it out first shifts everything after it up by

@@ -24,8 +24,9 @@ const { dropIndexAt, showDropLine, clearDropLine } = require('./drop-line.js');
 // owns the iframe, its stylesheet and the names in it; this adds a gesture on
 // top of it, through what the preview makes public — PREVIEW_READY_EVENT to
 // listen on its document, PREVIEW_RENDERED_EVENT to make its rows draggable,
-// `freezeRender` / `thawRender` to hold it still, `previewDocument` and
-// `previewRows` to measure it, which drop-line.js turns into a drop position.
+// `freezeRender` / `thawRender` to hold it still, `elementRowFromEvent` to
+// find the row picked up, `previewDocument` and `previewRows` to measure it,
+// which drop-line.js turns into a drop position.
 // `insertElement` and `moveElementTo` come from the element list.
 
 // What either drag puts on the dataTransfer. A type of our own, never
@@ -192,7 +193,7 @@ const DragSurfaceMixin = {
     // why it needs no stopPropagation. Worth knowing before someone removes
     // the palette's and finds it still works here.
     handlePreviewDragStart(event) {
-      const row = this.rowBeingPickedUp(event.target);
+      const row = this.elementRowFromEvent(event);
       if (!row) {
         event.preventDefault();
         return;
@@ -215,20 +216,6 @@ const DragSurfaceMixin = {
         row.classList.add(MOVING_CLASS);
       }, 0);
       this.holdPage();
-    },
-
-    // The row of a composed element the target belongs to, or null. A target
-    // with no `closest` is a text node: a selection being dragged.
-    rowBeingPickedUp(target) {
-      const row =
-        target && typeof target.closest === 'function'
-          ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
-          : null;
-      if (!row) return null;
-      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      return this.state.elements.some((element) => element.id === id)
-        ? row
-        : null;
     },
 
     // ---- over the preview, and the drop -------------------------------------

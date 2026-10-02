@@ -23,10 +23,10 @@ const {
 //
 // It knows nothing of the drag. What the drag needs from it is public and
 // generic: the events below, to listen on a freshly written document and to
-// dress the rows of each render, and freezeRender / thawRender, to keep the
-// rows still under the cursor. The class
-// names live here too, because this is what owns the stylesheet they appear
-// in; drag-surface.js imports them.
+// dress the rows of each render; freezeRender / thawRender, to keep the rows
+// still under the cursor; elementRowFromEvent, to name the row under it. The
+// class names live here too, because this is what owns the stylesheet they
+// appear in; drag-surface.js imports them.
 
 // Marks the selected row inside the preview. Prefixed, because it lands in a
 // document that also holds the user's own markup.
@@ -234,25 +234,32 @@ const PreviewSurfaceMixin = {
     // ---- selecting ---------------------------------------------------------
 
     // Selecting by clicking the rendered block, rather than only through the
-    // list on the left. `closest` walks up from whatever was actually clicked —
-    // a word inside a paragraph, a pixel of an image — to the row that carries
-    // the element id.
+    // list on the left.
     handlePreviewClick(event) {
       // The preview holds real links: a button renders an `<a href>`, and
       // clicking one would navigate the iframe away from the composition.
       event.preventDefault();
 
+      const row = this.elementRowFromEvent(event);
+      if (row) this.selectedId = row.getAttribute(ELEMENT_ATTRIBUTE);
+    },
+
+    // The row of the composed element an event happened in, or null: for the
+    // click above and the drag (drag-surface.js) alike. `closest` walks up
+    // from whatever was hit — a word, a pixel of an image — to the row that
+    // carries the id; a target with no `closest` is a text node, a selection
+    // being dragged. A row whose id is not in the state is not ours.
+    elementRowFromEvent(event) {
       const target = event.target;
       const row =
         target && typeof target.closest === 'function'
           ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
           : null;
-      if (!row) return;
-
+      if (!row) return null;
       const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      if (this.state.elements.some((element) => element.id === id)) {
-        this.selectedId = id;
-      }
+      return this.state.elements.some((element) => element.id === id)
+        ? row
+        : null;
     },
 
     // Marks the selected row in the preview, so the selection reads the same on
