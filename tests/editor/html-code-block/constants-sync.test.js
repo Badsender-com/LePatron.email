@@ -1,18 +1,18 @@
 'use strict';
 
-// The server copies the editor's identifiers for the synthetic blocks, because
-// it cannot import from a browser bundle. A comment saying "keep in sync" keeps
-// nothing in sync: a renamed property would make the size and permission guards
-// look for a block that no longer exists — and let everything through.
+// The editor and the server read the synthetic blocks from one table
+// (packages/shared/synthetic-blocks.js). What can still drift is what each side
+// adds or derives on its own: a renamed property would make the size and
+// permission guards look for a block that no longer exists — and let everything
+// through — and a missing error code would refuse a block in the name of the
+// other one.
 //
-// Driven off the editor's descriptor list rather than a hand-written pair of
-// assertions, so a third synthetic block added there fails here until the server
-// knows about it too.
+// Driven off the table rather than a hand-written pair of assertions, so a third
+// synthetic block added there fails here until the server knows how to refuse it.
 
+const SHARED = require('../../../packages/shared/synthetic-blocks.js');
+const editorBlockTypes = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
 const editorConstants = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
-const {
-  SYNTHETIC_BLOCKS: EDITOR_BLOCKS,
-} = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
 const guard = require('../../../packages/server/mailing/synthetic-block-guard.js');
 const protection = require('../../../packages/server/translation/html-code-block-protection.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
@@ -21,23 +21,27 @@ const serverBlockFor = (type) =>
   guard.SYNTHETIC_BLOCKS.find((block) => block.type === type);
 
 describe('synthetic block identifiers, editor ↔ server', () => {
+  it('the editor injects the shared table, not a copy of it', () => {
+    expect(editorBlockTypes.SYNTHETIC_BLOCKS).toBe(SHARED.SYNTHETIC_BLOCKS);
+  });
+
   it('the server knows exactly the blocks the editor injects', () => {
-    expect(guard.SYNTHETIC_BLOCKS.map((block) => block.type).sort()).toEqual(
-      EDITOR_BLOCKS.map((block) => block.type).sort()
+    expect(guard.SYNTHETIC_BLOCKS.map((block) => block.type)).toEqual(
+      SHARED.SYNTHETIC_BLOCKS.map((block) => block.type)
     );
   });
 
-  describe.each(EDITOR_BLOCKS.map((block) => [block.type, block]))(
+  describe.each(SHARED.SYNTHETIC_BLOCKS.map((block) => [block.type, block]))(
     '%s',
-    (type, editorBlock) => {
+    (type, sharedBlock) => {
       it('the guard reads the property the editor writes', () => {
         expect(serverBlockFor(type).htmlProperty).toBe(
-          editorBlock.htmlProperty
+          sharedBlock.htmlProperty
         );
       });
 
       it('the guard checks the flag the palette obeys', () => {
-        expect(serverBlockFor(type).flag).toBe(editorBlock.flag);
+        expect(serverBlockFor(type).flag).toBe(sharedBlock.flag);
       });
 
       // A refusal naming the wrong feature is worse than a generic one: a client
@@ -58,7 +62,7 @@ describe('synthetic block identifiers, editor ↔ server', () => {
 
   it('the server loads every flag it is about to read', () => {
     expect(Object.keys(guard.TEMPLATE_FLAG_PROJECTION).sort()).toEqual(
-      EDITOR_BLOCKS.map((block) => block.flag).sort()
+      SHARED.SYNTHETIC_BLOCKS.map((block) => block.flag).sort()
     );
   });
 
@@ -69,11 +73,8 @@ describe('synthetic block identifiers, editor ↔ server', () => {
   });
 
   it('the translation protection looks for the markers the export emits', () => {
-    expect(
-      [
-        protection.HTML_CODE_MARKER_CLASS,
-        protection.BLOCK_BUILDER_MARKER_CLASS,
-      ].sort()
-    ).toEqual(EDITOR_BLOCKS.map((block) => block.markerClass).sort());
+    expect(protection.MARKER_CLASSES.slice().sort()).toEqual(
+      SHARED.SYNTHETIC_BLOCKS.map((block) => block.markerClass).sort()
+    );
   });
 });

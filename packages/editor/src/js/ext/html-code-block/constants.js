@@ -1,6 +1,10 @@
 'use strict';
 
-const { HTML_CODE_BLOCK, BLOCK_BUILDER_BLOCK } = require('./block-types.js');
+const {
+  HTML_CODE_BLOCK,
+  BLOCK_BUILDER_BLOCK,
+  HTML_CODE_MAX_LENGTH,
+} = require('./block-types.js');
 
 // Named constants for the "HTML code" block, derived from its descriptor rather
 // than declared a second time — two spellings of `lp-html-block` would drift,
@@ -22,11 +26,6 @@ const BUILDER_STATE_PROPERTY = BLOCK_BUILDER_BLOCK.stateProperty;
 // marker to the export — depends on the rendering mode, never on which block
 // asked.
 const HTML_CODE_BINDING = 'lpHtmlCode';
-
-// Maximum length of the markup, enforced in the editor and on the server.
-// `mailing.data` is an unvalidated Mixed field and `previewHtml` stores the
-// rendered copy in the same document, against Mongo's 16MB per-document limit.
-const HTML_CODE_MAX_LENGTH = 100000;
 
 module.exports = {
   HTML_CODE_BLOCK_TYPE,

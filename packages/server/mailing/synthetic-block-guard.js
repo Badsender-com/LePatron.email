@@ -3,6 +3,12 @@
 const { Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const {
+  SYNTHETIC_BLOCKS: SHARED_SYNTHETIC_BLOCKS,
+  HTML_CODE_BLOCK,
+  BLOCK_BUILDER_BLOCK,
+  HTML_CODE_MAX_LENGTH,
+} = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the synthetic blocks — the "HTML code" block and the
 // block builder: their size, and whether the template allows them at all.
@@ -24,24 +30,24 @@ const ERROR_CODES = require('../constant/error-codes.js');
 // without the raw HTML block, which is exactly the client who wants the guard
 // rails, so one flag must never stand in for the other.
 
-// Keep in sync with packages/editor/src/js/ext/html-code-block/block-types.js.
-// Not imported from there: the editor package is a browser bundle, and the
-// server must not depend on it. Enforced by
-// tests/editor/html-code-block/constants-sync.test.js.
-const SYNTHETIC_BLOCKS = Object.freeze([
-  Object.freeze({
-    type: 'htmlCodeBlock',
-    htmlProperty: 'htmlCode',
-    flag: 'htmlBlockEnabled',
+// The descriptors come from the table the editor injects from
+// (packages/shared/synthetic-blocks.js), so the property read here is the one the
+// editor writes and the flag is the one the palette obeys. What only the server
+// knows is added here: the error code naming each block when it is refused.
+const ERROR_CODES_BY_TYPE = Object.freeze({
+  [HTML_CODE_BLOCK.type]: {
     errorCode: ERROR_CODES.HTML_CODE_BLOCK_DISABLED,
-  }),
-  Object.freeze({
-    type: 'blockBuilderBlock',
-    htmlProperty: 'builderHtml',
-    flag: 'blockBuilderEnabled',
+  },
+  [BLOCK_BUILDER_BLOCK.type]: {
     errorCode: ERROR_CODES.BLOCK_BUILDER_DISABLED,
-  }),
-]);
+  },
+});
+
+const SYNTHETIC_BLOCKS = Object.freeze(
+  SHARED_SYNTHETIC_BLOCKS.map((block) =>
+    Object.freeze({ ...block, ...ERROR_CODES_BY_TYPE[block.type] })
+  )
+);
 
 // The projection to pass to `Templates.findById(...).select(...)`: every flag
 // this module reads, and nothing else.
@@ -51,8 +57,6 @@ const TEMPLATE_FLAG_PROJECTION = Object.freeze(
     return projection;
   }, {})
 );
-
-const HTML_CODE_MAX_LENGTH = 100000;
 
 const descriptorOf = (block) =>
   block && typeof block === 'object'
