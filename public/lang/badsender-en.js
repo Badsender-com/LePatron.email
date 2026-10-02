@@ -320,11 +320,13 @@ module.exports = {
   'html-code-modal-title': 'HTML code',
   'html-code-modal-apply': 'Apply',
   'html-code-modal-cancel': 'Cancel',
+  'html-code-modal-close': 'Close',
   'html-code-placeholder':
     'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
   'html-code-too-large':
     'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
   'widget-code-edit-css': 'Edit the email CSS',
+  'widget-code-view-css': 'View the email CSS',
   'widget-code-css-hint':
     "Added to the <head> of the exported email. Shared by every block of this mailing. At export, the template's styles are inlined and win over this CSS unless !important.",
   'widget-code-disabled':
@@ -339,6 +341,12 @@ module.exports = {
   'head-css-section-hint':
     "Added to the <head> of the exported email. Useful to make markup pasted in an HTML code block responsive. At export, the template's styles are inlined and win over this CSS unless !important.",
   'head-css-section-button': 'Edit the CSS',
+  'head-css-view-button': 'View the CSS',
+  'head-css-read-only-hint':
+    'This template no longer allows editing the custom CSS. It is kept as is and still exported with the HTML code blocks; it can only be deleted.',
+  'head-css-delete': 'Delete the CSS',
+  'head-css-delete-confirm':
+    'Delete the custom CSS of this email? This template no longer allows writing it again.',
   'head-css-modal-title': 'Custom CSS (email <head>)',
   'head-css-placeholder':
     'Write your CSS here. It is added to the <head> of the exported email, as written, and is not applied to the template blocks.',

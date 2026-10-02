@@ -51,6 +51,23 @@ function addHeadCssToViewModel(viewModel) {
     return headCssToExport(viewModel.content, viewModel.headCss());
   };
 
+  // Whether the head CSS is shown read-only: the flag is off, but the mailing
+  // still stores CSS and still holds an HTML code block, so that CSS is still
+  // exported (exported-css.js). It is treated like the block itself, which
+  // stays, cannot be edited, and can be deleted: the server refuses any change
+  // to the stored CSS but accepts clearing it (head-css-guard.js). Without a
+  // block nothing is exported, so nothing is shown — the CSS is kept for when
+  // one comes back.
+  viewModel.isHeadCssReadOnly = function () {
+    if (viewModel.isHeadCssEditable()) return false;
+    const css = viewModel.headCss();
+    return (
+      typeof css === 'string' &&
+      css.trim() !== '' &&
+      viewModel.hasHtmlCodeBlock()
+    );
+  };
+
   // Opens the shared CodeMirror modal on the stylesheet instead of a block
   // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
   // guarded because the palette button exists before Vue has bound.
@@ -64,6 +81,25 @@ function addHeadCssToViewModel(viewModel) {
       placeholderKey: 'head-css-placeholder',
       tooLargeKey: 'head-css-too-large',
       maxLength: HEAD_CSS_MAX_LENGTH,
+    });
+  };
+
+  // The same modal, read-only, for the CSS the template no longer lets the
+  // author edit: no Apply, a sentence saying why, and a Delete that clears the
+  // CSS in one undoable step.
+  viewModel.openHeadCssViewer = function () {
+    if (!viewModel.isHeadCssReadOnly()) return;
+    if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
+    viewModel.toggleHtmlCodeModal(true, {
+      accessor: viewModel.headCss,
+      mode: 'css',
+      titleKey: 'head-css-modal-title',
+      placeholderKey: 'head-css-placeholder',
+      maxLength: HEAD_CSS_MAX_LENGTH,
+      readOnly: true,
+      noticeKey: 'head-css-read-only-hint',
+      deleteKey: 'head-css-delete',
+      deleteConfirmKey: 'head-css-delete-confirm',
     });
   };
 }

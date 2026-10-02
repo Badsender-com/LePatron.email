@@ -62,6 +62,14 @@
     margin: 0 0 1rem;
   }
 
+  // Read-only mode: why the value cannot be edited, between title and editor.
+  &__notice {
+    margin: -0.5rem 0 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
   // Fills the modal height so the editor is usable on a full-page paste.
   &__editor {
     border: 1px solid rgba(0, 0, 0, 0.12);
@@ -88,6 +96,13 @@
       font-weight: bold;
     }
   }
+}
+
+// The one destructive action of the modal footer: set apart on the left, in
+// the error colour the counter already uses, away from Close.
+.modal-footer .html-code-modal__delete {
+  float: left;
+  color: #f04e23;
 }
 
 // Head CSS: a stylesheet for the whole email, offered at the bottom of the

@@ -329,11 +329,13 @@ module.exports = {
   'html-code-modal-title': 'Code HTML',
   'html-code-modal-apply': 'Appliquer',
   'html-code-modal-cancel': 'Annuler',
+  'html-code-modal-close': 'Fermer',
   'html-code-placeholder':
     'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
   'html-code-too-large':
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
   'widget-code-edit-css': "Éditer le CSS de l'email",
+  'widget-code-view-css': "Voir le CSS de l'email",
   'widget-code-css-hint':
     "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   'widget-code-disabled':
@@ -349,6 +351,12 @@ module.exports = {
   'head-css-section-hint':
     "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   'head-css-section-button': 'Éditer le CSS',
+  'head-css-view-button': 'Voir le CSS',
+  'head-css-read-only-hint':
+    'Ce template ne permet plus de modifier le CSS personnalisé. Il est conservé tel quel et toujours exporté avec les blocs Code HTML ; il peut seulement être supprimé.',
+  'head-css-delete': 'Supprimer le CSS',
+  'head-css-delete-confirm':
+    'Supprimer le CSS personnalisé de cet email ? Ce template ne permet plus de le réécrire.',
   'head-css-modal-title': "CSS personnalisé (<head> de l'email)",
   'head-css-placeholder':
     "Écrivez ici votre CSS. Il sera ajouté dans le <head> de l'email exporté, tel quel, sans être appliqué aux blocs du template.",

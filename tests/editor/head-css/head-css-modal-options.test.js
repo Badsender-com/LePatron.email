@@ -156,3 +156,115 @@ describe('the shared code modal', () => {
     expect(vm.stopMultiple).toHaveBeenCalled();
   });
 });
+
+// With the template flag off, CSS the email still exports is shown read-only,
+// like the HTML code block itself: nothing to apply, but a way to delete it.
+describe('the shared code modal, read-only', () => {
+  const READ_ONLY_OPTIONS = {
+    ...HEAD_CSS_OPTIONS,
+    readOnly: true,
+    noticeKey: 'head-css-read-only-hint',
+    deleteKey: 'head-css-delete',
+    deleteConfirmKey: 'head-css-delete-confirm',
+  };
+  const button = (app, name) =>
+    app.$el.querySelector('button[name="' + name + '"]');
+
+  let confirmSpy;
+  beforeEach(() => {
+    confirmSpy = jest.spyOn(window, 'confirm');
+  });
+  afterEach(() => {
+    confirmSpy.mockRestore();
+  });
+
+  it('opens CodeMirror read-only, without Apply, saying why', async () => {
+    const { modal, app } = mountModal();
+
+    const options = await open(modal, {
+      accessor: jest.fn(() => '.a{color:red}'),
+      ...READ_ONLY_OPTIONS,
+    });
+
+    expect(options.readOnly).toBe(true);
+    expect(button(app, 'submitAction')).toBeNull();
+    expect(button(app, 'deleteAction').textContent.trim()).toBe(
+      'head-css-delete'
+    );
+    expect(button(app, 'closeAction').textContent.trim()).toBe(
+      'html-code-modal-close'
+    );
+    expect(
+      app.$el.querySelector('.html-code-modal__notice').textContent.trim()
+    ).toBe('head-css-read-only-hint');
+  });
+
+  it('never writes through Apply', async () => {
+    const { modal } = mountModal();
+    const accessor = jest.fn(() => '.a{color:red}');
+
+    await open(modal, { accessor, ...READ_ONLY_OPTIONS });
+    modal.editor.setValue('.b{color:blue}');
+    modal.handleApply();
+
+    expect(accessor).not.toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it('clears the CSS in one undo step once Delete is confirmed', async () => {
+    const { modal, vm } = mountModal();
+    const accessor = jest.fn(() => '.a{color:red}');
+    confirmSpy.mockReturnValue(true);
+
+    await open(modal, { accessor, ...READ_ONLY_OPTIONS });
+    modal.handleDelete();
+
+    expect(confirmSpy).toHaveBeenCalledWith('head-css-delete-confirm');
+    expect(vm.startMultiple).toHaveBeenCalled();
+    expect(accessor).toHaveBeenCalledWith('');
+    expect(vm.stopMultiple).toHaveBeenCalled();
+    expect(modal.accessor).toBeNull();
+  });
+
+  it('keeps the CSS when Delete is not confirmed', async () => {
+    const { modal } = mountModal();
+    const accessor = jest.fn(() => '.a{color:red}');
+    confirmSpy.mockReturnValue(false);
+
+    await open(modal, { accessor, ...READ_ONLY_OPTIONS });
+    modal.handleDelete();
+
+    expect(accessor).not.toHaveBeenCalledWith(expect.any(String));
+    expect(modal.accessor).toBe(accessor);
+  });
+
+  it('keeps the CSS on Close', async () => {
+    const { modal, app } = mountModal();
+    const accessor = jest.fn(() => '.a{color:red}');
+
+    await open(modal, { accessor, ...READ_ONLY_OPTIONS });
+    button(app, 'closeAction').click();
+
+    expect(accessor).not.toHaveBeenCalledWith(expect.any(String));
+    expect(confirmSpy).not.toHaveBeenCalled();
+  });
+
+  // The read-only options must not leak into the next edit, as the CSS ones
+  // must not leak into an HTML one.
+  it('is editable again, without Delete, the next time it opens', async () => {
+    const { modal, app } = mountModal();
+
+    await open(modal, { accessor: jest.fn(() => ''), ...READ_ONLY_OPTIONS });
+    modal.closeModal();
+    const options = await open(modal, {
+      accessor: jest.fn(() => ''),
+      ...HEAD_CSS_OPTIONS,
+    });
+
+    expect(options.readOnly).toBe(false);
+    expect(button(app, 'submitAction')).not.toBeNull();
+    expect(button(app, 'deleteAction')).toBeNull();
+    expect(button(app, 'closeAction').textContent.trim()).toBe(
+      'html-code-modal-cancel'
+    );
+  });
+});

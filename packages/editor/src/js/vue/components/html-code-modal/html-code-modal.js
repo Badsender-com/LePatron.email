@@ -16,13 +16,31 @@ const getCodeMirror = () =>
 // HTML code block, so `toggleHtmlCodeModal(true, { accessor })` behaves exactly
 // as it did before this became reusable. The head CSS editor passes its own
 // mode, labels and bound (see viewModel.openHeadCssEditor).
+//
+// `readOnly` shows the value without letting it be changed: no Apply, and
+// CodeMirror refuses input while still letting the text be selected and
+// copied. It is how the head CSS is shown once the template flag is off (see
+// viewModel.openHeadCssViewer). `deleteKey`, when set, adds a button that
+// clears the value after `deleteConfirmKey` is confirmed, and `noticeKey` a
+// sentence under the title saying why the value cannot be edited.
 const DEFAULT_OPTIONS = {
   mode: 'htmlmixed',
   titleKey: 'html-code-modal-title',
   placeholderKey: 'html-code-placeholder',
   tooLargeKey: 'html-code-too-large',
   maxLength: HTML_CODE_MAX_LENGTH,
+  readOnly: false,
+  noticeKey: null,
+  deleteKey: null,
+  deleteConfirmKey: null,
 };
+
+// The editor's other destructive actions confirm the same way
+// (badsender-comments.js); guarded for environments without a window.
+const confirmAction = (message) =>
+  typeof window !== 'undefined' && typeof window.confirm === 'function'
+    ? window.confirm(message)
+    : false;
 
 const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
   components: {
@@ -75,6 +93,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
         electricChars: false,
         // Hint only, never persisted in the model (addon/display/placeholder.js).
         placeholder: this.vm.t(this.options.placeholderKey),
+        readOnly: Boolean(this.options.readOnly),
       });
       this.editor.setValue(value);
       this.editor.on('change', this.handleChange);
@@ -101,7 +120,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
     },
 
     handleApply() {
-      if (!this.editor || !this.accessor) return;
+      if (!this.editor || !this.accessor || this.options.readOnly) return;
       const value = this.editor.getValue();
       const result = validateHtmlCodeLength(value, this.options.maxLength);
       if (!result.valid) {
@@ -119,6 +138,17 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
       this.closeModal();
     },
 
+    // Clearing is a write like Apply, so it is one step on the undo stack: a
+    // Ctrl+Z after it gets the value back as it was.
+    handleDelete() {
+      if (!this.accessor || !this.options.deleteKey) return;
+      if (!confirmAction(this.vm.t(this.options.deleteConfirmKey))) return;
+      this.vm.startMultiple();
+      this.accessor('');
+      this.vm.stopMultiple();
+      this.closeModal();
+    },
+
     closeModal() {
       this.destroyEditor();
       this.accessor = null;
@@ -131,6 +161,7 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
   template: `<modal-component ref="modalRef" :is-full-width="true" :on-close="destroyEditor">
   <div class="modal-content html-code-modal">
     <h5 class="html-code-modal__title">{{ vm.t(options.titleKey) }}</h5>
+    <p v-if="options.noticeKey" class="html-code-modal__notice">{{ vm.t(options.noticeKey) }}</p>
     <div class="html-code-modal__editor">
       <textarea ref="codeArea"></textarea>
     </div>
@@ -140,12 +171,20 @@ const HtmlCodeModalComponent = Vue.component('HtmlCodeModal', {
   </div>
   <div class="modal-footer">
     <button
+      v-if="options.deleteKey"
+      @click.prevent="handleDelete"
+      class="btn-flat waves-effect waves-light html-code-modal__delete"
+      name="deleteAction">
+      {{ vm.t(options.deleteKey) }}
+    </button>
+    <button
       @click.prevent="closeModal"
       class="btn-flat waves-effect waves-light"
       name="closeAction">
-      {{ vm.t('html-code-modal-cancel') }}
+      {{ vm.t(options.readOnly ? 'html-code-modal-close' : 'html-code-modal-cancel') }}
     </button>
     <button
+      v-if="!options.readOnly"
       @click.prevent="handleApply"
       :disabled="tooLong"
       class="btn waves-effect waves-light"

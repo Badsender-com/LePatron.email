@@ -20,13 +20,21 @@ ko.bindingHandlers.button = { init() {} };
 // `isHeadCssEditable` belongs to the main viewModel (viewmodel.js), which reads
 // the same flag; it is stubbed so the CSS entry point can be told apart from
 // the block's own predicate.
-function renderPanel(htmlBlockEnabled, headCssEditable = htmlBlockEnabled) {
+// Same for `isHeadCssReadOnly` (ext/head-css/view-model.js).
+function renderPanel(
+  htmlBlockEnabled,
+  headCssEditable = htmlBlockEnabled,
+  headCssReadOnly = false
+) {
   const plugin = widgetCode();
   const vm = {
     metadata: { htmlBlockEnabled },
     t: (key) => key,
     htmlCode: ko.observable('<p>stored</p>'),
     isHeadCssEditable: () => headCssEditable,
+    isHeadCssReadOnly: () => headCssReadOnly,
+    openHeadCssEditor: jest.fn(),
+    openHeadCssViewer: jest.fn(),
   };
   plugin.viewModel(vm);
 
@@ -42,8 +50,14 @@ function renderPanel(htmlBlockEnabled, headCssEditable = htmlBlockEnabled) {
     vm,
     toggle,
     button: host.querySelector('.html-code-widget__button'),
-    cssButton: host.querySelector('.html-code-widget__button--secondary'),
-    cssHint: host.querySelector('.html-code-widget__hint'),
+    cssButton: host.querySelector(
+      '.html-code-widget__button--secondary:not(.html-code-widget__button--view-css)'
+    ),
+    cssHint: host.querySelector(
+      '.html-code-widget__hint:not(.html-code-widget__hint--read-only)'
+    ),
+    viewCssButton: host.querySelector('.html-code-widget__button--view-css'),
+    readOnlyHint: host.querySelector('.html-code-widget__hint--read-only'),
     message: host.querySelector('.html-code-widget__disabled'),
   };
 }
@@ -86,6 +100,33 @@ describe('HTML code widget', () => {
     expect(button.style.display).not.toBe('none');
     expect(cssButton.style.display).toBe('none');
     expect(cssHint.style.display).toBe('none');
+  });
+
+  // With the flag off, CSS the email still exports is shown read-only, like
+  // this block: a way to view it — and delete it, in the modal — instead of
+  // nothing at all.
+  it('offers to view the email CSS when it is read-only', () => {
+    const { vm, cssButton, viewCssButton, readOnlyHint } = renderPanel(
+      false,
+      false,
+      true
+    );
+    expect(cssButton.style.display).toBe('none');
+    expect(viewCssButton.style.display).not.toBe('none');
+    expect(readOnlyHint.textContent).toBe('head-css-read-only-hint');
+
+    viewCssButton.click();
+    expect(vm.openHeadCssViewer).toHaveBeenCalled();
+    expect(vm.openHeadCssEditor).not.toHaveBeenCalled();
+  });
+
+  it('offers no view of the CSS when it is editable, or absent', () => {
+    [renderPanel(true), renderPanel(false)].forEach(
+      ({ viewCssButton, readOnlyHint }) => {
+        expect(viewCssButton.style.display).toBe('none');
+        expect(readOnlyHint.style.display).toBe('none');
+      }
+    );
   });
 
   it('does not open the editor when the block cannot be edited', () => {

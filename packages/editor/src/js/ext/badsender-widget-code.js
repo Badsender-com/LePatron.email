@@ -18,7 +18,9 @@
 // on the same observable. The hint under the button says the scope is the whole
 // email, so nobody expects it to be per-block. Whether it shows is
 // `viewModel.isHeadCssEditable`'s call (ext/head-css/view-model.js), as for
-// the Style tab.
+// the Style tab. With the flag off, CSS the email still exports is offered
+// read-only instead, with its delete (`viewModel.isHeadCssReadOnly`), the way
+// this block itself stays without being editable.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
@@ -36,6 +38,8 @@ function html(propAccessor, onfocusbinding, parameters) {
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHeadCssEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
       <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
+      <button class="html-code-widget__button html-code-widget__button--secondary html-code-widget__button--view-css" data-bind="visible: $root.isHeadCssReadOnly(), button: { icons: { primary: 'lucide lucide-eye' } }, text: $root.t('widget-code-view-css'), click: function() { $root.openHeadCssViewer(); }">View the email CSS</button>
+      <p class="html-code-widget__hint html-code-widget__hint--read-only" data-bind="visible: $root.isHeadCssReadOnly(), text: $root.t('head-css-read-only-hint')"></p>
     </div>
   `;
 }
