@@ -249,7 +249,8 @@ const DragSurfaceMixin = {
       doc.body.classList.add(DRAGGING_CLASS);
 
       const rows = this.previewRows(doc);
-      showDropLine(doc, rows, dropIndexAt(rows, event.clientY));
+      const index = dropIndexAt(rows, event.clientY);
+      showDropLine(doc, rows, index, this.draggingId);
     },
 
     // Leaving the iframe entirely, rather than crossing between two rows:

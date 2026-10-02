@@ -207,6 +207,39 @@ describe('the drop moves the element', () => {
     expect(typesOf(modal)).toEqual(['text', 'button', 'divider']);
   });
 
+  // Just above the row or just below it, a drop changes nothing: a line there
+  // would promise a move that does not happen.
+  it('draws no line on the edges of the row being moved', async () => {
+    const { doc } = await openModal(['text', 'button', 'divider']);
+    layOutRows(doc, 100);
+    fireIn(doc, 'dragstart', rowsOf(doc)[1]);
+
+    // Above the middle row's midpoint, then past it: positions 1 and 2.
+    dragOverAt(doc, 120);
+    expect(dropLineOf(doc)).toBeNull();
+    dragOverAt(doc, 160);
+    expect(dropLineOf(doc)).toBeNull();
+
+    // One row further either way is a real move.
+    dragOverAt(doc, 10);
+    expect(dropLineOf(doc)).toBeTruthy();
+    dragOverAt(doc, 120);
+    expect(dropLineOf(doc)).toBeNull();
+    dragOverAt(doc, 260);
+    expect(dropLineOf(doc)).toBeTruthy();
+  });
+
+  // An insertion has no row of its own: every position is a change.
+  it('still draws the line there for a palette drag', async () => {
+    const { doc } = await openModal(['text', 'button', 'divider']);
+    layOutRows(doc, 100);
+    startPaletteDrag('spacer');
+
+    dragOverAt(doc, 120);
+
+    expect(dropLineOf(doc)).toBeTruthy();
+  });
+
   it('keeps the moved element selected', async () => {
     const { modal, doc } = await openModal(['text', 'button', 'divider']);
     layOutRows(doc, 100);
