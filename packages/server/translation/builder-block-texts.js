@@ -8,10 +8,8 @@ const {
   parseState,
   serialiseState,
 } = require('../../shared/block-builder/state.js');
-const {
-  isTranslatableFieldName,
-  isTranslatableValue,
-} = require('./mosaico-text-extractor.js');
+const { elementFor } = require('../../shared/block-builder/elements/index.js');
+const { isTranslatableValue } = require('./mosaico-text-extractor.js');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const {
   HTML_CODE_MAX_LENGTH,
@@ -72,12 +70,12 @@ function findBuilderBlocks(data) {
 /**
  * The translatable texts of every composed block.
  *
- * Which fields count is decided by the SAME predicates the generic extractor
- * uses, deliberately: `content`, `label` and `alt` are picked up because they
- * match `/content$/i`, `/label$/i` and `/alt$/i` there too. A sixth element
- * shipping a `caption` would be translated without anyone editing this file,
- * and a field the generic pass refuses — a colour, a number — is refused here
- * for the same reason.
+ * Which fields count is decided by the element's own manifest, not by its
+ * field names: TEXT and RICH_TEXT slots, and the ATTR slots declared
+ * translatable (an image `alt`) — see translatableOf in
+ * packages/shared/block-builder/manifest.js. A URL, a colour or a size is
+ * never sent, whatever it is called. The value filter is still the generic
+ * extractor's, so an empty text or a bare variable stays home.
  *
  * @param {Object} data mailing.data
  * @returns {Object} flat map of key -> text
@@ -90,11 +88,10 @@ function extractBuilderTexts(data) {
     if (!state) return;
 
     state.elements.forEach((element, elementIndex) => {
-      Object.entries(element).forEach(([field, value]) => {
-        if (field === 'id' || field === 'type') return;
-        if (!isTranslatableFieldName(field)) return;
+      // parseState drops an element of unknown type, so the definition exists.
+      elementFor(element.type).translatable.forEach((field) => {
+        const value = element[field];
         if (!isTranslatableValue(value)) return;
-
         result[keyFor(container, index, elementIndex, field)] = value;
       });
     });

@@ -63,9 +63,8 @@ describe('what gets sent for translation', () => {
     });
   });
 
-  // Which fields count is decided by the same predicates the generic extractor
-  // uses, so a new element shipping a `caption` would be translated without
-  // anyone editing that list.
+  // Which fields count is decided by the element's manifest: TEXT and
+  // RICH_TEXT slots, and an ATTR declared translatable — `alt`, not `align`.
   it('takes an image alt, which is prose too', () => {
     const data = modelWith(composedBlock([image('Une photo de chat')]));
 
@@ -84,9 +83,36 @@ describe('what gets sent for translation', () => {
 
     const keys = Object.keys(extractBuilderTexts(data));
 
+    expect(keys).toEqual([
+      'builderBlock.mainBlocks.0.0.content',
+      'builderBlock.mainBlocks.0.1.label',
+    ]);
     expect(keys).not.toContain('builderBlock.mainBlocks.0.0.color');
     expect(keys).not.toContain('builderBlock.mainBlocks.0.0.fontSize');
     expect(keys).not.toContain('builderBlock.mainBlocks.0.1.href');
+  });
+
+  // `align` is an ATTR like `alt`, but a keyword the markup depends on: a
+  // translated `center` is no alignment at all.
+  it('never sends an ATTR slot the manifest does not declare translatable', () => {
+    const data = modelWith(
+      composedBlock([text('Bonjour', { align: 'center' }), image('Un chat')])
+    );
+
+    expect(Object.keys(extractBuilderTexts(data))).toEqual([
+      'builderBlock.mainBlocks.0.0.content',
+      'builderBlock.mainBlocks.0.1.alt',
+    ]);
+  });
+
+  // The field names no longer decide: a URL slot is refused by its context,
+  // whatever text it holds.
+  it('never sends a link, even one that reads like prose', () => {
+    const data = modelWith(
+      composedBlock([{ ...button('Cliquez'), href: 'voir la suite' }])
+    );
+
+    expect(Object.values(extractBuilderTexts(data))).toEqual(['Cliquez']);
   });
 
   // The markup is generated. Sending it to an LLM would have it rewritten, and

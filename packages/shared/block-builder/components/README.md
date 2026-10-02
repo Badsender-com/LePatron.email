@@ -47,6 +47,10 @@ module.exports = {
   refused (a size that is not one).
 - `fallback` overrides that second use, when the default would be wrong in the
   markup (an empty `href` links to the page itself).
+- `translatable: true` marks an `ATTR` slot whose value is prose (an image
+  `alt`), so the AI translation rewrites it. `TEXT` and `RICH_TEXT` slots are
+  always translated; `URL`, `COLOR`, `PX` and `CSS_VALUE` never are, and the
+  compiler refuses the flag on them.
 
 ## The workflow
 
@@ -98,6 +102,7 @@ render time, and `undefined`, `null` or `NaN` in the output.
   no single context covers must be split into two slots.
 - A fallback may not contain `[`, `]` or `|` (they would break the
   placeholder), and must be a value its own context accepts unchanged.
+- `translatable`, when given, is a boolean on an `ATTR` slot.
 
 **Tailwind**
 

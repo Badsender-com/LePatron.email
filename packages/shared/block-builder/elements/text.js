@@ -5,13 +5,18 @@
 // see rich-text.js.
 
 const { defineTemplate } = require('../template.js');
-const { defaultsOf } = require('../manifest.js');
+const { defaultsOf, translatableOf } = require('../manifest.js');
 
 const render = defineTemplate(
   require('../components/text.compiled.js').default
 );
 
-// Typed as the generator expects — see ../manifest.js.
-const defaults = defaultsOf(require('../components/text.slots.js'));
+const manifest = require('../components/text.slots.js');
 
-module.exports = { type: 'text', render, defaults };
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(manifest);
+
+// What a translation may rewrite — see ../manifest.js.
+const translatable = translatableOf(manifest);
+
+module.exports = { type: 'text', render, defaults, translatable };

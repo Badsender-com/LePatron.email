@@ -35,6 +35,26 @@ function checkDefault(where, slot) {
     throw new Error(`${where}: a fallback, when given, must be a string.`);
   }
   checkFallback(where, slot);
+  checkTranslatable(where, slot);
+}
+
+/**
+ * `translatable` only where it decides something: on an ATTR slot, which may
+ * hold prose or a keyword. TEXT and RICH_TEXT are always translated; on a URL,
+ * a colour or a size the flag would send a value the markup depends on to the
+ * provider, and bring back a broken one.
+ */
+function checkTranslatable(where, slot) {
+  if (slot.translatable === undefined) return;
+  if (typeof slot.translatable !== 'boolean') {
+    throw new Error(`${where}: translatable, when given, must be a boolean.`);
+  }
+  if (slot.context !== 'ATTR') {
+    throw new Error(
+      `${where} is ${slot.context}: only an ATTR slot may declare ` +
+        'translatable (TEXT and RICH_TEXT always are, the others never).'
+    );
+  }
 }
 
 /**
