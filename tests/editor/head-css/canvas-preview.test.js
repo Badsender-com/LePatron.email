@@ -15,6 +15,10 @@ const {
   attachHeadCssPreview,
   STYLE_ELEMENT_ID,
 } = require('../../../packages/editor/src/js/ext/head-css/canvas-preview.js');
+const {
+  ALWAYS_TRUE_MEDIA,
+  VISIBLE_ON_BOTH_SUFFIX,
+} = require('../../../packages/editor/src/js/ext/preview-media.js');
 
 function setup(initialCss, previewMode) {
   const viewModel = {
@@ -107,6 +111,17 @@ describe('attachHeadCssPreview', () => {
       viewModel.previewMode('desktop');
 
       expect(sheet().textContent).toContain('@media (max-width:600px)');
+    });
+
+    // The default mode treats the template's media queries this way too
+    // (badsender-screen-preview.js): forced, with selectors no element matches.
+    it('follows the template in the default `both` mode', () => {
+      const { sheet } = setup(MEDIA, 'both');
+
+      expect(sheet().textContent).toContain(ALWAYS_TRUE_MEDIA);
+      expect(sheet().textContent).toContain(
+        '#main-wysiwyg-area .a' + VISIBLE_ON_BOTH_SUFFIX
+      );
     });
   });
 

@@ -118,6 +118,27 @@ describe('scopeCss', () => {
       );
       expect(out).toContain('#main-wysiwyg-area .a');
     });
+
+    // The `both` preview, like the template's stylesheet: forced, but every
+    // selector inside carries a suffix (preview-media.js).
+    it('suffixes every selector of a forced media rule, and only those', () => {
+      const out = flat(
+        scopeCss(
+          '.c{color:red}@media (max-width:600px){.a,.b{width:100%}}',
+          AREA,
+          {
+            forceMedia: true,
+            mediaSelectorSuffix: '.visible-on-both',
+          }
+        )
+      );
+      expect(out).toBe(
+        '#main-wysiwyg-area .c { color: red; } ' +
+          '@media only screen and (min-width: 0px) { ' +
+          '#main-wysiwyg-area .a.visible-on-both, ' +
+          '#main-wysiwyg-area .b.visible-on-both { width: 100%; } }'
+      );
+    });
   });
 
   // Percentages and from/to are not selectors — prefixing them breaks the

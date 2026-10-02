@@ -67,6 +67,7 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 ## 6. Limites connues
 
 - **Toutes les media queries sont neutralisées en aperçu mobile, pas seulement les `max-width`.** Une règle `@media (min-width: 700px)` s'appliquerait donc à tort dans cet aperçu. C'est le comportement qu'a déjà `badsender-screen-preview.js` sur le CSS du template : s'en écarter serait plus déroutant que s'y conformer.
+- **En aperçu « les deux » (le mode par défaut), les règles mobiles ne s'affichent pas**, comme celles du template : la condition est forcée, mais chaque sélecteur reçoit le suffixe `.visible-on-both`, qu'aucun élément ne porte. Les deux feuilles lisent ces règles dans un seul module, `ext/preview-media.js`.
 - **`he.encode` côté serveur** encode les non-ASCII en entités décimales, y compris dans le `<style>`. Un `content: "é"` ou un commentaire accentué en souffrira. Même limite que le bloc Code HTML, documentée là-bas.
 
 ## 7. Recette manuelle
@@ -78,7 +79,7 @@ Non-régression d'abord, le reste ensuite.
 3. Flag ON → la section apparaît ; le bouton ouvre la modale en coloration CSS.
    3bis. Sélectionner un bloc Code HTML → le panneau offre « Éditer le CSS de l'email » sous le bouton HTML, avec la mention de portée. Les deux entrées ouvrent le même contenu.
    3ter. **Aperçu canvas** : coller `<p class="classred">Coucou</p>` dans un bloc, écrire `.classred{color:red}` dans le CSS, appliquer → le texte passe en rouge **dans l'éditeur**, sans que la toolbox ni les panneaux changent d'aspect.
-   3quater. **Aperçu mobile** : ajouter `@media (max-width:600px){.classred{color:blue}}` → le texte reste rouge en aperçu Bureau, passe en bleu en aperçu Mobile, et redevient rouge au retour.
+   3quater. **Aperçu mobile** : ajouter `@media (max-width:600px){.classred{color:blue}}` → le texte reste rouge en aperçu Bureau et en aperçu « les deux », passe en bleu en aperçu Mobile, et redevient rouge au retour.
 4. Écrire `.foo{color:red}`, appliquer, sauvegarder, recharger → le CSS est retrouvé.
 5. Exporter → `<style type="text/css" data-lp-head-css="true">` est présent dans le `<head>`, juste avant `</head>`, contenu intact.
 6. Envoi de test et export ESP → même présence.

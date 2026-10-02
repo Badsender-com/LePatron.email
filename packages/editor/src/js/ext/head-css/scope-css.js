@@ -18,6 +18,7 @@
 
 const cssParse = require('mensch/lib/parser.js');
 const cssStringify = require('mensch/lib/stringify.js');
+const { ALWAYS_TRUE_MEDIA } = require('../preview-media.js');
 
 // The document root of an email (`html`, `:root`) is the canvas itself here,
 // and its <body> is the `replacedbody` element inside it: template-loader.js
@@ -35,15 +36,6 @@ const LEADING_COMBINATOR = /^\s*[>+~]?\s*/;
 
 // At-rules whose inner blocks hold selectors to rewrite.
 const NESTING_AT_RULES = new Set(['media', 'supports', 'document']);
-
-// A condition that is always true, used to make mobile rules apply while the
-// mobile preview is on. Same value, and same blunt approach, as
-// badsender-screen-preview.js uses on the template's own stylesheet: EVERY
-// media query is forced, not only the `max-width` ones. A desktop-only
-// `min-width` query would therefore apply too — wrong in theory, but it is the
-// behaviour the template already has, and diverging would be worse than
-// matching it.
-const ALWAYS_TRUE_MEDIA = 'only screen and (min-width: 0px)';
 
 /**
  * Splits a selector list on its top-level commas only.
@@ -149,8 +141,11 @@ function scopeSelector(selector, prefix) {
  *
  * @param {Array} rules mensch AST nodes
  * @param {string} prefix
+ * @param {{ forceMedia: boolean, mediaSelectorSuffix: string }} media see
+ *   preview-media.js
+ * @param {string} suffix appended to every selector, inside a forced media rule
  */
-function scopeRules(rules, prefix, forceMedia) {
+function scopeRules(rules, prefix, media, suffix) {
   if (!Array.isArray(rules)) return;
 
   rules.forEach((rule) => {
@@ -159,18 +154,22 @@ function scopeRules(rules, prefix, forceMedia) {
     if (rule.type === 'rule' && Array.isArray(rule.selectors)) {
       // Joined back before re-splitting: see the header on mensch's commas.
       rule.selectors = splitSelectorList(rule.selectors.join(',')).map(
-        (selector) => scopeSelector(selector, prefix)
+        (selector) =>
+          selector.trim() === '' ? selector : scopeSelector(selector, prefix) + suffix
       );
       return;
     }
 
     if (NESTING_AT_RULES.has(rule.type)) {
-      // The canvas is a div, so a media query is evaluated against the browser
-      // window, never against the canvas width. Shrinking the canvas to 350px
-      // for the mobile preview therefore triggers nothing on its own: the
-      // condition has to be neutralised for the rules to show.
-      if (rule.type === 'media' && forceMedia) rule.name = ALWAYS_TRUE_MEDIA;
-      scopeRules(rule.rules, prefix, forceMedia);
+      // A media query never follows the canvas width: see preview-media.js.
+      const forced = rule.type === 'media' && media.forceMedia;
+      if (forced) rule.name = ALWAYS_TRUE_MEDIA;
+      scopeRules(
+        rule.rules,
+        prefix,
+        media,
+        forced ? media.mediaSelectorSuffix : suffix
+      );
     }
   });
 }
@@ -178,9 +177,11 @@ function scopeRules(rules, prefix, forceMedia) {
 /**
  * @param {string} css the author's stylesheet
  * @param {string} prefix the selector everything must live under
- * @param {Object} [options]
- * @param {boolean} [options.forceMedia] make every media query apply, for the
- *   mobile preview
+ * @param {Object} [options] what the preview mode does to media queries, as
+ *   returned by previewMediaFor (preview-media.js)
+ * @param {boolean} [options.forceMedia] make every media query's condition hold
+ * @param {string} [options.mediaSelectorSuffix] appended to the selectors of
+ *   the forced media rules
  * @returns {string|null} the scoped stylesheet, or null when the CSS cannot be
  *   parsed — the caller then applies nothing rather than something wrong
  */
@@ -203,11 +204,11 @@ function scopeCss(css, prefix, options) {
 
   if (!sheet || sheet.type !== 'stylesheet' || !sheet.stylesheet) return null;
 
-  scopeRules(
-    sheet.stylesheet.rules,
-    prefix.trim(),
-    Boolean(options && options.forceMedia)
-  );
+  const media = {
+    forceMedia: Boolean(options && options.forceMedia),
+    mediaSelectorSuffix: (options && options.mediaSelectorSuffix) || '',
+  };
+  scopeRules(sheet.stylesheet.rules, prefix.trim(), media, '');
 
   try {
     return cssStringify(sheet, { indentation: '' });

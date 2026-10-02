@@ -14,6 +14,7 @@
 // email is still right.
 
 const { scopeCss } = require('./scope-css.js');
+const { previewMediaFor } = require('../preview-media.js');
 
 const CANVAS_SELECTOR = '#main-wysiwyg-area';
 const STYLE_ELEMENT_ID = 'lp-head-css-preview';
@@ -52,9 +53,8 @@ function renderPreview(doc, css, previewMode) {
   const element = ensureStyleElement(doc);
   if (!element) return;
 
-  const scoped = scopeCss(css, CANVAS_SELECTOR, {
-    forceMedia: previewMode === 'mobile',
-  });
+  // Media queries follow the preview mode exactly as the template's do.
+  const scoped = scopeCss(css, CANVAS_SELECTOR, previewMediaFor(previewMode));
 
   // `null` means the CSS could not be scoped. Leaving the previous rules in
   // place would show the author a canvas that no longer matches what they
