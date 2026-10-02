@@ -804,8 +804,11 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // After the substitution, so the stylesheet cannot be mistaken for a marker,
     // and after every regex above, so it reaches the export exactly as written.
-    // A mailing without head CSS gets the very same string as before.
-    return injectHeadCss(content, viewModel.headCss());
+    // A mailing without head CSS gets the very same string as before — and so
+    // does one without any HTML code block left: the CSS follows the blocks it
+    // exists to style, and stays stored for when one comes back
+    // (ext/head-css/exported-css.js).
+    return injectHeadCss(content, viewModel.exportedHeadCss());
   };
 
   // The substitution session opens BEFORE the frame is bound: from then on the

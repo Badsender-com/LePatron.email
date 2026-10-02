@@ -4,6 +4,7 @@ const ko = require('knockout');
 const {
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../../../shared/head-css/constants.js');
+const { hasHtmlCodeBlock, headCssToExport } = require('./exported-css.js');
 
 // The head CSS members of the editor's view model: the stylesheet itself, the
 // predicates the two entry points read (toolbox.tmpl.html,
@@ -32,6 +33,22 @@ function addHeadCssToViewModel(viewModel) {
   // (template-loader.js), hence the lazy read.
   viewModel.isHeadCssEditable = function () {
     return Boolean(viewModel.metadata && viewModel.metadata.htmlBlockEnabled);
+  };
+
+  // Whether the mailing holds an HTML code block, which is what decides whether
+  // the head CSS is exported at all (see exported-css.js). Read lazily, like
+  // the flag: `content` is the view model's, set before this runs but only
+  // filled once the mailing is loaded.
+  viewModel.hasHtmlCodeBlock = function () {
+    return hasHtmlCodeBlock(viewModel.content);
+  };
+
+  // What exportHTML injects (viewmodel.js), and what the canvas previews
+  // (canvas-preview.js): the stored CSS while an HTML code block is present,
+  // nothing otherwise. `headCss` itself is never cleared by this — the CSS is
+  // kept for an undo, or a block added back.
+  viewModel.exportedHeadCss = function () {
+    return headCssToExport(viewModel.content, viewModel.headCss());
   };
 
   // Opens the shared CodeMirror modal on the stylesheet instead of a block
