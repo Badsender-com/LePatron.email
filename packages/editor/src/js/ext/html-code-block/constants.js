@@ -11,7 +11,8 @@ const {
 // than declared a second time — two spellings of `lp-html-block` would drift,
 // and the one that drifted would be the one nothing renders.
 //
-// See block-types.js for what each of these is and why it is what it is.
+// See packages/shared/synthetic-blocks.js for what each of these is and why it
+// is what it is.
 
 const HTML_CODE_BLOCK_TYPE = HTML_CODE_BLOCK.type;
 const HTML_CODE_PROPERTY = HTML_CODE_BLOCK.htmlProperty;
