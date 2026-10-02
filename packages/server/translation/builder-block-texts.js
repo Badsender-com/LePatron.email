@@ -190,10 +190,14 @@ function applyToStates(data, entries) {
     if (!states.has(id)) states.set(id, readBlock(block));
     const { state } = states.get(id);
     const element = state && state.elements[parsed.elementIndex];
-    // The field must already exist. A translation that invents one would add a
-    // key the element's template never renders, and `cleanElement` would drop
-    // it on the next load anyway.
-    if (!element || !(parsed.field in element)) {
+    // Only a field the extraction could have sent: one of the element's
+    // translatable slots (see extractBuilderTexts), held by the element itself.
+    // A translation never writes a link, a colour or a size.
+    const writable =
+      element &&
+      elementFor(element.type).translatable.includes(parsed.field) &&
+      Object.prototype.hasOwnProperty.call(element, parsed.field);
+    if (!writable) {
       skipped.push(key);
       return;
     }
