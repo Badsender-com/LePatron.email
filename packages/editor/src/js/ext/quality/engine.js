@@ -99,6 +99,34 @@ function completeFinding(rule, finding, ctx) {
   };
 }
 
+const failedCheck = (rule) => ({
+  ruleId: rule.id,
+  category: rule.category,
+  status: 'error',
+});
+
+function runRule(rule, ctx) {
+  try {
+    const findings = (rule.run(ctx) || []).map((f) =>
+      completeFinding(rule, f, ctx)
+    );
+    const status = findings.length ? 'failed' : 'passed';
+    return {
+      findings,
+      check: {
+        ruleId: rule.id,
+        category: rule.category,
+        status,
+        count: findings.length,
+      },
+    };
+  } catch (err) {
+    // One broken rule must never stop the export or the other checks.
+    console.error(`Quality check "${rule.id}" failed`, err);
+    return { findings: [], check: failedCheck(rule) };
+  }
+}
+
 /**
  * Runs every quality check against the current email.
  * @param {Object} viewModel - the editor view model
@@ -112,32 +140,22 @@ function runQualityChecks(viewModel, options = {}) {
   const html =
     typeof options.html === 'string' ? options.html : viewModel.exportHTML();
   const rules = options.rules || DEFAULT_RULES;
-  const ctx = buildContext(viewModel, html);
 
-  const findings = [];
-  const checks = [];
+  let ctx;
+  try {
+    ctx = buildContext(viewModel, html);
+  } catch (err) {
+    // Download and ESP send run the checks first: a model the engine cannot
+    // read must cost the checks, never the export.
+    console.error('Quality checks could not read the email', err);
+    return { findings: [], checks: rules.map(failedCheck) };
+  }
 
-  rules.forEach((rule) => {
-    let ruleFindings;
-    try {
-      ruleFindings = rule.run(ctx) || [];
-    } catch (err) {
-      // One broken rule must never stop the export or the other checks.
-      console.error(`Quality check "${rule.id}" failed`, err);
-      checks.push({ ruleId: rule.id, category: rule.category, status: 'error' });
-      return;
-    }
-    const completed = ruleFindings.map((f) => completeFinding(rule, f, ctx));
-    findings.push(...completed);
-    checks.push({
-      ruleId: rule.id,
-      category: rule.category,
-      status: completed.length ? 'failed' : 'passed',
-      count: completed.length,
-    });
-  });
-
-  return { findings, checks };
+  const results = rules.map((rule) => runRule(rule, ctx));
+  return {
+    findings: _.flatMap(results, 'findings'),
+    checks: results.map((result) => result.check),
+  };
 }
 
 module.exports = {

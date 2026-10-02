@@ -150,4 +150,32 @@ describe('runQualityChecks', () => {
       ],
     });
   });
+
+  describe('when the engine itself fails', () => {
+    beforeEach(() => jest.spyOn(console, 'error').mockImplementation(() => {}));
+    afterEach(() => console.error.mockRestore());
+
+    it('reports no finding when the email cannot be read', () => {
+      const vm = fakeViewModel();
+      vm.content = () => {
+        throw new Error('boom');
+      };
+
+      expect(runQualityChecks(vm, { rules: [reportEveryBlock] })).toEqual({
+        findings: [],
+        checks: [{ ruleId: 'fake', category: 'content', status: 'error' }],
+      });
+    });
+
+    it('fails only the rule whose findings cannot be completed', () => {
+      const malformed = { ...reportEveryBlock, id: 'bad', run: () => [null] };
+      const vm = fakeViewModel({ blocks: heroBlocks });
+      const { findings, checks } = runQualityChecks(vm, {
+        rules: [malformed, reportEveryBlock],
+      });
+
+      expect(checks.map((c) => c.status)).toEqual(['error', 'failed']);
+      expect(findings).toHaveLength(2);
+    });
+  });
 });
