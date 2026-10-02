@@ -4,7 +4,13 @@
 
 'use strict';
 
-const { exportOf, findingsOf } = require('./fake-view-model');
+const {
+  runQualityChecks,
+} = require('../../../packages/editor/src/js/ext/quality/engine.js');
+const {
+  findUnfilledAnchors,
+} = require('../../../packages/editor/src/js/ext/quality/links.js');
+const { fakeViewModel, exportOf, findingsOf } = require('./fake-view-model');
 
 const RULES = '../../../packages/editor/src/js/ext/quality/rules';
 const unfilledLinks = require(`${RULES}/unfilled-links`);
@@ -62,5 +68,29 @@ describe('images-without-link', () => {
       blockId: 'b1',
       messageKey: 'Clickable image has no link',
     });
+  });
+});
+
+describe('findUnfilledAnchors', () => {
+  it('looks the anchors up once per run, for both link rules', () => {
+    const seen = [];
+    const reader = {
+      id: 'reader',
+      run: (ctx) => {
+        seen.push(findUnfilledAnchors(ctx));
+        return [];
+      },
+    };
+    const html = exportOf({ b1: '<a href="#toreplace">a</a>' });
+    const vm = fakeViewModel({
+      blocks: [{ id: 'b1', type: 'textBlock' }],
+      html,
+    });
+    runQualityChecks(vm, { rules: [reader, reader] });
+    runQualityChecks(vm, { rules: [reader] });
+
+    expect(seen[0]).toHaveLength(1);
+    expect(seen[1]).toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[0]);
   });
 });
