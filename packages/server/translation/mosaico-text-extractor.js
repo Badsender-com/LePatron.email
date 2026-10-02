@@ -63,6 +63,12 @@ const EXCLUDED_FIELDS = [
   // of its name — listing it makes the exclusion explicit and survives a rename or
   // a new pattern. See docs/plans/html-code-block.md
   'htmlCode',
+  // The block builder's markup and state, for the same reason: the markup is
+  // generated, and rewriting it would desynchronise it from the state it is
+  // generated from. Composed blocks are not translated yet; when they are, it
+  // will be through the state's own texts, not these two strings.
+  'builderHtml',
+  'builderState',
 ];
 
 // Field names that contain URLs (never translate)

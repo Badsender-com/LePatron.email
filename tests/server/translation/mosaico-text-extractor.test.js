@@ -39,6 +39,13 @@ describe('MosaicoTextExtractor', () => {
       expect(isTranslatableFieldName('htmlCode')).toBe(false);
     });
 
+    // Same promise for a composed block, until it is translated through its
+    // state's own texts.
+    it('should return false for the block builder markup and state', () => {
+      expect(isTranslatableFieldName('builderHtml')).toBe(false);
+      expect(isTranslatableFieldName('builderState')).toBe(false);
+    });
+
     it('should return false for URL fields', () => {
       expect(isTranslatableFieldName('href')).toBe(false);
       expect(isTranslatableFieldName('buttonLink')).toBe(false);
