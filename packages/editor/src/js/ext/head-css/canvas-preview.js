@@ -37,9 +37,8 @@ function ensureStyleElement(doc) {
   // Deliberately NOT `title="template-stylesheet"`: that title is what
   // badsender-screen-preview.js walks to rewrite media queries on the mobile
   // toggle, and it rebuilds its index only when a template loads. Claiming the
-  // title would put a sheet it never indexed in its way. The consequence is
-  // known and documented: `@media` rules in head CSS do not follow the mobile
-  // toggle yet.
+  // title would put a sheet it never indexed in its way. This sheet follows
+  // the toggle on its own, by being regenerated: see attachHeadCssPreview.
   doc.head.appendChild(element);
   return element;
 }
@@ -67,7 +66,8 @@ function renderPreview(doc, css, previewMode) {
  *
  * @param {Object} viewModel
  * @param {Document} [doc]
- * @returns {Object|null} the Knockout subscription, for tests
+ * @returns {{ dispose: Function }|null} stops following the view model and
+ *   removes the canvas copy; null when there is nothing to follow
  */
 function attachHeadCssPreview(viewModel, doc) {
   const target =
@@ -88,8 +88,9 @@ function attachHeadCssPreview(viewModel, doc) {
   // Re-rendered from the source on every change rather than rewritten in the
   // CSSOM the way badsender-screen-preview.js does for the template. That
   // module builds its index of media rules once, when a template loads; this
-  // sheet is rebuilt on every keystroke, so it could never stay in such an
-  // index. Regenerating is both simpler and correct by construction.
+  // sheet is replaced on every "Apply", every undo and every preview mode
+  // change, so it could never stay in such an index. Regenerating is both
+  // simpler and correct by construction.
   const subscriptions = [viewModel.headCss.subscribe(render)];
   if (typeof viewModel.previewMode === 'function') {
     subscriptions.push(viewModel.previewMode.subscribe(render));
@@ -98,18 +99,32 @@ function attachHeadCssPreview(viewModel, doc) {
   return {
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      const element = target.getElementById
+        ? target.getElementById(STYLE_ELEMENT_ID)
+        : null;
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
     },
   };
 }
 
-// Plugin shape expected by template-loader.js: `init` runs after Knockout has
-// applied its bindings, which is when the canvas exists.
-const headCssPreviewPlugin = {
-  viewModel: function () {},
-  init: function (viewModel) {
-    attachHeadCssPreview(viewModel);
-  },
-};
+// A view model plugin (template-loader.js #_viewModelPluginInstance): `init`
+// runs after Knockout has applied its bindings, which is when the canvas
+// exists, and `dispose` when the editor is torn down — without it, the
+// subscriptions outlived the view model and its rules stayed in the document.
+function headCssPreviewPlugin(viewModel) {
+  let attachment = null;
+  return {
+    init() {
+      attachment = attachHeadCssPreview(viewModel);
+    },
+    dispose() {
+      if (attachment) attachment.dispose();
+      attachment = null;
+    },
+  };
+}
 
 module.exports = {
   headCssPreviewPlugin,

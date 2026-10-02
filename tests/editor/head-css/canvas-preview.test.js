@@ -13,6 +13,7 @@ const ko = require('knockout');
 
 const {
   attachHeadCssPreview,
+  headCssPreviewPlugin,
   STYLE_ELEMENT_ID,
 } = require('../../../packages/editor/src/js/ext/head-css/canvas-preview.js');
 const {
@@ -131,6 +132,36 @@ describe('attachHeadCssPreview', () => {
     expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toContain(
       '#main-wysiwyg-area .a'
     );
+  });
+
+  // template-loader.js disposes its plugins when the editor is torn down: the
+  // subscriptions must not outlive the view model, nor its rules the editor.
+  describe('as an editor plugin', () => {
+    it('starts on init and stops on dispose', () => {
+      const viewModel = {
+        headCss: ko.observable('.a{color:red}'),
+        previewMode: ko.observable('desktop'),
+      };
+      const plugin = headCssPreviewPlugin(viewModel);
+
+      expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
+      plugin.init();
+      expect(document.getElementById(STYLE_ELEMENT_ID).textContent).toContain(
+        '#main-wysiwyg-area .a'
+      );
+
+      plugin.dispose();
+      expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
+      expect(viewModel.headCss.getSubscriptionsCount()).toBe(0);
+      expect(viewModel.previewMode.getSubscriptionsCount()).toBe(0);
+
+      viewModel.headCss('.b{color:blue}');
+      expect(document.getElementById(STYLE_ELEMENT_ID)).toBeNull();
+    });
+
+    it('tolerates a dispose without init', () => {
+      expect(() => headCssPreviewPlugin({}).dispose()).not.toThrow();
+    });
   });
 
   it('does nothing without a headCss observable', () => {
