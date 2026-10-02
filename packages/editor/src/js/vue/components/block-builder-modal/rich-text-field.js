@@ -31,14 +31,23 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
   data: () => ({
     editorId: `bb-rich-${++sequence}`,
     editor: null,
+    // What the editor last held, as TinyMCE serialises it. Compared on every
+    // event rather than emitted blindly: NodeChange fires on each caret move,
+    // and every emit regenerates and re-renders the whole preview.
+    lastContent: null,
   }),
   watch: {
-    // The same field is reused when the selection moves to another text
-    // element, so the content has to be pushed in rather than only read out.
+    // The same field — and the same TinyMCE instance — is reused when the
+    // selection moves to another text element (the panel does not key it on
+    // the element), so the content has to be pushed in rather than only read
+    // out. An echo of what the editor just emitted is not pushed back.
     value(next) {
-      if (!this.editor) return;
-      if (this.editor.getContent() === next) return;
+      if (!this.editor || next === this.lastContent) return;
       this.editor.setContent(next || '');
+      this.lastContent = this.editor.getContent();
+      // Another element's text now: an undo must not bring the previous one's
+      // back into this one.
+      if (this.editor.undoManager) this.editor.undoManager.clear();
     },
   },
   mounted() {
@@ -70,9 +79,15 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
         paste_remove_styles: true,
         setup: (editor) => {
           this.editor = editor;
-          editor.on('init', () => editor.setContent(this.value || ''));
+          editor.on('init', () => {
+            editor.setContent(this.value || '');
+            this.lastContent = editor.getContent();
+          });
           editor.on('change keyup input NodeChange', () => {
-            this.$emit('input', editor.getContent());
+            const content = editor.getContent();
+            if (content === this.lastContent) return;
+            this.lastContent = content;
+            this.$emit('input', content);
           });
         },
       });
@@ -85,6 +100,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
       // opened and closed.
       this.editor.remove();
       this.editor = null;
+      this.lastContent = null;
     },
 
     onFallbackInput(event) {

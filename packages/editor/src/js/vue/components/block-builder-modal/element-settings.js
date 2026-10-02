@@ -186,7 +186,6 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
 
       <rich-text-field
         v-if="field.type === 'richtext'"
-        :key="element.id"
         :value="element[field.key]"
         :labelledby="labelId(field)"
         @input="update(field.key, $event)" />
