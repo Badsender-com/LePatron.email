@@ -106,7 +106,6 @@ module.exports = `<modal-component
     </button>
     <button
       @click.prevent="handleApply"
-      :disabled="isEmpty"
       class="btn waves-effect waves-light"
       type="submit"
       name="submitAction">

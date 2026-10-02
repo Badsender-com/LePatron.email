@@ -273,6 +273,25 @@ describe('applying', () => {
     });
   });
 
+  // Emptying a block is a composition too: with Apply disabled on an empty
+  // list, the last element could be removed but never written away. The empty
+  // block then exports nothing (strip-empty-blocks.js).
+  it('applies an empty composition, emptying the block', () => {
+    const { modal, accessor, stateAccessor } = open();
+    modal.addElement('text');
+    modal.handleApply();
+
+    const reopened = open({
+      markup: accessor.writes[0],
+      state: stateAccessor.writes[0],
+    });
+    reopened.modal.removeSelected();
+    reopened.modal.handleApply();
+
+    expect(reopened.written).toEqual(['']);
+    expect(JSON.parse(reopened.stateAccessor.writes[0]).elements).toEqual([]);
+  });
+
   it('writes nothing when closed without applying', () => {
     const { modal, written, stateAccessor } = open();
     modal.addElement('text');
