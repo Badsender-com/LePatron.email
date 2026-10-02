@@ -17,11 +17,11 @@ const {
 // The component is expected to provide: `state`, `selectedId` and `vm`.
 
 const PALETTE = [
-  { type: 'text', label: 'Texte' },
-  { type: 'image', label: 'Image' },
-  { type: 'button', label: 'Bouton' },
-  { type: 'divider', label: 'Séparateur' },
-  { type: 'spacer', label: 'Espaceur' },
+  { type: 'text', labelKey: 'block-builder-element-text' },
+  { type: 'image', labelKey: 'block-builder-element-image' },
+  { type: 'button', labelKey: 'block-builder-element-button' },
+  { type: 'divider', labelKey: 'block-builder-element-divider' },
+  { type: 'spacer', labelKey: 'block-builder-element-spacer' },
 ];
 
 const defaultsFor = (type) => {
@@ -34,7 +34,7 @@ const ElementListMixin = {
   methods: {
     labelFor(element) {
       const entry = PALETTE.find((item) => item.type === element.type);
-      const name = entry ? entry.label : element.type;
+      const name = entry ? this.vm.t(entry.labelKey) : element.type;
       if (element.type === 'text' && element.content) {
         // The first words, so a list of five texts is still readable.
         const plain = element.content.replace(/<[^>]*>/g, '').trim();

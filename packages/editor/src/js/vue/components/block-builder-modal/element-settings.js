@@ -11,48 +11,112 @@ const { RichTextFieldComponent } = require('./rich-text-field');
 // Values are free, as decided: roles resolved against the template theme come
 // later, and they will replace a `type` here without touching the panel itself.
 
+// Labels are i18n keys, resolved by the modal (see LABEL_KEYS below).
 const FIELDS = {
   text: [
-    { key: 'content', label: 'Texte', type: 'richtext' },
-    { key: 'align', label: 'Alignement', type: 'align' },
-    { key: 'fontSize', label: 'Taille', type: 'number', min: 8, max: 72 },
-    { key: 'lineHeight', label: 'Interligne', type: 'number', min: 8, max: 96 },
-    { key: 'color', label: 'Couleur', type: 'color' },
+    { key: 'content', labelKey: 'block-builder-field-text', type: 'richtext' },
+    { key: 'align', labelKey: 'block-builder-field-align', type: 'align' },
+    {
+      key: 'fontSize',
+      labelKey: 'block-builder-field-font-size',
+      type: 'number',
+      min: 8,
+      max: 72,
+    },
+    {
+      key: 'lineHeight',
+      labelKey: 'block-builder-field-line-height',
+      type: 'number',
+      min: 8,
+      max: 96,
+    },
+    { key: 'color', labelKey: 'block-builder-field-color', type: 'color' },
   ],
   image: [
-    { key: 'src', label: 'Image', type: 'image' },
-    { key: 'alt', label: 'Texte alternatif', type: 'text' },
-    { key: 'href', label: 'Lien (optionnel)', type: 'text' },
-    { key: 'width', label: 'Largeur', type: 'number', min: 20, max: 600 },
-    { key: 'align', label: 'Alignement', type: 'align' },
+    { key: 'src', labelKey: 'block-builder-field-image', type: 'image' },
+    { key: 'alt', labelKey: 'block-builder-field-alt', type: 'text' },
+    {
+      key: 'href',
+      labelKey: 'block-builder-field-link-optional',
+      type: 'text',
+    },
+    {
+      key: 'width',
+      labelKey: 'block-builder-field-width',
+      type: 'number',
+      min: 20,
+      max: 600,
+    },
+    { key: 'align', labelKey: 'block-builder-field-align', type: 'align' },
   ],
   button: [
-    { key: 'label', label: 'Libellé', type: 'text' },
-    { key: 'href', label: 'Lien', type: 'text' },
-    { key: 'backgroundColor', label: 'Fond', type: 'color' },
-    { key: 'color', label: 'Texte', type: 'color' },
-    { key: 'borderRadius', label: 'Arrondi', type: 'number', min: 0, max: 50 },
-    { key: 'align', label: 'Alignement', type: 'align' },
+    { key: 'label', labelKey: 'block-builder-field-label', type: 'text' },
+    { key: 'href', labelKey: 'block-builder-field-link', type: 'text' },
+    {
+      key: 'backgroundColor',
+      labelKey: 'block-builder-field-background',
+      type: 'color',
+    },
+    { key: 'color', labelKey: 'block-builder-field-text-color', type: 'color' },
+    {
+      key: 'borderRadius',
+      labelKey: 'block-builder-field-radius',
+      type: 'number',
+      min: 0,
+      max: 50,
+    },
+    { key: 'align', labelKey: 'block-builder-field-align', type: 'align' },
   ],
   divider: [
-    { key: 'color', label: 'Couleur', type: 'color' },
-    { key: 'thickness', label: 'Épaisseur', type: 'number', min: 1, max: 12 },
+    { key: 'color', labelKey: 'block-builder-field-color', type: 'color' },
+    {
+      key: 'thickness',
+      labelKey: 'block-builder-field-thickness',
+      type: 'number',
+      min: 1,
+      max: 12,
+    },
   ],
-  spacer: [{ key: 'height', label: 'Hauteur', type: 'number', min: 4, max: 160 }],
+  spacer: [
+    {
+      key: 'height',
+      labelKey: 'block-builder-field-height',
+      type: 'number',
+      min: 4,
+      max: 160,
+    },
+  ],
 };
 
 const ALIGNMENTS = [
-  { value: 'left', label: 'Gauche' },
-  { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Droite' },
+  { value: 'left', labelKey: 'block-builder-align-left' },
+  { value: 'center', labelKey: 'block-builder-align-center' },
+  { value: 'right', labelKey: 'block-builder-align-right' },
 ];
+
+// Every key this panel reads from `labels`, so the modal can resolve them all
+// without knowing the field tables.
+const LABEL_KEYS = Array.from(
+  new Set(
+    [
+      'block-builder-select-element',
+      'block-builder-choose-image',
+      'block-builder-change-image',
+    ]
+      .concat(
+        ...Object.values(FIELDS).map((fields) => fields.map((f) => f.labelKey))
+      )
+      .concat(ALIGNMENTS.map((option) => option.labelKey))
+  )
+);
 
 const ElementSettingsComponent = Vue.component('ElementSettings', {
   components: { RichTextField: RichTextFieldComponent },
   props: {
     element: { type: Object, default: null },
-    // Translated by the modal, which holds the view-model. Passing the strings
-    // down keeps this component free of the editor's i18n plumbing.
+    // Translated by the modal, which holds the view-model, keyed by i18n key
+    // (LABEL_KEYS). Passing the strings down keeps this component free of the
+    // editor's i18n plumbing.
     labels: { type: Object, default: () => ({}) },
   },
   data: () => ({ alignments: ALIGNMENTS }),
@@ -83,15 +147,23 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
     // template literal — `\'` becomes `'` before Vue ever sees it, and the
     // expression fails to compile, taking the whole panel down with it.
     pickLabel(field) {
-      const key = this.element[field.key] ? 'change' : 'choose';
-      return this.labels[key];
+      return this.label(
+        this.element[field.key]
+          ? 'block-builder-change-image'
+          : 'block-builder-choose-image'
+      );
+    },
+    // A method for the same reason: the keys hold dashes, and a template-literal
+    // template is a poor place to quote them.
+    label(key) {
+      return this.labels[key] || key;
     },
   },
   template: `<div class="bb-settings">
-  <p v-if="!element" class="bb-settings__empty">{{ labels.empty }}</p>
+  <p v-if="!element" class="bb-settings__empty">{{ label('block-builder-select-element') }}</p>
   <div v-else>
     <div v-for="field in fields" :key="field.key" class="bb-settings__field">
-      <label class="bb-settings__label">{{ field.label }}</label>
+      <label class="bb-settings__label">{{ label(field.labelKey) }}</label>
 
       <rich-text-field
         v-if="field.type === 'richtext'"
@@ -140,11 +212,11 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
           type="button"
           class="bb-settings__choice"
           :class="{ 'bb-settings__choice--on': element[field.key] === option.value }"
-          @click.prevent="update(field.key, option.value)">{{ option.label }}</button>
+          @click.prevent="update(field.key, option.value)">{{ label(option.labelKey) }}</button>
       </div>
     </div>
   </div>
 </div>`,
 });
 
-module.exports = { ElementSettingsComponent, FIELDS };
+module.exports = { ElementSettingsComponent, FIELDS, LABEL_KEYS };

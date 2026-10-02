@@ -66,7 +66,8 @@ function mount(component, data, template) {
   });
 }
 
-const LABELS = { empty: 'empty', choose: 'choose', change: 'change' };
+// Resolved by the modal from LABEL_KEYS; the panel falls back to the key.
+const LABELS = {};
 
 describe('the settings panel compiles and renders', () => {
   // Counting the rendered fields rather than only watching the console: Vue
@@ -116,7 +117,7 @@ describe('the settings panel compiles and renders', () => {
     );
 
     expect(app.$el.querySelector('.bb-settings__pick').textContent.trim()).toBe(
-      'change'
+      'block-builder-change-image'
     );
     expect(app.$el.querySelector('.bb-settings__thumb')).not.toBeNull();
   });
@@ -129,7 +130,7 @@ describe('the settings panel compiles and renders', () => {
     );
 
     expect(app.$el.querySelector('.bb-settings__pick').textContent.trim()).toBe(
-      'choose'
+      'block-builder-choose-image'
     );
     expect(app.$el.querySelector('.bb-settings__thumb')).toBeNull();
   });

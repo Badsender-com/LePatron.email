@@ -434,7 +434,9 @@ describe('the element list', () => {
     const { modal } = open();
     modal.addElement('divider');
 
-    expect(modal.labelFor(modal.selected)).toBe('Séparateur');
+    expect(modal.labelFor(modal.selected)).toBe(
+      'block-builder-element-divider'
+    );
   });
 
   // Five texts in a row are indistinguishable without this.
@@ -443,7 +445,9 @@ describe('the element list', () => {
     modal.addElement('text');
     modal.applySetting({ key: 'content', value: '<strong>Un titre</strong>' });
 
-    expect(modal.labelFor(modal.selected)).toBe('Texte — Un titre');
+    expect(modal.labelFor(modal.selected)).toBe(
+      'block-builder-element-text — Un titre'
+    );
   });
 
   it('shows the label of a button', () => {
@@ -451,6 +455,8 @@ describe('the element list', () => {
     modal.addElement('button');
     modal.applySetting({ key: 'label', value: 'Je découvre' });
 
-    expect(modal.labelFor(modal.selected)).toBe('Bouton — Je découvre');
+    expect(modal.labelFor(modal.selected)).toBe(
+      'block-builder-element-button — Je découvre'
+    );
   });
 });

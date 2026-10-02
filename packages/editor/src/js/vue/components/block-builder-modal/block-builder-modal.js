@@ -1,6 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
-const { ElementSettingsComponent } = require('./element-settings');
+const { ElementSettingsComponent, LABEL_KEYS } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
@@ -71,6 +71,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     state: emptyState(),
     selectedId: null,
     previewWidth: DESKTOP_WIDTH,
+    desktopWidth: DESKTOP_WIDTH,
+    mobileWidth: MOBILE_WIDTH,
     frameRequest: null,
   }),
   computed: {
@@ -101,13 +103,12 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       );
     },
     // Translated here, where the view-model is, and handed to the settings
-    // panel as plain strings.
+    // panel as plain strings keyed by i18n key.
     settingsLabels() {
-      return {
-        empty: this.vm.t('block-builder-select-element'),
-        choose: this.vm.t('block-builder-choose-image'),
-        change: this.vm.t('block-builder-change-image'),
-      };
+      return LABEL_KEYS.reduce((labels, key) => {
+        labels[key] = this.vm.t(key);
+        return labels;
+      }, {});
     },
   },
   watch: {
