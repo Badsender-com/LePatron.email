@@ -227,18 +227,27 @@ describe('writing the translation back', () => {
     expect(data.mainBlocks.blocks[0].builderHtml).not.toContain('Bonjour');
   });
 
-  it('rebuilds with the real generator, not a copy of it', () => {
+  // Pinned on the bytes, not on another call to `generate`: an expectation
+  // computed with the function under test would agree with any generator,
+  // including a broken one. A template change that moves these bytes on
+  // purpose updates them here.
+  it('rebuilds exactly the markup the editor would store', () => {
     const data = modelWith(composedBlock([text('Bonjour')]));
 
     injectBuilderTexts(data, {
       'builderBlock.mainBlocks.0.0.content': 'Hello',
     });
 
-    const expected = generate({
-      ...emptyState(),
-      elements: [text('Hello')],
-    });
-    expect(data.mainBlocks.blocks[0].builderHtml).toBe(expected);
+    expect(data.mainBlocks.blocks[0].builderHtml).toBe(
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="transparent" style="background-color:transparent;">' +
+        '<tr><td style="padding:0px 0 0px 0;">' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
+        '<tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
+        '<tr><td align="left" style="padding:8px 24px 8px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:21px; color:#000000; mso-line-height-rule:exactly;">' +
+        'Hello' +
+        '</td></tr></table></td></tr>' +
+        '</table></td></tr></table>'
+    );
   });
 
   it('reports what it did', () => {
