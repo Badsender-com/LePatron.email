@@ -226,8 +226,10 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  * Why: the translated copy's previewHtml is sanitized before storage, because
  * provider output was injected into it. Sanitizing the pasted markup along with
  * it stripped the ESP scripts the block exists for, and the copy's ZIP no longer
- * matched its export. The zones hold no provider output — they are excluded
- * from translation — and the preview is sanitized again when served.
+ * matched its export. An HTML code block's zone holds no provider output — it
+ * is excluded from translation. A composed block's zone holds markup the
+ * generator rebuilt from translated text, and relies on the generator's
+ * escaping instead. The preview is sanitized again when served.
  *
  * @param {string} html
  * @param {Function} transform (document: string) => string

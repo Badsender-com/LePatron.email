@@ -76,15 +76,19 @@ async function buildTranslatedPreview({
 
   // Provider output was injected into previewHtml above; sanitize the
   // final document before persisting it (stored-XSS protection — the
-  // preview is later served as text/html). The HTML code blocks are put
-  // back as stored: they hold no provider output, and sanitizing them
-  // stripped the ESP scripts they exist for, so the copy's ZIP no longer
-  // matched its export. Serving the preview sanitizes it again.
+  // preview is later served as text/html). Serving it sanitizes it again.
   //
-  // Located on what the document holds NOW: the composed blocks carry
-  // their rebuilt markup since the swap above, so matching on the stored
-  // originals would miss them and let the sanitiser into a generated
-  // zone.
+  // The synthetic zones are put back as they are. An HTML code block holds
+  // no provider output (it is excluded from translation), and sanitizing it
+  // stripped the ESP scripts it exists for, so the copy's ZIP no longer
+  // matched its export. A composed zone does hold provider text, inside
+  // markup regenerated from it: what protects it is the generator, which
+  // escapes every value for the slot it lands in (rich text through an
+  // allow-list), not the sanitizer.
+  //
+  // The zones are matched on the markup the copy holds now — the rebuilt
+  // one for composed blocks. One that matches no stored markup is still
+  // found by counting `<div>` from its marker, and kept out all the same.
   const sanitized = await runTranslationStep('sanitizePreview', () =>
     transformDocumentKeepingHtmlCodeBlocks(
       swapped.html,
