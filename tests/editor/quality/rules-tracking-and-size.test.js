@@ -20,6 +20,14 @@ describe('html-size', () => {
     expect(findings[0].params.size).toBeGreaterThan(102);
   });
 
+  it('fingerprints the size in KB, so it changes with a new size only', () => {
+    const fingerprintOf = (bytes) =>
+      findingsOf(htmlSize, { html: 'a'.repeat(bytes) })[0].fingerprint;
+
+    expect(fingerprintOf(110 * 1024 - 10)).toBe(fingerprintOf(110 * 1024));
+    expect(fingerprintOf(110 * 1024)).not.toBe(fingerprintOf(120 * 1024));
+  });
+
   it('stays silent below the limit', () => {
     expect(findingsOf(htmlSize, { html: '<p>short</p>' })).toEqual([]);
   });
