@@ -331,4 +331,16 @@ module.exports = {
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',
+  // Quality control (ext/quality)
+  'Quality control': 'Quality control',
+  'Link not filled in: __label__': 'Link not filled in: __label__',
+  'Clickable image has no link': 'Clickable image has no link',
+  'Image not replaced': 'Image not replaced',
+  'Template sample image not replaced': 'Template sample image not replaced',
+  'Missing Outlook background image': 'Missing Outlook background image',
+  'Missing mobile background image': 'Missing mobile background image',
+  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
+    'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB',
+  'Required tracking parameters missing: __keys__':
+    'Required tracking parameters missing: __keys__',
 };
