@@ -69,6 +69,13 @@ const PREVIEW_READY_EVENT = 'preview-document-ready';
 // flow, so the rows never shift under the cursor the way a border would make
 // them. It takes no pointer events, or it would become the drop target.
 //
+// Colours hold to WCAG AA on the white page (docs/UX_GUIDELINES.md): the
+// theme's secondary blue #265090 (8:1) for what the drag draws — the line, the
+// live empty zone — and the panel's greys for the rest, #616161 (6.2:1) for
+// text and #757575 (4.6:1) for outlines, against the 4.5:1 asked of text and
+// the 3:1 asked of UI. The accent #00acdc is 2.65:1 on white: fine as a fill
+// behind text, too faint as a line or as text.
+//
 // A starter — the words a blank element shows here and nowhere else — is
 // faded so it reads as a placeholder, not as content. Opacity rather than a
 // colour, because it has to work on the button too: at 0.6, black text on white
@@ -94,15 +101,15 @@ const PREVIEW_DOCUMENT = [
   // While dragging, every row shows where it begins and ends, so the insertion
   // point is read against a visible structure rather than guessed.
   `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]:not(.${SELECTED_CLASS}){`,
-  'outline:1px dashed #b5b5b5;outline-offset:-1px;}',
+  'outline:1px dashed #757575;outline-offset:-1px;}',
   `#${DROP_LINE_ID}{position:absolute;left:0;right:0;margin:0;`,
-  `height:${DROP_LINE_HEIGHT}px;background:#00acdc;`,
+  `height:${DROP_LINE_HEIGHT}px;background:#265090;`,
   'pointer-events:none;z-index:2147483647;}',
   `#${EMPTY_DROP_ID}{`,
-  'margin:24px;padding:32px 16px;border:2px dashed #c7c7c7;border-radius:4px;',
-  'text-align:center;color:#8c8c8c;font:14px Arial,Helvetica,sans-serif;}',
+  'margin:24px;padding:32px 16px;border:2px dashed #757575;border-radius:4px;',
+  'text-align:center;color:#616161;font:14px Arial,Helvetica,sans-serif;}',
   `body.${DRAGGING_CLASS} #${EMPTY_DROP_ID}{`,
-  'border-color:#00acdc;color:#00acdc;}',
+  'border-color:#265090;color:#265090;}',
   '</style></head><body></body></html>',
 ].join('');
 
