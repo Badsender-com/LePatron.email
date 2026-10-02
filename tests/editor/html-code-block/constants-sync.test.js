@@ -106,6 +106,7 @@ describe('the composed-block translation, editor ↔ server', () => {
     SHARED.SYNTHETIC_BLOCKS.forEach((block) => {
       expect(block).toHaveProperty('stateProperty');
       expect(typeof block.translatable).toBe('boolean');
+      expect(typeof block.blockTranslatable).toBe('boolean');
     });
   });
 
