@@ -10,11 +10,11 @@ const {
 // Dragging an element from the palette into the preview.
 //
 // A mixin for the same reason the preview is one: every method here reads or
-// writes the component's state — what is being dragged, where it would land.
+// writes the component's state — what is being dragged, which entry shows it.
 // That state is declared here, with the gesture it belongs to.
 //
 // It depends on the preview surface and not the other way round: the preview
-// owns the iframe, its stylesheet and the class names; this adds a gesture on
+// owns the iframe, its stylesheet and the names in it; this adds a gesture on
 // top of it, through what the preview makes public — PREVIEW_READY_EVENT to
 // listen on its document, `freezeRender` / `thawRender` to hold it still,
 // `previewDocument` and `previewRows` to measure it. `insertElement` comes from
