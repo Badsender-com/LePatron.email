@@ -247,6 +247,8 @@ describe('the drop moves the element', () => {
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     dropAt(doc, 10);
+    // The browser fires dragend after the drop: it must not undo the choice.
+    fireIn(doc, 'dragend', rowsOf(doc)[0]);
 
     expect(modal.selectedId).toBe(second.id);
     expect(modal.selected.type).toBe('button');
@@ -278,6 +280,30 @@ describe('the drop moves the element', () => {
     expect(modal.draggingId).toBeNull();
     expect(typesOf(modal)).toEqual(['text', 'button']);
     expect(doc.body.querySelectorAll(`.${MOVING_CLASS}`)).toHaveLength(0);
+  });
+
+  // Picking a row up selects it, so the settings follow it. Put down nowhere,
+  // it moved nothing, and the selection should not have moved either.
+  it('gives the selection back when the drag ends without a drop', async () => {
+    const { modal, doc } = await openModal(['text', 'button', 'divider']);
+    const [first] = modal.state.elements;
+    modal.selectedId = first.id;
+
+    fireIn(doc, 'dragstart', rowsOf(doc)[2]);
+    expect(modal.selected.type).toBe('divider');
+    fireIn(doc, 'dragend', rowsOf(doc)[2]);
+
+    expect(modal.selectedId).toBe(first.id);
+  });
+
+  it('gives back no selection when there was none', async () => {
+    const { modal, doc } = await openModal(['text', 'button']);
+    modal.selectedId = null;
+
+    fireIn(doc, 'dragstart', rowsOf(doc)[1]);
+    fireIn(doc, 'dragend', rowsOf(doc)[1]);
+
+    expect(modal.selectedId).toBeNull();
   });
 });
 

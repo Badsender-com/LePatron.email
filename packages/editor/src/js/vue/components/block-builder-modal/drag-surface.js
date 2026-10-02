@@ -47,8 +47,9 @@ const DragSurfaceMixin = {
     fadedType: null,
   }),
   created() {
-    // Not reactive: nothing renders off it.
+    // Not reactive: nothing renders off them.
     this.fadeTimer = null;
+    this.selectionBeforeDrag = null;
     this.$on(PREVIEW_READY_EVENT, this.listenOnPreview);
     this.$on(PREVIEW_RENDERED_EVENT, this.makeRowsDraggable);
   },
@@ -156,7 +157,11 @@ const DragSurfaceMixin = {
       window.clearTimeout(this.fadeTimer);
     },
 
+    // A reorder still under way here was never dropped — Escape, or let go
+    // outside the preview. It moved nothing, so it changes no selection
+    // either: the one its dragstart replaced comes back.
     handleDragEnd() {
+      if (this.draggingId) this.selectedId = this.selectionBeforeDrag;
       this.releasePage();
       this.fadedType = null;
       this.draggingType = null;
@@ -219,7 +224,9 @@ const DragSurfaceMixin = {
         event.dataTransfer.setData(DRAG_TYPE, id);
       }
       // Selecting what is being moved, so the settings panel follows the thing
-      // under the cursor rather than staying on whatever was selected before.
+      // under the cursor rather than staying on whatever was selected before
+      // — which is kept, for a drag that ends without a drop.
+      this.selectionBeforeDrag = this.selectedId;
       this.selectedId = id;
       row.ownerDocument.body.classList.add(DRAGGING_CLASS);
       // Dimmed once the browser has taken its picture, as the palette entry is.
@@ -279,6 +286,8 @@ const DragSurfaceMixin = {
       const type = this.draggingType;
       const id = this.draggingId;
 
+      // Ended as a drop, not a cancel: the selection goes to what moved.
+      this.draggingId = null;
       this.handleDragEnd();
       if (id) this.moveElementTo(id, index);
       else this.insertElement(type, index);
