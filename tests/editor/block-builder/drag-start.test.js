@@ -10,8 +10,11 @@
 // preview — and the half that failed silently the first time, because the page
 // itself cancels native drags. The landing half is in drag-and-drop.test.js.
 
+const Vue = require('vue/dist/vue.common');
+
 const {
   openModal,
+  unmountAll,
   transfer,
   startPaletteDrag,
   paletteEntry,
@@ -22,9 +25,7 @@ const {
 // could not notice it being changed back to something TinyMCE pastes.
 const DRAG_TYPE = 'application/x-lp-block-builder';
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
+afterEach(unmountAll);
 
 describe('starting a drag from the palette', () => {
   // `setData` is not optional: without it Firefox never starts the drag at all.
@@ -48,6 +49,71 @@ describe('starting a drag from the palette', () => {
 
     expect(Object.keys(event.dataTransfer.data)).toEqual([DRAG_TYPE]);
     expect(event.dataTransfer.getData('text/plain')).toBeUndefined();
+  });
+});
+
+describe('what the page says during a palette drag', () => {
+  const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const fadedEntries = () =>
+    document.querySelectorAll('.bb-modal__add--dragging');
+
+  /** A dragover on the editor page, outside the preview. */
+  function dragOverPage() {
+    const event = new window.Event('dragover', {
+      bubbles: true,
+      cancelable: true,
+    });
+    event.dataTransfer = transfer();
+    document.querySelector('.bb-settings').dispatchEvent(event);
+    return event;
+  }
+
+  // Mosaico cancels dragover on the whole window, which made every part of
+  // the page look like it accepted the drop.
+  it('refuses the drop anywhere outside the preview, and says so', async () => {
+    await openModal(['text']);
+    startPaletteDrag('image');
+
+    const event = dragOverPage();
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(event.dataTransfer.dropEffect).toBe('none');
+  });
+
+  it('leaves the page alone once the drag is over', async () => {
+    const { modal } = await openModal(['text']);
+    startPaletteDrag('image');
+    modal.handleDragEnd();
+
+    const event = dragOverPage();
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(event.dataTransfer.dropEffect).toBeNull();
+  });
+
+  // The browser takes its picture of the entry after dragstart returns.
+  it('fades the entry only after the drag image has been taken', async () => {
+    await openModal([]);
+    startPaletteDrag('image');
+    await Vue.nextTick();
+    expect(fadedEntries()).toHaveLength(0);
+
+    await nextTask();
+    await Vue.nextTick();
+
+    expect(fadedEntries()).toHaveLength(1);
+    expect(fadedEntries()[0]).toBe(paletteEntry('image'));
+  });
+
+  it('never fades it for a drag over before that', async () => {
+    const { modal } = await openModal([]);
+    startPaletteDrag('image');
+    modal.handleDragEnd();
+
+    await nextTask();
+    await Vue.nextTick();
+
+    expect(fadedEntries()).toHaveLength(0);
   });
 });
 

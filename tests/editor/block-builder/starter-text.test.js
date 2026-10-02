@@ -16,6 +16,7 @@ const Vue = require('vue/dist/vue.common');
 
 const {
   openModal,
+  unmountAll,
   layOutRows,
   rowOf,
   startPaletteDrag,
@@ -29,9 +30,7 @@ const {
 const TEXT_STARTER = 'block-builder-starter-text';
 const BUTTON_STARTER = 'block-builder-starter-button';
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
+afterEach(unmountAll);
 
 describe('a new element stays blank', () => {
   it.each([

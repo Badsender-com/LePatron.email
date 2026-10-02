@@ -352,7 +352,8 @@ module.exports = {
     "Le block builder n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'block-builder-modal-title': 'Composer un bloc',
   'block-builder-add': 'Ajouter',
-  'block-builder-drop-here': 'Glissez un élément ici',
+  'block-builder-drop-here':
+    'Glissez un élément ici ou cliquez-en un dans la palette',
   'block-builder-starter-text': 'Saisissez votre texte…',
   'block-builder-starter-button': 'Votre bouton',
   'block-builder-elements': 'Éléments',

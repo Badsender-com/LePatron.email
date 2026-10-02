@@ -21,6 +21,7 @@
 
 const {
   openModal,
+  unmountAll,
   layOutRows,
   rowsOf,
   startPaletteDrag,
@@ -33,9 +34,7 @@ const {
   DROP_LINE_ID,
 } = require('./drag-helpers.js');
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
+afterEach(unmountAll);
 
 describe('the insertion point follows the cursor', () => {
   // The one rule of the HTML5 drag API everybody forgets: without this the

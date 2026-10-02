@@ -34,6 +34,16 @@ const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 // The palette's order, which is what indexes an entry in the DOM.
 const PALETTE_TYPES = ['text', 'image', 'button', 'divider', 'spacer'];
 
+// Every app openModal mounted, so a test can destroy them: a drag left running
+// by one test would otherwise keep its page listeners into the next.
+const mounted = [];
+
+/** Destroys what openModal mounted, and empties the page. */
+function unmountAll() {
+  mounted.splice(0).forEach((app) => app.$destroy());
+  document.body.innerHTML = '';
+}
+
 /**
  * A stand-in for a Knockout observable: reads with no argument, writes with one.
  */
@@ -93,6 +103,7 @@ async function openModal(types) {
     },
     template: '<block-builder-modal :vm="vm" />',
   });
+  mounted.push(app);
 
   const modal = app.$children[0];
   // Kept, so a test can read back what Apply wrote: the modal forgets its
@@ -189,6 +200,7 @@ const typesOf = (modal) => modal.state.elements.map((element) => element.type);
 
 module.exports = {
   openModal,
+  unmountAll,
   accessorOf,
   transfer,
   rowsOf,

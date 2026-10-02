@@ -35,7 +35,7 @@ module.exports = `<modal-component
           role="button"
           tabindex="0"
           class="bb-modal__add"
-          :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
+          :class="{ 'bb-modal__add--dragging': fadedType === item.type }"
           draggable="true"
           @dragstart="handleDragStart(item.type, $event)"
           @drag="handleDrag"

@@ -12,6 +12,7 @@ const Vue = require('vue/dist/vue.common');
 
 const {
   openModal,
+  unmountAll,
   layOutRows,
   rowsOf,
   startPaletteDrag,
@@ -25,7 +26,7 @@ const {
 } = require('./drag-helpers.js');
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  unmountAll();
   jest.restoreAllMocks();
 });
 

@@ -30,9 +30,19 @@ const DragSurfaceMixin = {
   data: () => ({
     // The palette entry currently being dragged.
     draggingType: null,
+    // The same, a moment later: the entry is faded only once the browser has
+    // taken its picture for the drag image (see handleDragStart).
+    fadedType: null,
   }),
   created() {
+    // Not reactive: nothing renders off it.
+    this.fadeTimer = null;
     this.$on(PREVIEW_READY_EVENT, this.listenOnPreview);
+  },
+  // A modal destroyed mid-drag gets no dragend: what the drag put on the page
+  // is taken off here, without the render a normal end would ask for.
+  beforeDestroy() {
+    this.releasePage();
   },
   methods: {
     // `dragover` has to cancel the event on every move, or the browser refuses
@@ -76,6 +86,24 @@ const DragSurfaceMixin = {
       }
       const doc = this.previewDocument();
       if (doc && doc.body) doc.body.classList.add(DRAGGING_CLASS);
+      // The browser snapshots the entry for the drag image after this handler
+      // returns: faded now, the ghost would come out faded twice.
+      this.fadeTimer = window.setTimeout(() => {
+        this.fadedType = type;
+      }, 0);
+      document.addEventListener('dragenter', this.refuseOutsidePreview);
+      document.addEventListener('dragover', this.refuseOutsidePreview);
+    },
+
+    // Mosaico cancels `dragover` on the whole editor window (fixPageEvents),
+    // which tells the browser the entire page accepts the drop: the cursor
+    // said "copy" over the palette, the settings, the backdrop. Only the
+    // preview accepts this drag, and its events never reach this document, so
+    // everything that does reach it is refused — explicitly, so the cursor
+    // says so.
+    refuseOutsidePreview(event) {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
     },
 
     // `drag` fires continuously at the source for the whole gesture, and
@@ -85,7 +113,15 @@ const DragSurfaceMixin = {
       event.stopPropagation();
     },
 
+    releasePage() {
+      document.removeEventListener('dragenter', this.refuseOutsidePreview);
+      document.removeEventListener('dragover', this.refuseOutsidePreview);
+      window.clearTimeout(this.fadeTimer);
+    },
+
     handleDragEnd() {
+      this.releasePage();
+      this.fadedType = null;
       this.draggingType = null;
       this.clearDropIndicator();
       const doc = this.previewDocument();

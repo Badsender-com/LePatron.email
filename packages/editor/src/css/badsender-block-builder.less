@@ -63,7 +63,9 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
     text-align: left;
-    cursor: pointer;
+    // `grab` rather than `pointer`: the entry is dragged as much as it is
+    // clicked, and the cursor is what says it can be. A click still adds.
+    cursor: grab;
     background: #fff;
     border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: 2px;
@@ -82,7 +84,7 @@
       outline-offset: 1px;
     }
 
-    // `grab` rather than `move`: the entry is not being taken out of the
+    // `grabbing` rather than `move`: the entry is not being taken out of the
     // palette, a copy of it is being placed.
     &:active {
       cursor: grabbing;
