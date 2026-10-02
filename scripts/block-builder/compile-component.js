@@ -20,6 +20,7 @@ const {
   substitutePlaceholders,
 } = require('./markup-pipeline.js');
 const { compileRender, renderWithSentinels } = require('./render-component.js');
+const { checkSlotPlacement } = require('./slot-placement.js');
 const {
   checkManifest,
   checkPropsDeclared,
@@ -90,6 +91,7 @@ async function compileVariant(name, component, variant) {
   const inlined = await inlineStyles(
     stripComments(checkRendered(label, rendered))
   );
+  checkSlotPlacement(label, inlined, component.slots);
   const { html, used } = substitutePlaceholders(
     inlined,
     component.slots,
