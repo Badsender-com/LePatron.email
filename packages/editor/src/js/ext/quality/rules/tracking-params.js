@@ -1,25 +1,21 @@
 'use strict';
 
+const { readTrackingUrls } = require('../context');
+
 /**
- * Returns the list of required tracking keys (as defined by the group config)
- * that have no value set in vm.content().tracking().trackingUrls.
- * Download and ESP send call it directly too: a missing key blocks them.
+ * The required tracking keys (as defined by the group config) that have no
+ * value among the tracking values the client filled in.
+ * @param {Object} [cfg] - metadata.trackingConfig
+ * @param {Array} trackingUrls - content().tracking().trackingUrls()
+ * @returns {string[]}
  */
-function checkRequiredTrackingParams(viewModel) {
-  const cfg =
-    viewModel && viewModel.metadata && viewModel.metadata.trackingConfig;
+function missingRequiredKeys(cfg, trackingUrls) {
   if (!cfg || !cfg.enabled || !Array.isArray(cfg.params)) return [];
   const requiredKeys = cfg.params
     .filter((p) => p && p.required)
     .map((p) => p.key);
   if (requiredKeys.length === 0) return [];
 
-  let trackingUrls = [];
-  try {
-    trackingUrls = viewModel.content().tracking().trackingUrls() || [];
-  } catch (_e) {
-    trackingUrls = [];
-  }
   const filled = new Set(
     trackingUrls
       .filter((tu) => tu && tu.key && tu.value && String(tu.value).length > 0)
@@ -28,12 +24,23 @@ function checkRequiredTrackingParams(viewModel) {
   return requiredKeys.filter((k) => !filled.has(k));
 }
 
+// Download and ESP send call it directly too: a missing key blocks them.
+function checkRequiredTrackingParams(viewModel) {
+  return missingRequiredKeys(
+    viewModel && viewModel.metadata && viewModel.metadata.trackingConfig,
+    readTrackingUrls(viewModel)
+  );
+}
+
 module.exports = {
   id: 'tracking-params',
   category: 'content',
   severity: 'error',
   run(ctx) {
-    const missing = checkRequiredTrackingParams(ctx.viewModel);
+    const missing = missingRequiredKeys(
+      ctx.config.trackingConfig,
+      ctx.trackingUrls
+    );
     if (!missing.length) return [];
     return [
       {
