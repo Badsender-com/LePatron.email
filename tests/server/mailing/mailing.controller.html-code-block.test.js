@@ -209,7 +209,7 @@ describe('PUT /mailings/:mailingId/mosaico — head CSS', () => {
 
     expect(error).toMatchObject({
       status: 403,
-      message: 'HTML_CODE_BLOCK_DISABLED',
+      message: 'HEAD_CSS_DISABLED',
     });
     expect(mailing.save).not.toHaveBeenCalled();
   });

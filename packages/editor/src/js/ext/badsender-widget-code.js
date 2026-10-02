@@ -16,7 +16,8 @@
 // Style tab — but this is where someone who just pasted markup looks for a way
 // to make it responsive. Two entry points, one value: both open the same editor
 // on the same observable. The hint under the button says the scope is the whole
-// email, so nobody expects it to be per-block.
+// email, so nobody expects it to be per-block. Whether it shows is
+// `viewModel.isHeadCssEditable`'s call (viewmodel.js), as for the Style tab.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
@@ -32,8 +33,8 @@ function html(propAccessor, onfocusbinding, parameters) {
     <div class="html-code-widget">
       <button class="html-code-widget__button" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
-      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
-      <p class="html-code-widget__hint" data-bind="visible: $root.isHtmlBlockEditable(), text: $root.t('widget-code-css-hint')"></p>
+      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHeadCssEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
+      <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
     </div>
   `;
 }

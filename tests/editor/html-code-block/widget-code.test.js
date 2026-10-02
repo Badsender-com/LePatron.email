@@ -17,12 +17,16 @@ const widgetCode = require('../../../packages/editor/src/js/ext/badsender-widget
 // The jQuery UI button binding is not what is under test.
 ko.bindingHandlers.button = { init() {} };
 
-function renderPanel(htmlBlockEnabled) {
+// `isHeadCssEditable` belongs to the main viewModel (viewmodel.js), which reads
+// the same flag; it is stubbed so the CSS entry point can be told apart from
+// the block's own predicate.
+function renderPanel(htmlBlockEnabled, headCssEditable = htmlBlockEnabled) {
   const plugin = widgetCode();
   const vm = {
     metadata: { htmlBlockEnabled },
     t: (key) => key,
     htmlCode: ko.observable('<p>stored</p>'),
+    isHeadCssEditable: () => headCssEditable,
   };
   plugin.viewModel(vm);
 
@@ -73,6 +77,13 @@ describe('HTML code widget', () => {
 
   it('hides the email CSS when the block cannot be edited', () => {
     const { cssButton, cssHint } = renderPanel(false);
+    expect(cssButton.style.display).toBe('none');
+    expect(cssHint.style.display).toBe('none');
+  });
+
+  it('asks the head CSS predicate, not the block one, about the CSS', () => {
+    const { button, cssButton, cssHint } = renderPanel(true, false);
+    expect(button.style.display).not.toBe('none');
     expect(cssButton.style.display).toBe('none');
     expect(cssHint.style.display).toBe('none');
   });

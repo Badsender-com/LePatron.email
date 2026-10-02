@@ -354,6 +354,8 @@ module.exports = {
     "Écrivez ici votre CSS. Il sera ajouté dans le <head> de l'email exporté, tel quel, sans être appliqué aux blocs du template.",
   'head-css-too-large':
     "Le CSS dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
+  'save-message-head-css-disabled':
+    "Enregistrement refusé : le CSS personnalisé n'est pas activé sur ce template.",
   'save-message-head-css-too-large':
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
 };

@@ -344,6 +344,8 @@ module.exports = {
     'Write your CSS here. It is added to the <head> of the exported email, as written, and is not applied to the template blocks.',
   'head-css-too-large':
     'The CSS is over the __max__ character limit. Shorten it before applying.',
+  'save-message-head-css-disabled':
+    'Saving refused: custom CSS is not enabled on this template.',
   'save-message-head-css-too-large':
     'Saving refused: the custom CSS is over the maximum size.',
 };

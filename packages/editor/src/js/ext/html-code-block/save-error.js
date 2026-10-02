@@ -7,7 +7,9 @@
 const SAVE_ERROR_KEYS = Object.freeze({
   HTML_CODE_BLOCK_DISABLED: 'save-message-html-code-disabled',
   HTML_CODE_BLOCK_TOO_LARGE: 'save-message-html-code-too-large',
-  // Head CSS shares HTML_CODE_BLOCK_DISABLED above — one flag, one message.
+  // Same template flag as the block, but its own message: the refusal is
+  // about the CSS, not about a block the user may not even have.
+  HEAD_CSS_DISABLED: 'save-message-head-css-disabled',
   HEAD_CSS_TOO_LARGE: 'save-message-head-css-too-large',
   PREVIEW_HTML_TOO_LARGE: 'save-message-preview-too-large',
 });

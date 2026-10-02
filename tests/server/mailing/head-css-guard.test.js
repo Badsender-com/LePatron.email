@@ -6,6 +6,7 @@
 // locks people out of their own work.
 
 const {
+  isHeadCssEnabled,
   validateHeadCss,
   bringsDisallowedHeadCss,
   assertHeadCssAllowed,
@@ -14,6 +15,21 @@ const {
 } = require('../../../packages/server/mailing/head-css-guard.js');
 
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+
+describe('isHeadCssEnabled', () => {
+  test.each([
+    [
+      'a template with the HTML code block flag',
+      { htmlBlockEnabled: true },
+      true,
+    ],
+    ['a template without it', { htmlBlockEnabled: false }, false],
+    ['a template that predates the flag', {}, false],
+    ['no template at all', null, false],
+  ])('is %s -> %s', (_label, template, expected) => {
+    expect(isHeadCssEnabled(template)).toBe(expected);
+  });
+});
 
 describe('validateHeadCss', () => {
   test('accepts CSS up to the limit', () => {
@@ -63,14 +79,14 @@ describe('bringsDisallowedHeadCss', () => {
         bringsDisallowedHeadCss({
           css: '.a{color:red}',
           previousCss: '',
-          htmlBlockEnabled: true,
+          headCssEnabled: true,
         })
       ).toBe(false);
     });
   });
 
   describe('with the flag off', () => {
-    const off = { htmlBlockEnabled: false };
+    const off = { headCssEnabled: false };
 
     test('refuses new CSS', () => {
       expect(
@@ -125,14 +141,14 @@ describe('bringsDisallowedHeadCss', () => {
 });
 
 describe('assertHeadCssAllowed', () => {
-  test('throws HTML_CODE_BLOCK_DISABLED on disallowed CSS', () => {
+  test('throws HEAD_CSS_DISABLED on disallowed CSS', () => {
     expect(() =>
       assertHeadCssAllowed({
         css: '.a{color:red}',
         previousCss: '',
-        htmlBlockEnabled: false,
+        headCssEnabled: false,
       })
-    ).toThrow(ERROR_CODES.HTML_CODE_BLOCK_DISABLED);
+    ).toThrow(ERROR_CODES.HEAD_CSS_DISABLED);
   });
 
   test('stays silent when the CSS is allowed', () => {
@@ -140,7 +156,7 @@ describe('assertHeadCssAllowed', () => {
       assertHeadCssAllowed({
         css: '.a{color:red}',
         previousCss: '',
-        htmlBlockEnabled: true,
+        headCssEnabled: true,
       })
     ).not.toThrow();
   });

@@ -11,6 +11,7 @@ const {
   assertHtmlCodeAllowed,
 } = require('./html-code-block-guard.js');
 const {
+  isHeadCssEnabled,
   validateHeadCss,
   assertHeadCssAllowed,
   hasHeadCss,
@@ -451,16 +452,15 @@ async function updateMosaico(req, res) {
     const template = await Templates.findById(mailing._wireframe)
       .select({ htmlBlockEnabled: 1 })
       .lean();
-    const htmlBlockEnabled = Boolean(template && template.htmlBlockEnabled);
     assertHtmlCodeAllowed({
       data: req.body.data,
       previousData: mailing.data,
-      htmlBlockEnabled,
+      htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
     });
     assertHeadCssAllowed({
       css: headCss,
       previousCss: mailing.headCss,
-      htmlBlockEnabled,
+      headCssEnabled: isHeadCssEnabled(template),
     });
   }
 

@@ -374,10 +374,21 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // back with the content on save (ext/badsender-server-storage.js).
   viewModel.headCss = ko.observable('');
 
+  // Whether the author may edit the head CSS: the one place the editor decides
+  // it, read by both entry points (toolbox.tmpl.html, badsender-widget-code.js)
+  // and by openHeadCssEditor below. Same template flag as the HTML code block,
+  // for the reasons in packages/server/mailing/head-css-guard.js, whose
+  // isHeadCssEnabled is the server's counterpart. `metadata` is assigned after
+  // this function runs (template-loader.js), hence the lazy read.
+  viewModel.isHeadCssEditable = function () {
+    return Boolean(viewModel.metadata && viewModel.metadata.htmlBlockEnabled);
+  };
+
   // Opens the shared CodeMirror modal on the stylesheet instead of a block
   // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
   // guarded because the palette button exists before Vue has bound.
   viewModel.openHeadCssEditor = function () {
+    if (!viewModel.isHeadCssEditable()) return;
     if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
     viewModel.toggleHtmlCodeModal(true, {
       accessor: viewModel.headCss,

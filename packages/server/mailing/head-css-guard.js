@@ -39,6 +39,18 @@ function validateHeadCss(css, maxLength) {
 }
 
 /**
+ * Whether the template lets its mailings carry head CSS. The one server-side
+ * place that knows which flag gates it; the editor's counterpart is
+ * `viewModel.isHeadCssEditable` (viewmodel.js).
+ *
+ * @param {{ htmlBlockEnabled?: boolean }|null} [template]
+ * @returns {boolean}
+ */
+function isHeadCssEnabled(template) {
+  return Boolean(template && template.htmlBlockEnabled);
+}
+
+/**
  * Whether the request brings head CSS the template does not allow.
  *
  * With the flag on, anything goes. With it off, CSS is refused unless it is
@@ -52,11 +64,11 @@ function validateHeadCss(css, maxLength) {
  * @param {Object} params
  * @param {*} params.css the CSS about to be written
  * @param {*} [params.previousCss] the CSS currently stored
- * @param {boolean} params.htmlBlockEnabled the template flag
+ * @param {boolean} params.headCssEnabled see isHeadCssEnabled
  * @returns {boolean}
  */
-function bringsDisallowedHeadCss({ css, previousCss, htmlBlockEnabled }) {
-  if (htmlBlockEnabled) return false;
+function bringsDisallowedHeadCss({ css, previousCss, headCssEnabled }) {
+  if (headCssEnabled) return false;
 
   const next = asCss(css);
   if (next.trim() === '') return false;
@@ -68,11 +80,13 @@ function bringsDisallowedHeadCss({ css, previousCss, htmlBlockEnabled }) {
  * Throws when the request brings head CSS the template does not allow.
  *
  * @param {Object} params see bringsDisallowedHeadCss
- * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED
+ * @throws {Forbidden} HEAD_CSS_DISABLED — its own code rather than the HTML
+ *   code block's, although the flag is shared: the refusal is about the CSS, and
+ *   the editor says so.
  */
 function assertHeadCssAllowed(params) {
   if (bringsDisallowedHeadCss(params)) {
-    throw new Forbidden(ERROR_CODES.HTML_CODE_BLOCK_DISABLED);
+    throw new Forbidden(ERROR_CODES.HEAD_CSS_DISABLED);
   }
 }
 
@@ -88,6 +102,7 @@ function hasHeadCss(css) {
 }
 
 module.exports = {
+  isHeadCssEnabled,
   validateHeadCss,
   bringsDisallowedHeadCss,
   assertHeadCssAllowed,
