@@ -7,7 +7,6 @@ module.exports = {
   id: 'html-size',
   category: 'technical',
   severity: 'warning',
-  GMAIL_CLIPPING_BYTES,
   run(ctx) {
     const bytes = new Blob([ctx.html]).size;
     if (bytes <= GMAIL_CLIPPING_BYTES) return [];

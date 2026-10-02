@@ -133,5 +133,4 @@ function runQualityChecks(viewModel, options = {}) {
 
 module.exports = {
   runQualityChecks,
-  DEFAULT_RULES,
 };
