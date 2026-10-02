@@ -69,6 +69,15 @@ describe('images-without-link', () => {
       messageKey: 'Clickable image has no link',
     });
   });
+
+  it('leaves an image never replaced to unreplaced-images', () => {
+    const blocks = [{ id: 'b1', type: 'imageBlock' }];
+    const html = exportOf({
+      b1:
+        '<a href="#toreplace"><img src="http://localhost:3000/api/images/placeholder/600x300.png"></a>',
+    });
+    expect(findingsOf(imagesWithoutLink, { blocks, html })).toEqual([]);
+  });
 });
 
 describe('findUnfilledAnchors', () => {
