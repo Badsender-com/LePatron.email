@@ -13,6 +13,7 @@ const {
   findHtmlCodeBlocks,
   HTML_CODE_PROPERTY,
 } = require('../mailing/html-code-block-guard.js');
+const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const translationJobs = require('./translation-jobs');
 const {
   runTranslationStep,
@@ -224,13 +225,20 @@ async function processTranslationAsync({
         // back as stored: they hold no provider output, and sanitizing them
         // stripped the ESP scripts they exist for, so the copy's ZIP no longer
         // matched its export. Serving the preview sanitizes it again.
+        // The head CSS is put back as stored for the same reason: the sanitizer
+        // drops a whole <style> whose text holds `<` and a letter — a
+        // `/* <table> */` comment, an SVG data URI — and the copy's previewHtml
+        // is what its multi-mailing ZIP exports.
         const safePreviewHtml = await runTranslationStep(
           'sanitizePreview',
           () =>
-            transformDocumentKeepingHtmlCodeBlocks(
-              previewHtml,
-              sanitizePreviewHtml,
-              htmlCodes
+            injectHeadCss(
+              transformDocumentKeepingHtmlCodeBlocks(
+                previewHtml,
+                sanitizePreviewHtml,
+                htmlCodes
+              ),
+              originalMailing.headCss
             )
         );
         await mailingService.updatePreviewHtml(
