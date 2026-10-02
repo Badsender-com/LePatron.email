@@ -16,7 +16,7 @@ const {
   displayErrors,
   getErrorsForControlQuality,
 } = require('../../../packages/editor/src/js/ext/badsender-control-quality.js');
-const { fakeViewModel, exportOf } = require('../quality/fake-view-model');
+const { fakeViewModel, exportOf } = require('./fake-view-model');
 
 const viewModel = { t: (key) => key };
 
