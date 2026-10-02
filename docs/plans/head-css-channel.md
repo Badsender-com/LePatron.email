@@ -62,7 +62,7 @@ Le CSS n'existe que pour styler du markup collé dans un bloc Code HTML. Ce qui 
 - **Retirer le dernier bloc n'efface pas le CSS.** Il reste dans `viewModel.headCss` et sur la créa ; un Ctrl+Z ou un bloc rajouté le fait revenir tel quel. Aucune perte silencieuse.
 - **En lecture seule, le CSS est traité comme le bloc lui-même** : le bloc reste, non éditable, supprimable ; le CSS reste, non éditable, supprimable. « Supprimer » demande confirmation, vide le CSS en un pas annulable, et le serveur l'accepte flag OFF (seul un CSS inchangé ou vidé passe).
 - **Côté éditeur**, la règle vit dans `ext/head-css/exported-css.js` (`hasHtmlCodeBlock`, `headCssToExport`) ; `exportHTML` et l'aperçu canvas lisent tous deux `viewModel.exportedHeadCss()`. L'aperçu passe par un `ko.pureComputed`, disposé avec le plugin, qui ne notifie que si le CSS exporté change.
-- **Côté serveur**, `headCssToExport` (`mailing/head-css-guard.js`, sur `findHtmlCodeBlocks`) applique la même règle au `previewHtml` d'une copie traduite. Un test fait tourner les deux prédicats sur les mêmes jeux de données.
+- **Côté serveur**, `headCssToExport` (`mailing/head-css-guard.js`, sur `findSyntheticBlocks`, limité au bloc HTML code) applique la même règle au `previewHtml` d'une copie traduite. Un test fait tourner les deux prédicats sur les mêmes jeux de données.
 - Les prédicats de l'interface sont dans `ext/head-css/view-model.js` : `isHeadCssEditable` (flag ON, inchangé), `isHeadCssReadOnly` (flag OFF, CSS non vide, au moins un bloc), `isHeadCssAwaitingBlock` (flag ON, aucun bloc).
 
 ### Autres décisions

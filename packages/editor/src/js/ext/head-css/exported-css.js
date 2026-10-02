@@ -1,12 +1,12 @@
 'use strict';
 
 const ko = require('knockout');
-const { matching } = require('../html-code-block/block-state.js');
+const { descriptorFor } = require('../html-code-block/block-state.js');
 const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
 
 // The HTML code block only, not the builder's: that one writes its own styles
 // inline and has nothing for this stylesheet to style.
-const isHtmlCodeBlock = matching(HTML_CODE_BLOCK);
+const isHtmlCodeBlock = (block) => descriptorFor(block) === HTML_CODE_BLOCK;
 
 // Which head CSS an export carries. The rule: the CSS follows the HTML code
 // blocks, not the template flag.

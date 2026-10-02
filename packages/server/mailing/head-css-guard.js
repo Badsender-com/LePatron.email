@@ -5,6 +5,7 @@ const { Forbidden } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { findSyntheticBlocks } = require('./synthetic-block-guard.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
+const { HTML_CODE_BLOCK } = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
 // template allows it at all.
@@ -103,10 +104,6 @@ function hasHeadCss(css) {
   return asCss(css).trim() !== '';
 }
 
-// The HTML code block only, not the builder's: that one writes its own styles
-// inline, and has nothing for this stylesheet to style.
-const HTML_CODE_BLOCK_TYPE = 'htmlCodeBlock';
-
 /**
  * The CSS a stored copy of the mailing must carry in its <head>: the head CSS
  * while `data` holds at least one HTML code block, nothing otherwise.
@@ -124,8 +121,10 @@ const HTML_CODE_BLOCK_TYPE = 'htmlCodeBlock';
  * @returns {string}
  */
 function headCssToExport({ data, headCss }) {
+  // The HTML code block only, not the builder's: that one writes its own
+  // styles inline, and has nothing for this stylesheet to style.
   const hasHtmlCodeBlock = findSyntheticBlocks(data).some(
-    (block) => block.type === HTML_CODE_BLOCK_TYPE
+    (block) => block.type === HTML_CODE_BLOCK.type
   );
   return hasHtmlCodeBlock ? asCss(headCss) : '';
 }
