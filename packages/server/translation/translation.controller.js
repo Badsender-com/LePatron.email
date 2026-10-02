@@ -15,7 +15,10 @@ const {
 } = require('../mailing/synthetic-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
 const { headCssToExport } = require('../mailing/head-css-guard.js');
-const { builderMarkups } = require('./builder-block-texts.js');
+const {
+  builderMarkups,
+  splitBuilderTranslations,
+} = require('./builder-block-texts.js');
 const { swapBuilderMarkup } = require('./builder-preview-swap.js');
 const translationJobs = require('./translation-jobs');
 const {
@@ -217,11 +220,21 @@ async function processTranslationAsync({
         const markupsOf = (data) => findSyntheticBlocks(data).map(htmlOf);
 
         const htmlCodes = markupsOf(originalMailing.data);
+        // Only the generic keys. A composed block's texts reach the preview
+        // through the swap below; replaced here as strings, their source
+        // wording would also be rewritten wherever else it appears — in a
+        // template block the protection config keeps, in an attribute.
+        const { rest: genericOriginals } = splitBuilderTranslations(
+          originalTexts
+        );
+        const { rest: genericTranslations } = splitBuilderTranslations(
+          translations
+        );
         const translated = await runTranslationStep('updatePreview', () =>
           updatePreviewWithTranslations(
             originalMailing.previewHtml,
-            originalTexts,
-            translations,
+            genericOriginals,
+            genericTranslations,
             { htmlCodes }
           )
         );
