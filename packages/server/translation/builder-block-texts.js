@@ -12,7 +12,11 @@ const {
   isTranslatableFieldName,
   isTranslatableValue,
 } = require('./mosaico-text-extractor.js');
-const { HTML_CODE_MAX_LENGTH } = require('../mailing/synthetic-block-guard.js');
+const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
+const {
+  HTML_CODE_MAX_LENGTH,
+  locateSyntheticBlocks,
+} = require('../mailing/synthetic-block-guard.js');
 
 // Translation for the block builder.
 //
@@ -39,36 +43,28 @@ const { HTML_CODE_MAX_LENGTH } = require('../mailing/synthetic-block-guard.js');
 // before it ever sees them (see splitBuilderTranslations).
 const BUILDER_KEY_PREFIX = 'builderBlock';
 
-const BLOCK_BUILDER_TYPE = 'blockBuilderBlock';
-const STATE_PROPERTY = 'builderState';
-const HTML_PROPERTY = 'builderHtml';
+// Read from the table the editor writes the block from, so a renamed property
+// cannot leave this pass reading a field nobody writes any more.
+const {
+  type: BLOCK_BUILDER_TYPE,
+  stateProperty: STATE_PROPERTY,
+  htmlProperty: HTML_PROPERTY,
+} = BLOCK_BUILDER_BLOCK;
 
 const keyFor = (container, blockIndex, elementIndex, field) =>
   `${BUILDER_KEY_PREFIX}.${container}.${blockIndex}.${elementIndex}.${field}`;
 
 /**
- * Every composed block of a content model, with where it sits.
- *
- * Only the top level is walked — the same rule as the save guard: Mosaico keeps
- * blocks in `{ blocks: [...] }` containers at the root of the model, and a
- * deeply nested Mixed payload must not be able to make this expensive.
+ * Every composed block of a content model, with where it sits — the same walk
+ * as the save guard's (see locateSyntheticBlocks).
  *
  * @param {Object} data mailing.data
  * @returns {Array<{container: string, index: number, block: Object}>}
  */
 function findBuilderBlocks(data) {
-  if (!data || typeof data !== 'object') return [];
-
-  return Object.entries(data)
-    .filter(([, value]) => value && Array.isArray(value.blocks))
-    .reduce((found, [container, value]) => {
-      value.blocks.forEach((block, index) => {
-        if (block && block.type === BLOCK_BUILDER_TYPE) {
-          found.push({ container, index, block });
-        }
-      });
-      return found;
-    }, []);
+  return locateSyntheticBlocks(data).filter(
+    ({ block }) => block.type === BLOCK_BUILDER_TYPE
+  );
 }
 
 /**
@@ -185,12 +181,12 @@ function injectBuilderTexts(data, translations) {
 
   // Parse each block's state once, apply everything, then regenerate once.
   const states = new Map();
-  const blockAt = (container, index) => {
-    const holder = data && data[container];
-    if (!holder || !Array.isArray(holder.blocks)) return null;
-    const block = holder.blocks[index];
-    return block && block.type === BLOCK_BUILDER_TYPE ? block : null;
-  };
+  const blocks = new Map(
+    findBuilderBlocks(data).map(({ container, index, block }) => [
+      `${container}.${index}`,
+      block,
+    ])
+  );
 
   let applied = 0;
 
@@ -201,13 +197,13 @@ function injectBuilderTexts(data, translations) {
       return;
     }
 
-    const block = blockAt(parsed.container, parsed.blockIndex);
+    const id = `${parsed.container}.${parsed.blockIndex}`;
+    const block = blocks.get(id);
     if (!block) {
       skipped.push(key);
       return;
     }
 
-    const id = `${parsed.container}.${parsed.blockIndex}`;
     if (!states.has(id))
       states.set(id, { block, state: parseState(block[STATE_PROPERTY]) });
 

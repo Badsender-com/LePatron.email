@@ -85,23 +85,41 @@ function htmlOf(block) {
 }
 
 /**
- * Every synthetic block of a Mosaico content model.
+ * Every synthetic block of a Mosaico content model, with where it sits.
  *
  * Mosaico stores blocks in containers — `mainBlocks` by convention, but a
  * template may declare others — each a `{ blocks: [...] }` at the top level of
  * the model. Only that level is walked, so a deeply nested Mixed payload cannot
  * make this expensive, and a container other than `mainBlocks` cannot slip past.
  *
+ * The position is what the translation of composed blocks keys its texts on
+ * (translation/builder-block-texts.js); one walk for both, so the guard and
+ * the translation can never disagree on which blocks a mailing holds.
+ *
+ * @param {Object} data mailing.data
+ * @returns {Array<{container: string, index: number, block: Object}>}
+ */
+function locateSyntheticBlocks(data) {
+  if (!data || typeof data !== 'object') return [];
+
+  return Object.entries(data)
+    .filter(([, value]) => value && Array.isArray(value.blocks))
+    .reduce((found, [container, value]) => {
+      value.blocks.forEach((block, index) => {
+        if (isSyntheticBlock(block)) found.push({ container, index, block });
+      });
+      return found;
+    }, []);
+}
+
+/**
+ * Every synthetic block of a Mosaico content model, in document order.
+ *
  * @param {Object} data mailing.data
  * @returns {Array<Object>}
  */
 function findSyntheticBlocks(data) {
-  if (!data || typeof data !== 'object') return [];
-
-  return Object.values(data)
-    .filter((value) => value && Array.isArray(value.blocks))
-    .reduce((found, container) => found.concat(container.blocks), [])
-    .filter(isSyntheticBlock);
+  return locateSyntheticBlocks(data).map(({ block }) => block);
 }
 
 /**
@@ -286,6 +304,7 @@ module.exports = {
   findLongestSyntheticBlock,
   findOversizedSyntheticBlock,
   findSyntheticBlocks,
+  locateSyntheticBlocks,
   findDisallowedSyntheticBlock,
   bringsDisallowedSyntheticHtml,
   assertSyntheticHtmlAllowed,
