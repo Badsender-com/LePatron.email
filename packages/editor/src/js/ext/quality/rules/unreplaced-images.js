@@ -37,7 +37,10 @@ function isPlaceholderSrc(src, placeholderUrl) {
   if (!src) return true;
   if (/[?&]method=placeholder\b/.test(src)) return true;
   const placeholderPath = placeholderUrl && pathnameOf(placeholderUrl);
-  return Boolean(placeholderPath) && pathnameOf(src).startsWith(placeholderPath);
+  // An src the URL parser rejects is the client's own mistake, not a
+  // placeholder, and must not take the whole check down with it.
+  const srcPath = placeholderPath && pathnameOf(src);
+  return Boolean(srcPath) && srcPath.startsWith(placeholderPath);
 }
 
 // Every image of a block model: objects carrying a `src` (image widgets).
