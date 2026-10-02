@@ -68,3 +68,41 @@ describe('the compiler refuses a default of the wrong type', () => {
     ).rejects.toThrow(message);
   });
 });
+
+describe('the compiler refuses a fallback that would not survive', () => {
+  const template = '<table><tr><td :bgcolor="tint">a</td></tr></table>';
+
+  it.each([
+    ['a ] that would end the placeholder', '#fff]', /contains \[, \] or \|/],
+    ['a [ in it', '[#fff', /contains \[, \] or \|/],
+    ['a | that would cut it short', '#fff|#000', /contains \[, \] or \|/],
+    ['a value its own context refuses', 'red;x:y', /not a valid COLOR value/],
+  ])('%s', async (_, fallback, message) => {
+    await expect(
+      compileFixture({
+        slots: { tint: { context: 'COLOR', default: '#ffffff', fallback } },
+        template,
+      })
+    ).rejects.toThrow(message);
+  });
+
+  it('checks a fallback derived from the default too', async () => {
+    await expect(
+      compileFixture({
+        slots: { tint: { context: 'COLOR', default: 'not a colour' } },
+        template,
+      })
+    ).rejects.toThrow(/"not a colour" is not a valid COLOR value/);
+  });
+
+  it('refuses a URL fallback with a scheme the URL context refuses', async () => {
+    await expect(
+      compileFixture({
+        slots: {
+          link: { context: 'URL', default: '', fallback: 'javascript:void(0)' },
+        },
+        template: '<table><tr><td><a :href="link">a</a></td></tr></table>',
+      })
+    ).rejects.toThrow(/not a valid URL value/);
+  });
+});

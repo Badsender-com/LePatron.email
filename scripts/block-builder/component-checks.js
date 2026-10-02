@@ -6,6 +6,13 @@
 // plausible-looking markup with a hole silently missing — and the only symptom
 // would be an email that looks wrong in production.
 
+const {
+  escapeForContext,
+} = require('../../packages/shared/block-builder/slot-contexts.js');
+const {
+  fallbackOf,
+} = require('../../packages/shared/block-builder/manifest.js');
+
 /**
  * A default of the type the generator and the editor expect.
  *
@@ -26,6 +33,34 @@ function checkDefault(where, slot) {
   }
   if (slot.fallback !== undefined && typeof slot.fallback !== 'string') {
     throw new Error(`${where}: a fallback, when given, must be a string.`);
+  }
+  checkFallback(where, slot);
+}
+
+/**
+ * A fallback the placeholder can carry, and that its own context accepts.
+ *
+ * It lands in `[[name|CONTEXT|fallback]]`: a `]` would end the placeholder
+ * early and the slot would vanish from the template, a `|` would cut the
+ * fallback short. And it is emitted as written when a value is refused, with
+ * no escaping of its own — so it must be something the context would have let
+ * through anyway.
+ */
+function checkFallback(where, slot) {
+  const fallback = fallbackOf(slot);
+  if (/[[\]|]/.test(fallback)) {
+    throw new Error(
+      `${where}: the fallback "${fallback}" contains [, ] or |, which ` +
+        'would break the [[name|CONTEXT|fallback]] placeholder.'
+    );
+  }
+  // No fallback passed, so a refused value comes back as '' and cannot pass
+  // for the fallback itself.
+  if (escapeForContext(fallback, slot.context) !== fallback) {
+    throw new Error(
+      `${where}: the fallback "${fallback}" is not a valid ${slot.context} ` +
+        'value, and it would be emitted unescaped.'
+    );
   }
 }
 
