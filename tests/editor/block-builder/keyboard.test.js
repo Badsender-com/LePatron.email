@@ -10,31 +10,10 @@
 
 const Vue = require('vue/dist/vue.common');
 
-const {
-  BlockBuilderModalComponent,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
-
-const mounted = [];
-const accessorOf = () => {
-  let value = '';
-  return (next) => (next === undefined ? value : (value = next));
-};
+const { open, unmountAll } = require('./modal-helpers.js');
 
 async function openWith(types) {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-  const app = new Vue({
-    el: host,
-    components: { BlockBuilderModal: BlockBuilderModalComponent },
-    data: { vm: { t: (key) => key, showDialogGallery: () => false } },
-    template: '<block-builder-modal :vm="vm" />',
-  });
-  mounted.push(app);
-  const modal = app.$children[0];
-  modal.handleToggle(true, {
-    accessor: accessorOf(),
-    stateAccessor: accessorOf(),
-  });
+  const { modal } = open(null, { showDialogGallery: () => false });
   types.forEach((type) => modal.addElement(type));
   await Vue.nextTick();
   return modal;
@@ -53,10 +32,7 @@ function press(target, key) {
   return event;
 }
 
-afterEach(() => {
-  mounted.splice(0).forEach((app) => app.$destroy());
-  document.body.innerHTML = '';
-});
+afterEach(unmountAll);
 
 describe('the element list', () => {
   it('is a labelled listbox of options', async () => {

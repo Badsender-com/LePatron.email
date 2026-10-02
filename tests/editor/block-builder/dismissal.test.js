@@ -11,44 +11,12 @@
 
 const Vue = require('vue/dist/vue.common');
 
-const {
-  BlockBuilderModalComponent,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
-
-const accessorOf = (initial) => {
-  let value = initial;
-  return (next) => {
-    if (next === undefined) return value;
-    value = next;
-    return value;
-  };
-};
-
-// Every modal listens on the document: one left mounted by an earlier test would
-// hear the next test's Escape.
-const mounted = [];
+const { open, unmountAll } = require('./modal-helpers.js');
 
 async function openModal(vmOverrides) {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-  const vm = {
-    t: (key) => key,
-    startMultiple: jest.fn(),
-    stopMultiple: jest.fn(),
+  const { modal } = open(null, {
     showDialogGallery: () => false,
     ...vmOverrides,
-  };
-  const app = new Vue({
-    el: host,
-    components: { BlockBuilderModal: BlockBuilderModalComponent },
-    data: { vm },
-    template: '<block-builder-modal :vm="vm" />',
-  });
-  mounted.push(app);
-  const modal = app.$children[0];
-  modal.handleToggle(true, {
-    accessor: accessorOf(''),
-    stateAccessor: accessorOf(''),
   });
   await Vue.nextTick();
   return modal;
@@ -71,9 +39,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  mounted.splice(0).forEach((app) => app.$destroy());
   confirm.mockRestore();
-  document.body.innerHTML = '';
+  unmountAll();
 });
 
 describe('dismissing an untouched composition', () => {
