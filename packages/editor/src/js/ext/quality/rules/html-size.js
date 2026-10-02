@@ -11,11 +11,13 @@ module.exports = {
   run(ctx) {
     const bytes = new Blob([ctx.html]).size;
     if (bytes <= GMAIL_CLIPPING_BYTES) return [];
+    const size = Math.ceil(bytes / 1024);
     return [
       {
         messageKey:
           'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB',
-        params: { size: Math.ceil(bytes / 1024) },
+        params: { size },
+        value: size,
       },
     ];
   },

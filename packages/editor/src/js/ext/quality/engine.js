@@ -31,6 +31,12 @@ function hashString(value) {
   return (hash >>> 0).toString(36);
 }
 
+/**
+ * Completes what a rule returns: { messageKey, params?, severity?, blockId?,
+ * propertyPath?, value? }. `value` is the offending value itself (the link
+ * label, the image src, the size in KB): the fingerprint hashes it, so it must
+ * change when the fault does, and only then.
+ */
 function completeFinding(rule, finding, ctx) {
   const blockId = finding.blockId || null;
   const propertyPath = finding.propertyPath || null;
@@ -60,10 +66,22 @@ const failedCheck = (rule) => ({
   status: 'error',
 });
 
+// Identical findings of one block (two "Read more" links left on #toreplace)
+// would share a fingerprint: their rank among themselves tells them apart, and
+// moving other blocks around leaves it alone.
+function rankFingerprints(findings) {
+  const ranks = new Map();
+  return findings.map((finding) => {
+    const rank = (ranks.get(finding.fingerprint) || 0) + 1;
+    ranks.set(finding.fingerprint, rank);
+    return { ...finding, fingerprint: `${finding.fingerprint}|${rank}` };
+  });
+}
+
 function runRule(rule, ctx) {
   try {
-    const findings = (rule.run(ctx) || []).map((f) =>
-      completeFinding(rule, f, ctx)
+    const findings = rankFingerprints(
+      (rule.run(ctx) || []).map((f) => completeFinding(rule, f, ctx))
     );
     const status = findings.length ? 'failed' : 'passed';
     return {
