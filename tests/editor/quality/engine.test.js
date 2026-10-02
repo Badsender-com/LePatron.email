@@ -123,4 +123,31 @@ describe('runQualityChecks', () => {
 
     expect(traced).toEqual([null, 'ko_heroBlock_1']);
   });
+
+  it('judges the blocks of every container, not only the main one', () => {
+    const vm = fakeViewModel({
+      blocks: [heroBlocks[0]],
+      containers: {
+        footerBlocks: [{ id: 'ko_textBlock_9', type: 'textBlock' }],
+      },
+    });
+    const { findings } = runQualityChecks(vm, { rules: [reportEveryBlock] });
+
+    expect(findings.map((f) => f.blockId)).toEqual([
+      'ko_heroBlock_1',
+      'ko_textBlock_9',
+    ]);
+  });
+
+  it('reads a template without a main container', () => {
+    const vm = fakeViewModel();
+    vm.content = () => ({ tracking: () => ({ trackingUrls: () => [] }) });
+
+    expect(runQualityChecks(vm, { rules: [reportEveryBlock] })).toEqual({
+      findings: [],
+      checks: [
+        { ruleId: 'fake', category: 'content', status: 'passed', count: 0 },
+      ],
+    });
+  });
 });
