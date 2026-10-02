@@ -16,6 +16,7 @@ const {
 const {
   parseState,
   serialiseState,
+  newElementId,
 } = require('../../../../../../shared/block-builder/state.js');
 
 // The composing surface of the block builder.
@@ -49,9 +50,6 @@ const DESKTOP_WIDTH = 600;
 const MOBILE_WIDTH = 350;
 
 
-let sequence = 0;
-const nextId = () => `el-${Date.now().toString(36)}-${++sequence}`;
-
 const defaultsFor = (type) => {
   const definition = ELEMENTS.find((element) => element.type === type);
   return definition ? { ...definition.defaults } : {};
@@ -75,6 +73,11 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // version that did not keep one. Composing REPLACES that markup, so the
     // user is told before they lose it.
     replacesExistingMarkup: false,
+    // True when the stored markup is not what the current generator makes of
+    // the stored state — an older generator wrote it, or the state was cleaned
+    // on the way in. The stored markup is frozen until the user applies, and
+    // applying rebuilds it, so they are told before rather than surprised after.
+    rebuildsMarkup: false,
     // The serialised state an apply was refused for, for its size. Kept rather
     // than a boolean so the message goes as soon as the composition changes.
     refusedState: null,
@@ -157,6 +160,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       // Markup with no state behind it: composing would throw it away.
       this.replacesExistingMarkup =
         !restored && typeof existingMarkup === 'string' && existingMarkup !== '';
+      this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
       this.selectedId = this.state.elements.length
         ? this.state.elements[0].id
         : null;
@@ -180,7 +184,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     addElement(type) {
-      const element = { id: nextId(), type, ...defaultsFor(type) };
+      const element = { id: newElementId(), type, ...defaultsFor(type) };
       this.state.elements.push(element);
       this.selectedId = element.id;
     },
@@ -256,6 +260,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
+      this.rebuildsMarkup = false;
       this.refusedState = null;
       this.state = emptyState();
       this.selectedId = null;

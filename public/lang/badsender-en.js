@@ -348,6 +348,8 @@ module.exports = {
   'block-builder-mobile': 'Mobile',
   'block-builder-preview-hint':
     'Indicative preview — browser rendering, not mail client rendering.',
+  'block-builder-rebuilds-markup':
+    'This block was built by an earlier version of the builder. Applying will rebuild it with the current one, and its rendering may change slightly.',
   'block-builder-too-large':
     'This composition is too large to be saved. Remove elements or shorten the texts before applying.',
   'widget-code-disabled':

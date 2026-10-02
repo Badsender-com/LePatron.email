@@ -246,6 +246,19 @@
   border-radius: 2px;
 }
 
+// Applying would rebuild the stored markup with the current generator. Quieter
+// than the warning: nothing is lost, the rendering may only move a little.
+.bb-modal__notice {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 172, 220, 0.08);
+  border: 1px solid rgba(0, 172, 220, 0.32);
+  border-radius: 2px;
+}
+
 // An apply refused for size. Same place as the warning, louder: the
 // composition has to change before it can be applied at all.
 .bb-modal__error {

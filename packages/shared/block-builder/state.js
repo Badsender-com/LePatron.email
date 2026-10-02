@@ -14,7 +14,25 @@
 // they have to redo; throwing costs them the editor.
 
 const { elementFor } = require('./elements/index.js');
-const { STATE_VERSION, emptyState } = require('./generate.js');
+const {
+  STATE_VERSION,
+  GENERATOR_VERSION,
+  DEFAULT_BLOCK,
+  emptyState,
+} = require('./generate.js');
+
+let sequence = 0;
+
+/**
+ * A fresh element id: unique within a session, and unlike any stored one
+ * written in an earlier session.
+ *
+ * @returns {string}
+ */
+function newElementId() {
+  sequence += 1;
+  return `el-${Date.now().toString(36)}-${sequence}`;
+}
 
 /**
  * @param {Object} state
@@ -22,12 +40,61 @@ const { STATE_VERSION, emptyState } = require('./generate.js');
  */
 function serialiseState(state) {
   try {
-    return JSON.stringify({ ...state, v: STATE_VERSION });
+    // Stamped with the CURRENT generator: what is serialised is what is being
+    // applied, and applying regenerates the markup with this version.
+    return JSON.stringify({
+      ...state,
+      v: STATE_VERSION,
+      gen: GENERATOR_VERSION,
+    });
   } catch (error) {
     // A cycle, or something unserialisable. Storing nothing is better than
     // storing half a state that would reopen as nonsense.
     return '';
   }
+}
+
+/**
+ * A stored value brought back to the type of its default, or the default.
+ *
+ * The templates format what they are given — a number `label` breaks the
+ * modal's `slice`, a string `fontSize` lands in arithmetic. Every default is a
+ * string or a number, so those are the only two conversions.
+ *
+ * @param {*} value
+ * @param {string|number} fallback
+ * @returns {string|number}
+ */
+function coerce(value, fallback) {
+  if (typeof fallback === 'number') {
+    const number = typeof value === 'string' ? Number(value) : value;
+    const usable =
+      typeof number === 'number' &&
+      Number.isFinite(number) &&
+      !(typeof value === 'string' && value.trim() === '');
+    return usable ? number : fallback;
+  }
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return fallback;
+}
+
+/**
+ * Keeps the keys `defaults` declares, each coerced to the type of its default,
+ * and drops the rest.
+ *
+ * @param {Object} stored
+ * @param {Object} defaults
+ * @returns {Object}
+ */
+function cleanAgainst(stored, defaults) {
+  const source = stored && typeof stored === 'object' ? stored : {};
+  return Object.keys(defaults).reduce((clean, key) => {
+    clean[key] = Object.prototype.hasOwnProperty.call(source, key)
+      ? coerce(source[key], defaults[key])
+      : defaults[key];
+    return clean;
+  }, {});
 }
 
 /**
@@ -46,14 +113,29 @@ function cleanElement(element) {
   const definition = elementFor(element.type);
   if (!definition) return null;
 
-  const clean = { id: String(element.id || ''), type: element.type };
-  Object.keys(definition.defaults).forEach((key) => {
-    clean[key] = Object.prototype.hasOwnProperty.call(element, key)
-      ? element[key]
-      : definition.defaults[key];
-  });
+  return {
+    id: typeof element.id === 'string' ? element.id : '',
+    type: element.type,
+    ...cleanAgainst(element, definition.defaults),
+  };
+}
 
-  return clean;
+/**
+ * Gives a fresh id to every element whose id is missing or already taken.
+ *
+ * The id is what the list, the selection and the preview all key on: two
+ * elements sharing one select, move and render as one.
+ *
+ * @param {Array<Object>} elements cleaned elements, modified in place
+ * @returns {Array<Object>}
+ */
+function ensureUniqueIds(elements) {
+  const seen = new Set();
+  elements.forEach((element) => {
+    if (element.id === '' || seen.has(element.id)) element.id = newElementId();
+    seen.add(element.id);
+  });
+  return elements;
 }
 
 /**
@@ -81,13 +163,14 @@ function parseState(serialised) {
   const elements = parsed.elements.map(cleanElement).filter(Boolean);
   if (elements.length === 0) return null;
 
-  const base = emptyState();
-
   return {
-    ...base,
-    block: { ...base.block, ...(parsed.block || {}) },
-    elements,
+    ...emptyState(),
+    // The generator that wrote the stored markup, kept as read: it is how a
+    // reopened block tells that applying would rebuild it differently.
+    gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
+    block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
+    elements: ensureUniqueIds(elements),
   };
 }
 
-module.exports = { serialiseState, parseState, cleanElement };
+module.exports = { serialiseState, parseState, cleanElement, newElementId };

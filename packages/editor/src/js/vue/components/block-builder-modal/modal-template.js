@@ -15,6 +15,9 @@ module.exports = `<modal-component ref="modalRef" :is-full-width="true">
     <p v-if="replacesExistingMarkup" class="bb-modal__warning">
       {{ vm.t('block-builder-replaces-markup') }}
     </p>
+    <p v-if="rebuildsMarkup" class="bb-modal__notice">
+      {{ vm.t('block-builder-rebuilds-markup') }}
+    </p>
     <p v-if="tooLarge" class="bb-modal__error" role="alert">
       {{ vm.t('block-builder-too-large') }}
     </p>
