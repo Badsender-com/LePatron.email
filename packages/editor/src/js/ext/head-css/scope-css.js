@@ -19,11 +19,19 @@
 const cssParse = require('mensch/lib/parser.js');
 const cssStringify = require('mensch/lib/stringify.js');
 
-// Selectors that mean "the document" inside an email, and therefore mean "the
-// canvas" here. Replaced by the prefix instead of being nested under it: an
-// author writing `body { font-family: X }` wants the canvas to get that font,
-// not a nonexistent `#main-wysiwyg-area body`.
-const DOCUMENT_SELECTORS = new Set(['html', 'body', ':root', '*']);
+// The document root of an email (`html`, `:root`) is the canvas itself here,
+// and its <body> is the `replacedbody` element inside it: template-loader.js
+// renames the template's html/head/body tags, attributes kept, so a div can
+// hold them. Nesting either under the prefix would target a nonexistent
+// `#main-wysiwyg-area body`, so they are translated instead, wherever they
+// lead a selector: `body.dark .x` keeps its meaning on the canvas.
+const ROOT_TYPE = /^(?:html|:root)(?![\w-])/i;
+const BODY_TYPE = /^body(?![\w-])/i;
+const CANVAS_BODY = 'replacedbody';
+
+// The combinator after the root compound. Turned into a plain descendant one:
+// the canvas does not nest the body directly under its root.
+const LEADING_COMBINATOR = /^\s*[>+~]?\s*/;
 
 // At-rules whose inner blocks hold selectors to rewrite.
 const NESTING_AT_RULES = new Set(['media', 'supports', 'document']);
@@ -74,6 +82,36 @@ function splitSelectorList(selectorText) {
 }
 
 /**
+ * Length of the compound selector `text` starts with: up to the first
+ * combinator or whitespace outside brackets, parentheses and quotes.
+ *
+ * @param {string} text
+ * @returns {number}
+ */
+function compoundLength(text) {
+  let depth = 0;
+  let quote = null;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (quote) {
+      if (char === quote && text[i - 1] !== '\\') quote = null;
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    } else if (char === '(' || char === '[') {
+      depth++;
+    } else if (char === ')' || char === ']') {
+      if (depth > 0) depth--;
+    } else if (depth === 0 && /[\s>+~]/.test(char)) {
+      return i;
+    }
+  }
+
+  return text.length;
+}
+
+/**
  * @param {string} selector
  * @param {string} prefix
  * @returns {string}
@@ -81,10 +119,26 @@ function splitSelectorList(selectorText) {
 function scopeSelector(selector, prefix) {
   const trimmed = selector.trim();
   if (trimmed === '') return selector;
-  if (DOCUMENT_SELECTORS.has(trimmed.toLowerCase())) return prefix;
   // Already scoped — an author pasting rules copied out of the template.
   if (trimmed.indexOf(prefix) === 0) return trimmed;
-  return prefix + ' ' + trimmed;
+
+  let scoped = prefix;
+  let rest = trimmed;
+
+  const root = ROOT_TYPE.exec(rest);
+  if (root) {
+    // What else the root compound says stays on the prefix: `html.a` -> `#area.a`.
+    rest = rest.slice(root[0].length);
+    const length = compoundLength(rest);
+    scoped += rest.slice(0, length);
+    rest = rest.slice(length).replace(LEADING_COMBINATOR, '');
+    if (rest === '') return scoped;
+  }
+
+  const body = BODY_TYPE.exec(rest);
+  if (body) rest = CANVAS_BODY + rest.slice(body[0].length);
+
+  return scoped + ' ' + rest;
 }
 
 /**

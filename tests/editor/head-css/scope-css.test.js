@@ -41,12 +41,43 @@ describe('scopeCss', () => {
     expect(out).toBe('#main-wysiwyg-area .a:not(.b,.c) { color: red; }');
   });
 
-  it('maps document-level selectors onto the canvas itself', () => {
-    expect(flat(scopeCss('body{font-family:Arial}', AREA))).toBe(
-      '#main-wysiwyg-area { font-family: Arial; }'
+  // In the canvas, the document root is the area itself and the email's body
+  // is `replacedbody` (template-loader.js renames the tag, attributes kept).
+  // Nesting them under the prefix targeted a `body` that does not exist there.
+  describe('document-level selectors', () => {
+    test.each([
+      ['html', '#main-wysiwyg-area'],
+      [':root', '#main-wysiwyg-area'],
+      ['body', '#main-wysiwyg-area replacedbody'],
+      ['html,body', '#main-wysiwyg-area, #main-wysiwyg-area replacedbody'],
+      ['body .x', '#main-wysiwyg-area replacedbody .x'],
+      ['html body .x', '#main-wysiwyg-area replacedbody .x'],
+      ['html > body > .x', '#main-wysiwyg-area replacedbody > .x'],
+      [':root body .x', '#main-wysiwyg-area replacedbody .x'],
+      // The body's classes are on `replacedbody`: dark mode keeps its meaning.
+      ['body.dark .x', '#main-wysiwyg-area replacedbody.dark .x'],
+      ['body:not(.a,.b) .x', '#main-wysiwyg-area replacedbody:not(.a,.b) .x'],
+      ['html.a .x', '#main-wysiwyg-area.a .x'],
+    ])('maps %s', (selector, expected) => {
+      expect(flat(scopeCss(selector + '{color:red}', AREA))).toBe(
+        expected + ' { color: red; }'
+      );
+    });
+
+    test.each(['tbody td', '.body', 'bodyx', 'htmlx .a'])(
+      'leaves %s, which only looks like one, nested',
+      (selector) => {
+        expect(flat(scopeCss(selector + '{color:red}', AREA))).toBe(
+          '#main-wysiwyg-area ' + selector + ' { color: red; }'
+        );
+      }
     );
-    expect(flat(scopeCss('html,body{margin:0}', AREA))).toBe(
-      '#main-wysiwyg-area, #main-wysiwyg-area { margin: 0; }'
+  });
+
+  // `*` means every element of the email, not the canvas element itself.
+  it('nests the universal selector, so it targets the descendants', () => {
+    expect(flat(scopeCss('*{box-sizing:border-box}', AREA))).toBe(
+      '#main-wysiwyg-area * { box-sizing: border-box; }'
     );
   });
 
