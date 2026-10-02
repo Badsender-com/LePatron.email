@@ -335,7 +335,7 @@ module.exports = {
     "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
   'widget-code-edit-css': "Éditer le CSS de l'email",
   'widget-code-css-hint':
-    "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création.",
+    "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
@@ -347,7 +347,7 @@ module.exports = {
   // Head CSS — a stylesheet for the whole email, gated by the same flag
   'head-css-section-title': 'CSS personnalisé',
   'head-css-section-hint':
-    "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML.",
+    "Ajouté dans le <head> de l'email exporté. Utile pour rendre responsive le code collé dans un bloc Code HTML. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
   'head-css-section-button': 'Éditer le CSS',
   'head-css-modal-title': "CSS personnalisé (<head> de l'email)",
   'head-css-placeholder':

@@ -68,6 +68,7 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 - **Toutes les media queries sont neutralisées en aperçu mobile, pas seulement les `max-width`.** Une règle `@media (min-width: 700px)` s'appliquerait donc à tort dans cet aperçu. C'est le comportement qu'a déjà `badsender-screen-preview.js` sur le CSS du template : s'en écarter serait plus déroutant que s'y conformer.
 - **En aperçu « les deux » (le mode par défaut), les règles mobiles ne s'affichent pas**, comme celles du template : la condition est forcée, mais chaque sélecteur reçoit le suffixe `.visible-on-both`, qu'aucun élément ne porte. Les deux feuilles lisent ces règles dans un seul module, `ext/preview-media.js`.
+- **Le canvas peut montrer une règle que l'email n'appliquera pas.** À l'export, juice écrit les styles du template en ligne, et un style en ligne l'emporte sur le `<head>` sauf `!important` ; dans le canvas, ces mêmes styles sont une feuille scopée que le CSS de l'email peut battre en spécificité. Les deux textes d'aide le disent.
 - **`he.encode` côté serveur** encode les non-ASCII en entités décimales, y compris dans le `<style>`. Un `content: "é"` ou un commentaire accentué en souffrira. Même limite que le bloc Code HTML, documentée là-bas.
 
 ## 7. Recette manuelle
