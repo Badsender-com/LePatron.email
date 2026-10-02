@@ -28,6 +28,9 @@ const {
   injectHeadCss,
 } = require('../../../shared/head-css/inject-head-css.js');
 const { addHeadCssToViewModel } = require('./ext/head-css/view-model.js');
+const {
+  addCanvasEntryToViewModel,
+} = require('./ext/html-code-block/canvas-entry.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -149,6 +152,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // for the export, which resolves `<type>-show`.
   viewModel.isEmptyHtmlBlock = isEmptySyntheticBlock;
   viewModel.emptyBlockLabelKey = emptyLabelKeyFor;
+
+  // What a click on a synthetic block in the canvas leads to — its settings,
+  // and for the composed block the builder: ext/html-code-block/canvas-entry.js.
+  addCanvasEntryToViewModel(viewModel);
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
