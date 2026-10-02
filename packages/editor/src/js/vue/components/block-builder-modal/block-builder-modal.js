@@ -3,6 +3,7 @@ const { ModalComponent } = require('../modal/modalComponent');
 const { ElementSettingsComponent } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
+const { DismissalMixin } = require('./dismissal.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -43,8 +44,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // The preview is a surface of its own — writing the iframe document,
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
-  // element-list.js.
-  mixins: [PreviewSurfaceMixin, ElementListMixin],
+  // element-list.js. And Escape or a backdrop click ask before losing work —
+  // see dismissal.js.
+  mixins: [PreviewSurfaceMixin, ElementListMixin, DismissalMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -150,6 +152,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
         ? this.state.elements[0].id
         : null;
       this.previewWidth = DESKTOP_WIDTH;
+      this.rememberOpenedState();
       this.$refs.modalRef?.openModal();
       this.$nextTick(this.renderPreview);
     },
@@ -198,6 +201,13 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     closeModal() {
+      this.resetComposition();
+      this.$refs.modalRef?.closeModal();
+    },
+
+    // Also what the modal calls once dismissed (`on-close`), since a dismissal
+    // closes it without going through closeModal().
+    resetComposition() {
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;
@@ -205,7 +215,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.refusedState = null;
       this.state = emptyState();
       this.selectedId = null;
-      this.$refs.modalRef?.closeModal();
+      this.openedState = '';
     },
   },
   template: MODAL_TEMPLATE,

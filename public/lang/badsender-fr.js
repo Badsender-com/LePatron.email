@@ -359,6 +359,8 @@ module.exports = {
     'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
   'block-builder-rebuilds-markup':
     "Ce bloc a été construit par une version précédente du générateur. L'appliquer le reconstruira avec la version actuelle : son rendu peut légèrement changer.",
+  'block-builder-discard-confirm':
+    'Fermer sans appliquer ? Vos modifications de cette composition seront perdues.',
   'block-builder-too-large':
     "Cette composition est trop volumineuse pour être enregistrée. Retirez des éléments ou raccourcissez les textes avant d'appliquer.",
   'widget-code-disabled':

@@ -350,6 +350,8 @@ module.exports = {
     'Indicative preview — browser rendering, not mail client rendering.',
   'block-builder-rebuilds-markup':
     'This block was built by an earlier version of the builder. Applying will rebuild it with the current one, and its rendering may change slightly.',
+  'block-builder-discard-confirm':
+    'Close without applying? Your changes to this composition will be lost.',
   'block-builder-too-large':
     'This composition is too large to be saved. Remove elements or shorten the texts before applying.',
   'widget-code-disabled':

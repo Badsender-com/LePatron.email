@@ -8,7 +8,11 @@
 //
 // It is read by the component and by nothing else; every binding it names lives
 // there or in one of its mixins.
-module.exports = `<modal-component ref="modalRef" :is-full-width="true">
+module.exports = `<modal-component
+  ref="modalRef"
+  :is-full-width="true"
+  :before-dismiss="confirmDismiss"
+  :on-close="resetComposition">
   <div class="modal-content bb-modal">
     <h5 class="bb-modal__title">{{ vm.t('block-builder-modal-title') }}</h5>
 
