@@ -10,18 +10,12 @@ const {
 } = require('./translation-step.utils.js');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
+const { warningKeysFor } = require('./translation-warnings.js');
 
 // The background half of duplicate + translate: everything that runs after
 // the controller has answered 202 with a job id. Its own module so the
 // controller stays the HTTP surface, and each phase here a function of its
 // own — load, translate, duplicate, preview, complete.
-
-// Warning keys are translated by the frontend
-const WARNING_KEYS = [
-  'translation.warnings.checkLinks',
-  'translation.warnings.checkImages',
-  'translation.warnings.checkVariant',
-];
 
 /**
  * The job's progress and cancellation callbacks, as translateMailing takes
@@ -139,7 +133,7 @@ async function processTranslationAsync(params) {
       folderId: params.folderId,
     });
 
-    const previewGenerated = await storeTranslatedPreview({
+    const preview = await storeTranslatedPreview({
       copyId: duplicatedMailing._id,
       source: source.mailing,
       translatedData: translatedData.data,
@@ -150,11 +144,11 @@ async function processTranslationAsync(params) {
     await translationJobs.setCompleted(jobId, {
       mailingId: duplicatedMailing._id.toString(),
       mailingName: duplicatedMailing.name,
-      previewGenerated,
+      previewGenerated: preview.previewGenerated,
       stats,
       sourceLanguage: translated.sourceLanguage,
       targetLanguage,
-      warningKeys: WARNING_KEYS,
+      warningKeys: warningKeysFor(stats, preview.missedComposedBlocks),
     });
   } catch (error) {
     // Handle cancellation gracefully

@@ -37,7 +37,9 @@ const markupsOf = (data) => findSyntheticBlocks(data).map(htmlOf);
  * @param {Object} params.translatedData the copy's translated `data`
  * @param {Object} params.originalTexts every extracted text, by key
  * @param {Object} params.translations every translation, by key
- * @returns {Promise<string>} the copy's previewHtml, sanitized
+ * @returns {Promise<{ html: string, missedComposedBlocks: number }>} the
+ *   copy's previewHtml, sanitized, and how many rebuilt composed blocks it
+ *   could not place (see swapBuilderMarkup)
  */
 async function buildTranslatedPreview({
   source,
@@ -68,7 +70,7 @@ async function buildTranslatedPreview({
   // the preview would keep showing the source language while the stored
   // block had already moved on.
   const translatedMarkups = markupsOf(translatedData);
-  const previewHtml = await runTranslationStep('swapBuilderMarkup', () =>
+  const swapped = await runTranslationStep('swapBuilderMarkup', () =>
     swapBuilderMarkup(translated, htmlCodes, translatedMarkups)
   );
 
@@ -85,7 +87,7 @@ async function buildTranslatedPreview({
   // zone.
   const sanitized = await runTranslationStep('sanitizePreview', () =>
     transformDocumentKeepingHtmlCodeBlocks(
-      previewHtml,
+      swapped.html,
       sanitizePreviewHtml,
       translatedMarkups
     )
@@ -97,41 +99,44 @@ async function buildTranslatedPreview({
   // is what its multi-mailing ZIP exports. Only while the copy holds an
   // HTML code block, as in the editor's export: without one, the CSS has
   // nothing to style and is left out (head-css-guard.js).
-  return runTranslationStep('injectHeadCss', () =>
+  const html = await runTranslationStep('injectHeadCss', () =>
     injectHeadCss(
       sanitized,
       headCssToExport({ data: translatedData, headCss: source.headCss })
     )
   );
+  return { html, missedComposedBlocks: swapped.missed };
 }
 
 /**
  * Builds the copy's previewHtml and stores it.
  *
- * A failure here is logged and reported as `false`, never thrown: the
- * translated copy already exists, and losing its preview is not a reason to
- * mark the whole job failed.
+ * A failure here is logged and reported as `previewGenerated: false`, never
+ * thrown: the translated copy already exists, and losing its preview is not a
+ * reason to mark the whole job failed.
  *
  * @param {Object} params see buildTranslatedPreview, plus `copyId`
- * @returns {Promise<boolean>} whether a preview was stored
+ * @returns {Promise<{ previewGenerated: boolean,
+ *   missedComposedBlocks: number }>}
  */
 async function storeTranslatedPreview({ copyId, ...params }) {
+  const nothing = { previewGenerated: false, missedComposedBlocks: 0 };
   if (!params.source.previewHtml) {
     logger.log(
       '[Translation] No previewHtml on original mailing, skipping preview update'
     );
-    return false;
+    return nothing;
   }
 
   try {
     logger.log('[Translation] Updating preview HTML via string replacement...');
-    const html = await buildTranslatedPreview(params);
+    const { html, missedComposedBlocks } = await buildTranslatedPreview(params);
     await mailingService.updatePreviewHtml(copyId, html);
     logger.log('[Translation] Preview HTML updated successfully');
-    return true;
+    return { previewGenerated: true, missedComposedBlocks };
   } catch (error) {
     logger.error(`[Translation] Preview update failed: ${error.message}`);
-    return false;
+    return nothing;
   }
 }
 

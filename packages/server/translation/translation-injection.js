@@ -15,6 +15,23 @@ const logger = require('../utils/logger.js');
 // the model, so the generic injector would walk into nothing and report a
 // failure nobody can act on.
 
+// The dropped keys come back from the provider, so neither their number nor
+// their length is ours: a few, cut short, are enough to recognise the pattern.
+const LOGGED_KEYS = 5;
+const LOGGED_KEY_LENGTH = 80;
+
+function sampleOf(keys) {
+  const shown = keys
+    .slice(0, LOGGED_KEYS)
+    .map((key) =>
+      key.length > LOGGED_KEY_LENGTH
+        ? `${key.slice(0, LOGGED_KEY_LENGTH)}…`
+        : key
+    );
+  const more = keys.length - shown.length;
+  return shown.join(', ') + (more > 0 ? ` (+${more} more)` : '');
+}
+
 /**
  * @param {Object} builderStats what injectBuilderTexts reported
  */
@@ -36,7 +53,7 @@ function logBuilderStats(builderStats) {
   if (builderStats.skipped.length > 0) {
     logger.warn(
       `[Translation] ${builderStats.skipped.length} composed-block key(s) dropped: ` +
-        builderStats.skipped.join(', ')
+        sampleOf(builderStats.skipped)
     );
   }
 }

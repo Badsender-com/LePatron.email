@@ -13,9 +13,12 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
+const logger = require('../../../packages/server/utils/logger.js');
 const {
-  swapBuilderMarkup,
+  swapBuilderMarkup: swapWithReport,
 } = require('../../../packages/server/translation/builder-preview-swap.js');
+
+const swapBuilderMarkup = (...args) => swapWithReport(...args).html;
 
 // The zones as the editor export writes them (inject-synthetic-blocks.js).
 const composed = (inner) =>
@@ -92,6 +95,27 @@ describe('swapping the rebuilt markup into the preview', () => {
     const html = '<body>rien a voir</body>';
 
     expect(swapBuilderMarkup(html, [BONJOUR], [HELLO])).toBe(html);
+  });
+
+  // Not finding a zone must not be silent: the preview still shows that
+  // block in the source language.
+  it('counts and logs the blocks it could not place', () => {
+    const html = `<body>${composed(BONJOUR)}</body>`;
+    const other = '<table><tr><td>Autre</td></tr></table>';
+
+    const result = swapWithReport(html, [other, BONJOUR], ['<b>x</b>', HELLO]);
+
+    expect(result.missed).toBe(1);
+    expect(result.html).toBe(`<body>${composed(HELLO)}</body>`);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('1 composed block(s) not found')
+    );
+  });
+
+  it('reports nothing missed when every changed block was placed', () => {
+    const html = composed(BONJOUR);
+
+    expect(swapWithReport(html, [BONJOUR], [HELLO]).missed).toBe(0);
   });
 
   it('does nothing when the markup did not change', () => {

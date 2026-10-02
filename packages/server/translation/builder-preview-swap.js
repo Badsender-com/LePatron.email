@@ -2,6 +2,7 @@
 
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const { findHtmlCodeBlockRanges } = require('./html-code-block-protection.js');
+const logger = require('../utils/logger.js');
 
 // Putting a rebuilt composed block back into previewHtml.
 //
@@ -9,7 +10,7 @@ const { findHtmlCodeBlockRanges } = require('./html-code-block-protection.js');
 // because it answers a different question: those decide what a block SAYS, this
 // decides how the stored preview document is edited. It touches no state, no
 // generator and no element — a string and two lists of markup go in, a string
-// comes out.
+// comes out, with the number of blocks it could not place.
 
 /**
  * Swaps each changed composed block's markup for its rebuilt one, in
@@ -29,16 +30,17 @@ const { findHtmlCodeBlockRanges } = require('./html-code-block-protection.js');
  * marker element and everything around it stay as they are. A changed block
  * whose zone cannot be found is left alone: a preview that keeps one block in
  * the old language is a visible, recoverable problem, and rewriting the wrong
- * range would not be.
+ * range would not be. It is counted, so the user can be told to check it.
  *
  * @param {string} html previewHtml, already translated everywhere else
  * @param {string[]} before every synthetic block's markup as stored before
  *   translation, in document order — the list the protection matched on
  * @param {string[]} after the same blocks' markup after translation
- * @returns {string}
+ * @returns {{ html: string, missed: number }} `missed` counts the changed
+ *   blocks whose zone was not found, and so still show the old markup
  */
 function swapBuilderMarkup(html, before, after) {
-  if (!html || typeof html !== 'string') return html;
+  if (!html || typeof html !== 'string') return { html, missed: 0 };
 
   const stored = before || [];
   const rebuilt = after || [];
@@ -50,7 +52,7 @@ function swapBuilderMarkup(html, before, after) {
           typeof rebuilt[index] === 'string' && rebuilt[index] !== stored[index]
       )
   );
-  if (changed.size === 0) return html;
+  if (changed.size === 0) return { html, missed: 0 };
 
   const zones = findHtmlCodeBlockRanges(html, stored).filter(
     (zone) =>
@@ -66,7 +68,14 @@ function swapBuilderMarkup(html, before, after) {
     cursor = zone.contentEnd;
   });
 
-  return out + html.slice(cursor);
+  const missed = changed.size - zones.length;
+  if (missed > 0) {
+    logger.warn(
+      `[Translation] ${missed} composed block(s) not found in previewHtml: ` +
+        'their preview keeps the source language.'
+    );
+  }
+  return { html: out + html.slice(cursor), missed };
 }
 
 module.exports = { swapBuilderMarkup };
