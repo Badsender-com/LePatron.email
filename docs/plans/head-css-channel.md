@@ -38,6 +38,7 @@ Chemin complet :
 mailing.headCss (Mongo)
   → metadata.headCss           (mailing.schema.js, même canal que htmlBlockEnabled)
   → viewModel.headCss()        (observable, seedé dans template-loader.js)
+  → exportedHeadCss()         (vide si la créa n'a aucun bloc Code HTML)
   → injectHeadCss(...)         (dernière étape de exportHTML)
   → <style> dans le <head>     (ZIP, envoi de test, ESP, previewHtml)
 ```
@@ -45,6 +46,26 @@ mailing.headCss (Mongo)
 Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne l'écrit **que s'il est présent dans la requête** : un bundle éditeur plus ancien, ou la route de métadonnées, ne doit pas effacer une feuille stockée.
 
 ## 4. Décisions
+
+### Le CSS suit les blocs Code HTML, pas le flag
+
+Le CSS n'existe que pour styler du markup collé dans un bloc Code HTML. Ce qui décide s'il part dans l'export, c'est donc la présence d'un tel bloc — vide ou non, dans n'importe quel conteneur de premier niveau (`mainBlocks` ou un autre) — et non le flag du template. Le flag décide seulement de qui peut **écrire** le CSS.
+
+| Flag | Bloc Code HTML dans la créa | CSS stocké | Exporté (export, canvas, copie traduite) | Interface (onglet Style, panneau du bloc)                                                      |
+| ---- | --------------------------- | ---------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| ON   | au moins un                 | oui / non  | oui                                      | « Éditer le CSS », comme avant                                                                 |
+| ON   | aucun                       | oui / non  | **non**                                  | « Éditer le CSS » + mention « non exporté tant que l'email ne contient pas de bloc Code HTML » |
+| OFF  | au moins un                 | oui        | oui                                      | **lecture seule** : « Voir le CSS » → modale sans « Appliquer », avec « Supprimer le CSS »     |
+| OFF  | au moins un                 | non        | —                                        | rien                                                                                           |
+| OFF  | aucun                       | oui / non  | **non**                                  | rien                                                                                           |
+
+- **Retirer le dernier bloc n'efface pas le CSS.** Il reste dans `viewModel.headCss` et sur la créa ; un Ctrl+Z ou un bloc rajouté le fait revenir tel quel. Aucune perte silencieuse.
+- **En lecture seule, le CSS est traité comme le bloc lui-même** : le bloc reste, non éditable, supprimable ; le CSS reste, non éditable, supprimable. « Supprimer » demande confirmation, vide le CSS en un pas annulable, et le serveur l'accepte flag OFF (seul un CSS inchangé ou vidé passe).
+- **Côté éditeur**, la règle vit dans `ext/head-css/exported-css.js` (`hasHtmlCodeBlock`, `headCssToExport`) ; `exportHTML` et l'aperçu canvas lisent tous deux `viewModel.exportedHeadCss()`. L'aperçu passe par un `ko.pureComputed`, disposé avec le plugin, qui ne notifie que si le CSS exporté change.
+- **Côté serveur**, `headCssToExport` (`mailing/head-css-guard.js`, sur `findHtmlCodeBlocks`) applique la même règle au `previewHtml` d'une copie traduite. Un test fait tourner les deux prédicats sur les mêmes jeux de données.
+- Les prédicats de l'interface sont dans `ext/head-css/view-model.js` : `isHeadCssEditable` (flag ON, inchangé), `isHeadCssReadOnly` (flag OFF, CSS non vide, au moins un bloc), `isHeadCssAwaitingBlock` (flag ON, aucun bloc).
+
+### Autres décisions
 
 | Sujet             | Décision                                                                                                                                                                                                                                                                                                                                                                         |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,7 +82,7 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 - **`</style` dans la charge utile est neutralisé** (`<\/style`). Sans ça, un CSS collé pourrait fermer l'élément et ouvrir du markup arbitraire dans l'export. Testé sur toutes les casses.
 - **Le flag est appliqué côté serveur**, pas seulement dans l'UI : la route accepte des requêtes écrites à la main.
-- **Couper le flag après coup** laisse la créa sauvegardable et le CSS effaçable, mais refuse toute écriture nouvelle — un super-admin ne doit pas enfermer un auteur hors de son propre email.
+- **Couper le flag après coup** laisse la créa sauvegardable et le CSS effaçable, mais refuse toute écriture nouvelle — un super-admin ne doit pas enfermer un auteur hors de son propre email. L'éditeur montre alors ce CSS en lecture seule, avec sa suppression, tant qu'il est encore exporté (voir § 4).
 - Le CSS **n'est pas assaini**. C'est assumé, et cohérent avec le bloc Code HTML : la promesse est la fidélité. Le garde-fou est le flag, pas un filtre.
 
 ## 6. Limites connues
@@ -73,10 +94,10 @@ Au retour, le champ est renvoyé avec le contenu à la sauvegarde. Le serveur ne
 
 ## 7. Recette manuelle
 
-Non-régression d'abord, le reste ensuite.
+Non-régression d'abord, le reste ensuite. Les points 3 à 12 supposent une créa contenant au moins un bloc Code HTML : sans bloc, le CSS n'est pas exporté (points 13 et suivants).
 
 1. **Flag OFF, aucune créa touchée** : exporter un email sans CSS → le ZIP est binairement identique à celui d'avant la branche.
-2. Flag OFF → la section « CSS personnalisé » n'apparaît pas dans l'onglet Style.
+2. Flag OFF, sans CSS stocké → la section « CSS personnalisé » n'apparaît pas dans l'onglet Style.
 3. Flag ON → la section apparaît ; le bouton ouvre la modale en coloration CSS.
    3bis. Sélectionner un bloc Code HTML → le panneau offre « Éditer le CSS de l'email » sous le bouton HTML, avec la mention de portée. Les deux entrées ouvrent le même contenu.
    3ter. **Aperçu canvas** : coller `<p class="classred">Coucou</p>` dans un bloc, écrire `.classred{color:red}` dans le CSS, appliquer → le texte passe en rouge **dans l'éditeur**, sans que la toolbox ni les panneaux changent d'aspect.
@@ -87,6 +108,16 @@ Non-régression d'abord, le reste ensuite.
 7. Coller `</style><script>alert(1)</script>` → l'export ne contient pas de `<script>` exécutable, et un seul `</style>`.
 8. Dépasser 20 000 caractères → refus côté éditeur avec message, puis refus serveur si la requête est forcée.
 9. Effacer le CSS et sauvegarder → l'export redevient identique au point 1.
-10. Couper le flag après avoir écrit du CSS → la créa reste sauvegardable, le CSS reste effaçable, mais toute modification est refusée.
+10. Couper le flag après avoir écrit du CSS → la créa reste sauvegardable, le CSS reste effaçable (en lecture seule dans l'éditeur, points 16-17), mais toute modification forcée par requête est refusée.
 11. Modifier un texte, puis appliquer du CSS → un premier Ctrl+Z retire le CSS (le texte reste modifié), un second défait le texte ; Ctrl+Y rétablit le CSS.
 12. Ouvrir la modale du bloc Code HTML après celle du CSS → coloration HTML, limite 100 000, libellés HTML (pas de fuite d'options).
+
+**Le CSS suit les blocs Code HTML** (§ 4) :
+
+13. Flag ON, créa sans bloc Code HTML → la section « CSS personnalisé » est là, éditable, avec la mention « non exporté tant que l'email ne contient pas de bloc Code HTML ». Écrire `.foo{color:red}`, appliquer, exporter → **pas** de `data-lp-head-css` dans le `<head>`, et rien dans le canvas.
+14. Ajouter un bloc Code HTML → la mention disparaît, le CSS s'applique dans le canvas, l'export contient le `<style data-lp-head-css="true">`.
+15. Supprimer ce bloc (le dernier) → le CSS disparaît du canvas et de l'export ; rouvrir « Éditer le CSS » → le CSS est toujours là, intact. Ctrl+Z → le bloc revient, le CSS aussi (canvas et export). Sauvegarder sans bloc, recharger → le CSS est toujours stocké.
+16. Flag OFF, créa avec un bloc Code HTML et du CSS stocké → onglet Style et panneau du bloc : « Voir le CSS » et la phrase « le template ne permet plus de modifier… ». La modale s'ouvre en lecture seule : pas d'« Appliquer », saisie impossible, sélection/copie possible, bouton « Fermer ». L'export contient toujours le CSS.
+17. Dans cette modale, « Supprimer le CSS » → confirmation ; « Annuler » dans la confirmation → rien ne change. Confirmer → la section disparaît, l'export ne contient plus le CSS ; sauvegarder → accepté. Ctrl+Z avant de sauvegarder → le CSS revient.
+18. Flag OFF, créa avec du CSS stocké mais sans bloc Code HTML → aucune section, rien dans l'export ; le CSS reste en base (vérifier `mailing.headCss`).
+19. Dupliquer-traduire une créa flag ON avec CSS mais sans bloc Code HTML → le `previewHtml` de la copie (et son ZIP multi-créas) ne contient pas le CSS ; avec un bloc, il le contient.
