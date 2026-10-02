@@ -29,17 +29,20 @@ module.exports = `<modal-component
     <div class="bb-modal__layout">
       <div class="bb-modal__column bb-modal__column--left">
         <p class="bb-modal__section">{{ vm.t('block-builder-add') }}</p>
-        <button
+        <div
           v-for="item in palette"
           :key="item.type"
-          type="button"
+          role="button"
+          tabindex="0"
           class="bb-modal__add"
           :class="{ 'bb-modal__add--dragging': draggingType === item.type }"
           draggable="true"
           @dragstart="handleDragStart(item.type, $event)"
           @drag="handleDrag"
           @dragend="handleDragEnd"
-          @click.prevent="addElement(item.type)">+ {{ vm.t(item.labelKey) }}</button>
+          @click="addElement(item.type)"
+          @keydown="onPaletteKeydown($event, item.type)"
+          @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
 
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
         <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>

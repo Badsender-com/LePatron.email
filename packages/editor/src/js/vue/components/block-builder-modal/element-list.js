@@ -69,6 +69,25 @@ const ElementListMixin = {
       this.insertElement(type, this.state.elements.length);
     },
 
+    // A palette entry is a `div role="button"`, not a <button>: Firefox does
+    // not start a native drag from a <button draggable>. So it does by hand
+    // what a <button> does for free — Enter on keydown, Space on keyup, and
+    // Space's keydown cancelled so the column does not scroll under it.
+    onPaletteKeydown(event, type) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.addElement(type);
+      } else if (event.key === ' ') {
+        event.preventDefault();
+      }
+    },
+
+    onPaletteKeyup(event, type) {
+      if (event.key !== ' ') return;
+      event.preventDefault();
+      this.addElement(type);
+    },
+
     insertElement(type, index) {
       if (!PALETTE.some((item) => item.type === type)) return null;
 

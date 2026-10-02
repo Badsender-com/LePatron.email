@@ -83,6 +83,68 @@ describe('the element list', () => {
   });
 });
 
+// A palette entry is a div with role="button", because Firefox does not start a
+// native drag from a <button draggable>. That costs it everything a <button>
+// does by itself, which is what is pinned here.
+describe('the palette entries', () => {
+  const entries = () => Array.from(document.querySelectorAll('.bb-modal__add'));
+  const typesOf = (modal) =>
+    modal.state.elements.map((element) => element.type);
+
+  function key(target, type, name) {
+    const event = new window.KeyboardEvent(type, {
+      key: name,
+      bubbles: true,
+      cancelable: true,
+    });
+    target.dispatchEvent(event);
+    return event;
+  }
+
+  it('are buttons that Tab reaches, and that can be dragged', async () => {
+    await openWith([]);
+
+    expect(entries()).toHaveLength(5);
+    entries().forEach((entry) => {
+      expect(entry.tagName).not.toBe('BUTTON');
+      expect(entry.getAttribute('role')).toBe('button');
+      expect(entry.getAttribute('tabindex')).toBe('0');
+      expect(entry.getAttribute('draggable')).toBe('true');
+    });
+  });
+
+  it('add on Enter, as a button does on keydown', async () => {
+    const modal = await openWith([]);
+
+    const event = key(entries()[1], 'keydown', 'Enter');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(typesOf(modal)).toEqual(['image']);
+  });
+
+  // Space activates on release, and its keydown would scroll the column.
+  it('add on Space when it is released, not when it is pressed', async () => {
+    const modal = await openWith([]);
+
+    const down = key(entries()[2], 'keydown', ' ');
+    expect(down.defaultPrevented).toBe(true);
+    expect(typesOf(modal)).toEqual([]);
+
+    key(entries()[2], 'keyup', ' ');
+    expect(typesOf(modal)).toEqual(['button']);
+  });
+
+  it('ignore other keys, and still add on a click', async () => {
+    const modal = await openWith([]);
+
+    key(entries()[0], 'keydown', 'a');
+    key(entries()[0], 'keyup', 'Enter');
+    entries()[3].click();
+
+    expect(typesOf(modal)).toEqual(['divider']);
+  });
+});
+
 describe('the reorder buttons', () => {
   const buttons = () =>
     Array.from(document.querySelectorAll('.bb-modal__actions button'));
