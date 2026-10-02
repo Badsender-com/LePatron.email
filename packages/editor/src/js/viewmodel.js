@@ -24,9 +24,7 @@ const {
 const {
   injectHeadCss,
 } = require('../../../shared/head-css/inject-head-css.js');
-const {
-  HEAD_CSS_MAX_LENGTH,
-} = require('../../../shared/head-css/constants.js');
+const { addHeadCssToViewModel } = require('./ext/head-css/view-model.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -367,38 +365,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     });
   };
 
-  // Stylesheet injected into the <head> of every export this editor produces.
-  // Lives on the mailing rather than in the content model: Mosaico's checkModel
-  // splices out any property the block definitions do not declare. Seeded from
-  // `metadata.headCss` once the mailing is loaded (template-loader.js) and sent
-  // back with the content on save (ext/badsender-server-storage.js).
-  viewModel.headCss = ko.observable('');
-
-  // Whether the author may edit the head CSS: the one place the editor decides
-  // it, read by both entry points (toolbox.tmpl.html, badsender-widget-code.js)
-  // and by openHeadCssEditor below. Same template flag as the HTML code block,
-  // for the reasons in packages/server/mailing/head-css-guard.js, whose
-  // isHeadCssEnabled is the server's counterpart. `metadata` is assigned after
-  // this function runs (template-loader.js), hence the lazy read.
-  viewModel.isHeadCssEditable = function () {
-    return Boolean(viewModel.metadata && viewModel.metadata.htmlBlockEnabled);
-  };
-
-  // Opens the shared CodeMirror modal on the stylesheet instead of a block
-  // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
-  // guarded because the palette button exists before Vue has bound.
-  viewModel.openHeadCssEditor = function () {
-    if (!viewModel.isHeadCssEditable()) return;
-    if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
-    viewModel.toggleHtmlCodeModal(true, {
-      accessor: viewModel.headCss,
-      mode: 'css',
-      titleKey: 'head-css-modal-title',
-      placeholderKey: 'head-css-placeholder',
-      tooLargeKey: 'head-css-too-large',
-      maxLength: HEAD_CSS_MAX_LENGTH,
-    });
-  };
+  // The head CSS, its predicates and its editor: ext/head-css/view-model.js.
+  addHeadCssToViewModel(viewModel);
 
   // toggleTranslateBlockModal will be set by the Vue component
   viewModel.toggleTranslateBlockModal = ko.observable(null);

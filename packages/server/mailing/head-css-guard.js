@@ -41,7 +41,8 @@ function validateHeadCss(css, maxLength) {
 /**
  * Whether the template lets its mailings carry head CSS. The one server-side
  * place that knows which flag gates it; the editor's counterpart is
- * `viewModel.isHeadCssEditable` (viewmodel.js).
+ * `viewModel.isHeadCssEditable`
+ * (packages/editor/src/js/ext/head-css/view-model.js).
  *
  * @param {{ htmlBlockEnabled?: boolean }|null} [template]
  * @returns {boolean}

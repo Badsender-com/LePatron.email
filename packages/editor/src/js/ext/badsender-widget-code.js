@@ -17,7 +17,8 @@
 // to make it responsive. Two entry points, one value: both open the same editor
 // on the same observable. The hint under the button says the scope is the whole
 // email, so nobody expects it to be per-block. Whether it shows is
-// `viewModel.isHeadCssEditable`'s call (viewmodel.js), as for the Style tab.
+// `viewModel.isHeadCssEditable`'s call (ext/head-css/view-model.js), as for
+// the Style tab.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
