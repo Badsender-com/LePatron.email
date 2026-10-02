@@ -38,7 +38,8 @@ function collectBlocks(viewModel) {
 function buildContext(viewModel, html) {
   const blocks = collectBlocks(viewModel);
   const blockIds = new Set(blocks.map((block) => block && block.id));
-  // An inert document: unlike $.parseHTML, DOMParser never fetches the images.
+  // A document of its own, inert: DOMParser keeps the whole page the export
+  // ships (html, head and body included) and loads or runs nothing of it.
   const doc = new DOMParser().parseFromString(html, 'text/html');
 
   return {
