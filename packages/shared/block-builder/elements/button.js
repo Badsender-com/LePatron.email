@@ -20,6 +20,7 @@
 // minimum the design rules ask for.
 
 const { defineTemplate } = require('../template.js');
+const { defaultsOf } = require('../manifest.js');
 
 // The markup is not written here any more. It is compiled from
 // components/button.vue by `yarn block-builder:compile`, so the people who own
@@ -34,22 +35,7 @@ const render = defineTemplate(
   require('../components/button.compiled.js').default
 );
 
-const defaults = {
-  label: '',
-  href: '',
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  borderRadius: 4,
-  fontFamily: 'Arial, Helvetica, sans-serif',
-  fontSize: 16,
-  lineHeight: 20,
-  verticalPadding: 14,
-  horizontalPadding: 28,
-  align: 'center',
-  paddingTop: 8,
-  paddingRight: 24,
-  paddingBottom: 8,
-  paddingLeft: 24,
-};
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(require('../components/button.slots.js'));
 
 module.exports = { type: 'button', render, defaults };

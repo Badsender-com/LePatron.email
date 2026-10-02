@@ -7,12 +7,12 @@
 
 module.exports = {
   slots: {
-    color: { context: 'COLOR', fallback: '#cccccc' },
-    thickness: { context: 'PX', fallback: '1' },
-    width: { context: 'CSS_VALUE', fallback: '100%' },
-    paddingTop: { context: 'PX', fallback: '8' },
-    paddingRight: { context: 'PX', fallback: '24' },
-    paddingBottom: { context: 'PX', fallback: '8' },
-    paddingLeft: { context: 'PX', fallback: '24' },
+    color: { context: 'COLOR', default: '#cccccc' },
+    thickness: { context: 'PX', default: 1 },
+    width: { context: 'CSS_VALUE', default: '100%' },
+    paddingTop: { context: 'PX', default: 8 },
+    paddingRight: { context: 'PX', default: 24 },
+    paddingBottom: { context: 'PX', default: 8 },
+    paddingLeft: { context: 'PX', default: 24 },
   },
 };

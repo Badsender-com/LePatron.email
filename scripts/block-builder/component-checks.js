@@ -7,6 +7,29 @@
 // would be an email that looks wrong in production.
 
 /**
+ * A default of the type the generator and the editor expect.
+ *
+ * The editor coerces a stored value to the type of its default, and the
+ * templates format what they are given: a string size lands in arithmetic, a
+ * number label breaks a `slice`. So the type is part of the contract, not a
+ * detail of the literal.
+ */
+function checkDefault(where, slot) {
+  if (slot.context === 'PX') {
+    if (!Number.isInteger(slot.default)) {
+      throw new Error(`${where} is PX: its default must be an integer.`);
+    }
+  } else if (typeof slot.default !== 'string') {
+    throw new Error(
+      `${where} is ${slot.context}: its default must be a string.`
+    );
+  }
+  if (slot.fallback !== undefined && typeof slot.fallback !== 'string') {
+    throw new Error(`${where}: a fallback, when given, must be a string.`);
+  }
+}
+
+/**
  * Every prop must be declared, and every declared prop must carry a context the
  * engine knows. A prop nobody declared would otherwise render a sentinel into
  * the shipped HTML, or — worse — reach the output with no escaping at all.
@@ -28,6 +51,7 @@ function checkManifest(name, manifest) {
         `${name}.slots.js: slot "${slotName}" declares no context.`
       );
     }
+    checkDefault(`${name}.slots.js: slot "${slotName}"`, slot);
   });
 
   // A component with no variants compiles to one template. With variants it

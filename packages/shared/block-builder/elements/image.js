@@ -15,6 +15,7 @@
 // field would bypass that — a point for whoever wires the panel.
 
 const { defineTemplate } = require('../template.js');
+const { defaultsOf } = require('../manifest.js');
 
 // The markup is not written here any more. It is compiled from
 // components/image.vue by `yarn block-builder:compile`, so the people who own
@@ -44,16 +45,7 @@ function render(values) {
 render.slots = renderLinked.slots;
 render.variants = { plain: renderPlain, linked: renderLinked };
 
-const defaults = {
-  src: '',
-  alt: '',
-  href: '',
-  width: 600,
-  align: 'center',
-  paddingTop: 0,
-  paddingRight: 0,
-  paddingBottom: 0,
-  paddingLeft: 0,
-};
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(require('../components/image.slots.js'));
 
 module.exports = { type: 'image', render, defaults };

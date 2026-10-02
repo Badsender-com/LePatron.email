@@ -4,18 +4,18 @@
 
 module.exports = {
   slots: {
-    content: { context: 'RICH_TEXT' },
-    align: { context: 'ATTR', fallback: 'left' },
+    content: { context: 'RICH_TEXT', default: '' },
+    align: { context: 'ATTR', default: 'left' },
     fontFamily: {
       context: 'CSS_VALUE',
-      fallback: 'Arial, Helvetica, sans-serif',
+      default: 'Arial, Helvetica, sans-serif',
     },
-    fontSize: { context: 'PX', fallback: '14' },
-    lineHeight: { context: 'PX', fallback: '21' },
-    color: { context: 'COLOR', fallback: '#000000' },
-    paddingTop: { context: 'PX', fallback: '0' },
-    paddingRight: { context: 'PX', fallback: '0' },
-    paddingBottom: { context: 'PX', fallback: '0' },
-    paddingLeft: { context: 'PX', fallback: '0' },
+    fontSize: { context: 'PX', default: 14 },
+    lineHeight: { context: 'PX', default: 21 },
+    color: { context: 'COLOR', default: '#000000' },
+    paddingTop: { context: 'PX', default: 8 },
+    paddingRight: { context: 'PX', default: 24 },
+    paddingBottom: { context: 'PX', default: 8 },
+    paddingLeft: { context: 'PX', default: 24 },
   },
 };

@@ -12,6 +12,7 @@
 // escape — see rich-text.js.
 
 const { defineTemplate } = require('../template.js');
+const { defaultsOf } = require('../manifest.js');
 
 // The markup is not written here any more. It is compiled from
 // components/text.vue by `yarn block-builder:compile`, so the people who own the
@@ -25,17 +26,7 @@ const render = defineTemplate(
   require('../components/text.compiled.js').default
 );
 
-const defaults = {
-  content: '',
-  align: 'left',
-  fontFamily: 'Arial, Helvetica, sans-serif',
-  fontSize: 14,
-  lineHeight: 21,
-  color: '#000000',
-  paddingTop: 8,
-  paddingRight: 24,
-  paddingBottom: 8,
-  paddingLeft: 24,
-};
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(require('../components/text.slots.js'));
 
 module.exports = { type: 'text', render, defaults };

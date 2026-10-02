@@ -31,6 +31,16 @@ function sfc({ template, slots, variants, script, extra = '' }) {
   return `${scriptBlock}<template>\n${template}\n</template>\n${extra}`;
 }
 
+// Every slot needs a default of its context's type; a fixture that is not
+// testing defaults should not have to spell one out.
+const withDefaults = (slots) =>
+  Object.keys(slots).reduce((all, name) => {
+    const slot = slots[name];
+    const fill = slot.context === 'PX' ? 0 : '';
+    all[name] = 'default' in slot ? slot : { ...slot, default: fill };
+    return all;
+  }, {});
+
 /**
  * @param {Object} options see `sfc`
  * @returns {Promise<Object<string, string>>} variant -> compiled template
@@ -39,7 +49,10 @@ function compileFixture(options) {
   return compileSource({
     name: 'fixture',
     source: sfc(options),
-    manifest: { slots: options.slots, variants: options.variants },
+    manifest: {
+      slots: withDefaults(options.slots),
+      variants: options.variants,
+    },
   });
 }
 

@@ -5,5 +5,5 @@
 // the component and fails on any difference.
 'use strict';
 module.exports = {
-  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"[[align|ATTR|left]]\" style=\"padding:[[paddingTop|PX|0]]px [[paddingRight|PX|0]]px [[paddingBottom|PX|0]]px [[paddingLeft|PX|0]]px; font-family:[[fontFamily|CSS_VALUE|Arial, Helvetica, sans-serif]]; font-size:[[fontSize|PX|14]]px; line-height:[[lineHeight|PX|21]]px; color:[[color|COLOR|#000000]]; mso-line-height-rule:exactly;\">[[content|RICH_TEXT|]]</td></tr></table>"
+  "default": "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td align=\"[[align|ATTR|left]]\" style=\"padding:[[paddingTop|PX|8]]px [[paddingRight|PX|24]]px [[paddingBottom|PX|8]]px [[paddingLeft|PX|24]]px; font-family:[[fontFamily|CSS_VALUE|Arial, Helvetica, sans-serif]]; font-size:[[fontSize|PX|14]]px; line-height:[[lineHeight|PX|21]]px; color:[[color|COLOR|#000000]]; mso-line-height-rule:exactly;\">[[content|RICH_TEXT|]]</td></tr></table>"
 };

@@ -4,6 +4,6 @@
 
 module.exports = {
   slots: {
-    height: { context: 'PX', fallback: '24' },
+    height: { context: 'PX', default: 24 },
   },
 };

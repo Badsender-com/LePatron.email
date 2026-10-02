@@ -4,6 +4,10 @@ const postcss = require('postcss');
 const tailwind = require('tailwindcss');
 const juice = require('juice');
 
+const {
+  fallbackOf,
+} = require('../../packages/shared/block-builder/manifest.js');
+
 // Everything that happens to the markup between Vue and the committed file.
 //
 // Split out of the compiler because that script was past the three hundred
@@ -34,8 +38,7 @@ const sentinelFor = (name) =>
  * @returns {string}
  */
 function placeholderFor(name, slot) {
-  const fallback = slot.fallback === undefined ? '' : String(slot.fallback);
-  return `[[${name}|${slot.context}|${fallback}]]`;
+  return `[[${name}|${slot.context}|${fallbackOf(slot)}]]`;
 }
 
 // Outlook's conditional comments, in their three spellings:

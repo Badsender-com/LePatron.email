@@ -8,6 +8,7 @@
 // collapsing an empty cell altogether.
 
 const { defineTemplate } = require('../template.js');
+const { defaultsOf } = require('../manifest.js');
 
 // The markup is not written here any more. It is compiled from
 // components/spacer.vue by `yarn block-builder:compile`, so the people who own the
@@ -21,6 +22,7 @@ const render = defineTemplate(
   require('../components/spacer.compiled.js').default
 );
 
-const defaults = { height: 24 };
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(require('../components/spacer.slots.js'));
 
 module.exports = { type: 'spacer', render, defaults };
