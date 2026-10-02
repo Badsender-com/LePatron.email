@@ -1,6 +1,10 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
-const { ElementSettingsComponent, LABEL_KEYS } = require('./element-settings');
+const {
+  ElementSettingsComponent,
+  LABEL_KEYS,
+  STARTERS,
+} = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
@@ -95,9 +99,20 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     // What the preview renders. Same markup plus the ids the selection and the
-    // drag need — they never leave this iframe.
+    // drag need, and the greyed starter of each element still blank — none of
+    // which leaves this iframe.
     previewMarkup() {
-      return generate(this.state, { elementIds: true });
+      return generate(this.state, {
+        elementIds: true,
+        starters: this.previewStarters,
+      });
+    },
+    previewStarters() {
+      return Object.keys(STARTERS).reduce((starters, type) => {
+        const { key, labelKey } = STARTERS[type];
+        starters[type] = { key, text: this.vm.t(labelKey) };
+        return starters;
+      }, {});
     },
     isEmpty() {
       return this.state.elements.length === 0;

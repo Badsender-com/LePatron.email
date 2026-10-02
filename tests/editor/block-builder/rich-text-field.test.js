@@ -145,3 +145,41 @@ describe('moving the selection to another text', () => {
     expect(editor.undoManager.clear).toHaveBeenCalled();
   });
 });
+
+// TinyMCE 4.5 has no placeholder setting, so the field draws one itself, off
+// its value — the editor keeps a bogus <br> in an empty body, which `:empty`
+// would never match.
+describe('the placeholder on the TinyMCE field', () => {
+  const field = () => document.querySelector('.bb-rich__field');
+  const blank = () =>
+    document.querySelector('.bb-rich').classList.contains('bb-rich--blank');
+
+  it('carries the starter for the CSS to draw, and for assistive tech', async () => {
+    await mountPanel(text('a', ''));
+
+    expect(field().getAttribute('data-placeholder')).toBe(
+      'block-builder-starter-text'
+    );
+    expect(field().getAttribute('aria-placeholder')).toBe(
+      'block-builder-starter-text'
+    );
+    expect(blank()).toBe(true);
+  });
+
+  it('shows while only an emptied line break is left', async () => {
+    await mountPanel(text('a', '<br>'));
+
+    expect(blank()).toBe(true);
+  });
+
+  it('goes as soon as something is typed', async () => {
+    await mountPanel(text('a', ''));
+    const [editor] = window.tinymce.editors;
+
+    editor.content = 'B';
+    editor.fire('input');
+    await Vue.nextTick();
+
+    expect(blank()).toBe(false);
+  });
+});

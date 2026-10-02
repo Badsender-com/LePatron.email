@@ -55,16 +55,11 @@ describe('composing', () => {
     const { modal } = open();
     modal.addElement('text');
     const first = modal.selected.id;
-    const untouched = modal.selected.content;
     modal.addElement('text');
 
     modal.applySetting({ key: 'content', value: 'Second' });
 
-    // Still whatever it held — the seed, here — and certainly not the value
-    // written into its neighbour.
-    expect(modal.state.elements.find((e) => e.id === first).content).toBe(
-      untouched
-    );
+    expect(modal.state.elements.find((e) => e.id === first).content).toBe('');
     expect(modal.selected.content).toBe('Second');
   });
 

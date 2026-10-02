@@ -155,29 +155,6 @@ describe('none of the drag chrome reaches the block', () => {
   });
 });
 
-describe('a dropped element says something', () => {
-  // An element that renders nothing appears nowhere — which is exactly how
-  // "I added a text and saw nothing" was reported.
-  it.each([
-    ['text', 'content', 'block-builder-seed-text'],
-    ['button', 'label', 'block-builder-seed-button'],
-  ])('seeds a %s', async (type, key, translation) => {
-    const { modal } = await openModal([]);
-
-    modal.addElement(type);
-
-    expect(modal.selected[key]).toBe(translation);
-  });
-
-  it('leaves the image empty', async () => {
-    const { modal } = await openModal([]);
-
-    modal.addElement('image');
-
-    expect(modal.selected.src).toBe('');
-  });
-});
-
 describe('clicking the palette still works', () => {
   it('appends, and selects what it appended', async () => {
     const { modal } = await openModal(['text']);

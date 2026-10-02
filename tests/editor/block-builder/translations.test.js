@@ -9,7 +9,6 @@ const {
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-settings.js');
 const {
   PALETTE,
-  SEED_KEYS,
 } = require('../../../packages/editor/src/js/vue/components/block-builder-modal/element-list.js');
 const MODAL_TEMPLATE = require('../../../packages/editor/src/js/vue/components/block-builder-modal/modal-template.js');
 const fr = require('../../../public/lang/badsender-fr.js');
@@ -22,11 +21,9 @@ const templateKeys = Array.from(
   (match) => match[1]
 );
 
-// Strings written into the preview iframe or into a new element, rather than
-// through the template.
-const scriptKeys = Object.values(SEED_KEYS)
-  .map((seed) => seed.label)
-  .concat(['block-builder-drop-here']);
+// Strings written into the preview iframe, rather than through the template.
+// The starters are in LABEL_KEYS, which the modal resolves for both places.
+const scriptKeys = ['block-builder-drop-here'];
 
 const keys = Array.from(
   new Set(

@@ -2,6 +2,7 @@
 
 const {
   ELEMENT_ATTRIBUTE,
+  STARTER_ATTRIBUTE,
 } = require('../../../../../../shared/block-builder/generate.js');
 
 // The preview: an iframe that shows the block, and the surface the user edits on.
@@ -59,12 +60,18 @@ const PREVIEW_READY_EVENT = 'preview-document-ready';
 // The insertion line is an inset box-shadow rather than a border: a border
 // would change the row's height mid-drag and make the rows shift under the
 // cursor.
+//
+// A starter — the words a blank element shows here and nowhere else — is
+// faded so it reads as a placeholder, not as content. Opacity rather than a
+// colour, because it has to work on the button too: at 0.6, black text on white
+// comes out #666 (5.7:1), and the default button's white on black the same.
 const PREVIEW_DOCUMENT = [
   '<!DOCTYPE html><html><head><meta charset="utf-8" /><style>',
   'body{margin:0;padding:0;background:#ffffff;}',
   'table{border-collapse:collapse;}',
   'img{max-width:100%;}',
   `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;min-height:24px;}`,
+  `[${STARTER_ATTRIBUTE}]>table{opacity:0.6;}`,
   `[${ELEMENT_ATTRIBUTE}].${SELECTED_CLASS}{`,
   'outline:2px solid #00acdc;outline-offset:-2px;}',
   // While dragging, every row shows where it begins and ends, so the insertion

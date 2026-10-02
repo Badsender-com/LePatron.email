@@ -40,22 +40,6 @@ function plainTextOf(html) {
   return (text || '').replace(/\s+/g, ' ').trim();
 }
 
-// What a brand new element says before anyone types into it.
-//
-// Here and not in the generator's defaults, on purpose: those defaults are the
-// fallback for a stored state that is missing a key, so seeding them would put
-// the placeholder back into a text the user had deliberately emptied, on every
-// reload.
-//
-// An element that renders nothing appears nowhere — that is the whole reason
-// this exists. The image has no seed because there is nothing honest to put in
-// it; the preview's `min-height` keeps its slot visible and clickable until a
-// picture is chosen.
-const SEED_KEYS = {
-  text: { key: 'content', label: 'block-builder-seed-text' },
-  button: { key: 'label', label: 'block-builder-seed-button' },
-};
-
 const ElementListMixin = {
   data: () => ({ palette: PALETTE }),
   computed: {
@@ -78,14 +62,6 @@ const ElementListMixin = {
       return name;
     },
 
-    // Builds an element, seeded so it is visible the moment it lands.
-    buildElement(type) {
-      const element = { id: newElementId(), type, ...defaultsFor(type) };
-      const seed = SEED_KEYS[type];
-      if (seed) element[seed.key] = this.vm.t(seed.label);
-      return element;
-    },
-
     // Clicking a palette entry appends. It stays alongside the drag: it is the
     // quick path, it is what a keyboard reaches, and it is the fallback when a
     // drag is dropped somewhere that refuses it.
@@ -96,7 +72,10 @@ const ElementListMixin = {
     insertElement(type, index) {
       if (!PALETTE.some((item) => item.type === type)) return null;
 
-      const element = this.buildElement(type);
+      // Blank, as its defaults have it. What the preview shows in a blank
+      // element is a starter drawn there and nowhere else (see STARTERS in
+      // element-settings.js): nothing the user did not type reaches the state.
+      const element = { id: newElementId(), type, ...defaultsFor(type) };
       const at = Math.max(0, Math.min(index, this.state.elements.length));
       this.state.elements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
@@ -166,4 +145,4 @@ const ElementListMixin = {
   },
 };
 
-module.exports = { ElementListMixin, PALETTE, SEED_KEYS };
+module.exports = { ElementListMixin, PALETTE };

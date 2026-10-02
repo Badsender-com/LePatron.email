@@ -18,6 +18,17 @@ const Vue = require('vue/dist/vue.common');
 // just for a list of six tags, and the pairing is checked by a test.
 const VALID_ELEMENTS = 'strong/b,em/i,u,a[href],br';
 
+// TinyMCE 4.5 has no placeholder setting (it came with 5.2), so the field draws
+// its own: a class while the value is blank, and the words through CSS
+// (`attr(data-placeholder)`). Read off the value rather than the editor's DOM,
+// which keeps a bogus `<br>` in an empty body and defeats `:empty`.
+const isBlank = (value) =>
+  !value ||
+  value
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;|\u00a0/g, ' ')
+    .trim() === '';
+
 const getTinyMce = () =>
   typeof window !== 'undefined' ? window.tinymce : null;
 
@@ -29,6 +40,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
     // The id of the panel's label for this field; there is no <input> for a
     // <label for> to point at.
     labelledby: { type: String, default: null },
+    placeholder: { type: String, default: null },
   },
   data: () => ({
     editorId: `bb-rich-${++sequence}`,
@@ -113,7 +125,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
       this.$emit('input', event.target.value);
     },
   },
-  template: `<div class="bb-rich">
+  template: `<div class="bb-rich" :class="{ 'bb-rich--blank': showsPlaceholder }">
   <div
     v-if="editor !== null || hasTinyMce"
     ref="field"
@@ -121,6 +133,8 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
     role="textbox"
     aria-multiline="true"
     :aria-labelledby="labelledby"
+    :aria-placeholder="placeholder"
+    :data-placeholder="placeholder"
     class="bb-rich__field"></div>
   <textarea
     v-else
@@ -128,12 +142,16 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
     class="bb-rich__field bb-rich__field--plain"
     rows="4"
     :aria-labelledby="labelledby"
+    :placeholder="placeholder"
     :value="value"
     @input="onFallbackInput"></textarea>
 </div>`,
   computed: {
     hasTinyMce() {
       return Boolean(getTinyMce());
+    },
+    showsPlaceholder() {
+      return Boolean(this.placeholder) && isBlank(this.value);
     },
   },
 });

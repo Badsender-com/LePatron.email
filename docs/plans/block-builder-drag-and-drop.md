@@ -167,6 +167,12 @@ répond sans ambiguïté. Jamais de reflow en direct — coûteux, et ça cligno
 placeholder, un libellé de bouton). C'est ce qui manque le plus à la version
 actuelle : un élément ajouté n'apparaît nulle part tant qu'il est vide.
 
+> **Décision produit (02/10) : l'amorce est un affichage d'aperçu, jamais un
+> contenu.** Elle n'est pas écrite dans l'état de composition et n'atteint
+> jamais l'email : un élément laissé vide n'exporte rien. L'aperçu la dessine
+> grisée (option `starters` du générateur, demandée par l'aperçu seul, comme
+> `elementIds`), et le champ de réglage l'affiche en placeholder.
+
 Le clic sur un élément de palette **continue d'ajouter en fin de liste** : c'est
 le chemin rapide, l'accessibilité clavier, et le filet si le drag échoue. Stripo
 fait de même, et le POC de mars aussi (« Click to add works alongside drag &
