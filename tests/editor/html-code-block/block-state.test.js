@@ -3,6 +3,7 @@
 const ko = require('knockout');
 const {
   isSyntheticBlock,
+  isComposedBlock,
   isEmptySyntheticBlock,
 } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
 
@@ -53,6 +54,32 @@ describe('isSyntheticBlock', () => {
     expect(isSyntheticBlock({})).toBe(false);
     expect(isSyntheticBlock(ko.observable(null))).toBe(false);
     expect(isSyntheticBlock(ko.observable(undefined))).toBe(false);
+  });
+});
+
+describe('isComposedBlock', () => {
+  const composed = () =>
+    ko.observable({
+      type: ko.observable('blockBuilderBlock'),
+      builderHtml: ko.observable(''),
+    });
+
+  it('recognises the composed block, wrapped or not', () => {
+    expect(isComposedBlock(composed())).toBe(true);
+    expect(isComposedBlock({ type: 'blockBuilderBlock' })).toBe(true);
+  });
+
+  // Its twin shares every predicate above; the canvas entry points to the
+  // builder must not open it on pasted markup.
+  it('rejects the HTML code block', () => {
+    expect(isComposedBlock(wrappedBlock(''))).toBe(false);
+    expect(isComposedBlock(plainBlock(''))).toBe(false);
+  });
+
+  it('rejects template blocks and malformed input', () => {
+    expect(isComposedBlock({ type: 'textBlock' })).toBe(false);
+    expect(isComposedBlock(null)).toBe(false);
+    expect(isComposedBlock(ko.observable(undefined))).toBe(false);
   });
 });
 

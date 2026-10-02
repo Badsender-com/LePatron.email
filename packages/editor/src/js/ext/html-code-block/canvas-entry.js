@@ -1,6 +1,8 @@
 'use strict';
 
-const { isSyntheticBlock } = require('./block-state.js');
+const ko = require('knockout');
+const { BLOCK_BUILDER_BLOCK } = require('./block-types.js');
+const { isSyntheticBlock, isComposedBlock } = require('./block-state.js');
 
 // The ways into a synthetic block from the canvas, used by
 // block-wysiwyg.tmpl.html.
@@ -13,6 +15,10 @@ const { isSyntheticBlock } = require('./block-state.js');
 // `doNotSelect`), so the very next click, the one meant to edit it, changed
 // nothing at all. Template blocks keep Mosaico's rule: their text is edited in
 // place, and the panel jumping on every click would be noise.
+//
+// The composed block also opens from the canvas, by double click or from its
+// hover toolbar. The HTML code block does not: it has no such entry point yet,
+// and adding one is a separate decision.
 
 // Order of the tabs in toolbox.tmpl.html: Blocks, Content, Style.
 const CONTENT_TOOL = 1;
@@ -41,6 +47,23 @@ function addCanvasEntryToViewModel(vm) {
   vm.revealBlockSettings = function (block, evt) {
     if (!isSyntheticBlock(block) || startedOnToolbar(evt)) return;
     vm.selectedTool(CONTENT_TOOL);
+  };
+
+  // Through vm.openBlockBuilder, exactly as the panel's button: one way into
+  // the modal, so its guards (the flag, a mounted modal, the accessors) cannot
+  // differ between entry points. In the canvas the block is the binding
+  // context the panel hands to its widget, so the accessor is the same one.
+  vm.composeBlock = function (block) {
+    if (!isComposedBlock(block)) return;
+    vm.openBlockBuilder(BLOCK_BUILDER_BLOCK.htmlProperty, ko.unwrap(block));
+  };
+
+  // A double click lands after the two clicks that already selected the block
+  // and revealed its settings; it goes one step further and opens the builder.
+  // Returns true so the browser's own double-click behaviour is left alone.
+  vm.openBlockFromCanvas = function (block, evt) {
+    if (!startedOnToolbar(evt)) vm.composeBlock(block);
+    return true;
   };
 }
 

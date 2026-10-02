@@ -1,7 +1,11 @@
 'use strict';
 
 const ko = require('knockout');
-const { SYNTHETIC_BLOCKS, descriptorForType } = require('./block-types.js');
+const {
+  SYNTHETIC_BLOCKS,
+  BLOCK_BUILDER_BLOCK,
+  descriptorForType,
+} = require('./block-types.js');
 
 // Predicates about a synthetic block, used by the view-model and the wysiwyg
 // block template.
@@ -37,6 +41,19 @@ function descriptorFor(block) {
  */
 function isSyntheticBlock(block) {
   return descriptorFor(block) !== null;
+}
+
+/**
+ * True for the composed block only — the one the block builder writes.
+ *
+ * Compared by descriptor rather than by type string, so a renamed type cannot
+ * leave this predicate matching nothing.
+ *
+ * @param {Object} block
+ * @returns {boolean}
+ */
+function isComposedBlock(block) {
+  return descriptorFor(block) === BLOCK_BUILDER_BLOCK;
 }
 
 /**
@@ -95,6 +112,7 @@ function paletteIconFor(block) {
 module.exports = {
   descriptorFor,
   isSyntheticBlock,
+  isComposedBlock,
   isEmptySyntheticBlock,
   emptyLabelKeyFor,
   paletteLabelKeyFor,
