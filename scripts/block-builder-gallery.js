@@ -9,8 +9,14 @@
 //
 // The specimens are the review checklist made executable. Each one exists
 // because something about it can break on its own.
+//
+// Dev tooling, so it lives in scripts/ rather than in packages/shared, which
+// ships with the product; build-block-builder-gallery.js is its command.
 
-const { generate, GENERATOR_VERSION } = require('./generate.js');
+const {
+  generate,
+  GENERATOR_VERSION,
+} = require('../packages/shared/block-builder/generate.js');
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ' +

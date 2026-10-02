@@ -12,9 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const {
-  renderGallery,
-} = require('../packages/shared/block-builder/gallery.js');
+const { renderGallery } = require('./block-builder-gallery.js');
 
 const REPO = path.resolve(__dirname, '..');
 

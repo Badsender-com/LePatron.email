@@ -12,9 +12,9 @@ const path = require('path');
 
 const {
   destinationFor,
-} = require('../../../scripts/build-block-builder-gallery.js');
+} = require('../../scripts/build-block-builder-gallery.js');
 
-const REPO = path.resolve(__dirname, '..', '..', '..');
+const REPO = path.resolve(__dirname, '..', '..');
 
 describe('a destination inside the repository', () => {
   it('defaults to the repository root', () => {

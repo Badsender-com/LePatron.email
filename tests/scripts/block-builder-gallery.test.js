@@ -7,10 +7,10 @@
 const {
   renderGallery,
   specimens,
-} = require('../../../packages/shared/block-builder/gallery.js');
+} = require('../../scripts/block-builder-gallery.js');
 const {
   ELEMENTS,
-} = require('../../../packages/shared/block-builder/elements/index.js');
+} = require('../../packages/shared/block-builder/elements/index.js');
 
 describe('specimens', () => {
   it('exercises every element at least once', () => {
