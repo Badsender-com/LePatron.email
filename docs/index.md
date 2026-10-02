@@ -32,6 +32,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
    - Mongoose conventions
    - Logging rules
    - New feature workflow (grill → ADR → epic → tickets → ADR + tests PR)
+   - Parallel work: checking GitHub for overlapping PRs and issues before starting
    - Code review guidelines (CRITICAL → LOW severity)
 
 2. **[AI-POLICIES.md](./AI_POLICIES.md)** - Quality & process

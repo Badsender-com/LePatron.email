@@ -15,6 +15,10 @@ Read `GLOSSARY.md` (if it exists) so test names match the product's vocabulary, 
 - Run one file with `yarn jest <path>`, the whole suite with `yarn test-ci`. Never `yarn test`: it is `jest --watch` and never exits.
 - Prior art: route tests over a real express router with mocked services (`tests/server/ai-skill/routes/`), guard assertions with `tests/helpers/express-router.js`, Vue components with `@vue/test-utils` (`tests/ui/components/`).
 
+## Before starting a ticket
+
+Check that nobody already has it: an assignee on the ticket, or an open PR that references it or touches the same files (`AGENTS.md`, section "Parallel Work"). If someone does, warn the user and wait for their answer. If not, offer to assign the ticket to them before starting, so other sessions skip it.
+
 ## What a good test is
 
 Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification: "a regular user cannot list the mailings of another group" tells you exactly what capability exists, and it survives refactors because it doesn't care about internal structure.

@@ -5,7 +5,7 @@ description: Grill a new feature before any code is written, recording the decis
 
 This is step 1 of the new feature workflow described in `AGENTS.md` (section "New Feature Workflow"). No production code is written during this step.
 
-1. Read `GLOSSARY.md` (if it exists) and the ADRs in `docs/adr/` that touch the area of the feature.
+1. Read `GLOSSARY.md` (if it exists) and the ADRs in `docs/adr/` that touch the area of the feature. Then look for overlapping work as described in `AGENTS.md`, section "Parallel Work": an open PR, an epic or a recently merged change on the same subject is the first thing to put to the user.
 2. Call the Skill tool twice, for "grilling" and "domain-modeling", and run the interview with both disciplines at once.
 3. During the interview, agree on the **seams** the feature will be tested at (the public interfaces: an API route, a service function, a Vue component's props and events). Prefer existing seams and the highest one possible; the fewest seams is best. They become the tests of the first PR.
 4. When the user confirms the shared understanding, make sure the feature has its ADR in `docs/adr/`, with `Status: proposed` and the main design decisions of the feature. A new feature always ends with at least one ADR; the domain-modeling criteria decide which decisions deserve to be in it.

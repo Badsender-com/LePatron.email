@@ -75,6 +75,38 @@ Each step has a skill in `.claude/skills/` (Claude Code invokes them by name; ot
 
 Before exploring the code for any task, read `GLOSSARY.md` (if it exists) and the ADRs in `docs/adr/` that touch the area. Use the glossary's terms in code, tests and issues. If a change contradicts an ADR, say so explicitly instead of silently overriding it.
 
+## Parallel Work
+
+Other people and other agents work on this repository at the same time. Before starting a task (a grilling, a ticket, a fix), and again before opening a PR, look for work that overlaps it:
+
+```bash
+# Open PRs touching the same area (adapt the path pattern)
+gh pr list --state open --limit 50 --json number,title,author,files \
+  --jq '.[] | select(any(.files[].path; test("packages/server/mailing/"))) | "#\(.number) \(.title) (@\(.author.login))"'
+
+# Issues and PRs on the same subject, open or recently closed
+gh issue list --state all --search "<keywords>" --limit 10
+gh pr list --state merged --search "<keywords>" --limit 10
+
+# Other local sessions, and what landed on develop since the branch started
+git worktree list
+git fetch origin develop && git log --oneline HEAD..origin/develop -- <paths>
+```
+
+Nothing found: carry on without comment. Something found: stop, and warn the user in a short block, in their language, before going further:
+
+```
+⚠️ Overlapping work
+- #1138 (open PR, @someone): changes the quality drawer this task touches
+- #1141 (merged yesterday): already fixes the truncated responses
+
+1. Update first? (rebase, pick up their changes, refresh the ticket)
+2. Does it change the decision or the scope of this task?
+3. Wait for #1138 to merge before going further?
+```
+
+Each question gets the user's answer; do not settle them yourself. Never edit, comment on or close someone else's issue or PR without being asked.
+
 ## Code Conventions
 
 ### General

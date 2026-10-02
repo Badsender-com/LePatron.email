@@ -17,6 +17,8 @@ Work from whatever is already in the conversation. If the user passes an epic nu
 
 If you have not already explored the code, do so. Ticket titles and descriptions use the vocabulary of `GLOSSARY.md` and respect the ADRs in `docs/adr/`.
 
+Check for overlapping work (`AGENTS.md`, section "Parallel Work"): a ticket that an open PR already covers is either dropped or blocked by that PR, and the user decides which.
+
 Look for opportunities to prefactor the code to make the implementation easier. "Make the change easy, then make the easy change."
 
 ### 3. Draft vertical slices
