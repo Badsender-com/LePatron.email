@@ -35,11 +35,12 @@
 //     they need a media query in the document head, and that channel is not
 //     wired to the generator yet.
 //
-// Note on `text-decoration`, which is written inline rather than taken from
-// Tailwind's `no-underline`: Tailwind 3 emits `text-decoration-line: none`,
-// and the older Outlook builds do not honour that longhand. The shorthand is
-// the one that works everywhere, so it stays hand-written. A reminder that on
-// primitives this low, Tailwind earns its place one utility at a time.
+// Note on `text-decoration`: stock Tailwind 3's `no-underline` emits
+// `text-decoration-line: none`, a longhand the older Outlook builds ignore.
+// The email config (scripts/block-builder/tailwind.config.js) redefines it as
+// the shorthand and the build refuses the longhand, but this one predates that
+// and is written inline either way. On primitives this low, Tailwind earns its
+// place one utility at a time.
 defineProps({
   label: String,
   href: String,

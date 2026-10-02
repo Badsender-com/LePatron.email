@@ -1,9 +1,5 @@
 'use strict';
 
-const postcss = require('postcss');
-const tailwind = require('tailwindcss');
-const juice = require('juice');
-
 const {
   fallbackOf,
 } = require('../../packages/shared/block-builder/manifest.js');
@@ -67,42 +63,6 @@ function stripComments(html) {
 }
 
 /**
- * Resolves the Tailwind classes the markup uses and inlines them.
- *
- * Inlined rather than left as classes because the block travels into other
- * people's templates: it can rely on no stylesheet but its own. Responsive
- * classes cannot survive this — they need a media query in the document head —
- * which is why the components are forbidden from using them for now.
- */
-async function inlineStyles(html) {
-  const { css } = await postcss([
-    tailwind({
-      content: [{ raw: html, extension: 'html' }],
-      corePlugins: { preflight: false },
-    }),
-  ]).process('@tailwind utilities;', { from: undefined });
-
-  const inlined = juice.inlineContent(html, css, { removeStyleTags: true });
-
-  // juice folds the rules into `style` but leaves the class names behind, and
-  // a class nothing defines is dead weight in every email that ships. They are
-  // stripped here — which is only safe because responsive classes are
-  // forbidden, so nothing needs a class to survive.
-  const responsive = /class="[^"]*\b[a-z]+:[a-z-]/.exec(inlined);
-  if (responsive) {
-    throw new Error(
-      'a responsive class survived inlining: ' +
-        `${responsive[0]}…\nThose need a media query in the document head, and ` +
-        'that channel is not wired to the generator yet.'
-    );
-  }
-
-  return closeVoidTags(
-    reEncodeEntities(inlined.replace(/\s+class="[^"]*"/g, ''))
-  );
-}
-
-/**
  * Puts back the entities Vue decoded on its way through.
  *
  * `&nbsp;` in a template becomes a raw U+00A0 in the render, and the raw
@@ -131,6 +91,16 @@ const VOID_TAG = /<(img|br|hr|input|meta|link|area|base|col|source|track|wbr)\b(
  */
 function closeVoidTags(html) {
   return html.replace(VOID_TAG, (match, tag, attrs) => `<${tag}${attrs} />`);
+}
+
+/**
+ * The last touches on markup that is otherwise final.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+function normaliseMarkup(html) {
+  return closeVoidTags(reEncodeEntities(html));
 }
 
 /**
@@ -173,6 +143,6 @@ module.exports = {
   sentinelFor,
   placeholderFor,
   stripComments,
-  inlineStyles,
+  normaliseMarkup,
   substitutePlaceholders,
 };

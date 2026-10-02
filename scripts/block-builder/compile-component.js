@@ -16,9 +16,10 @@ const {
 } = require('../../packages/shared/block-builder/template.js');
 const {
   stripComments,
-  inlineStyles,
+  normaliseMarkup,
   substitutePlaceholders,
 } = require('./markup-pipeline.js');
+const { inlineStyles } = require('./email-safe-css.js');
 const { compileRender, renderWithSentinels } = require('./render-component.js');
 const { checkSlotPlacement } = require('./slot-placement.js');
 const {
@@ -89,14 +90,12 @@ async function compileVariant(name, component, variant) {
   );
   const label = `${name} (${variant})`;
   const inlined = await inlineStyles(
-    stripComments(checkRendered(label, rendered))
-  );
-  checkSlotPlacement(label, inlined, component.slots);
-  const { html, used } = substitutePlaceholders(
-    inlined,
-    component.slots,
+    stripComments(checkRendered(label, rendered)),
     label
   );
+  const markup = normaliseMarkup(inlined);
+  checkSlotPlacement(label, markup, component.slots);
+  const { html, used } = substitutePlaceholders(markup, component.slots, label);
 
   // Compiled by the real engine before being written. It is the engine that
   // knows which contexts exist, and it throws on one it does not — so an
