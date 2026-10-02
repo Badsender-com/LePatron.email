@@ -20,6 +20,12 @@ const {
 // `previewDocument` and `previewRows` to measure it. `insertElement` comes from
 // the element list.
 
+// What the palette puts on the drag. A type of our own, never `text/plain`: a
+// drag released over the settings panel's TinyMCE field would otherwise be
+// pasted there by its paste plugin, as the word "text" or "image". Firefox
+// starts a drag on any type, which is all `setData` is needed for here.
+const DRAG_TYPE = 'application/x-lp-block-builder';
+
 const DragSurfaceMixin = {
   data: () => ({
     // The palette entry currently being dragged.
@@ -50,6 +56,7 @@ const DragSurfaceMixin = {
     // The drag carries its type in `dataTransfer` as well as in component
     // state. The state is what the drop reads — both ends are ours — but
     // `setData` is not optional: without it Firefox never starts the drag.
+    // Cleared first, so nothing the browser filled in by itself rides along.
     //
     // THE EVENT MUST NOT REACH `window`. Mosaico installs listeners there that
     // cancel `dragstart` and `drag` outright (template-loader.js
@@ -63,8 +70,9 @@ const DragSurfaceMixin = {
       this.draggingType = type;
       this.freezeRender();
       if (event.dataTransfer) {
+        event.dataTransfer.clearData();
         event.dataTransfer.effectAllowed = 'copy';
-        event.dataTransfer.setData('text/plain', type);
+        event.dataTransfer.setData(DRAG_TYPE, type);
       }
       const doc = this.previewDocument();
       if (doc && doc.body) doc.body.classList.add(DRAGGING_CLASS);
@@ -180,4 +188,4 @@ const DragSurfaceMixin = {
   },
 };
 
-module.exports = { DragSurfaceMixin };
+module.exports = { DragSurfaceMixin, DRAG_TYPE };

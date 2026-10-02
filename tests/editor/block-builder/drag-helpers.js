@@ -47,11 +47,19 @@ function accessorOf(initial) {
   };
 }
 
-/** A stand-in for the DataTransfer the browser hands a real drag. */
+/**
+ * A stand-in for the DataTransfer the browser hands a real drag.
+ *
+ * Starts with a `text/plain` already on it, as a browser may fill in by itself:
+ * the palette has to clear it, or a drop on a text field pastes it.
+ */
 const transfer = () => ({
   effectAllowed: null,
   dropEffect: null,
-  data: {},
+  data: { 'text/plain': 'filled in by the browser' },
+  clearData() {
+    this.data = {};
+  },
   setData(type, value) {
     this.data[type] = value;
   },

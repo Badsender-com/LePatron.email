@@ -18,6 +18,10 @@ const {
   DRAGGING_CLASS,
 } = require('./drag-helpers.js');
 
+// Duplicated, like the class names in drag-helpers.js: a test that imported it
+// could not notice it being changed back to something TinyMCE pastes.
+const DRAG_TYPE = 'application/x-lp-block-builder';
+
 afterEach(() => {
   document.body.innerHTML = '';
 });
@@ -30,9 +34,20 @@ describe('starting a drag from the palette', () => {
     const event = startPaletteDrag('image');
 
     expect(modal.draggingType).toBe('image');
-    expect(event.dataTransfer.getData('text/plain')).toBe('image');
+    expect(event.dataTransfer.getData(DRAG_TYPE)).toBe('image');
     expect(event.dataTransfer.effectAllowed).toBe('copy');
     expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(true);
+  });
+
+  // Released over the settings panel, a `text/plain` drag is pasted into the
+  // TinyMCE field by its paste plugin — the word "image", in the user's text.
+  it('carries nothing a text field would paste', async () => {
+    await openModal(['text']);
+
+    const event = startPaletteDrag('image');
+
+    expect(Object.keys(event.dataTransfer.data)).toEqual([DRAG_TYPE]);
+    expect(event.dataTransfer.getData('text/plain')).toBeUndefined();
   });
 });
 
