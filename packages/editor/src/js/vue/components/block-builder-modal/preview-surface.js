@@ -31,11 +31,13 @@ const {
 // document that also holds the user's own markup.
 const SELECTED_CLASS = 'lp-bb-selected';
 
-// Set on the body while something is being dragged, and on the row the drop
-// would land against.
+// Set on the body while something is being dragged.
 const DRAGGING_CLASS = 'lp-bb-dragging';
-const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
-const DROP_AFTER_CLASS = 'lp-bb-drop-after';
+
+// The insertion line: one element over the whole preview, placed at the edge
+// the drop would land on (drag-surface.js), in pixels.
+const DROP_LINE_ID = 'lp-bb-drop-line';
+const DROP_LINE_HEIGHT = 4;
 
 // The drop target of a block that holds nothing yet.
 const EMPTY_DROP_ID = 'lp-bb-empty-drop';
@@ -57,9 +59,10 @@ const PREVIEW_READY_EVENT = 'preview-document-ready';
 // the row is zero pixels tall and cannot be clicked. The same trap as the empty
 // block placeholder in the canvas.
 //
-// The insertion line is an inset box-shadow rather than a border: a border
-// would change the row's height mid-drag and make the rows shift under the
-// cursor.
+// The insertion line is an element of its own, absolutely positioned over the
+// rows: above their content, so it shows across an image too, and out of the
+// flow, so the rows never shift under the cursor the way a border would make
+// them. It takes no pointer events, or it would become the drop target.
 //
 // A starter — the words a blank element shows here and nowhere else — is
 // faded so it reads as a placeholder, not as content. Opacity rather than a
@@ -78,10 +81,9 @@ const PREVIEW_DOCUMENT = [
   // point is read against a visible structure rather than guessed.
   `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]:not(.${SELECTED_CLASS}){`,
   'outline:1px dashed #b5b5b5;outline-offset:-1px;}',
-  `[${ELEMENT_ATTRIBUTE}].${DROP_BEFORE_CLASS}{`,
-  'box-shadow:inset 0 3px 0 0 #00acdc;}',
-  `[${ELEMENT_ATTRIBUTE}].${DROP_AFTER_CLASS}{`,
-  'box-shadow:inset 0 -3px 0 0 #00acdc;}',
+  `#${DROP_LINE_ID}{position:absolute;left:0;right:0;margin:0;`,
+  `height:${DROP_LINE_HEIGHT}px;background:#00acdc;`,
+  'pointer-events:none;z-index:2147483647;}',
   `#${EMPTY_DROP_ID}{`,
   'margin:24px;padding:32px 16px;border:2px dashed #c7c7c7;border-radius:4px;',
   'text-align:center;color:#8c8c8c;font:14px Arial,Helvetica,sans-serif;}',
@@ -245,8 +247,8 @@ module.exports = {
   PreviewSurfaceMixin,
   SELECTED_CLASS,
   DRAGGING_CLASS,
-  DROP_BEFORE_CLASS,
-  DROP_AFTER_CLASS,
+  DROP_LINE_ID,
+  DROP_LINE_HEIGHT,
   EMPTY_DROP_ID,
   PREVIEW_READY_FLAG,
   PREVIEW_READY_EVENT,

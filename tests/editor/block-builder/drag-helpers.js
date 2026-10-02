@@ -27,8 +27,7 @@ const {
 // that breaks the stylesheet.
 const SELECTED_CLASS = 'lp-bb-selected';
 const DRAGGING_CLASS = 'lp-bb-dragging';
-const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
-const DROP_AFTER_CLASS = 'lp-bb-drop-after';
+const DROP_LINE_ID = 'lp-bb-drop-line';
 const MOVING_CLASS = 'lp-bb-moving';
 const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
@@ -182,6 +181,9 @@ function startPaletteDrag(type) {
   return event;
 }
 
+/** The insertion line, or null when none is drawn. */
+const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
+
 /** The element types currently composed, in order. */
 const typesOf = (modal) => modal.state.elements.map((element) => element.type);
 
@@ -198,12 +200,12 @@ module.exports = {
   paletteEntry,
   startPaletteDrag,
   typesOf,
+  dropLineOf,
   ELEMENT_ATTRIBUTE,
   PALETTE_TYPES,
   SELECTED_CLASS,
   DRAGGING_CLASS,
-  DROP_BEFORE_CLASS,
-  DROP_AFTER_CLASS,
+  DROP_LINE_ID,
   MOVING_CLASS,
   EMPTY_DROP_ID,
 };

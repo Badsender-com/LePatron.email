@@ -28,9 +28,9 @@ const {
   dropAt,
   fireIn,
   typesOf,
+  dropLineOf,
   DRAGGING_CLASS,
-  DROP_BEFORE_CLASS,
-  DROP_AFTER_CLASS,
+  DROP_LINE_ID,
 } = require('./drag-helpers.js');
 
 afterEach(() => {
@@ -48,7 +48,9 @@ describe('the insertion point follows the cursor', () => {
     expect(dragOverAt(doc, 10).defaultPrevented).toBe(true);
   });
 
-  it('marks the row the element would land before', async () => {
+  // jsdom lays nothing out, so the line's place is read off what it was told:
+  // rows of 100px from the top, and a 4px line centred on the edge.
+  it('draws the line at the top of the row the element would land before', async () => {
     const { doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
     startPaletteDrag('image');
@@ -56,30 +58,54 @@ describe('the insertion point follows the cursor', () => {
     // Above the midpoint of the second row.
     dragOverAt(doc, 120);
 
-    expect(rowsOf(doc)[1].classList.contains(DROP_BEFORE_CLASS)).toBe(true);
-    expect(rowsOf(doc)[0].classList.contains(DROP_BEFORE_CLASS)).toBe(false);
+    expect(dropLineOf(doc).style.top).toBe('98px');
   });
 
-  it('marks the last row below it when the cursor is past everything', async () => {
-    const { doc } = await openModal(['text', 'button']);
-    layOutRows(doc, 100);
-    startPaletteDrag('image');
-
-    dragOverAt(doc, 190);
-
-    expect(rowsOf(doc)[1].classList.contains(DROP_AFTER_CLASS)).toBe(true);
-  });
-
-  it('shows one indicator at a time', async () => {
+  it('keeps the line inside the document above the first row', async () => {
     const { doc } = await openModal(['text', 'button']);
     layOutRows(doc, 100);
     startPaletteDrag('image');
 
     dragOverAt(doc, 10);
+
+    expect(dropLineOf(doc).style.top).toBe('0px');
+  });
+
+  it('draws it under the last row when the cursor is past everything', async () => {
+    const { doc } = await openModal(['text', 'button']);
+    layOutRows(doc, 100);
+    startPaletteDrag('image');
+
     dragOverAt(doc, 190);
 
-    expect(doc.body.querySelectorAll(`.${DROP_BEFORE_CLASS}`)).toHaveLength(0);
-    expect(doc.body.querySelectorAll(`.${DROP_AFTER_CLASS}`)).toHaveLength(1);
+    expect(dropLineOf(doc).style.top).toBe('198px');
+  });
+
+  // One element moved around, rather than a class toggled on every row at
+  // every dragover — and drawn over the rows, not on them.
+  it('moves one line, and leaves the rows alone', async () => {
+    const { doc } = await openModal(['text', 'button']);
+    layOutRows(doc, 100);
+    startPaletteDrag('image');
+    const classes = rowsOf(doc).map((row) => row.className);
+
+    dragOverAt(doc, 10);
+    dragOverAt(doc, 190);
+
+    expect(doc.querySelectorAll(`#${DROP_LINE_ID}`)).toHaveLength(1);
+    expect(dropLineOf(doc).parentNode).toBe(doc.body);
+    expect(rowsOf(doc).map((row) => row.className)).toEqual(classes);
+  });
+
+  it('takes the line away when the drag leaves the preview', async () => {
+    const { doc } = await openModal(['text']);
+    layOutRows(doc, 100);
+    startPaletteDrag('image');
+    dragOverAt(doc, 10);
+
+    fireIn(doc, 'dragleave', doc.body);
+
+    expect(dropLineOf(doc)).toBeNull();
   });
 });
 
@@ -106,7 +132,7 @@ describe('a drag that is not ours never reaches the browser', () => {
     expect(event.defaultPrevented).toBe(true);
     expect(event.dataTransfer.dropEffect).toBe('none');
     expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(false);
-    expect(doc.body.querySelector(`.${DROP_BEFORE_CLASS}`)).toBeNull();
+    expect(dropLineOf(doc)).toBeNull();
   });
 
   it('cancels its drop, and inserts nothing', async () => {
@@ -171,7 +197,7 @@ describe('dropping', () => {
 
     expect(modal.draggingType).toBeNull();
     expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(false);
-    expect(doc.body.querySelectorAll(`.${DROP_BEFORE_CLASS}`)).toHaveLength(0);
+    expect(dropLineOf(doc)).toBeNull();
   });
 
   it('ignores a drop carrying a type the palette does not offer', async () => {

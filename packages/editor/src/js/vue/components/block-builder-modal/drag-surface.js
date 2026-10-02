@@ -2,8 +2,8 @@
 
 const {
   DRAGGING_CLASS,
-  DROP_BEFORE_CLASS,
-  DROP_AFTER_CLASS,
+  DROP_LINE_ID,
+  DROP_LINE_HEIGHT,
   PREVIEW_READY_EVENT,
 } = require('./preview-surface.js');
 
@@ -167,23 +167,39 @@ const DragSurfaceMixin = {
       return rows.length;
     },
 
+    // One line for the whole preview, moved to the edge the drop would land
+    // on, rather than a class on the row: drawn on the row, it paints under
+    // the row's content — invisible across an image — and every dragover
+    // toggled classes on every row.
     showDropIndicator(doc, index) {
       const rows = this.previewRows(doc);
-      this.clearDropIndicator();
-      if (!rows.length) return;
-
-      if (index < rows.length) {
-        rows[index].classList.add(DROP_BEFORE_CLASS);
-      } else {
-        rows[rows.length - 1].classList.add(DROP_AFTER_CLASS);
+      if (!rows.length) {
+        this.clearDropIndicator();
+        return;
       }
+      const edge =
+        index < rows.length
+          ? rows[index].getBoundingClientRect().top
+          : rows[rows.length - 1].getBoundingClientRect().bottom;
+      const scrolled = (doc.defaultView && doc.defaultView.pageYOffset) || 0;
+      const line = doc.getElementById(DROP_LINE_ID) || this.addDropLine(doc);
+      // Centred on the edge, and kept inside the document at the top.
+      const top = Math.max(0, Math.round(edge + scrolled - DROP_LINE_HEIGHT / 2));
+      line.style.top = `${top}px`;
+    },
+
+    addDropLine(doc) {
+      const line = doc.createElement('div');
+      line.id = DROP_LINE_ID;
+      line.setAttribute('aria-hidden', 'true');
+      doc.body.appendChild(line);
+      return line;
     },
 
     clearDropIndicator() {
-      this.previewRows(this.previewDocument()).forEach((row) => {
-        row.classList.remove(DROP_BEFORE_CLASS);
-        row.classList.remove(DROP_AFTER_CLASS);
-      });
+      const doc = this.previewDocument();
+      const line = doc && doc.getElementById(DROP_LINE_ID);
+      if (line) line.parentNode.removeChild(line);
     },
   },
 };

@@ -17,9 +17,9 @@ const {
   startPaletteDrag,
   dragOverAt,
   dropAt,
+  dropLineOf,
   ELEMENT_ATTRIBUTE,
   DRAGGING_CLASS,
-  DROP_AFTER_CLASS,
   SELECTED_CLASS,
   EMPTY_DROP_ID,
 } = require('./drag-helpers.js');
@@ -143,7 +143,7 @@ describe('none of the drag chrome reaches the block', () => {
     dragOverAt(doc, 90);
     // The chrome is really there mid-drag, or this test proves nothing.
     expect(doc.body.classList.contains(DRAGGING_CLASS)).toBe(true);
-    expect(doc.body.querySelector(`.${DROP_AFTER_CLASS}`)).not.toBeNull();
+    expect(dropLineOf(doc)).not.toBeNull();
 
     dropAt(doc, 90);
     modal.handleApply();
@@ -151,6 +151,7 @@ describe('none of the drag chrome reaches the block', () => {
     const written = markup();
     expect(written).toContain('<table role="presentation"');
     expect(written).not.toMatch(/lp-bb-/);
+    expect(written).not.toContain('position:absolute');
     expect(written).not.toContain(ELEMENT_ATTRIBUTE);
   });
 });
