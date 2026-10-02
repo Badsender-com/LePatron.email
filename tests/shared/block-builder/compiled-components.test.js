@@ -7,43 +7,55 @@
 // the output of the committed source — otherwise a quick fix made by hand in
 // the generated file survives until someone recompiles and silently loses it.
 //
-// So this runs the real compiler, the way a developer runs it, and fails on any
-// difference. Without it, "Badsender keeps control of the generated HTML" stops
-// being true at the first hand-edit.
+// So this runs the real compiler, in-process, and compares each committed file
+// with what it would write — one test per component, so a failure names the
+// component and shows the diff. Without it, "Badsender keeps control of the
+// generated HTML" stops being true at the first hand-edit.
 
-const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const REPO = path.join(__dirname, '..', '..', '..');
-const COMPONENTS = path.join(
-  REPO,
-  'packages',
-  'shared',
-  'block-builder',
-  'components'
-);
+const {
+  COMPONENTS_DIR: COMPONENTS,
+  compileComponent,
+  listComponents,
+} = require('../../../scripts/block-builder/compile-component.js');
+const {
+  CONTEXTS,
+} = require('../../../packages/shared/block-builder/slot-contexts.js');
 
-const componentNames = fs
-  .readdirSync(COMPONENTS)
-  .filter((file) => file.endsWith('.vue'))
-  .map((file) => path.basename(file, '.vue'));
+const componentNames = listComponents();
 
 describe('the compiled components match their sources', () => {
-  // Rendering Vue and running Tailwind costs a second or two, which is why this
-  // is one test rather than one per component.
-  it('recompiles to exactly what is committed', () => {
-    expect(() =>
-      execFileSync(
-        process.execPath,
-        [
-          path.join('scripts', 'compile-block-builder-components.js'),
-          '--check',
-        ],
-        { cwd: REPO, encoding: 'utf8', stdio: 'pipe' }
-      )
-    ).not.toThrow();
-  }, 60000);
+  // The test name carries the fix, since it is what a failure prints first.
+  test.each(componentNames)(
+    '%s.compiled.js is what `yarn block-builder:compile` writes',
+    async (name) => {
+      const destination = path.join(COMPONENTS, `${name}.compiled.js`);
+      const current = fs.existsSync(destination)
+        ? fs.readFileSync(destination, 'utf8')
+        : '';
+      // One tag per line, so the diff points at the tag that changed rather
+      // than at a single line of a thousand characters.
+      const byTag = (file) => file.replace(/></g, '>\n<');
+      expect(byTag(current)).toBe(byTag(await compileComponent(name)));
+    },
+    30000
+  );
+
+  // The editor bundle requires the compiled files directly, and nothing lints
+  // them. One left behind by a renamed or deleted component would ship stale
+  // markup with no source anyone can edit.
+  it('has no compiled file or manifest without its component', () => {
+    const orphans = fs
+      .readdirSync(COMPONENTS)
+      .filter((file) => /\.(compiled|slots)\.js$/.test(file))
+      .filter((file) => {
+        const name = file.replace(/\.(compiled|slots)\.js$/, '');
+        return !componentNames.includes(name);
+      });
+    expect(orphans).toEqual([]);
+  });
 });
 
 /**
@@ -105,15 +117,7 @@ describe('every component ships what the generator needs', () => {
     expect(holes.length).toBeGreaterThan(0);
     holes.forEach((hole) => {
       const [, context] = hole.slice(2, -2).split('|');
-      expect([
-        'TEXT',
-        'ATTR',
-        'URL',
-        'COLOR',
-        'PX',
-        'CSS_VALUE',
-        'RICH_TEXT',
-      ]).toContain(context);
+      expect(CONTEXTS).toContain(context);
     });
   });
 });

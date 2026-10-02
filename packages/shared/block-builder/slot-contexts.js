@@ -85,7 +85,12 @@ function escapeForContext(value, context, fallback) {
   }
 }
 
+// Every context, for whoever needs the list rather than one of them: the
+// template engine, which refuses any other, and the tests.
+const CONTEXTS = [TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT];
+
 module.exports = {
+  CONTEXTS,
   escapeForContext,
   isSafeUrl,
   TEXT,
