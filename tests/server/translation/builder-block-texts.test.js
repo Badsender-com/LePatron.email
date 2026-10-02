@@ -267,6 +267,15 @@ describe('a translation that does not fit is dropped, never guessed', () => {
       'a field the element does not have',
       { 'builderBlock.mainBlocks.0.0.caption': 'x' },
     ],
+    // `Number('')` is 0: an empty segment must not land on the first block.
+    ['an empty block index', { 'builderBlock.mainBlocks..0.content': 'x' }],
+    ['an empty element index', { 'builderBlock.mainBlocks.0..content': 'x' }],
+    [
+      'an index that is not an integer',
+      { 'builderBlock.mainBlocks.0.0x0.content': 'x' },
+    ],
+    ['a negative index', { 'builderBlock.mainBlocks.-0.0.content': 'x' }],
+    ['an empty field', { 'builderBlock.mainBlocks.0.0.': 'x' }],
     [
       'a value that is not a string',
       { 'builderBlock.mainBlocks.0.0.content': 42 },

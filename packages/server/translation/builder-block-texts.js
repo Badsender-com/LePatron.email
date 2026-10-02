@@ -51,6 +51,8 @@ const {
   htmlProperty: HTML_PROPERTY,
 } = BLOCK_BUILDER_BLOCK;
 
+const INDEX = /^\d+$/;
+
 const keyFor = (container, blockIndex, elementIndex, field) =>
   `${BUILDER_KEY_PREFIX}.${container}.${blockIndex}.${elementIndex}.${field}`;
 
@@ -136,11 +138,17 @@ function parseKey(key) {
   if (parts.length !== 5 || parts[0] !== BUILDER_KEY_PREFIX) return null;
 
   const [, container, blockIndex, elementIndex, field] = parts;
-  const block = Number(blockIndex);
-  const element = Number(elementIndex);
-  if (!Number.isInteger(block) || !Number.isInteger(element)) return null;
+  // Digits only: `Number('')` is 0, so a key with an empty segment would
+  // otherwise land on the first block or element.
+  if (!container || !field) return null;
+  if (!INDEX.test(blockIndex) || !INDEX.test(elementIndex)) return null;
 
-  return { container, blockIndex: block, elementIndex: element, field };
+  return {
+    container,
+    blockIndex: Number(blockIndex),
+    elementIndex: Number(elementIndex),
+    field,
+  };
 }
 
 /**
