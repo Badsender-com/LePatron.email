@@ -75,10 +75,7 @@ module.exports = {
   isPlaceholderSrc,
   run(ctx) {
     const shownByBlock = exportedImagesByBlock(ctx);
-    const placeholderUrl = _.get(
-      ctx.viewModel,
-      'metadata.imagesUrl.placeholder'
-    );
+    const { placeholderUrl } = ctx.config;
 
     // Placeholders actually shown in the client's blocks.
     const placeholders = _.flatMap(Object.values(shownByBlock), (images) =>

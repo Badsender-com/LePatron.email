@@ -1,6 +1,6 @@
 'use strict';
 
-const { findUnfilledAnchors } = require('./unfilled-links');
+const { findUnfilledAnchors } = require('../links');
 
 // The template wraps this image in a link it expects the client to fill in
 // (`#toreplace` by convention), and the link still leads nowhere.
