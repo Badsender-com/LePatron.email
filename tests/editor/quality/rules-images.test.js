@@ -55,6 +55,17 @@ describe('unreplaced-images', () => {
     expect(findingsOf(unreplacedImages, { blocks, html })).toEqual([]);
   });
 
+  it('still checks the other images when an src cannot be parsed', () => {
+    const blocks = [{ id: 'b1', type: 'imageBlock' }];
+    const html = exportOf({
+      b1: `<img src="http://exa mple.com/x.png"><img src="${PLACEHOLDER}">`,
+    });
+    const findings = findingsOf(unreplacedImages, { blocks, html });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0].messageKey).toBe('Image not replaced');
+  });
+
   it('leaves the transparent GIF templates use as a spacer alone', () => {
     const blocks = [{ id: 'b1', type: 'spacerBlock' }];
     const gif =
