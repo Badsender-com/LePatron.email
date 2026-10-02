@@ -2,6 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
 const { ElementSettingsComponent } = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
+const { ElementListMixin } = require('./element-list.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -11,12 +12,8 @@ const {
   emptyState,
 } = require('../../../../../../shared/block-builder/generate.js');
 const {
-  ELEMENTS,
-} = require('../../../../../../shared/block-builder/elements/index.js');
-const {
   parseState,
   serialiseState,
-  newElementId,
 } = require('../../../../../../shared/block-builder/state.js');
 
 // The composing surface of the block builder.
@@ -38,28 +35,16 @@ const {
 // same-origin (no `src`, and `sandbox` keeps `allow-same-origin`), so the
 // parent can listen on its document even though scripts inside it cannot run.
 
-const PALETTE = [
-  { type: 'text', label: 'Texte' },
-  { type: 'image', label: 'Image' },
-  { type: 'button', label: 'Bouton' },
-  { type: 'divider', label: 'Séparateur' },
-  { type: 'spacer', label: 'Espaceur' },
-];
-
 const DESKTOP_WIDTH = 600;
 const MOBILE_WIDTH = 350;
-
-
-const defaultsFor = (type) => {
-  const definition = ELEMENTS.find((element) => element.type === type);
-  return definition ? { ...definition.defaults } : {};
-};
 
 const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   components: { ModalComponent, ElementSettings: ElementSettingsComponent },
   // The preview is a surface of its own — writing the iframe document,
   // rendering into it, and the selection it carries. See preview-surface.js.
-  mixins: [PreviewSurfaceMixin],
+  // The element list is another: adding, selecting, moving, removing. See
+  // element-list.js.
+  mixins: [PreviewSurfaceMixin, ElementListMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -83,16 +68,14 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     refusedState: null,
     state: emptyState(),
     selectedId: null,
-    palette: PALETTE,
     previewWidth: DESKTOP_WIDTH,
     frameRequest: null,
   }),
   computed: {
     selected() {
       return (
-        this.state.elements.find(
-          (element) => element.id === this.selectedId
-        ) || null
+        this.state.elements.find((element) => element.id === this.selectedId) ||
+        null
       );
     },
     // What the block will actually store and mail: no element ids, which are
@@ -159,7 +142,9 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.state = restored || emptyState();
       // Markup with no state behind it: composing would throw it away.
       this.replacesExistingMarkup =
-        !restored && typeof existingMarkup === 'string' && existingMarkup !== '';
+        !restored &&
+        typeof existingMarkup === 'string' &&
+        existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
       this.selectedId = this.state.elements.length
         ? this.state.elements[0].id
@@ -167,50 +152,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.previewWidth = DESKTOP_WIDTH;
       this.$refs.modalRef?.openModal();
       this.$nextTick(this.renderPreview);
-    },
-
-    labelFor(element) {
-      const entry = PALETTE.find((item) => item.type === element.type);
-      const name = entry ? entry.label : element.type;
-      if (element.type === 'text' && element.content) {
-        // The first words, so a list of five texts is still readable.
-        const plain = element.content.replace(/<[^>]*>/g, '').trim();
-        if (plain) return `${name} — ${plain.slice(0, 28)}`;
-      }
-      if (element.type === 'button' && element.label) {
-        return `${name} — ${element.label.slice(0, 28)}`;
-      }
-      return name;
-    },
-
-    addElement(type) {
-      const element = { id: newElementId(), type, ...defaultsFor(type) };
-      this.state.elements.push(element);
-      this.selectedId = element.id;
-    },
-
-    removeSelected() {
-      const index = this.indexOfSelected();
-      if (index === -1) return;
-      this.state.elements.splice(index, 1);
-      const next = this.state.elements[index] || this.state.elements[index - 1];
-      this.selectedId = next ? next.id : null;
-    },
-
-    move(offset) {
-      const index = this.indexOfSelected();
-      const target = index + offset;
-      if (index === -1 || target < 0 || target >= this.state.elements.length) {
-        return;
-      }
-      const [element] = this.state.elements.splice(index, 1);
-      this.state.elements.splice(target, 0, element);
-    },
-
-    indexOfSelected() {
-      return this.state.elements.findIndex(
-        (element) => element.id === this.selectedId
-      );
     },
 
     // Opens the editor's own image gallery — the same dialog the background
