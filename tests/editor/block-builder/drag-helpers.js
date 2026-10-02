@@ -68,7 +68,7 @@ const transfer = () => ({
  * dragging, not the scheduling.
  *
  * @param {string[]} [types] element types to add, in order
- * @returns {Promise<{modal: Object, doc: Document}>}
+ * @returns {Promise<{modal: Object, doc: Document, markup: Function}>}
  */
 async function openModal(types) {
   const host = document.createElement('div');
@@ -88,8 +88,11 @@ async function openModal(types) {
   });
 
   const modal = app.$children[0];
+  // Kept, so a test can read back what Apply wrote: the modal forgets its
+  // accessors as it closes.
+  const markup = accessorOf('');
   modal.handleToggle(true, {
-    accessor: accessorOf(''),
+    accessor: markup,
     stateAccessor: accessorOf(''),
   });
   await Vue.nextTick();
@@ -97,7 +100,7 @@ async function openModal(types) {
   (types || []).forEach((type) => modal.addElement(type));
   modal.renderPreview();
 
-  return { modal, doc: modal.$refs.previewFrame.contentDocument };
+  return { modal, doc: modal.$refs.previewFrame.contentDocument, markup };
 }
 
 /** The rendered rows, in document order. */
@@ -144,6 +147,10 @@ function fireIn(doc, type, target, clientY) {
   return event;
 }
 
+/** A dragover, then a drop, at a height in the preview. */
+const dragOverAt = (doc, clientY) => fireIn(doc, 'dragover', doc.body, clientY);
+const dropAt = (doc, clientY) => fireIn(doc, 'drop', doc.body, clientY);
+
 /** The palette entry for a type, queried on the document. */
 const paletteEntry = (type) =>
   document.querySelectorAll('.bb-modal__add')[PALETTE_TYPES.indexOf(type)];
@@ -178,6 +185,8 @@ module.exports = {
   rowOf,
   layOutRows,
   fireIn,
+  dragOverAt,
+  dropAt,
   paletteEntry,
   startPaletteDrag,
   typesOf,
