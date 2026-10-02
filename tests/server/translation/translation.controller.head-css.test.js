@@ -40,18 +40,41 @@ const {
   injectHeadCss,
 } = require('../../../packages/shared/head-css/inject-head-css.js');
 
+const HTML_CODE = '<p class="classred">Coucou</p>';
 const DOC =
   '<!DOCTYPE html><html><head><title>t</title></head>' +
-  '<body><p>Bonjour</p></body></html>';
+  '<body><p>Bonjour</p>' +
+  '<div class="lp-html-block">' +
+  HTML_CODE +
+  '</div></body></html>';
 
-function givenSource(headCss) {
+const WITH_BLOCK = {
+  mainBlocks: {
+    blocks: [
+      { type: 'textBlock', text: 'Bonjour' },
+      { type: 'htmlCodeBlock', htmlCode: HTML_CODE },
+    ],
+  },
+};
+const WITHOUT_BLOCK = {
+  mainBlocks: { blocks: [{ type: 'textBlock', text: 'Bonjour' }] },
+};
+
+// The translated copy keeps the source's blocks: only their texts change.
+function givenSource(headCss, data = WITH_BLOCK) {
   mailingService.findOneForUser.mockResolvedValue({
     _company: 'group',
     _wireframe: 'template',
     name: 'Source',
-    data: {},
+    data,
     headCss,
     previewHtml: injectHeadCss(DOC, headCss),
+  });
+  translationService.translateMailing.mockResolvedValue({
+    mailing: { name: 'Source', data },
+    stats: {},
+    originalTexts: { 'data.text': 'Bonjour' },
+    translations: { 'data.text': 'Hello' },
   });
 }
 
@@ -84,12 +107,6 @@ describe('duplicate + translate, head CSS', () => {
     translationJobs.createJob.mockResolvedValue({ jobId: 'job' });
     translationJobs.isCancelled.mockResolvedValue(false);
     Templates.findById.mockResolvedValue({ markup: '' });
-    translationService.translateMailing.mockResolvedValue({
-      mailing: { name: 'Source', data: {} },
-      stats: {},
-      originalTexts: { 'data.text': 'Bonjour' },
-      translations: { 'data.text': 'Hello' },
-    });
     mailingService.duplicateWithTranslatedData.mockResolvedValue({
       _id: 'copy',
       name: 'Source - EN',
@@ -113,6 +130,28 @@ describe('duplicate + translate, head CSS', () => {
 
     expect(stored.match(/<style/g)).toHaveLength(1);
     expect(stored).toContain('.a{color:red}</style></head>');
+  });
+
+  // The CSS follows the HTML code blocks, as in the editor's export: a copy
+  // without any carries none, even when the source still stores it.
+  it('leaves the CSS out of a copy without any HTML code block', async () => {
+    givenSource('/* <table> fix */ .a{color:red}', WITHOUT_BLOCK);
+
+    const stored = await duplicateAndTranslate();
+
+    expect(stored).toContain('<p>Hello</p>');
+    expect(stored).not.toContain('.a{color:red}');
+    expect(stored).not.toContain('data-lp-head-css');
+  });
+
+  // A source exported before the rule may still carry the element in its
+  // preview: the copy must not inherit a stylesheet styling nothing.
+  it('drops a stylesheet the source preview carried without a block', async () => {
+    givenSource('.a{color:red}', WITHOUT_BLOCK);
+
+    const stored = await duplicateAndTranslate();
+
+    expect(stored).not.toContain('data-lp-head-css');
   });
 
   it('adds no stylesheet to a mailing without head CSS', async () => {

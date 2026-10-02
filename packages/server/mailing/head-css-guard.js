@@ -3,6 +3,7 @@
 const { Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const { findHtmlCodeBlocks } = require('./html-code-block-guard.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
@@ -102,7 +103,28 @@ function hasHeadCss(css) {
   return asCss(css).trim() !== '';
 }
 
+/**
+ * The CSS a stored copy of the mailing must carry in its <head>: the head CSS
+ * while `data` holds at least one HTML code block, nothing otherwise.
+ *
+ * The CSS follows the HTML code blocks, not the template flag — the editor's
+ * export applies the same rule (packages/editor/src/js/ext/head-css/
+ * exported-css.js), and this is its counterpart for the documents the server
+ * writes itself, such as a translated copy's previewHtml. Once the last block
+ * is gone the CSS has nothing left to style, so it is left out; it stays
+ * stored on the mailing for when a block comes back.
+ *
+ * @param {Object} params
+ * @param {Object} params.data the content model the copy is rendered from
+ * @param {*} params.headCss the stored head CSS
+ * @returns {string}
+ */
+function headCssToExport({ data, headCss }) {
+  return findHtmlCodeBlocks(data).length > 0 ? asCss(headCss) : '';
+}
+
 module.exports = {
+  headCssToExport,
   isHeadCssEnabled,
   validateHeadCss,
   bringsDisallowedHeadCss,

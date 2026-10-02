@@ -14,6 +14,7 @@ const {
   HTML_CODE_PROPERTY,
 } = require('../mailing/html-code-block-guard.js');
 const { injectHeadCss } = require('../../shared/head-css/inject-head-css.js');
+const { headCssToExport } = require('../mailing/head-css-guard.js');
 const translationJobs = require('./translation-jobs');
 const {
   runTranslationStep,
@@ -228,7 +229,9 @@ async function processTranslationAsync({
         // The head CSS is put back as stored for the same reason: the sanitizer
         // drops a whole <style> whose text holds `<` and a letter — a
         // `/* <table> */` comment, an SVG data URI — and the copy's previewHtml
-        // is what its multi-mailing ZIP exports.
+        // is what its multi-mailing ZIP exports. Only while the copy holds an
+        // HTML code block, as in the editor's export: without one, the CSS
+        // has nothing to style and is left out (head-css-guard.js).
         const safePreviewHtml = await runTranslationStep(
           'sanitizePreview',
           () =>
@@ -238,7 +241,10 @@ async function processTranslationAsync({
                 sanitizePreviewHtml,
                 htmlCodes
               ),
-              originalMailing.headCss
+              headCssToExport({
+                data: translatedData.data,
+                headCss: originalMailing.headCss,
+              })
             )
         );
         await mailingService.updatePreviewHtml(

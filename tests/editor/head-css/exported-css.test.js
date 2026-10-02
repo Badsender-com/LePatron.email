@@ -33,6 +33,7 @@ const addUndoStackExtensionMaker = require('../../../packages/editor/src/js/undo
 const {
   injectHeadCss,
 } = require('../../../packages/shared/head-css/inject-head-css.js');
+const serverGuard = require('../../../packages/server/mailing/head-css-guard.js');
 
 const CSS = '.classred{color:red}';
 const DOC =
@@ -202,6 +203,30 @@ describe('the exported head CSS', () => {
     mainBlocks().push(wrapBlock(htmlBlock(), 1));
 
     expect(exported()).toContain(CSS + '</style></head>');
+  });
+});
+
+// The server writes stored copies itself (a translated duplicate's previewHtml)
+// and must decide as the editor's export does. The two walk different shapes —
+// instrumented here, plain there — so they are kept apart, and pinned to agree.
+describe('the server counterpart', () => {
+  it.each([
+    ['a block in mainBlocks', { mainBlocks: { blocks: [htmlBlock()] } }],
+    [
+      'a block in another container',
+      { mainBlocks: { blocks: [] }, footerBlocks: { blocks: [htmlBlock()] } },
+    ],
+    [
+      'an empty block',
+      { mainBlocks: { blocks: [{ type: 'htmlCodeBlock', htmlCode: '' }] } },
+    ],
+    ['no block', { mainBlocks: { blocks: [textBlock()] } }],
+    ['no container', { titleText: 'htmlCodeBlock' }],
+    ['no content', undefined],
+  ])('agrees on %s', (_label, data) => {
+    expect(serverGuard.headCssToExport({ data, headCss: CSS })).toBe(
+      headCssToExport(data, CSS)
+    );
   });
 });
 

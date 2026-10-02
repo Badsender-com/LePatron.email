@@ -11,6 +11,7 @@ const {
   bringsDisallowedHeadCss,
   assertHeadCssAllowed,
   hasHeadCss,
+  headCssToExport,
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../packages/server/mailing/head-css-guard.js');
 
@@ -159,5 +160,50 @@ describe('assertHeadCssAllowed', () => {
         headCssEnabled: true,
       })
     ).not.toThrow();
+  });
+});
+
+// The CSS follows the HTML code blocks, not the flag: what the server writes
+// into a stored copy (a translated duplicate's previewHtml) obeys the editor's
+// export rule. The flag plays no part here — it gates writing the CSS, above.
+describe('headCssToExport', () => {
+  const CSS = '.a{color:red}';
+  const block = { type: 'htmlCodeBlock', htmlCode: '<p>x</p>' };
+
+  test('is the CSS while the content holds an HTML code block', () => {
+    expect(
+      headCssToExport({
+        data: { mainBlocks: { blocks: [block] } },
+        headCss: CSS,
+      })
+    ).toBe(CSS);
+  });
+
+  test('looks at every top-level container', () => {
+    expect(
+      headCssToExport({
+        data: { mainBlocks: { blocks: [] }, footerBlocks: { blocks: [block] } },
+        headCss: CSS,
+      })
+    ).toBe(CSS);
+  });
+
+  test('is nothing without any HTML code block', () => {
+    expect(
+      headCssToExport({
+        data: { mainBlocks: { blocks: [{ type: 'textBlock' }] } },
+        headCss: CSS,
+      })
+    ).toBe('');
+    expect(headCssToExport({ data: undefined, headCss: CSS })).toBe('');
+  });
+
+  test('is nothing when no CSS is stored', () => {
+    expect(
+      headCssToExport({
+        data: { mainBlocks: { blocks: [block] } },
+        headCss: undefined,
+      })
+    ).toBe('');
   });
 });
