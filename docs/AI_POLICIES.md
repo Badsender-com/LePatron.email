@@ -13,10 +13,20 @@ This document defines policies and best practices when working with AI coding ag
   - PR #2: Notifications system
   - This makes reviews manageable and reduces risk of merge conflicts
 
+### New Features: ADR + Tests First
+
+A new feature goes through the "New Feature Workflow" of [AGENTS.md](../AGENTS.md) and lands as a sequence of PRs, one per ticket of its epic:
+
+- **PR 1 (ticket 01)**: the ADR in `docs/adr/`, the `GLOSSARY.md` changes, and the acceptance tests at the agreed seams, inside `describe.skip` blocks that each name the ticket turning them on. No production code; CI stays green.
+- **Next PRs (one per ticket)**: remove the ticket's `.skip`, implement until its tests pass, add the smaller tests the implementation needs.
+- Reviewers of PR 1 review the design and the behavior the feature commits to, not code.
+- A `describe.skip` without a ticket reference is a review finding. When the epic closes, none of its skips remain.
+
 ### Documentation PRs
 
 - **Agent instruction files (../../AGENTS.md, CLAUDE.md, etc.) should be in separate PRs**
 - Don't bundle documentation updates with feature implementations
+- Exception: a feature's ADR and `GLOSSARY.md` changes belong to the feature, in its first PR
 - Documentation PRs should be:
   - Small and focused
   - Easy to review
@@ -32,6 +42,7 @@ Before creating a PR, verify:
 - [ ] CI is passing (no failing tests)
 - [ ] Linting passes (`yarn code:lint`)
 - [ ] Files respect 300-line limit
+- [ ] New feature: the PR maps to one ticket of the epic, and PR 1 holds the ADR and the skipped tests
 
 ## Testing and CI
 
@@ -183,6 +194,7 @@ When multiple instruction files exist:
 2. **AI_POLICIES.md** - This file (PR structure, quality standards)
 3. **ux-guidelines.md** - UI/UX specific guidelines
 4. **CLAUDE.md** - Claude Code specific commands and shortcuts
+5. **docs/adr/** - Decisions already taken: a change that contradicts one says so explicitly
 
 ## Review Process
 
