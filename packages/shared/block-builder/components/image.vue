@@ -13,7 +13,7 @@
 // strings and never branches. An image with no link must not ship an empty
 // `<a>`, which some clients render as a focusable, underlined gap.
 //
-// See button.vue for the rest of the rules.
+// See README.md, next to this file, for the rules every component here obeys.
 defineProps({
   src: String,
   alt: String,

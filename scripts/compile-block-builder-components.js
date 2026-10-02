@@ -4,7 +4,14 @@
 // Compiles the block builder's Vue components into the templates the generator
 // renders at runtime.
 //
-//   yarn block-builder:compile [--check]
+//   yarn block-builder:compile [--check] [--stage] [file…]
+//
+//   --check   compare instead of write, and fail on any difference (CI)
+//   --stage   `git add` what was written (the pre-commit hook)
+//   file…     only the components these .vue/.slots.js files belong to
+//
+// The integrator's side of this — what to edit, what to commit, what the
+// compiler refuses — is packages/shared/block-builder/components/README.md.
 //
 // Why a build step at all: the team writes Maizzle every day, and a Vue SFC is
 // the dialect Maizzle 6 uses — so the people who own the email HTML can own
@@ -33,6 +40,7 @@
 // Forced here so a production shell compiles the same files as a laptop.
 process.env.NODE_ENV = 'development';
 
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,29 +50,61 @@ const {
   listComponents,
 } = require('./block-builder/compile-component.js');
 
+/**
+ * The components to compile: those the given files belong to, or all.
+ *
+ * @param {Array<string>} files paths to .vue or .slots.js files
+ * @returns {Array<string>}
+ */
+function selectComponents(files) {
+  const all = listComponents();
+  if (files.length === 0) return all;
+  const named = new Set(
+    files.map((file) => path.basename(file).replace(/\.(vue|slots\.js)$/, ''))
+  );
+  return all.filter((name) => named.has(name));
+}
+
+/**
+ * @returns {Promise<boolean>} whether the committed file was already current
+ */
+async function compileOne(name, { check }) {
+  const destination = path.join(COMPONENTS_DIR, `${name}.compiled.js`);
+  const next = await compileComponent(name);
+  const current = fs.existsSync(destination)
+    ? fs.readFileSync(destination, 'utf8')
+    : '';
+
+  if (check) {
+    process.stdout.write(
+      current === next
+        ? `✓ ${name}\n`
+        : `✗ ${name} — the compiled file has drifted\n`
+    );
+  } else {
+    fs.writeFileSync(destination, next, 'utf8');
+    process.stdout.write(`✓ ${name} → ${path.relative('.', destination)}\n`);
+  }
+  return current === next;
+}
+
 async function main() {
-  const check = process.argv.includes('--check');
+  const args = process.argv.slice(2);
+  const check = args.includes('--check');
+  const stage = args.includes('--stage');
+  const names = selectComponents(args.filter((arg) => !arg.startsWith('--')));
   let drifted = 0;
 
-  for (const name of listComponents()) {
-    const destination = path.join(COMPONENTS_DIR, `${name}.compiled.js`);
+  for (const name of names) {
     // eslint-disable-next-line no-await-in-loop
-    const next = await compileComponent(name);
+    if (!(await compileOne(name, { check }))) drifted += 1;
+  }
 
-    if (check) {
-      const current = fs.existsSync(destination)
-        ? fs.readFileSync(destination, 'utf8')
-        : '';
-      if (current !== next) {
-        drifted += 1;
-        process.stdout.write(`✗ ${name} — the compiled file has drifted\n`);
-      } else {
-        process.stdout.write(`✓ ${name}\n`);
-      }
-    } else {
-      fs.writeFileSync(destination, next, 'utf8');
-      process.stdout.write(`✓ ${name} → ${path.relative('.', destination)}\n`);
-    }
+  if (stage && !check && names.length) {
+    const compiled = names.map((name) =>
+      path.join(COMPONENTS_DIR, `${name}.compiled.js`)
+    );
+    execFileSync('git', ['add', '--', ...compiled], { stdio: 'inherit' });
   }
 
   if (check && drifted > 0) {

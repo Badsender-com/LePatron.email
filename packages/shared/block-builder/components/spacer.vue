@@ -15,7 +15,7 @@
 // it, and it would land in every email that ships this block. (Template
 // comments never ship — the compiler strips them — so the note lives here.)
 //
-// See button.vue for the rules every component here obeys.
+// See README.md, next to this file, for the rules every component here obeys.
 defineProps({
   height: String,
 });

@@ -9,7 +9,7 @@
 // components/*.vue by `yarn block-builder:compile`, so the people who own the
 // email HTML can write it as a Vue component with Tailwind classes — the
 // dialect they already use on client templates — instead of a string of
-// placeholders.
+// placeholders. See components/README.md.
 //
 // What arrives here is the same thing it always was: email HTML with typed
 // `[[name|CONTEXT|fallback]]` holes. The engine, the escaping and the runtime

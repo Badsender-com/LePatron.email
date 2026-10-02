@@ -13,7 +13,7 @@
 // render time can be markup too. Nothing unsafe follows from that — the value
 // the generator puts there has been through the rebuilder.
 //
-// See button.vue for the rules every component here obeys.
+// See README.md, next to this file, for the rules every component here obeys.
 defineProps({
   content: String,
   align: String,
