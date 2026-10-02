@@ -103,6 +103,11 @@
       background: rgba(0, 172, 220, 0.12);
       font-weight: 500;
     }
+
+    &:focus-visible {
+      outline: 2px solid rgba(0, 172, 220, 0.6);
+      outline-offset: -2px;
+    }
   }
 
   &__actions {
@@ -120,6 +125,13 @@
 
       &:hover {
         background: #f5f5f5;
+      }
+
+      // Disabled at the ends of the list, where moving further does nothing.
+      &:disabled {
+        cursor: default;
+        opacity: 0.4;
+        background: #fff;
       }
     }
   }

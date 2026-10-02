@@ -36,20 +36,38 @@ module.exports = `<modal-component
           class="bb-modal__add"
           @click.prevent="addElement(item.type)">+ {{ vm.t(item.labelKey) }}</button>
 
-        <p class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
+        <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
         <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
-        <ul v-else class="bb-modal__list">
+        <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelId">
           <li
-            v-for="element in state.elements"
+            v-for="(element, index) in state.elements"
             :key="element.id"
+            role="option"
+            :aria-selected="String(element.id === selectedId)"
+            :tabindex="optionTabIndex(index)"
             class="bb-modal__item"
             :class="{ 'bb-modal__item--on': element.id === selectedId }"
-            @click="selectedId = element.id">{{ labelFor(element) }}</li>
+            @click="selectedId = element.id"
+            @keydown="onOptionKeydown($event, index)">{{ labelFor(element) }}</li>
         </ul>
         <div v-if="selected" class="bb-modal__actions">
-          <button type="button" @click.prevent="move(-1)" :title="vm.t('block-builder-move-up')">↑</button>
-          <button type="button" @click.prevent="move(1)" :title="vm.t('block-builder-move-down')">↓</button>
-          <button type="button" @click.prevent="removeSelected" :title="vm.t('block-builder-remove')">✕</button>
+          <button
+            type="button"
+            :disabled="!canMove(-1)"
+            :title="vm.t('block-builder-move-up')"
+            :aria-label="vm.t('block-builder-move-up')"
+            @click.prevent="move(-1)">↑</button>
+          <button
+            type="button"
+            :disabled="!canMove(1)"
+            :title="vm.t('block-builder-move-down')"
+            :aria-label="vm.t('block-builder-move-down')"
+            @click.prevent="move(1)">↓</button>
+          <button
+            type="button"
+            :title="vm.t('block-builder-remove')"
+            :aria-label="vm.t('block-builder-remove')"
+            @click.prevent="removeSelected">✕</button>
         </div>
       </div>
 
@@ -58,10 +76,12 @@ module.exports = `<modal-component
           <button
             type="button"
             :class="{ 'bb-modal__toggle--on': previewWidth === desktopWidth }"
+            :aria-pressed="String(previewWidth === desktopWidth)"
             @click.prevent="previewWidth = desktopWidth">{{ vm.t('block-builder-desktop') }}</button>
           <button
             type="button"
             :class="{ 'bb-modal__toggle--on': previewWidth === mobileWidth }"
+            :aria-pressed="String(previewWidth === mobileWidth)"
             @click.prevent="previewWidth = mobileWidth">{{ vm.t('block-builder-mobile') }}</button>
         </div>
         <div class="bb-modal__stage">

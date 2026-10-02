@@ -110,6 +110,9 @@ const LABEL_KEYS = Array.from(
   )
 );
 
+// Fields rendered as a plain <input>.
+const INPUT_TYPES = new Set(['text', 'color', 'number']);
+
 const ElementSettingsComponent = Vue.component('ElementSettings', {
   components: { RichTextField: RichTextFieldComponent },
   props: {
@@ -153,6 +156,19 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
           : 'block-builder-choose-image'
       );
     },
+    // Ids tying each label to its control, unique per panel instance.
+    controlId(field) {
+      return `bb-field-${this._uid}-${field.key}`;
+    },
+    labelId(field) {
+      return `${this.controlId(field)}-label`;
+    },
+    // A real <label for> where the control is an input; the others — the text
+    // editor, the image picker, the alignment group — point back at the label
+    // with aria-labelledby instead.
+    labelTarget(field) {
+      return INPUT_TYPES.has(field.type) ? this.controlId(field) : null;
+    },
     // A method for the same reason: the keys hold dashes, and a template-literal
     // template is a poor place to quote them.
     label(key) {
@@ -163,15 +179,23 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
   <p v-if="!element" class="bb-settings__empty">{{ label('block-builder-select-element') }}</p>
   <div v-else>
     <div v-for="field in fields" :key="field.key" class="bb-settings__field">
-      <label class="bb-settings__label">{{ label(field.labelKey) }}</label>
+      <label
+        :id="labelId(field)"
+        :for="labelTarget(field)"
+        class="bb-settings__label">{{ label(field.labelKey) }}</label>
 
       <rich-text-field
         v-if="field.type === 'richtext'"
         :key="element.id"
         :value="element[field.key]"
+        :labelledby="labelId(field)"
         @input="update(field.key, $event)" />
 
-      <div v-else-if="field.type === 'image'" class="bb-settings__image">
+      <div
+        v-else-if="field.type === 'image'"
+        class="bb-settings__image"
+        role="group"
+        :aria-labelledby="labelId(field)">
         <div
           v-if="element[field.key]"
           class="bb-settings__thumb"
@@ -184,6 +208,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
 
       <input
         v-else-if="field.type === 'text'"
+        :id="controlId(field)"
         type="text"
         class="bb-settings__input"
         :value="element[field.key]"
@@ -191,6 +216,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
 
       <input
         v-else-if="field.type === 'color'"
+        :id="controlId(field)"
         type="color"
         class="bb-settings__input bb-settings__input--color"
         :value="element[field.key]"
@@ -198,6 +224,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
 
       <input
         v-else-if="field.type === 'number'"
+        :id="controlId(field)"
         type="number"
         class="bb-settings__input"
         :min="field.min"
@@ -205,13 +232,18 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
         :value="element[field.key]"
         @input="onNumber(field, $event)" />
 
-      <div v-else-if="field.type === 'align'" class="bb-settings__group">
+      <div
+        v-else-if="field.type === 'align'"
+        class="bb-settings__group"
+        role="group"
+        :aria-labelledby="labelId(field)">
         <button
           v-for="option in alignments"
           :key="option.value"
           type="button"
           class="bb-settings__choice"
           :class="{ 'bb-settings__choice--on': element[field.key] === option.value }"
+          :aria-pressed="String(element[field.key] === option.value)"
           @click.prevent="update(field.key, option.value)">{{ label(option.labelKey) }}</button>
       </div>
     </div>

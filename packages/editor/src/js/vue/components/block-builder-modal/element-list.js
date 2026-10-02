@@ -31,6 +31,11 @@ const defaultsFor = (type) => {
 
 const ElementListMixin = {
   data: () => ({ palette: PALETTE }),
+  computed: {
+    listLabelId() {
+      return `bb-elements-${this._uid}`;
+    },
+  },
   methods: {
     labelFor(element) {
       const entry = PALETTE.find((item) => item.type === element.type);
@@ -68,6 +73,41 @@ const ElementListMixin = {
       }
       const [element] = this.state.elements.splice(index, 1);
       this.state.elements.splice(target, 0, element);
+    },
+
+    // Whether the selected element can move by `offset`, so the buttons are
+    // disabled at the ends of the list rather than silently doing nothing.
+    canMove(offset) {
+      const index = this.indexOfSelected();
+      const target = index + offset;
+      return index !== -1 && target >= 0 && target < this.state.elements.length;
+    },
+
+    // The list is a listbox with a roving tabindex: one Tab stop — the selected
+    // option, or the first — and the arrows to move within it.
+    optionTabIndex(index) {
+      const selected = this.indexOfSelected();
+      return index === (selected === -1 ? 0 : selected) ? 0 : -1;
+    },
+
+    onOptionKeydown(event, index) {
+      const { key } = event;
+      if (key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        this.selectedId = this.state.elements[index].id;
+        return;
+      }
+      if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
+
+      event.preventDefault();
+      const next = index + (key === 'ArrowDown' ? 1 : -1);
+      if (next < 0 || next >= this.state.elements.length) return;
+      this.selectedId = this.state.elements[next].id;
+      // After the render, which moves the tabindex onto the new option.
+      this.$nextTick(() => {
+        const options = this.$el.querySelectorAll('[role="option"]');
+        if (options[next]) options[next].focus();
+      });
     },
 
     indexOfSelected() {

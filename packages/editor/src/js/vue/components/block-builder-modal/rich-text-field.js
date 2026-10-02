@@ -24,6 +24,9 @@ let sequence = 0;
 const RichTextFieldComponent = Vue.component('RichTextField', {
   props: {
     value: { type: String, default: '' },
+    // The id of the panel's label for this field; there is no <input> for a
+    // <label for> to point at.
+    labelledby: { type: String, default: null },
   },
   data: () => ({
     editorId: `bb-rich-${++sequence}`,
@@ -93,12 +96,16 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
     v-if="editor !== null || hasTinyMce"
     ref="field"
     :id="editorId"
+    role="textbox"
+    aria-multiline="true"
+    :aria-labelledby="labelledby"
     class="bb-rich__field"></div>
   <textarea
     v-else
     ref="field"
     class="bb-rich__field bb-rich__field--plain"
     rows="4"
+    :aria-labelledby="labelledby"
     :value="value"
     @input="onFallbackInput"></textarea>
 </div>`,
