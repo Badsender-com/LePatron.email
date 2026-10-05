@@ -7,17 +7,16 @@ const {
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound, BadRequest } = require('http-errors');
+const { NotFound } = require('http-errors');
 const logger = require('../utils/logger');
 const {
   hasSyntheticBlock,
-  validateSyntheticBlocks,
-  assertSyntheticBlockContentAllowed,
+  asModel,
   TEMPLATE_FLAG_PROJECTION,
 } = require('../mailing/synthetic-block-guard.js');
 const {
-  rebuildComposedMarkup,
-} = require('../mailing/builder-block-integrity.js');
+  normalizeAndGuardSyntheticContent,
+} = require('../mailing/synthetic-content-pipeline.js');
 
 module.exports = {
   getPersonalizedBlocks,
@@ -86,43 +85,25 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
 }
 
 /**
- * @param {Object} content one block
- * @throws {BadRequest} the too-large code of the refused block
+ * Brings a personalized block's content to what will be stored, and refuses
+ * markup its template does not allow. A personalized block is shared with the
+ * whole company and dropped into other people's mailings, so it goes through
+ * the same pipeline as the mailing save (mailing/synthetic-content-pipeline.js):
+ * sizes, a composed block's markup rebuilt from its state, the template flags.
+ * Loads the template only when the content holds a synthetic block.
  */
-function assertBlockSizes(content) {
-  const check = validateSyntheticBlocks({ blocks: { blocks: [content] } });
-  if (!check.valid) throw new BadRequest(check.errorCode);
-}
-
-/**
- * Refuses markup the block's template does not allow. A personalized block is
- * shared with the whole company and dropped into other people's mailings, so it
- * gets the same gates as the mailing save (see mailing/synthetic-block-guard.js
- * and mailing/builder-block-integrity.js): sizes, a composed block's markup
- * rebuilt from its state, the template flags. Loads the template only when the
- * content holds a synthetic block.
- */
-async function assertBlockHtmlCodeAllowed({
+async function normalizeAndGuardBlockContent({
   content,
   previousContent,
   templateId,
 }) {
-  if (!hasSyntheticBlock(content)) return;
-
-  assertBlockSizes(content);
-  rebuildComposedMarkup(content, previousContent);
-  assertBlockSizes(content);
-
-  const template = templateId
-    ? await Templates.findById(templateId)
-        .select(TEMPLATE_FLAG_PROJECTION)
-        .lean()
-    : null;
-
-  assertSyntheticBlockContentAllowed({
-    content,
-    previousContent,
-    flags: template || {},
+  await normalizeAndGuardSyntheticContent({
+    data: asModel(content),
+    previousData: asModel(previousContent),
+    loadFlags: () =>
+      templateId
+        ? Templates.findById(templateId).select(TEMPLATE_FLAG_PROJECTION).lean()
+        : null,
   });
 }
 
@@ -161,7 +142,7 @@ async function assertTemplateInGroup(templateId, groupId) {
 
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
   await assertTemplateInGroup(templateId, groupId);
-  await assertBlockHtmlCodeAllowed({ content: block.content, templateId });
+  await normalizeAndGuardBlockContent({ content: block.content, templateId });
 
   const newBlock = await PersonalizedBlocks.create({
     ...block,
@@ -184,7 +165,7 @@ async function updatePersonalizedBlock(id, groupId, updatedBlock) {
     if (!existing) {
       throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);
     }
-    await assertBlockHtmlCodeAllowed({
+    await normalizeAndGuardBlockContent({
       content: changes.content,
       previousContent: existing.content,
       templateId: existing._template,

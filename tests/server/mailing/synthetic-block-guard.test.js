@@ -85,7 +85,8 @@ describe('synthetic block guard — sizes', () => {
 describe('synthetic block guard — the template flag', () => {
   const {
     findDisallowedSyntheticBlock,
-    assertSyntheticBlockContentAllowed,
+    assertSyntheticHtmlAllowed,
+    asModel,
     hasSyntheticBlock,
   } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 
@@ -159,33 +160,33 @@ describe('synthetic block guard — the template flag', () => {
     });
   });
 
-  describe('assertSyntheticBlockContentAllowed (personalized blocks)', () => {
+  // A personalized block is one block, not a content model: wrapped, it gets
+  // the same gate.
+  describe('a single block, through asModel', () => {
+    const assertAllowed = (content, previousContent) =>
+      assertSyntheticHtmlAllowed({
+        data: asModel(content),
+        previousData: asModel(previousContent),
+        flags: { htmlBlockEnabled: false },
+      });
+
     it('refuses an HTML code block on a template without the flag', () => {
-      expect(() =>
-        assertSyntheticBlockContentAllowed({
-          content: htmlBlock('<p>x</p>'),
-          flags: { htmlBlockEnabled: false },
-        })
-      ).toThrow(expect.objectContaining({ status: 403 }));
+      expect(() => assertAllowed(htmlBlock('<p>x</p>'))).toThrow(
+        expect.objectContaining({ status: 403 })
+      );
     });
 
     it('accepts the stored block unchanged', () => {
       expect(() =>
-        assertSyntheticBlockContentAllowed({
-          content: htmlBlock('<p>x</p>'),
-          previousContent: htmlBlock('<p>x</p>'),
-          flags: { htmlBlockEnabled: false },
-        })
+        assertAllowed(htmlBlock('<p>x</p>'), htmlBlock('<p>x</p>'))
       ).not.toThrow();
     });
 
-    it('accepts any other block', () => {
+    it('accepts any other block, and no block at all', () => {
       expect(() =>
-        assertSyntheticBlockContentAllowed({
-          content: { type: 'textBlock', text: '<p>x</p>' },
-          flags: { htmlBlockEnabled: false },
-        })
+        assertAllowed({ type: 'textBlock', text: '<p>x</p>' })
       ).not.toThrow();
+      expect(asModel(undefined)).toEqual({ blocks: { blocks: [] } });
     });
   });
 

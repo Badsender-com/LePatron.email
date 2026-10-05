@@ -123,6 +123,15 @@ function findSyntheticBlocks(data) {
 }
 
 /**
+ * One block — a personalized block's content — as a content model, so that
+ * every walk, size and gate above applies to it unchanged.
+ *
+ * @param {Object} [block]
+ * @returns {Object} a model holding `block`, or no block at all
+ */
+const asModel = (block) => ({ blocks: { blocks: block ? [block] : [] } });
+
+/**
  * The serialised state a synthetic block stores next to its markup, or '' for
  * a block that keeps none.
  *
@@ -135,6 +144,18 @@ function stateOf(block) {
   const state = block[descriptor.stateProperty];
   return typeof state === 'string' ? state : '';
 }
+
+/**
+ * What identifies a stored synthetic block: its markup AND its state. A
+ * builder block's markup is rebuilt from its state (builder-block-integrity.js),
+ * so stored markup next to another state is not the stored block. One key for
+ * the guard and the rebuild, so they cannot disagree on what "already stored"
+ * means. A NUL never appears in either half.
+ *
+ * @param {Object} block
+ * @returns {string}
+ */
+const pairKeyOf = (block) => `${htmlOf(block)}\u0000${stateOf(block)}`;
 
 /**
  * The descriptor of the first synthetic block past a size limit, or null.
@@ -200,14 +221,10 @@ function validateSyntheticBlocks(data, maxLength) {
 function findDisallowedSyntheticBlock({ data, previousData, flags }) {
   const allowed = flags || {};
 
-  // A builder block is judged on its markup AND its state: the markup is
-  // rebuilt from the state (builder-block-integrity.js), so stored markup next
-  // to another state is not the stored block.
-  const keyOf = (block) => `${htmlOf(block)}\u0000${stateOf(block)}`;
   const storedByType = findSyntheticBlocks(previousData).reduce(
     (byType, block) => {
       if (!byType[block.type]) byType[block.type] = new Set();
-      byType[block.type].add(keyOf(block));
+      byType[block.type].add(pairKeyOf(block));
       return byType;
     },
     {}
@@ -221,7 +238,7 @@ function findDisallowedSyntheticBlock({ data, previousData, flags }) {
     if (html === '') return false;
 
     const stored = storedByType[block.type];
-    return !stored || !stored.has(keyOf(block));
+    return !stored || !stored.has(pairKeyOf(block));
   });
 
   return offending ? descriptorOf(offending) : null;
@@ -242,30 +259,6 @@ function assertSyntheticHtmlAllowed(params) {
 }
 
 /**
- * The same rule for a personalized block, whose content is ONE block rather
- * than a content model. Personalized blocks are shared with the whole company
- * and inserted into other people's mailings, so they get the same gate.
- *
- * @param {Object} params
- * @param {Object} params.content the block about to be written
- * @param {Object} [params.previousContent] the block currently stored
- * @param {Object} params.flags the flags of the block's template
- * @throws {Forbidden}
- */
-function assertSyntheticBlockContentAllowed({
-  content,
-  previousContent,
-  flags,
-}) {
-  const asModel = (block) => ({ blocks: { blocks: block ? [block] : [] } });
-  assertSyntheticHtmlAllowed({
-    data: asModel(content),
-    previousData: asModel(previousContent),
-    flags,
-  });
-}
-
-/**
  * Whether a content model, or a single block, holds any synthetic block. Lets
  * callers skip loading the template flags when there is nothing to check.
  *
@@ -283,8 +276,9 @@ module.exports = {
   locateSyntheticBlocks,
   findDisallowedSyntheticBlock,
   assertSyntheticHtmlAllowed,
-  assertSyntheticBlockContentAllowed,
   hasSyntheticBlock,
+  asModel,
+  pairKeyOf,
   htmlOf,
   SYNTHETIC_BLOCKS,
   TEMPLATE_FLAG_PROJECTION,

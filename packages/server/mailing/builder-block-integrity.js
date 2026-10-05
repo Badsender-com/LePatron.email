@@ -1,6 +1,10 @@
 'use strict';
 
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
+const {
+  findSyntheticBlocks,
+  pairKeyOf,
+} = require('./synthetic-block-guard.js');
 const { parseState } = require('../../shared/block-builder/state.js');
 const { generate } = require('../../shared/block-builder/generate.js');
 
@@ -19,50 +23,29 @@ const { generate } = require('../../shared/block-builder/generate.js');
 
 const { type, htmlProperty, stateProperty } = BLOCK_BUILDER_BLOCK;
 
-const asString = (value) => (typeof value === 'string' ? value : '');
-
-// One key for the pair: a NUL never appears in either half.
-const pairOf = (block) =>
-  `${asString(block[htmlProperty])}\u0000${asString(block[stateProperty])}`;
-
 /**
- * The composed blocks of a content model (top-level containers only, as the
- * guard walks them) or of a single block.
+ * The composed blocks of a content model, walked as the guard walks them.
+ * A single block goes through `asModel` (synthetic-block-guard.js) first.
  *
- * @param {Object} data mailing.data, or one block
+ * @param {Object} data mailing.data
  * @returns {Array<Object>}
  */
-function composedBlocksOf(data) {
-  if (!data || typeof data !== 'object') return [];
-  if (data.type === type) return [data];
-
-  return Object.values(data)
-    .filter((value) => value && Array.isArray(value.blocks))
-    .reduce(
-      (found, value) =>
-        found.concat(
-          value.blocks.filter(
-            (block) => block && typeof block === 'object' && block.type === type
-          )
-        ),
-      []
-    );
-}
+const composedBlocksOf = (data) =>
+  findSyntheticBlocks(data).filter((block) => block.type === type);
 
 /**
  * Rewrites, in place, the markup of every composed block of `data` whose
  * markup-and-state pair is not already stored in `previousData`.
  *
- * @param {Object} data the content about to be written (mailing.data, or one
- *   personalized block)
- * @param {Object} [previousData] the content currently stored, same shape
+ * @param {Object} data the content model about to be written
+ * @param {Object} [previousData] the content model currently stored
  * @returns {number} how many blocks were rebuilt
  */
 function rebuildComposedMarkup(data, previousData) {
-  const stored = new Set(composedBlocksOf(previousData).map(pairOf));
+  const stored = new Set(composedBlocksOf(previousData).map(pairKeyOf));
 
   return composedBlocksOf(data).reduce((rebuilt, block) => {
-    if (stored.has(pairOf(block))) return rebuilt;
+    if (stored.has(pairKeyOf(block))) return rebuilt;
 
     const state = parseState(block[stateProperty]);
     const html = state ? generate(state) : '';
@@ -73,4 +56,4 @@ function rebuildComposedMarkup(data, previousData) {
   }, 0);
 }
 
-module.exports = { rebuildComposedMarkup, pairOf };
+module.exports = { rebuildComposedMarkup };

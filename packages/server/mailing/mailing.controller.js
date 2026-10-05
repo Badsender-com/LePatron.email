@@ -5,12 +5,10 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const { TEMPLATE_FLAG_PROJECTION } = require('./synthetic-block-guard.js');
 const {
-  validateSyntheticBlocks,
-  hasSyntheticBlock,
-  assertSyntheticHtmlAllowed,
-  TEMPLATE_FLAG_PROJECTION,
-} = require('./synthetic-block-guard.js');
+  normalizeAndGuardSyntheticContent,
+} = require('./synthetic-content-pipeline.js');
 const {
   isHeadCssEnabled,
   validateHeadCss,
@@ -21,7 +19,6 @@ const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../utils/preview-html-sanitizer.js');
 
-const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
 const {
@@ -408,22 +405,17 @@ async function previewHtml(req, res) {
 }
 
 /**
- * Throws when the synthetic blocks or the head CSS of the request are past
- * their limit.
+ * Throws when the head CSS of the request is past its limit.
  *
- * The editor enforces both too, but `data` is an unvalidated Mixed field and
- * `previewHtml` duplicates the markup in the same document, against Mongo's
- * 16MB per-document limit.
+ * The editor enforces it too, but nothing else stops a hand-written request,
+ * and the stylesheet is stored in the same document as `data` and
+ * `previewHtml`, against Mongo's 16MB per-document limit. The synthetic blocks
+ * are bounded by their own pipeline (synthetic-content-pipeline.js).
  *
  * @param {Object} body the updateMosaico request body
- * @throws {BadRequest} HTML_CODE_BLOCK_TOO_LARGE, BLOCK_BUILDER_TOO_LARGE or
- *   HEAD_CSS_TOO_LARGE
+ * @throws {BadRequest} HEAD_CSS_TOO_LARGE
  */
-function assertPastedContentSizes(body) {
-  const blocks = validateSyntheticBlocks(body.data);
-  if (!blocks.valid) {
-    throw new BadRequest(blocks.errorCode);
-  }
+function assertHeadCssSize(body) {
   if (!validateHeadCss(body.headCss).valid) {
     throw new BadRequest(ERROR_CODES.HEAD_CSS_TOO_LARGE);
   }
@@ -456,38 +448,45 @@ function applyMosaicoUpdate(mailing, body, user) {
 }
 
 /**
- * Throws when the request brings a synthetic block or head CSS the mailing's
- * template does not allow.
+ * The flags of the mailing's template, loaded on first call and only then.
  *
- * Enforced here because the editor only hides the entry points, and a
- * hand-written request could add either block, or a stylesheet, to any
- * template. The template is loaded only when there is something to check, so a
- * mailing without any of it costs no query — and loaded once for every guard,
- * since a mailing may hold all of it at the same time.
+ * A mailing without any synthetic block or head CSS costs no query; one with
+ * both costs a single one, shared by every guard.
+ *
+ * @param {Object} mailing the stored mailing
+ * @returns {Function} resolves with the template flags
+ */
+function templateFlagsOf(mailing) {
+  let flags = null;
+  return () => {
+    if (!flags) {
+      flags = Templates.findById(mailing._wireframe)
+        .select(TEMPLATE_FLAG_PROJECTION)
+        .lean();
+    }
+    return flags;
+  };
+}
+
+/**
+ * Throws when the request brings head CSS the mailing's template does not
+ * allow. Enforced here because the editor only hides the entry point.
  *
  * @param {Object} body the updateMosaico request body
  * @param {Object} mailing the stored mailing, before this update
- * @throws {Forbidden} HTML_CODE_BLOCK_DISABLED, BLOCK_BUILDER_DISABLED or
- *   HEAD_CSS_DISABLED
+ * @param {Function} loadFlags see templateFlagsOf
+ * @throws {Forbidden} HEAD_CSS_DISABLED
  */
-async function assertTemplateFlags(body, mailing) {
-  if (!hasSyntheticBlock(body.data) && !hasHeadCss(body.headCss)) return;
+async function assertHeadCssFlag(body, mailing, loadFlags) {
+  if (!hasHeadCss(body.headCss)) return;
 
-  const template = await Templates.findById(mailing._wireframe)
-    .select(TEMPLATE_FLAG_PROJECTION)
-    .lean();
-  assertSyntheticHtmlAllowed({
-    data: body.data,
-    previousData: mailing.data,
-    flags: template || {},
-  });
   // The stylesheet rides on the HTML code block's flag: it exists to style
   // pasted markup, and the builder generates its own CSS rather than writing
   // it here.
   assertHeadCssAllowed({
     css: body.headCss,
     previousCss: mailing.headCss,
-    headCssEnabled: isHeadCssEnabled(template),
+    headCssEnabled: isHeadCssEnabled(await loadFlags()),
   });
 }
 
@@ -516,12 +515,16 @@ async function updateMosaico(req, res) {
 
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  assertPastedContentSizes(req.body);
-  // Before the flags: they judge the markup that will actually be stored. And
-  // the sizes again, on what was rebuilt.
-  rebuildComposedMarkup(req.body.data, mailing.data);
-  assertPastedContentSizes(req.body);
-  await assertTemplateFlags(req.body, mailing);
+  assertHeadCssSize(req.body);
+  // The editor only hides the entry points: a hand-written request could add
+  // either block, or a stylesheet, to any template. This is the gate.
+  const loadFlags = templateFlagsOf(mailing);
+  await normalizeAndGuardSyntheticContent({
+    data: req.body.data,
+    previousData: mailing.data,
+    loadFlags,
+  });
+  await assertHeadCssFlag(req.body, mailing, loadFlags);
 
   // `previewHtml` is served and sanitized on every preview request, and stored in
   // the same document as `data`. The largest real one is two orders of magnitude

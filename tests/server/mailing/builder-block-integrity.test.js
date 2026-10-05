@@ -8,6 +8,9 @@ const {
   rebuildComposedMarkup,
 } = require('../../../packages/server/mailing/builder-block-integrity.js');
 const {
+  asModel,
+} = require('../../../packages/server/mailing/synthetic-block-guard.js');
+const {
   generate,
   emptyState,
 } = require('../../../packages/shared/block-builder/generate.js');
@@ -102,7 +105,7 @@ describe('rebuildComposedMarkup', () => {
     const state = stateWith('Bonjour');
     const block = composed(state, '<p>x</p>');
 
-    rebuildComposedMarkup(block);
+    rebuildComposedMarkup(asModel(block));
 
     expect(block.builderHtml).toBe(generated(state));
   });
