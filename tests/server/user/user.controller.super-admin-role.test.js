@@ -58,6 +58,9 @@ const {
   actorFrom,
   bootstrap,
   call,
+  expectRefusal,
+  expectRefusedOutright,
+  readUserVia,
   withDeactivated,
 } = require('../../helpers/super-admin-fixtures.js');
 
@@ -68,22 +71,13 @@ const FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION =
 const LAST_SUPER_ADMIN_PROTECTED = 'LAST_SUPER_ADMIN_PROTECTED';
 const SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP = 'SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP';
 const PLATFORM_GROUP_NOT_FOUND = 'PLATFORM_GROUP_NOT_FOUND';
+const INVALID_ROLE_PARAM = 'INVALID_ROLE_PARAM';
 
 const actor = (id) => actorFrom(store.userRecord(id));
 const create = (user, body) => call(controller.create, { user, body });
 const update = (user, userId, body) =>
   call(controller.update, { user, params: { userId }, body });
-const read = async (userId) => {
-  const { body } = await call(controller.read, {
-    user: bootstrap,
-    params: { userId },
-  });
-  return body;
-};
-
-function expectRefusal(result, status, code) {
-  expect(result).toEqual({ status, error: code });
-}
+const read = readUserVia(controller);
 
 beforeEach(() => {
   store.seed({ groups: GROUPS, users: USERS });
@@ -107,6 +101,26 @@ describe.skip('granting and revoking the super admin role (#1155)', () => {
       expect(body.role).toBe('super_admin');
       expect(body.group.id).toBe(PLATFORM_GROUP);
       expect(body.isAdmin).toBe(true);
+    });
+
+    it('accepts the platform group when the screen names it', async () => {
+      const { status, body } = await create(actor(ALICE), {
+        ...newSuperAdmin,
+        groupId: PLATFORM_GROUP,
+      });
+
+      expect(status).toBe(200);
+      expect(body.role).toBe('super_admin');
+      expect(body.group.id).toBe(PLATFORM_GROUP);
+    });
+
+    it('refuses a role the product does not define', async () => {
+      const result = await create(actor(ALICE), {
+        ...newSuperAdmin,
+        role: 'owner',
+      });
+
+      expectRefusal(result, 400, INVALID_ROLE_PARAM);
     });
 
     it('the bootstrap account creates the first one of an environment', async () => {
@@ -138,7 +152,7 @@ describe.skip('granting and revoking the super admin role (#1155)', () => {
         groupId: CLIENT_GROUP,
       });
 
-      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE);
+      expectRefusedOutright(result);
     });
 
     it('cannot be created in a client group', async () => {
@@ -227,6 +241,17 @@ describe.skip('granting and revoking the super admin role (#1155)', () => {
       expect((await read(BOB)).role).toBe('company_admin');
     });
 
+    it('a super admin re-sending their own role is not a demotion', async () => {
+      // The edit page sends the whole user back, role included.
+      const { status } = await update(actor(ALICE), ALICE, {
+        name: 'Alice B.',
+        role: 'super_admin',
+      });
+
+      expect(status).toBe(200);
+      expect((await read(ALICE)).role).toBe('super_admin');
+    });
+
     it('a super admin cannot demote themselves', async () => {
       const result = await update(actor(ALICE), ALICE, {
         role: 'regular_user',
@@ -267,7 +292,7 @@ describe.skip('granting and revoking the super admin role (#1155)', () => {
         role: 'regular_user',
       });
 
-      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE);
+      expectRefusedOutright(result);
     });
   });
 });

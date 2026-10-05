@@ -38,6 +38,9 @@ const {
   actorFrom,
   bootstrap,
   call,
+  expectRefusal,
+  expectRefusedOutright,
+  readUserVia,
   withDeactivated,
 } = require('../../helpers/super-admin-fixtures.js');
 
@@ -58,17 +61,7 @@ const activate = (user, userId) =>
 const resetPassword = (user, userId) =>
   call(controller.adminResetPassword, { user, params: { userId } });
 const list = (user, query) => call(controller.list, { user, query });
-const read = async (userId) => {
-  const { body } = await call(controller.read, {
-    user: bootstrap,
-    params: { userId },
-  });
-  return body;
-};
-
-function expectRefusal(result, status, code) {
-  expect(result).toEqual({ status, error: code });
-}
+const read = readUserVia(controller);
 
 beforeEach(() => {
   store.seed({ groups: GROUPS, users: USERS });
@@ -110,12 +103,16 @@ describe.skip('managing a super admin account (#1155)', () => {
     it('a company admin of a client group cannot edit a super admin', async () => {
       const result = await update(actor(ERIN), ALICE, { name: 'Hacked' });
 
-      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
+      expectRefusedOutright(result);
       expect((await read(ALICE)).name).toBe('Alice');
     });
 
     it('a company admin still manages the other members of their group', async () => {
-      const { status } = await update(actor(CAROL), DAVE, { name: 'David' });
+      // The edit page sends the whole user back, role included.
+      const { status } = await update(actor(CAROL), DAVE, {
+        name: 'David',
+        role: 'regular_user',
+      });
 
       expect(status).toBe(200);
       expect((await read(DAVE)).name).toBe('David');
@@ -172,7 +169,7 @@ describe.skip('managing a super admin account (#1155)', () => {
     it('a company admin of a client group cannot deactivate a super admin', async () => {
       const result = await deactivate(actor(ERIN), ALICE);
 
-      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
+      expectRefusedOutright(result);
     });
 
     it('a super admin reactivates a deactivated one', async () => {

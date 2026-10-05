@@ -87,6 +87,28 @@ function call(handler, { user, params = {}, body = {}, query = {} }) {
   });
 }
 
+function expectRefusal(result, status, code) {
+  expect(result).toEqual({ status, error: code });
+}
+
+// A company admin of another group is refused whichever rule fires first:
+// the super admin guardrail or the scoping of a company admin to their own
+// group. The contract pins the refusal, not its code.
+function expectRefusedOutright(result) {
+  expect(result.status).toBe(403);
+}
+
+// What a client reads back after an action, through the user controller.
+function readUserVia(controller) {
+  return async (userId) => {
+    const { body } = await call(controller.read, {
+      user: bootstrap,
+      params: { userId },
+    });
+    return body;
+  };
+}
+
 function withDeactivated(id) {
   return USERS.map((u) => (u._id === id ? { ...u, isDeactivated: true } : u));
 }
@@ -105,5 +127,8 @@ module.exports = {
   actorFrom,
   bootstrap,
   call,
+  expectRefusal,
+  expectRefusedOutright,
+  readUserVia,
   withDeactivated,
 };

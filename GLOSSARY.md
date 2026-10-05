@@ -12,7 +12,7 @@ _UI_: Groupe
 _Avoid_: Company, organization, account
 
 **Platform group**:
-The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged at installation.
+The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
 _Avoid_: Badsender group, admin group
 
 ### Roles
@@ -29,7 +29,7 @@ _Avoid_: Group admin, owner
 **Super admin**:
 A person operating the platform, with full rights on every group. A super admin belongs to the platform group and is an ordinary account otherwise.
 _UI_: Super administrateur
-_Avoid_: Admin, platform admin
+_Avoid_: Admin, platform admin (in prose and UI text; the code keeps its `admin` guard and flag)
 
 **Bootstrap account**:
 The super admin account defined by the deployment configuration, outside the database. It creates the first super admin of an environment and is never listed, demoted or removed.

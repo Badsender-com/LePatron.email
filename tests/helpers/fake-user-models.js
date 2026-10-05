@@ -14,11 +14,11 @@
  * by `user.schema.test.js`), `findByIdAndUpdate` hands back the updated
  * record, and fields are stored as given.
  *
- * Documents carry the virtuals and methods the controllers rely on:
- * `isAdmin` and `isGroupAdmin` derive from `role` as `UserSchema` does once
- * super admin is a persisted role (ADR 0002), `status` follows the schema's
- * virtual without its SAML branch; `activate`, `deactivate`, `resetPassword`
- * and `save` write back to the store.
+ * Documents carry the virtuals and methods the controllers rely on. They
+ * assume ADR 0002, not today's schema: `isAdmin` and `isGroupAdmin` derive
+ * from `role` (the schema suite is what pins the flip of the virtual);
+ * `status` follows the schema's virtual without its SAML branch; `activate`,
+ * `deactivate`, `resetPassword` and `save` write back to the store.
  */
 
 const ROLE_SUPER_ADMIN = 'super_admin';
@@ -60,6 +60,22 @@ function query(resolveTo) {
 }
 
 const VIRTUALS = ['isAdmin', 'isGroupAdmin', 'group', 'status'];
+// What an update may write, as `UserSchema` declares it.
+const STORED_FIELDS = [
+  'name',
+  'email',
+  'lang',
+  'role',
+  'externalUsername',
+  '_company',
+  'password',
+  'token',
+  'tokenExpire',
+  'isDeactivated',
+  'activeSessionId',
+  'sessionMetadata',
+  'lastActivity',
+];
 const isVirtual = (key) => VIRTUALS.includes(key);
 
 function createStore() {
@@ -160,7 +176,9 @@ function createStore() {
         if (!record) return null;
         const fields = update.$set || update;
         Object.entries(fields).forEach(([key, value]) => {
-          if (value !== undefined) record[key] = value;
+          if (value !== undefined && STORED_FIELDS.includes(key)) {
+            record[key] = value;
+          }
         });
         return toDocument(record, { populated: true });
       }),
@@ -171,12 +189,46 @@ function createStore() {
     },
   };
 
+  function toGroupDocument(record) {
+    if (!record) return null;
+    return {
+      ...record,
+      id: String(record._id),
+      async save() {
+        Object.assign(
+          record,
+          Object.fromEntries(
+            Object.entries(this).filter(
+              ([key, value]) => typeof value !== 'function' && key !== 'id'
+            )
+          )
+        );
+        return this;
+      },
+      toJSON() {
+        return Object.fromEntries(
+          Object.entries(this).filter(
+            ([, value]) => typeof value !== 'function'
+          )
+        );
+      },
+    };
+  }
+
   const Groups = {
     findById: (id) =>
-      query(() => groups.find((g) => matches(g, { _id: id })) || null),
+      query(() => toGroupDocument(groups.find((g) => matches(g, { _id: id })))),
     findOne: (filter) =>
-      query(() => groups.find((g) => matches(g, filter)) || null),
-    find: (filter) => query(() => groups.filter((g) => matches(g, filter))),
+      query(() => toGroupDocument(groups.find((g) => matches(g, filter)))),
+    find: (filter) =>
+      query(() =>
+        groups.filter((g) => matches(g, filter)).map(toGroupDocument)
+      ),
+    updateMany: async (filter, update) => {
+      const targets = groups.filter((g) => matches(g, filter));
+      targets.forEach((g) => Object.assign(g, update.$set || update));
+      return { nModified: targets.length };
+    },
   };
 
   const Mailings = {
