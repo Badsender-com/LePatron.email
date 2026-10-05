@@ -44,6 +44,10 @@ function generateSubjects() {
   return `${prefixApi}/text-generation/subject`;
 }
 
+function generatePreheaders() {
+  return `${prefixApi}/text-generation/preheader`;
+}
+
 function getTranslationLanguages() {
   return `${prefixApi}/translation/languages`;
 }
@@ -73,6 +77,7 @@ function readStoredImage(imageName) {
 
 module.exports = {
   generateSubjects,
+  generatePreheaders,
   getEspIds,
   getProfileDetail,
   getCampaignDetail,
