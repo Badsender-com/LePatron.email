@@ -1,6 +1,13 @@
 <script>
 import { CheckCircle2, Check } from 'lucide-vue';
 
+// What to check when a job reports no warnings of its own (an older server).
+const DEFAULT_WARNING_KEYS = [
+  'translation.warnings.checkLinks',
+  'translation.warnings.checkImages',
+  'translation.warnings.checkVariant',
+];
+
 export default {
   name: 'BsMailingModalTranslationWarning',
   components: {
@@ -10,10 +17,23 @@ export default {
   data() {
     return {
       show: false,
+      warningKeys: DEFAULT_WARNING_KEYS,
     };
   },
+  computed: {
+    // The server says what to check — a composed block it could not translate
+    // faithfully adds a line. A key this build has no wording for is left out
+    // rather than shown raw.
+    shownWarningKeys() {
+      return this.warningKeys.filter((key) => this.$te(key));
+    },
+  },
   methods: {
-    open() {
+    open(warningKeys) {
+      this.warningKeys =
+        Array.isArray(warningKeys) && warningKeys.length > 0
+          ? warningKeys
+          : DEFAULT_WARNING_KEYS;
       this.show = true;
     },
     close() {
@@ -43,9 +63,9 @@ export default {
         <v-alert type="info" dense outlined class="mb-4" color="#2196F3">
           <strong>{{ $t('translation.warningTitle') }}</strong>
           <ul class="mt-2 mb-0">
-            <li>{{ $t('translation.warningLinks') }}</li>
-            <li>{{ $t('translation.warningImages') }}</li>
-            <li>{{ $t('translation.warningVariants') }}</li>
+            <li v-for="key in shownWarningKeys" :key="key">
+              {{ $t(key) }}
+            </li>
           </ul>
         </v-alert>
       </v-card-text>

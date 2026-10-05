@@ -37,6 +37,16 @@ const LEADING_COMBINATOR = /^\s*[>+~]?\s*/;
 // At-rules whose inner blocks hold selectors to rewrite.
 const NESTING_AT_RULES = new Set(['media', 'supports', 'document']);
 
+// What else the canvas copy keeps: rules, comments, and the at-rules that
+// define something rather than apply it. Everything else — `@import` first,
+// which would bring a stylesheet in unscoped, then `@namespace`, `@page` and
+// whatever this parser does not know — is left out of the canvas only; the
+// export still ships the stylesheet as written.
+const KEPT_TYPES = new Set(['rule', 'comment', 'font-face', 'keyframes']);
+
+// After an already-scoped prefix, a sibling combinator leaves the canvas.
+const LEAVES_CANVAS = /^\s*[+~]/;
+
 /**
  * Splits a selector list on its top-level commas only.
  *
@@ -111,8 +121,14 @@ function compoundLength(text) {
 function scopeSelector(selector, prefix) {
   const trimmed = selector.trim();
   if (trimmed === '') return selector;
-  // Already scoped — an author pasting rules copied out of the template.
-  if (trimmed.indexOf(prefix) === 0) return trimmed;
+  // Already scoped — an author pasting rules copied out of the template —
+  // unless what follows the prefix reaches its siblings.
+  if (
+    trimmed.indexOf(prefix) === 0 &&
+    !LEAVES_CANVAS.test(trimmed.slice(prefix.length))
+  ) {
+    return trimmed;
+  }
 
   let scoped = prefix;
   let rest = trimmed;
@@ -144,13 +160,17 @@ function scopeSelector(selector, prefix) {
  * @param {{ forceMedia: boolean, mediaSelectorSuffix: string }} media see
  *   preview-media.js
  * @param {string} suffix appended to every selector, inside a forced media rule
+ * @returns {Array} the rules the canvas keeps (see KEPT_TYPES)
  */
 function scopeRules(rules, prefix, media, suffix) {
-  if (!Array.isArray(rules)) return;
+  if (!Array.isArray(rules)) return [];
 
-  rules.forEach((rule) => {
-    if (!rule) return;
+  const kept = rules.filter(
+    (rule) =>
+      rule && (KEPT_TYPES.has(rule.type) || NESTING_AT_RULES.has(rule.type))
+  );
 
+  kept.forEach((rule) => {
     if (rule.type === 'rule' && Array.isArray(rule.selectors)) {
       // Joined back before re-splitting: see the header on mensch's commas.
       rule.selectors = splitSelectorList(rule.selectors.join(',')).map(
@@ -164,7 +184,7 @@ function scopeRules(rules, prefix, media, suffix) {
       // A media query never follows the canvas width: see preview-media.js.
       const forced = rule.type === 'media' && media.forceMedia;
       if (forced) rule.name = ALWAYS_TRUE_MEDIA;
-      scopeRules(
+      rule.rules = scopeRules(
         rule.rules,
         prefix,
         media,
@@ -172,6 +192,8 @@ function scopeRules(rules, prefix, media, suffix) {
       );
     }
   });
+
+  return kept;
 }
 
 /**
@@ -208,7 +230,12 @@ function scopeCss(css, prefix, options) {
     forceMedia: Boolean(options && options.forceMedia),
     mediaSelectorSuffix: (options && options.mediaSelectorSuffix) || '',
   };
-  scopeRules(sheet.stylesheet.rules, prefix.trim(), media, '');
+  sheet.stylesheet.rules = scopeRules(
+    sheet.stylesheet.rules,
+    prefix.trim(),
+    media,
+    ''
+  );
 
   try {
     return cssStringify(sheet, { indentation: '' });

@@ -9,6 +9,7 @@ const path = require('path');
 const {
   fallbackOf,
   defaultsOf,
+  translatableOf,
 } = require('../../../packages/shared/block-builder/manifest.js');
 const {
   ELEMENTS,
@@ -104,5 +105,80 @@ describe('the compiler refuses a fallback that would not survive', () => {
         template: '<table><tr><td><a :href="link">a</a></td></tr></table>',
       })
     ).rejects.toThrow(/not a valid URL value/);
+  });
+});
+
+// What the AI translation may rewrite in a composed block. Listed by hand,
+// element by element, on purpose: a sixth element — or a new slot on one of
+// these — fails here until someone has decided whether its value is prose.
+describe('what a translation may rewrite', () => {
+  const EXPECTED = {
+    text: ['content'],
+    image: ['alt'],
+    button: ['label'],
+    divider: [],
+    spacer: [],
+  };
+
+  it('is decided for every element', () => {
+    expect(ELEMENTS.map((element) => element.type).sort()).toEqual(
+      Object.keys(EXPECTED).sort()
+    );
+  });
+
+  test.each(ELEMENTS.map((element) => [element.type, element]))(
+    '%s',
+    (type, element) => {
+      expect(element.translatable).toEqual(EXPECTED[type]);
+    }
+  );
+
+  it('takes TEXT and RICH_TEXT, and an ATTR only when declared', () => {
+    expect(
+      translatableOf({
+        slots: {
+          a: { context: 'TEXT' },
+          b: { context: 'RICH_TEXT' },
+          c: { context: 'ATTR' },
+          d: { context: 'ATTR', translatable: true },
+        },
+      })
+    ).toEqual(['a', 'b', 'd']);
+  });
+
+  it.each(['URL', 'COLOR', 'PX', 'CSS_VALUE'])(
+    'never takes a %s slot, even flagged',
+    (context) => {
+      expect(
+        translatableOf({ slots: { x: { context, translatable: true } } })
+      ).toEqual([]);
+    }
+  );
+});
+
+describe('the compiler refuses a translatable flag that decides nothing', () => {
+  it.each([
+    ['on a URL slot', { context: 'URL', default: '', translatable: true }],
+    ['on a TEXT slot', { context: 'TEXT', default: '', translatable: true }],
+    [
+      'that is not a boolean',
+      { context: 'ATTR', default: '', translatable: 1 },
+    ],
+  ])('%s', async (_, slot) => {
+    await expect(
+      compileFixture({
+        slots: { link: slot },
+        template: '<table><tr><td :title="link">a</td></tr></table>',
+      })
+    ).rejects.toThrow(/translatable/);
+  });
+
+  it('accepts it on an ATTR slot', async () => {
+    await expect(
+      compileFixture({
+        slots: { link: { context: 'ATTR', default: '', translatable: true } },
+        template: '<table><tr><td :title="link">a</td></tr></table>',
+      })
+    ).resolves.toBeTruthy();
   });
 });

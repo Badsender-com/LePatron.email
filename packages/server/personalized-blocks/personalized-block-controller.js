@@ -119,9 +119,10 @@ async function updatePersonalizedBlock(req, res) {
  */
 async function deletePersonalizedBlock(req, res) {
   const { id } = req.params;
+  const { groupId } = req.query;
 
   try {
-    await personalizedBlockService.deletePersonalizedBlock(id);
+    await personalizedBlockService.deletePersonalizedBlock(id, groupId);
     res.status(204).send();
   } catch (error) {
     if (error.status) {

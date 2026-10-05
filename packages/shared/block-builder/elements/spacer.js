@@ -4,13 +4,18 @@
 // components/spacer.vue; see index.js for how it gets here.
 
 const { defineTemplate } = require('../template.js');
-const { defaultsOf } = require('../manifest.js');
+const { defaultsOf, translatableOf } = require('../manifest.js');
 
 const render = defineTemplate(
   require('../components/spacer.compiled.js').default
 );
 
-// Typed as the generator expects — see ../manifest.js.
-const defaults = defaultsOf(require('../components/spacer.slots.js'));
+const manifest = require('../components/spacer.slots.js');
 
-module.exports = { type: 'spacer', render, defaults };
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(manifest);
+
+// What a translation may rewrite — see ../manifest.js.
+const translatable = translatableOf(manifest);
+
+module.exports = { type: 'spacer', render, defaults, translatable };

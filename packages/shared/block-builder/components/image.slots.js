@@ -5,7 +5,9 @@
 module.exports = {
   slots: {
     src: { context: 'URL', default: '' },
-    alt: { context: 'ATTR', default: '' },
+    // Prose a reader (or a screen reader) sees, unlike `align`: translated
+    // with the rest of the block. See ../manifest.js translatableOf.
+    alt: { context: 'ATTR', default: '', translatable: true },
     href: { context: 'URL', default: '', fallback: '#' },
     width: { context: 'PX', default: 600 },
     align: { context: 'ATTR', default: 'center' },

@@ -109,10 +109,27 @@ function paletteIconFor(block) {
   return descriptor ? descriptor.paletteIcon : '';
 }
 
+/**
+ * Whether the editor offers the "Translate block" button on a block.
+ *
+ * True for everything a template ships. A synthetic block says for itself
+ * (`blockTranslatable`), and neither does today: the HTML code block must
+ * never have its markup rewritten, and a composed block is translated with
+ * the whole mailing only — the per-block route cannot rebuild its markup.
+ *
+ * @param {Object} block
+ * @returns {boolean}
+ */
+function offersBlockTranslation(block) {
+  const descriptor = descriptorFor(block);
+  return descriptor ? descriptor.blockTranslatable === true : true;
+}
+
 module.exports = {
   descriptorFor,
   isSyntheticBlock,
   isComposedBlock,
+  offersBlockTranslation,
   isEmptySyntheticBlock,
   emptyLabelKeyFor,
   paletteLabelKeyFor,

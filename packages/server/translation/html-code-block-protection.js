@@ -47,19 +47,20 @@ const DIV_OPEN = /<div\s/gi;
 const DIV_OR_COMMENT = /<!--|-->|<div\b|<\/div\s*>/gi;
 
 /**
- * Whether an opening tag's class list holds the marker class, as a whole token:
+ * The marker class an opening tag carries, as a whole token, or null:
  * `lp-html-block-root` (the block root) and `not-lp-html-block-either` are not
  * the marker.
  */
-function hasMarkerClass(tag) {
+function markerClassOf(tag) {
   const classAttr = /\sclass\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
-  if (!classAttr) return false;
+  if (!classAttr) return null;
   const classes = (classAttr[1] || classAttr[2] || '').split(/\s+/);
-  return MARKER_CLASSES.some((marker) => classes.includes(marker));
+  return MARKER_CLASSES.find((marker) => classes.includes(marker)) || null;
 }
 
 /**
- * Opening tags of marker elements, in document order: `{ start, contentStart }`.
+ * Opening tags of marker elements, in document order:
+ * `{ start, contentStart, markerClass }`.
  *
  * Linear: every candidate `<div ` is read up to the next `>`, and the scan
  * resumes after that `>` — nothing in between can open a real tag, since the
@@ -76,16 +77,16 @@ function findMarkerTags(html) {
     const contentStart = close + 1;
     DIV_OPEN.lastIndex = contentStart;
     if (contentStart - start > MAX_TAG_LENGTH) continue;
-    if (hasMarkerClass(html.slice(start, contentStart))) {
-      tags.push({ start, contentStart });
-    }
+    const markerClass = markerClassOf(html.slice(start, contentStart));
+    if (markerClass) tags.push({ start, contentStart, markerClass });
   }
   return tags;
 }
 
 /**
- * Index just past the `</div>` closing the element whose content starts at
- * `contentStart`, or -1 when the markup is unbalanced.
+ * Where the element whose content starts at `contentStart` closes:
+ * `{ contentEnd, end }` around its `</div>`, or null when the markup is
+ * unbalanced.
  */
 function findMatchingClose(html, contentStart) {
   DIV_OR_COMMENT.lastIndex = contentStart;
@@ -104,52 +105,64 @@ function findMatchingClose(html, contentStart) {
       depth += 1;
     } else if (value.startsWith('</div')) {
       depth -= 1;
-      if (depth === 0) return token.index + token[0].length;
+      if (depth === 0) {
+        return { contentEnd: token.index, end: token.index + token[0].length };
+      }
     }
   }
-  return -1;
+  return null;
 }
 
 /**
- * Where the zone opened at `tag` ends, using the stored markup when one of the
- * remaining `htmlCodes` sits exactly at the start of its content. The matched
- * markup is removed from `htmlCodes`, so two identical blocks match in turn.
+ * The zone opened at `tag`, when one of the `remaining` stored markups sits
+ * exactly at the start of its content: `{ contentEnd, end, matched }`, where
+ * `matched` is that markup's index in the caller's list. It is removed from
+ * `remaining`, so two identical blocks match in turn. Null when none does.
  */
-function exactZoneEnd(html, tag, htmlCodes) {
+function exactZone(html, tag, remaining) {
   // Blocks render in the order they are stored, so the match is almost always
   // the first one left. Looking a few further tolerates a template whose
   // containers render in another order, without comparing every tag against
   // every block.
-  const matched = htmlCodes
+  const found = remaining
     .slice(0, EXACT_MATCH_LOOKAHEAD)
-    .findIndex((raw) => html.startsWith(raw, tag.contentStart));
-  if (matched === -1) return -1;
+    .findIndex(({ raw }) => html.startsWith(raw, tag.contentStart));
+  if (found === -1) return null;
 
-  const contentEnd = tag.contentStart + htmlCodes[matched].length;
-  htmlCodes.splice(matched, 1);
+  const { raw, index } = remaining[found];
+  remaining.splice(found, 1);
+  const contentEnd = tag.contentStart + raw.length;
 
   // The marker element's own closing tag follows the markup.
   const close = /^<\/div\s*>/i.exec(html.slice(contentEnd, contentEnd + 16));
-  return close ? contentEnd + close[0].length : contentEnd;
+  const end = close ? contentEnd + close[0].length : contentEnd;
+  return { contentEnd, end, matched: index };
 }
 
 /**
- * Ranges of `html` that belong to an HTML code block, as [start, end) pairs
- * covering the marker element and its content.
+ * The zones of `html` that belong to a synthetic block, in document order.
+ *
+ * Each zone gives the range of the marker element (`start`, `end`, what the
+ * string replacement and the sanitizer keep out) and of its content
+ * (`contentStart`, `contentEnd`, the block's markup itself, which is what the
+ * composed-block swap replaces). `matched` is the index, in `htmlCodes`, of the
+ * stored markup the zone was matched on exactly, or -1 when it was located by
+ * counting `<div>`.
  *
  * @param {string} html
- * @param {string[]} [htmlCodes] the markup stored in the mailing's HTML code
+ * @param {string[]} [htmlCodes] the markup stored in the mailing's synthetic
  *   blocks, in document order. When given, each zone is matched on it exactly.
- * @returns {Array<{start: number, end: number}>}
+ * @returns {Array<{start: number, end: number, contentStart: number,
+ *   contentEnd: number, matched: number, markerClass: string}>}
  */
 function findHtmlCodeBlockRanges(html, htmlCodes) {
   const ranges = [];
   if (!html || typeof html !== 'string') return ranges;
 
   // Empty blocks render no zone at all, and '' would match anywhere.
-  const remaining = (htmlCodes || []).filter(
-    (raw) => typeof raw === 'string' && raw !== ''
-  );
+  const remaining = (htmlCodes || [])
+    .map((raw, index) => ({ raw, index }))
+    .filter(({ raw }) => typeof raw === 'string' && raw !== '');
 
   for (const tag of findMarkerTags(html)) {
     // A marker inside a zone already protected — pasted markup that happens to
@@ -157,19 +170,21 @@ function findHtmlCodeBlockRanges(html, htmlCodes) {
     const previous = ranges[ranges.length - 1];
     if (previous && tag.start < previous.end) continue;
 
-    let end = exactZoneEnd(html, tag, remaining);
-    if (end === -1) end = findMatchingClose(html, tag.contentStart);
-    if (end === -1) {
+    const { start, contentStart, markerClass } = tag;
+    const base = { start, contentStart, markerClass, matched: -1 };
+    const zone =
+      exactZone(html, tag, remaining) || findMatchingClose(html, contentStart);
+    if (!zone) {
       // Unbalanced pasted markup. Protect to the end of the document rather than
       // risk rewriting inside it: a mailing whose tail is left untranslated is a
       // visible, recoverable problem; silently corrupted pasted HTML is not.
       logger.warn(
         '[Translation] unbalanced HTML code block in previewHtml, protecting to end of document'
       );
-      ranges.push({ start: tag.start, end: html.length });
+      ranges.push({ ...base, contentEnd: html.length, end: html.length });
       return ranges;
     }
-    ranges.push({ start: tag.start, end });
+    ranges.push({ ...base, ...zone });
   }
   return ranges;
 }
@@ -211,8 +226,16 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  * Why: the translated copy's previewHtml is sanitized before storage, because
  * provider output was injected into it. Sanitizing the pasted markup along with
  * it stripped the ESP scripts the block exists for, and the copy's ZIP no longer
- * matched its export. The zones hold no provider output — they are excluded
- * from translation — and the preview is sanitized again when served.
+ * matched its export. An HTML code block's zone holds no provider output — it
+ * is excluded from translation. A composed block's zone holds markup the
+ * generator rebuilt from translated text, and relies on the generator's
+ * escaping instead. The preview is sanitized again when served.
+ *
+ * Only a zone matched EXACTLY on a stored markup is kept out of the transform.
+ * One located by counting `<div>` is only known to carry a marker class — which
+ * any text written into the preview can carry too — so it is sanitized with
+ * the rest. The string replacement keeps protecting both kinds: leaving a zone
+ * untranslated is the safe side there, not here.
  *
  * @param {string} html
  * @param {Function} transform (document: string) => string
@@ -221,7 +244,9 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  */
 function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
   if (!html || typeof html !== 'string') return transform(html);
-  const ranges = findHtmlCodeBlockRanges(html, htmlCodes);
+  const ranges = findHtmlCodeBlockRanges(html, htmlCodes).filter(
+    (range) => range.matched !== -1
+  );
   if (ranges.length === 0) return transform(html);
 
   const nonce = crypto.randomBytes(8).toString('hex');

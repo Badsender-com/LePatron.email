@@ -2,7 +2,7 @@
 
 // The five content elements of the mono-column MVP.
 //
-// Each module exports `{ type, render, defaults }`. Adding a sixth means adding
+// Each module exports `{ type, render, defaults, translatable }`. Adding a sixth means adding
 // a file and a line here — nothing else in the generator knows the list.
 //
 // The markup is not written in these modules. It is compiled from
