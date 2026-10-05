@@ -12,7 +12,6 @@
 // meant to withhold, and nothing in the UI would show it.
 
 const {
-  bringsDisallowedSyntheticHtml,
   assertSyntheticHtmlAllowed,
   findDisallowedSyntheticBlock,
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
@@ -25,7 +24,7 @@ const {
 } = require('./synthetic-blocks.fixtures.js');
 
 const brings = (data, previousData, flags) =>
-  bringsDisallowedSyntheticHtml({ data, previousData, flags });
+  findDisallowedSyntheticBlock({ data, previousData, flags }) !== null;
 
 const ONLY_BUILDER = { blockBuilderEnabled: true, htmlBlockEnabled: false };
 const ONLY_HTML = { blockBuilderEnabled: false, htmlBlockEnabled: true };

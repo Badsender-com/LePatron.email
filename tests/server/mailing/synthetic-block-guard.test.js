@@ -2,62 +2,20 @@
 
 const {
   validateSyntheticBlocks,
-  findLongestSyntheticBlock,
+  findSyntheticBlocks,
   HTML_CODE_MAX_LENGTH,
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 
 const { htmlBlock, dataWith } = require('./synthetic-blocks.fixtures.js');
 
-describe('html code block guard', () => {
-  describe('findLongestSyntheticBlock', () => {
-    it('returns 0 when there is no HTML code block', () => {
-      expect(
-        findLongestSyntheticBlock(
-          dataWith({ type: 'textBlock', text: 'hello' })
-        )
-      ).toBe(0);
-    });
-
-    it('returns the length of the longest HTML code block', () => {
-      const data = dataWith(
-        htmlBlock('ab'),
-        { type: 'textBlock', text: 'x'.repeat(50) },
-        htmlBlock('abcd'),
-        htmlBlock('abc')
-      );
-      expect(findLongestSyntheticBlock(data)).toBe(4);
-    });
-
-    it('ignores a non-string value', () => {
-      expect(
-        findLongestSyntheticBlock(dataWith({ type: 'htmlCodeBlock' }))
-      ).toBe(0);
-      expect(
-        findLongestSyntheticBlock(
-          dataWith({ type: 'htmlCodeBlock', htmlCode: 42 })
-        )
-      ).toBe(0);
-    });
-
-    it('tolerates malformed or missing data', () => {
-      expect(findLongestSyntheticBlock(undefined)).toBe(0);
-      expect(findLongestSyntheticBlock(null)).toBe(0);
-      expect(findLongestSyntheticBlock({})).toBe(0);
-      expect(findLongestSyntheticBlock({ mainBlocks: {} })).toBe(0);
-      expect(findLongestSyntheticBlock({ mainBlocks: { blocks: null } })).toBe(
-        0
-      );
-      expect(findLongestSyntheticBlock(dataWith(null, undefined))).toBe(0);
-    });
-  });
-
+describe('synthetic block guard — sizes', () => {
   describe('validateSyntheticBlocks', () => {
     it('accepts a mailing with no HTML code block', () => {
       const result = validateSyntheticBlocks(
         dataWith({ type: 'textBlock', text: 'hello' })
       );
       expect(result.valid).toBe(true);
-      expect(result.maxLength).toBe(HTML_CODE_MAX_LENGTH);
+      expect(result.errorCode).toBeNull();
     });
 
     it('accepts a block exactly at the limit', () => {
@@ -69,7 +27,7 @@ describe('html code block guard', () => {
       const data = dataWith(htmlBlock('x'.repeat(HTML_CODE_MAX_LENGTH + 1)));
       const result = validateSyntheticBlocks(data);
       expect(result.valid).toBe(false);
-      expect(result.length).toBe(HTML_CODE_MAX_LENGTH + 1);
+      expect(result.errorCode).toBe('HTML_CODE_BLOCK_TOO_LARGE');
     });
 
     // The editor enforces the same limit, so this only fires on a crafted or
@@ -91,15 +49,42 @@ describe('html code block guard', () => {
     it('accepts an absent payload, so a save without data is untouched', () => {
       expect(validateSyntheticBlocks(undefined).valid).toBe(true);
     });
+
+    it('measures nothing but a string', () => {
+      expect(
+        validateSyntheticBlocks(dataWith({ type: 'htmlCodeBlock' }), 0)
+      ).toEqual({
+        valid: true,
+        errorCode: null,
+      });
+      expect(
+        validateSyntheticBlocks(
+          dataWith({ type: 'htmlCodeBlock', htmlCode: 42 }),
+          0
+        ).valid
+      ).toBe(true);
+    });
+  });
+
+  describe('findSyntheticBlocks', () => {
+    it('tolerates malformed or missing data', () => {
+      [
+        undefined,
+        null,
+        {},
+        { mainBlocks: {} },
+        { mainBlocks: { blocks: null } },
+        dataWith(null, undefined),
+      ].forEach((data) => expect(findSyntheticBlocks(data)).toEqual([]));
+    });
   });
 });
 
 // The flag only hides the palette entry in the editor, and the block definition
 // is injected into every template: on its own it stopped no hand-written request.
-describe('html code block guard — the template flag', () => {
+describe('synthetic block guard — the template flag', () => {
   const {
-    findSyntheticBlocks,
-    bringsDisallowedSyntheticHtml,
+    findDisallowedSyntheticBlock,
     assertSyntheticBlockContentAllowed,
     hasSyntheticBlock,
   } = require('../../../packages/server/mailing/synthetic-block-guard.js');
@@ -123,13 +108,13 @@ describe('html code block guard — the template flag', () => {
     });
   });
 
-  describe('bringsDisallowedSyntheticHtml', () => {
+  describe('findDisallowedSyntheticBlock', () => {
     const check = (data, previousData, htmlBlockEnabled) =>
-      bringsDisallowedSyntheticHtml({
+      findDisallowedSyntheticBlock({
         data,
         previousData,
         flags: { htmlBlockEnabled },
-      });
+      }) !== null;
 
     it('allows anything when the template enables the block', () => {
       expect(check(dataWith(htmlBlock('<p>new</p>')), dataWith(), true)).toBe(

@@ -123,19 +123,6 @@ function findSyntheticBlocks(data) {
 }
 
 /**
- * Length of the longest synthetic block in a Mosaico content model, or 0.
- *
- * @param {Object} data mailing.data
- * @returns {number}
- */
-function findLongestSyntheticBlock(data) {
-  return findSyntheticBlocks(data).reduce(
-    (longest, block) => Math.max(longest, htmlOf(block).length),
-    0
-  );
-}
-
-/**
  * The serialised state a synthetic block stores next to its markup, or '' for
  * a block that keeps none.
  *
@@ -173,19 +160,15 @@ function findOversizedSyntheticBlock(data, limits) {
 /**
  * @param {Object} data mailing.data
  * @param {number} [maxLength] maximum markup length
- * @returns {{ valid: boolean, length: number, maxLength: number,
- *   errorCode: string|null }} `length` is the longest markup; `errorCode`
- *   names the refused block — its markup or, for the builder, its state.
+ * @returns {{ valid: boolean, errorCode: string|null }} `errorCode` names the
+ *   refused block — its markup or, for the builder, its state.
  */
 function validateSyntheticBlocks(data, maxLength) {
   const limit =
     typeof maxLength === 'number' ? maxLength : HTML_CODE_MAX_LENGTH;
-  const length = findLongestSyntheticBlock(data);
   const refused = findOversizedSyntheticBlock(data, { html: limit });
   return {
     valid: refused === null,
-    length,
-    maxLength: limit,
     errorCode: refused ? refused.tooLargeErrorCode : null,
   };
 }
@@ -245,16 +228,6 @@ function findDisallowedSyntheticBlock({ data, previousData, flags }) {
 }
 
 /**
- * Whether `data` brings markup a template flag disallows.
- *
- * @param {Object} params see findDisallowedSyntheticBlock
- * @returns {boolean}
- */
-function bringsDisallowedSyntheticHtml(params) {
-  return findDisallowedSyntheticBlock(params) !== null;
-}
-
-/**
  * Throws when `data` brings markup a template flag disallows.
  *
  * The error names the block that was refused, so a client given the builder but
@@ -305,12 +278,10 @@ function hasSyntheticBlock(data) {
 
 module.exports = {
   validateSyntheticBlocks,
-  findLongestSyntheticBlock,
   findOversizedSyntheticBlock,
   findSyntheticBlocks,
   locateSyntheticBlocks,
   findDisallowedSyntheticBlock,
-  bringsDisallowedSyntheticHtml,
   assertSyntheticHtmlAllowed,
   assertSyntheticBlockContentAllowed,
   hasSyntheticBlock,
