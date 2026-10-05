@@ -23,8 +23,10 @@ async function createUser(userParams) {
   return user;
 }
 
-async function updateUser(userParams) {
-  const user = await Users.findOneForApi({ _id: userParams.userId });
+// `loaded` is the target when the caller already has it.
+async function updateUser(userParams, loaded) {
+  const user =
+    loaded || (await Users.findOneForApi({ _id: userParams.userId }));
   if (!user) {
     throw new createError.NotFound();
   }

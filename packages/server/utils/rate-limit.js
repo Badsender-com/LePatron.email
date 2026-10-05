@@ -45,12 +45,15 @@ function createRateLimiter({ windowMs, max, keyOf, now = Date.now }) {
   };
 }
 
-// Behind the platform's proxy, `req.ip` is the proxy; the client is the first
-// address of the forwarded chain.
+// Behind the platform's proxy, `req.ip` is the proxy. The proxy appends the
+// address it saw to the forwarded chain, so the last entry is the client as
+// the proxy knows it; the earlier entries are whatever the client sent and
+// are never used as a key.
 function clientIp(req) {
   const forwarded = req.headers && req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0].trim();
+  if (typeof forwarded === 'string' && forwarded.trim().length > 0) {
+    const chain = forwarded.split(',').map((entry) => entry.trim());
+    return chain[chain.length - 1];
   }
   return req.ip || (req.connection && req.connection.remoteAddress) || null;
 }

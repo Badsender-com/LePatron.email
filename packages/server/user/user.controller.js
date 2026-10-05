@@ -15,6 +15,7 @@ const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const userScope = require('./user-scope.js');
+const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isSamlConfigured } = require('../account/saml-config.js');
 const {
@@ -233,7 +234,10 @@ async function update(req, res) {
   if (!target) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, target);
 
-  const updatedUser = await userService.updateUser({ userId, ...userParams });
+  const updatedUser = await userService.updateUser(
+    { userId, ...userParams },
+    target
+  );
 
   res.json(updatedUser);
 }
@@ -320,15 +324,24 @@ async function adminResetPassword(req, res) {
  */
 
 async function forgotPassword(req, res) {
-  const { email } = req.params;
+  const email = normalizeString(req.params.email);
   const user = await Users.findOne({ email, isDeactivated: { $ne: true } });
-  // The answer says nothing about the account: the email does, when there
-  // is one.
-  if (user) {
-    await user.resetPassword('user', user.lang);
-    logger.info(`[account] password reset email sent for ${email}`);
-  }
+  // The answer says nothing about the account, in its body or in its timing:
+  // the email does, when there is one, and is sent once the answer is out.
   res.json({});
+  if (user) {
+    user
+      .resetPassword('user', user.lang)
+      .then(() =>
+        logger.info(`[account] password reset email sent to ${user.id}`)
+      )
+      .catch((error) =>
+        logger.error(
+          `[account] password reset email failed for ${user.id}`,
+          error
+        )
+      );
+  }
 }
 
 /**
@@ -380,25 +393,21 @@ async function getPublicProfile(req, res) {
   }
   // todo move on service
   const user = await Users.findOne({
-    email: username,
+    email: normalizeString(username),
     isDeactivated: { $ne: true },
   });
-  // An unknown email reads like an account signing in with a password, so
-  // the login page tells nothing about which emails have an account.
+  // The answer only says how to sign in, which is all the login page reads:
+  // an unknown email reads like an account signing in with a password, so
+  // nothing tells which emails have an account.
   if (!user) return res.json({ group: { isSAMLAuthentication: false } });
   const group = await Groups.findOne({
     _id: user.group,
   });
 
-  const { name, email, isDeactivated } = user;
-
+  // SSO is offered only when it can be verified: a company without its
+  // identity provider's certificate signs in with a password.
   return res.json({
-    name,
-    email,
-    isDeactivated,
-    // SSO is offered only when it can be verified: a company without its
-    // identity provider's certificate signs in with a password.
-    group: { name: group.name, isSAMLAuthentication: isSamlConfigured(group) },
+    group: { isSAMLAuthentication: isSamlConfigured(group) },
   });
 }
 
