@@ -12,7 +12,7 @@ _UI_: Groupe
 _Avoid_: Company, organization, account
 
 **Platform group**:
-The group of the operator running the platform. It is the home of the super admins and of the AI playground. There is exactly one per environment.
+The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged at installation.
 _Avoid_: Badsender group, admin group
 
 ### Roles

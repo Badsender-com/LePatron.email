@@ -10,10 +10,15 @@
  * with `$ne`, `$in`, `$exists`), so a test only seeds records and reads them
  * back through the controller.
  *
+ * They are filters, not the schema: no validation runs (the enum is covered
+ * by `user.schema.test.js`), `findByIdAndUpdate` hands back the updated
+ * record, and fields are stored as given.
+ *
  * Documents carry the virtuals and methods the controllers rely on:
  * `isAdmin` and `isGroupAdmin` derive from `role` as `UserSchema` does once
- * super admin is a persisted role (ADR 0002); `activate`, `deactivate`,
- * `resetPassword` and `save` write back to the store.
+ * super admin is a persisted role (ADR 0002), `status` follows the schema's
+ * virtual without its SAML branch; `activate`, `deactivate`, `resetPassword`
+ * and `save` write back to the store.
  */
 
 const ROLE_SUPER_ADMIN = 'super_admin';
@@ -54,6 +59,9 @@ function query(resolveTo) {
   return chain;
 }
 
+const VIRTUALS = ['isAdmin', 'isGroupAdmin', 'group', 'status'];
+const isVirtual = (key) => VIRTUALS.includes(key);
+
 function createStore() {
   const users = [];
   const groups = [];
@@ -79,12 +87,20 @@ function createStore() {
       get group() {
         return groupOf(this);
       },
+      get status() {
+        if (this.isDeactivated) return 'deactivated';
+        if (this.password) return 'confirmed';
+        if (this.token) return 'password-mail-sent';
+        return 'to-be-initialized';
+      },
       async save() {
+        // Only stored fields go back to the record: no methods, no virtuals.
         Object.assign(
           record,
           Object.fromEntries(
             Object.entries(this).filter(
-              ([key, value]) => typeof value !== 'function' && key !== 'id'
+              ([key, value]) =>
+                typeof value !== 'function' && key !== 'id' && !isVirtual(key)
             )
           )
         );
@@ -106,16 +122,11 @@ function createStore() {
         return this.save();
       },
       toJSON() {
-        const fields = Object.fromEntries(
+        return Object.fromEntries(
           Object.entries(this).filter(
             ([, value]) => typeof value !== 'function'
           )
         );
-        return {
-          ...fields,
-          isAdmin: this.isAdmin,
-          isGroupAdmin: this.isGroupAdmin,
-        };
       },
     };
     if (populated) doc._company = groupOf(record);
