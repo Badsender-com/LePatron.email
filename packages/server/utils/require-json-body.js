@@ -12,7 +12,8 @@ const ERROR_CODES = require('../constant/error-codes.js');
 // bodies everywhere. A browser only sends `application/json` cross-site after
 // a CORS preflight the app does not grant, so requiring it keeps these routes
 // to the app's own pages. Every client of these routes already sends JSON
-// (the editor through $.ajax and axios, the mailing list through axios).
+// (the editor through $.ajax and axios, the mailing list through axios, the
+// editor's ESP dialog through axios for send-campaign-mail).
 
 /**
  * @param {import('express').Request} req

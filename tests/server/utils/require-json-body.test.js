@@ -16,6 +16,7 @@ const {
 } = require('../../../packages/server/account/auth.guard.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 const router = require('../../../packages/server/mailing/mailing.routes.js');
+const profileRouter = require('../../../packages/server/profile/profile.routes.js');
 
 function appWith(handler) {
   const app = express();
@@ -67,5 +68,17 @@ describe('the mailing routes that act on what the request carries', () => {
     ['/download-multiple-zip'],
   ])('%s requires a JSON body', (path) => {
     expect(guardsOf('post', path)).toEqual([GUARD_USER, requireJsonBody]);
+  });
+});
+
+// It pushes the request's HTML to the ESP, as the campaign the user ships.
+describe('the profile route that sends a campaign', () => {
+  const { guardsOf } = routeInspector(profileRouter);
+
+  it('/:mailingId/send-campaign-mail requires a JSON body', () => {
+    expect(guardsOf('post', '/:mailingId/send-campaign-mail')).toEqual([
+      GUARD_USER,
+      requireJsonBody,
+    ]);
   });
 });
