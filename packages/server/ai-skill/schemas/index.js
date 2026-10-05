@@ -93,11 +93,28 @@ const subjectGenInput = z
 
 const subjectGenOutput = textProposalsOutput;
 
+const preheaderGenInput = z
+  .object({
+    content: emailCopySchema,
+    // The subject the user picked: the preheader complements it.
+    subject: z.string().min(1),
+    emailType: z.string().optional(),
+    currentPreheader: z.string().optional(),
+    brief: z.string().optional(),
+    avoid: z.array(z.string()).optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const preheaderGenOutput = textProposalsOutput;
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
   subjectGenInput,
   subjectGenOutput,
+  preheaderGenInput,
+  preheaderGenOutput,
 });
 
 /**
