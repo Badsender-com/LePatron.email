@@ -8,12 +8,13 @@
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   PersonalizedBlocks: {
+    aggregate: jest.fn(),
     create: jest.fn(),
     findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
     deleteOne: jest.fn(),
   },
-  Users: {},
+  Users: { collection: { name: 'users' } },
   Templates: { findById: jest.fn(), findOne: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger', () => ({
@@ -150,5 +151,65 @@ describe('deleting a block', () => {
     await expect(
       service.deletePersonalizedBlock(BLOCK, GROUP)
     ).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+// An id that is not one used to throw inside ObjectId() — a 500 — or, when
+// missing, become a made-up id that matched nothing.
+describe('ids that are not ids', () => {
+  const INVALID = [
+    ['a mistyped id', 'not-an-id'],
+    ['no id at all', undefined],
+    ['a number', 42],
+  ];
+  const refusal = { status: 400, message: 'INVALID_OBJECT_ID' };
+
+  it.each(INVALID)('refuses to list with %s', async (_label, id) => {
+    await expect(
+      service.getPersonalizedBlocks(id, TEMPLATE)
+    ).rejects.toMatchObject(refusal);
+    await expect(
+      service.getPersonalizedBlocks(GROUP, id)
+    ).rejects.toMatchObject(refusal);
+    expect(PersonalizedBlocks.aggregate).not.toHaveBeenCalled();
+  });
+
+  it.each(INVALID)('refuses to create with %s', async (_label, id) => {
+    const block = { name: 'n', content: {} };
+    await expect(
+      service.addPersonalizedBlock(block, id, TEMPLATE, USER)
+    ).rejects.toMatchObject(refusal);
+    await expect(
+      service.addPersonalizedBlock(block, GROUP, id, USER)
+    ).rejects.toMatchObject(refusal);
+    expect(PersonalizedBlocks.create).not.toHaveBeenCalled();
+  });
+
+  it.each(INVALID)('refuses to update with %s', async (_label, id) => {
+    await expect(
+      service.updatePersonalizedBlock(id, GROUP, { name: 'n' })
+    ).rejects.toMatchObject(refusal);
+    await expect(
+      service.updatePersonalizedBlock(BLOCK, id, { name: 'n' })
+    ).rejects.toMatchObject(refusal);
+    expect(PersonalizedBlocks.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it.each(INVALID)('refuses to delete with %s', async (_label, id) => {
+    await expect(
+      service.deletePersonalizedBlock(id, GROUP)
+    ).rejects.toMatchObject(refusal);
+    await expect(
+      service.deletePersonalizedBlock(BLOCK, id)
+    ).rejects.toMatchObject(refusal);
+    expect(PersonalizedBlocks.deleteOne).not.toHaveBeenCalled();
+  });
+
+  it('still lists with valid ids', async () => {
+    PersonalizedBlocks.aggregate.mockResolvedValue([]);
+
+    await expect(
+      service.getPersonalizedBlocks(GROUP, TEMPLATE)
+    ).resolves.toEqual([]);
   });
 });

@@ -7,7 +7,7 @@ const {
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const { NotFound, BadRequest } = require('http-errors');
 const logger = require('../utils/logger');
 const {
   hasSyntheticBlock,
@@ -25,7 +25,31 @@ module.exports = {
   deletePersonalizedBlock,
 };
 
+/**
+ * Whether the request carries an actual id. A string or an ObjectId only:
+ * mongoose 5's isValidObjectId also says yes to `undefined` and to numbers,
+ * which ObjectId() turns into a made-up id.
+ */
+const isObjectId = (id) =>
+  (typeof id === 'string' || id instanceof mongoose.Types.ObjectId) &&
+  mongoose.isValidObjectId(id);
+
+/**
+ * Refuses an id the request carries that is not one. `ObjectId()` would
+ * otherwise throw on it — a 500 for a mistyped URL — or, given nothing at all,
+ * make up a fresh id and match nothing silently.
+ *
+ * @param {...*} ids
+ * @throws {BadRequest} INVALID_OBJECT_ID
+ */
+function assertObjectIds(...ids) {
+  if (!ids.every(isObjectId)) {
+    throw new BadRequest(ERROR_CODES.INVALID_OBJECT_ID);
+  }
+}
+
 async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
+  assertObjectIds(groupId, templateId);
   try {
     // Initialize MongoDB aggregation query
     const query = [];
@@ -141,6 +165,7 @@ async function assertTemplateInGroup(templateId, groupId) {
 }
 
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
+  assertObjectIds(groupId, templateId);
   await assertTemplateInGroup(templateId, groupId);
   await normalizeAndGuardBlockContent({ content: block.content, templateId });
 
@@ -156,6 +181,7 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 }
 
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
+  assertObjectIds(id, groupId);
   const changes = updatableOf(updatedBlock);
 
   if (hasSyntheticBlock(changes.content)) {
@@ -186,6 +212,7 @@ async function updatePersonalizedBlock(id, groupId, updatedBlock) {
 }
 
 async function deletePersonalizedBlock(blockId, groupId) {
+  assertObjectIds(blockId, groupId);
   const deleted = await PersonalizedBlocks.deleteOne(inGroup(blockId, groupId));
 
   if (deleted.deletedCount === 0) {
