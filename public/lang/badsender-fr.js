@@ -389,7 +389,7 @@ module.exports = {
   'block-builder-move-down': 'Descendre',
   'block-builder-remove': 'Supprimer',
   'block-builder-preview-hint':
-    'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
+    'Cliquez sur un élément pour le régler, faites-le glisser pour le déplacer. Aperçu indicatif — rendu navigateur, pas rendu client mail.',
   'block-builder-rebuilds-markup':
     "Ce bloc a été construit par une version précédente du générateur. L'appliquer le reconstruira avec la version actuelle : son rendu peut légèrement changer.",
   'block-builder-discard-confirm':

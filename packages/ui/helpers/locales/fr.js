@@ -436,9 +436,13 @@ export default {
     successTitle: 'Traduction effectuée',
     successMessage: 'Votre email a été dupliqué et traduit avec succès.',
     warningTitle: 'Pensez à vérifier :',
-    warningLinks: 'Les liens présents dans l\'email',
-    warningImages: 'Les images contenant du texte',
-    warningVariants: 'La variante de template si applicable',
+    // Keyed as the server sends them in a job's warningKeys.
+    warnings: {
+      checkLinks: 'Les liens présents dans l\'email',
+      checkImages: 'Les images contenant du texte',
+      checkVariant: 'La variante de template si applicable',
+      composedBlockUntranslated: 'Les blocs composés : certains n\'ont pas pu être traduits, ou ont été reconstruits avec une version plus récente du constructeur de blocs',
+    },
     understood: 'J\'ai compris',
     translatingNotice: 'Traduction en cours, veuillez patienter...',
     progressStarting: 'Démarrage de la traduction...',

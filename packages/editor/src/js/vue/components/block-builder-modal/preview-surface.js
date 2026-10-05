@@ -22,10 +22,11 @@ const {
 // `previewMarkup`, `vm`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
-// generic: the event below, to listen on a freshly written document, and
-// freezeRender / thawRender, to keep the rows still under the cursor. The class
-// names live here too, because this is what owns the stylesheet they appear
-// in; drag-surface.js imports them.
+// generic: the events below, to listen on a freshly written document and to
+// dress the rows of each render; freezeRender / thawRender, to keep the rows
+// still under the cursor; elementRowFromEvent, to name the row under it. The
+// class names live here too, because this is what owns the stylesheet they
+// appear in; drag-surface.js imports them.
 
 // Marks the selected row inside the preview. Prefixed, because it lands in a
 // document that also holds the user's own markup.
@@ -33,6 +34,10 @@ const SELECTED_CLASS = 'lp-bb-selected';
 
 // Set on the body while something is being dragged.
 const DRAGGING_CLASS = 'lp-bb-dragging';
+
+// The row being moved by a reorder drag, dimmed so the cursor is not carrying
+// an invisible thing.
+const MOVING_CLASS = 'lp-bb-moving';
 
 // The insertion line: one element over the whole preview, placed at the edge
 // the drop would land on (drag-surface.js), in pixels.
@@ -50,6 +55,11 @@ const PREVIEW_READY_FLAG = '__lpBlockBuilderPreview';
 // it listens for. A component event rather than a method to override: any
 // number of mixins can subscribe, and their order does not matter.
 const PREVIEW_READY_EVENT = 'preview-document-ready';
+
+// Emitted the same way after every render, once the new rows are in: whatever
+// another surface sets on the rendered nodes — preview chrome that the
+// generated markup must never carry — is gone with the old body.
+const PREVIEW_RENDERED_EVENT = 'preview-rendered';
 
 // The preview document's own chrome. It is never exported — only the generated
 // markup is — so these rules exist purely to make the surface usable.
@@ -91,7 +101,11 @@ const PREVIEW_DOCUMENT = [
   'body{margin:0;padding:0;background:#ffffff;}',
   'table{border-collapse:collapse;}',
   'img{max-width:100%;}',
-  `[${ELEMENT_ATTRIBUTE}]{cursor:pointer;height:24px;}`,
+  // A row can be clicked and picked up: `grab` says the second, which a
+  // pointer would not, and `grabbing` takes over once it is held.
+  `[${ELEMENT_ATTRIBUTE}]{cursor:grab;height:24px;}`,
+  `[${ELEMENT_ATTRIBUTE}]:active,`,
+  `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]{cursor:grabbing;}`,
   `[${STARTER_ATTRIBUTE}]>table{opacity:0.6;}`,
   `[${STARTER_ATTRIBUTE}="image"]{height:120px;`,
   `background:#eeeeee ${IMAGE_ICON} no-repeat center;}`,
@@ -102,6 +116,7 @@ const PREVIEW_DOCUMENT = [
   // point is read against a visible structure rather than guessed.
   `body.${DRAGGING_CLASS} [${ELEMENT_ATTRIBUTE}]:not(.${SELECTED_CLASS}){`,
   'outline:1px dashed #757575;outline-offset:-1px;}',
+  `[${ELEMENT_ATTRIBUTE}].${MOVING_CLASS}{opacity:0.4;}`,
   `#${DROP_LINE_ID}{position:absolute;left:0;right:0;margin:0;`,
   `height:${DROP_LINE_HEIGHT}px;background:#265090;`,
   'pointer-events:none;z-index:2147483647;}',
@@ -203,6 +218,7 @@ const PreviewSurfaceMixin = {
         doc.body.appendChild(zone);
       }
       this.applySelectionHighlight();
+      this.$emit(PREVIEW_RENDERED_EVENT, doc);
     },
 
     previewRows(doc) {
@@ -222,25 +238,32 @@ const PreviewSurfaceMixin = {
     // ---- selecting ---------------------------------------------------------
 
     // Selecting by clicking the rendered block, rather than only through the
-    // list on the left. `closest` walks up from whatever was actually clicked —
-    // a word inside a paragraph, a pixel of an image — to the row that carries
-    // the element id.
+    // list on the left.
     handlePreviewClick(event) {
       // The preview holds real links: a button renders an `<a href>`, and
       // clicking one would navigate the iframe away from the composition.
       event.preventDefault();
 
+      const row = this.elementRowFromEvent(event);
+      if (row) this.selectedId = row.getAttribute(ELEMENT_ATTRIBUTE);
+    },
+
+    // The row of the composed element an event happened in, or null: for the
+    // click above and the drag (drag-surface.js) alike. `closest` walks up
+    // from whatever was hit — a word, a pixel of an image — to the row that
+    // carries the id; a target with no `closest` is a text node, a selection
+    // being dragged. A row whose id is not in the state is not ours.
+    elementRowFromEvent(event) {
       const target = event.target;
       const row =
         target && typeof target.closest === 'function'
           ? target.closest(`[${ELEMENT_ATTRIBUTE}]`)
           : null;
-      if (!row) return;
-
+      if (!row) return null;
       const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      if (this.state.elements.some((element) => element.id === id)) {
-        this.selectedId = id;
-      }
+      return this.state.elements.some((element) => element.id === id)
+        ? row
+        : null;
     },
 
     // Marks the selected row in the preview, so the selection reads the same on
@@ -252,11 +275,7 @@ const PreviewSurfaceMixin = {
     // (see state.js), and there are at most a handful of rows.
     applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
-      const doc = frame && frame.contentDocument;
-      if (!doc || !doc.body) return;
-
-      const rows = doc.body.querySelectorAll(`[${ELEMENT_ATTRIBUTE}]`);
-      Array.prototype.forEach.call(rows, (row) => {
+      this.previewRows(frame && frame.contentDocument).forEach((row) => {
         const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedId;
         row.classList.toggle(SELECTED_CLASS, selected);
       });
@@ -270,7 +289,9 @@ module.exports = {
   DRAGGING_CLASS,
   DROP_LINE_ID,
   DROP_LINE_HEIGHT,
+  MOVING_CLASS,
   EMPTY_DROP_ID,
   PREVIEW_READY_FLAG,
   PREVIEW_READY_EVENT,
+  PREVIEW_RENDERED_EVENT,
 };

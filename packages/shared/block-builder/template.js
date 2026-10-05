@@ -20,31 +20,14 @@
 // today, produced by Maizzle and compiled at build time if the team prefers.
 // This module only cares about the placeholders, which keeps that choice open.
 
-const {
-  escapeForContext,
-  TEXT,
-  ATTR,
-  URL,
-  COLOR,
-  PX,
-  CSS_VALUE,
-  RICH_TEXT,
-} = require('./slot-contexts.js');
+const { escapeForContext, CONTEXTS } = require('./slot-contexts.js');
 
 // `[[name|CONTEXT|fallback]]`. Double brackets rather than `{{ }}` or `%% %%`:
 // those are ESP personalisation tags, which templates legitimately contain and
 // which must pass through untouched.
 const PLACEHOLDER = /\[\[([^\]]*)\]\]/g;
 
-const KNOWN_CONTEXTS = new Set([
-  TEXT,
-  ATTR,
-  URL,
-  COLOR,
-  PX,
-  CSS_VALUE,
-  RICH_TEXT,
-]);
+const KNOWN_CONTEXTS = new Set(CONTEXTS);
 
 /**
  * @param {string} descriptor the inside of a placeholder

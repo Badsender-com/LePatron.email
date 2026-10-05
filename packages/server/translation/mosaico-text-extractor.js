@@ -65,8 +65,8 @@ const EXCLUDED_FIELDS = [
   'htmlCode',
   // The block builder's markup and state, for the same reason: the markup is
   // generated, and rewriting it would desynchronise it from the state it is
-  // generated from. Composed blocks are not translated yet; when they are, it
-  // will be through the state's own texts, not these two strings.
+  // generated from. Composed blocks are translated through the state's own
+  // texts instead (builder-block-texts.js), never through these two strings.
   'builderHtml',
   'builderState',
 ];

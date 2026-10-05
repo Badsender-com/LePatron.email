@@ -76,6 +76,16 @@ const HTML_CODE_BLOCK = Object.freeze({
 
   // The template flag revealing it in the palette.
   flag: 'htmlBlockEnabled',
+
+  // The AI translation would rewrite markup the user pasted, and the block's
+  // whole promise is that its HTML is never altered. `htmlCode` is excluded
+  // engine-side too (mosaico-text-extractor.js).
+  translatable: false,
+
+  // Whether the editor offers its "Translate block" button. Not for this
+  // block, for the reason above — nobody is offered something that will not
+  // happen.
+  blockTranslatable: false,
 });
 
 /**
@@ -94,8 +104,8 @@ const BLOCK_BUILDER_BLOCK = Object.freeze({
   // Matches none of TRANSLATABLE_FIELD_PATTERNS (/text$/, /title$/, /label$/,
   // /alt$/, /heading$/, /description$/, /caption$/, /placeholder$/, /content$/i),
   // so the generated markup is not sent to the LLM as if it were prose. The
-  // builder's own text will be reached through `builderState` instead, by a
-  // dedicated extractor — see the roadmap's step 5.
+  // builder's own text is reached through `builderState` instead, by a
+  // dedicated extractor (packages/server/translation/builder-block-texts.js).
   htmlProperty: 'builderHtml',
 
   // The composition, as a serialised JSON STRING — not an object. checkmodel.js
@@ -121,6 +131,18 @@ const BLOCK_BUILDER_BLOCK = Object.freeze({
   emptyLabelKey: 'block-builder-block-empty',
 
   flag: 'blockBuilderEnabled',
+
+  // Composed blocks ARE translated with the whole mailing (duplicate +
+  // translate), since the server rebuilds their markup from the translated
+  // state with the same generator the editor uses
+  // (packages/server/translation/builder-block-texts.js). The generated HTML is
+  // never sent anywhere — only the prose inside the state is.
+  translatable: true,
+
+  // But not on their own: the per-block route translates a flat object of
+  // fields and writes it back into the model, and knows nothing of a state to
+  // translate and a markup to rebuild. Its button stays hidden until it does.
+  blockTranslatable: false,
 });
 
 const SYNTHETIC_BLOCKS = Object.freeze([HTML_CODE_BLOCK, BLOCK_BUILDER_BLOCK]);

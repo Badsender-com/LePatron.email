@@ -111,14 +111,40 @@ const ElementListMixin = {
       this.selectedId = next ? next.id : null;
     },
 
+    // The arrows, through the drag's own move so the splice exists once.
+    // moveElementTo takes a drop position, counted with the element still in
+    // place: one row down is past the next row, two positions on.
     move(offset) {
-      const index = this.indexOfSelected();
-      const target = index + offset;
-      if (index === -1 || target < 0 || target >= this.state.elements.length) {
-        return;
-      }
-      const [element] = this.state.elements.splice(index, 1);
-      this.state.elements.splice(target, 0, element);
+      if (!this.canMove(offset)) return;
+      const target = this.indexOfSelected() + offset;
+      const position = offset > 0 ? target + 1 : target;
+      this.moveElementTo(this.selectedId, position);
+    },
+
+    /**
+     * Moves an element to a drop position — for the reorder drag, and for
+     * the arrows through `move`.
+     *
+     * `index` counts rows as they are laid out NOW, with the dragged element
+     * still among them. Taking it out first shifts everything after it up by
+     * one, so a target past its old position has to come down by one — the
+     * classic off-by-one of every reorder, and the reason dropping an element
+     * just below itself would otherwise move it one row too far.
+     *
+     * The moved element ends up selected, so the settings panel stays on it.
+     */
+    moveElementTo(id, index) {
+      const from = this.state.elements.findIndex(
+        (element) => element.id === id
+      );
+      if (from === -1) return;
+
+      this.selectedId = id;
+      const to = index > from ? index - 1 : index;
+      if (to === from) return;
+
+      const [element] = this.state.elements.splice(from, 1);
+      this.state.elements.splice(to, 0, element);
     },
 
     // Whether the selected element can move by `offset`, so the buttons are

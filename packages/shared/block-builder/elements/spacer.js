@@ -1,26 +1,21 @@
 'use strict';
 
-// Vertical spacer.
-//
-// A cell with an explicit height, plus `font-size:0` and `line-height:0`: without
-// those, Outlook gives the non-breaking space a line box of its own and the gap
-// comes out taller than asked. The `&nbsp;` itself is what stops clients from
-// collapsing an empty cell altogether.
+// Vertical spacer. The markup, and why the cell is built the way it is, is in
+// components/spacer.vue; see index.js for how it gets here.
 
 const { defineTemplate } = require('../template.js');
+const { defaultsOf, translatableOf } = require('../manifest.js');
 
 const render = defineTemplate(
-  [
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">',
-    '<tr>',
-    '<td height="[[height|PX|24]]"',
-    ' style="height:[[height|PX|24]]px; font-size:0; line-height:0;"',
-    ' aria-hidden="true">&nbsp;</td>',
-    '</tr>',
-    '</table>',
-  ].join('')
+  require('../components/spacer.compiled.js').default
 );
 
-const defaults = { height: 24 };
+const manifest = require('../components/spacer.slots.js');
 
-module.exports = { type: 'spacer', render, defaults };
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(manifest);
+
+// What a translation may rewrite — see ../manifest.js.
+const translatable = translatableOf(manifest);
+
+module.exports = { type: 'spacer', render, defaults, translatable };

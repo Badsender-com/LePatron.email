@@ -18,6 +18,8 @@ const {
   transfer,
   startPaletteDrag,
   paletteEntry,
+  dragOverPage,
+  nextTask,
   DRAGGING_CLASS,
 } = require('./drag-helpers.js');
 
@@ -53,20 +55,8 @@ describe('starting a drag from the palette', () => {
 });
 
 describe('what the page says during a palette drag', () => {
-  const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
   const fadedEntries = () =>
     document.querySelectorAll('.bb-modal__add--dragging');
-
-  /** A dragover on the editor page, outside the preview. */
-  function dragOverPage() {
-    const event = new window.Event('dragover', {
-      bubbles: true,
-      cancelable: true,
-    });
-    event.dataTransfer = transfer();
-    document.querySelector('.bb-settings').dispatchEvent(event);
-    return event;
-  }
 
   // Mosaico cancels dragover on the whole window, which made every part of
   // the page look like it accepted the drop.

@@ -57,6 +57,9 @@ describe('URL', () => {
     ['a handlebars tag', '{{unsubscribe}}'],
     ['a percent tag', '%%unsubscribe%%'],
     ['a bracketed token', '[unsubscribe_link]'],
+    ['a token inside an https URL', 'https://example.com/?u={{id}}'],
+    ['a parent-relative path', '../assets/x.png'],
+    ['a query', '?utm_source=x'],
   ])('keeps %s', (_label, url) => {
     expect(escapeForContext(url, URL, 'FALLBACK')).not.toBe('FALLBACK');
   });
@@ -68,6 +71,16 @@ describe('URL', () => {
     ['data', 'data:text/html;base64,PHNjcmlwdD4='],
     ['vbscript', 'vbscript:msgbox(1)'],
     ['an empty string', ''],
+    // A scheme is judged on its own: a token later in the value does not
+    // make an unsafe scheme acceptable.
+    ['an unsafe scheme followed by a handlebars tag', 'javascript:x//{{a}}'],
+    ['an unsafe scheme followed by a percent tag', 'javascript:x//%%a%%'],
+    ['an unsafe scheme followed by an ESP tag', 'javascript:x//<%= a %>'],
+    ['an unsafe scheme split by a tab', 'java\tscript:x'],
+    ['an unsafe scheme split by a newline', 'java\nscript:x'],
+    ['an unknown scheme', 'foo:bar'],
+    ['a protocol-relative URL', '//example.com/x'],
+    ['a backslash host', '/\\example.com/x'],
   ])('refuses %s', (_label, url) => {
     expect(escapeForContext(url, URL, 'FALLBACK')).toBe('FALLBACK');
   });
@@ -126,6 +139,19 @@ describe('CSS_VALUE', () => {
     expect(escapeForContext('0 auto', CSS_VALUE, '')).toBe('0 auto');
   });
 
+  it('keeps a font stack and a percentage', () => {
+    expect(
+      escapeForContext('Arial, Helvetica, sans-serif', CSS_VALUE, '')
+    ).toBe('Arial, Helvetica, sans-serif');
+    expect(escapeForContext('100%', CSS_VALUE, '')).toBe('100%');
+  });
+
+  it('escapes the single quote of a quoted font name for its attribute', () => {
+    expect(escapeForContext("'Open Sans', Arial", CSS_VALUE, '')).toBe(
+      '&#39;Open Sans&#39;, Arial'
+    );
+  });
+
   test.each([
     ['a declaration break', 'red;background:black'],
     ['a block close', 'red}body{display:none'],
@@ -133,6 +159,10 @@ describe('CSS_VALUE', () => {
     ['an expression', 'expression(alert(1))'],
     ['an import', '@import "evil.css"'],
     ['a tag', '</style><script>'],
+    ['a double quote, which ends the attribute', 'Arial" x="y'],
+    ['an ampersand, which starts an entity', 'Arial&#59;x'],
+    ['a backslash, which starts a CSS escape', 'Arial\\3b x'],
+    ['a parenthesis', 'calc(100% - 1px)'],
   ])('falls back on %s', (_label, value) => {
     expect(escapeForContext(value, CSS_VALUE, 'FALLBACK')).toBe('FALLBACK');
   });
