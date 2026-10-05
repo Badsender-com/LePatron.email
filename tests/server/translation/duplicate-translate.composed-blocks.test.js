@@ -10,89 +10,39 @@
 // rebuilds is what the preview swaps in, and the pasted block comes out of
 // all of it byte for byte.
 
-jest.mock('../../../packages/server/translation/translation-jobs', () => ({
-  createJob: jest.fn(),
-  isCancelled: jest.fn(),
-  setTotals: jest.fn(),
-  updateBatchProgress: jest.fn(),
-  setCompleted: jest.fn(),
-  setFailed: jest.fn(),
-}));
-jest.mock('../../../packages/server/mailing/mailing.service', () => ({
-  findOneForUser: jest.fn(),
-  duplicateWithTranslatedData: jest.fn(),
-  updatePreviewHtml: jest.fn(),
-}));
-jest.mock('../../../packages/server/common/models.common', () => ({
-  Templates: { findById: jest.fn() },
-}));
-jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
-  getActiveFeatureWithIntegration: jest.fn(),
-}));
-jest.mock(
-  '../../../packages/server/integration-providers/provider-factory',
-  () => ({ createProvider: jest.fn() })
-);
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
-
-const translationJobs = require('../../../packages/server/translation/translation-jobs');
-const mailingService = require('../../../packages/server/mailing/mailing.service');
-const { Templates } = require('../../../packages/server/common/models.common');
-const aiFeatureService = require('../../../packages/server/ai-feature/ai-feature.service');
-const ProviderFactory = require('../../../packages/server/integration-providers/provider-factory');
-const controller = require('../../../packages/server/translation/translation.controller.js');
+const {
+  mailingService,
+  Templates,
+  element,
+  composedBlock,
+  zone,
+  givenProvider,
+  resetMocks,
+  duplicateAndTranslate,
+} = require('./duplicate-translate.harness.js');
 const {
   generate,
-  emptyState,
 } = require('../../../packages/shared/block-builder/generate.js');
 const {
-  serialiseState,
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
-const {
-  elementFor,
-} = require('../../../packages/shared/block-builder/elements/index.js');
 
-// A composed block as the editor stores it: elements created from their
-// defaults (element-list.js), edited, then serialised and generated on apply
-// (block-builder-modal.js handleApply).
-const element = (id, type, values) => ({
-  id,
-  type,
-  ...elementFor(type).defaults,
-  ...values,
-});
-const STATE = {
-  ...emptyState(),
-  elements: [
-    element('el-1', 'text', { content: 'Bonjour <strong>à tous</strong>' }),
-    element('el-2', 'image', {
-      src: 'https://cdn.example/chat.png',
-      alt: 'Un chat',
-    }),
-    element('el-3', 'button', {
-      label: 'Découvrir',
-      href: 'https://example.com',
-    }),
-  ],
-};
-const COMPOSED = {
-  type: 'blockBuilderBlock',
-  builderState: serialiseState(STATE),
-  builderHtml: generate(STATE),
-};
+const COMPOSED = composedBlock([
+  element('el-1', 'text', { content: 'Bonjour <strong>à tous</strong>' }),
+  element('el-2', 'image', {
+    src: 'https://cdn.example/chat.png',
+    alt: 'Un chat',
+  }),
+  element('el-3', 'button', {
+    label: 'Découvrir',
+    href: 'https://example.com',
+  }),
+]);
 
 // Pasted markup sharing wording with the rest, and an ESP script the
 // sanitizer would strip.
 const PASTED =
   '<p>Bienvenue</p><script type="text/x-esp">{{ unsubscribe }}</script>';
-
-const zone = (rootClass, markerClass, inner) =>
-  `<div class="${rootClass}"><div class="${markerClass}">${inner}</div></div>`;
 
 const PREVIEW = [
   '<!DOCTYPE html><html lang="fr"><head><title>Source</title></head><body>',
@@ -127,65 +77,15 @@ const DICTIONARY = {
   Source: 'Source',
 };
 
-function givenProvider(translate) {
-  ProviderFactory.createProvider.mockReturnValue({
-    translateBatch: jest.fn(async ({ texts }) =>
-      Object.fromEntries(
-        Object.entries(texts).map(([key, value]) => [key, translate(value)])
-      )
-    ),
-  });
-}
-
-// Resolves once the background job completes, with what it stored.
-async function duplicateAndTranslate() {
-  const completed = new Promise((resolve) => {
-    translationJobs.setCompleted.mockImplementation(async (_id, result) =>
-      resolve(result)
-    );
-    translationJobs.setFailed.mockImplementation(async (_id, message) =>
-      resolve(new Error(message))
-    );
-  });
-  await controller.duplicateAndTranslate(
-    {
-      user: { id: 'user', group: { id: 'group' } },
-      params: { mailingId: 'source' },
-      body: { targetLanguage: 'en', sourceLanguage: 'fr' },
-    },
-    { status: jest.fn().mockReturnThis(), json: jest.fn() },
-    jest.fn()
-  );
-  const result = await completed;
-  expect(result).not.toBeInstanceOf(Error);
-  return {
-    result,
-    data:
-      mailingService.duplicateWithTranslatedData.mock.calls[0][0]
-        .translatedData,
-    preview: mailingService.updatePreviewHtml.mock.calls[0][1],
-  };
-}
-
 const composedOf = (data) => data.mainBlocks.blocks[1];
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  translationJobs.createJob.mockResolvedValue({ jobId: 'job' });
-  translationJobs.isCancelled.mockResolvedValue(false);
+  resetMocks();
   Templates.findById.mockResolvedValue({
     markup: '',
     blockBuilderEnabled: true,
   });
-  aiFeatureService.getActiveFeatureWithIntegration.mockResolvedValue({
-    integration: { provider: 'openai' },
-    feature: { config: { availableLanguages: ['fr', 'en'] } },
-  });
   mailingService.findOneForUser.mockResolvedValue(SOURCE);
-  mailingService.duplicateWithTranslatedData.mockResolvedValue({
-    _id: 'copy',
-    name: 'Source - EN',
-  });
 });
 
 describe('duplicate + translate a mailing with a composed block', () => {

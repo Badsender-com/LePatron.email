@@ -5,37 +5,20 @@
 // followed by a letter, and that previewHtml is what the copy's multi-mailing
 // ZIP exports: without re-injection, the copy silently lost its stylesheet.
 
-jest.mock('../../../packages/server/translation/translation-jobs', () => ({
-  createJob: jest.fn(),
-  isCancelled: jest.fn(),
-  setTotals: jest.fn(),
-  updateBatchProgress: jest.fn(),
-  setCompleted: jest.fn(),
-  setFailed: jest.fn(),
-}));
+// Stubbed whole: these tests are about what the controller does with a
+// translation, not about producing one.
 jest.mock('../../../packages/server/translation/translation.service', () => ({
   translateMailing: jest.fn(),
   detectSourceLanguage: jest.fn(),
 }));
-jest.mock('../../../packages/server/mailing/mailing.service', () => ({
-  findOneForUser: jest.fn(),
-  duplicateWithTranslatedData: jest.fn(),
-  updatePreviewHtml: jest.fn(),
-}));
-jest.mock('../../../packages/server/common/models.common', () => ({
-  Templates: { findById: jest.fn() },
-}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
 
-const translationJobs = require('../../../packages/server/translation/translation-jobs');
+const {
+  mailingService,
+  Templates,
+  resetMocks,
+  duplicateAndTranslate,
+} = require('./duplicate-translate.harness.js');
 const translationService = require('../../../packages/server/translation/translation.service');
-const mailingService = require('../../../packages/server/mailing/mailing.service');
-const { Templates } = require('../../../packages/server/common/models.common');
-const controller = require('../../../packages/server/translation/translation.controller.js');
 const {
   injectHeadCss,
 } = require('../../../packages/shared/head-css/inject-head-css.js');
@@ -78,46 +61,17 @@ function givenSource(headCss, data = WITH_BLOCK) {
   });
 }
 
-// The controller answers 202 and translates in the background: resolves with
-// the previewHtml stored on the copy once the job completes.
-async function duplicateAndTranslate() {
-  const completed = new Promise((resolve) => {
-    translationJobs.setCompleted.mockImplementation(async () => resolve());
-    translationJobs.setFailed.mockImplementation(async (_id, message) =>
-      resolve(message)
-    );
-  });
-  const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-  await controller.duplicateAndTranslate(
-    {
-      user: { id: 'user', group: { id: 'group' } },
-      params: { mailingId: 'source' },
-      body: { targetLanguage: 'en', sourceLanguage: 'fr' },
-    },
-    res,
-    jest.fn()
-  );
-  expect(await completed).toBeUndefined();
-  return mailingService.updatePreviewHtml.mock.calls[0][1];
-}
-
 describe('duplicate + translate, head CSS', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    translationJobs.createJob.mockResolvedValue({ jobId: 'job' });
-    translationJobs.isCancelled.mockResolvedValue(false);
+    resetMocks();
     Templates.findById.mockResolvedValue({ markup: '' });
-    mailingService.duplicateWithTranslatedData.mockResolvedValue({
-      _id: 'copy',
-      name: 'Source - EN',
-    });
   });
 
   it('keeps a stylesheet the sanitizer would drop whole', async () => {
     const css = '/* <table> fix */ .a{color:red}';
     givenSource(css);
 
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).toContain('<p>Hello</p>');
     expect(stored).toContain('="true">' + css + '</style></head>');
@@ -126,7 +80,7 @@ describe('duplicate + translate, head CSS', () => {
   it('does not stack a second stylesheet when the first one survived', async () => {
     givenSource('.a{color:red}');
 
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored.match(/<style/g)).toHaveLength(1);
     expect(stored).toContain('.a{color:red}</style></head>');
@@ -137,7 +91,7 @@ describe('duplicate + translate, head CSS', () => {
   it('leaves the CSS out of a copy without any HTML code block', async () => {
     givenSource('/* <table> fix */ .a{color:red}', WITHOUT_BLOCK);
 
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).toContain('<p>Hello</p>');
     expect(stored).not.toContain('.a{color:red}');
@@ -149,7 +103,7 @@ describe('duplicate + translate, head CSS', () => {
   it('drops a stylesheet the source preview carried without a block', async () => {
     givenSource('.a{color:red}', WITHOUT_BLOCK);
 
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).not.toContain('data-lp-head-css');
   });
@@ -157,7 +111,7 @@ describe('duplicate + translate, head CSS', () => {
   it('adds no stylesheet to a mailing without head CSS', async () => {
     givenSource('');
 
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).not.toContain('<style');
   });

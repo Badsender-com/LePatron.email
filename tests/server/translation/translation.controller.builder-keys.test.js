@@ -9,69 +9,29 @@
 // template block the protection config keeps in the source language, in an
 // attribute — although nothing in those places had been translated.
 
-jest.mock('../../../packages/server/translation/translation-jobs', () => ({
-  createJob: jest.fn(),
-  isCancelled: jest.fn(),
-  setTotals: jest.fn(),
-  updateBatchProgress: jest.fn(),
-  setCompleted: jest.fn(),
-  setFailed: jest.fn(),
-}));
+// Stubbed whole: these tests are about what the controller does with a
+// translation, not about producing one.
 jest.mock('../../../packages/server/translation/translation.service', () => ({
   translateMailing: jest.fn(),
   detectSourceLanguage: jest.fn(),
 }));
-jest.mock('../../../packages/server/mailing/mailing.service', () => ({
-  findOneForUser: jest.fn(),
-  duplicateWithTranslatedData: jest.fn(),
-  updatePreviewHtml: jest.fn(),
-}));
-jest.mock('../../../packages/server/common/models.common', () => ({
-  Templates: { findById: jest.fn() },
-}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
 
-const translationJobs = require('../../../packages/server/translation/translation-jobs');
+const {
+  mailingService,
+  Templates,
+  resetMocks,
+  duplicateAndTranslate,
+} = require('./duplicate-translate.harness.js');
 const translationService = require('../../../packages/server/translation/translation.service');
-const mailingService = require('../../../packages/server/mailing/mailing.service');
-const { Templates } = require('../../../packages/server/common/models.common');
-const controller = require('../../../packages/server/translation/translation.controller.js');
 
 const DOC =
   '<!DOCTYPE html><html><head><title>t</title></head><body>' +
   '<p class="protected">Bonjour</p><img alt="Bonjour" src="a.png">' +
   '<p>Au revoir</p></body></html>';
 
-async function duplicateAndTranslate() {
-  const completed = new Promise((resolve) => {
-    translationJobs.setCompleted.mockImplementation(async () => resolve());
-    translationJobs.setFailed.mockImplementation(async (_id, message) =>
-      resolve(message)
-    );
-  });
-  const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-  await controller.duplicateAndTranslate(
-    {
-      user: { id: 'user', group: { id: 'group' } },
-      params: { mailingId: 'source' },
-      body: { targetLanguage: 'en', sourceLanguage: 'fr' },
-    },
-    res,
-    jest.fn()
-  );
-  expect(await completed).toBeUndefined();
-  return mailingService.updatePreviewHtml.mock.calls[0][1];
-}
-
 describe('duplicate + translate, composed-block keys and the preview', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    translationJobs.createJob.mockResolvedValue({ jobId: 'job' });
-    translationJobs.isCancelled.mockResolvedValue(false);
+    resetMocks();
     Templates.findById.mockResolvedValue({ markup: '' });
     mailingService.findOneForUser.mockResolvedValue({
       _company: 'group',
@@ -79,10 +39,6 @@ describe('duplicate + translate, composed-block keys and the preview', () => {
       name: 'Source',
       data: {},
       previewHtml: DOC,
-    });
-    mailingService.duplicateWithTranslatedData.mockResolvedValue({
-      _id: 'copy',
-      name: 'Source - EN',
     });
     translationService.translateMailing.mockResolvedValue({
       mailing: { name: 'Source', data: {} },
@@ -99,7 +55,7 @@ describe('duplicate + translate, composed-block keys and the preview', () => {
   });
 
   it('leaves the source wording of a composed block alone elsewhere', async () => {
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).toContain('<p class="protected">Bonjour</p>');
     expect(stored).toContain('alt="Bonjour"');
@@ -107,7 +63,7 @@ describe('duplicate + translate, composed-block keys and the preview', () => {
   });
 
   it('still translates the generic keys', async () => {
-    const stored = await duplicateAndTranslate();
+    const { preview: stored } = await duplicateAndTranslate();
 
     expect(stored).toContain('<p>Goodbye</p>');
   });
