@@ -150,12 +150,17 @@ function stateOf(block) {
  * builder block's markup is rebuilt from its state (builder-block-integrity.js),
  * so stored markup next to another state is not the stored block. One key for
  * the guard and the rebuild, so they cannot disagree on what "already stored"
- * means. A NUL never appears in either half.
+ * means.
+ *
+ * Serialised as a pair rather than joined on a separator: both halves come
+ * from the request, so any separator can appear in them, and a stored
+ * ('a<sep>b', 'c') would then share its key with a crafted ('a', 'b<sep>c') —
+ * a truncated markup let through as stored.
  *
  * @param {Object} block
  * @returns {string}
  */
-const pairKeyOf = (block) => `${htmlOf(block)}\u0000${stateOf(block)}`;
+const pairKeyOf = (block) => JSON.stringify([htmlOf(block), stateOf(block)]);
 
 /**
  * The descriptor of the first synthetic block past a size limit, or null.

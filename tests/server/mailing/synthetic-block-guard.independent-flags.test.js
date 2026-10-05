@@ -175,3 +175,14 @@ describe('an empty block of either type is always accepted', () => {
     expect(brings(dataWith(block), {}, NEITHER)).toBe(false);
   });
 });
+
+// Both halves of the pair come from the request: no separator between them
+// can be trusted to stay out of either.
+describe('the stored pair cannot be forged by moving bytes across halves', () => {
+  it('refuses a markup prefix with the rest moved into the state', () => {
+    const stored = dataWith(builderBlock('<p>a\u0000b</p>', 'c'));
+    const next = dataWith(builderBlock('<p>a', 'b</p>\u0000c'));
+
+    expect(brings(next, stored, NEITHER)).toBe(true);
+  });
+});
