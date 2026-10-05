@@ -427,4 +427,44 @@ module.exports = {
     'Saving refused: custom CSS is not enabled on this template.',
   'save-message-head-css-too-large':
     'Saving refused: the custom CSS is over the maximum size.',
+
+  // text generation (epic #1163)
+  'text-generation-open': 'Generate subject and preheader',
+  'text-generation-title': 'Subject and preheader',
+  'text-generation-intro':
+    "Three proposals written from the email's content, along Badsender's copywriting guidelines.",
+  'text-generation-brief-label': 'Instruction (optional)',
+  'text-generation-brief-placeholder': 'E.g. stress the free delivery',
+  'text-generation-generate': 'Suggest subjects',
+  'text-generation-more': 'Suggest others',
+  'text-generation-subjects-title': 'Pick a subject',
+  'text-generation-length': '__count__ characters',
+  'text-generation-mobile': 'on mobile: “__preview__…”',
+  'text-generation-dropped':
+    'Proposals set aside for breaking the copywriting rules: __count__.',
+  'text-generation-none':
+    'No proposal respected the copywriting rules. Ask for others.',
+  'text-generation-apply': 'Apply subject',
+  'text-generation-copy': 'Copy',
+  'text-generation-copied': 'Copied',
+  'text-generation-copy-hint':
+    "This email's subject is not managed in LePatron: copy a proposal and paste it in your sending platform.",
+  'text-generation-applied': 'Subject applied. It is saved with the email.',
+  'text-generation-undo': 'Undo',
+  'text-generation-close': 'Close',
+  'text-generation-cancel': 'Cancel',
+  'text-generation-empty-email':
+    'The email has no text yet: add content before asking for proposals.',
+  'text-generation-error-disabled':
+    'Text generation is not enabled for your group.',
+  'text-generation-error-unavailable':
+    'Text generation is not available right now. Contact your administrator.',
+  'text-generation-error-rate-limited':
+    'Too many requests. Try again in a few minutes.',
+  'text-generation-error-too-large':
+    'The email is too long to be sent to the AI.',
+  'text-generation-error-failed': 'Generation failed. Try again.',
+  'text-generation-error-network': 'Network error. Check your connection.',
+  'text-generation-error-copy':
+    'Copy failed: select the text and copy it by hand.',
 };

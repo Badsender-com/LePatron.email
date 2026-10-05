@@ -40,6 +40,10 @@ function translateBlock() {
   return `${prefixApi}/translation/block`;
 }
 
+function generateSubjects() {
+  return `${prefixApi}/text-generation/subject`;
+}
+
 function getTranslationLanguages() {
   return `${prefixApi}/translation/languages`;
 }
@@ -57,6 +61,7 @@ function uploadGalleryImageFromUrl(mailingId) {
 }
 
 module.exports = {
+  generateSubjects,
   getEspIds,
   getProfileDetail,
   getCampaignDetail,
