@@ -64,7 +64,7 @@ describe('User roles', () => {
 
   // Turned on by #1155 (super admin as a persisted role: admin status,
   // guardrails and listing).
-  describe.skip('super admin as a persisted role (#1155)', () => {
+  describe('super admin as a persisted role (#1155)', () => {
     it('accepts the super_admin role', () => {
       const errors = build({ role: 'super_admin' }).validateSync();
 
