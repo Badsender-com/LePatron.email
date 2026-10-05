@@ -13,6 +13,8 @@ const SAVE_ERROR_KEYS = Object.freeze({
   BLOCK_BUILDER_DISABLED: 'save-message-block-builder-disabled',
   HTML_CODE_BLOCK_TOO_LARGE: 'save-message-html-code-too-large',
   BLOCK_BUILDER_TOO_LARGE: 'save-message-block-builder-too-large',
+  // Every block fits, but not all of them together.
+  SYNTHETIC_CONTENT_TOO_LARGE: 'save-message-synthetic-content-too-large',
   // Same template flag as the block, but its own message: the refusal is
   // about the CSS, not about a block the user may not even have.
   HEAD_CSS_DISABLED: 'save-message-head-css-disabled',

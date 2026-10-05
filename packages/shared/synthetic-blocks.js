@@ -16,7 +16,8 @@
 //
 // In packages/shared because both sides read this table: the editor injects and
 // renders the blocks (ext/html-code-block/block-types.js re-exports it), and the
-// server gates and measures them (mailing/synthetic-block-guard.js) and keeps
+// server gates and measures them (mailing/synthetic-block-guard.js,
+// mailing/synthetic-block-sizes.js) and keeps
 // their zones out of translation (translation/html-code-block-protection.js).
 // One table, so a renamed property cannot leave the server guarding a block
 // that no longer exists — and letting everything through.
@@ -168,6 +169,15 @@ const HTML_CODE_MAX_LENGTH = 100000;
 // never render.
 const BUILDER_STATE_MAX_LENGTH = HTML_CODE_MAX_LENGTH * 2;
 
+// Maximum length of all the synthetic content of one content model added up:
+// every block's markup and state, in characters. Each block is bounded above,
+// but nothing bounds how many blocks a request brings. 3MB is thirty HTML code
+// blocks, or ten composed blocks, at their maximum — far past any real email,
+// whose composed blocks weigh a few kilobytes — and, with `previewHtml` (bounded
+// at 5MB, server/utils/preview-html-sanitizer.js) in the same document, keeps a
+// mailing well under Mongo's 16MB.
+const SYNTHETIC_CONTENT_MAX_LENGTH = 3 * 1024 * 1024;
+
 module.exports = {
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
@@ -175,4 +185,5 @@ module.exports = {
   descriptorForType,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
+  SYNTHETIC_CONTENT_MAX_LENGTH,
 };

@@ -11,9 +11,13 @@
 const {
   validateSyntheticBlocks,
   findOversizedSyntheticBlock,
+  syntheticContentLength,
+} = require('../../../packages/server/mailing/synthetic-block-sizes.js');
+const {
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
-} = require('../../../packages/server/mailing/synthetic-block-guard.js');
+  SYNTHETIC_CONTENT_MAX_LENGTH,
+} = require('../../../packages/shared/synthetic-blocks.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const {
@@ -94,5 +98,67 @@ describe('validateSyntheticBlocks', () => {
 
   it('carries no code when everything fits', () => {
     expect(validateSyntheticBlocks(dataWith()).errorCode).toBeNull();
+  });
+});
+
+// Each block is bounded, but not how many a request brings: without a bound on
+// the sum, enough blocks just under their own limit still reach Mongo's.
+describe('the sum of every block', () => {
+  // As many HTML code blocks at their maximum as the sum allows, plus `extra`.
+  const blocksUpTo = (extra) => {
+    const count = Math.floor(
+      SYNTHETIC_CONTENT_MAX_LENGTH / HTML_CODE_MAX_LENGTH
+    );
+    const rest = SYNTHETIC_CONTENT_MAX_LENGTH - count * HTML_CODE_MAX_LENGTH;
+    const full = 'x'.repeat(HTML_CODE_MAX_LENGTH);
+    return dataWith(
+      ...Array.from({ length: count }, () => htmlBlock(full)),
+      htmlBlock('x'.repeat(rest + extra))
+    );
+  };
+
+  it('counts the markup and the state of every synthetic block', () => {
+    const data = dataWith(
+      htmlBlock('abc'),
+      { type: 'textBlock', text: 'not counted' },
+      builderBlock('de', 'fghi')
+    );
+    expect(syntheticContentLength(data)).toBe(9);
+  });
+
+  it('accepts content exactly at the bound', () => {
+    expect(validateSyntheticBlocks(blocksUpTo(0))).toEqual({
+      valid: true,
+      errorCode: null,
+    });
+  });
+
+  it('refuses content past it, every block fitting', () => {
+    expect(validateSyntheticBlocks(blocksUpTo(1)).errorCode).toBe(
+      ERROR_CODES.SYNTHETIC_CONTENT_TOO_LARGE
+    );
+  });
+
+  // The block's own refusal says which one to shorten.
+  it('names an oversized block first', () => {
+    const data = blocksUpTo(1);
+    data.mainBlocks.blocks.push(builderBlock(longerThan(HTML_CODE_MAX_LENGTH)));
+    expect(validateSyntheticBlocks(data).errorCode).toBe(
+      ERROR_CODES.BLOCK_BUILDER_TOO_LARGE
+    );
+  });
+
+  // Far above any real email, and leaves room under Mongo's 16MB for the
+  // previewHtml stored in the same document.
+  it('sits between a real email and the document limit', () => {
+    const {
+      PREVIEW_HTML_MAX_LENGTH,
+    } = require('../../../packages/server/utils/preview-html-sanitizer.js');
+    expect(SYNTHETIC_CONTENT_MAX_LENGTH).toBeGreaterThanOrEqual(
+      10 * (HTML_CODE_MAX_LENGTH + BUILDER_STATE_MAX_LENGTH)
+    );
+    expect(SYNTHETIC_CONTENT_MAX_LENGTH + PREVIEW_HTML_MAX_LENGTH).toBeLessThan(
+      12 * 1024 * 1024
+    );
   });
 });

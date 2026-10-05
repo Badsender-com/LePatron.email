@@ -9,16 +9,13 @@ const {
   BLOCK_BUILDER_BLOCK,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
+  SYNTHETIC_CONTENT_MAX_LENGTH,
 } = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the synthetic blocks — the "HTML code" block and the
-// block builder: their size, and whether the template allows them at all.
-//
-// Size: the editor already refuses to apply an oversized paste, but
-// `mailing.data` is an unvalidated Mixed field, the body parser accepts 50MB, and
-// `previewHtml` stores the rendered copy in the same document. Without this check
-// a crafted or scripted request could push the document past Mongo's 16MB limit,
-// which would surface as a raw Mongo error on save.
+// block builder: where they sit in a content model, and whether the template
+// allows them at all. Their size is bounded next door
+// (synthetic-block-sizes.js).
 //
 // Permission: the block DEFINITIONS are injected into every template
 // client-side, whatever the flags (see packages/editor/src/js/ext/
@@ -163,43 +160,6 @@ function stateOf(block) {
 const pairKeyOf = (block) => JSON.stringify([htmlOf(block), stateOf(block)]);
 
 /**
- * The descriptor of the first synthetic block past a size limit, or null.
- *
- * The markup is bounded for every block; the builder's state too, since it
- * sits in the same document and nothing else bounds it.
- *
- * @param {Object} data mailing.data
- * @param {Object} [limits]
- * @param {number} [limits.html] maximum markup length
- * @param {number} [limits.state] maximum serialised state length
- * @returns {Object|null}
- */
-function findOversizedSyntheticBlock(data, limits) {
-  const { html = HTML_CODE_MAX_LENGTH, state = BUILDER_STATE_MAX_LENGTH } =
-    limits || {};
-  const oversized = findSyntheticBlocks(data).find(
-    (block) => htmlOf(block).length > html || stateOf(block).length > state
-  );
-  return oversized ? descriptorOf(oversized) : null;
-}
-
-/**
- * @param {Object} data mailing.data
- * @param {number} [maxLength] maximum markup length
- * @returns {{ valid: boolean, errorCode: string|null }} `errorCode` names the
- *   refused block — its markup or, for the builder, its state.
- */
-function validateSyntheticBlocks(data, maxLength) {
-  const limit =
-    typeof maxLength === 'number' ? maxLength : HTML_CODE_MAX_LENGTH;
-  const refused = findOversizedSyntheticBlock(data, { html: limit });
-  return {
-    valid: refused === null,
-    errorCode: refused ? refused.tooLargeErrorCode : null,
-  };
-}
-
-/**
  * The descriptor of the first block `data` brings that its flag disallows, or
  * null.
  *
@@ -275,8 +235,7 @@ function hasSyntheticBlock(data) {
 }
 
 module.exports = {
-  validateSyntheticBlocks,
-  findOversizedSyntheticBlock,
+  descriptorOf,
   findSyntheticBlocks,
   locateSyntheticBlocks,
   findDisallowedSyntheticBlock,
@@ -285,8 +244,10 @@ module.exports = {
   asModel,
   pairKeyOf,
   htmlOf,
+  stateOf,
   SYNTHETIC_BLOCKS,
   TEMPLATE_FLAG_PROJECTION,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
+  SYNTHETIC_CONTENT_MAX_LENGTH,
 };

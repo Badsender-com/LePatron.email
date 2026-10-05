@@ -396,6 +396,8 @@ module.exports = {
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-block-builder-too-large':
     'Save refused: a composed block exceeds the maximum size.',
+  'save-message-synthetic-content-too-large':
+    'Save refused: together, the HTML code and composed blocks of this email exceed the maximum size. Remove some of them.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',
   // Head CSS — a stylesheet for the whole email, gated by the same flag
   'head-css-section-title': 'Custom CSS',

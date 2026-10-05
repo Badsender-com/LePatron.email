@@ -1,10 +1,12 @@
 'use strict';
 
 const {
-  validateSyntheticBlocks,
   findSyntheticBlocks,
   HTML_CODE_MAX_LENGTH,
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
+const {
+  validateSyntheticBlocks,
+} = require('../../../packages/server/mailing/synthetic-block-sizes.js');
 
 const { htmlBlock, dataWith } = require('./synthetic-blocks.fixtures.js');
 

@@ -20,7 +20,8 @@ const {
 } = require('../../../packages/server/mailing/synthetic-content-pipeline.js');
 const {
   HTML_CODE_MAX_LENGTH,
-} = require('../../../packages/server/mailing/synthetic-block-guard.js');
+  SYNTHETIC_CONTENT_MAX_LENGTH,
+} = require('../../../packages/shared/synthetic-blocks.js');
 const {
   generate,
   emptyState,
@@ -74,6 +75,24 @@ describe('normalizeAndGuardSyntheticContent', () => {
     });
     expect(rebuildComposedMarkup).not.toHaveBeenCalled();
     expect(loadFlags).not.toHaveBeenCalled();
+  });
+
+  it('never rebuilds content past the bound on the sum', async () => {
+    const { serialised } = stateWith('Bonjour');
+    const full = 'x'.repeat(HTML_CODE_MAX_LENGTH);
+    const count = Math.ceil(SYNTHETIC_CONTENT_MAX_LENGTH / full.length);
+    const { done } = run(
+      dataWith(
+        builderBlock('', serialised),
+        ...Array.from({ length: count }, () => htmlBlock(full))
+      )
+    );
+
+    await expect(done).rejects.toMatchObject({
+      status: 400,
+      message: 'SYNTHETIC_CONTENT_TOO_LARGE',
+    });
+    expect(rebuildComposedMarkup).not.toHaveBeenCalled();
   });
 
   // A state within its own bound can still generate markup past the markup

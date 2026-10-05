@@ -406,6 +406,8 @@ module.exports = {
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-block-builder-too-large':
     'Enregistrement refusé : un bloc composé dépasse la taille maximale.',
+  'save-message-synthetic-content-too-large':
+    'Enregistrement refusé : ensemble, les blocs Code HTML et les blocs composés de cet email dépassent la taille maximale. Supprimez-en quelques-uns.',
   'save-message-preview-too-large':
     "Enregistrement refusé : l'email est trop volumineux.",
   // Head CSS — a stylesheet for the whole email, gated by the same flag
