@@ -25,6 +25,8 @@ const {
 } = require('../../../packages/server/common/models.common.js');
 const controller = require('../../../packages/server/user/user.controller.js');
 
+beforeEach(() => jest.clearAllMocks());
+
 function call(handler, params) {
   return new Promise((resolve) => {
     const res = { json: (payload) => resolve({ status: 200, body: payload }) };
@@ -56,6 +58,17 @@ describe('forgotten password', () => {
     });
 
     expect(result).toEqual({ status: 200, body: {} });
+  });
+});
+
+describe('setting a password from the emailed link', () => {
+  it('needs the token of the link', async () => {
+    const result = await call(controller.setPassword, {
+      email: 'known@client.test',
+    });
+
+    expect(result.status).toBe(400);
+    expect(Users.findOne).not.toHaveBeenCalled();
   });
 });
 

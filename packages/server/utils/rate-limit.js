@@ -16,12 +16,24 @@ const createError = require('http-errors');
  * @param {Function} [options.now] clock, for tests
  * @returns {Function} an express middleware answering 429 past the limit
  */
-function createRateLimiter({ windowMs, max, keyOf, now = Date.now }) {
+function createRateLimiter({
+  windowMs,
+  max,
+  keyOf,
+  now = Date.now,
+  maxEntries = 10000,
+}) {
   const windows = new Map();
 
+  // Keys come from requests, so the store is bounded: expired windows go
+  // first, then the oldest ones (a Map keeps insertion order).
   function prune(at) {
     for (const [key, entry] of windows) {
       if (entry.resetAt <= at) windows.delete(key);
+    }
+    for (const key of windows.keys()) {
+      if (windows.size < maxEntries) break;
+      windows.delete(key);
     }
   }
 
@@ -29,7 +41,7 @@ function createRateLimiter({ windowMs, max, keyOf, now = Date.now }) {
     const key = keyOf(req);
     if (!key) return next();
     const at = now();
-    if (windows.size > 1000) prune(at);
+    if (windows.size >= maxEntries) prune(at);
 
     let entry = windows.get(key);
     if (!entry || entry.resetAt <= at) {
@@ -51,9 +63,10 @@ function createRateLimiter({ windowMs, max, keyOf, now = Date.now }) {
 // are never used as a key.
 function clientIp(req) {
   const forwarded = req.headers && req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim().length > 0) {
+  if (typeof forwarded === 'string') {
     const chain = forwarded.split(',').map((entry) => entry.trim());
-    return chain[chain.length - 1];
+    const last = chain[chain.length - 1];
+    if (last) return last;
   }
   return req.ip || (req.connection && req.connection.remoteAddress) || null;
 }

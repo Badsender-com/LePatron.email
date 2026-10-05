@@ -98,7 +98,7 @@ export default {
           const errorMessage =
             err.response?.status === 429
               ? this.$t('global.errors.tooManyRequests')
-              : this.$t('global.errors.password.error.nouser');
+              : this.$t('global.errors.errorOccured');
           this.showSnackbar({
             text: errorMessage,
             color: 'error',

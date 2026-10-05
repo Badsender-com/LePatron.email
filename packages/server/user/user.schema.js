@@ -177,13 +177,18 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
+// `type` is 'admin' when an administrator resets the account (the current
+// password stops working at once) or 'user' when the person asked for a new
+// one (the current password keeps working until the emailed link is used,
+// so that asking in someone's name locks nobody out).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = undefined;
+  if (type !== 'user') user.password = undefined;
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
   lang = lang || 'en';
@@ -231,6 +236,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
 };
 
 UserSchema.methods.comparePassword = function comparePassword(password) {
+  if (!this.password) return false;
   return bcrypt.compareSync(password, this.password);
 };
 

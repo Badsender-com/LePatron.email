@@ -51,6 +51,21 @@ describe('createRateLimiter', () => {
     expect((await run(limiter, { key: 'a' })).err).toBeUndefined();
   });
 
+  it('keeps the store bounded by dropping the oldest windows', async () => {
+    const small = createRateLimiter({
+      windowMs: 60_000,
+      max: 1,
+      keyOf: (req) => req.key,
+      now: () => clock,
+      maxEntries: 3,
+    });
+    for (const key of ['a', 'b', 'c', 'd']) await run(small, { key });
+
+    // 'a' was evicted, so its window starts afresh.
+    expect((await run(small, { key: 'a' })).err).toBeUndefined();
+    expect((await run(small, { key: 'd' })).err.status).toBe(429);
+  });
+
   it('skips a request without a key', async () => {
     for (let i = 0; i < 5; i += 1) {
       expect((await run(limiter, { key: null })).err).toBeUndefined();
@@ -65,6 +80,12 @@ describe('clientIp', () => {
         headers: { 'x-forwarded-for': '198.51.100.9, 203.0.113.7' },
       })
     ).toBe('203.0.113.7');
+  });
+
+  it('ignores an empty forwarded chain', () => {
+    expect(
+      clientIp({ headers: { 'x-forwarded-for': ' , ' }, ip: '198.51.100.2' })
+    ).toBe('198.51.100.2');
   });
 
   it('falls back to the connection address', () => {
