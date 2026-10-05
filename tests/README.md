@@ -71,6 +71,31 @@ yarn test --watch
 yarn test --coverage
 ```
 
+## Skipped Acceptance Tests
+
+The first PR of a new feature ships its acceptance tests before the code (see the "New Feature Workflow" in [AGENTS.md](../AGENTS.md) and the `tdd` skill). They are written in full but skipped, so CI stays green:
+
+```javascript
+// Turned on by #1234 (search across all workspaces)
+describe.skip('global mailing search', () => {
+  let searchMailings;
+
+  beforeAll(() => {
+    // Not at the top of the file: the module doesn't exist until #1234.
+    ({
+      searchMailings,
+    } = require('../../../packages/server/mailing/mailing-search.service'));
+  });
+
+  it('never returns a mailing from a workspace the user has no right on', async () => {
+    // ...
+  });
+});
+```
+
+- Every `describe.skip` names the ticket that turns it on.
+- The ticket's PR removes the `.skip`, sees the tests fail, then makes them pass.
+
 ## Writing Tests
 
 ### Backend Test Template
