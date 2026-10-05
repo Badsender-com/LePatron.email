@@ -129,3 +129,50 @@ describe('a translation that would blow past the size limit', () => {
     expect(result.blocksUpdated).toBe(1);
   });
 });
+
+// The state is stored next to the markup and bounded by the save too. Any
+// text long enough to push a real state past its bound pushes the markup past
+// its own first, so the bound is lowered here to reach the state check alone.
+describe('a translated state past its own bound', () => {
+  const GUARD = '../../../packages/server/mailing/synthetic-block-guard.js';
+  const STATE_BOUND = 500;
+
+  const injectWithStateBound = (data, translations) => {
+    let result;
+    jest.isolateModules(() => {
+      jest.doMock(GUARD, () => ({
+        ...jest.requireActual(GUARD),
+        BUILDER_STATE_MAX_LENGTH: STATE_BOUND,
+      }));
+      const {
+        injectBuilderTexts: inject,
+      } = require('../../../packages/server/translation/builder-block-texts.js');
+      result = inject(data, translations);
+    });
+    return result;
+  };
+
+  it('leaves the block exactly as it was', () => {
+    const data = modelWith(composedBlock([text('Bonjour')]));
+    const before = { ...data.mainBlocks.blocks[0] };
+
+    const result = injectWithStateBound(data, {
+      'builderBlock.mainBlocks.0.0.content': 'x'.repeat(STATE_BOUND),
+    });
+
+    expect(result.oversized).toBe(1);
+    expect(result.blocksUpdated).toBe(0);
+    expect(data.mainBlocks.blocks[0]).toEqual(before);
+  });
+
+  it('still translates a state under it', () => {
+    const data = modelWith(composedBlock([text('Bonjour')]));
+
+    const result = injectWithStateBound(data, {
+      'builderBlock.mainBlocks.0.0.content': 'Hello',
+    });
+
+    expect(result.oversized).toBe(0);
+    expect(result.blocksUpdated).toBe(1);
+  });
+});

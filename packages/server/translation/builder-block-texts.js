@@ -10,6 +10,7 @@ const { isTranslatableValue } = require('./mosaico-text-extractor.js');
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const {
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
   locateSyntheticBlocks,
 } = require('../mailing/synthetic-block-guard.js');
 
@@ -224,6 +225,9 @@ function rebuildBlock({ block, state }) {
   // leaving both fields as they were keeps the block untranslated but intact,
   // which is the recoverable failure.
   if (serialised === '') return 'unchanged';
+  // Both halves are bounded as the save bounds them: the state is stored next
+  // to the markup, and nothing else limits it.
+  if (serialised.length > BUILDER_STATE_MAX_LENGTH) return 'oversized';
 
   const markup = generate(state);
   if (markup.length > HTML_CODE_MAX_LENGTH) return 'oversized';
