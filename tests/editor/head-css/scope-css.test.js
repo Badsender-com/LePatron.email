@@ -162,6 +162,19 @@ describe('scopeCss', () => {
     expect(flat(scopeCss(once, AREA))).toBe(flat(once));
   });
 
+  it('keeps a prefixed compound, and what descends from it, as written', () => {
+    expect(
+      flat(scopeCss('#main-wysiwyg-area:hover .a ~ .b{color:red}', AREA))
+    ).toBe('#main-wysiwyg-area:hover .a ~ .b { color: red; }');
+  });
+
+  // Another element whose id starts with the canvas's.
+  it('scopes a selector whose id only starts like the prefix', () => {
+    expect(flat(scopeCss('#main-wysiwyg-area-x .a{color:red}', AREA))).toBe(
+      '#main-wysiwyg-area #main-wysiwyg-area-x .a { color: red; }'
+    );
+  });
+
   it('keeps a prefixed child selector as written', () => {
     expect(flat(scopeCss('#main-wysiwyg-area > .a{color:red}', AREA))).toBe(
       '#main-wysiwyg-area > .a { color: red; }'
@@ -173,9 +186,13 @@ describe('scopeCss', () => {
   it.each([
     ['~', '#main-wysiwyg-area ~ div{color:red}'],
     ['+', '#main-wysiwyg-area+div{color:red}'],
+    // Past the prefix's whole compound, not just the prefix.
+    ['~ after a pseudo-class', '#main-wysiwyg-area:has(*) ~ *{color:red}'],
+    ['+ after a class', '#main-wysiwyg-area.x+div{color:red}'],
+    ['~ after an attribute', '#main-wysiwyg-area[data-a="~"] ~ p{color:red}'],
   ])('scopes a prefixed selector that reaches a sibling (%s)', (_c, css) => {
     expect(flat(scopeCss(css, AREA))).toMatch(
-      /^#main-wysiwyg-area #main-wysiwyg-area\s*[~+]/
+      /^#main-wysiwyg-area #main-wysiwyg-area\S*?\s*[~+]/
     );
   });
 

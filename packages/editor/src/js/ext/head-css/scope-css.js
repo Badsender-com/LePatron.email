@@ -47,6 +47,10 @@ const KEPT_TYPES = new Set(['rule', 'comment', 'font-face', 'keyframes']);
 // After an already-scoped prefix, a sibling combinator leaves the canvas.
 const LEAVES_CANVAS = /^\s*[+~]/;
 
+// What would make the prefix the start of a longer name — another element's id
+// or class — rather than the canvas itself.
+const CONTINUES_NAME = /^[\w-]/;
+
 /**
  * Splits a selector list on its top-level commas only.
  *
@@ -114,6 +118,25 @@ function compoundLength(text) {
 }
 
 /**
+ * Whether a selector already targets the canvas — an author pasting rules
+ * copied out of the template — and only what is inside it.
+ *
+ * The sibling check looks past the prefix's whole compound, not just the
+ * prefix: `#main-wysiwyg-area:has(*) ~ *` reaches the canvas's siblings as
+ * surely as `#main-wysiwyg-area ~ *`.
+ *
+ * @param {string} trimmed the selector, trimmed
+ * @param {string} prefix
+ * @returns {boolean}
+ */
+function isAlreadyScoped(trimmed, prefix) {
+  if (trimmed.indexOf(prefix) !== 0) return false;
+  const afterPrefix = trimmed.slice(prefix.length);
+  if (CONTINUES_NAME.test(afterPrefix)) return false;
+  return !LEAVES_CANVAS.test(afterPrefix.slice(compoundLength(afterPrefix)));
+}
+
+/**
  * @param {string} selector
  * @param {string} prefix
  * @returns {string}
@@ -121,14 +144,7 @@ function compoundLength(text) {
 function scopeSelector(selector, prefix) {
   const trimmed = selector.trim();
   if (trimmed === '') return selector;
-  // Already scoped — an author pasting rules copied out of the template —
-  // unless what follows the prefix reaches its siblings.
-  if (
-    trimmed.indexOf(prefix) === 0 &&
-    !LEAVES_CANVAS.test(trimmed.slice(prefix.length))
-  ) {
-    return trimmed;
-  }
+  if (isAlreadyScoped(trimmed, prefix)) return trimmed;
 
   let scoped = prefix;
   let rest = trimmed;
