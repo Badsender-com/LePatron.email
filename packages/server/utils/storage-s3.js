@@ -6,7 +6,6 @@ const denodeify = require('denodeify');
 const logger = require('../utils/logger.js');
 
 const config = require('../node.config.js');
-const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 
 if (!config.isAws) {
@@ -41,88 +40,39 @@ if (!config.isAws) {
   };
 
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
+  // Settle on S3's answer, never on `httpUploadProgress`: progress reaches 100%
+  // as soon as the last byte leaves the socket, before S3 has stored the object
+  // (or refused it). Resolving there sent the editor the URL of an image that
+  // could not be read yet: its gallery thumbnail stayed blank and the image
+  // dropped in the email collapsed, until the creation was reopened.
+  const upload = (params) => {
+    const { Key: name } = params;
+    const managedUpload = s3.upload({
+      Bucket: config.storage.aws.bucketName,
+      ...params,
+    });
+    managedUpload.on('httpUploadProgress', (progress) => {
+      logger.info(`upload – ${name}`, (progress.loaded / progress.total) * 100);
+    });
+    return managedUpload.promise().then(
+      () => undefined,
+      (err) => {
+        logger.error(err);
+        throw err;
+      }
+    );
+  };
+
   const writeStreamFromPath = (file) => {
-    const deferred = defer();
     const { name, path } = file;
-    const source = fs.createReadStream(path);
-
-    s3.upload(
-      {
-        Bucket: config.storage.aws.bucketName,
-        Key: name,
-        Body: source,
-      },
-      function (err) {
-        // Only log real failures: the callback also fires on success with
-        // err === null, which previously produced misleading "error" log
-        // lines containing the successful upload's ETag/Location.
-        if (err) logger.error(err);
-      }
-    )
-      .on('httpUploadProgress', (progress) => {
-        logger.info(
-          `writeStreamFromPath – ${name}`,
-          (progress.loaded / progress.total) * 100
-        );
-        if (progress.loaded >= progress.total) deferred.resolve();
-      })
-      .on('error', deferred.reject);
-
-    return deferred;
+    return upload({ Key: name, Body: fs.createReadStream(path) });
   };
 
-  const writeStreamFromStream = (source, name) => {
-    const deferred = defer();
+  const writeStreamFromStream = (source, name) =>
+    upload({ Key: name, Body: source });
 
-    s3.upload(
-      {
-        Bucket: config.storage.aws.bucketName,
-        Key: name,
-        Body: source,
-      },
-      (err) => {
-        // Only log real failures (see writeStreamFromPath).
-        if (err) logger.error(err);
-      }
-    )
-      .on('httpUploadProgress', (progress) => {
-        logger.info(
-          `writeStreamFromStream – ${name}`,
-          (progress.loaded / progress.total) * 100
-        );
-        if (progress.loaded >= progress.total) deferred.resolve();
-      })
-      .on('error', deferred.reject);
-
-    return deferred;
-  };
-
-  const writeStreamFromStreamWithPrefix = (source, name, prefix) => {
-    const deferred = defer();
-
-    s3.upload(
-      {
-        Bucket: config.storage.aws.bucketName,
-        Prefix: prefix,
-        Key: name,
-        Body: source,
-      },
-      (err) => {
-        // Only log real failures (see writeStreamFromPath).
-        if (err) logger.error(err);
-      }
-    )
-      .on('httpUploadProgress', (progress) => {
-        logger.info(
-          `writeStreamFromStream – ${name}`,
-          (progress.loaded / progress.total) * 100
-        );
-        if (progress.loaded >= progress.total) deferred.resolve();
-      })
-      .on('error', deferred.reject);
-
-    return deferred;
-  };
+  const writeStreamFromStreamWithPrefix = (source, name, prefix) =>
+    upload({ Prefix: prefix, Key: name, Body: source });
 
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#listObjectsV2-property
   // https://github.com/matthew-andrews/denodeify#advanced-usage
