@@ -3,6 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
+import { Roles } from '~/helpers/constants/roles';
 
 export default {
   name: 'BsUserForm',
@@ -13,15 +14,13 @@ export default {
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
   ],
-  roles: [
-    { text: 'Group admin', value: 'company_admin' },
-    { text: 'Regular user', value: 'regular_user' },
-  ],
   props: {
     user: { type: Object, default: () => ({}) },
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     title: { type: String, default: '' },
+    // Offers the super admin role: on, choosing another role is a demotion.
+    includeSuperAdmin: { type: Boolean, default: false },
   },
   validations() {
     return {
@@ -34,6 +33,19 @@ export default {
     };
   },
   computed: {
+    roles() {
+      const roles = [
+        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
+        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
+      ];
+      if (this.includeSuperAdmin) {
+        roles.unshift({
+          text: this.$t('users.roles.superAdmin'),
+          value: Roles.SUPER_ADMIN,
+        });
+      }
+      return roles;
+    },
     localModel: {
       get() {
         return this.user;
@@ -127,7 +139,7 @@ export default {
             v-model="localModel.role"
             :label="$t('users.role')"
             name="role"
-            :items="$options.roles"
+            :items="roles"
           />
         </v-col>
       </v-row>

@@ -9,6 +9,8 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as userStatusHelpers from '~/helpers/user-status.js';
+import { Roles } from '~/helpers/constants/roles';
+import { superAdminErrorKey } from '~/helpers/super-admin-errors.js';
 import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -79,6 +81,9 @@ export default {
     },
     showGroupBadge() {
       return this.isAdmin && this.groupName;
+    },
+    isSuperAdmin() {
+      return this.user.role === Roles.SUPER_ADMIN;
     },
     statusIcon() {
       return userStatusHelpers.getStatusIcon(this.user.status);
@@ -195,10 +200,8 @@ export default {
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
+        const key = superAdminErrorKey(error) || 'global.errors.errorOccured';
+        this.showSnackbar({ text: this.$t(key), color: 'error' });
         console.log(error);
       } finally {
         this.loading = false;
@@ -321,6 +324,7 @@ export default {
         v-model="user"
         :title="$t('users.details')"
         :loading="loading"
+        :include-super-admin="isSuperAdmin"
         @submit="updateUser"
       />
 

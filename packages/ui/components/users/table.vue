@@ -60,9 +60,11 @@ export default {
     },
   },
   methods: {
+    // A super admin is managed from the super admins screen and the global
+    // user page, never from their group's settings (ADR 0002).
     userPath(user) {
       const groupId = user.group?.id || this.$route.params.groupId;
-      return groupId
+      return groupId && user.role !== Roles.SUPER_ADMIN
         ? `/groups/${groupId}/settings/users/${user.id}`
         : `/users/${user.id}`;
     },
@@ -116,12 +118,7 @@ export default {
       this.$emit('update', user);
     },
     navigateToUser(user) {
-      const groupId = user.group?.id || this.$route.params.groupId;
-      if (groupId) {
-        this.$router.push(`/groups/${groupId}/settings/users/${user.id}`);
-      } else {
-        this.$router.push(`/users/${user.id}`);
-      }
+      this.$router.push(this.userPath(user));
     },
     // Returns the i18n KEY, not the translated string: BsRowActions calls
     // $t(action.text) on its side, so returning $t(...) here would translate
@@ -215,7 +212,15 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="item.role === roles.GROUP_ADMIN"
+          v-if="item.role === roles.SUPER_ADMIN"
+          x-small
+          color="primary"
+          dark
+        >
+          {{ $t('users.roles.superAdmin') }}
+        </v-chip>
+        <v-chip
+          v-else-if="item.role === roles.GROUP_ADMIN"
           x-small
           color="accent"
           dark
