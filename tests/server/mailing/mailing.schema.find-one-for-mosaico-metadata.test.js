@@ -12,7 +12,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
-  getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
+  getEditorFeatureFlags: jest.fn().mockResolvedValue({
+    hasTranslationFeature: false,
+    hasTextGenerationFeature: false,
+  }),
 }));
 // The policy itself lives in mailing-metadata.service.js, which findOneForMosaico
 // delegates to; it reads the taxonomy through models.common like the rest of that

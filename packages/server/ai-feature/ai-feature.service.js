@@ -4,7 +4,9 @@ const { AIFeatureConfigs, Integrations } = require('../common/models.common');
 const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const AIFeatureTypes = require('../constant/ai-feature-type.js');
+
+const { AIFeatureTypeValues } = AIFeatureTypes;
 const { validateFeatureConfig } = require('./ai-feature.validation.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
@@ -26,6 +28,7 @@ module.exports = {
   getFeatureConfig,
   getActiveFeatureWithIntegration,
   resolveActiveFeature,
+  getEditorFeatureFlags,
   FeatureResolutionReasons,
 };
 
@@ -249,5 +252,33 @@ async function getActiveFeatureWithIntegration({ groupId, featureType }) {
   return {
     feature: resolved.feature,
     integration: resolved.integration,
+  };
+}
+
+/**
+ * Which AI features the editor may offer for a group: a feature counts only when
+ * it is on AND its integration is active, the same rule invocations apply.
+ *
+ * One read for every flag, rather than one resolveActiveFeature per feature: the
+ * editor asks on every open.
+ *
+ * @returns {Promise<{hasTranslationFeature: boolean, hasTextGenerationFeature: boolean}>}
+ */
+async function getEditorFeatureFlags({ groupId }) {
+  const aiConfig = await AIFeatureConfigs.findOne({
+    _company: Types.ObjectId(groupId),
+  }).populate('features.integration');
+  const features = (aiConfig && aiConfig.features) || [];
+  const usable = (featureType) =>
+    features.some(
+      (f) =>
+        f.featureType === featureType &&
+        f.isActive &&
+        f.integration &&
+        f.integration.isActive
+    );
+  return {
+    hasTranslationFeature: usable(AIFeatureTypes.TRANSLATION),
+    hasTextGenerationFeature: usable(AIFeatureTypes.TEXT_GENERATION),
   };
 }

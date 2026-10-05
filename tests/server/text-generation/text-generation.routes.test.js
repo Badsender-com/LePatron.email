@@ -33,20 +33,13 @@ jest.mock('../../../packages/server/account/auth.guard', () => ({
     return res.status(401).json({ message: 'Unauthorized' });
   },
 }));
-// The AI rate limit has its own tests (#1165): here it only has to be on the
-// route. `virtual` because the module ships with #1165, after this file; the
-// path carries its extension so it matches the router's require exactly.
-// #1166 can drop `virtual` when it turns these tests on.
-jest.mock(
-  '../../../packages/server/ai-usage/ai-rate-limit.js',
-  () => ({
-    aiRateLimit: () =>
-      function aiRateLimitMiddleware(req, res, next) {
-        next();
-      },
-  }),
-  { virtual: true }
-);
+// The AI rate limit has its own tests: here it only has to be on the route.
+jest.mock('../../../packages/server/ai-usage/ai-rate-limit.js', () => ({
+  aiRateLimit: () =>
+    function aiRateLimitMiddleware(req, res, next) {
+      next();
+    },
+}));
 
 const express = require('express');
 const request = require('supertest');
@@ -180,7 +173,6 @@ function loadModules() {
   } = require('../../../packages/server/ai-skill/repositories/expertise.repository'));
   mailingService = require('../../../packages/server/mailing/mailing.service');
   mailingMetadataService = require('../../../packages/server/mailing/mailing-metadata.service');
-  // Required here, not at the top of the file: the module ships with #1166.
   textGenerationRouter = require('../../../packages/server/text-generation/text-generation.routes');
 
   mailingService.findOneForUser.mockResolvedValue({ id: MAILING_ID });
@@ -191,8 +183,7 @@ function loadModules() {
   findApplicable.mockResolvedValue(EXPERTISE);
 }
 
-// Turned on by #1166 (generate and apply a subject from the editor)
-describe.skip('text generation: POST /api/text-generation/subject', () => {
+describe('text generation: POST /api/text-generation/subject', () => {
   beforeEach(loadModules);
 
   const body = {
