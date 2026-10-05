@@ -14,6 +14,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
+const superAdminPolicy = require('./super-admin-policy.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isSamlConfigured } = require('../account/saml-config.js');
 const {
@@ -22,7 +23,6 @@ const {
 
 module.exports = {
   list: asyncHandler(list),
-  getByGroupId: asyncHandler(getUsersByGroupId),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMailings: asyncHandler(readMailings),
@@ -75,7 +75,9 @@ async function getCurrentUser(req, res, next) {
  */
 
 async function list(req, res) {
-  const users = await Users.find({})
+  const { role } = req.query;
+  superAdminPolicy.assertRoleParam(role);
+  const users = await Users.find(role ? { role } : {})
     .populate({
       path: '_company',
       select:
@@ -83,12 +85,6 @@ async function list(req, res) {
     })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
-}
-
-async function getUsersByGroupId(req, res) {
-  const { user: connectedUser } = req;
-  const users = await userService.findByGroupId(connectedUser?.group?.id);
-  res.json(users);
 }
 
 /**
@@ -107,9 +103,13 @@ async function getUsersByGroupId(req, res) {
  */
 
 async function create(req, res) {
-  const { groupId } = req.body;
+  const role = req.body.role || Roles.REGULAR_USER;
+  const groupId = await superAdminPolicy.groupForCreation(req.user, {
+    role,
+    groupId: req.body.groupId,
+  });
   if (!groupId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller : in create, no groupId provided in request'
     );
   }
@@ -121,10 +121,6 @@ async function create(req, res) {
     'lang',
     'externalUsername',
   ]);
-  const role =
-    req.body.role === Roles.GROUP_ADMIN
-      ? Roles.GROUP_ADMIN
-      : Roles.REGULAR_USER;
 
   const newUser = await userService.createUser({
     groupId,
@@ -213,7 +209,7 @@ async function readMailings(req, res) {
 async function update(req, res) {
   const { userId } = req.params;
   if (!userId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller :  in update function, no userId provided in request'
     );
   }
@@ -225,6 +221,10 @@ async function update(req, res) {
     'role',
     'externalUsername',
   ]);
+  const target = await Users.findOneForApi({ _id: userId });
+  if (!target) throw new createError.NotFound();
+  await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
+
   const updatedUser = await userService.updateUser({ userId, ...userParams });
 
   res.json(updatedUser);
@@ -246,6 +246,7 @@ async function activate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  superAdminPolicy.assertCanManage(req.user, user);
 
   await user.activate();
   const updatedUser = await Users.findOneForApi({ _id: userId });
@@ -268,6 +269,7 @@ async function deactivate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  await superAdminPolicy.assertCanDeactivate(req.user, user);
 
   await user.deactivate();
   const updatedUser = await Users.findOneForApi({ _id: userId });
@@ -290,6 +292,7 @@ async function adminResetPassword(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  superAdminPolicy.assertCanManage(req.user, user);
 
   await user.resetPassword('admin', user.lang);
   const updatedUser = await Users.findOneForApi({ _id: userId });

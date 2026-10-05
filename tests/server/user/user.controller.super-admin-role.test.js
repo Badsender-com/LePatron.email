@@ -85,7 +85,7 @@ beforeEach(() => {
 
 // Turned on by #1155 (super admin as a persisted role: admin status,
 // guardrails and listing).
-describe.skip('granting and revoking the super admin role (#1155)', () => {
+describe('granting and revoking the super admin role (#1155)', () => {
   describe('creating a super admin', () => {
     const newSuperAdmin = {
       name: 'Grace',

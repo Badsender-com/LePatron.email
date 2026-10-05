@@ -9,6 +9,7 @@ const {
 } = require('../workspace/workspace.service.js');
 
 const groupService = require('../group/group.service.js');
+const superAdminPolicy = require('../user/super-admin-policy.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
@@ -105,10 +106,17 @@ async function setPlatform(req, res) {
     throw new NotFound();
   }
 
+  // The flag cannot leave a group with active super admins (ADR 0002).
   if (!isPlatform) {
+    if (group.isPlatform) await superAdminPolicy.assertFlagCanLeave(group);
     group.isPlatform = false;
     await group.save();
     return res.json(group.toJSON());
+  }
+  if (!group.isPlatform) {
+    await superAdminPolicy.assertFlagCanLeave(
+      await Groups.findOne({ isPlatform: true, _id: { $ne: group._id } })
+    );
   }
 
   // Move the flag: clear any other platform group first so the partial unique

@@ -100,7 +100,7 @@ describe('the platform flag', () => {
 
   // Turned on by #1155 (super admin as a persisted role: admin status,
   // guardrails and listing).
-  describe.skip('on the group of active super admins (#1155)', () => {
+  describe('on the group of active super admins (#1155)', () => {
     beforeEach(() => {
       store.seed({ groups: GROUPS, users: USERS });
     });

@@ -1,6 +1,7 @@
 'use strict';
 
 const { Types } = require('mongoose');
+const config = require('../../../../packages/server/node.config.js');
 
 jest.mock(
   '../../../../packages/server/ai-playground/services/scenario.service',
@@ -52,7 +53,11 @@ function makeApp({ asAdmin = true } = {}) {
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => {
-    req.user = asAdmin ? { isAdmin: true, id: 'admin' } : { id: 'someone' };
+    // The admin stub is the bootstrap account: the one admin with no
+    // document, hence no owner on what it creates.
+    req.user = asAdmin
+      ? { isAdmin: true, id: config.admin.id }
+      : { id: 'someone' };
     next();
   });
   app.use('/api/ai-playground', router);

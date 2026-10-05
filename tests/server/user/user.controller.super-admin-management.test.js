@@ -69,7 +69,7 @@ beforeEach(() => {
 
 // Turned on by #1155 (super admin as a persisted role: admin status,
 // guardrails and listing).
-describe.skip('managing a super admin account (#1155)', () => {
+describe('managing a super admin account (#1155)', () => {
   describe('editing', () => {
     it('a super admin edits another one', async () => {
       const { status } = await update(actor(ALICE), BOB, {
