@@ -77,9 +77,11 @@ function escapeMarkupText(text) {
       references.push(reference);
       return HOLD;
     });
-  return escapeText(held)
-    .split(HOLD)
-    .reduce((out, part, index) => out + references[index - 1] + part);
+  const [first, ...rest] = escapeText(held).split(HOLD);
+  return rest.reduce(
+    (out, part, index) => out + references[index] + part,
+    first
+  );
 }
 
 // The references an href carries in practice. Decoded before the URL is

@@ -117,8 +117,10 @@ function checkSlotPlacement(label, html, slots) {
     if (positions.length === 0) return;
 
     const fits = positions.map((position) => ALLOWED[position] || []);
-    const common = fits.reduce((all, allowed) =>
-      all.filter((c) => allowed.includes(c))
+    const [firstFit, ...otherFits] = fits;
+    const common = otherFits.reduce(
+      (all, allowed) => all.filter((c) => allowed.includes(c)),
+      firstFit
     );
 
     if (positions.length > 1 && common.length === 0) {
