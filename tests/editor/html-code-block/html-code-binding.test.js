@@ -68,8 +68,12 @@ describe('lpHtmlCode binding', () => {
 // `href="#"`, and a click opened the editor again in another tab. The click
 // still bubbles, so the block is selected by it.
 describe('links in the canvas', () => {
-  const clickOn = (target) => {
-    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+  const clickOn = (target, type = 'click') => {
+    const event = new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      button: type === 'auxclick' ? 1 : 0,
+    });
     target.dispatchEvent(event);
     return event;
   };
@@ -98,10 +102,23 @@ describe('links in the canvas', () => {
     expect(bubbled).toHaveBeenCalled();
   });
 
+  // A middle click opens the link in a new tab without any `click`.
+  it('cancels a middle click on a link too, and lets it bubble', () => {
+    const host = renderLink('wysiwyg');
+    const bubbled = jest.fn();
+    host.addEventListener('auxclick', bubbled);
+
+    const event = clickOn(host.querySelector('span'), 'auxclick');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(bubbled).toHaveBeenCalled();
+  });
+
   it('leaves a click outside any link alone', () => {
     const host = renderLink('wysiwyg');
     const element = host.querySelector('[data-bind^="lpHtmlCode"]');
 
     expect(clickOn(element).defaultPrevented).toBe(false);
+    expect(clickOn(element, 'auxclick').defaultPrevented).toBe(false);
   });
 });

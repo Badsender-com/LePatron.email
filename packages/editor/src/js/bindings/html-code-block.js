@@ -28,7 +28,10 @@ const {
 // A link in the canvas is something to look at, not to follow: a composed
 // button with no URL yet is `href="#"`, and following it opened the editor
 // again in another tab. Cancelled without stopping the click, so the block is
-// still selected by it.
+// still selected by it. A middle click opens the link in a new tab just the
+// same, through `auxclick` rather than `click`: cancelled the same way.
+const LINK_EVENTS = ['click', 'auxclick'];
+
 function keepLinksInPlace(event) {
   const link =
     event.target && event.target.closest && event.target.closest('a');
@@ -38,7 +41,9 @@ function keepLinksInPlace(event) {
 ko.bindingHandlers[HTML_CODE_BINDING] = {
   init: function (element, valueAccessor, allBindings, viewModel, context) {
     if (context && context.templateMode === 'wysiwyg') {
-      element.addEventListener('click', keepLinksInPlace);
+      LINK_EVENTS.forEach((type) =>
+        element.addEventListener(type, keepLinksInPlace)
+      );
     }
     return ko.bindingHandlers.html.init.apply(this, arguments);
   },
