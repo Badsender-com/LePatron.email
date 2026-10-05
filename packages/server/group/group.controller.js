@@ -9,6 +9,7 @@ const {
 } = require('../workspace/workspace.service.js');
 
 const groupService = require('../group/group.service.js');
+const superAdminPolicy = require('../user/super-admin-policy.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
@@ -106,17 +107,24 @@ async function setPlatform(req, res) {
   }
 
   if (!isPlatform) {
+    // The flag cannot leave a group with active super admins (ADR 0002).
+    await superAdminPolicy.assertFlagCanLeave(group);
     group.isPlatform = false;
     await group.save();
     return res.json(group.toJSON());
   }
 
-  // Move the flag: clear any other platform group first so the partial unique
-  // index never trips, then mark this one.
-  await Groups.updateMany(
-    { isPlatform: true, _id: { $ne: group._id } },
-    { $set: { isPlatform: false } }
-  );
+  // Move the flag: the current platform group gives it up first, so the
+  // partial unique index never trips, then this one takes it.
+  const current = await Groups.findOne({
+    isPlatform: true,
+    _id: { $ne: group._id },
+  });
+  if (current) {
+    await superAdminPolicy.assertFlagCanLeave(current);
+    current.isPlatform = false;
+    await current.save();
+  }
   group.isPlatform = true;
   await group.save();
   res.json(group.toJSON());
@@ -249,6 +257,8 @@ async function deleteGroup(req, res) {
   if (!user.isAdmin) {
     throw new NotFound();
   }
+  // Deleting the group would delete its super admins with it (ADR 0002).
+  await superAdminPolicy.assertFlagCanLeave(group);
   await groupService.deleteGroup(groupId);
 
   res.json(group);
@@ -479,6 +489,8 @@ async function update(req, res) {
 
   // Process credentials (handle masking and deletion)
   const processedBody = groupFtpService.processCredentialsForUpdate(req.body);
+  // The platform flag has its own endpoint and its own guardrail (ADR 0002).
+  delete processedBody.isPlatform;
 
   // Validate SSH key format if provided and not masked
   if (processedBody.ftpSshKey) {

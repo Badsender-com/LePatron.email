@@ -67,7 +67,7 @@ describe('findUserByGroupId', () => {
 
   // Turned on by #1155 (super admin as a persisted role: admin status,
   // guardrails and listing).
-  describe.skip('the platform group (#1155)', () => {
+  describe('the platform group (#1155)', () => {
     it('keeps super admins out of its user list', async () => {
       const users = await groupService.findUserByGroupId(PLATFORM_GROUP);
 

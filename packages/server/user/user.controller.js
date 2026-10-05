@@ -9,11 +9,13 @@ const logger = require('../utils/logger.js');
 const {
   updateSessionTracking,
 } = require('../account/session-tracking.helper.js');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
+const superAdminPolicy = require('./super-admin-policy.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isSamlConfigured } = require('../account/saml-config.js');
 const {
@@ -22,7 +24,6 @@ const {
 
 module.exports = {
   list: asyncHandler(list),
-  getByGroupId: asyncHandler(getUsersByGroupId),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMailings: asyncHandler(readMailings),
@@ -70,12 +71,17 @@ async function getCurrentUser(req, res, next) {
  * @apiName GetUsers
  * @apiGroup Users
  *
+ * @apiParam (Query) {String} [role] one of the product's roles, as a plain
+ *   value; any other value is refused with INVALID_ROLE_PARAM
+ *
  * @apiUse users
  * @apiSuccess {users[]} items list of users
  */
 
 async function list(req, res) {
-  const users = await Users.find({})
+  const { role } = req.query;
+  superAdminPolicy.assertRoleParam(role);
+  const users = await Users.find(role ? { role } : {})
     .populate({
       path: '_company',
       select:
@@ -83,12 +89,6 @@ async function list(req, res) {
     })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
-}
-
-async function getUsersByGroupId(req, res) {
-  const { user: connectedUser } = req;
-  const users = await userService.findByGroupId(connectedUser?.group?.id);
-  res.json(users);
 }
 
 /**
@@ -107,9 +107,13 @@ async function getUsersByGroupId(req, res) {
  */
 
 async function create(req, res) {
-  const { groupId } = req.body;
+  const role = req.body.role || Roles.REGULAR_USER;
+  const groupId = await superAdminPolicy.groupForCreation(req.user, {
+    role,
+    groupId: req.body.groupId,
+  });
   if (!groupId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller : in create, no groupId provided in request'
     );
   }
@@ -121,16 +125,13 @@ async function create(req, res) {
     'lang',
     'externalUsername',
   ]);
-  const role =
-    req.body.role === Roles.GROUP_ADMIN
-      ? Roles.GROUP_ADMIN
-      : Roles.REGULAR_USER;
 
   const newUser = await userService.createUser({
     groupId,
     role,
     ...userParams,
   });
+  superAdminPolicy.logAction(req.user, 'create', newUser);
   res.json(newUser);
 }
 
@@ -149,6 +150,7 @@ async function read(req, res) {
   const { userId } = req.params;
   const user = await Users.findOneForApi({ _id: userId });
   if (!user) throw new createError.NotFound();
+  superAdminPolicy.assertCanManage(req.user, user);
 
   res.json(user);
 }
@@ -173,10 +175,11 @@ async function readMailings(req, res) {
   const parsedLimit = parseInt(limit, 10);
   const offset = (parsedPage - 1) * parsedLimit;
 
-  const user = await Users.findById(userId).select('_id');
+  const user = await Users.findById(userId).select('_id role');
   if (!user) {
     throw new createError.NotFound(); // Ensure this error is properly handled by your error middleware
   }
+  superAdminPolicy.assertCanManage(req.user, user);
 
   // Retrieve mailings and their total count
   const [mailings, totalItems] = await Promise.all([
@@ -213,7 +216,7 @@ async function readMailings(req, res) {
 async function update(req, res) {
   const { userId } = req.params;
   if (!userId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller :  in update function, no userId provided in request'
     );
   }
@@ -225,7 +228,12 @@ async function update(req, res) {
     'role',
     'externalUsername',
   ]);
+  const target = await Users.findOneForApi({ _id: userId });
+  if (!target) throw new createError.NotFound();
+  await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
+
   const updatedUser = await userService.updateUser({ userId, ...userParams });
+  superAdminPolicy.logAction(req.user, 'update', target, userParams.role);
 
   res.json(updatedUser);
 }
@@ -246,8 +254,10 @@ async function activate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  await superAdminPolicy.assertCanActivate(req.user, user);
 
   await user.activate();
+  superAdminPolicy.logAction(req.user, 'activate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
 }
@@ -268,8 +278,10 @@ async function deactivate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  await superAdminPolicy.assertCanDeactivate(req.user, user);
 
   await user.deactivate();
+  superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
 }
@@ -290,8 +302,10 @@ async function adminResetPassword(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  superAdminPolicy.assertCanManage(req.user, user);
 
   await user.resetPassword('admin', user.lang);
+  superAdminPolicy.logAction(req.user, 'reset-password', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
 }
@@ -336,6 +350,7 @@ async function forgotPassword(req, res) {
 
 async function setPassword(req, res) {
   const { token } = req.params;
+  if (!token) throw new createError.BadRequest('invalid or expired token');
   const user = await Users.findOne({
     token,
     tokenExpire: { $gt: Date.now() },
@@ -410,10 +425,11 @@ async function login(req, res, next) {
       // Update session tracking
       await updateSessionTracking(req, user);
 
-      // For super admin, return the user object directly (not in database)
-      // For regular users, fetch complete user data with populated group (includes module flags)
+      // The bootstrap account has no document: it is returned as is. Any
+      // stored user, super admin included, is reloaded with its populated
+      // group (module flags).
       let completeUser = user;
-      if (user._id !== config.admin.id && user.id !== config.admin.id) {
+      if (!isBootstrapAccount(user)) {
         completeUser = await Users.findOneForApi({ _id: user._id });
       }
 

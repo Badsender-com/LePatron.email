@@ -132,7 +132,7 @@ describe('auth guards', () => {
 
   // Turned on by #1155 (super admin as a persisted role: admin status,
   // guardrails and listing).
-  describe.skip('a persisted super admin (#1155)', () => {
+  describe('a persisted super admin (#1155)', () => {
     const superAdmin = persisted('super_admin');
 
     it('passes the user guard', async () => {

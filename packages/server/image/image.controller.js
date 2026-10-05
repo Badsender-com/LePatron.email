@@ -87,7 +87,7 @@ const onWriteResizeEnd = (datas) => () => {
     .save()
     .then(() => console.log(green('cache image infos saved in DB', path)))
     .catch((e) => {
-      console.log(red('[IMAGE] can\'t save cache image infos in DB'), path);
+      console.log(red("[IMAGE] can't save cache image infos in DB"), path);
       console.log(inspect(e));
     });
 };
@@ -98,7 +98,7 @@ const getResizedImageName = (path) => {
 };
 
 const onWriteResizeError = (path) => (e) => {
-  console.log('[IMAGE] can\'t upload resize/placeholder result', path);
+  console.log("[IMAGE] can't upload resize/placeholder result", path);
   console.log(inspect(e));
 };
 

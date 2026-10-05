@@ -3,12 +3,10 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Users, Mailings } = require('../common/models.common.js');
-const mongoose = require('mongoose');
 
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
-  findByGroupId: asyncHandler(findByGroupId),
   getPersistedLocalStorageKey,
   updatePersistedLocalStorageKey,
 };
@@ -43,19 +41,13 @@ async function updateUser(userParams) {
     userParams,
     {
       runValidators: true,
+      new: true,
     }
   ).populate({
     path: '_company',
     select: 'id name',
   });
   return updatedUser;
-}
-
-async function findByGroupId(groupId) {
-  const users = await Users.find({
-    _company: mongoose.Types.ObjectId(groupId),
-  });
-  return users;
 }
 
 /**
