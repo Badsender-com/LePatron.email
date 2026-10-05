@@ -20,7 +20,7 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 - La révocation d'un lien de partage selon le rôle, côté serveur et éditeur (`c09c99be`), n'est pas rejouée.
 - La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.
 - Le correctif `updateLabel` de la galerie (identifiant invalide en 422, dans `7dafb4cb`) et `qualityIgnores` dans `MAILING_LIST_PROJECTION` (`91a62081`) appartiennent à leurs PR.
-- L'ADR 0003 (génération de texte) est absent du tableau de `docs/adr/README.md` : 0004 garde son numéro.
+- La génération de texte a son ADR en 0016, 0003 étant celui du contrôle qualité v2 : 0004 garde son numéro.
 
 **Mise à jour du 2026-10-06** : plusieurs chantiers voisins ont été livrés ou sont en revue sur `develop` depuis la rédaction de ce document, et en changent l'état de départ. La branche `feat/roles-permissions` les a rapatriés (voir « État de départ au 2026-10-06 » ci-dessous). En résumé :
 
