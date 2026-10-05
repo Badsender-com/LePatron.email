@@ -7,11 +7,12 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   PersonalizedBlocks: {
     create: jest.fn(),
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
+    findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    deleteOne: jest.fn(),
   },
   Users: {},
-  Templates: { findById: jest.fn() },
+  Templates: { findById: jest.fn(), findOne: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger', () => ({
   log: jest.fn(),
@@ -38,9 +39,11 @@ const lean = (value) => ({
 beforeEach(() => {
   jest.resetAllMocks();
   PersonalizedBlocks.create.mockImplementation(async (doc) => doc);
-  PersonalizedBlocks.findByIdAndUpdate.mockImplementation(
-    async (id, doc) => doc
+  PersonalizedBlocks.findOneAndUpdate.mockImplementation(
+    async (filter, doc) => doc
   );
+  // The template belongs to the group, unless a test says otherwise.
+  Templates.findOne.mockReturnValue(lean({ _id: TEMPLATE }));
 });
 
 describe('personalized blocks — the HTML code block flag', () => {
@@ -84,7 +87,7 @@ describe('personalized blocks — the HTML code block flag', () => {
   });
 
   it('refuses new markup on update, against the stored block template', async () => {
-    PersonalizedBlocks.findById.mockReturnValue(
+    PersonalizedBlocks.findOne.mockReturnValue(
       lean({ content: htmlBlock('<p>stored</p>'), _template: TEMPLATE })
     );
     Templates.findById.mockReturnValue(lean({ htmlBlockEnabled: false }));
@@ -95,11 +98,11 @@ describe('personalized blocks — the HTML code block flag', () => {
       })
     ).rejects.toMatchObject({ status: 403 });
     expect(Templates.findById).toHaveBeenCalledWith(TEMPLATE);
-    expect(PersonalizedBlocks.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(PersonalizedBlocks.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it('keeps accepting a rename of a block whose markup is unchanged', async () => {
-    PersonalizedBlocks.findById.mockReturnValue(
+    PersonalizedBlocks.findOne.mockReturnValue(
       lean({ content: htmlBlock('<p>stored</p>'), _template: TEMPLATE })
     );
     Templates.findById.mockReturnValue(lean({ htmlBlockEnabled: false }));
@@ -109,7 +112,7 @@ describe('personalized blocks — the HTML code block flag', () => {
       content: htmlBlock('<p>stored</p>'),
     });
 
-    expect(PersonalizedBlocks.findByIdAndUpdate).toHaveBeenCalled();
+    expect(PersonalizedBlocks.findOneAndUpdate).toHaveBeenCalled();
   });
 });
 

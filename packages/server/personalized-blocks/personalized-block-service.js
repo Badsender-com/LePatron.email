@@ -126,7 +126,41 @@ async function assertBlockHtmlCodeAllowed({
   });
 }
 
+// What a block's author may change. Its group, template and author are set by
+// the server, never by the request.
+const UPDATABLE_FIELDS = ['name', 'category', 'content'];
+
+const updatableOf = (block) =>
+  UPDATABLE_FIELDS.reduce((fields, field) => {
+    if (block && Object.prototype.hasOwnProperty.call(block, field)) {
+      fields[field] = block[field];
+    }
+    return fields;
+  }, {});
+
+// A block is read, changed or deleted through its group: the route checks the
+// caller belongs to the group named in the request, and this is what ties the
+// block to that same group.
+const inGroup = (id, groupId) => ({
+  _id: mongoose.Types.ObjectId(id),
+  _group: mongoose.Types.ObjectId(groupId),
+});
+
+/**
+ * @throws {NotFound} TEMPLATE_NOT_FOUND unless the template belongs to the group
+ */
+async function assertTemplateInGroup(templateId, groupId) {
+  const template = await Templates.findOne({
+    _id: mongoose.Types.ObjectId(templateId),
+    _company: mongoose.Types.ObjectId(groupId),
+  })
+    .select({ _id: 1 })
+    .lean();
+  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+}
+
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
+  await assertTemplateInGroup(templateId, groupId);
   await assertBlockHtmlCodeAllowed({ content: block.content, templateId });
 
   const newBlock = await PersonalizedBlocks.create({
@@ -141,25 +175,25 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 }
 
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
-  if (hasSyntheticBlock(updatedBlock.content)) {
-    const existing = await PersonalizedBlocks.findById(
-      mongoose.Types.ObjectId(id)
-    )
+  const changes = updatableOf(updatedBlock);
+
+  if (hasSyntheticBlock(changes.content)) {
+    const existing = await PersonalizedBlocks.findOne(inGroup(id, groupId))
       .select({ content: 1, _template: 1 })
       .lean();
     if (!existing) {
       throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);
     }
     await assertBlockHtmlCodeAllowed({
-      content: updatedBlock.content,
+      content: changes.content,
       previousContent: existing.content,
       templateId: existing._template,
     });
   }
 
-  const updated = await PersonalizedBlocks.findByIdAndUpdate(
-    mongoose.Types.ObjectId(id),
-    { ...updatedBlock, _group: mongoose.Types.ObjectId(groupId) },
+  const updated = await PersonalizedBlocks.findOneAndUpdate(
+    inGroup(id, groupId),
+    { $set: changes },
     { new: true } // This option returns the updated document
   );
 
@@ -171,9 +205,7 @@ async function updatePersonalizedBlock(id, groupId, updatedBlock) {
 }
 
 async function deletePersonalizedBlock(blockId, groupId) {
-  const deleted = await PersonalizedBlocks.deleteOne({
-    _id: mongoose.Types.ObjectId(blockId),
-  });
+  const deleted = await PersonalizedBlocks.deleteOne(inGroup(blockId, groupId));
 
   if (deleted.deletedCount === 0) {
     throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);
