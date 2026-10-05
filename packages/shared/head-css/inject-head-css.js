@@ -39,14 +39,10 @@ const STYLE_CLOSE = /<\/style/gi;
 const OPENING_TAG = '<style type="text/css" ' + MARKER_ATTRIBUTE + '="true">';
 const CLOSING_TAG = '</style>';
 
-// Matches an injected element, including its content. Only ever trusted when
-// it opens inside the <head>: see findInjectedElement.
-const INJECTED_ELEMENT = new RegExp(
-  '<style[^>]*\\s' +
-    MARKER_ATTRIBUTE +
-    '\\s*=\\s*"true"[^>]*>[\\s\\S]*?<\\/style\\s*>',
-  'i'
-);
+// The marker, read on one opening tag at a time (see findInjectedElement).
+const MARKER = new RegExp('\\s' + MARKER_ATTRIBUTE + '\\s*=\\s*"true"', 'i');
+const STYLE_OPEN = /<style\b/gi;
+const STYLE_END = /<\/style\s*>/gi;
 
 /**
  * Removes what would end the <style> element early.
@@ -67,13 +63,31 @@ function neutralizeStyleClose(css) {
  * opening tag, rather than searching the head segment only, keeps the element
  * found when the CSS itself contains `</head>`.
  *
+ * One pass: each `<style` opening in the head is read up to its `>`, its
+ * attributes checked for the marker — a sanitizer may have reordered them —
+ * and the element ends at the next `</style>`, which the neutralised CSS can
+ * never contain. A regex over the whole element backtracked to the end of the
+ * document from every unclosed opening.
+ *
  * @param {string} html
  * @param {number} headEnd index of the first </head>
- * @returns {RegExpExecArray|null}
+ * @returns {{ index: number, end: number }|null}
  */
 function findInjectedElement(html, headEnd) {
-  const match = INJECTED_ELEMENT.exec(html);
-  return match && match.index < headEnd ? match : null;
+  STYLE_OPEN.lastIndex = 0;
+  let open;
+  while ((open = STYLE_OPEN.exec(html)) && open.index < headEnd) {
+    const tagEnd = html.indexOf('>', open.index);
+    if (tagEnd === -1) return null;
+    STYLE_END.lastIndex = tagEnd + 1;
+    const close = STYLE_END.exec(html);
+    if (!close) return null;
+    if (MARKER.test(html.slice(open.index, tagEnd))) {
+      return { index: open.index, end: close.index + close[0].length };
+    }
+    STYLE_OPEN.lastIndex = close.index + close[0].length;
+  }
+  return null;
 }
 
 /**
@@ -109,8 +123,7 @@ function injectHeadCss(html, css) {
     : '';
 
   if (previous) {
-    const end = previous.index + previous[0].length;
-    return html.slice(0, previous.index) + element + html.slice(end);
+    return html.slice(0, previous.index) + element + html.slice(previous.end);
   }
   return html.slice(0, headEnd) + element + html.slice(headEnd);
 }

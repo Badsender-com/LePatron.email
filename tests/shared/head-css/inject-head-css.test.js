@@ -166,3 +166,29 @@ describe('injectHeadCss', () => {
     });
   });
 });
+
+// One pass over the head: an opening that is never closed does not send the
+// search back to the end of the document — and the body is not searched at
+// all, where an HTML code block may hold anything.
+describe('injectHeadCss — linear on any document', () => {
+  it.each([
+    [
+      'unclosed openings in the head',
+      (u) => `<html><head>${u}</head><body></body></html>`,
+    ],
+    [
+      'unclosed openings in the body',
+      (u) => `<html><head></head><body>${u}</body></html>`,
+    ],
+  ])('%s', (_label, build) => {
+    ['<style a', '<style>'].forEach((unit) => {
+      const html = build(unit.repeat(150000));
+      const start = Date.now();
+
+      injectHeadCss(html, '');
+      injectHeadCss(html, '.a{color:red}');
+
+      expect(Date.now() - start).toBeLessThan(500);
+    });
+  });
+});
