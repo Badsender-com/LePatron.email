@@ -8,8 +8,7 @@
  * editor (`ko.toJS(viewModel.content())`), so the test needs no editor.
  */
 
-// Turned on by #1166 (generate and apply a subject from the editor)
-describe.skip('editor: extracting the email copy', () => {
+describe('editor: extracting the email copy', () => {
   let extractEmailCopy;
 
   beforeAll(() => {
