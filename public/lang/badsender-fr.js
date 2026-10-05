@@ -226,6 +226,10 @@ module.exports = {
     "Une erreur est survenue lors du chargement des dossiers. Contactez le support avec l'identifiant : {logId}.",
   'snackbar-error': "Une erreur s'est produite. Veuillez réessayer.",
 
+  // Block toolbar
+  'Save block to library': 'Enregistrer dans la bibliothèque de blocs',
+  'Translate block': 'Traduire le bloc',
+
   // Comments
   'Comment block': 'Commenter ce bloc',
   'comments-title': 'Commentaires',

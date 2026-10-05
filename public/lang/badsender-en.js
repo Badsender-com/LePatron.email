@@ -217,6 +217,10 @@ module.exports = {
     'An error occurred while loading folders. Please contact support with this ID: {logId}.',
   'snackbar-error': 'An error occurred. Please try again.',
 
+  // Block toolbar
+  'Save block to library': 'Save block to library',
+  'Translate block': 'Translate block',
+
   // Comments
   'Comment block': 'Comment this block',
   'comments-title': 'Comments',
