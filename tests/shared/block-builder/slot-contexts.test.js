@@ -81,6 +81,12 @@ describe('URL', () => {
     ['an unknown scheme', 'foo:bar'],
     ['a protocol-relative URL', '//example.com/x'],
     ['a backslash host', '/\\example.com/x'],
+    // A browser strips tabs and newlines anywhere in a URL: these are
+    // `//example.com/x` by the time it follows them.
+    ['a protocol-relative URL split by a tab', '/\t/example.com/x'],
+    ['a protocol-relative URL split by a newline', '/\n/example.com/x'],
+    ['a protocol-relative URL split by a CR', '/\r/example.com/x'],
+    ['a backslash host split by a tab', '/\t\\example.com/x'],
   ])('refuses %s', (_label, url) => {
     expect(escapeForContext(url, URL, 'FALLBACK')).toBe('FALLBACK');
   });

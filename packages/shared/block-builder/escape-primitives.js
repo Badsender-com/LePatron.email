@@ -46,6 +46,11 @@ const ESP_TOKEN = /^(<%|\{\{|%%|\[)/;
 // `/\host`, which browsers read as a URL on another host.
 const RELATIVE_URL = /^(\.{0,2}\/(?![/\\])|[#?])/;
 
+// What a browser strips from anywhere in a URL before reading it: ASCII tab
+// and newlines. Removed before the relative check, or `/<TAB>/host` would pass
+// as a path and be followed as `//host`.
+const STRIPPED_FROM_URL = /[\t\n\r]/g;
+
 /**
  * @param {*} value
  * @returns {string}
@@ -91,7 +96,10 @@ function isSafeUrl(url) {
   const compact = trimmed.replace(IGNORED_IN_SCHEME, '');
   if (ANY_SCHEME.test(compact)) return SAFE_URL_SCHEME.test(compact);
 
-  return ESP_TOKEN.test(trimmed) || RELATIVE_URL.test(trimmed);
+  return (
+    ESP_TOKEN.test(trimmed) ||
+    RELATIVE_URL.test(trimmed.replace(STRIPPED_FROM_URL, ''))
+  );
 }
 
 module.exports = { asString, escapeText, escapeAttribute, isSafeUrl };
