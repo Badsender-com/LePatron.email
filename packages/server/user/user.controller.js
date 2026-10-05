@@ -362,9 +362,11 @@ async function forgotPassword(req, res) {
 
 async function setPassword(req, res) {
   const { token } = req.params;
+  if (!token) throw new createError.BadRequest('invalid or expired token');
   const user = await Users.findOne({
     token,
     tokenExpire: { $gt: Date.now() },
+    isDeactivated: { $ne: true },
   });
   if (!user) throw new createError.BadRequest('invalid or expired token');
 
