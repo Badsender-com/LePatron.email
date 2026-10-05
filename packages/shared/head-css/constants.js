@@ -1,10 +1,8 @@
 'use strict';
 
-// Shared between the editor bundle and the server, which both enforce it.
-//
-// Unlike the HTML code block — whose constants are duplicated server-side and
-// kept in step by a test, because the server must not depend on a browser
-// bundle — head CSS already has a module both sides require
+// Shared between the editor bundle and the server, which both enforce it —
+// as the synthetic blocks' limits are (packages/shared/synthetic-blocks.js),
+// and alongside the module both sides already require
 // (packages/shared/head-css/inject-head-css.js). One definition, no drift.
 //
 // A stylesheet is far more compact than the markup it styles. This bound is

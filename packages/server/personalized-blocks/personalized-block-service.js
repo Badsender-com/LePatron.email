@@ -7,12 +7,17 @@ const {
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const { NotFound, BadRequest } = require('http-errors');
 const logger = require('../utils/logger');
 const {
-  hasHtmlCodeBlock,
-  assertHtmlCodeBlockContentAllowed,
-} = require('../mailing/html-code-block-guard.js');
+  hasSyntheticBlock,
+  validateSyntheticBlocks,
+  assertSyntheticBlockContentAllowed,
+  TEMPLATE_FLAG_PROJECTION,
+} = require('../mailing/synthetic-block-guard.js');
+const {
+  rebuildComposedMarkup,
+} = require('../mailing/builder-block-integrity.js');
 
 module.exports = {
   getPersonalizedBlocks,
@@ -81,32 +86,81 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
 }
 
 /**
- * Refuses HTML code the block's template does not allow. A personalized block is
+ * @param {Object} content one block
+ * @throws {BadRequest} the too-large code of the refused block
+ */
+function assertBlockSizes(content) {
+  const check = validateSyntheticBlocks({ blocks: { blocks: [content] } });
+  if (!check.valid) throw new BadRequest(check.errorCode);
+}
+
+/**
+ * Refuses markup the block's template does not allow. A personalized block is
  * shared with the whole company and dropped into other people's mailings, so it
- * gets the same gate as the mailing save (see mailing/html-code-block-guard.js).
- * Loads the template only when the content holds an HTML code block.
+ * gets the same gates as the mailing save (see mailing/synthetic-block-guard.js
+ * and mailing/builder-block-integrity.js): sizes, a composed block's markup
+ * rebuilt from its state, the template flags. Loads the template only when the
+ * content holds a synthetic block.
  */
 async function assertBlockHtmlCodeAllowed({
   content,
   previousContent,
   templateId,
 }) {
-  if (!hasHtmlCodeBlock(content)) return;
+  if (!hasSyntheticBlock(content)) return;
+
+  assertBlockSizes(content);
+  rebuildComposedMarkup(content, previousContent);
+  assertBlockSizes(content);
 
   const template = templateId
     ? await Templates.findById(templateId)
-        .select({ htmlBlockEnabled: 1 })
+        .select(TEMPLATE_FLAG_PROJECTION)
         .lean()
     : null;
 
-  assertHtmlCodeBlockContentAllowed({
+  assertSyntheticBlockContentAllowed({
     content,
     previousContent,
-    htmlBlockEnabled: Boolean(template && template.htmlBlockEnabled),
+    flags: template || {},
   });
 }
 
+// What a block's author may change. Its group, template and author are set by
+// the server, never by the request.
+const UPDATABLE_FIELDS = ['name', 'category', 'content'];
+
+const updatableOf = (block) =>
+  UPDATABLE_FIELDS.reduce((fields, field) => {
+    if (block && Object.prototype.hasOwnProperty.call(block, field)) {
+      fields[field] = block[field];
+    }
+    return fields;
+  }, {});
+
+// A block is read, changed or deleted through its group: the route checks the
+// caller belongs to the group named in the request, and this is what ties the
+// block to that same group.
+const inGroup = (id, groupId) => ({
+  _id: mongoose.Types.ObjectId(id),
+  _group: mongoose.Types.ObjectId(groupId),
+});
+
+/**
+ * @throws {NotFound} TEMPLATE_NOT_FOUND unless the template belongs to the group
+ */
+async function assertTemplateInGroup(templateId, groupId) {
+  const template = await Templates.findOne({
+    _id: mongoose.Types.ObjectId(templateId),
+    _company: mongoose.Types.ObjectId(groupId),
+  })
+    .select({ _id: 1 })
+    .lean();
+  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+}
+
 async function addPersonalizedBlock(block, groupId, templateId, userId) {
+  await assertTemplateInGroup(templateId, groupId);
   await assertBlockHtmlCodeAllowed({ content: block.content, templateId });
 
   const newBlock = await PersonalizedBlocks.create({
@@ -121,25 +175,25 @@ async function addPersonalizedBlock(block, groupId, templateId, userId) {
 }
 
 async function updatePersonalizedBlock(id, groupId, updatedBlock) {
-  if (hasHtmlCodeBlock(updatedBlock.content)) {
-    const existing = await PersonalizedBlocks.findById(
-      mongoose.Types.ObjectId(id)
-    )
+  const changes = updatableOf(updatedBlock);
+
+  if (hasSyntheticBlock(changes.content)) {
+    const existing = await PersonalizedBlocks.findOne(inGroup(id, groupId))
       .select({ content: 1, _template: 1 })
       .lean();
     if (!existing) {
       throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);
     }
     await assertBlockHtmlCodeAllowed({
-      content: updatedBlock.content,
+      content: changes.content,
       previousContent: existing.content,
       templateId: existing._template,
     });
   }
 
-  const updated = await PersonalizedBlocks.findByIdAndUpdate(
-    mongoose.Types.ObjectId(id),
-    { ...updatedBlock, _group: mongoose.Types.ObjectId(groupId) },
+  const updated = await PersonalizedBlocks.findOneAndUpdate(
+    inGroup(id, groupId),
+    { $set: changes },
     { new: true } // This option returns the updated document
   );
 
@@ -151,9 +205,7 @@ async function updatePersonalizedBlock(id, groupId, updatedBlock) {
 }
 
 async function deletePersonalizedBlock(blockId, groupId) {
-  const deleted = await PersonalizedBlocks.deleteOne({
-    _id: mongoose.Types.ObjectId(blockId),
-  });
+  const deleted = await PersonalizedBlocks.deleteOne(inGroup(blockId, groupId));
 
   if (deleted.deletedCount === 0) {
     throw new NotFound(ERROR_CODES.PERSONALIZED_BLOCK_NOT_FOUND);

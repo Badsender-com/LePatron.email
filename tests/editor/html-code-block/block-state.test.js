@@ -2,8 +2,9 @@
 
 const ko = require('knockout');
 const {
-  isHtmlCodeBlock,
-  isEmptyHtmlCodeBlock,
+  isSyntheticBlock,
+  isComposedBlock,
+  isEmptySyntheticBlock,
 } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
 
 // Blocks reach these predicates in two very different shapes, and the difference
@@ -26,57 +27,83 @@ const halfWrappedBlock = (html) => ({
   htmlCode: ko.observable(html),
 });
 
-describe('isHtmlCodeBlock', () => {
+describe('isSyntheticBlock', () => {
   it('recognises a plain palette definition', () => {
-    expect(isHtmlCodeBlock(plainBlock(''))).toBe(true);
+    expect(isSyntheticBlock(plainBlock(''))).toBe(true);
   });
 
   it('recognises a fully wrapped canvas instance', () => {
-    expect(isHtmlCodeBlock(wrappedBlock(''))).toBe(true);
+    expect(isSyntheticBlock(wrappedBlock(''))).toBe(true);
   });
 
   it('recognises a block whose properties alone are observable', () => {
-    expect(isHtmlCodeBlock(halfWrappedBlock(''))).toBe(true);
+    expect(isSyntheticBlock(halfWrappedBlock(''))).toBe(true);
   });
 
   it('rejects any other block type, in every shape', () => {
-    expect(isHtmlCodeBlock({ type: 'textBlock' })).toBe(false);
-    expect(isHtmlCodeBlock({ type: ko.observable('textBlock') })).toBe(false);
+    expect(isSyntheticBlock({ type: 'textBlock' })).toBe(false);
+    expect(isSyntheticBlock({ type: ko.observable('textBlock') })).toBe(false);
     expect(
-      isHtmlCodeBlock(ko.observable({ type: ko.observable('textBlock') }))
+      isSyntheticBlock(ko.observable({ type: ko.observable('textBlock') }))
     ).toBe(false);
   });
 
   it('tolerates missing or malformed input', () => {
-    expect(isHtmlCodeBlock(null)).toBe(false);
-    expect(isHtmlCodeBlock(undefined)).toBe(false);
-    expect(isHtmlCodeBlock({})).toBe(false);
-    expect(isHtmlCodeBlock(ko.observable(null))).toBe(false);
-    expect(isHtmlCodeBlock(ko.observable(undefined))).toBe(false);
+    expect(isSyntheticBlock(null)).toBe(false);
+    expect(isSyntheticBlock(undefined)).toBe(false);
+    expect(isSyntheticBlock({})).toBe(false);
+    expect(isSyntheticBlock(ko.observable(null))).toBe(false);
+    expect(isSyntheticBlock(ko.observable(undefined))).toBe(false);
   });
 });
 
-describe('isEmptyHtmlCodeBlock', () => {
+describe('isComposedBlock', () => {
+  const composed = () =>
+    ko.observable({
+      type: ko.observable('blockBuilderBlock'),
+      builderHtml: ko.observable(''),
+    });
+
+  it('recognises the composed block, wrapped or not', () => {
+    expect(isComposedBlock(composed())).toBe(true);
+    expect(isComposedBlock({ type: 'blockBuilderBlock' })).toBe(true);
+  });
+
+  // Its twin shares every predicate above; the canvas entry points to the
+  // builder must not open it on pasted markup.
+  it('rejects the HTML code block', () => {
+    expect(isComposedBlock(wrappedBlock(''))).toBe(false);
+    expect(isComposedBlock(plainBlock(''))).toBe(false);
+  });
+
+  it('rejects template blocks and malformed input', () => {
+    expect(isComposedBlock({ type: 'textBlock' })).toBe(false);
+    expect(isComposedBlock(null)).toBe(false);
+    expect(isComposedBlock(ko.observable(undefined))).toBe(false);
+  });
+});
+
+describe('isEmptySyntheticBlock', () => {
   // The regression: with an observable `type`, this used to return false for
   // every block, so the placeholder never rendered and an empty block was 0px
   // tall and unselectable in the canvas.
   it('is true for an empty wrapped canvas instance', () => {
-    expect(isEmptyHtmlCodeBlock(wrappedBlock(''))).toBe(true);
+    expect(isEmptySyntheticBlock(wrappedBlock(''))).toBe(true);
   });
 
   it('is true for an empty block whose properties alone are observable', () => {
-    expect(isEmptyHtmlCodeBlock(halfWrappedBlock(''))).toBe(true);
+    expect(isEmptySyntheticBlock(halfWrappedBlock(''))).toBe(true);
   });
 
   it('is true for an empty plain block', () => {
-    expect(isEmptyHtmlCodeBlock(plainBlock(''))).toBe(true);
+    expect(isEmptySyntheticBlock(plainBlock(''))).toBe(true);
   });
 
   it('is true when the markup property is absent or nullish', () => {
-    expect(isEmptyHtmlCodeBlock({ type: 'htmlCodeBlock' })).toBe(true);
-    expect(isEmptyHtmlCodeBlock(plainBlock(null))).toBe(true);
+    expect(isEmptySyntheticBlock({ type: 'htmlCodeBlock' })).toBe(true);
+    expect(isEmptySyntheticBlock(plainBlock(null))).toBe(true);
     expect(
-      isEmptyHtmlCodeBlock({
+      isEmptySyntheticBlock({
         type: ko.observable('htmlCodeBlock'),
         htmlCode: ko.observable(null),
       })
@@ -84,26 +111,26 @@ describe('isEmptyHtmlCodeBlock', () => {
   });
 
   it('is false as soon as markup is present', () => {
-    expect(isEmptyHtmlCodeBlock(wrappedBlock('<table></table>'))).toBe(false);
-    expect(isEmptyHtmlCodeBlock(plainBlock('<table></table>'))).toBe(false);
-    expect(isEmptyHtmlCodeBlock(halfWrappedBlock('x'))).toBe(false);
+    expect(isEmptySyntheticBlock(wrappedBlock('<table></table>'))).toBe(false);
+    expect(isEmptySyntheticBlock(plainBlock('<table></table>'))).toBe(false);
+    expect(isEmptySyntheticBlock(halfWrappedBlock('x'))).toBe(false);
   });
 
   it('follows the observable when markup is pasted, then cleared', () => {
     const block = halfWrappedBlock('');
-    expect(isEmptyHtmlCodeBlock(block)).toBe(true);
+    expect(isEmptySyntheticBlock(block)).toBe(true);
 
     block.htmlCode('<table></table>');
-    expect(isEmptyHtmlCodeBlock(block)).toBe(false);
+    expect(isEmptySyntheticBlock(block)).toBe(false);
 
     block.htmlCode('');
-    expect(isEmptyHtmlCodeBlock(block)).toBe(true);
+    expect(isEmptySyntheticBlock(block)).toBe(true);
   });
 
   it('is false for other block types, however empty', () => {
-    expect(isEmptyHtmlCodeBlock({ type: 'textBlock', text: '' })).toBe(false);
+    expect(isEmptySyntheticBlock({ type: 'textBlock', text: '' })).toBe(false);
     expect(
-      isEmptyHtmlCodeBlock({
+      isEmptySyntheticBlock({
         type: ko.observable('textBlock'),
         text: ko.observable(''),
       })
@@ -111,8 +138,57 @@ describe('isEmptyHtmlCodeBlock', () => {
   });
 
   it('tolerates missing or malformed input', () => {
-    expect(isEmptyHtmlCodeBlock(null)).toBe(false);
-    expect(isEmptyHtmlCodeBlock(undefined)).toBe(false);
-    expect(isEmptyHtmlCodeBlock({})).toBe(false);
+    expect(isEmptySyntheticBlock(null)).toBe(false);
+    expect(isEmptySyntheticBlock(undefined)).toBe(false);
+    expect(isEmptySyntheticBlock({})).toBe(false);
+  });
+});
+
+// The "Translate block" button. The per-block route translates a flat object
+// of fields and writes it back; it cannot translate a composed block's state
+// and rebuild its markup, so the button stays hidden there — composed blocks
+// are translated with the whole mailing only. The HTML code block stays out
+// for good: translating pasted markup would rewrite it.
+describe('which blocks offer the translate button', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const {
+    offersBlockTranslation,
+  } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+
+  it('hides it on a composed block', () => {
+    expect(offersBlockTranslation({ type: 'blockBuilderBlock' })).toBe(false);
+    expect(
+      offersBlockTranslation({ type: ko.observable('blockBuilderBlock') })
+    ).toBe(false);
+  });
+
+  it('hides it on the HTML code block', () => {
+    expect(offersBlockTranslation({ type: 'htmlCodeBlock' })).toBe(false);
+  });
+
+  // A template's own blocks have always been translatable and must stay so.
+  it("leaves a template's own blocks alone", () => {
+    expect(offersBlockTranslation({ type: 'textBlock' })).toBe(true);
+    expect(offersBlockTranslation(null)).toBe(true);
+  });
+
+  // The predicate only hides the button if the toolbar asks it — and a
+  // view-model without it must hide the button, not show it.
+  it('is what the block toolbar asks before showing the button', () => {
+    const template = fs.readFileSync(
+      path.join(
+        __dirname,
+        '../../../packages/editor/src/tmpl/block-wysiwyg.tmpl.html'
+      ),
+      'utf8'
+    );
+    const translateTool = template
+      .split('\n')
+      .find((line) => line.includes('class="tool translate"'));
+
+    expect(translateTool).toContain('$root.offersBlockTranslation($rawData)');
+    expect(translateTool).not.toContain('!$root.offersBlockTranslation');
+    expect(translateTool).not.toContain('isTranslatableBlock');
   });
 });

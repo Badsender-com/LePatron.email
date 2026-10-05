@@ -1,7 +1,12 @@
 'use strict';
 
 const ko = require('knockout');
-const { isHtmlCodeBlock } = require('../html-code-block/block-state.js');
+const { descriptorFor } = require('../html-code-block/block-state.js');
+const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
+
+// The HTML code block only, not the builder's: that one writes its own styles
+// inline and has nothing for this stylesheet to style.
+const isHtmlCodeBlock = (block) => descriptorFor(block) === HTML_CODE_BLOCK;
 
 // Which head CSS an export carries. The rule: the CSS follows the HTML code
 // blocks, not the template flag.
@@ -38,7 +43,7 @@ function blocksOf(value) {
  *
  * Every top-level `{ blocks: [...] }` container is looked at — `mainBlocks` by
  * convention, but a template may declare others — and only that level, as the
- * server's findHtmlCodeBlocks does.
+ * server's findSyntheticBlocks does.
  *
  * Works on the plain model as on the instrumented one. Read inside a Knockout
  * computed or binding, it subscribes to the containers and blocks it reads, so

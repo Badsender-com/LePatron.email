@@ -94,6 +94,9 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
+# Block builder control gallery, rebuilt on demand with `yarn block-builder:gallery`
+block-builder-gallery.html
+
 # dotenv environment variables file
 # Every variant, including local backups: one was committed by accident once.
 .env

@@ -3,13 +3,14 @@
 const { Forbidden } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const { findHtmlCodeBlocks } = require('./html-code-block-guard.js');
+const { findSyntheticBlocks } = require('./synthetic-block-guard.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
+const { HTML_CODE_BLOCK } = require('../../shared/synthetic-blocks.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
 // template allows it at all.
 //
-// Same reasoning as html-code-block-guard.js, for the same reasons: the editor
+// Same reasoning as synthetic-block-guard.js, for the same reasons: the editor
 // checks both, but the route accepts hand-written requests, and `previewHtml`
 // stores a second copy of whatever is injected in the same document.
 //
@@ -120,7 +121,12 @@ function hasHeadCss(css) {
  * @returns {string}
  */
 function headCssToExport({ data, headCss }) {
-  return findHtmlCodeBlocks(data).length > 0 ? asCss(headCss) : '';
+  // The HTML code block only, not the builder's: that one writes its own
+  // styles inline, and has nothing for this stylesheet to style.
+  const hasHtmlCodeBlock = findSyntheticBlocks(data).some(
+    (block) => block.type === HTML_CODE_BLOCK.type
+  );
+  return hasHtmlCodeBlock ? asCss(headCss) : '';
 }
 
 module.exports = {

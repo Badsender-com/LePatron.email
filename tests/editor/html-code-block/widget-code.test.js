@@ -7,7 +7,7 @@
 // The block definition is injected into every template, whatever the flag, so a
 // mailing written while the flag was on keeps its block once it is turned off.
 // The server keeps accepting that stored markup but refuses any other
-// (mailing/html-code-block-guard.js): the panel must say the block can no longer
+// (mailing/synthetic-block-guard.js): the panel must say the block can no longer
 // be edited, rather than let the user edit it and then fail to save.
 
 const ko = require('knockout');

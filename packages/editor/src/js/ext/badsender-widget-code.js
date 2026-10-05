@@ -1,5 +1,7 @@
 'use strict';
 
+const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
+
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
 //
@@ -21,6 +23,11 @@
 // the Style tab. With the flag off, CSS the email still exports is offered
 // read-only instead, with its delete (`viewModel.isHeadCssReadOnly`), the way
 // this block itself stays without being editable.
+//
+// The block builder is NOT here. It has a block type of its own, and its own
+// widget (badsender-widget-block-builder.js): offering "compose visually" from
+// inside a block named "HTML code" made the choice between the two invisible at
+// the only moment it matters — when the user picks a block from the palette.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
@@ -28,7 +35,7 @@
 // With the template flag off, the block stays — the server keeps accepting the
 // markup already stored, so the email remains savable — but it cannot be edited:
 // the server refuses any markup the mailing did not already hold
-// (packages/server/mailing/html-code-block-guard.js). The button gives way to a
+// (packages/server/mailing/synthetic-block-guard.js). The button gives way to a
 // sentence saying so, rather than letting the user edit and then fail to save.
 function html(propAccessor, onfocusbinding, parameters) {
   return `
@@ -47,7 +54,7 @@ function html(propAccessor, onfocusbinding, parameters) {
 module.exports = () => {
   function widget() {
     return {
-      widget: 'code',
+      widget: HTML_CODE_BLOCK.widget,
       defaultParameters: Object.freeze({}),
       html,
     };
@@ -60,7 +67,7 @@ module.exports = () => {
     vm.toggleHtmlCodeModal = null;
 
     vm.isHtmlBlockEditable = function () {
-      return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
+      return Boolean(vm.metadata && vm.metadata[HTML_CODE_BLOCK.flag]);
     };
 
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {

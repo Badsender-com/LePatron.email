@@ -431,9 +431,13 @@ export default {
     successTitle: 'Translation complete',
     successMessage: 'Your email has been duplicated and translated successfully.',
     warningTitle: 'Please verify:',
-    warningLinks: 'Links in the email',
-    warningImages: 'Images containing text',
-    warningVariants: 'Template variant if applicable',
+    // Keyed as the server sends them in a job's warningKeys.
+    warnings: {
+      checkLinks: 'Links in the email',
+      checkImages: 'Images containing text',
+      checkVariant: 'Template variant if applicable',
+      composedBlockUntranslated: 'Composed blocks: some could not be translated, or were rebuilt with a newer version of the block builder',
+    },
     understood: 'Got it',
     translatingNotice: 'Translation in progress, please wait...',
     progressStarting: 'Starting translation...',
@@ -1244,6 +1248,12 @@ export default {
     htmlBlock: {
       name: 'HTML code block',
       description: 'Allows pasting free HTML code between two template blocks.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
+    blockBuilder: {
+      name: 'Block builder',
+      description:
+        'Lets users compose a block visually. LePatron writes the HTML.',
       hint: 'The block will show up at the end of the editor palette.',
     },
   },

@@ -338,12 +338,74 @@ module.exports = {
   'widget-code-view-css': "Voir le CSS de l'email",
   'widget-code-css-hint':
     "Ajouté dans le <head> de l'email exporté. Partagé par tous les blocs de cette création. À l'export, les styles du template passent en ligne et l'emportent sur ce CSS, sauf !important.",
+  // Block builder
+  'block-builder-select-element': 'Sélectionnez un élément pour le régler.',
+  'block-builder-choose-image': 'Choisir une image',
+  'block-builder-change-image': "Changer l'image",
+  'block-builder-replaces-markup':
+    "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
+  'block-builder-block-name': 'Bloc composé',
+  'block-builder-block-empty': 'Bloc composé — double-cliquez pour composer',
+  'widget-block-builder-compose': 'Composer un bloc',
+  'block-builder-tool-compose': 'Composer le bloc',
+  'widget-block-builder-disabled':
+    "Le block builder n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
+  'block-builder-modal-title': 'Composer un bloc',
+  'block-builder-add': 'Ajouter',
+  'block-builder-drop-here':
+    'Glissez un élément ici ou cliquez-en un dans la palette',
+  'block-builder-starter-text': 'Saisissez votre texte…',
+  'block-builder-starter-button': 'Votre bouton',
+  'block-builder-elements': 'Éléments',
+  'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
+  'block-builder-desktop': 'Bureau',
+  'block-builder-mobile': 'Mobile',
+  'block-builder-element-text': 'Texte',
+  'block-builder-element-image': 'Image',
+  'block-builder-element-button': 'Bouton',
+  'block-builder-element-divider': 'Séparateur',
+  'block-builder-element-spacer': 'Espaceur',
+  'block-builder-field-text': 'Texte',
+  'block-builder-field-align': 'Alignement',
+  'block-builder-field-font-size': 'Taille',
+  'block-builder-field-line-height': 'Interligne',
+  'block-builder-field-color': 'Couleur',
+  'block-builder-field-image': 'Image',
+  'block-builder-field-alt': 'Texte alternatif',
+  'block-builder-field-link-optional': 'Lien (optionnel)',
+  'block-builder-field-width': 'Largeur',
+  'block-builder-field-label': 'Libellé',
+  'block-builder-field-link': 'Lien',
+  'block-builder-field-background': 'Fond',
+  'block-builder-field-text-color': 'Texte',
+  'block-builder-field-radius': 'Arrondi',
+  'block-builder-field-thickness': 'Épaisseur',
+  'block-builder-field-height': 'Hauteur',
+  'block-builder-align-left': 'Gauche',
+  'block-builder-align-center': 'Centre',
+  'block-builder-align-right': 'Droite',
+  'block-builder-preview-title': 'Aperçu',
+  'block-builder-move-up': 'Monter',
+  'block-builder-move-down': 'Descendre',
+  'block-builder-remove': 'Supprimer',
+  'block-builder-preview-hint':
+    'Cliquez sur un élément pour le régler, faites-le glisser pour le déplacer. Aperçu indicatif — rendu navigateur, pas rendu client mail.',
+  'block-builder-rebuilds-markup':
+    "Ce bloc a été construit par une version précédente du générateur. L'appliquer le reconstruira avec la version actuelle : son rendu peut légèrement changer.",
+  'block-builder-discard-confirm':
+    'Fermer sans appliquer ? Vos modifications de cette composition seront perdues.',
+  'block-builder-too-large':
+    "Cette composition est trop volumineuse pour être enregistrée. Retirez des éléments ou raccourcissez les textes avant d'appliquer.",
   'widget-code-disabled':
     "Le bloc Code HTML n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'save-message-html-code-disabled':
     "Enregistrement refusé : le bloc Code HTML n'est pas activé sur ce template.",
+  'save-message-block-builder-disabled':
+    "Enregistrement refusé : le block builder n'est pas activé sur ce template.",
   'save-message-html-code-too-large':
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
+  'save-message-block-builder-too-large':
+    'Enregistrement refusé : un bloc composé dépasse la taille maximale.',
   'save-message-preview-too-large':
     "Enregistrement refusé : l'email est trop volumineux.",
   // Head CSS — a stylesheet for the whole email, gated by the same flag

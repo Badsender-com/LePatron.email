@@ -71,10 +71,16 @@ Complete guide to LePatron.email documentation for developers and AI agents.
    - Testing
 
 3. **[TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md)** - Mosaico templates
+
    - Template structure
    - Block creation
    - Styling
    - Testing templates
+
+4. **[Block builder components](../packages/shared/block-builder/components/README.md)** - Email HTML of the block builder's elements
+   - Vue + Tailwind components compiled at build time
+   - Which files to edit, `yarn block-builder:compile`, what to commit
+   - What the compiler refuses, and why
 
 ### Package-Level Documentation
 

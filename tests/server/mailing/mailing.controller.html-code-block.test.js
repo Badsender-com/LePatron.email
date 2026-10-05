@@ -162,13 +162,20 @@ describe('PUT /mailings/:mailingId/mosaico — the template flag', () => {
 });
 
 describe('PUT /mailings/:mailingId/mosaico — sizes', () => {
-  it('refuses an oversized HTML code block', async () => {
+  // Each block is refused in its own name: a composer told their HTML code
+  // block is too large, when they have none, has nothing to act on.
+  it.each([
+    ['HTML code block', 'htmlCode', 'HTML_CODE_BLOCK_TOO_LARGE'],
+    ['composed block', 'builderHtml', 'BLOCK_BUILDER_TOO_LARGE'],
+  ])('refuses an oversized %s', async (_label, property, code) => {
     mockMailing(dataWith());
-    mockTemplateFlag(true);
+    const type =
+      property === 'htmlCode' ? 'htmlCodeBlock' : 'blockBuilderBlock';
+    const block = { type, [property]: 'x'.repeat(100001) };
 
-    const error = await save({ data: dataWith(htmlBlock('x'.repeat(100001))) });
-
-    expect(error).toMatchObject({ message: 'HTML_CODE_BLOCK_TOO_LARGE' });
+    expect(await save({ data: dataWith(block) })).toMatchObject({
+      message: code,
+    });
   });
 
   // previewHtml is sanitized each time it is served; unbounded, it was an easy

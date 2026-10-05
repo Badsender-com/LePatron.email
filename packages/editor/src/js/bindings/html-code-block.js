@@ -25,8 +25,23 @@ const {
 //
 // The neutralized markup is derived on the fly and never written back to the
 // model: the stored value stays the pasted markup, byte for byte.
+// A link in the canvas is something to look at, not to follow: a composed
+// button with no URL yet is `href="#"`, and following it opened the editor
+// again in another tab. Cancelled without stopping the click, so the block is
+// still selected by it.
+function keepLinksInPlace(event) {
+  const link =
+    event.target && event.target.closest && event.target.closest('a');
+  if (link) event.preventDefault();
+}
+
 ko.bindingHandlers[HTML_CODE_BINDING] = {
-  init: ko.bindingHandlers.html.init,
+  init: function (element, valueAccessor, allBindings, viewModel, context) {
+    if (context && context.templateMode === 'wysiwyg') {
+      element.addEventListener('click', keepLinksInPlace);
+    }
+    return ko.bindingHandlers.html.init.apply(this, arguments);
+  },
   update: function (
     element,
     valueAccessor,
