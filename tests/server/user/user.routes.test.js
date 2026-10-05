@@ -22,6 +22,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const router = require('../../../packages/server/user/user.routes.js');
 const {
   GUARD_ADMIN,
+  adminUser,
 } = require('../../../packages/server/account/auth.guard.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 
@@ -32,14 +33,37 @@ describe('user routes', () => {
     expect(guardsOf('get', '')).toEqual([GUARD_ADMIN]);
   });
 
-  it('mounts one shared guard before every user management route', () => {
+  describe('the shared guard of the user management routes', () => {
     const shared = router.stack.findIndex((layer) => layer.route?.path === '*');
     const firstManagementRoute = router.stack.findIndex(
       (layer) => layer.route?.path === '/:userId'
     );
 
-    expect(shared).toBeGreaterThan(-1);
-    expect(shared).toBeLessThan(firstManagementRoute);
-    expect(router.stack[shared].route.stack).toHaveLength(1);
+    function runShared(user) {
+      return new Promise((resolve) => {
+        router.stack[shared].route.stack[0].handle({ user }, {}, (err) =>
+          resolve(err)
+        );
+      });
+    }
+
+    it('is mounted before them', () => {
+      expect(shared).toBeGreaterThan(-1);
+      expect(shared).toBeLessThan(firstManagementRoute);
+    });
+
+    it('rejects a regular user', async () => {
+      const err = await runShared({ isAdmin: false, isGroupAdmin: false });
+
+      expect(err.status).toBe(401);
+    });
+
+    it('lets a company admin through', async () => {
+      expect(await runShared({ isGroupAdmin: true })).toBeUndefined();
+    });
+
+    it('lets the bootstrap account through', async () => {
+      expect(await runShared({ ...adminUser })).toBeUndefined();
+    });
   });
 });

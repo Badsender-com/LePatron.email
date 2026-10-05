@@ -7,6 +7,12 @@
 // it, so the guards are specified here against real `User` documents,
 // serialised the way passport puts them on a request.
 
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  Users: {},
+  Groups: {},
+  OAuthClients: {},
+  OAuthTokens: {},
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
