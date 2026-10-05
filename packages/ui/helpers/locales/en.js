@@ -495,8 +495,12 @@ export default {
     role: 'Role',
     roles: {
       superAdmin: 'Super admin',
-      groupAdmin: 'Group admin',
+      groupAdmin: 'Company admin',
       regularUser: 'Regular user',
+      chip: {
+        superAdmin: 'Super admin',
+        groupAdmin: 'Admin',
+      },
     },
     noUsersAvailable: 'No users available',
     sections: {
@@ -1168,6 +1172,13 @@ export default {
     noMember: 'No member of the platform group to promote.',
     noPlatformGroup:
       'No platform group is set up on this environment: no super admin can be created.',
+    demote: {
+      title: 'Revoke the super admin role',
+      action: 'Revoke the role',
+      notice:
+        'This account will no longer be a super admin. Are you sure you want to revoke the role of',
+    },
+    loadError: 'The super admins could not be loaded. Reload the page.',
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Only a super admin can grant or revoke this role.',
@@ -1198,7 +1209,6 @@ export default {
     companiesList: 'Companies list',
     companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
-    superAdmins: 'Super admins',
     switchCompany: 'Pick a company…',
     colors: 'Colors',
   },

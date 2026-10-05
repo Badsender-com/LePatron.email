@@ -3,7 +3,7 @@ import { mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { superAdminErrorKey } from '~/helpers/super-admin-errors.js';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
@@ -27,9 +27,11 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     notifyError(error) {
-      const key = superAdminErrorKey(error) || 'global.errors.errorOccured';
-      this.showSnackbar({ text: this.$t(key), color: 'error' });
-      console.log(error);
+      this.showSnackbar({
+        text: superAdminErrorMessage(this, error),
+        color: 'error',
+      });
+      console.error(error);
     },
     activate(_user) {
       this.$refs.activateDialog.open();

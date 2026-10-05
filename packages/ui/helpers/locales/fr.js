@@ -502,6 +502,10 @@ export default {
       superAdmin: 'Super administrateur',
       groupAdmin: 'Administrateur du groupe',
       regularUser: 'Utilisateur',
+      chip: {
+        superAdmin: 'Super admin',
+        groupAdmin: 'Admin',
+      },
     },
     noUsersAvailable: 'Aucun utilisateur disponible',
     sections: {
@@ -1183,6 +1187,14 @@ export default {
     noMember: 'Aucun membre du groupe plateforme à promouvoir.',
     noPlatformGroup:
       'Aucun groupe plateforme n\'est configuré sur cet environnement : aucun super administrateur ne peut être créé.',
+    demote: {
+      title: 'Retirer le rôle de super administrateur',
+      action: 'Retirer le rôle',
+      notice:
+        'Ce compte ne sera plus super administrateur. Êtes-vous sûr de vouloir retirer le rôle de',
+    },
+    loadError:
+      'Impossible de charger les super administrateurs. Rechargez la page.',
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Seul un super administrateur peut attribuer ou retirer ce rôle.',
@@ -1205,15 +1217,14 @@ export default {
   },
   settingsNav: {
     categories: {
-      superAdmin: 'Super Admin',
+      superAdmin: 'Super administrateur',
       general: 'Général',
       emailBuilder: 'Email Builder',
       crmIntelligence: 'CRM Intelligence',
     },
     companiesList: 'Liste des entreprises',
     companiesEmpty: 'Aucune entreprise pour le moment',
-    superAdminOnly: 'Super admin uniquement',
-    superAdmins: 'Super administrateurs',
+    superAdminOnly: 'Super administrateur uniquement',
     switchCompany: 'Choisir une entreprise…',
     colors: 'Couleurs',
   },

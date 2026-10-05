@@ -10,13 +10,14 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import { Roles } from '~/helpers/constants/roles';
-import { superAdminErrorKey } from '~/helpers/super-admin-errors.js';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
+import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
   name: 'BsPageUser',
@@ -26,6 +27,7 @@ export default {
     BsDataTable,
     BsUserActions,
     BsPageHeader,
+    BsModalConfirm,
     LucideMoreVertical: MoreVertical,
   },
   mixins: [mixinPageTitle],
@@ -50,6 +52,9 @@ export default {
   data() {
     return {
       user: {},
+      // The role the server last confirmed: the form edits `user` in place,
+      // so a refused demotion must be undone from here.
+      savedRole: null,
       workspaces: [],
       savingWorkspaces: new Set(),
       mailings: [],
@@ -83,7 +88,10 @@ export default {
       return this.isAdmin && this.groupName;
     },
     isSuperAdmin() {
-      return this.user.role === Roles.SUPER_ADMIN;
+      return this.savedRole === Roles.SUPER_ADMIN;
+    },
+    isDemotion() {
+      return this.isSuperAdmin && this.user.role !== Roles.SUPER_ADMIN;
     },
     statusIcon() {
       return userStatusHelpers.getStatusIcon(this.user.status);
@@ -110,6 +118,9 @@ export default {
   watch: {
     'pagination.page': 'loadMailings',
     'pagination.itemsPerPage': 'loadMailings',
+  },
+  created() {
+    this.savedRole = this.user.role;
   },
   mounted() {
     // Sidebar lives outside this page; tell it which group context applies
@@ -188,21 +199,35 @@ export default {
       this.pagination.page = 1;
       this.pagination.itemsPerPage = itemsPerPage;
     },
-    async updateUser() {
+    // Taking the super admin role away is a guarded action (ADR 0002): it is
+    // confirmed first, like a deactivation.
+    updateUser() {
+      if (this.isDemotion) {
+        this.$refs.demoteDialog.open();
+        return;
+      }
+      return this.submitUser();
+    },
+    async submitUser() {
       this.loading = true;
       try {
         const { $axios, $route } = this;
         const { params } = $route;
         await $axios.$put(apiRoutes.usersItem(params), this.user);
+        this.savedRole = this.user.role;
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
-        const key = superAdminErrorKey(error) || 'global.errors.errorOccured';
-        this.showSnackbar({ text: this.$t(key), color: 'error' });
-        console.log(error);
+        // The form wrote the new role before the server refused it.
+        this.user.role = this.savedRole;
+        this.showSnackbar({
+          text: superAdminErrorMessage(this, error),
+          color: 'error',
+        });
+        console.error(error);
       } finally {
         this.loading = false;
       }
@@ -224,6 +249,7 @@ export default {
     },
     updateUserFromActions(updatedUser) {
       this.user = updatedUser;
+      this.savedRole = updatedUser.role;
       this.mixinPageTitleUpdateTitle(this.title);
     },
   },
@@ -386,6 +412,15 @@ export default {
         :user="user"
         @update="updateUserFromActions"
       />
+      <bs-modal-confirm
+        ref="demoteDialog"
+        :title="$t('superAdmins.demote.title')"
+        :action-label="$t('superAdmins.demote.action')"
+        @confirm="submitUser"
+        >{{ $t('superAdmins.demote.notice') }}
+        <b>{{ user.name | capitalizeEach }}</b
+        >?</bs-modal-confirm
+      >
     </v-container>
   </div>
 </template>
