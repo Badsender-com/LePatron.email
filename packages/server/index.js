@@ -84,6 +84,7 @@ const { siteOrigin } = require('./utils/site-origin.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 const { workerCount } = require('./utils/worker-count.js');
+const textGenerationRouter = require('./text-generation/text-generation.routes.js');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -427,6 +428,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);
+  app.use('/api/text-generation', textGenerationRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);

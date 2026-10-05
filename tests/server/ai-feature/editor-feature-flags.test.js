@@ -32,8 +32,7 @@ function configWith(features) {
 const active = { _id: 'i1', isActive: true };
 const inactive = { _id: 'i2', isActive: false };
 
-// Turned on by #1166 (generate and apply a subject from the editor)
-describe.skip('editor data: text generation flag', () => {
+describe('editor data: text generation flag', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('is on when text generation is active with an active integration', async () => {
