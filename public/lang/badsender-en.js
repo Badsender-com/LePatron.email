@@ -336,7 +336,7 @@ module.exports = {
   'block-builder-replaces-markup':
     'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
   'block-builder-block-name': 'Composed block',
-  'block-builder-block-empty': 'Composed block — click to compose',
+  'block-builder-block-empty': 'Composed block — double-click to compose',
   'widget-block-builder-compose': 'Compose a block',
   'block-builder-tool-compose': 'Compose block',
   'widget-block-builder-disabled':

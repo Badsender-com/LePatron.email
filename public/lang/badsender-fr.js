@@ -345,7 +345,7 @@ module.exports = {
   'block-builder-replaces-markup':
     "Ce bloc contient déjà du code HTML qui n'a pas été composé ici. Si vous validez, il sera remplacé par votre composition.",
   'block-builder-block-name': 'Bloc composé',
-  'block-builder-block-empty': 'Bloc composé — cliquez pour composer',
+  'block-builder-block-empty': 'Bloc composé — double-cliquez pour composer',
   'widget-block-builder-compose': 'Composer un bloc',
   'block-builder-tool-compose': 'Composer le bloc',
   'widget-block-builder-disabled':
