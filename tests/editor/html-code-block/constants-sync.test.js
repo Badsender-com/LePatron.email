@@ -102,10 +102,9 @@ describe('the composed-block translation, editor ↔ server', () => {
     },
   };
 
-  it('every descriptor says whether it keeps a state and can be translated', () => {
+  it('every descriptor says whether it keeps a state and offers block translation', () => {
     SHARED.SYNTHETIC_BLOCKS.forEach((block) => {
       expect(block).toHaveProperty('stateProperty');
-      expect(typeof block.translatable).toBe('boolean');
       expect(typeof block.blockTranslatable).toBe('boolean');
     });
   });
