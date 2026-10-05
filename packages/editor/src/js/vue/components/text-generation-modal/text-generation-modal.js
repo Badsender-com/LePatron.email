@@ -10,6 +10,9 @@ const {
 } = require('../../../ext/text-generation/email-copy');
 const template = require('./text-generation-modal.template');
 
+// Proposals already seen that "Suggest others" sends back (server limit).
+const MAX_AVOID = 30;
+
 // What the user can act on, by status of the text generation routes.
 const ERROR_KEYS = {
   403: 'text-generation-error-disabled',
@@ -84,7 +87,9 @@ const TextGenerationModalComponent = Vue.component('TextGenerationModal', {
           content,
           currentSubject: this.currentSubject() || undefined,
           brief: this.brief || undefined,
-          avoid: this.seen.length ? this.seen : undefined,
+          // The server takes the last 30: past that, older proposals matter less
+          // than a request that keeps working.
+          avoid: this.seen.length ? this.seen.slice(-MAX_AVOID) : undefined,
         });
         this.proposals = data.proposals;
         this.dropped = data.dropped;
