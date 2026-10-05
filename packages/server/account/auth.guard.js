@@ -5,6 +5,7 @@
 // https://github.com/solderjs/example-oauth2orize-consumer
 
 const passport = require('passport');
+const bcrypt = require('bcryptjs');
 const LocalStrategy = require('passport-local').Strategy;
 const BasicStrategy = require('passport-http').BasicStrategy;
 const ClientPasswordStrategy = require('passport-oauth2-client-password')
@@ -23,6 +24,10 @@ const {
   OAuthTokens,
   Groups,
 } = require('../common/models.common.js');
+
+// Compared against when the email is unknown, so that a wrong email costs
+// the same time as a wrong password.
+const UNKNOWN_USER_HASH = bcrypt.hashSync('unknown-user', 10);
 
 const adminUser = Object.freeze({
   isAdmin: true,
@@ -87,14 +92,18 @@ passport.use(
     }
     // user
     try {
+      // A pending reset does not bar the way in: an invited account has no
+      // password yet, an admin reset cleared it, and both fail below.
       const user = await Users.findOne({
         email: username,
         isDeactivated: { $ne: true },
-        token: { $exists: false },
       });
 
+      // Same message and same cost whether the email is unknown or the
+      // password wrong.
       if (!user) {
-        return done(null, false, { message: 'password.error.nouser' });
+        bcrypt.compareSync(password, UNKNOWN_USER_HASH);
+        return done(null, false, { message: 'password.error.incorrect' });
       }
 
       const isPasswordValid = user.comparePassword(password);
@@ -219,7 +228,6 @@ passport.use(
         const user = await Users.findOne({
           email: email,
           isDeactivated: { $ne: true },
-          token: { $exists: false },
         });
 
         if (user) {
@@ -241,7 +249,6 @@ passport.use(
       const user = await Users.findOne({
         email: profile.nameID,
         isDeactivated: { $ne: true },
-        token: { $exists: false },
       });
       if (!user)
         return done(new Error('No user found'), false, {

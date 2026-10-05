@@ -125,6 +125,11 @@ UserSchema.plugin(mongooseHidden, {
   },
 });
 
+// The links in the emails use the scheme the site is served with.
+function siteOrigin() {
+  return `http${config.forcessl ? 's' : ''}://${config.host}`;
+}
+
 function encodePassword(password) {
   if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
@@ -172,19 +177,26 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
+// `type` is 'admin' when an administrator resets the account (the current
+// password stops working at once) or 'user' when the person asked for a new
+// one (the current password keeps working until the emailed link is used,
+// so that asking in someone's name locks nobody out).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = undefined;
+  if (type !== 'user') user.password = undefined;
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
+  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
+    user.token
+  }`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
@@ -208,7 +220,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const loginUrl = `http://${config.host}/account/login`;
+  const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
@@ -224,6 +236,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
 };
 
 UserSchema.methods.comparePassword = function comparePassword(password) {
+  if (!this.password) return false;
   return bcrypt.compareSync(password, this.password);
 };
 
