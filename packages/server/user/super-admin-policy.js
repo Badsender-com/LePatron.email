@@ -5,6 +5,7 @@ const { BadRequest, Conflict, Forbidden } = require('http-errors');
 const Roles = require('../account/roles.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Users, Groups } = require('../common/models.common.js');
+const logger = require('../utils/logger.js');
 
 /**
  * The guardrails of the super admin role (ADR 0002), as checks the user and
@@ -24,8 +25,7 @@ const ROLE_VALUES = Object.values(Roles);
 
 const isSuperAdmin = (user) => user?.role === Roles.SUPER_ADMIN;
 const isSelf = (actor, target) => String(actor?.id) === String(target.id);
-const companyIdOf = (user) =>
-  String(user._company?._id || user._company || user.group?.id);
+const companyIdOf = (user) => String(user._company?._id || user._company);
 
 /**
  * A role read from a request must be one of the product's roles, as a plain
@@ -111,6 +111,16 @@ async function assertCanUpdate(actor, target, role) {
   await assertNotLastSuperAdmin(target);
 }
 
+/**
+ * Reactivating a super admin brings an active super admin back: it must
+ * still be in the platform group, which may have moved meanwhile.
+ */
+async function assertCanActivate(actor, target) {
+  if (!isSuperAdmin(target)) return;
+  assertCanManage(actor, target);
+  await assertPlatformGroupIs(companyIdOf(target));
+}
+
 async function assertCanDeactivate(actor, target) {
   if (!isSuperAdmin(target)) return;
   assertCanManage(actor, target);
@@ -118,6 +128,17 @@ async function assertCanDeactivate(actor, target) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION);
   }
   await assertNotLastSuperAdmin(target);
+}
+
+/**
+ * A trace of who did what to a super admin account, until the audit log
+ * (#1102) records it: logged when the target is a super admin or becomes one.
+ */
+function logAction(actor, action, target, role) {
+  if (!isSuperAdmin(target) && role !== Roles.SUPER_ADMIN) return;
+  logger.info(
+    `[super-admin] ${action} on ${target.id} (${target.email}) by ${actor?.id}`
+  );
 }
 
 /**
@@ -135,6 +156,8 @@ module.exports = {
   groupForCreation,
   assertCanUpdate,
   assertCanManage,
+  assertCanActivate,
   assertCanDeactivate,
   assertFlagCanLeave,
+  logAction,
 };

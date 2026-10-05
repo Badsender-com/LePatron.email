@@ -41,6 +41,7 @@ async function updateUser(userParams) {
     userParams,
     {
       runValidators: true,
+      new: true,
     }
   ).populate({
     path: '_company',

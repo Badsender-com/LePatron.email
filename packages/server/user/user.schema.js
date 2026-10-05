@@ -174,6 +174,7 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };
