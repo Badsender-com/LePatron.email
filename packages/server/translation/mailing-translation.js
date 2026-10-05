@@ -37,8 +37,12 @@ const {
  * inside `builderState`, one JSON string the generic walker cannot see into.
  * Without this, a mailing with composed blocks came back from translation
  * with those blocks still in the source language, and nothing said so.
+ *
+ * Only when the template allows the builder: translating a composed block
+ * rebuilds its markup, which is a write the save route would refuse on a
+ * template without the flag. Left out, the blocks are copied as they are.
  */
-async function extractAllTexts(mailing, templateMarkup) {
+async function extractAllTexts(mailing, templateMarkup, blockBuilderEnabled) {
   // Parse protection config from template markup (if provided)
   const protectionConfig = templateMarkup
     ? await runTranslationStep('parseProtectionConfig', () =>
@@ -46,14 +50,40 @@ async function extractAllTexts(mailing, templateMarkup) {
       )
     : null;
 
+  const generic = await runTranslationStep('extractTexts', () =>
+    extractTexts(mailing, protectionConfig)
+  );
+  if (!blockBuilderEnabled) return generic;
+
   return {
-    ...(await runTranslationStep('extractTexts', () =>
-      extractTexts(mailing, protectionConfig)
-    )),
+    ...generic,
     ...(await runTranslationStep('extractBuilderTexts', () =>
       extractBuilderTexts(mailing.data)
     )),
   };
+}
+
+/**
+ * The provider's answer, reduced to what was asked: one string per key that
+ * was sent. A key the provider adds, or a value that is not a string, is
+ * dropped — the injectors write by key, so an answer may only touch what the
+ * extraction chose to send.
+ *
+ * @param {Object} texts what was sent, by key
+ * @param {Object} translations what came back
+ * @returns {Object} translations for sent keys only
+ */
+function keepRequestedTranslations(texts, translations) {
+  const answer = translations || {};
+  return Object.keys(texts).reduce((kept, key) => {
+    if (
+      Object.prototype.hasOwnProperty.call(answer, key) &&
+      typeof answer[key] === 'string'
+    ) {
+      kept[key] = answer[key];
+    }
+    return kept;
+  }, {});
 }
 
 /**
@@ -144,6 +174,7 @@ function statsOf(extraction, validation, injection) {
  * @param {string} params.sourceLanguage - Source language code (or 'auto')
  * @param {string} params.targetLanguage - Target language code
  * @param {string} [params.templateMarkup] - Template HTML markup for protection config
+ * @param {boolean} [params.blockBuilderEnabled] - The template's builder flag: composed blocks are translated only when it is on
  * @param {Function} [params.onTotalsKnown] - Callback invoked once with ({ totalKeys, totalBatches }) before any provider call
  * @param {Function} [params.onBatchProgress] - Callback for batch progress (batchNumber, keysInBatch)
  * @param {Function} [params.assertNotCancelled] - Throws TRANSLATION_CANCELLED once the job is cancelled
@@ -155,7 +186,8 @@ async function translateMailing(params) {
 
   const textsToTranslate = await extractAllTexts(
     mailing,
-    params.templateMarkup
+    params.templateMarkup,
+    Boolean(params.blockBuilderEnabled)
   );
   const stats = getExtractionStats(textsToTranslate);
 
@@ -172,14 +204,17 @@ async function translateMailing(params) {
     };
   }
 
-  const translations = await translateTexts({
+  const answer = await translateTexts({
     ...params,
     featureConfig,
     texts: textsToTranslate,
     totalKeys: stats.fieldCount,
   });
 
-  const validation = validateTranslations(textsToTranslate, translations);
+  // Validated on the raw answer, so the extra keys are still counted and
+  // logged; injected from the reduced one.
+  const validation = validateTranslations(textsToTranslate, answer);
+  const translations = keepRequestedTranslations(textsToTranslate, answer);
   if (!validation.isValid) {
     logger.warn(
       `[Translation] Validation warning - missing: ${validation.missing.length}, extra: ${validation.extra.length}`

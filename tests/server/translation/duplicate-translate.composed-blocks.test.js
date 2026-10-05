@@ -173,7 +173,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   translationJobs.createJob.mockResolvedValue({ jobId: 'job' });
   translationJobs.isCancelled.mockResolvedValue(false);
-  Templates.findById.mockResolvedValue({ markup: '' });
+  Templates.findById.mockResolvedValue({
+    markup: '',
+    blockBuilderEnabled: true,
+  });
   aiFeatureService.getActiveFeatureWithIntegration.mockResolvedValue({
     integration: { provider: 'openai' },
     feature: { config: { availableLanguages: ['fr', 'en'] } },

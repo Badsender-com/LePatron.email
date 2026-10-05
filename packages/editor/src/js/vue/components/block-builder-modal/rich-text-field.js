@@ -1,4 +1,7 @@
 const Vue = require('vue/dist/vue.common');
+const {
+  sanitizeRichText,
+} = require('../../../../../../shared/block-builder/rich-text.js');
 
 // A TinyMCE field for the builder's text element.
 //
@@ -13,9 +16,8 @@ const Vue = require('vue/dist/vue.common');
 
 // Mirrors ALLOWED in rich-text.js, attributes included: `href` and nothing
 // else, so no `target` — the sanitiser drops it, and a link set to open in a new
-// window would silently stop doing so on apply. Kept as a literal rather than
-// derived from it: the editor bundle would otherwise pull the whole generator in
-// just for a list of six tags, and the pairing is checked by a test.
+// window would silently stop doing so on apply. Kept as a literal, in TinyMCE's
+// own syntax, and paired with the sanitiser's list by a test.
 const VALID_ELEMENTS = 'strong/b,em/i,u,a[href],br';
 
 // TinyMCE 4.5 has no placeholder setting (it came with 5.2), so the field draws
@@ -28,6 +30,13 @@ const isBlank = (value) =>
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;|\u00a0/g, ' ')
     .trim() === '';
+
+// What the field hands to TinyMCE: the stored text, through the same sanitiser
+// the generator applies on the way out. The value comes from a stored state,
+// which may have been written by anything — and TinyMCE parses what it is given
+// in the editor's own page, before `valid_elements` gets a say.
+const toEditable = (value) =>
+  sanitizeRichText(typeof value === 'string' ? value : '');
 
 const getTinyMce = () =>
   typeof window !== 'undefined' ? window.tinymce : null;
@@ -57,7 +66,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
     // out. An echo of what the editor just emitted is not pushed back.
     value(next) {
       if (!this.editor || next === this.lastContent) return;
-      this.editor.setContent(next || '');
+      this.editor.setContent(toEditable(next));
       this.lastContent = this.editor.getContent();
       // Another element's text now: an undo must not bring the previous one's
       // back into this one.
@@ -98,7 +107,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
         setup: (editor) => {
           this.editor = editor;
           editor.on('init', () => {
-            editor.setContent(this.value || '');
+            editor.setContent(toEditable(this.value));
             this.lastContent = editor.getContent();
           });
           editor.on('change keyup input NodeChange', () => {

@@ -45,7 +45,7 @@ function jobCallbacks(jobId) {
 }
 
 /**
- * The source mailing, its group and its template's markup.
+ * The source mailing, its group, its template's markup and builder flag.
  *
  * Group-scoped load: the source mailing must belong to the caller's group (or
  * caller is super admin). Without this filter a group admin could
@@ -61,14 +61,19 @@ async function loadSource({ mailingId, user }) {
     (mailing._company && mailing._company.toString());
 
   let templateMarkup = null;
+  let blockBuilderEnabled = false;
   if (mailing._wireframe) {
     const template = await runTranslationStep('loadTemplate', () =>
-      Templates.findById(mailing._wireframe, { markup: 1 })
+      Templates.findById(mailing._wireframe, {
+        markup: 1,
+        blockBuilderEnabled: 1,
+      })
     );
     templateMarkup = template?.markup || null;
+    blockBuilderEnabled = Boolean(template && template.blockBuilderEnabled);
   }
 
-  return { mailing, groupId, templateMarkup };
+  return { mailing, groupId, templateMarkup, blockBuilderEnabled };
 }
 
 /**
@@ -81,7 +86,7 @@ async function translateSource({
   sourceLanguage,
   targetLanguage,
 }) {
-  const { mailing, groupId, templateMarkup } = source;
+  const { mailing, groupId, templateMarkup, blockBuilderEnabled } = source;
   const detectedSourceLanguage =
     sourceLanguage === 'auto'
       ? await runTranslationStep('detectSourceLanguage', () =>
@@ -99,6 +104,7 @@ async function translateSource({
     sourceLanguage: detectedSourceLanguage,
     targetLanguage,
     templateMarkup,
+    blockBuilderEnabled,
     ...jobCallbacks(jobId),
   });
 

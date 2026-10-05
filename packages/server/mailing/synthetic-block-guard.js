@@ -217,10 +217,14 @@ function validateSyntheticBlocks(data, maxLength) {
 function findDisallowedSyntheticBlock({ data, previousData, flags }) {
   const allowed = flags || {};
 
+  // A builder block is judged on its markup AND its state: the markup is
+  // rebuilt from the state (builder-block-integrity.js), so stored markup next
+  // to another state is not the stored block.
+  const keyOf = (block) => `${htmlOf(block)}\u0000${stateOf(block)}`;
   const storedByType = findSyntheticBlocks(previousData).reduce(
     (byType, block) => {
       if (!byType[block.type]) byType[block.type] = new Set();
-      byType[block.type].add(htmlOf(block));
+      byType[block.type].add(keyOf(block));
       return byType;
     },
     {}
@@ -234,7 +238,7 @@ function findDisallowedSyntheticBlock({ data, previousData, flags }) {
     if (html === '') return false;
 
     const stored = storedByType[block.type];
-    return !stored || !stored.has(html);
+    return !stored || !stored.has(keyOf(block));
   });
 
   return offending ? descriptorOf(offending) : null;

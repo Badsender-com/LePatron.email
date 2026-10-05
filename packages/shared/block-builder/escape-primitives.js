@@ -24,12 +24,24 @@ const ATTR_ENTITIES = TEXT_ENTITIES.concat([
 // first executes, and the second carries a whole document.
 const SAFE_URL_SCHEME = /^(https?:|mailto:|tel:)/i;
 
-// ESP personalisation, which is a URL the provider fills in later. Same three
-// families the editor already accepts (badsender-extensions.js).
-const ESP_TOKEN = /(<%|\{\{|%%|^\[)/;
+// Any scheme at all. A URL that has one is judged on it and nothing else, so
+// a token further down the value cannot vouch for what it starts with.
+const ANY_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
-// A relative path, for assets served alongside the email.
-const RELATIVE_URL = /^[./#?]/;
+// What a browser ignores while it reads a scheme: control characters and
+// whitespace. Removed before looking for one, so the scheme is judged as the
+// browser will read it.
+// eslint-disable-next-line no-control-regex -- matching them is the point
+const IGNORED_IN_SCHEME = /[\u0000- \u007f]/g;
+
+// ESP personalisation, which is a URL the provider fills in later. Same three
+// families the editor already accepts (badsender-extensions.js). Only at the
+// START of the value: that is where the provider puts the URL it fills in.
+const ESP_TOKEN = /^(<%|\{\{|%%|\[)/;
+
+// A relative path, for assets served alongside the email. Not `//host` nor
+// `/\host`, which browsers read as a URL on another host.
+const RELATIVE_URL = /^(\.{0,2}\/(?![/\\])|[#?])/;
 
 /**
  * @param {*} value
@@ -72,11 +84,11 @@ function escapeAttribute(value) {
 function isSafeUrl(url) {
   const trimmed = asString(url).trim();
   if (trimmed === '') return false;
-  return (
-    SAFE_URL_SCHEME.test(trimmed) ||
-    ESP_TOKEN.test(trimmed) ||
-    RELATIVE_URL.test(trimmed)
-  );
+
+  const compact = trimmed.replace(IGNORED_IN_SCHEME, '');
+  if (ANY_SCHEME.test(compact)) return SAFE_URL_SCHEME.test(compact);
+
+  return ESP_TOKEN.test(trimmed) || RELATIVE_URL.test(trimmed);
 }
 
 module.exports = { asString, escapeText, escapeAttribute, isSafeUrl };

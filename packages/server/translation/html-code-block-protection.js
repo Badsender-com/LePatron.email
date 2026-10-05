@@ -231,6 +231,12 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  * generator rebuilt from translated text, and relies on the generator's
  * escaping instead. The preview is sanitized again when served.
  *
+ * Only a zone matched EXACTLY on a stored markup is kept out of the transform.
+ * One located by counting `<div>` is only known to carry a marker class — which
+ * any text written into the preview can carry too — so it is sanitized with
+ * the rest. The string replacement keeps protecting both kinds: leaving a zone
+ * untranslated is the safe side there, not here.
+ *
  * @param {string} html
  * @param {Function} transform (document: string) => string
  * @param {string[]} [htmlCodes] see findHtmlCodeBlockRanges
@@ -238,7 +244,9 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  */
 function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
   if (!html || typeof html !== 'string') return transform(html);
-  const ranges = findHtmlCodeBlockRanges(html, htmlCodes);
+  const ranges = findHtmlCodeBlockRanges(html, htmlCodes).filter(
+    (range) => range.matched !== -1
+  );
   if (ranges.length === 0) return transform(html);
 
   const nonce = crypto.randomBytes(8).toString('hex');
