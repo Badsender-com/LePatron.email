@@ -33,7 +33,7 @@ module.exports = `
       <p v-if="!proposals.length" class="text-generation__hint">{{ t('text-generation-none') }}</p>
 
       <ul class="text-generation__proposals" role="radiogroup" :aria-label="t('text-generation-subjects-title')">
-        <li v-for="(proposal, index) in proposals" :key="proposal.text" class="text-generation__proposal">
+        <li v-for="(proposal, index) in proposals" :key="index" class="text-generation__proposal">
           <label class="text-generation__choice">
             <input v-if="canApplySubject" type="radio" name="text-generation-subject" :value="index" v-model="selectedIndex" />
             <span class="text-generation__text">{{ proposal.text }}</span>
