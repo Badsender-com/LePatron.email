@@ -162,6 +162,42 @@ describe('scopeCss', () => {
     expect(flat(scopeCss(once, AREA))).toBe(flat(once));
   });
 
+  it('keeps a prefixed child selector as written', () => {
+    expect(flat(scopeCss('#main-wysiwyg-area > .a{color:red}', AREA))).toBe(
+      '#main-wysiwyg-area > .a { color: red; }'
+    );
+  });
+
+  // The canvas has siblings in the editor's page: a selector reaching them
+  // is not scoped, whatever it starts with.
+  it.each([
+    ['~', '#main-wysiwyg-area ~ div{color:red}'],
+    ['+', '#main-wysiwyg-area+div{color:red}'],
+  ])('scopes a prefixed selector that reaches a sibling (%s)', (_c, css) => {
+    expect(flat(scopeCss(css, AREA))).toMatch(
+      /^#main-wysiwyg-area #main-wysiwyg-area\s*[~+]/
+    );
+  });
+
+  // The canvas copy keeps what it can scope. The export is not affected.
+  it.each([
+    ['@import', '@import url(other.css);'],
+    ['@charset', '@charset "utf-8";'],
+    ['@page', '@page{margin:0}'],
+  ])('leaves %s out of the canvas', (rule, css) => {
+    const out = flat(scopeCss(`${css} .a{color:red}`, AREA));
+    expect(out).not.toContain(rule);
+    expect(out).toContain('#main-wysiwyg-area .a');
+  });
+
+  it('leaves an @import nested in a media rule out too', () => {
+    const out = flat(
+      scopeCss('@media screen{@import url(x.css); .a{color:red}}', AREA)
+    );
+    expect(out).not.toContain('@import');
+    expect(out).toContain('#main-wysiwyg-area .a');
+  });
+
   describe('when the CSS cannot be used', () => {
     // mensch is lenient, like a browser: it recovers rather than throwing, so a
     // stylesheet in the middle of being typed styles what it can. What matters

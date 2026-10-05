@@ -27,13 +27,22 @@ const {
 // that breaks the stylesheet.
 const SELECTED_CLASS = 'lp-bb-selected';
 const DRAGGING_CLASS = 'lp-bb-dragging';
-const DROP_BEFORE_CLASS = 'lp-bb-drop-before';
-const DROP_AFTER_CLASS = 'lp-bb-drop-after';
+const DROP_LINE_ID = 'lp-bb-drop-line';
 const MOVING_CLASS = 'lp-bb-moving';
 const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
 // The palette's order, which is what indexes an entry in the DOM.
 const PALETTE_TYPES = ['text', 'image', 'button', 'divider', 'spacer'];
+
+// Every app openModal mounted, so a test can destroy them: a drag left running
+// by one test would otherwise keep its page listeners into the next.
+const mounted = [];
+
+/** Destroys what openModal mounted, and empties the page. */
+function unmountAll() {
+  mounted.splice(0).forEach((app) => app.$destroy());
+  document.body.innerHTML = '';
+}
 
 /**
  * A stand-in for a Knockout observable: reads with no argument, writes with one.
@@ -47,11 +56,19 @@ function accessorOf(initial) {
   };
 }
 
-/** A stand-in for the DataTransfer the browser hands a real drag. */
+/**
+ * A stand-in for the DataTransfer the browser hands a real drag.
+ *
+ * Starts with a `text/plain` already on it, as a browser may fill in by itself:
+ * the palette has to clear it, or a drop on a text field pastes it.
+ */
 const transfer = () => ({
   effectAllowed: null,
   dropEffect: null,
-  data: {},
+  data: { 'text/plain': 'filled in by the browser' },
+  clearData() {
+    this.data = {};
+  },
   setData(type, value) {
     this.data[type] = value;
   },
@@ -68,7 +85,7 @@ const transfer = () => ({
  * dragging, not the scheduling.
  *
  * @param {string[]} [types] element types to add, in order
- * @returns {Promise<{modal: Object, doc: Document}>}
+ * @returns {Promise<{modal: Object, doc: Document, markup: Function}>}
  */
 async function openModal(types) {
   const host = document.createElement('div');
@@ -86,10 +103,14 @@ async function openModal(types) {
     },
     template: '<block-builder-modal :vm="vm" />',
   });
+  mounted.push(app);
 
   const modal = app.$children[0];
+  // Kept, so a test can read back what Apply wrote: the modal forgets its
+  // accessors as it closes.
+  const markup = accessorOf('');
   modal.handleToggle(true, {
-    accessor: accessorOf(''),
+    accessor: markup,
     stateAccessor: accessorOf(''),
   });
   await Vue.nextTick();
@@ -97,7 +118,7 @@ async function openModal(types) {
   (types || []).forEach((type) => modal.addElement(type));
   modal.renderPreview();
 
-  return { modal, doc: modal.$refs.previewFrame.contentDocument };
+  return { modal, doc: modal.$refs.previewFrame.contentDocument, markup };
 }
 
 /** The rendered rows, in document order. */
@@ -144,6 +165,22 @@ function fireIn(doc, type, target, clientY) {
   return event;
 }
 
+/** A dragover, then a drop, at a height in the preview. */
+const dragOverAt = (doc, clientY) => fireIn(doc, 'dragover', doc.body, clientY);
+const dropAt = (doc, clientY) => fireIn(doc, 'drop', doc.body, clientY);
+
+/**
+ * A reorder's drop as a browser delivers it: a dragover at the same height
+ * first — no drop comes without one, and a dragover left uncancelled would
+ * have refused it — then the drop itself.
+ */
+function moveTo(doc, clientY) {
+  const over = dragOverAt(doc, clientY);
+  expect(over.defaultPrevented).toBe(true);
+  expect(over.dataTransfer.dropEffect).toBe('move');
+  return dropAt(doc, clientY);
+}
+
 /** The palette entry for a type, queried on the document. */
 const paletteEntry = (type) =>
   document.querySelectorAll('.bb-modal__add')[PALETTE_TYPES.indexOf(type)];
@@ -167,26 +204,52 @@ function startPaletteDrag(type) {
   return event;
 }
 
+/**
+ * A dragover on the editor page, outside the preview — over the settings
+ * panel, where the TinyMCE field a stray drop would paste into lives.
+ */
+function dragOverPage() {
+  const event = new window.Event('dragover', {
+    bubbles: true,
+    cancelable: true,
+  });
+  event.dataTransfer = transfer();
+  document.querySelector('.bb-settings').dispatchEvent(event);
+  return event;
+}
+
+/** Resolves on the next task: after what a handler deferred with setTimeout. */
+const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** The insertion line, or null when none is drawn. */
+const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
+
 /** The element types currently composed, in order. */
 const typesOf = (modal) => modal.state.elements.map((element) => element.type);
 
 module.exports = {
   openModal,
+  unmountAll,
   accessorOf,
   transfer,
   rowsOf,
   rowOf,
   layOutRows,
   fireIn,
+  dragOverAt,
+  dropAt,
+  moveTo,
   paletteEntry,
   startPaletteDrag,
+  dragOverPage,
+  nextTask,
   typesOf,
+  dropLineOf,
   ELEMENT_ATTRIBUTE,
   PALETTE_TYPES,
   SELECTED_CLASS,
   DRAGGING_CLASS,
-  DROP_BEFORE_CLASS,
-  DROP_AFTER_CLASS,
+  DROP_LINE_ID,
   MOVING_CLASS,
   EMPTY_DROP_ID,
 };

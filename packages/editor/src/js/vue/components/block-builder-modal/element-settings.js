@@ -14,7 +14,12 @@ const { RichTextFieldComponent } = require('./rich-text-field');
 // Labels are i18n keys, resolved by the modal (see LABEL_KEYS below).
 const FIELDS = {
   text: [
-    { key: 'content', labelKey: 'block-builder-field-text', type: 'richtext' },
+    {
+      key: 'content',
+      labelKey: 'block-builder-field-text',
+      type: 'richtext',
+      placeholderKey: 'block-builder-starter-text',
+    },
     { key: 'align', labelKey: 'block-builder-field-align', type: 'align' },
     {
       key: 'fontSize',
@@ -50,7 +55,12 @@ const FIELDS = {
     { key: 'align', labelKey: 'block-builder-field-align', type: 'align' },
   ],
   button: [
-    { key: 'label', labelKey: 'block-builder-field-label', type: 'text' },
+    {
+      key: 'label',
+      labelKey: 'block-builder-field-label',
+      type: 'text',
+      placeholderKey: 'block-builder-starter-button',
+    },
     { key: 'href', labelKey: 'block-builder-field-link', type: 'text' },
     {
       key: 'backgroundColor',
@@ -94,6 +104,19 @@ const ALIGNMENTS = [
   { value: 'right', labelKey: 'block-builder-align-right' },
 ];
 
+// What an element shows while it is still blank, by type: the field it stands
+// in for and the words. One table for both places it appears — the field's
+// placeholder here, and the greyed text the preview renders in the element
+// (see the generator's `starters` option) — so the two always agree.
+//
+// Never written into the element. A starter in the state would be exported as
+// if the user had typed it, and a text deliberately emptied would get it back.
+const STARTERS = Object.keys(FIELDS).reduce((starters, type) => {
+  const field = FIELDS[type].find((candidate) => candidate.placeholderKey);
+  if (field) starters[type] = { key: field.key, labelKey: field.placeholderKey };
+  return starters;
+}, {});
+
 // Every key this panel reads from `labels`, so the modal can resolve them all
 // without knowing the field tables.
 const LABEL_KEYS = Array.from(
@@ -107,6 +130,7 @@ const LABEL_KEYS = Array.from(
         ...Object.values(FIELDS).map((fields) => fields.map((f) => f.labelKey))
       )
       .concat(ALIGNMENTS.map((option) => option.labelKey))
+      .concat(Object.values(STARTERS).map((starter) => starter.labelKey))
   )
 );
 
@@ -174,6 +198,9 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
     label(key) {
       return this.labels[key] || key;
     },
+    placeholder(field) {
+      return field.placeholderKey ? this.label(field.placeholderKey) : null;
+    },
   },
   template: `<div class="bb-settings">
   <p v-if="!element" class="bb-settings__empty">{{ label('block-builder-select-element') }}</p>
@@ -188,6 +215,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
         v-if="field.type === 'richtext'"
         :value="element[field.key]"
         :labelledby="labelId(field)"
+        :placeholder="placeholder(field)"
         @input="update(field.key, $event)" />
 
       <div
@@ -210,6 +238,7 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
         :id="controlId(field)"
         type="text"
         class="bb-settings__input"
+        :placeholder="placeholder(field)"
         :value="element[field.key]"
         @input="update(field.key, $event.target.value)" />
 
@@ -250,4 +279,4 @@ const ElementSettingsComponent = Vue.component('ElementSettings', {
 </div>`,
 });
 
-module.exports = { ElementSettingsComponent, FIELDS, LABEL_KEYS };
+module.exports = { ElementSettingsComponent, FIELDS, LABEL_KEYS, STARTERS };

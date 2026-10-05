@@ -21,11 +21,15 @@ const templateKeys = Array.from(
   (match) => match[1]
 );
 
+// Strings written into the preview iframe, rather than through the template.
+// The starters are in LABEL_KEYS, which the modal resolves for both places.
+const scriptKeys = ['block-builder-drop-here'];
+
 const keys = Array.from(
   new Set(
-    LABEL_KEYS.concat(PALETTE.map((entry) => entry.labelKey)).concat(
-      templateKeys
-    )
+    LABEL_KEYS.concat(PALETTE.map((entry) => entry.labelKey))
+      .concat(templateKeys)
+      .concat(scriptKeys)
   )
 );
 

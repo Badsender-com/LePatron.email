@@ -62,10 +62,45 @@ const ElementListMixin = {
       return name;
     },
 
+    // Clicking a palette entry appends. It stays alongside the drag: it is the
+    // quick path, it is what a keyboard reaches, and it is the fallback when a
+    // drag is dropped somewhere that refuses it.
     addElement(type) {
+      this.insertElement(type, this.state.elements.length);
+    },
+
+    // A palette entry is a `div role="button"`, not a <button>: Firefox does
+    // not start a native drag from a <button draggable>. So it does by hand
+    // what a <button> does for free — Enter on keydown, Space on keyup, and
+    // Space's keydown cancelled so the column does not scroll under it.
+    onPaletteKeydown(event, type) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.addElement(type);
+      } else if (event.key === ' ') {
+        event.preventDefault();
+      }
+    },
+
+    onPaletteKeyup(event, type) {
+      if (event.key !== ' ') return;
+      event.preventDefault();
+      this.addElement(type);
+    },
+
+    insertElement(type, index) {
+      if (!PALETTE.some((item) => item.type === type)) return null;
+
+      // Blank, as its defaults have it. What the preview shows in a blank
+      // element is a starter drawn there and nowhere else (see STARTERS in
+      // element-settings.js): nothing the user did not type reaches the state.
       const element = { id: newElementId(), type, ...defaultsFor(type) };
-      this.state.elements.push(element);
+      const at = Math.max(0, Math.min(index, this.state.elements.length));
+      this.state.elements.splice(at, 0, element);
+      // Selected on arrival, so the settings panel is already on it — dropping
+      // and editing are one gesture, not two.
       this.selectedId = element.id;
+      return element;
     },
 
     removeSelected() {
@@ -76,14 +111,40 @@ const ElementListMixin = {
       this.selectedId = next ? next.id : null;
     },
 
+    // The arrows, through the drag's own move so the splice exists once.
+    // moveElementTo takes a drop position, counted with the element still in
+    // place: one row down is past the next row, two positions on.
     move(offset) {
-      const index = this.indexOfSelected();
-      const target = index + offset;
-      if (index === -1 || target < 0 || target >= this.state.elements.length) {
-        return;
-      }
-      const [element] = this.state.elements.splice(index, 1);
-      this.state.elements.splice(target, 0, element);
+      if (!this.canMove(offset)) return;
+      const target = this.indexOfSelected() + offset;
+      const position = offset > 0 ? target + 1 : target;
+      this.moveElementTo(this.selectedId, position);
+    },
+
+    /**
+     * Moves an element to a drop position — for the reorder drag, and for
+     * the arrows through `move`.
+     *
+     * `index` counts rows as they are laid out NOW, with the dragged element
+     * still among them. Taking it out first shifts everything after it up by
+     * one, so a target past its old position has to come down by one — the
+     * classic off-by-one of every reorder, and the reason dropping an element
+     * just below itself would otherwise move it one row too far.
+     *
+     * The moved element ends up selected, so the settings panel stays on it.
+     */
+    moveElementTo(id, index) {
+      const from = this.state.elements.findIndex(
+        (element) => element.id === id
+      );
+      if (from === -1) return;
+
+      this.selectedId = id;
+      const to = index > from ? index - 1 : index;
+      if (to === from) return;
+
+      const [element] = this.state.elements.splice(from, 1);
+      this.state.elements.splice(to, 0, element);
     },
 
     // Whether the selected element can move by `offset`, so the buttons are

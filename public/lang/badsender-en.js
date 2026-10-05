@@ -343,6 +343,9 @@ module.exports = {
     'The block builder is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'block-builder-modal-title': 'Compose a block',
   'block-builder-add': 'Add',
+  'block-builder-drop-here': 'Drag an element here or click one in the palette',
+  'block-builder-starter-text': 'Type your text…',
+  'block-builder-starter-button': 'Your button',
   'block-builder-elements': 'Elements',
   'block-builder-empty': 'No element yet. Add one to start.',
   'block-builder-desktop': 'Desktop',
@@ -376,7 +379,7 @@ module.exports = {
   'block-builder-move-down': 'Move down',
   'block-builder-remove': 'Remove',
   'block-builder-preview-hint':
-    'Indicative preview — browser rendering, not mail client rendering.',
+    'Click an element to edit it, drag it to move it. Indicative preview — browser rendering, not mail client rendering.',
   'block-builder-rebuilds-markup':
     'This block was built by an earlier version of the builder. Applying will rebuild it with the current one, and its rendering may change slightly.',
   'block-builder-discard-confirm':

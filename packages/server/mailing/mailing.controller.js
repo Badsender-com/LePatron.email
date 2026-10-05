@@ -21,6 +21,7 @@ const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../utils/preview-html-sanitizer.js');
 
+const { rebuildComposedMarkup } = require('./builder-block-integrity.js');
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
 const {
@@ -515,6 +516,10 @@ async function updateMosaico(req, res) {
 
   await mailingService.assertUserCanEditMailing(user, mailing);
 
+  assertPastedContentSizes(req.body);
+  // Before the flags: they judge the markup that will actually be stored. And
+  // the sizes again, on what was rebuilt.
+  rebuildComposedMarkup(req.body.data, mailing.data);
   assertPastedContentSizes(req.body);
   await assertTemplateFlags(req.body, mailing);
 

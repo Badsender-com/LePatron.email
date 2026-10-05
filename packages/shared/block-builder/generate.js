@@ -35,11 +35,44 @@ const GENERATOR_VERSION = '1.0.0';
 // and the control gallery do not.
 const ELEMENT_ATTRIBUTE = 'data-lp-el';
 
+// Marks a row that shows its starter rather than anything the user wrote — see
+// the `starters` option. Editing chrome, off by default, for the same reason as
+// ELEMENT_ATTRIBUTE: only the preview asks for starters, so only the preview
+// ever carries it. Its value is the element type, for the preview's stylesheet.
+const STARTER_ATTRIBUTE = 'data-lp-starter';
+
 const DEFAULT_BLOCK = {
   backgroundColor: 'transparent',
   paddingTop: 0,
   paddingBottom: 0,
 };
+
+// Blank as a reader sees it: a rich text the editor emptied can still hold a
+// `<br>` or a non-breaking space, and renders nothing all the same.
+function isBlank(value) {
+  if (typeof value !== 'string') return true;
+  return (
+    value
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;|\u00a0/g, ' ')
+      .trim() === ''
+  );
+}
+
+// The values to render in place of a blank slot, or null when the element has
+// no starter or is not blank. A starter without `text` only marks the row: the
+// preview's stylesheet has something to draw, and nothing is substituted.
+function starterValues(type, values, options) {
+  const starters = options && options.starters;
+  if (!starters || !Object.prototype.hasOwnProperty.call(starters, type)) {
+    return null;
+  }
+  const starter = starters[type];
+  if (!starter || !isBlank(values[starter.key])) return null;
+  return typeof starter.text === 'string'
+    ? { ...values, [starter.key]: starter.text }
+    : values;
+}
 
 /**
  * @param {Object} element one entry of `state.elements`
@@ -55,12 +88,16 @@ function generateElement(element, options) {
   if (!definition) return '';
 
   const values = { ...definition.defaults, ...element };
+  const starter = starterValues(definition.type, values, options);
   const id =
     options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
+  const attributes =
+    (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
+    (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : '');
 
   return (
-    `<tr><td${id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : ''}>` +
-    definition.render(values) +
+    `<tr><td${attributes}>` +
+    definition.render(starter || values) +
     '</td></tr>'
   );
 }
@@ -70,6 +107,10 @@ function generateElement(element, options) {
  * @param {Object} [options]
  * @param {boolean} [options.elementIds] mark each row with its element id.
  *   Editing chrome — see ELEMENT_ATTRIBUTE. Off unless the preview asks.
+ * @param {Object} [options.starters] by element type, `{ key, text }`: what an
+ *   element shows while its `key` is blank, so a fresh one is visible in the
+ *   preview at all. Editing chrome too — see STARTER_ATTRIBUTE. The words are
+ *   rendered through the slot's own escaping, and never reach the state.
  * @returns {string} the block's markup, or an empty string for an empty state
  */
 function generate(state, options) {
@@ -130,5 +171,6 @@ module.exports = {
   STATE_VERSION,
   GENERATOR_VERSION,
   ELEMENT_ATTRIBUTE,
+  STARTER_ATTRIBUTE,
   DEFAULT_BLOCK,
 };

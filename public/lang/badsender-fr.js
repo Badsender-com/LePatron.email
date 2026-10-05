@@ -352,6 +352,10 @@ module.exports = {
     "Le block builder n'est plus activé sur ce template : ce bloc est conservé tel quel, mais ne peut plus être modifié.",
   'block-builder-modal-title': 'Composer un bloc',
   'block-builder-add': 'Ajouter',
+  'block-builder-drop-here':
+    'Glissez un élément ici ou cliquez-en un dans la palette',
+  'block-builder-starter-text': 'Saisissez votre texte…',
+  'block-builder-starter-button': 'Votre bouton',
   'block-builder-elements': 'Éléments',
   'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
   'block-builder-desktop': 'Bureau',
@@ -385,7 +389,7 @@ module.exports = {
   'block-builder-move-down': 'Descendre',
   'block-builder-remove': 'Supprimer',
   'block-builder-preview-hint':
-    'Aperçu indicatif — rendu navigateur, pas rendu client mail.',
+    'Cliquez sur un élément pour le régler, faites-le glisser pour le déplacer. Aperçu indicatif — rendu navigateur, pas rendu client mail.',
   'block-builder-rebuilds-markup':
     "Ce bloc a été construit par une version précédente du générateur. L'appliquer le reconstruira avec la version actuelle : son rendu peut légèrement changer.",
   'block-builder-discard-confirm':

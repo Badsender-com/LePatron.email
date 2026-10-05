@@ -152,6 +152,29 @@ describe('already-stored markup is per block type', () => {
   });
 });
 
+describe('a stored builder block is its markup AND its state', () => {
+  // Its markup is rebuilt from its state on save: keeping the stored markup
+  // while changing the state is changing the block.
+  const withState = (builderHtml, builderState) => ({
+    type: 'blockBuilderBlock',
+    builderHtml,
+    builderState,
+  });
+
+  it('grandfathers the stored pair', () => {
+    const stored = dataWith(withState('<p>b</p>', '{"v":1}'));
+
+    expect(brings(stored, stored, NEITHER)).toBe(false);
+  });
+
+  it('refuses the stored markup next to another state', () => {
+    const stored = dataWith(withState('<p>b</p>', '{"v":1}'));
+    const next = dataWith(withState('<p>b</p>', '{"v":1,"x":2}'));
+
+    expect(brings(next, stored, NEITHER)).toBe(true);
+  });
+});
+
 describe('an empty block of either type is always accepted', () => {
   it.each([
     ['an HTML code block', htmlBlock('')],

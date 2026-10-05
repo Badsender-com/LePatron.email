@@ -31,9 +31,12 @@ const CSS_VALUE = 'CSS_VALUE';
 // allow-list rather than an escape. See rich-text.js.
 const RICH_TEXT = 'RICH_TEXT';
 
-// CSS values may not end a declaration, close the block, or open a new tag —
-// nor call `url()` or `expression()`, which load and execute.
-const UNSAFE_CSS = /[;}<>]|url\s*\(|expression\s*\(|@import/i;
+// What a CSS value may be made of: words, numbers, units, commas, `#` and
+// single quotes — enough for a font stack or a percentage. An allow-list
+// rather than a list of what to refuse: no `;` or `}` to end the declaration,
+// no `(` to call a function, no `\` for a CSS escape, no `"` or `&` to end or
+// rewrite the attribute the value sits in.
+const CSS_VALUE_CHARS = /^[a-z0-9\s,.'%#_-]+$/i;
 
 // `#rgb`, `#rrggbb`, `rgb()`, `rgba()`, or a bare CSS colour keyword.
 const COLOR_VALUE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i;
@@ -74,8 +77,13 @@ function escapeForContext(value, context, fallback) {
       return Number.isFinite(number) ? String(number) : asString(fallback);
     }
 
-    case CSS_VALUE:
-      return UNSAFE_CSS.test(raw) ? asString(fallback) : raw.trim();
+    case CSS_VALUE: {
+      const trimmed = raw.trim();
+      // Escaped anyway: every CSS_VALUE slot sits inside an attribute.
+      return CSS_VALUE_CHARS.test(trimmed)
+        ? escapeAttribute(trimmed)
+        : asString(fallback);
+    }
 
     default:
       // An unknown context is a template bug. Escaping as an attribute is the
@@ -85,7 +93,12 @@ function escapeForContext(value, context, fallback) {
   }
 }
 
+// Every context, for whoever needs the list rather than one of them: the
+// template engine, which refuses any other, and the tests.
+const CONTEXTS = [TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT];
+
 module.exports = {
+  CONTEXTS,
   escapeForContext,
   isSafeUrl,
   TEXT,

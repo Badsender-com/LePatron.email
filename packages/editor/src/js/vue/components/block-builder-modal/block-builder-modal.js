@@ -1,9 +1,14 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
-const { ElementSettingsComponent, LABEL_KEYS } = require('./element-settings');
+const {
+  ElementSettingsComponent,
+  LABEL_KEYS,
+  STARTERS,
+} = require('./element-settings');
 const { PreviewSurfaceMixin } = require('./preview-surface.js');
 const { ElementListMixin } = require('./element-list.js');
 const { DismissalMixin } = require('./dismissal.js');
+const { DragSurfaceMixin } = require('./drag-surface.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
@@ -44,9 +49,15 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   // The preview is a surface of its own — writing the iframe document,
   // rendering into it, and the selection it carries. See preview-surface.js.
   // The element list is another: adding, selecting, moving, removing. See
-  // element-list.js. And Escape or a backdrop click ask before losing work —
+  // element-list.js. The drag adds the gesture on top of the preview — see
+  // drag-surface.js. And Escape or a backdrop click ask before losing work —
   // see dismissal.js.
-  mixins: [PreviewSurfaceMixin, ElementListMixin, DismissalMixin],
+  mixins: [
+    PreviewSurfaceMixin,
+    ElementListMixin,
+    DragSurfaceMixin,
+    DismissalMixin,
+  ],
   props: {
     vm: { type: Object, default: () => ({}) },
   },
@@ -73,7 +84,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     previewWidth: DESKTOP_WIDTH,
     desktopWidth: DESKTOP_WIDTH,
     mobileWidth: MOBILE_WIDTH,
-    frameRequest: null,
   }),
   computed: {
     selected() {
@@ -89,9 +99,25 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     },
 
     // What the preview renders. Same markup plus the ids the selection and the
-    // drag need — they never leave this iframe.
+    // drag need, and the greyed starter of each element still blank — none of
+    // which leaves this iframe.
     previewMarkup() {
-      return generate(this.state, { elementIds: true });
+      return generate(this.state, {
+        elementIds: true,
+        starters: this.previewStarters,
+      });
+    },
+    // The words a blank element shows, plus an image with no source: no words
+    // for that one, only the mark — the preview draws an empty frame for it.
+    previewStarters() {
+      return Object.keys(STARTERS).reduce(
+        (starters, type) => {
+          const { key, labelKey } = STARTERS[type];
+          starters[type] = { key, text: this.vm.t(labelKey) };
+          return starters;
+        },
+        { image: { key: 'src' } }
+      );
     },
     isEmpty() {
       return this.state.elements.length === 0;
@@ -125,9 +151,6 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
   },
   mounted() {
     this.vm.toggleBlockBuilderModal = this.handleToggle;
-  },
-  beforeDestroy() {
-    if (this.frameRequest) window.cancelAnimationFrame(this.frameRequest);
   },
   methods: {
     handleToggle(value, data) {
@@ -209,6 +232,8 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     // Also what the modal calls once dismissed (`on-close`), since a dismissal
     // closes it without going through closeModal().
     resetComposition() {
+      // A drag the closing modal cut short: no dragend will come for it.
+      this.handleDragEnd();
       this.accessor = null;
       this.stateAccessor = null;
       this.replacesExistingMarkup = false;

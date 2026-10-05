@@ -60,6 +60,7 @@ describe('composing', () => {
     modal.applySetting({ key: 'content', value: 'Second' });
 
     expect(modal.state.elements.find((e) => e.id === first).content).toBe('');
+    expect(modal.selected.content).toBe('Second');
   });
 
   it('ignores a setting when nothing is selected', () => {

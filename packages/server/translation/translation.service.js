@@ -9,22 +9,10 @@ const logger = require('../utils/logger.js');
 const aiFeatureService = require('../ai-feature/ai-feature.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const {
-  extractTexts,
-  getExtractionStats,
-} = require('./mosaico-text-extractor.js');
-const {
-  injectTexts,
-  validateTranslations,
-} = require('./mosaico-text-injector.js');
-const { parseProtectionConfig } = require('./template-protection-parser.js');
-const {
-  splitIntoBatches,
-  translateInBatches,
-} = require('./translation-batch.utils.js');
-const {
-  runTranslationStep,
-  TRANSLATION_CANCELLED,
-} = require('./translation-step.utils.js');
+  getTranslationFeature,
+  extractFullContext,
+} = require('./translation-feature.js');
+const { translateMailing } = require('./mailing-translation.js');
 
 module.exports = {
   translateMailing,
@@ -34,162 +22,6 @@ module.exports = {
   detectSourceLanguage,
   extractFullContext,
 };
-
-/**
- * Translate an entire mailing
- * @param {Object} params
- * @param {string} params.groupId - Group ID for integration lookup
- * @param {Object} params.mailing - Mailing document to translate
- * @param {string} params.sourceLanguage - Source language code (or 'auto')
- * @param {string} params.targetLanguage - Target language code
- * @param {string} [params.templateMarkup] - Template HTML markup for protection config
- * @param {Function} [params.onTotalsKnown] - Callback invoked once with ({ totalKeys, totalBatches }) before any provider call
- * @param {Function} [params.onBatchProgress] - Callback for batch progress (batchNumber, keysInBatch)
- * @param {Function} [params.assertNotCancelled] - Throws TRANSLATION_CANCELLED once the job is cancelled
- * @returns {Promise<Object>} Translated mailing data
- */
-async function translateMailing({
-  groupId,
-  mailing,
-  sourceLanguage,
-  targetLanguage,
-  templateMarkup,
-  onTotalsKnown,
-  onBatchProgress,
-  assertNotCancelled,
-}) {
-  // Get active translation feature with integration
-  const featureConfig = await aiFeatureService.getActiveFeatureWithIntegration({
-    groupId,
-    featureType: AIFeatureTypes.TRANSLATION,
-  });
-
-  if (!featureConfig) {
-    throw new BadRequest(ERROR_CODES.NO_INTEGRATION_FOR_FEATURE);
-  }
-
-  const { integration, feature } = featureConfig;
-
-  // Validate target language is allowed
-  const availableLanguages = feature.config?.availableLanguages || [];
-  if (
-    availableLanguages.length > 0 &&
-    !availableLanguages.includes(targetLanguage)
-  ) {
-    throw new BadRequest(ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED);
-  }
-
-  // Parse protection config from template markup (if provided)
-  const protectionConfig = templateMarkup
-    ? await runTranslationStep('parseProtectionConfig', () =>
-        parseProtectionConfig(templateMarkup)
-      )
-    : null;
-
-  // Extract texts from mailing (respecting protection config)
-  const textsToTranslate = await runTranslationStep('extractTexts', () =>
-    extractTexts(mailing, protectionConfig)
-  );
-  const stats = getExtractionStats(textsToTranslate);
-
-  if (stats.fieldCount === 0) {
-    // Nothing to translate
-    if (onTotalsKnown) {
-      await onTotalsKnown({ totalKeys: 0, totalBatches: 0 });
-    }
-    return {
-      mailing,
-      stats: {
-        fieldsTranslated: 0,
-        charactersTranslated: 0,
-      },
-      originalTexts: textsToTranslate,
-      translations: {},
-    };
-  }
-
-  // Create provider with feature config (includes model selection)
-  const providerFeatureConfig = feature.config || {};
-  const provider = ProviderFactory.createProvider(
-    integration,
-    providerFeatureConfig
-  );
-
-  // Split into batches up-front so the caller can be notified of the totals
-  // before any provider call happens (used for live progress reporting).
-  const batchLimits = provider.getBatchLimits
-    ? provider.getBatchLimits()
-    : undefined;
-  const batches = await runTranslationStep('splitIntoBatches', () =>
-    splitIntoBatches(textsToTranslate, batchLimits)
-  );
-
-  if (onTotalsKnown) {
-    await onTotalsKnown({
-      totalKeys: stats.fieldCount,
-      totalBatches: batches.length,
-    });
-  }
-
-  // Extract full context for DeepL (improves translation quality)
-  // LLM providers will ignore this parameter
-  const context = await runTranslationStep('extractFullContext', () =>
-    extractFullContext(textsToTranslate)
-  );
-
-  let translations;
-  try {
-    translations = await translateInBatches({
-      provider,
-      batches,
-      sourceLanguage,
-      targetLanguage,
-      context,
-      onBatchProgress,
-      assertNotCancelled,
-    });
-  } catch (error) {
-    // Passed through as is: wrapped as a provider error, the job was marked
-    // failed over its cancelled status.
-    if (error.message === TRANSLATION_CANCELLED) throw error;
-    logger.error(`[Translation] Translation error: ${error.message}`);
-    const status = error instanceof ProviderError ? error.httpStatus : 400;
-    throw createError(
-      status,
-      ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
-    );
-  }
-
-  // Validate translations
-  const validation = validateTranslations(textsToTranslate, translations);
-  if (!validation.isValid) {
-    logger.warn(
-      `[Translation] Validation warning - missing: ${validation.missing.length}, extra: ${validation.extra.length}`
-    );
-    // Continue anyway - partial translation is better than none
-  }
-
-  // Inject translations back into mailing
-  const {
-    mailing: translatedMailing,
-    stats: injectionStats,
-  } = await runTranslationStep('injectTexts', () =>
-    injectTexts(mailing, translations)
-  );
-
-  return {
-    mailing: translatedMailing,
-    stats: {
-      fieldsExtracted: stats.fieldCount,
-      charactersExtracted: stats.totalCharacters,
-      fieldsTranslated: validation.translatedCount,
-      fieldsInjected: injectionStats.injected,
-      failedInjections: injectionStats.failed,
-    },
-    originalTexts: textsToTranslate,
-    translations,
-  };
-}
 
 /**
  * Translate a single text (for inline/field-by-field translation)
@@ -206,26 +38,10 @@ async function translateText({
   sourceLanguage,
   targetLanguage,
 }) {
-  // Get active translation feature with integration
-  const featureConfig = await aiFeatureService.getActiveFeatureWithIntegration({
+  const { integration, feature } = await getTranslationFeature({
     groupId,
-    featureType: AIFeatureTypes.TRANSLATION,
+    targetLanguage,
   });
-
-  if (!featureConfig) {
-    throw new BadRequest(ERROR_CODES.NO_INTEGRATION_FOR_FEATURE);
-  }
-
-  const { integration, feature } = featureConfig;
-
-  // Validate target language is allowed
-  const availableLanguages = feature.config?.availableLanguages || [];
-  if (
-    availableLanguages.length > 0 &&
-    !availableLanguages.includes(targetLanguage)
-  ) {
-    throw new BadRequest(ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED);
-  }
 
   // Create provider with feature config (includes model selection)
   const providerConfig = feature.config || {};
@@ -263,26 +79,10 @@ async function translateBlockContent({
   sourceLanguage,
   targetLanguage,
 }) {
-  // Get active translation feature with integration
-  const featureConfig = await aiFeatureService.getActiveFeatureWithIntegration({
+  const { integration, feature } = await getTranslationFeature({
     groupId,
-    featureType: AIFeatureTypes.TRANSLATION,
+    targetLanguage,
   });
-
-  if (!featureConfig) {
-    throw new BadRequest(ERROR_CODES.NO_INTEGRATION_FOR_FEATURE);
-  }
-
-  const { integration, feature } = featureConfig;
-
-  // Validate target language is allowed
-  const availableLanguages = feature.config?.availableLanguages || [];
-  if (
-    availableLanguages.length > 0 &&
-    !availableLanguages.includes(targetLanguage)
-  ) {
-    throw new BadRequest(ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED);
-  }
 
   // blockContent is already extracted on client side (flat object)
   // No need to extract again - just validate it has content
@@ -369,24 +169,4 @@ function detectSourceLanguage(mailing) {
 
   // Fallback to auto-detect
   return 'auto';
-}
-
-/**
- * Extract full context from mailing for translation
- * Used by DeepL to provide context for better translations
- * @param {Object} textsToTranslate - Extracted texts object
- * @returns {string} Concatenated context text
- */
-function extractFullContext(textsToTranslate) {
-  if (!textsToTranslate || typeof textsToTranslate !== 'object') {
-    return '';
-  }
-
-  // Get all text values and join them
-  const allTexts = Object.values(textsToTranslate)
-    .filter((value) => typeof value === 'string' && value.trim())
-    .map((value) => value.trim());
-
-  // Join with double newlines for clear separation
-  return allTexts.join('\n\n');
 }

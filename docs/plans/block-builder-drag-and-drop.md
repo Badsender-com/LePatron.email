@@ -79,6 +79,20 @@ GrapesJS prouve que **l'API HTML5 suffit** quand l'iframe est same-origin et san
 `src` — c'est exactement la configuration de notre aperçu. C'est la voie la moins
 chère. Son défaut : pas de tactile.
 
+> ⚠️ **Correction du 27/09 — ce raisonnement était incomplet.** La configuration
+> de l'iframe n'est pas la seule chose qui décide : **la page hôte aussi**.
+> Mosaico appelle `fixPageEvents` (`template-loader.js`, depuis `app.js`) à
+> chaque chargement de l'éditeur, et cette fonction pose sur `window` des
+> écouteurs qui annulent `dragstart` **et** `drag`. C'est délibéré : le drag
+> natif ne doit pas concurrencer le sortable jQuery UI qui pilote le canvas.
+> Conséquence : **aucun drag natif ne démarre dans la page de l'éditeur**, quelle
+> que soit la configuration de l'iframe.
+>
+> L'API HTML5 reste le bon choix, mais elle exige de tenir ces événements à
+> l'écart de `window` — `stopPropagation` sur la palette, plutôt que d'affaiblir
+> une protection qui a raison partout ailleurs. À vérifier **sur la page hôte**
+> avant de conclure, pas seulement chez le voisin.
+
 ### Le POC Badsender de mars (`WYSIWYG-block-builder`)
 
 Correction d'une affirmation antérieure de ma part : le POC **avait** le drag
@@ -152,6 +166,12 @@ répond sans ambiguïté. Jamais de reflow en direct — coûteux, et ça cligno
 **Tout élément déposé arrive avec un contenu d'amorce** (un texte, une image
 placeholder, un libellé de bouton). C'est ce qui manque le plus à la version
 actuelle : un élément ajouté n'apparaît nulle part tant qu'il est vide.
+
+> **Décision produit (02/10) : l'amorce est un affichage d'aperçu, jamais un
+> contenu.** Elle n'est pas écrite dans l'état de composition et n'atteint
+> jamais l'email : un élément laissé vide n'exporte rien. L'aperçu la dessine
+> grisée (option `starters` du générateur, demandée par l'aperçu seul, comme
+> `elementIds`), et le champ de réglage l'affiche en placeholder.
 
 Le clic sur un élément de palette **continue d'ajouter en fin de liste** : c'est
 le chemin rapide, l'accessibilité clavier, et le filet si le drag échoue. Stripo
