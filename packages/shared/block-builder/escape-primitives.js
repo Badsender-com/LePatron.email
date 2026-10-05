@@ -34,9 +34,12 @@ const ANY_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 // eslint-disable-next-line no-control-regex -- matching them is the point
 const IGNORED_IN_SCHEME = /[\u0000- \u007f]/g;
 
-// ESP personalisation, which is a URL the provider fills in later. Same three
-// families the editor already accepts (badsender-extensions.js). Only at the
-// START of the value: that is where the provider puts the URL it fills in.
+// ESP personalisation, which is a URL the provider fills in later: a value
+// opening on `<%`, `{{`, `%%` or `[`. The editor's template URL converter
+// (templateUrlConverter in badsender-extensions.js) leaves two of these alone
+// the same way, `<%` and a bracketed `[...]` token; the other two are what the
+// ESPs' own merge tags open with. Only at the START of the value: that is where
+// the provider puts the URL it fills in.
 const ESP_TOKEN = /^(<%|\{\{|%%|\[)/;
 
 // A relative path, for assets served alongside the email. Not `//host` nor

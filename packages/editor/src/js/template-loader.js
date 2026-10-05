@@ -254,10 +254,12 @@ if (process.env.MOSAICO) {
     });
 
     function onSuccess(templatecode, textStatus, jqXHR) {
-      // Make the generic "HTML code" block available in every template, without
-      // touching any client template. Unconditional on purpose: gating the block
-      // definition would make checkModel splice already stored blocks out of
-      // existing mailings. See ext/html-code-block/inject-synthetic-blocks.js.
+      // Make both synthetic blocks — the "HTML code" block and the block
+      // builder — available in every template, without touching any client
+      // template. Unconditional on purpose: gating the block definitions would
+      // make checkModel splice already stored blocks out of existing mailings;
+      // the template flags only hide the palette entries. See
+      // ext/html-code-block/inject-synthetic-blocks.js.
       var res = templateCompiler(
         performanceAwareCaller,
         templateUrlConverter,

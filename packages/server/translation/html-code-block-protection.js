@@ -4,21 +4,27 @@ const crypto = require('crypto');
 const logger = require('../utils/logger.js');
 const { SYNTHETIC_BLOCKS } = require('../../shared/synthetic-blocks.js');
 
-// Keeps the pasted markup of an "HTML code" block out of the previewHtml
-// string-replacement pass.
+// Keeps the markup of the synthetic blocks — the "HTML code" block and the
+// block builder — out of the passes that rewrite previewHtml after a
+// translation: the string replacement and the sanitizer.
 //
-// mailing.data is already safe: `htmlCode` is in EXCLUDED_FIELDS, so the
-// extractor never offers it for translation. But previewHtml is translated by
-// blind string replacement (preview-html-updater.js), which happily rewrites text
-// that happens to sit inside a pasted block. The preview and the multi-mailing ZIP
-// (both reading previewHtml) then diverged from the editor export (regenerated
-// from data) — two different deliverables for one mailing.
+// mailing.data is already safe: the extractor excludes every descriptor's
+// markup and state properties (EXCLUDED_FIELDS in mosaico-text-extractor.js),
+// so neither block's markup is ever offered for translation. But previewHtml is
+// translated by blind string replacement (preview-html-updater.js), which
+// happily rewrites text that happens to sit inside a block's markup. The
+// preview and the multi-mailing ZIP (both reading previewHtml) then diverged
+// from the editor export (regenerated from data) — two different deliverables
+// for one mailing.
 //
-// v1 decision: the block is excluded from translation EVERYWHERE. Opt-in
-// translation of the block is a v2 idea, out of scope.
+// What happens to a zone next depends on its block. An HTML code block is
+// never translated: its zone comes out of every pass as it went in. A composed
+// block is translated through its state (builder-block-texts.js): its zone is
+// kept out of the string replacement here, then swapped for the markup rebuilt
+// from the translated state (builder-preview-swap.js).
 //
 // Locating a zone, in order of reliability:
-//   1. the markup stored in `htmlCode`, when the caller has it: the editor export
+//   1. the markup stored on the block, when the caller has it: the editor export
 //      substitutes it back byte for byte right after the marker element opens, so
 //      it can be matched EXACTLY, whatever it contains — an extra `</div>`, a
 //      `<div` inside a script string, anything pasted;
@@ -179,7 +185,8 @@ function findHtmlCodeBlockRanges(html, htmlCodes) {
       // risk rewriting inside it: a mailing whose tail is left untranslated is a
       // visible, recoverable problem; silently corrupted pasted HTML is not.
       logger.warn(
-        '[Translation] unbalanced HTML code block in previewHtml, protecting to end of document'
+        '[Translation] unbalanced synthetic block markup in previewHtml, protecting to end of document',
+        { markerClass }
       );
       ranges.push({ ...base, contentEnd: html.length, end: html.length });
       return ranges;
@@ -190,7 +197,7 @@ function findHtmlCodeBlockRanges(html, htmlCodes) {
 }
 
 /**
- * Apply `transform` to every part of `html` EXCEPT the HTML code block zones.
+ * Apply `transform` to every part of `html` EXCEPT the synthetic block zones.
  *
  * @param {string} html
  * @param {Function} transform (segment: string) => string
@@ -215,7 +222,7 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
 
 /**
  * Apply a WHOLE-document transform — the sanitizer — to `html`, and put every
- * HTML code block zone back untouched afterwards.
+ * synthetic block zone back untouched afterwards.
  *
  * Unlike transformOutsideHtmlCodeBlocks, the transform needs the full document
  * to make sense of it, so each zone is swapped for an inert token first — ASCII,
