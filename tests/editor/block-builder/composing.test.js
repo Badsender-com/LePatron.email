@@ -152,6 +152,20 @@ describe('the element list', () => {
     );
   });
 
+  // TinyMCE writes `&nbsp;` and `&amp;`: the list shows the words, not them.
+  it('decodes the character references of a text', () => {
+    const { modal } = open();
+    modal.addElement('text');
+    modal.applySetting({
+      key: 'content',
+      value: 'Un titre qui&nbsp;<b>dit</b> A &amp; B',
+    });
+
+    expect(modal.labelFor(modal.selected)).toBe(
+      'block-builder-element-text — Un titre qui dit A & B'
+    );
+  });
+
   it('shows the label of a button', () => {
     const { modal } = open();
     modal.addElement('button');

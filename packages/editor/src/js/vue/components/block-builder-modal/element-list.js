@@ -29,6 +29,17 @@ const defaultsFor = (type) => {
   return definition ? { ...definition.defaults } : {};
 };
 
+// A text element's words as a reader sees them: tags dropped and character
+// references decoded — TinyMCE writes `&nbsp;`, which showed as such in the
+// list. Parsed in an inert document, which runs and loads nothing.
+function plainTextOf(html) {
+  const text =
+    typeof DOMParser === 'undefined'
+      ? html.replace(/<[^>]*>/g, '')
+      : new DOMParser().parseFromString(html, 'text/html').body.textContent;
+  return (text || '').replace(/\s+/g, ' ').trim();
+}
+
 const ElementListMixin = {
   data: () => ({ palette: PALETTE }),
   computed: {
@@ -42,7 +53,7 @@ const ElementListMixin = {
       const name = entry ? this.vm.t(entry.labelKey) : element.type;
       if (element.type === 'text' && element.content) {
         // The first words, so a list of five texts is still readable.
-        const plain = element.content.replace(/<[^>]*>/g, '').trim();
+        const plain = plainTextOf(element.content);
         if (plain) return `${name} — ${plain.slice(0, 28)}`;
       }
       if (element.type === 'button' && element.label) {
