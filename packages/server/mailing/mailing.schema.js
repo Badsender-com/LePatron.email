@@ -23,6 +23,9 @@ const {
   TEMPLATE_FLAG_PROJECTION,
   syntheticBlockFlagsOf,
 } = require('./synthetic-block-guard.js');
+const {
+  MAILING_LIST_PROJECTION,
+} = require('../constant/mailing-list-projection.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -236,7 +239,7 @@ MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { previewHtml: 0, data: 0, headCss: 0 });
+  return this.find(query, MAILING_LIST_PROJECTION);
 };
 
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(

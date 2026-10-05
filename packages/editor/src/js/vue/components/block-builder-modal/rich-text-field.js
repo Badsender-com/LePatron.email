@@ -2,6 +2,9 @@ const Vue = require('vue/dist/vue.common');
 const {
   sanitizeRichText,
 } = require('../../../../../../shared/block-builder/rich-text.js');
+const {
+  isBlankRichText,
+} = require('../../../../../../shared/block-builder/generate.js');
 
 // A TinyMCE field for the builder's text element.
 //
@@ -23,13 +26,9 @@ const VALID_ELEMENTS = 'strong/b,em/i,u,a[href],br';
 // TinyMCE 4.5 has no placeholder setting (it came with 5.2), so the field draws
 // its own: a class while the value is blank, and the words through CSS
 // (`attr(data-placeholder)`). Read off the value rather than the editor's DOM,
-// which keeps a bogus `<br>` in an empty body and defeats `:empty`.
-const isBlank = (value) =>
-  !value ||
-  value
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;|\u00a0/g, ' ')
-    .trim() === '';
+// which keeps a bogus `<br>` in an empty body and defeats `:empty` — and with
+// the generator's own test, so the field shows its placeholder exactly when the
+// preview shows the starter text.
 
 // What the field hands to TinyMCE: the stored text, through the same sanitiser
 // the generator applies on the way out. The value comes from a stored state,
@@ -160,7 +159,7 @@ const RichTextFieldComponent = Vue.component('RichTextField', {
       return Boolean(getTinyMce());
     },
     showsPlaceholder() {
-      return Boolean(this.placeholder) && isBlank(this.value);
+      return Boolean(this.placeholder) && isBlankRichText(this.value);
     },
   },
 });

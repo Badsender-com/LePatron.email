@@ -48,8 +48,10 @@ const DEFAULT_BLOCK = {
 };
 
 // Blank as a reader sees it: a rich text the editor emptied can still hold a
-// `<br>` or a non-breaking space, and renders nothing all the same.
-function isBlank(value) {
+// `<br>` or a non-breaking space, and renders nothing all the same. Shared with
+// the modal's rich-text field, whose placeholder shows exactly when the
+// generator would render the starter text instead.
+function isBlankRichText(value) {
   if (typeof value !== 'string') return true;
   return (
     value
@@ -68,7 +70,7 @@ function starterValues(type, values, options) {
     return null;
   }
   const starter = starters[type];
-  if (!starter || !isBlank(values[starter.key])) return null;
+  if (!starter || !isBlankRichText(values[starter.key])) return null;
   return typeof starter.text === 'string'
     ? { ...values, [starter.key]: starter.text }
     : values;
@@ -173,4 +175,5 @@ module.exports = {
   ELEMENT_ATTRIBUTE,
   STARTER_ATTRIBUTE,
   DEFAULT_BLOCK,
+  isBlankRichText,
 };

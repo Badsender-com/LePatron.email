@@ -2,27 +2,13 @@
 
 // The collection and the guard are plain string work inside
 // handleRelativeOrFtpImages; the regexes are the whole behaviour, so they are
-// what these tests pin down. Requiring mailing.service.js would drag in
-// mongoose models and an FTP client for no benefit here.
-const SOURCE = require('fs').readFileSync(
-  require('path').resolve(
-    __dirname,
-    '../../../packages/server/mailing/mailing.service.js'
-  ),
-  'utf8'
-);
-
-// keep in sync with mailing.service.js — the test fails loudly if they drift
-const extract = (name) => {
-  const line = SOURCE.split('\n').find((l) => l.includes(`const ${name} = /`));
-  if (!line) throw new Error(`${name} not found in mailing.service.js`);
-  const body = line.slice(line.indexOf('/') + 1, line.lastIndexOf('/'));
-  const flags = line.slice(line.lastIndexOf('/') + 1).replace(/[;\s]/g, '');
-  return new RegExp(body, flags);
-};
-
-const urlsRegexUrl = extract('urlsRegexUrl');
-const ownImages = extract('OWN_IMAGES_URL_REGEX');
+// what these tests pin down. They live in a module of their own so that these
+// tests need not drag in mailing.service.js, its mongoose models and its FTP
+// client.
+const {
+  IMAGE_FILE_URL_REGEX: urlsRegexUrl,
+  OWN_IMAGES_URL_REGEX: ownImages,
+} = require('../../../packages/server/mailing/export-image-urls.js');
 
 const OURS = 'https://builder.badsender.com/api/images';
 

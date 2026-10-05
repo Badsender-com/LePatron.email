@@ -45,6 +45,9 @@ const userController = require('../../../packages/server/user/user.controller.js
 const {
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../packages/shared/head-css/constants.js');
+const {
+  MAILING_LIST_PROJECTION,
+} = require('../../../packages/server/constant/mailing-list-projection.js');
 
 const ID = '507f1f77bcf86cd799439001';
 
@@ -89,7 +92,7 @@ describe('list payloads leave the head CSS out', () => {
       query: {},
     });
 
-    expect(query.select.mock.calls[0][0].split(' ')).toContain('-headCss');
+    expect(query.select.mock.calls[0][0]).toMatchObject({ headCss: 0 });
   });
 
   it('GET /users/:userId/mailings', async () => {
@@ -101,12 +104,24 @@ describe('list payloads leave the head CSS out', () => {
       query: {},
     });
 
-    expect(query.select.mock.calls[0][0].split(' ')).toContain('-headCss');
+    expect(query.select.mock.calls[0][0]).toMatchObject({ headCss: 0 });
   });
 });
 
 // The route refuses an oversized stylesheet first, with its own code; the
 // schema bound is for any write that does not go through it.
+// One projection for every list, so a heavy field added to it reaches all of
+// them at once.
+describe('the list projection', () => {
+  it('leaves out every field only the editor reads', () => {
+    expect(MAILING_LIST_PROJECTION).toEqual({
+      previewHtml: 0,
+      data: 0,
+      headCss: 0,
+    });
+  });
+});
+
 describe('the schema bound', () => {
   it('matches the shared limit', () => {
     expect(MailingSchema.path('headCss').options.maxlength).toBe(

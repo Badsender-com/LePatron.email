@@ -17,6 +17,9 @@ const invocationLogService = require('../ai-skill/services/invocation-log.servic
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
+const {
+  MAILING_LIST_PROJECTION,
+} = require('../constant/mailing-list-projection.js');
 const { normalizeIdpCert } = require('../account/saml-config.js');
 
 const {
@@ -384,7 +387,7 @@ async function readMailings(req, res) {
   // their total count
   const [mailings, totalItems] = await Promise.all([
     Mailings.find({ _company: groupId })
-      .select('-previewHtml -data -headCss')
+      .select(MAILING_LIST_PROJECTION)
       .sort(sort)
       // in case limit = -1, we want to retrieve all mailings
       .skip(skip)

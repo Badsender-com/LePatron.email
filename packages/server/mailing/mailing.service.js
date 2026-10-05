@@ -1,6 +1,10 @@
 'use strict';
 
 const { omit } = require('lodash');
+const {
+  OWN_IMAGES_URL_REGEX,
+  IMAGE_FILE_URL_REGEX,
+} = require('./export-image-urls.js');
 const mongoose = require('mongoose');
 const {
   NotFound,
@@ -930,13 +934,6 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
 }
 
 // This will either add images to archive ( zip file ) or upload an image depending on the value of the cdnDownload and regularDownload
-// Our own image endpoint, whatever the file extension. The extension-based
-// regex below cannot match a file stored as `.bin` or `.false`, and those are
-// precisely the ones that escaped the transfer in production.
-// The host part stops at the same delimiters as the path: with `\S*`, a line
-// of minified CSS matched from an earlier url() up to our `/api/images/`.
-const OWN_IMAGES_URL_REGEX = /https?:\/\/[^\s"'()<>]*\/api\/images\/[^\s"'<>)]+/g;
-
 async function handleRelativeOrFtpImages({
   html,
   cdnDownload,
@@ -1004,14 +1001,6 @@ async function handleRelativeOrFtpImages({
   //   })
 
   const urlsRegexDataRaw = /data-raw/g;
-  // `svg` was missing here: a perfectly well-named SVG was never collected, so
-  // it was never transferred, and the delivered email kept pointing at us.
-  // The URL stops at quotes, parentheses and tag brackets, like
-  // OWN_IMAGES_URL_REGEX: with `\S+`, minified CSS such as
-  // `url(https://x/a.png)}.b{background:url(https://x/b.png)}` matched from the
-  // first URL to the last extension, and the replace below rewrote the CSS in
-  // between. `;` is still allowed, as `&amp;` in a query string needs it.
-  const urlsRegexUrl = /https?:[^\s"'()<>]+\.(jpg|jpeg|png|gif|webp|svg)/gi;
 
   let splittedHtml = html.split('\n');
   if (!html.includes('\n')) {
@@ -1028,7 +1017,7 @@ async function handleRelativeOrFtpImages({
     // `.match` with a /g regex returns *every* occurrence: the previous `.exec`
     // took only the first one, so a second image on the same line was silently
     // left behind — and left hotlinking us.
-    const found = line.match(urlsRegexUrl) || [];
+    const found = line.match(IMAGE_FILE_URL_REGEX) || [];
     const ownImages = line.match(OWN_IMAGES_URL_REGEX) || [];
     allImages.push(...found, ...ownImages);
   });
