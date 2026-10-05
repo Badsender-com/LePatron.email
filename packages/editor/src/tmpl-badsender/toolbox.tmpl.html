@@ -145,6 +145,17 @@
          `new Vue({el})` REPLACES the node Knockout thinks it owns, so a reactive
          observable here would tear the mount down without remounting it. Do not
          make it reactive without moving the mount. -->
+    <!-- Text generation (epic #1163): subject and preheader proposals written
+         from the email's content. Shown whether or not the group uses the email
+         metadata: without them, the proposals are offered to copy. -->
+    <!-- ko if: $root.metadata.hasTextGenerationFeature -->
+    <div class="text-generation-entry">
+      <button type="button" class="text-generation-entry__button" data-bind="click: $root.openTextGeneration">
+        <span class="lucide lucide-fw lucide-wand-2" aria-hidden="true"></span>
+        <span data-bind="text: $root.t('text-generation-open')">Generate subject and preheader</span>
+      </button>
+    </div>
+    <!-- /ko -->
     <!-- ko if: $root.hasEmailMetadata() -->
     <div id="email-metadata-section">
       <email-metadata-plugin />
