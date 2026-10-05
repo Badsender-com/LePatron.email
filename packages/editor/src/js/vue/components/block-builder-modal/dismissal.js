@@ -70,4 +70,4 @@ const DismissalMixin = {
   },
 };
 
-module.exports = { DismissalMixin, childDialogOpen };
+module.exports = { DismissalMixin };

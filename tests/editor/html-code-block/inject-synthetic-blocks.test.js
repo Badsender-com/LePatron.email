@@ -9,13 +9,12 @@ const {
   orderPaletteBlockDefs,
 } = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
 const {
-  HTML_CODE_BLOCK_TYPE,
-} = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
-const {
   SYNTHETIC_BLOCKS,
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
 } = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
+
+const HTML_CODE_BLOCK_TYPE = HTML_CODE_BLOCK.type;
 
 // A block's opening tag, as the injector emits it.
 const openingTagOf = (descriptor) =>

@@ -1,26 +1,17 @@
 'use strict';
 
 const {
-  HTML_CODE_BLOCK,
-  BLOCK_BUILDER_BLOCK,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
 } = require('./block-types.js');
 
-// Named constants for the "HTML code" block, derived from its descriptor rather
-// than declared a second time — two spellings of `lp-html-block` would drift,
-// and the one that drifted would be the one nothing renders.
+// Named constants for the synthetic blocks' editor code, beyond what their
+// descriptors hold. A block's type, properties and classes are read from the
+// descriptor itself (block-types.js), never declared a second time here — two
+// spellings of `lp-html-block` would drift, and the one that drifted would be
+// the one nothing renders.
 //
-// See packages/shared/synthetic-blocks.js for what each of these is and why it
-// is what it is.
-
-const HTML_CODE_BLOCK_TYPE = HTML_CODE_BLOCK.type;
-const HTML_CODE_PROPERTY = HTML_CODE_BLOCK.htmlProperty;
-const HTML_CODE_MARKER_CLASS = HTML_CODE_BLOCK.markerClass;
-
-const BLOCK_BUILDER_BLOCK_TYPE = BLOCK_BUILDER_BLOCK.type;
-const BLOCK_BUILDER_HTML_PROPERTY = BLOCK_BUILDER_BLOCK.htmlProperty;
-const BUILDER_STATE_PROPERTY = BLOCK_BUILDER_BLOCK.stateProperty;
+// See packages/shared/synthetic-blocks.js for the limits below.
 
 // Knockout binding rendering the raw markup of either synthetic block. One
 // binding for both: what it does — neutralise in the canvas, hand an inert
@@ -29,12 +20,6 @@ const BUILDER_STATE_PROPERTY = BLOCK_BUILDER_BLOCK.stateProperty;
 const HTML_CODE_BINDING = 'lpHtmlCode';
 
 module.exports = {
-  HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_PROPERTY,
-  HTML_CODE_MARKER_CLASS,
-  BLOCK_BUILDER_BLOCK_TYPE,
-  BLOCK_BUILDER_HTML_PROPERTY,
-  BUILDER_STATE_PROPERTY,
   HTML_CODE_BINDING,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,

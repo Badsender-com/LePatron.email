@@ -149,6 +149,5 @@ module.exports = {
   headCssPreviewPlugin,
   attachHeadCssPreview,
   renderPreview,
-  CANVAS_SELECTOR,
   STYLE_ELEMENT_ID,
 };

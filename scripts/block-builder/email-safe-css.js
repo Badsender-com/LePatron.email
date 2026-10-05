@@ -140,4 +140,4 @@ async function inlineStyles(html, label) {
   return inlined.replace(/\s+class="[^"]*"/g, '');
 }
 
-module.exports = { inlineStyles, classesOf };
+module.exports = { inlineStyles };

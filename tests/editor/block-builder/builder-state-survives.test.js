@@ -36,14 +36,21 @@ const {
   injectSyntheticBlocks,
 } = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
 const {
-  HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_PROPERTY,
-  BLOCK_BUILDER_BLOCK_TYPE,
-  BLOCK_BUILDER_HTML_PROPERTY,
-  BUILDER_STATE_PROPERTY,
-} = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+  HTML_CODE_BLOCK,
+  BLOCK_BUILDER_BLOCK,
+} = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 const modelDef = require('../../../packages/editor/src/js/converter/model.js');
+
+const {
+  type: HTML_CODE_BLOCK_TYPE,
+  htmlProperty: HTML_CODE_PROPERTY,
+} = HTML_CODE_BLOCK;
+const {
+  type: BLOCK_BUILDER_BLOCK_TYPE,
+  htmlProperty: BLOCK_BUILDER_HTML_PROPERTY,
+  stateProperty: BUILDER_STATE_PROPERTY,
+} = BLOCK_BUILDER_BLOCK;
 
 const TEMPLATE = [
   '<html><head><style type="text/css">@supports -ko-blockdefs {',
