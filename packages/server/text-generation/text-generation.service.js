@@ -71,6 +71,11 @@ const subjectRequestSchema = requestSchema.extend({
   currentSubject: optionalText,
 });
 
+const preheaderRequestSchema = requestSchema.extend({
+  subject: z.string().refine((text) => text.trim().length > 0),
+  currentPreheader: optionalText,
+});
+
 function readRequest(schema, body) {
   const parsed = schema.safeParse(body || {});
   if (!parsed.success) {
@@ -239,4 +244,53 @@ async function generateSubjects({ user, body }) {
   });
 }
 
-module.exports = { generateSubjects };
+/**
+ * Three preheader proposals that complement the subject the user picked.
+ *
+ * @param {Object} params
+ * @param {Object} params.user the requesting user
+ * @param {Object} params.body { mailingId, content, subject, currentPreheader?, brief?, avoid? }
+ * @returns {Promise<{ proposals: Array, dropped: number }>}
+ */
+async function generatePreheaders({ user, body }) {
+  const request = readRequest(preheaderRequestSchema, body);
+  const { groupId, emailType, expertise } = await prepare({
+    user,
+    mailingId: request.mailingId,
+    scope: 'preheader',
+  });
+
+  let result;
+  try {
+    result = await skillInvocation.invoke({
+      skillId: 'redaction.pre-header',
+      featureType: AIFeatureTypes.TEXT_GENERATION,
+      invocationSource: 'text-generation.preheader',
+      groupId,
+      userId: user.id,
+      input: compact({
+        content: request.content,
+        subject: request.subject,
+        emailType,
+        currentPreheader: request.currentPreheader,
+        brief: request.brief,
+        avoid: request.avoid,
+        expertise: expertise.map(toSkillExpertise),
+      }),
+      expertiseConsumed: expertise.map(toConsumed),
+    });
+  } catch (err) {
+    throw toHttpError(err);
+  }
+
+  return screenProposals('preheader', result.output.proposals, {
+    sources: [
+      ...request.content.map((piece) => piece.text),
+      request.subject,
+      request.currentPreheader || '',
+    ],
+    avoid: request.avoid,
+  });
+}
+
+module.exports = { generateSubjects, generatePreheaders };

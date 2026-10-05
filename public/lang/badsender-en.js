@@ -429,6 +429,18 @@ module.exports = {
     'Saving refused: the custom CSS is over the maximum size.',
 
   // text generation (epic #1163)
+  'text-generation-applied-preheader': 'Preheader:',
+  'text-generation-applied-subject': 'Subject:',
+  'text-generation-long': 'long: its end will rarely be read',
+  'text-generation-short':
+    'short: some inboxes complete it with the start of the email',
+  'text-generation-copy-hint-preheader':
+    'This template has no editable preheader: copy a proposal and paste it in your sending platform.',
+  'text-generation-back': 'Back',
+  'text-generation-picked-subject': 'Picked subject: “__subject__”',
+  'text-generation-preheaders-title': 'Pick a preheader',
+  'text-generation-to-preheaders': 'Suggest preheaders',
+  'text-generation-apply-subject-only': 'Apply subject only',
   'text-generation-open': 'Generate subject and preheader',
   'text-generation-title': 'Subject and preheader',
   'text-generation-intro':
@@ -444,12 +456,12 @@ module.exports = {
     'Proposals set aside for breaking the copywriting rules: __count__.',
   'text-generation-none':
     'No proposal respected the copywriting rules. Ask for others.',
-  'text-generation-apply': 'Apply subject',
+  'text-generation-apply': 'Apply',
   'text-generation-copy': 'Copy',
   'text-generation-copied': 'Copied',
   'text-generation-copy-hint':
     "This email's subject is not managed in LePatron: copy a proposal and paste it in your sending platform.",
-  'text-generation-applied': 'Subject applied. It is saved with the email.',
+  'text-generation-applied': 'Applied. Save the email to keep it.',
   'text-generation-undo': 'Undo',
   'text-generation-close': 'Close',
   'text-generation-cancel': 'Cancel',
