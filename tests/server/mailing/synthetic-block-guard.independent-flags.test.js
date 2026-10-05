@@ -18,13 +18,11 @@ const {
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
-const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
-const builderBlock = (builderHtml) => ({
-  type: 'blockBuilderBlock',
-  builderHtml,
-});
-
-const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
+const {
+  htmlBlock,
+  builderBlock,
+  dataWith,
+} = require('./synthetic-blocks.fixtures.js');
 
 const brings = (data, previousData, flags) =>
   bringsDisallowedSyntheticHtml({ data, previousData, flags });
@@ -155,21 +153,16 @@ describe('already-stored markup is per block type', () => {
 describe('a stored builder block is its markup AND its state', () => {
   // Its markup is rebuilt from its state on save: keeping the stored markup
   // while changing the state is changing the block.
-  const withState = (builderHtml, builderState) => ({
-    type: 'blockBuilderBlock',
-    builderHtml,
-    builderState,
-  });
 
   it('grandfathers the stored pair', () => {
-    const stored = dataWith(withState('<p>b</p>', '{"v":1}'));
+    const stored = dataWith(builderBlock('<p>b</p>', '{"v":1}'));
 
     expect(brings(stored, stored, NEITHER)).toBe(false);
   });
 
   it('refuses the stored markup next to another state', () => {
-    const stored = dataWith(withState('<p>b</p>', '{"v":1}'));
-    const next = dataWith(withState('<p>b</p>', '{"v":1,"x":2}'));
+    const stored = dataWith(builderBlock('<p>b</p>', '{"v":1}'));
+    const next = dataWith(builderBlock('<p>b</p>', '{"v":1,"x":2}'));
 
     expect(brings(next, stored, NEITHER)).toBe(true);
   });

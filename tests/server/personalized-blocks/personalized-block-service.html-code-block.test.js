@@ -31,7 +31,10 @@ const TEMPLATE = '507f1f77bcf86cd799439002';
 const USER = '507f1f77bcf86cd799439003';
 const BLOCK = '507f1f77bcf86cd799439004';
 
-const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
+const {
+  htmlBlock,
+  builderBlock,
+} = require('../mailing/synthetic-blocks.fixtures.js');
 const lean = (value) => ({
   select: () => ({ lean: () => Promise.resolve(value) }),
 });
@@ -148,11 +151,7 @@ describe('personalized blocks — sizes and composed markup', () => {
   });
 
   it('refuses an oversized composed state', async () => {
-    const content = {
-      type: 'blockBuilderBlock',
-      builderHtml: '',
-      builderState: 'x'.repeat(200001),
-    };
+    const content = builderBlock('', 'x'.repeat(200001));
 
     await expect(
       service.addPersonalizedBlock(
@@ -169,11 +168,7 @@ describe('personalized blocks — sizes and composed markup', () => {
 
   it('stores the markup the state generates, not the one sent', async () => {
     Templates.findById.mockReturnValue(lean({ blockBuilderEnabled: true }));
-    const content = {
-      type: 'blockBuilderBlock',
-      builderHtml: '<p>autre chose</p>',
-      builderState,
-    };
+    const content = builderBlock('<p>autre chose</p>', builderState);
 
     await service.addPersonalizedBlock(
       { name: 'n', content },

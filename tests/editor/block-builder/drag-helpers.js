@@ -3,21 +3,21 @@
  *
  * Not a test file — no `.test.js`, so Jest's default match leaves it alone.
  *
- * It exists because every one of them needs the same scaffolding: mounting the
- * modal, opening it on a pair of accessors, faking a DataTransfer, giving
- * jsdom's zero-height rows a box to measure. Written out once per file, that
+ * It exists because every one of them needs the same scaffolding: opening the
+ * modal and composing in it, faking a DataTransfer, giving jsdom's
+ * zero-height rows a box to measure. Written out once per file, that
  * was enough duplication to fail the quality gate — and rightly: the
  * scaffolding is not the test, and having it three times means a fix to the
- * fake lands in one file and not the others.
+ * fake lands in one file and not the others. For the same reason the modal is
+ * mounted, opened and destroyed by modal-helpers.js, as for every other modal
+ * test.
  */
 
 'use strict';
 
 const Vue = require('vue/dist/vue.common');
 
-const {
-  BlockBuilderModalComponent,
-} = require('../../../packages/editor/src/js/vue/components/block-builder-modal/block-builder-modal.js');
+const { open, unmountAll } = require('./modal-helpers.js');
 const {
   ELEMENT_ATTRIBUTE,
 } = require('../../../packages/shared/block-builder/generate.js');
@@ -33,28 +33,6 @@ const EMPTY_DROP_ID = 'lp-bb-empty-drop';
 
 // The palette's order, which is what indexes an entry in the DOM.
 const PALETTE_TYPES = ['text', 'image', 'button', 'divider', 'spacer'];
-
-// Every app openModal mounted, so a test can destroy them: a drag left running
-// by one test would otherwise keep its page listeners into the next.
-const mounted = [];
-
-/** Destroys what openModal mounted, and empties the page. */
-function unmountAll() {
-  mounted.splice(0).forEach((app) => app.$destroy());
-  document.body.innerHTML = '';
-}
-
-/**
- * A stand-in for a Knockout observable: reads with no argument, writes with one.
- */
-function accessorOf(initial) {
-  let value = initial === undefined ? '' : initial;
-  return (next) => {
-    if (next === undefined) return value;
-    value = next;
-    return value;
-  };
-}
 
 /**
  * A stand-in for the DataTransfer the browser hands a real drag.
@@ -88,31 +66,9 @@ const transfer = () => ({
  * @returns {Promise<{modal: Object, doc: Document, markup: Function}>}
  */
 async function openModal(types) {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-
-  const app = new Vue({
-    el: host,
-    components: { BlockBuilderModal: BlockBuilderModalComponent },
-    data: {
-      vm: {
-        t: (key) => key,
-        startMultiple: jest.fn(),
-        stopMultiple: jest.fn(),
-      },
-    },
-    template: '<block-builder-modal :vm="vm" />',
-  });
-  mounted.push(app);
-
-  const modal = app.$children[0];
-  // Kept, so a test can read back what Apply wrote: the modal forgets its
-  // accessors as it closes.
-  const markup = accessorOf('');
-  modal.handleToggle(true, {
-    accessor: markup,
-    stateAccessor: accessorOf(''),
-  });
+  // The markup accessor is kept, so a test can read back what Apply wrote: the
+  // modal forgets its accessors as it closes.
+  const { modal, accessor: markup } = open();
   await Vue.nextTick();
 
   (types || []).forEach((type) => modal.addElement(type));
@@ -230,7 +186,6 @@ const typesOf = (modal) => modal.state.elements.map((element) => element.type);
 module.exports = {
   openModal,
   unmountAll,
-  accessorOf,
   transfer,
   rowsOf,
   rowOf,

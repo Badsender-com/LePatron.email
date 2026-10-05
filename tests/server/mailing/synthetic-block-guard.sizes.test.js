@@ -16,14 +16,12 @@ const {
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
-const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
-const builderBlock = (builderHtml, builderState) => ({
-  type: 'blockBuilderBlock',
-  builderHtml,
-  builderState,
-});
-const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
-const longerThan = (limit) => 'x'.repeat(limit + 1);
+const {
+  htmlBlock,
+  builderBlock,
+  dataWith,
+  longerThan,
+} = require('./synthetic-blocks.fixtures.js');
 
 describe('findOversizedSyntheticBlock', () => {
   it('finds nothing in a mailing within the limits', () => {

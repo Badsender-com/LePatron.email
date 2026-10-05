@@ -6,8 +6,7 @@ const {
   HTML_CODE_MAX_LENGTH,
 } = require('../../../packages/server/mailing/synthetic-block-guard.js');
 
-const htmlBlock = (html) => ({ type: 'htmlCodeBlock', htmlCode: html });
-const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
+const { htmlBlock, dataWith } = require('./synthetic-blocks.fixtures.js');
 
 describe('html code block guard', () => {
   describe('findLongestSyntheticBlock', () => {
