@@ -5,7 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { Roles } from '~/helpers/constants/roles';
-import { superAdminErrorKey } from '~/helpers/super-admin-errors.js';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsUsersTable from '~/components/users/table.vue';
@@ -30,6 +30,8 @@ export default {
   },
   async asyncData({ $axios }) {
     try {
+      // The groups listing is the one the company switcher already loads
+      // for a super admin; the platform group is the one flagged in it.
       const [usersResponse, groupsResponse] = await Promise.all([
         $axios.$get(apiRoutes.users(), {
           params: { role: Roles.SUPER_ADMIN },
@@ -40,18 +42,21 @@ export default {
         superAdmins: usersResponse.items,
         platformGroup:
           groupsResponse.items.find((group) => group.isPlatform) || null,
+        loadError: false,
       };
     } catch (error) {
       console.error(error);
-      return { superAdmins: [], platformGroup: null };
+      return { superAdmins: [], platformGroup: null, loadError: true };
     }
   },
   data() {
     return {
       superAdmins: [],
       platformGroup: null,
+      loadError: false,
       members: [],
       loading: false,
+      membersLoading: false,
       modalLoading: false,
     };
   },
@@ -62,6 +67,9 @@ export default {
     title() {
       return this.$t('superAdmins.pageTitle');
     },
+    canAct() {
+      return !this.loadError && !!this.platformGroup;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -70,7 +78,7 @@ export default {
     },
     async openPromoteModal() {
       try {
-        this.loading = true;
+        this.membersLoading = true;
         const response = await this.$axios.$get(
           apiRoutes.groupsItemUsers({ groupId: this.platformGroup.id })
         );
@@ -79,7 +87,7 @@ export default {
       } catch (error) {
         this.notifyError(error);
       } finally {
-        this.loading = false;
+        this.membersLoading = false;
       }
     },
     async createSuperAdmin(user) {
@@ -104,11 +112,9 @@ export default {
     async promoteMember(userId) {
       try {
         this.modalLoading = true;
-        await this.$axios.$put(apiRoutes.usersItem({ userId }), {
-          role: Roles.SUPER_ADMIN,
-        });
-        const promoted = await this.$axios.$get(
-          apiRoutes.usersItem({ userId })
+        const promoted = await this.$axios.$put(
+          apiRoutes.usersItem({ userId }),
+          { role: Roles.SUPER_ADMIN }
         );
         this.superAdmins = [promoted, ...this.superAdmins];
         this.$refs.promoteModal.close();
@@ -122,21 +128,17 @@ export default {
         this.modalLoading = false;
       }
     },
-    // BsUsersTable emits `update` both for its loading state and for a user
-    // changed by a row action.
-    onTableUpdate(payload) {
-      if (typeof payload === 'boolean') {
-        this.loading = payload;
-        return;
-      }
+    onUserUpdated(updated) {
       const index = this.superAdmins.findIndex(
-        (user) => user.id === payload.id
+        (user) => user.id === updated.id
       );
-      if (index !== -1) this.$set(this.superAdmins, index, payload);
+      if (index !== -1) this.$set(this.superAdmins, index, updated);
     },
     notifyError(error) {
-      const key = superAdminErrorKey(error) || 'global.errors.errorOccured';
-      this.showSnackbar({ text: this.$t(key), color: 'error' });
+      this.showSnackbar({
+        text: superAdminErrorMessage(this, error),
+        color: 'error',
+      });
       console.error(error);
     },
   },
@@ -154,9 +156,10 @@ export default {
       </template>
       <template #actions>
         <v-btn
-          text
+          outlined
           color="primary"
-          :disabled="!platformGroup || loading"
+          :disabled="!canAct"
+          :loading="membersLoading"
           @click="openPromoteModal"
         >
           <lucide-user-plus :size="18" class="mr-2" />
@@ -165,23 +168,26 @@ export default {
         <v-btn
           color="accent"
           elevation="0"
-          :disabled="!platformGroup"
+          :disabled="!canAct"
           @click="openCreateModal"
         >
           <lucide-plus :size="18" class="mr-2" />
-          {{ $t('global.add') }}
+          {{ $t('superAdmins.add') }}
         </v-btn>
       </template>
     </bs-page-header>
     <v-container fluid>
-      <v-alert v-if="!platformGroup" type="warning" outlined text>
+      <v-alert v-if="loadError" type="error" outlined text>
+        {{ $t('superAdmins.loadError') }}
+      </v-alert>
+      <v-alert v-else-if="!platformGroup" type="warning" outlined text>
         {{ $t('superAdmins.noPlatformGroup') }}
       </v-alert>
       <bs-users-table
+        v-model="loading"
         :users="superAdmins"
-        :loading="loading"
         :hidden-cols="['group', 'role']"
-        @update="onTableUpdate"
+        @update="onUserUpdated"
       />
       <bs-modal-create-super-admin
         ref="createModal"

@@ -50,7 +50,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import { Shield, Sparkles, FlaskConical } from 'lucide-vue';
+import { Shield, Sparkles, FlaskConical, UserCog } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
@@ -59,6 +59,7 @@ export default {
     LucideShield: Shield,
     LucideSparkles: Sparkles,
     LucideFlaskConical: FlaskConical,
+    LucideUserCog: UserCog,
   },
   props: {
     collapsed: {
@@ -114,7 +115,7 @@ export default {
             {
               id: 'super-admins',
               label: this.$t('superAdmins.pageTitle'),
-              icon: 'mdi-shield-account-outline',
+              iconComponent: 'LucideUserCog',
               route: '/super-admins',
               superAdminOnly: true,
               activePatterns: ['/super-admins'],

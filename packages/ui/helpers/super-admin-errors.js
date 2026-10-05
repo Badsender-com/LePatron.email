@@ -1,27 +1,26 @@
-// The refusals of the super admin guardrails (ADR 0002) each carry their own
-// error code, sent back as the `message` of the API error. The screens show
-// the matching translation instead of the generic "an error occurred".
+// Turn a refusal of the super admin guardrails (ADR 0002) into a sentence
+// in the user's language.
+//
+// The server sends identifiers, not prose: the error's `message` is an
+// ERROR_CODES entry. The wording lives in the locales, under
+// `superAdmins.errors.*`. `vm` is the component instance (for $t).
 
-const SUPER_ADMIN_ERROR_CODES = [
-  'FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE',
-  'FORBIDDEN_SUPER_ADMIN_MANAGEMENT',
-  'FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION',
-  'FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION',
-  'LAST_SUPER_ADMIN_PROTECTED',
-  'SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP',
-  'PLATFORM_GROUP_NOT_FOUND',
-  'PLATFORM_GROUP_HAS_SUPER_ADMINS',
-  'INVALID_ROLE_PARAM',
-];
+import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 
 /**
- * @param {Error} error an axios error
- * @returns {string|null} the i18n key of the refusal, or null when the error
- *   is not one of the super admin guardrails
+ * @param {Object} vm component instance
+ * @param {Error} err an axios error
+ * @returns {string} the translated refusal, or the generic fallback when the
+ *   error is not one of the super admin guardrails
  */
-export function superAdminErrorKey(error) {
-  const code = error?.response?.data?.message;
-  return SUPER_ADMIN_ERROR_CODES.includes(code)
-    ? `superAdmins.errors.${code}`
-    : null;
+export function superAdminErrorMessage(vm, err) {
+  const code =
+    err && err.response && err.response.data && err.response.data.message;
+  if (code && ERROR_CODES[code] === code) {
+    const key = `superAdmins.errors.${code}`;
+    const label = vm.$t(key);
+    // vue-i18n echoes the key back when there is no entry for it.
+    if (label !== key) return label;
+  }
+  return vm.$t('global.errors.errorOccured');
 }

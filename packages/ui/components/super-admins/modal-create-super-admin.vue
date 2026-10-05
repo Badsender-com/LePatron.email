@@ -1,7 +1,7 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
-import BsModalConfirm from '~/components/modal-confirm';
+import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 
@@ -9,7 +9,7 @@ const emptyUser = () => ({ email: '', name: '', lang: 'fr' });
 
 export default {
   name: 'BsModalCreateSuperAdmin',
-  components: { BsModalConfirm, BsTextField, BsSelect },
+  components: { BsModalForm, BsTextField, BsSelect },
   mixins: [validationMixin],
   supportedLanguages: [
     { text: 'English', value: 'en' },
@@ -66,75 +66,50 @@ export default {
 </script>
 
 <template>
-  <bs-modal-confirm
+  <bs-modal-form
     ref="modal"
     :title="$t('superAdmins.add')"
-    :is-form="true"
-    modal-width="600"
+    :submit-label="$t('global.create')"
+    :loading="loading"
+    width="600"
+    @submit="onSubmit"
   >
-    <v-form @submit.prevent="onSubmit">
-      <p class="text-body-2 text--secondary">
-        {{ $t('superAdmins.addDescription') }}
-      </p>
-      <v-row>
-        <v-col cols="12" md="6">
-          <bs-text-field
-            v-model="user.email"
-            :label="$t('users.email')"
-            type="email"
-            required
-            :error-messages="emailErrors"
-            :disabled="loading"
-            autofocus
-            @input="$v.user.email.$touch()"
-            @blur="$v.user.email.$touch()"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <bs-text-field
-            v-model="user.name"
-            :label="$t('forms.user.name')"
-            required
-            :error-messages="nameErrors"
-            :disabled="loading"
-            @input="$v.user.name.$touch()"
-            @blur="$v.user.name.$touch()"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <bs-select
-            v-model="user.lang"
-            :label="$t('users.lang')"
-            :items="$options.supportedLanguages"
-            :disabled="loading"
-          />
-        </v-col>
-      </v-row>
-      <v-divider class="mt-4" />
-      <div class="modal-actions">
-        <v-btn text color="primary" :disabled="loading" @click="close">
-          {{ $t('global.cancel') }}
-        </v-btn>
-        <v-btn
-          type="submit"
-          color="accent"
-          elevation="0"
-          :loading="loading"
+    <p class="text-caption text--secondary">
+      {{ $t('superAdmins.addDescription') }}
+    </p>
+    <v-row>
+      <v-col cols="12" md="6">
+        <bs-text-field
+          v-model="user.email"
+          :label="$t('users.email')"
+          type="email"
+          required
+          :error-messages="emailErrors"
           :disabled="loading"
-        >
-          {{ $t('global.create') }}
-        </v-btn>
-      </div>
-    </v-form>
-  </bs-modal-confirm>
+          autofocus
+          @input="$v.user.email.$touch()"
+          @blur="$v.user.email.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <bs-text-field
+          v-model="user.name"
+          :label="$t('forms.user.name')"
+          required
+          :error-messages="nameErrors"
+          :disabled="loading"
+          @input="$v.user.name.$touch()"
+          @blur="$v.user.name.$touch()"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <bs-select
+          v-model="user.lang"
+          :label="$t('users.lang')"
+          :items="$options.supportedLanguages"
+          :disabled="loading"
+        />
+      </v-col>
+    </v-row>
+  </bs-modal-form>
 </template>
-
-<style scoped>
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0;
-}
-</style>
