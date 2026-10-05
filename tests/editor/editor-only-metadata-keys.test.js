@@ -11,12 +11,15 @@ const {
 } = require('../../packages/editor/src/js/utils/editor-only-metadata-keys.js');
 
 describe('EDITOR_ONLY_METADATA_KEYS', () => {
-  it.each(['urlConverter', 'template', 'emailMetadata', 'emailMetadataConfig'])(
-    'excludes %s',
-    (key) => {
-      expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
-    }
-  );
+  it.each([
+    'urlConverter',
+    'template',
+    'emailMetadata',
+    'emailMetadataConfig',
+    'headCss',
+  ])('excludes %s', (key) => {
+    expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
+  });
 
   it('leaves everything the server does read', () => {
     const metadata = {
@@ -27,6 +30,7 @@ describe('EDITOR_ONLY_METADATA_KEYS', () => {
       template: '/api/templates/x/markup',
       emailMetadata: { subject: 'Soldes' },
       emailMetadataConfig: { emailTypes: [{ id: 'a', label: 'Infolettre' }] },
+      headCss: '.stale{}',
     };
 
     const sent = _omit(metadata, EDITOR_ONLY_METADATA_KEYS);

@@ -7,11 +7,12 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   PersonalizedBlocks: {
     create: jest.fn(),
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
+    findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    deleteOne: jest.fn(),
   },
   Users: {},
-  Templates: { findById: jest.fn() },
+  Templates: { findById: jest.fn(), findOne: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger', () => ({
   log: jest.fn(),
@@ -30,7 +31,10 @@ const TEMPLATE = '507f1f77bcf86cd799439002';
 const USER = '507f1f77bcf86cd799439003';
 const BLOCK = '507f1f77bcf86cd799439004';
 
-const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
+const {
+  htmlBlock,
+  builderBlock,
+} = require('../mailing/synthetic-blocks.fixtures.js');
 const lean = (value) => ({
   select: () => ({ lean: () => Promise.resolve(value) }),
 });
@@ -38,9 +42,11 @@ const lean = (value) => ({
 beforeEach(() => {
   jest.resetAllMocks();
   PersonalizedBlocks.create.mockImplementation(async (doc) => doc);
-  PersonalizedBlocks.findByIdAndUpdate.mockImplementation(
-    async (id, doc) => doc
+  PersonalizedBlocks.findOneAndUpdate.mockImplementation(
+    async (filter, doc) => doc
   );
+  // The template belongs to the group, unless a test says otherwise.
+  Templates.findOne.mockReturnValue(lean({ _id: TEMPLATE }));
 });
 
 describe('personalized blocks — the HTML code block flag', () => {
@@ -84,7 +90,7 @@ describe('personalized blocks — the HTML code block flag', () => {
   });
 
   it('refuses new markup on update, against the stored block template', async () => {
-    PersonalizedBlocks.findById.mockReturnValue(
+    PersonalizedBlocks.findOne.mockReturnValue(
       lean({ content: htmlBlock('<p>stored</p>'), _template: TEMPLATE })
     );
     Templates.findById.mockReturnValue(lean({ htmlBlockEnabled: false }));
@@ -95,11 +101,11 @@ describe('personalized blocks — the HTML code block flag', () => {
       })
     ).rejects.toMatchObject({ status: 403 });
     expect(Templates.findById).toHaveBeenCalledWith(TEMPLATE);
-    expect(PersonalizedBlocks.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(PersonalizedBlocks.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it('keeps accepting a rename of a block whose markup is unchanged', async () => {
-    PersonalizedBlocks.findById.mockReturnValue(
+    PersonalizedBlocks.findOne.mockReturnValue(
       lean({ content: htmlBlock('<p>stored</p>'), _template: TEMPLATE })
     );
     Templates.findById.mockReturnValue(lean({ htmlBlockEnabled: false }));
@@ -109,6 +115,69 @@ describe('personalized blocks — the HTML code block flag', () => {
       content: htmlBlock('<p>stored</p>'),
     });
 
-    expect(PersonalizedBlocks.findByIdAndUpdate).toHaveBeenCalled();
+    expect(PersonalizedBlocks.findOneAndUpdate).toHaveBeenCalled();
+  });
+});
+
+describe('personalized blocks — sizes and composed markup', () => {
+  const {
+    generate,
+    emptyState,
+  } = require('../../../packages/shared/block-builder/generate.js');
+  const {
+    serialiseState,
+    parseState,
+  } = require('../../../packages/shared/block-builder/state.js');
+
+  const builderState = serialiseState({
+    ...emptyState(),
+    elements: [{ id: 'el-1', type: 'text', content: 'Bonjour' }],
+  });
+
+  it('refuses an oversized HTML code block before loading anything', async () => {
+    await expect(
+      service.addPersonalizedBlock(
+        { name: 'n', content: htmlBlock('x'.repeat(100001)) },
+        GROUP,
+        TEMPLATE,
+        USER
+      )
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'HTML_CODE_BLOCK_TOO_LARGE',
+    });
+    expect(Templates.findById).not.toHaveBeenCalled();
+    expect(PersonalizedBlocks.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses an oversized composed state', async () => {
+    const content = builderBlock('', 'x'.repeat(200001));
+
+    await expect(
+      service.addPersonalizedBlock(
+        { name: 'n', content },
+        GROUP,
+        TEMPLATE,
+        USER
+      )
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'BLOCK_BUILDER_TOO_LARGE',
+    });
+  });
+
+  it('stores the markup the state generates, not the one sent', async () => {
+    Templates.findById.mockReturnValue(lean({ blockBuilderEnabled: true }));
+    const content = builderBlock('<p>autre chose</p>', builderState);
+
+    await service.addPersonalizedBlock(
+      { name: 'n', content },
+      GROUP,
+      TEMPLATE,
+      USER
+    );
+
+    const [[saved]] = PersonalizedBlocks.create.mock.calls;
+    expect(saved.content.builderHtml).toBe(generate(parseState(builderState)));
   });
 });

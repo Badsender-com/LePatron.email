@@ -18,3 +18,10 @@ packages/documentation/.vuepress/dist/
 packages/documentation/api/
 
 !packages/editor/src/js/vue/*
+# Vue 3 SFC, compiled at build time by scripts/compile-block-builder-components.js.
+# The project's eslint is configured for Vue 2 and cannot parse <script setup>.
+packages/shared/block-builder/components/*.vue
+
+# And its output. `eslint --fix` would rewrite the quoting of a generated file
+# and the golden test would then fail on something nobody edited.
+packages/shared/block-builder/components/*.compiled.js

@@ -106,10 +106,15 @@ Vignette de palette : **icône + libellé i18n**, pas de PNG.
 ### 4.1 Injection inconditionnelle du bloc, côté client
 
 Dans `packages/editor/src/js/template-loader.js`, branche `process.env.BADSENDER`,
-`onSuccess(templatecode)` (~ligne 255) — avant `templateCompiler` :
+`onSuccess(templatecode)` (~ligne 265) — le template n'atteint `templateCompiler`
+qu'une fois injecté :
 
 ```js
-templatecode = injectHtmlCodeBlock(templatecode);
+templateCompiler(
+  /* … */
+  syntheticBlockInjector.injectSyntheticBlocks(templatecode)
+  /* … */
+);
 ```
 
 Fonction **pure** (string → string) qui ajoute :
@@ -327,7 +332,7 @@ ramène tout à un vrai booléen avant.
 
 **Le flag est appliqué côté serveur.** La définition du bloc étant injectée dans tous les
 templates, le flag ne masquait que la palette : une requête écrite à la main ajoutait le
-bloc n'importe où. `mailing/html-code-block-guard.js` refuse (403
+bloc n'importe où. `mailing/synthetic-block-guard.js` refuse (403
 `HTML_CODE_BLOCK_DISABLED`), quand le template n'a pas le flag, tout code HTML que le
 mailing ne contenait pas déjà **mot pour mot** — sur `PUT /mailings/:id/mosaico` et sur la
 création / modification de blocs personnalisés. Le code déjà stocké reste accepté : une
@@ -449,23 +454,24 @@ Retours de review, corrigés dans la PR :
 
 ### Fichiers principaux
 
-| Rôle                         | Fichier                                                                    |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| Constantes partagées         | `packages/editor/src/js/ext/html-code-block/constants.js`                  |
-| Injection + ordre palette    | `packages/editor/src/js/ext/html-code-block/inject-html-code-block.js`     |
-| Neutralisation aperçu canvas | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
-| Zone protégée inliner        | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
-| Limite de taille (éditeur)   | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
-| Prédicats d'état d'un bloc   | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
-| Retrait d'un bloc vide       | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
-| Substitution à l'export      | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
-| Garde de traduction          | `packages/server/translation/html-code-block-protection.js`                |
-| Binding de rendu             | `packages/editor/src/js/bindings/html-code-block.js`                       |
-| Widget `code`                | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
-| Modale CodeMirror            | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
-| Limite de taille (serveur)   | `packages/server/mailing/html-code-block-guard.js`                         |
-| Sanitizer d'aperçu           | `packages/server/utils/preview-html-sanitizer.js`                          |
-| Payloads de caractérisation  | `tests/fixtures/esp-payloads.js`                                           |
+| Rôle                          | Fichier                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| Descripteurs des blocs        | `packages/shared/synthetic-blocks.js` (éditeur et serveur)                 |
+| Constantes dérivées (éditeur) | `packages/editor/src/js/ext/html-code-block/constants.js`                  |
+| Injection + ordre palette     | `packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js`    |
+| Neutralisation aperçu canvas  | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
+| Zone protégée inliner         | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
+| Limite de taille (éditeur)    | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
+| Prédicats d'état d'un bloc    | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
+| Retrait d'un bloc vide        | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
+| Substitution à l'export       | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
+| Garde de traduction           | `packages/server/translation/html-code-block-protection.js`                |
+| Binding de rendu              | `packages/editor/src/js/bindings/html-code-block.js`                       |
+| Widget `code`                 | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
+| Modale CodeMirror             | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
+| Limite de taille (serveur)    | `packages/server/mailing/synthetic-block-guard.js`                         |
+| Sanitizer d'aperçu            | `packages/server/utils/preview-html-sanitizer.js`                          |
+| Payloads de caractérisation   | `tests/fixtures/esp-payloads.js`                                           |
 
 ### Points d'accroche dans le code existant
 

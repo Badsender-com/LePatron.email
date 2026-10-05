@@ -1,6 +1,9 @@
 'use strict';
 
-const { HTML_CODE_MAX_LENGTH } = require('./constants.js');
+const {
+  HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
+} = require('./constants.js');
 
 /**
  * Size guard for the pasted markup.
@@ -22,4 +25,22 @@ function validateHtmlCodeLength(html, maxLength) {
   return { valid: length <= limit, length, maxLength: limit };
 }
 
-module.exports = { validateHtmlCodeLength };
+/**
+ * The same guard for a composition, which stores its state next to its markup:
+ * the server bounds both (mailing/synthetic-block-guard.js), so an oversized
+ * one applied here would fail every autosave after it.
+ *
+ * @param {string} html the generated markup
+ * @param {string} state the serialised state
+ * @returns {{ valid: boolean }}
+ */
+function validateBlockBuilderLength(html, state) {
+  const stateLength = typeof state === 'string' ? state.length : 0;
+  return {
+    valid:
+      validateHtmlCodeLength(html).valid &&
+      stateLength <= BUILDER_STATE_MAX_LENGTH,
+  };
+}
+
+module.exports = { validateHtmlCodeLength, validateBlockBuilderLength };

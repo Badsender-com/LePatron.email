@@ -8,6 +8,9 @@ const {
   isEmailAddress,
 } = require('../../../packages/server/translation/mosaico-text-extractor');
 
+const SHARED = '../../../packages/shared/synthetic-blocks.js';
+const { SYNTHETIC_BLOCKS } = require(SHARED);
+
 describe('MosaicoTextExtractor', () => {
   describe('isTranslatableFieldName', () => {
     it('should return true for text fields', () => {
@@ -34,9 +37,41 @@ describe('MosaicoTextExtractor', () => {
     });
 
     // The HTML code block's whole promise is that its markup is never altered;
-    // handing it to the LLM would have it rewritten.
-    it('should return false for the HTML code block markup', () => {
-      expect(isTranslatableFieldName('htmlCode')).toBe(false);
+    // handing it to the LLM would have it rewritten. Same promise for a
+    // composed block, translated through its state's own texts instead.
+    // Driven off the shared table: a property renamed there must stay
+    // excluded here.
+    it.each(
+      SYNTHETIC_BLOCKS.reduce(
+        (fields, block) =>
+          fields.concat(
+            [block.htmlProperty, block.stateProperty]
+              .filter(Boolean)
+              .map((field) => [block.type, field])
+          ),
+        []
+      )
+    )('should return false for the %s field %s', (_type, field) => {
+      expect(isTranslatableFieldName(field)).toBe(false);
+    });
+
+    // `htmlContent` matches /content$/: excluded only because the table says
+    // it is a block's markup, which is exactly what a rename would test.
+    it('should follow a property renamed in the shared table', () => {
+      jest.isolateModules(() => {
+        jest.doMock(SHARED, () => {
+          const actual = jest.requireActual(SHARED);
+          return {
+            ...actual,
+            SYNTHETIC_BLOCKS: [
+              { ...actual.HTML_CODE_BLOCK, htmlProperty: 'htmlContent' },
+            ],
+          };
+        });
+        const extractor = require('../../../packages/server/translation/mosaico-text-extractor');
+        expect(extractor.isTranslatableFieldName('htmlContent')).toBe(false);
+        expect(extractor.isTranslatableFieldName('bodyContent')).toBe(true);
+      });
     });
 
     it('should return false for URL fields', () => {

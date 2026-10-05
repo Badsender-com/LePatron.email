@@ -26,12 +26,16 @@ const currentMailing = require('./badsender-current-mailing.js');
 const contentFeedMappings = require('./badsender-content-feed-mappings.js');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
+const {
+  headCssPreviewPlugin,
+} = require('./head-css/canvas-preview.js');
 const comments = require('./badsender-comments.js');
 
 // widgets
 // https://github.com/voidlabs/mosaico/wiki/Mosaico-Plugins#widget-plugins
 var widgetBgImage = require('./badsender-widget-bgimage');
 var widgetCode = require('./badsender-widget-code');
+var widgetBlockBuilder = require('./badsender-widget-block-builder');
 
 function editorIcon(opts) {
   const { editorIcon } = opts.metadata;
@@ -80,11 +84,13 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
+  customExtensions.push(headCssPreviewPlugin);
   customExtensions.push(comments(opts));
   // widget should be differentiating of VM extensions by
   // template-loader.js#pluginsCall
   customExtensions.push(widgetBgImage(opts));
   customExtensions.push(widgetCode(opts));
+  customExtensions.push(widgetBlockBuilder(opts));
   // fix duplicated blocks items
   customExtensions.push(selectItem);
 

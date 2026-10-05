@@ -1,6 +1,8 @@
 'use strict';
 
-// PUT /mailings/:mailingId/mosaico is where the HTML code block becomes content.
+// PUT /mailings/:mailingId/mosaico is where the HTML code block becomes
+// content; the head CSS written to style it has its own file
+// (mailing.controller.head-css.test.js).
 // The editor hides the block when the template flag is off, but the block
 // definition is injected into every template, so a hand-written request could
 // add one anywhere: this endpoint is the gate. It must also keep every existing
@@ -9,88 +11,25 @@
 // GET /mailings/:mailingId/preview serves previewHtml as text/html: scoped to
 // the reader's company and workspace, and sandboxed.
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Mailings: { findOne: jest.fn(), findOneForMosaico: jest.fn() },
-  Templates: { findById: jest.fn() },
-  Galleries: {},
-  Users: {},
-}));
-jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
-  assertUserCanEditMailing: jest.fn(),
-  previewMail: jest.fn(),
-}));
-jest.mock(
-  '../../../packages/server/mailing/send-test-mail.controller.js',
-  () => ({})
-);
-jest.mock(
-  '../../../packages/server/mailing/download-zip.controller.js',
-  () => ({})
-);
-jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
-
 const {
-  Mailings,
   Templates,
-} = require('../../../packages/server/common/models.common.js');
-const mailingService = require('../../../packages/server/mailing/mailing.service.js');
-const controller = require('../../../packages/server/mailing/mailing.controller.js');
+  mailingService,
+  controller,
+  MAILING_ID,
+  user,
+  mockMailing,
+  mockFlags,
+  save,
+  resetMocks,
+} = require('./update-mosaico.harness.js');
+const { htmlBlock, dataWith } = require('./synthetic-blocks.fixtures.js');
 const {
   PREVIEW_HTML_MAX_LENGTH,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');
 
-const MAILING_ID = '507f1f77bcf86cd799439001';
-const TEMPLATE_ID = '507f1f77bcf86cd799439002';
-const user = {
-  id: 'user-1',
-  isAdmin: false,
-  lang: 'fr',
-  group: { id: '507f1f77bcf86cd799439003' },
-};
+const mockTemplateFlag = (htmlBlockEnabled) => mockFlags({ htmlBlockEnabled });
 
-const htmlBlock = (htmlCode) => ({ type: 'htmlCodeBlock', htmlCode });
-const dataWith = (...blocks) => ({ mainBlocks: { blocks } });
-
-function mockMailing(storedData) {
-  const mailing = {
-    _id: MAILING_ID,
-    _wireframe: TEMPLATE_ID,
-    data: storedData,
-    save: jest.fn().mockResolvedValue(undefined),
-    markModified: jest.fn(),
-  };
-  Mailings.findOne.mockResolvedValue(mailing);
-  return mailing;
-}
-
-function mockTemplateFlag(htmlBlockEnabled) {
-  Templates.findById.mockReturnValue({
-    select: () => ({ lean: () => Promise.resolve({ htmlBlockEnabled }) }),
-  });
-}
-
-// Resolves with the error passed to `next`, or null when the request succeeded.
-function save(body) {
-  return new Promise((resolve) => {
-    const res = { json: () => resolve(null) };
-    controller.updateMosaico(
-      { params: { mailingId: MAILING_ID }, body, user },
-      res,
-      resolve
-    );
-  });
-}
-
-beforeEach(() => {
-  jest.resetAllMocks();
-  mailingService.assertUserCanEditMailing.mockResolvedValue(undefined);
-  Mailings.findOneForMosaico.mockResolvedValue({});
-});
+beforeEach(resetMocks);
 
 describe('PUT /mailings/:mailingId/mosaico — the template flag', () => {
   it('accepts a new HTML code block when the template enables it', async () => {
@@ -157,13 +96,20 @@ describe('PUT /mailings/:mailingId/mosaico — the template flag', () => {
 });
 
 describe('PUT /mailings/:mailingId/mosaico — sizes', () => {
-  it('refuses an oversized HTML code block', async () => {
+  // Each block is refused in its own name: a composer told their HTML code
+  // block is too large, when they have none, has nothing to act on.
+  it.each([
+    ['HTML code block', 'htmlCode', 'HTML_CODE_BLOCK_TOO_LARGE'],
+    ['composed block', 'builderHtml', 'BLOCK_BUILDER_TOO_LARGE'],
+  ])('refuses an oversized %s', async (_label, property, code) => {
     mockMailing(dataWith());
-    mockTemplateFlag(true);
+    const type =
+      property === 'htmlCode' ? 'htmlCodeBlock' : 'blockBuilderBlock';
+    const block = { type, [property]: 'x'.repeat(100001) };
 
-    const error = await save({ data: dataWith(htmlBlock('x'.repeat(100001))) });
-
-    expect(error).toMatchObject({ message: 'HTML_CODE_BLOCK_TOO_LARGE' });
+    expect(await save({ data: dataWith(block) })).toMatchObject({
+      message: code,
+    });
   });
 
   // previewHtml is sanitized each time it is served; unbounded, it was an easy
