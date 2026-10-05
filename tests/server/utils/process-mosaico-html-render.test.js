@@ -60,3 +60,41 @@ describe('processMosaicoHtmlRender', () => {
     expect(out).toContain('/* href="&amp;" */');
   });
 });
+
+describe('processMosaicoHtmlRender — stylesheets', () => {
+  // Entities are not decoded inside <style>: encoded, `content:"→"` showed the
+  // entity and an accented font name matched nothing.
+  it('leaves the characters of a stylesheet as written', () => {
+    const css = '.a::before{content:"→"} .b{font-family:"Hélvetica"}';
+    const out = processMosaicoHtmlRender(
+      doc(`<style>${css}</style>`, '<p>é</p>')
+    );
+
+    expect(out).toContain(`<style>${css}</style>`);
+    // The markup around it is still encoded.
+    expect(out).toContain('<p>&#233;</p>');
+  });
+
+  it('treats the rest as markup when a <style> is never closed', () => {
+    const out = processMosaicoHtmlRender(
+      doc('', '<style><a href="a&amp;b">é</a>')
+    );
+
+    expect(out).toContain('href="a&b"');
+    expect(out).toContain('&#233;');
+  });
+
+  // One pass over the document: an unclosed opening does not send the scan
+  // back to the end of the input.
+  it.each([
+    ['unclosed openings', '<style a'],
+    ['openings never closed', '<style>'],
+  ])('stays linear on %s', (_label, unit) => {
+    const html = unit.repeat(150000);
+    const start = Date.now();
+
+    processMosaicoHtmlRender(html);
+
+    expect(Date.now() - start).toBeLessThan(500);
+  });
+});
