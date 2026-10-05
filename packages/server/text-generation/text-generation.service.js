@@ -12,7 +12,9 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const {
   InvocationStatuses,
 } = require('../ai-skill/constant/skill-constants.js');
+const { Templates } = require('../common/models.common.js');
 const { screenProposals } = require('./proposal-checks.js');
+const manifest = require('./skill-manifest.js');
 
 /**
  * Text generation: the subject and the preheader of an email (ADR 0003).
@@ -25,12 +27,22 @@ const { screenProposals } = require('./proposal-checks.js');
  * editor, never from one skill to another.
  */
 
-// Writing doctrine, and the deliverability doctrine that keeps the promise of a
-// subject honest.
-const EXPERTISE_CATEGORIES = ['redaction', 'deliverability'];
+// The expertise each invocation reads, as the manifest declares it: one
+// declaration for this code, `yarn check-skills` and the activation alert.
+function expertiseCategories(scope) {
+  const filter = manifest.expertiseFilters.find((f) => f.scope.includes(scope));
+  return filter.categories;
+}
+
+// What the user may write into the prompt. The AI rate limit caps the request;
+// these keep the user's share of the prompt to an instruction, not a document.
+const MAX_BRIEF_LENGTH = 500;
+const MAX_AVOID_LENGTH = 300;
+const MAX_AVOID_ITEMS = 30;
 
 const optionalText = z
   .string()
+  .max(MAX_BRIEF_LENGTH)
   .optional()
   // An empty field is no instruction: the skill should not read "".
   .transform((value) => (value && value.trim() ? value : undefined));
@@ -46,7 +58,10 @@ const requestSchema = z.object({
     )
     .min(1),
   brief: optionalText,
-  avoid: z.array(z.string()).max(30).optional(),
+  avoid: z
+    .array(z.string().max(MAX_AVOID_LENGTH))
+    .max(MAX_AVOID_ITEMS)
+    .optional(),
 });
 
 const subjectRequestSchema = requestSchema.extend({
@@ -89,6 +104,23 @@ const compact = (object) =>
   );
 
 /**
+ * The group whose engine serves the request and whose quota it counts against.
+ *
+ * A regular user only reaches the mailings of their own group. A super admin
+ * has no group: the mailing's company pays — or, for a mailing an admin created
+ * before companies were stamped on mailings, the company of its template, which
+ * is the group the editor asked to show the button for.
+ */
+async function billedGroupId(user, mailing) {
+  if (user.group && user.group.id) return user.group.id;
+  if (mailing._company) return mailing._company;
+  const template = await Templates.findById(mailing._wireframe)
+    .select({ _company: 1 })
+    .lean();
+  return template && template._company;
+}
+
+/**
  * What every invocation of this feature starts from: access to the mailing, its
  * email type, and the expertises of the scope.
  */
@@ -102,14 +134,13 @@ async function prepare({ user, mailingId, scope }) {
   const expertise = await expertiseRepo.findApplicable(
     compact({
       scope,
-      categories: EXPERTISE_CATEGORIES,
+      categories: expertiseCategories(scope),
       emailType: emailType || undefined,
     })
   );
 
   return {
-    // A super admin has no group of their own: the mailing's company pays.
-    groupId: (user.group && user.group.id) || mailing._company,
+    groupId: await billedGroupId(user, mailing),
     emailType: emailType || undefined,
     expertise,
   };
@@ -123,7 +154,14 @@ function toHttpError(err) {
   if (err && err.featureResolutionReason) {
     return createError(403, ERROR_CODES.TEXT_GENERATION_DISABLED);
   }
-  if (err && err.invocationStatus === InvocationStatuses.CONFIG_ERROR) {
+  // The skill refusing the input this feature built is not the user's to retry:
+  // its active version expects another contract. A configuration problem.
+  const contractBroken =
+    err && err.skillError && err.skillError.code === 'INPUT_VALIDATION';
+  if (
+    (err && err.invocationStatus === InvocationStatuses.CONFIG_ERROR) ||
+    contractBroken
+  ) {
     return createError(503, ERROR_CODES.TEXT_GENERATION_UNAVAILABLE);
   }
   if (
@@ -179,7 +217,13 @@ async function generateSubjects({ user, body }) {
     throw toHttpError(err);
   }
 
-  return screenProposals('subject', result.output.proposals, request.content);
+  return screenProposals('subject', result.output.proposals, {
+    sources: [
+      ...request.content.map((piece) => piece.text),
+      request.currentSubject || '',
+    ],
+    avoid: request.avoid,
+  });
 }
 
 module.exports = { generateSubjects };
