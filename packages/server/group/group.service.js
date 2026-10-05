@@ -143,7 +143,7 @@ async function createGroup(group) {
 }
 
 async function deleteGroup(groupId) {
-  findById(groupId);
+  await findById(groupId);
 
   const groupWorkspaces = await workspaceService.findWorkspaces({ groupId });
 

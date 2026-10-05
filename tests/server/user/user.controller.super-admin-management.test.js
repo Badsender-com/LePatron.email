@@ -28,6 +28,7 @@ const {
 } = require('../../../packages/server/common/models.common.js');
 const controller = require('../../../packages/server/user/user.controller.js');
 const {
+  CLIENT_GROUP,
   ALICE,
   BOB,
   CAROL,
@@ -50,6 +51,7 @@ const FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION =
   'FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION';
 const LAST_SUPER_ADMIN_PROTECTED = 'LAST_SUPER_ADMIN_PROTECTED';
 const INVALID_ROLE_PARAM = 'INVALID_ROLE_PARAM';
+const SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP = 'SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP';
 
 const actor = (id) => actorFrom(store.userRecord(id));
 const update = (user, userId, body) =>
@@ -105,6 +107,24 @@ describe('managing a super admin account (#1155)', () => {
 
       expectRefusedOutright(result);
       expect((await read(ALICE)).name).toBe('Alice');
+    });
+
+    it('a company admin cannot read a super admin', async () => {
+      const result = await call(controller.read, {
+        user: actor(CAROL),
+        params: { userId: ALICE },
+      });
+
+      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
+    });
+
+    it('a company admin cannot list the mailings of a super admin', async () => {
+      const result = await call(controller.readMailings, {
+        user: actor(CAROL),
+        params: { userId: ALICE },
+      });
+
+      expectRefusal(result, 403, FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
     });
 
     it('a company admin still manages the other members of their group', async () => {
@@ -181,6 +201,22 @@ describe('managing a super admin account (#1155)', () => {
       const bob = await read(BOB);
       expect(bob.isDeactivated).toBe(false);
       expect(bob.role).toBe('super_admin');
+    });
+
+    it('a deactivated super admin cannot come back outside the platform group', async () => {
+      // The flag moved while they were deactivated.
+      store.seed({
+        groups: GROUPS.map((g) => ({
+          ...g,
+          isPlatform: g._id === CLIENT_GROUP,
+        })),
+        users: withDeactivated(BOB),
+      });
+
+      const result = await activate(actor(ALICE), BOB);
+
+      expectRefusal(result, 403, SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP);
+      expect((await read(BOB)).isDeactivated).toBe(true);
     });
 
     it('a company admin cannot reactivate a super admin', async () => {
