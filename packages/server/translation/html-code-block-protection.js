@@ -222,13 +222,17 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
 
 /**
  * Apply a WHOLE-document transform — the sanitizer — to `html`, and put every
- * synthetic block zone back untouched afterwards.
+ * synthetic block's markup back untouched afterwards.
  *
  * Unlike transformOutsideHtmlCodeBlocks, the transform needs the full document
- * to make sense of it, so each zone is swapped for an inert token first — ASCII,
- * no markup, which a sanitizer keeps as text — then restored. Same technique as
- * the editor export (packages/editor/src/js/ext/html-code-block/
- * export-substitution.js).
+ * to make sense of it, so each block's markup is swapped for an inert token
+ * first — ASCII, no markup, which a sanitizer keeps as text — then restored.
+ * Same technique as the editor export (packages/editor/src/js/ext/
+ * html-code-block/export-substitution.js).
+ *
+ * Only the markup itself is kept out, never the marker element around it: the
+ * marker's tags are LePatron's own, nothing in them needs protecting, and a
+ * previewHtml written by hand could hang anything on them.
  *
  * Why: the translated copy's previewHtml is sanitized before storage, because
  * provider output was injected into it. Sanitizing the pasted markup along with
@@ -259,11 +263,13 @@ function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
   const nonce = crypto.randomBytes(8).toString('hex');
   const tokenFor = (index) => `LPHTMLBLOCK${nonce}X${index}X`;
 
+  const contentOf = (range) => html.slice(range.contentStart, range.contentEnd);
+
   let withTokens = '';
   let cursor = 0;
   ranges.forEach((range, index) => {
-    withTokens += html.slice(cursor, range.start) + tokenFor(index);
-    cursor = range.end;
+    withTokens += html.slice(cursor, range.contentStart) + tokenFor(index);
+    cursor = range.contentEnd;
   });
   withTokens += html.slice(cursor);
 
@@ -272,7 +278,7 @@ function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
   // A replacer function, not a string: pasted markup routinely holds `$&`.
   return transformed.replace(pattern, (match, index) => {
     const range = ranges[Number(index)];
-    return range ? html.slice(range.start, range.end) : '';
+    return range ? contentOf(range) : '';
   });
 }
 

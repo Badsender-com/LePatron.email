@@ -75,3 +75,64 @@ describe('transformOutsideHtmlCodeBlocks', () => {
     expect(result).toContain('<p>pasted</p>');
   });
 });
+
+// The translated copy's previewHtml is sanitized before storage. Sanitizing the
+// pasted markup with it stripped the ESP scripts the block exists for, so the
+// copy's ZIP no longer matched its export.
+describe('transformDocumentKeepingHtmlCodeBlocks, the pasted markup', () => {
+  const pasted = '<script>espTracking("$&")</script><p>kept</p>';
+  const html = [
+    '<html><head></head><body>',
+    '<p>translated<img src="x" onerror="alert(1)"></p>',
+    `<div class="lp-html-block-root"><div class="lp-html-block">${pasted}</div></div>`,
+    '</body></html>',
+  ].join('');
+
+  it('sanitizes the document but puts the pasted markup back byte for byte', () => {
+    const result = transformDocumentKeepingHtmlCodeBlocks(
+      html,
+      sanitizePreviewHtml,
+      [pasted]
+    );
+    expect(result).not.toMatch(/onerror/);
+    expect(result).toContain(`<div class="lp-html-block">${pasted}</div>`);
+  });
+
+  it('is the plain transform without any block', () => {
+    const shout = (s) => s.toUpperCase();
+    expect(transformDocumentKeepingHtmlCodeBlocks('<p>a</p>', shout)).toBe(
+      '<P>A</P>'
+    );
+  });
+});
+
+// The marker element around the markup is LePatron's own: nothing in it needs
+// protecting, and a previewHtml written by hand could hang anything on it.
+describe('transformDocumentKeepingHtmlCodeBlocks, the marker element', () => {
+  const crafted = (inner) =>
+    `<div class="lp-html-block" onmouseover="alert(1)">${inner}</div>`;
+
+  it('goes through the transform with the rest of the document', () => {
+    const result = transformDocumentKeepingHtmlCodeBlocks(
+      doc(crafted(stored)),
+      sanitizePreviewHtml,
+      [stored]
+    );
+
+    expect(result).not.toMatch(/onmouseover/);
+    expect(result).toContain(`<div class="lp-html-block">${stored}</div>`);
+  });
+
+  it('is transformed around a markup put back byte for byte', () => {
+    const inner = '<div>kept</div>';
+    const tag = (part) => part.replace(/<div/g, '<div data-t');
+
+    const result = transformDocumentKeepingHtmlCodeBlocks(
+      `<div class="lp-html-block">${inner}</div>`,
+      tag,
+      [inner]
+    );
+
+    expect(result).toBe(`<div data-t class="lp-html-block">${inner}</div>`);
+  });
+});
