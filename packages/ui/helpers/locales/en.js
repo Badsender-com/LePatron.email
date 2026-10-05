@@ -493,6 +493,11 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    roles: {
+      superAdmin: 'Super admin',
+      groupAdmin: 'Group admin',
+      regularUser: 'Regular user',
+    },
     noUsersAvailable: 'No users available',
     sections: {
       statusSecurity: 'Status & Security',
@@ -1149,6 +1154,40 @@ export default {
       ctaLabel: 'default CTA label (static text)',
     },
   },
+  superAdmins: {
+    pageTitle: 'Super admins',
+    add: 'Add a super admin',
+    addDescription:
+      'The account is created in the platform group and receives an email to choose its password.',
+    promote: 'Promote a member',
+    promoteAction: 'Promote',
+    promoteDescription:
+      'Pick a member of the platform group: they become a super admin and keep their account.',
+    promoted: 'Super admin promoted',
+    member: 'Member',
+    noMember: 'No member of the platform group to promote.',
+    noPlatformGroup:
+      'No platform group is set up on this environment: no super admin can be created.',
+    errors: {
+      FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
+        'Only a super admin can grant or revoke this role.',
+      FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
+        'Only a super admin can manage a super admin.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:
+        'You cannot revoke your own super admin role.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
+        'You cannot deactivate your own account.',
+      LAST_SUPER_ADMIN_PROTECTED:
+        'At least one active super admin must remain.',
+      SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
+        'A super admin must belong to the platform group.',
+      PLATFORM_GROUP_NOT_FOUND:
+        'No platform group is set up on this environment.',
+      PLATFORM_GROUP_HAS_SUPER_ADMINS:
+        'This group hosts active super admins: it stays the platform group.',
+      INVALID_ROLE_PARAM: 'This role does not exist.',
+    },
+  },
   settingsNav: {
     categories: {
       superAdmin: 'Super Admin',
@@ -1159,6 +1198,7 @@ export default {
     companiesList: 'Companies list',
     companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
+    superAdmins: 'Super admins',
     switchCompany: 'Pick a company…',
     colors: 'Colors',
   },

@@ -112,6 +112,14 @@ export default {
               superAdminOnly: true,
             },
             {
+              id: 'super-admins',
+              label: this.$t('superAdmins.pageTitle'),
+              icon: 'mdi-shield-account-outline',
+              route: '/super-admins',
+              superAdminOnly: true,
+              activePatterns: ['/super-admins'],
+            },
+            {
               id: 'ai-playground',
               label: this.$t('aiPlayground.pageTitle'),
               iconComponent: 'LucideFlaskConical',

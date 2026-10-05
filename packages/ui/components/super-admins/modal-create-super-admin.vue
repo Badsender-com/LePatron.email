@@ -4,15 +4,12 @@ import { required, email } from 'vuelidate/lib/validators';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import { Roles } from '~/helpers/constants/roles';
+
+const emptyUser = () => ({ email: '', name: '', lang: 'fr' });
 
 export default {
-  name: 'BsModalCreateUser',
-  components: {
-    BsModalConfirm,
-    BsTextField,
-    BsSelect,
-  },
+  name: 'BsModalCreateSuperAdmin',
+  components: { BsModalConfirm, BsTextField, BsSelect },
   mixins: [validationMixin],
   supportedLanguages: [
     { text: 'English', value: 'en' },
@@ -22,32 +19,17 @@ export default {
     loading: { type: Boolean, default: false },
   },
   data() {
-    return {
-      user: {
-        email: '',
-        name: '',
-        externalUsername: '',
-        lang: 'fr',
-        role: 'regular_user',
-      },
-    };
+    return { user: emptyUser() };
   },
   validations() {
     return {
       user: {
         email: { required, email },
         name: { required },
-        role: { required },
       },
     };
   },
   computed: {
-    roles() {
-      return [
-        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
-        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
-      ];
-    },
     emailErrors() {
       const errors = [];
       if (!this.$v.user.email.$dirty) return errors;
@@ -67,13 +49,7 @@ export default {
   },
   methods: {
     open() {
-      this.user = {
-        email: '',
-        name: '',
-        externalUsername: '',
-        lang: 'fr',
-        role: 'regular_user',
-      };
+      this.user = emptyUser();
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -92,11 +68,14 @@ export default {
 <template>
   <bs-modal-confirm
     ref="modal"
-    :title="$t('global.newUser')"
+    :title="$t('superAdmins.add')"
     :is-form="true"
     modal-width="600"
   >
     <v-form @submit.prevent="onSubmit">
+      <p class="text-body-2 text--secondary">
+        {{ $t('superAdmins.addDescription') }}
+      </p>
       <v-row>
         <v-col cols="12" md="6">
           <bs-text-field
@@ -123,27 +102,10 @@ export default {
           />
         </v-col>
         <v-col cols="12" md="6">
-          <bs-text-field
-            v-model="user.externalUsername"
-            :label="
-              $t('forms.user.externalUsername') + $t('forms.user.optional')
-            "
-            :disabled="loading"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
           <bs-select
             v-model="user.lang"
             :label="$t('users.lang')"
             :items="$options.supportedLanguages"
-            :disabled="loading"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <bs-select
-            v-model="user.role"
-            :label="$t('users.role')"
-            :items="roles"
             :disabled="loading"
           />
         </v-col>
