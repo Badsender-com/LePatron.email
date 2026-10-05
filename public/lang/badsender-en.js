@@ -396,6 +396,8 @@ module.exports = {
     'Save refused: an HTML code block exceeds the maximum size.',
   'save-message-block-builder-too-large':
     'Save refused: a composed block exceeds the maximum size.',
+  'save-message-block-builder-state-unreadable':
+    'Save refused: a composed block can no longer be read. Delete it, or recompose it, then save again.',
   'save-message-synthetic-content-too-large':
     'Save refused: together, the HTML code and composed blocks of this email exceed the maximum size. Remove some of them.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',

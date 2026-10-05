@@ -406,6 +406,8 @@ module.exports = {
     'Enregistrement refusé : un bloc Code HTML dépasse la taille maximale.',
   'save-message-block-builder-too-large':
     'Enregistrement refusé : un bloc composé dépasse la taille maximale.',
+  'save-message-block-builder-state-unreadable':
+    "Enregistrement refusé : un bloc composé n'est plus lisible. Supprimez-le, ou recomposez-le, puis enregistrez à nouveau.",
   'save-message-synthetic-content-too-large':
     'Enregistrement refusé : ensemble, les blocs Code HTML et les blocs composés de cet email dépassent la taille maximale. Supprimez-en quelques-uns.',
   'save-message-preview-too-large':

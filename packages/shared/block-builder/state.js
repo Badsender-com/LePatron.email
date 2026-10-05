@@ -139,10 +139,13 @@ function ensureUniqueIds(elements) {
 }
 
 /**
- * @param {*} serialised the stored string
- * @returns {Object|null} a usable state, or null when there is nothing to reopen
+ * The stored string as a state-shaped object of a version this code reads, or
+ * null.
+ *
+ * @param {*} serialised
+ * @returns {Object|null}
  */
-function parseState(serialised) {
+function readEnvelope(serialised) {
   if (typeof serialised !== 'string' || serialised.trim() === '') return null;
 
   let parsed;
@@ -160,6 +163,31 @@ function parseState(serialised) {
   // so it is treated as nothing to reopen.
   if (typeof parsed.v === 'number' && parsed.v > STATE_VERSION) return null;
 
+  return parsed;
+}
+
+/**
+ * Whether the stored string is a composition without any element — what the
+ * editor stores when everything was removed and applied. parseState returns
+ * null for it as for a state it cannot read, but this one means something: an
+ * empty block, which generates no markup.
+ *
+ * @param {*} serialised the stored string
+ * @returns {boolean}
+ */
+function isEmptyComposition(serialised) {
+  const parsed = readEnvelope(serialised);
+  return parsed !== null && parsed.elements.length === 0;
+}
+
+/**
+ * @param {*} serialised the stored string
+ * @returns {Object|null} a usable state, or null when there is nothing to reopen
+ */
+function parseState(serialised) {
+  const parsed = readEnvelope(serialised);
+  if (!parsed) return null;
+
   const elements = parsed.elements.map(cleanElement).filter(Boolean);
   if (elements.length === 0) return null;
 
@@ -173,4 +201,10 @@ function parseState(serialised) {
   };
 }
 
-module.exports = { serialiseState, parseState, cleanElement, newElementId };
+module.exports = {
+  serialiseState,
+  parseState,
+  isEmptyComposition,
+  cleanElement,
+  newElementId,
+};

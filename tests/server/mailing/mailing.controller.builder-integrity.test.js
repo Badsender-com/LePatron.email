@@ -79,3 +79,22 @@ describe('PUT /mailings/:mailingId/mosaico — composed markup', () => {
     expect(await save({ data: dataWith({ ...stored }) })).toBeNull();
   });
 });
+
+// The autosave would otherwise persist the loss: refused, the stored block
+// stays as it was until the author deletes or recomposes it.
+describe('PUT /mailings/:mailingId/mosaico — an unreadable composed state', () => {
+  it('refuses the save instead of emptying the block', async () => {
+    const mailing = mockMailing(dataWith());
+    mockFlags({ blockBuilderEnabled: true });
+
+    expect(
+      await save({
+        data: dataWith(composed('<p>x</p>', '{"v":1,"elements":[')),
+      })
+    ).toMatchObject({
+      status: 400,
+      message: 'BLOCK_BUILDER_STATE_UNREADABLE',
+    });
+    expect(mailing.save).not.toHaveBeenCalled();
+  });
+});
