@@ -1,9 +1,11 @@
 'use strict';
 
-const {
-  HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_PROPERTY,
-} = require('../html-code-block/constants');
+const { HTML_CODE_BLOCK } = require('../html-code-block/block-types');
+
+// Read from the synthetic block descriptor, the one table the editor and the
+// server share (packages/shared/synthetic-blocks.js).
+const HTML_CODE_BLOCK_TYPE = HTML_CODE_BLOCK.type;
+const HTML_CODE_PROPERTY = HTML_CODE_BLOCK.htmlProperty;
 const { allEditedRichTexts } = require('./user-styles');
 
 // Markup the client wrote themselves: the code pasted in an "HTML code"
