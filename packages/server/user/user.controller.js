@@ -14,6 +14,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
+const userScope = require('./user-scope.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isSamlConfigured } = require('../account/saml-config.js');
 const {
@@ -109,10 +110,11 @@ async function getUsersByGroupId(req, res) {
 async function create(req, res) {
   const { groupId } = req.body;
   if (!groupId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller : in create, no groupId provided in request'
     );
   }
+  userScope.assertActorCreatesIn(req.user, groupId);
   await groupService.findById(groupId);
 
   const userParams = pick(req.body, [
@@ -149,6 +151,7 @@ async function read(req, res) {
   const { userId } = req.params;
   const user = await Users.findOneForApi({ _id: userId });
   if (!user) throw new createError.NotFound();
+  userScope.assertActorReaches(req.user, user);
 
   res.json(user);
 }
@@ -173,10 +176,11 @@ async function readMailings(req, res) {
   const parsedLimit = parseInt(limit, 10);
   const offset = (parsedPage - 1) * parsedLimit;
 
-  const user = await Users.findById(userId).select('_id');
+  const user = await Users.findById(userId).select('_id _company');
   if (!user) {
     throw new createError.NotFound(); // Ensure this error is properly handled by your error middleware
   }
+  userScope.assertActorReaches(req.user, user);
 
   // Retrieve mailings and their total count
   const [mailings, totalItems] = await Promise.all([
@@ -213,7 +217,7 @@ async function readMailings(req, res) {
 async function update(req, res) {
   const { userId } = req.params;
   if (!userId) {
-    throw new createError.BadRequestError(
+    throw new createError.BadRequest(
       'user.controller :  in update function, no userId provided in request'
     );
   }
@@ -225,6 +229,10 @@ async function update(req, res) {
     'role',
     'externalUsername',
   ]);
+  const target = await Users.findOneForApi({ _id: userId });
+  if (!target) throw new createError.NotFound();
+  userScope.assertActorReaches(req.user, target);
+
   const updatedUser = await userService.updateUser({ userId, ...userParams });
 
   res.json(updatedUser);
@@ -246,6 +254,7 @@ async function activate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  userScope.assertActorReaches(req.user, user);
 
   await user.activate();
   const updatedUser = await Users.findOneForApi({ _id: userId });
@@ -268,6 +277,7 @@ async function deactivate(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  userScope.assertActorReaches(req.user, user);
 
   await user.deactivate();
   const updatedUser = await Users.findOneForApi({ _id: userId });
@@ -290,6 +300,7 @@ async function adminResetPassword(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
+  userScope.assertActorReaches(req.user, user);
 
   await user.resetPassword('admin', user.lang);
   const updatedUser = await Users.findOneForApi({ _id: userId });
@@ -310,12 +321,14 @@ async function adminResetPassword(req, res) {
 
 async function forgotPassword(req, res) {
   const { email } = req.params;
-  const user = await Users.findOne({ email });
-  if (!user) throw new createError.BadRequest();
-
-  await user.resetPassword('user', user.lang);
-  const updatedUser = await Users.findOneForApi({ _id: user._id });
-  res.json(updatedUser);
+  const user = await Users.findOne({ email, isDeactivated: { $ne: true } });
+  // The answer says nothing about the account: the email does, when there
+  // is one.
+  if (user) {
+    await user.resetPassword('user', user.lang);
+    logger.info(`[account] password reset email sent for ${email}`);
+  }
+  res.json({});
 }
 
 /**
@@ -370,7 +383,9 @@ async function getPublicProfile(req, res) {
     email: username,
     isDeactivated: { $ne: true },
   });
-  if (!user) throw new createError.BadRequest('User not found');
+  // An unknown email reads like an account signing in with a password, so
+  // the login page tells nothing about which emails have an account.
+  if (!user) return res.json({ group: { isSAMLAuthentication: false } });
   const group = await Groups.findOne({
     _id: user.group,
   });

@@ -93,8 +93,9 @@ passport.use(
         token: { $exists: false },
       });
 
+      // Same message whether the email is unknown or the password wrong.
       if (!user) {
-        return done(null, false, { message: 'password.error.nouser' });
+        return done(null, false, { message: 'password.error.incorrect' });
       }
 
       const isPasswordValid = user.comparePassword(password);

@@ -125,6 +125,11 @@ UserSchema.plugin(mongooseHidden, {
   },
 });
 
+// The links in the emails use the scheme the site is served with.
+function siteOrigin() {
+  return `http${config.forcessl ? 's' : ''}://${config.host}`;
+}
+
 function encodePassword(password) {
   if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
@@ -184,7 +189,9 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
+  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
+    user.token
+  }`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
@@ -208,7 +215,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const loginUrl = `http://${config.host}/account/login`;
+  const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
