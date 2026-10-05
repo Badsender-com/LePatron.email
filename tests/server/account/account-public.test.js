@@ -19,7 +19,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
-const { Users } = require('../../../packages/server/common/models.common.js');
+const {
+  Users,
+  Groups,
+} = require('../../../packages/server/common/models.common.js');
 const controller = require('../../../packages/server/user/user.controller.js');
 
 function call(handler, params) {
@@ -41,6 +44,7 @@ describe('forgotten password', () => {
     });
 
     expect(result).toEqual({ status: 200, body: {} });
+    await new Promise((resolve) => setImmediate(resolve));
     expect(resetPassword).toHaveBeenCalled();
   });
 
@@ -56,6 +60,21 @@ describe('forgotten password', () => {
 });
 
 describe('public profile', () => {
+  it('reads a known email as how it signs in, nothing more', async () => {
+    Users.findOne.mockResolvedValue({ _id: 'u1', group: 'g1', name: 'Known' });
+    Groups.findOne.mockResolvedValue({ name: 'Client' });
+
+    const result = await call(controller.getPublicProfile, {
+      username: 'Known@Client.test',
+    });
+
+    expect(result).toEqual({
+      status: 200,
+      body: { group: { isSAMLAuthentication: false } },
+    });
+    expect(Users.findOne.mock.calls[0][0].email).toBe('known@client.test');
+  });
+
   it('reads an unknown email like an account signing in with a password', async () => {
     Users.findOne.mockResolvedValue(null);
 

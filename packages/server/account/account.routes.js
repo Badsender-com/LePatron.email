@@ -11,25 +11,25 @@ const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 
 const HOUR = 60 * 60 * 1000;
 
-// Public, unauthenticated endpoints: bounded per address and, for the
-// password reset, per account, so nobody can flood an inbox or lock an
-// account out by asking again and again.
-const limitPerAddress = createRateLimiter({
-  windowMs: HOUR,
-  max: 120,
-  keyOf: clientIp,
-});
+// Public, unauthenticated endpoints: bounded per client address, each with
+// its own budget (a login is two calls: profile, then login), and the
+// password reset per account too, so nobody can flood an inbox.
+const perAddress = () =>
+  createRateLimiter({ windowMs: HOUR, max: 120, keyOf: clientIp });
 const limitResetPerAccount = createRateLimiter({
   windowMs: HOUR,
   max: 3,
-  keyOf: (req) => String(req.params.email || '').toLowerCase(),
+  keyOf: (req) =>
+    String(req.params.email || '')
+      .trim()
+      .toLowerCase(),
 });
 
-router.post('/login', limitPerAddress, users.login);
-router.get('/:username', limitPerAddress, users.getPublicProfile);
+router.post('/login', perAddress(), users.login);
+router.get('/:username', perAddress(), users.getPublicProfile);
 router.delete(
   '/:email/password',
-  limitPerAddress,
+  perAddress(),
   limitResetPerAccount,
   users.forgotPassword
 );

@@ -88,12 +88,15 @@ const RECORDS = [
   { _id: FRANK, name: 'Frank', role: 'regular_user', _company: GROUP_B },
 ];
 
+// As passport puts it on the request: the stored user's JSON, whose
+// populated company carries `id` but no `_id`.
 const companyAdminOfA = {
   id: CAROL,
   role: 'company_admin',
   isGroupAdmin: true,
   isAdmin: false,
-  group: { id: GROUP_A },
+  _company: { id: GROUP_A, name: 'A' },
+  group: { id: GROUP_A, name: 'A' },
 };
 const admin = { id: 'admin', isAdmin: true };
 

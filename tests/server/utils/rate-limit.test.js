@@ -59,9 +59,11 @@ describe('createRateLimiter', () => {
 });
 
 describe('clientIp', () => {
-  it('reads the first forwarded address behind the proxy', () => {
+  it('reads the address the proxy appended, not one the client sent', () => {
     expect(
-      clientIp({ headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1' } })
+      clientIp({
+        headers: { 'x-forwarded-for': '198.51.100.9, 203.0.113.7' },
+      })
     ).toBe('203.0.113.7');
   });
 

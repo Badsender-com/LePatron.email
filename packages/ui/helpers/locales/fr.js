@@ -11,6 +11,8 @@ export default {
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
+      tooManyRequests:
+        'Trop de tentatives. Réessayez dans quelques minutes.',
       createMailingFailed: 'Une erreur est survenue lors de la création du mailing',
       required: 'Ce champ est obligatoire',
       userRequired: 'Veuillez saisir un utilisateur',

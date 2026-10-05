@@ -9,21 +9,34 @@ const ERROR_CODES = require('../constant/error-codes.js');
  * a company admin reaches the accounts of their own group.
  */
 
-const companyIdOf = (user) =>
-  String(user._company?._id || user._company || user.group?.id);
+/**
+ * The company of a user, whatever shape it comes in: the session's JSON
+ * (`group` and `_company` serialised without `_id`), a Mongoose document
+ * (populated or not), or a plain record.
+ */
+function companyIdOf(user) {
+  const company = user.group || user._company;
+  if (!company) return undefined;
+  if (typeof company === 'string') return company;
+  if (company._id) return String(company._id);
+  if (typeof company.id === 'string') return company.id;
+  return String(company);
+}
 
 function assertActorReaches(actor, target) {
   if (actor?.isAdmin) return;
-  if (companyIdOf(actor) !== companyIdOf(target)) {
+  const own = companyIdOf(actor);
+  if (!own || own !== companyIdOf(target)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_USER_ACCESS);
   }
 }
 
 function assertActorCreatesIn(actor, groupId) {
   if (actor?.isAdmin) return;
-  if (!groupId || String(groupId) !== companyIdOf(actor)) {
+  const own = companyIdOf(actor);
+  if (!own || !groupId || String(groupId) !== own) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_USER_ACCESS);
   }
 }
 
-module.exports = { assertActorReaches, assertActorCreatesIn };
+module.exports = { assertActorReaches, assertActorCreatesIn, companyIdOf };
