@@ -7,6 +7,9 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const { trimString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names');
+const {
+  TEMPLATE_FLAG_PROJECTION,
+} = require('../mailing/synthetic-block-guard.js');
 
 /**
  * @apiDefine templates
@@ -151,8 +154,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     _company: 1,
     assets: 1,
     trackingConfig: 1,
-    htmlBlockEnabled: 1,
-    blockBuilderEnabled: 1,
+    ...TEMPLATE_FLAG_PROJECTION,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })

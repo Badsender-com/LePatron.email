@@ -21,6 +21,7 @@
  */
 
 const { isFieldProtected } = require('./template-protection-parser');
+const { SYNTHETIC_BLOCKS } = require('../../shared/synthetic-blocks.js');
 
 // Patterns for content that should NOT be translated
 const NON_TRANSLATABLE_PATTERNS = [
@@ -57,18 +58,20 @@ const EXCLUDED_FIELDS = [
   'textStyle',
   'titleTextStyle',
   'bodyTextStyle',
-  // Pasted markup of the "HTML code" block: sending it to the LLM would have it
-  // rewritten, and the block's whole promise is that its HTML is never altered.
-  // It already fails every TRANSLATABLE_FIELD_PATTERNS above, but only by accident
-  // of its name — listing it makes the exclusion explicit and survives a rename or
-  // a new pattern. See docs/plans/html-code-block.md
-  'htmlCode',
-  // The block builder's markup and state, for the same reason: the markup is
-  // generated, and rewriting it would desynchronise it from the state it is
-  // generated from. Composed blocks are translated through the state's own
-  // texts instead (builder-block-texts.js), never through these two strings.
-  'builderHtml',
-  'builderState',
+  // The markup and state of the synthetic blocks, read from the table the
+  // editor writes them from, so a renamed property stays excluded whatever its
+  // new name matches. The "HTML code" block's pasted markup: sending it to the
+  // LLM would have it rewritten, and the block's whole promise is that its HTML
+  // is never altered. The block builder's markup and state, for the same
+  // reason: the markup is generated, and rewriting it would desynchronise it
+  // from the state it is generated from. Composed blocks are translated
+  // through the state's own texts instead (builder-block-texts.js), never
+  // through these strings. See docs/plans/html-code-block.md
+  ...SYNTHETIC_BLOCKS.reduce(
+    (fields, block) =>
+      fields.concat([block.htmlProperty, block.stateProperty].filter(Boolean)),
+    []
+  ),
 ];
 
 // Field names that contain URLs (never translate)

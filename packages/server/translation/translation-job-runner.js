@@ -10,6 +10,7 @@ const {
 } = require('./translation-step.utils.js');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
+const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
 const { warningKeysFor } = require('./translation-warnings.js');
 
 // The background half of duplicate + translate: everything that runs after
@@ -66,11 +67,13 @@ async function loadSource({ mailingId, user }) {
     const template = await runTranslationStep('loadTemplate', () =>
       Templates.findById(mailing._wireframe, {
         markup: 1,
-        blockBuilderEnabled: 1,
+        [BLOCK_BUILDER_BLOCK.flag]: 1,
       })
     );
     templateMarkup = template?.markup || null;
-    blockBuilderEnabled = Boolean(template && template.blockBuilderEnabled);
+    blockBuilderEnabled = Boolean(
+      template && template[BLOCK_BUILDER_BLOCK.flag]
+    );
   }
 
   return { mailing, groupId, templateMarkup, blockBuilderEnabled };

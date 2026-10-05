@@ -60,6 +60,19 @@ const TEMPLATE_FLAG_PROJECTION = Object.freeze(
   }, {})
 );
 
+/**
+ * Each synthetic block's flag on a template, by name, as a boolean: what the
+ * editor reads to show each palette entry.
+ *
+ * @param {Object} [template] a template loaded with TEMPLATE_FLAG_PROJECTION
+ * @returns {Object}
+ */
+const syntheticBlockFlagsOf = (template) =>
+  SYNTHETIC_BLOCKS.reduce((flags, { flag }) => {
+    flags[flag] = Boolean(template && template[flag]);
+    return flags;
+  }, {});
+
 const descriptorOf = (block) =>
   block && typeof block === 'object'
     ? SYNTHETIC_BLOCKS.find((candidate) => candidate.type === block.type) ||
@@ -247,6 +260,7 @@ module.exports = {
   stateOf,
   SYNTHETIC_BLOCKS,
   TEMPLATE_FLAG_PROJECTION,
+  syntheticBlockFlagsOf,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
   SYNTHETIC_CONTENT_MAX_LENGTH,

@@ -5,6 +5,7 @@ const {
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../../../shared/head-css/constants.js');
 const { hasHtmlCodeBlock, headCssToExport } = require('./exported-css.js');
+const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
 
 // The head CSS members of the editor's view model: the stylesheet itself, the
 // predicates the two entry points read (toolbox.tmpl.html,
@@ -32,7 +33,9 @@ function addHeadCssToViewModel(viewModel) {
   // server's counterpart. `metadata` is assigned after the view model is built
   // (template-loader.js), hence the lazy read.
   viewModel.isHeadCssEditable = function () {
-    return Boolean(viewModel.metadata && viewModel.metadata.htmlBlockEnabled);
+    return Boolean(
+      viewModel.metadata && viewModel.metadata[HTML_CODE_BLOCK.flag]
+    );
   };
 
   // Whether the mailing holds an HTML code block, which is what decides whether

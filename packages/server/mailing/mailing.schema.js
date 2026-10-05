@@ -19,6 +19,10 @@ const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
+const {
+  TEMPLATE_FLAG_PROJECTION,
+  syntheticBlockFlagsOf,
+} = require('./synthetic-block-guard.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -520,8 +524,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         _company: 1,
         assets: 1,
         trackingConfig: 1,
-        htmlBlockEnabled: 1,
-        blockBuilderEnabled: 1,
+        ...TEMPLATE_FLAG_PROJECTION,
       },
     });
   if (!mailing) return mailing;
@@ -593,12 +596,12 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       hasTranslationFeature,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
+      // Named after the descriptors' flags, which the editor reads them by.
       // See docs/plans/html-code-block.md
-      htmlBlockEnabled: !!mailing._wireframe.htmlBlockEnabled,
+      ...syntheticBlockFlagsOf(mailing._wireframe),
       // The editor injects this into the <head> of every export it produces.
       // Gated by the same flag as the HTML code block it exists to style.
       headCss: mailing.headCss || '',
-      blockBuilderEnabled: !!mailing._wireframe.blockBuilderEnabled,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

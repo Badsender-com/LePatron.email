@@ -50,7 +50,7 @@ function validateHeadCss(css, maxLength) {
  * @returns {boolean}
  */
 function isHeadCssEnabled(template) {
-  return Boolean(template && template.htmlBlockEnabled);
+  return Boolean(template && template[HTML_CODE_BLOCK.flag]);
 }
 
 /**
