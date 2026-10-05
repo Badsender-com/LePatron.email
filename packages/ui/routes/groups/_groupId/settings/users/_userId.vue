@@ -11,6 +11,8 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import { Roles } from '~/helpers/constants/roles';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import { User, Shield, Users, Mail } from 'lucide-vue';
@@ -34,10 +36,6 @@ export default {
   supportedLanguages: [
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
-  ],
-  roles: [
-    { text: 'Group admin', value: 'company_admin' },
-    { text: 'Regular user', value: 'regular_user' },
   ],
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
@@ -96,6 +94,12 @@ export default {
     };
   },
   computed: {
+    roles() {
+      return [
+        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
+        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
+      ];
+    },
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
     },
@@ -267,7 +271,7 @@ export default {
         });
       } catch (error) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: superAdminErrorMessage(this, error),
           color: 'error',
         });
         console.error(error);
@@ -365,7 +369,7 @@ export default {
                   <bs-select
                     v-model="user.role"
                     :label="$t('users.role')"
-                    :items="$options.roles"
+                    :items="roles"
                   />
                 </v-col>
               </v-row>
