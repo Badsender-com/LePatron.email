@@ -16,6 +16,7 @@ const editorConstants = require('../../../packages/editor/src/js/ext/html-code-b
 const guard = require('../../../packages/server/mailing/synthetic-block-guard.js');
 const protection = require('../../../packages/server/translation/html-code-block-protection.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+const builderTexts = require('../../../packages/server/translation/builder-block-texts.js');
 
 const serverBlockFor = (type) =>
   guard.SYNTHETIC_BLOCKS.find((block) => block.type === type);
@@ -76,5 +77,48 @@ describe('synthetic block identifiers, editor ↔ server', () => {
     expect(protection.MARKER_CLASSES.slice().sort()).toEqual(
       SHARED.SYNTHETIC_BLOCKS.map((block) => block.markerClass).sort()
     );
+  });
+});
+
+// The translation of composed blocks reads the block through the same table:
+// a renamed state or markup property would otherwise leave it extracting from
+// a field nobody writes, and the composed blocks would come back untranslated
+// with nothing to say so.
+describe('the composed-block translation, editor ↔ server', () => {
+  const { BLOCK_BUILDER_BLOCK } = SHARED;
+  const state = JSON.stringify({
+    v: 1,
+    elements: [{ id: 'e1', type: 'text', content: 'Bonjour' }],
+  });
+  const data = {
+    mainBlocks: {
+      blocks: [
+        {
+          type: BLOCK_BUILDER_BLOCK.type,
+          [BLOCK_BUILDER_BLOCK.stateProperty]: state,
+          [BLOCK_BUILDER_BLOCK.htmlProperty]: '<table>old</table>',
+        },
+      ],
+    },
+  };
+
+  it('every descriptor says whether it keeps a state and can be translated', () => {
+    SHARED.SYNTHETIC_BLOCKS.forEach((block) => {
+      expect(block).toHaveProperty('stateProperty');
+      expect(typeof block.translatable).toBe('boolean');
+      expect(typeof block.blockTranslatable).toBe('boolean');
+    });
+  });
+
+  it('extracts from the state property the editor writes', () => {
+    expect(Object.values(builderTexts.extractBuilderTexts(data))).toEqual([
+      'Bonjour',
+    ]);
+  });
+
+  it('walks the model exactly as the save guard does', () => {
+    expect(
+      builderTexts.findBuilderBlocks(data).map(({ block }) => block)
+    ).toEqual(guard.findSyntheticBlocks(data));
   });
 });

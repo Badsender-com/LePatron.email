@@ -251,7 +251,24 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
     ] = findHtmlCodeBlockRanges('a<div class="lp-html-block"><b>x</b></div>b', [
       '<i>other</i>',
     ]);
-    expect(range).toEqual({ start: 1, end: 42 });
+    expect(range).toMatchObject({ start: 1, end: 42, matched: -1 });
+  });
+
+  // What the composed-block swap anchors on: the block's own markup, and
+  // which stored block it is.
+  it('gives the content range and the stored markup it matched', () => {
+    const doc = `<div class="lp-html-block">${pasted}</div>`;
+    const [range] = findHtmlCodeBlockRanges(doc, ['<i>other</i>', pasted]);
+    expect(range.matched).toBe(1);
+    expect(range.markerClass).toBe('lp-html-block');
+    expect(doc.slice(range.contentStart, range.contentEnd)).toBe(pasted);
+  });
+
+  it('gives the content range of a zone located by counting divs', () => {
+    const doc = 'a<div class="lp-builder-block"><b>x</b></div>b';
+    const [range] = findHtmlCodeBlockRanges(doc);
+    expect(range.markerClass).toBe('lp-builder-block');
+    expect(doc.slice(range.contentStart, range.contentEnd)).toBe('<b>x</b>');
   });
 });
 

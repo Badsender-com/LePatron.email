@@ -9,6 +9,8 @@
 // used to be written twice — a string fallback in the manifest, a typed default
 // in the element module — and the two had already drifted apart.
 
+const { TEXT, RICH_TEXT, ATTR } = require('./slot-contexts.js');
+
 /**
  * What the generator substitutes when a value is refused at render time.
  *
@@ -38,4 +40,25 @@ function defaultsOf(manifest) {
   }, {});
 }
 
-module.exports = { fallbackOf, defaultsOf };
+/**
+ * The slots whose value is prose a reader sees, and that a translation may
+ * therefore rewrite.
+ *
+ * Decided by the context, which already says what a value is: TEXT and
+ * RICH_TEXT are words. An ATTR may be words (an image `alt`) or a keyword the
+ * markup depends on (an `align`), so it counts only when the manifest declares
+ * it `translatable`. URL, COLOR, PX and CSS_VALUE never do: a translated
+ * colour or link is a broken one.
+ *
+ * @param {{slots: Object}} manifest
+ * @returns {string[]} slot names
+ */
+function translatableOf(manifest) {
+  return Object.keys(manifest.slots).filter((name) => {
+    const { context, translatable } = manifest.slots[name];
+    if (context === TEXT || context === RICH_TEXT) return true;
+    return context === ATTR && translatable === true;
+  });
+}
+
+module.exports = { fallbackOf, defaultsOf, translatableOf };

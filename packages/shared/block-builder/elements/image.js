@@ -8,7 +8,7 @@
 // field would bypass that — a point for whoever wires the panel.
 
 const { defineTemplate } = require('../template.js');
-const { defaultsOf } = require('../manifest.js');
+const { defaultsOf, translatableOf } = require('../manifest.js');
 
 // Two compiled variants rather than one conditional: the engine renders slots,
 // it does not branch. An image with no link must not ship an empty `<a>`, so
@@ -33,7 +33,12 @@ function render(values) {
 render.slots = renderLinked.slots;
 render.variants = { plain: renderPlain, linked: renderLinked };
 
-// Typed as the generator expects — see ../manifest.js.
-const defaults = defaultsOf(require('../components/image.slots.js'));
+const manifest = require('../components/image.slots.js');
 
-module.exports = { type: 'image', render, defaults };
+// Typed as the generator expects — see ../manifest.js.
+const defaults = defaultsOf(manifest);
+
+// What a translation may rewrite — see ../manifest.js.
+const translatable = translatableOf(manifest);
+
+module.exports = { type: 'image', render, defaults, translatable };

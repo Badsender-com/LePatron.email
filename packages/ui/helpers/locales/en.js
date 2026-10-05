@@ -431,9 +431,13 @@ export default {
     successTitle: 'Translation complete',
     successMessage: 'Your email has been duplicated and translated successfully.',
     warningTitle: 'Please verify:',
-    warningLinks: 'Links in the email',
-    warningImages: 'Images containing text',
-    warningVariants: 'Template variant if applicable',
+    // Keyed as the server sends them in a job's warningKeys.
+    warnings: {
+      checkLinks: 'Links in the email',
+      checkImages: 'Images containing text',
+      checkVariant: 'Template variant if applicable',
+      composedBlockUntranslated: 'Composed blocks: some could not be translated, or were rebuilt with a newer version of the block builder',
+    },
     understood: 'Got it',
     translatingNotice: 'Translation in progress, please wait...',
     progressStarting: 'Starting translation...',

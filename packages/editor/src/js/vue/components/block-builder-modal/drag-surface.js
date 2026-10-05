@@ -2,42 +2,55 @@
 
 const {
   DRAGGING_CLASS,
-  DROP_LINE_ID,
-  DROP_LINE_HEIGHT,
+  MOVING_CLASS,
   PREVIEW_READY_EVENT,
+  PREVIEW_RENDERED_EVENT,
 } = require('./preview-surface.js');
+const {
+  ELEMENT_ATTRIBUTE,
+} = require('../../../../../../shared/block-builder/generate.js');
+const { dropIndexAt, showDropLine, clearDropLine } = require('./drop-line.js');
 
-// Dragging an element from the palette into the preview.
+// Dragging in the preview, two gestures in one: an element from the palette,
+// to insert it, or a row already in the block, to move it. Same indicator and
+// same drop maths; what the drop does is the difference.
 //
 // A mixin for the same reason the preview is one: every method here reads or
-// writes the component's state — what is being dragged, which entry shows it.
-// That state is declared here, with the gesture it belongs to.
+// writes the component's state — what is being dragged, which entry or row
+// shows it. That state is declared here, with the gesture it belongs to.
 //
 // It depends on the preview surface and not the other way round: the preview
 // owns the iframe, its stylesheet and the names in it; this adds a gesture on
 // top of it, through what the preview makes public — PREVIEW_READY_EVENT to
-// listen on its document, `freezeRender` / `thawRender` to hold it still,
-// `previewDocument` and `previewRows` to measure it. `insertElement` comes from
-// the element list.
+// listen on its document, PREVIEW_RENDERED_EVENT to make its rows draggable,
+// `freezeRender` / `thawRender` to hold it still, `elementRowFromEvent` to
+// find the row picked up, `previewDocument` and `previewRows` to measure it,
+// which drop-line.js turns into a drop position. `insertElement` and
+// `moveElementTo` come from the element list.
 
-// What the palette puts on the drag. A type of our own, never `text/plain`: a
-// drag released over the settings panel's TinyMCE field would otherwise be
-// pasted there by its paste plugin, as the word "text" or "image". Firefox
-// starts a drag on any type, which is all `setData` is needed for here.
+// What either drag puts on the dataTransfer. A type of our own, never
+// `text/plain`: a drag released over the settings panel's TinyMCE field would
+// otherwise be pasted there by its paste plugin, as the word "text" or "image"
+// — or, for a reorder, an element id. Firefox starts a drag on any type, which
+// is all `setData` is needed for here.
 const DRAG_TYPE = 'application/x-lp-block-builder';
 
 const DragSurfaceMixin = {
   data: () => ({
-    // The palette entry currently being dragged.
+    // What is being dragged: a palette entry to insert, or the id of an
+    // element already in the block to move. Never both.
     draggingType: null,
-    // The same, a moment later: the entry is faded only once the browser has
-    // taken its picture for the drag image (see handleDragStart).
+    draggingId: null,
+    // The palette entry, a moment later: it is faded only once the browser
+    // has taken its picture for the drag image (see handleDragStart).
     fadedType: null,
   }),
   created() {
-    // Not reactive: nothing renders off it.
+    // Not reactive: nothing renders off them.
     this.fadeTimer = null;
+    this.selectionBeforeDrag = null;
     this.$on(PREVIEW_READY_EVENT, this.listenOnPreview);
+    this.$on(PREVIEW_RENDERED_EVENT, this.makeRowsDraggable);
   },
   // A modal destroyed mid-drag gets no dragend: what the drag put on the page
   // is taken off here, without the render a normal end would ask for.
@@ -45,23 +58,38 @@ const DragSurfaceMixin = {
     this.releasePage();
   },
   methods: {
-    // `dragover` has to cancel the event on every move, or the browser refuses
-    // the drop outright — the one rule of the HTML5 drag API that everybody
-    // forgets.
-    //
     // Mosaico's page guard (see handleDragStart) lives on the editor's
     // `window`, and events inside the iframe never reach it: the preview
-    // document needs a guard of its own, which is what `dragstart` and the
-    // unconditional cancels below are.
+    // document needs a guard of its own, which is what refusing every
+    // `dragstart` but a row's, and the unconditional cancels of dragover and
+    // drop, are.
+    //
+    // `dragend` fires at the source of the drag, and the source of a reorder
+    // is a row in here: the palette's own dragend is bound on its entries.
     listenOnPreview(doc) {
       doc.addEventListener('dragstart', this.handlePreviewDragStart);
+      doc.addEventListener('dragend', this.handleDragEnd);
       doc.addEventListener('dragenter', this.handlePreviewDragOver);
       doc.addEventListener('dragover', this.handlePreviewDragOver);
       doc.addEventListener('drop', this.handlePreviewDrop);
       doc.addEventListener('dragleave', this.handlePreviewDragLeave);
     },
 
-    // ---- dragging from the palette into the preview -----------------------
+    /** True while either kind of drag is under way. */
+    isDragging() {
+      return Boolean(this.draggingType || this.draggingId);
+    },
+
+    // Never both. WebKit can lose the dragend of a drag that crossed the
+    // iframe's edge, and a drag whose end never came is still "under way"
+    // when the next one starts: its id would be read by the next drop, which
+    // would move the old row instead of inserting. So each drag starts by
+    // ending whatever the last one left behind.
+    endLostDrag() {
+      if (this.isDragging()) this.handleDragEnd();
+    },
+
+    // ---- starting from the palette -----------------------------------------
 
     // The drag carries its type in `dataTransfer` as well as in component
     // state. The state is what the drop reads — both ends are ours — but
@@ -77,6 +105,7 @@ const DragSurfaceMixin = {
     // rather than the protection weakened there.
     handleDragStart(type, event) {
       event.stopPropagation();
+      this.endLostDrag();
       this.draggingType = type;
       this.freezeRender();
       if (event.dataTransfer) {
@@ -91,19 +120,7 @@ const DragSurfaceMixin = {
       this.fadeTimer = window.setTimeout(() => {
         this.fadedType = type;
       }, 0);
-      document.addEventListener('dragenter', this.refuseOutsidePreview);
-      document.addEventListener('dragover', this.refuseOutsidePreview);
-    },
-
-    // Mosaico cancels `dragover` on the whole editor window (fixPageEvents),
-    // which tells the browser the entire page accepts the drop: the cursor
-    // said "copy" over the palette, the settings, the backdrop. Only the
-    // preview accepts this drag, and its events never reach this document, so
-    // everything that does reach it is refused — explicitly, so the cursor
-    // says so.
-    refuseOutsidePreview(event) {
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+      this.holdPage();
     },
 
     // `drag` fires continuously at the source for the whole gesture, and
@@ -113,48 +130,134 @@ const DragSurfaceMixin = {
       event.stopPropagation();
     },
 
+    // ---- either drag: the page around the preview, and the end -------------
+
+    // Mosaico cancels `dragover` on the whole editor window (fixPageEvents),
+    // which tells the browser the entire page accepts the drop: the cursor
+    // said "copy" over the palette, the settings, the backdrop. Only the
+    // preview accepts this drag, and its events never reach this document, so
+    // everything that does reach it is refused — explicitly, so the cursor
+    // says so. A reorder leaving the iframe meets the same page, so it is
+    // refused the same way.
+    holdPage() {
+      document.addEventListener('dragenter', this.refuseOutsidePreview);
+      document.addEventListener('dragover', this.refuseOutsidePreview);
+    },
+
+    refuseOutsidePreview(event) {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+    },
+
     releasePage() {
       document.removeEventListener('dragenter', this.refuseOutsidePreview);
       document.removeEventListener('dragover', this.refuseOutsidePreview);
       window.clearTimeout(this.fadeTimer);
     },
 
+    // A reorder still under way here was never dropped — Escape, or let go
+    // outside the preview. It moved nothing, so it changes no selection
+    // either: the one its dragstart replaced comes back.
     handleDragEnd() {
+      if (this.draggingId) this.selectedId = this.selectionBeforeDrag;
       this.releasePage();
       this.fadedType = null;
       this.draggingType = null;
-      this.clearDropIndicator();
+      this.draggingId = null;
       const doc = this.previewDocument();
-      if (doc && doc.body) doc.body.classList.remove(DRAGGING_CLASS);
+      clearDropLine(doc);
+      if (doc && doc.body) {
+        doc.body.classList.remove(DRAGGING_CLASS);
+        this.previewRows(doc).forEach((row) =>
+          row.classList.remove(MOVING_CLASS)
+        );
+      }
       // Renders were held while the rows had to stay still under the cursor.
       this.thawRender();
     },
 
-    // The preview's images and links are natively draggable, and a drag of one
-    // dropped back in — or a file or link dropped from outside — would have
-    // the browser open it in the iframe, navigating away from the composition.
-    // Nothing in the preview starts a builder drag (yet: reordering will have
-    // to opt in here), so every drag starting there is cancelled.
-    handlePreviewDragStart(event) {
-      event.preventDefault();
+    // ---- moving a row of the preview ---------------------------------------
+
+    // Preview chrome, set on the rendered nodes rather than written into the
+    // markup: `draggable` has no business in an email, and the generated HTML
+    // is what ships. The images and links inside a row are natively draggable
+    // and would be what the browser picks up — the picture under the cursor
+    // would be an image or a URL rather than the row being moved — so they are
+    // switched off, leaving the row as the one thing to drag.
+    makeRowsDraggable(doc) {
+      this.previewRows(doc).forEach((row) => {
+        row.draggable = true;
+        Array.prototype.forEach.call(
+          row.querySelectorAll('img, a'),
+          (node) => {
+            node.draggable = false;
+          }
+        );
+      });
     },
 
-    // Cancelled whatever is being dragged, so the browser never applies its
-    // own default; whether it is OUR drag decides only between accepting the
-    // drop and refusing it.
+    // The one drag the preview starts. Anything else starting there — an image
+    // or a link a browser lets through anyway, a text selection — would carry
+    // a URL or text, and dropped back in, have the browser open it in the
+    // iframe, navigating away from the composition: cancelled.
+    //
+    // Unlike the palette's, this `dragstart` starts inside the iframe, so it
+    // never reaches the editor's `window` nor meets Mosaico's guard — which is
+    // why it needs no stopPropagation. Worth knowing before someone removes
+    // the palette's and finds it still works here.
+    handlePreviewDragStart(event) {
+      const row = this.elementRowFromEvent(event);
+      if (!row) {
+        event.preventDefault();
+        return;
+      }
+
+      this.endLostDrag();
+      const id = row.getAttribute(ELEMENT_ATTRIBUTE);
+      this.draggingId = id;
+      this.freezeRender();
+      if (event.dataTransfer) {
+        event.dataTransfer.clearData();
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData(DRAG_TYPE, id);
+      }
+      // Selecting what is being moved, so the settings panel follows the thing
+      // under the cursor rather than staying on whatever was selected before
+      // — which is kept, for a drag that ends without a drop.
+      this.selectionBeforeDrag = this.selectedId;
+      this.selectedId = id;
+      row.ownerDocument.body.classList.add(DRAGGING_CLASS);
+      // Dimmed once the browser has taken its picture, as the palette entry is.
+      this.fadeTimer = window.setTimeout(() => {
+        row.classList.add(MOVING_CLASS);
+      }, 0);
+      this.holdPage();
+    },
+
+    // ---- over the preview, and the drop -------------------------------------
+
+    // `dragover` has to cancel the event on every move, or the browser refuses
+    // the drop outright — the one rule of the HTML5 drag API that everybody
+    // forgets. Cancelled whatever is being dragged, so the browser never
+    // applies its own default; whether it is OUR drag decides only between
+    // accepting the drop and refusing it.
     handlePreviewDragOver(event) {
       event.preventDefault();
-      if (!this.draggingType) {
+      if (!this.isDragging()) {
         if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
         return;
       }
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = this.draggingId ? 'move' : 'copy';
+      }
 
       const doc = this.previewDocument();
       if (!doc || !doc.body) return;
       doc.body.classList.add(DRAGGING_CLASS);
 
-      this.showDropIndicator(doc, this.dropIndexAt(doc, event.clientY));
+      const rows = this.previewRows(doc);
+      const index = dropIndexAt(rows, event.clientY);
+      showDropLine(doc, rows, index, this.draggingId);
     },
 
     // Leaving the iframe entirely, rather than crossing between two rows:
@@ -169,73 +272,25 @@ const DragSurfaceMixin = {
       const doc = this.previewDocument();
       if (!doc) return;
       if (leaving && doc.contains(leaving)) return;
-      this.clearDropIndicator();
+      clearDropLine(this.previewDocument());
     },
 
     // The index is measured again rather than kept from the last dragover: the
     // drop carries its own coordinates, and they are the ones that count.
     handlePreviewDrop(event) {
       event.preventDefault();
-      if (!this.draggingType) return;
+      if (!this.isDragging()) return;
 
       const doc = this.previewDocument();
-      const index = doc ? this.dropIndexAt(doc, event.clientY) : 0;
+      const index = doc ? dropIndexAt(this.previewRows(doc), event.clientY) : 0;
       const type = this.draggingType;
+      const id = this.draggingId;
 
+      // Ended as a drop, not a cancel: the selection goes to what moved.
+      this.draggingId = null;
       this.handleDragEnd();
-      this.insertElement(type, index);
-    },
-
-    /**
-     * Where an element dropped at this height would go.
-     *
-     * Measured against each row's midpoint: above it the element goes before,
-     * below it after. Past the last row, at the end.
-     *
-     * @returns {number} an index in `state.elements`
-     */
-    dropIndexAt(doc, clientY) {
-      const rows = this.previewRows(doc);
-      for (let i = 0; i < rows.length; i++) {
-        const box = rows[i].getBoundingClientRect();
-        if (clientY < box.top + box.height / 2) return i;
-      }
-      return rows.length;
-    },
-
-    // One line for the whole preview, moved to the edge the drop would land
-    // on, rather than a class on the row: drawn on the row, it paints under
-    // the row's content — invisible across an image — and every dragover
-    // toggled classes on every row.
-    showDropIndicator(doc, index) {
-      const rows = this.previewRows(doc);
-      if (!rows.length) {
-        this.clearDropIndicator();
-        return;
-      }
-      const edge =
-        index < rows.length
-          ? rows[index].getBoundingClientRect().top
-          : rows[rows.length - 1].getBoundingClientRect().bottom;
-      const scrolled = (doc.defaultView && doc.defaultView.pageYOffset) || 0;
-      const line = doc.getElementById(DROP_LINE_ID) || this.addDropLine(doc);
-      // Centred on the edge, and kept inside the document at the top.
-      const top = Math.max(0, Math.round(edge + scrolled - DROP_LINE_HEIGHT / 2));
-      line.style.top = `${top}px`;
-    },
-
-    addDropLine(doc) {
-      const line = doc.createElement('div');
-      line.id = DROP_LINE_ID;
-      line.setAttribute('aria-hidden', 'true');
-      doc.body.appendChild(line);
-      return line;
-    },
-
-    clearDropIndicator() {
-      const doc = this.previewDocument();
-      const line = doc && doc.getElementById(DROP_LINE_ID);
-      if (line) line.parentNode.removeChild(line);
+      if (id) this.moveElementTo(id, index);
+      else this.insertElement(type, index);
     },
   },
 };

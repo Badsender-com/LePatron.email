@@ -215,6 +215,7 @@ describe('character references', () => {
   it.each([
     ['an encoded scheme letter', 'jav&#97;script:x'],
     ['an encoded leading letter', '&#106;avascript:x'],
+    ['an encoded second slash', '/&#47;example.com'],
     ['a hexadecimal one', '&#x6A;avascript:x'],
   ])('drops a link whose decoded URL is refused (%s)', (_label, href) => {
     expect(sanitizeRichText(`<a href="${href}">x</a>`)).toBe('<a>x</a>');

@@ -143,3 +143,52 @@ describe('isEmptySyntheticBlock', () => {
     expect(isEmptySyntheticBlock({})).toBe(false);
   });
 });
+
+// The "Translate block" button. The per-block route translates a flat object
+// of fields and writes it back; it cannot translate a composed block's state
+// and rebuild its markup, so the button stays hidden there — composed blocks
+// are translated with the whole mailing only. The HTML code block stays out
+// for good: translating pasted markup would rewrite it.
+describe('which blocks offer the translate button', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const {
+    offersBlockTranslation,
+  } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+
+  it('hides it on a composed block', () => {
+    expect(offersBlockTranslation({ type: 'blockBuilderBlock' })).toBe(false);
+    expect(
+      offersBlockTranslation({ type: ko.observable('blockBuilderBlock') })
+    ).toBe(false);
+  });
+
+  it('hides it on the HTML code block', () => {
+    expect(offersBlockTranslation({ type: 'htmlCodeBlock' })).toBe(false);
+  });
+
+  // A template's own blocks have always been translatable and must stay so.
+  it("leaves a template's own blocks alone", () => {
+    expect(offersBlockTranslation({ type: 'textBlock' })).toBe(true);
+    expect(offersBlockTranslation(null)).toBe(true);
+  });
+
+  // The predicate only hides the button if the toolbar asks it — and a
+  // view-model without it must hide the button, not show it.
+  it('is what the block toolbar asks before showing the button', () => {
+    const template = fs.readFileSync(
+      path.join(
+        __dirname,
+        '../../../packages/editor/src/tmpl/block-wysiwyg.tmpl.html'
+      ),
+      'utf8'
+    );
+    const translateTool = template
+      .split('\n')
+      .find((line) => line.includes('class="tool translate"'));
+
+    expect(translateTool).toContain('$root.offersBlockTranslation($rawData)');
+    expect(translateTool).not.toContain('!$root.offersBlockTranslation');
+    expect(translateTool).not.toContain('isTranslatableBlock');
+  });
+});
