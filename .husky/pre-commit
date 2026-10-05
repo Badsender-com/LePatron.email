@@ -1,4 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn lint-staged
+# Sequential: the block builder's compile reads the .vue files prettier is
+# rewriting, and must read them after it, not at the same time.
+yarn lint-staged --concurrent false

@@ -327,3 +327,38 @@ describe('findOneForMosaico — company opted in', () => {
     expect(emailMetadataConfig.requiredFields).toEqual([]);
   });
 });
+
+// The editor reads each palette flag by the name its descriptor gives it
+// (packages/shared/synthetic-blocks.js): the template must be loaded with every
+// one of them, and each handed back under that same name.
+describe('findOneForMosaico — the synthetic block flags', () => {
+  const {
+    SYNTHETIC_BLOCKS,
+  } = require('../../../packages/shared/synthetic-blocks.js');
+  const flags = SYNTHETIC_BLOCKS.map((block) => block.flag);
+
+  it('loads every flag with the template', async () => {
+    const context = makeContext({});
+
+    await call(context);
+
+    const populate = context.model.findOne.mock.results[0].value.populate;
+    const templatePopulate = populate.mock.results[0].value.populate;
+    const { select } = templatePopulate.mock.calls[0][0];
+    flags.forEach((flag) => expect(select[flag]).toBe(1));
+  });
+
+  it('hands each flag back under its own name', async () => {
+    const [first, ...others] = flags;
+    const context = makeContext({
+      mailingOverrides: {
+        _wireframe: { _id: TEMPLATE, _company: COMPANY, [first]: true },
+      },
+    });
+
+    const { metadata } = await call(context);
+
+    expect(metadata[first]).toBe(true);
+    others.forEach((flag) => expect(metadata[flag]).toBe(false));
+  });
+});

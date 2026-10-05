@@ -267,14 +267,14 @@ export default {
       this.estimatedTimeRemaining = (remainingBatches * avgTimePerBatch) / 1000;
     },
 
-    handleTranslationComplete() {
+    handleTranslationComplete(result) {
       this.showSnackbar({
         text: this.$t('translation.success'),
         color: 'success',
       });
 
       this.$emit('translated');
-      this.$emit('show-warning');
+      this.$emit('show-warning', result && result.warningKeys);
       this.close();
     },
 

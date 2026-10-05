@@ -3,9 +3,12 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
+const {
+  ALWAYS_TRUE_MEDIA,
+  VISIBLE_ON_BOTH_SUFFIX,
+  previewMediaFor,
+} = require('./preview-media.js');
 
-const desktopMediaQuery = 'only screen and (min-width: 0px)';
-const visibleOnBoth = '.visible-on-both';
 let cssMediaResources = [];
 
 function screenPreview(viewModel) {
@@ -32,7 +35,7 @@ function screenPreview(viewModel) {
       }
     }
 
-    setMediaQueries('both', true);
+    setMediaQueries('both');
   }
 
   function getScreenVisibility() {
@@ -40,7 +43,7 @@ function screenPreview(viewModel) {
     viewModel.isBothPreview(previewMode === `both`);
     viewModel.isDesktopPreview(previewMode === `desktop`);
     viewModel.isMobilePreview(previewMode === `mobile`);
-    setMediaQueries(previewMode, previewMode === `both`);
+    setMediaQueries(previewMode);
   }
 
   viewModel.loadedTemplate.subscribe(
@@ -51,19 +54,21 @@ function screenPreview(viewModel) {
   viewModel.previewMode.subscribe(getScreenVisibility, viewModel, 'change');
 }
 
-function setMediaQueries(mode, setSuffix = false) {
+// See preview-media.js for what each mode does, shared with the head CSS.
+function setMediaQueries(mode) {
+  const { forceMedia, mediaSelectorSuffix } = previewMediaFor(mode);
   cssMediaResources.forEach(
     ({ stylesheet, cssMediaRuleIdx, baseMediaCondition }) => {
-      const outputCondition = ['both', 'mobile'].includes(mode)
-        ? desktopMediaQuery
+      const outputCondition = forceMedia
+        ? ALWAYS_TRUE_MEDIA
         : baseMediaCondition;
       let styles = '';
       const cssRules = stylesheet.cssRules[cssMediaRuleIdx].cssRules;
 
       for (let i = 0; i < cssRules.length; i++) {
-        cssRules[i].selectorText = setSuffix
-          ? `${cssRules[i].selectorText}${visibleOnBoth}`
-          : cssRules[i].selectorText.replace(visibleOnBoth, '');
+        cssRules[i].selectorText = mediaSelectorSuffix
+          ? `${cssRules[i].selectorText}${mediaSelectorSuffix}`
+          : cssRules[i].selectorText.replace(VISIBLE_ON_BOTH_SUFFIX, '');
 
         styles += `${cssRules[i].cssText}`;
       }
