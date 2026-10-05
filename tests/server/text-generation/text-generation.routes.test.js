@@ -665,8 +665,7 @@ describe('text generation: POST /api/text-generation/subject', () => {
   });
 });
 
-// Turned on by #1167 (generate and apply a preheader built from the picked subject)
-describe.skip('text generation: POST /api/text-generation/preheader', () => {
+describe('text generation: POST /api/text-generation/preheader', () => {
   beforeEach(loadModules);
 
   const body = {
