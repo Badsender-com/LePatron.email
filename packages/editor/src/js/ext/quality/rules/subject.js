@@ -1,7 +1,5 @@
 'use strict';
 
-const { getSubject } = require('../copy-fields');
-
 // Truncation, not performance: subject length does not change read rates
 // (Return Path, 9 million subjects). Mobile apps cut at 33-48 characters, which
 // no threshold could avoid; past 60 Outlook cuts too, past 90 almost everyone.
@@ -43,10 +41,10 @@ module.exports = {
   LONG,
   TOO_LONG,
   passParams: (ctx) => ({
-    count: Array.from((getSubject(ctx.viewModel) || '').trim()).length,
+    count: Array.from((ctx.subject || '').trim()).length,
   }),
   run(ctx) {
-    const raw = getSubject(ctx.viewModel);
+    const raw = ctx.subject;
     if (raw === null) return []; // the ESP holds the subject
     const subject = raw.trim();
     if (!subject) {

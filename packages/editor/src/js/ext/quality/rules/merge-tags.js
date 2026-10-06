@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const { blockTexts, blockLinks } = require('../exported-content');
-const { getSubject, getPreheader } = require('../copy-fields');
 
 // Personalization delimiters of the ESPs our clients use. A tag opened and
 // never closed is sent as is: "Hello {{first_name," reaches the recipient.
@@ -52,9 +51,9 @@ module.exports = {
         .concat((links[block.id] || []).map((link) => link.href))
         .join(' '),
     }));
-    const subject = getSubject(ctx.viewModel);
+    const subject = ctx.subject;
     if (subject) sources.push({ blockId: null, where: 'subject', text: subject });
-    const preheader = getPreheader(ctx.viewModel);
+    const preheader = ctx.preheader;
     if (preheader && preheader.value) {
       sources.push({ blockId: null, where: 'preheader', text: preheader.value });
     }
