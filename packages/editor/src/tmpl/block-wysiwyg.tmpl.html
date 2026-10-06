@@ -45,7 +45,11 @@
     <!-- /ko -->
     <!-- /ko -->
   </div>
-  <div class="block-content-wrapper">
+  <!-- `inert` takes the block's content out of the focus order and out of reach of
+       the keyboard and the pointer: the overlay below only stops the mouse, a Tab
+       still reached the inline editors. Only an attribute is toggled, the DOM the
+       block bindings own stays as is. Locked until the current user is known. -->
+  <div class="block-content-wrapper" data-bind="attr: { inert: $root.currentUser()?.canEditContent ? null : '' }">
     <!-- ko block: $data --><!-- /ko -->
     <!-- ko if: !$root.currentUser()?.canEditContent -->
     <div class="canvas-readonly-overlay"></div>
