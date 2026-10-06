@@ -3,21 +3,11 @@
 const ko = require('knockout');
 const { stripMergeTags } = require('./merge-tag-syntax');
 const { EMOJI_REGEX } = require('./emoji');
+const { getSubject } = require('../email-subject');
 
-// The copy that lives outside the blocks: the subject (email metadata) and the
-// preheader (a template property). Both are the client's to write.
-
-/**
- * The subject being edited, or null when the company does not use the email
- * metadata: the editor then knows nothing of the subject (the ESP holds it).
- * @returns {string|null}
- */
-function getSubject(viewModel) {
-  const store = viewModel.emailMetadataStore;
-  if (!store || !store.isActive || !store.isActive()) return null;
-  const { subject } = store.snapshot();
-  return typeof subject === 'string' ? subject : '';
-}
+// The copy that lives outside the blocks: the subject (email metadata, read
+// through ext/email-subject.js) and the preheader (a template property). Both
+// are the client's to write.
 
 // Where a template declares its preheader, shared with the share page.
 const {
