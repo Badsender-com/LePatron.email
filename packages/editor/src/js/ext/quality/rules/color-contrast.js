@@ -9,6 +9,10 @@ const { parseColor, contrastRatio, styleValue, backgroundOf } = require('../colo
 // Under 1.5:1 the text is as good as hidden, which filters distrust.
 const AA_TEXT = 4.5;
 const AA_LARGE = 3;
+// AA is what is required; the message says AAA is the ideal (team decision
+// of 1 October 2026).
+const AAA_TEXT = 7;
+const AAA_LARGE = 4.5;
 const INVISIBLE = 1.5;
 
 // Within the client's rich text: the nearest declaration of a property.
@@ -61,18 +65,20 @@ module.exports = {
         const background = color && backgroundFor(ctx, blockId, element);
         if (!background) return null;
         const ratio = contrastRatio(color, background);
-        const required = isLarge(element) ? AA_LARGE : AA_TEXT;
+        const large = isLarge(element);
+        const required = large ? AA_LARGE : AA_TEXT;
         if (ratio >= required) return null;
         const params = {
           ratio: Math.round(ratio * 10) / 10,
           required,
+          ideal: large ? AAA_LARGE : AAA_TEXT,
           text: excerpt(textOf(element)),
         };
         return {
           messageKey:
             ratio < INVISIBLE
               ? 'Text almost invisible on its background (__ratio__:1): __text__'
-              : 'Contrast too low (__ratio__:1, __required__:1 needed): __text__',
+              : 'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__',
           severity: ratio < INVISIBLE ? 'error' : 'warning',
           params,
           blockId,

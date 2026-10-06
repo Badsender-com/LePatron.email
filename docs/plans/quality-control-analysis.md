@@ -91,7 +91,7 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 | `images-without-link` | Warning          | Image sans texte dans un tel lien. Pas si l'image est un placeholder : `unreplaced-images` la signale déjà                                                                                                                               |
 | `unreplaced-images`   | Erreur / Warning | Erreur : `<img>` sans `src` ou placeholder (`metadata.imagesUrl.placeholder`, ou `?method=placeholder`). Warning : image d'exemple du template jamais changée, reconnue à son nom de fichier (l'export la sert en `cover/WxH/<fichier>`) |
 | `background-images`   | Warning          | Variante de fond activée (Outlook, mobile, standard) sans image : vide, `none`, GIF transparent, ou l'image par défaut du template                                                                                                       |
-| `html-size`           | Warning          | HTML exporté de plus de 102 KB (troncature Gmail)                                                                                                                                                                                        |
+| `html-size`           | Warning          | HTML exporté de plus de 100 KB (Gmail tronque à 102 KB, l'ESP ajoute son tracking)                                                                                                                                                       |
 
 « Pas d'image de fond » est défini à un seul endroit, `quality/ownership.js` (`isImageUnset`). Le widget d'image de fond l'utilise aussi : le placeholder Clarins codé en dur a disparu.
 
@@ -205,7 +205,7 @@ Pipeline de traitement appliqué à tout HTML exporté :
 | **Clic Export** | Images non remplacées       | Client  | Erreur   | Non      |
 | **Clic Export** | Images cliquables sans lien | Client  | Warning  | Non      |
 | **Clic Export** | Images de fond manquantes   | Client  | Warning  | Non      |
-| **Clic Export** | Taille email (102KB)        | Client  | Warning  | Non      |
+| **Clic Export** | Taille email (100KB)        | Client  | Warning  | Non      |
 | **Download**    | Mailing existe              | Serveur | Critical | Oui      |
 | **Download**    | Accès utilisateur           | Serveur | Critical | Oui      |
 | **Download**    | Processing HTML             | Serveur | -        | Auto     |

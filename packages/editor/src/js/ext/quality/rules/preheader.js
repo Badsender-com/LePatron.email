@@ -1,15 +1,35 @@
 'use strict';
 
-const { isDynamic, stripMergeTags } = require('../merge-tag-syntax');
+const { stripMergeTags } = require('../merge-tag-syntax');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
-// objet et préheader"): Knak fails under 15 characters; under 40, inboxes
-// complete the preview with the body; Litmus and Stripo advise 90 to 100;
-// Dyspatch sees clients display up to 140.
-const TOO_SHORT = 15;
-const SHORT = 40;
+// objet et préheader"): Litmus and Stripo advise 90 to 100; Dyspatch sees
+// clients display up to 140. A short preheader is never reported (team
+// decision of 1 October 2026): it can be an editorial choice, and many
+// templates fill the rest of the preview themselves.
 const LONG = 100;
 const TOO_LONG = 140;
+
+// Compared without case, spacing, merge tags or end punctuation: "Spring
+// sale!" repeats "spring sale".
+const normalise = (text) =>
+  stripMergeTags(text)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[\s.!?…:;,]+$/u, '')
+    .trim();
+
+// The preheader repeats the subject: the same words, or the subject then more.
+function repeatsSubject(preheader, subject) {
+  const p = normalise(preheader);
+  const s = normalise(subject);
+  // Two words at least: a one-word subject ("New") is only the start of many
+  // preheaders.
+  if (s.split(' ').length < 2 || !p.startsWith(s)) return false;
+  // The subject as a whole, not the start of a longer word: "Sale" is not
+  // repeated by "Salesforce".
+  return p.length === s.length || /^[\s\p{P}]/u.test(p.slice(s.length));
+}
 
 // Merge tags do not count: their value is only known at send time.
 const visibleLength = (text) =>
@@ -21,8 +41,6 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Preheader',
   passKey: 'The preheader is filled in and __count__ characters long',
-  TOO_SHORT,
-  SHORT,
   LONG,
   TOO_LONG,
   passParams: (ctx) => {
@@ -51,19 +69,20 @@ module.exports = {
         },
       ];
     }
+    // Inboxes show the subject and the preheader side by side.
+    const repeats = Boolean(ctx.subject) && repeatsSubject(value, ctx.subject);
+    const findings = repeats
+      ? [
+          {
+            messageKey:
+              'The preheader repeats the subject: inboxes show the same words twice',
+            value,
+          },
+        ]
+      : [];
     const count = visibleLength(value);
-    const finding = (messageKey, severity) => [
-      { messageKey, severity, params: { count }, value },
-    ];
-    if (count < TOO_SHORT && !isDynamic(value)) {
-      return finding('Preheader too short (__count__ characters)', 'warning');
-    }
-    if (count < SHORT) {
-      return finding(
-        'Short preheader (__count__ characters): some inboxes complete it with the body',
-        'info'
-      );
-    }
+    const finding = (messageKey, severity) =>
+      findings.concat({ messageKey, severity, params: { count }, value });
     if (count > TOO_LONG) {
       return finding(
         'Preheader too long (__count__ characters): inboxes cut it well before',
@@ -76,6 +95,6 @@ module.exports = {
         'info'
       );
     }
-    return [];
+    return findings;
   },
 };

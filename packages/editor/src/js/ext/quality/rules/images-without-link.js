@@ -4,7 +4,11 @@ const { findUnfilledAnchors } = require('../links');
 const { isPlaceholderSrc } = require('../images');
 
 // The template wraps this image in a link it expects the client to fill in
-// (`#toreplace` by convention), and the link still leads nowhere.
+// (`#toreplace` by convention), and the link still leads nowhere. A link left
+// empty in a `data-ko-link` is not exported at all, the image is then simply
+// not clickable, and nothing is reported (team decision of 1 October 2026).
+// An empty `href` that the export keeps (`-ko-attr-href`) stays clickable,
+// and is reported.
 module.exports = {
   id: 'images-without-link',
   category: 'content',
