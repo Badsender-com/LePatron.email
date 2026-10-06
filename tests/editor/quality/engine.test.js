@@ -201,6 +201,9 @@ describe('runQualityChecks', () => {
       expect(runQualityChecks(vm, { rules: [reportEveryBlock] })).toEqual({
         findings: [],
         checks: [{ ruleId: 'fake', category: 'content', status: 'error' }],
+        // Nothing to ask the server about either.
+        html: '<html><body></body></html>',
+        resources: { links: [], images: [] },
       });
     });
 
