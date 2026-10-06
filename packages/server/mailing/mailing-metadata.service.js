@@ -356,9 +356,9 @@ async function buildEditorMetadata({ mailing, group }) {
  * @returns {Promise<string|null>}
  */
 async function findCanonicalEmailType(mailing) {
-  if (!mailing || !mailing._emailType) return null;
+  if (!mailing?._emailType) return null;
   const item = await TaxonomyItems.findById(mailing._emailType)
     .select({ canonicalType: 1 })
     .lean();
-  return (item && item.canonicalType) || null;
+  return item?.canonicalType || null;
 }

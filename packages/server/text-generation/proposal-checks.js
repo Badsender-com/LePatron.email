@@ -12,14 +12,16 @@
  */
 
 // Personalization variables of the ESPs our clients use: {{x}}, %%x%%, *|x|*,
-// [[x]]. Their value is only known at send time.
-const VARIABLE_PATTERN = /\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]/g;
+// [[x]]. Their value is only known at send time. Quantifiers are bounded: a
+// variable name is short, and an unclosed opener must not cost a scan of the
+// rest of the text from every position.
+const VARIABLE_PATTERN = /\{\{[^}]{0,100}\}\}|%%[^%]{0,100}%%|\*\|[^|]{0,100}\|\*|\[\[[^\]]{0,100}\]\]/g;
 
 // Forms a model invents when it means a variable — {prenom}, %prenom% — but no
 // ESP of ours reads. Checked like variables, so one the email does not use
 // drops the proposal. `[x]` is left alone: "[IMPORTANT] Incident" is a
 // legitimate subject.
-const SUSPECTED_VARIABLE_PATTERN = /(?<![{%])\{[A-Za-z_][\w.]*\}(?!\})|(?<!%)%[A-Za-z_][\w.]*%(?!%)/g;
+const SUSPECTED_VARIABLE_PATTERN = /(?<![{%])\{[A-Za-z_][\w.]{0,50}\}(?!\})|(?<!%)%[A-Za-z_][\w.]{0,50}%(?!%)/g;
 
 // A subject dressed as a reply or a forward, colon full-width or not, counter
 // or not (`Re[2]:`). Gmail's sender guidelines forbid it.
