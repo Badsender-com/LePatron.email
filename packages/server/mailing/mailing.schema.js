@@ -69,7 +69,7 @@ const MailingSchema = Schema(
       // catches a write that does not go through updateMosaico.
       maxlength: HEAD_CSS_MAX_LENGTH,
     },
-    // _user can't be required: admin doesn't set a _user
+    // _user can't be required: the bootstrap account has none to set
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
     author: {
@@ -106,7 +106,7 @@ const MailingSchema = Schema(
       // • so just make an alias
       alias: 'templateName',
     },
-    // _company can't be required: admin doesn't have a _company
+    // _company can't be required: the bootstrap account has none
     _company: {
       type: ObjectId,
       ref: GroupModel,

@@ -11,6 +11,7 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import { User, Shield, Users, Mail } from 'lucide-vue';
@@ -270,7 +271,7 @@ export default {
         });
       } catch (error) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: superAdminErrorMessage(this, error),
           color: 'error',
         });
         console.error(error);

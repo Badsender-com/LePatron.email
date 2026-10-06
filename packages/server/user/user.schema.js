@@ -45,6 +45,7 @@ const UserSchema = Schema(
     role: {
       type: String,
       enum: [
+        Roles.SUPER_ADMIN,
         Roles.GROUP_ADMIN,
         Roles.GROUP_ADMIN_TECH,
         Roles.REGULAR_USER,
@@ -163,9 +164,11 @@ UserSchema.virtual('isReinitialized').get(function () {
   return false;
 });
 
-// for better session handling
+// Platform-wide rights (ADR 0002). The bootstrap account carries the same
+// flag from outside the database; see account/bootstrap-account.js for the
+// checks that must tell the two apart.
 UserSchema.virtual('isAdmin').get(function () {
-  return false;
+  return this.role === Roles.SUPER_ADMIN;
 });
 
 UserSchema.virtual('isGroupAdmin').get(function () {

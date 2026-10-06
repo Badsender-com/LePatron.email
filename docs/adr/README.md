@@ -10,4 +10,5 @@ Each file records one decision that is hard to reverse, surprising without conte
 | ADR                                                     | Decision                                                                       | Status   |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------ | -------- |
 | [0001](./0001-grill-first-feature-workflow.md)          | New features start with a grilling, an ADR, an epic and tickets                | proposed |
+| [0002](./0002-super-admin-persisted-role.md)            | Super admin is a persisted role; the bootstrap account creates the first one   | proposed |
 | [0003](./0003-text-generation-skills-and-expertises.md) | Text generation runs on Badsender skills and expertises, as its own AI feature | proposed |

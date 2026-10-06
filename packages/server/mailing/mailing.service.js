@@ -6,6 +6,7 @@ const {
   IMAGE_FILE_URL_REGEX,
 } = require('./export-image-urls.js');
 const mongoose = require('mongoose');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const {
   NotFound,
   InternalServerError,
@@ -199,26 +200,14 @@ async function findMailings(query) {
 async function findTags(query) {
   const { user, workspaceId, parentFolderId } = query;
 
-  // Admins have no `_company` on their user record, so the regular
-  // `addStrictGroupFilter` path produces a corrupt query and `Tag.find`
-  // returns nothing. Derive the relevant company from the workspace or
-  // parent folder being viewed instead.
-  let companyId;
-  if (user?.isAdmin) {
-    if (workspaceId) {
-      const workspace = await Workspaces.findById(workspaceId)
-        .select('_company')
-        .lean();
-      companyId = workspace?._company;
-    } else if (parentFolderId) {
-      const folder = await Folders.findById(parentFolderId)
-        .populate({ path: '_workspace', select: '_company' })
-        .lean();
-      companyId = folder?._workspace?._company;
-    }
-  } else {
-    companyId = user?.group?.id;
-  }
+  // An admin's own company is not the one being viewed (the bootstrap
+  // account has none, a super admin's is the platform group), so the
+  // regular `addStrictGroupFilter` path would produce a corrupt query and
+  // `Tag.find` would return nothing. Derive the company from the workspace
+  // or parent folder being viewed instead.
+  const companyId = user?.isAdmin
+    ? await companyOfDestination({ workspaceId, parentFolderId })
+    : user?.group?.id;
 
   if (!companyId) return [];
 
@@ -330,6 +319,30 @@ function buildMailingCopy(source) {
   return omit(source, MAILING_COPY_OMITTED_FIELDS);
 }
 
+/**
+ * The company a workspace or a folder belongs to.
+ *
+ * @param {Object} destination
+ * @param {string} [destination.workspaceId]
+ * @param {string} [destination.parentFolderId]
+ * @returns {Promise<ObjectId|undefined>}
+ */
+async function companyOfDestination({ workspaceId, parentFolderId }) {
+  if (workspaceId) {
+    const workspace = await Workspaces.findById(workspaceId)
+      .select('_company')
+      .lean();
+    return workspace?._company;
+  }
+  if (parentFolderId) {
+    const folder = await Folders.findById(parentFolderId)
+      .populate({ path: '_workspace', select: '_company' })
+      .lean();
+    return folder?._workspace?._company;
+  }
+  return undefined;
+}
+
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
 async function createInsideWorkspaceOrFolder(mailingData) {
   const {
@@ -372,11 +385,15 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     ...mailParentParam,
   };
 
-  // admin doesn't have valid user id & company
-  if (!user.isAdmin) {
+  // The bootstrap account has no document and no company to sign with. A
+  // persisted super admin signs the mailing like any user, in the company
+  // of the workspace or folder it lands in, not in their own platform group.
+  if (!isBootstrapAccount(user)) {
     mailing.userId = user.id;
     mailing.userName = user.name;
-    mailing.group = user.group.id;
+    mailing.group = user.isAdmin
+      ? await companyOfDestination({ workspaceId, parentFolderId })
+      : user.group.id;
   }
 
   const newMailing = await createMailing(mailing);

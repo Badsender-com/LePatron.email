@@ -3,7 +3,11 @@ import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import { ASSIGNABLE_ROLES, getRoleLabelKey } from '~/helpers/roles.js';
+import {
+  ASSIGNABLE_ROLES,
+  SUPER_ADMIN,
+  getRoleLabelKey,
+} from '~/helpers/roles.js';
 
 export default {
   name: 'BsUserForm',
@@ -19,6 +23,8 @@ export default {
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     title: { type: String, default: '' },
+    // Offers the super admin role: on, choosing another role is a demotion.
+    includeSuperAdmin: { type: Boolean, default: false },
   },
   validations() {
     return {
@@ -56,7 +62,14 @@ export default {
       return errors;
     },
     roleOptions() {
-      return ASSIGNABLE_ROLES.map((value) => ({
+      // A super admin's own role must stay displayable; promoting to it is
+      // only offered when asked for.
+      const offersSuperAdmin =
+        this.includeSuperAdmin || this.user.role === SUPER_ADMIN;
+      const roles = offersSuperAdmin
+        ? [SUPER_ADMIN, ...ASSIGNABLE_ROLES]
+        : ASSIGNABLE_ROLES;
+      return roles.map((value) => ({
         value,
         text: this.$t(getRoleLabelKey(value)),
       }));
