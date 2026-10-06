@@ -8,13 +8,8 @@ module.exports = {
     installQualityReview(vm, ko);
   },
   init(vm) {
-    // The quality drawer and the comments panel share the right side of the
-    // editor: opening one closes the other.
-    if (vm.showComments) {
-      vm.showQuality.subscribe((isOpen) => isOpen && vm.showComments(false));
-      vm.showComments.subscribe((isOpen) => isOpen && vm.showQuality(false));
-    }
-
+    // Opening the drawer closes the comments, and the reverse: both are flags
+    // of the editor's one right panel (ext/right-panel.js).
     Vue.component('QualityDrawerPlugin', {
       components: { QualityDrawer },
       data: () => ({ viewModel: vm }),
