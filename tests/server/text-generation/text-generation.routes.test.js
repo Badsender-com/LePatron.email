@@ -619,6 +619,34 @@ describe('text generation: POST /api/text-generation/subject', () => {
     });
 
     it.each([
+      ['credits or quota are exhausted', 'PROVIDER_QUOTA_EXCEEDED'],
+      ['the key is refused', 'PROVIDER_INVALID_CREDENTIALS'],
+      ['the integration is misconfigured', 'PROVIDER_CONFIG_ERROR'],
+    ])(
+      'answers 503 when %s: retrying will not help',
+      async (_label, failureCode) => {
+        const err = failedInvocation(502, 'PROVIDER_ERROR');
+        err.failureCode = failureCode;
+        invoke.mockRejectedValue(err);
+        const res = await request(makeApp())
+          .post('/api/text-generation/subject')
+          .send(body);
+        expect(res.status).toBe(503);
+        expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+      }
+    );
+
+    it('still answers 502 when the provider hits a passing error', async () => {
+      const err = failedInvocation(502, 'PROVIDER_ERROR');
+      err.failureCode = 'PROVIDER_API_ERROR';
+      invoke.mockRejectedValue(err);
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.status).toBe(502);
+    });
+
+    it.each([
       ['the provider fails', 502, 'PROVIDER_ERROR'],
       ['the provider times out', 502, 'TIMEOUT'],
       // A malformed model answer is not the caller's mistake.
