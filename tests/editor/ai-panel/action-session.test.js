@@ -46,14 +46,12 @@ const answer = (...texts) => ({
   dropped: 0,
 });
 
-// Turned on by #1181 (the « Outils IA » panel with the subject and preheader actions)
-describe.skip('ai panel: the steps of an AI action', () => {
+describe('ai panel: the steps of an AI action', () => {
   let createActionSession;
   let api;
   let editor;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1181.
     ({
       createActionSession,
     } = require('../../../packages/editor/src/js/ext/ai-panel/action-session'));
