@@ -246,14 +246,19 @@ export default {
     buildQuickActions(item) {
       const actions = [];
 
-      // 1. Comment (with unresolved badge)
+      // 1. Comment (with unresolved badge, or the approval check)
       if (this.hasAccess) {
         actions.push({
           key: 'comment',
           icon: MessageCircle,
-          text: 'mailings.openComments',
+          text: item.isApproved
+            ? 'mailings.openCommentsApproved'
+            : 'mailings.openComments',
+          // Approved: the green check replaces the count, the details are one
+          // click away in the comments panel.
+          approved: Boolean(item.isApproved),
           badge:
-            item.unresolvedCommentsCount > 0
+            !item.isApproved && item.unresolvedCommentsCount > 0
               ? item.unresolvedCommentsCount
               : null,
           onClick: () => {

@@ -416,6 +416,7 @@ export default {
     downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
     openComments: 'Open comments',
+    openCommentsApproved: 'Approved — open comments',
     duplicateTranslate: 'Duplicate + Translate',
   },
   translation: {

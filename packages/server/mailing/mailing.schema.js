@@ -386,7 +386,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   // Get unresolved comment counts for each mailing
   const Comment = mongoose.models[CommentModel];
   let commentCountsMap = {};
+  let approvedMailingIds = new Set();
   if (Comment) {
+    approvedMailingIds = new Set(await Comment.findApprovedMailingIds(ids));
     const commentCounts = await Comment.aggregate([
       {
         $match: {
@@ -417,6 +419,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     ...doc,
     hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
+    isApproved: approvedMailingIds.has(doc._id.toString()),
   }));
 
   const convertedResultMailingDocs = finalDocs.map(

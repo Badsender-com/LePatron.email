@@ -422,6 +422,7 @@ export default {
     moveManySuccessful: 'Les emails ont bien été déplacés',
     editTagsSuccessful: 'Les labels ont bien été mis à jour',
     openComments: 'Ouvrir les commentaires',
+    openCommentsApproved: 'Validé — ouvrir les commentaires',
     duplicateTranslate: 'Dupliquer + Traduire',
   },
   translation: {

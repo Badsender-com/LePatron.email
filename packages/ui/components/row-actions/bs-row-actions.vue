@@ -14,7 +14,13 @@
           v-on="on"
           @click.stop="action.onClick"
         >
-          <span v-if="action.badge" class="qa-badge-wrap">
+          <span v-if="action.approved" class="qa-badge-wrap">
+            <component :is="action.icon" :size="18" />
+            <span class="qa-badge qa-badge--approved">
+              <lucide-check :size="10" :stroke-width="3" />
+            </span>
+          </span>
+          <span v-else-if="action.badge" class="qa-badge-wrap">
             <component :is="action.icon" :size="18" />
             <span class="qa-badge">{{ formatBadgeCount(action.badge) }}</span>
           </span>
@@ -92,17 +98,19 @@
 </template>
 
 <script>
-import { MoreHorizontal } from 'lucide-vue';
+import { Check, MoreHorizontal } from 'lucide-vue';
 
 export default {
   name: 'BsRowActions',
   components: {
+    LucideCheck: Check,
     LucideMoreHorizontal: MoreHorizontal,
   },
   props: {
     /**
      * Quick actions (always visible inline, max 4)
-     * Array of { key, icon, text, onClick, variant?, badge? }
+     * Array of { key, icon, text, onClick, variant?, badge?, approved? }
+     * `approved` shows a green check instead of the `badge` count.
      */
     quickActions: {
       type: Array,
@@ -198,6 +206,16 @@ export default {
   border-radius: 8px;
   box-sizing: border-box;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Approved: the green check takes the place of the count */
+.qa-badge--approved {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--v-success-base, #4caf50);
+  color: #fff;
 }
 
 /* Divider =============================================================== */
