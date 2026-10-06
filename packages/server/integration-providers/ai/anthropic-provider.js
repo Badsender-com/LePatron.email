@@ -167,7 +167,7 @@ class AnthropicProvider extends BaseLLMProvider {
     const schema = requestedSchema(requestBody);
     if (!schema) return toolUse ? JSON.stringify(toolUse.input) : text;
 
-    let answer = toolUse && toolUse.input;
+    let answer = toolUse?.input;
     if (!answer) {
       // Text that is not plain JSON is left to the caller's repair pass.
       try {

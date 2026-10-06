@@ -51,59 +51,74 @@ const UNSUPPORTED_KEYWORDS = new Set([
   'maxItems',
 ]);
 
-const SCHEMA_MAPS = ['properties', '$defs', 'definitions'];
-const SCHEMA_LISTS = ['anyOf', 'allOf', 'oneOf', 'prefixItems'];
+const SCHEMA_MAPS = new Set(['properties', '$defs', 'definitions']);
+const SCHEMA_LISTS = new Set(['anyOf', 'allOf', 'oneOf', 'prefixItems']);
+const SCHEMA_CHILDREN = new Set(['items', 'not']);
+
+// Internal markers, never returned: a keyword to leave out, and a schema
+// structured outputs cannot express. Symbols rather than null, which is a
+// legitimate keyword value (`const: null`).
+const SKIP = Symbol('skip');
+const UNEXPRESSIBLE = Symbol('unexpressible');
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function hasOwn(object, key) {
-  return Object.prototype.hasOwnProperty.call(object, key);
+function convertMap(map) {
+  const next = {};
+  for (const [name, child] of Object.entries(map)) {
+    const converted = convertSchema(child);
+    if (converted === UNEXPRESSIBLE) return UNEXPRESSIBLE;
+    next[name] = converted;
+  }
+  return next;
+}
+
+function convertList(list) {
+  const next = list.map(convertSchema);
+  return next.includes(UNEXPRESSIBLE) ? UNEXPRESSIBLE : next;
+}
+
+function convertKeyword(key, value) {
+  if (UNSUPPORTED_KEYWORDS.has(key)) return SKIP;
+  // Only 0 and 1 are accepted.
+  if (key === 'minItems' && value > 1) return SKIP;
+  if (SCHEMA_MAPS.has(key) && isPlainObject(value)) return convertMap(value);
+  if (SCHEMA_LISTS.has(key) && Array.isArray(value)) return convertList(value);
+  if (SCHEMA_CHILDREN.has(key)) return convertSchema(value);
+  return value;
+}
+
+// An open map has no equivalent: closing it would forbid every key.
+function closeObject(schema) {
+  if (schema.type !== 'object') return schema;
+  if (schema.additionalProperties) return UNEXPRESSIBLE;
+  return { ...schema, additionalProperties: false };
+}
+
+function convertSchema(schema) {
+  if (!isPlainObject(schema)) return schema;
+
+  const next = {};
+  for (const [key, value] of Object.entries(schema)) {
+    const converted = convertKeyword(key, value);
+    if (converted === UNEXPRESSIBLE) return UNEXPRESSIBLE;
+    if (converted !== SKIP) next[key] = converted;
+  }
+  return closeObject(next);
 }
 
 /**
  * The schema as structured outputs accepts it, or null when it cannot be
- * expressed there — an open map (`additionalProperties` other than false) has
- * no equivalent, and closing it would forbid every key.
+ * expressed there — an open map (`additionalProperties` other than false).
  *
  * Walked by structure, not by key name: a property may well be called
  * `minLength`.
  */
 function toStructuredOutputSchema(schema) {
-  if (!isPlainObject(schema)) return schema;
-
-  const next = {};
-  for (const [key, value] of Object.entries(schema)) {
-    if (UNSUPPORTED_KEYWORDS.has(key)) continue;
-    // Only 0 and 1 are accepted.
-    if (key === 'minItems' && value > 1) continue;
-
-    if (SCHEMA_MAPS.includes(key) && isPlainObject(value)) {
-      next[key] = {};
-      for (const [name, child] of Object.entries(value)) {
-        const converted = toStructuredOutputSchema(child);
-        if (converted === null) return null;
-        next[key][name] = converted;
-      }
-    } else if (SCHEMA_LISTS.includes(key) && Array.isArray(value)) {
-      next[key] = value.map(toStructuredOutputSchema);
-      if (next[key].includes(null)) return null;
-    } else if (key === 'items' || key === 'not') {
-      next[key] = toStructuredOutputSchema(value);
-      if (next[key] === null) return null;
-    } else {
-      next[key] = value;
-    }
-  }
-
-  if (next.type === 'object') {
-    if (hasOwn(next, 'additionalProperties') && next.additionalProperties) {
-      return null;
-    }
-    next.additionalProperties = false;
-  }
-  return next;
+  const converted = convertSchema(schema);
+  return converted === UNEXPRESSIBLE ? null : converted;
 }
 
 function jsonTool(inputSchema) {
@@ -141,7 +156,7 @@ function buildJsonModeFields(schema) {
 /** @returns {{param: string, action: string}|null} */
 function detectJsonModeQuirk(status, parsedError, message) {
   if (status !== 400) return null;
-  const error = (parsedError && parsedError.error) || {};
+  const error = parsedError?.error || {};
   const text = error.message || message || '';
 
   if (FORCED_TOOL_REFUSED.test(text)) {
@@ -199,7 +214,7 @@ function applyAnthropicQuirks(body, quirks) {
 function requestedSchema(requestBody) {
   if (!requestBody) return null;
   const { output_config: outputConfig, tools } = requestBody;
-  if (outputConfig && outputConfig.format) return outputConfig.format.schema;
+  if (outputConfig?.format) return outputConfig.format.schema;
   const tool = (tools || []).find((item) => item.name === JSON_TOOL_NAME);
   return tool ? tool.input_schema : null;
 }
@@ -224,7 +239,8 @@ function unwrapEnvelope(value, schema) {
   }
 
   const keys = Object.keys(value);
-  if (keys.length !== 1 || hasOwn(schema.properties, keys[0])) return untouched;
+  if (keys.length !== 1 || Object.hasOwn(schema.properties, keys[0]))
+    return untouched;
 
   let inner = value[keys[0]];
   if (typeof inner === 'string') {
@@ -237,8 +253,8 @@ function unwrapEnvelope(value, schema) {
   if (!isPlainObject(inner)) return untouched;
 
   const fits =
-    Object.keys(inner).every((key) => hasOwn(schema.properties, key)) &&
-    (schema.required || []).every((key) => hasOwn(inner, key));
+    Object.keys(inner).every((key) => Object.hasOwn(schema.properties, key)) &&
+    (schema.required || []).every((key) => Object.hasOwn(inner, key));
   return fits ? { value: inner, envelope: keys[0] } : untouched;
 }
 

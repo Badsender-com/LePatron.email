@@ -285,6 +285,21 @@ describe('AnthropicProvider', () => {
           ).toEqual({ type: 'string' });
         });
 
+        // null is a value a keyword may hold, not a schema that failed.
+        it('keeps a keyword whose value is null', async () => {
+          mockFetch.mockResolvedValue(textAnswer('{"text":null}'));
+
+          await askJson({
+            type: 'object',
+            properties: { text: { const: null } },
+            required: ['text'],
+          });
+
+          expect(
+            sentBody().output_config.format.schema.properties.text
+          ).toEqual({ const: null });
+        });
+
         // An open map has no equivalent there: closing it would forbid every
         // key. The tool takes it as is.
         it('uses the tool for a schema it cannot express', async () => {
