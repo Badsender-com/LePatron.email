@@ -8,8 +8,10 @@ import {
   mailingsItem,
   downloadMultipleMails,
 } from '~/helpers/api-routes';
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { USER, ROLE } from '~/store/user';
+import { REVIEWER, WRITER } from '~/helpers/roles.js';
 import { CloudDownload, Download, FolderInput, Trash2 } from 'lucide-vue';
 
 export default {
@@ -37,6 +39,15 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, { role: ROLE }),
+    // Same rules as the row actions in mailings-table.vue: reviewer organises
+    // nothing, writer does not delete.
+    canOrganise() {
+      return this.role !== REVIEWER;
+    },
+    canDelete() {
+      return this.role !== REVIEWER && this.role !== WRITER;
+    },
     selectionLength() {
       return this.mailingsSelection.length;
     },
@@ -217,6 +228,7 @@ export default {
       <div class="bsdt-bulkbar__actions">
         <!-- Tags menu -->
         <mailings-tags-menu
+          v-if="canOrganise"
           :tags="tags"
           :mailings-selection="mailingsSelection"
           @create="$emit(`createTag`, $event)"
@@ -224,7 +236,7 @@ export default {
         />
 
         <!-- Move -->
-        <v-tooltip bottom>
+        <v-tooltip v-if="canOrganise" bottom>
           <template #activator="{ on }">
             <button
               class="bsdt-bulkbar__btn"
@@ -281,10 +293,10 @@ export default {
         </v-tooltip>
 
         <!-- Divider before destructive action -->
-        <span class="bsdt-bulkbar__divider" />
+        <span v-if="canDelete" class="bsdt-bulkbar__divider" />
 
         <!-- Delete (danger) -->
-        <v-tooltip bottom>
+        <v-tooltip v-if="canDelete" bottom>
           <template #activator="{ on }">
             <button
               class="bsdt-bulkbar__btn bsdt-bulkbar__btn--danger"

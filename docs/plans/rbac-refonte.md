@@ -173,31 +173,38 @@ Pas de rôles sur-mesure demandés, et pas de moteur générique de permissions 
 
 Légende des colonnes : **Lecture** = consulter la feature/l'écran · **Écriture** = créer et/ou modifier · **Suppression** = supprimer (`—` = l'action n'existe pas pour cette feature). Valeurs possibles par cellule : `company_admin`, `company_admin_tech`, `super_admin`, ou une combinaison (ex. `company_admin + company_admin_tech`). `super_admin` garde de toute façon un accès complet partout (compte env var, inchangé) — omis des cellules sauf quand il est le seul rôle autorisé.
 
-| #   | Feature                                                                           | Lecture                              | Écriture                               | Suppression                            |
-| --- | --------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------- | -------------------------------------- |
-| 1   | Workspaces                                                                        | `company_admin`                      | `company_admin`                        | `company_admin`                        |
-| 2   | Utilisateurs                                                                      | `company_admin`                      | `company_admin`                        | `company_admin`                        |
-| 3   | Rôles (assigner un rôle à un utilisateur)                                         | `company_admin`                      | `company_admin`                        | —                                      |
-| 4   | Test lists (listes d'emails de test)                                              | `company_admin`                      | `company_admin`                        | `company_admin`                        |
-| 5   | Couleurs (nuancier)                                                               | `company_admin`                      | `company_admin`                        | `company_admin`                        |
-| 6   | Bibliothèque de blocs personnalisés                                               | `company_admin`                      | `company_admin`                        | `company_admin`                        |
-| 7   | Modération de commentaires (supprimer un commentaire d'autrui)                    | —                                    | —                                      | `company_admin`                        |
-| 8   | Variables personnalisées (merge tags)                                             | tout utilisateur avec accès au group | `company_admin` + `company_admin_tech` | `company_admin` + `company_admin_tech` |
-| 9   | Profils ESP (Adobe/Actito/DSC/Sendinblue)                                         | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 10  | Export options (hébergement CDN/FTP)                                              | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 11  | Intégrations (connecteurs AI/feed/dashboard)                                      | `company_admin_tech`                 | `company_admin_tech`                   | `company_admin_tech`                   |
-| 12  | AI Features (traduction, config skills par company)                               | `company_admin_tech`                 | `company_admin_tech`                   | —                                      |
-| 13  | Tracking (UTM) — niveau company                                                   | `company_admin_tech`                 | `company_admin_tech`                   | —                                      |
-| 14  | Tracking (UTM) — override par template                                            | `company_admin_tech`                 | `company_admin_tech`                   | —                                      |
-| 15  | Feed mappings (flux de contenu)                                                   | `company_admin_tech`                 | `company_admin_tech`                   | `company_admin_tech`                   |
-| 16  | CRM Intelligence — dashboards                                                     | _ouvert, hors scope #1099_           |                                        |                                        |
-| 17  | Templates — admin (CRUD templates d'une company)                                  | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 18  | Mailings — rapport admin (vue d'ensemble lecture seule)                           | _ouvert, hors scope #1099_           | —                                      | —                                      |
-| 19  | Company — réglages généraux (nom, statut, modules, rétention logs)                | `company_admin`                      | `company_admin`                        | —                                      |
-| 20  | Company — SAML (authentification)                                                 | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 21  | AI Skills Hub (plateforme, skills/expertise)                                      | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 22  | AI Playground (plateforme)                                                        | `super_admin`                        | `super_admin`                          | `super_admin`                          |
-| 23  | Annuaire des companies (créer/supprimer une company, lister toutes les companies) | `super_admin`                        | `super_admin`                          | `super_admin`                          |
+| #   | Feature                                                                                                    | Lecture                                | Écriture                               | Suppression                                                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 1   | Workspaces                                                                                                 | `company_admin`                        | `company_admin`                        | `company_admin`                                                                             |
+| 2   | Utilisateurs                                                                                               | `company_admin`                        | `company_admin`                        | `company_admin`                                                                             |
+| 3   | Rôles (assigner un rôle à un utilisateur)                                                                  | `company_admin`                        | `company_admin`                        | —                                                                                           |
+| 4   | Test lists (listes d'emails de test)                                                                       | `company_admin`                        | `company_admin`                        | `company_admin`                                                                             |
+| 5   | Couleurs (nuancier)                                                                                        | `company_admin`                        | `company_admin`                        | `company_admin`                                                                             |
+| 6   | Bibliothèque de blocs personnalisés                                                                        | `company_admin`                        | `company_admin`                        | `company_admin`                                                                             |
+| 7   | Modération de commentaires (supprimer un commentaire d'autrui)                                             | —                                      | —                                      | `company_admin`                                                                             |
+| 8   | Variables personnalisées (merge tags)                                                                      | tout utilisateur avec accès au group   | `company_admin` + `company_admin_tech` | `company_admin` + `company_admin_tech`                                                      |
+| 9   | Profils ESP (Adobe/Actito/DSC/Sendinblue)                                                                  | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 10  | Export options (hébergement CDN/FTP)                                                                       | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 11  | Intégrations (connecteurs AI/feed/dashboard)                                                               | `company_admin_tech`                   | `company_admin_tech`                   | `company_admin_tech`                                                                        |
+| 12  | AI Features (traduction, config skills par company)                                                        | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
+| 13  | Tracking (UTM) — niveau company                                                                            | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
+| 14  | Tracking (UTM) — override par template                                                                     | `company_admin_tech`                   | `company_admin_tech`                   | —                                                                                           |
+| 15  | Feed mappings (flux de contenu)                                                                            | `company_admin_tech`                   | `company_admin_tech`                   | `company_admin_tech`                                                                        |
+| 16  | CRM Intelligence — dashboards                                                                              | _ouvert, hors scope #1099_             |                                        |                                                                                             |
+| 17  | Templates — admin (CRUD templates d'une company)                                                           | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 18  | Mailings — rapport admin (vue d'ensemble lecture seule)                                                    | _ouvert, hors scope #1099_             | —                                      | —                                                                                           |
+| 19  | Company — réglages généraux (nom, statut, modules, rétention logs)                                         | `company_admin`                        | `company_admin`                        | —                                                                                           |
+| 20  | Company — SAML (authentification)                                                                          | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 21  | AI Skills Hub (plateforme, skills/expertise)                                                               | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 22  | AI Playground (plateforme)                                                                                 | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 23  | Annuaire des companies (créer/supprimer une company, lister toutes les companies)                          | `super_admin`                          | `super_admin`                          | `super_admin`                                                                               |
+| 24  | Contrôle qualité — consulter, relancer, transformer en commentaire, envoi de test, vérifier les ressources | tous les rôles                         | tous les rôles                         | —                                                                                           |
+| 25  | Contrôle qualité — ignorer un résultat                                                                     | tous sauf `writer` et `reviewer`       | tous sauf `writer` et `reviewer`       | —                                                                                           |
+| 26  | Liens de partage                                                                                           | tous les rôles                         | tous les rôles (créer)                 | ses propres liens : tous les rôles ; ceux d'autrui : `company_admin` + `company_admin_tech` |
+| 27  | Génération de texte IA — configuration par group                                                           | `company_admin` + `company_admin_tech` | `company_admin` + `company_admin_tech` | —                                                                                           |
+| 28  | Génération de texte IA — utilisation dans l'éditeur                                                        | —                                      | tous sauf `reviewer`                   | —                                                                                           |
+
+Lignes 24-28 ajoutées le 2026-10-06 (chantiers rapatriés, détail et statut en 3.2 bis) : décisions produit **à confirmer par tests fonctionnels et review**.
 
 Décisions actées le 2026-09-03 :
 
@@ -214,6 +221,33 @@ Décisions actées le 2026-09-03 :
 - Ligne partagée (8) : remplacer `GUARD_GROUP_ADMIN` par `GUARD_GROUP_ADMIN_OR_TECH` sur les routes d'écriture/suppression de `group.routes.js` (`/:groupId/personalized-variables`).
 - Côté UI, même bascule sur `meta.acl` des pages concernées (`ACL_GROUP_ADMIN` → `ACL_GROUP_ADMIN_TECH` pour 11-15, `ACL_GROUP_ADMIN_TECH` ajouté en plus pour 8) et sur la logique de visibilité de la sidebar (`bs-sidebar-settings-list.vue`), qui utilise aujourd'hui un seul flag `canAccessGroupAdmin` pour tous ces éléments et doit être scindée.
 
+### 3.2 bis Droits sur les chantiers rapatriés le 2026-10-06
+
+**Statut : rempli par le produit le 2026-10-06, à confirmer par des tests fonctionnels et une review** (rien n'est encore implémenté). Valeurs : `oui` / `non`. `super_admin` a un accès complet partout, omis.
+
+**A. Contrôle qualité (panneau de l'éditeur, QC v2)**
+
+| #   | Action                                                 | regular_user | writer    | reviewer  | company_admin_tech | company_admin |
+| --- | ------------------------------------------------------ | ------------ | --------- | --------- | ------------------ | ------------- |
+| A1  | Voir les résultats des contrôles                       | oui          | oui       | oui       | oui                | oui           |
+| A2  | Lancer / relancer les contrôles                        | oui          | oui       | oui       | oui                | oui           |
+| A3  | Ignorer un résultat (`quality-ignores`)                | oui          | non       | non       | oui                | oui           |
+| A4  | Transformer un résultat en commentaire                 | oui          | oui       | oui       | oui                | oui           |
+| A5  | Envoi de test depuis le panneau                        | oui          | oui       | oui       | oui                | oui           |
+| A6  | Vérifier les ressources (`quality/resources`)          | oui          | oui       | oui       | oui                | oui           |
+| A7  | Lien de partage — lister                               | oui          | oui       | oui       | oui                | oui           |
+| A8  | Lien de partage — créer                                | oui          | oui       | oui       | oui                | oui           |
+| A9  | Lien de partage — révoquer (les siens / ceux d'autrui) | les siens    | les siens | les siens | ceux d'autrui      | ceux d'autrui |
+
+**B. Génération de texte IA (sujet, préheader)**
+
+| #   | Action                                   | regular_user | writer | reviewer | company_admin_tech | company_admin |
+| --- | ---------------------------------------- | ------------ | ------ | -------- | ------------------ | ------------- |
+| B1  | Configurer la fonctionnalité (par group) | non          | non    | non      | oui                | oui           |
+| B2  | Utiliser la génération dans l'éditeur    | oui          | oui    | non      | oui                | oui           |
+
+Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les traduire en `canEdit*`/guards (aujourd'hui aucune de ces actions n'est soumise aux rôles, et les routes `share-links` sont toutes en `GUARD_USER`).
+
 ### 3.3 `reviewer` / `writer` : restriction UI du canvas ET du listing, pas d'enforcement serveur
 
 **Constat technique clé** : la sauvegarde d'un mailing passe par un seul endpoint (`PUT /:mailingId/mosaico`, `packages/server/mailing/mailing.controller.js:398`, `mailing.data = req.body.data`) qui écrase tout le JSON Mosaico (structure + contenu + style mélangés) en une fois. Il n'existe aucune séparation champ par champ côté serveur. Garantir côté API que `writer` ne modifie que le contenu nécessiterait de diffuser ce JSON — jugé trop risqué pour cet incrément, différé dans [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103). De la même façon, les actions de listing (renommer/déplacer/dupliquer/supprimer un mailing) passent par `mailing.routes.js`, toutes en `GUARD_USER` — aucune restriction serveur par rôle n'existe non plus à ce niveau.
@@ -224,14 +258,16 @@ Décisions actées le 2026-09-03 :
 
 **`reviewer`** — rôle passif sur le contenu, actif uniquement sur commentaire/test/validation :
 
+- Canvas builder — `reviewer` (aucun droit d'édition, `isReadOnly`) : la liste d'onglets passe en `display: none` (`#tooltabs:has(.toolbox-readonly-overlay--all)`) et un message unique (`toolbox-readonly-all`) remplace le contenu du panneau actif ; le DOM n'est jamais retiré. Pour les autres rôles restreints, un message par panneau verrouillé, qui remplace son contenu (`display: none` sur le reste du panneau).
 - Canvas builder — onglets (`packages/editor/src/tmpl-badsender/toolbox.tmpl.html`) : overlay additif (`.toolbox-readonly-overlay`, position absolue, z-index au-dessus du contenu du panneau) sur Blocks/Content/Style quand `canEditStructure`/`canEditContent`/`canEditStyle` (booléens dérivés dans `badsender-current-user.js`) sont `false` — bloque le clic ET le drag-and-drop (l'overlay intercepte le `mousedown`) sans toucher aux `<div id="toolblocks">` etc. eux-mêmes.
 - Canvas builder — contenu du bloc (`packages/editor/src/tmpl/block-wysiwyg.tmpl.html`) : un overlay additif similaire (`.canvas-readonly-overlay`) est ajouté à l'intérieur de `.block-content-wrapper`, **à côté de** (pas à la place de) `<!-- ko block: $data -->` qui rend le contenu réel — bloque le focus/l'édition inline (texte, image, lien) sans toucher à la barre d'outils du bloc, qui est un **sibling** de ce wrapper.
 - Canvas builder — barre d'outils par bloc (même fichier) : réduite à l'icône **Commenter** uniquement. Déplacer/dupliquer/sauvegarder en bibliothèque/variante/supprimer sont masqués (`if: canEditStructure`, `false` pour reviewer et writer).
-- Listing de mailings (`packages/ui/routes/mailings/__partials/mailings-table.vue`) : renommer, déplacer, dupliquer/copier, supprimer, transférer — **masqués**. Ce fichier calcule déjà une liste d'actions cachées par contexte (`TABLE_HIDDEN_COLUMNS_ADMIN` ligne 49/`_USER` ligne 50, définitions lignes 48-50, logique de sélection lignes ~117-127) ; on y ajoute un jeu `TABLE_HIDDEN_COLUMNS_REVIEWER` sélectionné via `roleHiddenColumns[this.role]` quand `role === 'reviewer'`, sur le même modèle que l'existant.
+- Listing de mailings (`packages/ui/routes/mailings/__partials/mailings-table.vue`) : renommer, déplacer, dupliquer/copier, supprimer, transférer — **masqués**. Ce fichier calcule déjà une liste d'actions cachées par contexte (`TABLE_HIDDEN_COLUMNS_ADMIN` ligne 49/`_USER` ligne 50, définitions lignes 48-50, logique de sélection lignes ~117-127) ; on y ajoute un jeu `TABLE_HIDDEN_COLUMNS_REVIEWER` sélectionné via `roleHiddenColumns[this.role]` quand `role === 'reviewer'`, sur le même modèle que l'existant. Correction du 2026-10-06 : `hiddenCols` filtrait ces jeux contre `TABLE_HIDDEN_COLUMNS_NO_ACCESS`, ce qui réaffichait renommer/déplacer/supprimer/tags pour tout utilisateur ayant accès au workspace (reviewer comme writer) ; filtre retiré. La barre d'actions groupées (`mailings-selection-actions.vue`) suit les mêmes règles : tags et déplacer masqués pour `reviewer`, supprimer masqué pour `reviewer` et `writer`. Les exports de la barre restent ouverts (non tranché).
 - Bouton "Nouveau mail" (`packages/ui/routes/mailings/index.vue`) : désactivé (`canCreateMailing` combine l'accès workspace existant et le rôle).
 - Gestion de dossiers (`packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue`) : renommer/déplacer/supprimer un dossier, créer un sous-dossier — masqués pour `reviewer` (`checkIfAuthorizedFolderMenu`/`hasRightToCreateFolder` gagnent une condition de rôle), cohérent avec un rôle entièrement passif sur l'organisation du contenu.
+- Renommer le mailing : masqué dans le listing (déjà le cas) **et** dans l'éditeur (double-clic sur le titre, flag `canRename`, `badsender-edit-title.js`) — UI seule, le `PUT` de renommage n'a toujours que `GUARD_USER`.
 - Envoi de test (`sendTestMail`, `GUARD_USER`) : **conservé**, correspond au "tester" de la vision produit — aucune restriction.
-- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Le panneau commentaires s'ouvre **par défaut** à l'arrivée dans l'éditeur (`showComments(true)` déclenché dès que le rôle est connu). Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
+- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Le panneau commentaires n'est **pas** ouvert par défaut (décision du 2026-10-06, retour de l'ouverture automatique initiale). Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
 
 **`writer`** — édite le contenu, gère ses variantes, ne crée ni ne supprime :
 
@@ -241,7 +277,7 @@ Décisions actées le 2026-09-03 :
 - Bouton "Nouveau mail" : désactivé, comme pour reviewer (créer un mailing "from scratch" reste une action de structure).
 - Gestion de dossiers : inchangée par rapport à `regular_user` — rien dans la demande produit ne justifie de la restreindre pour `writer`.
 - Envoi de test : conservé.
-- Commentaire : panneau ouvert par défaut, comme pour reviewer. Mêmes droits qu'un `regular_user` sur le fond (pas d'action de décision d'approbation affichée — voir 3.4).
+- Commentaire : panneau fermé par défaut, comme pour reviewer. Mêmes droits qu'un `regular_user` sur le fond (pas d'action de décision d'approbation affichée — voir 3.4).
 
 ### 3.4 Décision d'approbation sur les commentaires (mécanisme de "validation")
 
@@ -263,24 +299,32 @@ Le rôle vit sur `User.role`, un champ scalaire — aucune structure supplément
 
 Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Assigned** = restreint aux workspaces assignés · **R** = lecture seule · **C** = commenter seulement · **—** = aucun accès · **UI:** = restriction non garantie côté serveur (section 3.3).
 
-| Domaine                                                | regular_user | writer   | reviewer | company_admin_tech | company_admin                          |
-| ------------------------------------------------------ | ------------ | -------- | -------- | ------------------ | -------------------------------------- |
-| Company (réglages généraux)                            | —            | —        | —        | —                  | Own (déjà restreint par `pick()`)      |
-| Users & rôles (créer/assigner un rôle)                 | —            | —        | —        | —                  | Own, sauf `super_admin`                |
-| Workspaces (CRUD + membres)                            | —            | —        | —        | —                  | Own                                    |
-| Workspaces (accès)                                     | Assigned     | Assigned | Assigned | Assigned           | Own                                    |
-| Mailing — créer                                        | Full         | UI: —    | UI: —    | Full               | Own                                    |
-| Mailing — renommer / déplacer / dupliquer              | Full         | UI: Full | UI: —    | Full               | Own                                    |
-| Mailing — supprimer                                    | Full         | UI: —    | UI: —    | Full               | Own                                    |
-| Mailing — dossiers (créer/renommer/déplacer/supprimer) | Full         | Full     | UI: —    | Full               | Own                                    |
-| Mailing — envoyer un test                              | Full         | Full     | Full     | Full               | Own                                    |
-| Intégrations / AI features / feed mappings             | —            | —        | —        | Own (nouveau)      | Own _(inchangé, écart documenté)_      |
-| Exports / profils ESP                                  | —            | —        | —        | —                  | — (inchangé, super-admin only)         |
-| Builder — structure                                    | Full         | UI: —    | UI: —    | Full               | Full                                   |
-| Builder — contenu                                      | Full         | UI: Full | UI: —    | Full               | Full                                   |
-| Builder — style                                        | Full         | UI: —    | UI: —    | Full               | Full                                   |
-| Commentaire — créer/répondre/résoudre                  | Full (siens) | Full     | Full     | Full               | Full (aussi autrui, comme aujourd'hui) |
-| Commentaire — décision d'approbation (3.4)             | —            | —        | Full     | —                  | Full                                   |
+| Domaine                                                   | regular_user | writer   | reviewer | company_admin_tech | company_admin                          |
+| --------------------------------------------------------- | ------------ | -------- | -------- | ------------------ | -------------------------------------- |
+| Company (réglages généraux)                               | —            | —        | —        | —                  | Own (déjà restreint par `pick()`)      |
+| Users & rôles (créer/assigner un rôle)                    | —            | —        | —        | —                  | Own, sauf `super_admin`                |
+| Workspaces (CRUD + membres)                               | —            | —        | —        | —                  | Own                                    |
+| Workspaces (accès)                                        | Assigned     | Assigned | Assigned | Assigned           | Own                                    |
+| Mailing — créer                                           | Full         | UI: —    | UI: —    | Full               | Own                                    |
+| Mailing — renommer / déplacer / dupliquer                 | Full         | UI: Full | UI: —    | Full               | Own                                    |
+| Mailing — supprimer                                       | Full         | UI: —    | UI: —    | Full               | Own                                    |
+| Mailing — dossiers (créer/renommer/déplacer/supprimer)    | Full         | Full     | UI: —    | Full               | Own                                    |
+| Mailing — envoyer un test                                 | Full         | Full     | Full     | Full               | Own                                    |
+| Intégrations / AI features / feed mappings                | —            | —        | —        | Own (nouveau)      | Own _(inchangé, écart documenté)_      |
+| Exports / profils ESP                                     | —            | —        | —        | —                  | — (inchangé, super-admin only)         |
+| Builder — structure                                       | Full         | UI: —    | UI: —    | Full               | Full                                   |
+| Builder — contenu                                         | Full         | UI: Full | UI: —    | Full               | Full                                   |
+| Builder — style                                           | Full         | UI: —    | UI: —    | Full               | Full                                   |
+| Commentaire — créer/répondre/résoudre                     | Full (siens) | Full     | Full     | Full               | Full (aussi autrui, comme aujourd'hui) |
+| Commentaire — décision d'approbation (3.4)                | —            | —        | Full     | —                  | Full                                   |
+| QC — consulter / relancer / commenter / test / ressources | Full         | Full     | Full     | Full               | Own                                    |
+| QC — ignorer un résultat                                  | Full         | UI: —    | UI: —    | Full               | Own                                    |
+| Lien de partage — lister / créer                          | Full         | Full     | Full     | Full               | Own                                    |
+| Lien de partage — révoquer                                | Siens        | Siens    | Siens    | Own (tous)         | Own (tous)                             |
+| IA texte (sujet, préheader) — configurer                  | —            | —        | —        | Own                | Own                                    |
+| IA texte (sujet, préheader) — utiliser                    | Full         | Full     | UI: —    | Full               | Own                                    |
+
+Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review) : aujourd'hui aucune n'est soumise aux rôles côté serveur, et les routes `share-links` sont toutes en `GUARD_USER`. « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. Le niveau d'enforcement (UI seule, comme 3.3, ou garde serveur sur la révocation) reste à trancher.
 
 `super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (accès complet partout ; depuis l'ADR 0002, ce sont des comptes persistés plutôt que le seul compte env var). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
 
