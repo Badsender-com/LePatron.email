@@ -244,6 +244,7 @@ describe.each([
   });
 
   it('still defers to the dialect for the other statuses', () => {
+    expect(build()._mapErrorToCode(402, {})).toBe(CODES.QUOTA_EXCEEDED);
     expect(build()._mapErrorToCode(429, {})).toBe(CODES.QUOTA_EXCEEDED);
     expect(build()._mapErrorToCode(500, {})).toBe(CODES.API_ERROR);
   });

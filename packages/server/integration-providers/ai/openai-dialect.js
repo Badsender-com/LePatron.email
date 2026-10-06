@@ -183,7 +183,8 @@ const openAIDialect = {
   // eslint-disable-next-line no-unused-vars
   _mapErrorToCode(status, errorData) {
     if (status === 401) return CODES.INVALID_CREDENTIALS;
-    if (status === 429) return CODES.QUOTA_EXCEEDED;
+    // 402: credits or billing exhausted — a quota, not a passing error.
+    if (status === 402 || status === 429) return CODES.QUOTA_EXCEEDED;
     return CODES.API_ERROR;
   },
 
