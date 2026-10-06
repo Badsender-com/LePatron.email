@@ -28,14 +28,14 @@ async function generateSubject(req, res) {
 }
 
 /**
- * @api {post} /text-generation/preheader Preheader proposals built from a picked subject
+ * @api {post} /text-generation/preheader Preheader proposals, built from the picked subject if any
  * @apiPermission user
  * @apiName GeneratePreheaders
  * @apiGroup TextGeneration
  *
  * @apiParam (Body) {String} mailingId the email being edited
  * @apiParam (Body) {Object[]} content its text as the editor shows it: `{ role, text }`
- * @apiParam (Body) {String} subject the subject the user picked
+ * @apiParam (Body) {String} [subject] the subject the user picked; without it, the preheader carries the main point of the email
  * @apiParam (Body) {String} [currentPreheader]
  * @apiParam (Body) {String} [brief] an instruction of the user
  * @apiParam (Body) {String[]} [avoid] proposals already seen
