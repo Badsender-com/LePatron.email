@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { userCan } = require('./user-can.js');
 
 const REVIEWER = 'reviewer';
 const WRITER = 'writer';
@@ -10,6 +11,9 @@ module.exports = (opts) => {
   function viewModel(viewModel) {
     // Initialize observable for the current user
     viewModel.currentUser = ko.observable(null);
+    viewModel.canSave = function () {
+      return userCan(viewModel, 'canSave');
+    };
 
     // API call to get the current user
     axios
@@ -34,6 +38,10 @@ module.exports = (opts) => {
         // Renaming the mailing is an organisation action, like the listing's
         // rename (hidden for reviewer in mailings-table.vue).
         const canRename = role !== REVIEWER;
+        // A reviewer changes nothing, so the toolbar's Save has nothing to write.
+        // The save run once on opening a mailing without a preview is not this
+        // button, and stays for every role (template-loader.js).
+        const canSave = role !== REVIEWER;
         // Nothing to edit anywhere: the toolbox drops its tabs and shows a
         // single message instead of one per panel.
         const isReadOnly = !canEditStructure && !canEditContent && !canEditStyle;
@@ -49,8 +57,19 @@ module.exports = (opts) => {
           canEditContent,
           canEditStyle,
           canRename,
+          canSave,
           isReadOnly,
         });
+
+        // A reviewer can edit nothing: the comments panel is what they came for,
+        // and open on arrival it shows what they can actually do. Only them —
+        // the other roles open it themselves.
+        if (
+          role === REVIEWER &&
+          typeof viewModel.showComments === 'function'
+        ) {
+          viewModel.showComments(true);
+        }
       })
       .catch((error) => {
         // Handle error
