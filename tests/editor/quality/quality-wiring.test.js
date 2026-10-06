@@ -21,6 +21,9 @@ jest.mock(
 );
 
 const ko = require('knockout');
+const {
+  installRightPanel,
+} = require('../../../packages/editor/src/js/ext/right-panel.js');
 const $ = require('jquery');
 const axios = require('axios');
 const Vue = require('vue/dist/vue.common');
@@ -52,7 +55,9 @@ describe('qualityDrawerPlugin', () => {
   it('installs the review, then mounts the drawer, exclusive with the comments panel', () => {
     const vm = fakeViewModel();
     vm.notifier = { warning: jest.fn() };
-    vm.showComments = ko.observable(false);
+    // The comments are a flag of the same right panel, as badsender-comments.js
+    // installs them.
+    vm.showComments = installRightPanel(vm, ko).flag('comments');
     // As toolbox.tmpl.html declares it.
     document.body.innerHTML =
       '<div id="quality-drawer"><quality-drawer-plugin></quality-drawer-plugin></div>';

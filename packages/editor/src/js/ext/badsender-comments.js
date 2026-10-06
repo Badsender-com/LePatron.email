@@ -18,6 +18,7 @@ const {
   extractMentionIds,
 } = require('./comments-utils.js');
 const { findBlockById, goToBlock } = require('./block-navigation.js');
+const { installRightPanel } = require('./right-panel.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -31,7 +32,9 @@ function commentsLoader(opts) {
 
   return function (viewModel) {
     // ===== OBSERVABLES =====
-    viewModel.showComments = ko.observable(false);
+    // One of the right panels: opening it closes quality control or the AI
+    // panel (ADR 0010).
+    viewModel.showComments = installRightPanel(viewModel, ko).flag('comments');
     viewModel.comments = ko.observableArray([]);
     viewModel.commentsStatus = ko.observable(false); // false | 'loading' | number
     viewModel.commentCounts = ko.observable({}); // { blockId: count }

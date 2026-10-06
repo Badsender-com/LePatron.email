@@ -11,13 +11,11 @@
 
 const ko = require('knockout');
 
-// Turned on by #1179 (one right-hand panel for comments and quality control)
-describe.skip('ai panel: the right panel state', () => {
+describe('ai panel: the right panel state', () => {
   let createRightPanel;
   let panel;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1179.
     ({
       createRightPanel,
     } = require('../../../packages/editor/src/js/ext/right-panel'));
