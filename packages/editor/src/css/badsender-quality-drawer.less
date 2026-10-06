@@ -18,40 +18,10 @@
 @qc-radius: 5px;
 @qc-motion: 0.2s ease-out;
 
-// ===== Panel position: right side, like the comments panel =====
-@keyframes qc-slide-in {
-  0% { right: -(@leftsidebar-width + 50px); }
-  100% { right: 0; }
-}
-@keyframes qc-slide-out {
-  0% { right: 0; }
-  100% { right: -(@leftsidebar-width + 50px); }
-}
-
-#toolquality.slidebar {
-  position: fixed;
-  left: auto;
-  right: 0;
-  top: var(--top-bar-height, 50px);
-  height: calc(100vh - var(--top-bar-height, 50px));
-  background: var(--white);
-  border-left: 1px solid var(--gray-300);
-  animation: qc-slide-in @qc-motion 0s 1;
-
-  &.hidden {
-    left: auto;
-    right: -(@leftsidebar-width + 50px);
-    animation: qc-slide-out @qc-motion 0s 1;
-  }
-
-  #quality-drawer {
-    height: 100%;
-  }
-}
-
-.withQuality #main-edit-area {
-  right: @leftsidebar-width;
-  transition: right @qc-motion;
+// Panel position: the right-hand place shared with the comments and the AI
+// panel, in badsender-right-panel.less.
+#toolquality #quality-drawer {
+  height: 100%;
 }
 
 // Scoped under the panel: the editor's global h2/h3/p rules (em sizes,
@@ -282,10 +252,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #toolquality.slidebar,
-  #toolquality.slidebar.hidden,
-  #toolquality .qc-spinner,
-  .withQuality #main-edit-area {
+  #toolquality .qc-spinner {
     animation: none;
     transition: none;
   }

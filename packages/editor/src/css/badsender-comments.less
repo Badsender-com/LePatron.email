@@ -40,51 +40,8 @@
 @comment-border-radius-lg: 8px;     // Large: cards, dialogs, panels
 @comment-border-radius-pill: 9999px; // Pills, chips, badges
 
-// ===========================================
-// Comments Panel Positioning - Right Side
-// Override default slidebar (left) to position on right
-// ===========================================
-@keyframes comments-slide-in {
-  0% {
-    right: -(@leftsidebar-width + 50px);
-  }
-  100% {
-    right: 0;
-  }
-}
-
-@keyframes comments-slide-out {
-  0% {
-    right: 0;
-  }
-  100% {
-    right: -(@leftsidebar-width + 50px);
-  }
-}
-
-#toolcomments.slidebar {
-  // Override positioning: fixed to viewport, not relative to parent
-  position: fixed;
-  left: auto;
-  right: 0;
-  top: var(--top-bar-height, 50px);
-  height: calc(100vh - var(--top-bar-height, 50px));
-  animation: comments-slide-in 0.2s ease-out 0s 1;
-  // Left border for separation from canvas (like left panel)
-  border-left: 1px solid @comment-gray-300;
-
-  &.hidden {
-    left: auto;
-    right: -(@leftsidebar-width + 50px);
-    animation: comments-slide-out 0.2s ease-out 0s 1;
-  }
-}
-
-// Adjust main edit area when comments panel is open
-.withComments #main-edit-area {
-  right: @leftsidebar-width;
-  transition: right 0.2s ease-out;
-}
+// Panel position: the right-hand place shared with quality control and the
+// AI panel, in badsender-right-panel.less.
 
 // ===========================================
 // Comments Panel Styles

@@ -1,0 +1,53 @@
+/**
+ * The right-hand place of the editor (ADR 0004): comments, quality control and
+ * the AI panel take turns there, one open at a time (js/ext/right-panel.js).
+ *
+ * One copy of what each panel used to carry: the slide from the right, and the
+ * canvas making room. `.slidebar.right-panel` (0,2,0) outranks the left-hand
+ * `.slidebar` defaults of style_mosaico_tools.less and the gallery's.
+ */
+
+@right-panel-motion: 0.2s ease-out;
+@right-panel-offset: -(@leftsidebar-width + 50px);
+
+@keyframes right-panel-slide-in {
+  0% { right: @right-panel-offset; }
+  100% { right: 0; }
+}
+
+@keyframes right-panel-slide-out {
+  0% { right: 0; }
+  100% { right: @right-panel-offset; }
+}
+
+.slidebar.right-panel {
+  position: fixed;
+  left: auto;
+  right: 0;
+  top: var(--top-bar-height, 50px);
+  height: calc(100vh - var(--top-bar-height, 50px));
+  background: var(--white);
+  border-left: 1px solid var(--gray-300, #e0e0e0);
+  animation: right-panel-slide-in @right-panel-motion 0s 1;
+
+  &.hidden {
+    left: auto;
+    right: @right-panel-offset;
+    animation: right-panel-slide-out @right-panel-motion 0s 1;
+  }
+}
+
+// Whichever right panel is open, the canvas shrinks rather than hides under it.
+.withRightPanel #main-edit-area {
+  right: @leftsidebar-width;
+  transition: right @right-panel-motion;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slidebar.right-panel,
+  .slidebar.right-panel.hidden,
+  .withRightPanel #main-edit-area {
+    animation: none;
+    transition: none;
+  }
+}
