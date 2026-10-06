@@ -1,0 +1,209 @@
+////////
+// QUALITY DRAWER — tabs and the "Send a test" tab.
+// Imported inside `#toolquality { }` by badsender-quality-drawer.less, which
+// also declares the @qc-* variables used here. Fields follow the editor's
+// metadata fields (badsender-email-metadata.less): 12px label, 40px input.
+////////
+
+// ===== Tabs =====
+.qc-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 12px 16px 0;
+  padding: 2px;
+  border-radius: @qc-radius;
+  background: var(--gray-100);
+}
+
+.qc-tab {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--gray-700);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &--active {
+    background: var(--white);
+    color: var(--primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// Each tab fills the rest of the drawer, its list scrolling inside.
+.qc-drawer__tabpanel,
+.qc-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.qc-drawer__tabpanel {
+  margin-top: 12px;
+}
+
+// ===== "Send a test" tab =====
+.qc-send {
+  padding: 0 16px 16px;
+  overflow-y: auto;
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  // As tall as the fields above it.
+  &__submit {
+    height: 40px;
+  }
+}
+
+.qc-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: @qc-radius;
+  background: @qc-tint-info;
+  color: @qc-info;
+  font-size: 12px;
+
+  &--error {
+    background: @qc-tint-error;
+    color: @qc-error;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    color: var(--gray-800);
+  }
+}
+
+.qc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-700);
+  }
+
+  &__input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--gray-900);
+    font-family: inherit;
+    font-size: 0.875rem;
+
+    &:focus {
+      border-color: var(--accent);
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    &--invalid {
+      border-color: @qc-error;
+    }
+  }
+
+  &__help {
+    font-size: 11px;
+    color: var(--gray-600);
+
+    &--error {
+      color: @qc-error;
+    }
+  }
+}
+
+.qc-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+// ===== "Share a preview", under the send form =====
+.qc-share {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+
+  &__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  &__create,
+  &__url {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  &__expiry {
+    flex: 1;
+  }
+
+  // As tall as the fields beside it.
+  &__button {
+    flex-shrink: 0;
+    height: 40px;
+  }
+
+  &__created {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: @qc-radius;
+    background: @qc-tint-success;
+  }
+
+  &__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--gray-200);
+    font-size: 12px;
+  }
+
+  &__meta {
+    color: var(--gray-700);
+  }
+}

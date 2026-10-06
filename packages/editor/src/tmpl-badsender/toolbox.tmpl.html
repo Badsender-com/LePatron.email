@@ -52,11 +52,19 @@
               <span class="lucide lucide-rss"></span>
             </div>
             <!-- /ko -->
+            <!-- ko if: $root.isSyntheticBlock($data) -->
+            <div class="block-synthetic-thumb">
+              <span class="lucide lucide-code-2"></span>
+            </div>
+            <span class="block-name" data-bind="text: $root.t('html-code-block-name')">HTML code</span>
+            <!-- /ko -->
+            <!-- ko ifnot: $root.isSyntheticBlock($data) -->
             <img
               data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(type) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }"
               alt="__name__" />
             <span class="block-name"
               data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(type) })">__name__</span>
+            <!-- /ko -->
           </div>
           <a href="javascript:void(0)" class="addblockbutton"
             data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
@@ -123,6 +131,31 @@
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
+    <!-- Email settings: a document-level setting, so it belongs in this tab with
+         the template's own options rather than in a panel of its own.
+
+         Placed AFTER those options, and styled to continue them: the two read as
+         one panel. An earlier revision put this block FIRST, because it then had a
+         save button of its own that fell off a 900px screen. That button is gone —
+         the editor's Save writes the metadata now — so the reason to jump the
+         queue went with it, and the template options keep the position users know.
+
+         What could NOT be done: rename the heading above. "Template Options" is
+         declared in each client template's own markup (`@supports -ko-blockdefs`),
+         not here — 6 of the 7 templates in the dev database use that exact string
+         and Ouest France has no such block at all. Hence two headings joined by a
+         frame, rather than one renamed section.
+
+         `hasEmailMetadata` is set once in the plugin's `viewModel` hook and never
+         written again, so this `if` renders once and never re-runs. That matters:
+         `new Vue({el})` REPLACES the node Knockout thinks it owns, so a reactive
+         observable here would tear the mount down without remounting it. Do not
+         make it reactive without moving the mount. -->
+    <!-- ko if: $root.hasEmailMetadata() -->
+    <div id="email-metadata-section">
+      <email-metadata-plugin />
+    </div>
+    <!-- /ko -->
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
@@ -246,6 +279,14 @@
   <!-- /ko -->
 </div>
 
+<!-- Quality drawer: Vue component mounted by vue/qualityDrawerPlugin.js.
+     Inert while hidden, so Tab never reaches a panel that is off screen. -->
+<div id="toolquality" class="slidebar" data-bind="css: { hidden: $root.showQuality() === false }, attr: { inert: !$root.showQuality() }">
+  <div id="quality-drawer">
+    <quality-drawer-plugin />
+  </div>
+</div>
+
 <!-- Comments Panel -->
 <div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
@@ -320,7 +361,7 @@
         <span class="comment-badge comment-badge-important"><span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'blocking' -->
-        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-ban"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
+        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
         <!-- /ko -->
         <!-- Category badge in header (always visible, even when collapsed) -->
         <!-- ko if: category === 'general' || !category -->
@@ -490,7 +531,7 @@
           <span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span>
         </span>
         <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="lucide lucide-circle-slash"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
+          <span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
         </span>
       </div>
 

@@ -11,6 +11,16 @@ const {
   protectVariables,
   restoreVariables,
 } = require('../../translation/variable-placeholder.utils.js');
+const TranslationFormalities = require('../../constant/translation-formality.js');
+
+// Our levels onto DeepL's lenient variants. A strict `more`/`less` makes DeepL
+// reject the whole request when the target language has no formality
+// (English, Chinese…); `prefer_*` applies the tone where it can and stays
+// neutral elsewhere. See constant/translation-formality.js.
+const DEEPL_FORMALITY = {
+  [TranslationFormalities.MORE]: 'prefer_more',
+  [TranslationFormalities.LESS]: 'prefer_less',
+};
 
 /**
  * DeepL provider implementation
@@ -86,13 +96,6 @@ class DeepLProvider extends BaseProvider {
       supportsModelSelection: false,
       supportsFormality: true,
     };
-  }
-
-  /**
-   * DeepL doesn't have models to list
-   */
-  async getAvailableModels() {
-    return [];
   }
 
   /**
@@ -205,9 +208,10 @@ class DeepLProvider extends BaseProvider {
         options.context = context;
       }
 
-      // Add formality if not default and language supports it
-      if (this.formality && this.formality !== 'default') {
-        options.formality = this.formality;
+      // Omitted for 'default': DeepL's own default is the neutral tone
+      const formality = DEEPL_FORMALITY[this.formality];
+      if (formality) {
+        options.formality = formality;
       }
 
       // Call DeepL

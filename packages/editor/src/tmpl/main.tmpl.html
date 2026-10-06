@@ -1,4 +1,4 @@
-<div id="page" style="display: none;" data-bind="visible: true, css: { withToolbox: $root.showToolbox, withComments: $root.showComments, 'is-both-preview': isBothPreview, 'is-desktop-preview': isDesktopPreview, 'is-mobile-preview': isMobilePreview }">
+<div id="page" style="display: none;" data-bind="visible: true, css: { withToolbox: $root.showToolbox, withComments: $root.showComments, withQuality: $root.showQuality, 'is-both-preview': isBothPreview, 'is-desktop-preview': isDesktopPreview, 'is-mobile-preview': isMobilePreview }">
 
   <div id="main-edit-area" data-bind="click: function(obj, evt) { $root.selectBlock(null); $root.bsEventsHub.windowClick(evt); return true; }, clickBubble: false">
     <!-- ko withProperties: { templateMode: 'wysiwyg', templateModeFallback: 'show' } -->
@@ -45,7 +45,7 @@
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'lucide lucide-fw lucide-image', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
-    <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle') }" role="button">
+    <span class="comments-button-wrapper" tabindex="0" role="button" data-bind="click: function() { $root.showComments(!$root.showComments()); }, event: { keydown: function(d, e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $root.showComments(!$root.showComments()); } return true; } }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle'), 'aria-expanded': $root.showComments() ? 'true' : 'false' }">
       <span class="lucide lucide-messages-square"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
@@ -87,8 +87,22 @@
     <!-- ko if: typeof $root.save !== 'undefined' -->
     <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, button: { disabled: !$root.save.enabled(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
     <!-- /ko -->
-    <!-- ko if: typeof $root.test !== 'undefined' -->
-    <a title="Show preview and send test" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show preview and send test') }, click: $root.test.execute, clickBubble: false, button: { disabled: !$root.test.enabled(), icons: { primary: 'lucide lucide-fw lucide-send' }, label: $root.t($root.test.name), text: true }">TEST</a>
+    <!-- ko if: typeof $root.showQuality !== 'undefined' -->
+    <button id="quality-toggle" type="button" class="quality-toggle" aria-controls="toolquality" data-bind="click: function() { $root.showQuality(!$root.showQuality()); }, clickBubble: false, attr: { title: $root.t('Test your email'), 'aria-expanded': $root.showQuality() ? 'true' : 'false' }">
+      <span class="lucide lucide-shield-check" aria-hidden="true"></span>
+      <span data-bind="text: $root.t('Test email')">Test email</span>
+      <!-- ko if: $root.quality.status() === 'running' -->
+      <span class="quality-toggle__badge" data-bind="text: $root.t('Running…')"></span>
+      <!-- /ko -->
+      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() > 0 -->
+      <span class="quality-toggle__badge quality-toggle__badge--error" data-bind="text: $root.quality.issueCount(), attr: { 'aria-label': $root.t('__count__ issues', { count: $root.quality.issueCount() }) }"></span>
+      <!-- /ko -->
+      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 -->
+      <span class="quality-toggle__badge quality-toggle__badge--success" data-bind="attr: { 'aria-label': $root.t('__count__ checks passed', { count: $root.quality.passedCount() }) }">
+        <span class="lucide lucide-check" aria-hidden="true"></span><span aria-hidden="true" data-bind="text: $root.quality.passedCount()"></span>
+      </span>
+      <!-- /ko -->
+    </button>
     <!-- /ko -->
     <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
     </div>

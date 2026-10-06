@@ -37,4 +37,8 @@ module.exports = Object.freeze({
   // AI Playground
   AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
   AIPlaygroundRunModel: 'AIPlaygroundRun',
+  // Taxonomy (email metadata)
+  TaxonomyItemModel: 'TaxonomyItem',
+  // Public preview links (quality drawer)
+  ShareLinkModel: 'ShareLink',
 });

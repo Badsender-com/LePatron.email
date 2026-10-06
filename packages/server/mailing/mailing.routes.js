@@ -7,7 +7,11 @@ const router = express.Router();
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
+const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
+const mailingMetadata = require('./mailing-metadata.controller.js');
+const mailingQuality = require('./mailing-quality.controller.js');
+const shareLinks = require('../share-link/share-link.controller.js');
 const translation = require('../translation/translation.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
@@ -39,6 +43,25 @@ router.post(
 
 router.post('/download-multiple-zip', GUARD_USER, mailings.downloadMultipleZip);
 
+router.patch(
+  '/:mailingId/metadata',
+  GUARD_USER,
+  GUARD_EMAIL_METADATA,
+  mailingMetadata.updateMetadata
+);
+router.patch(
+  '/:mailingId/quality-ignores',
+  GUARD_USER,
+  mailingQuality.updateQualityIgnores
+);
+router.post(
+  '/:mailingId/quality/resources',
+  GUARD_USER,
+  mailingQuality.checkResources
+);
+router.get('/:mailingId/share-links', GUARD_USER, shareLinks.list);
+router.post('/:mailingId/share-links', GUARD_USER, shareLinks.create);
+router.delete('/:mailingId/share-links/:linkId', GUARD_USER, shareLinks.revoke);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);

@@ -2,6 +2,12 @@
 
 const IntegrationProviders = require('../constant/integration-provider');
 const OpenAIProvider = require('./ai/openai-provider');
+const AnthropicProvider = require('./ai/anthropic-provider');
+const GeminiProvider = require('./ai/gemini-provider');
+const AzureOpenAIProvider = require('./ai/azure-openai-provider');
+const OpenAICompatibleProvider = require('./ai/openai-compatible-provider');
+const ScalewayProvider = require('./ai/scaleway-provider');
+const OvhProvider = require('./ai/ovh-provider');
 const MistralProvider = require('./ai/mistral-provider');
 const InfomaniakProvider = require('./ai/infomaniak-provider');
 const DeepLProvider = require('./ai/deepl-provider');
@@ -12,6 +18,12 @@ const RssProvider = require('./data-feed/rss-provider');
  */
 const PROVIDER_MAP = {
   [IntegrationProviders.OPENAI]: OpenAIProvider,
+  [IntegrationProviders.ANTHROPIC]: AnthropicProvider,
+  [IntegrationProviders.GEMINI]: GeminiProvider,
+  [IntegrationProviders.AZURE_OPENAI]: AzureOpenAIProvider,
+  [IntegrationProviders.OPENAI_COMPATIBLE]: OpenAICompatibleProvider,
+  [IntegrationProviders.SCALEWAY]: ScalewayProvider,
+  [IntegrationProviders.OVH]: OvhProvider,
   [IntegrationProviders.MISTRAL]: MistralProvider,
   [IntegrationProviders.INFOMANIAK]: InfomaniakProvider,
   [IntegrationProviders.DEEPL]: DeepLProvider,

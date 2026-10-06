@@ -39,6 +39,7 @@ const {
 const crmIntelligenceRouter = require('./crm-intelligence/crm-intelligence.routes.js');
 const integrationRouter = require('./integration/integration.routes.js');
 const feedMappingRouter = require('./feed-mapping/feed-mapping.routes.js');
+const taxonomyRouter = require('./taxonomy/taxonomy.routes.js');
 const dashboardRouter = require('./dashboard/dashboard.routes.js');
 const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
 const {
@@ -301,6 +302,7 @@ if (cluster.isMaster) {
   app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/integrations', integrationRouter);
   app.use('/api/feed-mappings', feedMappingRouter);
+  app.use('/api/taxonomy-items', taxonomyRouter);
   app.use('/api/ai-features', aiFeatureRouter);
   app.use('/api/ai-skills', aiSkillsRouter);
   app.use('/api/ai-expertise', aiExpertiseRouter);
@@ -321,6 +323,10 @@ if (cluster.isMaster) {
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render
   );
+
+  // Public preview of an email, opened from a share link: no session needed.
+  const sharePage = require('./share-link/share-page.controller.js');
+  app.get('/share/:token', sharePage.renderShare);
 
   const maintenanceEditor = require('./maintenance/maintenance.controller.js');
   app.get(

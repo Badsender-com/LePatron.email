@@ -1,6 +1,6 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
+import { required, numeric } from 'vuelidate/lib/validators';
 import {
   getProviderFormConfig,
   getProviderLabel,
@@ -8,6 +8,7 @@ import {
 } from './provider-configs';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
+import BsIntegrationConfigFields from './bs-integration-config-fields';
 import { Eye, EyeOff } from 'lucide-vue';
 
 export default {
@@ -15,6 +16,7 @@ export default {
   components: {
     BsTextField,
     BsSelect,
+    BsIntegrationConfigFields,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
   },
@@ -42,6 +44,7 @@ export default {
         apiKey: '',
         apiHost: '',
         productId: '',
+        config: {},
         isActive: true,
       },
       showApiKey: false,
@@ -97,6 +100,28 @@ export default {
     isApiKeyRequired() {
       return this.selectedProviderConfig.apiKeyRequired !== false;
     },
+    configFields() {
+      return this.selectedProviderConfig.configFields || [];
+    },
+    // Mirrors the server: pointing a stored key at a new host requires the key
+    // itself, so that nobody redirects a key they could not read.
+    apiHostChanged() {
+      return (
+        this.isEdit &&
+        (this.form.apiHost || '') !== (this.integration.apiHost || '')
+      );
+    },
+    mustReenterApiKey() {
+      return this.isApiKeyRequired && this.apiHostChanged;
+    },
+    // Mirrors the server: a key (AI) or a signed token (Metabase) is sent to
+    // this host, so http is refused. Only for a new or changed host, so an
+    // integration saved before the rule can still be renamed.
+    mustUseHttps() {
+      return (
+        this.form.type !== 'data_feed' && (!this.isEdit || this.apiHostChanged)
+      );
+    },
   },
   watch: {
     integration: {
@@ -110,6 +135,8 @@ export default {
             apiKey: '', // Never pre-fill API key for security
             apiHost: val.apiHost || '',
             productId: val.productId || '',
+            // Kept whole: saving sends back the keys the form does not show.
+            config: { ...(val.config || {}) },
             isActive: val.isActive !== false,
           };
         } else {
@@ -126,6 +153,8 @@ export default {
         } else {
           this.form.type = 'ai'; // Default to 'ai' for AI providers
         }
+        // Settings belong to one provider: the server refuses another's keys.
+        this.form.config = {};
       }
     },
   },
@@ -138,11 +167,17 @@ export default {
     };
     // API key required only for new integrations, and only for providers
     // that actually need one (e.g. public RSS feeds don't)
-    if (!this.isEdit && this.isApiKeyRequired) {
+    if ((!this.isEdit && this.isApiKeyRequired) || this.mustReenterApiKey) {
       rules.form.apiKey = { required };
     }
+    if (this.mustUseHttps) {
+      rules.form.apiHost = {
+        https: (value) => !value || /^https:\/\//i.test(value.trim()),
+      };
+    }
     if (this.showProductIdField) {
-      rules.form.productId = { required };
+      // Digits only, as on the server: Infomaniak builds its API path from it.
+      rules.form.productId = { required, numeric };
     }
     return rules;
   },
@@ -155,6 +190,7 @@ export default {
         apiKey: '',
         apiHost: '',
         productId: '',
+        config: {},
         isActive: true,
       };
       this.$v.$reset();
@@ -165,7 +201,22 @@ export default {
     fieldErrors(fieldName) {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
-      if (!field.required) return [this.$t('global.errors.required')];
+      // `=== false`, not `!`: a field without a required rule (the host) has
+      // `field.required` undefined, and must not read as "required".
+      if (
+        field.required === false &&
+        fieldName === 'apiKey' &&
+        this.mustReenterApiKey
+      ) {
+        return [this.$t('integrations.apiKeyRequiredOnHostChange')];
+      }
+      if (field.required === false) return [this.$t('global.errors.required')];
+      if (field.numeric === false) {
+        return [this.$t('integrations.infomaniak.productIdInvalid')];
+      }
+      if (field.https === false) {
+        return [this.$t('integrations.errors.INTEGRATION_HOST_HTTPS_REQUIRED')];
+      }
       return [];
     },
 
@@ -193,6 +244,11 @@ export default {
       // Include productId for Infomaniak
       if (this.form.productId) {
         data.productId = this.form.productId;
+      }
+
+      // Only for providers with settings: the others keep what they have.
+      if (this.configFields.length > 0) {
+        data.config = { ...this.form.config };
       }
 
       this.$emit('save', data);
@@ -237,9 +293,10 @@ export default {
           <label class="bs-text-field__label">
             {{ apiKeyLabel }}
             <span
-              v-if="!isEdit && isApiKeyRequired"
+              v-if="(!isEdit && isApiKeyRequired) || mustReenterApiKey"
               class="bs-text-field__required"
-            >*</span>
+              >*</span
+            >
           </label>
           <v-text-field
             v-model="form.apiKey"
@@ -264,7 +321,10 @@ export default {
               </v-btn>
             </template>
           </v-text-field>
-          <div v-if="isEdit" class="bs-text-field__hint">
+          <div v-if="mustReenterApiKey" class="bs-text-field__hint">
+            {{ $t('integrations.apiKeyRequiredOnHostChange') }}
+          </div>
+          <div v-else-if="isEdit" class="bs-text-field__hint">
             {{ $t('integrations.apiKeyHintEdit') }}
           </div>
         </div>
@@ -288,12 +348,20 @@ export default {
           v-if="selectedProviderConfig.apiHostPlaceholder"
           v-model="form.apiHost"
           :label="$t('integrations.apiHost')"
+          :error-messages="fieldErrors('apiHost')"
           :placeholder="selectedProviderConfig.apiHostPlaceholder"
           :hint="
             selectedProviderConfig.apiHostHintKey
               ? $t(selectedProviderConfig.apiHostHintKey)
               : ''
           "
+          :disabled="loading"
+          @blur="$v.form.apiHost && $v.form.apiHost.$touch()"
+        />
+
+        <bs-integration-config-fields
+          v-model="form.config"
+          :fields="configFields"
           :disabled="loading"
         />
 

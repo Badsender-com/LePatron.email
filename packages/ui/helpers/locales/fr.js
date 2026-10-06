@@ -690,6 +690,31 @@ export default {
     }
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_NAME_ALREADY_EXIST:
+        'Une intégration porte déjà ce nom dans ce groupe. Choisissez-en un autre.',
+      INTEGRATION_NOT_FOUND:
+        'Cette intégration n\'existe plus : elle a peut-être été supprimée. Rechargez la page.',
+      FORBIDDEN_INTEGRATION_ACCESS:
+        'Vous n\'avez pas accès à cette intégration.',
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'Cette adresse est privée ou locale. Pour des raisons de sécurité, LePatron n\'appelle que des adresses publiques : une IA hébergée sur votre réseau interne n\'est pas joignable depuis le serveur.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'Ce nom de domaine est introuvable. Vérifiez l\'orthographe de l\'URL.',
+      INTEGRATION_HOST_INVALID:
+        'Cette URL n\'est pas valide. Attendu : une adresse complète, par exemple https://exemple.com',
+      INTEGRATION_HOST_HTTPS_REQUIRED:
+        'Cette adresse doit commencer par https:// : l\'intégration y envoie une clé, qui circulerait en clair en http.',
+      INTEGRATION_API_KEY_REQUIRED:
+        'L\'adresse de l\'API a changé : saisissez à nouveau la clé API.',
+      INVALID_PRODUCT_ID: 'Le Product ID ne contient que des chiffres.',
+      INTEGRATION_CONFIG_INVALID:
+        'Un réglage de l\'intégration n\'est pas valide pour ce fournisseur.',
+    },
+    apiKeyRequiredOnHostChange:
+      'L\'adresse de l\'API a changé : saisissez à nouveau la clé pour confirmer qu\'elle doit y être envoyée.',
     title: 'Intégrations',
     name: 'Nom',
     provider: 'Fournisseur',
@@ -738,7 +763,36 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Votre clé API Infomaniak',
       productId: 'Product ID',
-      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools',
+      productIdInvalid: 'Le Product ID ne contient que des chiffres'
+    },
+    anthropic: {
+      apiKeyPlaceholder: 'Votre clé API Anthropic',
+      apiHostHint: 'Laissez vide pour l\'API publique Anthropic ; à renseigner uniquement si vous passez par une passerelle d\'entreprise.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Votre clé API Google AI Studio',
+      apiHostHint: 'Laissez vide pour l\'API publique Gemini.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Votre clé API Azure OpenAI',
+      apiHostHint: 'URL de votre ressource Azure, par exemple https://mon-instance.openai.azure.com. Le nom du déploiement tient lieu de modèle.',
+      reasoningModel: 'Le déploiement utilise un modèle de raisonnement (gpt-5, série o)',
+      reasoningModelHint: 'À cocher si le déploiement tourne sur gpt-5, o1, o3 ou o4 : ces modèles refusent la température et max_tokens, et le nom du déploiement ne permet pas de le deviner. Le réglage vaut pour tous les déploiements utilisés avec cette intégration : si l\'un d\'eux est un modèle de raisonnement, cochez-le, les autres modèles fonctionnent aussi (ils perdent seulement le réglage de température).'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'La clé API de votre endpoint',
+      apiHostHint: 'Tout endpoint compatible avec l\'API OpenAI. Les adresses privées et locales sont refusées pour des raisons de sécurité.',
+      supportsJsonMode: 'L\'endpoint gère le mode JSON (response_format)',
+      supportsJsonModeHint: 'À cocher seulement si l\'endpoint garantit une réponse JSON valide : les skills s\'appuient alors dessus. Sinon, la réponse est réparée après coup.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Votre clé API Scaleway',
+      apiHostHint: 'Laissez vide sauf si votre compte impose une URL propre à un projet.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Votre clé API OVHcloud',
+      apiHostHint: 'Laissez vide pour les AI Endpoints publics d\'OVHcloud.'
     },
     deepl: {
       apiKeyPlaceholder: 'Votre clé API DeepL',
@@ -754,6 +808,114 @@ export default {
       fast: 'rapide',
       recommended: 'recommandé',
     }
+  },
+  emailBuilderSettings: {
+    title: 'Réglages Email Builder',
+    sidebarLabel: 'Configuration',
+    metadata: {
+      sectionTitle: 'Métadonnées des emails',
+      sectionDescription:
+        'Permet de renseigner un objet, une date d\'envoi prévue et une typologie sur chaque email, au lieu de les ressaisir à chaque envoi.',
+      enabled: 'Activer les métadonnées des emails',
+      enabledHint:
+        'Lorsque l\'option est désactivée, ces champs n\'apparaissent nulle part et l\'API les refuse ; les données déjà saisies sont conservées.',
+      taxonomyAction: 'Gérer les typologies',
+      taxonomyHint:
+        'Les typologies d\'email se configurent dans Paramètres → Général → Typologies, indépendamment de cette option.',
+    },
+    snackbars: {
+      invalid: 'Les réglages envoyés n\'ont pas été acceptés.',
+      updated: 'Réglages Email Builder mis à jour',
+      error: 'La mise à jour des réglages a échoué',
+    },
+  },
+  taxonomy: {
+    active: 'Actif',
+    inactive: 'Inactif',
+    title: 'Typologies d\'email',
+    sidebarLabel: 'Typologies',
+    description:
+      'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
+    table: {
+      label: 'Libellé',
+      description: 'Définition',
+      canonicalType: 'Correspondance IA',
+      order: 'Ordre',
+      isActive: 'Statut',
+    },
+    canonicalTypes: {
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
+      transactional: 'Transactionnel',
+      institutional: 'Institutionnel',
+    },
+    form: {
+      createTitle: 'Nouvelle typologie',
+      editTitle: 'Modifier la typologie',
+      label: 'Libellé',
+      labelPlaceholder: 'Infolettre hebdomadaire',
+      labelHint: 'Le nom que vos équipes utilisent réellement.',
+      labelRequired: 'Le libellé est obligatoire',
+      labelTooLong: 'Le libellé ne peut pas dépasser {max} caractères',
+      description: 'Définition',
+      descriptionPlaceholder:
+        'Envoi du jeudi matin à toute la base, actualités et nouveautés produits.',
+      descriptionHint:
+        'À quoi sert cette typologie chez vous, et quand l\'utiliser. C\'est ce texte qui guidera l\'IA.',
+      descriptionTooLong: 'La définition ne peut pas dépasser {max} caractères',
+      canonicalType: 'Typologie IA correspondante',
+      canonicalTypePlaceholder: 'Aucune',
+      canonicalTypeHint:
+        'Facultatif. Fait le lien avec le vocabulaire de l\'IA, pour charger la bonne expertise quel que soit le nom que vous avez choisi.',
+      order: 'Ordre',
+      orderHint: 'Ordre d\'affichage dans les listes.',
+      status: 'Statut',
+      isActive: 'Actif',
+      isActiveHint:
+        'Une typologie désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
+    },
+    deleteConfirmTitle: 'Supprimer cette typologie ?',
+    deleteConfirmMessage: 'La typologie « {label} » sera supprimée.',
+    deleteConfirmHint:
+      'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+    loadError: {
+      title: 'Impossible de charger vos typologies',
+      description:
+        "La liste n'a pas pu être lue. Rien n'est perdu — réessayez.",
+      action: 'Réessayer',
+    },
+    empty: {
+      action: 'Créer une typologie',
+      title: 'Aucune typologie pour le moment',
+      description:
+        'Créez les typologies dont vos équipes ont besoin : leur libellé et leur définition sont les vôtres.',
+    },
+    errors: {
+      limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
+      labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
+      inUse:
+        'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
+    },
+    defaults: {
+      action: 'Typologies par défaut',
+      confirmTitle: 'Ajouter les typologies Badsender manquantes',
+      confirmIntro:
+        'Les typologies suivantes vont être créées. Vous pourrez ensuite les renommer, préciser leur définition ou les désactiver.',
+      confirmNothing:
+        'Vos typologies couvrent déjà les six types Badsender : il n\'y a rien à ajouter.',
+      confirmSkipped:
+        'Non créées, leur libellé est déjà utilisé par une de vos typologies : {labels}.',
+      snackbarCreated:
+        '{count} typologie créée | {count} typologies créées',
+      snackbarNone: 'Aucune typologie à ajouter',
+    },
+    snackbars: {
+      created: 'Typologie créée',
+      updated: 'Typologie mise à jour',
+      deleted: 'Typologie supprimée',
+    },
   },
   feedMappings: {
     title: 'Flux de contenu',
@@ -1034,12 +1196,10 @@ export default {
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
       formalityDefault: 'Par défaut',
       formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
+      formalityLess: 'Informel'
     },
     skill: {
       title: 'Moteur Skills',
@@ -1047,8 +1207,16 @@ export default {
       enableLabel: 'Activer le moteur Skills',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
-      modelDefaultOption: 'Par défaut du fournisseur ({model})',
-      modelDefaultOptionUnknown: 'Par défaut du fournisseur'
+    },
+    model: {
+      defaultOption: 'Par défaut du fournisseur ({model})',
+      defaultOptionUnknown: 'Par défaut du fournisseur',
+      requiredPlaceholder: 'Saisissez ou choisissez un modèle',
+      required: 'Ce fournisseur n\'a pas de modèle par défaut : choisissez-en un, sans quoi les appels échoueront.',
+      deprecated: 'obsolète',
+      invalidId: 'Non enregistré : un identifiant de modèle accepte uniquement lettres, chiffres et . _ - : / @, sans espace.',
+      customHint: 'Modèle saisi manuellement : il n\'a pas été vérifié auprès du fournisseur.',
+      loadFailed: 'Liste des modèles indisponible : seuls les modèles connus sont proposés. Vous pouvez saisir un identifiant.',
     },
     textGeneration: {
       title: 'Génération de texte',
@@ -1057,9 +1225,6 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
     }
   },
   colors: {
@@ -1093,6 +1258,13 @@ export default {
     previewDescription: 'Aperçu du template rendu',
     regeneratePreview: 'Régénérer l\'aperçu',
     filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
+    advancedOptions: 'Options avancées',
+    advancedOptionsDescription: 'Fonctionnalités activables template par template',
+    htmlBlock: {
+      name: 'Bloc Code HTML',
+      description: 'Permet de coller du code HTML libre entre deux blocs du template.',
+      hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
+    },
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',
@@ -1138,9 +1310,12 @@ export default {
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
     },
     emailTypes: {
-      promo: 'Promotionnel',
-      newsletter: 'Newsletter',
+      editorial: 'Éditorial',
+      promotional: 'Promotionnel',
+      service: 'Serviciel',
+      notification: 'Suivi',
       transactional: 'Transactionnel',
+      institutional: 'Institutionnel',
     },
     statuses: {
       DRAFT: 'Brouillon',

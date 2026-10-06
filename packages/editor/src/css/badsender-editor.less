@@ -1075,6 +1075,8 @@ body {
 @import (less) './badsender-mobile-preview.less';
 @import (less) './badsender-colorpicker.less';
 @import (less) './badsender-modal.less';
+@import (inline) '../../../../node_modules/codemirror/lib/codemirror.css';
+@import (less) './badsender-html-code-block.less';
 
 .mce-text-decoration-none {
   text-decoration: none;
@@ -1108,28 +1110,6 @@ body {
   }
 }
 
-.error-message, .size-warning-message {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-  max-width: 700px;
-  margin: 16px auto !important;
-  padding: .8rem 1rem !important;
-  background-color: rgb(254 252 232 / 1);
-  border-left: 4px solid rgb(250 204 21 / 1);
-  font-weight: normal;
-  color: rgb(161 98 7);
-
-  h3 {
-    margin: 0;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    margin: 0;
-    margin-bottom: .2rem;
-  }
-}
-
 .adobe-label {
   margin-bottom : 3rem !important;
 }
@@ -1153,6 +1133,8 @@ body {
 
 // Comments Panel styles (extracted to separate file for maintainability)
 @import 'badsender-comments.less';
+@import 'badsender-email-metadata.less';
+@import 'badsender-quality-drawer.less';
 
 // =============================================================================
 // BLOCK & IMAGE TOOLS - Modern Ghost Style

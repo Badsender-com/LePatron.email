@@ -1,11 +1,9 @@
 'use strict';
 
-const fetch = require('node-fetch');
-const AbortController = require('abort-controller');
 const { XMLParser } = require('fast-xml-parser');
 const BaseProvider = require('../base-provider.js');
 const logger = require('../../utils/logger.js');
-const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
+const { guardedFetch, toProviderError } = require('../provider-http.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -13,6 +11,11 @@ const {
 
 const DEFAULT_LIMIT = 10;
 const REQUEST_TIMEOUT_MS = 15000;
+// Feeds move (http → https, a new path) and say so with a redirect. They
+// carry no key, so following a few, each hop re-checked, costs nothing.
+const MAX_REDIRECTS = 3;
+// A feed of a few dozen items is well under this; the parser holds it whole.
+const MAX_FEED_BYTES = 5 * 1024 * 1024;
 
 /**
  * RSS 2.0 / Atom feed provider. Fetches and normalizes feed items into a
@@ -35,16 +38,19 @@ class RssProvider extends BaseProvider {
       throw new ProviderError('No feed URL configured', CODES.CONFIG_ERROR);
     }
 
-    // SSRF guard at call time (TOCTOU): re-validate the host right before the
-    // outbound request, in case DNS changed since the integration was saved.
-    await assertOutboundHostAllowed(feedUrl);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
+    // Through the guarded helper like every provider call: the host is
+    // checked on each hop, the socket connects to the address that was
+    // checked, and the body is bounded. A plain fetch here followed redirects
+    // unchecked — `302 → 169.254.169.254` walked past the SSRF guard on a
+    // route any user can call.
     let xml;
     try {
-      const response = await fetch(feedUrl, { signal: controller.signal });
+      const response = await guardedFetch(feedUrl, {
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        maxBytes: MAX_FEED_BYTES,
+        maxRedirects: MAX_REDIRECTS,
+        label: 'RSS feed',
+      });
 
       if (!response.ok) {
         throw new ProviderError(
@@ -55,16 +61,9 @@ class RssProvider extends BaseProvider {
 
       xml = await response.text();
     } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new ProviderError('RSS feed request timed out', CODES.TIMEOUT);
-      }
       if (error instanceof ProviderError) throw error;
-      throw new ProviderError(
-        `Failed to fetch RSS feed: ${error.message}`,
-        CODES.API_ERROR
-      );
-    } finally {
-      clearTimeout(timeoutId);
+      // Body read failures (size, timeout) come out of node-fetch untyped.
+      throw toProviderError(error, 'RSS feed');
     }
 
     const items = parseFeedItems(xml)

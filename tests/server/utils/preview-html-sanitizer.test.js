@@ -2,7 +2,7 @@
 
 const {
   sanitizePreviewHtml,
-} = require('../../../packages/server/translation/preview-html-sanitizer.js');
+} = require('../../../packages/server/utils/preview-html-sanitizer.js');
 
 describe('preview-html-sanitizer (stored-XSS protection)', () => {
   it('strips script tags injected via provider output', () => {

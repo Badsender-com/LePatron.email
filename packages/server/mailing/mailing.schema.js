@@ -12,9 +12,11 @@ const {
   WorkspaceModel,
   FolderModel,
   CommentModel,
+  TaxonomyItemModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
+const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 
 const { Schema, Types } = mongoose;
@@ -96,6 +98,56 @@ const MailingSchema = Schema(
         type: String,
       },
     ],
+    // --- Editorial metadata (behind the company's emailMetadata.enabled flag) ---
+    // Single field: no A/B variants in this phase.
+    subject: {
+      type: String,
+      // Both ends of an email header have a practical ceiling; nothing else would
+      // bound this field.
+      maxlength: 255,
+    },
+    plannedSendDate: {
+      type: Date,
+    },
+    // Strict reference to the company's own taxonomy — no free text. Validated
+    // against the mailing's company and the `emailType` taxonomy on write.
+    // NOTE: the preheader is deliberately NOT a field here, and not part of the
+    // metadata this phase edits at all. It is a template property living in
+    // `data`, editable where it always has been — the template's own options in
+    // the editor. Bringing it into the metadata would mean changing how our
+    // templates declare it, which is a product question still to be settled.
+    _emailType: {
+      type: ObjectId,
+      ref: TaxonomyItemModel,
+    },
+    // The second classification dimension: is there a human decision for this
+    // particular send? Independent of the type — a password reset is
+    // transactional AND automated. Two closed values, so unlike the type this one
+    // is an enum and not a taxonomy: a company may not add a third.
+    //
+    // No index: nothing filters on it yet, and #1081 removed exactly this kind of
+    // index-with-no-reader.
+    trigger: {
+      type: String,
+      enum: EmailTriggerValues,
+    },
+    // Quality control findings the team chose to ignore on this email (the
+    // quality drawer's "Ignore"). Keyed by the finding's fingerprint — rule,
+    // block, property and a hash of the faulty value — so an ignored finding
+    // comes back on its own once its content changes. Shared by everyone who
+    // edits the email. Bounded by MAX_QUALITY_IGNORES in mailing-quality.service.
+    qualityIgnores: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true, maxlength: 512 },
+          ruleId: { type: String, maxlength: 64 },
+          _user: { type: ObjectId, ref: UserModel },
+          ignoredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -124,6 +176,13 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   this.name = `${this.name.trim()} copy`;
   this.isNew = true;
   this.espIds = [];
+  // The subject, the typology and the trigger describe the email and are worth
+  // keeping — a copy of an automated transactional email is still one; a planned
+  // send date belongs to one campaign and must not be inherited.
+  this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -169,11 +228,17 @@ MailingSchema.index({ _company: 1, createdAt: -1 });
 MailingSchema.index({ _company: 1, name: 1 });
 MailingSchema.index({ _company: 1, wireframe: 1 });
 MailingSchema.index({ _company: 1, author: 1 });
+// Editorial metadata filters on the mailing listing, same reasoning as above:
+// the `_company` prefix is what keeps the query from scanning a global index.
+MailingSchema.index({ _company: 1, _emailType: 1 });
+MailingSchema.index({ _company: 1, plannedSendDate: -1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { previewHtml: 0, data: 0 });
+  // qualityIgnores is the editor's business (up to 500 entries per email):
+  // the mosaico metadata carries it, the lists never need it.
+  return this.find(query, { previewHtml: 0, data: 0, qualityIgnores: 0 });
 };
 
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
@@ -424,6 +489,7 @@ const translations = {
  * @apiSuccess {String} metadata.templateId id of the template
  * @apiSuccess {String} metadata.name name
  * @apiSuccess {String} metadata.template the URL where Mosaico will fetch the markup
+ * @apiSuccess {Boolean} metadata.htmlBlockEnabled whereas the "HTML code" block shows up in the palette
  * @apiSuccess {Object} metadata.url an object of useful urls for Mosaico
  * @apiSuccess {String} metadata.url.update update URL
  * @apiSuccess {String} metadata.url.send send by mail URL
@@ -452,7 +518,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     })
     .populate({
       path: '_wireframe',
-      select: { _id: 1, name: 1, _company: 1, assets: 1, trackingConfig: 1 },
+      select: {
+        _id: 1,
+        name: 1,
+        _company: 1,
+        assets: 1,
+        trackingConfig: 1,
+        htmlBlockEnabled: 1,
+      },
     });
   if (!mailing) return mailing;
 
@@ -485,6 +558,19 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     translationFeatureConfig.integration.isActive
   );
 
+  // Editorial metadata for the editor's email-settings section, when the company
+  // opted in. The policy — which company the typology list is scoped to, what to
+  // do when the mailing and its template disagree — belongs with the write path
+  // that has to stay consistent with it, not in this schema.
+  //
+  // Lazy require to avoid a circular dependency, like aiFeatureService above:
+  // the service reaches models.common, which reaches back here.
+  const mailingMetadataService = require('./mailing-metadata.service.js');
+  const editorMetadata = await mailingMetadataService.buildEditorMetadata({
+    mailing,
+    group,
+  });
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -508,6 +594,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
       hasTranslationFeature,
+      // Drives palette visibility of the generic "HTML code" block only — the
+      // block definition is always injected client-side. See
+      // docs/plans/html-code-block.md
+      htmlBlockEnabled: !!mailing._wireframe.htmlBlockEnabled,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {
@@ -516,7 +606,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
+        qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
+        qualityResources: `/api/mailings/${mailingId}/quality/resources`,
+        shareLinks: `/api/mailings/${mailingId}/share-links`,
       },
+      // Fingerprints of the quality findings ignored on this email.
+      qualityIgnores: (mailing.qualityIgnores || []).map(
+        (ignore) => ignore.fingerprint
+      ),
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
         cdnButtonLabel: group.cdnButtonLabel,
@@ -538,6 +635,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
+      // Spread so both keys are simply absent when the company opted out, rather
+      // than present and undefined — the editor tests for presence.
+      ...(editorMetadata || {}),
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata

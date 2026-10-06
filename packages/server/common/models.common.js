@@ -34,6 +34,8 @@ const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
+const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
+const ShareLinkSchema = require('../share-link/share-link.schema.js');
 
 /// ///
 // EXPORTS
@@ -107,6 +109,11 @@ const AIPlaygroundRuns = mongoose.model(
   modelNames.AIPlaygroundRunModel,
   AIPlaygroundRunSchema
 );
+const TaxonomyItems = mongoose.model(
+  modelNames.TaxonomyItemModel,
+  TaxonomyItemSchema
+);
+const ShareLinks = mongoose.model(modelNames.ShareLinkModel, ShareLinkSchema);
 
 module.exports = {
   mongoose,
@@ -129,6 +136,7 @@ module.exports = {
   OAuthCodes,
   Tags,
   Comments,
+  ShareLinks,
   Integrations,
   Dashboards,
   AIFeatureConfigs,
@@ -139,4 +147,5 @@ module.exports = {
   AISkillInvocations,
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
+  TaxonomyItems,
 };

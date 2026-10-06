@@ -84,10 +84,14 @@ describe('DeepLProvider', () => {
     });
   });
 
-  describe('getAvailableModels', () => {
-    it('should return empty array (DeepL does not use models)', async () => {
-      const result = await provider.getAvailableModels();
-      expect(result).toEqual([]);
+  // DeepL is not an LLM: it exposes no model selection at all, which is what
+  // `supportsModelSelection: false` above tells the UI. The old
+  // getAvailableModels() stub returning [] was removed with the listing
+  // rework — it said "this account has no models" where the honest answer is
+  // "this provider has no notion of one".
+  describe('model listing', () => {
+    it('does not expose a remote listing', () => {
+      expect(provider.listRemoteModels).toBeUndefined();
     });
   });
 
@@ -240,10 +244,16 @@ describe('DeepLProvider', () => {
       );
     });
 
-    it('should pass formality when configured', async () => {
+    // The lenient variants, never the strict ones: DeepL rejects a strict
+    // `more`/`less` for target languages without formality (English,
+    // Chinese…), and the setting applies to every language of the group.
+    it.each([
+      ['more', 'prefer_more'],
+      ['less', 'prefer_less'],
+    ])('sends formality %s as %s', async (formality, expected) => {
       const formalProvider = new DeepLProvider({
         ...mockIntegration,
-        config: { formality: 'more' },
+        config: { formality },
       });
 
       deepl.__mocks__.mockTranslateText.mockResolvedValueOnce([
@@ -261,10 +271,23 @@ describe('DeepLProvider', () => {
         expect.any(Array),
         'EN',
         'FR',
-        expect.objectContaining({
-          formality: 'more',
-        })
+        expect.objectContaining({ formality: expected })
       );
+    });
+
+    it('sends no formality for the default tone', async () => {
+      deepl.__mocks__.mockTranslateText.mockResolvedValueOnce([
+        { text: 'Bonjour' },
+      ]);
+
+      await provider.translateBatch({
+        texts: { text: 'Hello' },
+        sourceLanguage: 'en',
+        targetLanguage: 'fr',
+      });
+
+      const options = deepl.__mocks__.mockTranslateText.mock.calls[0][3];
+      expect(options).not.toHaveProperty('formality');
     });
 
     it('should handle single result (non-array)', async () => {

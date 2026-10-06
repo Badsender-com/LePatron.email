@@ -17,6 +17,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Cpu } from 'lucide-vue';
 
@@ -26,6 +27,7 @@ export default {
   name: 'BsAiFeatureSkillEngineSection',
   components: {
     BsSelect,
+    BsAiModelPicker,
     BsFormSection,
     LucideCpu: Cpu,
   },
@@ -38,12 +40,10 @@ export default {
     return {
       loading: false,
       saving: false,
-      loadingModels: false,
       config: null,
       integrations: [],
-      dynamicModels: [],
+      // Reported by the model picker; drives whether its column is shown.
       capabilities: null,
-      defaultModel: null,
     };
   },
   computed: {
@@ -65,31 +65,6 @@ export default {
     },
     supportsModelSelection() {
       return this.capabilities?.supportsModelSelection || false;
-    },
-    // The `null` entry is not cosmetic: when no model is configured the
-    // provider silently falls back to its own default (gpt-4o-mini,
-    // mistral-small-latest, …). Naming it makes that explicit, and it is the
-    // only way back to the default once a model has been picked.
-    modelOptions() {
-      const models = this.dynamicModels.map((m) => {
-        const name = m.name || m.id;
-        const description = m.descriptionKey ? this.$t(m.descriptionKey) : '';
-        return {
-          value: m.id,
-          text: description ? `${name} (${description})` : name,
-        };
-      });
-      return [
-        {
-          value: null,
-          text: this.defaultModel
-            ? this.$t('aiFeatures.skill.modelDefaultOption', {
-                model: this.defaultModel,
-              })
-            : this.$t('aiFeatures.skill.modelDefaultOptionUnknown'),
-        },
-        ...models,
-      ];
     },
     selectedIntegrationId: {
       get() {
@@ -117,20 +92,6 @@ export default {
       },
       set(value) {
         this.updateFeature({ config: { model: value } });
-      },
-    },
-  },
-  watch: {
-    selectedIntegrationId: {
-      immediate: true,
-      handler(newId) {
-        if (newId) {
-          this.loadModelsForIntegration(newId);
-        } else {
-          this.dynamicModels = [];
-          this.capabilities = null;
-          this.defaultModel = null;
-        }
       },
     },
   },
@@ -179,28 +140,6 @@ export default {
         await this.fetchData();
       } finally {
         this.saving = false;
-      }
-    },
-
-    async loadModelsForIntegration(integrationId) {
-      try {
-        this.loadingModels = true;
-        const response = await this.$axios.$get(
-          apiRoutes.integrationModels(integrationId)
-        );
-        this.dynamicModels = response.models || [];
-        this.capabilities = response.capabilities || null;
-        this.defaultModel = response.defaultModel || null;
-      } catch (error) {
-        this.dynamicModels = [];
-        this.capabilities = null;
-        this.defaultModel = null;
-        this.showSnackbar({
-          text: this.$t('aiFeatures.errors.loadModelsFailed'),
-          color: 'error',
-        });
-      } finally {
-        this.loadingModels = false;
       }
     },
   },
@@ -256,17 +195,14 @@ export default {
           />
         </v-col>
 
-        <v-col
-          v-if="supportsModelSelection && selectedIntegrationId"
-          cols="12"
-          md="6"
-        >
-          <bs-select
+        <v-col v-show="supportsModelSelection" cols="12" md="6">
+          <bs-ai-model-picker
             v-model="selectedModel"
-            :items="modelOptions"
+            :integration-id="selectedIntegrationId"
             :label="$t('aiFeatures.skill.model')"
             :hint="$t('aiFeatures.skill.modelHint')"
-            :disabled="saving || !selectedIntegrationId || loadingModels"
+            :disabled="saving"
+            @capabilities="capabilities = $event"
           />
         </v-col>
       </v-row>
