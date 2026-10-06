@@ -4,7 +4,10 @@ const { findUnfilledAnchors } = require('../links');
 const { isPlaceholderSrc } = require('../images');
 
 // The template wraps this image in a link it expects the client to fill in
-// (`#toreplace` by convention), and the link still leads nowhere.
+// (`#toreplace` by convention), and the link still leads nowhere. An empty
+// link is left alone: the export drops the <a> around the image, which then
+// simply is not clickable (team decision of 1 October 2026).
+const isEmptyLink = (link) => link.anchor.getAttribute('href').trim() === '';
 module.exports = {
   id: 'images-without-link',
   category: 'content',
@@ -15,7 +18,10 @@ module.exports = {
     const { placeholderUrl } = ctx.config;
     return (
       findUnfilledAnchors(ctx)
-        .filter((link) => !link.label && link.anchor.querySelector('img'))
+        .filter(
+          (link) =>
+            !link.label && !isEmptyLink(link) && link.anchor.querySelector('img')
+        )
         .map((link) => ({
           link,
           src: link.anchor.querySelector('img').getAttribute('src'),

@@ -28,12 +28,17 @@ const def = { type: 'textBlock', longText: DEFAULT_TEXT };
 
 // A text block whose rich text the client wrote; its export shows the same
 // markup, inside a block background of `bg`.
-function richTextFindings(rule, longText, { bg = '#ffffff' } = {}) {
+function richTextFindings(
+  rule,
+  longText,
+  { bg = '#ffffff', type = 'textBlock' } = {}
+) {
   const html = exportOf({
     b1: `<table><tr><td bgcolor="${bg}">${longText}</td></tr></table>`,
   });
-  const blocks = [{ id: 'b1', type: 'textBlock', longText }];
-  return runQualityChecks(fakeViewModel({ blocks, blockDefs: [def], html }), {
+  const blocks = [{ id: 'b1', type, longText }];
+  const blockDefs = [def, { ...def, type }];
+  return runQualityChecks(fakeViewModel({ blocks, blockDefs, html }), {
     rules: [rule],
   }).findings;
 }
@@ -60,8 +65,24 @@ describe('small-font', () => {
     );
     expect(finding).toMatchObject({
       severity: 'warning',
-      params: { size: 11 },
+      params: { size: 11, min: 14 },
     });
+  });
+
+  it('allows 12 px in header and footer blocks', () => {
+    const text = '<p><span style="font-size: 12px">Legal notice</span></p>';
+    expect(richTextFindings(smallFont, text, { type: 'footerBlock' })).toEqual(
+      []
+    );
+    expect(
+      richTextFindings(smallFont, text, { type: 'preheaderHeader' })
+    ).toEqual([]);
+    const [finding] = richTextFindings(
+      smallFont,
+      '<p><span style="font-size: 11px">Legal notice</span></p>',
+      { type: 'footerBlock' }
+    );
+    expect(finding.params).toMatchObject({ size: 11, min: 12 });
   });
 
   it('converts points', () => {
@@ -111,7 +132,7 @@ describe('color-contrast', () => {
     );
     expect(finding).toMatchObject({
       severity: 'warning',
-      params: { required: 4.5 },
+      params: { required: 4.5, ideal: 7 },
     });
   });
 
@@ -169,12 +190,12 @@ describe('text-layout', () => {
       'Justified text: word gaps get harder to read: __text__',
     ],
     [
-      '<p style="line-height:1.1">Tight lines</p>',
-      'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
+      '<p style="line-height:0.9">Overlapping lines</p>',
+      'Line height under 1 (__ratio__): the lines overlap: __text__',
     ],
     [
-      '<p style="font-size:20px;line-height:22px">Tight too</p>',
-      'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
+      '<p style="font-size:20px;line-height:18px">Overlapping too</p>',
+      'Line height under 1 (__ratio__): the lines overlap: __text__',
     ],
   ])('notes %s', (longText, messageKey) => {
     expect(
@@ -182,12 +203,41 @@ describe('text-layout', () => {
     ).toEqual([messageKey]);
   });
 
-  it('leaves comfortable text alone', () => {
+  it('warns about overlapping lines', () => {
+    const [finding] = richTextFindings(
+      textLayout,
+      '<p style="line-height:0.8">Overlapping lines</p>'
+    );
+    expect(finding.severity).toBe('warning');
+  });
+
+  it('leaves comfortable text alone, a line height of 1.1 included', () => {
     expect(
       richTextFindings(
         textLayout,
-        '<p style="line-height:150%;text-align:left">Fine</p>'
+        '<p style="line-height:150%;text-align:left">Fine</p><p style="line-height:1.1">Tight but fine</p>'
       )
+    ).toEqual([]);
+  });
+
+  it('notes long centred text once for the whole email', () => {
+    const long = 'word '.repeat(50);
+    const findings = richTextFindings(
+      textLayout,
+      `<p style="text-align:center">${long}</p><p style="text-align:center">${long}</p>`
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        messageKey:
+          'Centred text over about three lines is hard to read: align long texts to the left',
+        blockId: null,
+      }),
+    ]);
+  });
+
+  it('leaves short centred text alone', () => {
+    expect(
+      richTextFindings(textLayout, '<p style="text-align:center">Our offer</p>')
     ).toEqual([]);
   });
 });
@@ -274,7 +324,7 @@ describe('emoji-placement', () => {
       'Emoji in the middle of a sentence: screen readers read its name there',
     ],
     [
-      'Sale today 🔥🔥🔥',
+      'Sale today 🔥🔥',
       'Several emojis in a row: screen readers read each name',
     ],
   ])('notes "%s"', (text, key) => {
@@ -284,5 +334,8 @@ describe('emoji-placement', () => {
   it('leaves an emoji at the end of a sentence alone', () => {
     expect(findingsOf('Our sale starts today 🔥')).toEqual([]);
     expect(findingsOf('Merci ❤️ À bientôt')).toEqual([]);
+    expect(findingsOf('Thanks to our nurses 👩‍⚕️')).toEqual([]);
+    expect(findingsOf('Well done 👍🏽')).toEqual([]);
+    expect(findingsOf('Made in France 🇫🇷')).toEqual([]);
   });
 });
