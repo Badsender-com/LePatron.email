@@ -87,6 +87,12 @@
     <!-- ko if: typeof $root.save !== 'undefined' -->
     <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, button: { disabled: !$root.save.enabled(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
     <!-- /ko -->
+    <!-- ko if: $root.metadata.hasTextGenerationFeature && typeof $root.showAi !== 'undefined' -->
+    <button id="ai-toggle" type="button" class="quality-toggle" aria-controls="toolai" data-bind="click: function() { $root.showAi(!$root.showAi()); }, clickBubble: false, attr: { title: $root.t('ai-panel-title'), 'aria-expanded': $root.showAi() ? 'true' : 'false' }">
+      <span class="lucide lucide-wand-2" aria-hidden="true"></span>
+      <span data-bind="text: $root.t('ai-panel-title')">AI tools</span>
+    </button>
+    <!-- /ko -->
     <!-- ko if: typeof $root.showQuality !== 'undefined' -->
     <button id="quality-toggle" type="button" class="right-panel-toggle" aria-controls="toolquality" data-bind="click: function() { $root.showQuality(!$root.showQuality()); }, clickBubble: false, attr: { title: $root.t('Test your email'), 'aria-expanded': $root.showQuality() ? 'true' : 'false' }">
       <span class="lucide lucide-shield-check" aria-hidden="true"></span>

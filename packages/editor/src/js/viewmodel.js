@@ -372,13 +372,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     viewModel.toggleSaveBlockModal(true, finalizedBlockData, 'CREATE');
   };
 
-  // toolbox.tmpl.html — the Content tab's text generation entry (epic #1163).
-  viewModel.openTextGeneration = function () {
-    if (typeof viewModel.toggleTextGenerationModal === 'function') {
-      viewModel.toggleTextGenerationModal();
-    }
-  };
-
   // block-wysiwyg.tmpl.html
   viewModel.translateBlock = function (blockData, parent, index) {
     const unwrappedBlock = recursivelyUnwrapObservable(blockData);

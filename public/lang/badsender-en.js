@@ -764,6 +764,22 @@ module.exports = {
   'Copy the link: __link__': 'Copy the link: __link__',
 
   // text generation (epic #1163)
+  // AI panel, « Outils IA » (ADR 0004)
+  'ai-panel-title': 'AI tools',
+  'ai-panel-actions': 'AI actions',
+  'ai-panel-action-subject': 'Generate the subject',
+  'ai-panel-action-preheader': 'Generate the preheader',
+  'ai-panel-copy-only':
+    'This email has no such field: the proposal will be for you to copy.',
+  'ai-panel-select-invite': 'Select a block or a field to see its AI actions.',
+  'ai-panel-all-actions': 'All actions',
+  'ai-panel-no-subject':
+    'This email has no subject yet. The preheader complements the subject: generate the subject first.',
+  'ai-panel-subject-first': 'Generate the subject first',
+  'ai-panel-preheader-anyway': 'Generate the preheader anyway',
+  'ai-panel-next-preheader': 'Go on with the preheader',
+  'ai-panel-generate': 'Suggest',
+  'ai-panel-loading': 'Generating…',
   'text-generation-applied-preheader': 'Preheader:',
   'text-generation-applied-subject': 'Subject:',
   'text-generation-long': 'long: its end will rarely be read',
@@ -771,18 +787,9 @@ module.exports = {
     'short: some inboxes complete it with the start of the email',
   'text-generation-copy-hint-preheader':
     'This template has no editable preheader: copy a proposal and paste it in your sending platform.',
-  'text-generation-back': 'Back',
-  'text-generation-picked-subject': 'Picked subject: “__subject__”',
   'text-generation-preheaders-title': 'Pick a preheader',
-  'text-generation-to-preheaders': 'Suggest preheaders',
-  'text-generation-apply-subject-only': 'Apply subject only',
-  'text-generation-open': 'Generate subject and preheader',
-  'text-generation-title': 'Subject and preheader',
-  'text-generation-intro':
-    "Three proposals written from the email's content, along Badsender's copywriting guidelines.",
   'text-generation-brief-label': 'Instruction (optional)',
   'text-generation-brief-placeholder': 'E.g. stress the free delivery',
-  'text-generation-generate': 'Suggest subjects',
   'text-generation-more': 'Suggest others',
   'text-generation-subjects-title': 'Pick a subject',
   'text-generation-length': '__count__ characters',
@@ -798,8 +805,6 @@ module.exports = {
     "This email's subject is not managed in LePatron: copy a proposal and paste it in your sending platform.",
   'text-generation-applied': 'Applied. Save the email to keep it.',
   'text-generation-undo': 'Undo',
-  'text-generation-close': 'Close',
-  'text-generation-cancel': 'Cancel',
   'text-generation-empty-email':
     'The email has no text yet: add content before asking for proposals.',
   'text-generation-error-disabled':

@@ -17,9 +17,6 @@ const {
 const {
   BlockBuilderModalComponent,
 } = require('./components/block-builder-modal/block-builder-modal.js');
-const {
-  TextGenerationModalComponent,
-} = require('./components/text-generation-modal/text-generation-modal.js');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -33,7 +30,6 @@ module.exports = {
         ContentFeedModalComponent,
         HtmlCodeModalComponent,
         BlockBuilderModalComponent,
-        TextGenerationModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -45,7 +41,6 @@ module.exports = {
           <translate-block-modal :vm="viewModel"></translate-block-modal>
           <content-feed-modal :vm="viewModel"></content-feed-modal>
           <html-code-modal :vm="viewModel"></html-code-modal><block-builder-modal :vm="viewModel"></block-builder-modal>
-          <text-generation-modal :vm="viewModel"></text-generation-modal>
         </div>
       `,
     });

@@ -787,6 +787,23 @@ module.exports = {
   'Copy the link: __link__': 'Copier le lien : __link__',
 
   // text generation (epic #1163)
+  // AI panel, « Outils IA » (ADR 0004)
+  'ai-panel-title': 'Outils IA',
+  'ai-panel-actions': 'Actions IA',
+  'ai-panel-action-subject': "Générer l'objet",
+  'ai-panel-action-preheader': 'Générer le préheader',
+  'ai-panel-copy-only':
+    "Cet email n'a pas ce champ : la proposition sera à copier.",
+  'ai-panel-select-invite':
+    'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
+  'ai-panel-all-actions': 'Toutes les actions',
+  'ai-panel-no-subject':
+    "Cet email n'a pas encore d'objet. Le préheader complète l'objet : générez d'abord l'objet.",
+  'ai-panel-subject-first': "Générer d'abord l'objet",
+  'ai-panel-preheader-anyway': 'Générer le préheader quand même',
+  'ai-panel-next-preheader': 'Continuer avec le préheader',
+  'ai-panel-generate': 'Proposer',
+  'ai-panel-loading': 'Génération en cours…',
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
   'text-generation-long': 'long : la fin sera rarement lue',
@@ -794,18 +811,9 @@ module.exports = {
     "court : certaines messageries le complètent avec le début de l'email",
   'text-generation-copy-hint-preheader':
     "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
-  'text-generation-back': 'Retour',
-  'text-generation-picked-subject': 'Objet choisi : « __subject__ »',
   'text-generation-preheaders-title': 'Choisissez un préheader',
-  'text-generation-to-preheaders': 'Proposer des préheaders',
-  'text-generation-apply-subject-only': "Appliquer l'objet seul",
-  'text-generation-open': 'Générer objet et préheader',
-  'text-generation-title': 'Objet et préheader',
-  'text-generation-intro':
-    "Trois propositions rédigées à partir du contenu de l'email, selon les recommandations de rédaction de Badsender.",
   'text-generation-brief-label': 'Consigne (facultatif)',
   'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
-  'text-generation-generate': 'Proposer des objets',
   'text-generation-more': "Proposer d'autres",
   'text-generation-subjects-title': 'Choisissez un objet',
   'text-generation-length': '__count__ caractères',
@@ -821,8 +829,6 @@ module.exports = {
     "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
   'text-generation-undo': 'Annuler',
-  'text-generation-close': 'Fermer',
-  'text-generation-cancel': 'Annuler',
   'text-generation-empty-email':
     "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
   'text-generation-error-disabled':

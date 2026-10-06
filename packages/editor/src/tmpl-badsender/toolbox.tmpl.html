@@ -125,17 +125,6 @@
       By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
-    <!-- Text generation (epic #1163): subject and preheader proposals written
-         from the email's content. Shown whether or not the group uses the email
-         metadata: without them, the proposals are offered to copy. -->
-    <!-- ko if: $root.metadata.hasTextGenerationFeature -->
-    <div class="text-generation-entry">
-      <button type="button" class="text-generation-entry__button" data-bind="click: $root.openTextGeneration">
-        <span class="lucide lucide-fw lucide-wand-2" aria-hidden="true"></span>
-        <span data-bind="text: $root.t('text-generation-open')">Generate subject and preheader</span>
-      </button>
-    </div>
-    <!-- /ko -->
     <!-- Email settings: a document-level setting, so it belongs in this tab with
          the template's own options rather than in a panel of its own.
 
@@ -310,6 +299,13 @@
 <div id="toolquality" class="slidebar right-panel" data-bind="rightPanel: 'quality'">
   <div id="quality-drawer">
     <quality-drawer-plugin />
+  </div>
+</div>
+
+<!-- AI panel, « Outils IA » (ADR 0004) -->
+<div id="toolai" class="slidebar right-panel" data-bind="rightPanel: 'ai'">
+  <div id="ai-panel">
+    <ai-panel-plugin />
   </div>
 </div>
 
