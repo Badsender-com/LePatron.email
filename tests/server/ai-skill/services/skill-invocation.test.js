@@ -417,6 +417,22 @@ describe('skill-invocation.invoke', () => {
       expect(logged.status).toBe('PROVIDER_ERROR');
     });
 
+    it('hands the provider verdict to the caller, never its message', async () => {
+      wireHappyPath();
+      const providerErr = new Error('gemini API error: 402 - credits depleted');
+      providerErr.code = 'PROVIDER_QUOTA_EXCEEDED';
+      mockProvider.chatComplete.mockRejectedValue(providerErr);
+      const caught = await skillInvocation
+        .invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'x' },
+          groupId: GROUP_ID,
+        })
+        .catch((err) => err);
+      expect(caught.failureCode).toBe('PROVIDER_QUOTA_EXCEEDED');
+      expect(caught.message).toBe('Skill invocation failed');
+    });
+
     it('logs TIMEOUT when the provider call exceeds timeoutMs', async () => {
       wireHappyPath();
       mockProvider.chatComplete.mockImplementation(
