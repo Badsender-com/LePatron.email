@@ -72,7 +72,9 @@ const subjectRequestSchema = requestSchema.extend({
 });
 
 const preheaderRequestSchema = requestSchema.extend({
-  subject: z.string().refine((text) => text.trim().length > 0),
+  // Absent when the subject is set in the sending platform: the skill then
+  // makes the preheader carry the main point of the email.
+  subject: optionalText,
   currentPreheader: optionalText,
 });
 
@@ -243,11 +245,12 @@ async function generateSubjects({ user, body }) {
 }
 
 /**
- * Three preheader proposals that complement the subject the user picked.
+ * Three preheader proposals that complement the subject the user picked, or
+ * carry the main point of the email when it has no subject yet.
  *
  * @param {Object} params
  * @param {Object} params.user the requesting user
- * @param {Object} params.body { mailingId, content, subject, currentPreheader?, brief?, avoid? }
+ * @param {Object} params.body { mailingId, content, subject?, currentPreheader?, brief?, avoid? }
  * @returns {Promise<{ proposals: Array, dropped: number }>}
  */
 async function generatePreheaders({ user, body }) {
@@ -284,7 +287,7 @@ async function generatePreheaders({ user, body }) {
   return screenProposals('preheader', result.output.proposals, {
     sources: [
       ...request.content.map((piece) => piece.text),
-      request.subject,
+      request.subject || '',
       request.currentPreheader || '',
     ],
     avoid: request.avoid,

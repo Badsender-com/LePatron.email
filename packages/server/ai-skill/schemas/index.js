@@ -96,8 +96,9 @@ const subjectGenOutput = textProposalsOutput;
 const preheaderGenInput = z
   .object({
     content: emailCopySchema,
-    // The subject the user picked: the preheader complements it.
-    subject: z.string().min(1),
+    // The subject the user picked: the preheader complements it. Absent when
+    // the subject is set elsewhere: the preheader carries the main point.
+    subject: z.string().min(1).optional(),
     emailType: z.string().optional(),
     currentPreheader: z.string().optional(),
     brief: z.string().optional(),
