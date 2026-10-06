@@ -8,9 +8,9 @@
 </form>
 <!-- /ko -->
 <!-- ko if: $root.titleMode() == 'show' -->
-<div class="creation-name">
+<div class="creation-name" data-bind="css: { 'creation-name--readonly': !$root.canRenameCreation() }">
   <p class="ui-button" data-bind="event: { dblclick: enableEditCreationName }, dblclickBubble: false,
-    attr: { title: $root.t('edit-title-double-click') }">
+    attr: { title: $root.canRenameCreation() ? $root.t('edit-title-double-click') : null }">
     <span class="ui-button-text" data-bind="text: $root.creationName"></span>
   </p>
 </div>
