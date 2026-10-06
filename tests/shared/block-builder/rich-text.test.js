@@ -158,20 +158,67 @@ describe('known bypass attempts', () => {
 // render of the preview. Each of these shapes took seconds per 100KB with the
 // regexes the scanner replaced: a `<` the scan read to the end of the input
 // from every start, or an attribute name read again from each of its letters.
+//
+// What has to hold is the SHAPE OF THE CURVE, not a duration. These tests used
+// to assert `< 200ms` on one run, and that is what made them flaky: the scanner
+// needs 3 to 30ms here, so the assertion had a 7x to 60x margin and still went
+// red at 209ms — it was measuring how much CPU a Jest worker got among 245
+// suites, not the code. Loosening the threshold would only move the noise
+// floor.
+//
+// So each shape is measured at N and at 2N. Linear doubles; the quadratic this
+// guards against quadruples, and turns milliseconds into seconds. That signal
+// is enormous, which is exactly why it does not need a tight bound: a loaded
+// machine slows both measurements alike and leaves the ratio alone.
 describe('adversarial input stays linear', () => {
   const SIZE = 100000;
-  const BUDGET_MS = 200;
+
+  // Doubling the input may not even double the time (the shorter shapes are
+  // partly dominated by setup), so the bound sits between what linear produces
+  // and the 4x of a quadratic regression.
+  const MAX_RATIO = 3;
+
+  // Checked on ONE run at the smaller size, BEFORE anything larger is measured.
+  // That order matters: a quadratic scanner cannot be interrupted from inside
+  // the test — the call is synchronous, so Jest's own timeout cannot fire — and
+  // measuring the doubled input first would simply hang. Deliberately far above
+  // the ~30ms this costs; it fires on a scanner that stopped making progress,
+  // never on a busy machine.
+  const CEILING_MS = 2000;
+
+  const timeOf = (html) => {
+    const started = process.hrtime.bigint();
+    sanitizeRichText(html);
+    return Number(process.hrtime.bigint() - started) / 1e6;
+  };
+
+  // The minimum of a few runs, not the mean: contention only ever ADDS time, so
+  // the fastest run is the one least polluted by everything else on the machine.
+  const fastestOf = (html, runs = 3) => {
+    let best = Infinity;
+    for (let i = 0; i < runs; i += 1) best = Math.min(best, timeOf(html));
+    return best;
+  };
 
   test.each([
-    ['`<a` never closed', '<a'.repeat(SIZE / 2)],
-    ['`<a ` never closed', '<a '.repeat(SIZE / 3)],
-    ['an unclosed quote in every tag', '<a "'.repeat(SIZE / 4)],
-    ['one very long attribute name', `<a ${'a'.repeat(SIZE)}>x</a>`],
-    ['mixed quotes', '<b x="\''.repeat(SIZE / 7)],
-  ])('%s', (_label, html) => {
-    const started = Date.now();
-    sanitizeRichText(html);
-    expect(Date.now() - started).toBeLessThan(BUDGET_MS);
+    ['`<a` never closed', (n) => '<a'.repeat(n / 2)],
+    ['`<a ` never closed', (n) => '<a '.repeat(n / 3)],
+    ['an unclosed quote in every tag', (n) => '<a "'.repeat(n / 4)],
+    ['one very long attribute name', (n) => `<a ${'a'.repeat(n)}>x</a>`],
+    ['mixed quotes', (n) => '<b x="\''.repeat(n / 7)],
+  ])('%s', (_label, build) => {
+    const single = build(SIZE);
+
+    // Cheap guard first, on a cold call: catches a scanner that blew up, while
+    // the input is still small enough for the failure to arrive in seconds.
+    expect(timeOf(single)).toBeLessThan(CEILING_MS);
+
+    const double = build(SIZE * 2);
+    // Warm up on the larger shape too, so the first measured run is not the one
+    // paying for JIT.
+    sanitizeRichText(double);
+
+    expect(fastestOf(double) / fastestOf(single)).toBeLessThan(MAX_RATIO);
   });
 
   it('still reads a well-formed tag after a run of unclosed ones', () => {
