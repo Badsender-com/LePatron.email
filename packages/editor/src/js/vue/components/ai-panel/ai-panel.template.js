@@ -27,7 +27,7 @@ module.exports = `
       <ul class="ai-panel__actions">
         <li v-for="item in actions" :key="item.id">
           <button type="button" class="ai-panel__action" @click="openAction(item.id)">
-            <span class="lucide lucide-wand-2" aria-hidden="true"></span>
+            <span class="lucide lucide-bot" aria-hidden="true"></span>
             <span>{{ t(nameOf(item.id)) }}</span>
           </button>
           <p v-if="!item.canApply" class="ai-panel__hint">{{ t('ai-panel-copy-only') }}</p>
