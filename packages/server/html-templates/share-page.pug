@@ -41,6 +41,10 @@ html(lang=lang)
       .bar__name { margin: 0; font-size: 15px; font-weight: 600; }
       .bar__meta { color: var(--muted); font-size: 13px; }
       .bar__brand { margin-left: auto; color: var(--brand); font-size: 12px; font-weight: 600; }
+      .copy { margin: 0; padding: 8px 16px; border-bottom: 1px solid var(--line); background: #fff; font-size: 13px; }
+      .copy__line { display: flex; gap: 8px; margin: 2px 0; }
+      .copy__label { flex-shrink: 0; min-width: 72px; color: var(--muted); }
+      .copy__value { margin: 0; }
       .email { flex: 1; width: 100%; border: 0; background: #fff; }
       .notice {
         max-width: 480px;
@@ -56,6 +60,12 @@ html(lang=lang)
         h1.bar__name= name
         span.bar__meta= meta
         span.bar__brand LePatron
+      if copy && copy.length
+        dl.copy
+          each line in copy
+            div.copy__line
+              dt.copy__label= line.label
+              dd.copy__value= line.value
       iframe.email(
         title=name
         sandbox="allow-popups allow-popups-to-escape-sandbox"
