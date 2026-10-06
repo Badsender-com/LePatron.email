@@ -1,6 +1,7 @@
 'use strict';
 
 const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
+const { userCan } = require('./user-can.js');
 
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
@@ -41,9 +42,9 @@ function html(propAccessor, onfocusbinding, parameters) {
   return `
     <input type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
     <div class="html-code-widget">
-      <button class="html-code-widget__button" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
+      <button class="html-code-widget__button" data-bind="visible: $root.canEditHtmlBlock(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
-      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHeadCssEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
+      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.canEditHeadCss(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
       <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary html-code-widget__button--view-css" data-bind="visible: $root.isHeadCssReadOnly(), button: { icons: { primary: 'lucide lucide-eye' } }, text: $root.t('widget-code-view-css'), click: function() { $root.openHeadCssViewer(); }">View the email CSS</button>
       <p class="html-code-widget__hint html-code-widget__hint--read-only" data-bind="visible: $root.isHeadCssReadOnly(), text: $root.t('head-css-read-only-hint')"></p>
@@ -70,8 +71,15 @@ module.exports = () => {
       return Boolean(vm.metadata && vm.metadata[HTML_CODE_BLOCK.flag]);
     };
 
+    // The template flag AND the role: the pasted markup is the block's
+    // structure, which a writer or reviewer does not edit. The panel's
+    // "disabled" sentence stays tied to the flag alone.
+    vm.canEditHtmlBlock = function () {
+      return vm.isHtmlBlockEditable() && userCan(vm, 'canEditStructure');
+    };
+
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {
-      if (!vm.isHtmlBlockEditable()) return;
+      if (!vm.canEditHtmlBlock()) return;
       if (typeof vm.toggleHtmlCodeModal !== 'function') return;
       if (!blockProperties || !blockProperties[propAccessor]) return;
 

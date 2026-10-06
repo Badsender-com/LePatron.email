@@ -49,14 +49,14 @@ function addCanvasEntryToViewModel(vm) {
     vm.selectedTool(CONTENT_TOOL);
   };
 
-  // The same flag as the panel's button (vm.isBlockBuilderEditable, in
+  // The same predicate as the panel's button (vm.canComposeBlocks, in
   // badsender-widget-block-builder.js): with it off the block is kept but can
   // no longer be edited, so the toolbar offers nothing to open.
   vm.canComposeBlock = function (block) {
     return (
       isComposedBlock(block) &&
-      typeof vm.isBlockBuilderEditable === 'function' &&
-      vm.isBlockBuilderEditable()
+      typeof vm.canComposeBlocks === 'function' &&
+      vm.canComposeBlocks()
     );
   };
 

@@ -3,6 +3,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
+var userCan = require('./user-can.js').userCan;
 
 function handleCreationName(viewModel) {
   var originalValue;
@@ -15,8 +16,7 @@ function handleCreationName(viewModel) {
 
   // Locked until the current user is known, like the toolbox panels.
   viewModel.canRenameCreation = function () {
-    var user = viewModel.currentUser && viewModel.currentUser();
-    return !!(user && user.canRename);
+    return userCan(viewModel, 'canRename');
   };
 
   viewModel.enableEditCreationName = function (data, event) {

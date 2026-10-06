@@ -1,6 +1,7 @@
 'use strict';
 
 const { BLOCK_BUILDER_BLOCK } = require('./html-code-block/block-types.js');
+const { userCan } = require('./user-can.js');
 
 // Widget for the `blockBuilder` property type, declared by the injected block
 // definitions as `builderHtml { widget: blockBuilder; }`.
@@ -16,7 +17,7 @@ function html(propAccessor, onfocusbinding, parameters) {
   return `
     <input type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
     <div class="html-code-widget">
-      <button class="html-code-widget__button" data-bind="visible: $root.isBlockBuilderEditable(), button: { icons: { primary: 'lucide lucide-layout-template' } }, text: $root.t('widget-block-builder-compose'), click: function(blockProperties, evt) { $root.openBlockBuilder('${propAccessor}', blockProperties); }">Compose a block</button>
+      <button class="html-code-widget__button" data-bind="visible: $root.canComposeBlocks(), button: { icons: { primary: 'lucide lucide-layout-template' } }, text: $root.t('widget-block-builder-compose'), click: function(blockProperties, evt) { $root.openBlockBuilder('${propAccessor}', blockProperties); }">Compose a block</button>
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isBlockBuilderEditable(), text: $root.t('widget-block-builder-disabled')"></p>
     </div>
   `;
@@ -44,8 +45,15 @@ module.exports = () => {
       return Boolean(vm.metadata && vm.metadata[BLOCK_BUILDER_BLOCK.flag]);
     };
 
+    // The template flag AND the role: composing rewrites the block's markup, a
+    // structure edit a writer or reviewer does not have. The panel keeps its
+    // "disabled" sentence for the flag only, it would mislead about a role.
+    vm.canComposeBlocks = function () {
+      return vm.isBlockBuilderEditable() && userCan(vm, 'canEditStructure');
+    };
+
     vm.openBlockBuilder = function (propAccessor, blockProperties) {
-      if (!vm.isBlockBuilderEditable()) return;
+      if (!vm.canComposeBlocks()) return;
       if (typeof vm.toggleBlockBuilderModal !== 'function') return;
       if (!blockProperties || !blockProperties[propAccessor]) return;
 

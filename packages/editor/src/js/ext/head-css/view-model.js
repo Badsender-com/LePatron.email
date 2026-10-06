@@ -6,6 +6,7 @@ const {
 } = require('../../../../../shared/head-css/constants.js');
 const { hasHtmlCodeBlock, headCssToExport } = require('./exported-css.js');
 const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
+const { userCan } = require('../user-can.js');
 
 // The head CSS members of the editor's view model: the stylesheet itself, the
 // predicates the two entry points read (toolbox.tmpl.html,
@@ -80,11 +81,17 @@ function addHeadCssToViewModel(viewModel) {
     return viewModel.isHeadCssEditable() && !viewModel.hasHtmlCodeBlock();
   };
 
+  // The template flag AND the role: the email's CSS is style, which a writer
+  // or reviewer does not edit. They can still read it (openHeadCssViewer).
+  viewModel.canEditHeadCss = function () {
+    return viewModel.isHeadCssEditable() && userCan(viewModel, 'canEditStyle');
+  };
+
   // Opens the shared CodeMirror modal on the stylesheet instead of a block
   // property. `toggleHtmlCodeModal` is set by the Vue component when it mounts;
   // guarded because the palette button exists before Vue has bound.
   viewModel.openHeadCssEditor = function () {
-    if (!viewModel.isHeadCssEditable()) return;
+    if (!viewModel.canEditHeadCss()) return;
     if (typeof viewModel.toggleHtmlCodeModal !== 'function') return;
     viewModel.toggleHtmlCodeModal(true, {
       accessor: viewModel.headCss,
