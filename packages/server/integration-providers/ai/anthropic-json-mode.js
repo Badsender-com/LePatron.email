@@ -27,19 +27,25 @@ const JSON_TOOL_NAME = 'emit_json';
 
 const AUTO_TOOL_INSTRUCTION = `Answer by calling the ${JSON_TOOL_NAME} tool exactly once, with the whole answer as its input. Do not answer in prose.`;
 
-// Anthropic's own wordings, matched on 400 only. Closed on purpose: anything
-// else is a real error and is raised as one.
-const OUTPUT_CONFIG_REFUSED = /\boutput_config\b/;
+// Matched on 400 only. Closed on purpose: anything else is a real error and is
+// raised as one. The refusal of output_config has not been observed live, so
+// it is matched on the field and on the feature's names, not on one wording.
+const OUTPUT_CONFIG_REFUSED = /\boutput_config\b|\boutput_format\b|structured outputs?\b/i;
 const FORCED_TOOL_REFUSED = /tool_choice: type "(?:tool|any)".* not supported/i;
+// A refusal about the schema itself belongs to one skill, not to the model:
+// remembered per model, it would move every skill off structured outputs.
+// `json_schema` (the format type) does not match: no boundary after `_`.
+const SCHEMA_REFUSED = /\bschema\b/i;
 
 const ADAPTATIONS = Object.freeze({
   output_config: 'json_via_tool',
   tool_choice: 'auto_tool_choice',
 });
 
-// Keywords structured outputs refuse. The SDKs strip them and check them
-// client-side; this connector calls the API directly, and the zod schema
-// checks them after the call anyway.
+// Keywords structured outputs refuses, or accepts only in part (no lookaround
+// in a `pattern`, and zod's email pattern has some). The SDKs strip them and
+// check them client-side; this connector calls the API directly, and the zod
+// schema checks them after the call anyway.
 const UNSUPPORTED_KEYWORDS = new Set([
   'minLength',
   'maxLength',
@@ -49,6 +55,7 @@ const UNSUPPORTED_KEYWORDS = new Set([
   'exclusiveMaximum',
   'multipleOf',
   'maxItems',
+  'pattern',
 ]);
 
 const SCHEMA_MAPS = new Set(['properties', '$defs', 'definitions']);
@@ -90,6 +97,13 @@ function convertKeyword(key, value) {
   return value;
 }
 
+// zod emits `oneOf` for a discriminated union, which structured outputs does
+// not take. `anyOf` accepts the same answers here, the branches being told
+// apart by their discriminant, and zod checks the rest.
+function outputKeyword(key, schema) {
+  return key === 'oneOf' && !Object.hasOwn(schema, 'anyOf') ? 'anyOf' : key;
+}
+
 // An open map has no equivalent: closing it would forbid every key.
 function closeObject(schema) {
   if (schema.type !== 'object') return schema;
@@ -104,7 +118,7 @@ function convertSchema(schema) {
   for (const [key, value] of Object.entries(schema)) {
     const converted = convertKeyword(key, value);
     if (converted === UNEXPRESSIBLE) return UNEXPRESSIBLE;
-    if (converted !== SKIP) next[key] = converted;
+    if (converted !== SKIP) next[outputKeyword(key, schema)] = converted;
   }
   return closeObject(next);
 }
@@ -153,7 +167,13 @@ function buildJsonModeFields(schema) {
   };
 }
 
-/** @returns {{param: string, action: string}|null} */
+/**
+ * A refusal about the schema is `transient`: the request falls back to the
+ * tool, but nothing is remembered for the model. Read wrongly either way, the
+ * cost is one refused request per call, never a failed call.
+ *
+ * @returns {{param: string, action: string, transient?: boolean}|null}
+ */
 function detectJsonModeQuirk(status, parsedError, message) {
   if (status !== 400) return null;
   const error = parsedError?.error || {};
@@ -163,7 +183,8 @@ function detectJsonModeQuirk(status, parsedError, message) {
     return { param: 'tool_choice', action: ADAPTATIONS.tool_choice };
   }
   if (OUTPUT_CONFIG_REFUSED.test(text)) {
-    return { param: 'output_config', action: ADAPTATIONS.output_config };
+    const quirk = { param: 'output_config', action: ADAPTATIONS.output_config };
+    return SCHEMA_REFUSED.test(text) ? { ...quirk, transient: true } : quirk;
   }
   return null;
 }
@@ -196,18 +217,20 @@ function applyJsonModeQuirk(body, quirk) {
   return body;
 }
 
-/**
- * Apply learned quirks in the order they were learned: a model refusing both
- * routes first loses `output_config` for the tool, then the forced choice.
- */
+// Whatever order they were learned in: the forced choice can only be relaxed
+// once `output_config` has become the tool. Learned the other way round (a
+// skill without schema refused first), the tool came back forced and the
+// model was stuck.
+const JSON_MODE_ORDER = [ADAPTATIONS.output_config, ADAPTATIONS.tool_choice];
+
+/** Other quirks first, in the order learned, then the JSON-mode ones. */
 function applyAnthropicQuirks(body, quirks) {
-  return (quirks || []).reduce(
-    (current, quirk) =>
-      Object.values(ADAPTATIONS).includes(quirk.action)
-        ? applyJsonModeQuirk(current, quirk)
-        : applyQuirks(current, [quirk]),
-    body
+  const all = quirks || [];
+  const others = all.filter((quirk) => !JSON_MODE_ORDER.includes(quirk.action));
+  const jsonMode = JSON_MODE_ORDER.flatMap((action) =>
+    all.filter((quirk) => quirk.action === action)
   );
+  return jsonMode.reduce(applyJsonModeQuirk, applyQuirks(body, others));
 }
 
 /** The schema the request asked for, whichever route carried it. */
@@ -252,8 +275,12 @@ function unwrapEnvelope(value, schema) {
   }
   if (!isPlainObject(inner)) return untouched;
 
+  // An empty object fits any schema without required keys: not a sign of
+  // an envelope.
+  const innerKeys = Object.keys(inner);
   const fits =
-    Object.keys(inner).every((key) => Object.hasOwn(schema.properties, key)) &&
+    innerKeys.length > 0 &&
+    innerKeys.every((key) => Object.hasOwn(schema.properties, key)) &&
     (schema.required || []).every((key) => Object.hasOwn(inner, key));
   return fits ? { value: inner, envelope: keys[0] } : untouched;
 }

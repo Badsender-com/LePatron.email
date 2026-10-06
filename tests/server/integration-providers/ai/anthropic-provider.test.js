@@ -300,6 +300,47 @@ describe('AnthropicProvider', () => {
           ).toEqual({ const: null });
         });
 
+        // zod's email pattern carries lookaheads, which structured outputs
+        // refuses; zod checks the pattern after the call.
+        it('strips patterns', async () => {
+          mockFetch.mockResolvedValue(textAnswer('{"email":"a@b.c"}'));
+
+          await askJson({
+            type: 'object',
+            properties: {
+              email: { type: 'string', pattern: '^(?!\\.)[^@]+@[^@]+$' },
+              pattern: { type: 'string' },
+            },
+            required: ['email'],
+          });
+
+          expect(sentBody().output_config.format.schema.properties).toEqual({
+            email: { type: 'string' },
+            pattern: { type: 'string' },
+          });
+        });
+
+        // What zod emits for a discriminated union.
+        it('turns oneOf into anyOf', async () => {
+          const branch = (kind) => ({
+            type: 'object',
+            properties: { kind: { const: kind } },
+            required: ['kind'],
+          });
+          mockFetch.mockResolvedValue(textAnswer('{"block":{"kind":"a"}}'));
+
+          await askJson({
+            type: 'object',
+            properties: { block: { oneOf: [branch('a'), branch('b')] } },
+            required: ['block'],
+          });
+
+          const { block } = sentBody().output_config.format.schema.properties;
+          expect(block.oneOf).toBeUndefined();
+          expect(block.anyOf).toHaveLength(2);
+          expect(block.anyOf[0].additionalProperties).toBe(false);
+        });
+
         // An open map has no equivalent there: closing it would forbid every
         // key. The tool takes it as is.
         it('uses the tool for a schema it cannot express', async () => {
@@ -464,9 +505,67 @@ describe('AnthropicProvider', () => {
 
           expect(mockFetch).toHaveBeenCalledTimes(4);
           expect(sentBody(2).tool_choice).toEqual({ type: 'auto' });
-          // Remembered in the order learned: the next call starts at the end.
+          // Remembered: the next call starts at the end.
           expect(sentBody(3).output_config).toBeUndefined();
           expect(sentBody(3).tool_choice).toEqual({ type: 'auto' });
+        });
+
+        // A skill without schema refuses the forced choice first; the next
+        // one, with a schema, must not get the forced tool back once
+        // output_config is refused.
+        it('lands on auto whichever refusal came first', async () => {
+          mockFetch
+            .mockResolvedValueOnce(refused(FORCED_TOOL_REFUSAL))
+            .mockResolvedValueOnce(toolAnswer({ text: 'x' }))
+            .mockResolvedValueOnce(refused('output_config: not supported'))
+            .mockResolvedValue(toolAnswer(proposals));
+
+          await askJson(undefined, 'claude-both');
+          const result = await askJson(proposalsSchema, 'claude-both');
+          await askJson(proposalsSchema, 'claude-both');
+
+          expect(mockFetch).toHaveBeenCalledTimes(5);
+          for (const call of [3, 4]) {
+            expect(sentBody(call).output_config).toBeUndefined();
+            expect(sentBody(call).tool_choice).toEqual({ type: 'auto' });
+          }
+          expect(JSON.parse(result.content)).toEqual(proposals);
+        });
+
+        // The wording has not been observed live: the feature's name is
+        // enough, not only the field's.
+        it('recognises a refusal naming structured outputs', async () => {
+          mockFetch
+            .mockResolvedValueOnce(
+              refused('This model does not support structured outputs.')
+            )
+            .mockResolvedValueOnce(toolAnswer(proposals));
+
+          await askJson(proposalsSchema, 'claude-legacy');
+
+          expect(sentBody(1).output_config).toBeUndefined();
+          expect(sentBody(1).tools[0].name).toBe('emit_json');
+        });
+
+        // One skill's schema says nothing about the model: the others keep
+        // structured outputs.
+        it('falls back for this request only when the schema is refused', async () => {
+          mockFetch
+            .mockResolvedValueOnce(
+              refused('output_config.format.schema: lookaround not supported')
+            )
+            .mockResolvedValueOnce(toolAnswer(proposals))
+            .mockResolvedValue(textAnswer(JSON.stringify(proposals)));
+
+          const result = await askJson(proposalsSchema);
+          await askJson(proposalsSchema);
+
+          expect(sentBody(1).output_config).toBeUndefined();
+          expect(JSON.parse(result.content)).toEqual(proposals);
+          expect(sentBody(2).output_config.format.type).toBe('json_schema');
+          expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining('this request only')
+          );
         });
 
         // A genuine misconfiguration must surface, not be retried into
@@ -546,6 +645,29 @@ describe('AnthropicProvider', () => {
           const result = await askJson(proposalsSchema);
 
           expect(result.content).toBe('Voici : {"proposals": []}');
+        });
+
+        // Structured outputs cannot answer prose: a proxy silently dropping
+        // output_config can, and nothing else would say so.
+        it('warns when prose comes back for a structured output', async () => {
+          mockFetch.mockResolvedValue(textAnswer('Voici trois idées.'));
+
+          await askJson(proposalsSchema);
+
+          expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining('output_config may not reach the API')
+          );
+        });
+
+        it('leaves alone an empty object under a schema with nothing required', async () => {
+          mockFetch.mockResolvedValue(textAnswer('{"anything":{}}'));
+
+          const result = await askJson({
+            type: 'object',
+            properties: { text: { type: 'string' } },
+          });
+
+          expect(JSON.parse(result.content)).toEqual({ anything: {} });
         });
 
         it('leaves an answer alone when no schema was sent', async () => {

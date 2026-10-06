@@ -144,6 +144,10 @@ function applyQuirks(body, quirks) {
 function describeQuirk(quirk) {
   if (quirk.action === 'rename') return `rename ${quirk.param}→${quirk.to}`;
   if (quirk.action === 'clamp') return `clamp ${quirk.param}→${quirk.value}`;
+  // A dialect's own adaptation (Anthropic's JSON mode): named as it is.
+  if (quirk.action && quirk.action !== 'drop') {
+    return `${quirk.action} (${quirk.param})`;
+  }
   return `drop ${quirk.param}`;
 }
 

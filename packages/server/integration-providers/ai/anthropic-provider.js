@@ -173,14 +173,27 @@ class AnthropicProvider extends BaseLLMProvider {
       try {
         answer = JSON.parse(text);
       } catch {
+        // Structured outputs cannot answer prose: a proxy behind apiHost
+        // that silently drops unknown fields can, and no 400 says so.
+        if (requestBody.output_config) {
+          logger.warn(
+            `anthropic/${data.model}: structured output asked, prose answered — output_config may not reach the API`
+          );
+        }
         return text;
       }
     }
     // Here rather than per feature: every skill reads through this method.
     const { value, envelope } = unwrapEnvelope(answer, schema);
     if (envelope) {
+      // The key is model output: quoted and bounded, never logged raw.
       logger.warn(
-        `anthropic/${data.model}: unwrapped an answer nested under "${envelope}"`
+        `anthropic/${
+          data.model
+        }: unwrapped an answer nested under ${JSON.stringify(envelope).slice(
+          0,
+          80
+        )}`
       );
     }
     return toolUse || envelope ? JSON.stringify(value) : text;
