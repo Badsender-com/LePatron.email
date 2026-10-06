@@ -1,6 +1,6 @@
 'use strict';
 
-// Keeps the pasted markup of an "HTML code" block OUT of the export DOM entirely.
+// Keeps the markup of a synthetic block OUT of the export DOM entirely.
 //
 // Without this, the markup makes a full round trip through the export frame's DOM
 // and then through the regex cascade at the end of viewmodel.js exportHTML. That

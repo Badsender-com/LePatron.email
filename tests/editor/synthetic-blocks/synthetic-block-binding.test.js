@@ -14,14 +14,14 @@ const createDOMPurify = require('dompurify');
 
 window.DOMPurify = createDOMPurify(window);
 
-require('../../../packages/editor/src/js/bindings/html-code-block.js');
+require('../../../packages/editor/src/js/bindings/synthetic-block.js');
 // withProperties: how Mosaico puts `templateMode` in the binding context.
 require('../../../packages/editor/src/js/bindings/blocks.js');
 const {
   beginExportSubstitution,
   endExportSubstitution,
   substituteMarkers,
-} = require('../../../packages/editor/src/js/ext/html-code-block/export-substitution.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/export-substitution.js');
 
 const PASTED = '<p>kept</p><img src="x" onerror="window.pwned = 1">';
 
@@ -31,10 +31,10 @@ function render(templateMode) {
   const host = document.createElement('div');
   host.innerHTML =
     `<div data-bind="withProperties: { templateMode: '${templateMode}' }">` +
-    '<div data-bind="lpHtmlCode: htmlCode"></div></div>';
+    '<div data-bind="lpSyntheticBlock: htmlCode"></div></div>';
   document.body.appendChild(host);
   ko.applyBindings({ htmlCode: PASTED }, host);
-  return host.querySelector('[data-bind^="lpHtmlCode"]');
+  return host.querySelector('[data-bind^="lpSyntheticBlock"]');
 }
 
 afterEach(() => {
@@ -43,7 +43,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('lpHtmlCode binding', () => {
+describe('lpSyntheticBlock binding', () => {
   it('neutralizes the markup in the canvas', () => {
     const element = render('wysiwyg');
     expect(element.innerHTML).toContain('<p>kept</p>');
@@ -82,7 +82,7 @@ describe('links in the canvas', () => {
     const host = document.createElement('div');
     host.innerHTML =
       `<div data-bind="withProperties: { templateMode: '${templateMode}' }">` +
-      '<div data-bind="lpHtmlCode: htmlCode"></div></div>';
+      '<div data-bind="lpSyntheticBlock: htmlCode"></div></div>';
     document.body.appendChild(host);
     ko.applyBindings(
       { htmlCode: '<a href="#" target="_blank"><span>Bouton</span></a>' },
@@ -116,7 +116,7 @@ describe('links in the canvas', () => {
 
   it('leaves a click outside any link alone', () => {
     const host = renderLink('wysiwyg');
-    const element = host.querySelector('[data-bind^="lpHtmlCode"]');
+    const element = host.querySelector('[data-bind^="lpSyntheticBlock"]');
 
     expect(clickOn(element).defaultPrevented).toBe(false);
     expect(clickOn(element, 'auxclick').defaultPrevented).toBe(false);

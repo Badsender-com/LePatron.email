@@ -1,15 +1,17 @@
 'use strict';
 
 const ko = require('knockout');
-const { HTML_CODE_BINDING } = require('../ext/html-code-block/constants.js');
+const { SYNTHETIC_BLOCK_BINDING } = require('../ext/synthetic-blocks/constants.js');
 const {
   neutralizeHtmlForPreview,
-} = require('../ext/html-code-block/neutralize-html.js');
+} = require('../ext/synthetic-blocks/neutralize-html.js');
 const {
   registerMarkup,
-} = require('../ext/html-code-block/export-substitution.js');
+} = require('../ext/synthetic-blocks/export-substitution.js');
 
-// Renders the pasted markup of an "HTML code" block.
+// Renders the raw markup of either synthetic block — the pasted markup of an
+// "HTML code" block, or the generated markup of a composed one. One binding for
+// both: what it does depends on the rendering mode, never on which block asked.
 //
 // Modelled on `virtualHtml` (bindings/virtuals.js): `init` is Knockout's own
 // `html` init, which returns `{ controlsDescendantBindings: true }`, so Knockout
@@ -38,7 +40,7 @@ function keepLinksInPlace(event) {
   if (link) event.preventDefault();
 }
 
-ko.bindingHandlers[HTML_CODE_BINDING] = {
+ko.bindingHandlers[SYNTHETIC_BLOCK_BINDING] = {
   init: function (element, valueAccessor, allBindings, viewModel, context) {
     if (context && context.templateMode === 'wysiwyg') {
       LINK_EVENTS.forEach((type) =>
@@ -79,4 +81,4 @@ ko.bindingHandlers[HTML_CODE_BINDING] = {
     });
   },
 };
-ko.virtualElements.allowedBindings[HTML_CODE_BINDING] = true;
+ko.virtualElements.allowedBindings[SYNTHETIC_BLOCK_BINDING] = true;

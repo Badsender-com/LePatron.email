@@ -12,7 +12,7 @@ const { DragSurfaceMixin } = require('./drag-surface.js');
 const MODAL_TEMPLATE = require('./modal-template.js');
 const {
   validateBlockBuilderLength,
-} = require('../../../ext/html-code-block/validate.js');
+} = require('../../../ext/synthetic-blocks/validate.js');
 const {
   generate,
   emptyState,

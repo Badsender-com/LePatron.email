@@ -16,22 +16,22 @@ const {
   emptyLabelKeyFor,
   paletteLabelKeyFor,
   paletteIconFor,
-} = require('./ext/html-code-block/block-state.js');
+} = require('./ext/synthetic-blocks/block-state.js');
 const {
   stripEmptySyntheticBlocks,
-} = require('./ext/html-code-block/strip-empty-blocks.js');
+} = require('./ext/synthetic-blocks/strip-empty-blocks.js');
 const {
   beginExportSubstitution,
   endExportSubstitution,
   substituteMarkers,
-} = require('./ext/html-code-block/export-substitution.js');
+} = require('./ext/synthetic-blocks/export-substitution.js');
 const {
   injectHeadCss,
 } = require('../../../shared/head-css/inject-head-css.js');
 const { addHeadCssToViewModel } = require('./ext/head-css/view-model.js');
 const {
   addCanvasEntryToViewModel,
-} = require('./ext/html-code-block/canvas-entry.js');
+} = require('./ext/synthetic-blocks/canvas-entry.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -159,7 +159,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.emptyBlockLabelKey = emptyLabelKeyFor;
 
   // What a click on a synthetic block in the canvas leads to — its settings,
-  // and for the composed block the builder: ext/html-code-block/canvas-entry.js.
+  // and for the composed block the builder: ext/synthetic-blocks/canvas-entry.js.
   addCanvasEntryToViewModel(viewModel);
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
@@ -833,7 +833,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // The substitution session opens BEFORE the frame is bound: from then on the
   // HTML code block renders an inert marker instead of the pasted markup, and the
   // raw bytes are put back at the very end of the export — after every regex has
-  // run. See ext/html-code-block/export-substitution.js.
+  // run. See ext/synthetic-blocks/export-substitution.js.
   //
   // Closed in a `finally`: an export that throws halfway must not leave the
   // session open, or every later render outside an export would get markers.

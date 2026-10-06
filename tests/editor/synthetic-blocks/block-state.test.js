@@ -5,7 +5,7 @@ const {
   isSyntheticBlock,
   isComposedBlock,
   isEmptySyntheticBlock,
-} = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-state.js');
 
 // Blocks reach these predicates in two very different shapes, and the difference
 // is what broke the empty-block placeholder the first time round:
@@ -154,7 +154,7 @@ describe('which blocks offer the translate button', () => {
   const path = require('path');
   const {
     offersBlockTranslation,
-  } = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+  } = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-state.js');
 
   it('hides it on a composed block', () => {
     expect(offersBlockTranslation({ type: 'blockBuilderBlock' })).toBe(false);

@@ -8,7 +8,7 @@ var templateConverter = require('./converter/main.js');
 var console = require('console');
 var initializeViewmodel = require('./viewmodel.js');
 var templateSystem = require('./bindings/choose-template.js');
-var syntheticBlockInjector = require('./ext/html-code-block/inject-synthetic-blocks.js');
+var syntheticBlockInjector = require('./ext/synthetic-blocks/inject-synthetic-blocks.js');
 
 if (!$.ui.version.match(/^1\.11\..*$/))
   throw (
@@ -259,7 +259,7 @@ if (process.env.MOSAICO) {
       // template. Unconditional on purpose: gating the block definitions would
       // make checkModel splice already stored blocks out of existing mailings;
       // the template flags only hide the palette entries. See
-      // ext/html-code-block/inject-synthetic-blocks.js.
+      // ext/synthetic-blocks/inject-synthetic-blocks.js.
       var res = templateCompiler(
         performanceAwareCaller,
         templateUrlConverter,

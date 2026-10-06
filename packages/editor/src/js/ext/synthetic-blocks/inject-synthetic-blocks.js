@@ -1,6 +1,6 @@
 'use strict';
 
-const { HTML_CODE_BINDING } = require('./constants.js');
+const { SYNTHETIC_BLOCK_BINDING } = require('./constants.js');
 const { SYNTHETIC_BLOCKS } = require('./block-types.js');
 const { descriptorFor } = require('./block-state.js');
 
@@ -119,7 +119,7 @@ function blockMarkup(descriptor) {
       '" data-ko-display="' +
       descriptor.htmlProperty +
       '" data-bind="' +
-      HTML_CODE_BINDING +
+      SYNTHETIC_BLOCK_BINDING +
       ': ' +
       descriptor.htmlProperty +
       '"></div>',

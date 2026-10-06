@@ -43,7 +43,7 @@ const {
 } = require('../../../packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js');
 const {
   HTML_CODE_MAX_LENGTH,
-} = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/constants.js');
 const {
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../packages/shared/head-css/constants.js');

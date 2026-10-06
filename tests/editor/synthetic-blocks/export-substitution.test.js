@@ -5,7 +5,7 @@ const {
   endExportSubstitution,
   registerMarkup,
   substituteMarkers,
-} = require('../../../packages/editor/src/js/ext/html-code-block/export-substitution.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/export-substitution.js');
 const {
   ESP_PAYLOADS,
   ESP_CRITICAL_PAYLOADS,

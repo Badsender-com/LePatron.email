@@ -135,7 +135,7 @@ const mosaicoLibList = [
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js',
   'node_modules/tinymce/tinymce.js',
   // Global, like tinymce above: used to neutralize the canvas preview of the
-  // HTML code block (see ext/html-code-block/neutralize-html.js). Not bundled
+  // HTML code block (see ext/synthetic-blocks/neutralize-html.js). Not bundled
   // through browserify so it stays out of the editor bundle's require graph.
   'node_modules/dompurify/dist/purify.js',
   // CodeMirror 5 for the HTML code block editor. Concatenated as globals rather

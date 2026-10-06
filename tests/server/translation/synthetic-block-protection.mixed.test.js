@@ -2,7 +2,7 @@
 
 // A mailing holding both synthetic blocks, translated.
 //
-// html-code-block-protection.test.js covers the zones with the HTML code
+// synthetic-block-protection.test.js covers the zones with the HTML code
 // block's marker; this is the mailing a client with both flags actually has —
 // pasted markup and a composed block side by side, each sharing wording with a
 // native block. Every zone must come out of the string replacement untouched,
@@ -19,7 +19,7 @@ const {
 } = require('../../../packages/server/translation/preview-html-updater');
 const {
   findHtmlCodeBlockRanges,
-} = require('../../../packages/server/translation/html-code-block-protection.js');
+} = require('../../../packages/server/translation/synthetic-block-protection.js');
 const {
   findSyntheticBlocks,
   htmlOf,

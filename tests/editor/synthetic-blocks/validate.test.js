@@ -3,11 +3,11 @@
 const {
   validateHtmlCodeLength,
   validateBlockBuilderLength,
-} = require('../../../packages/editor/src/js/ext/html-code-block/validate.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/validate.js');
 const {
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
-} = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/constants.js');
 
 describe('validateHtmlCodeLength', () => {
   it('accepts markup under the limit', () => {

@@ -3,7 +3,7 @@
 const {
   saveErrorKeyFor,
   SAVE_ERROR_KEYS,
-} = require('../../../packages/editor/src/js/ext/html-code-block/save-error.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/save-error.js');
 const SERVER_ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const fr = require('../../../public/lang/badsender-fr.js');
 const en = require('../../../public/lang/badsender-en.js');
