@@ -16,6 +16,7 @@ The editor's first text generation (subject, then preheader) is built on the Ski
 ## Consequences
 
 - Whatever can be counted or checked is computed in code, never by the model: visible length, mobile cut, personalization variables, emoji position, fake reply prefixes. A proposal breaking a checkable rule is dropped before the user sees it, with no retry; length is shown, never used to drop.
+- "The email's text as the editor shows it" is read from the editor's rendering, not from its content model: the model holds every field a template declares (hidden parts, other brands' variants, unused list items), and only the rendering has applied the template's display rules. Header and footer blocks, the frame of the email, are left out, and so is a text still at its template sample value.
 - Nothing is written into the email until the user picks a proposal. When the email has no subject field (metadata off) or the template no preheader, the proposal is offered to copy instead.
 - Requests that reach an AI provider are capped in size and counted per user and per group, in shared windows held in the database, so the limit holds across instances; translation goes through the same limit.
 - The skill writes in the language of the content it receives: a mailing has no language of its own.
