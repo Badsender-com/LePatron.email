@@ -1,82 +1,89 @@
 'use strict';
 
-const {
-  extractBlockTranslatableContent,
-} = require('../../utils/block-content-extractor');
-
 /**
  * The email's text as the reader sees it, for text generation (epic #1163).
  *
- * Read from the editor's content model rather than the saved mailing: the user
- * generates from what is on screen, saved or not. Only the blocks count: the
- * preheader, header and footer of the template are its frame, not the message.
+ * Read from the editor's rendering, not from its content model. The model holds
+ * every field a template declares — the parts a display rule hides, the
+ * variants of other brands, ten list items of which two are shown — and only
+ * the template knows which of them end up on screen: the editor has already
+ * applied those rules when it renders. So the text sent is exactly what the
+ * user sees, saved or not.
  *
- * Which fields hold text is the block translation's decision, reused as is;
- * this adds what the model needs on top: the order, a role, plain text, and
- * nothing the reader does not see.
+ * Every editable text is rendered with the id `ko_<block>_<n>_<field>`, under
+ * its block's container `ko_<block>_<n>`. Left out:
+ * - the header and footer blocks: the frame of the email, not its message;
+ * - a field the rendering hides;
+ * - a text left at the template's sample value ("Title", "CALL TO ACTION"):
+ *   nobody wrote it, and it would mislead the model.
  */
 
-// Alternatives of images and the like: read by screen readers, not by the eye
-// that scans an inbox, and often filled with file names.
-const NOT_COPY = /(^|\.)(alt|imageAlt|altText|title)$/;
-// `title` alone is an image tooltip; `titleText` is a heading.
+const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
+const FRAME_BLOCK = /header|footer|preheader/i;
 const TITLE = /title|heading/i;
-const BUTTON = /button|cta|label/i;
+const BUTTON = /button|cta/i;
+const BLOCK_LEVEL = 'p, div, li, h1, h2, h3, h4, h5, h6, td, tr';
 
-const ENTITIES = {
-  nbsp: ' ',
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  quot: '"',
-  apos: "'",
-  '#39': "'",
-};
-
-function toPlainText(html) {
-  return html
-    .replace(/<\/(p|div|li|h[1-6])>|<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&(nbsp|amp|lt|gt|quot|apos|#39);/g, (_, name) => ENTITIES[name])
-    .replace(/\s+/g, ' ')
-    .trim();
+/** Plain text of an element, block boundaries and line breaks as spaces. */
+function textOf(element) {
+  const clone = element.cloneNode(true);
+  clone.querySelectorAll('br').forEach((br) => br.replaceWith(' '));
+  clone
+    .querySelectorAll(BLOCK_LEVEL)
+    .forEach((node) => node.append(' '));
+  return clone.textContent.replace(/\s+/g, ' ').trim();
 }
 
-function roleOf(path) {
-  if (BUTTON.test(path)) return 'button';
-  if (TITLE.test(path)) return 'title';
-  return 'text';
+/** Same plain text from an HTML string — a template's sample value. */
+function textOfHtml(html, document) {
+  const holder = document.createElement('div');
+  holder.innerHTML = String(html);
+  return textOf(holder);
 }
 
-/**
- * Templates hide a part of a block with a `<part>Visible` flag next to it
- * (`titleVisible` for `titleText`, `buttonVisible` for `buttonLink.text`). A
- * field is hidden when a flag named after one of its leading words is false.
- */
-function isHidden(block, path) {
-  const head = path.split('.')[0];
-  const words = head.split(/(?=[A-Z])/);
-  for (let count = 1; count <= words.length; count += 1) {
-    const flag = `${words.slice(0, count).join('')}Visible`;
-    if (block[flag] === false) return true;
+function isHidden(element, stopAt) {
+  const view = element.ownerDocument.defaultView;
+  for (let node = element; node && node !== stopAt; node = node.parentElement) {
+    if (node.hidden) return true;
+    const style = view.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden') return true;
   }
   return false;
 }
 
+function roleOf(element, field) {
+  if (/^H[1-6]$/.test(element.tagName)) return 'title';
+  if (element.tagName === 'A' || BUTTON.test(field)) return 'button';
+  if (TITLE.test(field)) return 'title';
+  return 'text';
+}
+
 /**
- * @param {Object} content the editor content, unwrapped (`ko.toJS(viewModel.content())`)
+ * @param {Element|Document} root the editor's canvas
+ * @param {Object} [options]
+ * @param {(blockType: string, field: string) => (string|undefined)} [options.sampleFor]
+ *   the template's sample value of a field, to leave it out when unchanged
  * @returns {Array<{ role: 'title'|'text'|'button', text: string }>} in reading order
  */
-function extractEmailCopy(content) {
-  const blocks =
-    (content && content.mainBlocks && content.mainBlocks.blocks) || [];
+function extractEmailCopy(root, { sampleFor = () => undefined } = {}) {
+  const document = root.ownerDocument || root;
   const copy = [];
-  blocks.forEach((block) => {
-    const fields = extractBlockTranslatableContent(block);
-    Object.keys(fields).forEach((path) => {
-      if (NOT_COPY.test(path) || isHidden(block, path)) return;
-      const text = toPlainText(fields[path]);
-      if (text) copy.push({ role: roleOf(path), text });
+  root.querySelectorAll('[id^="ko_"]').forEach((block) => {
+    const match = BLOCK_ID.exec(block.id);
+    if (!match) return;
+    const blockType = match[1];
+    if (FRAME_BLOCK.test(blockType)) return;
+
+    const prefix = `${block.id}_`;
+    block.querySelectorAll('[contenteditable]').forEach((field) => {
+      if (!field.id || !field.id.startsWith(prefix)) return;
+      if (isHidden(field, block)) return;
+      const name = field.id.slice(prefix.length);
+      const text = textOf(field);
+      if (!text) return;
+      const sample = sampleFor(blockType, name);
+      if (sample !== undefined && textOfHtml(sample, document) === text) return;
+      copy.push({ role: roleOf(field, name), text });
     });
   });
   return copy;
