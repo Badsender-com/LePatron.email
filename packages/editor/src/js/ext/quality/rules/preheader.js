@@ -1,6 +1,5 @@
 'use strict';
 
-const { getPreheader } = require('../copy-fields');
 const { isDynamic } = require('../exported-content');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
@@ -31,11 +30,11 @@ module.exports = {
   LONG,
   TOO_LONG,
   passParams: (ctx) => {
-    const preheader = getPreheader(ctx.viewModel);
+    const preheader = ctx.preheader;
     return { count: preheader ? visibleLength(preheader.value) : 0 };
   },
   run(ctx) {
-    const preheader = getPreheader(ctx.viewModel);
+    const preheader = ctx.preheader;
     if (!preheader) return [];
     const value = preheader.value.trim();
     if (preheader.turnedOff || !value) {
