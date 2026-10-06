@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const ko = require('knockout');
+const { getSubject, getPreheader } = require('./copy-fields');
 
 // The tracking values the client filled in, as the tracking panel stores them.
 function readTrackingUrls(viewModel) {
@@ -48,6 +49,11 @@ function buildContext(viewModel, html) {
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
     trackingUrls: readTrackingUrls(viewModel),
+    // The copy outside the blocks, the client's to write (copy-fields.js):
+    // the subject (null when the ESP holds it) and the preheader (null when
+    // the template has none).
+    subject: getSubject(viewModel),
+    preheader: getPreheader(viewModel),
     // Shared by the rules of one run: what they read from the export once.
     cache: {},
     // The editor's configuration, read once: rules never reach the view model.
