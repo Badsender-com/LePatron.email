@@ -7,6 +7,7 @@ jest.mock('../../../../packages/server/utils/outbound-host.js', () => ({
 }));
 jest.mock('../../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 }));
 
@@ -194,6 +195,25 @@ describe('GeminiProvider', () => {
           messages: [{ role: 'user', content: 'x' }],
         })
       ).rejects.toThrow(/SAFETY/);
+    });
+
+    // Typed as truncation so a translation batch is split rather than
+    // failed: this answer is thrown before the shared finish-reason check.
+    it('types an exhausted output budget as truncation', async () => {
+      mockFetch.mockResolvedValue(
+        reply(
+          generateResponse({
+            candidates: [{ content: {}, finishReason: 'MAX_TOKENS' }],
+          })
+        )
+      );
+
+      await expect(
+        provider.chatComplete({
+          model: 'gemini-x',
+          messages: [{ role: 'user', content: 'x' }],
+        })
+      ).rejects.toMatchObject({ code: CODES.OUTPUT_TRUNCATED });
     });
 
     it('rejects a candidate stopped by a safety filter', async () => {

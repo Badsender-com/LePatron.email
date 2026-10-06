@@ -146,6 +146,45 @@ describe('Template Protection Parser', () => {
     });
   });
 
+  // The editor builds its blocks from the browser's tree, so protection must
+  // follow the same HTML5 rules. A field read in the wrong place would be
+  // translated although protected, or the other way round.
+  describe('parseProtectionConfig, HTML5 tree rules', () => {
+    it('follows an element fostered out of a table, as the browser does', () => {
+      // A <div> is not allowed directly in a <table>: the parser moves it
+      // before the table, out of reach of the table's data-translate.
+      const markup = `
+        <div data-ko-block="content">
+          <table data-translate="false">
+            <div data-ko-editable="note">Fostered</div>
+            <tr><td data-ko-editable="cell">In the table</td></tr>
+          </table>
+        </div>
+      `;
+      const config = parseProtectionConfig(markup);
+      expect(config._protectedFields).toEqual({ 'content.cell': false });
+    });
+
+    it('ignores the content of a <template> element', () => {
+      const markup = `
+        <div data-ko-block="block">
+          <template><p data-ko-editable="hidden" data-translate="false">x</p></template>
+          <p data-ko-editable="shown" data-translate="false">y</p>
+        </div>
+      `;
+      const config = parseProtectionConfig(markup);
+      expect(config._protectedFields).toEqual({ 'block.shown': false });
+    });
+
+    it('reads a deeply nested template without exhausting the stack', () => {
+      const markup = `<div data-ko-block="deep" data-translate="false">${'<div>'.repeat(
+        20000
+      )}<p data-ko-editable="title" data-translate="true">x</p></div>`;
+      const config = parseProtectionConfig(markup);
+      expect(config._protectedFields).toEqual({ 'deep.title': true });
+    });
+  });
+
   describe('isFieldProtected', () => {
     it('should return false when protectionConfig is null', () => {
       expect(isFieldProtected('data.block.field', 'field', null)).toBe(false);

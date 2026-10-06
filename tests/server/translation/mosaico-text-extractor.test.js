@@ -5,7 +5,11 @@ const {
   getExtractionStats,
   isTranslatableFieldName,
   isTranslatableValue,
+  isEmailAddress,
 } = require('../../../packages/server/translation/mosaico-text-extractor');
+
+const SHARED = '../../../packages/shared/synthetic-blocks.js';
+const { SYNTHETIC_BLOCKS } = require(SHARED);
 
 describe('MosaicoTextExtractor', () => {
   describe('isTranslatableFieldName', () => {
@@ -33,9 +37,41 @@ describe('MosaicoTextExtractor', () => {
     });
 
     // The HTML code block's whole promise is that its markup is never altered;
-    // handing it to the LLM would have it rewritten.
-    it('should return false for the HTML code block markup', () => {
-      expect(isTranslatableFieldName('htmlCode')).toBe(false);
+    // handing it to the LLM would have it rewritten. Same promise for a
+    // composed block, translated through its state's own texts instead.
+    // Driven off the shared table: a property renamed there must stay
+    // excluded here.
+    it.each(
+      SYNTHETIC_BLOCKS.reduce(
+        (fields, block) =>
+          fields.concat(
+            [block.htmlProperty, block.stateProperty]
+              .filter(Boolean)
+              .map((field) => [block.type, field])
+          ),
+        []
+      )
+    )('should return false for the %s field %s', (_type, field) => {
+      expect(isTranslatableFieldName(field)).toBe(false);
+    });
+
+    // `htmlContent` matches /content$/: excluded only because the table says
+    // it is a block's markup, which is exactly what a rename would test.
+    it('should follow a property renamed in the shared table', () => {
+      jest.isolateModules(() => {
+        jest.doMock(SHARED, () => {
+          const actual = jest.requireActual(SHARED);
+          return {
+            ...actual,
+            SYNTHETIC_BLOCKS: [
+              { ...actual.HTML_CODE_BLOCK, htmlProperty: 'htmlContent' },
+            ],
+          };
+        });
+        const extractor = require('../../../packages/server/translation/mosaico-text-extractor');
+        expect(extractor.isTranslatableFieldName('htmlContent')).toBe(false);
+        expect(extractor.isTranslatableFieldName('bodyContent')).toBe(true);
+      });
     });
 
     it('should return false for URL fields', () => {
@@ -81,6 +117,16 @@ describe('MosaicoTextExtractor', () => {
 
     it('should return false for email addresses', () => {
       expect(isTranslatableValue('test@example.com')).toBe(false);
+    });
+
+    // The regex this replaced backtracked quadratically on such a value:
+    // 1.3 s for 40 000 characters, on the event loop (#1140).
+    it('tests a long value with an @ and many dots in linear time', () => {
+      const value = `a@${'b.'.repeat(50000)}@`;
+      const startedAt = Date.now();
+
+      expect(isTranslatableValue(value)).toBe(true);
+      expect(Date.now() - startedAt).toBeLessThan(100);
     });
 
     it('should return false for color values', () => {
@@ -461,6 +507,30 @@ describe('MosaicoTextExtractor', () => {
 
       expect(result._name).toBe('Test');
       expect(result['data.block.titleText']).toBe('Hello');
+    });
+  });
+
+  // Must accept exactly what /^[^\s@]+@[^\s@]+\.[^\s@]+$/ did, without its
+  // quadratic backtracking.
+  describe('isEmailAddress', () => {
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    it.each([
+      'a@b.c',
+      'first.last@sub.example.com',
+      '@b.c',
+      'a@.c',
+      'a@b.',
+      'a@b..c',
+      'a@.b.c',
+      'a@@b.c',
+      'a@b.c@d.e',
+      'a b@c.d',
+      'a@b\tc.d',
+      'a@bc',
+      'plain text',
+    ])('agrees with the former pattern on %j', (value) => {
+      expect(isEmailAddress(value)).toBe(EMAIL_PATTERN.test(value));
     });
   });
 });

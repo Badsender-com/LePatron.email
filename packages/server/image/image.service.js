@@ -5,6 +5,7 @@ const { PassThrough } = require('stream');
 const mime = require('mime-types');
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
+const createError = require('http-errors');
 
 const { Galleries } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
@@ -14,27 +15,21 @@ const logger = require('../utils/logger.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const DUPLICATE_KEY_ERROR = 11000;
 
-function destroy(mongoId, imageName) {
-  return Galleries.findOne({
-    creationOrWireframeId: mongoId,
-  }).then((gallery) => {
-    // TODO: handle non existing gallery
-    // mongoID could be incorrect
-
-    const { files } = gallery;
-
-    const imageIndex = files.findIndex((file) => file.name === imageName);
-
-    const filesUpdated = files;
-
-    filesUpdated.splice(imageIndex, 1);
-
-    gallery.files = filesUpdated;
-
-    gallery.markModified('files');
-    return gallery.save();
-  });
+// Every write below is a single atomic update. Reading the gallery, changing
+// its `files` and saving it back lost images: two uploads validated one after
+// the other overlap on the server (each waits for S3), the second save carries
+// a stale version and Mongoose refuses it with a VersionError. The image was
+// stored but never listed, and the editor showed an upload error.
+async function destroy(mongoId, imageName) {
+  const gallery = await Galleries.findOneAndUpdate(
+    { creationOrWireframeId: mongoId },
+    { $pull: { files: { name: imageName } } },
+    { new: true }
+  );
+  if (!gallery) throw new createError.NotFound();
+  return gallery;
 }
 
 function createGallery(mongoId) {
@@ -45,6 +40,35 @@ function createGallery(mongoId) {
       files,
     }).save();
   });
+}
+
+// A gallery is created on first use, seeded from the storage listing. Several
+// requests can need it at once (the first uploads of a creation, or an upload
+// while the gallery panel opens): the unique index lets one create it, and the
+// others read the one it created.
+async function findOrCreateGallery(mongoId) {
+  const gallery = await Galleries.findOne({ creationOrWireframeId: mongoId });
+  if (gallery) return gallery;
+  try {
+    return await createGallery(mongoId);
+  } catch (error) {
+    if (error.code !== DUPLICATE_KEY_ERROR) throw error;
+    return Galleries.findOne({ creationOrWireframeId: mongoId });
+  }
+}
+
+// Append the files the gallery doesn't list yet. The name filter makes the
+// "already there?" check part of the same atomic update as the push.
+async function addFiles(mongoId, files) {
+  await findOrCreateGallery(mongoId);
+  await Promise.all(
+    files.map((file) =>
+      Galleries.updateOne(
+        { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
+        { $push: { files: file } }
+      )
+    )
+  );
 }
 
 /**
@@ -97,16 +121,7 @@ async function createFromUrl(mongoId, imageUrl) {
 
   const uploadedFile = formatName(fileName);
 
-  const gallery =
-    (await Galleries.findOne({ creationOrWireframeId: mongoId })) ||
-    (await createGallery(mongoId));
-
-  const alreadyStored = gallery.files.some((file) => file.name === fileName);
-  if (!alreadyStored) {
-    gallery.files = [...gallery.files, uploadedFile];
-    gallery.markModified('files');
-    await gallery.save();
-  }
+  await addFiles(mongoId, [uploadedFile]);
 
   logger.log('Downloaded feed image into gallery', mongoId, fileName);
 
@@ -116,5 +131,7 @@ async function createFromUrl(mongoId, imageUrl) {
 module.exports = {
   destroy,
   createGallery,
+  findOrCreateGallery,
+  addFiles,
   createFromUrl,
 };

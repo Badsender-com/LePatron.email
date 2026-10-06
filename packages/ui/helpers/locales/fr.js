@@ -180,6 +180,8 @@ export default {
       enableSaml: 'Activer l\'authentification SAML',
       entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
       issuerHint: 'Identifiant unique de votre application chez le fournisseur',
+      idpCertHint:
+        'Certificat de signature du fournisseur d\'identité (PEM), présent dans ses métadonnées SAML. Obligatoire : sans lui, la connexion SSO n\'est pas proposée.',
       dangerZone: {
         title: 'Zone de danger',
         description: 'Les actions dans cette zone sont irréversibles. Procédez avec prudence.',
@@ -226,6 +228,7 @@ export default {
       ftpConnectionSuccess: 'Connexion réussie',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
+      idpCert: 'Certificat du fournisseur d\'identité',
       userHasAccessToAllWorkspaces:
         'Donner accès à tous les workspaces aux utilisateurs standards',
     },
@@ -433,9 +436,13 @@ export default {
     successTitle: 'Traduction effectuée',
     successMessage: 'Votre email a été dupliqué et traduit avec succès.',
     warningTitle: 'Pensez à vérifier :',
-    warningLinks: 'Les liens présents dans l\'email',
-    warningImages: 'Les images contenant du texte',
-    warningVariants: 'La variante de template si applicable',
+    // Keyed as the server sends them in a job's warningKeys.
+    warnings: {
+      checkLinks: 'Les liens présents dans l\'email',
+      checkImages: 'Les images contenant du texte',
+      checkVariant: 'La variante de template si applicable',
+      composedBlockUntranslated: 'Les blocs composés : certains n\'ont pas pu être traduits, ou ont été reconstruits avec une version plus récente du constructeur de blocs',
+    },
     understood: 'J\'ai compris',
     translatingNotice: 'Traduction en cours, veuillez patienter...',
     progressStarting: 'Démarrage de la traduction...',
@@ -1263,6 +1270,12 @@ export default {
     htmlBlock: {
       name: 'Bloc Code HTML',
       description: 'Permet de coller du code HTML libre entre deux blocs du template.',
+      hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
+    },
+    blockBuilder: {
+      name: 'Composer un bloc',
+      description:
+        'Permet de composer un bloc visuellement. C\'est LePatron qui écrit le HTML.',
       hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
     },
   },

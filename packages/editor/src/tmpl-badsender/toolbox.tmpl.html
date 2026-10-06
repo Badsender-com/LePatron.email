@@ -54,9 +54,9 @@
             <!-- /ko -->
             <!-- ko if: $root.isSyntheticBlock($data) -->
             <div class="block-synthetic-thumb">
-              <span class="lucide lucide-code-2"></span>
+              <span class="lucide" data-bind="css: $root.syntheticBlockIcon($data)"></span>
             </div>
-            <span class="block-name" data-bind="text: $root.t('html-code-block-name')">HTML code</span>
+            <span class="block-name" data-bind="text: $root.t($root.syntheticBlockLabelKey($data))">HTML code</span>
             <!-- /ko -->
             <!-- ko ifnot: $root.isSyntheticBlock($data) -->
             <img
@@ -187,6 +187,40 @@
     <div class="toolbox-readonly-overlay">
       <span class="lucide lucide-lock"></span>
       <span data-bind="text: $root.t('toolbox-readonly-style')">You don't have permission to edit this mailing's style</span>
+    </div>
+    <!-- /ko -->
+
+
+    <!-- Head CSS: a stylesheet for the whole email, not a block property, so it
+         lives with the global style options rather than in a block panel.
+         Editable under the same flag as the HTML code block it exists to style
+         (viewModel.isHeadCssEditable). With the flag off, CSS still exported —
+         stored, and an HTML code block still present — is shown read-only,
+         with its delete, like the block itself (viewModel.isHeadCssReadOnly).
+         Both predicates decide for this entry point and the block panel's
+         alike: ext/head-css/view-model.js. -->
+    <!-- ko if: $root.isHeadCssEditable() || $root.isHeadCssReadOnly() -->
+    <div class="head-css-section">
+      <h3 class="head-css-section__title" data-bind="text: $root.t('head-css-section-title')">Custom CSS</h3>
+      <!-- ko if: $root.isHeadCssEditable() -->
+      <p class="head-css-section__hint" data-bind="text: $root.t('head-css-section-hint')"></p>
+      <p class="head-css-section__hint head-css-section__hint--warning" data-bind="visible: $root.isHeadCssAwaitingBlock(), text: $root.t('head-css-not-exported-hint')"></p>
+      <button
+        type="button"
+        class="head-css-section__button"
+        data-bind="click: $root.openHeadCssEditor, text: $root.t('head-css-section-button')">
+        Edit the CSS
+      </button>
+      <!-- /ko -->
+      <!-- ko if: $root.isHeadCssReadOnly() -->
+      <p class="head-css-section__hint" data-bind="text: $root.t('head-css-read-only-hint')"></p>
+      <button
+        type="button"
+        class="head-css-section__button"
+        data-bind="click: $root.openHeadCssViewer, text: $root.t('head-css-view-button')">
+        View the CSS
+      </button>
+      <!-- /ko -->
     </div>
     <!-- /ko -->
   </div>

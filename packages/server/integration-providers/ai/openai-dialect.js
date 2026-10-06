@@ -2,6 +2,7 @@
 
 const logger = require('../../utils/logger.js');
 const { fetchProviderJson } = require('../provider-http.js');
+const { detectParamQuirk } = require('./param-quirks.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -21,6 +22,27 @@ const {
  * OpenAI-compatible endpoints) inherit these untouched, or override the one
  * piece that differs.
  */
+/**
+ * Content as a string, whatever shape the model sent it in.
+ *
+ * Reasoning models served over an OpenAI-compatible API return an array of
+ * blocks rather than a string — zai-glm-5 on Mistral does, with its reasoning
+ * in a `thinking` block. Assuming a string made that crash with
+ * `content.trim is not a function`, a JavaScript error with nothing in it for
+ * whoever reads the log. Text blocks are concatenated and the rest dropped,
+ * exactly as the Anthropic dialect does.
+ */
+function readContent(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .filter((block) => block && block.type === 'text')
+    .map((block) => block.text)
+    .filter(Boolean)
+    .join('');
+}
+
 const openAIDialect = {
   /** URL for the chat completions endpoint. Override for non-standard paths. */
   _getChatCompletionsUrl() {
@@ -124,7 +146,7 @@ const openAIDialect = {
 
     const usage = data.usage || {};
     return {
-      content: data.choices[0].message.content,
+      content: readContent(data.choices[0].message.content),
       usage: {
         promptTokens: usage.prompt_tokens || 0,
         completionTokens: usage.completion_tokens || 0,
@@ -140,6 +162,17 @@ const openAIDialect = {
   _getFinishReason(data) {
     const choice = (data.choices || [])[0];
     return choice && choice.finish_reason === 'length' ? 'length' : null;
+  },
+
+  /**
+   * Which parameter a refusal names, if it is one we know how to adapt.
+   *
+   * A hook rather than a shared table, for the same reason as
+   * `_mapErrorToCode`: each dialect words its refusals differently. Anthropic
+   * and Gemini override it to never adapt, until their own wording is added.
+   */
+  _detectParamQuirk(status, parsedError, message) {
+    return detectParamQuirk(status, parsedError, message);
   },
 
   /**

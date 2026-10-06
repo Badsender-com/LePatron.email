@@ -9,6 +9,11 @@
  * changes nothing server-side — but the typology list has no business travelling
  * on every save, and the values are patched through their own route.
  *
+ * `headCss` is the value loaded with the mailing, never updated afterwards:
+ * the live one is `viewModel.headCss`, which the global save adds on its own
+ * (badsender-server-storage.js). Sending the stale copy as well only worked
+ * because the live one happened to be spread after it.
+ *
  * One list, because two copies of it drift.
  */
 const EDITOR_ONLY_METADATA_KEYS = [
@@ -18,6 +23,7 @@ const EDITOR_ONLY_METADATA_KEYS = [
   'emailMetadataConfig',
   // Patched through /quality-ignores, one finding at a time.
   'qualityIgnores',
+  'headCss',
 ];
 
 module.exports = { EDITOR_ONLY_METADATA_KEYS };

@@ -13,6 +13,8 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [CONTRIBUTING.md](./CONTRIBUTING.md)                         | How to contribute to the project                        | Contributors             |
 | [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                            | Template developers      |
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |
+| [adr/](./adr/)                                               | Architecture Decision Records                           | AI agents, developers    |
+| [../.claude/skills/](../.claude/skills/)                     | Agent skills, including the new feature workflow        | AI agents                |
 
 ## 📚 Documentation Structure
 
@@ -29,6 +31,8 @@ Complete guide to LePatron.email documentation for developers and AI agents.
    - Error handling with ERROR_CODES
    - Mongoose conventions
    - Logging rules
+   - New feature workflow (grill → ADR → epic → tickets → ADR + tests PR)
+   - Parallel work: checking GitHub for overlapping PRs and issues before starting
    - Code review guidelines (CRITICAL → LOW severity)
 
 2. **[AI-POLICIES.md](./AI_POLICIES.md)** - Quality & process
@@ -50,9 +54,15 @@ Complete guide to LePatron.email documentation for developers and AI agents.
    - Common UX anti-patterns from reviews
 
 4. **[CLAUDE.md](./CLAUDE.md)** - Quick commands
+
    - `/review`, `/architecture-review`, `/security-review`
    - Available subagents (code-reviewer, architect, security-auditor, ux-reviewer)
+   - Agent skills (`git-sync`, `grill-with-docs`, `to-prd`, `to-issues`, `tdd`, `grilling`, `domain-modeling`)
    - Linting commands (`yarn code:lint`, `yarn code:fix`)
+
+5. **[adr/](./adr/)** - Architecture Decision Records
+   - One file per decision that is hard to reverse, surprising, and a real trade-off
+   - Written while grilling a new feature, shipped in its first PR
 
 #### For Developers
 
@@ -71,10 +81,16 @@ Complete guide to LePatron.email documentation for developers and AI agents.
    - Testing
 
 3. **[TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md)** - Mosaico templates
+
    - Template structure
    - Block creation
    - Styling
    - Testing templates
+
+4. **[Block builder components](../packages/shared/block-builder/components/README.md)** - Email HTML of the block builder's elements
+   - Vue + Tailwind components compiled at build time
+   - Which files to edit, `yarn block-builder:compile`, what to commit
+   - What the compiler refuses, and why
 
 ### Package-Level Documentation
 
@@ -105,16 +121,19 @@ Pre-implementation design docs for larger features — audit findings, target mo
 
 #### /.claude/
 
-- **ux-review.txt** - UX reviewer agent instructions
+- **agents/** - Subagents (code-reviewer, architect, security-auditor, ux-reviewer)
+- **commands/** - `/review`, `/architecture-review`, `/security-review`, `/ux-review`
+- **skills/** - Agent skills; [CREDITS.md](../.claude/skills/CREDITS.md) lists the ones adapted from mattpocock/skills
 
 ## 🎯 When to Use Each Document
 
 ### Starting a New Feature
 
-1. Read [AGENTS.md](../AGENTS.md) for conventions
-2. Check [AI-POLICIES.md](./AI_POLICIES.md) for PR structure
-3. If UI work: read [UX-GUIDELINES.md](./agents/ux-guidelines.md)
-4. Create feature branch following naming convention
+1. Follow the "New Feature Workflow" in [AGENTS.md](../AGENTS.md): no code before the grilling
+2. `/grill-with-docs` → ADR in [adr/](./adr/) and `GLOSSARY.md` updates
+3. `/to-prd` → the `⛰ Epic` issue; `/to-issues` → its sub-issues
+4. First PR: the ADR and the skipped acceptance tests (`/tdd`); then one PR per ticket
+5. If UI work: read [UX_GUIDELINES.md](./UX_GUIDELINES.md)
 
 ### Before Code Review
 
@@ -140,9 +159,9 @@ Pre-implementation design docs for larger features — audit findings, target mo
 
 ### Writing Tests
 
-1. Unit tests: co-locate with source (`{resource}.test.js`)
-2. Testing docs: `/packages/documentation/tests/`
-3. Follow patterns in [packages/documentation/tests/README.md](./packages/documentation/tests/README.md)
+1. Unit tests: in `/tests/`, mirroring the source (see [tests/README.md](../tests/README.md))
+2. Test-first: the `tdd` skill (seams, good tests, mocking at boundaries)
+3. Testing docs: `/packages/documentation/tests/`
 
 ## 🔄 Documentation Workflow
 
@@ -253,5 +272,5 @@ These documents are living documents that evolve with the project:
 - Remove outdated information
 - Keep cross-references accurate
 
-**Last Updated**: 2026-02-10
+**Last Updated**: 2026-10-02
 **Maintainers**: LePatron.email development team

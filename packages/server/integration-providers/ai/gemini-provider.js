@@ -91,10 +91,13 @@ class GeminiProvider extends BaseLLMProvider {
     // spends its whole budget returns a candidate with no content at all, and
     // reporting that as "invalid response structure" sent the admin looking
     // for a bug where there was only a token limit.
+    // Typed as truncation, which the translation batch loop answers by
+    // splitting the batch: the shared finish-reason check never sees this
+    // answer, since it is thrown before the call returns.
     if (candidate && candidate.finishReason === 'MAX_TOKENS') {
       throw new ProviderError(
         'Gemini ran out of output tokens before answering',
-        CODES.INVALID_RESPONSE
+        CODES.OUTPUT_TRUNCATED
       );
     }
     if (candidate && candidate.finishReason === 'SAFETY') {
@@ -126,6 +129,18 @@ class GeminiProvider extends BaseLLMProvider {
         cachedTokens: usage.cachedContentTokenCount || 0,
       },
     };
+  }
+
+  /**
+   * Never adapt. Gemini's `error.code` is the HTTP status as a number and its
+   * refusals are not worded like OpenAI's, so the detection inherited from
+   * the dialect would match nothing anyway — but by luck of the error shape,
+   * not by design. Stated here so it stays that way until Gemini's own
+   * refusals are taught.
+   */
+  // eslint-disable-next-line no-unused-vars
+  _detectParamQuirk(status, parsedError, message) {
+    return null;
   }
 
   _mapErrorToCode(status, errorData) {

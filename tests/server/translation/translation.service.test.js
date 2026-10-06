@@ -169,6 +169,31 @@ describe('TranslationService', () => {
     });
   });
 
+  // Wrapped as a provider error, a cancelled job was marked failed.
+  describe('translateMailing cancellation', () => {
+    it('lets a cancel through unwrapped', async () => {
+      aiFeatureService.getActiveFeatureWithIntegration.mockResolvedValue({
+        integration: { provider: 'openai' },
+        feature: { config: {} },
+      });
+      ProviderFactory.createProvider.mockReturnValue({
+        translateBatch: jest.fn().mockResolvedValue({ _name: 'Hello' }),
+      });
+
+      await expect(
+        translationService.translateMailing({
+          groupId: 'group-123',
+          mailing: { name: 'Bonjour', data: {} },
+          sourceLanguage: 'fr',
+          targetLanguage: 'en',
+          onBatchProgress: () => {
+            throw new Error('TRANSLATION_CANCELLED');
+          },
+        })
+      ).rejects.toMatchObject({ message: 'TRANSLATION_CANCELLED' });
+    });
+  });
+
   describe('translateText', () => {
     it('should translate single text', async () => {
       const mockProvider = {
@@ -243,7 +268,7 @@ describe('TranslationService', () => {
 
     it('should detect language with different quote styles', () => {
       const mailing = {
-        previewHtml: '<html lang=\'en\'><body>Content</body></html>',
+        previewHtml: "<html lang='en'><body>Content</body></html>",
       };
 
       const result = translationService.detectSourceLanguage(mailing);

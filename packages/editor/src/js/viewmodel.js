@@ -10,17 +10,28 @@ const {
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 const {
-  isHtmlCodeBlock,
-  isEmptyHtmlCodeBlock,
+  isSyntheticBlock,
+  offersBlockTranslation,
+  isEmptySyntheticBlock,
+  emptyLabelKeyFor,
+  paletteLabelKeyFor,
+  paletteIconFor,
 } = require('./ext/html-code-block/block-state.js');
 const {
-  stripEmptyHtmlCodeBlocks,
+  stripEmptySyntheticBlocks,
 } = require('./ext/html-code-block/strip-empty-blocks.js');
 const {
   beginExportSubstitution,
   endExportSubstitution,
   substituteMarkers,
 } = require('./ext/html-code-block/export-substitution.js');
+const {
+  injectHeadCss,
+} = require('../../../shared/head-css/inject-head-css.js');
+const { addHeadCssToViewModel } = require('./ext/head-css/view-model.js');
+const {
+  addCanvasEntryToViewModel,
+} = require('./ext/html-code-block/canvas-entry.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -125,18 +136,30 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.content = content;
   viewModel.blockDefs = blockDefs;
 
-  // The "HTML code" block is injected by LePatron rather than declared by the
-  // template, so it has no `edres/<type>.png` thumbnail in any client template.
-  // The palette falls back to an icon and a translated label for it.
-  viewModel.isSyntheticBlock = isHtmlCodeBlock;
+  // The synthetic blocks are injected by LePatron rather than declared by the
+  // template, so neither has an `edres/<type>.png` thumbnail in any client
+  // template. The palette falls back to an icon and a translated label, both
+  // taken from the block's own descriptor so the two never show up as one.
+  viewModel.isSyntheticBlock = isSyntheticBlock;
 
-  // An "HTML code" block with no markup yet renders nothing at all — its
-  // content is wrapped in a `ko if` by data-ko-display — and
+  // Both synthetic blocks hide the "Translate block" button: see
+  // offersBlockTranslation.
+  viewModel.offersBlockTranslation = offersBlockTranslation;
+  viewModel.syntheticBlockLabelKey = paletteLabelKeyFor;
+  viewModel.syntheticBlockIcon = paletteIconFor;
+
+  // A synthetic block with no markup yet renders nothing at all — its content
+  // is wrapped in a `ko if` by data-ko-display — and
   // `#main-edit-area .editable` has no min-height, so the block would be flat
   // and impossible to click. block-wysiwyg.tmpl.html uses this to show a
   // clickable placeholder instead. Edit mode only: that template is never used
   // for the export, which resolves `<type>-show`.
-  viewModel.isEmptyHtmlBlock = isEmptyHtmlCodeBlock;
+  viewModel.isEmptyHtmlBlock = isEmptySyntheticBlock;
+  viewModel.emptyBlockLabelKey = emptyLabelKeyFor;
+
+  // What a click on a synthetic block in the canvas leads to — its settings,
+  // and for the composed block the builder: ext/html-code-block/canvas-entry.js.
+  addCanvasEntryToViewModel(viewModel);
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
@@ -359,6 +382,9 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       index: blockIndex,
     });
   };
+
+  // The head CSS, its predicates and its editor: ext/head-css/view-model.js.
+  addHeadCssToViewModel(viewModel);
 
   // toggleTranslateBlockModal will be set by the Vue component
   viewModel.toggleTranslateBlockModal = ko.observable(null);
@@ -718,12 +744,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // Remove trash leftover by TinyMCE
     content = content.replace(/ data-mce-(href|src|style)="[^"]*"/gm, '');
 
-    // Drop the leftover root of an EMPTY "HTML code" block. Its payload is
+    // Drop the leftover root of an EMPTY synthetic block. Its payload is
     // already gone (data-ko-display), but Mosaico never lets a block root
     // disappear, so an untouched block would ship an empty div. Runs after the
     // data-bind removal above, so the root is bare by now, and only ever matches
     // an empty root of ours — a mail without such a block is unchanged.
-    content = stripEmptyHtmlCodeBlocks(content);
+    content = stripEmptySyntheticBlocks(content);
 
     // Replace "replacedstyle" to "style" attributes (chrome puts replacedstyle after style)
     content = content.replace(
@@ -792,7 +818,15 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // LAST step, on purpose: put the pasted markup of every HTML code block back,
     // byte for byte, now that none of the transformations above can reach it.
-    return substituteMarkers(content);
+    content = substituteMarkers(content);
+
+    // After the substitution, so the stylesheet cannot be mistaken for a marker,
+    // and after every regex above, so it reaches the export exactly as written.
+    // A mailing without head CSS gets the very same string as before — and so
+    // does one without any HTML code block left: the CSS follows the blocks it
+    // exists to style, and stays stored for when one comes back
+    // (ext/head-css/exported-css.js).
+    return injectHeadCss(content, viewModel.exportedHeadCss());
   };
 
   // The substitution session opens BEFORE the frame is bound: from then on the

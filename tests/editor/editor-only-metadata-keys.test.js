@@ -17,6 +17,7 @@ describe('EDITOR_ONLY_METADATA_KEYS', () => {
     'emailMetadata',
     'emailMetadataConfig',
     'qualityIgnores',
+    'headCss',
   ])('excludes %s', (key) => {
     expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
   });
@@ -30,6 +31,7 @@ describe('EDITOR_ONLY_METADATA_KEYS', () => {
       template: '/api/templates/x/markup',
       emailMetadata: { subject: 'Soldes' },
       emailMetadataConfig: { emailTypes: [{ id: 'a', label: 'Infolettre' }] },
+      headCss: '.stale{}',
     };
 
     const sent = _omit(metadata, EDITOR_ONLY_METADATA_KEYS);

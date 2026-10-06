@@ -2,9 +2,11 @@
 
 const {
   validateHtmlCodeLength,
+  validateBlockBuilderLength,
 } = require('../../../packages/editor/src/js/ext/html-code-block/validate.js');
 const {
   HTML_CODE_MAX_LENGTH,
+  BUILDER_STATE_MAX_LENGTH,
 } = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
 
 describe('validateHtmlCodeLength', () => {
@@ -41,5 +43,29 @@ describe('validateHtmlCodeLength', () => {
     // 'é' is one character but two UTF-8 bytes; the limit is a character limit.
     expect(validateHtmlCodeLength('éé', 2).valid).toBe(true);
     expect(validateHtmlCodeLength('ééé', 2).valid).toBe(false);
+  });
+});
+
+// The server bounds both strings a composed block stores; the editor checks the
+// same two before writing either.
+describe('validateBlockBuilderLength', () => {
+  it('accepts a composition within both limits', () => {
+    expect(validateBlockBuilderLength('<table></table>', '{"v":1}').valid).toBe(
+      true
+    );
+  });
+
+  it('refuses markup past the markup limit', () => {
+    const html = 'x'.repeat(HTML_CODE_MAX_LENGTH + 1);
+    expect(validateBlockBuilderLength(html, '{}').valid).toBe(false);
+  });
+
+  it('refuses a state past the state limit', () => {
+    const state = 'x'.repeat(BUILDER_STATE_MAX_LENGTH + 1);
+    expect(validateBlockBuilderLength('<p>x</p>', state).valid).toBe(false);
+  });
+
+  it('accepts an empty composition', () => {
+    expect(validateBlockBuilderLength('', '').valid).toBe(true);
   });
 });

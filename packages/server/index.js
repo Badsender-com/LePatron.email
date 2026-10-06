@@ -56,10 +56,19 @@ const translationRouter = require('./translation/translation.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
-const workers =
-  process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
+const cpuCount = require('os').cpus().length;
+const workers = process.env.WORKERS <= cpuCount ? process.env.WORKERS : 1;
 
 if (cluster.isMaster) {
+  // A WORKERS above the CPU count falls back to a single worker, not to the
+  // CPU count, and used to do so silently. Left as is: each worker gets its
+  // own heap limit, so capping instead would multiply the memory an instance
+  // needs on the next deploy. Said out loud until the instances are sized.
+  if (process.env.WORKERS > cpuCount) {
+    logger.warn(
+      `WORKERS=${process.env.WORKERS} exceeds the ${cpuCount} CPUs available: running a single worker`
+    );
+  }
   logger.log(chalk.cyan('start cluster with %s workers'), workers);
 
   for (let i = 0; i < workers; ++i) {

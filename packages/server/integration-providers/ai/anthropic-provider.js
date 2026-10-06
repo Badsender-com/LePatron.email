@@ -125,6 +125,16 @@ class AnthropicProvider extends BaseLLMProvider {
 
   // eslint-disable-next-line no-unused-vars
   _parseResponse(data, requestBody) {
+    // The model declining is not a technical failure, and reporting it as an
+    // empty response sent us looking for a parser bug. Gemini's equivalent
+    // (finishReason SAFETY) was already named; this one was not.
+    if (data.stop_reason === 'refusal') {
+      throw new ProviderError(
+        'Anthropic declined to answer this prompt',
+        CODES.INVALID_RESPONSE
+      );
+    }
+
     if (!Array.isArray(data.content)) {
       throw new ProviderError(
         'Invalid response structure from anthropic',
@@ -166,6 +176,18 @@ class AnthropicProvider extends BaseLLMProvider {
     return data.stop_reason === 'max_tokens' ? 'length' : null;
   }
 
+  /**
+   * Never adapt. Anthropic words its refusals its own way ("temperature:
+   * Extra inputs are not permitted"), so the OpenAI detection inherited from
+   * the dialect would match nothing anyway — but by luck of the wording, not
+   * by design. Stated here so it stays that way until Anthropic's own
+   * refusals are taught.
+   */
+  // eslint-disable-next-line no-unused-vars
+  _detectParamQuirk(status, parsedError, message) {
+    return null;
+  }
+
   _mapErrorToCode(status) {
     // 403 is Anthropic's permission_error, which in practice means the key is
     // not valid for this call — closer to invalid credentials than to a
@@ -201,9 +223,15 @@ class AnthropicProvider extends BaseLLMProvider {
     return 'You are a JSON translation API. You receive a JSON object and return the same JSON object with translated values. Return valid JSON only: no preamble, no explanation, no markdown fences. The first character of your reply must be {.';
   }
 
-  /** Lower than the OpenAI default, in step with the 8192-token output ceiling. */
+  /**
+   * Sized on the 8192-token output ceiling, which a mailing's HTML-heavy
+   * texts fill at about 2.3 characters a token: a 30 000-character batch
+   * answered 19 174 characters and was cut. 12 000, keys included, leaves room
+   * for a target language that runs longer than the source; a batch that still
+   * overflows is split rather than failed.
+   */
   getBatchLimits() {
-    return { maxKeys: 80, maxChars: 30000 };
+    return { maxKeys: 80, maxChars: 12000 };
   }
 }
 

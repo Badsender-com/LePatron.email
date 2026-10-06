@@ -7,6 +7,7 @@ jest.mock('../../../../packages/server/utils/outbound-host.js', () => ({
 }));
 jest.mock('../../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 }));
 
@@ -359,6 +360,57 @@ describe('AnthropicProvider', () => {
         'length'
       );
       expect(provider._getFinishReason({ stop_reason: 'end_turn' })).toBeNull();
+    });
+
+    // Staging, #1140: a 30 000-character batch came back cut at 8192 tokens
+    // and failed as "Unexpected end of JSON input".
+    it('types a cut translation as truncation, not as a parse error', async () => {
+      mockFetch.mockResolvedValue(
+        reply(
+          messageResponse({
+            content: [{ type: 'text', text: '{"a": "Hel' }],
+            stop_reason: 'max_tokens',
+          })
+        )
+      );
+
+      await expect(
+        provider.translateBatch({
+          texts: { a: 'Hallo', b: 'Welt' },
+          sourceLanguage: 'de',
+          targetLanguage: 'en',
+        })
+      ).rejects.toMatchObject({ code: CODES.OUTPUT_TRUNCATED });
+    });
+
+    // A skill answering in prose can still use a cut answer: reported, not
+    // thrown.
+    it('reports a cut chat answer on the result', async () => {
+      mockFetch.mockResolvedValue(
+        reply(messageResponse({ stop_reason: 'max_tokens' }))
+      );
+
+      const result = await provider.chatComplete({
+        model: 'claude-x',
+        messages: [{ role: 'user', content: 'x' }],
+      });
+
+      expect(result).toMatchObject({ content: 'bonjour', truncated: true });
+    });
+
+    // Found by the conformance script: claude-fable-5 declines the translation
+    // prompt outright. Reported as an empty response, it read as a parser bug.
+    it('names a refusal rather than calling it an empty response', async () => {
+      mockFetch.mockResolvedValue(
+        reply(messageResponse({ content: [], stop_reason: 'refusal' }))
+      );
+
+      await expect(
+        provider.chatComplete({
+          model: 'claude-x',
+          messages: [{ role: 'user', content: 'x' }],
+        })
+      ).rejects.toThrow(/declined/i);
     });
 
     it('rejects a payload with no content array', async () => {

@@ -198,6 +198,7 @@ passport.use(
 );
 
 const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
+const { samlOptionsFor } = require('./saml-config.js');
 
 passport.use(
   new MultiSamlStrategy(
@@ -229,11 +230,11 @@ passport.use(
           const group = await Groups.findOne({
             _id: user.group,
           });
-          if (group && group.entryPoint && group.issuer) {
-            return done(null, {
-              entryPoint: group.entryPoint,
-              issuer: group.issuer,
-            });
+          // Never options without the identity provider's certificate:
+          // passport-saml verifies a response's signature only when it has one.
+          const samlOptions = samlOptionsFor(group);
+          if (samlOptions) {
+            return done(null, samlOptions);
           }
           return done(new Error('Provider informations not found'), null);
         }
