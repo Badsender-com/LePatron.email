@@ -167,6 +167,25 @@ CommentSchema.statics.countUnresolvedByMailing = async function (mailingId) {
   });
 };
 
+// Static: ids (as strings) of the mailings whose latest root comment is an
+// approval. A comment posted after the approval, whatever it says, lifts it: a
+// plain comment already is an implicit request for changes (plan section 3.4).
+CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
+  const latestByMailing = await this.aggregate([
+    {
+      $match: {
+        _mailing: { $in: mailingIds },
+        _parentComment: null,
+        isDeleted: false,
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    { $group: { _id: '$_mailing', decision: { $first: '$decision' } } },
+    { $match: { decision: COMMENT_DECISIONS.APPROVED } },
+  ]);
+  return latestByMailing.map((item) => item._id.toString());
+};
+
 // Static: Get comment counts grouped by block with severity info
 CommentSchema.statics.getBlockCommentCounts = async function (mailingId) {
   return this.aggregate([
