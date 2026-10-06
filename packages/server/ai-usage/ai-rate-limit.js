@@ -111,7 +111,7 @@ function aiRateLimit({ maxBodyBytes = DEFAULT_MAX_BODY_BYTES } = {}) {
       const { user } = req;
       await consume({
         userId: user.id,
-        groupId: user.group && user.group.id,
+        groupId: user.group?.id,
         limits: config.aiRateLimits || {},
       });
       next();

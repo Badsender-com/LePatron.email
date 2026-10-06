@@ -15,10 +15,11 @@
  * Mirrors the translation section; when the étape 2bis hierarchy refactor lands,
  * the translation block can be extracted on the same model.
  */
-import { mapMutations } from 'vuex';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import * as apiRoutes from '~/helpers/api-routes.js';
-import { getProviderLabel } from '~/components/integrations/provider-configs';
+import mixinAiFeatureConfig from '~/helpers/mixins/mixin-ai-feature-config.js';
+import {
+  getProviderLabel,
+  providerConfigs,
+} from '~/components/integrations/provider-configs';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
@@ -32,6 +33,7 @@ export default {
     BsFormSection,
     LucideCpu: Cpu,
   },
+  mixins: [mixinAiFeatureConfig],
   props: {
     groupId: { type: String, required: true },
     // The AIFeatureConfig entry this section edits.
@@ -44,10 +46,6 @@ export default {
   },
   data() {
     return {
-      loading: false,
-      saving: false,
-      config: null,
-      integrations: [],
       // Reported by the model picker; drives whether its column is shown.
       capabilities: null,
     };
@@ -58,10 +56,17 @@ export default {
         (f) => f.featureType === this.featureType
       );
     },
+    // A skill needs a model that writes: translation-only engines (DeepL)
+    // cannot run one.
+    generationIntegrations() {
+      return this.integrations.filter(
+        (i) => providerConfigs[i.provider]?.category === 'aiGeneration'
+      );
+    },
     integrationOptions() {
       return [
         { value: null, text: this.$t('aiFeatures.noIntegration') },
-        ...this.integrations.map((i) => ({
+        ...this.generationIntegrations.map((i) => ({
           value: i._id,
           text: `${i.name} (${getProviderLabel(i.provider)})`,
         })),
@@ -103,52 +108,9 @@ export default {
       },
     },
   },
-  mounted() {
-    this.fetchData();
-  },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-
-    async fetchData() {
-      try {
-        this.loading = true;
-        const [configRes, integrationsRes] = await Promise.all([
-          this.$axios.$get(apiRoutes.aiFeatures(this.groupId)),
-          this.$axios.$get(apiRoutes.integrations(this.groupId, 'ai')),
-        ]);
-        this.config = configRes;
-        this.integrations = integrationsRes.items || [];
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async updateFeature(data) {
-      try {
-        this.saving = true;
-        const result = await this.$axios.$put(
-          apiRoutes.aiFeaturesItem(this.groupId, this.featureType),
-          data
-        );
-        this.config = result;
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        await this.fetchData();
-      } finally {
-        this.saving = false;
-      }
+    updateFeature(data) {
+      return this.saveFeature(this.featureType, data);
     },
   },
 };
