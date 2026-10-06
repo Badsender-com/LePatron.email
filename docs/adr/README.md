@@ -7,7 +7,8 @@ Each file records one decision that is hard to reverse, surprising without conte
 - Sequential numbering, `NNNN-slug.md`, in English. A reversed decision gets a new ADR; the old one is marked `superseded by ADR-NNNN`.
 - The repository is public: no client name, no unfixed vulnerability, no secret.
 
-| ADR                                                     | Decision                                                                       | Status   |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------ | -------- |
-| [0001](./0001-grill-first-feature-workflow.md)          | New features start with a grilling, an ADR, an epic and tickets                | proposed |
-| [0003](./0003-text-generation-skills-and-expertises.md) | Text generation runs on Badsender skills and expertises, as its own AI feature | proposed |
+| ADR                                                     | Decision                                                                           | Status   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------- |
+| [0001](./0001-grill-first-feature-workflow.md)          | New features start with a grilling, an ADR, an epic and tickets                    | proposed |
+| [0003](./0003-text-generation-skills-and-expertises.md) | Text generation runs on Badsender skills and expertises, as its own AI feature     | proposed |
+| [0004](./0004-ai-panel-and-ai-actions.md)               | AI actions live in a right-hand AI panel, shared with comments and quality control | proposed |
