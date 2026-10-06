@@ -27,7 +27,6 @@ router.put('/:userId', users.update);
 router.delete('/:userId', users.deactivate);
 
 router.put('/:userId/activate', users.activate);
-router.put('/:userId/password', users.setPassword);
 router.delete('/:userId/password', users.adminResetPassword);
 router.get('/:userId/mailings', users.readMailings);
 

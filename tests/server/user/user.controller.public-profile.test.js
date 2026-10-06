@@ -54,10 +54,7 @@ describe('GET public profile — whether the login page offers SSO', () => {
 
   it('offers SSO to a company whose certificate is configured', async () => {
     const profile = await publicProfile(sso);
-    expect(profile.group).toEqual({
-      name: 'Client',
-      isSAMLAuthentication: true,
-    });
+    expect(profile.group).toEqual({ isSAMLAuthentication: true });
   });
 
   it('falls back to the password without a certificate', async () => {
@@ -70,11 +67,8 @@ describe('GET public profile — whether the login page offers SSO', () => {
     expect(profile.group.isSAMLAuthentication).toBe(false);
   });
 
-  it('never ships the certificate or the SSO settings', async () => {
+  it('ships nothing but how to sign in', async () => {
     const profile = await publicProfile(sso);
-    expect(Object.keys(profile.group).sort()).toEqual([
-      'isSAMLAuthentication',
-      'name',
-    ]);
+    expect(profile).toEqual({ group: { isSAMLAuthentication: true } });
   });
 });

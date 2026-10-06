@@ -100,6 +100,9 @@ describe('list payloads leave the head CSS out', () => {
     Users.findById.mockReturnValue(byId());
 
     await call(userController.readMailings, {
+      // An admin reaches every user; the reach itself is specified in
+      // user.controller.scope.test.js.
+      user: { isAdmin: true },
       params: { userId: ID },
       query: {},
     });
