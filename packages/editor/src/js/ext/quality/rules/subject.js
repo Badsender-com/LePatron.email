@@ -1,15 +1,16 @@
 'use strict';
 
+const { countEmojis } = require('../emoji');
+
 // Truncation, not performance: subject length does not change read rates
-// (Return Path, 9 million subjects). Mobile apps cut at 33-48 characters, which
-// no threshold could avoid; past 60 Outlook cuts too, past 90 almost everyone.
-const LONG = 60;
-const TOO_LONG = 90;
+// (Return Path, 9 million subjects). Team decision of 1 October 2026: under 40
+// characters ideally, never over 60.
+const LONG = 40;
+const TOO_LONG = 60;
 
 // Reply and forward prefixes, in the languages our clients write in. Gmail
 // asks not to fake them.
 const FAKE_REPLY = /^\s*(re|fw|fwd|tr|aw|wg|rv|sv|vs|r|odp|antw)\s*:/i;
-const EMOJI = /\p{Extended_Pictographic}/gu;
 const REPEATED_PUNCTUATION = /(!{2,}|\?{2,}|\${2,}|€{2,})/;
 const MIN_LETTERS_FOR_CAPS = 8;
 const CAPS_RATIO = 0.7;
@@ -26,7 +27,7 @@ function aggressiveness(subject) {
   if (REPEATED_PUNCTUATION.test(subject)) {
     return 'Subject repeats punctuation (!!, ??, $$)';
   }
-  if ((subject.match(EMOJI) || []).length > 1) {
+  if (countEmojis(subject) > 1) {
     return 'Subject has more than one emoji';
   }
   return null;
@@ -54,12 +55,14 @@ module.exports = {
     const count = Array.from(subject).length;
     if (count > TOO_LONG) {
       findings.push({
-        messageKey: 'Subject too long (__count__ characters): cut in almost every inbox',
+        messageKey:
+          'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
         params: { count },
       });
     } else if (count > LONG) {
       findings.push({
-        messageKey: 'Long subject (__count__ characters): may be cut on mobile and in Outlook',
+        messageKey:
+          'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
         severity: 'info',
         params: { count },
       });
