@@ -85,18 +85,33 @@ const activeQuery = (mailingId, now = new Date()) => ({
  * @param {Function} [urlOf] - token → address; with it, `url` is the link to
  *   copy again (null when it cannot be opened)
  */
-function toApi(link, urlOf) {
+function toApi(link, urlOf, user) {
   const api = {
     id: String(link._id),
     createdAt: link.createdAt,
     expiresAt: link.expiresAt,
     createdBy: link._user && link._user.name ? link._user.name : null,
   };
+  // Told by the server because the editor only gets the author's name, not who
+  // they are; the same rule guards the DELETE (see revokeLink).
+  if (user) api.canRevoke = canRevokeAnyLink(user) || isAuthor(user, link);
   if (urlOf) {
     const token = openToken(link.tokenEncrypted);
     api.url = token ? urlOf(token) : null;
   }
   return api;
+}
+
+// Whoever administers the company turns off any link of its emails; everyone
+// else only the ones they made. A link made by a super admin has no author
+// (see createShareLink), so only the administrators reach it.
+function canRevokeAnyLink(user) {
+  return Boolean(user.isAdmin || user.isGroupAdmin || user.isGroupAdminTech);
+}
+
+function isAuthor(user, link) {
+  const author = link._user && (link._user._id || link._user);
+  return Boolean(author && String(author) === String(user.id));
 }
 
 /**
@@ -122,19 +137,31 @@ async function createShareLink({ mailing, user, expiresInDays }) {
   return { link, token };
 }
 
-/** @param {Function} urlOf - token → address, for the links to copy again */
-async function listActiveLinks(mailingId, urlOf) {
+/**
+ * @param {Function} urlOf - token → address, for the links to copy again
+ * @param {Object} user - who lists them, to say which they may turn off
+ */
+async function listActiveLinks(mailingId, urlOf, user) {
   const links = await ShareLinks.find(activeQuery(mailingId))
     .sort({ createdAt: -1 })
     .populate('_user', 'name')
     .lean();
-  return links.map((link) => toApi(link, urlOf));
+  return links.map((link) => toApi(link, urlOf, user));
 }
 
-/** Revokes a link of this email; a link of another email is a 404. */
-async function revokeLink(mailingId, linkId) {
+/**
+ * Revokes a link of this email; a link of another email is a 404, and so is,
+ * for someone who may only turn off their own, a link somebody else made —
+ * the filter is the check, so it cannot race the update.
+ */
+async function revokeLink(mailingId, linkId, user) {
   const link = await ShareLinks.findOneAndUpdate(
-    { _id: linkId, _mailing: mailingId, revokedAt: null },
+    {
+      _id: linkId,
+      _mailing: mailingId,
+      revokedAt: null,
+      ...(canRevokeAnyLink(user) ? {} : { _user: user.id }),
+    },
     { revokedAt: new Date() }
   );
   if (!link) throw new createError.NotFound(ERROR_CODES.SHARE_LINK_NOT_FOUND);

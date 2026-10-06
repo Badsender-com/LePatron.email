@@ -48,6 +48,7 @@ beforeEach(() => {
         {
           id: 'l1',
           createdBy: 'Ana',
+          canRevoke: true,
           createdAt: '2026-09-29T15:20:00Z',
           expiresAt: '2026-10-06T00:00:00Z',
           url: 'https://app.test/share/old',
@@ -78,6 +79,7 @@ describe('ShareLinkPanel', () => {
         url: 'https://app.test/share/abc',
         expiresAt: '2026-09-30T00:00:00Z',
         createdBy: 'Ana',
+        canRevoke: true,
       },
     });
     const { el } = await mount();
@@ -93,6 +95,31 @@ describe('ShareLinkPanel', () => {
       'https://app.test/share/abc'
     );
     expect(el.querySelectorAll('.qc-share__item')).toHaveLength(2);
+  });
+
+  // The server says which links the user may turn off (their own, unless they
+  // administer the company): the others are listed, and can be copied, only.
+  it('offers no "Turn off" on a link the user may not revoke', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'l1',
+            createdBy: 'Bob',
+            canRevoke: false,
+            createdAt: '2026-09-29T15:20:00Z',
+            expiresAt: '2026-10-06T00:00:00Z',
+            url: 'https://app.test/share/old',
+          },
+        ],
+      },
+    });
+    const { el } = await mount();
+    const labels = Array.from(
+      el.querySelectorAll('.qc-share__item button')
+    ).map((b) => b.getAttribute('aria-label'));
+    expect(labels.some((l) => /^Turn off/.test(l))).toBe(false);
+    expect(labels.some((l) => /^Copy the link/.test(l))).toBe(true);
   });
 
   it('turns a link off', async () => {

@@ -187,6 +187,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             :value="link.url"
           >
           <button
+            v-if="link.canRevoke"
             type="button"
             class="qc-link-button"
             :disabled="revoking.includes(link.id)"
