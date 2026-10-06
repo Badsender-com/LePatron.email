@@ -13,7 +13,14 @@ function handleCreationName(viewModel) {
     return viewModel.metadata.name();
   }, viewModel);
 
+  // Locked until the current user is known, like the toolbox panels.
+  viewModel.canRenameCreation = function () {
+    var user = viewModel.currentUser && viewModel.currentUser();
+    return !!(user && user.canRename);
+  };
+
   viewModel.enableEditCreationName = function (data, event) {
+    if (!viewModel.canRenameCreation()) return;
     console.log('enableEditCreationName', data);
     originalValue = viewModel.metadata.name();
     viewModel.titleMode('edit');

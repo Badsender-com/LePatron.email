@@ -109,27 +109,44 @@
     position: relative;
   }
 
+  // The overlay replaces the panel's content instead of covering it: while it
+  // is rendered, every other child of the panel is `display: none`. Pure CSS,
+  // so the DOM that jQuery UI Tabs / Knockout index is untouched, and nothing
+  // is left to scroll to, tab into or drop onto (an absolutely positioned
+  // overlay scrolled away with the panel and let the keyboard through).
+  #toolblocks,
+  #toolcontents,
+  #toolstyles {
+    &:has(> .toolbox-readonly-overlay) > :not(.toolbox-readonly-overlay) {
+      display: none;
+    }
+  }
+
+  // Fully read-only (reviewer): one message, no tabs to choose between. The
+  // tab list is only hidden, never removed, so jQuery UI Tabs keeps its index.
+  #tooltabs:has(.toolbox-readonly-overlay--all) .tooltabs__list {
+    display: none;
+  }
+
   .toolbox-readonly-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 50;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 24px;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--v-primary-base);
+    align-items: flex-start;
+    gap: 10px;
+    margin: 24px 20px;
+    padding: 12px 14px;
     font-size: 0.9em;
-    cursor: not-allowed;
+    line-height: 1.45;
+    color: #4a5a68;
+    background: #f1f5f9;
+    border: 1px solid #dbe3ea;
+    border-radius: 6px;
+    cursor: default;
 
     .lucide {
-      font-size: 1.8em;
+      flex: none;
+      margin-top: 1px;
+      font-size: 1.2em;
+      color: #6b8196;
     }
   }
 
