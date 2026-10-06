@@ -36,6 +36,31 @@ describe('AIFeatureService', () => {
     jest.clearAllMocks();
   });
 
+  // A config holding every feature type (so no backfill), read and written back
+  // as is.
+  function wireCompleteConfig(
+    featureTypes = ['translation', 'skill', 'text_generation']
+  ) {
+    const config = {
+      _id: mockConfigId,
+      _company: mockGroupId,
+      features: featureTypes.map((featureType) => ({
+        featureType,
+        integration: null,
+        isActive: false,
+        config: {},
+      })),
+    };
+    groupService.findById.mockResolvedValue({ _id: mockGroupId });
+    AIFeatureConfigs.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(config),
+    });
+    AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(config),
+    });
+    return config;
+  }
+
   describe('getOrCreateConfig', () => {
     it('should return existing config when found', async () => {
       const existingConfig = {
@@ -310,39 +335,9 @@ describe('AIFeatureService', () => {
     // deployment names, self-hosted endpoints), so these cover the format
     // guard that replaces the closed list, not a whitelist.
     describe('model identifier', () => {
+      // `skill` first: the assertions read what was written at index 0.
       function arrangeConfig() {
-        const existingConfig = {
-          _id: mockConfigId,
-          _company: mockGroupId,
-          // Every enum type present: a missing one triggers the backfill in
-          // getOrCreateConfig, which re-reads through findById.
-          features: [
-            {
-              featureType: 'skill',
-              integration: null,
-              isActive: false,
-              config: {},
-            },
-            {
-              featureType: 'translation',
-              integration: null,
-              isActive: false,
-              config: {},
-            },
-            {
-              featureType: 'text_generation',
-              integration: null,
-              isActive: false,
-            },
-          ],
-        };
-        groupService.findById.mockResolvedValue({ _id: mockGroupId });
-        AIFeatureConfigs.findOne.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(existingConfig),
-        });
-        AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
-          populate: jest.fn().mockResolvedValue(existingConfig),
-        });
+        wireCompleteConfig(['skill', 'translation', 'text_generation']);
       }
 
       function modelWrittenBy(call) {
@@ -439,38 +434,7 @@ describe('AIFeatureService', () => {
     // Persisted since the formality fix: the select was rendered, DeepL knew
     // how to read the value, but nothing ever wrote it.
     it('persists the translation formality', async () => {
-      const existingConfig = {
-        _id: mockConfigId,
-        _company: mockGroupId,
-        // Every enum type present → no backfill (see above).
-        features: [
-          {
-            featureType: 'translation',
-            integration: null,
-            isActive: false,
-            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
-          },
-          {
-            featureType: 'skill',
-            integration: null,
-            isActive: false,
-            config: {},
-          },
-          {
-            featureType: 'text_generation',
-            integration: null,
-            isActive: false,
-          },
-        ],
-      };
-
-      groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      AIFeatureConfigs.findOne.mockReturnValue({
-        populate: jest.fn().mockResolvedValue(existingConfig),
-      });
-      AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
-        populate: jest.fn().mockResolvedValue(existingConfig),
-      });
+      wireCompleteConfig();
 
       await aiFeatureService.updateFeatureConfig({
         groupId: mockGroupId,
@@ -831,6 +795,52 @@ describe('AIFeatureService', () => {
           })
         ).toBeNull();
       }
+    });
+  });
+
+  describe('the engine of a feature that runs skills', () => {
+    const integration = (provider) => ({
+      _id: mockIntegrationId,
+      type: 'ai',
+      provider,
+    });
+
+    it.each(['text_generation', 'skill'])(
+      'refuses a translation-only integration for %s',
+      async (featureType) => {
+        wireCompleteConfig();
+        Integrations.findOne.mockResolvedValue(integration('deepl'));
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType,
+            integrationId: mockIntegrationId,
+          })
+        ).rejects.toThrow('INTEGRATION_CANNOT_GENERATE_TEXT');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      }
+    );
+
+    it('accepts an integration that writes text', async () => {
+      wireCompleteConfig();
+      Integrations.findOne.mockResolvedValue(integration('mistral'));
+      await aiFeatureService.updateFeatureConfig({
+        groupId: mockGroupId,
+        featureType: 'text_generation',
+        integrationId: mockIntegrationId,
+      });
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalled();
+    });
+
+    it('still accepts DeepL for translation', async () => {
+      wireCompleteConfig();
+      Integrations.findOne.mockResolvedValue(integration('deepl'));
+      await aiFeatureService.updateFeatureConfig({
+        groupId: mockGroupId,
+        featureType: 'translation',
+        integrationId: mockIntegrationId,
+      });
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalled();
     });
   });
 });
