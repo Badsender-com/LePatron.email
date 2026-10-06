@@ -160,11 +160,10 @@ module.exports = {
         },
       },
 
-      // The subject is this component's own state, so text generation goes
-      // through here to read it and to write a picked proposal into the field.
-      // Removed on dispose: once the section is gone, the modal must offer copy.
+      // The subject is this component's own state, so the AI actions write a
+      // picked proposal into the field through here (ext/email-subject.js).
+      // Removed on dispose: once the section is gone, they must offer copy.
       created() {
-        vm.getEmailSubject = () => this.subject;
         vm.setEmailSubject = (subject) => {
           this.subject = subject;
         };
@@ -219,7 +218,6 @@ module.exports = {
       app = null;
     }
     if (activeVm) {
-      delete activeVm.getEmailSubject;
       delete activeVm.setEmailSubject;
       activeVm = null;
     }
