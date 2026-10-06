@@ -5,10 +5,17 @@ const { userDeclarations, toPx, hasText } = require('../user-styles');
 const { textOf } = require('../exported-content');
 const { styleValue } = require('../colors');
 
-// WCAG 1.4.12: a line height of at least 1.5 keeps lines apart for low-vision
-// and dyslexic readers; justified text opens irregular gaps between words.
-const MIN_LINE_HEIGHT = 1.5;
+// Justified text opens irregular gaps between words. A line height under 1
+// makes lines overlap: that is what is reported (team decision of 1 October
+// 2026). WCAG asks for 1.5 at AAA only, and whether 1.2 reads well depends on
+// the template and its typeface.
+const MIN_LINE_HEIGHT = 1;
 const DEFAULT_FONT_PX = 16;
+// Centred text is hard to follow past about three lines: some 200 characters
+// at the width of an email. Said once for the whole email, with no block to
+// go to: centred titles and short lines are fine, and pointing at each one
+// would bury the advice.
+const CENTRED_MAX_CHARS = 200;
 
 const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);
 
@@ -36,10 +43,19 @@ module.exports = {
   category: 'accessibility',
   severity: 'info',
   titleKey: 'Text layout',
-  passKey: 'No text is justified or has tight lines',
+  passKey: 'No text is justified, overlaps or is centred at length',
+  CENTRED_MAX_CHARS,
   run(ctx) {
-    const findings = userDeclarations(ctx)
-      .filter(({ element }) => hasText(element))
+    const declarations = userDeclarations(ctx).filter(({ element }) =>
+      hasText(element)
+    );
+    const longCentred = declarations.some(
+      ({ prop, value, element }) =>
+        prop === 'text-align' &&
+        /^center/i.test(value) &&
+        textOf(element).length > CENTRED_MAX_CHARS
+    );
+    const findings = declarations
       .map((decl) => {
         if (decl.prop === 'text-align' && /^justify/i.test(decl.value)) {
           return { ...decl, messageKey: 'Justified text: word gaps get harder to read: __text__' };
@@ -49,19 +65,30 @@ module.exports = {
         if (ratio && ratio < MIN_LINE_HEIGHT) {
           return {
             ...decl,
-            messageKey: 'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
+            messageKey: 'Line height under 1 (__ratio__): the lines overlap: __text__',
+            severity: 'warning',
             params: { ratio: Math.round(ratio * 100) / 100 },
           };
         }
         return null;
       })
       .filter(Boolean);
-    return _.uniqBy(findings, (f) => `${f.messageKey}|${f.path}`).map((f) => ({
-      messageKey: f.messageKey,
-      params: { ...f.params, text: excerpt(textOf(f.element)) },
-      blockId: f.blockId,
-      propertyPath: f.path,
-      value: `${f.prop}:${f.value}`,
-    }));
+    const perBlock = _.uniqBy(findings, (f) => `${f.messageKey}|${f.path}`).map(
+      (f) => ({
+        messageKey: f.messageKey,
+        severity: f.severity,
+        params: { ...f.params, text: excerpt(textOf(f.element)) },
+        blockId: f.blockId,
+        propertyPath: f.path,
+        value: `${f.prop}:${f.value}`,
+      })
+    );
+    if (!longCentred) return perBlock;
+    return perBlock.concat({
+      messageKey:
+        'Centred text over about three lines is hard to read: align long texts to the left',
+      // One advice for the whole email: ignoring it keeps it ignored.
+      value: 'long-centred-text',
+    });
   },
 };

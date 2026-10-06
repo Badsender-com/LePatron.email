@@ -70,6 +70,12 @@ describe('images-without-link', () => {
     });
   });
 
+  it('leaves an image in an empty link alone: the export drops the link', () => {
+    const blocks = [{ id: 'b1', type: 'imageBlock' }];
+    const html = exportOf({ b1: '<a href=""><img src="x.png"></a>' });
+    expect(findingsOf(imagesWithoutLink, { blocks, html })).toEqual([]);
+  });
+
   it('leaves an image never replaced to unreplaced-images', () => {
     const blocks = [{ id: 'b1', type: 'imageBlock' }];
     const html = exportOf({

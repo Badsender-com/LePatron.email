@@ -13,7 +13,6 @@ const { fakeViewModel, exportOf } = require('./fake-view-model');
 const RULES = '../../../packages/editor/src/js/ext/quality/rules';
 const subject = require(`${RULES}/subject`);
 const preheader = require(`${RULES}/preheader`);
-const sampleText = require(`${RULES}/sample-text`);
 const mergeTags = require(`${RULES}/merge-tags`);
 const emptyBlocks = require(`${RULES}/empty-blocks`);
 const uppercaseText = require(`${RULES}/uppercase-text`);
@@ -55,15 +54,18 @@ describe('subject', () => {
 
   it.each([
     ['', ['No subject']],
+    ['a'.repeat(40), []],
     [
-      'a'.repeat(61),
+      'a'.repeat(41),
       [
-        'Long subject (__count__ characters): may be cut on mobile and in Outlook',
+        'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
       ],
     ],
     [
-      'a'.repeat(91),
-      ['Subject too long (__count__ characters): cut in almost every inbox'],
+      'a'.repeat(61),
+      [
+        'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
+      ],
     ],
     [
       'RE: your order',
@@ -80,6 +82,7 @@ describe('subject', () => {
     ['HUGE SALE THIS WEEKEND', ['Subject mostly in capital letters']],
     ['Last chance!!', ['Subject repeats punctuation (!!, ??, $$)']],
     ['Sale 🔥🔥 today', ['Subject has more than one emoji']],
+    ['Our nurses 👩‍⚕️ thank you', []],
     ['Our spring collection is here', []],
   ])('judges "%s"', (subjectValue, keys) => {
     expect(keysOf(subject, { subjectValue })).toEqual(keys);
@@ -87,9 +90,9 @@ describe('subject', () => {
 
   it('counts an emoji as one character', () => {
     const [finding] = findingsOf(subject, {
-      subjectValue: `${'a'.repeat(60)}🔥`,
+      subjectValue: `${'a'.repeat(40)}🔥`,
     });
-    expect(finding.params.count).toBe(61);
+    expect(finding.params.count).toBe(41);
   });
 });
 
@@ -103,11 +106,6 @@ describe('preheader', () => {
     [
       'View it online',
       'Preheader still the sample text of the template: __text__',
-    ],
-    ['Hi there', 'Preheader too short (__count__ characters)'],
-    [
-      'Our spring collection',
-      'Short preheader (__count__ characters): some inboxes complete it with the body',
     ],
     [
       'a'.repeat(101),
@@ -123,60 +121,35 @@ describe('preheader', () => {
     ).toEqual([key]);
   });
 
+  it('never reports a short preheader', () => {
+    expect(findingsOf(preheader, { preheaderValue: 'Hi there' })).toEqual([]);
+  });
+
+  it.each([
+    ['Spring sale', 'Spring sale!'],
+    ['Spring sale', 'spring  sale, up to 50% off'],
+  ])(
+    'warns when the preheader repeats the subject "%s"',
+    (subjectValue, preheaderValue) => {
+      expect(keysOf(preheader, { subjectValue, preheaderValue })).toEqual([
+        'The preheader repeats the subject: inboxes show the same words twice',
+      ]);
+    }
+  );
+
+  it('accepts a preheader that only shares words with the subject', () => {
+    expect(
+      findingsOf(preheader, {
+        subjectValue: 'Spring sale',
+        preheaderValue: 'Up to 50% off our spring sale',
+      })
+    ).toEqual([]);
+  });
+
   it('accepts a preheader of the right length, merge tags aside', () => {
     const value =
       '{{first_name}}, discover our new spring collection before anyone else';
     expect(findingsOf(preheader, { preheaderValue: value })).toEqual([]);
-  });
-});
-
-describe('sample-text', () => {
-  const def = {
-    type: 'textBlock',
-    titleText: 'Your title here',
-    align: 'center',
-  };
-  const block = (titleText) => ({
-    id: 'b1',
-    type: 'textBlock',
-    titleText,
-    align: 'center',
-  });
-
-  it('reports lorem ipsum as an error', () => {
-    const html = exportOf({ b1: '<p>Lorem ipsum dolor sit amet</p>' });
-    const [finding] = findingsOf(sampleText, { blocks: [block('x')], html });
-    expect(finding).toMatchObject({ severity: 'error', blockId: 'b1' });
-  });
-
-  it("warns about the template's sample text still shown", () => {
-    const html = exportOf({
-      b1: '<h1>Your title here</h1><p>center of town</p>',
-    });
-    const findings = findingsOf(sampleText, {
-      blocks: [block('Your title here')],
-      blockDefs: [def],
-      html,
-    });
-    expect(findings).toHaveLength(1);
-    expect(findings[0]).toMatchObject({
-      severity: 'warning',
-      propertyPath: 'titleText',
-      params: { text: 'Your title here' },
-    });
-  });
-
-  it('leaves replaced texts, and style values, alone', () => {
-    const html = exportOf({
-      b1: '<h1>Spring is here</h1><p>center of town</p>',
-    });
-    expect(
-      findingsOf(sampleText, {
-        blocks: [block('Spring is here')],
-        blockDefs: [def],
-        html,
-      })
-    ).toEqual([]);
   });
 });
 

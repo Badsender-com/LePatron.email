@@ -20,7 +20,6 @@ const imageOnlyEmail = require('./rules/image-only-email');
 const unsupportedImageFormats = require('./rules/unsupported-image-formats');
 const subject = require('./rules/subject');
 const preheader = require('./rules/preheader');
-const sampleText = require('./rules/sample-text');
 const mergeTags = require('./rules/merge-tags');
 const emptyBlocks = require('./rules/empty-blocks');
 const uppercaseText = require('./rules/uppercase-text');
@@ -48,7 +47,6 @@ const { collectResources } = require('./resources');
 const DEFAULT_RULES = [
   subject,
   preheader,
-  sampleText,
   mergeTags,
   emptyBlocks,
   uppercaseText,
