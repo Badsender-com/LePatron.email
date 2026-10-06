@@ -138,6 +138,87 @@ describe('GET /share/:token', () => {
     }
   });
 
+  it('shows the subject and the preheader when the company writes them in LePatron', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    const saved = {
+      _id: MAILING_ID,
+      name: 'Soldes',
+      subject: ' Nos soldes ',
+      data: { preheaderBlock: { preheaderText: "Jusqu'à -50 %" } },
+      previewHtml: '<p>hi</p>',
+    };
+    Mailings.findById.mockReturnValue(lean(saved));
+    const render = async (group) => {
+      Groups.findById.mockReturnValue(lean(group));
+      const { res } = await call(pageController.renderShare, {
+        params: { token: TOKEN },
+      });
+      return res.render.mock.calls[0][1].copy;
+    };
+
+    expect(
+      await render({ status: 'active', emailMetadata: { enabled: true } })
+    ).toEqual([
+      { label: 'Objet', value: 'Nos soldes' },
+      { label: 'Préheader', value: "Jusqu'à -50 %" },
+    ]);
+    expect(await render({ status: 'active' })).toEqual([]);
+    // Only the preheader of the content model is read, never all of it.
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({
+      subject: 1,
+      'data.preheaderText': 1,
+      'data.preheaderBlock.preheaderText': 1,
+    });
+    expect(Mailings.findById.mock.calls[0][1]).not.toHaveProperty('data');
+  });
+
+  it('leaves out a preheader the template turned off', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', emailMetadata: { enabled: true } })
+    );
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        name: 'Soldes',
+        subject: 'Nos soldes',
+        data: { preheaderText: 'Caché', preheaderVisible: false },
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.render.mock.calls[0][1].copy).toEqual([
+      { label: 'Objet', value: 'Nos soldes' },
+    ]);
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({
+      'data.preheaderVisible': 1,
+    });
+  });
+
+  it('leaves out a subject or a preheader not filled in', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', emailMetadata: { enabled: true } })
+    );
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        name: 'Soldes',
+        subject: '',
+        data: { preheaderText: 'Vu en premier' },
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.render.mock.calls[0][1].copy).toEqual([
+      { label: 'Préheader', value: 'Vu en premier' },
+    ]);
+  });
+
   it('sanitizes a shared version once, however large', async () => {
     ShareLinks.findOne.mockReturnValue(lean(activeLink));
     Mailings.findById.mockReturnValue(
@@ -224,6 +305,29 @@ describe('share-page.pug', () => {
     );
     expect(page).toMatch(/<iframe[^>]*referrerpolicy="no-referrer"/);
     expect(page).toContain('srcdoc="&lt;p class=&quot;x&quot;&gt;Hello');
+  });
+
+  it('shows the subject and preheader lines as text, escaped', () => {
+    const page = render({
+      lang: 'fr',
+      title: 't',
+      name: 'n',
+      meta: 'meta',
+      copy: [{ label: 'Objet', value: '<script>alert(3)</script>' }],
+      html: '<p>hi</p>',
+    });
+    expect(page).not.toMatch(/<script/i);
+    expect(page).toContain('<dt class="copy__label">Objet</dt>');
+    expect(page).toContain('&lt;script&gt;alert(3)&lt;/script&gt;');
+    expect(
+      render({
+        lang: 'fr',
+        title: 't',
+        name: 'n',
+        meta: 'm',
+        html: '<p>hi</p>',
+      })
+    ).not.toContain('class="copy');
   });
 });
 
