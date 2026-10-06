@@ -14,6 +14,9 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { Templates } = require('../common/models.common.js');
 const { screenProposals } = require('./proposal-checks.js');
+const {
+  PROVIDER_ERROR_CODES,
+} = require('../integration-providers/provider-error.js');
 const manifest = require('./skill-manifest.js');
 
 /**
@@ -146,6 +149,12 @@ async function prepare({ user, mailingId, scope }) {
   };
 }
 
+const ACCOUNT_FAILURES = [
+  PROVIDER_ERROR_CODES.INVALID_CREDENTIALS,
+  PROVIDER_ERROR_CODES.QUOTA_EXCEEDED,
+  PROVIDER_ERROR_CODES.CONFIG_ERROR,
+];
+
 /**
  * Turn an invocation failure into what the user can act on. The detail stays in
  * the invocation log.
@@ -154,13 +163,17 @@ function toHttpError(err) {
   if (err && err.featureResolutionReason) {
     return createError(403, ERROR_CODES.TEXT_GENERATION_DISABLED);
   }
-  // The skill refusing the input this feature built is not the user's to retry:
-  // its active version expects another contract. A configuration problem.
+  // Failures that retrying will not fix: the skill refusing the input this
+  // feature built (its active version expects another contract), or a provider
+  // refusing the account itself — key, quota, credits, configuration. An
+  // administrator has to act, so the user is told so, not to retry.
   const contractBroken =
     err && err.skillError && err.skillError.code === 'INPUT_VALIDATION';
+  const accountRefused = err && ACCOUNT_FAILURES.includes(err.failureCode);
   if (
     (err && err.invocationStatus === InvocationStatuses.CONFIG_ERROR) ||
-    contractBroken
+    contractBroken ||
+    accountRefused
   ) {
     return createError(503, ERROR_CODES.TEXT_GENERATION_UNAVAILABLE);
   }
