@@ -186,6 +186,74 @@ describe('callWithParamAdaptation', () => {
 
       expect(quirksCache.list(KEY)).toEqual([]);
     });
+
+    // A refusal that belongs to this request, not to the model.
+    it('adapts but does not remember a transient quirk', async () => {
+      const attempt = jest
+        .fn()
+        .mockResolvedValueOnce(refusal('temperature'))
+        .mockResolvedValueOnce({ ok: true, data: {} });
+      const detect = (...args) => ({
+        ...detectParamQuirk(...args),
+        transient: true,
+      });
+
+      await run(attempt, { detect });
+
+      expect(attempt.mock.calls[1][0]).not.toHaveProperty('temperature');
+      expect(quirksCache.list(KEY)).toEqual([]);
+    });
+  });
+
+  // Anthropic's JSON-mode fallbacks replace a parameter by another route,
+  // which a drop or a rename cannot express.
+  describe('custom adaptation', () => {
+    const swap = (body, quirks) =>
+      quirks.reduce(
+        (current, quirk) => ({ ...current, swapped: quirk.param }),
+        body
+      );
+
+    it('applies a fresh quirk through the dialect', async () => {
+      const attempt = jest
+        .fn()
+        .mockResolvedValueOnce(refusal('max_tokens'))
+        .mockResolvedValueOnce({ ok: true, data: {} });
+
+      const { body } = await run(attempt, { apply: swap });
+
+      expect(body.swapped).toBe('max_tokens');
+      expect(attempt.mock.calls[1][0].swapped).toBe('max_tokens');
+    });
+
+    // Every quirk so far, on the original body: the dialect decides the
+    // order, not the order they were learned in.
+    it('hands the dialect every quirk on the original body', async () => {
+      quirksCache.add(KEY, { param: 'temperature', action: 'drop' });
+      const apply = jest.fn((body) => body);
+      const attempt = jest
+        .fn()
+        .mockResolvedValueOnce(refusal('max_tokens'))
+        .mockResolvedValueOnce({ ok: true, data: {} });
+
+      await run(attempt, { apply });
+
+      const [body, quirks] = apply.mock.calls[1];
+      expect(body).toHaveProperty('temperature', 0.3);
+      expect(quirks.map((quirk) => quirk.param)).toEqual([
+        'temperature',
+        'max_tokens',
+      ]);
+    });
+
+    it('applies the remembered quirks through the dialect', async () => {
+      quirksCache.add(KEY, { param: 'temperature', action: 'drop' });
+      const attempt = jest.fn().mockResolvedValue({ ok: true, data: {} });
+
+      await run(attempt, { apply: swap });
+
+      expect(attempt.mock.calls[0][0].swapped).toBe('temperature');
+    });
   });
 
   // Three attempts must not mean three times the timeout.

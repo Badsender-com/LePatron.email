@@ -17,7 +17,7 @@ const quirksCache = require('./param-quirks.cache.js');
  *
  * Termination is structural rather than a counter: a parameter already adapted
  * in this sequence cannot be adapted again, so every round removes a distinct
- * one from a closed list of five.
+ * one from the dialect's closed list.
  */
 
 const MAX_ATTEMPTS = 3;
@@ -30,7 +30,12 @@ const MIN_ATTEMPT_TIMEOUT_MS = 1000;
  * @param {Function} params.performAttempt async (body, timeoutMs) =>
  *   {ok: true, data} | {ok: false, status, parsedError, message}
  * @param {Object} params.body
- * @param {Function} params.detect (status, parsedError, message) => quirk|null
+ * @param {Function} params.detect (status, parsedError, message) => quirk|null;
+ *   a `transient` quirk adapts this request only and is not remembered
+ * @param {Function} [params.apply] (body, quirks) => body; a dialect whose
+ *   adaptations are more than a parameter dropped or renamed supplies its own.
+ *   Always handed the original body and every quirk so far, so a dialect can
+ *   order them rather than depend on the order they were learned in
  * @param {string} params.key cache key for this model
  * @param {number} params.deadlineAt absolute deadline for the whole sequence
  * @param {string} params.label provider/model, for the log line
@@ -43,16 +48,17 @@ async function callWithParamAdaptation({
   performAttempt,
   body,
   detect,
+  apply = applyQuirks,
   key,
   deadlineAt,
   label,
 }) {
   // Start from what is already known about this model, so the refusal is not
   // paid again on every process that has seen it.
-  const known = quirksCache.list(key);
-  let currentBody = known.length ? applyQuirks(body, known) : body;
+  const quirks = [...quirksCache.list(key)];
+  let currentBody = quirks.length ? apply(body, quirks) : body;
 
-  const adapted = new Set(known.map((quirk) => quirk.param));
+  const adapted = new Set(quirks.map((quirk) => quirk.param));
   let lastFailure = null;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -72,14 +78,16 @@ async function callWithParamAdaptation({
     if (!quirk || adapted.has(quirk.param)) break;
 
     adapted.add(quirk.param);
-    quirksCache.add(key, quirk);
-    currentBody = applyQuirks(currentBody, [quirk]);
+    if (!quirk.transient) quirksCache.add(key, quirk);
+    quirks.push(quirk);
+    currentBody = apply(body, quirks);
 
     // Warn, not log: this is the only trace. Once memorised, the adaptation is
     // applied silently, so the line comes back once per worker and per TTL —
     // which is what says a fast-path pattern is behind.
+    const scope = quirk.transient ? 'this request only' : 'memorised';
     logger.warn(
-      `${label}: adapting request — ${describeQuirk(quirk)} (memorised)`
+      `${label}: adapting request — ${describeQuirk(quirk)} (${scope})`
     );
   }
 

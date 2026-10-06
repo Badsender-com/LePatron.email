@@ -230,7 +230,7 @@ async function invoke({
   // runs failed in OUTPUT_PARSE). The repair pass in parseJsonFromLLM stays as
   // defense-in-depth for providers without JSON mode.
   // The schema rides along: providers that can enforce a shape rather than
-  // ask for one need it (Anthropic forces a tool call built from it). Those
+  // ask for one need it (Anthropic decodes its answer against it). Those
   // that cannot simply ignore the extra field.
   const responseFormat =
     typeof provider.supportsJsonResponseFormat === 'function' &&
