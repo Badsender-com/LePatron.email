@@ -2,12 +2,18 @@
 
 Document de conception pour l'ajout de nouveaux rôles au système de rôles et permissions de LePatron.email. Rédigé à partir de la vision produit d'Olivier Fredon et d'un audit du code existant.
 
+**Mise à jour du 2026-10-06** : plusieurs chantiers voisins ont été livrés ou sont en revue sur `develop` depuis la rédaction de ce document, et en changent l'état de départ. La branche `feat/roles-permissions` les a rapatriés (voir « État de départ au 2026-10-06 » ci-dessous). En résumé :
+
+- **`super_admin` est désormais un rôle persisté**, multi-comptes ([#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est couverte par l'epic #1153 et ses PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)). Les sections 2, 3.1, 3.6, 7 et 8 qui décrivent le super admin comme « compte unique en variable d'environnement » sont corrigées ci-dessous.
+- **Un lien de partage public existe déjà**, mais ce n'est que l'aperçu en lecture seule du contrôle qualité v2 (lot 7, PR #1138) : pas de commentaire possible. [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (spectateur qui commente) doit s'appuyer sur ce socle (section 5).
+- La gestion des utilisateurs a été durcie (PR #1161) : un `company_admin` n'atteint que les comptes de sa propre company (`user-scope.js`).
+
 **Scope réduit le 2026-08-27** : le chantier RBAC initial couvrait tout en un seul cadrage (nouveaux rôles, `super_admin` en rôle DB multi-comptes, notion d'équipe, spectateur non loggué, audit log). Jugé trop "epic" et risqué pour un seul incrément, il est désormais découpé :
 
 - **Ce document/incrément** : ajout des rôles `company_admin_tech`, `reviewer`, `writer`. Issue GitHub [#1099](https://github.com/Badsender-com/LePatron.email/issues/1099).
-- Spectateur non loggué via lien de partage — différé, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (voir section 5).
+- Spectateur non loggué via lien de partage — différé, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (voir section 5) ; le socle « lien de partage » existe depuis le QC v2.
 - Team / notion d'équipe au sein d'une company — différé, issue [#1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
-- `super_admin` en rôle persistant multi-comptes — différé, issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101).
+- `super_admin` en rôle persistant multi-comptes — **livré ailleurs** (epic #1153, PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) ; l'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui reste (section 8).
 - Audit log des changements de rôle et réglages sensibles — différé, issue [#1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 - Gestion granulaire des droits par feature et action — différé, issue [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
 
@@ -34,7 +40,7 @@ L'audit du code existant (section 2) reste une référence factuelle valide pour
 
 - **Utilisateur (regular user)** : droits d'accès et d'actions limités à l'application. Évolution prévue : en tant que company admin, on doit pouvoir assigner les workspaces disponibles depuis le profil utilisateur au moment de sa création ou de sa modification.
 - **Administrateur de compte (group admin → company admin)** : mêmes droits qu'un regular user + accès complet à la company et à son administration. Évolution : devient "propriétaire" de la company et peut désigner de nouveaux rôles parmi les utilisateurs de sa company.
-- **Super administrateur (super admin)** : mêmes droits que company admin, applicables sur l'ensemble des comptes. Aujourd'hui un seul compte par environnement (prod/staging/dev), défini en variable d'environnement. Évolution envisagée (différée, [issue #1101](https://github.com/Badsender-com/LePatron.email/issues/1101)) : devenir un rôle à part entière dans l'application, avec plusieurs comptes individuels possibles. **Hors scope de cet incrément.**
+- **Super administrateur (super admin)** : mêmes droits que company admin, applicables sur l'ensemble des comptes. Rôle persisté depuis l'[ADR 0002](../adr/0002-super-admin-persisted-role.md) : plusieurs comptes individuels, toujours rattachés au groupe plateforme (`Group.isPlatform`), gérés depuis un écran dédié. Le compte défini en variable d'environnement reste le compte de bootstrap : il crée le premier super admin d'un nouvel environnement et n'est jamais listé, rétrogradé ni supprimé. **Hors scope de cet incrément** (livré par l'epic #1153).
 
 ### Note de vocabulaire
 
@@ -74,6 +80,29 @@ Règles de compatibilité actées :
 
 ---
 
+## État de départ au 2026-10-06
+
+La branche `feat/roles-permissions` a rapatrié toutes les PR ouvertes à cette date, pour travailler au plus près de l'état probable de la prochaine mise en production. Ce que cela change pour ce chantier :
+
+| Chantier rapatrié                           | PR                  | Effet sur les rôles                                                                                                                                                                                                 |
+| ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contrôle qualité v2, lots 1 à 7             | #1122 à #1138       | Nouveau panneau dans l'éditeur (contrôles, envoi de test, ignorer un résultat, le transformer en commentaire, lien de partage). **Aucune de ces actions n'est soumise aux rôles** `reviewer`/`writer` aujourd'hui.  |
+| Super admin persisté                        | #1157 à #1159       | `super_admin` entre dans l'enum `role`, `isAdmin` dérive du rôle, `superAdminPolicy` encadre chaque action de `user.controller.js`. Fusionné avec `userScope` (#1161) : les deux contrôles s'appliquent à la suite. |
+| Durcissement de la gestion des utilisateurs | #1161               | `user-scope.js` : un `company_admin` n'atteint que sa company.                                                                                                                                                      |
+| Génération de texte IA                      | #1145, #1170, #1171 | Nouvelle fonctionnalité IA par group (sujet, préheader) dans l'éditeur : à classer dans la matrice 3.2 (qui configure, qui utilise).                                                                                |
+| Refonte de la galerie                       | #1068               | Métadonnées d'image, filtres, contrôle de propriété. Écritures atomiques de `develop` conservées.                                                                                                                   |
+| Bloc composé, Head CSS                      | `develop`           | Outil « Compose » dans la barre d'outils du bloc (rangé avec la structure, donc masqué au `writer`), section Head CSS dans l'onglet Style (couverte par l'overlay lecture seule du style).                          |
+
+Écarts connus à traiter, non encore résolus :
+
+- les règles du QC sur le code HTML ne couvrent que le bloc « code HTML », pas le bloc composé ;
+- les routes `share-links` ne sont pas restreintes par rôle (section 5) ;
+- les droits d'un `reviewer`/`writer` sur chaque action du panneau QC sont à définir avec le produit, sur un tableau vide à remplir (section 3.2 : ne pas deviner).
+
+Deux incompatibilités d'intégration ont été corrigées en rapatriant : le moteur QC importait des constantes supprimées de `html-code-block/constants.js` (les règles sur le code HTML ne voyaient plus aucun bloc), et les tests de canevas n'avaient pas de `currentUser()`.
+
+---
+
 ## 2. Audit — vision vs code réel
 
 Basé sur l'exploration du code réel (`packages/server`, `packages/ui`, `packages/editor`) et la vérification manuelle des fichiers cités.
@@ -92,7 +121,7 @@ Basé sur l'exploration du code réel (`packages/server`, `packages/ui`, `packag
 
 ### Ce qui ne va pas (écarts avec la vision)
 
-- **`super_admin` n'est pas un rôle en base.** C'est un compte unique codé en dur (`config.admin.id/username/password`, `packages/server/node.config.js`, un `ObjectId` fixe `576b90a441ceadc005124896`), et `UserSchema.virtual('isAdmin')` (`packages/server/user/user.schema.js:156-158`) retourne **toujours `false`** pour un vrai utilisateur en base. "Super admin doit devenir un rôle à part entière avec plusieurs comptes individuels" est donc un changement structurel, pas une simple évolution d'UI.
+- **[Résolu le 2026-10-05, ADR 0002] `super_admin` n'était pas un rôle en base.** Constat d'origine, conservé pour l'historique : C'est un compte unique codé en dur (`config.admin.id/username/password`, `packages/server/node.config.js`, un `ObjectId` fixe `576b90a441ceadc005124896`), et `UserSchema.virtual('isAdmin')` (`packages/server/user/user.schema.js:156-158`) retourne **toujours `false`** pour un vrai utilisateur en base. "Super admin doit devenir un rôle à part entière avec plusieurs comptes individuels" est donc un changement structurel, pas une simple évolution d'UI.
   - **Important** : le compte super admin en variable d'environnement (`config.admin`) n'est **pas remplacé**. Il devient le mécanisme de **bootstrap/break-glass permanent** : dans chaque environnement, il sert à créer le tout premier compte `super_admin` réel en base (on se connecte avec les identifiants env var — qui passent déjà `GUARD_ADMIN` via l'objet figé `isAdmin: true`, indépendamment de toute donnée en base — puis on crée/gère les comptes super admin individuels depuis ce compte). Il reste actif indéfiniment comme filet de secours (nouvel environnement, perte d'accès aux comptes DB) ; il n'est **pas prévu de le retirer**.
 - Les intégrations/ESP sont déjà gérables par `company_admin` (`GUARD_GROUP_ADMIN` sur `packages/server/integration/integration.routes.js`), pas réservées au super admin comme décrit dans la note d'usage. **Décidé le 2026-09-03** : corrigé dans cet incrément — intégrations, AI features, feed mappings et tracking (company + par template) passent en accès exclusif `company_admin_tech` (voir section 3.2), `company_admin` perd l'accès à ces quatre domaines. Les profils ESP (FTP/CDN) restent super-admin-only, hors scope (inchangé).
 - La liste des rôles est dupliquée en dur dans deux composants Vue distincts (`packages/ui/components/users/form.vue:16-19` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`) — tout ajout de rôle oblige à modifier les deux, risque d'oubli.
@@ -101,15 +130,15 @@ Basé sur l'exploration du code réel (`packages/server`, `packages/ui`, `packag
 ### Oublié / absent (à créer de zéro)
 
 - **Aucun audit log / activity log** nulle part dans le code (aucun modèle/service `audit`, `activity-log`, `history`). Pas de traçabilité des changements de rôle ni des actions sensibles.
-- **Aucun lien de partage public/anonyme** (pas de route `/share` ou `/public`, pas de token, tout est derrière l'authentification) — à créer intégralement pour le rôle spectateur non loggué.
+- **Lien de partage public/anonyme : socle livré, spectateur toujours absent.** Le QC v2 (lot 7, PR #1138) a ajouté `packages/server/share-link/` (schéma `ShareLink`, jeton stocké haché et chiffré, expiration TTL, révocation), la page publique `/share/:token` et les routes `/api/mailings/:mailingId/share-links` (liste, création, révocation). C'est un **aperçu en lecture seule de la dernière version enregistrée**, sans commentaire ni identité de spectateur : le rôle « spectateur qui commente » reste à construire (section 5).
 - **Aucun test dédié** à la logique même de `GUARD_GROUP_ADMIN`/`GUARD_ADMIN` (contrairement à `GUARD_CAN_ACCESS_GROUP`, bien couvert dans `tests/server/group/group.guard.test.js`).
 - **Aucune notion d'équipe** (team) — à créer de zéro si le bonus est retenu, en s'inspirant du modèle `Workspace` existant.
-- **Aucun garde-fou anti-escalade** : rien n'empêche aujourd'hui de retirer le dernier company admin d'une company, ou (une fois super admin en base) de s'auto-attribuer ce rôle.
+- **Garde-fous anti-escalade : partiellement livrés.** Côté super admin (ADR 0002, `super-admin-policy.js`) : seul un super admin accorde ou retire le rôle, on ne peut ni se rétrograder ni se désactiver, et il reste au moins un super admin actif. Côté company : la PR #1161 borne la portée de la gestion des utilisateurs à la company de l'acteur (`user-scope.js`). **Reste ouvert** : rien n'empêche de retirer le dernier `company_admin` d'une company.
 
 ### Warnings
 
-- Le jour où `isAdmin` passera de "toujours `false`" à "dérivé du rôle", **tout le code qui teste `user.isAdmin`** change de comportement en cascade (guards, `verifyMailingAccess`, `checkIfUserIsAuthorizedToAccessIntegration`, `group.guard.js`...). C'est le point de bascule le plus sensible de tout le chantier — à ne merger qu'avec un test de non-régression dédié.
-- Le compte `config.admin` (env var) doit continuer à passer `GUARD_ADMIN` exactement comme aujourd'hui — c'est le mécanisme de bootstrap, il ne s'agit pas d'un chemin legacy à déprécier.
+- **[Fait, ADR 0002]** `isAdmin` est maintenant dérivé du rôle (`user.schema.js`). Avertissement d'origine, utile pour toute relecture : le jour où `isAdmin` passera de "toujours `false`" à "dérivé du rôle", **tout le code qui teste `user.isAdmin`** change de comportement en cascade (guards, `verifyMailingAccess`, `checkIfUserIsAuthorizedToAccessIntegration`, `group.guard.js`...). C'est le point de bascule le plus sensible de tout le chantier — à ne merger qu'avec un test de non-régression dédié.
+- Le compte `config.admin` (env var) continue de passer `GUARD_ADMIN` exactement comme avant — c'est le mécanisme de bootstrap, il ne s'agit pas d'un chemin legacy à déprécier.
 - **Mise à jour 2026-09-03** : `company_admin` perd bien l'accès aux intégrations/AI features/tracking/feed-mappings dans cet incrément (décision produit actée, voir section 3.2) — le paragraphe ci-dessus décrivait un choix provisoire depuis révisé.
 - `packages/server/account/auth.guard.js`'s `guard()` n'est pas un `roles.includes(user.role)` générique : trois branches câblées en dur sur `Roles.SUPER_ADMIN`/`GROUP_ADMIN`/`REGULAR_USER`, testant les virtuals `user.isAdmin`/`user.isGroupAdmin`. Ajouter `Roles.GROUP_ADMIN_TECH` dans le tableau d'un guard existant n'aurait **aucun effet** sans une 4ᵉ branche dédiée (+ un nouveau virtual `isGroupAdminTech` sur `UserSchema`, même pattern que `isGroupAdmin`, `user.schema.js:160-163`). Même lacune côté UI : `packages/ui/helpers/pages-acls.js` (`ACL_USER`/`ACL_GROUP_ADMIN`/`ACL_ADMIN`) a besoin du même traitement (nouvelle constante `ACL_GROUP_ADMIN_TECH` + flag `groupAdminTech` dans `getAuthorizations()`), plus un nouveau getter `IS_GROUP_ADMIN_TECH` dans `packages/ui/store/user.js` et une branche supplémentaire dans `packages/ui/middleware/authentication-check.js:18-23`. C'est le prérequis technique n°1 avant tout swap de guard sur les routes listées en 3.2/4.
 - Renommer seulement le vocabulaire visible (`group`→`company`) crée une période où le nom de code (`Group`, `isGroupAdmin`, `/groups/...`) et le nom produit (company) divergent — à garder en tête pour les devs et les agents IA qui liront le code.
@@ -134,9 +163,9 @@ Pas de rôles sur-mesure demandés, et pas de moteur générique de permissions 
     WRITER: 'writer',
   };
   ```
-  `SUPER_ADMIN` reste hors de l'enum `role` persisté (`user.schema.js:45-49`) — inchangé, voir [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101).
+  Depuis l'ADR 0002, `SUPER_ADMIN` **fait partie** de l'enum `role` persisté (`user.schema.js`) : l'enum compte donc 6 valeurs. `super_admin` n'est pas assignable depuis une company : on l'accorde depuis l'écran des super admins, sous les garde-fous de `super-admin-policy.js`.
 - `packages/server/account/auth.guard.js` (existant, étendu) — nouveau guard additif `GUARD_GROUP_ADMIN_OR_TECH = guard([Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH])`, sans toucher `GUARD_GROUP_ADMIN`/`GUARD_ADMIN`/`GUARD_USER` existants (zéro régression sur les routes déjà en place).
-- `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 valeurs de rôle (les 5 assignables + `super_admin` non exposé dans le picker) avec labels i18n, remplace les deux listes dupliquées de `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`.
+- `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 valeurs de rôle (les 5 assignables + `super_admin`, proposé par le sélecteur uniquement sur demande via `includeSuperAdmin` ou quand l'utilisateur l'est déjà) avec labels i18n ; `packages/ui/helpers/constants/roles.js` (objet `Roles`, repris du chantier super admin) en porte les mêmes valeurs, remplace les deux listes dupliquées de `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`.
 
 ### 3.2 `company_admin` vs `company_admin_tech` : matrice de droits par feature
 
@@ -176,7 +205,7 @@ Décisions actées le 2026-09-03 :
 - `company_admin_tech` exclusif, **retiré à `company_admin`** : Intégrations (11), AI Features (12), Tracking company (13), Tracking par template (14), Feed mappings (15). Profils ESP (9) et Export options (10) restent `super_admin`-only comme aujourd'hui — **hors scope de cet incrément**, `company_admin_tech` n'y a pas accès non plus (contrairement à une version antérieure de cette liste qui les incluait par erreur).
 - Partagé `company_admin` + `company_admin_tech` : Variables personnalisées (8) — écriture/suppression seulement ; la lecture est déjà ouverte à tout utilisateur ayant accès au group (`GUARD_CAN_ACCESS_GROUP`, inchangé).
 - `super_admin` exclusif, ni `company_admin` ni `company_admin_tech` : Templates admin (17), Company SAML (20), AI Skills Hub (21), AI Playground (22), Annuaire des companies (23) — déjà le cas aujourd'hui, aucun changement.
-- Garde-fou "impossible de retirer le dernier `company_admin` d'une company" — **différé**, comme l'anti-escalade `super_admin` (voir [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101)). Le risque augmente avec l'élargissement du picker à 5 rôles, mais reste hors scope de #1099 par décision produit.
+- Garde-fou "impossible de retirer le dernier `company_admin` d'une company" — **différé**, alors que l'anti-escalade `super_admin` est livrée (ADR 0002). Le risque augmente avec l'élargissement du picker à 5 rôles, mais reste hors scope de #1099 par décision produit.
 - Encore ouvert, indépendant de #1099 : CRM Intelligence dashboards (16), Mailings rapport admin (18) — aucune route touchée par cet incrément, à trancher quand ces features seront concernées par un futur chantier de permissions.
 
 **Prérequis technique avant tout swap de guard** : `packages/server/account/auth.guard.js`'s `guard()` n'est pas un `roles.includes(user.role)` générique (voir warning en section 2) — il faut d'abord lui ajouter une 4ᵉ branche pour `Roles.GROUP_ADMIN_TECH` (+ le virtual `isGroupAdminTech` sur `UserSchema`, + l'équivalent côté `pages-acls.js`/`store/user.js`/`authentication-check.js`) avant de pouvoir écrire `GUARD_GROUP_ADMIN_TECH`/`GUARD_GROUP_ADMIN_OR_TECH`. Une fois ce socle en place, la mise en œuvre par route suit un mécanisme uniforme :
@@ -253,7 +282,7 @@ Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Ass
 | Commentaire — créer/répondre/résoudre                  | Full (siens) | Full     | Full     | Full               | Full (aussi autrui, comme aujourd'hui) |
 | Commentaire — décision d'approbation (3.4)             | —            | —        | Full     | —                  | Full                                   |
 
-`super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (toujours le compte env var, accès complet partout). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
+`super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (accès complet partout ; depuis l'ADR 0002, ce sont des comptes persistés plutôt que le seul compte env var). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
 
 ---
 
@@ -261,7 +290,7 @@ Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Ass
 
 ### Incrément unique — Nouveaux rôles (#1099)
 
-**Statut au 2026-09-03 : implémenté et testé manuellement en local** (roles/guards/ACL, picker de rôles, restrictions listing/dossiers/canvas, décision d'approbation). Reste à faire avant de considérer l'incrément terminé : tests automatisés sur les restrictions UI (aucune infra de test de composants Vue/Knockout dans ce repo aujourd'hui — décision à prendre séparément), et une passe de QA plus large (autres navigateurs,autres tailles d'écran, autres mailings/blocks que ceux testés).
+**Statut au 2026-09-03 (inchangé au 2026-10-06, rebasé sur l'état de `develop` décrit plus haut) : implémenté et testé manuellement en local** (roles/guards/ACL, picker de rôles, restrictions listing/dossiers/canvas, décision d'approbation). Reste à faire avant de considérer l'incrément terminé : tests automatisés sur les restrictions UI (aucune infra de test de composants Vue/Knockout dans ce repo aujourd'hui — décision à prendre séparément), et une passe de QA plus large (autres navigateurs,autres tailles d'écran, autres mailings/blocks que ceux testés).
 
 **Livrable** : `company_admin_tech`, `reviewer`, `writer` existent en tant que rôles assignables ; `company_admin_tech` opère réellement sur les réglages techniques ; `reviewer`/`writer` ont une expérience builder restreinte côté UI.
 
@@ -286,9 +315,17 @@ Migration de données : aucune migration destructive — l'enum `role` ne fait q
 
 ## 5. Spectateur non loggué — différé
 
-Le chantier du spectateur non loggué (lien de partage : schéma `ShareLink`, service/controller/routes/guard dédiés, branchement additif sur `comment.service.js`/`comment.controller.js`, écran de gestion des liens) est sorti de cet incrément et traité dans [l'issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), qui contient le détail de conception complet (schéma, branchement sur `verifyMailingAccess`, révocation/expiration).
+Le chantier du spectateur non loggué (lien de partage donnant le droit de **commenter**) est sorti de cet incrément et traité dans [l'issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
-**Pourquoi une issue séparée** : c'est un sous-système quasi autonome — aucun fichier partagé avec l'infra des 3 nouveaux rôles (`roles.js`, guards, booléens éditeur, `mailings-table.vue`). Le seul point de couplage est une dépendance légère sur le champ `decision` des commentaires (introduit par cet incrément, section 3.4) : la restriction "le spectateur ne peut pas poser de décision" ne peut être activée qu'une fois ce champ mergé — un ordre de séquencement, pas un vrai couplage technique.
+**Ce qui existe déjà (QC v2, lot 7, PR #1138)** : un lien d'aperçu public, en lecture seule.
+
+- `packages/server/share-link/` : schéma `ShareLink` (jeton retrouvé par son haché SHA-256, conservé chiffré pour pouvoir être recopié, expiration avec suppression TTL 30 jours après, `_mailing`, `_company`, `_user`, `lang`), service, contrôleur d'édition et contrôleur de la page publique.
+- Routes d'édition : `GET/POST /api/mailings/:mailingId/share-links`, `DELETE .../:linkId`, toutes sous `GUARD_USER`. Page publique : `/share/:token`, sans compte.
+- Le visiteur voit la **dernière version enregistrée** du mail. Il ne commente pas, n'a pas d'identité, n'appelle aucune route de commentaire.
+
+**Ce que #1104 ajoute par-dessus** : l'identité d'un spectateur (nom ou email déclaré), le droit de poser des commentaires (créer/répondre uniquement, jamais résoudre, supprimer ni poser une `decision`, voir section 3.4), le branchement sur `comment.service.js`/`comment.controller.js` et un écran de gestion. Le modèle `ShareLink` et son cycle de vie (création, expiration, révocation) sont à **réutiliser**, pas à recréer ; la restriction « pas de décision » se branche sur le champ `decision` de la section 3.4.
+
+**Point ouvert sur les rôles** : les routes `share-links` n'exigent que `GUARD_USER` (+ `editableMailing`). Un `reviewer` ou un `writer` peut donc créer et révoquer un lien public. À trancher avec le produit (voir la matrice vide à remplir plutôt qu'une supposition) ; aucune restriction n'est posée aujourd'hui.
 
 Un audit log générique des accès/création/révocation de lien reste différé dans [l'issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102), indépendamment de #1104.
 
@@ -315,7 +352,7 @@ Dans `tests/server/security/`, même naming que l'existant (`exploit-f2-idor-cro
 
 - `exploit-rbac-2-tech-admin-no-user-access.test.js` : un `company_admin_tech` ne peut pas lister/créer/modifier des utilisateurs ou des workspaces via l'API, même en devinant les routes.
 
-Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier admin) sont différés avec [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101), puisque `super_admin` reste hors de l'enum persisté dans cet incrément. Le test d'isolation du token de partage (`exploit-rbac-1-share-token-scope.test.js`) est différé avec [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
+Les tests d'escalade liés à `super_admin` (auto-promotion, retrait du dernier admin) sont couverts par l'epic #1153 (ADR 0002 et ses tests d'acceptation, `tests/server/account/auth.guard.super-admin.test.js`) : ils ne sont plus à écrire ici. Le test d'isolation du token de partage (`exploit-rbac-1-share-token-scope.test.js`) est différé avec [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104).
 
 ### 7.3 Non-régression fonctionnelle
 
@@ -343,13 +380,13 @@ Une checklist QA manuelle formalisée (`docs/rbac-testing-checklist.md`, sur le 
 
 Cinq chantiers sont explicitement sortis de cet incrément et suivis dans des issues dédiées :
 
-- **Spectateur non loggué via lien de partage** — [issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), voir section 5.
+- **Spectateur non loggué qui commente via lien de partage** — [issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), voir section 5 (le lien d'aperçu en lecture seule existe déjà).
 - **Team / notion d'équipe au sein d'une company** — [issue #1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
-- **`super_admin` en rôle persistant multi-comptes** (migration DB, flip d'`isAdmin`, garde-fous anti-escalade) — [issue #1101](https://github.com/Badsender-com/LePatron.email/issues/1101). Le compte super admin en variable d'environnement reste le mécanisme de bootstrap/break-glass permanent, il n'est pas remplacé par des comptes DB dans cet incrément.
+- **`super_admin` en rôle persistant multi-comptes** — **livré par l'epic #1153** (PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) : flip d'`isAdmin`, garde-fous, écran de gestion. Le compte en variable d'environnement reste le bootstrap permanent. L'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui n'a pas été repris.
 - **Audit log** des changements de rôle et réglages sensibles — [issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 - **Gestion granulaire des droits par feature et action** (moteur de permissions générique, enforcement serveur fin pour `writer`) — [issue #1103](https://github.com/Badsender-com/LePatron.email/issues/1103), avec un premier inventaire des features administrables actuelles.
 
 Autres éléments hors périmètre, indépendants du découpage ci-dessus :
 
 - **Renommage des identifiants de code** `group`→`company` (modèle Mongoose `Group`, fichiers `group.*.js`, guards `isGroupAdmin`/`GUARD_GROUP_ADMIN`, ACL `ACL_GROUP_ADMIN`, routes `/groups/...`) : seul le vocabulaire visible (libellés UI, i18n `fr.js`/`en.js`, documentation) est renommé dans l'immédiat. Le renommage du code est un incrément technique séparé, sans urgence fonctionnelle.
-- **Garde-fou "dernier `company_admin`"** : rien n'empêche aujourd'hui de retirer le dernier company admin d'une company (section 2). Décision produit actée le 2026-09-03 : différé, comme l'anti-escalade `super_admin` ([#1101](https://github.com/Badsender-com/LePatron.email/issues/1101)) — voir section 3.2.
+- **Garde-fou "dernier `company_admin`"** : rien n'empêche aujourd'hui de retirer le dernier company admin d'une company (section 2). Décision produit actée le 2026-09-03 : différé, alors que l'anti-escalade `super_admin` a été livrée avec l'ADR 0002 — voir section 3.2.
