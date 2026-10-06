@@ -68,13 +68,23 @@ const TextGenerationModalComponent = Vue.component('TextGenerationModal', {
     close() {
       this.$refs.modalRef.closeModal();
     },
+    // The text on screen, sample values of the template left out.
+    emailCopy() {
+      const defs = ko.toJS(this.vm.blockDefs) || [];
+      const sampleFor = (blockType, field) => {
+        const def = defs.find((d) => d.type === blockType);
+        return def && typeof def[field] === 'string' ? def[field] : undefined;
+      };
+      const canvas = document.getElementById('main-wysiwyg-area') || document;
+      return extractEmailCopy(canvas, { sampleFor });
+    },
     currentSubject() {
       return typeof this.vm.getEmailSubject === 'function'
         ? this.vm.getEmailSubject()
         : undefined;
     },
     async requestSubjects() {
-      const content = extractEmailCopy(ko.toJS(this.vm.content()));
+      const content = this.emailCopy();
       if (!content.length) {
         this.error = this.t('text-generation-empty-email');
         return;
