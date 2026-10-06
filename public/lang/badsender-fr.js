@@ -440,6 +440,18 @@ module.exports = {
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
 
   // text generation (epic #1163)
+  'text-generation-applied-preheader': 'Préheader :',
+  'text-generation-applied-subject': 'Objet :',
+  'text-generation-long': 'long : la fin sera rarement lue',
+  'text-generation-short':
+    "court : certaines messageries le complètent avec le début de l'email",
+  'text-generation-copy-hint-preheader':
+    "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-back': 'Retour',
+  'text-generation-picked-subject': 'Objet choisi : « __subject__ »',
+  'text-generation-preheaders-title': 'Choisissez un préheader',
+  'text-generation-to-preheaders': 'Proposer des préheaders',
+  'text-generation-apply-subject-only': "Appliquer l'objet seul",
   'text-generation-open': 'Générer objet et préheader',
   'text-generation-title': 'Objet et préheader',
   'text-generation-intro':
@@ -455,12 +467,12 @@ module.exports = {
     'Propositions écartées car elles ne respectaient pas les règles de rédaction : __count__.',
   'text-generation-none':
     "Aucune proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
-  'text-generation-apply': "Appliquer l'objet",
+  'text-generation-apply': 'Appliquer',
   'text-generation-copy': 'Copier',
   'text-generation-copied': 'Copié',
   'text-generation-copy-hint':
     "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
-  'text-generation-applied': "Objet appliqué. Il sera enregistré avec l'email.",
+  'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
   'text-generation-undo': 'Annuler',
   'text-generation-close': 'Fermer',
   'text-generation-cancel': 'Annuler',
