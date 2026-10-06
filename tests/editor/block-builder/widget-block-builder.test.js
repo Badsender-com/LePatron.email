@@ -22,11 +22,15 @@ const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsende
 // The jQuery UI button binding is not what is under test.
 ko.bindingHandlers.button = { init() {} };
 
-function renderPanel(metadata) {
+function renderPanel(
+  metadata,
+  currentUser = () => ({ canEditStructure: true })
+) {
   const plugin = widgetBlockBuilder();
   const vm = {
     metadata,
     t: (key) => key,
+    currentUser,
     builderHtml: ko.observable('<p>composed</p>'),
     builderState: ko.observable('{"v":1}'),
   };
@@ -50,6 +54,28 @@ function renderPanel(metadata) {
 
 afterEach(() => {
   document.body.innerHTML = '';
+});
+
+describe('block builder widget, by role', () => {
+  // A writer and a reviewer edit no structure: composing rewrites the block's
+  // markup. The flag stays on, so the "disabled" sentence (about the template)
+  // must not appear in their place.
+  it.each([
+    ['not loaded yet', () => null],
+    ['without structure rights', () => ({ canEditStructure: false })],
+  ])('offers nothing to a user %s', (_label, currentUser) => {
+    const { vm, toggle, button, message } = renderPanel(
+      { blockBuilderEnabled: true },
+      currentUser
+    );
+
+    expect(vm.canComposeBlocks()).toBe(false);
+    expect(button.style.display).toBe('none');
+    expect(message.style.display).toBe('none');
+
+    vm.openBlockBuilder('builderHtml', vm);
+    expect(toggle).not.toHaveBeenCalled();
+  });
 });
 
 describe('block builder widget', () => {
@@ -114,6 +140,7 @@ describe('block builder widget', () => {
     const vm = {
       metadata: { blockBuilderEnabled: true },
       t: (key) => key,
+      currentUser: () => ({ canEditStructure: true }),
       builderHtml: ko.observable('<p>composed</p>'),
     };
     plugin.viewModel(vm);

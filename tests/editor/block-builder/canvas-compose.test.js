@@ -71,6 +71,20 @@ describe('composing a block from the canvas', () => {
   });
 });
 
+describe('composing a block without structure rights', () => {
+  it.each(['writer', 'reviewer'])('is refused to a %s', () => {
+    const vm = createViewModel({ blockBuilderEnabled: true });
+    vm.currentUser = () => ({ canEditStructure: false, canEditContent: true });
+    const block = composedBlock();
+
+    expect(vm.canComposeBlock(block)).toBe(false);
+    vm.composeBlock(block);
+    vm.openBlockFromCanvas(block, { target: document.body });
+
+    expect(vm.toggleBlockBuilderModal).not.toHaveBeenCalled();
+  });
+});
+
 describe('double-clicking a block in the canvas', () => {
   it('opens the builder on a composed block', () => {
     const block = composedBlock();
