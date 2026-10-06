@@ -8,7 +8,7 @@ const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../provider-error.js');
 const { callWithParamAdaptation } = require('./adaptive-chat-call.js');
-const { quirkKey } = require('./param-quirks.js');
+const { quirkKey, applyQuirks } = require('./param-quirks.js');
 
 // A whole mailing translates in batches of this, and reasoning models take
 // their time: generous, but no longer unbounded while the body is read.
@@ -25,6 +25,11 @@ const CHAT_MAX_BYTES = 10 * 1024 * 1024;
  * overriding the hooks these call.
  */
 const chatCallMethods = {
+  /** Overridden by a dialect that teaches its own adaptations. */
+  _applyParamQuirks(body, quirks) {
+    return applyQuirks(body, quirks);
+  },
+
   /**
    * One attempt. Deliberately free of interpretation: it performs the request
    * and reports what came back, so the adaptation loop above owns the decision
@@ -99,6 +104,7 @@ const chatCallMethods = {
         body: requestBody,
         detect: (status, parsedError, message) =>
           this._detectParamQuirk(status, parsedError, message),
+        apply: (body, quirks) => this._applyParamQuirks(body, quirks),
         key: quirkKey({
           providerType: providerName,
           endpoint: this._getEndpointUrl(model),

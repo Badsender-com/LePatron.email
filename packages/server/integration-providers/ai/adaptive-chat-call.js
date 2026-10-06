@@ -31,6 +31,8 @@ const MIN_ATTEMPT_TIMEOUT_MS = 1000;
  *   {ok: true, data} | {ok: false, status, parsedError, message}
  * @param {Object} params.body
  * @param {Function} params.detect (status, parsedError, message) => quirk|null
+ * @param {Function} [params.apply] (body, quirks) => body; a dialect whose
+ *   adaptations are more than a parameter dropped or renamed supplies its own
  * @param {string} params.key cache key for this model
  * @param {number} params.deadlineAt absolute deadline for the whole sequence
  * @param {string} params.label provider/model, for the log line
@@ -43,6 +45,7 @@ async function callWithParamAdaptation({
   performAttempt,
   body,
   detect,
+  apply = applyQuirks,
   key,
   deadlineAt,
   label,
@@ -50,7 +53,7 @@ async function callWithParamAdaptation({
   // Start from what is already known about this model, so the refusal is not
   // paid again on every process that has seen it.
   const known = quirksCache.list(key);
-  let currentBody = known.length ? applyQuirks(body, known) : body;
+  let currentBody = known.length ? apply(body, known) : body;
 
   const adapted = new Set(known.map((quirk) => quirk.param));
   let lastFailure = null;
@@ -73,7 +76,7 @@ async function callWithParamAdaptation({
 
     adapted.add(quirk.param);
     quirksCache.add(key, quirk);
-    currentBody = applyQuirks(currentBody, [quirk]);
+    currentBody = apply(currentBody, [quirk]);
 
     // Warn, not log: this is the only trace. Once memorised, the adaptation is
     // applied silently, so the line comes back once per worker and per TTL —

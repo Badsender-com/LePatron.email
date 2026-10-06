@@ -12,6 +12,8 @@ jest.mock('../../../../packages/server/utils/logger.js', () => ({
 }));
 
 const AnthropicProvider = require('../../../../packages/server/integration-providers/ai/anthropic-provider');
+const quirksCache = require('../../../../packages/server/integration-providers/ai/param-quirks.cache.js');
+const logger = require('../../../../packages/server/utils/logger.js');
 const {
   PROVIDER_ERROR_CODES: CODES,
 } = require('../../../../packages/server/integration-providers/provider-error.js');
@@ -38,8 +40,8 @@ function messageResponse(overrides = {}) {
   };
 }
 
-function sentBody() {
-  return JSON.parse(mockFetch.mock.calls[0][1].body);
+function sentBody(call = 0) {
+  return JSON.parse(mockFetch.mock.calls[call][1].body);
 }
 function sentHeaders() {
   return mockFetch.mock.calls[0][1].headers;
@@ -50,6 +52,9 @@ describe('AnthropicProvider', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Learned quirks are per process: one test's refusal must not shape the
+    // next test's request.
+    quirksCache.clear();
     provider = new AnthropicProvider({
       provider: 'anthropic',
       apiKey: 'sk-ant-test',
@@ -146,60 +151,203 @@ describe('AnthropicProvider', () => {
     // There is no response_format on this endpoint, and an instruction alone
     // does not hold: a skill whose prompt asked for "du texte simple" got
     // prose back and failed at OUTPUT_PARSE. Prefilling an assistant turn was
-    // tried and is refused by generation 5, so a forced tool call is what
-    // holds the format on both generations.
-    describe('forced JSON', () => {
-      it('forces a tool call when JSON is asked for', async () => {
-        mockFetch.mockResolvedValue(reply(messageResponse()));
+    // tried and is refused by generation 5.
+    describe('JSON mode', () => {
+      // The shape of the text generation output: zod emits minLength,
+      // minItems and maxItems, which structured outputs refuses.
+      const proposalsSchema = {
+        type: 'object',
+        properties: {
+          proposals: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                text: { type: 'string', minLength: 1 },
+                angle: { type: 'string', minLength: 1 },
+              },
+              required: ['text', 'angle'],
+              additionalProperties: false,
+            },
+            minItems: 3,
+            maxItems: 3,
+          },
+        },
+        required: ['proposals'],
+        additionalProperties: false,
+      };
+      const proposals = {
+        proposals: [
+          { text: 'Un', angle: 'a' },
+          { text: 'Deux', angle: 'b' },
+          { text: 'Trois', angle: 'c' },
+        ],
+      };
 
-        await provider.chatComplete({
-          model: 'claude-x',
-          messages: [{ role: 'user', content: 'x' }],
-          responseFormat: { type: 'json_object' },
-        });
-
-        expect(sentBody().tool_choice).toEqual({
-          type: 'tool',
-          name: 'emit_json',
-        });
-        // Open when the caller sends no schema.
-        expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
-      });
-
-      it('passes the output schema to the tool', async () => {
-        const schema = {
-          type: 'object',
-          properties: { text: { type: 'string' } },
-          required: ['text'],
-        };
-        mockFetch.mockResolvedValue(reply(messageResponse()));
-
-        await provider.chatComplete({
-          model: 'claude-x',
-          messages: [{ role: 'user', content: 'x' }],
+      function askJson(schema, model = 'claude-x') {
+        return provider.chatComplete({
+          model,
+          messages: [
+            { role: 'system', content: 'be terse' },
+            { role: 'user', content: 'x' },
+          ],
           responseFormat: { type: 'json_object', schema },
         });
+      }
 
-        expect(sentBody().tools[0].input_schema).toEqual(schema);
-      });
+      function toolAnswer(input) {
+        return reply(
+          messageResponse({
+            content: [{ type: 'tool_use', id: 't1', name: 'emit_json', input }],
+            stop_reason: 'tool_use',
+          })
+        );
+      }
 
-      // Anthropic answers 400 to any input_schema that is not an object.
-      it('falls back to an open object for a schema of another shape', async () => {
-        mockFetch.mockResolvedValue(reply(messageResponse()));
+      function textAnswer(text) {
+        return reply(messageResponse({ content: [{ type: 'text', text }] }));
+      }
 
-        await provider.chatComplete({
-          model: 'claude-x',
-          messages: [{ role: 'user', content: 'x' }],
-          responseFormat: {
-            type: 'json_object',
-            schema: { type: 'array', items: { type: 'string' } },
+      function refused(message) {
+        return reply(
+          {
+            type: 'error',
+            error: { type: 'invalid_request_error', message },
           },
+          400
+        );
+      }
+
+      const FORCED_TOOL_REFUSAL =
+        'tool_choice: type "tool" and "any" are not supported for this model.';
+
+      describe('structured outputs, when a schema is supplied', () => {
+        // Decoded against the schema, the answer cannot come back wrapped in
+        // an invented key, as claude-opus-5 did under the forced tool.
+        it('asks for a JSON schema format rather than a tool call', async () => {
+          mockFetch.mockResolvedValue(textAnswer(JSON.stringify(proposals)));
+
+          await askJson(proposalsSchema);
+
+          expect(sentBody().output_config.format.type).toBe('json_schema');
+          expect(sentBody().tools).toBeUndefined();
+          expect(sentBody().tool_choice).toBeUndefined();
         });
 
-        expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
+        // Sent as is, they are a 400. The zod schema still checks them once
+        // the answer is in.
+        it('strips the constraints structured outputs refuses', async () => {
+          mockFetch.mockResolvedValue(textAnswer(JSON.stringify(proposals)));
+
+          await askJson(proposalsSchema);
+
+          const { schema } = sentBody().output_config.format;
+          expect(schema.properties.proposals).toEqual({
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                text: { type: 'string' },
+                angle: { type: 'string' },
+              },
+              required: ['text', 'angle'],
+              additionalProperties: false,
+            },
+          });
+        });
+
+        it('closes every object, as structured outputs requires', async () => {
+          mockFetch.mockResolvedValue(textAnswer('{"text":"x"}'));
+
+          await askJson({
+            type: 'object',
+            properties: { text: { type: 'string' } },
+            required: ['text'],
+          });
+
+          expect(
+            sentBody().output_config.format.schema.additionalProperties
+          ).toBe(false);
+        });
+
+        // Walked by structure, not by key name.
+        it('keeps a property that happens to be named like a keyword', async () => {
+          mockFetch.mockResolvedValue(textAnswer('{"minLength":"x"}'));
+
+          await askJson({
+            type: 'object',
+            properties: { minLength: { type: 'string' } },
+            required: ['minLength'],
+          });
+
+          expect(
+            sentBody().output_config.format.schema.properties.minLength
+          ).toEqual({ type: 'string' });
+        });
+
+        // An open map has no equivalent there: closing it would forbid every
+        // key. The tool takes it as is.
+        it('uses the tool for a schema it cannot express', async () => {
+          const schema = {
+            type: 'object',
+            properties: {
+              labels: {
+                type: 'object',
+                additionalProperties: { type: 'string' },
+              },
+            },
+          };
+          mockFetch.mockResolvedValue(toolAnswer({ labels: { a: 'b' } }));
+
+          await askJson(schema);
+
+          expect(sentBody().output_config).toBeUndefined();
+          expect(sentBody().tools[0].input_schema).toEqual(schema);
+        });
+
+        it('reads the answer from the text block', async () => {
+          mockFetch.mockResolvedValue(textAnswer(JSON.stringify(proposals)));
+
+          const result = await askJson(proposalsSchema);
+
+          expect(JSON.parse(result.content)).toEqual(proposals);
+        });
       });
 
-      it('declares no tool when no JSON is asked for', async () => {
+      describe('forced tool, when no schema is usable', () => {
+        it('forces the tool with an open object when no schema is sent', async () => {
+          mockFetch.mockResolvedValue(toolAnswer({ text: 'Bonjour' }));
+
+          await askJson(undefined);
+
+          expect(sentBody().tool_choice).toEqual({
+            type: 'tool',
+            name: 'emit_json',
+          });
+          expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
+        });
+
+        // Anthropic answers 400 to any input_schema that is not an object.
+        it('falls back to an open object for a schema of another shape', async () => {
+          mockFetch.mockResolvedValue(toolAnswer({ text: 'Bonjour' }));
+
+          await askJson({ type: 'array', items: { type: 'string' } });
+
+          expect(sentBody().output_config).toBeUndefined();
+          expect(sentBody().tools[0].input_schema).toEqual({ type: 'object' });
+        });
+
+        // The tool input arrives parsed; callers expect a JSON string.
+        it('re-serialises the tool input as the content', async () => {
+          mockFetch.mockResolvedValue(toolAnswer({ text: 'Bonjour' }));
+
+          const result = await askJson(undefined);
+
+          expect(JSON.parse(result.content)).toEqual({ text: 'Bonjour' });
+        });
+      });
+
+      it('declares no tool and no format when no JSON is asked for', async () => {
         mockFetch.mockResolvedValue(reply(messageResponse()));
 
         await provider.chatComplete({
@@ -209,32 +357,7 @@ describe('AnthropicProvider', () => {
 
         expect(sentBody().tools).toBeUndefined();
         expect(sentBody().tool_choice).toBeUndefined();
-      });
-
-      // The tool input arrives parsed; callers expect a JSON string.
-      it('re-serialises the tool input as the content', async () => {
-        mockFetch.mockResolvedValue(
-          reply(
-            messageResponse({
-              content: [
-                {
-                  type: 'tool_use',
-                  id: 't1',
-                  name: 'emit_json',
-                  input: { text: 'Bonjour' },
-                },
-              ],
-            })
-          )
-        );
-
-        const result = await provider.chatComplete({
-          model: 'claude-x',
-          messages: [{ role: 'user', content: 'x' }],
-          responseFormat: { type: 'json_object' },
-        });
-
-        expect(JSON.parse(result.content)).toEqual({ text: 'Bonjour' });
+        expect(sentBody().output_config).toBeUndefined();
       });
 
       it('still reads a plain text answer when no tool was used', async () => {
@@ -246,6 +369,179 @@ describe('AnthropicProvider', () => {
         });
 
         expect(result.content).toBe('bonjour');
+      });
+
+      // Each fallback is learned from the refusal and remembered, like the
+      // other providers' parameter quirks.
+      describe('fallbacks', () => {
+        // 2026-10-06 golden runs: claude-opus-5-5 refused every skill call.
+        it('lets the model choose the tool when a forced choice is refused', async () => {
+          mockFetch
+            .mockResolvedValueOnce(refused(FORCED_TOOL_REFUSAL))
+            .mockResolvedValueOnce(toolAnswer({ text: 'Bonjour' }));
+
+          const result = await askJson(undefined, 'claude-opus-5-5');
+
+          expect(mockFetch).toHaveBeenCalledTimes(2);
+          expect(sentBody(1).tool_choice).toEqual({ type: 'auto' });
+          expect(sentBody(1).tools[0].name).toBe('emit_json');
+          // Nothing forces the call any more: the prompt has to ask for it.
+          expect(sentBody(1).system).toMatch(/^be terse\n\n.*emit_json/);
+          expect(JSON.parse(result.content)).toEqual({ text: 'Bonjour' });
+        });
+
+        // `auto` guarantees no call: an answer in prose must still come
+        // through, for the caller's parser to read.
+        it('reads a text answer when the model skipped the tool', async () => {
+          mockFetch
+            .mockResolvedValueOnce(refused(FORCED_TOOL_REFUSAL))
+            .mockResolvedValueOnce(textAnswer('{"text":"Bonjour"}'));
+
+          const result = await askJson(undefined, 'claude-opus-5-5');
+
+          expect(JSON.parse(result.content)).toEqual({ text: 'Bonjour' });
+        });
+
+        it('pays the refusal once per model, not once per call', async () => {
+          mockFetch
+            .mockResolvedValueOnce(refused(FORCED_TOOL_REFUSAL))
+            .mockResolvedValue(toolAnswer({ text: 'Bonjour' }));
+
+          await askJson(undefined, 'claude-opus-5-5');
+          await askJson(undefined, 'claude-opus-5-5');
+
+          expect(mockFetch).toHaveBeenCalledTimes(3);
+          expect(sentBody(2).tool_choice).toEqual({ type: 'auto' });
+        });
+
+        // An older model, or a gateway that does not know the field.
+        it('moves to the forced tool when output_config is refused', async () => {
+          mockFetch
+            .mockResolvedValueOnce(
+              refused('output_config: Extra inputs are not permitted')
+            )
+            .mockResolvedValueOnce(toolAnswer(proposals));
+
+          const result = await askJson(proposalsSchema, 'claude-legacy');
+
+          expect(mockFetch).toHaveBeenCalledTimes(2);
+          expect(sentBody(1).output_config).toBeUndefined();
+          expect(sentBody(1).tool_choice).toEqual({
+            type: 'tool',
+            name: 'emit_json',
+          });
+          expect(sentBody(1).tools[0].input_schema.properties).toHaveProperty(
+            'proposals'
+          );
+          expect(JSON.parse(result.content)).toEqual(proposals);
+        });
+
+        it('goes down both steps for a model refusing both routes', async () => {
+          mockFetch
+            .mockResolvedValueOnce(
+              refused('output_config.format: not supported for this model')
+            )
+            .mockResolvedValueOnce(refused(FORCED_TOOL_REFUSAL))
+            .mockResolvedValueOnce(toolAnswer(proposals));
+
+          await askJson(proposalsSchema, 'claude-both');
+          await askJson(proposalsSchema, 'claude-both');
+
+          expect(mockFetch).toHaveBeenCalledTimes(4);
+          expect(sentBody(2).tool_choice).toEqual({ type: 'auto' });
+          // Remembered in the order learned: the next call starts at the end.
+          expect(sentBody(3).output_config).toBeUndefined();
+          expect(sentBody(3).tool_choice).toEqual({ type: 'auto' });
+        });
+
+        // A genuine misconfiguration must surface, not be retried into
+        // something else.
+        it('raises any other refusal untouched', async () => {
+          mockFetch.mockResolvedValue(refused('model: claude-nope not found'));
+
+          await expect(askJson(proposalsSchema)).rejects.toThrow(
+            /claude-nope not found/
+          );
+          expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      // 2026-10-06 golden runs: claude-opus-5 wrapped the tool input in an
+      // invented key in 12 calls out of 21, a different one each time, and
+      // every one failed the strict zod schema.
+      describe('invented envelope', () => {
+        const legacy = 'claude-legacy';
+
+        async function answerThroughTool(input) {
+          mockFetch
+            .mockResolvedValueOnce(refused('output_config: not supported'))
+            .mockResolvedValueOnce(toolAnswer(input));
+          return askJson(proposalsSchema, legacy);
+        }
+
+        it.each(['paramètre', 'angle', 'paramètre_manquant', 'parameters'])(
+          'unwraps an answer nested under "%s"',
+          async (key) => {
+            const result = await answerThroughTool({ [key]: proposals });
+
+            expect(JSON.parse(result.content)).toEqual(proposals);
+            expect(logger.warn).toHaveBeenCalledWith(
+              expect.stringContaining(`"${key}"`)
+            );
+          }
+        );
+
+        it('unwraps an envelope holding the JSON as text', async () => {
+          const result = await answerThroughTool({
+            paramètre: JSON.stringify(proposals),
+          });
+
+          expect(JSON.parse(result.content)).toEqual(proposals);
+        });
+
+        it('unwraps a text answer too', async () => {
+          mockFetch.mockResolvedValue(
+            textAnswer(JSON.stringify({ réponse: proposals }))
+          );
+
+          const result = await askJson(proposalsSchema);
+
+          expect(JSON.parse(result.content)).toEqual(proposals);
+        });
+
+        // Anything else is the zod schema's to judge, not ours to reshape.
+        it.each([
+          ['a key the schema knows', { proposals: { proposals: [] } }],
+          ['more than one key', { a: proposals, b: proposals }],
+          ['a value missing a required key', { paramètre: { other: 1 } }],
+          [
+            'a value with keys the schema does not know',
+            { paramètre: { ...proposals, extra: true } },
+          ],
+          ['a value that is not an object', { paramètre: [1, 2, 3] }],
+        ])('leaves alone %s', async (label, input) => {
+          const result = await answerThroughTool(input);
+
+          expect(JSON.parse(result.content)).toEqual(input);
+        });
+
+        it('leaves alone text that is not JSON, for the repair pass', async () => {
+          mockFetch.mockResolvedValue(textAnswer('Voici : {"proposals": []}'));
+
+          const result = await askJson(proposalsSchema);
+
+          expect(result.content).toBe('Voici : {"proposals": []}');
+        });
+
+        it('leaves an answer alone when no schema was sent', async () => {
+          mockFetch.mockResolvedValue(toolAnswer({ paramètre: { text: 'x' } }));
+
+          const result = await askJson(undefined);
+
+          expect(JSON.parse(result.content)).toEqual({
+            paramètre: { text: 'x' },
+          });
+        });
       });
     });
 

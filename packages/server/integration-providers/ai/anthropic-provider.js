@@ -3,6 +3,15 @@
 const BaseLLMProvider = require('./base-llm-provider');
 const { fetchProviderJson } = require('../provider-http.js');
 const { splitSystemMessages } = require('./message-utils.js');
+const logger = require('../../utils/logger.js');
+const {
+  JSON_TOOL_NAME,
+  buildJsonModeFields,
+  detectJsonModeQuirk,
+  applyAnthropicQuirks,
+  requestedSchema,
+  unwrapEnvelope,
+} = require('./anthropic-json-mode.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -25,7 +34,6 @@ const DEFAULT_MAX_TOKENS = 8192;
 // `claude-3-5-sonnet-…` and `claude-haiku-4-5-…` — so the 5 in either is not
 // mistaken for generation 5.
 const TEMPERATURE_MODELS = /^claude-(3|[a-z]+-[34])(-|$)/;
-const JSON_TOOL_NAME = 'emit_json';
 
 /**
  * Anthropic (Claude), on the Messages API.
@@ -40,11 +48,12 @@ class AnthropicProvider extends BaseLLMProvider {
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;
   }
 
-  // Claimed through the forced tool call below rather than a response_format
-  // flag. Without it the model is free to answer in prose — which it does: a
-  // skill whose prompt asked for "du texte simple" got prose back and failed
-  // at OUTPUT_PARSE, because the injected JSON contract and the skill's own
-  // wording pull in opposite directions and nothing settled the conflict.
+  // Claimed through structured outputs or a tool call (anthropic-json-mode.js)
+  // rather than a response_format flag. Without it the model is free to
+  // answer in prose — which it does: a skill whose prompt asked for "du texte
+  // simple" got prose back and failed at OUTPUT_PARSE, because the injected
+  // JSON contract and the skill's own wording pull in opposite directions and
+  // nothing settled the conflict.
   supportsJsonResponseFormat() {
     return true;
   }
@@ -94,36 +103,16 @@ class AnthropicProvider extends BaseLLMProvider {
       body.temperature = temperature;
     }
 
-    // Forcing a tool call is what actually holds the format here. Two other
-    // routes were tried against a live account and rejected by the API:
     // response_format does not exist on this endpoint, and prefilling an
-    // assistant turn with `{` is refused outright by generation 5 ("does not
-    // support assistant message prefill"). A forced tool works on both
-    // generations, and hands back a parsed object rather than text to repair.
-    //
+    // assistant turn with `{` is refused by generation 5 ("does not support
+    // assistant message prefill"): both were tried against a live account.
     if (responseFormat && responseFormat.type === 'json_object') {
-      body.tools = [
-        {
-          name: JSON_TOOL_NAME,
-          description: 'Emit the JSON object required by the output contract.',
-          // The real schema when the caller supplies one. Left open, the
-          // model invents a shape: observed live, one answer came back
-          // wrapped in `parameters`, another nested `text` inside `text`.
-          // Anthropic requires an object at the top: any other shape would
-          // be a 400 on every call, so it falls back to the open object.
-          input_schema:
-            responseFormat.schema && responseFormat.schema.type === 'object'
-              ? responseFormat.schema
-              : { type: 'object' },
-        },
-      ];
-      body.tool_choice = { type: 'tool', name: JSON_TOOL_NAME };
+      Object.assign(body, buildJsonModeFields(responseFormat.schema));
     }
 
     return body;
   }
 
-  // eslint-disable-next-line no-unused-vars
   _parseResponse(data, requestBody) {
     // The model declining is not a technical failure, and reporting it as an
     // empty response sent us looking for a parser bug. Gemini's equivalent
@@ -142,20 +131,7 @@ class AnthropicProvider extends BaseLLMProvider {
       );
     }
 
-    // Filtered on type: a response can also carry thinking or tool-use blocks,
-    // and concatenating those would put reasoning into the output.
-    // A forced tool call comes back already parsed, so it is re-serialised
-    // rather than read as text: the callers expect a JSON string, and this
-    // way nothing has to survive a round trip through prose.
-    const toolUse = data.content.find(
-      (block) => block.type === 'tool_use' && block.name === JSON_TOOL_NAME
-    );
-    const content = toolUse
-      ? JSON.stringify(toolUse.input)
-      : data.content
-          .filter((block) => block.type === 'text')
-          .map((block) => block.text)
-          .join('');
+    const content = this._readContent(data, requestBody);
 
     const usage = data.usage || {};
     const promptTokens = usage.input_tokens || 0;
@@ -172,20 +148,59 @@ class AnthropicProvider extends BaseLLMProvider {
     };
   }
 
+  /**
+   * Filtered on type: a response can also carry thinking or tool-use blocks,
+   * and concatenating those would put reasoning into the output.
+   * A tool call comes back already parsed, so it is re-serialised rather
+   * than read as text: the callers expect a JSON string, and this way nothing
+   * has to survive a round trip through prose.
+   */
+  _readContent(data, requestBody) {
+    const toolUse = data.content.find(
+      (block) => block.type === 'tool_use' && block.name === JSON_TOOL_NAME
+    );
+    const text = data.content
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
+      .join('');
+
+    const schema = requestedSchema(requestBody);
+    if (!schema) return toolUse ? JSON.stringify(toolUse.input) : text;
+
+    let answer = toolUse && toolUse.input;
+    if (!answer) {
+      // Text that is not plain JSON is left to the caller's repair pass.
+      try {
+        answer = JSON.parse(text);
+      } catch {
+        return text;
+      }
+    }
+    // Here rather than per feature: every skill reads through this method.
+    const { value, envelope } = unwrapEnvelope(answer, schema);
+    if (envelope) {
+      logger.warn(
+        `anthropic/${data.model}: unwrapped an answer nested under "${envelope}"`
+      );
+    }
+    return toolUse || envelope ? JSON.stringify(value) : text;
+  }
+
   _getFinishReason(data) {
     return data.stop_reason === 'max_tokens' ? 'length' : null;
   }
 
   /**
-   * Never adapt. Anthropic words its refusals its own way ("temperature:
-   * Extra inputs are not permitted"), so the OpenAI detection inherited from
-   * the dialect would match nothing anyway — but by luck of the wording, not
-   * by design. Stated here so it stays that way until Anthropic's own
-   * refusals are taught.
+   * Only the JSON-mode routes are adapted, on Anthropic's own wordings
+   * (anthropic-json-mode.js). The OpenAI detection inherited from the dialect
+   * would match nothing here — by luck of the wording, not by design.
    */
-  // eslint-disable-next-line no-unused-vars
   _detectParamQuirk(status, parsedError, message) {
-    return null;
+    return detectJsonModeQuirk(status, parsedError, message);
+  }
+
+  _applyParamQuirks(body, quirks) {
+    return applyAnthropicQuirks(body, quirks);
   }
 
   _mapErrorToCode(status) {

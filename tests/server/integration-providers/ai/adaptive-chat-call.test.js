@@ -188,6 +188,37 @@ describe('callWithParamAdaptation', () => {
     });
   });
 
+  // Anthropic's JSON-mode fallbacks replace a parameter by another route,
+  // which a drop or a rename cannot express.
+  describe('custom adaptation', () => {
+    const swap = (body, quirks) =>
+      quirks.reduce(
+        (current, quirk) => ({ ...current, swapped: quirk.param }),
+        body
+      );
+
+    it('applies a fresh quirk through the dialect', async () => {
+      const attempt = jest
+        .fn()
+        .mockResolvedValueOnce(refusal('max_tokens'))
+        .mockResolvedValueOnce({ ok: true, data: {} });
+
+      const { body } = await run(attempt, { apply: swap });
+
+      expect(body.swapped).toBe('max_tokens');
+      expect(attempt.mock.calls[1][0].swapped).toBe('max_tokens');
+    });
+
+    it('applies the remembered quirks through the dialect', async () => {
+      quirksCache.add(KEY, { param: 'temperature', action: 'drop' });
+      const attempt = jest.fn().mockResolvedValue({ ok: true, data: {} });
+
+      await run(attempt, { apply: swap });
+
+      expect(attempt.mock.calls[0][0].swapped).toBe('temperature');
+    });
+  });
+
   // Three attempts must not mean three times the timeout.
   describe('time budget', () => {
     it('shrinks the budget as attempts are spent', async () => {

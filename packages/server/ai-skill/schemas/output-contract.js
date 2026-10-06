@@ -24,10 +24,10 @@ const { getSchema } = require('./index.js');
  * The output schema as JSON Schema, or null when it cannot be represented.
  *
  * Separate from the prompt block because some providers can enforce it rather
- * than merely be asked: Anthropic takes it as the input schema of a forced
- * tool call. Handed a bare `{type:'object'}` instead, the model invents a
- * shape — observed live: one wrapped the answer in `parameters`, another
- * nested `text` inside `text`.
+ * than merely be asked: Anthropic decodes against it (structured outputs) or
+ * takes it as a tool's input schema. Handed a bare `{type:'object'}` instead,
+ * the model invents a shape — observed live: one wrapped the answer in
+ * `parameters`, another nested `text` inside `text`.
  *
  * @param {string} outputSchemaId
  * @returns {Object|null}
