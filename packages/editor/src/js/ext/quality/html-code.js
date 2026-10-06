@@ -1,9 +1,6 @@
 'use strict';
 
-const {
-  HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_PROPERTY,
-} = require('../html-code-block/constants');
+const { HTML_CODE_BLOCK } = require('../html-code-block/block-types');
 const { allEditedRichTexts } = require('./user-styles');
 
 // Markup the client wrote themselves: the code pasted in an "HTML code"
@@ -18,8 +15,8 @@ const { allEditedRichTexts } = require('./user-styles');
  */
 function htmlCodeBlocks(ctx) {
   return ctx.blocks
-    .filter((block) => block && block.type === HTML_CODE_BLOCK_TYPE)
-    .map((block) => ({ blockId: block.id, html: block[HTML_CODE_PROPERTY] || '' }))
+    .filter((block) => block && block.type === HTML_CODE_BLOCK.type)
+    .map((block) => ({ blockId: block.id, html: block[HTML_CODE_BLOCK.htmlProperty] || '' }))
     .filter(({ html }) => html.trim());
 }
 
@@ -30,7 +27,7 @@ function htmlCodeBlocks(ctx) {
 function clientMarkup(ctx) {
   const code = htmlCodeBlocks(ctx).map((block) => ({
     ...block,
-    path: HTML_CODE_PROPERTY,
+    path: HTML_CODE_BLOCK.htmlProperty,
     source: 'code',
   }));
   const richTexts = allEditedRichTexts(ctx).map((richText) => ({
