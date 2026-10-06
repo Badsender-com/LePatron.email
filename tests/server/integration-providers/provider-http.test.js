@@ -233,6 +233,8 @@ describe('provider-http', () => {
 
     it.each([
       [401, CODES.INVALID_CREDENTIALS],
+      // Credits or billing exhausted: retrying will not help either.
+      [402, CODES.QUOTA_EXCEEDED],
       [429, CODES.QUOTA_EXCEEDED],
       [500, CODES.API_ERROR],
     ])('maps a %s to %s by default', async (status, expected) => {

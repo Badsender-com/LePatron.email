@@ -123,6 +123,10 @@ async function logFailure(params) {
   );
   err.invocationId = invocationId;
   err.invocationStatus = params.status;
+  // The provider's own verdict (PROVIDER_QUOTA_EXCEEDED, …), for a caller that
+  // must tell "retry later" from "an administrator has to act". A code, never
+  // the provider's message.
+  if (params.error && params.error.code) err.failureCode = params.error.code;
   if (isCallerInputError) err.skillError = params.error;
   // Transient decoration for UI consumption (inline field errors). Never
   // persisted: logInvocation builds its doc from explicit picks and `error`
