@@ -114,9 +114,9 @@
       </div>
     </div>
     <!-- ko if: !$root.currentUser()?.canEditStructure -->
-    <div class="toolbox-readonly-overlay">
-      <span class="lucide lucide-lock"></span>
-      <span data-bind="text: $root.t('toolbox-readonly-structure')">You don't have permission to edit this mailing's structure</span>
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+      <span class="lucide lucide-info" aria-hidden="true"></span>
+      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-structure')">You don't have permission to edit this mailing's structure</span>
     </div>
     <!-- /ko -->
   </div>
@@ -171,9 +171,9 @@
       <tracking-params-plugin />
     </div>
     <!-- ko if: !$root.currentUser()?.canEditContent -->
-    <div class="toolbox-readonly-overlay">
-      <span class="lucide lucide-lock"></span>
-      <span data-bind="text: $root.t('toolbox-readonly-content')">You don't have permission to edit this mailing's content</span>
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+      <span class="lucide lucide-info" aria-hidden="true"></span>
+      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-content')">You don't have permission to edit this mailing's content</span>
     </div>
     <!-- /ko -->
   </div>
@@ -194,6 +194,13 @@
       <!-- ko block: content --><!-- /ko -->
     </div>
     <!-- /ko -->
+    <!-- ko if: !$root.currentUser()?.canEditStyle -->
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+      <span class="lucide lucide-info" aria-hidden="true"></span>
+      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-style')">You don't have permission to edit this mailing's style</span>
+    </div>
+    <!-- /ko -->
+
 
     <!-- Head CSS: a stylesheet for the whole email, not a block property, so it
          lives with the global style options rather than in a block panel.
@@ -225,12 +232,6 @@
         View the CSS
       </button>
       <!-- /ko -->
-    </div>
-    <!-- /ko -->
-    <!-- ko if: !$root.currentUser()?.canEditStyle -->
-    <div class="toolbox-readonly-overlay">
-      <span class="lucide lucide-lock"></span>
-      <span data-bind="text: $root.t('toolbox-readonly-style')">You don't have permission to edit this mailing's style</span>
     </div>
     <!-- /ko -->
   </div>

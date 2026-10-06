@@ -287,6 +287,18 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  'comments-decision-approve': 'Approve',
+  'comments-decision-approve-default-text': 'I approve this email',
+  'comments-decision-approved': 'Approved',
+  'comments-decision-changes-requested': 'Changes requested',
+  'toolbox-readonly-all':
+    "You don't have permission to edit this mailing. You can comment on it and send tests.",
+  'toolbox-readonly-structure':
+    "You don't have permission to edit this mailing's structure",
+  'toolbox-readonly-content':
+    "You don't have permission to edit this mailing's content",
+  'toolbox-readonly-style':
+    "You don't have permission to edit this mailing's style",
   'save-message-success-metadata-error':
     'The email was saved, but the email settings could not be: __reason__',
   // email metadata section of the Content tab
@@ -427,16 +439,6 @@ module.exports = {
     'Saving refused: custom CSS is not enabled on this template.',
   'save-message-head-css-too-large':
     'Saving refused: the custom CSS is over the maximum size.',
-  'comments-decision-approve': 'Approve',
-  'comments-decision-approve-default-text': 'I approve this email',
-  'comments-decision-approved': 'Approved',
-  'comments-decision-changes-requested': 'Changes requested',
-  'toolbox-readonly-structure':
-    "You don't have permission to edit this mailing's structure",
-  'toolbox-readonly-content':
-    "You don't have permission to edit this mailing's content",
-  'toolbox-readonly-style':
-    "You don't have permission to edit this mailing's style",
 
   // text generation (epic #1163)
   'text-generation-applied-preheader': 'Preheader:',

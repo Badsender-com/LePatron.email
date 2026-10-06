@@ -31,6 +31,12 @@ module.exports = (opts) => {
         const canEditStructure = role !== REVIEWER && role !== WRITER;
         const canEditContent = role !== REVIEWER;
         const canEditStyle = role !== REVIEWER && role !== WRITER;
+        // Renaming the mailing is an organisation action, like the listing's
+        // rename (hidden for reviewer in mailings-table.vue).
+        const canRename = role !== REVIEWER;
+        // Nothing to edit anywhere: the toolbox drops its tabs and shows a
+        // single message instead of one per panel.
+        const isReadOnly = !canEditStructure && !canEditContent && !canEditStyle;
 
         // Update the observable with the current user along with the new attribute
         viewModel.currentUser({
@@ -42,16 +48,9 @@ module.exports = (opts) => {
           canEditStructure,
           canEditContent,
           canEditStyle,
+          canRename,
+          isReadOnly,
         });
-
-        // reviewer/writer's main interaction is commenting — open the
-        // comments panel by default instead of making them find the toggle.
-        if (
-          (role === REVIEWER || role === WRITER) &&
-          typeof viewModel.showComments === 'function'
-        ) {
-          viewModel.showComments(true);
-        }
       })
       .catch((error) => {
         // Handle error
