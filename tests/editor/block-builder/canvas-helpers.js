@@ -56,6 +56,12 @@ function createViewModel(metadata) {
   const vm = {
     metadata,
     t: (key) => key,
+    // an unrestricted role: these tests are about the tools, not the RBAC
+    currentUser: () => ({
+      canEditStructure: true,
+      canEditContent: true,
+      canEditStyle: true,
+    }),
     selectedTool: ko.observable(0),
     selectedBlock: ko.observable(null),
     selectBlock: jest.fn((block) => vm.selectedBlock(block)),
