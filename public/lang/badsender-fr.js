@@ -300,6 +300,8 @@ module.exports = {
   'comments-decision-approve-default-text': 'Je valide cet email',
   'comments-decision-approved': 'Approuvé',
   'comments-decision-changes-requested': 'Changements demandés',
+  'toolbox-readonly-all':
+    "Vous n'avez pas le droit de modifier cet email. Vous pouvez le commenter et le tester.",
   'toolbox-readonly-structure':
     "Vous n'avez pas le droit de modifier la structure de cet email",
   'toolbox-readonly-content':

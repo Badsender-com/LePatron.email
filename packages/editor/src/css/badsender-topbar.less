@@ -113,6 +113,12 @@
     input {
       flex: 1 1 auto;
     }
+
+    // Title that cannot be renamed (reviewer): plain text, no button hover.
+    &.creation-name--readonly .ui-button {
+      pointer-events: none;
+      cursor: default;
+    }
   }
 }
 

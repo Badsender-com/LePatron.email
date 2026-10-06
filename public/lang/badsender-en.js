@@ -291,6 +291,8 @@ module.exports = {
   'comments-decision-approve-default-text': 'I approve this email',
   'comments-decision-approved': 'Approved',
   'comments-decision-changes-requested': 'Changes requested',
+  'toolbox-readonly-all':
+    "You don't have permission to edit this mailing. You can comment on it and send tests.",
   'toolbox-readonly-structure':
     "You don't have permission to edit this mailing's structure",
   'toolbox-readonly-content':
