@@ -29,6 +29,7 @@ module.exports = {
   getFeatureConfig,
   getActiveFeatureWithIntegration,
   resolveActiveFeature,
+  getEditorFeatureFlags,
   FeatureResolutionReasons,
 };
 
@@ -228,6 +229,15 @@ async function resolveActiveFeature({ groupId, featureType }) {
     _company: Types.ObjectId(groupId),
   }).populate('features.integration');
 
+  return resolveFromConfig(aiConfig, featureType);
+}
+
+/**
+ * The resolution rule itself, on a config already read: one rule for the
+ * engine an invocation gets and for the flags the editor shows, so the button
+ * never appears for an engine the invocation would refuse.
+ */
+function resolveFromConfig(aiConfig, featureType) {
   if (!aiConfig) {
     return { ok: false, reason: FeatureResolutionReasons.NO_CONFIG };
   }
@@ -266,5 +276,26 @@ async function getActiveFeatureWithIntegration({ groupId, featureType }) {
   return {
     feature: resolved.feature,
     integration: resolved.integration,
+  };
+}
+
+/**
+ * Which AI features the editor may offer for a group: a feature counts only when
+ * it is on AND its integration is active — resolveFromConfig, the very rule
+ * invocations apply.
+ *
+ * One read for every flag, rather than one resolveActiveFeature per feature: the
+ * editor asks on every open.
+ *
+ * @returns {Promise<{hasTranslationFeature: boolean, hasTextGenerationFeature: boolean}>}
+ */
+async function getEditorFeatureFlags({ groupId }) {
+  const aiConfig = await AIFeatureConfigs.findOne({
+    _company: Types.ObjectId(groupId),
+  }).populate('features.integration');
+  const usable = (featureType) => resolveFromConfig(aiConfig, featureType).ok;
+  return {
+    hasTranslationFeature: usable(AIFeatureTypes.TRANSLATION),
+    hasTextGenerationFeature: usable(AIFeatureTypes.TEXT_GENERATION),
   };
 }

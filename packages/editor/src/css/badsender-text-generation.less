@@ -1,0 +1,121 @@
+/**
+ * Text generation (epic #1163): the entry in the Content tab and its modal.
+ *
+ * Nested in `.mo` for the same reason as badsender-email-metadata.less: the
+ * editor's generic `.mo button` / `.mo p` rules sit at (0,1,1) and would win.
+ * Colours come from the editor's own tokens (badsender-editor.less).
+ */
+
+.mo .text-generation-entry {
+  margin: 20px 16px 0;
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--v-accent-darken1, #0097c4);
+    background: white;
+    border: 1px solid var(--v-accent-darken1, #0097c4);
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 151, 196, 0.06);
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 151, 196, 0.35);
+    }
+  }
+}
+
+.text-generation {
+  &__title {
+    margin-top: 0;
+  }
+
+  &__intro,
+  &__hint {
+    margin: 0 0 12px;
+    color: var(--gray-700, #616161);
+  }
+
+  &__error {
+    padding: 12px;
+    margin-bottom: 16px;
+    background-color: #ffebee;
+    border-left: 4px solid var(--error, #c62828);
+    color: #c62828;
+    border-radius: 4px;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    color: var(--gray-700, #616161);
+  }
+
+  &__brief {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    font-family: inherit;
+    border: 1px solid var(--gray-300, #e0e0e0);
+    border-radius: 4px;
+    resize: vertical;
+  }
+
+  &__proposals {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__proposal {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--gray-300, #e0e0e0);
+    border-radius: 4px;
+  }
+
+  &__choice {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    cursor: pointer;
+
+    // Materialize hides native radios behind its own pseudo-elements; this
+    // modal uses the native control, visible and keyboard-reachable.
+    input[type='radio'] {
+      position: static;
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  &__text {
+    font-weight: 600;
+    color: var(--gray-900, #212121);
+  }
+
+  &__angle,
+  &__facts {
+    font-size: 0.75rem;
+    color: var(--gray-700, #616161);
+  }
+
+  &__copy {
+    align-self: flex-start;
+  }
+}
