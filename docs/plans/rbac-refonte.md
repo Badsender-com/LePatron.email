@@ -267,8 +267,9 @@ Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les
 - Gestion de dossiers (`packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue`) : renommer/déplacer/supprimer un dossier, créer un sous-dossier — masqués pour `reviewer` (`checkIfAuthorizedFolderMenu`/`hasRightToCreateFolder` gagnent une condition de rôle), cohérent avec un rôle entièrement passif sur l'organisation du contenu.
 - Renommer le mailing : masqué dans le listing (déjà le cas) **et** dans l'éditeur (double-clic sur le titre, flag `canRename`, `badsender-edit-title.js`) — UI seule, le `PUT` de renommage n'a toujours que `GUARD_USER`.
 - Constructeurs ouverts depuis le canvas ou le panneau Content (Block Builder du bloc composé, éditeur du bloc code HTML, CSS de l'email) : refusés à `reviewer` et `writer` dans les ouvreurs eux-mêmes (`canComposeBlocks`, `canEditHtmlBlock`, `canEditHeadCss`, via `ext/user-can.js`), donc le double-clic sur un bloc composé n'ouvre plus rien. Le bloc code HTML est rangé avec la structure (son balisage _est_ le bloc) : **à confirmer avec le produit**. Le CSS de l'email suit `canEditStyle` ; sa consultation en lecture seule reste ouverte.
+- Save : bouton « Sauvegarder » désactivé pour `reviewer` (flag `canSave`) — UI seule, le `PUT /mosaico` reste en `GUARD_USER`. La sauvegarde unique lancée à l'ouverture d'un mailing sans aperçu HTML (`template-loader.js`) est **conservée pour tous les rôles** (décision du 2026-10-06) : l'aperçu du listing est ainsi toujours généré, au prix d'une écriture de normalisation possible à l'ouverture par un `reviewer`. Le risque d'écrasement de la structure par le Save d'un `writer` reste un sujet serveur (#1103).
 - Envoi de test (`sendTestMail`, `GUARD_USER`) : **conservé**, correspond au "tester" de la vision produit — aucune restriction.
-- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Le panneau commentaires n'est **pas** ouvert par défaut (décision du 2026-10-06, retour de l'ouverture automatique initiale). Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
+- Commentaire : créer/répondre/résoudre/rouvrir — conservé (déjà ouvert à tout utilisateur avec accès au mailing, `GUARD_USER` + `verifyMailingAccess`) ; suppression limitée aux siens, comme tout le monde. Le panneau commentaires s'ouvre **par défaut** à l'arrivée dans l'éditeur, pour `reviewer` seulement (`showComments(true)` dès que le rôle est connu) : c'est tout ce qu'il peut faire, autant qu'il le voie (décision du 2026-10-06, après un essai sans ouverture automatique). Peut en plus poser une **décision d'approbation** sur un commentaire (voir 3.4) — c'est le mécanisme concret de "valider".
 
 **`writer`** — édite le contenu, gère ses variantes, ne crée ni ne supprime :
 
@@ -278,7 +279,7 @@ Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les
 - Bouton "Nouveau mail" : désactivé, comme pour reviewer (créer un mailing "from scratch" reste une action de structure).
 - Gestion de dossiers : inchangée par rapport à `regular_user` — rien dans la demande produit ne justifie de la restreindre pour `writer`.
 - Envoi de test : conservé.
-- Commentaire : panneau fermé par défaut, comme pour reviewer. Mêmes droits qu'un `regular_user` sur le fond (pas d'action de décision d'approbation affichée — voir 3.4).
+- Commentaire : panneau fermé par défaut, contrairement à reviewer. Mêmes droits qu'un `regular_user` sur le fond (pas d'action de décision d'approbation affichée — voir 3.4).
 
 ### 3.4 Décision d'approbation sur les commentaires (mécanisme de "validation")
 
