@@ -38,6 +38,8 @@ module.exports = (opts) => {
         // Renaming the mailing is an organisation action, like the listing's
         // rename (hidden for reviewer in mailings-table.vue).
         const canRename = role !== REVIEWER;
+        // Ignoring a quality result is a decision for the whole team.
+        const canIgnoreQuality = role !== REVIEWER && role !== WRITER;
         // A reviewer changes nothing, so the toolbar's Save has nothing to write.
         // The save run once on opening a mailing without a preview is not this
         // button, and stays for every role (template-loader.js).
@@ -58,6 +60,7 @@ module.exports = (opts) => {
           canEditStyle,
           canRename,
           canSave,
+          canIgnoreQuality,
           isReadOnly,
         });
 

@@ -5,6 +5,7 @@ const { findingItems, checkItems } = require('./quality-items');
 const { commentDraftFor } = require('./quality-actions');
 const { goToBlock } = require('../../../ext/block-navigation');
 const { formatCommentDate } = require('../../../ext/comments-utils');
+const { userCan } = require('../../../ext/user-can');
 
 const HIGHLIGHT_CLASS = 'qc-highlight';
 // How long "Ignored. Undo" stays under the list.
@@ -47,6 +48,11 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     showIgnored: false,
     undo: null,
     undoTimer: null,
+    // Ignoring is a team-wide decision: not for a writer or a reviewer. Kept in
+    // data, fed by a subscription, because the current user is a Knockout
+    // observable (loaded late) that a Vue computed would not track.
+    canIgnore: false,
+    userSubscription: null,
     // Constants the template reads.
     severityOrder: SEVERITY_ORDER,
     severityMeta: SEVERITY_META,
@@ -99,7 +105,17 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
       }
     },
   },
+  created() {
+    const sync = () => {
+      this.canIgnore = userCan(this.vm, 'canIgnoreQuality');
+    };
+    sync();
+    if (this.vm.currentUser && typeof this.vm.currentUser.subscribe === 'function') {
+      this.userSubscription = this.vm.currentUser.subscribe(sync);
+    }
+  },
   beforeDestroy() {
+    if (this.userSubscription) this.userSubscription.dispose();
     clearHighlight();
     clearTimeout(this.undoTimer);
   },
@@ -209,6 +225,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
                 :item="item"
                 :t="t"
                 :can-comment="canComment"
+                :can-ignore="canIgnore"
                 :expanded="expandedId === item.id"
                 @toggle="toggle(item)"
                 @locate="locate(item)"
@@ -235,6 +252,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
                 :t="t"
                 ignored
                 :can-comment="canComment"
+                :can-ignore="canIgnore"
                 :expanded="expandedId === item.id"
                 @toggle="toggle(item)"
                 @locate="locate(item)"
