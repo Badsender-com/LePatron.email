@@ -3,7 +3,7 @@
 // CodeMirror 5 files for the HTML code block editor, in load order: the modes
 // and the addon register themselves on the global CodeMirror, so the library
 // comes first. Concatenated into the editor libs as globals (see gulpfile.js),
-// and loaded as such by tests/editor/html-code-block/codemirror-bundle.test.js.
+// and loaded as such by tests/editor/synthetic-blocks/codemirror-bundle.test.js.
 //
 // CodeMirror ships no minified build: the production libs minify these into one
 // file, CODEMIRROR_MIN_BUNDLE.

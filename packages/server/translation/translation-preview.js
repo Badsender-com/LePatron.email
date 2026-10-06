@@ -5,7 +5,7 @@ const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
 const {
   transformDocumentKeepingHtmlCodeBlocks,
-} = require('./html-code-block-protection.js');
+} = require('./synthetic-block-protection.js');
 const {
   findSyntheticBlocks,
   htmlOf,

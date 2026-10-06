@@ -14,7 +14,7 @@ const { SYNTHETIC_BLOCKS } = require('./block-types.js');
 // after. Only the *contents* of the marker element are moved: the wrapper itself
 // is LePatron's own markup and keeps behaving like any other template element.
 //
-// Purely additive: with no HTML code block in the document there is nothing to
+// Purely additive: with no synthetic block in the document there is nothing to
 // detach and the inlining is bit-for-bit what it was before.
 //
 // Since export-substitution.js landed, an export renders an inert marker here

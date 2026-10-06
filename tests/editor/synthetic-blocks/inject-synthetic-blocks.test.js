@@ -7,12 +7,12 @@ const ko = require('knockout');
 const {
   injectSyntheticBlocks,
   orderPaletteBlockDefs,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/inject-synthetic-blocks.js');
 const {
   SYNTHETIC_BLOCKS,
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
-} = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-types.js');
 
 const HTML_CODE_BLOCK_TYPE = HTML_CODE_BLOCK.type;
 

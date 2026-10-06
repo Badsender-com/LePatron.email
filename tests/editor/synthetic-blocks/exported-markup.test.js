@@ -17,10 +17,10 @@ global.ko = ko;
 
 const {
   injectSyntheticBlocks,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/inject-synthetic-blocks.js');
 const {
   stripEmptySyntheticBlocks,
-} = require('../../../packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 
 const BARE_TEMPLATE = [
@@ -169,7 +169,7 @@ describe('the exported markup of an HTML code block', () => {
   });
 
   describe('when htmlCode is set', () => {
-    // The pasted markup is injected by the lpHtmlCode binding, which goes through
+    // The pasted markup is injected by the lpSyntheticBlock binding, which goes through
     // ko.utils.setHtml — not exercisable under jsdom (Knockout's own `html`
     // binding fails there too), so the structure is asserted instead of rendered.
     it('hides the whole payload behind a single conditional', () => {
@@ -189,8 +189,10 @@ describe('the exported markup of an HTML code block', () => {
       expect(markerIndex).toBeLessThan(endIndex);
     });
 
-    it('renders the markup through the lpHtmlCode binding', () => {
-      expect(showTemplate).toMatch(/data-bind="[^"]*lpHtmlCode: htmlCode/);
+    it('renders the markup through the lpSyntheticBlock binding', () => {
+      expect(showTemplate).toMatch(
+        /data-bind="[^"]*lpSyntheticBlock: htmlCode/
+      );
     });
   });
 });

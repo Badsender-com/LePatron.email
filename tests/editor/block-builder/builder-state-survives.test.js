@@ -34,11 +34,11 @@ global.ko = ko;
 
 const {
   injectSyntheticBlocks,
-} = require('../../../packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/inject-synthetic-blocks.js');
 const {
   HTML_CODE_BLOCK,
   BLOCK_BUILDER_BLOCK,
-} = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-types.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 const modelDef = require('../../../packages/editor/src/js/converter/model.js');
 

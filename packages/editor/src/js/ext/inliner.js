@@ -6,7 +6,7 @@ var inlineDocument = require('juice/lib/inline')({}).inlineDocument;
 var {
   detachPastedMarkup,
   restorePastedMarkup,
-} = require('./html-code-block/protect-from-inliner.js');
+} = require('./synthetic-blocks/protect-from-inliner.js');
 
 var inlinerPlugin = function (vm) {
   vm.inline = function (doc) {

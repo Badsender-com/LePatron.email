@@ -228,7 +228,7 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  * to make sense of it, so each block's markup is swapped for an inert token
  * first — ASCII, no markup, which a sanitizer keeps as text — then restored.
  * Same technique as the editor export (packages/editor/src/js/ext/
- * html-code-block/export-substitution.js).
+ * synthetic-blocks/export-substitution.js).
  *
  * Only the markup itself is kept out, never the marker element around it: the
  * marker's tags are LePatron's own, nothing in them needs protecting, and a

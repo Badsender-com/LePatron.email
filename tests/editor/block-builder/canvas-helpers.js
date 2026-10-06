@@ -13,8 +13,8 @@ const ko = require('knockout');
 const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsender-widget-block-builder.js');
 const {
   addCanvasEntryToViewModel,
-} = require('../../../packages/editor/src/js/ext/html-code-block/canvas-entry.js');
-const blockState = require('../../../packages/editor/src/js/ext/html-code-block/block-state.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/canvas-entry.js');
+const blockState = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-state.js');
 
 const TEMPLATE = fs.readFileSync(
   path.join(

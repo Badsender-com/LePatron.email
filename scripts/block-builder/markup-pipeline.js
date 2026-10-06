@@ -20,7 +20,7 @@ const {
 // interpolations, Tailwind rewrites class attributes and juice rewrites style
 // attributes, and a sentinel has to come out the other end byte for byte. The
 // same reasoning, and the same shape, as the export substitution markers in
-// packages/editor/src/js/ext/html-code-block/export-substitution.js.
+// packages/editor/src/js/ext/synthetic-blocks/export-substitution.js.
 const SENTINEL_PREFIX = 'LPSLOT';
 
 const sentinelFor = (name) =>

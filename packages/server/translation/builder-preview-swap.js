@@ -1,7 +1,7 @@
 'use strict';
 
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
-const { findHtmlCodeBlockRanges } = require('./html-code-block-protection.js');
+const { findHtmlCodeBlockRanges } = require('./synthetic-block-protection.js');
 const logger = require('../utils/logger.js');
 
 // Putting a rebuilt composed block back into previewHtml.

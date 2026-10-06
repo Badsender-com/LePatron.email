@@ -16,7 +16,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   transformDocumentKeepingHtmlCodeBlocks,
   transformOutsideHtmlCodeBlocks,
-} = require('../../../packages/server/translation/html-code-block-protection.js');
+} = require('../../../packages/server/translation/synthetic-block-protection.js');
 const {
   sanitizePreviewHtml,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');

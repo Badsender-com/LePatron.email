@@ -1,6 +1,6 @@
 'use strict';
 
-const { BLOCK_BUILDER_BLOCK } = require('./html-code-block/block-types.js');
+const { BLOCK_BUILDER_BLOCK } = require('./synthetic-blocks/block-types.js');
 
 // Widget for the `blockBuilder` property type, declared by the injected block
 // definitions as `builderHtml { widget: blockBuilder; }`.

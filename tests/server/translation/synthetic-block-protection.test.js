@@ -6,7 +6,7 @@ const {
 const {
   findHtmlCodeBlockRanges,
   transformOutsideHtmlCodeBlocks,
-} = require('../../../packages/server/translation/html-code-block-protection.js');
+} = require('../../../packages/server/translation/synthetic-block-protection.js');
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   warn: jest.fn(),

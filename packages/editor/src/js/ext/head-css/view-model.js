@@ -5,7 +5,7 @@ const {
   HEAD_CSS_MAX_LENGTH,
 } = require('../../../../../shared/head-css/constants.js');
 const { hasHtmlCodeBlock, headCssToExport } = require('./exported-css.js');
-const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
+const { HTML_CODE_BLOCK } = require('../synthetic-blocks/block-types.js');
 
 // The head CSS members of the editor's view model: the stylesheet itself, the
 // predicates the two entry points read (toolbox.tmpl.html,

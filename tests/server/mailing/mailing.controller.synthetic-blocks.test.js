@@ -1,6 +1,6 @@
 'use strict';
 
-// PUT /mailings/:mailingId/mosaico is where the HTML code block becomes
+// PUT /mailings/:mailingId/mosaico is where a synthetic block becomes
 // content; the head CSS written to style it has its own file
 // (mailing.controller.head-css.test.js).
 // The editor hides the block when the template flag is off, but the block

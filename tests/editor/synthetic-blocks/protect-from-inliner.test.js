@@ -8,7 +8,7 @@ const jQuery = require('jquery');
 const {
   detachPastedMarkup,
   restorePastedMarkup,
-} = require('../../../packages/editor/src/js/ext/html-code-block/protect-from-inliner.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js');
 
 const $ = jQuery;
 

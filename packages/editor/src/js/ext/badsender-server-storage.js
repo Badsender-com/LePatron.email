@@ -9,7 +9,7 @@ const {
   EDITOR_ONLY_METADATA_KEYS,
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
-const { saveErrorKeyFor } = require('./html-code-block/save-error.js');
+const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
 const {
   getErrorsForControlQuality,
   displayErrors,
