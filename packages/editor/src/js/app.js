@@ -24,6 +24,7 @@ const personalizedBlocksPlugin = require('./vue/personalizedBlocksPlugin.js');
 const trackingParamsPlugin = require('./vue/trackingParamsPlugin');
 const emailMetadataPlugin = require('./vue/emailMetadataPlugin');
 const qualityDrawerPlugin = require('./vue/qualityDrawerPlugin');
+const galleryPlugin = require('./vue/galleryPlugin');
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
@@ -237,6 +238,7 @@ var start = function (
     trackingParamsPlugin,
     emailMetadataPlugin,
     qualityDrawerPlugin,
+    galleryPlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)
