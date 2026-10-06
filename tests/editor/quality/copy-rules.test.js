@@ -54,15 +54,18 @@ describe('subject', () => {
 
   it.each([
     ['', ['No subject']],
+    ['a'.repeat(40), []],
     [
-      'a'.repeat(61),
+      'a'.repeat(41),
       [
-        'Long subject (__count__ characters): may be cut on mobile and in Outlook',
+        'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
       ],
     ],
     [
-      'a'.repeat(91),
-      ['Subject too long (__count__ characters): cut in almost every inbox'],
+      'a'.repeat(61),
+      [
+        'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
+      ],
     ],
     [
       'RE: your order',
@@ -79,6 +82,9 @@ describe('subject', () => {
     ['HUGE SALE THIS WEEKEND', ['Subject mostly in capital letters']],
     ['Last chance!!', ['Subject repeats punctuation (!!, ??, $$)']],
     ['Sale 🔥🔥 today', ['Subject has more than one emoji']],
+    ['Our nurses 👩‍⚕️ thank you', []],
+    ['Sale in 🇫🇷🇧🇪', ['Subject has more than one emoji']],
+    ['Brand® Line™ is back', []],
     ['Our spring collection is here', []],
   ])('judges "%s"', (subjectValue, keys) => {
     expect(keysOf(subject, { subjectValue })).toEqual(keys);
@@ -86,9 +92,9 @@ describe('subject', () => {
 
   it('counts an emoji as one character', () => {
     const [finding] = findingsOf(subject, {
-      subjectValue: `${'a'.repeat(60)}🔥`,
+      subjectValue: `${'a'.repeat(40)}🔥`,
     });
-    expect(finding.params.count).toBe(61);
+    expect(finding.params.count).toBe(41);
   });
 });
 
@@ -103,11 +109,6 @@ describe('preheader', () => {
       'View it online',
       'Preheader still the sample text of the template: __text__',
     ],
-    ['Hi there', 'Preheader too short (__count__ characters)'],
-    [
-      'Our spring collection',
-      'Short preheader (__count__ characters): some inboxes complete it with the body',
-    ],
     [
       'a'.repeat(101),
       'Long preheader (__count__ characters): its end will rarely be seen',
@@ -120,6 +121,56 @@ describe('preheader', () => {
     expect(
       keysOf(preheader, { preheaderValue, preheaderDefault: 'View it online' })
     ).toEqual([key]);
+  });
+
+  it('never reports a short preheader', () => {
+    expect(findingsOf(preheader, { preheaderValue: 'Hi there' })).toEqual([]);
+  });
+
+  it.each([
+    ['Spring sale', 'Spring sale!'],
+    ['Spring sale', 'spring  sale, up to 50% off'],
+  ])(
+    'warns when the preheader repeats the subject "%s"',
+    (subjectValue, preheaderValue) => {
+      expect(keysOf(preheader, { subjectValue, preheaderValue })).toEqual([
+        'The preheader repeats the subject: inboxes show the same words twice',
+      ]);
+    }
+  );
+
+  it('reports a repeated subject and a preheader too long, both', () => {
+    expect(
+      keysOf(preheader, {
+        subjectValue: 'Spring sale',
+        preheaderValue: `Spring sale ${'a'.repeat(140)}`,
+      })
+    ).toEqual([
+      'The preheader repeats the subject: inboxes show the same words twice',
+      'Preheader too long (__count__ characters): inboxes cut it well before',
+    ]);
+  });
+
+  it.each([
+    ['New', 'New arrivals in store'],
+    ['{{first_name}}', '{{first_name}}, discover our spring sale'],
+    ['{{first_name}}, hello', 'Discover our spring sale'],
+  ])(
+    'leaves a preheader alone after the subject "%s"',
+    (subjectValue, preheaderValue) => {
+      expect(findingsOf(preheader, { subjectValue, preheaderValue })).toEqual(
+        []
+      );
+    }
+  );
+
+  it('accepts a preheader that only shares words with the subject', () => {
+    expect(
+      findingsOf(preheader, {
+        subjectValue: 'Spring sale',
+        preheaderValue: 'Up to 50% off our spring sale',
+      })
+    ).toEqual([]);
   });
 
   it('accepts a preheader of the right length, merge tags aside', () => {

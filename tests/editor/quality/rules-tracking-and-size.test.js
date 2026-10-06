@@ -11,13 +11,13 @@ const htmlSize = require(`${RULES}/html-size`);
 const trackingParams = require(`${RULES}/tracking-params`);
 
 describe('html-size', () => {
-  it('warns above the 102 KB Gmail clipping limit, with the size', () => {
-    const html = `<p>${'a'.repeat(110 * 1024)}</p>`;
+  it('warns above 100 KB, short of the 102 KB Gmail clipping, with the size', () => {
+    const html = `<p>${'a'.repeat(101 * 1024)}</p>`;
     const findings = findingsOf(htmlSize, { html });
 
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ severity: 'warning', blockId: null });
-    expect(findings[0].params.size).toBeGreaterThan(102);
+    expect(findings[0].params.size).toBeGreaterThan(100);
   });
 
   it('fingerprints the size in KB, so it changes with a new size only', () => {
