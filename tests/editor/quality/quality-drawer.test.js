@@ -43,8 +43,9 @@ const sizeCheck = {
   passParams: { size: 40 },
 };
 
-async function mountDrawer(result) {
+async function mountDrawer(result, user = { canIgnoreQuality: true }) {
   const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
+  vm.currentUser = ko.observable(user);
   vm.selectBlock = jest.fn();
   vm.notifier = { warning: jest.fn() };
   installQualityReview(vm, ko, {
@@ -234,6 +235,47 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
     expect(vm.quality.ignored()).toEqual([]);
     expect(el.querySelector('.qc-group--ignored')).toBeNull();
+  });
+
+  // Ignoring hides a result for the whole team: not for a writer or a reviewer.
+  // They still read it and can locate its block.
+  it.each([
+    ['without the right', { canIgnoreQuality: false }],
+    ['not loaded yet', null],
+  ])('offers no ignoring to a user %s', async (_label, user) => {
+    const { vm, el } = await mountDrawer(
+      { findings: [linkFinding], checks: [] },
+      user
+    );
+    vm.quality.run();
+    await Vue.nextTick();
+
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    const labels = Array.from(
+      el.querySelectorAll('.qc-row__actions button')
+    ).map((b) => b.textContent.trim());
+
+    expect(labels).not.toContain('Ignore');
+    expect(labels).toContain('Go to block');
+  });
+
+  it('offers ignoring once the user turns out to be allowed', async () => {
+    const { vm, el } = await mountDrawer(
+      { findings: [linkFinding], checks: [] },
+      null
+    );
+    vm.quality.run();
+    await Vue.nextTick();
+    vm.currentUser({ canIgnoreQuality: true });
+    await Vue.nextTick();
+
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    const labels = Array.from(
+      el.querySelectorAll('.qc-row__actions button')
+    ).map((b) => b.textContent.trim());
+    expect(labels).toContain('Ignore');
   });
 
   it('turns a finding into a comment draft', async () => {
