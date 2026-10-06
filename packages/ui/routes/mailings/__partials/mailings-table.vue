@@ -135,9 +135,9 @@ export default {
       if (!this.hasAccess) {
         return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }
-      return excludedRules.filter(
-        (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
-      );
+      // Not filtered against TABLE_HIDDEN_COLUMNS_NO_ACCESS: that stripped the
+      // rename/delete/move/tags that reviewer and writer must not get.
+      return excludedRules;
     },
     selectedRows: {
       get() {
