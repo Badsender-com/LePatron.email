@@ -1,14 +1,15 @@
 'use strict';
 
 const { blockTexts } = require('../exported-content');
+const { EMOJI } = require('../emoji');
 
 // Screen readers read an emoji's name ("fire", "red heart"): inside a
 // sentence it breaks it, several in a row turn into a list. At the end of a
 // sentence it reads fine.
-const EMOJI = '\\p{Extended_Pictographic}[\\u{FE0F}\\u{200D}\\p{Extended_Pictographic}]*';
 // A letter, the emoji, then the sentence going on with a lowercase word.
 const MID_SENTENCE = new RegExp(`\\p{L}[,]?\\s*${EMOJI}\\s*(?=\\p{Ll})`, 'u');
-const RUN = new RegExp(`(?:${EMOJI}\\s*){3,}`, 'u');
+// Two in a row already read as a list of names.
+const RUN = new RegExp(`(?:${EMOJI}\\s*){2,}`, 'u');
 
 module.exports = {
   id: 'emoji-placement',

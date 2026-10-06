@@ -435,8 +435,8 @@ module.exports = {
   'Template sample image not replaced': 'Template sample image not replaced',
   'Missing Outlook background image': 'Missing Outlook background image',
   'Missing mobile background image': 'Missing mobile background image',
-  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
-    'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB',
+  'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
   'Required tracking parameters missing: __keys__':
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
@@ -486,8 +486,8 @@ module.exports = {
   'Every background image turned on is set':
     'Every background image turned on is set',
   'Email weight': 'Email weight',
-  'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit':
-    'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit',
+  'Exported HTML weighs __size__ KB, under the 100 KB limit':
+    'Exported HTML weighs __size__ KB, under the 100 KB limit',
   'Link addresses': 'Link addresses',
   'Every link address is well formed': 'Every link address is well formed',
   'Link URL contains a space: __url__': 'Link URL contains a space: __url__',
@@ -555,10 +555,10 @@ module.exports = {
   'The subject is filled in and __count__ characters long':
     'The subject is filled in and __count__ characters long',
   'No subject': 'No subject',
-  'Subject too long (__count__ characters): cut in almost every inbox':
-    'Subject too long (__count__ characters): cut in almost every inbox',
-  'Long subject (__count__ characters): may be cut on mobile and in Outlook':
-    'Long subject (__count__ characters): may be cut on mobile and in Outlook',
+  'Subject too long (__count__ characters): inboxes cut it, keep it under 60':
+    'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
+  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile':
+    'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
   'Subject starts like a reply or a forward (__prefix__) without being one':
     'Subject starts like a reply or a forward (__prefix__) without being one',
   'Subject mostly in capital letters': 'Subject mostly in capital letters',
@@ -570,10 +570,8 @@ module.exports = {
     'The preheader is filled in and __count__ characters long',
   'No preheader: inboxes show the first words of the body instead':
     'No preheader: inboxes show the first words of the body instead',
-  'Preheader too short (__count__ characters)':
-    'Preheader too short (__count__ characters)',
-  'Short preheader (__count__ characters): some inboxes complete it with the body':
-    'Short preheader (__count__ characters): some inboxes complete it with the body',
+  'The preheader repeats the subject: inboxes show the same words twice':
+    'The preheader repeats the subject: inboxes show the same words twice',
   'Preheader too long (__count__ characters): inboxes cut it well before':
     'Preheader too long (__count__ characters): inboxes cut it well before',
   'Long preheader (__count__ characters): its end will rarely be seen':
@@ -598,9 +596,10 @@ module.exports = {
   'Preheader still the sample text of the template: __text__':
     'Preheader still the sample text of the template: __text__',
   'Font size': 'Font size',
-  'No text was set under 14 px': 'No text was set under 14 px',
-  'Text set to __size__ px, under the 14 px that reads comfortably: __text__':
-    'Text set to __size__ px, under the 14 px that reads comfortably: __text__',
+  'No text was set under 14 px, or 12 px in the header and footer':
+    'No text was set under 14 px, or 12 px in the header and footer',
+  'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
+    'Text set to __size__ px, under the __min__ px that reads comfortably: __text__',
   'Hidden text': 'Hidden text',
   'No text is hidden': 'No text is hidden',
   'Hidden text: filters read hidden content as an attempt to fool them: __text__':
@@ -610,15 +609,17 @@ module.exports = {
     'Every coloured text reads against its background',
   'Text almost invisible on its background (__ratio__:1): __text__':
     'Text almost invisible on its background (__ratio__:1): __text__',
-  'Contrast too low (__ratio__:1, __required__:1 needed): __text__':
-    'Contrast too low (__ratio__:1, __required__:1 needed): __text__',
+  'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__':
+    'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__',
   'Text layout': 'Text layout',
-  'No text is justified or has tight lines':
-    'No text is justified or has tight lines',
+  'No text is justified, overlaps or is centred at length':
+    'No text is justified, overlaps or is centred at length',
   'Justified text: word gaps get harder to read: __text__':
     'Justified text: word gaps get harder to read: __text__',
-  'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__':
-    'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
+  'Line height under 1 (__ratio__): the lines overlap: __text__':
+    'Line height under 1 (__ratio__): the lines overlap: __text__',
+  'Centred text over about three lines is hard to read: align long texts to the left':
+    'Centred text over about three lines is hard to read: align long texts to the left',
   'Visible links': 'Visible links',
   'Every link stands out from the text around it':
     'Every link stands out from the text around it',
