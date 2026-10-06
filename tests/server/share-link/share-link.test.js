@@ -207,6 +207,8 @@ describe('listing and revoking', () => {
         createdBy: 'Ana',
         // No sealed token on this one: nothing to copy again.
         url: null,
+        // Somebody else's link, and `user` is no administrator.
+        canRevoke: false,
       },
     ]);
     expect(JSON.stringify(items)).not.toContain('secret');
@@ -230,6 +232,65 @@ describe('listing and revoking', () => {
     });
     expect(error).toMatchObject({ status: 404 });
     expect(ShareLinks.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('who may turn a link off', () => {
+  const ME = user.id;
+  const listFor = async (requester, links) => {
+    ShareLinks.find.mockReturnValue({
+      sort: () => ({ populate: () => lean(links) }),
+    });
+    const { res } = await call(controller.list, {
+      params: { mailingId: MAILING_ID },
+      user: requester,
+    });
+    return res.json.mock.calls[0][0].items.map((item) => item.canRevoke);
+  };
+  const links = [
+    { _id: 'mine', _user: { _id: ME, name: 'Ana' } },
+    { _id: 'theirs', _user: { _id: 'other', name: 'Bob' } },
+    { _id: 'admin-made', _user: null },
+  ];
+
+  it.each([
+    ['a regular user', { ...user }],
+    ['a writer', { ...user, role: 'writer' }],
+    ['a reviewer', { ...user, role: 'reviewer' }],
+  ])('offers %s only the links they made', async (_label, requester) => {
+    expect(await listFor(requester, links)).toEqual([true, false, false]);
+  });
+
+  it.each([
+    ['a company admin', { ...user, isGroupAdmin: true }],
+    ['a tech company admin', { ...user, isGroupAdminTech: true }],
+    ['a super admin', { ...user, isAdmin: true }],
+  ])('offers %s every link, the admin-made ones included', async (_l, r) => {
+    expect(await listFor(r, links)).toEqual([true, true, true]);
+  });
+
+  it('refuses an author-only user the link of somebody else, atomically', async () => {
+    ShareLinks.findOneAndUpdate.mockResolvedValue(null);
+    const { error } = await call(controller.revoke, {
+      params: { mailingId: MAILING_ID, linkId: LINK_ID },
+    });
+    expect(ShareLinks.findOneAndUpdate.mock.calls[0][0]).toMatchObject({
+      _id: LINK_ID,
+      _user: ME,
+    });
+    expect(error).toMatchObject({ status: 404 });
+  });
+
+  it('lets an administrator turn off any link of the email', async () => {
+    ShareLinks.findOneAndUpdate.mockResolvedValue({ _id: LINK_ID });
+    const { error } = await call(controller.revoke, {
+      params: { mailingId: MAILING_ID, linkId: LINK_ID },
+      user: { ...user, isGroupAdmin: true },
+    });
+    expect(error).toBeUndefined();
+    expect(ShareLinks.findOneAndUpdate.mock.calls[0][0]).not.toHaveProperty(
+      '_user'
+    );
   });
 });
 

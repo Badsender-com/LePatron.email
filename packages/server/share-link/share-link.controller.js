@@ -68,6 +68,8 @@ async function create(req, res) {
     ...shareLinkService.toApi(link),
     // As the list will show it: the admin's links have no author.
     createdBy: link._user ? req.user.name || null : null,
+    // Their own link.
+    canRevoke: true,
     url: shareUrl(req, token),
     // Whether the list will offer to copy it again.
     copyable: Boolean(link.tokenEncrypted),
@@ -87,8 +89,10 @@ async function list(req, res) {
   // Working links: never cached on the way.
   res.set('Cache-Control', 'private, no-store');
   res.json({
-    items: await shareLinkService.listActiveLinks(mailing._id, (token) =>
-      shareUrl(req, token)
+    items: await shareLinkService.listActiveLinks(
+      mailing._id,
+      (token) => shareUrl(req, token),
+      req.user
     ),
   });
 }
@@ -105,6 +109,6 @@ async function revoke(req, res) {
     throw new createError.NotFound(ERROR_CODES.SHARE_LINK_NOT_FOUND);
   }
   const mailing = await editableMailing(req);
-  await shareLinkService.revokeLink(mailing._id, linkId);
+  await shareLinkService.revokeLink(mailing._id, linkId, req.user);
   res.status(204).end();
 }

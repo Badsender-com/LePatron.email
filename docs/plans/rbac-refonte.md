@@ -93,13 +93,42 @@ La branche `feat/roles-permissions` a rapatrié toutes les PR ouvertes à cette 
 | Refonte de la galerie                       | #1068               | Métadonnées d'image, filtres, contrôle de propriété. Écritures atomiques de `develop` conservées.                                                                                                                   |
 | Bloc composé, Head CSS                      | `develop`           | Outil « Compose » dans la barre d'outils du bloc (rangé avec la structure, donc masqué au `writer`), section Head CSS dans l'onglet Style (couverte par l'overlay lecture seule du style).                          |
 
-Écarts connus à traiter, non encore résolus :
+Écarts connus restants (le détail de ce qui a été fait depuis est dans « Avancement de la reprise du 2026-10-06 » ci-dessous) :
 
 - les règles du QC sur le code HTML ne couvrent que le bloc « code HTML », pas le bloc composé ;
-- les routes `share-links` ne sont pas restreintes par rôle (section 5) ;
-- les droits d'un `reviewer`/`writer` sur chaque action du panneau QC sont à définir avec le produit, sur un tableau vide à remplir (section 3.2 : ne pas deviner).
+- les restrictions de rôle sont **UI seule**, sauf la révocation des liens de partage (3.6) : le serveur n'impose toujours rien sur `PUT /mosaico`, le renommage, `quality-ignores` ni `decision` (#1103).
 
 Deux incompatibilités d'intégration ont été corrigées en rapatriant : le moteur QC importait des constantes supprimées de `html-code-block/constants.js` (les règles sur le code HTML ne voyaient plus aucun bloc), et les tests de canevas n'avaient pas de `currentUser()`.
+
+### Avancement de la reprise du 2026-10-06
+
+Travail fait sur `feat/roles-permissions` après le rapatriement des PR, validé à la main dans le navigateur par le produit (sauf mention) :
+
+| Sujet                                                        | Résultat                                                                                                                                                                | Où                                                                                |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Tableaux de droits QC, liens de partage, génération de texte | Remplis par le produit, reportés en 3.2 (lignes 24-28) et 3.6                                                                                                           | 3.2 bis                                                                           |
+| Toolbox verrouillée                                          | Contenu du panneau masqué (`display: none`) et remplacé par un encart d'information ; `reviewer` : onglets masqués, un seul message (`isReadOnly`)                      | `badsender-main-toolbox.less`, `toolbox.tmpl.html`                                |
+| Contenu des blocs                                            | `inert` sans droit d'édition du contenu : plus d'édition au clavier sous le calque                                                                                      | `block-wysiwyg.tmpl.html`                                                         |
+| Constructeurs                                                | Block Builder, éditeur du bloc code HTML, CSS de l'email refusés à `reviewer`/`writer` dans les ouvreurs (double-clic compris)                                          | `ext/user-can.js`, `canComposeBlocks`, `canEditHtmlBlock`, `canEditHeadCss`       |
+| Renommage                                                    | Refusé à `reviewer` dans l'éditeur (sans effet de survol) ; le listing masquait déjà l'action mais un filtre la réaffichait : corrigé, barre d'actions groupées filtrée | `badsender-edit-title.js`, `mailings-table.vue`, `mailings-selection-actions.vue` |
+| Save                                                         | Bouton désactivé pour `reviewer` ; la sauvegarde unique à l'ouverture d'un mailing sans aperçu est conservée pour tous                                                  | `canSave`, `main.tmpl.html`                                                       |
+| Commentaires                                                 | Panneau ouvert à l'arrivée du `reviewer` seulement                                                                                                                      | `badsender-current-user.js`                                                       |
+| Validation                                                   | Pastille verte avec un check dans le listing quand le dernier commentaire racine est une approbation                                                                    | `findApprovedMailingIds`, `isApproved`, `bs-row-actions.vue`                      |
+| QC : ignorer                                                 | Masqué pour `reviewer`/`writer` (`canIgnoreQuality`)                                                                                                                    | `quality-checks-panel.js`, `quality-issue-row.js`                                 |
+| Liens de partage : révoquer                                  | `canRevoke` calculé par le serveur et filtre `_user` sur le `DELETE` : **seule restriction appliquée côté serveur**                                                     | `share-link.service.js`                                                           |
+
+Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyle`, `canRename`, `canSave`, `canIgnoreQuality`, `isReadOnly`) sont toutes calculées à un seul endroit, `ext/badsender-current-user.js`, et lues par `userCan(vm, capacité)` : refus tant que l'utilisateur n'est pas chargé (`currentUser` arrive en asynchrone).
+
+**Reste à faire** (dans l'ordre où on comptait les traiter) :
+
+1. Génération de texte IA (B2) : `openTextGeneration` et l'application du sujet/préheader n'ont aucune garde de rôle (le `reviewer` n'est bloqué que par l'affichage du panneau masqué) ; configuration par group (B1) à vérifier côté routes.
+2. Galerie d'images (upload, suppression, `addImage`) : ouverte à tous les rôles, rien décidé par le produit.
+3. Export vers CDN/FTP/ESP depuis la barre du haut : rien décidé pour `reviewer`. La barre d'actions groupées du listing garde les exports pour tous.
+4. Approbation : `company_admin_tech` et `regular_user` ne voient pas le bouton « Approuver » ; à confirmer. `decision` n'est pas contrôlée côté serveur.
+5. Gardes de défense en profondeur dans le viewModel (`removeBlock`, `duplicateBlock`, `moveBlock`, `addBlock`, undo/redo) ; dépôt d'image sur le canvas (les drops jQuery UI sont géométriques, ni `inert` ni le calque ne les arrêtent).
+6. Échec de `/api/users/current-user` : tout reste verrouillé sans message ; `canEditStyle` et `canEditStructure` portent la même règle (deux booléens).
+7. Bloc code HTML rangé avec la structure : **à confirmer avec le produit** (un `writer` ne peut plus corriger le HTML collé).
+8. Enforcement serveur de tout le reste (#1103) et QA multi-navigateurs ; lignes 16 et 18 de la matrice 3.2 toujours ouvertes.
 
 ---
 
@@ -267,6 +296,7 @@ Décisions reportées en 3.2 (lignes 24-28) et 3.6 le 2026-10-06. Reste à : les
 - Gestion de dossiers (`packages/ui/components/sidebar/context/bs-sidebar-workspace-tree.vue`) : renommer/déplacer/supprimer un dossier, créer un sous-dossier — masqués pour `reviewer` (`checkIfAuthorizedFolderMenu`/`hasRightToCreateFolder` gagnent une condition de rôle), cohérent avec un rôle entièrement passif sur l'organisation du contenu.
 - Renommer le mailing : masqué dans le listing (déjà le cas) **et** dans l'éditeur (double-clic sur le titre, flag `canRename`, `badsender-edit-title.js`) — UI seule, le `PUT` de renommage n'a toujours que `GUARD_USER`.
 - Constructeurs ouverts depuis le canvas ou le panneau Content (Block Builder du bloc composé, éditeur du bloc code HTML, CSS de l'email) : refusés à `reviewer` et `writer` dans les ouvreurs eux-mêmes (`canComposeBlocks`, `canEditHtmlBlock`, `canEditHeadCss`, via `ext/user-can.js`), donc le double-clic sur un bloc composé n'ouvre plus rien. Le bloc code HTML est rangé avec la structure (son balisage _est_ le bloc) : **à confirmer avec le produit**. Le CSS de l'email suit `canEditStyle` ; sa consultation en lecture seule reste ouverte.
+- Liens de partage : révocation limitée aux siens (tous les rôles) ou à ceux d'autrui (`company_admin`, `company_admin_tech`, `super_admin`) — voir l'enforcement serveur en 3.6.
 - Contrôle qualité : ignorer / ne plus ignorer un résultat masqué pour `reviewer` et `writer` (flag `canIgnoreQuality`, `quality-checks-panel.js` / `quality-issue-row.js`) ; ils gardent la consultation, le saut vers le bloc et le commentaire. UI seule : `PATCH quality-ignores` reste en `GUARD_USER`.
 - Save : bouton « Sauvegarder » désactivé pour `reviewer` (flag `canSave`) — UI seule, le `PUT /mosaico` reste en `GUARD_USER`. La sauvegarde unique lancée à l'ouverture d'un mailing sans aperçu HTML (`template-loader.js`) est **conservée pour tous les rôles** (décision du 2026-10-06) : l'aperçu du listing est ainsi toujours généré, au prix d'une écriture de normalisation possible à l'ouverture par un `reviewer`. Le risque d'écrasement de la structure par le Save d'un `writer` reste un sujet serveur (#1103).
 - Envoi de test (`sendTestMail`, `GUARD_USER`) : **conservé**, correspond au "tester" de la vision produit — aucune restriction.
@@ -327,7 +357,7 @@ Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Ass
 | IA texte (sujet, préheader) — configurer                  | —            | —        | —        | Own                | Own                                    |
 | IA texte (sujet, préheader) — utiliser                    | Full         | Full     | UI: —    | Full               | Own                                    |
 
-Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review) : aujourd'hui aucune n'est soumise aux rôles côté serveur, et les routes `share-links` sont toutes en `GUARD_USER`. « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. Le niveau d'enforcement (UI seule, comme 3.3, ou garde serveur sur la révocation) reste à trancher.
+Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review) : aujourd'hui aucune n'est soumise aux rôles côté serveur, et les routes `share-links` sont toutes en `GUARD_USER`. « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. **Enforcement décidé le 2026-10-06 : serveur + interface** pour la révocation (contrairement au reste de 3.3, le serveur sait déjà qui a créé le lien) : `share-link.service.js` calcule `canRevoke` par lien dans la liste (`company_admin`, `company_admin_tech`, `super_admin` : tous ; les autres : leurs propres liens), l'éditeur masque « Turn off » sinon, et `revokeLink` ajoute `_user` au filtre du `findOneAndUpdate` pour les non-administrateurs — un lien d'autrui répond 404, sans fenêtre de course.
 
 `super_admin` n'apparaît plus dans cette matrice : inchangé par cet incrément (accès complet partout ; depuis l'ADR 0002, ce sont des comptes persistés plutôt que le seul compte env var). `company_admin_tech` a un accès "Full" identique à `regular_user` sur mailing/builder/commentaire (rien ne justifie de le restreindre là-dessus, sa spécificité est uniquement l'accès technique en plus). Le spectateur non loggué n'apparaît pas dans cette matrice : ce n'est pas un `User.role`, c'est un accès dérivé d'un token de partage (section 5), lui-même restreint à créer/répondre (jamais résoudre/supprimer/décider) sur le seul mailing pointé par son lien.
 
