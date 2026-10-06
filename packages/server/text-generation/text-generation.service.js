@@ -48,7 +48,7 @@ const optionalText = z
   .max(MAX_BRIEF_LENGTH)
   .optional()
   // An empty field is no instruction: the skill should not read "".
-  .transform((value) => (value && value.trim() ? value : undefined));
+  .transform((value) => (value?.trim() ? value : undefined));
 
 const requestSchema = z.object({
   mailingId: z.string().min(1),
@@ -115,12 +115,12 @@ const compact = (object) =>
  * is the group the editor asked to show the button for.
  */
 async function billedGroupId(user, mailing) {
-  if (user.group && user.group.id) return user.group.id;
+  if (user.group?.id) return user.group.id;
   if (mailing._company) return mailing._company;
   const template = await Templates.findById(mailing._wireframe)
     .select({ _company: 1 })
     .lean();
-  return template && template._company;
+  return template?._company;
 }
 
 /**
@@ -149,41 +149,39 @@ async function prepare({ user, mailingId, scope }) {
   };
 }
 
-const ACCOUNT_FAILURES = [
+const ACCOUNT_FAILURES = new Set([
   PROVIDER_ERROR_CODES.INVALID_CREDENTIALS,
   PROVIDER_ERROR_CODES.QUOTA_EXCEEDED,
   PROVIDER_ERROR_CODES.CONFIG_ERROR,
-];
+]);
 
 /**
  * Turn an invocation failure into what the user can act on. The detail stays in
  * the invocation log.
  */
 function toHttpError(err) {
-  if (err && err.featureResolutionReason) {
+  if (err?.featureResolutionReason) {
     return createError(403, ERROR_CODES.TEXT_GENERATION_DISABLED);
   }
   // Failures that retrying will not fix: the skill refusing the input this
   // feature built (its active version expects another contract), or a provider
   // refusing the account itself — key, quota, credits, configuration. An
   // administrator has to act, so the user is told so, not to retry.
-  const contractBroken =
-    err && err.skillError && err.skillError.code === 'INPUT_VALIDATION';
-  const accountRefused = err && ACCOUNT_FAILURES.includes(err.failureCode);
+  const contractBroken = err?.skillError?.code === 'INPUT_VALIDATION';
+  const accountRefused = ACCOUNT_FAILURES.has(err?.failureCode);
   if (
-    (err && err.invocationStatus === InvocationStatuses.CONFIG_ERROR) ||
+    err?.invocationStatus === InvocationStatuses.CONFIG_ERROR ||
     contractBroken ||
     accountRefused
   ) {
     return createError(503, ERROR_CODES.TEXT_GENERATION_UNAVAILABLE);
   }
   if (
-    err &&
     [
       InvocationStatuses.PROVIDER_ERROR,
       InvocationStatuses.TIMEOUT,
       InvocationStatuses.VALIDATION_ERROR,
-    ].includes(err.invocationStatus)
+    ].includes(err?.invocationStatus)
   ) {
     const failed = createError(502, ERROR_CODES.TEXT_GENERATION_FAILED);
     failed.invocationId = err.invocationId;
