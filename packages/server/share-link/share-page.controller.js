@@ -40,6 +40,8 @@ const PAGES = {
     },
     meta: (date) =>
       `Aperçu de la dernière version enregistrée · lien valable jusqu'au ${date} · les liens de l'email s'ouvrent dans un nouvel onglet`,
+    subject: 'Objet',
+    preheader: 'Préheader',
   },
   en: {
     unknown: {
@@ -67,6 +69,8 @@ const PAGES = {
     },
     meta: (date) =>
       `Preview of the last saved version · link valid until ${date} · links in the email open in a new tab`,
+    subject: 'Subject',
+    preheader: 'Preheader',
   },
 };
 
@@ -157,17 +161,46 @@ function sanitizedPage(mailing) {
 
 // A link lives no longer than the company's access to the email builder.
 // Links made by the admin, who has no company, have no company to check.
-async function companyAllowsSharing(link) {
-  if (!link._company) return true;
+// Also says whether the company writes the subject in LePatron (email
+// metadata): the page then shows the subject and the preheader.
+async function companySharing(link) {
+  if (!link._company) return { allowed: true, metadata: false };
   const group = await Groups.findById(link._company, {
     status: 1,
     enableEmailBuilder: 1,
+    emailMetadata: 1,
   }).lean();
-  return Boolean(
+  const allowed = Boolean(
     group &&
       group.status !== GROUP_STATUS.INACTIVE &&
       group.enableEmailBuilder !== false
   );
+  // Off unless the company opted in, as GUARD_EMAIL_METADATA reads it.
+  const metadata = Boolean(group && group.emailMetadata?.enabled === true);
+  return { allowed, metadata };
+}
+
+// Templates declare their preheader at the root or in a root-level
+// `preheaderBlock` (as the editor reads it, ext/quality/copy-fields.js).
+function preheaderOf(data) {
+  const value =
+    (data && data.preheaderText) ||
+    (data && data.preheaderBlock && data.preheaderBlock.preheaderText);
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+// The subject and preheader lines of the bar, when the company writes them in
+// LePatron and they are filled in. Read as plain text, Pug escapes them.
+function copyLines(mailing, lang, metadata) {
+  if (!metadata) return [];
+  const page = PAGES[lang];
+  const subject =
+    typeof mailing.subject === 'string' ? mailing.subject.trim() : '';
+  const preheader = preheaderOf(mailing.data);
+  return [
+    subject && { label: page.subject, value: subject },
+    preheader && { label: page.preheader, value: preheader },
+  ].filter(Boolean);
 }
 
 // An unknown link has no language of its own: the reader's, English or French.
@@ -209,14 +242,17 @@ async function showShare(req, res) {
   if (!allowView(String(link._id))) {
     return renderNotice(res, 429, lang, 'busy');
   }
-  if (!(await companyAllowsSharing(link))) {
-    return renderNotice(res, 404, lang, 'unknown');
-  }
+  const sharing = await companySharing(link);
+  if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
 
   const mailing = await Mailings.findById(link._mailing, {
     previewHtml: 1,
     updatedAt: 1,
     name: 1,
+    subject: 1,
+    // Only the preheader of the content model, never the whole of it.
+    'data.preheaderText': 1,
+    'data.preheaderBlock.preheaderText': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
   if (!mailing.previewHtml) return renderNotice(res, 404, lang, 'empty');
@@ -226,6 +262,7 @@ async function showShare(req, res) {
     title: mailing.name,
     name: mailing.name,
     meta: PAGES[lang].meta(formatDate(link.expiresAt, lang)),
+    copy: copyLines(mailing, lang, sharing.metadata),
     html: sanitizedPage(mailing),
   });
 }
