@@ -192,6 +192,42 @@ describe('a composition of rows and columns', () => {
       expect(read.rows[0].columns[0].elements[0].smuggled).toBeUndefined();
     });
   });
+
+  // The seam the server rebuilds through: it reads the stored state and
+  // regenerates the markup from it (builder-block-integrity.js). What comes
+  // back from `parseState` therefore has to render, on its own, what was
+  // stored — a read that renders nothing gets written back as nothing, and the
+  // composition is gone on the next save.
+  //
+  // `generate` chooses its shape by the ABSENCE of a flat `elements` view.
+  // That absence has to be real, not merely conditional: `emptyState()` hands
+  // one out, so a rule that only adds the view for a flat composition never
+  // takes it away from a row-shaped one.
+  describe('read back for the server to regenerate', () => {
+    let generate;
+
+    beforeAll(() => {
+      ({
+        generate,
+      } = require('../../../packages/shared/block-builder/generate.js'));
+    });
+
+    it('carries no flat view of its elements', () => {
+      const read = parseState(serialiseState(composition(twoColumns)));
+
+      expect(read.elements).toBeUndefined();
+    });
+
+    it('regenerates the markup it was stored with', () => {
+      const stored = serialiseState(composition(twoColumns));
+
+      const markup = generate(parseState(stored));
+
+      expect(markup).not.toBe('');
+      expect(markup).toContain('gauche');
+      expect(markup).toContain('droite');
+    });
+  });
 });
 
 // Turned on by #1206 (a composition becomes rows of columns)
