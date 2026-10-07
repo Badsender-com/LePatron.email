@@ -137,6 +137,51 @@ describe('skill-invocation.invoke', () => {
       expect(logged.output).toEqual({ text: 'hello world' });
     });
 
+    it('logs the expertise versions the caller composed into the input', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        expertiseConsumed: [
+          {
+            expertiseId: 'redaction.doctrine-objet',
+            versionMajor: 2,
+            versionMinor: 1,
+            body: 'not logged',
+          },
+        ],
+      });
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.expertiseConsumed).toEqual([
+        {
+          expertiseId: 'redaction.doctrine-objet',
+          versionMajor: 2,
+          versionMinor: 1,
+        },
+      ]);
+    });
+
+    it('logs the expertise versions on a failure too', async () => {
+      wireHappyPath();
+      mockProvider.chatComplete.mockRejectedValue(new Error('down'));
+      await skillInvocation
+        .invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'hi' },
+          groupId: GROUP_ID,
+          expertiseConsumed: [
+            { expertiseId: 'a', versionMajor: 1, versionMinor: 0 },
+          ],
+        })
+        .catch(() => {});
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.status).toBe('PROVIDER_ERROR');
+      expect(logged.expertiseConsumed).toEqual([
+        { expertiseId: 'a', versionMajor: 1, versionMinor: 0 },
+      ]);
+    });
+
     it('injects the output-format contract derived from outputSchemaId into the system message', async () => {
       wireHappyPath();
       await skillInvocation.invoke({
@@ -372,6 +417,22 @@ describe('skill-invocation.invoke', () => {
       expect(logged.status).toBe('PROVIDER_ERROR');
     });
 
+    it('hands the provider verdict to the caller, never its message', async () => {
+      wireHappyPath();
+      const providerErr = new Error('gemini API error: 402 - credits depleted');
+      providerErr.code = 'PROVIDER_QUOTA_EXCEEDED';
+      mockProvider.chatComplete.mockRejectedValue(providerErr);
+      const caught = await skillInvocation
+        .invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'x' },
+          groupId: GROUP_ID,
+        })
+        .catch((err) => err);
+      expect(caught.failureCode).toBe('PROVIDER_QUOTA_EXCEEDED');
+      expect(caught.message).toBe('Skill invocation failed');
+    });
+
     it('logs TIMEOUT when the provider call exceeds timeoutMs', async () => {
       wireHappyPath();
       mockProvider.chatComplete.mockImplementation(
@@ -499,6 +560,59 @@ describe('skill-invocation.invoke', () => {
         groupId: GROUP_ID,
         featureType: 'skill',
       });
+    });
+
+    it('resolves the engine of the feature type the caller names', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'x' },
+        groupId: GROUP_ID,
+        featureType: 'text_generation',
+      });
+      expect(aiFeatureService.resolveActiveFeature).toHaveBeenCalledWith({
+        groupId: GROUP_ID,
+        featureType: 'text_generation',
+      });
+    });
+
+    // No fallback to 'skill': a group that has not enabled a client feature
+    // must not get it through the generic engine.
+    it('names the missing feature and its reason when that engine is off', async () => {
+      LePatronSkills.findOne.mockResolvedValue(buildSkill());
+      Groups.findById.mockReturnValue({
+        lean: () => Promise.resolve({ _id: GROUP_ID }),
+      });
+      aiFeatureService.resolveActiveFeature.mockResolvedValue({
+        ok: false,
+        reason: 'FEATURE_INACTIVE',
+      });
+
+      const caught = await skillInvocation
+        .invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'x' },
+          groupId: GROUP_ID,
+          featureType: 'text_generation',
+        })
+        .catch((err) => err);
+      expect(caught.message).toMatch(/no active 'text_generation' feature/);
+      expect(caught.featureResolutionReason).toBe('FEATURE_INACTIVE');
+      expect(aiFeatureService.resolveActiveFeature).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an unknown feature type before anything else', async () => {
+      wireHappyPath();
+      const caught = await skillInvocation
+        .invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'x' },
+          groupId: GROUP_ID,
+          featureType: 'redaction',
+        })
+        .catch((err) => err);
+      expect(caught.invocationStatus).toBe('CONFIG_ERROR');
+      expect(LePatronSkills.findOne).not.toHaveBeenCalled();
     });
 
     // Schemas live in code while versions store only their id, so a rename or a

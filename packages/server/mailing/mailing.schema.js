@@ -15,7 +15,6 @@ const {
   TaxonomyItemModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
-const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
@@ -565,21 +564,13 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
 
-  // Check if translation feature is available for this group
-  // Lazy require to avoid circular dependency
+  // Which AI features the editor offers: each needs to be on, with an active
+  // integration. Lazy require to avoid a circular dependency.
   const aiFeatureService = require('../ai-feature/ai-feature.service');
-  const translationFeatureConfig = await aiFeatureService.getActiveFeatureWithIntegration(
-    {
-      groupId,
-      featureType: AIFeatureTypes.TRANSLATION,
-    }
-  );
-  const hasTranslationFeature = !!(
-    translationFeatureConfig &&
-    translationFeatureConfig.feature.isActive &&
-    translationFeatureConfig.integration &&
-    translationFeatureConfig.integration.isActive
-  );
+  const {
+    hasTranslationFeature,
+    hasTextGenerationFeature,
+  } = await aiFeatureService.getEditorFeatureFlags({ groupId });
 
   // Editorial metadata for the editor's email-settings section, when the company
   // opted in. The policy — which company the typology list is scoped to, what to
@@ -617,6 +608,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
       hasTranslationFeature,
+      // The text generation button. Independent of the email metadata: without
+      // them, the subject proposal is offered to copy.
+      hasTextGenerationFeature,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
       // Named after the descriptors' flags, which the editor reads them by.

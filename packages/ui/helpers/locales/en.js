@@ -1205,7 +1205,10 @@ export default {
     },
     textGeneration: {
       title: 'Text generation',
-      description: 'Generate personalized marketing content for your emails.'
+      description: 'Suggests a subject and a preheader in the editor, written from the email content along Badsender\'s copywriting guidelines.',
+      enableLabel: 'Enable text generation',
+      model: 'AI model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
     },
     qualityCheck: {
       title: 'Quality check',

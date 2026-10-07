@@ -1,0 +1,206 @@
+////////
+// AI PANEL — « Outils IA » (ADR 0004): the AI actions and their steps.
+// Its place is the right panel's (badsender-right-panel.less); its header,
+// buttons, notices and spinner come from the shared kit
+// (badsender-right-panel-ui.less). Only what is the AI panel's own is here.
+//
+// Scoped under the panel: the editor's global p/ul/label rules and
+// Materialize's radios are more specific than a bare class and would win.
+////////
+
+#toolai {
+  #ai-panel {
+    height: 100%;
+  }
+
+  .ai-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    color: var(--gray-900);
+
+    button {
+      font-family: inherit;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    &__body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    // ===== The list of actions =====
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    &__action {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: @qc-radius;
+      background: var(--white);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--gray-100);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+    }
+
+    &__hint,
+    &__label,
+    &__meta {
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+
+    &__invite {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border: 1px dashed var(--gray-300);
+      border-radius: @qc-radius;
+      color: var(--gray-700);
+    }
+
+    // ===== The steps of an action =====
+    &__back,
+    &__start {
+      align-self: flex-start;
+    }
+
+    // The way round the strong suggestion: readable, but not a button.
+    &__discreet {
+      color: var(--gray-700);
+      text-decoration: underline;
+    }
+
+    &__notice,
+    &__applied {
+      align-items: flex-start;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    &__brief {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      font-family: inherit;
+      border: 1px solid var(--gray-300);
+      border-radius: @qc-radius;
+      resize: vertical;
+    }
+
+    &__intro {
+      font-weight: 600;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    &__proposals {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    &__proposal {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: @qc-radius;
+
+      &--picked {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+    }
+
+    &__choice {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      cursor: pointer;
+
+      // Materialize hides native radios behind its own pseudo-elements; the
+      // panel uses the native control, visible and keyboard-reachable.
+      input[type='radio'] {
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        accent-color: var(--accent);
+      }
+    }
+
+    // Selectable: the copy fallback asks the user to select it by hand, and
+    // the editor otherwise switches selection off everywhere.
+    &__text {
+      font-weight: 600;
+      color: var(--gray-900);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    &__facts li {
+      line-height: 1.5;
+    }
+
+    &__copy {
+      align-self: flex-start;
+    }
+
+    &__buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    &__notice &__buttons {
+      width: 100%;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    &__status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gray-700);
+    }
+  }
+}

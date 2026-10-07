@@ -785,4 +785,67 @@ module.exports = {
   'This email already has __count__ active links: turn one off first':
     "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
   'Copy the link: __link__': 'Copier le lien : __link__',
+
+  // text generation (epic #1163)
+  // AI panel, « Outils IA » (ADR 0004)
+  'ai-panel-title': 'Outils IA',
+  'ai-panel-actions': 'Actions disponibles',
+  'ai-panel-action-subject': "Générer l'objet",
+  'ai-panel-action-preheader': 'Générer le préheader',
+  'ai-panel-copy-only':
+    "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
+  'ai-panel-select-invite':
+    'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
+  'ai-panel-all-actions': 'Toutes les actions',
+  'ai-panel-no-subject':
+    "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
+  'ai-panel-subject-first': "Générer d'abord l'objet",
+  'ai-panel-preheader-anyway': 'Générer le préheader quand même',
+  'ai-panel-next-preheader': 'Continuer avec le préheader',
+  'ai-panel-loading': 'Génération en cours…',
+  'ai-panel-generate-subject': 'Proposer des objets',
+  'ai-panel-generate-preheader': 'Proposer des préheaders',
+  'ai-panel-proposed': '__count__ propositions',
+  'ai-panel-undo': 'Annuler la modification',
+  'ai-panel-undone': 'Modification annulée.',
+  'ai-panel-undo-changed':
+    "Le champ a été modifié depuis : rien n'a été annulé.",
+  'text-generation-applied-preheader': 'Préheader :',
+  'text-generation-applied-subject': 'Objet :',
+  'text-generation-long': 'long : la fin sera rarement lue',
+  'text-generation-short':
+    "court : certaines boîtes de réception le complètent avec le début de l'email",
+  'text-generation-copy-hint-preheader':
+    "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-preheaders-title': 'Choisissez un préheader',
+  'text-generation-brief-label': 'Consigne (facultatif)',
+  'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
+  'text-generation-more': "Proposer d'autres",
+  'text-generation-subjects-title': 'Choisissez un objet',
+  'text-generation-length': '__count__ caractères',
+  'text-generation-mobile': 'sur mobile : « __preview__… »',
+  'text-generation-dropped':
+    '__count__ proposition(s) écartée(s) : elles ne respectaient pas les règles de rédaction.',
+  'text-generation-none':
+    "Aucune proposition ne respectait les règles de rédaction. Demandez-en d'autres.",
+  'text-generation-apply': 'Appliquer',
+  'text-generation-copy': 'Copier',
+  'text-generation-copied': 'Copié',
+  'text-generation-copy-hint':
+    "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
+  'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
+  'text-generation-empty-email':
+    "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
+  'text-generation-error-disabled':
+    "La génération de texte n'est pas activée pour votre groupe.",
+  'text-generation-error-unavailable':
+    "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
+  'text-generation-error-rate-limited':
+    'Trop de demandes. Réessayez dans quelques minutes.',
+  'text-generation-error-too-large':
+    "L'email est trop long pour être envoyé à l'IA.",
+  'text-generation-error-failed': 'La génération a échoué. Réessayez.',
+  'text-generation-error-network': 'Erreur réseau. Vérifiez votre connexion.',
+  'text-generation-error-copy':
+    'La copie a échoué : sélectionnez le texte et copiez-le à la main.',
 };

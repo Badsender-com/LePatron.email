@@ -54,6 +54,14 @@ const config = rc('lepatron', {
     tmpDir: 'tmp',
     cache: false,
   },
+  // Ceiling on the requests that reach an AI provider (translation, text
+  // generation), shared by every AI feature. A safety net against runaway
+  // loops and quota burning, not a commercial quota.
+  aiRateLimits: {
+    perUserPerMinute: 20,
+    perUserPerDay: 300,
+    perGroupPerDay: 3000,
+  },
   admin: {
     id: '576b90a441ceadc005124896',
     username: 'admin',
