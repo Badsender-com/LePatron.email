@@ -114,11 +114,11 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 | `images-without-link`       | Contenu       | Warning          | Image dans un lien non renseigné (un `data-ko-link` vide n'est pas exporté, donc pas signalé)                                                                               |
 | `unnamed-image-links`       | Accessibilité | Warning          | Lien sans texte fait d'images sans alt                                                                                                                                      |
 | `unreplaced-images`         | Contenu       | Erreur / Warning | Image sans `src` ou placeholder (E), image d'exemple du template (W)                                                                                                        |
-| `alt-text-quality`          | Technique     | Info             | Alt qui est une adresse, un nom de fichier, ou de plus de 150 caractères                                                                                                    |
+| `alt-text-quality`          | Accessibilité | Info             | Alt qui est une adresse, un nom de fichier, ou de plus de 150 caractères                                                                                                    |
 | `background-images`         | Contenu       | Warning          | Variante de fond activée sans image                                                                                                                                         |
 | `unsupported-image-formats` | Technique     | Warning          | webp, avif, heic, heif, tif, tiff, svg                                                                                                                                      |
-| `image-only-email`          | Accessibilité | Warning          | Des images et moins de 100 caractères de texte                                                                                                                              |
-| `insecure-urls`             | Contenu       | Info / Warning   | Lien (I) ou image (W) en `http://`                                                                                                                                          |
+| `image-only-email`          | Contenu       | Warning          | Des images et moins de 100 caractères de texte                                                                                                                              |
+| `insecure-urls`             | Technique     | Info / Warning   | Lien (I) ou image (W) en `http://`                                                                                                                                          |
 | `forbidden-code`            | Technique     | Erreur           | script, iframe, form, embed, object, attributs `on…`, `javascript:` dans le code du client                                                                                  |
 | `malformed-html`            | Technique     | Warning          | Balise jamais fermée ou fermante orpheline, dans un bloc de code HTML                                                                                                       |
 | `unsupported-code`          | Technique     | Warning          | flex, grid, `position`, variables CSS, `@import`, images `data:`, `<svg>`, `<video>`, `<audio>`                                                                             |
@@ -136,6 +136,21 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 ### Affichage
 
 Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; seul le tracking obligatoire bloque, par la modale de `displayTrackingError()`. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
+
+### Réglages par groupe et par template (epic #1193, ADR 0004)
+
+Chaque contrôle a un état par groupe : **Désactivé**, **Actif** ou **Bloquant**, et ses seuils dans des bornes. Un template surcharge ces réglages un par un et suit le groupe pour le reste. Sans réglage, c'est le comportement d'origine : tout est actif, le tracking obligatoire est bloquant, avec les seuils du tableau ci-dessus.
+
+- **Catalogue** : `packages/shared/quality/checks.js`, avec pour chaque contrôle sa catégorie, son état par défaut et ses seuils (défaut, bornes, unité). L'éditeur et le serveur le lisent ; la page d'admin en garde une copie, vérifiée par un test de synchro.
+- **Stockage** : `qualitySettings` sur le groupe et sur le template, `{ checks: { [id]: { state?, thresholds? } } }`, seulement ce qui est réglé. Il est validé par `sanitizeQualitySettings` (422 `INVALID_QUALITY_SETTINGS`), via `PUT /groups/:groupId` et `PUT /templates/:templateId/quality-settings`. Les droits sont ceux du super admin, et du company admin sur son groupe.
+- **Résolution** : `resolveQualitySettings(group, template)` donne, pour chaque contrôle et chaque seuil, la valeur du template, sinon celle du groupe, sinon le défaut. L'éditeur la reçoit dans `metadata.qualitySettings`.
+- **Éditeur** : un contrôle désactivé n'est ni lancé ni listé, et le panneau dit combien le sont. Les règles lisent leurs seuils dans `ctx.config.quality`, et les messages les citent.
+- **Blocage** :
+  - les résultats d'un contrôle bloquant portent `blocking` et ne peuvent pas être ignorés ;
+  - `viewModel.quality.gate({ html })` arrête le téléchargement et l'envoi ESP (avant l'ouverture du formulaire) et liste ce qui bloque dans une modale ;
+  - un contrôle serveur bloquant fait attendre la réponse du serveur. Seul un résultat sûr bloque, un échec du serveur jamais ;
+  - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing (`resolveMailingTrackingContext`). Les autres blocages ne s'appliquent que dans l'éditeur.
+- **Admin** : Paramètres → Email Builder → Contrôle qualité. Les réglages du groupe viennent en haut, puis chaque template avec ses surcharges.
 
 ### Contrôles qualité côté serveur
 
