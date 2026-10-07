@@ -58,13 +58,13 @@ describe('subject', () => {
     [
       'a'.repeat(41),
       [
-        'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
+        'Long subject (__count__ characters): ideally under __max__, it may be cut on mobile',
       ],
     ],
     [
       'a'.repeat(61),
       [
-        'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
+        'Subject too long (__count__ characters): inboxes cut it, keep it under __max__',
       ],
     ],
     [

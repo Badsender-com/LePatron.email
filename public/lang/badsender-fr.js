@@ -447,8 +447,8 @@ module.exports = {
     "Image d'exemple du template non remplacée",
   'Missing Outlook background image': 'Image de fond Outlook manquante',
   'Missing mobile background image': 'Image de fond mobile manquante',
-  'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
-    "Le HTML exporté pèse __size__ Ko : restez sous 100 Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
+  'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    "Le HTML exporté pèse __size__ Ko : restez sous __max__ Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
@@ -499,8 +499,8 @@ module.exports = {
   'Every background image turned on is set':
     'Toutes les images de fond activées sont renseignées',
   'Email weight': "Poids de l'email",
-  'Exported HTML weighs __size__ KB, under the 100 KB limit':
-    'Le HTML exporté pèse __size__ Ko, sous la limite de 100 Ko',
+  'Exported HTML weighs __size__ KB, under the __max__ KB limit':
+    'Le HTML exporté pèse __size__ Ko, sous la limite de __max__ Ko',
   'Link addresses': 'Adresses des liens',
   'Every link address is well formed':
     'Toutes les adresses de liens sont bien formées',
@@ -572,10 +572,10 @@ module.exports = {
   'The subject is filled in and __count__ characters long':
     "L'objet est renseigné et fait __count__ caractères",
   'No subject': "Pas d'objet",
-  'Subject too long (__count__ characters): inboxes cut it, keep it under 60':
-    'Objet trop long (__count__ caractères) : les boîtes de réception le coupent, restez sous 60',
-  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile':
-    'Objet long (__count__ caractères) : idéalement sous 40, il peut être coupé sur mobile',
+  'Subject too long (__count__ characters): inboxes cut it, keep it under __max__':
+    'Objet trop long (__count__ caractères) : les boîtes de réception le coupent, restez sous __max__',
+  'Long subject (__count__ characters): ideally under __max__, it may be cut on mobile':
+    'Objet long (__count__ caractères) : idéalement sous __max__, il peut être coupé sur mobile',
   'Subject starts like a reply or a forward (__prefix__) without being one':
     "L'objet commence comme une réponse ou un transfert (__prefix__) sans en être un",
   'Subject mostly in capital letters':
@@ -615,8 +615,8 @@ module.exports = {
   'Preheader still the sample text of the template: __text__':
     "Le préheader est resté au texte d'exemple du template : __text__",
   'Font size': 'Taille de police',
-  'No text was set under 14 px, or 12 px in the header and footer':
-    "Aucun texte n'est réglé sous 14 px, ou 12 px dans l'en-tête et le pied de page",
+  'No text was set under __min__ px, or __minHeaderFooter__ px in the header and footer':
+    "Aucun texte n'est réglé sous __min__ px, ou __minHeaderFooter__ px dans l'en-tête et le pied de page",
   'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
     'Texte réglé à __size__ px, sous les __min__ px confortables à lire : __text__',
   'Hidden text': 'Texte masqué',
@@ -635,8 +635,8 @@ module.exports = {
     "Aucun texte n'est justifié, ne se chevauche ni n'est longuement centré",
   'Justified text: word gaps get harder to read: __text__':
     'Texte justifié : les espaces irréguliers entre les mots gênent la lecture : __text__',
-  'Line height under 1 (__ratio__): the lines overlap: __text__':
-    'Interligne inférieur à 1 (__ratio__) : les lignes se chevauchent : __text__',
+  'Line height under __min__ (__ratio__): the lines overlap: __text__':
+    'Interligne inférieur à __min__ (__ratio__) : les lignes se chevauchent : __text__',
   'Centred text over about three lines is hard to read: align long texts to the left':
     'Un texte centré de plus de trois lignes environ se lit mal : alignez les textes longs à gauche',
   'Visible links': 'Liens visibles',
@@ -716,21 +716,19 @@ module.exports = {
   'Link could not be checked, check it by hand: __label__':
     "Le lien n'a pas pu être vérifié, vérifiez-le vous-même : __label__",
   'Image weight': 'Poids des images',
-  'Images checked: __count__, each under 500 KB':
-    'Images vérifiées : __count__, chacune sous 500 Ko',
+  'Images checked: __count__, each under __max__ KB':
+    'Images vérifiées : __count__, chacune sous __max__ Ko',
   'Image could not be downloaded: the export will leave it out (__name__)':
     "Image impossible à télécharger : l'export la laissera de côté (__name__)",
-  'Heavy GIF (__size__ KB): keep it under 1 MB':
-    'GIF lourd (__size__ Ko) : restez sous 1 Mo',
-  'Heavy image (__size__ KB): keep it under 500 KB':
-    'Image lourde (__size__ Ko) : restez sous 500 Ko',
+  'Heavy GIF (__size__ KB): keep it under __max__ KB':
+    'GIF lourd (__size__ Ko) : restez sous __max__ Ko',
+  'Heavy image (__size__ KB): keep it under __max__ KB':
+    'Image lourde (__size__ Ko) : restez sous __max__ Ko',
   'Total image weight': 'Poids total des images',
-  'Images weigh __size__ KB in all, under 500 KB':
-    'Les images pèsent __size__ Ko au total, sous les 500 Ko',
-  'Images weigh __size__ KB in all: over 1 MB':
-    'Les images pèsent __size__ Ko au total : plus de 1 Mo',
-  'Images weigh __size__ KB in all: over 500 KB':
-    'Les images pèsent __size__ Ko au total : plus de 500 Ko',
+  'Images weigh __size__ KB in all, under __max__ KB':
+    'Les images pèsent __size__ Ko au total, sous les __max__ Ko',
+  'Images weigh __size__ KB in all: over __max__ KB':
+    'Les images pèsent __size__ Ko au total : plus de __max__ Ko',
   'Image dimensions': 'Dimensions des images',
   'No image is much larger than it is shown':
     "Aucune image n'est beaucoup plus grande que sa taille d'affichage",
