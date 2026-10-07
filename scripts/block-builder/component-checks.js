@@ -8,6 +8,7 @@
 
 const {
   escapeForContext,
+  MARKUP,
 } = require('../../packages/shared/block-builder/slot-contexts.js');
 const {
   fallbackOf,
@@ -100,10 +101,26 @@ function checkManifest(name, manifest) {
     throw new Error(`${name}.slots.js exports no slots.`);
   }
 
+  // Declared by the manifest, not inferred from the file name: unlocking the
+  // one context that does not escape has to be something a reviewer sees.
+  const isLayout = manifest && manifest.kind === 'layout';
+
   Object.entries(slots).forEach(([slotName, slot]) => {
     if (!slot || !slot.context) {
       throw new Error(
         `${name}.slots.js: slot "${slotName}" declares no context.`
+      );
+    }
+    // The whole security argument for MARKUP is where it may be declared. An
+    // element's slots are filled from stored state — from what a user typed —
+    // so a MARKUP slot there would hand that state to the output unescaped. A
+    // layout's are filled by the generator with its own markup.
+    if (slot.context === MARKUP && !isLayout) {
+      throw new Error(
+        `${name}.slots.js: slot "${slotName}" is MARKUP, which only a layout ` +
+          "may declare. An element's slots are filled from stored state, so " +
+          "MARKUP there would ship it unescaped. Add `kind: 'layout'` to " +
+          'the manifest only if the generator — never a user — fills this slot.'
       );
     }
     checkDefault(`${name}.slots.js: slot "${slotName}"`, slot);

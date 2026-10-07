@@ -27,9 +27,22 @@ const URL = 'URL';
 const COLOR = 'COLOR';
 const PX = 'PX';
 const CSS_VALUE = 'CSS_VALUE';
-// The only context that lets markup through, and the only one backed by an
+// The only context that lets USER markup through, and the only one backed by an
 // allow-list rather than an escape. See rich-text.js.
 const RICH_TEXT = 'RICH_TEXT';
+
+// Markup the GENERATOR produced, inserted as it was built.
+//
+// The one context that does not escape at all, so the one that could undo the
+// whole model. It exists because a layout has to contain the rendered HTML of
+// its columns, and markup escaped is markup destroyed.
+//
+// What keeps it honest is not what it does but WHERE IT MAY BE DECLARED: in a
+// layout's manifest, never an element's. An element's slots are filled from
+// stored state — from what a user typed — while a layout's are filled by
+// `generate` with its own output, and by nothing else. The compiler enforces
+// that (scripts/block-builder/component-checks.js); this comment does not.
+const MARKUP = 'MARKUP';
 
 // What a CSS value may be made of: words, numbers, units, commas, `#` and
 // single quotes — enough for a font stack or a percentage. An allow-list
@@ -66,6 +79,13 @@ function escapeForContext(value, context, fallback) {
     case RICH_TEXT:
       return sanitizeRichText(raw);
 
+    // Passed through, as built. Tested on `value` and not on `raw`: everything
+    // reaching this function has already been coerced to a string, so a number
+    // or an object would arrive as "42" or "[object Object]" and be written
+    // into a cell. Only something that WAS markup is markup.
+    case MARKUP:
+      return typeof value === 'string' ? value : '';
+
     case URL:
       return isSafeUrl(raw) ? escapeAttribute(raw.trim()) : asString(fallback);
 
@@ -95,7 +115,7 @@ function escapeForContext(value, context, fallback) {
 
 // Every context, for whoever needs the list rather than one of them: the
 // template engine, which refuses any other, and the tests.
-const CONTEXTS = [TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT];
+const CONTEXTS = [TEXT, ATTR, URL, COLOR, PX, CSS_VALUE, RICH_TEXT, MARKUP];
 
 module.exports = {
   CONTEXTS,
@@ -108,4 +128,5 @@ module.exports = {
   PX,
   CSS_VALUE,
   RICH_TEXT,
+  MARKUP,
 };
