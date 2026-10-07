@@ -157,16 +157,26 @@ const EspComponent = Vue.component('EspForm', {
           this.isLoading = false;
         });
     },
-    handleProfileSelect(profile) {
-      // Pre-flight: block BEFORE the ESP form opens so the user doesn't fill
-      // in campaign details (subject, name, etc.) only to be told the tracking
-      // is incomplete. Reads the live KO state — works even if no save has
-      // happened since editing. Backend re-checks the same in
-      // profile.service.assertRequiredTrackingParamsFilled (defense in depth).
-      const missingTracking = checkRequiredTrackingParams(this.vm);
-      if (missingTracking.length > 0) {
-        displayTrackingError(missingTracking, this.vm);
-        return;
+    async handleProfileSelect(profile) {
+      // Pre-flight: the quality checks run BEFORE the ESP form opens, on the
+      // HTML as it would leave, so the user doesn't fill in campaign details
+      // only to be told the email cannot leave. A finding of a blocking check
+      // (the required tracking parameters by default) stops here, listed in a
+      // modal; the drawer only opens on what blocks (ADR 0004). The backend
+      // re-checks the tracking parameters (profile.service
+      // .assertRequiredTrackingParamsFilled), when that check is blocking.
+      if (this.vm.quality) {
+        const { blocked } = await this.vm.quality.gate({
+          html: this.vm.exportHTML(),
+          quiet: true,
+        });
+        if (blocked) return;
+      } else {
+        const missingTracking = checkRequiredTrackingParams(this.vm);
+        if (missingTracking.length > 0) {
+          displayTrackingError(missingTracking, this.vm);
+          return;
+        }
       }
       this.selectedProfile = profile;
       this.fetchData().then(() => {

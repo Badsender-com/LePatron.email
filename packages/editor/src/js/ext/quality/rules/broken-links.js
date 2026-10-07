@@ -15,14 +15,17 @@ function messageOf(result) {
           messageKey: 'Link to a domain that does not exist: __label__',
         };
   }
+  // Not sure: a reader may well see the page. Never blocking (ADR 0004).
   if (result.reason === 'timeout') {
     return {
       severity: 'info',
+      uncertain: true,
       messageKey: 'Link did not answer in time, check it by hand: __label__',
     };
   }
   return {
     severity: 'info',
+    uncertain: true,
     messageKey: result.httpStatus
       ? 'Link could not be checked (__status__), check it by hand: __label__'
       : 'Link could not be checked, check it by hand: __label__',
