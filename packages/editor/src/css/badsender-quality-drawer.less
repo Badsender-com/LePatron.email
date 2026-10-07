@@ -1,0 +1,288 @@
+////////
+// QUALITY DRAWER — right-side panel of quality checks
+// Design: Claude Design "Quality Drawer" (preview/components-quality-drawer).
+// Colours come from the editor's tokens (badsender-editor.less :root): --gray-*,
+// --accent, --primary. Severity text uses darker shades than the icons so that
+// labels reach WCAG AA on white; icons only need 3:1.
+////////
+
+@qc-error: #d32f2f;
+@qc-warning: #b07400; // icons only: 3.9:1, enough for a graphic, not for text
+@qc-warning-text: #8a5a00; // 5.9:1 on white
+@qc-info: #1565c0;
+@qc-success: #2e7d32;
+@qc-tint-error: rgba(211, 47, 47, 0.1);
+@qc-tint-warning: rgba(255, 180, 0, 0.14);
+@qc-tint-info: rgba(33, 150, 243, 0.12);
+@qc-tint-success: rgba(76, 175, 80, 0.12);
+@qc-radius: 5px;
+@qc-motion: 0.2s ease-out;
+
+// ===== Panel position: right side, like the comments panel =====
+@keyframes qc-slide-in {
+  0% { right: -(@leftsidebar-width + 50px); }
+  100% { right: 0; }
+}
+@keyframes qc-slide-out {
+  0% { right: 0; }
+  100% { right: -(@leftsidebar-width + 50px); }
+}
+
+#toolquality.slidebar {
+  position: fixed;
+  left: auto;
+  right: 0;
+  top: var(--top-bar-height, 50px);
+  height: calc(100vh - var(--top-bar-height, 50px));
+  background: var(--white);
+  border-left: 1px solid var(--gray-300);
+  animation: qc-slide-in @qc-motion 0s 1;
+
+  &.hidden {
+    left: auto;
+    right: -(@leftsidebar-width + 50px);
+    animation: qc-slide-out @qc-motion 0s 1;
+  }
+
+  #quality-drawer {
+    height: 100%;
+  }
+}
+
+.withQuality #main-edit-area {
+  right: @leftsidebar-width;
+  transition: right @qc-motion;
+}
+
+// Scoped under the panel: the editor's global h2/h3/p rules (em sizes,
+// margins) are more specific than a bare class and would win otherwise.
+#toolquality {
+// ===== Drawer =====
+.qc-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 13px;
+  color: var(--gray-900);
+
+  button {
+    font-family: inherit;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  &__eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+  }
+
+  &__title {
+    margin: 2px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  &__empty,
+  &__clean {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  &__empty {
+    flex: 1;
+    justify-content: center;
+    padding: 40px 32px;
+  }
+
+  &__empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    background: @qc-tint-info;
+    color: var(--accent);
+    font-size: 28px;
+  }
+
+  &__empty-title,
+  &__clean-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  &__empty-text {
+    max-width: 260px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+    color: var(--gray-700);
+  }
+
+  &__hint {
+    margin: 24px 0 0;
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+
+  &__running,
+  &__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  &__clean {
+    padding: 24px 20px;
+    background: linear-gradient(180deg, @qc-tint-success 0%, var(--white) 100%);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  &__clean-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+    border: 2px solid @qc-success;
+    border-radius: 50%;
+    background: var(--white);
+    color: @qc-success;
+    font-size: 22px;
+  }
+
+  &__clean-text {
+    margin: 0;
+    font-size: 12px;
+    color: var(--gray-700);
+  }
+
+  &__list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--gray-200);
+  }
+}
+
+.qc-running-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.qc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: qc-spin 0.7s linear infinite;
+}
+
+@keyframes qc-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ===== Severity colours =====
+.qc-sev--error { color: @qc-error; }
+.qc-sev--warning { color: @qc-warning; }
+.qc-sev--info { color: @qc-info; }
+.qc-sev--success { color: @qc-success; }
+
+// Pills, groups, rows and buttons of the result list.
+@import 'badsender-quality-drawer-results.less';
+} // End #toolquality
+
+// ===== Block located from the drawer =====
+.editable.qc-highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+
+  &--error { outline-color: @qc-error; }
+  &--warning { outline-color: @qc-warning; }
+  &--info { outline-color: @qc-info; }
+}
+
+// ===== Toolbar button =====
+.quality-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  height: 30px;
+  margin: 0 6px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: @qc-radius;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+
+  // Open drawer: shown by the same attribute screen readers read.
+  &[aria-expanded='true'] {
+    background: var(--white);
+    color: var(--primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--white);
+    outline-offset: 2px;
+  }
+
+  > .lucide-shield-check { font-size: 15px; }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 10px;
+    font-weight: 700;
+
+    &--error { background: @qc-error; color: var(--white); }
+    &--success { background: @qc-success; color: var(--white); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #toolquality.slidebar,
+  #toolquality.slidebar.hidden,
+  #toolquality .qc-spinner,
+  .withQuality #main-edit-area {
+    animation: none;
+    transition: none;
+  }
+}

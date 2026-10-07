@@ -15,6 +15,7 @@ const {
   reconstructMentionsForStorage,
   extractMentionIds,
 } = require('./comments-utils.js');
+const { findBlockById, goToBlock } = require('./block-navigation.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -731,21 +732,7 @@ function commentsLoader(opts) {
       viewModel.showComments(true);
 
       // Select the block in the editor (same as "Go to block")
-      const block = viewModel.findBlockById(blockId);
-      if (block) {
-        viewModel.selectBlock(block, true);
-
-        // Scroll to the block element in the DOM
-        setTimeout(function () {
-          const blockElement = document.querySelector(
-            '.editable[data-block-id="' + blockId + '"]'
-          );
-
-          if (blockElement) {
-            blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 100);
-      }
+      goToBlock(viewModel, blockId);
 
       // Focus on main textarea after DOM update
       setTimeout(function () {
@@ -917,25 +904,7 @@ function commentsLoader(opts) {
      * Find a block object by its ID
      */
     viewModel.findBlockById = function (blockId) {
-      if (!blockId) return null;
-
-      try {
-        const blocks = viewModel.content().mainBlocks().blocks();
-        for (var i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          // Each block is an observable function, need to call it
-          const blockData = typeof block === 'function' ? block() : block;
-          if (!blockData) continue;
-          // The id property may also be an observable
-          const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-          if (id === blockId) {
-            return blockData;
-          }
-        }
-      } catch (e) {
-        // Block lookup failed - return null silently
-      }
-      return null;
+      return findBlockById(viewModel, blockId);
     };
 
     /**
@@ -953,24 +922,7 @@ function commentsLoader(opts) {
         return;
       }
 
-      const block = viewModel.findBlockById(comment.blockId);
-      if (!block) {
-        return;
-      }
-
-      // Select the block
-      viewModel.selectBlock(block, true);
-
-      // Scroll to the block element in the DOM
-      setTimeout(function () {
-        const blockElement = document.querySelector(
-          '.editable[data-block-id="' + comment.blockId + '"]'
-        );
-
-        if (blockElement) {
-          blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 100);
+      goToBlock(viewModel, comment.blockId);
     };
 
     // ===== SUBSCRIPTIONS =====
