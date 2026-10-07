@@ -42,8 +42,7 @@ const rejection = (promise) =>
     (error) => error
   );
 
-// Turned on by #1202 (the required tracking parameters as a check like the others)
-describe.skip('the server re-check of the required tracking parameters', () => {
+describe('the server re-check of the required tracking parameters', () => {
   it('refuses a missing required parameter by default, as today', async () => {
     const error = await rejection(
       mailingService.resolveMailingTrackingContext(

@@ -36,6 +36,9 @@ const {
   resolveTrackingConfig,
   validateRequiredTrackingParams,
 } = require('../utils/resolve-tracking-config');
+const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
 
 const IMAGES_FOLDER = 'images';
 
@@ -1173,7 +1176,13 @@ async function resolveMailingTrackingContext(
     tracking,
     groupTrackingConfig
   );
-  if (missingParams.length > 0) {
+  // The required tracking parameters are a check like the others (ADR 0004):
+  // blocking by default; the server refuses them missing only while the
+  // mailing's group or template keeps that check blocking.
+  const trackingCheckBlocks =
+    resolveQualitySettings(group, template).checks['tracking-params'].state ===
+    'blocking';
+  if (missingParams.length > 0 && trackingCheckBlocks) {
     const err = new UnprocessableEntity(
       ERROR_CODES.TRACKING_REQUIRED_PARAMS_MISSING
     );
