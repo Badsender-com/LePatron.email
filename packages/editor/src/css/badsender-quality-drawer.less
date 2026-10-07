@@ -6,52 +6,13 @@
 // labels reach WCAG AA on white; icons only need 3:1.
 ////////
 
-@qc-error: #d32f2f;
-@qc-warning: #b07400; // icons only: 3.9:1, enough for a graphic, not for text
-@qc-warning-text: #8a5a00; // 5.9:1 on white
-@qc-info: #1565c0;
-@qc-success: #2e7d32;
-@qc-tint-error: rgba(211, 47, 47, 0.1);
-@qc-tint-warning: rgba(255, 180, 0, 0.14);
-@qc-tint-info: rgba(33, 150, 243, 0.12);
-@qc-tint-success: rgba(76, 175, 80, 0.12);
-@qc-radius: 5px;
-@qc-motion: 0.2s ease-out;
+// The @qc-* colours and radius live with the shared right-panel kit
+// (badsender-right-panel-ui.less).
 
-// ===== Panel position: right side, like the comments panel =====
-@keyframes qc-slide-in {
-  0% { right: -(@leftsidebar-width + 50px); }
-  100% { right: 0; }
-}
-@keyframes qc-slide-out {
-  0% { right: 0; }
-  100% { right: -(@leftsidebar-width + 50px); }
-}
-
-#toolquality.slidebar {
-  position: fixed;
-  left: auto;
-  right: 0;
-  top: var(--top-bar-height, 50px);
-  height: calc(100vh - var(--top-bar-height, 50px));
-  background: var(--white);
-  border-left: 1px solid var(--gray-300);
-  animation: qc-slide-in @qc-motion 0s 1;
-
-  &.hidden {
-    left: auto;
-    right: -(@leftsidebar-width + 50px);
-    animation: qc-slide-out @qc-motion 0s 1;
-  }
-
-  #quality-drawer {
-    height: 100%;
-  }
-}
-
-.withQuality #main-edit-area {
-  right: @leftsidebar-width;
-  transition: right @qc-motion;
+// Panel position: the right-hand place shared with the comments and the AI
+// panel, in badsender-right-panel.less.
+#toolquality #quality-drawer {
+  height: 100%;
 }
 
 // Scoped under the panel: the editor's global h2/h3/p rules (em sizes,
@@ -67,30 +28,6 @@
 
   button {
     font-family: inherit;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--gray-200);
-  }
-
-  &__eyebrow {
-    margin: 0;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--gray-600);
-  }
-
-  &__title {
-    margin: 2px 0 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--primary);
   }
 
   &__empty,
@@ -196,19 +133,6 @@
   font-weight: 500;
 }
 
-.qc-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--gray-200);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: qc-spin 0.7s linear infinite;
-}
-
-@keyframes qc-spin {
-  to { transform: rotate(360deg); }
-}
-
 // ===== Severity colours =====
 .qc-sev--error { color: @qc-error; }
 .qc-sev--warning { color: @qc-warning; }
@@ -278,15 +202,5 @@
 
     &--error { background: @qc-error; color: var(--white); }
     &--success { background: @qc-success; color: var(--white); }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #toolquality.slidebar,
-  #toolquality.slidebar.hidden,
-  #toolquality .qc-spinner,
-  .withQuality #main-edit-area {
-    animation: none;
-    transition: none;
   }
 }

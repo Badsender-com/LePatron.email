@@ -3,6 +3,7 @@
 const axios = require('axios');
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = require('./engine');
 const { hasResources } = require('./resources');
+const { installRightPanel } = require('../right-panel.js');
 
 // The state of the last quality review, shared by the drawer, the toolbar
 // button and the commands that export the email (download, ESP send).
@@ -162,7 +163,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
       });
   }
 
-  viewModel.showQuality = ko.observable(false);
+  // One of the right panels: opening it closes the comments or the AI panel
+  // (ADR 0004).
+  viewModel.showQuality = installRightPanel(viewModel, ko).flag('quality');
   // The drawer's tab: the checks, or sending a test.
   const tab = ko.observable('checks');
 

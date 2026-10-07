@@ -37,17 +37,10 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     },
   },
   watch: {
+    // Focus and Escape are the right panel's (ext/right-panel.js): the drawer
+    // only clears what it highlighted in the canvas.
     open(isOpen) {
-      if (isOpen) {
-        this.$nextTick(() => this.$refs.close && this.$refs.close.focus());
-        return;
-      }
-      clearHighlight();
-      // Focus goes back to the toolbar button that opened the drawer.
-      if (this.$el.contains(document.activeElement)) {
-        const toggle = document.getElementById('quality-toggle');
-        if (toggle) toggle.focus();
-      }
+      if (!isOpen) clearHighlight();
     },
   },
   mounted() {
@@ -107,12 +100,11 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       role="dialog"
       aria-modal="false"
       aria-labelledby="qc-drawer-title"
-      @keydown.esc="close"
     >
-      <header class="qc-drawer__header">
+      <header class="right-panel__header">
         <div>
-          <p class="qc-drawer__eyebrow">{{ t('Test your email') }}</p>
-          <h2 id="qc-drawer-title" class="qc-drawer__title">{{ t(currentTab.labelKey) }}</h2>
+          <p class="right-panel__eyebrow">{{ t('Test your email') }}</p>
+          <h2 id="qc-drawer-title" class="right-panel__title">{{ t(currentTab.labelKey) }}</h2>
         </div>
         <button ref="close" type="button" class="qc-icon-button" :aria-label="t('Close')" :title="t('Close')" @click="close">
           <span class="lucide lucide-x" aria-hidden="true"></span>
