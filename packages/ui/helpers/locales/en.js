@@ -1010,6 +1010,57 @@ export default {
     }
   },
   qualitySettings: {
+    thresholdHint: 'Default {default}, from {min} to {max}',
+    orderError: 'Must not be lower than the level before it',
+    thresholdError: 'Between {min} and {max}',
+    units: {
+      characters: 'characters',
+      words: 'words',
+      px: 'px',
+      KB: 'KB',
+      ratio: '×',
+    },
+    thresholds: {
+      subject: {
+        long: 'Long subject: info above',
+        tooLong: 'Subject too long: warning above',
+      },
+      preheader: {
+        long: 'Long preheader: info above',
+        tooLong: 'Preheader too long: warning above',
+      },
+      'uppercase-text': {
+        maxWords: 'Words in capitals in a row, at most',
+      },
+      'small-font': {
+        minSize: 'Minimum size',
+        minSizeHeaderFooter: 'Minimum size in the header and footer',
+      },
+      'text-layout': {
+        minLineHeight: 'Minimum line height',
+        centredMaxChars: 'Centred text, at most',
+      },
+      'alt-text-quality': {
+        maxLength: 'Length, at most',
+      },
+      'image-only-email': {
+        minTextLength: 'Text besides images, at least',
+      },
+      'html-size': {
+        maxKb: 'Weight, at most',
+      },
+      'image-weight': {
+        maxKb: 'Weight of an image, at most',
+        maxGifKb: 'Weight of a GIF, at most',
+      },
+      'images-total-weight': {
+        warningKb: 'Warning above',
+        errorKb: 'Error above',
+      },
+      'oversized-images': {
+        maxRatio: 'Real width, at most, times the width shown',
+      },
+    },
     title: 'Quality control',
     sidebarLabel: 'Quality control',
     groupTitle: 'Checks of the group',
