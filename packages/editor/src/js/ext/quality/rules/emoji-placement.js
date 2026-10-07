@@ -4,7 +4,7 @@ const { blockTexts } = require('../exported-content');
 
 // Screen readers read an emoji's name ("fire", "red heart"): inside a
 // sentence it breaks it, several in a row turn into a list. At the end of a
-// sentence it reads fine. (Suggested by MDU, Notion 26/09.)
+// sentence it reads fine.
 const EMOJI = '\\p{Extended_Pictographic}[\\u{FE0F}\\u{200D}\\p{Extended_Pictographic}]*';
 // A letter, the emoji, then the sentence going on with a lowercase word.
 const MID_SENTENCE = new RegExp(`\\p{L}[,]?\\s*${EMOJI}\\s*(?=\\p{Ll})`, 'u');
