@@ -810,6 +810,14 @@ export default {
     }
   },
   qualitySettings: {
+    templatesTitle: 'Templates',
+    templatesDescription: 'Un template peut surcharger chaque réglage du groupe. Ce qu\'il ne règle pas suit le groupe, y compris ses changements ultérieurs.',
+    templatesEmpty: 'Ce groupe n\'a pas encore de template.',
+    inheritedState: 'Hérité du groupe ({state})',
+    inheritedValue: 'Hérité du groupe : {value}',
+    ownSetting: 'Propre au template',
+    templateInherits: 'Hérité du groupe',
+    templateOverrides: '{count} réglage(s) propre(s) au template',
     thresholdsTitle: 'Seuils',
     thresholdHint: 'Défaut {default}, de {min} à {max}',
     thresholdError: 'Entre {min} et {max}',
