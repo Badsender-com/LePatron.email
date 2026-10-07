@@ -14,6 +14,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const {
+  isGeneratedClass,
+} = require('../../../packages/shared/block-builder/generated-classes.js');
 
 const {
   COMPONENTS_DIR: COMPONENTS,
@@ -78,7 +81,25 @@ describe('every component ships what the generator needs', () => {
 
       // Inlining is the whole point of the build step: a block lands in other
       // people's templates and can rely on no stylesheet but its own.
-      expect(compiled).not.toMatch(/\sclass="/);
+      //
+      // Which is why what survives in a `class` matters more than whether one
+      // is there at all. A Tailwind utility surviving means the inliner missed
+      // it, and the block would depend on a stylesheet it does not control.
+      // A name the generator owns is the opposite case: nothing could inline
+      // it, because it only means something inside a media query, and the
+      // stylesheet in the document head is about to refer to it by name. A
+      // slot that lands in a class is still a sentinel at this point.
+      (compiled.match(/\sclass="([^"]*)"/g) || []).forEach((attribute) => {
+        attribute
+          .replace(/^\sclass="|"$/g, '')
+          .split(/\s+/)
+          .filter(Boolean)
+          .forEach((className) => {
+            expect(
+              isGeneratedClass(className) || className.startsWith('[[')
+            ).toBe(true);
+          });
+      });
 
       // A comment in a component is a note for its next author. Only Outlook's
       // conditional comments are markup, and only they may ship.

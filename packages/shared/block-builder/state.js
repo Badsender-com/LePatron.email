@@ -240,11 +240,17 @@ function parseState(serialised) {
     gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
     block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
     rows,
-    // A DERIVED view, flat and in document order, while the generator and the
-    // modal still read a composition that way. It is never stored — see
-    // serialiseState — so `rows` stays the only source of truth, and it goes
-    // away with the ticket that teaches the generator to read rows.
-    elements: elementsOf(rows),
+    // A flat view, in document order, present ONLY for a composition that was
+    // stored flat. Its absence is what tells the generator to render rows.
+    //
+    // That is the rule, and it is one rule: a composition renders the way it
+    // was stored. Deriving a flat view for every composition looked tidier and
+    // was wrong — a block stored before columns would have come back as a
+    // one-column row and re-rendered as a column cell, so translating a mailing
+    // without changing a word would have rewritten its markup.
+    //
+    // It goes away with the ticket that teaches the modal to compose rows.
+    ...(Array.isArray(parsed.rows) ? {} : { elements: elementsOf(rows) }),
   };
 }
 
