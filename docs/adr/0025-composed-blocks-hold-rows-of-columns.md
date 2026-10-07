@@ -2,6 +2,7 @@
 
 - Status: proposed
 - Date: 2026-10-08
+- Epic: #1194
 
 The Block Builder shipped single-column: a composed block was a flat list of elements, and every style it produced was inline. Columns break both halves of that. A block now holds **rows**, each row holds **columns**, and each column holds elements — because a saved block has to be a whole structure (a one-column title row, then a two-column row with an image facing text and a button) rather than one row that only becomes a layout once several blocks sit next to each other. And because a stacking rule cannot be inlined by definition — it only means anything inside a media query — the generator now derives a stylesheet from the state alongside the markup, recomputed at export and never stored.
 
