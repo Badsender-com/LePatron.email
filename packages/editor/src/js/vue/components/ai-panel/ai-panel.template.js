@@ -38,6 +38,19 @@ module.exports = `
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>
 
     <template v-if="!session">
+      <template v-if="target.kind !== 'email'">
+        <p class="ai-panel__section">{{ t('ai-panel-selected-block') }}</p>
+        <ul v-if="targetActions.length" class="ai-panel__actions">
+          <li v-for="item in targetActions" :key="item.id">
+            <button type="button" class="ai-panel__action" @click="openAction(item.id)">
+              <span class="lucide lucide-bot" aria-hidden="true"></span>
+              <span>{{ t(nameOf(item.id)) }}</span>
+            </button>
+          </li>
+        </ul>
+        <p v-else class="ai-panel__hint">{{ t('ai-panel-no-action-yet') }}</p>
+        <p class="ai-panel__section">{{ t('ai-panel-whole-email') }}</p>
+      </template>
       <ul class="ai-panel__actions">
         <li v-for="item in actions" :key="item.id">
           <button type="button" class="ai-panel__action" @click="openAction(item.id)">
@@ -47,7 +60,7 @@ module.exports = `
           <p v-if="!item.canApply" class="ai-panel__hint">{{ t('ai-panel-copy-only') }}</p>
         </li>
       </ul>
-      <p class="ai-panel__invite">
+      <p v-if="target.kind === 'email'" class="ai-panel__invite">
         <span class="lucide lucide-info" aria-hidden="true"></span>
         {{ t('ai-panel-select-invite') }}
       </p>
@@ -57,6 +70,13 @@ module.exports = `
       <button type="button" class="qc-link-button ai-panel__back" @click="showList()">
         <span class="lucide lucide-arrow-left" aria-hidden="true"></span>{{ t('ai-panel-all-actions') }}
       </button>
+
+      <p v-if="selectionChanged" class="qc-notice ai-panel__moved">
+        <span class="qc-notice__text">{{ t('ai-panel-selection-changed') }}</span>
+        <button type="button" class="qc-link-button" @click="showList(selectionChanged)">
+          {{ t('ai-panel-see-its-actions') }}
+        </button>
+      </p>
 
       <p v-if="state.error" class="qc-notice qc-notice--error" role="alert">{{ t(state.error) }}</p>
 

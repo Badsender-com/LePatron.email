@@ -11,9 +11,26 @@ const {
   createActionSession,
 } = require('../../../ext/ai-panel/action-session');
 const { createEditorAccess } = require('../../../ext/ai-panel/editor-access');
+const { placeFieldIcons } = require('../../../ext/ai-panel/field-icons');
 const template = require('./ai-panel.template');
 
 const EMAIL = Object.freeze({ kind: 'email' });
+
+// The target of the canvas selection: a block, or the whole email. The block
+// that holds the preheader is the preheader's target, so the panel offers what
+// the field's icon offers.
+const targetOf = (block) => {
+  if (!block) return EMAIL;
+  const blockType = block.type();
+  if (blockType === 'preheaderBlock') return { kind: 'preheader' };
+  return { kind: 'block', blockType };
+};
+
+// What each field's AI icon says, since it opens the action itself.
+const ICON_LABELS = {
+  subject: 'ai-field-subject-label',
+  preheader: 'ai-field-preheader-label',
+};
 
 const ROUTES = { subject: generateSubjects, preheader: generatePreheaders };
 
@@ -54,6 +71,12 @@ const AiPanel = Vue.component('AiPanel', {
   data: () => ({
     // The actions of the whole email, read from the email on every open.
     actions: [],
+    // What the list is about: the canvas selection, or the whole email.
+    target: EMAIL,
+    targetActions: [],
+    // The selection moved during an action: its proposals stay, the panel
+    // offers the actions of the new element.
+    selectionChanged: null,
     // The action under way, or null for the list.
     session: null,
     // The user chose to go on without a subject.
@@ -64,6 +87,7 @@ const AiPanel = Vue.component('AiPanel', {
     // Said to screen readers: proposals arrived, copied, undone.
     liveMessage: '',
     subscriptions: [],
+    iconsObserver: null,
   }),
   computed: {
     action() {
@@ -107,10 +131,13 @@ const AiPanel = Vue.component('AiPanel', {
       this.vm.showAi.subscribe((isOpen) => {
         if (isOpen) this.refresh();
       }),
+      this.vm.selectedBlock.subscribe(this.follow),
     ];
+    this.watchFieldIcons();
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
+    if (this.iconsObserver) this.iconsObserver.disconnect();
   },
   methods: {
     t(key, params) {
@@ -119,8 +146,58 @@ const AiPanel = Vue.component('AiPanel', {
     nameOf(id) {
       return LABELS[id].name;
     },
+    actionsFor(target) {
+      return availableActions(target, this.editor.context());
+    },
+    // The email is read once for both lists.
     refresh() {
-      this.actions = availableActions(EMAIL, this.editor.context()).actions;
+      const context = this.editor.context();
+      this.actions = availableActions(EMAIL, context).actions;
+      this.targetActions =
+        this.target.kind === 'email'
+          ? []
+          : availableActions(this.target, context).actions;
+    },
+    // The panel follows the selection while it shows a list, never in the
+    // middle of an action: its proposals are not lost to a click elsewhere.
+    // It only says the selection changed when the new element has actions
+    // (a click on the background just deselects).
+    follow(block) {
+      const target = targetOf(block);
+      if (this.session) {
+        const offers = block && this.actionsFor(target).actions.length > 0;
+        this.selectionChanged = offers ? target : null;
+        return;
+      }
+      this.target = target;
+      if (this.vm.showAi()) this.refresh();
+    },
+    // From an AI icon: its single action directly, the list otherwise.
+    openTarget(target) {
+      const { actions, opens } = this.actionsFor(target);
+      if (opens === 'action') this.openAction(actions[0].id);
+      else if (opens === 'list') this.showList(target);
+    },
+    // The subject and preheader fields re-render (Vue, Knockout): the icons are
+    // placed again on every change of the toolbox, never twice.
+    watchFieldIcons() {
+      const root = document.getElementById('main-toolbox');
+      if (!root) return;
+      let pending = null;
+      const place = () => {
+        pending = null;
+        const context = this.editor.context();
+        placeFieldIcons(root, {
+          actionsFor: (target) => availableActions(target, context),
+          onOpen: this.openTarget,
+          labelFor: (kind) => this.t(ICON_LABELS[kind]),
+        });
+      };
+      this.iconsObserver = new MutationObserver(() => {
+        if (!pending) pending = setTimeout(place, 100);
+      });
+      this.iconsObserver.observe(root, { childList: true, subtree: true });
+      place();
     },
     // After a step replaced what had the focus: put it where the user goes on.
     focusAfterRender(ref) {
@@ -131,15 +208,17 @@ const AiPanel = Vue.component('AiPanel', {
       });
     },
     reset() {
+      this.selectionChanged = null;
       this.goOnAnyway = false;
       this.brief = '';
       this.copyError = false;
       this.undoRefused = false;
       this.liveMessage = '';
     },
-    showList() {
+    showList(target = targetOf(this.vm.selectedBlock())) {
       this.session = null;
       this.reset();
+      this.target = target;
       this.refresh();
       this.vm.showAi(true);
       this.focusAfterRender('heading');
