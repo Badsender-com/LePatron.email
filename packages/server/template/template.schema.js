@@ -103,6 +103,13 @@ const TemplateSchema = Schema(
         },
       ],
     },
+    // Overrides of the group's quality settings, one setting at a time
+    // (docs/adr/0004-quality-settings-per-group-and-template.md): what is not
+    // set here follows the group. Validated by sanitizeQualitySettings.
+    qualitySettings: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     // Super-admin only: makes the generic "HTML code" block available in this
     // template's block palette. The block definition itself is always injected
     // client-side (see docs/plans/html-code-block.md): this flag only drives
@@ -154,6 +161,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     _company: 1,
     assets: 1,
     trackingConfig: 1,
+    qualitySettings: 1,
     ...TEMPLATE_FLAG_PROJECTION,
   })
     .populate({ path: '_company', select: 'id name' })

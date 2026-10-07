@@ -46,6 +46,13 @@ router.put(
   GUARD_GROUP_ADMIN,
   templates.updateTrackingConfig
 );
+// Same rule as the tracking config: a company admin may override the quality
+// settings of their own group's templates (checked in the controller).
+router.put(
+  '/:templateId/quality-settings',
+  GUARD_GROUP_ADMIN,
+  templates.updateQualitySettings
+);
 router.put('/:templateId', GUARD_ADMIN, templates.update);
 router.get('/:templateId', GUARD_USER, templates.read);
 router.post('', GUARD_ADMIN, templates.create);

@@ -17,6 +17,9 @@ const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const {
+  sanitizeQualitySettings,
+} = require('../utils/sanitize-quality-settings.js');
+const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
 const {
@@ -30,6 +33,7 @@ module.exports = {
   readMarkup: asyncHandler(readMarkup),
   update: asyncHandler(update),
   updateTrackingConfig: asyncHandler(updateTrackingConfig),
+  updateQualitySettings: asyncHandler(updateQualitySettings),
   destroy: asyncHandler(destroy),
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
@@ -227,6 +231,40 @@ async function updateTrackingConfig(req, res) {
   template.trackingConfig = sanitizeTrackingConfig(req.body, {
     allowOverrideGroupTracking: true,
   });
+  await template.save();
+  res.json(template);
+}
+
+/**
+ * @api {put} /templates/:templateId/quality-settings override quality settings
+ * @apiPermission group-admin (own group only) or super-admin
+ * @apiName UpdateTemplateQualitySettings
+ * @apiGroup Templates
+ *
+ * @apiParam (Body) {Object} checks `{ [checkId]: { state?, thresholds? } }`;
+ *   `null` brings a setting back to the group's (ADR 0004)
+ */
+async function updateQualitySettings(req, res) {
+  const { templateId } = req.params;
+  const { user } = req;
+  const template = await Templates.findById(templateId);
+  if (!template) throw new createError.NotFound();
+  // Like the template's tracking settings: a company admin only touches the
+  // templates of their own group, a super admin any template.
+  if (!user.isAdmin) {
+    const templateCompanyId = template._company && template._company.toString();
+    const userCompanyId = user.group && user.group.id;
+    if (!templateCompanyId || templateCompanyId !== userCompanyId) {
+      throw new createError.Forbidden();
+    }
+  }
+  template.qualitySettings = sanitizeQualitySettings(
+    req.body,
+    template.qualitySettings
+  );
+  if (typeof template.markModified === 'function') {
+    template.markModified('qualitySettings');
+  }
   await template.save();
   res.json(template);
 }
