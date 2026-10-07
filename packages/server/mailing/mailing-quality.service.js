@@ -8,7 +8,9 @@ const ERROR_CODES = require('../constant/error-codes.js');
 // (ext/quality/engine.js): the server stores it opaquely, it never runs checks.
 
 // An email has a few dozen findings at most; the ceiling only bounds the
-// document against a runaway client.
+// document against a runaway client. Fingerprints of findings that no longer
+// exist (the content changed) are never reported again: at the ceiling, the
+// oldest gives way, so "Ignore" keeps working on a long-lived email.
 const MAX_QUALITY_IGNORES = 500;
 const MAX_FINGERPRINT_LENGTH = 512;
 // Rule ids are kebab-case names (ext/quality/rules/*.js).
@@ -59,10 +61,11 @@ function applyIgnore(mailing, { fingerprint, ruleId, ignored }, user) {
   const exists = current.some((ignore) => ignore.fingerprint === fingerprint);
 
   if (ignored && !exists) {
-    if (current.length >= MAX_QUALITY_IGNORES) {
-      throw new UnprocessableEntity(ERROR_CODES.QUALITY_IGNORES_LIMIT_REACHED);
-    }
-    mailing.qualityIgnores = current.concat({
+    // Stored in the order they were ignored: the oldest come first.
+    const kept = current.slice(
+      Math.max(0, current.length - (MAX_QUALITY_IGNORES - 1))
+    );
+    mailing.qualityIgnores = kept.concat({
       fingerprint,
       ruleId,
       _user: user && user.id,
