@@ -184,8 +184,6 @@ async function read(req, res) {
   // • BUT there is no use send it outside of mosaico response which has it's own format
   // • if needed we can cope with that by manually copy it in the response (response.data = mailing.data)
   const response = mailing.toJSON();
-  // The editor gets the ignored quality findings with its own metadata.
-  delete response.qualityIgnores;
   res.json(response);
 }
 

@@ -177,7 +177,19 @@ const MailingSchema = Schema(
       type: [],
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The ignored quality findings reach the editor with its own metadata
+      // (findOneForMosaico) and nowhere else: no API answer carries them, nor
+      // the ids of who ignored them.
+      transform: (doc, ret) => {
+        delete ret.qualityIgnores;
+        return ret;
+      },
+    },
+  }
 );
 
 MailingSchema.pre('find', function () {
