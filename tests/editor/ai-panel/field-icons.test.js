@@ -38,12 +38,10 @@ function render(html) {
   return document.body;
 }
 
-// Turned on by #1182 (AI icons on the subject and preheader fields)
-describe.skip('ai panel: AI icons on the fields', () => {
+describe('ai panel: AI icons on the fields', () => {
   let placeFieldIcons;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1182.
     ({
       placeFieldIcons,
     } = require('../../../packages/editor/src/js/ext/ai-panel/field-icons'));
@@ -91,6 +89,23 @@ describe.skip('ai panel: AI icons on the fields', () => {
     placeFieldIcons(root, { actionsFor: always, onOpen: jest.fn() });
     placeFieldIcons(root, { actionsFor: always, onOpen: jest.fn() });
     expect(icons(root)).toHaveLength(2);
+  });
+
+  it('names each icon after what it opens, right after its label', () => {
+    const root = render(SUBJECT_FIELD + PREHEADER_FIELD);
+    placeFieldIcons(root, {
+      actionsFor: always,
+      onOpen: jest.fn(),
+      labelFor: (kind) => `Générer : ${kind}`,
+    });
+    const subject = root.querySelector('[data-ai-target="subject"]');
+    expect(subject.getAttribute('aria-label')).toBe('Générer : subject');
+    expect(subject.previousElementSibling.tagName).toBe('LABEL');
+    expect(
+      root
+        .querySelector('[data-ai-target="preheader"]')
+        .getAttribute('aria-label')
+    ).toBe('Générer : preheader');
   });
 
   it('opens its target on click, and is a labelled button', () => {
