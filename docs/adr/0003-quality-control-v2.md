@@ -1,6 +1,6 @@
 # The quality control judges only the client's edits, in the editor, and blocks nothing but tracking
 
-- Status: proposed
+- Status: proposed; superseded by ADR-0009 on blocking
 - Date: 2026-10-07
 - Epic: #1193 (quality settings, lot 8; the stack itself was planned on the Notion brief « Refonte QC v2 » and has no epic)
 
