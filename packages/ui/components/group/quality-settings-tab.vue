@@ -64,7 +64,7 @@ export default {
       try {
         // Partial update: only the section this page owns travels.
         await this.$axios.$put(groupsItem({ groupId: this.group.id }), {
-          qualitySettings: statesPayload(this.states),
+          qualitySettings: statesPayload(this.states, this.savedStates),
         });
         this.showSnackbar({
           text: this.$t('qualitySettings.snackbars.updated'),
@@ -116,7 +116,10 @@ export default {
             mandatory
             dense
             color="accent"
-            :aria-label="$t('qualitySettings.stateLabel')"
+            role="group"
+            :aria-label="`${$t('qualitySettings.stateLabel')} : ${$t(
+              `qualitySettings.checks.${id}`
+            )}`"
             @change="onStateChange(id, $event)"
           >
             <v-btn

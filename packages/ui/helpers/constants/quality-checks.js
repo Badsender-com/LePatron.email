@@ -210,8 +210,8 @@ export const CHECKS = {
     category: 'performance',
     defaultState: 'on',
     thresholds: {
-      maxKb: { default: 500, min: 10, max: 10240, unit: 'KB' },
-      maxGifKb: { default: 1024, min: 10, max: 10240, unit: 'KB' },
+      maxKb: { default: 500, min: 10, max: 10239, unit: 'KB' },
+      maxGifKb: { default: 1024, min: 10, max: 10239, unit: 'KB' },
     },
   },
   'images-total-weight': {

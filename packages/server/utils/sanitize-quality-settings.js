@@ -32,6 +32,8 @@ function sanitizeQualitySettings(raw, stored) {
   };
   const isObject = (value) =>
     value !== null && typeof value === 'object' && !Array.isArray(value);
+  // Own keys only: "constructor" or "toString" are not checks of the catalogue.
+  const isCheck = (id) => Object.prototype.hasOwnProperty.call(CHECKS, id);
 
   const current = stored && isObject(stored.checks) ? { ...stored.checks } : {};
   if (raw === null || raw === undefined) return { checks: current };
@@ -42,13 +44,16 @@ function sanitizeQualitySettings(raw, stored) {
   if (!isObject(raw.checks)) throw fail('checks must be an object');
 
   Object.entries(raw.checks).forEach(([checkId, change]) => {
-    if (!CHECKS[checkId]) throw fail(`Unknown check: ${checkId}`);
+    if (!isCheck(checkId)) throw fail(`Unknown check: ${checkId}`);
     if (!isObject(change)) throw fail(`${checkId} must be an object`);
     const unknown = Object.keys(change).filter((key) => key !== 'state');
     if (unknown.length) {
       throw fail(`Unknown settings of ${checkId}: ${unknown.join(', ')}`);
     }
-    const next = { ...(current[checkId] || {}) };
+    const stored = Object.prototype.hasOwnProperty.call(current, checkId)
+      ? current[checkId]
+      : {};
+    const next = { ...stored };
     if ('state' in change) {
       if (change.state === null) delete next.state;
       else if (!CHECK_STATES.includes(change.state)) {
