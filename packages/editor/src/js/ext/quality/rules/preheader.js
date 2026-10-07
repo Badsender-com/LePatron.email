@@ -2,7 +2,7 @@
 
 const { stripMergeTags } = require('../merge-tag-syntax');
 const { inboxLength } = require('../copy-fields');
-const { thresholdOf } = require('../settings');
+const { orderedThresholds } = require('../settings');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
 // objet et préheader"): Litmus and Stripo advise 90 to 100; Dyspatch sees
@@ -90,13 +90,19 @@ module.exports = {
     const count = inboxLength(value);
     const finding = (messageKey, severity) =>
       findings.concat({ messageKey, severity, params: { count }, value });
-    if (count > thresholdOf(ctx, 'preheader', 'tooLong')) {
+    const [long, tooLong] = orderedThresholds(
+      ctx,
+      'preheader',
+      'long',
+      'tooLong'
+    );
+    if (count > tooLong) {
       return finding(
         'Preheader too long (__count__ characters): inboxes cut it well before',
         'warning'
       );
     }
-    if (count > thresholdOf(ctx, 'preheader', 'long')) {
+    if (count > long) {
       return finding(
         'Long preheader (__count__ characters): its end will rarely be seen',
         'info'
