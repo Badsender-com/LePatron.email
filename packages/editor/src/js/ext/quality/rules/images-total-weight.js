@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const { checkableImages, remoteImage } = require('../resources');
-const { thresholdOf } = require('../settings');
+const { orderedThresholds } = require('../settings');
 
 // Everything the reader downloads for the client's images: each address once,
 // as the export ships it. Badsender's grid warns past 500 KB; past 1 MB the
@@ -28,12 +28,16 @@ module.exports = {
   passKey: 'Images weigh __size__ KB in all, under __max__ KB',
   passParams: (ctx) => ({
     size: kb(totalBytes(ctx)),
-    max: thresholdOf(ctx, 'images-total-weight', 'warningKb'),
+    max: orderedThresholds(ctx, 'images-total-weight', 'warningKb', 'errorKb')[0],
   }),
   run(ctx) {
     const total = totalBytes(ctx);
-    const warningKb = thresholdOf(ctx, 'images-total-weight', 'warningKb');
-    const errorKb = thresholdOf(ctx, 'images-total-weight', 'errorKb');
+    const [warningKb, errorKb] = orderedThresholds(
+      ctx,
+      'images-total-weight',
+      'warningKb',
+      'errorKb'
+    );
     if (total <= warningKb * 1024) return [];
     return [
       total > errorKb * 1024

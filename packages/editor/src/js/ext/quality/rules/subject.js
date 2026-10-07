@@ -1,7 +1,7 @@
 'use strict';
 
 const { countEmojis } = require('../emoji');
-const { thresholdOf } = require('../settings');
+const { orderedThresholds } = require('../settings');
 
 // Truncation, not performance: subject length does not change read rates
 // (Return Path, 9 million subjects). Team decision of 1 October 2026: under 40
@@ -51,8 +51,7 @@ module.exports = {
     }
     const findings = [];
     const count = Array.from(subject).length;
-    const long = thresholdOf(ctx, 'subject', 'long');
-    const tooLong = thresholdOf(ctx, 'subject', 'tooLong');
+    const [long, tooLong] = orderedThresholds(ctx, 'subject', 'long', 'tooLong');
     if (count > tooLong) {
       findings.push({
         messageKey:
