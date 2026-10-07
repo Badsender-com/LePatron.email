@@ -42,6 +42,7 @@ const oversizedImages = require('./rules/oversized-images');
 const domainBlocklists = require('./rules/domain-blocklists');
 const dangerousLinks = require('./rules/dangerous-links');
 const { collectResources } = require('./resources');
+const { checkStateOf } = require('./settings');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -225,8 +226,13 @@ function applicableRules(ctx, rules) {
  * (`ctx.remote = remote; runRules(ctx, REMOTE_RULES)`).
  * @returns {{ findings: Array, checks: Array }}
  */
+// A check the group or the template turned off is neither run nor listed,
+// on the local pass as on the server's.
+const isOff = (ctx, rule) => checkStateOf(ctx, rule.id) === 'off';
+
 function runRules(ctx, rules) {
-  const results = applicableRules(ctx, rules).map((rule) => runRule(rule, ctx));
+  const kept = rules.filter((rule) => !isOff(ctx, rule));
+  const results = applicableRules(ctx, kept).map((rule) => runRule(rule, ctx));
   return {
     findings: _.flatMap(results, 'findings'),
     checks: results.map((result) => result.check),
@@ -241,11 +247,12 @@ function runRules(ctx, rules) {
  * @param {Array} [options.rules] - rules to run instead of the default set
  * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
  * @returns {{ findings: Array, checks: Array, html: string, resources: Object,
- *   ctx: Object|null }}
+ *   ctx: Object|null, turnedOff: string[] }}
  *   findings to show, one entry per check with its status (so passed checks
  *   can be listed too), the HTML checked, the links and images to ask the
- *   server about (listed on the local pass only), and the context built, for
- *   the remote pass to reuse
+ *   server about (listed on the local pass only), the context built, for the
+ *   remote pass to reuse, and the checks the mailing's quality settings
+ *   turned off (neither run nor listed)
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
@@ -265,6 +272,7 @@ function runQualityChecks(viewModel, options = {}) {
       html,
       resources: NO_RESOURCES,
       ctx: null,
+      turnedOff: [],
     };
   }
 
@@ -273,6 +281,7 @@ function runQualityChecks(viewModel, options = {}) {
     html,
     resources: options.remote ? NO_RESOURCES : resourcesOf(ctx),
     ctx,
+    turnedOff: rules.filter((rule) => isOff(ctx, rule)).map((rule) => rule.id),
   };
 }
 
