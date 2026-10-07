@@ -11,7 +11,10 @@ const request = require('../../helpers/local-request.js');
 const {
   requireJsonBody,
 } = require('../../../packages/server/utils/require-json-body.js');
-const { GUARD_CAN } = require('../../../packages/server/account/auth.guard.js');
+const {
+  GUARD_CAN,
+  GUARD_USER,
+} = require('../../../packages/server/account/auth.guard.js');
 const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 const router = require('../../../packages/server/mailing/mailing.routes.js');
@@ -68,6 +71,14 @@ describe('the mailing routes that act on what the request carries', () => {
   ])('%s requires a JSON body', (path, capability) => {
     expect(guardsOf('post', path)).toEqual([
       GUARD_CAN(capability),
+      requireJsonBody,
+    ]);
+  });
+
+  // It spends the user's runs and has the server fetch the addresses sent.
+  it('/:mailingId/quality/resources requires a JSON body', () => {
+    expect(guardsOf('post', '/:mailingId/quality/resources')).toEqual([
+      GUARD_USER,
       requireJsonBody,
     ]);
   });

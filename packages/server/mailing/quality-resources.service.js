@@ -10,6 +10,7 @@ const images = require('./quality-images.service.js');
 const {
   cached,
   throttled,
+  limiter,
   mapLimited,
   onDefaultPort,
   timeLeft,
@@ -30,8 +31,9 @@ const {
  *   - per run: number of addresses, parallel requests, one deadline (what is
  *     left past it is "unverifiable"), a budget of bytes downloaded;
  *   - per user: one run at a time, and 20 runs per 10 minutes;
- *   - for the whole process: a ceiling on image downloads in parallel;
- *   - only the default ports (80, 443);
+ *   - for the whole process: a ceiling on link probes and on image downloads
+ *     in parallel, and a daily budget of Web Risk lookups per company;
+ *   - only the default ports (80, 443), redirects included;
  *   - answers say what a reader would see, never why a request was refused.
  * Definitive answers are cached a few minutes, per company: a re-run after
  * fixing one link should not fetch the forty others again.
@@ -44,6 +46,15 @@ const CONCURRENCY = 4;
 const LINK_TIMEOUT_MS = 5000;
 // Short enough to answer before a hosting router gives up on the request.
 const RUN_DEADLINE_MS = 20000;
+// Link probes in parallel for the whole process, whoever asks: each user gets
+// CONCURRENCY of them, so many users at once must not fan out without end.
+const MAX_LINK_PROBES = 16;
+const linkProbes = limiter(MAX_LINK_PROBES);
+// Web Risk lookups a company may make in a day, past the cache. A run asks
+// 60 at most: this lets a company run the checks some fifty times a day, and
+// bounds what one account can cost past Google's free tier.
+const WEB_RISK_LOOKUPS_PER_DAY = 3000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // ----- Payload
 
@@ -119,9 +130,13 @@ async function checkLink(url, run, deps) {
   if (!onDefaultPort(url) || Date.now() > run.deadline) return UNVERIFIABLE;
   try {
     return linkState(
-      await deps.probe(url, {
-        timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
-        readBody: false,
+      await linkProbes(() => {
+        if (Date.now() > run.deadline) return Promise.resolve({ status: 0 });
+        return deps.probe(url, {
+          timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
+          readBody: false,
+          defaultPortsOnly: true,
+        });
       })
     );
   } catch (error) {
@@ -153,7 +168,7 @@ const DEFAULT_DEPS = {
   resolve4: blocklists.resolve4,
   zones: () => blocklists.blocklistZones(),
   webRiskKey: () => webRisk.apiKey(),
-  webRiskLookup: (url, key) => webRisk.lookup(url, key),
+  webRiskLookup: (url, key, options) => webRisk.lookup(url, key, options),
 };
 
 const byKey = (keys, values) =>
@@ -162,17 +177,20 @@ const byKey = (keys, values) =>
     return acc;
   }, {});
 
-async function checkDomains(links, zones, key, deps) {
+async function checkDomains(links, zones, key, run, deps) {
   if (!zones.length) return { enabled: false, listed: {} };
   const domains = [
     ...new Set(links.map(blocklists.registrableDomain).filter(Boolean)),
   ];
   const results = await mapLimited(domains, CONCURRENCY, (domain) =>
-    cached(
-      key('dnsbl', domain),
-      () => blocklists.listedOn(domain, zones, deps.resolve4),
-      () => true
-    )
+    // Past the run's deadline, a domain is not judged (and not cached).
+    Date.now() > run.deadline
+      ? Promise.resolve([])
+      : cached(
+          key('dnsbl', domain),
+          () => blocklists.listedOn(domain, zones, deps.resolve4),
+          () => true
+        )
   );
   const listed = byKey(domains, results);
   Object.keys(listed).forEach((domain) => {
@@ -181,14 +199,45 @@ async function checkDomains(links, zones, key, deps) {
   return { enabled: true, listed };
 }
 
+const webRiskLookups = new Map(); // cacheScope -> { since, count }
+
+// Takes one lookup from the company's daily budget; false once it is spent.
+function spendWebRiskLookup(scope) {
+  const now = Date.now();
+  const budget = webRiskLookups.get(scope);
+  if (!budget || now - budget.since > DAY_MS) {
+    webRiskLookups.set(scope, { since: now, count: 1 });
+    return true;
+  }
+  if (budget.count >= WEB_RISK_LOOKUPS_PER_DAY) return false;
+  budget.count += 1;
+  return true;
+}
+
+// Google matches an address on its host and path: the query string changes
+// nothing to the answer, and `?utm_content=1`, `?utm_content=2`… must not each
+// cost a lookup.
+function webRiskKeyOf(url) {
+  const parsed = new URL(url);
+  return `${parsed.origin}${parsed.pathname}`;
+}
+
 // Links Google lists as phishing, malware or unwanted software. A failed
-// lookup is not judged, and not kept for the next runs.
-async function checkThreats(links, apiKey, key, deps) {
+// lookup, one past the run's deadline or past the company's daily budget is
+// not judged, and not kept for the next runs.
+async function checkThreats(links, apiKey, key, run, scope, deps) {
   if (!apiKey) return { enabled: false, threats: {} };
   const results = await mapLimited(links, CONCURRENCY, (url) =>
     cached(
-      key('webrisk', url),
-      () => deps.webRiskLookup(url, apiKey),
+      key('webrisk', webRiskKeyOf(url)),
+      () => {
+        if (Date.now() > run.deadline || !spendWebRiskLookup(scope)) {
+          return Promise.resolve(null);
+        }
+        return deps.webRiskLookup(url, apiKey, {
+          timeoutMs: timeLeft(run, webRisk.TIMEOUT_MS),
+        });
+      },
       (types) => types !== null
     )
   );
@@ -237,8 +286,15 @@ function checkResources(
           images.isDefinitiveImage
         );
       }),
-      checkDomains(resources.links, deps.zones(), key, deps),
-      checkThreats(resources.links, deps.webRiskKey(), key, deps),
+      checkDomains(resources.links, deps.zones(), key, run, deps),
+      checkThreats(
+        resources.links,
+        deps.webRiskKey(),
+        key,
+        run,
+        cacheScope,
+        deps
+      ),
     ]);
 
     return {
@@ -250,7 +306,10 @@ function checkResources(
   });
 }
 
-const clearCacheForTests = clearForTests;
+function clearCacheForTests() {
+  clearForTests();
+  webRiskLookups.clear();
+}
 
 module.exports = {
   validateResourcesPayload,
@@ -259,5 +318,6 @@ module.exports = {
   MAX_LINKS,
   MAX_IMAGES,
   RUNS_PER_WINDOW,
+  WEB_RISK_LOOKUPS_PER_DAY,
   clearCacheForTests,
 };
