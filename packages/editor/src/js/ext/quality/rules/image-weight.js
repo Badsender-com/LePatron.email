@@ -14,12 +14,19 @@ const kb = (result) =>
 const isGif = (result, src) =>
   result.type === 'gif' || /\.gif($|\?)/i.test(src || '');
 
+// The image is surely gone: a 404 or 410, or no such host. A 401, 403 or 429
+// may only refuse the server's robot, while a reader gets the image.
+const isGone = (result) =>
+  [404, 410].includes(result.httpStatus) || result.reason === 'not-found';
+
 // `kind` joins the fingerprint: ignoring "could not be downloaded" must not
 // hide a later "heavy image" on the same address.
 function problemOf(ctx, image, result) {
   if (result.state === 'unreachable') {
     return {
       kind: 'missing',
+      // Not sure: never blocking (ADR 0004).
+      uncertain: !isGone(result),
       messageKey:
         'Image could not be downloaded: the export will leave it out (__name__)',
       params: { name: image.src.split('/').pop().split('?')[0] },

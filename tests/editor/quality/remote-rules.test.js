@@ -183,6 +183,27 @@ describe('image weight', () => {
     expect(findings[0].params).toEqual({ name: 'gone.png' });
   });
 
+  it('blocks on an image surely gone only, when the check blocks', () => {
+    const blocks = (result) => {
+      const vm = vmWith(img('https://cdn.test/a.png'));
+      vm.metadata.qualitySettings = {
+        checks: { 'image-weight': { state: 'blocking', thresholds: {} } },
+      };
+      return runQualityChecks(vm, {
+        rules: [imageWeight],
+        remote: images({
+          'https://cdn.test/a.png': { state: 'unreachable', ...result },
+        }),
+      }).findings[0].blocking;
+    };
+    expect(blocks({ httpStatus: 404 })).toBe(true);
+    expect(blocks({ httpStatus: 410 })).toBe(true);
+    expect(blocks({ reason: 'not-found' })).toBe(true);
+    // A refusal of the server's robot: a reader may well get the image.
+    expect(blocks({ httpStatus: 403 })).toBe(false);
+    expect(blocks({ httpStatus: 429 })).toBe(false);
+  });
+
   it('does not judge an image the server could not reach on purpose', () => {
     const { findings, checks } = check(
       imageWeight,
