@@ -66,6 +66,8 @@ describe('the mailing routes that act on what the request carries', () => {
     ['/:mailingId/mosaico/download-zip'],
     ['/:mailingId/mosaico/send-test-mail'],
     ['/download-multiple-zip'],
+    // It spends the user's runs and has the server fetch the addresses sent.
+    ['/:mailingId/quality/resources'],
   ])('%s requires a JSON body', (path) => {
     expect(guardsOf('post', path)).toEqual([GUARD_USER, requireJsonBody]);
   });

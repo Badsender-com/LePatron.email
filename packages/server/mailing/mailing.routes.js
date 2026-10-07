@@ -64,6 +64,8 @@ router.patch(
 router.post(
   '/:mailingId/quality/resources',
   GUARD_USER,
+  // A form posted from another site would spend the user's runs.
+  requireJsonBody,
   mailingQuality.checkResources
 );
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);

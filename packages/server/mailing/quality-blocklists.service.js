@@ -3,6 +3,8 @@
 const dns = require('dns');
 const psl = require('psl');
 
+const config = require('../node.config.js');
+
 /**
  * DNS blocklists of domains (Spamhaus DBL, SURBL, URIBL, Invaluement…), for
  * the quality check on the domains an email links to. A listed domain is asked
@@ -18,7 +20,9 @@ const DNS_TIMEOUT_MS = 2000;
  * None by default: every one of them asks for a subscription for commercial
  * use, and Spamhaus answers nothing through public resolvers.
  */
-function blocklistZones(value = process.env.QC_DOMAIN_BLOCKLISTS) {
+function blocklistZones(
+  value = config.qualityControl && config.qualityControl.domainBlocklists
+) {
   return String(value || '')
     .split(',')
     .map((entry) => entry.trim())
