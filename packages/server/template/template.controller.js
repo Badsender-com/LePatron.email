@@ -20,6 +20,9 @@ const {
   sanitizeQualitySettings,
 } = require('../utils/sanitize-quality-settings.js');
 const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
+const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
 const {
@@ -258,13 +261,21 @@ async function updateQualitySettings(req, res) {
       throw new createError.Forbidden();
     }
   }
+  // What the template does not set follows its group: thresholds that go
+  // together are checked against the group's values.
+  const group = template._company
+    ? await Groups.findById(template._company).select('qualitySettings')
+    : null;
+  const { checks } = resolveQualitySettings(group, null);
+  const inherited = Object.fromEntries(
+    Object.entries(checks).map(([id, check]) => [id, check.thresholds])
+  );
   template.qualitySettings = sanitizeQualitySettings(
     req.body,
-    template.qualitySettings
+    template.qualitySettings,
+    inherited
   );
-  if (typeof template.markModified === 'function') {
-    template.markModified('qualitySettings');
-  }
+  template.markModified('qualitySettings');
   await template.save();
   res.json(template);
 }

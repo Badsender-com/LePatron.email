@@ -92,20 +92,25 @@ export function thresholdErrors(thresholds) {
 
 /**
  * The higher threshold of each pair set below its lower one, as
- * `checkId.name` keys (defaults fill what is not set).
+ * `checkId.name` keys. What is not set follows `inherited` (a template's
+ * group), then the default.
  * @param {Object} thresholds as thresholdsOf returns them
+ * @param {Object} [inherited] the same shape, for what is not set
  * @returns {string[]}
  */
-export function orderErrors(thresholds) {
+export function orderErrors(thresholds, inherited = {}) {
+  const isSet = (value) =>
+    value !== null && value !== '' && value !== undefined;
   return Object.entries(thresholds).flatMap(([id, values]) =>
     (CHECKS[id].ordered || [])
       .filter(([low, high]) => {
-        const value = (name) =>
-          values[name] === null ||
-          values[name] === '' ||
-          values[name] === undefined
-            ? CHECKS[id].thresholds[name].default
-            : Number(values[name]);
+        const value = (name) => {
+          if (isSet(values[name])) return Number(values[name]);
+          const fallback = inherited[id] && inherited[id][name];
+          return isSet(fallback)
+            ? Number(fallback)
+            : CHECKS[id].thresholds[name].default;
+        };
         return value(low) > value(high);
       })
       .map(([, high]) => `${id}.${high}`)
