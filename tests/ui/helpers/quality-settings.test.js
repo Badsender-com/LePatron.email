@@ -3,6 +3,7 @@ import {
   statesPayload,
   thresholdsOf,
   thresholdErrors,
+  orderErrors,
   settingsPayload,
   checksByCategory,
   qualitySettingsErrorKeyFor,
@@ -71,6 +72,15 @@ describe('quality settings page helpers', () => {
       'html-size': { maxKb: 150 },
     };
     expect(thresholdErrors(thresholds)).toEqual(['small-font.minSize']);
+  });
+
+  it('names the higher level of a pair set under the lower one', () => {
+    const thresholds = {
+      ...thresholdsOf(undefined),
+      subject: { long: 70, tooLong: null },
+      'images-total-weight': { warningKb: 300, errorKb: 400 },
+    };
+    expect(orderErrors(thresholds)).toEqual(['subject.tooLong']);
   });
 
   it('sends only the thresholds that changed, a default one as null', () => {
