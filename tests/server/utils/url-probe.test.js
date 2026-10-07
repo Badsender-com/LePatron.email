@@ -68,6 +68,18 @@ describe('probeUrl', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('refuses a redirect to another port when asked for the default ones', async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValueOnce(
+        response(302, { location: 'https://victim.test:6379/' })
+      );
+    await expect(
+      probeUrl('https://a.test', { fetchImpl, defaultPortsOnly: true })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.UNREACHABLE });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('gives up after too many redirects', async () => {
     const fetchImpl = jest.fn(async () =>
       response(302, { location: 'https://a.test/again' })
