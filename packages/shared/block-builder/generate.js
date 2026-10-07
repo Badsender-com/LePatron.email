@@ -13,6 +13,12 @@
 
 const { elementFor } = require('./elements/index.js');
 const { escapeForContext, COLOR, PX, ATTR } = require('./slot-contexts.js');
+const { defineTemplate } = require('./template.js');
+const { stackClassFor } = require('./generated-classes.js');
+const columnTemplates = require('./components/column.compiled.js');
+
+const renderFilledColumn = defineTemplate(columnTemplates.filled);
+const renderEmptyColumn = defineTemplate(columnTemplates.empty);
 
 // Bumped when the shape of a state changes in a way a reader must know about.
 const STATE_VERSION = 2;
@@ -159,6 +165,77 @@ function generateElement(element, options) {
 }
 
 /**
+ * The elements of a column, stacked.
+ *
+ * Each element already renders a complete table of its own, so concatenating
+ * them stacks them — no wrapper needed, and none added: a `<div>` nobody asked
+ * for would change the markup of every email. The one exception is the editing
+ * chrome, which needs somewhere to live and is empty unless the preview asks,
+ * so it brings its own wrapper and only then.
+ *
+ * @param {Array<Object>} elements
+ * @param {Object} [options]
+ * @returns {string}
+ */
+function renderColumnContent(elements, options) {
+  return (elements || [])
+    .map((element) => {
+      const markup = renderElement(element, options);
+      if (markup === '') return '';
+      const attributes = elementAttributes(element, options);
+      return attributes ? `<div${attributes}>${markup}</div>` : markup;
+    })
+    .join('');
+}
+
+/**
+ * One row, as a table of real percentage cells.
+ *
+ * Cells rather than `inline-block` divs: that is what lets Outlook lay the
+ * columns out natively, with no ghost table. A column holding nothing keeps
+ * its cell — two 50% columns become one full-width column the moment one of
+ * them disappears — so emptiness picks a variant, it never drops the cell.
+ *
+ * @param {Object} row
+ * @param {Object} [options]
+ * @returns {string} the row's markup, or '' when it holds nothing anywhere
+ */
+function generateRow(row, options) {
+  const columns = (row && Array.isArray(row.columns) ? row.columns : []).filter(
+    (column) => column && typeof column === 'object'
+  );
+  if (columns.length === 0) return '';
+
+  const stackClass = stackClassFor(columns.length);
+  const contents = columns.map((column) =>
+    renderColumnContent(column.elements, options)
+  );
+
+  // A row where every column is empty renders nothing at all: it would
+  // otherwise ship a band of blank cells nobody can see or click.
+  if (contents.every((content) => content === '')) return '';
+
+  const cells = columns.map((column, index) => {
+    const values = {
+      width: `${column.width}%`,
+      stackClass,
+      content: contents[index],
+    };
+    return contents[index] === ''
+      ? renderEmptyColumn(values)
+      : renderFilledColumn(values);
+  });
+
+  return (
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
+    '<tr>' +
+    cells.join('') +
+    '</tr>' +
+    '</table>'
+  );
+}
+
+/**
  * @param {Object} state
  * @param {Object} [options]
  * @param {boolean} [options.elementIds] mark each row with its element id.
@@ -170,17 +247,39 @@ function generateElement(element, options) {
  * @returns {string} the block's markup, or an empty string for an empty state
  */
 function generate(state, options) {
-  if (!state || !Array.isArray(state.elements)) return '';
+  if (!state || typeof state !== 'object') return '';
 
-  // `.map(generateElement)` would hand the index as a second argument, which is
-  // exactly where the options go — every element after the first would get
+  // `.map(fn)` would hand the index as a second argument, which is exactly
+  // where the options go — everything after the first entry would get
   // `elementIds` from a number.
-  const rows = state.elements
-    .map((element) => generateElement(element, options))
-    .join('');
+  // Each branch produces markup that stands on its own inside the block's
+  // cell: a row is already a table, and the flat list's rows need one around
+  // them. Deciding that here rather than wrapping afterwards is what keeps a
+  // single-column composition rendering exactly as it did.
+  //
+  // Which shape renders: the one the composition was stored in. A flat view is
+  // present only on a composition that was stored flat (see state.js), so its
+  // absence is the signal — never a guess at what the rows "really" mean.
+  let body;
+  if (!Array.isArray(state.elements) && Array.isArray(state.rows)) {
+    body = state.rows.map((row) => generateRow(row, options)).join('');
+  } else {
+    // A composition still held as a flat list, which is what the modal hands
+    // over until it composes rows itself.
+    const cells = (Array.isArray(state.elements) ? state.elements : [])
+      .map((element) => generateElement(element, options))
+      .join('');
+    body =
+      cells === ''
+        ? ''
+        : '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
+          cells +
+          '</table>';
+  }
+
   // An empty block exports nothing at all — same rule as the HTML code block,
   // whose empty root had to be stripped to avoid shipping a bare <div>.
-  if (rows === '') return '';
+  if (body === '') return '';
 
   const block = { ...DEFAULT_BLOCK, ...(state.block || {}) };
   const background = escapeForContext(
@@ -197,9 +296,7 @@ function generate(state, options) {
     ` style="background-color:${background};">` +
     '<tr>' +
     `<td style="padding:${paddingTop}px 0 ${paddingBottom}px 0;">` +
-    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">' +
-    rows +
-    '</table>' +
+    body +
     '</td>' +
     '</tr>' +
     '</table>'
