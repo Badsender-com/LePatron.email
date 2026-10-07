@@ -77,11 +77,21 @@ function starterValues(type, values, options) {
 }
 
 /**
- * @param {Object} element one entry of `state.elements`
+ * An element's own markup, with nothing around it.
+ *
+ * Separate from `generateElement` because the row an element used to carry is
+ * not always the right wrapper. Inside a column's cell it is the wrong one:
+ * a `<tr>` directly inside a `<td>` is invalid, and browsers drop it along
+ * with everything in it — the element would simply vanish from the email.
+ *
+ * So what an element renders and what it is wrapped in are now two decisions,
+ * and whoever places it makes the second one.
+ *
+ * @param {Object} element one entry of a column's `elements`
  * @param {Object} [options] see generate
- * @returns {string} the element's markup
+ * @returns {string} the element's markup, unwrapped
  */
-function generateElement(element, options) {
+function renderElement(element, options) {
   if (!element || typeof element !== 'object') return '';
 
   const definition = elementFor(element.type);
@@ -90,16 +100,60 @@ function generateElement(element, options) {
   if (!definition) return '';
 
   const values = { ...definition.defaults, ...element };
+  return definition.render(
+    starterValues(definition.type, values, options) || values
+  );
+}
+
+/**
+ * The editing chrome an element's wrapper carries, as an attribute string.
+ *
+ * Kept apart from the markup for the same reason: the wrapper varies, the
+ * chrome does not. A column's cell needs exactly these attributes to make its
+ * elements selectable and draggable, and it must not have to rebuild them —
+ * two spellings of `data-lp-el` would drift, and the one that drifted would be
+ * the one the preview stopped being able to find.
+ *
+ * Empty unless the preview asks: none of this belongs in a shipped email.
+ *
+ * @param {Object} element
+ * @param {Object} [options] see generate
+ * @returns {string} leading-space-prefixed attributes, or an empty string
+ */
+function elementAttributes(element, options) {
+  if (!element || typeof element !== 'object') return '';
+
+  const definition = elementFor(element.type);
+  if (!definition) return '';
+
+  const values = { ...definition.defaults, ...element };
   const starter = starterValues(definition.type, values, options);
   const id =
     options && options.elementIds ? escapeForContext(element.id, ATTR) : '';
-  const attributes =
-    (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
-    (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : '');
 
   return (
-    `<tr><td${attributes}>` +
-    definition.render(starter || values) +
+    (id ? ` ${ELEMENT_ATTRIBUTE}="${id}"` : '') +
+    (starter ? ` ${STARTER_ATTRIBUTE}="${definition.type}"` : '')
+  );
+}
+
+/**
+ * An element as one row of a single-column block.
+ *
+ * @param {Object} element one entry of `state.elements`
+ * @param {Object} [options] see generate
+ * @returns {string} the element's markup, in its own row
+ */
+function generateElement(element, options) {
+  if (!element || typeof element !== 'object') return '';
+  // Asked before rendering, not inferred from an empty render: an element that
+  // renders nothing still occupied a row before this split, and the export has
+  // to come out identical.
+  if (!elementFor(element.type)) return '';
+
+  return (
+    `<tr><td${elementAttributes(element, options)}>` +
+    renderElement(element, options) +
     '</td></tr>'
   );
 }
@@ -169,6 +223,8 @@ function emptyState() {
 module.exports = {
   generate,
   generateElement,
+  renderElement,
+  elementAttributes,
   emptyState,
   STATE_VERSION,
   GENERATOR_VERSION,
