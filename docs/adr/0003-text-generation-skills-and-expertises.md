@@ -3,6 +3,7 @@
 - Status: proposed
 - Date: 2026-10-05
 - Epic: #1163
+- Amended by ADR-0004: the preheader may be generated without a subject, and then carries the main point of the email
 
 The editor's first text generation (subject, then preheader) is built on the Skills module rather than on a prompt in the code: the prompts (skills) and the Badsender know-how they read (expertises) are data that consultants write, version and test in the admin, without a deploy. The feature's code only composes each invocation's input — the email's text as the editor shows it, the email type when known, the applicable expertises for one scope — and chains the invocations: three subjects, the user picks one, then three preheaders built from it. Text generation is an AI feature of its own, with its own integration and model, and never falls back to the generic skill engine, so a group opens it without opening every skill.
 

@@ -16,6 +16,16 @@ The AI feature that writes text for the user to pick from: today the subject and
 _UI_: Génération de texte
 _Avoid_: Textgen, copywriting, AI writing
 
+**AI action**:
+What the user triggers to have AI work on a target — the whole email, a block or a field —, from the AI panel or from the AI icon of that target; it relies on an AI feature and may chain several invocations.
+_UI_: Action IA
+_Avoid_: AI tool, AI command, prompt
+
+**AI panel**:
+The right-hand panel where the user picks an AI action, gives its options and instruction, and chooses among its proposals; it shares its place with the comments and the quality control panels, one open at a time.
+_UI_: Outils IA
+_Avoid_: AI sidebar, AI drawer, assistant
+
 **Skill**:
 A versioned prompt, written by Badsender consultants, that turns one input into one output; it never fetches context and never calls another skill.
 _UI_: Skill
