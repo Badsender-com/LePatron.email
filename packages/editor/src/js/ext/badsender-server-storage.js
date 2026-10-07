@@ -215,9 +215,19 @@ function loader(opts) {
         download(html, downloadOptions);
         return;
       }
-      viewModel.quality.gate({ html }).then(({ blocked }) => {
-        if (!blocked) download(html, downloadOptions);
-      });
+      // One export at a time: the button waits for the checks' verdict.
+      if (!downloadCmd.enabled()) return;
+      downloadCmd.enabled(false);
+      viewModel.quality
+        .gate({ html })
+        .then(({ blocked }) => {
+          if (blocked) downloadCmd.enabled(true);
+          else download(html, downloadOptions);
+        })
+        .catch((err) => {
+          console.error('Quality gate failed', err);
+          downloadCmd.enabled(true);
+        });
     };
 
     function download(html, downloadOptions) {

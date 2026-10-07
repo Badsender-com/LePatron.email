@@ -201,8 +201,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
     errorCount: countOf('error'),
-    // What the toolbar badge counts: what should be fixed, not the infos.
-    issueCount: countOf('error', 'warning'),
+    // What the toolbar badge counts: what should be fixed, not the infos,
+    // unless they block an export.
+    issueCount: ko.pureComputed(
+      () =>
+        active().filter(
+          (f) => f.blocking || f.severity === 'error' || f.severity === 'warning'
+        ).length
+    ),
+    // The findings that stop an export (ADR 0004).
+    blockingCount: ko.pureComputed(
+      () => active().filter((f) => f.blocking).length
+    ),
     passedCount: ko.pureComputed(
       () => checks().filter((c) => c.status === 'passed').length
     ),
@@ -247,15 +257,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
      */
     gate(options) {
       const id = ++runId;
+      let local;
       try {
-        runAll(id, options, { openOnIssues: true });
+        local = runAll(id, options, { openOnIssues: true });
       } catch (err) {
         console.error('Quality review failed', err);
         settle();
         return Promise.resolve({ blocked: false, findings: [] });
       }
       if (active().length) viewModel.quality.open('checks');
-      const findings = active().filter((finding) => finding.blocking);
+      // The verdict is this run's own: never what a later run left in the
+      // drawer. A blocking finding cannot be ignored.
+      const findings = local.findings.filter((finding) => finding.blocking);
       if (findings.length) displayBlockingFindings(findings, viewModel);
       return Promise.resolve({ blocked: findings.length > 0, findings });
     },
