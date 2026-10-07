@@ -116,8 +116,7 @@ describe('the thresholds in force', () => {
   });
 });
 
-// Turned on by #1200 (make a check blocking for the download)
-describe.skip('a blocking check', () => {
+describe('a blocking check', () => {
   const unfilled = textBlock('<a href="#toreplace">Shop now</a>');
   const blocking = { 'unfilled-links': { state: 'blocking', thresholds: {} } };
 
@@ -148,6 +147,23 @@ describe.skip('a blocking check', () => {
     const vm = review({ 'unfilled-links': { state: 'on', thresholds: {} } });
     const verdict = await vm.quality.gate({ html: unfilled.html });
     expect(verdict.blocked).toBe(false);
+  });
+
+  it('is counted on the toolbar badge, even as an info', () => {
+    const vm = fakeViewModel(textBlock('<p>Hi</p>'));
+    const finding = {
+      ruleId: 'headings',
+      severity: 'info',
+      blocking: true,
+      fingerprint: 'f1',
+    };
+    installQualityReview(vm, ko, {
+      defer: (fn) => fn(),
+      run: () => ({ findings: [finding], checks: [], resources: {} }),
+    });
+    vm.quality.run();
+    expect(vm.quality.blockingCount()).toBe(1);
+    expect(vm.quality.issueCount()).toBe(1);
   });
 
   it('cannot be ignored: an ignore stored before it became blocking no longer counts', async () => {

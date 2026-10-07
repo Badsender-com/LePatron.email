@@ -4,6 +4,7 @@ const axios = require('axios');
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = require('./engine');
 const { hasResources } = require('./resources');
 const { checkStateOf } = require('./settings');
+const { displayBlockingFindings } = require('../badsender-control-quality');
 
 // The state of the last quality review, shared by the drawer, the toolbar
 // button and the commands that export the email (download, ESP send).
@@ -80,7 +81,10 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // previous one, and is not sent at all if a newer run replaced it.
   let inFlight = Promise.resolve();
 
-  const isIgnored = (finding) => ignored.indexOf(finding.fingerprint) !== -1;
+  // A finding of a blocking check cannot be ignored: an ignore stored before
+  // the check became blocking no longer hides it (ADR 0004).
+  const isIgnored = (finding) =>
+    !finding.blocking && ignored.indexOf(finding.fingerprint) !== -1;
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));
   const countOf = (...severities) =>
     ko.pureComputed(
@@ -160,6 +164,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // Shown at once, stored in the background, put back as it was on failure.
   function setIgnored(finding, value) {
     const { fingerprint, ruleId } = finding;
+    if (finding.blocking) return Promise.resolve();
     if (value === isIgnored(finding)) return Promise.resolve();
     if (value) ignored.push(fingerprint);
     else ignored.remove(fingerprint);
@@ -196,8 +201,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
     errorCount: countOf('error'),
-    // What the toolbar badge counts: what should be fixed, not the infos.
-    issueCount: countOf('error', 'warning'),
+    // What the toolbar badge counts: what should be fixed, not the infos,
+    // unless they block an export.
+    issueCount: ko.pureComputed(
+      () =>
+        active().filter(
+          (f) => f.blocking || f.severity === 'error' || f.severity === 'warning'
+        ).length
+    ),
+    // The findings that stop an export (ADR 0004).
+    blockingCount: ko.pureComputed(
+      () => active().filter((f) => f.blocking).length
+    ),
     passedCount: ko.pureComputed(
       () => checks().filter((c) => c.status === 'passed').length
     ),
@@ -229,6 +244,33 @@ function installQualityReview(viewModel, ko, deps = {}) {
       runId++;
       if (remoteStatus() === 'running') remoteStatus('idle');
       settle();
+    },
+
+    /**
+     * Decides whether an export may leave: runs the checks on the HTML about
+     * to leave, opens the drawer when there is something to see, and, when a
+     * finding of a blocking check remains, lists them in a modal. The export
+     * is stopped by the caller on `blocked`. A failure of the checks never
+     * blocks.
+     * @param {Object} [options] - `html`: the HTML already exported
+     * @returns {Promise<{ blocked: boolean, findings: Array }>}
+     */
+    gate(options) {
+      const id = ++runId;
+      let local;
+      try {
+        local = runAll(id, options, { openOnIssues: true });
+      } catch (err) {
+        console.error('Quality review failed', err);
+        settle();
+        return Promise.resolve({ blocked: false, findings: [] });
+      }
+      if (active().length) viewModel.quality.open('checks');
+      // The verdict is this run's own: never what a later run left in the
+      // drawer. A blocking finding cannot be ignored.
+      const findings = local.findings.filter((finding) => finding.blocking);
+      if (findings.length) displayBlockingFindings(findings, viewModel);
+      return Promise.resolve({ blocked: findings.length > 0, findings });
     },
 
     /**

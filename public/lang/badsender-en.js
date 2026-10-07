@@ -446,6 +446,10 @@ module.exports = {
   'Links, images and weight are checked before you send a test.':
     'Links, images and weight are checked before you send a test.',
   '__count__ checks': '__count__ checks',
+  Blocking: 'Blocking',
+  'This email cannot leave yet': 'This email cannot leave yet',
+  'Your quality settings make these checks blocking: fix them before downloading or sending the email.':
+    'Your quality settings make these checks blocking: fix them before downloading or sending the email.',
   '__count__ checks turned off by your group or template':
     '__count__ checks turned off by your group or template',
   'Running checks…': 'Running checks…',

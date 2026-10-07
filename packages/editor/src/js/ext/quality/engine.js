@@ -109,6 +109,11 @@ function hashString(value) {
  */
 function completeFinding(rule, finding, ctx) {
   const blockId = finding.blockId || null;
+  // A finding of a blocking check stops the download and the ESP send (ADR
+  // 0004), unless the rule says it is not sure (a server answer that may be a
+  // robot refusal, not a broken page).
+  const blocking =
+    checkStateOf(ctx, rule.id) === 'blocking' && !finding.uncertain;
   const propertyPath = finding.propertyPath || null;
   return {
     ruleId: rule.id,
@@ -120,6 +125,7 @@ function completeFinding(rule, finding, ctx) {
     blockId,
     blockLabel: blockId ? getBlockLabelWithNumber(ctx.blocks, blockId) : null,
     propertyPath,
+    blocking,
     // Identifies "this issue on this content": it changes when the content
     // does, so an ignored finding comes back once the value is edited.
     fingerprint: [
