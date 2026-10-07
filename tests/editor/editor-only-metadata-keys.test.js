@@ -18,6 +18,7 @@ describe('EDITOR_ONLY_METADATA_KEYS', () => {
     'emailMetadataConfig',
     'headCss',
     'qualityIgnores',
+    'qualitySettings',
   ])('excludes %s', (key) => {
     expect(EDITOR_ONLY_METADATA_KEYS).toContain(key);
   });

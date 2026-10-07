@@ -24,6 +24,8 @@ const EDITOR_ONLY_METADATA_KEYS = [
   'headCss',
   // Patched through /quality-ignores, one finding at a time.
   'qualityIgnores',
+  // Set by the group and template quality settings, never by the editor.
+  'qualitySettings',
 ];
 
 module.exports = { EDITOR_ONLY_METADATA_KEYS };
