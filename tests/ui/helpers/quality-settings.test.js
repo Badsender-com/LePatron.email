@@ -86,6 +86,17 @@ describe('quality settings page helpers', () => {
     expect(orderErrors(thresholds)).toEqual(['subject.tooLong']);
   });
 
+  it("checks a template's pairs against its group's values", () => {
+    const template = thresholdsOf({
+      checks: { subject: { thresholds: { long: 70 } } },
+    });
+    const group = thresholdsOf({
+      checks: { subject: { thresholds: { tooLong: 80 } } },
+    });
+    expect(orderErrors(template, group)).toEqual([]);
+    expect(orderErrors(template)).toEqual(['subject.tooLong']);
+  });
+
   it('sends only the thresholds that changed, a default one as null', () => {
     const saved = thresholdsOf({
       checks: { 'html-size': { thresholds: { maxKb: 150 } } },

@@ -7,6 +7,7 @@ import {
   statesOf,
   thresholdsOf,
   thresholdErrors,
+  orderErrors,
   overridesOf,
   overridesPayload,
   checksByCategory,
@@ -56,7 +57,10 @@ export default {
       );
     },
     invalidThresholds() {
-      return thresholdErrors(this.thresholds);
+      return thresholdErrors(this.thresholds).concat(this.misordered);
+    },
+    misordered() {
+      return orderErrors(this.thresholds, this.groupThresholds);
     },
   },
   watch: {
@@ -131,6 +135,23 @@ export default {
       return this.invalidThresholds.includes(`${id}.${name}`);
     },
 
+    errorFor(id, threshold) {
+      if (!this.isInvalid(id, threshold.name)) return [];
+      if (this.misordered.includes(`${id}.${threshold.name}`)) {
+        return [this.$t('qualitySettings.orderError')];
+      }
+      return [
+        this.$t('qualitySettings.thresholdError', {
+          min: threshold.min,
+          max: threshold.max,
+        }),
+      ];
+    },
+
+    selectedState(id) {
+      return this.states[id] || INHERITED;
+    },
+
     onStateChange(id, value) {
       this.states = {
         ...this.states,
@@ -198,10 +219,12 @@ export default {
             </span>
           </span>
           <v-select
-            :value="states[id] || 'inherited'"
+            :value="selectedState(id)"
             :items="stateOptions(id)"
             :disabled="loading"
-            :aria-label="$t('qualitySettings.stateLabel')"
+            :aria-label="`${$t('qualitySettings.stateLabel')} : ${$t(
+              `qualitySettings.checks.${id}`
+            )}`"
             dense
             outlined
             hide-details
@@ -227,16 +250,7 @@ export default {
                   })
                 : $t('qualitySettings.ownSetting')
             "
-            :error-messages="
-              isInvalid(id, threshold.name)
-                ? [
-                    $t('qualitySettings.thresholdError', {
-                      min: threshold.min,
-                      max: threshold.max,
-                    }),
-                  ]
-                : []
-            "
+            :error-messages="errorFor(id, threshold)"
             :disabled="loading"
             type="number"
             :step="threshold.unit === 'ratio' ? 0.1 : 1"

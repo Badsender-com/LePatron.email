@@ -7,7 +7,7 @@
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
-  Groups: {},
+  Groups: { findById: jest.fn() },
   Mailings: {},
   Galleries: {},
 }));
@@ -25,6 +25,7 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
 
 const {
   Templates,
+  Groups,
 } = require('../../../packages/server/common/models.common.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
@@ -36,8 +37,16 @@ function templateDoc(qualitySettings) {
     _id: TEMPLATE_ID,
     _company: { toString: () => GROUP_ID },
     qualitySettings,
+    markModified: jest.fn(),
     save: jest.fn().mockResolvedValue(undefined),
   };
+}
+
+// The template's group, as the route reads it (its quality settings only).
+function groupWith(qualitySettings) {
+  Groups.findById.mockReturnValue({
+    select: jest.fn().mockResolvedValue({ qualitySettings }),
+  });
 }
 
 const groupAdminOf = (groupId) => ({
@@ -61,7 +70,8 @@ describe('PUT /templates/:templateId/quality-settings', () => {
     templates = require('../../../packages/server/template/template.controller.js');
   });
 
-  async function put({ user, body, stored }) {
+  async function put({ user, body, stored, group }) {
+    groupWith(group);
     const template = templateDoc(stored);
     Templates.findById.mockResolvedValue(template);
     const res = { json: jest.fn() };
@@ -83,6 +93,31 @@ describe('PUT /templates/:templateId/quality-settings', () => {
       checks: { 'small-font': { thresholds: { minSize: 11 } } },
     });
     expect(template.save).toHaveBeenCalled();
+    expect(template.markModified).toHaveBeenCalledWith('qualitySettings');
+  });
+
+  it("checks thresholds that go together against the group's values", async () => {
+    const group = {
+      checks: { subject: { thresholds: { tooLong: 80 } } },
+    };
+    // 70 is over the default of 60, under the group's 80: allowed.
+    const { template } = await put({
+      user: groupAdminOf(GROUP_ID),
+      group,
+      body: { checks: { subject: { thresholds: { long: 70 } } } },
+    });
+    expect(template.qualitySettings.checks.subject).toEqual({
+      thresholds: { long: 70 },
+    });
+    // 90 is over the group's 80: refused.
+    const error = await rejection(
+      put({
+        user: groupAdminOf(GROUP_ID),
+        group,
+        body: { checks: { subject: { thresholds: { long: 90 } } } },
+      })
+    );
+    expect(error.status).toBe(422);
   });
 
   it('lets a super admin override any template', async () => {
