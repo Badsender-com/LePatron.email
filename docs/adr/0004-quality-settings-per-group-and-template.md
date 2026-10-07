@@ -14,7 +14,7 @@ The rule catalogue (check ids, thresholds with their default, minimum and maximu
 
 ## Considered Options
 
-- **Blocking enforced on the server for every check**: rejected for now. The server would have to run the editor's rule engine on the exported HTML. The editor enforces blocking; the server keeps checking only the required tracking parameters, as before, and only when that check is on and blocking. A direct call to the API therefore bypasses every other blocking check.
+- **Blocking enforced on the server for every check**: rejected for now. The server would have to run the editor's rule engine on the exported HTML. The editor enforces blocking; the server keeps checking only the required tracking parameters, as before, and only when that check is on and blocking. A direct call to the API therefore bypasses every other blocking check, and so does the download of several mailings at once from the mailing list, which ships their saved previews without opening the editor.
 - **A template replacing the group's settings as a whole** (the `trackingConfig` override): rejected. A template usually changes one or two values, and a whole copy would stop following the group's later changes.
 - **Changing a check's severity, and ESP-specific merge-tag syntax**: out of this feature. The syntax waits for an audit of the ESPs' syntaxes. A mailing does not know its ESP before it is sent.
 
