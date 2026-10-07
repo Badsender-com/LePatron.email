@@ -4,12 +4,9 @@
 // per run from the parsed HTML. The template's frame, outside every block, is
 // never part of it.
 
-// ESP merge tags and personalization variables: {{x}}, %%x%%, *|X|*, [[x]],
-// [unsubscribe_link], ${x}. A URL carrying one is only known once the ESP sends
-// the email, so it is never judged on its form.
-const DYNAMIC_PATTERN = /\{\{|\}\}|%%|\*\||\|\*|\[\[|\]\]|\$\{|\[[a-z0-9_-]+\]/i;
-
-const isDynamic = (value) => DYNAMIC_PATTERN.test(value || '');
+// A URL carrying an ESP merge tag is only known once the ESP sends the email,
+// so it is never judged on its form (merge-tag-syntax.js).
+const { isDynamic } = require('./merge-tag-syntax');
 
 const textOf = (node) => (node.textContent || '').replace(/\s+/g, ' ').trim();
 

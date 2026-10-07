@@ -59,6 +59,8 @@ describe('malformed-links', () => {
     '{{unsubscribe_url}}',
     '%%view_online%%',
     '[unsubscribe_link]',
+    '<%= recipient.url %>',
+    'https://brand.com/?id=<%= recipient.id %>',
     '#toreplace',
     'https://brand.com/%',
   ])('leaves %s alone', (href) => {
