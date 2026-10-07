@@ -70,8 +70,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// Turned on by #1197 (turn a check off for a group)
-describe.skip('PUT /groups/:groupId — check states', () => {
+describe('PUT /groups/:groupId — check states', () => {
   it('lets a company admin turn a check off for their group', async () => {
     const payload = await update({
       body: {

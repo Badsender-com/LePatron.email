@@ -12,8 +12,7 @@ function load() {
   } = require('../../../packages/server/utils/resolve-quality-settings.js'));
 }
 
-// Turned on by #1197 (turn a check off for a group)
-describe.skip('resolveQualitySettings — a group', () => {
+describe('resolveQualitySettings — a group', () => {
   beforeAll(load);
 
   it("gives every check its default when nothing is set: today's behavior", () => {
