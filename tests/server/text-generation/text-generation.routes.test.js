@@ -719,6 +719,20 @@ describe('text generation: POST /api/text-generation/preheader', () => {
     }
   );
 
+  it('keeps a proposal without a subject that reuses a variable of the content', async () => {
+    invoke.mockResolvedValue(
+      proposals('Bonjour {{prenom}}, le lin est à -30 % jusqu’à dimanche')
+    );
+    const res = await request(makeApp())
+      .post('/api/text-generation/preheader')
+      .send({ mailingId: MAILING_ID, content: CONTENT });
+    expect(res.status).toBe(200);
+    expect(res.body.proposals.map((p) => p.text)).toEqual([
+      'Bonjour {{prenom}}, le lin est à -30 % jusqu’à dimanche',
+    ]);
+    expect(res.body.dropped).toBe(0);
+  });
+
   it('accepts a subject of exactly 500 characters', async () => {
     invoke.mockResolvedValue(
       proposals('Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin')
