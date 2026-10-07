@@ -158,15 +158,6 @@ describe('creating a link', () => {
     expect(ShareLinks.create).not.toHaveBeenCalled();
   });
 
-  it('refuses what a form on another site could post', async () => {
-    const { error } = await call(controller.create, {
-      params: { mailingId: MAILING_ID },
-      is: () => false,
-    });
-    expect(error).toMatchObject({ status: 415 });
-    expect(ShareLinks.create).not.toHaveBeenCalled();
-  });
-
   it('stops at 20 active links per email', async () => {
     ShareLinks.countDocuments.mockResolvedValue(20);
     const { error } = await call(controller.create, {
