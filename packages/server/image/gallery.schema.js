@@ -34,6 +34,7 @@ const GallerySchema = Schema(
           label: file.label || file.name,
           source: file.source || 'upload',
           externalMetadata: file.externalMetadata || {},
+          uploadedAt: file.uploadedAt || null,
         }));
       },
     },
