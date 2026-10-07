@@ -34,6 +34,8 @@ const EspComponent = Vue.component('EspForm', {
     mailingId: null,
     isLoading: false,
     isLoadingExport: false,
+    // The quality checks run before the form opens: one profile at a time.
+    isChecking: false,
     selectedProfile: null,
     type: SEND_MODE.CREATION,
     campaignId: null,
@@ -166,11 +168,27 @@ const EspComponent = Vue.component('EspForm', {
       // re-checks the tracking parameters (profile.service
       // .assertRequiredTrackingParamsFilled), when that check is blocking.
       if (this.vm.quality) {
-        const { blocked } = await this.vm.quality.gate({
-          html: this.vm.exportHTML(),
-          quiet: true,
-        });
-        if (blocked) return;
+        if (this.isChecking) return;
+        this.isChecking = true;
+        try {
+          const verdict = this.vm.quality.gate({
+            html: this.vm.exportHTML(),
+            quiet: true,
+          });
+          // Said only when the server is actually asked, and one of its
+          // checks blocks.
+          if (this.vm.quality.waitsForServer()) {
+            this.vm.notifier.info(this.vm.t('Checking links and images…'));
+          }
+          const { blocked } = await verdict;
+          if (blocked) return;
+        } catch (err) {
+          console.error('Quality gate failed', err);
+          this.vm.notifier.error(this.vm.t('error-server'));
+          return;
+        } finally {
+          this.isChecking = false;
+        }
       } else {
         const missingTracking = checkRequiredTrackingParams(this.vm);
         if (missingTracking.length > 0) {
