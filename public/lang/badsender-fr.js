@@ -684,4 +684,14 @@ module.exports = {
     "Adresse relative dans le code HTML, elle ne fonctionne que sur son site d'origine : __urls__",
   'Colour an email client cannot read in the HTML code: __colors__':
     'Couleur illisible par les clients mail dans le code HTML : __colors__',
+  'Send a test': 'Envoi de test',
+  '__count__ errors are still to fix: you can send a test anyway':
+    '__count__ erreur(s) restent à corriger : vous pouvez tout de même envoyer un test',
+  'See the results': 'Voir les résultats',
+  'The quality checks have not run on this version yet':
+    "Le contrôle qualité n'a pas encore été lancé sur cette version",
+  'Separate addresses with a semicolon':
+    'Séparez les adresses par un point-virgule',
+  'Saved list of addresses': "Liste d'adresses enregistrée",
+  'Send the test email': "Envoyer l'email de test",
 };
