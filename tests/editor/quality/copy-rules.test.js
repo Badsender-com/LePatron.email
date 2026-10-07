@@ -83,6 +83,8 @@ describe('subject', () => {
     ['Last chance!!', ['Subject repeats punctuation (!!, ??, $$)']],
     ['Sale 🔥🔥 today', ['Subject has more than one emoji']],
     ['Our nurses 👩‍⚕️ thank you', []],
+    ['Sale in 🇫🇷🇧🇪', ['Subject has more than one emoji']],
+    ['Nespresso® Vertuo™ is back', []],
     ['Our spring collection is here', []],
   ])('judges "%s"', (subjectValue, keys) => {
     expect(keysOf(subject, { subjectValue })).toEqual(keys);
@@ -134,6 +136,31 @@ describe('preheader', () => {
       expect(keysOf(preheader, { subjectValue, preheaderValue })).toEqual([
         'The preheader repeats the subject: inboxes show the same words twice',
       ]);
+    }
+  );
+
+  it('reports a repeated subject and a preheader too long, both', () => {
+    expect(
+      keysOf(preheader, {
+        subjectValue: 'Spring sale',
+        preheaderValue: `Spring sale ${'a'.repeat(140)}`,
+      })
+    ).toEqual([
+      'The preheader repeats the subject: inboxes show the same words twice',
+      'Preheader too long (__count__ characters): inboxes cut it well before',
+    ]);
+  });
+
+  it.each([
+    ['New', 'New arrivals in store'],
+    ['{{first_name}}', '{{first_name}}, discover our spring sale'],
+    ['{{first_name}}, hello', 'Discover our spring sale'],
+  ])(
+    'leaves a preheader alone after the subject "%s"',
+    (subjectValue, preheaderValue) => {
+      expect(findingsOf(preheader, { subjectValue, preheaderValue })).toEqual(
+        []
+      );
     }
   );
 

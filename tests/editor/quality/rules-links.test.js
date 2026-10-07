@@ -70,10 +70,18 @@ describe('images-without-link', () => {
     });
   });
 
-  it('leaves an image in an empty link alone: the export drops the link', () => {
+  it('leaves an image alone once the export dropped its empty link', () => {
+    // A `data-ko-link` left empty exports the image without its <a>.
+    const blocks = [{ id: 'b1', type: 'imageBlock' }];
+    const html = exportOf({ b1: '<img src="x.png">' });
+    expect(findingsOf(imagesWithoutLink, { blocks, html })).toEqual([]);
+  });
+
+  it('reports an empty href the export keeps: the image stays clickable', () => {
+    // `-ko-attr-href` writes href="" and keeps the <a>.
     const blocks = [{ id: 'b1', type: 'imageBlock' }];
     const html = exportOf({ b1: '<a href=""><img src="x.png"></a>' });
-    expect(findingsOf(imagesWithoutLink, { blocks, html })).toEqual([]);
+    expect(findingsOf(imagesWithoutLink, { blocks, html })).toHaveLength(1);
   });
 
   it('leaves an image never replaced to unreplaced-images', () => {

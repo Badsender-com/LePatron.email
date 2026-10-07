@@ -8,9 +8,11 @@ const { textOf } = require('../exported-content');
 // are Badsender's choice. At 2 px and under, "hidden-text" reports it.
 const MIN_SIZE = 14;
 // Header and footer blocks (legal notice, view online) may go down to 12 px
-// (team decision of 1 October 2026). Told apart by their block type.
+// (team decision of 1 October 2026). Told apart by their block type:
+// `headerBlock`, `preheaderBlock`, `footerBlock`, `footer-legal`… but not a
+// content block such as `HeaderAndText`.
 const MIN_SIZE_HEADER_FOOTER = 12;
-const HEADER_OR_FOOTER = /header|footer/i;
+const HEADER_OR_FOOTER = /(?:header|footer)(?:[-_]?block)?$|^footer/i;
 const HIDDEN_SIZE = 2;
 
 const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);

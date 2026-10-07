@@ -70,19 +70,29 @@ describe('small-font', () => {
   });
 
   it('allows 12 px in header and footer blocks', () => {
-    const text = '<p><span style="font-size: 12px">Legal notice</span></p>';
+    // 13 px: the 12 px of DEFAULT_TEXT would read as the template's own size.
+    const text = '<p><span style="font-size: 13px">Legal notice</span></p>';
     expect(richTextFindings(smallFont, text, { type: 'footerBlock' })).toEqual(
       []
     );
-    expect(
-      richTextFindings(smallFont, text, { type: 'preheaderHeader' })
-    ).toEqual([]);
+    ['headerBlock', 'preheaderBlock', 'footer-legal'].forEach((type) =>
+      expect(richTextFindings(smallFont, text, { type })).toEqual([])
+    );
     const [finding] = richTextFindings(
       smallFont,
       '<p><span style="font-size: 11px">Legal notice</span></p>',
       { type: 'footerBlock' }
     );
     expect(finding.params).toMatchObject({ size: 11, min: 12 });
+  });
+
+  it('keeps 14 px in a content block named after a header', () => {
+    const [finding] = richTextFindings(
+      smallFont,
+      '<p><span style="font-size: 13px">Body copy</span></p>',
+      { type: 'HeaderAndText' }
+    );
+    expect(finding.params).toMatchObject({ size: 13, min: 14 });
   });
 
   it('converts points', () => {
@@ -235,6 +245,66 @@ describe('text-layout', () => {
     ]);
   });
 
+  it('measures only the text drawn centred', () => {
+    const long = 'word '.repeat(50);
+    expect(
+      richTextFindings(
+        textLayout,
+        `<div style="text-align:center"><h2>Title</h2><p style="text-align:left">${long}</p></div>`
+      )
+    ).toEqual([]);
+    expect(
+      richTextFindings(
+        textLayout,
+        `<div style="text-align:center"><h2>Title</h2><p>${long}</p></div>`
+      )
+    ).toHaveLength(1);
+  });
+
+  it('notes centred text from 201 characters', () => {
+    const centred = (n) =>
+      richTextFindings(
+        textLayout,
+        `<p style="text-align:center">${'a'.repeat(n)}</p>`
+      );
+    expect(centred(200)).toEqual([]);
+    expect(centred(201)).toHaveLength(1);
+  });
+
+  it('keeps one fingerprint for the centred advice, so ignoring it lasts', () => {
+    const fingerprint = (text) =>
+      richTextFindings(
+        textLayout,
+        `<p style="text-align:center">${text.repeat(60)}</p>`
+      )[0].fingerprint;
+    expect(fingerprint('abcd ')).toBe(fingerprint('wxyz '));
+  });
+
+  it("never judges the template's own centred text", () => {
+    const longText = `<p style="text-align:center">${'word '.repeat(50)}</p>`;
+    const html = exportOf({ b1: longText });
+    const blocks = [{ id: 'b1', type: 'textBlock', longText }];
+    const blockDefs = [{ type: 'textBlock', longText }];
+    expect(
+      runQualityChecks(fakeViewModel({ blocks, blockDefs, html }), {
+        rules: [textLayout],
+      }).findings
+    ).toEqual([]);
+  });
+
+  it('judges a line height in px only against a font size the client set', () => {
+    // The 12 px of a template footer is out of sight: 14px is not 0.875.
+    expect(
+      richTextFindings(textLayout, '<p style="line-height:14px">Legal</p>')
+    ).toEqual([]);
+    expect(
+      richTextFindings(
+        textLayout,
+        '<p style="font-size:16px;line-height:0">Squashed</p>'
+      )
+    ).toHaveLength(1);
+  });
+
   it('leaves short centred text alone', () => {
     expect(
       richTextFindings(textLayout, '<p style="text-align:center">Our offer</p>')
@@ -337,5 +407,16 @@ describe('emoji-placement', () => {
     expect(findingsOf('Thanks to our nurses 👩‍⚕️')).toEqual([]);
     expect(findingsOf('Well done 👍🏽')).toEqual([]);
     expect(findingsOf('Made in France 🇫🇷')).toEqual([]);
+    expect(findingsOf('Discover Nespresso® coffees')).toEqual([]);
+    expect(findingsOf('Acme™ products and more')).toEqual([]);
+  });
+
+  it('reads flags and keycaps as emojis', () => {
+    expect(findingsOf('Sale 🇫🇷🇧🇪')).toEqual([
+      'Several emojis in a row: screen readers read each name',
+    ]);
+    expect(findingsOf('Top 1️⃣2️⃣')).toEqual([
+      'Several emojis in a row: screen readers read each name',
+    ]);
   });
 });

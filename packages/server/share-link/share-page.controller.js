@@ -181,12 +181,14 @@ async function companySharing(link) {
 }
 
 // Templates declare their preheader at the root or in a root-level
-// `preheaderBlock` (as the editor reads it, ext/quality/copy-fields.js).
+// `preheaderBlock`, and versafix-like ones can turn it off: read as the editor
+// does (ext/quality/copy-fields.js), the first path that holds a string.
 function preheaderOf(data) {
-  const value =
-    (data && data.preheaderText) ||
-    (data && data.preheaderBlock && data.preheaderBlock.preheaderText);
-  return typeof value === 'string' ? value.trim() : '';
+  if (!data || data.preheaderVisible === false) return '';
+  const value = [data.preheaderText, data.preheaderBlock?.preheaderText].find(
+    (candidate) => typeof candidate === 'string'
+  );
+  return value ? value.trim() : '';
 }
 
 // The subject and preheader lines of the bar, when the company writes them in
@@ -253,6 +255,7 @@ async function showShare(req, res) {
     // Only the preheader of the content model, never the whole of it.
     'data.preheaderText': 1,
     'data.preheaderBlock.preheaderText': 1,
+    'data.preheaderVisible': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
   if (!mailing.previewHtml) return renderNotice(res, 404, lang, 'empty');

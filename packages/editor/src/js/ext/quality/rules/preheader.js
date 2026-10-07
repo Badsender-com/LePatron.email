@@ -8,10 +8,13 @@
 const LONG = 100;
 const TOO_LONG = 140;
 
-// Compared without case, spacing or end punctuation: "Spring sale!" repeats
-// "spring sale".
+const MERGE_TAG = /\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]/g;
+
+// Compared without case, spacing, merge tags or end punctuation: "Spring
+// sale!" repeats "spring sale".
 const normalise = (text) =>
   (text || '')
+    .replace(MERGE_TAG, ' ')
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .replace(/[\s.!?…:;,]+$/u, '')
@@ -21,7 +24,9 @@ const normalise = (text) =>
 function repeatsSubject(preheader, subject) {
   const p = normalise(preheader);
   const s = normalise(subject);
-  if (s.length < 3 || !p.startsWith(s)) return false;
+  // Two words at least: a one-word subject ("New") is only the start of many
+  // preheaders.
+  if (s.split(' ').length < 2 || !p.startsWith(s)) return false;
   // The subject as a whole, not the start of a longer word: "Sale" is not
   // repeated by "Salesforce".
   return p.length === s.length || /^[\s\p{P}]/u.test(p.slice(s.length));
@@ -29,11 +34,7 @@ function repeatsSubject(preheader, subject) {
 
 // Merge tags do not count: their value is only known at send time.
 const visibleLength = (text) =>
-  Array.from(
-    text
-      .replace(/\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]/g, '')
-      .trim()
-  ).length;
+  Array.from(text.replace(MERGE_TAG, '').trim()).length;
 
 module.exports = {
   id: 'preheader',
@@ -70,19 +71,19 @@ module.exports = {
       ];
     }
     // Inboxes show the subject and the preheader side by side.
-    if (ctx.subject && repeatsSubject(value, ctx.subject)) {
-      return [
-        {
-          messageKey:
-            'The preheader repeats the subject: inboxes show the same words twice',
-          value,
-        },
-      ];
-    }
+    const repeats = Boolean(ctx.subject) && repeatsSubject(value, ctx.subject);
+    const findings = repeats
+      ? [
+          {
+            messageKey:
+              'The preheader repeats the subject: inboxes show the same words twice',
+            value,
+          },
+        ]
+      : [];
     const count = visibleLength(value);
-    const finding = (messageKey, severity) => [
-      { messageKey, severity, params: { count }, value },
-    ];
+    const finding = (messageKey, severity) =>
+      findings.concat({ messageKey, severity, params: { count }, value });
     if (count > TOO_LONG) {
       return finding(
         'Preheader too long (__count__ characters): inboxes cut it well before',
@@ -95,6 +96,6 @@ module.exports = {
         'info'
       );
     }
-    return [];
+    return findings;
   },
 };

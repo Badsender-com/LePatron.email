@@ -172,6 +172,31 @@ describe('GET /share/:token', () => {
     expect(Mailings.findById.mock.calls[0][1]).not.toHaveProperty('data');
   });
 
+  it('leaves out a preheader the template turned off', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', emailMetadata: { enabled: true } })
+    );
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        name: 'Soldes',
+        subject: 'Nos soldes',
+        data: { preheaderText: 'Caché', preheaderVisible: false },
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.render.mock.calls[0][1].copy).toEqual([
+      { label: 'Objet', value: 'Nos soldes' },
+    ]);
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({
+      'data.preheaderVisible': 1,
+    });
+  });
+
   it('leaves out a subject or a preheader not filled in', async () => {
     ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
     Groups.findById.mockReturnValue(
