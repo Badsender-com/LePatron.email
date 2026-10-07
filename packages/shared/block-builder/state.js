@@ -15,6 +15,12 @@
 
 const { elementFor } = require('./elements/index.js');
 const {
+  readRows,
+  elementsOf,
+  ensureUniqueRowIds,
+  newRowId,
+} = require('./composition.js');
+const {
   STATE_VERSION,
   GENERATOR_VERSION,
   DEFAULT_BLOCK,
@@ -42,8 +48,30 @@ function serialiseState(state) {
   try {
     // Stamped with the CURRENT generator: what is serialised is what is being
     // applied, and applying regenerates the markup with this version.
+    // `elements` is dropped when there are rows: it is a derived view, and
+    // storing it beside the rows would be a second source of truth that drifts
+    // the first time one is edited and the other is not.
+    const { elements, ...rest } = state || {};
+    // Which shape gets written, while both exist.
+    //
+    // Rows are stored only when the caller hands rows and NOTHING ELSE. That is
+    // the transitional rule, and it is deliberately unambiguous: `parseState`
+    // returns a flat `elements` view beside the rows, and whoever holds that
+    // view may be editing it — the modal splices it today. Two shapes in one
+    // object, one of them edited, is a composition that disagrees with itself,
+    // and the half that loses is whichever the writer did not touch.
+    //
+    // So: a caller that still thinks in elements writes elements, a caller that
+    // thinks in rows writes rows. The rule goes away with the derived view,
+    // when the modal composes rows directly.
+    const hasRows = Array.isArray(rest.rows) && rest.rows.length > 0;
+    const stored =
+      hasRows && elements === undefined
+        ? rest
+        : { ...rest, rows: undefined, elements: elements || [] };
+
     return JSON.stringify({
-      ...state,
+      ...stored,
       v: STATE_VERSION,
       gen: GENERATOR_VERSION,
     });
@@ -120,6 +148,9 @@ function cleanElement(element) {
   };
 }
 
+/** Cleans a list of stored elements, dropping the ones no template declares. */
+const cleanElements = (elements) => elements.map(cleanElement).filter(Boolean);
+
 /**
  * Gives a fresh id to every element whose id is missing or already taken.
  *
@@ -156,7 +187,11 @@ function readEnvelope(serialised) {
   }
 
   if (!parsed || typeof parsed !== 'object') return null;
-  if (!Array.isArray(parsed.elements)) return null;
+  // Either shape: `rows` since columns, a flat `elements` before them. Anything
+  // with neither is not a composition this code wrote.
+  if (!Array.isArray(parsed.rows) && !Array.isArray(parsed.elements)) {
+    return null;
+  }
 
   // A state from a FUTURE version: its elements may mean something else
   // entirely. Reopening it would silently rewrite the block on the next save,
@@ -177,7 +212,8 @@ function readEnvelope(serialised) {
  */
 function isEmptyComposition(serialised) {
   const parsed = readEnvelope(serialised);
-  return parsed !== null && parsed.elements.length === 0;
+  if (parsed === null) return false;
+  return elementsOf(readRows(parsed, cleanElements)).length === 0;
 }
 
 /**
@@ -188,8 +224,14 @@ function parseState(serialised) {
   const parsed = readEnvelope(serialised);
   if (!parsed) return null;
 
-  const elements = parsed.elements.map(cleanElement).filter(Boolean);
-  if (elements.length === 0) return null;
+  const rows = readRows(parsed, cleanElements);
+  if (elementsOf(rows).length === 0) return null;
+
+  // Ids are made unique across the WHOLE composition, not column by column:
+  // selection and drag address an element by id alone, so two elements sharing
+  // one in different columns would select and move as one.
+  ensureUniqueIds(elementsOf(rows));
+  ensureUniqueRowIds(rows, newRowId);
 
   return {
     ...emptyState(),
@@ -197,7 +239,12 @@ function parseState(serialised) {
     // reopened block tells that applying would rebuild it differently.
     gen: typeof parsed.gen === 'string' ? parsed.gen : GENERATOR_VERSION,
     block: cleanAgainst(parsed.block, DEFAULT_BLOCK),
-    elements: ensureUniqueIds(elements),
+    rows,
+    // A DERIVED view, flat and in document order, while the generator and the
+    // modal still read a composition that way. It is never stored — see
+    // serialiseState — so `rows` stays the only source of truth, and it goes
+    // away with the ticket that teaches the generator to read rows.
+    elements: elementsOf(rows),
   };
 }
 
