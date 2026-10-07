@@ -9,7 +9,9 @@ const SCROLL_DELAY_MS = 100;
 const unwrap = (value) => (typeof value === 'function' ? value() : value);
 
 /**
- * The block of the content model with this id, or null.
+ * The block of the content model with this id, or null. Every container of
+ * the template is searched (`mainBlocks`, `headerBlocks`…), as the quality
+ * engine judges them all (quality/context.js).
  * @param {Object} viewModel
  * @param {string} blockId
  * @returns {Object|null}
@@ -17,10 +19,15 @@ const unwrap = (value) => (typeof value === 'function' ? value() : value);
 function findBlockById(viewModel, blockId) {
   if (!blockId) return null;
   try {
-    const blocks = viewModel.content().mainBlocks().blocks();
-    for (let i = 0; i < blocks.length; i++) {
-      const block = unwrap(blocks[i]);
-      if (block && unwrap(block.id) === blockId) return block;
+    const content = viewModel.content();
+    const containers = Object.keys(content).filter((key) => /Blocks$/.test(key));
+    for (const key of containers) {
+      const container = unwrap(content[key]);
+      const blocks = (container && unwrap(container.blocks)) || [];
+      for (let i = 0; i < blocks.length; i++) {
+        const block = unwrap(blocks[i]);
+        if (block && unwrap(block.id) === blockId) return block;
+      }
     }
   } catch (e) {
     // A model being rebuilt has no blocks to find.
