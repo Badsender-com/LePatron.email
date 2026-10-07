@@ -5,7 +5,7 @@
 > **Date** : 20 mars 2026
 > **Branche** : `feat/quality-control`
 >
-> **Mise à jour** : octobre 2026, QC v2 (`feat/quality-control-v2` et les PR empilées au-dessus). Les contrôles côté éditeur passent par un moteur de règles (`packages/editor/src/js/ext/quality/`), affichés dans le panneau « Tester votre email » ; certains demandent au serveur de mesurer les liens et les images. Les sections « Contrôles côté client », « Contrôles qualité côté serveur » et l'annexe décrivent l'état du QC v2, ses choix sont dans [l'ADR 0002](../adr/0002-quality-control-v2.md). Le reste du document est inchangé.
+> **Mise à jour** : octobre 2026, QC v2 (`feat/quality-control-v2` et les PR empilées au-dessus). Les contrôles côté éditeur passent par un moteur de règles (`packages/editor/src/js/ext/quality/`), affichés dans le panneau « Tester votre email » ; certains demandent au serveur de mesurer les liens et les images. Les sections « Contrôles côté client », « Contrôles qualité côté serveur » et l'annexe décrivent l'état du QC v2, ses choix sont dans [l'ADR 0003](../adr/0003-quality-control-v2.md). Le reste du document est inchangé.
 
 ---
 

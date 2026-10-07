@@ -10,4 +10,4 @@ Each file records one decision that is hard to reverse, surprising without conte
 | ADR                                            | Decision                                                                                           | Status   |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------- |
 | [0001](./0001-grill-first-feature-workflow.md) | New features start with a grilling, an ADR, an epic and tickets                                    | proposed |
-| [0002](./0002-quality-control-v2.md)           | The quality control judges only the client's edits, in the editor, and blocks nothing but tracking | proposed |
+| [0003](./0003-quality-control-v2.md)           | The quality control judges only the client's edits, in the editor, and blocks nothing but tracking | proposed |
