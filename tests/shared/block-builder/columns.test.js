@@ -29,7 +29,7 @@ const rowOf = (columns) => ({
 });
 
 // Turned on by #1207 (the generator renders rows of columns)
-describe.skip('a composition renders as rows of columns', () => {
+describe('a composition renders as rows of columns', () => {
   let generate;
   let emptyState;
 
@@ -40,7 +40,13 @@ describe.skip('a composition renders as rows of columns', () => {
     } = require('../../../packages/shared/block-builder/generate.js'));
   });
 
-  const render = (...rows) => generate({ ...emptyState(), rows });
+  // Built without the flat `elements` view on purpose: a composition carries
+  // one or the other, and its absence is what says "render rows". See state.js.
+  const composition = (rows) => {
+    const { elements: _elements, ...rest } = emptyState();
+    return { ...rest, rows };
+  };
+  const render = (...rows) => generate(composition(rows));
 
   describe('the cells', () => {
     it('renders one cell per column, carrying its width', () => {
@@ -158,7 +164,7 @@ describe.skip('a composition renders as rows of columns', () => {
     // nothing at all rather than a bare table.
     it('renders nothing for a composition with no content anywhere', () => {
       expect(render(rowOf([[100, []]]))).toBe('');
-      expect(generate({ ...emptyState(), rows: [] })).toBe('');
+      expect(generate(composition([]))).toBe('');
     });
   });
 
@@ -188,7 +194,7 @@ describe.skip('a composition renders as rows of columns', () => {
 
     it('survives a row that is not a row', () => {
       expect(() =>
-        generate({ ...emptyState(), rows: [null, 'nope', {}, { columns: 42 }] })
+        generate(composition([null, 'nope', {}, { columns: 42 }]))
       ).not.toThrow();
     });
   });
@@ -208,7 +214,11 @@ describe.skip('a composition derives its stylesheet', () => {
     } = require('../../../packages/shared/block-builder/generate.js'));
   });
 
-  const cssOf = (...rows) => collectCss({ ...emptyState(), rows });
+  const composition = (rows) => {
+    const { elements: _elements, ...rest } = emptyState();
+    return { ...rest, rows };
+  };
+  const cssOf = (...rows) => collectCss(composition(rows));
 
   it('derives a stacking rule for a row of several columns', () => {
     const css = cssOf(
@@ -230,7 +240,7 @@ describe.skip('a composition derives its stylesheet', () => {
   });
 
   it('derives nothing for an empty composition', () => {
-    expect(collectCss({ ...emptyState(), rows: [] })).toBe('');
+    expect(collectCss(composition([]))).toBe('');
     expect(collectCss(null)).toBe('');
   });
 
@@ -276,23 +286,20 @@ describe.skip('a composition derives its stylesheet', () => {
     const {
       generate,
     } = require('../../../packages/shared/block-builder/generate.js');
-    const composition = {
-      ...emptyState(),
-      rows: [
-        rowOf([
-          [50, [textAt('a', 'gauche')]],
-          [50, [textAt('b', 'droite')]],
-        ]),
-      ],
-    };
+    const subject = composition([
+      rowOf([
+        [50, [textAt('a', 'gauche')]],
+        [50, [textAt('b', 'droite')]],
+      ]),
+    ]);
 
     const classes = (
-      collectCss(composition).match(/\.([\w-]+)\s*\{/g) || []
+      collectCss(subject).match(/\.([\w-]+)\s*\{/g) || []
     ).map((match) => match.replace(/[.{\s]/g, ''));
 
     expect(classes.length).toBeGreaterThan(0);
     classes.forEach((name) => {
-      expect(generate(composition)).toContain(name);
+      expect(generate(subject)).toContain(name);
     });
   });
 });
