@@ -5,7 +5,7 @@
 > **Date** : 20 mars 2026
 > **Branche** : `feat/quality-control`
 >
-> **Mise à jour** : octobre 2026, QC v2 lot 1 (`feat/quality-control-v2`). Les contrôles côté éditeur passent par un moteur de règles (`packages/editor/src/js/ext/quality/`) : la section « Contrôles côté client » et l'annexe décrivent ce moteur. Le reste du document est inchangé.
+> **Mise à jour** : octobre 2026, QC v2 (`feat/quality-control-v2` et les PR empilées au-dessus). Les contrôles côté éditeur passent par un moteur de règles (`packages/editor/src/js/ext/quality/`), affichés dans le panneau « Tester votre email » ; certains demandent au serveur de mesurer les liens et les images. Les sections « Contrôles côté client », « Contrôles qualité côté serveur » et l'annexe décrivent l'état du QC v2, ses choix sont dans [l'ADR 0003](../adr/0003-quality-control-v2.md). Le reste du document est inchangé.
 
 ---
 
@@ -55,19 +55,24 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 
 ### Fichiers impliqués
 
-| Fichier                                                      | Rôle                      | Couche  |
-| ------------------------------------------------------------ | ------------------------- | ------- |
-| `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC    | Client  |
-| `packages/editor/src/js/ext/badsender-control-quality.js`    | Façade : bannière, modale | Client  |
-| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export | Client  |
-| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP        | Client  |
-| `packages/server/mailing/mailing.service.js`                 | Validations métier        | Serveur |
-| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                | Serveur |
-| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test    | Serveur |
-| `packages/server/profile/profile.service.js`                 | Validation profils ESP    | Serveur |
-| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML           | Serveur |
-| `packages/server/utils/download-zip-markdown.js`             | Notices export            | Serveur |
-| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données | Client  |
+| Fichier                                                      | Rôle                            | Couche  |
+| ------------------------------------------------------------ | ------------------------------- | ------- |
+| `packages/editor/src/js/ext/quality/`                        | Moteur et règles du QC          | Client  |
+| `packages/editor/src/js/ext/badsender-control-quality.js`    | Modale du tracking obligatoire  | Client  |
+| `packages/editor/src/js/ext/quality/quality-review.js`       | État du panneau, appels serveur | Client  |
+| `packages/editor/src/js/vue/components/quality-drawer/`      | Panneau « Tester votre email »  | Client  |
+| `packages/server/mailing/quality-resources.service.js`       | Liens et images mesurés         | Serveur |
+| `packages/server/mailing/mailing-quality.service.js`         | Résultats ignorés               | Serveur |
+| `packages/server/share-link/`                                | Lien de partage public          | Serveur |
+| `packages/editor/src/js/ext/badsender-server-storage.js`     | Intégration QC à l'export       | Client  |
+| `packages/editor/src/js/vue/components/esp/esp-send-mail.js` | QC avant envoi ESP              | Client  |
+| `packages/server/mailing/mailing.service.js`                 | Validations métier              | Serveur |
+| `packages/server/mailing/download-zip.controller.js`         | Export ZIP                      | Serveur |
+| `packages/server/mailing/send-test-mail.service.js`          | Validation emails test          | Serveur |
+| `packages/server/profile/profile.service.js`                 | Validation profils ESP          | Serveur |
+| `packages/server/utils/process-mosaico-html-render.js`       | Processing HTML                 | Serveur |
+| `packages/server/utils/download-zip-markdown.js`             | Notices export                  | Serveur |
+| `packages/editor/src/js/converter/checkmodel.js`             | Validation modèle données       | Client  |
 
 ---
 
@@ -75,7 +80,7 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 
 ### Le moteur : `ext/quality/engine.js`
 
-`runQualityChecks(viewModel, { html })` est appelé au téléchargement (`badsender-server-storage.js`, sur l'export qui sert au ZIP) et après un envoi ESP (`esp-send-mail.js`, sur le HTML envoyé). `getErrorsForControlQuality()` (`badsender-control-quality.js`) en fait des lignes traduites pour la bannière « Contrôle qualité », en attendant le panneau du lot 2.
+`runQualityChecks(viewModel, { html })` est appelé par `quality-review.js` (`viewModel.quality`) : depuis le panneau (« Lancer le contrôle », « Relancer »), au téléchargement (`badsender-server-storage.js`, sur l'export qui sert au ZIP) et après un envoi ESP (`esp-send-mail.js`, sur le HTML envoyé). Les règles locales (`DEFAULT_RULES`) répondent d'abord ; les règles distantes (`REMOTE_RULES`) lisent ensuite la réponse de `POST /api/mailings/:mailingId/quality/resources`.
 
 - Le HTML est exporté une fois, puis analysé une fois avec `DOMParser` (`quality/context.js`). Le contexte contient aussi les blocs de tous les conteneurs du modèle (`*Blocks`) et la configuration de l'éditeur (`ctx.config` : route des placeholders, configuration du tracking). Les règles ne lisent que ce contexte.
 - **On ne juge que l'édition du client.** Un nœud exporté est rattaché à son bloc par l'`id` de la racine du bloc, conservé dans l'export. Ce qui est hors bloc (cadre du template) n'est jamais jugé.
@@ -84,20 +89,65 @@ LePatron.email dispose d'un système de contrôle qualité réparti entre le cli
 
 ### Les règles (`ext/quality/rules/`)
 
-| Règle                 | Sévérité         | Ce qui est signalé                                                                                                                                                                                                                       |
-| --------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tracking-params`     | Erreur           | Paramètres de tracking obligatoires sans valeur. Bloque aussi le téléchargement et l'envoi ESP (`checkRequiredTrackingParams`)                                                                                                           |
-| `unfilled-links`      | Erreur           | Lien avec texte dans un bloc dont le `href` est `#toreplace`, `#` ou vide (y compris dans un bloc Code HTML)                                                                                                                             |
-| `images-without-link` | Warning          | Image sans texte dans un tel lien. Pas si l'image est un placeholder : `unreplaced-images` la signale déjà                                                                                                                               |
-| `unreplaced-images`   | Erreur / Warning | Erreur : `<img>` sans `src` ou placeholder (`metadata.imagesUrl.placeholder`, ou `?method=placeholder`). Warning : image d'exemple du template jamais changée, reconnue à son nom de fichier (l'export la sert en `cover/WxH/<fichier>`) |
-| `background-images`   | Warning          | Variante de fond activée (Outlook, mobile, standard) sans image : vide, `none`, GIF transparent, ou l'image par défaut du template                                                                                                       |
-| `html-size`           | Warning          | HTML exporté de plus de 102 KB (troncature Gmail)                                                                                                                                                                                        |
+Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue détaillé, avec les motifs exacts, est tenu dans la page Notion du chantier.
 
-« Pas d'image de fond » est défini à un seul endroit, `quality/ownership.js` (`isImageUnset`). Le widget d'image de fond l'utilise aussi : le placeholder Clarins codé en dur a disparu.
+| Règle                       | Catégorie     | Sévérité         | Ce qui est signalé                                                                                                                                                          |
+| --------------------------- | ------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `subject`                   | Rédaction     | Warning / Info   | Objet vide (W), plus de 40 caractères (I) ou de 60 (W), faux « RE: » ou « Fwd: » (W), majuscules, `!!` ou plusieurs emojis (I). Seulement si l'entreprise a les métadonnées |
+| `preheader`                 | Rédaction     | Warning / Info   | Absent, désactivé ou resté au texte du template (W), répète l'objet (W), plus de 100 caractères (I) ou de 140 (W), variables exclues                                        |
+| `merge-tags`                | Rédaction     | Erreur           | Variable de personnalisation non fermée, dans les textes, les liens, l'objet ou le préheader                                                                                |
+| `empty-blocks`              | Rédaction     | Warning          | Bloc sans texte ni image alors que son modèle prévoit du texte                                                                                                              |
+| `uppercase-text`            | Accessibilité | Info             | 6 mots ou plus en majuscules d'affilée                                                                                                                                      |
+| `hidden-text`               | Accessibilité | Erreur           | Texte masqué par un style du client (`display:none`, `opacity:0`, taille ≤ 2 px…)                                                                                           |
+| `small-font`                | Accessibilité | Warning          | Taille saisie par le client sous 14 px, ou 12 px dans un bloc d'en-tête ou de pied de page                                                                                  |
+| `color-contrast`            | Accessibilité | Warning / Erreur | Contraste sous le niveau AA (4,5:1, 3:1 en grand texte), le message donne l'idéal AAA ; sous 1,5:1 en erreur                                                                |
+| `text-layout`               | Accessibilité | Info / Warning   | Texte justifié (I), interligne sous 1 (W), plus de 200 caractères centrés (une info pour tout l'email)                                                                      |
+| `indistinct-links`          | Accessibilité | Info             | Lien dans une phrase, ni souligné ni d'une autre couleur                                                                                                                    |
+| `headings`                  | Accessibilité | Info             | Titre vide, niveau sauté                                                                                                                                                    |
+| `alt-redundant`             | Accessibilité | Info             | Texte alternatif identique au texte voisin                                                                                                                                  |
+| `emoji-placement`           | Accessibilité | Info             | Deux emojis d'affilée ou plus, emoji au milieu d'une phrase (un emoji composé compte pour un)                                                                               |
+| `tracking-params`           | Contenu       | Erreur, bloquant | Paramètres de tracking obligatoires sans valeur. Bloque le téléchargement et l'envoi ESP (`checkRequiredTrackingParams`)                                                    |
+| `unfilled-links`            | Contenu       | Erreur           | Lien avec texte dont l'adresse est `#toreplace`, `#`, vide ou `javascript:`                                                                                                 |
+| `malformed-links`           | Contenu       | Warning          | Protocole manquant ou inconnu, `mailto:` ou `tel:` invalide, espace, domaine sans point                                                                                     |
+| `displayed-urls`            | Contenu       | Warning          | Le texte du lien est une adresse                                                                                                                                            |
+| `suspicious-links`          | Contenu       | Warning          | Identifiant dans l'URL, adresse IP, environnement de test, domaine d'exemple, raccourcisseur, extension à risque, punycode                                                  |
+| `images-without-link`       | Contenu       | Warning          | Image dans un lien non renseigné (un `data-ko-link` vide n'est pas exporté, donc pas signalé)                                                                               |
+| `unnamed-image-links`       | Accessibilité | Warning          | Lien sans texte fait d'images sans alt                                                                                                                                      |
+| `unreplaced-images`         | Contenu       | Erreur / Warning | Image sans `src` ou placeholder (E), image d'exemple du template (W)                                                                                                        |
+| `alt-text-quality`          | Technique     | Info             | Alt qui est une adresse, un nom de fichier, ou de plus de 150 caractères                                                                                                    |
+| `background-images`         | Contenu       | Warning          | Variante de fond activée sans image                                                                                                                                         |
+| `unsupported-image-formats` | Technique     | Warning          | webp, avif, heic, heif, tif, tiff, svg                                                                                                                                      |
+| `image-only-email`          | Accessibilité | Warning          | Des images et moins de 100 caractères de texte                                                                                                                              |
+| `insecure-urls`             | Contenu       | Info / Warning   | Lien (I) ou image (W) en `http://`                                                                                                                                          |
+| `forbidden-code`            | Technique     | Erreur           | script, iframe, form, embed, object, attributs `on…`, `javascript:` dans le code du client                                                                                  |
+| `malformed-html`            | Technique     | Warning          | Balise jamais fermée ou fermante orpheline, dans un bloc de code HTML                                                                                                       |
+| `unsupported-code`          | Technique     | Warning          | flex, grid, `position`, variables CSS, `@import`, images `data:`, `<svg>`, `<video>`, `<audio>`                                                                             |
+| `loose-code`                | Technique     | Warning          | URL relative, couleur hexadécimale invalide, dans un bloc de code HTML                                                                                                      |
+| `html-size`                 | Technique     | Warning          | HTML exporté de plus de 100 KB (Gmail tronque à 102 KB, l'ESP ajoute son tracking)                                                                                          |
+| `broken-links`              | Contenu       | Erreur / Info    | Serveur. 404, 410, 500 ou domaine inexistant (E) ; délai, refus de robot (I « vérifiez-le »)                                                                                |
+| `dangerous-links`           | Contenu       | Erreur           | Serveur. Google Web Risk : hameçonnage, logiciel malveillant ou indésirable. Désactivé sans `QC_WEB_RISK_API_KEY`                                                           |
+| `domain-blocklists`         | Contenu       | Warning          | Serveur. Listes DNS de domaines. Désactivé sans `QC_DOMAIN_BLOCKLISTS`                                                                                                      |
+| `image-weight`              | Performance   | Warning          | Serveur. Image de plus de 500 KB, GIF de plus de 1 MB, image introuvable, telles que l'export les livre                                                                     |
+| `images-total-weight`       | Performance   | Warning / Erreur | Serveur. Poids total des images au-delà de 500 KB (W) ou de 1 MB (E)                                                                                                        |
+| `oversized-images`          | Performance   | Info             | Serveur. Largeur réelle de plus de 2 fois l'attribut `width`                                                                                                                |
+
+« Pas d'image de fond » est défini à un seul endroit, `quality/ownership.js` (`isImageUnset`). Le widget d'image de fond l'utilise aussi : le placeholder d'un client, codé en dur, a disparu. La syntaxe des variables de personnalisation des ESP est définie à un seul endroit, `quality/merge-tag-syntax.js`, et l'emoji dans `quality/emoji.js`.
 
 ### Affichage
 
-`displayErrors(errors, viewModel)` insère la bannière « Contrôle qualité » au-dessus de l'email. Les lignes sont insérées comme texte, jamais comme HTML : elles citent le libellé des liens. Si un paramètre de tracking obligatoire manque, `displayTrackingError()` ouvre une modale bloquante.
+Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; seul le tracking obligatoire bloque, par la modale de `displayTrackingError()`. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
+
+### Contrôles qualité côté serveur
+
+- **`POST /api/mailings/:mailingId/quality/resources`** (`quality-resources.service.js`) : l'éditeur envoie les liens et les images des blocs du client, le serveur répond pour chacun, sans rien enregistrer. Corps JSON obligatoire. Protection SSRF à chaque redirection, ports 80 et 443 seulement, 60 liens et 40 images, une échéance de 20 s et un budget de 50 MB par passage, un passage à la fois et 20 par tranche de 10 minutes par utilisateur, 16 sondes de liens et 8 téléchargements d'images simultanés pour le processus, cache de 10 minutes par entreprise. Les limites valent par worker.
+- **Web Risk** (`quality-web-risk.service.js`) : clé dans l'en-tête `X-Goog-Api-Key`, adresses comparées sans leur query string, 3 000 consultations par jour et par entreprise au-delà du cache.
+- **Lien de partage** (`share-link/`) : `GET /share/:token` sert la dernière version enregistrée, nettoyée (`sanitizeSharedPreviewHtml`, chaque lien en nouvel onglet sans `opener`), dans une iframe sandbox sous une CSP sans script. Jeton de 32 octets, retrouvé par son empreinte et conservé chiffré pour être recopié.
+
+| Variable               | Effet                                                       | Par défaut |
+| ---------------------- | ----------------------------------------------------------- | ---------- |
+| `QC_WEB_RISK_API_KEY`  | Active `dangerous-links` (clé d'un projet Google Cloud)     | Désactivé  |
+| `QC_DOMAIN_BLOCKLISTS` | Active `domain-blocklists`, au format `Nom=zone,Nom2=zone2` | Désactivé  |
+| `ENCRYPTION_KEY`       | Chiffre le jeton des liens de partage, pour les recopier    | Existante  |
 
 ---
 
@@ -205,7 +255,7 @@ Pipeline de traitement appliqué à tout HTML exporté :
 | **Clic Export** | Images non remplacées       | Client  | Erreur   | Non      |
 | **Clic Export** | Images cliquables sans lien | Client  | Warning  | Non      |
 | **Clic Export** | Images de fond manquantes   | Client  | Warning  | Non      |
-| **Clic Export** | Taille email (102KB)        | Client  | Warning  | Non      |
+| **Clic Export** | Taille email (100KB)        | Client  | Warning  | Non      |
 | **Download**    | Mailing existe              | Serveur | Critical | Oui      |
 | **Download**    | Accès utilisateur           | Serveur | Critical | Oui      |
 | **Download**    | Processing HTML             | Serveur | -        | Auto     |
@@ -265,6 +315,8 @@ Pipeline de traitement appliqué à tout HTML exporté :
 
 ### 1. Contrôles manquants identifiés
 
+Le QC v2 livre ceux-ci, sauf l'alt d'une image sans lien (une image décorative doit garder un alt vide : laissé à l'IA) et les balises sémantiques (propres au template).
+
 | Contrôle                      | Priorité | Description                                          |
 | ----------------------------- | -------- | ---------------------------------------------------- |
 | **Alt text images**           | Haute    | Vérifier que toutes les images ont un attribut `alt` |
@@ -301,11 +353,13 @@ Pipeline de traitement appliqué à tout HTML exporté :
 
 ```javascript
 // Téléchargement : packages/editor/src/js/ext/badsender-server-storage.js
-const html = viewModel.exportHTML();
-const errors = getErrorsForControlQuality(viewModel, { html });
+if (viewModel.quality) viewModel.quality.review({ html });
 
 // Envoi ESP : packages/editor/src/js/vue/components/esp/esp-send-mail.js
-const errors = getErrorsForControlQuality(this.vm, { html: unprocessedHtml });
+if (this.vm.quality) this.vm.quality.review({ html: unprocessedHtml });
+
+// Panneau : packages/editor/src/js/vue/components/quality-drawer/
+this.vm.quality.run();
 ```
 
 ### Structure d'un résultat
@@ -327,7 +381,18 @@ const errors = getErrorsForControlQuality(this.vm, { html: unprocessedHtml });
     },
   ],
   // Une entrée par règle : 'passed', 'failed' (avec count) ou 'error'
-  checks: [{ ruleId: 'unfilled-links', category: 'content', status: 'failed', count: 1 }],
+  checks: [
+    {
+      ruleId: 'unfilled-links',
+      category: 'content',
+      titleKey: 'Links',
+      status: 'failed',
+      count: 1,
+    },
+  ],
+  // Le HTML jugé, et ce que les règles distantes demandent au serveur
+  html: '<!DOCTYPE html>…',
+  resources: { links: ['https://…'], images: [{ url: 'https://…' }] },
 }
 ```
 

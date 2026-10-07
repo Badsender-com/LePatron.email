@@ -447,8 +447,8 @@ module.exports = {
     "Image d'exemple du template non remplacée",
   'Missing Outlook background image': 'Image de fond Outlook manquante',
   'Missing mobile background image': 'Image de fond mobile manquante',
-  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
-    'Le HTML exporté pèse __size__ Ko : Gmail tronque les emails de plus de 102 Ko',
+  'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    "Le HTML exporté pèse __size__ Ko : restez sous 100 Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
@@ -499,8 +499,8 @@ module.exports = {
   'Every background image turned on is set':
     'Toutes les images de fond activées sont renseignées',
   'Email weight': "Poids de l'email",
-  'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit':
-    'Le HTML exporté pèse __size__ Ko, sous la limite de 102 Ko de Gmail',
+  'Exported HTML weighs __size__ KB, under the 100 KB limit':
+    'Le HTML exporté pèse __size__ Ko, sous la limite de 100 Ko',
   'Link addresses': 'Adresses des liens',
   'Every link address is well formed':
     'Toutes les adresses de liens sont bien formées',
@@ -572,10 +572,10 @@ module.exports = {
   'The subject is filled in and __count__ characters long':
     "L'objet est renseigné et fait __count__ caractères",
   'No subject': "Pas d'objet",
-  'Subject too long (__count__ characters): cut in almost every inbox':
-    'Objet trop long (__count__ caractères) : coupé dans presque toutes les boîtes de réception',
-  'Long subject (__count__ characters): may be cut on mobile and in Outlook':
-    'Objet long (__count__ caractères) : il peut être coupé sur mobile et dans Outlook',
+  'Subject too long (__count__ characters): inboxes cut it, keep it under 60':
+    'Objet trop long (__count__ caractères) : les boîtes de réception le coupent, restez sous 60',
+  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile':
+    'Objet long (__count__ caractères) : idéalement sous 40, il peut être coupé sur mobile',
   'Subject starts like a reply or a forward (__prefix__) without being one':
     "L'objet commence comme une réponse ou un transfert (__prefix__) sans en être un",
   'Subject mostly in capital letters':
@@ -588,10 +588,8 @@ module.exports = {
     'Le préheader est renseigné et fait __count__ caractères',
   'No preheader: inboxes show the first words of the body instead':
     'Pas de préheader : les boîtes de réception affichent les premiers mots du corps à la place',
-  'Preheader too short (__count__ characters)':
-    'Préheader trop court (__count__ caractères)',
-  'Short preheader (__count__ characters): some inboxes complete it with the body':
-    'Préheader court (__count__ caractères) : certaines boîtes de réception le complètent avec le corps',
+  'The preheader repeats the subject: inboxes show the same words twice':
+    "Le préheader répète l'objet : les boîtes de réception affichent deux fois les mêmes mots",
   'Preheader too long (__count__ characters): inboxes cut it well before':
     'Préheader trop long (__count__ caractères) : les boîtes de réception le coupent bien avant',
   'Long preheader (__count__ characters): its end will rarely be seen':
@@ -617,9 +615,10 @@ module.exports = {
   'Preheader still the sample text of the template: __text__':
     "Le préheader est resté au texte d'exemple du template : __text__",
   'Font size': 'Taille de police',
-  'No text was set under 14 px': "Aucun texte n'a été réduit sous 14 px",
-  'Text set to __size__ px, under the 14 px that reads comfortably: __text__':
-    "Texte réglé à __size__ px, sous les 14 px d'une lecture confortable : __text__",
+  'No text was set under 14 px, or 12 px in the header and footer':
+    "Aucun texte n'est réglé sous 14 px, ou 12 px dans l'en-tête et le pied de page",
+  'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
+    'Texte réglé à __size__ px, sous les __min__ px confortables à lire : __text__',
   'Hidden text': 'Texte masqué',
   'No text is hidden': "Aucun texte n'est masqué",
   'Hidden text: filters read hidden content as an attempt to fool them: __text__':
@@ -629,15 +628,17 @@ module.exports = {
     'Tous les textes colorés se lisent sur leur fond',
   'Text almost invisible on its background (__ratio__:1): __text__':
     'Texte presque invisible sur son fond (__ratio__:1) : __text__',
-  'Contrast too low (__ratio__:1, __required__:1 needed): __text__':
-    'Contraste insuffisant (__ratio__:1, __required__:1 requis) : __text__',
+  'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__':
+    'Contraste trop faible (__ratio__:1) : __required__:1 au minimum, __ideal__:1 idéalement : __text__',
   'Text layout': 'Mise en forme du texte',
-  'No text is justified or has tight lines':
-    "Aucun texte n'est justifié ni trop serré",
+  'No text is justified, overlaps or is centred at length':
+    "Aucun texte n'est justifié, ne se chevauche ni n'est longuement centré",
   'Justified text: word gaps get harder to read: __text__':
     'Texte justifié : les espaces irréguliers entre les mots gênent la lecture : __text__',
-  'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__':
-    'Interligne serré (__ratio__), sous le 1,5 qui garde les lignes lisibles : __text__',
+  'Line height under 1 (__ratio__): the lines overlap: __text__':
+    'Interligne inférieur à 1 (__ratio__) : les lignes se chevauchent : __text__',
+  'Centred text over about three lines is hard to read: align long texts to the left':
+    'Un texte centré de plus de trois lignes environ se lit mal : alignez les textes longs à gauche',
   'Visible links': 'Liens visibles',
   'Every link stands out from the text around it':
     'Tous les liens se distinguent du texte qui les entoure',
