@@ -86,8 +86,10 @@ const CHECKS = Object.freeze({
   'html-size': check('technical', { maxKb: t(100, 10, 2048, 'KB') }),
   // Performance, checked by the server
   'image-weight': check('performance', {
-    maxKb: t(500, 10, 10240, 'KB'),
-    maxGifKb: t(1024, 10, 10240, 'KB'),
+    // The server measures 10 MB at most: a ceiling of 10,240 KB would
+    // never be exceeded.
+    maxKb: t(500, 10, 10239, 'KB'),
+    maxGifKb: t(1024, 10, 10239, 'KB'),
   }),
   'images-total-weight': check('performance', {
     warningKb: t(500, 10, 20480, 'KB'),

@@ -2,8 +2,12 @@
 
 const {
   CHECKS,
+  CHECK_STATES,
   defaultQualitySettings,
 } = require('../../shared/quality/checks.js');
+
+const own = (object, key) =>
+  Boolean(object) && Object.prototype.hasOwnProperty.call(object, key);
 
 /**
  * The quality settings a mailing gets: for every check and every threshold,
@@ -21,12 +25,20 @@ const {
 function resolveQualitySettings(group, template) {
   const resolved = defaultQualitySettings();
   [checksOf(group), checksOf(template)].forEach((checks) => {
+    // What is stored is read defensively: a super admin may write these
+    // fields without the sanitizer, and only catalogue keys may be applied.
     Object.entries(checks).forEach(([checkId, setting]) => {
+      if (!own(CHECKS, checkId) || !setting || typeof setting !== 'object') {
+        return;
+      }
       const target = resolved.checks[checkId];
-      if (!target || !setting) return;
-      if (setting.state) target.state = setting.state;
-      Object.entries(setting.thresholds || {}).forEach(([name, value]) => {
-        if (name in CHECKS[checkId].thresholds && typeof value === 'number') {
+      if (CHECK_STATES.includes(setting.state)) target.state = setting.state;
+      const thresholds =
+        setting.thresholds && typeof setting.thresholds === 'object'
+          ? setting.thresholds
+          : {};
+      Object.entries(thresholds).forEach(([name, value]) => {
+        if (own(CHECKS[checkId].thresholds, name) && Number.isFinite(value)) {
           target.thresholds[name] = value;
         }
       });
@@ -39,7 +51,8 @@ function checksOf(owner) {
   const raw = owner && owner.qualitySettings;
   const settings =
     raw && typeof raw.toObject === 'function' ? raw.toObject() : raw;
-  return (settings && settings.checks) || {};
+  const checks = settings && settings.checks;
+  return checks && typeof checks === 'object' ? checks : {};
 }
 
 module.exports = { resolveQualitySettings };

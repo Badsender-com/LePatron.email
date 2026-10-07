@@ -125,6 +125,10 @@ describe('PUT /groups/:groupId — check states', () => {
     ['an unknown check', { 'no-such-check': { state: 'off' } }],
     ['an unknown state', { headings: { state: 'loud' } }],
     ['a check that is not an object', { headings: 'off' }],
+    // Inherited names are no checks of the catalogue (security review).
+    ['an inherited name', { constructor: { state: 'off' } }],
+    ['another inherited name', { toString: { state: 'off' } }],
+    ['__proto__', JSON.parse('{"__proto__": {"state": "off"}}')],
   ])('refuses %s with a 422', async (_label, checks) => {
     const error = await rejection(
       update({ body: { qualitySettings: { checks } } })
@@ -185,6 +189,25 @@ describe.skip('PUT /groups/:groupId — thresholds', () => {
   ])('refuses %s with a 422', async (_label, checks) => {
     const error = await rejection(
       update({ body: { qualitySettings: { checks } } })
+    );
+    expect(error.status).toBe(422);
+    expect(error.message).toBe('INVALID_QUALITY_SETTINGS');
+  });
+});
+
+describe('POST /groups — quality settings', () => {
+  it('refuses invalid settings before creating the group', async () => {
+    const error = await rejection(
+      groupController.create(
+        {
+          body: {
+            name: 'Company B',
+            qualitySettings: { checks: { 'no-such-check': { state: 'off' } } },
+          },
+          user: superAdmin,
+        },
+        { json: jest.fn() }
+      )
     );
     expect(error.status).toBe(422);
     expect(error.message).toBe('INVALID_QUALITY_SETTINGS');

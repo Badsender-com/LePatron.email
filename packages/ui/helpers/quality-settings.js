@@ -26,18 +26,23 @@ export function statesOf(settings) {
 }
 
 /**
- * The payload that saves these states: a state equal to the default is sent as
- * `null`, so the group follows the default again rather than pinning it.
+ * The payload that saves these states: only the checks that changed since
+ * `saved`, so two admins editing different checks do not overwrite each
+ * other; a state equal to the default is sent as `null`, so the group follows
+ * the default again rather than pinning it.
  * @param {Object<string, string>} states
+ * @param {Object<string, string>} [saved] the states as stored
  * @returns {{ checks: Object }}
  */
-export function statesPayload(states) {
+export function statesPayload(states, saved = {}) {
   return {
     checks: Object.fromEntries(
-      Object.entries(states).map(([id, state]) => [
-        id,
-        { state: state === CHECKS[id].defaultState ? null : state },
-      ])
+      Object.entries(states)
+        .filter(([id, state]) => state !== saved[id])
+        .map(([id, state]) => [
+          id,
+          { state: state === CHECKS[id].defaultState ? null : state },
+        ])
     ),
   };
 }
