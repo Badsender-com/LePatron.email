@@ -701,13 +701,65 @@ describe('text generation: POST /api/text-generation/preheader', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('answers 400 without the picked subject, without invoking anything', async () => {
+  it.each([
+    ['no subject', {}],
+    ['a blank subject', { subject: '   ' }],
+    ['a null subject', { subject: null }],
+  ])(
+    'invokes the preheader skill without a subject for %s: it may be set in the sending platform',
+    async (_label, subject) => {
+      invoke.mockResolvedValue(
+        proposals('Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin')
+      );
+      const res = await request(makeApp())
+        .post('/api/text-generation/preheader')
+        .send({ mailingId: MAILING_ID, content: CONTENT, ...subject });
+      expect(res.status).toBe(200);
+      expect(invoke.mock.calls[0][0].input).not.toHaveProperty('subject');
+    }
+  );
+
+  it('keeps a proposal without a subject that reuses a variable of the content', async () => {
+    invoke.mockResolvedValue(
+      proposals('Bonjour {{prenom}}, le lin est à -30 % jusqu’à dimanche')
+    );
     const res = await request(makeApp())
       .post('/api/text-generation/preheader')
       .send({ mailingId: MAILING_ID, content: CONTENT });
-    expect(res.status).toBe(400);
-    expect(invoke).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(res.body.proposals.map((p) => p.text)).toEqual([
+      'Bonjour {{prenom}}, le lin est à -30 % jusqu’à dimanche',
+    ]);
+    expect(res.body.dropped).toBe(0);
   });
+
+  it('accepts a subject of exactly 500 characters', async () => {
+    invoke.mockResolvedValue(
+      proposals('Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin')
+    );
+    const res = await request(makeApp())
+      .post('/api/text-generation/preheader')
+      .send({
+        mailingId: MAILING_ID,
+        content: CONTENT,
+        subject: 'a'.repeat(500),
+      });
+    expect(res.status).toBe(200);
+  });
+
+  it.each([
+    ['not text', 42],
+    ['too long', 'a'.repeat(501)],
+  ])(
+    'answers 400 for a subject that is %s, without invoking anything',
+    async (_label, subject) => {
+      const res = await request(makeApp())
+        .post('/api/text-generation/preheader')
+        .send({ mailingId: MAILING_ID, content: CONTENT, subject });
+      expect(res.status).toBe(400);
+      expect(invoke).not.toHaveBeenCalled();
+    }
+  );
 
   it('asks for the preheader expertise of the writing and deliverability categories', async () => {
     invoke.mockResolvedValue(
