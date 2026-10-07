@@ -154,12 +154,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
       });
   }
 
-  // Runs the local checks at once, then the server's in the background.
+  // Runs the local checks at once, then the server's in the background; the
+  // promise settles once the server answered (or failed).
   function runAll(id, options, remoteOptions) {
     const local = apply(run(viewModel, options));
-    runRemote(id, local, remoteOptions);
-    return local;
+    const remote = runRemote(id, local, remoteOptions);
+    return { local, remote };
   }
+
+  // A check the server runs is blocking: an export must wait for its answer.
+  const remoteBlocking = REMOTE_RULES.some(
+    (rule) => checkStateOf(settings, rule.id) === 'blocking'
+  );
 
   // Shown at once, stored in the background, put back as it was on failure.
   function setIgnored(finding, value) {
@@ -213,6 +219,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
       viewModel.showQuality(true);
     },
 
+    // Whether an export will wait for the server's checks: one of them blocks.
+    waitsForServer: () => Boolean(resourcesUrl) && remoteBlocking,
+
     ignore: (finding) => setIgnored(finding, true),
     unignore: (finding) => setIgnored(finding, false),
 
@@ -245,19 +254,30 @@ function installQualityReview(viewModel, ko, deps = {}) {
      * @param {Object} [options] - `html`: the HTML already exported
      * @returns {Promise<{ blocked: boolean, findings: Array }>}
      */
-    gate(options) {
+    gate(options = {}) {
+      const { quiet = false, ...runOptions } = options;
       const id = ++runId;
+      let remote;
       try {
-        runAll(id, options, { openOnIssues: true });
+        ({ remote } = runAll(id, runOptions, { openOnIssues: !quiet }));
       } catch (err) {
         console.error('Quality review failed', err);
         settle();
         return Promise.resolve({ blocked: false, findings: [] });
       }
-      if (active().length) viewModel.quality.open('checks');
-      const findings = active().filter((finding) => finding.blocking);
-      if (findings.length) displayBlockingFindings(findings, viewModel);
-      return Promise.resolve({ blocked: findings.length > 0, findings });
+      // The server's answer only matters when one of its checks blocks; its
+      // failure never blocks (runRemote catches it).
+      const waited =
+        remoteBlocking && remoteStatus() === 'running' ? remote : Promise.resolve();
+      return waited.then(() => {
+        const findings = active().filter((finding) => finding.blocking);
+        // Quiet: before an ESP send, the drawer only opens on what blocks.
+        if ((quiet ? findings.length : active().length) && id === runId) {
+          viewModel.quality.open('checks');
+        }
+        if (findings.length) displayBlockingFindings(findings, viewModel);
+        return { blocked: findings.length > 0, findings };
+      });
     },
 
     /**
@@ -269,9 +289,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     review(options) {
       const id = ++runId;
       try {
-        const result = runAll(id, options, { openOnIssues: true });
+        const { local } = runAll(id, options, { openOnIssues: true });
         if (active().length) viewModel.quality.open('checks');
-        return result;
+        return local;
       } catch (err) {
         console.error('Quality review failed', err);
         settle();

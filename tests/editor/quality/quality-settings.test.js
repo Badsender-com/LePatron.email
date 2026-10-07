@@ -163,8 +163,7 @@ describe('a blocking check', () => {
   });
 });
 
-// Turned on by #1201 (blocking checks before an ESP send, and server checks that block)
-describe.skip('a blocking check run by the server', () => {
+describe('a blocking check run by the server', () => {
   const link = textBlock('<a href="https://brand.test/gone">Our offer</a>');
 
   function review(answer) {

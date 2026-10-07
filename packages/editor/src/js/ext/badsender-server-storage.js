@@ -215,6 +215,9 @@ function loader(opts) {
         download(html, downloadOptions);
         return;
       }
+      if (viewModel.quality.waitsForServer()) {
+        viewModel.notifier.info(viewModel.t('Checking links and images…'));
+      }
       viewModel.quality.gate({ html }).then(({ blocked }) => {
         if (!blocked) download(html, downloadOptions);
       });
