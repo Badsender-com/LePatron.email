@@ -446,6 +446,8 @@ module.exports = {
   'Links, images and weight are checked before you send a test.':
     'Links, images and weight are checked before you send a test.',
   '__count__ checks': '__count__ checks',
+  '__count__ checks turned off by your group or template':
+    '__count__ checks turned off by your group or template',
   'Running checks…': 'Running checks…',
   'Running…': 'Running…',
   Cancel: 'Cancel',

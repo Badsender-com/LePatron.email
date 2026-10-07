@@ -18,6 +18,9 @@ const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
+const {
+  resolveQualitySettings,
+} = require('../utils/resolve-quality-settings.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
 const {
   TEMPLATE_FLAG_PROJECTION,
@@ -559,6 +562,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         _company: 1,
         assets: 1,
         trackingConfig: 1,
+        qualitySettings: 1,
         ...TEMPLATE_FLAG_PROJECTION,
       },
     });
@@ -660,6 +664,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         ftpButtonLabel: group.ftpButtonLabel,
       },
       trackingConfig: resolveTrackingConfig(group, mailing._wireframe),
+      // Every check's state and thresholds for this mailing: its template's,
+      // else its group's, else the defaults (ADR 0004).
+      qualitySettings: resolveQualitySettings(group, mailing._wireframe),
       fileuploadConfig: {
         url: {
           mailing: `/api/images/gallery/${mailingId}`,
