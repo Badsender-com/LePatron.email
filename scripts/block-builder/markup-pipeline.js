@@ -139,6 +139,7 @@ function substitutePlaceholders(html, slots, name) {
 }
 
 module.exports = {
+  SENTINEL_PREFIX,
   sentinelFor,
   placeholderFor,
   stripComments,

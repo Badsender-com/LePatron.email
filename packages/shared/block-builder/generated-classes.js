@@ -25,4 +25,30 @@ function isGeneratedClass(name) {
   return typeof name === 'string' && name.startsWith(GENERATED_CLASS_PREFIX);
 }
 
-module.exports = { GENERATED_CLASS_PREFIX, isGeneratedClass };
+// How a column behaves on a phone. One value today — the columns stack — and
+// the class is named after it rather than called "the stacking class", so a
+// second behaviour is a second name and not a migration. The row object is
+// where the setting that chooses between them will live.
+const STACK = 'stack';
+
+/**
+ * The class a column carries for its mobile behaviour, or '' when it has none.
+ *
+ * A row of one column has nothing to stack, and must not drag a rule into the
+ * head of every mailing that holds a composed block.
+ *
+ * @param {number} columnCount how many columns the row holds
+ * @param {string} [behaviour]
+ * @returns {string}
+ */
+function stackClassFor(columnCount, behaviour = STACK) {
+  if (!Number.isFinite(columnCount) || columnCount < 2) return '';
+  return `${GENERATED_CLASS_PREFIX}${behaviour}`;
+}
+
+module.exports = {
+  GENERATED_CLASS_PREFIX,
+  isGeneratedClass,
+  stackClassFor,
+  STACK,
+};
