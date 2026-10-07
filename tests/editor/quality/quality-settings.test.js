@@ -116,8 +116,7 @@ describe('the thresholds in force', () => {
   });
 });
 
-// Turned on by #1200 (make a check blocking for the download)
-describe.skip('a blocking check', () => {
+describe('a blocking check', () => {
   const unfilled = textBlock('<a href="#toreplace">Shop now</a>');
   const blocking = { 'unfilled-links': { state: 'blocking', thresholds: {} } };
 
