@@ -1,6 +1,6 @@
 # The quality control judges only the client's edits, in the editor, and blocks nothing but tracking
 
-- Status: proposed
+- Status: proposed; superseded by ADR-0004 on blocking
 - Date: 2026-10-07
 
 The quality control (QC) is a rule engine in the editor (`packages/editor/src/js/ext/quality/`). Each run exports the email once, parses it once, and hands every rule the same context. A rule never reads the view model. A finding is reported only when the faulty value comes from the client: a node of the export belongs to a block through the `id` of the block root, and anything outside a block is the template's frame. Values the client left at the template's default (sample image, `#toreplace` link) count as forgotten by the client, not as a fault of the template. No check depends on the language of the content, since clients write in many languages: everything that needs to understand the text is left to later AI checks. Nothing blocks the user, except the required tracking parameters, as before.
