@@ -18,7 +18,7 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 // A template's overrides of its group's quality settings
 // (docs/adr/0004-quality-settings-per-group-and-template.md): each setting is
 // either inherited from the group, shown as such, or set on the template.
-const OFFERED_STATES = ['off', 'on'];
+const OFFERED_STATES = ['off', 'on', 'blocking'];
 const INHERITED = 'inherited';
 
 export default {

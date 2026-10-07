@@ -16,7 +16,7 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 
 // The states this page offers. A state set another way (the API) is still
 // shown on its check, so the page never hides what applies.
-const OFFERED_STATES = ['off', 'on'];
+const OFFERED_STATES = ['off', 'on', 'blocking'];
 
 export default {
   name: 'BsGroupQualitySettingsTab',
