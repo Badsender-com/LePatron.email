@@ -41,4 +41,6 @@ module.exports = Object.freeze({
   TaxonomyItemModel: 'TaxonomyItem',
   // Public preview links (quality drawer)
   ShareLinkModel: 'ShareLink',
+  // Rate limit of the AI features
+  AIUsageCounterModel: 'AIUsageCounter',
 });

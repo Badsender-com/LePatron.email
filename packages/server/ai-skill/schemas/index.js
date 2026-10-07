@@ -47,9 +47,75 @@ const genericTextOutput = z
   })
   .strict();
 
+// --- Text generation (subject, preheader) ---
+
+// The email as the editor shows it: each piece of text with its role, in
+// reading order. Built by the editor, never by the skill.
+const emailCopySchema = z
+  .array(
+    z
+      .object({
+        role: z.enum(['title', 'text', 'button']),
+        text: z.string().min(1),
+      })
+      .strict()
+  )
+  .min(1);
+
+// Three proposals exactly: the feature shows them side by side, and a skill
+// that answers two has not done its job.
+const textProposalsOutput = z
+  .object({
+    proposals: z
+      .array(
+        z
+          .object({
+            text: z.string().min(1),
+            angle: z.string().min(1),
+          })
+          .strict()
+      )
+      .length(3),
+  })
+  .strict();
+
+const subjectGenInput = z
+  .object({
+    content: emailCopySchema,
+    emailType: z.string().optional(),
+    currentSubject: z.string().optional(),
+    brief: z.string().optional(),
+    // The proposals the user already saw: the skill moves away from them.
+    avoid: z.array(z.string()).optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const subjectGenOutput = textProposalsOutput;
+
+const preheaderGenInput = z
+  .object({
+    content: emailCopySchema,
+    // The subject the user picked: the preheader complements it. Absent when
+    // the subject is set elsewhere: the preheader carries the main point.
+    subject: z.string().min(1).optional(),
+    emailType: z.string().optional(),
+    currentPreheader: z.string().optional(),
+    brief: z.string().optional(),
+    avoid: z.array(z.string()).optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const preheaderGenOutput = textProposalsOutput;
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
+  subjectGenInput,
+  subjectGenOutput,
+  preheaderGenInput,
+  preheaderGenOutput,
 });
 
 /**

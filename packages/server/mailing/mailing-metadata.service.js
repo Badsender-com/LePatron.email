@@ -40,6 +40,7 @@ module.exports = {
   applyMetadataToMailing,
   normalizePlannedSendDate,
   buildEditorMetadata,
+  findCanonicalEmailType,
   MAX_SUBJECT_LENGTH,
   ALLOWED_METADATA_KEYS,
 };
@@ -342,4 +343,22 @@ async function buildEditorMetadata({ mailing, group }) {
       url: { update: `/api/mailings/${mailingId}/metadata` },
     },
   };
+}
+
+/**
+ * The email type of a mailing in the vocabulary of the AI skills, or null.
+ *
+ * A company names its typologies as it likes; expertises are filtered on the
+ * canonical type each typology maps to. Null when the mailing has no typology,
+ * or one that maps to nothing: the caller then asks for every email type.
+ *
+ * @param {Object} mailing a Mailings document
+ * @returns {Promise<string|null>}
+ */
+async function findCanonicalEmailType(mailing) {
+  if (!mailing?._emailType) return null;
+  const item = await TaxonomyItems.findById(mailing._emailType)
+    .select({ canonicalType: 1 })
+    .lean();
+  return item?.canonicalType || null;
 }

@@ -12,7 +12,9 @@ const { InvocationStatusValues } = require('../constant/skill-constants.js');
 const ExpertiseConsumedSchema = new Schema(
   {
     expertiseId: { type: String, required: true },
-    versionNumber: { type: Number },
+    // Expertises are versioned major.minor, like skills.
+    versionMajor: { type: Number },
+    versionMinor: { type: Number },
   },
   { _id: false }
 );
