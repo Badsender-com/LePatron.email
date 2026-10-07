@@ -52,11 +52,8 @@ function shareUrl(req, token) {
  * @apiSuccess {String} createdBy
  */
 async function create(req, res) {
-  // A form on another site can post urlencoded data with the session cookie;
-  // JSON takes a preflight it would not pass.
-  if (!req.is('application/json')) {
-    throw new createError.UnsupportedMediaType(ERROR_CODES.INVALID_SHARE_LINK);
-  }
+  // JSON only (requireJsonBody, on the route): a form on another site posts
+  // urlencoded data with the session cookie, JSON takes a preflight.
   const { expiresInDays } = shareLinkService.validateCreatePayload(req.body);
   const mailing = await editableMailing(req);
   const { link, token } = await shareLinkService.createShareLink({

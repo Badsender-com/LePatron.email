@@ -3,8 +3,8 @@
 const axios = require('axios');
 
 // The email's preview links (/api/mailings/:id/share-links, see
-// share-link.controller.js). Only creation returns a link's address: the
-// server keeps a hash of its token, nothing it could show again.
+// share-link.controller.js). The list gives the address of the links it
+// can show again (`copyable`): the server keeps their token encrypted.
 
 const listShareLinks = (url) =>
   axios.get(url).then((response) => response.data.items);
