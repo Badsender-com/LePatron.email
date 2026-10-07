@@ -7,6 +7,7 @@ import {
   statesOf,
   thresholdsOf,
   thresholdErrors,
+  orderErrors,
   settingsPayload,
   checksByCategory,
   qualitySettingsErrorKeyFor,
@@ -49,7 +50,10 @@ export default {
       );
     },
     invalidThresholds() {
-      return thresholdErrors(this.thresholds);
+      return thresholdErrors(this.thresholds).concat(this.misordered);
+    },
+    misordered() {
+      return orderErrors(this.thresholds);
     },
   },
   watch: {
@@ -95,6 +99,19 @@ export default {
 
     isInvalid(id, name) {
       return this.invalidThresholds.includes(`${id}.${name}`);
+    },
+
+    errorFor(id, threshold) {
+      if (!this.isInvalid(id, threshold.name)) return [];
+      if (this.misordered.includes(`${id}.${threshold.name}`)) {
+        return [this.$t('qualitySettings.orderError')];
+      }
+      return [
+        this.$t('qualitySettings.thresholdError', {
+          min: threshold.min,
+          max: threshold.max,
+        }),
+      ];
     },
 
     onThresholdChange(id, name, value) {
@@ -207,16 +224,7 @@ export default {
                   max: threshold.max,
                 })
               "
-              :error-messages="
-                isInvalid(id, threshold.name)
-                  ? [
-                      $t('qualitySettings.thresholdError', {
-                        min: threshold.min,
-                        max: threshold.max,
-                      }),
-                    ]
-                  : []
-              "
+              :error-messages="errorFor(id, threshold)"
               :disabled="loading || states[id] === 'off'"
               :data-threshold="`${id}.${threshold.name}`"
               type="number"
