@@ -216,3 +216,30 @@ describe.skip('a blocking check run by the server', () => {
     expect((await vm.quality.gate({ html: link.html })).blocked).toBe(false);
   });
 });
+
+// A template may override one threshold of a pair past its group's other one:
+// the check still reads them in order (code review of #1193).
+describe('paired thresholds set in the wrong order', () => {
+  it('reads the lower one as the first level', () => {
+    const subject = require(`${RULES}/subject`);
+    const vm = withSettings(
+      {},
+      { subject: { state: 'on', thresholds: { long: 70, tooLong: 50 } } }
+    );
+    const run = (length) => {
+      vm.emailMetadataStore = {
+        isActive: () => true,
+        snapshot: () => ({ subject: 'a'.repeat(length) }),
+      };
+      return runQualityChecks(vm, { rules: [subject] }).findings[0];
+    };
+    expect(run(60)).toMatchObject({
+      severity: 'info',
+      params: { count: 60, max: 50 },
+    });
+    expect(run(80)).toMatchObject({
+      severity: 'warning',
+      params: { count: 80, max: 70 },
+    });
+  });
+});

@@ -1,12 +1,12 @@
 'use strict';
 
 const { countEmojis } = require('../emoji');
+const { orderedThresholds } = require('../settings');
 
 // Truncation, not performance: subject length does not change read rates
 // (Return Path, 9 million subjects). Team decision of 1 October 2026: under 40
-// characters ideally, never over 60.
-const LONG = 40;
-const TOO_LONG = 60;
+// characters ideally, never over 60 (thresholds `long` and `tooLong`, set by
+// the group's quality settings).
 
 // Reply and forward prefixes, in the languages our clients write in. Gmail
 // asks not to fake them.
@@ -39,8 +39,6 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Subject',
   passKey: 'The subject is filled in and __count__ characters long',
-  LONG,
-  TOO_LONG,
   passParams: (ctx) => ({
     count: Array.from((ctx.subject || '').trim()).length,
   }),
@@ -53,18 +51,19 @@ module.exports = {
     }
     const findings = [];
     const count = Array.from(subject).length;
-    if (count > TOO_LONG) {
+    const [long, tooLong] = orderedThresholds(ctx, 'subject', 'long', 'tooLong');
+    if (count > tooLong) {
       findings.push({
         messageKey:
-          'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
-        params: { count },
+          'Subject too long (__count__ characters): inboxes cut it, keep it under __max__',
+        params: { count, max: tooLong },
       });
-    } else if (count > LONG) {
+    } else if (count > long) {
       findings.push({
         messageKey:
-          'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
+          'Long subject (__count__ characters): ideally under __max__, it may be cut on mobile',
         severity: 'info',
-        params: { count },
+        params: { count, max: long },
       });
     }
     if (FAKE_REPLY.test(subject)) {

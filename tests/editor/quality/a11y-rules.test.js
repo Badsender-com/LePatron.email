@@ -201,11 +201,11 @@ describe('text-layout', () => {
     ],
     [
       '<p style="line-height:0.9">Overlapping lines</p>',
-      'Line height under 1 (__ratio__): the lines overlap: __text__',
+      'Line height under __min__ (__ratio__): the lines overlap: __text__',
     ],
     [
       '<p style="font-size:20px;line-height:18px">Overlapping too</p>',
-      'Line height under 1 (__ratio__): the lines overlap: __text__',
+      'Line height under __min__ (__ratio__): the lines overlap: __text__',
     ],
   ])('notes %s', (longText, messageKey) => {
     expect(
