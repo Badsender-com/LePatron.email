@@ -597,4 +597,48 @@ module.exports = {
     'Long passage in capital letters (__count__ words): __excerpt__',
   'Preheader still the sample text of the template: __text__':
     'Preheader still the sample text of the template: __text__',
+  'Font size': 'Font size',
+  'No text was set under 14 px': 'No text was set under 14 px',
+  'Text set to __size__ px, under the 14 px that reads comfortably: __text__':
+    'Text set to __size__ px, under the 14 px that reads comfortably: __text__',
+  'Hidden text': 'Hidden text',
+  'No text is hidden': 'No text is hidden',
+  'Hidden text: filters read hidden content as an attempt to fool them: __text__':
+    'Hidden text: filters read hidden content as an attempt to fool them: __text__',
+  'Colour contrast': 'Colour contrast',
+  'Every coloured text reads against its background':
+    'Every coloured text reads against its background',
+  'Text almost invisible on its background (__ratio__:1): __text__':
+    'Text almost invisible on its background (__ratio__:1): __text__',
+  'Contrast too low (__ratio__:1, __required__:1 needed): __text__':
+    'Contrast too low (__ratio__:1, __required__:1 needed): __text__',
+  'Text layout': 'Text layout',
+  'No text is justified or has tight lines':
+    'No text is justified or has tight lines',
+  'Justified text: word gaps get harder to read: __text__':
+    'Justified text: word gaps get harder to read: __text__',
+  'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__':
+    'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
+  'Visible links': 'Visible links',
+  'Every link stands out from the text around it':
+    'Every link stands out from the text around it',
+  'Link neither underlined nor coloured differently from its text: __label__':
+    'Link neither underlined nor coloured differently from its text: __label__',
+  Headings: 'Headings',
+  'Headings are filled in and follow each other':
+    'Headings are filled in and follow each other',
+  'Empty heading (__tag__)': 'Empty heading (__tag__)',
+  'Heading level skipped: __from__ followed by __to__':
+    'Heading level skipped: __from__ followed by __to__',
+  'Repeated alternative texts': 'Repeated alternative texts',
+  'No alternative text repeats the text next to it':
+    'No alternative text repeats the text next to it',
+  'Alternative text repeats the text next to the image: __alt__':
+    'Alternative text repeats the text next to the image: __alt__',
+  Emojis: 'Emojis',
+  'Emojis sit at the end of sentences': 'Emojis sit at the end of sentences',
+  'Several emojis in a row: screen readers read each name':
+    'Several emojis in a row: screen readers read each name',
+  'Emoji in the middle of a sentence: screen readers read its name there':
+    'Emoji in the middle of a sentence: screen readers read its name there',
 };
