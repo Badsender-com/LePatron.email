@@ -21,9 +21,9 @@ const keysOf = (rule, options) =>
   findingsOf(rule, options).map((f) => f.messageKey);
 
 const LONG_SUBJECT =
-  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile';
+  'Long subject (__count__ characters): ideally under __max__, it may be cut on mobile';
 const TOO_LONG_SUBJECT =
-  'Subject too long (__count__ characters): inboxes cut it, keep it under 60';
+  'Subject too long (__count__ characters): inboxes cut it, keep it under __max__';
 const FAKE_REPLY =
   'Subject starts like a reply or a forward (__prefix__) without being one';
 
