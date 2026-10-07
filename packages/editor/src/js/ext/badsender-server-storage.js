@@ -210,7 +210,13 @@ function loader(opts) {
       // One export at a time: the button waits for the checks' verdict.
       if (!downloadCmd.enabled()) return;
       downloadCmd.enabled(false);
-      gate(html).then(({ blocked }) => {
+      const verdict = gate(html);
+      // Said only when the server is actually asked, and one of its checks
+      // blocks.
+      if (viewModel.quality.waitsForServer && viewModel.quality.waitsForServer()) {
+        viewModel.notifier.info(viewModel.t('Checking links and images…'));
+      }
+      verdict.then(({ blocked }) => {
         if (blocked) downloadCmd.enabled(true);
         else download(html, downloadOptions);
       });
