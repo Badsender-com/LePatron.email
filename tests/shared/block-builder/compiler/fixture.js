@@ -16,6 +16,7 @@ const {
  * @param {string} [options.script] the inside of `<script setup>`; by default
  *   a defineProps of every slot and variant prop, as String or Boolean
  * @param {string} [options.extra] anything to append to the SFC
+ * @param {string} [options.kind] `layout` to compile it as a layout
  * @returns {string}
  */
 function sfc({ template, slots, variants, script, extra = '' }) {
@@ -52,6 +53,9 @@ function compileFixture(options) {
     manifest: {
       slots: withDefaults(options.slots),
       variants: options.variants,
+      // Only a layout may declare the one context that does not escape, so a
+      // fixture testing that has to be able to claim it — and to fail to.
+      ...(options.kind ? { kind: options.kind } : {}),
     },
   });
 }

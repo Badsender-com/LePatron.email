@@ -14,6 +14,9 @@ const tailwind = require('tailwindcss');
 const juice = require('juice');
 
 const config = require('./tailwind.config.js');
+const {
+  isGeneratedClass,
+} = require('../../packages/shared/block-builder/generated-classes.js');
 
 // What email clients drop, and why it is refused rather than shipped.
 const UNSAFE = [
@@ -127,17 +130,37 @@ async function inlineStyles(html, label) {
   ]).process('@tailwind utilities;', { from: undefined });
 
   const declarations = inlinableDeclarations(root);
-  classesOf(html).forEach((name) =>
-    checkClass(label, name, declarations.get(name))
-  );
+  // A class the generator owns is not a utility that failed to inline: it is
+  // one that MUST NOT be, because it only means anything inside a media query.
+  // Checking it the same way would refuse exactly the thing it is there for.
+  classesOf(html)
+    .filter((name) => !isGeneratedClass(name))
+    .forEach((name) => checkClass(label, name, declarations.get(name)));
 
   const inlined = juice.inlineContent(html, css, { removeStyleTags: true });
   checkInlineStyles(label, inlined);
 
-  // juice folds the rules into `style` but leaves the class names behind, and
-  // a class nothing defines is dead weight in every email that ships. Every
-  // class was just checked to inline completely, so none needs to survive.
-  return inlined.replace(/\s+class="[^"]*"/g, '');
+  return keepGeneratedClasses(inlined);
+}
+
+/**
+ * Drops the class names juice has finished with, keeps the ones we emit.
+ *
+ * juice folds a utility's rules into `style` but leaves its name behind, and a
+ * class nothing defines is dead weight in every email that ships — every
+ * utility was just checked to inline completely, so none of those needs to
+ * survive. The generator's own classes are the opposite case: nothing inlined
+ * them, and the stylesheet in the document head is about to refer to them by
+ * name. Stripping all of them is what made a responsive rule impossible.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+function keepGeneratedClasses(html) {
+  return html.replace(/\s+class="([^"]*)"/g, (whole, list) => {
+    const kept = list.split(/\s+/).filter(isGeneratedClass);
+    return kept.length ? ` class="${kept.join(' ')}"` : '';
+  });
 }
 
 module.exports = { inlineStyles };
