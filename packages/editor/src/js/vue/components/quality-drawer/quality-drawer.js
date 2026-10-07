@@ -101,10 +101,10 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       aria-modal="false"
       aria-labelledby="qc-drawer-title"
     >
-      <header class="qc-drawer__header">
+      <header class="right-panel__header">
         <div>
-          <p class="qc-drawer__eyebrow">{{ t('Test your email') }}</p>
-          <h2 id="qc-drawer-title" class="qc-drawer__title">{{ t(currentTab.labelKey) }}</h2>
+          <p class="right-panel__eyebrow">{{ t('Test your email') }}</p>
+          <h2 id="qc-drawer-title" class="right-panel__title">{{ t(currentTab.labelKey) }}</h2>
         </div>
         <button ref="close" type="button" class="qc-icon-button" :aria-label="t('Close')" :title="t('Close')" @click="close">
           <span class="lucide lucide-x" aria-hidden="true"></span>

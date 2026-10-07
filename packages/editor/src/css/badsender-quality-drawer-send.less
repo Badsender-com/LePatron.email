@@ -73,29 +73,6 @@
   }
 }
 
-.qc-notice {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: @qc-radius;
-  background: @qc-tint-info;
-  color: @qc-info;
-  font-size: 12px;
-
-  &--error {
-    background: @qc-tint-error;
-    color: @qc-error;
-  }
-
-  &__text {
-    flex: 1;
-    min-width: 0;
-    color: var(--gray-800);
-  }
-}
-
 .qc-field {
   display: flex;
   flex-direction: column;
@@ -138,11 +115,6 @@
       color: @qc-error;
     }
   }
-}
-
-.qc-button[disabled] {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 // ===== "Share a preview", under the send form =====

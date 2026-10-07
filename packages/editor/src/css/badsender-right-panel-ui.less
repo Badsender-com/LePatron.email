@@ -1,0 +1,198 @@
+////////
+// RIGHT PANEL — the shared kit of the right-hand panels (ADR 0004): header,
+// buttons, notices, spinner. Born with the quality drawer, hence the qc-
+// prefix; quality control and the AI panel both use it.
+//
+// Scoped under `.slidebar.right-panel` (0,2,0): the editor's generic
+// `.mo button` / `.mo p` rules sit at (0,1,1) and would win otherwise.
+////////
+
+@qc-error: #d32f2f;
+@qc-warning: #b07400; // icons only: 3.9:1, enough for a graphic, not for text
+@qc-warning-text: #8a5a00; // 5.9:1 on white
+@qc-info: #1565c0;
+@qc-success: #2e7d32;
+@qc-tint-error: rgba(211, 47, 47, 0.1);
+@qc-tint-warning: rgba(255, 180, 0, 0.14);
+@qc-tint-info: rgba(33, 150, 243, 0.12);
+@qc-tint-success: rgba(76, 175, 80, 0.12);
+@qc-radius: 5px;
+@qc-motion: 0.2s ease-out;
+
+.slidebar.right-panel {
+  // ===== Header =====
+  .right-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .right-panel__eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+  }
+
+  .right-panel__title {
+    margin: 2px 0 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+
+    // Focused when an action opens, to be announced; not a control.
+    &:focus {
+      outline: none;
+    }
+  }
+
+  // ===== Buttons =====
+  .qc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: @qc-radius;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    &--cta {
+      background: var(--accent);
+      color: var(--white);
+
+      &:hover { filter: brightness(0.92); }
+    }
+
+    &--outline {
+      background: transparent;
+      border-color: var(--gray-300);
+      color: var(--primary);
+
+      &:hover { background: var(--gray-100); }
+    }
+
+    &--ghost {
+      background: transparent;
+      color: var(--gray-700);
+
+      &:hover { background: var(--gray-100); }
+    }
+
+    &--sm {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    &--grow {
+      flex: 1;
+    }
+
+    &[disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .qc-link-button,
+  .qc-icon-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  .qc-link-button {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+
+    &:hover { text-decoration: underline; }
+  }
+
+  .qc-icon-button {
+    padding: 6px;
+    border-radius: 4px;
+    color: var(--gray-600);
+    font-size: 16px;
+
+    &:hover { background: var(--gray-100); }
+  }
+
+  .qc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  // ===== Notice =====
+  .qc-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: @qc-radius;
+    background: @qc-tint-info;
+    color: @qc-info;
+    font-size: 12px;
+
+    &--error {
+      background: @qc-tint-error;
+      color: @qc-error;
+    }
+
+    &__text {
+      flex: 1;
+      min-width: 0;
+      color: var(--gray-800);
+    }
+  }
+
+  // ===== Spinner =====
+  .qc-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--gray-200);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: qc-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes qc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slidebar.right-panel .qc-spinner {
+    animation: none;
+  }
+}

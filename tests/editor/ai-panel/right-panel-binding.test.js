@@ -12,12 +12,14 @@
 const ko = require('knockout');
 const {
   installRightPanel,
-} = require('../../packages/editor/src/js/ext/right-panel');
+} = require('../../../packages/editor/src/js/ext/right-panel');
 
 function mount() {
   document.body.innerHTML = `
     <button id="toggle" aria-controls="toolquality">Tester</button>
+    <button id="field-icon">Icône d'un champ</button>
     <div id="toolquality" class="slidebar right-panel" data-bind="rightPanel: 'quality'">
+      <h2 id="title" tabindex="-1">Titre</h2>
       <button id="close">Fermer</button>
     </div>`;
   const vm = {};
@@ -62,6 +64,26 @@ describe('the right panel binding', () => {
     jest.runAllTimers();
     vm.rightPanel.hide();
     expect(document.activeElement.id).toBe('toggle');
+  });
+
+  it('leaves the focus where the panel put it on open', () => {
+    jest.useFakeTimers();
+    const { vm } = mount();
+    vm.rightPanel.show('quality');
+    // The panel focuses its own title before the binding's turn comes.
+    document.getElementById('title').focus();
+    jest.runAllTimers();
+    expect(document.activeElement.id).toBe('title');
+  });
+
+  it('gives the focus back to what opened it, rather than its toggle', () => {
+    jest.useFakeTimers();
+    const { vm } = mount();
+    document.getElementById('field-icon').focus();
+    vm.rightPanel.show('quality');
+    jest.runAllTimers();
+    vm.rightPanel.hide();
+    expect(document.activeElement.id).toBe('field-icon');
   });
 
   it('hides a panel when another one opens', () => {
