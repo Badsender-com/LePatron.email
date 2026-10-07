@@ -23,13 +23,14 @@ Design system documentation for LePatron.email.
 
 ## Documents
 
-| Document                                     | Content                                        |
-| -------------------------------------------- | ---------------------------------------------- |
-| [01-tokens.md](./01-tokens.md)               | **Single source**: colors, typography, spacing |
-| [02-components.md](./02-components.md)       | Vue App + Editor components                    |
-| [03-debt-registry.md](./03-debt-registry.md) | UI debts to address                            |
-| [04-editor-stack.md](./04-editor-stack.md)   | Editor technical stack                         |
-| [../UX_GUIDELINES.md](../UX_GUIDELINES.md)   | UX patterns and accessibility                  |
+| Document                                                                       | Content                                                |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| [01-tokens.md](./01-tokens.md)                                                 | **Single source**: colors, typography, spacing         |
+| [02-components.md](./02-components.md)                                         | Vue App + Editor components                            |
+| [03-debt-registry.md](./03-debt-registry.md)                                   | UI debts to address                                    |
+| [04-editor-stack.md](./04-editor-stack.md)                                     | Editor technical stack                                 |
+| [05-roles-permissions-design-brief.md](./05-roles-permissions-design-brief.md) | Brief rôles, permissions et validation pour la refonte |
+| [../UX_GUIDELINES.md](../UX_GUIDELINES.md)                                     | UX patterns and accessibility                          |
 
 ## Key Principles
 
