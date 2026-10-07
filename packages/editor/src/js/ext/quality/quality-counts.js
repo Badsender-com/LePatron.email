@@ -13,8 +13,14 @@ function createCounts(ko, { active, checks }) {
     ko.pureComputed(
       () => active().filter((f) => severities.includes(f.severity)).length
     );
-  // What the toolbar badge counts: what should be fixed, not the infos.
-  const issueCount = countOf('error', 'warning');
+  // What the toolbar badge counts: what should be fixed, not the infos,
+  // unless they block an export.
+  const issueCount = ko.pureComputed(
+    () =>
+      active().filter(
+        (f) => f.blocking || f.severity === 'error' || f.severity === 'warning'
+      ).length
+  );
   // A check that could not run, or was cancelled, was never judged: no green
   // tick while one is left, as the drawer's "all passed" (allPassed).
   const ranCount = ko.pureComputed(
@@ -25,6 +31,10 @@ function createCounts(ko, { active, checks }) {
   return {
     errorCount: countOf('error'),
     issueCount,
+    // The findings that stop an export (ADR 0009).
+    blockingCount: ko.pureComputed(
+      () => active().filter((f) => f.blocking).length
+    ),
     passedCount: ko.pureComputed(
       () => checks().filter((c) => c.status === 'passed').length
     ),
