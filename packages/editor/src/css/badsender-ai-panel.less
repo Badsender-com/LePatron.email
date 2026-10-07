@@ -1,14 +1,12 @@
 ////////
 // AI PANEL — « Outils IA » (ADR 0004): the AI actions and their steps.
-// Its place is the right panel's (badsender-right-panel.less). Colours come
-// from the editor's tokens (badsender-editor.less :root).
+// Its place is the right panel's (badsender-right-panel.less); its header,
+// buttons, notices and spinner come from the shared kit
+// (badsender-right-panel-ui.less). Only what is the AI panel's own is here.
 //
-// Scoped under the panel: the editor's global h2/p/button rules and
+// Scoped under the panel: the editor's global p/ul/label rules and
 // Materialize's radios are more specific than a bare class and would win.
 ////////
-
-@ai-radius: 5px;
-@ai-error: #c62828;
 
 #toolai {
   #ai-panel {
@@ -30,31 +28,10 @@
       margin: 0;
     }
 
-    &__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--gray-200);
-    }
-
-    &__eyebrow {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--gray-600);
-    }
-
-    &__title {
-      margin: 2px 0 0;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--primary);
-
-      &:focus {
-        outline: none;
-      }
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
     &__body {
@@ -66,11 +43,8 @@
       padding: 16px;
     }
 
-    &__actions,
-    &__proposals {
-      list-style: none;
-      margin: 0;
-      padding: 0;
+    // ===== The list of actions =====
+    &__actions {
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -83,7 +57,7 @@
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--gray-300);
-      border-radius: @ai-radius;
+      border-radius: @qc-radius;
       background: var(--white);
       color: var(--primary);
       font-size: 13px;
@@ -91,28 +65,21 @@
       text-align: left;
       cursor: pointer;
 
-      .lucide {
-        color: var(--accent);
-      }
-
       &:hover {
         background: var(--gray-100);
       }
+
+      &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
     }
 
     &__hint,
-    &__intro,
     &__label,
-    &__angle,
-    &__facts {
-      color: var(--gray-700);
-    }
-
-    &__hint,
-    &__angle,
-    &__facts,
-    &__label {
+    &__meta {
       font-size: 12px;
+      color: var(--gray-700);
     }
 
     &__invite {
@@ -120,49 +87,29 @@
       gap: 8px;
       padding: 12px;
       border: 1px dashed var(--gray-300);
-      border-radius: @ai-radius;
+      border-radius: @qc-radius;
       color: var(--gray-700);
     }
 
+    // ===== The steps of an action =====
     &__back,
-    &__link {
+    &__start {
       align-self: flex-start;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
+    }
 
-      &:hover {
-        text-decoration: underline;
-      }
+    // The way round the strong suggestion: readable, but not a button.
+    &__discreet {
+      color: var(--gray-700);
+      text-decoration: underline;
     }
 
     &__notice,
     &__applied {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px;
-      border-radius: @ai-radius;
-      background: var(--gray-100);
+      align-items: flex-start;
 
       &:focus {
         outline: none;
       }
-    }
-
-    &__error {
-      padding: 10px 12px;
-      border-left: 4px solid @ai-error;
-      border-radius: @ai-radius;
-      background: #ffebee;
-      color: @ai-error;
     }
 
     &__brief {
@@ -171,8 +118,22 @@
       padding: 8px 10px;
       font-family: inherit;
       border: 1px solid var(--gray-300);
-      border-radius: @ai-radius;
+      border-radius: @qc-radius;
       resize: vertical;
+    }
+
+    &__intro {
+      font-weight: 600;
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    &__proposals {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     &__proposal {
@@ -181,7 +142,7 @@
       gap: 4px;
       padding: 10px 12px;
       border: 1px solid var(--gray-300);
-      border-radius: @ai-radius;
+      border-radius: @qc-radius;
 
       &--picked {
         border-color: var(--accent);
@@ -201,12 +162,25 @@
         position: static;
         opacity: 1;
         pointer-events: auto;
+        accent-color: var(--accent);
       }
     }
 
+    // Selectable: the copy fallback asks the user to select it by hand, and
+    // the editor otherwise switches selection off everywhere.
     &__text {
       font-weight: 600;
       color: var(--gray-900);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    &__facts li {
+      line-height: 1.5;
+    }
+
+    &__copy {
+      align-self: flex-start;
     }
 
     &__buttons {
@@ -216,79 +190,17 @@
       justify-content: flex-end;
     }
 
-    &__primary,
-    &__secondary {
-      display: inline-flex;
+    &__notice &__buttons {
+      width: 100%;
+      justify-content: flex-start;
       align-items: center;
-      justify-content: center;
-      height: 32px;
-      padding: 0 14px;
-      border: 1px solid transparent;
-      border-radius: @ai-radius;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-
-      &[disabled] {
-        opacity: 0.5;
-        cursor: default;
-      }
-    }
-
-    &__primary {
-      align-self: flex-start;
-      background: var(--accent);
-      color: var(--white);
-
-      &:hover:not([disabled]) {
-        filter: brightness(0.92);
-      }
-    }
-
-    &__secondary {
-      background: transparent;
-      border-color: var(--gray-300);
-      color: var(--primary);
-
-      &:hover:not([disabled]) {
-        background: var(--gray-100);
-      }
-    }
-
-    &__copy {
-      align-self: flex-start;
-      height: 28px;
-      font-size: 12px;
     }
 
     &__status {
-      min-height: 1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       color: var(--gray-700);
     }
-
-    &__spinner {
-      display: inline-block;
-      margin-right: 6px;
-      animation: ai-panel-spin 1s linear infinite;
-    }
-
-    button:focus-visible,
-    textarea:focus-visible,
-    input:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-  }
-}
-
-@keyframes ai-panel-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #toolai .ai-panel__spinner {
-    animation: none;
   }
 }

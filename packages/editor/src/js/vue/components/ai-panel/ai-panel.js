@@ -13,6 +13,8 @@ const {
 const { createEditorAccess } = require('../../../ext/ai-panel/editor-access');
 const template = require('./ai-panel.template');
 
+const EMAIL = Object.freeze({ kind: 'email' });
+
 const ROUTES = { subject: generateSubjects, preheader: generatePreheaders };
 
 const api = {
@@ -24,12 +26,14 @@ const api = {
 const LABELS = {
   [ACTIONS.SUBJECT]: {
     name: 'ai-panel-action-subject',
+    generate: 'ai-panel-generate-subject',
     proposals: 'text-generation-subjects-title',
     copyHint: 'text-generation-copy-hint',
     applied: 'text-generation-applied-subject',
   },
   [ACTIONS.PREHEADER]: {
     name: 'ai-panel-action-preheader',
+    generate: 'ai-panel-generate-preheader',
     proposals: 'text-generation-preheaders-title',
     copyHint: 'text-generation-copy-hint-preheader',
     applied: 'text-generation-applied-preheader',
@@ -40,7 +44,8 @@ const LABELS = {
  * The AI panel, « Outils IA » (ADR 0004): the actions that need no target,
  * then the steps of the action the user picked. The steps themselves live in
  * an action session (ext/ai-panel/action-session.js); this only renders them.
- * Its place, Escape and focus are the right panel's (ext/right-panel.js).
+ * Its place, Escape and the focus on open and close are the right panel's
+ * (ext/right-panel.js); the focus between the steps is this panel's.
  */
 const AiPanel = Vue.component('AiPanel', {
   props: {
@@ -54,9 +59,11 @@ const AiPanel = Vue.component('AiPanel', {
     // The user chose to go on without a subject.
     goOnAnyway: false,
     brief: '',
-    copiedIndex: null,
     copyError: false,
-    subscription: null,
+    undoRefused: false,
+    // Said to screen readers: proposals arrived, copied, undone.
+    liveMessage: '',
+    subscriptions: [],
   }),
   computed: {
     action() {
@@ -88,20 +95,22 @@ const AiPanel = Vue.component('AiPanel', {
       const { applied } = this.state || {};
       return applied ? Object.values(applied)[0] : '';
     },
+    nextAction() {
+      return this.session ? this.session.nextAction() : null;
+    },
   },
   created() {
     this.editor = createEditorAccess(this.vm);
-    // For the AI icons on the fields (#1182): open the panel on an action.
-    this.vm.aiPanel = { openAction: this.openAction, showList: this.showList };
   },
   mounted() {
-    this.subscription = this.vm.showAi.subscribe((isOpen) => {
-      if (isOpen) this.refresh();
-    });
+    this.subscriptions = [
+      this.vm.showAi.subscribe((isOpen) => {
+        if (isOpen) this.refresh();
+      }),
+    ];
   },
   beforeDestroy() {
-    if (this.subscription) this.subscription.dispose();
-    delete this.vm.aiPanel;
+    this.subscriptions.forEach((subscription) => subscription.dispose());
   },
   methods: {
     t(key, params) {
@@ -111,15 +120,29 @@ const AiPanel = Vue.component('AiPanel', {
       return LABELS[id].name;
     },
     refresh() {
-      const context = this.editor.context();
-      this.actions = availableActions({ kind: 'email' }, context).actions;
+      this.actions = availableActions(EMAIL, this.editor.context()).actions;
+    },
+    // After a step replaced what had the focus: put it where the user goes on.
+    focusAfterRender(ref) {
+      this.$nextTick(() => {
+        const element = this.$refs[ref];
+        const target = Array.isArray(element) ? element[0] : element;
+        if (target) target.focus();
+      });
+    },
+    reset() {
+      this.goOnAnyway = false;
+      this.brief = '';
+      this.copyError = false;
+      this.undoRefused = false;
+      this.liveMessage = '';
     },
     showList() {
       this.session = null;
-      this.goOnAnyway = false;
-      this.brief = '';
+      this.reset();
       this.refresh();
       this.vm.showAi(true);
+      this.focusAfterRender('heading');
     },
     openAction(id) {
       this.refresh();
@@ -129,39 +152,50 @@ const AiPanel = Vue.component('AiPanel', {
         api,
         editor: this.editor,
       });
-      this.goOnAnyway = false;
-      this.brief = '';
-      this.copiedIndex = null;
+      this.reset();
       this.vm.showAi(true);
-      this.$nextTick(() => this.focus('heading'));
+      this.focusAfterRender('heading');
     },
-    focus(ref) {
-      const element = this.$refs[ref];
-      if (element) element.focus();
+    goOn() {
+      this.goOnAnyway = true;
+      this.focusAfterRender('brief');
+    },
+    async ask(request) {
+      this.copyError = false;
+      this.undoRefused = false;
+      this.liveMessage = this.t('ai-panel-loading');
+      await request;
+      if (this.state.error || !this.state.proposals.length) return;
+      this.liveMessage = this.t('ai-panel-proposed', {
+        count: this.state.proposals.length,
+      });
+      this.focusAfterRender('proposals');
     },
     generate() {
-      this.copiedIndex = null;
-      return this.session.request({ brief: this.brief });
+      return this.ask(this.session.request({ brief: this.brief }));
     },
     more() {
-      this.copiedIndex = null;
-      return this.session.requestMore();
+      return this.ask(this.session.requestMore({ brief: this.brief }));
     },
     apply() {
       this.session.apply();
       this.refresh();
-      this.$nextTick(() => this.focus('applied'));
+      this.focusAfterRender('applied');
     },
     undo() {
-      this.session.undo();
+      this.undoRefused = !this.session.undo();
       this.refresh();
+      if (this.undoRefused) return;
+      this.liveMessage = this.t('ai-panel-undone');
+      this.focusAfterRender('picked');
     },
     async copy(index) {
-      this.session.select(index);
       try {
-        await navigator.clipboard.writeText(this.session.textToCopy());
-        this.copiedIndex = index;
+        await navigator.clipboard.writeText(this.state.proposals[index].text);
+        this.session.copied(index);
         this.copyError = false;
+        this.liveMessage = this.t('text-generation-copied');
+        this.refresh();
       } catch (err) {
         this.copyError = true;
       }
