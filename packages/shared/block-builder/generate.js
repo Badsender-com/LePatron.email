@@ -15,7 +15,7 @@ const { elementFor } = require('./elements/index.js');
 const { escapeForContext, COLOR, PX, ATTR } = require('./slot-contexts.js');
 
 // Bumped when the shape of a state changes in a way a reader must know about.
-const STATE_VERSION = 1;
+const STATE_VERSION = 2;
 
 // Bumped when a template changes in a way that alters rendered output. A block
 // whose stored `gen` is behind can be offered an update; it is never updated
@@ -216,6 +216,9 @@ function emptyState() {
     v: STATE_VERSION,
     gen: GENERATOR_VERSION,
     block: { ...DEFAULT_BLOCK },
+    rows: [],
+    // Derived from `rows`, and never stored. Temporary: it is what lets the
+    // generator keep reading a flat composition while the rows land.
     elements: [],
   };
 }

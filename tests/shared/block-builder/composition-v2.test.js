@@ -11,7 +11,7 @@
 // anything written in the meantime survives.
 
 // Turned on by #1206 (a composition becomes rows of columns)
-describe.skip('a composition of rows and columns', () => {
+describe('a composition of rows and columns', () => {
   let parseState;
   let serialiseState;
   let STATE_VERSION;
@@ -195,7 +195,7 @@ describe.skip('a composition of rows and columns', () => {
 });
 
 // Turned on by #1206 (a composition becomes rows of columns)
-describe.skip('a composition written before columns', () => {
+describe('a composition written before columns', () => {
   let parseState;
 
   beforeAll(() => {
