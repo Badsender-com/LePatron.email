@@ -159,6 +159,15 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // The state and thresholds of the quality control's checks for this
+    // company (docs/adr/0009-quality-settings-per-group-and-template.md):
+    // `{ checks: { [checkId]: { state?, thresholds? } } }`, only what was set.
+    // Validated by sanitizeQualitySettings; nothing stored means the catalogue's
+    // defaults, the quality control as it always was. No migration needed.
+    qualitySettings: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     // Module activation settings
     enableEmailBuilder: {
       type: Boolean,

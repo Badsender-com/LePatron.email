@@ -16,7 +16,8 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
   Mailings: {},
-  Groups: {},
+  // The share links' metadata read the group too (share-link.service.js).
+  Groups: { findById: () => ({ lean: () => Promise.resolve({}) }) },
 }));
 
 const mongoose = require('mongoose');
@@ -66,8 +67,7 @@ function callWith({ groupSettings, templateSettings }) {
     .then((result) => ({ result, populateTemplate }));
 }
 
-// Turned on by #1197 (turn a check off for a group)
-describe.skip('findOneForMosaico — quality settings', () => {
+describe('findOneForMosaico — quality settings', () => {
   it("gives the editor today's defaults when nothing is set", async () => {
     const { result } = await callWith({});
     const { checks } = result.metadata.qualitySettings;
