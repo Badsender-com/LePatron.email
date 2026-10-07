@@ -70,7 +70,12 @@ router.post(
   mailingQuality.checkResources
 );
 router.get('/:mailingId/share-links', GUARD_USER, shareLinks.list);
-router.post('/:mailingId/share-links', GUARD_USER, shareLinks.create);
+router.post(
+  '/:mailingId/share-links',
+  GUARD_USER,
+  requireJsonBody,
+  shareLinks.create
+);
 router.delete('/:mailingId/share-links/:linkId', GUARD_USER, shareLinks.revoke);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);

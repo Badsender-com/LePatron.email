@@ -68,6 +68,8 @@ describe('the mailing routes that act on what the request carries', () => {
     ['/download-multiple-zip'],
     // It spends the user's runs and has the server fetch the addresses sent.
     ['/:mailingId/quality/resources'],
+    // It creates a public link to the email.
+    ['/:mailingId/share-links'],
   ])('%s requires a JSON body', (path) => {
     expect(guardsOf('post', path)).toEqual([GUARD_USER, requireJsonBody]);
   });
