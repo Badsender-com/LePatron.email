@@ -1120,8 +1120,8 @@ export default {
     }
   },
   qualitySettings: {
-    thresholdsTitle: 'Thresholds',
     thresholdHint: 'Default {default}, from {min} to {max}',
+    orderError: 'Must not be lower than the level before it',
     thresholdError: 'Between {min} and {max}',
     units: {
       characters: 'characters',

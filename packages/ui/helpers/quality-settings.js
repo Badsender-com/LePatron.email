@@ -91,6 +91,28 @@ export function thresholdErrors(thresholds) {
 }
 
 /**
+ * The higher threshold of each pair set below its lower one, as
+ * `checkId.name` keys (defaults fill what is not set).
+ * @param {Object} thresholds as thresholdsOf returns them
+ * @returns {string[]}
+ */
+export function orderErrors(thresholds) {
+  return Object.entries(thresholds).flatMap(([id, values]) =>
+    (CHECKS[id].ordered || [])
+      .filter(([low, high]) => {
+        const value = (name) =>
+          values[name] === null ||
+          values[name] === '' ||
+          values[name] === undefined
+            ? CHECKS[id].thresholds[name].default
+            : Number(values[name]);
+        return value(low) > value(high);
+      })
+      .map(([, high]) => `${id}.${high}`)
+  );
+}
+
+/**
  * The payload that saves states and thresholds together, only what changed
  * since the saved values. A value equal to its default goes as `null`, so the
  * group follows the default again.
