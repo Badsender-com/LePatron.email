@@ -50,8 +50,7 @@ describe('resolveQualitySettings — a group', () => {
   });
 });
 
-// Turned on by #1199 (override settings on a template)
-describe.skip('resolveQualitySettings — a template over its group', () => {
+describe('resolveQualitySettings — a template over its group', () => {
   beforeAll(load);
 
   const group = {
