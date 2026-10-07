@@ -167,6 +167,24 @@ describe('PUT /groups/:groupId — thresholds', () => {
     expect(payload.qualitySettings.checks.subject).toEqual({ state: 'on' });
   });
 
+  it('checks the order against what is already stored', async () => {
+    const error = await rejection(
+      update({
+        stored: {
+          qualitySettings: {
+            checks: { preheader: { thresholds: { tooLong: 120 } } },
+          },
+        },
+        body: {
+          qualitySettings: {
+            checks: { preheader: { thresholds: { long: 130 } } },
+          },
+        },
+      })
+    );
+    expect(error.status).toBe(422);
+  });
+
   it.each([
     [
       'a value under its minimum',
@@ -184,6 +202,20 @@ describe('PUT /groups/:groupId — thresholds', () => {
     [
       'a threshold on a check without any',
       { headings: { thresholds: { x: 1 } } },
+    ],
+    // Inherited names are no thresholds of the catalogue (security review).
+    [
+      'an inherited threshold name',
+      { subject: { thresholds: { constructor: 30 } } },
+    ],
+    // A warning level above its error level would never be reached.
+    [
+      'a lower level set above the higher one',
+      { subject: { thresholds: { long: 70, tooLong: 50 } } },
+    ],
+    [
+      'a lower level set above the default of the higher one',
+      { 'images-total-weight': { thresholds: { warningKb: 2000 } } },
     ],
   ])('refuses %s with a 422', async (_label, checks) => {
     const error = await rejection(

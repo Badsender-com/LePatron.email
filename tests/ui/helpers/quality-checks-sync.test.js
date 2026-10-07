@@ -41,4 +41,23 @@ describe('the settings page copy of the check catalogue', () => {
       expect(typeof locale.qualitySettings.categories[category]).toBe('string');
     });
   });
+
+  it.each([
+    ['en', en],
+    ['fr', fr],
+  ])('names every state, threshold and unit in %s', (_lang, locale) => {
+    CHECK_STATES.forEach((state) => {
+      expect(typeof locale.qualitySettings.states[state]).toBe('string');
+    });
+    Object.entries(CHECKS).forEach(([id, check]) => {
+      Object.entries(check.thresholds).forEach(([name, threshold]) => {
+        expect(typeof locale.qualitySettings.thresholds[id][name]).toBe(
+          'string'
+        );
+        expect(typeof locale.qualitySettings.units[threshold.unit]).toBe(
+          'string'
+        );
+      });
+    });
+  });
 });
