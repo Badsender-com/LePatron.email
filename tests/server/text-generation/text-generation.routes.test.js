@@ -704,6 +704,7 @@ describe('text generation: POST /api/text-generation/preheader', () => {
   it.each([
     ['no subject', {}],
     ['a blank subject', { subject: '   ' }],
+    ['a null subject', { subject: null }],
   ])(
     'invokes the preheader skill without a subject for %s: it may be set in the sending platform',
     async (_label, subject) => {
@@ -717,6 +718,20 @@ describe('text generation: POST /api/text-generation/preheader', () => {
       expect(invoke.mock.calls[0][0].input).not.toHaveProperty('subject');
     }
   );
+
+  it('accepts a subject of exactly 500 characters', async () => {
+    invoke.mockResolvedValue(
+      proposals('Jusqu’au dimanche 12 mai inclus, sur tout le rayon lin')
+    );
+    const res = await request(makeApp())
+      .post('/api/text-generation/preheader')
+      .send({
+        mailingId: MAILING_ID,
+        content: CONTENT,
+        subject: 'a'.repeat(500),
+      });
+    expect(res.status).toBe(200);
+  });
 
   it.each([
     ['not text', 42],
