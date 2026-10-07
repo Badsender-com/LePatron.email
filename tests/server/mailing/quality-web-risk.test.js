@@ -1,7 +1,7 @@
 'use strict';
 
 // Google Web Risk, for links that lead to phishing or malware. The API key
-// travels in the query string: it must never reach a log.
+// travels in a header, never in a URL, and must never reach a log.
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   warn: jest.fn(),
@@ -18,6 +18,7 @@ const {
 const {
   checkResources,
   clearCacheForTests,
+  WEB_RISK_LOOKUPS_PER_DAY,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
 
 const KEY = 'AIza-test-key';
@@ -34,7 +35,7 @@ beforeEach(() => {
 
 describe('lookup', () => {
   it('asks for phishing, malware and unwanted software, the address encoded', () => {
-    const url = new URL(lookupUrl('https://a.test/?q=1&r=2', KEY));
+    const url = new URL(lookupUrl('https://a.test/?q=1&r=2'));
     expect(url.origin + url.pathname).toBe(
       'https://webrisk.googleapis.com/v1/uris:search'
     );
@@ -44,29 +45,43 @@ describe('lookup', () => {
       'UNWANTED_SOFTWARE',
     ]);
     expect(url.searchParams.get('uri')).toBe('https://a.test/?q=1&r=2');
-    expect(url.searchParams.get('key')).toBe(KEY);
+    expect(url.searchParams.has('key')).toBe(false);
+  });
+
+  it('sends the key in a header, never in the URL', async () => {
+    const fetchImpl = jest.fn(async () => answer(200, {}));
+    await lookup('https://a.test', KEY, { fetchImpl });
+    const [requested, options] = fetchImpl.mock.calls[0];
+    expect(requested).not.toContain(KEY);
+    expect(options.headers).toEqual({ 'X-Goog-Api-Key': KEY });
   });
 
   it('reads a listed address, and a clean one', async () => {
     const listed = jest.fn(async () =>
       answer(200, { threat: { threatTypes: ['SOCIAL_ENGINEERING'] } })
     );
-    expect(await lookup('https://bad.test', KEY, listed)).toEqual([
-      'SOCIAL_ENGINEERING',
-    ]);
+    expect(
+      await lookup('https://bad.test', KEY, { fetchImpl: listed })
+    ).toEqual(['SOCIAL_ENGINEERING']);
     const clean = jest.fn(async () => answer(200, {}));
-    expect(await lookup('https://good.test', KEY, clean)).toEqual([]);
+    expect(
+      await lookup('https://good.test', KEY, { fetchImpl: clean })
+    ).toEqual([]);
   });
 
   it('judges nothing when Google does not answer, and logs no key', async () => {
     expect(
-      await lookup('https://a.test', KEY, async () => answer(403, {}))
+      await lookup('https://a.test', KEY, {
+        fetchImpl: async () => answer(403, {}),
+      })
     ).toBeNull();
     expect(
-      await lookup('https://a.test', KEY, async () => {
-        throw Object.assign(new Error(`timeout ${KEY}`), {
-          name: 'FetchError',
-        });
+      await lookup('https://a.test', KEY, {
+        fetchImpl: async () => {
+          throw Object.assign(new Error(`timeout ${KEY}`), {
+            name: 'FetchError',
+          });
+        },
       })
     ).toBeNull();
     expect(JSON.stringify(logger.warn.mock.calls)).not.toContain(KEY);
@@ -114,6 +129,31 @@ describe('in a quality run', () => {
     const { webRisk } = await run(['https://bad.test'], d);
     expect(webRisk).toEqual({ enabled: false, threats: {} });
     expect(d.webRiskLookup).not.toHaveBeenCalled();
+  });
+
+  it('asks once for addresses that differ only by their query string', async () => {
+    const d = deps();
+    await run(['https://a.test/p?utm=1', 'https://a.test/p?utm=2'], d);
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops asking once the company's daily budget is spent", async () => {
+    const d = deps();
+    const links = (n) =>
+      Array.from({ length: n }, (_, i) => `https://site${i}.test/`);
+    const runs = Math.ceil(WEB_RISK_LOOKUPS_PER_DAY / 60);
+    for (let i = 0; i < runs; i++) {
+      // Distinct users: the per-user throttle is not what is tested here.
+      await run(
+        links(60).map((url) => `${url}${i}`),
+        d,
+        `u${i}`
+      );
+    }
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
+    const { webRisk } = await run(['https://bad.test/late'], d, 'late');
+    expect(webRisk.threats).toEqual({});
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
   });
 
   it('asks again what Google could not answer', async () => {
