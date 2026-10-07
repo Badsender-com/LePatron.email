@@ -810,6 +810,57 @@ export default {
     }
   },
   qualitySettings: {
+    thresholdsTitle: 'Seuils',
+    thresholdHint: 'Défaut {default}, de {min} à {max}',
+    thresholdError: 'Entre {min} et {max}',
+    units: {
+      characters: 'caractères',
+      words: 'mots',
+      px: 'px',
+      KB: 'Ko',
+      ratio: '×',
+    },
+    thresholds: {
+      subject: {
+        long: 'Objet long : info au-delà de',
+        tooLong: 'Objet trop long : avertissement au-delà de',
+      },
+      preheader: {
+        long: 'Préheader long : info au-delà de',
+        tooLong: 'Préheader trop long : avertissement au-delà de',
+      },
+      'uppercase-text': {
+        maxWords: 'Mots en majuscules d\'affilée, au plus',
+      },
+      'small-font': {
+        minSize: 'Taille minimale',
+        minSizeHeaderFooter: 'Taille minimale en en-tête et pied de page',
+      },
+      'text-layout': {
+        minLineHeight: 'Interligne minimal',
+        centredMaxChars: 'Texte centré, au plus',
+      },
+      'alt-text-quality': {
+        maxLength: 'Longueur, au plus',
+      },
+      'image-only-email': {
+        minTextLength: 'Texte hors images, au moins',
+      },
+      'html-size': {
+        maxKb: 'Poids, au plus',
+      },
+      'image-weight': {
+        maxKb: 'Poids d\'une image, au plus',
+        maxGifKb: 'Poids d\'un GIF, au plus',
+      },
+      'images-total-weight': {
+        warningKb: 'Avertissement au-delà de',
+        errorKb: 'Erreur au-delà de',
+      },
+      'oversized-images': {
+        maxRatio: 'Largeur réelle, au plus, en fois la largeur affichée',
+      },
+    },
     title: 'Contrôle qualité',
     sidebarLabel: 'Contrôle qualité',
     groupTitle: 'Contrôles du groupe',

@@ -43,6 +43,68 @@ export function statesPayload(states) {
 }
 
 /**
+ * The thresholds the group set, check by check: `null` where the default
+ * applies, so the field shows the default as its placeholder.
+ * @param {Object} [settings] the group's `qualitySettings`
+ * @returns {Object<string, Object<string, number|null>>}
+ */
+export function thresholdsOf(settings) {
+  const stored = storedChecks(settings);
+  return Object.fromEntries(
+    Object.keys(CHECKS)
+      .filter((id) => Object.keys(CHECKS[id].thresholds).length)
+      .map((id) => [
+        id,
+        Object.fromEntries(
+          Object.keys(CHECKS[id].thresholds).map((name) => {
+            const value = stored[id] && stored[id].thresholds;
+            return [
+              name,
+              value && typeof value[name] === 'number' ? value[name] : null,
+            ];
+          })
+        ),
+      ])
+  );
+}
+
+/**
+ * The thresholds outside their bounds, as `checkId.name` keys.
+ * @param {Object} thresholds as thresholdsOf returns them
+ * @returns {string[]}
+ */
+export function thresholdErrors(thresholds) {
+  return Object.entries(thresholds).flatMap(([id, values]) =>
+    Object.entries(values)
+      .filter(([name, value]) => {
+        if (value === null || value === '' || value === undefined) return false;
+        const { min, max } = CHECKS[id].thresholds[name];
+        return !Number.isFinite(Number(value)) || value < min || value > max;
+      })
+      .map(([name]) => `${id}.${name}`)
+  );
+}
+
+/**
+ * The payload that saves states and thresholds together. A value equal to its
+ * default goes as `null`, so the group follows the default again.
+ * @returns {{ checks: Object }}
+ */
+export function settingsPayload(states, thresholds = {}) {
+  const { checks } = statesPayload(states);
+  Object.entries(thresholds).forEach(([id, values]) => {
+    checks[id].thresholds = Object.fromEntries(
+      Object.entries(values).map(([name, value]) => {
+        const number = value === '' || value === null ? null : Number(value);
+        const isDefault = number === CHECKS[id].thresholds[name].default;
+        return [name, number === null || isDefault ? null : number];
+      })
+    );
+  });
+  return { checks };
+}
+
+/**
  * The checks of each category, in the order the page lists them.
  * @returns {Array<{ category: string, ids: string[] }>}
  */

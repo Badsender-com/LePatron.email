@@ -66,8 +66,7 @@ describe('a check that is off', () => {
   });
 });
 
-// Turned on by #1198 (set a group's thresholds)
-describe.skip('the thresholds in force', () => {
+describe('the thresholds in force', () => {
   const smallFont = require(`${RULES}/small-font`);
 
   it('are applied: 12 px passes when the group allows 11 px', () => {
