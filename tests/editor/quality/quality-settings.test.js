@@ -149,6 +149,23 @@ describe('a blocking check', () => {
     expect(verdict.blocked).toBe(false);
   });
 
+  it('is counted on the toolbar badge, even as an info', () => {
+    const vm = fakeViewModel(textBlock('<p>Hi</p>'));
+    const finding = {
+      ruleId: 'headings',
+      severity: 'info',
+      blocking: true,
+      fingerprint: 'f1',
+    };
+    installQualityReview(vm, ko, {
+      defer: (fn) => fn(),
+      run: () => ({ findings: [finding], checks: [], resources: {} }),
+    });
+    vm.quality.run();
+    expect(vm.quality.blockingCount()).toBe(1);
+    expect(vm.quality.issueCount()).toBe(1);
+  });
+
   it('cannot be ignored: an ignore stored before it became blocking no longer counts', async () => {
     const first = runQualityChecks(
       withSettings(unfilled, blocking)
