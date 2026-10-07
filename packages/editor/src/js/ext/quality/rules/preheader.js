@@ -1,6 +1,6 @@
 'use strict';
 
-const { isDynamic } = require('../exported-content');
+const { isDynamic, stripMergeTags } = require('../merge-tag-syntax');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
 // objet et préheader"): Knak fails under 15 characters; under 40, inboxes
@@ -13,11 +13,7 @@ const TOO_LONG = 140;
 
 // Merge tags do not count: their value is only known at send time.
 const visibleLength = (text) =>
-  Array.from(
-    text
-      .replace(/\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]/g, '')
-      .trim()
-  ).length;
+  Array.from(stripMergeTags(text).replace(/\s+/g, ' ').trim()).length;
 
 module.exports = {
   id: 'preheader',
