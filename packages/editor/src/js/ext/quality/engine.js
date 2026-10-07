@@ -35,6 +35,13 @@ const forbiddenCode = require('./rules/forbidden-code');
 const malformedHtml = require('./rules/malformed-html');
 const unsupportedCode = require('./rules/unsupported-code');
 const looseCode = require('./rules/loose-code');
+const brokenLinks = require('./rules/broken-links');
+const imageWeight = require('./rules/image-weight');
+const imagesTotalWeight = require('./rules/images-total-weight');
+const oversizedImages = require('./rules/oversized-images');
+const domainBlocklists = require('./rules/domain-blocklists');
+const dangerousLinks = require('./rules/dangerous-links');
+const { collectResources } = require('./resources');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -69,6 +76,18 @@ const DEFAULT_RULES = [
   unsupportedCode,
   looseCode,
   htmlSize,
+];
+
+// Rules that read what the server found (`options.remote`): links that do not
+// answer, image weight once exported, blocklisted domains. They run once the
+// server has answered, on the same export as the rules above.
+const REMOTE_RULES = [
+  brokenLinks,
+  dangerousLinks,
+  domainBlocklists,
+  imageWeight,
+  imagesTotalWeight,
+  oversizedImages,
 ];
 
 // djb2: enough to tell two values apart in a fingerprint, not a security hash.
@@ -130,6 +149,18 @@ function rankFingerprints(findings) {
   });
 }
 
+const NO_RESOURCES = Object.freeze({ links: [], images: [] });
+
+// What to ask the server about. Never in the way of the local checks.
+function resourcesOf(ctx) {
+  try {
+    return collectResources(ctx);
+  } catch (err) {
+    console.error('Quality checks could not list the links and images', err);
+    return NO_RESOURCES;
+  }
+}
+
 function runRule(rule, ctx) {
   try {
     const findings = rankFingerprints(
@@ -162,8 +193,11 @@ function runRule(rule, ctx) {
  * @param {Object} [options]
  * @param {string} [options.html] - an already exported HTML, to avoid exporting twice
  * @param {Array} [options.rules] - rules to run instead of the default set
- * @returns {{ findings: Array, checks: Array }} findings to show, and one entry
- *   per check with its status, so passed checks can be listed too
+ * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
+ * @returns {{ findings: Array, checks: Array, html: string, resources: Object }}
+ *   findings to show, one entry per check with its status (so passed checks
+ *   can be listed too), the HTML checked, and the links and images to ask the
+ *   server about
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
@@ -172,18 +206,27 @@ function runQualityChecks(viewModel, options = {}) {
 
   let ctx;
   try {
-    ctx = buildContext(viewModel, html);
+    ctx = buildContext(viewModel, html, options.remote);
   } catch (err) {
     // Download and ESP send run the checks first: a model the engine cannot
     // read must cost the checks, never the export.
     console.error('Quality checks could not read the email', err);
-    return { findings: [], checks: rules.map(failedCheck) };
+    return {
+      findings: [],
+      checks: rules.map(failedCheck),
+      html,
+      resources: NO_RESOURCES,
+    };
   }
 
-  const results = rules.map((rule) => runRule(rule, ctx));
+  // A check that cannot apply (a blocklist nobody subscribed to) is not listed.
+  const applicable = rules.filter((rule) => !rule.enabled || rule.enabled(ctx));
+  const results = applicable.map((rule) => runRule(rule, ctx));
   return {
     findings: _.flatMap(results, 'findings'),
     checks: results.map((result) => result.check),
+    html,
+    resources: resourcesOf(ctx),
   };
 }
 
@@ -191,4 +234,5 @@ module.exports = {
   runQualityChecks,
   // The drawer announces how many checks it runs.
   DEFAULT_RULES,
+  REMOTE_RULES,
 };
