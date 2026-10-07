@@ -26,7 +26,7 @@ const { CHECKS, CHECK_STATES } = require('../../shared/quality/checks.js');
  * @param {Object} [stored] the settings stored on the group or template
  * @returns {{ checks: Object }}
  */
-function sanitizeQualitySettings(raw, stored) {
+function sanitizeQualitySettings(raw, stored, inherited = {}) {
   const fail = (details) => {
     const err = new UnprocessableEntity(ERROR_CODES.INVALID_QUALITY_SETTINGS);
     err.details = details;
@@ -69,7 +69,8 @@ function sanitizeQualitySettings(raw, stored) {
         checkId,
         change.thresholds,
         next.thresholds,
-        fail
+        fail,
+        inherited[checkId]
       );
       if (!Object.keys(next.thresholds).length) delete next.thresholds;
     } else if ('thresholds' in change) {
@@ -83,8 +84,9 @@ function sanitizeQualitySettings(raw, stored) {
 }
 
 // The thresholds of one check, merged into the stored ones: within the
-// catalogue's bounds, `null` bringing one back to its default.
-function mergeThresholds(checkId, raw, stored, fail) {
+// catalogue's bounds, `null` bringing one back to its default. `inherited`
+// holds what a template's unset thresholds follow (its group's values).
+function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
     throw fail(`thresholds of ${checkId} must be an object`);
   }
@@ -110,11 +112,15 @@ function mergeThresholds(checkId, raw, stored, fail) {
     }
     merged[name] = value;
   });
-  // Thresholds that go together stay in order once merged, defaults included:
-  // an error level under its warning level would never be reached.
+  // Thresholds that go together stay in order once merged, with what is
+  // inherited or the defaults: an error level under its warning level would
+  // never be reached.
   CHECKS[checkId].ordered.forEach(([low, high]) => {
-    const value = (name) =>
-      name in merged ? merged[name] : known[name].default;
+    const value = (name) => {
+      if (name in merged) return merged[name];
+      if (Number.isFinite(inherited[name])) return inherited[name];
+      return known[name].default;
+    };
     if (value(low) > value(high)) {
       throw fail(`${checkId}.${low} must not exceed ${checkId}.${high}`);
     }

@@ -1010,6 +1010,14 @@ export default {
     }
   },
   qualitySettings: {
+    templatesTitle: 'Templates',
+    templatesDescription: 'A template can override any setting of the group. What it does not set follows the group, including its later changes.',
+    templatesEmpty: 'This group has no template yet.',
+    inheritedState: 'Inherited from the group ({state})',
+    inheritedValue: 'Inherited from the group: {value}',
+    ownSetting: 'Set on the template',
+    templateInherits: 'Inherited from the group',
+    templateOverrides: '{count} setting(s) set on the template',
     thresholdHint: 'Default {default}, from {min} to {max}',
     orderError: 'Must not be lower than the level before it',
     thresholdError: 'Between {min} and {max}',
