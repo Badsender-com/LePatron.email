@@ -155,6 +155,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           {{ t('Run quality checks') }}
         </button>
         <p class="qc-drawer__hint">{{ t('__count__ checks', { count: vm.quality.ruleCount }) }}</p>
+        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
       </div>
 
       <div v-else-if="status === 'running'" class="qc-drawer__running">
@@ -191,6 +192,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         <p v-if="remoteStatus === 'running'" class="qc-remote">
           <span class="qc-spinner" aria-hidden="true"></span>{{ t('Checking links and images…') }}
         </p>
+        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
 
         <div class="qc-drawer__list">
           <div v-for="group in groups" :key="group.severity" class="qc-group">

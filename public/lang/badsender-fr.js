@@ -458,6 +458,8 @@ module.exports = {
   'Links, images and weight are checked before you send a test.':
     "Les liens, les images et le poids de l'email sont vérifiés avant l'envoi d'un test.",
   '__count__ checks': '__count__ contrôles',
+  '__count__ checks turned off by your group or template':
+    '__count__ contrôle(s) désactivé(s) par votre groupe ou votre template',
   'Running checks…': 'Contrôle en cours…',
   'Running…': 'En cours…',
   Cancel: 'Annuler',

@@ -153,6 +153,15 @@ const GroupSchema = Schema(
       // but NOT enforced in this phase — enforcement comes with CRM Governance.
       requiredFields: { type: [String], default: [] },
     },
+    // The state and thresholds of the quality control's checks for this
+    // company (docs/adr/0004-quality-settings-per-group-and-template.md):
+    // `{ checks: { [checkId]: { state?, thresholds? } } }`, only what was set.
+    // Validated by sanitizeQualitySettings; nothing stored means the catalogue's
+    // defaults, the quality control as it always was. No migration needed.
+    qualitySettings: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     // Module activation settings
     enableEmailBuilder: {
       type: Boolean,

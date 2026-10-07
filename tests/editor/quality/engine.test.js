@@ -204,6 +204,7 @@ describe('runQualityChecks', () => {
         // Nothing to ask the server about either.
         html: '<html><body></body></html>',
         resources: { links: [], images: [] },
+        turnedOff: [],
       });
     });
 

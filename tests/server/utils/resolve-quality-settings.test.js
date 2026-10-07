@@ -12,8 +12,7 @@ function load() {
   } = require('../../../packages/server/utils/resolve-quality-settings.js'));
 }
 
-// Turned on by #1197 (turn a check off for a group)
-describe.skip('resolveQualitySettings — a group', () => {
+describe('resolveQualitySettings — a group', () => {
   beforeAll(load);
 
   it("gives every check its default when nothing is set: today's behavior", () => {
@@ -106,5 +105,33 @@ describe.skip('resolveQualitySettings — a template over its group', () => {
     expect(resolveQualitySettings(asDocument, null).checks.headings.state).toBe(
       'off'
     );
+  });
+});
+
+// What is stored may not have gone through the sanitizer (a super admin
+// writing the field directly): only catalogue keys and known states apply,
+// and nothing is ever written outside the result (security review).
+describe('resolveQualitySettings — what is stored, read defensively', () => {
+  beforeAll(load);
+
+  it('ignores inherited names, unknown states and junk', () => {
+    const group = {
+      qualitySettings: {
+        checks: {
+          constructor: { state: 'off' },
+          toString: { state: 'off' },
+          headings: { state: 'loud', thresholds: 'x' },
+          subject: { thresholds: { constructor: 5, long: '30' } },
+        },
+      },
+    };
+    const resolved = resolveQualitySettings(group, { qualitySettings: 'x' });
+    expect(resolved.checks.headings.state).toBe('on');
+    expect(resolved.checks.subject.thresholds).toEqual({
+      long: 40,
+      tooLong: 60,
+    });
+    expect(Object.state).toBeUndefined();
+    expect(Object.prototype.toString.state).toBeUndefined();
   });
 });

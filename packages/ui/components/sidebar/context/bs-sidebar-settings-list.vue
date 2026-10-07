@@ -296,6 +296,12 @@ export default {
             route: `${this.settingsBasePath}/tracking`,
           },
           {
+            id: 'quality',
+            label: this.$t('qualitySettings.sidebarLabel'),
+            icon: 'mdi-shield-check-outline',
+            route: `${this.settingsBasePath}/quality`,
+          },
+          {
             id: 'feed-mappings',
             label: this.$t('feedMappings.title'),
             icon: 'mdi-rss',
