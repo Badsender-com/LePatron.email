@@ -293,15 +293,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
     gate(options) {
       const id = ++runId;
       runVersion = contentVersion;
+      let local;
       try {
-        runAll(id, options, {});
+        local = runAll(id, options, {});
       } catch (err) {
         console.error('Quality review failed', err);
         settle();
         return Promise.resolve({ blocked: false, findings: [] });
       }
       surface(id);
-      const findings = active().filter((finding) => finding.blocking);
+      // The verdict is this run's own: never what a later run left in the
+      // drawer. A blocking finding cannot be ignored.
+      const findings = local.findings.filter((finding) => finding.blocking);
       if (findings.length) displayBlockingFindings(findings, viewModel);
       return Promise.resolve({ blocked: findings.length > 0, findings });
     },
