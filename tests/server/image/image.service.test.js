@@ -109,6 +109,7 @@ describe('image.service.createFromUrl', () => {
             label: result.name,
             source: 'upload',
             externalMetadata: {},
+            uploadedAt: expect.any(Date),
           },
         },
       }
@@ -149,6 +150,7 @@ describe('image.service.addFiles', () => {
               label: file.name,
               source: 'upload',
               externalMetadata: {},
+              uploadedAt: expect.any(Date),
             },
           },
         }
