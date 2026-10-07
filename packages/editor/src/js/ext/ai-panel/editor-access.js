@@ -17,6 +17,10 @@ const {
 function createEditorAccess(viewModel) {
   const content = () => ko.toJS(viewModel.content());
   const preheader = () => findPreheader(content());
+  // A subject the user generated and copied, for an email whose subject lives
+  // in the sending platform: the preheader builds on it all the same.
+  let rememberedSubject = null;
+  const knownSubject = () => getSubject(viewModel) || rememberedSubject || '';
 
   return {
     get mailingId() {
@@ -39,6 +43,10 @@ function createEditorAccess(viewModel) {
       return extractEmailCopy(canvas, { sampleFor });
     },
     getSubject: () => getSubject(viewModel) || '',
+    knownSubject,
+    rememberSubject: (value) => {
+      rememberedSubject = value;
+    },
     setSubject: (value) => setSubject(viewModel, value),
     getPreheader: () => (preheader() || { value: '' }).value,
     setPreheader: (value) => writePreheader(viewModel.content, value),
@@ -46,11 +54,15 @@ function createEditorAccess(viewModel) {
     stopMultiple: () => viewModel.stopMultiple(),
     // The context the action registry decides from.
     context() {
+      const textGeneration = Boolean(
+        viewModel.metadata.hasTextGenerationFeature
+      );
       return {
-        textGeneration: Boolean(viewModel.metadata.hasTextGenerationFeature),
-        hasSubject: Boolean((getSubject(viewModel) || '').trim()),
+        textGeneration,
+        hasSubject: Boolean(knownSubject().trim()),
         hasSubjectField: canWriteSubject(viewModel),
-        hasPreheaderField: Boolean(preheader()),
+        // The whole content is read only when an action may need it.
+        hasPreheaderField: textGeneration && Boolean(preheader()),
       };
     },
   };
