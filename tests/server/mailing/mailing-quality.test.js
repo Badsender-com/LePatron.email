@@ -107,21 +107,20 @@ describe('applyIgnore', () => {
     );
   });
 
-  it('stops at the ceiling', () => {
+  it('lets the oldest go at the ceiling, so ignoring keeps working', () => {
     const mailing = makeMailing({
       qualityIgnores: Array.from({ length: MAX_QUALITY_IGNORES }, (_, i) => ({
         fingerprint: `f${i}`,
       })),
     });
-    expect(() =>
-      applyIgnore(
-        mailing,
-        { fingerprint: 'one-more', ruleId: null, ignored: true },
-        user
-      )
-    ).toThrow(
-      expect.objectContaining({ message: 'QUALITY_IGNORES_LIMIT_REACHED' })
+    const fingerprints = applyIgnore(
+      mailing,
+      { fingerprint: 'one-more', ruleId: null, ignored: true },
+      user
     );
+    expect(fingerprints).toHaveLength(MAX_QUALITY_IGNORES);
+    expect(fingerprints[0]).toBe('f1');
+    expect(fingerprints[fingerprints.length - 1]).toBe('one-more');
   });
 });
 
