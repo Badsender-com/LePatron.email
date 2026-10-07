@@ -1,14 +1,14 @@
 'use strict';
 
 const { stripMergeTags } = require('../merge-tag-syntax');
+const { thresholdOf } = require('../settings');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
 // objet et préheader"): Litmus and Stripo advise 90 to 100; Dyspatch sees
 // clients display up to 140. A short preheader is never reported (team
 // decision of 1 October 2026): it can be an editorial choice, and many
 // templates fill the rest of the preview themselves.
-const LONG = 100;
-const TOO_LONG = 140;
+// Thresholds `long` (100) and `tooLong` (140), set by the quality settings.
 
 // Compared without case, spacing, merge tags or end punctuation: "Spring
 // sale!" repeats "spring sale".
@@ -41,8 +41,6 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Preheader',
   passKey: 'The preheader is filled in and __count__ characters long',
-  LONG,
-  TOO_LONG,
   passParams: (ctx) => {
     const preheader = ctx.preheader;
     return { count: preheader ? visibleLength(preheader.value) : 0 };
@@ -83,13 +81,13 @@ module.exports = {
     const count = visibleLength(value);
     const finding = (messageKey, severity) =>
       findings.concat({ messageKey, severity, params: { count }, value });
-    if (count > TOO_LONG) {
+    if (count > thresholdOf(ctx, 'preheader', 'tooLong')) {
       return finding(
         'Preheader too long (__count__ characters): inboxes cut it well before',
         'warning'
       );
     }
-    if (count > LONG) {
+    if (count > thresholdOf(ctx, 'preheader', 'long')) {
       return finding(
         'Long preheader (__count__ characters): its end will rarely be seen',
         'info'

@@ -4,17 +4,17 @@ const _ = require('lodash');
 const { userDeclarations, toPx, hasText } = require('../user-styles');
 const { textOf } = require('../exported-content');
 const { styleValue } = require('../colors');
+const { thresholdOf } = require('../settings');
 
 // Justified text opens irregular gaps between words. A line height under 1
 // makes lines overlap: that is what is reported (team decision of 1 October
 // 2026). WCAG asks for 1.5 at AAA only, and whether 1.2 reads well depends on
-// the template and its typeface.
-const MIN_LINE_HEIGHT = 1;
+// the template and its typeface. Thresholds `minLineHeight` and
+// `centredMaxChars`, set by the quality settings.
 // Centred text is hard to follow past about three lines: some 200 characters
 // at the width of an email. Said once for the whole email, with no block to
 // go to: centred titles and short lines are fine, and pointing at each one
 // would bury the advice.
-const CENTRED_MAX_CHARS = 200;
 
 const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);
 
@@ -64,8 +64,9 @@ module.exports = {
   severity: 'info',
   titleKey: 'Text layout',
   passKey: 'No text is justified, overlaps or is centred at length',
-  CENTRED_MAX_CHARS,
   run(ctx) {
+    const minLineHeight = thresholdOf(ctx, 'text-layout', 'minLineHeight');
+    const centredMaxChars = thresholdOf(ctx, 'text-layout', 'centredMaxChars');
     const declarations = userDeclarations(ctx).filter(({ element }) =>
       hasText(element)
     );
@@ -73,7 +74,7 @@ module.exports = {
       ({ prop, value, element }) =>
         prop === 'text-align' &&
         isCentred(value) &&
-        centredLength(element) > CENTRED_MAX_CHARS
+        centredLength(element) > centredMaxChars
     );
     const findings = declarations
       .map((decl) => {
@@ -82,12 +83,12 @@ module.exports = {
         }
         const ratio =
           decl.prop === 'line-height' && lineHeightRatio(decl.value, decl.element);
-        if (typeof ratio === 'number' && ratio < MIN_LINE_HEIGHT) {
+        if (typeof ratio === 'number' && ratio < minLineHeight) {
           return {
             ...decl,
-            messageKey: 'Line height under 1 (__ratio__): the lines overlap: __text__',
+            messageKey: 'Line height under __min__ (__ratio__): the lines overlap: __text__',
             severity: 'warning',
-            params: { ratio: Math.round(ratio * 100) / 100 },
+            params: { ratio: Math.round(ratio * 100) / 100, min: minLineHeight },
           };
         }
         return null;

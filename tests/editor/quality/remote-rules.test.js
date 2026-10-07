@@ -169,8 +169,8 @@ describe('image weight', () => {
       })
     );
     expect(findings.map((f) => [f.messageKey, f.params.size])).toEqual([
-      ['Heavy image (__size__ KB): keep it under 500 KB', '800'],
-      ['Heavy GIF (__size__ KB): keep it under 1 MB', '1500'],
+      ['Heavy image (__size__ KB): keep it under __max__ KB', '800'],
+      ['Heavy GIF (__size__ KB): keep it under __max__ KB', '1500'],
     ]);
   });
 

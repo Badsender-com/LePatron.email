@@ -64,6 +64,9 @@ function buildContext(viewModel, html, remote) {
       // Every route of LePatron's image backend: images, cover, crop, placeholder.
       imagesUrl: _.get(viewModel, 'metadata.imagesUrl') || {},
       trackingConfig: _.get(viewModel, 'metadata.trackingConfig'),
+      // The quality settings resolved by the server (ADR 0004); none for a
+      // mailing loaded without them: every check keeps its default.
+      quality: _.get(viewModel, 'metadata.qualitySettings') || null,
     },
     // The block root keeps its `id` in the export (uniqueId + attr:{id}).
     // Anything outside a block root is the template's frame, not the client's.
