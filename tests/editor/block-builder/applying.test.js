@@ -18,6 +18,9 @@ const {
 const {
   HTML_CODE_MAX_LENGTH,
 } = require('../../../packages/shared/synthetic-blocks.js');
+const {
+  isEmptyComposition,
+} = require('../../../packages/shared/block-builder/state.js');
 
 afterEach(unmountAll);
 
@@ -88,7 +91,10 @@ describe('applying', () => {
     reopened.modal.handleApply();
 
     expect(reopened.written).toEqual(['']);
-    expect(JSON.parse(reopened.stateAccessor.writes[0]).elements).toEqual([]);
+    // Asserted through the predicate rather than on the stored shape: what the
+    // block needs is to READ as empty, and the shape that says so changed when
+    // a composition gained rows.
+    expect(isEmptyComposition(reopened.stateAccessor.writes[0])).toBe(true);
   });
 
   it('writes nothing when closed without applying', () => {
