@@ -9,8 +9,8 @@ const { getBlockDefault } = require('./ownership');
 // template's default is the template's; in an edited one, a declaration the
 // default already carried is still the template's. Only the rest is judged.
 //
-// Block style properties are left out on purpose: templates such as Clarins
-// map them to their own design tokens ("h1_times", "primary"), not to CSS.
+// Block style properties are left out on purpose: some client templates map
+// them to their own design tokens ("h1_times", "primary"), not to CSS.
 
 const TEXT_KEY = /(text|title|label|caption|content|heading|description)$/i;
 const HAS_MARKUP = /<[a-z]/i;
