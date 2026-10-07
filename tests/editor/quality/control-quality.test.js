@@ -14,9 +14,30 @@ const $ = require('jquery');
 
 const {
   displayErrors,
+  getErrorsForControlQuality,
 } = require('../../../packages/editor/src/js/ext/badsender-control-quality.js');
+const { fakeViewModel, exportOf } = require('./fake-view-model');
 
 const viewModel = { t: (key) => key };
+
+describe('getErrorsForControlQuality', () => {
+  it('lists the findings as translated lines, prefixed by their block', () => {
+    const vm = fakeViewModel({
+      blocks: [{ id: 'b1', type: 'titleBlock' }],
+      html: exportOf({ b1: '<a href="#toreplace">Read more</a>' }),
+    });
+
+    expect(getErrorsForControlQuality(vm)).toEqual([
+      'Title · Link not filled in: Read more',
+    ]);
+  });
+
+  it('checks the HTML it is given instead of exporting again', () => {
+    const vm = fakeViewModel();
+    getErrorsForControlQuality(vm, { html: '<p></p>' });
+    expect(vm.exportHTML).not.toHaveBeenCalled();
+  });
+});
 
 beforeEach(() => {
   document.body.innerHTML = '<replacedbody></replacedbody>';

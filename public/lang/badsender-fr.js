@@ -438,4 +438,17 @@ module.exports = {
     "Enregistrement refusé : le CSS personnalisé n'est pas activé sur ce template.",
   'save-message-head-css-too-large':
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
+  // Quality control (ext/quality)
+  'Quality control': 'Contrôle qualité',
+  'Link not filled in: __label__': 'Lien non renseigné : __label__',
+  'Clickable image has no link': 'Image cliquable sans lien',
+  'Image not replaced': 'Image non remplacée',
+  'Template sample image not replaced':
+    "Image d'exemple du template non remplacée",
+  'Missing Outlook background image': 'Image de fond Outlook manquante',
+  'Missing mobile background image': 'Image de fond mobile manquante',
+  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
+    'Le HTML exporté pèse __size__ Ko : Gmail tronque les emails de plus de 102 Ko',
+  'Required tracking parameters missing: __keys__':
+    'Paramètres de tracking obligatoires manquants : __keys__',
 };
