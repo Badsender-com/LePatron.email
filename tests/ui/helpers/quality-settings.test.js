@@ -21,12 +21,14 @@ describe('quality settings page helpers', () => {
     expect(states['emoji-placement']).toBe('on');
   });
 
-  it('sends a state equal to the default as null', () => {
-    const states = { ...statesOf(undefined), headings: 'off' };
-    const { checks } = statesPayload(states);
-    expect(checks.headings).toEqual({ state: 'off' });
-    expect(checks['emoji-placement']).toEqual({ state: null });
-    expect(checks['tracking-params']).toEqual({ state: null });
+  it('sends only the checks that changed, a default state as null', () => {
+    const saved = statesOf({ checks: { subject: { state: 'off' } } });
+    const states = { ...saved, headings: 'off', subject: 'on' };
+    const { checks } = statesPayload(states, saved);
+    expect(checks).toEqual({
+      headings: { state: 'off' },
+      subject: { state: null },
+    });
   });
 
   it('lists every check once, by category', () => {
