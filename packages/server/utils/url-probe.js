@@ -116,6 +116,9 @@ function dropBody(response) {
  * @param {number} [options.timeoutMs=5000] - for the whole chain and the body
  * @param {number} [options.maxRedirects=5]
  * @param {boolean} [options.readBody=false] - read the body into a Buffer
+ * @param {boolean} [options.defaultPortsOnly=false] - refuse a hop to another
+ *   port than 80 or 443, redirects included: a redirector must not turn the
+ *   probe into a port scanner of public hosts
  * @param {number} [options.maxBytes] - ceiling on the body read
  * @param {Function} [options.fetchImpl] - injectable for tests
  * @returns {Promise<{ status: number, url: string, contentType: string|null,
@@ -128,6 +131,7 @@ async function probeUrl(
     timeoutMs = 5000,
     maxRedirects = 5,
     readBody = false,
+    defaultPortsOnly = false,
     maxBytes = 0,
     fetchImpl = fetch,
   } = {}
@@ -138,6 +142,9 @@ async function probeUrl(
     for (let hop = 0; ; hop += 1) {
       // A literal IP never goes through guardedLookup. The check resolves the
       // name too, and a lookup has no timeout of its own: the deadline bounds it.
+      if (defaultPortsOnly && new URL(currentUrl).port !== '') {
+        throw new ProbeError(PROBE_FAILURES.UNREACHABLE);
+      }
       await beforeDeadline(assertOutboundHostAllowed(currentUrl), deadline);
       const response = await fetchImpl(currentUrl, {
         method: 'GET',

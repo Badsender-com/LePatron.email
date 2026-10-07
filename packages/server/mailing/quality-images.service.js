@@ -87,6 +87,7 @@ function download(target, run, deps) {
         timeoutMs,
         readBody: true,
         maxBytes: MAX_IMAGE_BYTES,
+        defaultPortsOnly: true,
       });
 }
 
