@@ -333,6 +333,10 @@ if (cluster.isMaster) {
     mosaicoEditor.render
   );
 
+  // Public preview of an email, opened from a share link: no session needed.
+  const sharePage = require('./share-link/share-page.controller.js');
+  app.get('/share/:token', sharePage.renderShare);
+
   const maintenanceEditor = require('./maintenance/maintenance.controller.js');
   app.get(
     '/maintenance',

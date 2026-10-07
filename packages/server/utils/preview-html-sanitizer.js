@@ -66,6 +66,32 @@ function sanitizePreviewHtml(previewHtml) {
   }
 }
 
+// The public share page (share-link/share-page.controller.js) opens every link
+// of the email in a new tab, with no opener: the reader wants to try them, and
+// a page opened from a shared email must not reach back to it. Set on the
+// sanitized DOM by a hook of a DOMPurify instance of its own, never by editing
+// the sanitized HTML as a string: a regex there can match inside an attribute
+// value and turn it back into markup.
+const { window: shareWindow } = new JSDOM('');
+const ShareDOMPurify = createDOMPurify(shareWindow);
+ShareDOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A' || node.tagName === 'AREA') {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
+
+/**
+ * Sanitize a preview for the public share page: the same rules as
+ * sanitizePreviewHtml, every link opening in a new tab without an opener.
+ * @param {string} previewHtml
+ * @returns {string}
+ */
+function sanitizeSharedPreviewHtml(previewHtml) {
+  if (!previewHtml || typeof previewHtml !== 'string') return previewHtml;
+  return ShareDOMPurify.sanitize(previewHtml, SANITIZE_CONFIG);
+}
+
 // Upper bound on a stored previewHtml, in characters, enforced on save
 // (mailing.controller.js updateMosaico). Sanitizing is synchronous and roughly
 // linear — about a second per megabyte — so an unbounded preview is an easy way
@@ -73,4 +99,8 @@ function sanitizePreviewHtml(previewHtml) {
 // the dev database is 116KB; Gmail clips above 102KB).
 const PREVIEW_HTML_MAX_LENGTH = 5 * 1024 * 1024;
 
-module.exports = { sanitizePreviewHtml, PREVIEW_HTML_MAX_LENGTH };
+module.exports = {
+  sanitizePreviewHtml,
+  sanitizeSharedPreviewHtml,
+  PREVIEW_HTML_MAX_LENGTH,
+};
