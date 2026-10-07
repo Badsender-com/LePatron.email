@@ -199,24 +199,28 @@ function loader(opts) {
 
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
-      // ====================================
-      // Block download if required tracking params are missing
-      const missingTracking = checkRequiredTrackingParams(viewModel);
-      if (missingTracking.length > 0) {
-        displayTrackingError(missingTracking, viewModel);
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        });
-        return;
-      }
+      const html = viewModel.exportHTML();
 
       // ====================================
       // Quality review of the same export the ZIP is built from: the drawer
-      // opens when there is something to see, the download goes on anyway.
-      const html = viewModel.exportHTML();
-      if (viewModel.quality) viewModel.quality.review({ html });
+      // opens when there is something to see; a finding of a blocking check
+      // (the required tracking parameters by default) stops the download and
+      // is listed in a modal (ADR 0004).
+      if (!viewModel.quality) {
+        const missingTracking = checkRequiredTrackingParams(viewModel);
+        if (missingTracking.length > 0) {
+          displayTrackingError(missingTracking, viewModel);
+          return;
+        }
+        download(html, downloadOptions);
+        return;
+      }
+      viewModel.quality.gate({ html }).then(({ blocked }) => {
+        if (!blocked) download(html, downloadOptions);
+      });
+    };
 
+    function download(html, downloadOptions) {
       downloadCmd.enabled(false);
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
@@ -253,7 +257,7 @@ function loader(opts) {
           downloadCmd.enabled(true);
         },
       });
-    };
+    }
 
     viewModel.save = saveCmd;
     viewModel.test = testCmd;

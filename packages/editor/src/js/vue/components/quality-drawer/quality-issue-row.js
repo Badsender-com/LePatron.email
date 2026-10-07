@@ -25,6 +25,10 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
     isFinding() {
       return Boolean(this.item.finding);
     },
+    // A finding of a blocking check: it stops the export, and cannot be ignored.
+    isBlocking() {
+      return Boolean(this.item.finding && this.item.finding.blocking);
+    },
   },
   template: `
     <div class="qc-row" :class="{ 'qc-row--expanded': expanded, 'qc-row--ignored': ignored }">
@@ -44,6 +48,7 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
           <span class="qc-row__line">
             <span class="qc-row__title">{{ item.title }}</span>
             <span v-if="item.blockLabel" class="qc-row__block">· {{ item.blockLabel }}</span>
+            <span v-if="isBlocking" class="qc-row__blocking">{{ t('Blocking') }}</span>
           </span>
           <span v-if="!expanded" class="qc-row__desc">{{ item.description }}</span>
         </span>
@@ -64,7 +69,7 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
             <span class="lucide lucide-message-circle" aria-hidden="true"></span>
             {{ t('Add comment') }}
           </button>
-          <button v-if="!ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('ignore')">
+          <button v-if="!ignored && !isBlocking" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('ignore')">
             <span class="lucide lucide-ban" aria-hidden="true"></span>
             {{ t('Ignore') }}
           </button>
