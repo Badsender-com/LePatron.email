@@ -19,11 +19,13 @@ const logger = consola.create({
 
 // A share link's token is its only credential (share-link.service.js): a log
 // holding it would hand out working links. Only its first characters remain,
-// enough to tell two links apart.
-const SHARE_TOKEN_IN_URL = /^(\/share\/[A-Za-z0-9_-]{4})[^/?#]*/;
+// enough to tell two links apart. Express routes the path however it is
+// written (/SHARE/, //share/, a token percent-encoded): everything after
+// /share/ goes, up to the query string.
+const SHARE_TOKEN_IN_URL = /^(\/+share\/+)([^?#]{0,4})[^?#]*/i;
 
 function loggedUrl(tokens, req, res) {
-  return (tokens.url(req, res) || '').replace(SHARE_TOKEN_IN_URL, '$1…');
+  return (tokens.url(req, res) || '').replace(SHARE_TOKEN_IN_URL, '$1$2…');
 }
 
 function logRequest(tokens, req, res) {
