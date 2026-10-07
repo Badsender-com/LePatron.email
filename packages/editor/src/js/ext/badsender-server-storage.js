@@ -207,8 +207,12 @@ function loader(opts) {
         download(html, downloadOptions);
         return;
       }
+      // One export at a time: the button waits for the checks' verdict.
+      if (!downloadCmd.enabled()) return;
+      downloadCmd.enabled(false);
       gate(html).then(({ blocked }) => {
-        if (!blocked) download(html, downloadOptions);
+        if (blocked) downloadCmd.enabled(true);
+        else download(html, downloadOptions);
       });
     };
 
