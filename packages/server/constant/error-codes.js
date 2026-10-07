@@ -245,4 +245,7 @@ module.exports = {
   // NOT when the typology belongs to another company, which reads as NOT_FOUND so
   // that no code tells a caller what exists elsewhere.
   EMAIL_TYPE_COMPANY_MISSING: 'EMAIL_TYPE_COMPANY_MISSING',
+
+  // QUALITY CONTROL
+  INVALID_QUALITY_IGNORE: 'INVALID_QUALITY_IGNORE',
 };

@@ -154,13 +154,42 @@ const MailingSchema = Schema(
       type: String,
       enum: EmailTriggerValues,
     },
+    // Quality control findings the team chose to ignore on this email (the
+    // quality drawer's "Ignore"). Keyed by the finding's fingerprint — rule,
+    // block, property and a hash of the faulty value — so an ignored finding
+    // comes back on its own once its content changes. Shared by everyone who
+    // edits the email. Bounded by MAX_QUALITY_IGNORES in mailing-quality.service.
+    qualityIgnores: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true, maxlength: 512 },
+          ruleId: { type: String, maxlength: 64 },
+          _user: { type: ObjectId, ref: UserModel },
+          ignoredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
       type: [],
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The ignored quality findings reach the editor with its own metadata
+      // (findOneForMosaico) and nowhere else: no API answer carries them, nor
+      // the ids of who ignored them.
+      transform: (doc, ret) => {
+        delete ret.qualityIgnores;
+        return ret;
+      },
+    },
+  }
 );
 
 MailingSchema.pre('find', function () {
@@ -186,6 +215,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   // keeping — a copy of an automated transactional email is still one; a planned
   // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -613,7 +645,12 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
+        qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
       },
+      // Fingerprints of the quality findings ignored on this email.
+      qualityIgnores: (mailing.qualityIgnores || []).map(
+        (ignore) => ignore.fingerprint
+      ),
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
         cdnButtonLabel: group.cdnButtonLabel,

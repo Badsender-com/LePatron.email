@@ -673,4 +673,11 @@ module.exports = {
   'Separate addresses with a semicolon': 'Separate addresses with a semicolon',
   'Saved list of addresses': 'Saved list of addresses',
   'Send the test email': 'Send the test email',
+  'Add comment': 'Add comment',
+  Ignore: 'Ignore',
+  'Stop ignoring': 'Stop ignoring',
+  Ignored: 'Ignored',
+  'Ignored: __title__': 'Ignored: __title__',
+  Undo: 'Undo',
+  'The change could not be saved': 'The change could not be saved',
 };
