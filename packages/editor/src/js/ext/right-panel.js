@@ -101,21 +101,30 @@ function registerRightPanelBinding(ko) {
         return isOpen;
       });
 
+      // What had the focus when the panel opened (a toggle, a field's icon):
+      // the focus goes back there when it closes.
+      let opener = null;
+
       const focusSub = sync.subscribe((isOpen) => {
         if (isOpen) {
-          // After the panel's own content has rendered.
+          const active = document.activeElement;
+          opener = active && active !== document.body ? active : null;
+          // After the panel's own content has rendered, and only if the panel
+          // has not already put the focus where it wants it.
           setTimeout(() => {
+            if (element.contains(document.activeElement)) return;
             const first = element.querySelector(FOCUSABLE);
             if (first) first.focus();
           }, 0);
           return;
         }
-        if (element.contains(document.activeElement) && element.id) {
-          const toggle = document.querySelector(
-            `[aria-controls="${element.id}"]`
-          );
-          if (toggle) toggle.focus();
-        }
+        if (!element.contains(document.activeElement)) return;
+        const toggle =
+          element.id &&
+          document.querySelector(`[aria-controls="${element.id}"]`);
+        const back = opener && opener.isConnected ? opener : toggle;
+        opener = null;
+        if (back) back.focus();
       });
 
       ko.utils.domNodeDisposal.addDisposeCallback(element, () => {
