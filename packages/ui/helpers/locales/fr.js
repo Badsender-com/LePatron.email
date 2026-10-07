@@ -810,8 +810,8 @@ export default {
     }
   },
   qualitySettings: {
-    thresholdsTitle: 'Seuils',
     thresholdHint: 'Défaut {default}, de {min} à {max}',
+    orderError: 'Ne peut pas être inférieur au niveau précédent',
     thresholdError: 'Entre {min} et {max}',
     units: {
       characters: 'caractères',

@@ -91,8 +91,11 @@ function mergeThresholds(checkId, raw, stored, fail) {
   const known = CHECKS[checkId].thresholds;
   const merged = { ...(stored || {}) };
   Object.entries(raw).forEach(([name, value]) => {
+    // Own keys only: "constructor" is not a threshold of the catalogue.
+    if (!Object.prototype.hasOwnProperty.call(known, name)) {
+      throw fail(`Unknown threshold of ${checkId}: ${name}`);
+    }
     const threshold = known[name];
-    if (!threshold) throw fail(`Unknown threshold of ${checkId}: ${name}`);
     if (value === null) {
       delete merged[name];
       return;
@@ -106,6 +109,15 @@ function mergeThresholds(checkId, raw, stored, fail) {
       );
     }
     merged[name] = value;
+  });
+  // Thresholds that go together stay in order once merged, defaults included:
+  // an error level under its warning level would never be reached.
+  CHECKS[checkId].ordered.forEach(([low, high]) => {
+    const value = (name) =>
+      name in merged ? merged[name] : known[name].default;
+    if (value(low) > value(high)) {
+      throw fail(`${checkId}.${low} must not exceed ${checkId}.${high}`);
+    }
   });
   return merged;
 }

@@ -20,23 +20,36 @@ const CHECK_STATES = Object.freeze(['off', 'on', 'blocking']);
 const t = (value, min, max, unit) =>
   Object.freeze({ default: value, min, max, unit });
 
-const check = (category, thresholds = {}, defaultState = 'on') =>
+// `ordered`: thresholds that go together, lowest first (an info then a
+// warning, a warning then an error); a group cannot set them the other way.
+const check = (category, thresholds = {}, defaultState = 'on', ordered = []) =>
   Object.freeze({
     category,
     defaultState,
     thresholds: Object.freeze(thresholds),
+    ordered: Object.freeze(ordered.map((pair) => Object.freeze(pair))),
   });
 
 const CHECKS = Object.freeze({
   // Copy
-  subject: check('copy', {
-    long: t(40, 10, 200, 'characters'),
-    tooLong: t(60, 10, 255, 'characters'),
-  }),
-  preheader: check('copy', {
-    long: t(100, 20, 300, 'characters'),
-    tooLong: t(140, 20, 500, 'characters'),
-  }),
+  subject: check(
+    'copy',
+    {
+      long: t(40, 10, 200, 'characters'),
+      tooLong: t(60, 10, 255, 'characters'),
+    },
+    'on',
+    [['long', 'tooLong']]
+  ),
+  preheader: check(
+    'copy',
+    {
+      long: t(100, 20, 300, 'characters'),
+      tooLong: t(140, 20, 500, 'characters'),
+    },
+    'on',
+    [['long', 'tooLong']]
+  ),
   'merge-tags': check('copy'),
   'empty-blocks': check('copy'),
   // Accessibility
@@ -91,10 +104,15 @@ const CHECKS = Object.freeze({
     maxKb: t(500, 10, 10239, 'KB'),
     maxGifKb: t(1024, 10, 10239, 'KB'),
   }),
-  'images-total-weight': check('performance', {
-    warningKb: t(500, 10, 20480, 'KB'),
-    errorKb: t(1024, 10, 20480, 'KB'),
-  }),
+  'images-total-weight': check(
+    'performance',
+    {
+      warningKb: t(500, 10, 20480, 'KB'),
+      errorKb: t(1024, 10, 20480, 'KB'),
+    },
+    'on',
+    [['warningKb', 'errorKb']]
+  ),
   'oversized-images': check('performance', {
     maxRatio: t(2, 1, 10, 'ratio'),
   }),
