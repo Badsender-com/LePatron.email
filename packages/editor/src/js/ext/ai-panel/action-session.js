@@ -55,15 +55,19 @@ const KINDS = {
     field: 'preheader',
     canApply: (editor) => editor.canApplyPreheader,
     body: (editor) => ({
-      subject: orUndefined(editor.getSubject()),
+      // The subject on screen, or the one the user copied for their platform.
+      subject: orUndefined(editor.knownSubject()),
       currentPreheader: orUndefined(editor.getPreheader()),
     }),
     read: (editor) => editor.getPreheader() || '',
     // A template property: one step of the editor's own undo.
     write: (editor, value) => {
       editor.startMultiple();
-      editor.setPreheader(value);
-      editor.stopMultiple();
+      try {
+        editor.setPreheader(value);
+      } finally {
+        editor.stopMultiple();
+      }
     },
     next: null,
   },
@@ -87,6 +91,8 @@ function createActionSession({ action, api, editor }) {
     // Every proposal shown so far: "Proposer d'autres" moves away from them.
     seen: [],
     selectedIndex: null,
+    // The proposal the user copied, when the email has no field to write to.
+    copiedIndex: null,
     applied: null,
     previous: null,
   };
@@ -114,10 +120,14 @@ function createActionSession({ action, api, editor }) {
           avoid: state.seen.length ? state.seen.slice(-MAX_AVOID) : undefined,
         })
       );
-      state.proposals = data.proposals;
       state.dropped = data.dropped || 0;
-      state.seen = state.seen.concat(data.proposals.map((p) => p.text));
-      state.selectedIndex = null;
+      // Others all set aside: the proposals shown stay, rather than none.
+      if (data.proposals.length || !state.proposals.length) {
+        state.proposals = data.proposals;
+        state.seen = state.seen.concat(data.proposals.map((p) => p.text));
+        state.selectedIndex = null;
+        state.copiedIndex = null;
+      }
       state.applied = null;
     } catch (err) {
       state.error = errorKey(err);
@@ -132,7 +142,9 @@ function createActionSession({ action, api, editor }) {
       state.brief = brief || '';
       return ask();
     },
-    requestMore() {
+    // With the instruction as the user edited it since, if they did.
+    requestMore({ brief } = {}) {
+      if (brief !== undefined) state.brief = brief;
       return ask();
     },
     select(index) {
@@ -150,19 +162,30 @@ function createActionSession({ action, api, editor }) {
       kind.write(editor, picked.text);
       state.applied = { [kind.field]: picked.text };
     },
+    // False, and nothing written, when the user changed the field by hand
+    // since: undoing would silently lose their edit.
     undo() {
-      if (!state.applied) return;
+      if (!state.applied) return false;
+      if (kind.read(editor) !== state.applied[kind.field]) return false;
       kind.write(editor, state.previous);
       state.applied = null;
+      return true;
     },
     // When the email has no field to write to: the user pastes it elsewhere.
     textToCopy() {
       const picked = selected();
       return picked ? picked.text : null;
     },
-    // What the panel offers once this action is applied.
+    // The user copied a proposal. A copied subject is the one the preheader
+    // then builds on, as if it had been applied.
+    copied(index) {
+      state.selectedIndex = index;
+      state.copiedIndex = index;
+      if (kind.field === 'subject') editor.rememberSubject(selected().text);
+    },
+    // What the panel offers once this action is applied, or copied.
     nextAction() {
-      return state.applied ? kind.next : null;
+      return state.applied || state.copiedIndex !== null ? kind.next : null;
     },
   };
   return session;
