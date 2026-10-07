@@ -34,6 +34,9 @@ const {
 const {
   sanitizeEmailMetadata,
 } = require('../utils/sanitize-email-metadata.js');
+const {
+  sanitizeQualitySettings,
+} = require('../utils/sanitize-quality-settings.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -165,6 +168,11 @@ async function create(req, res) {
   if ('emailMetadata' in groupToCreate) {
     groupToCreate.emailMetadata = sanitizeEmailMetadata(
       groupToCreate.emailMetadata
+    );
+  }
+  if ('qualitySettings' in groupToCreate) {
+    groupToCreate.qualitySettings = sanitizeQualitySettings(
+      groupToCreate.qualitySettings
     );
   }
 
@@ -519,6 +527,18 @@ async function update(req, res) {
     );
   }
 
+  // The quality settings, merged into what is stored: a page that changes one
+  // check must not reset the others.
+  if ('qualitySettings' in groupToUpdate) {
+    const storedSettings = (
+      await Groups.findById(req.params.groupId, { qualitySettings: 1 }).lean()
+    )?.qualitySettings;
+    groupToUpdate.qualitySettings = sanitizeQualitySettings(
+      groupToUpdate.qualitySettings,
+      storedSettings
+    );
+  }
+
   // Only reachable by a super admin: the pick below drops it for a company admin.
   if ('idpCert' in groupToUpdate) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
@@ -532,6 +552,8 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // A company admin sets the quality control of their own group (ADR 0004).
+      'qualitySettings',
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to
     // carry the id of the target.

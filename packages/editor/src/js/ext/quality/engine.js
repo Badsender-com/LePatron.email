@@ -42,6 +42,7 @@ const oversizedImages = require('./rules/oversized-images');
 const domainBlocklists = require('./rules/domain-blocklists');
 const dangerousLinks = require('./rules/dangerous-links');
 const { collectResources } = require('./resources');
+const { checkStateOf } = require('./settings');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
@@ -194,10 +195,11 @@ function runRule(rule, ctx) {
  * @param {string} [options.html] - an already exported HTML, to avoid exporting twice
  * @param {Array} [options.rules] - rules to run instead of the default set
  * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
- * @returns {{ findings: Array, checks: Array, html: string, resources: Object }}
- *   findings to show, one entry per check with its status (so passed checks
- *   can be listed too), the HTML checked, and the links and images to ask the
- *   server about
+ * @returns {{ findings: Array, checks: Array, html: string, resources: Object,
+ *   turnedOff: string[] }} findings to show, one entry per check with its
+ *   status (so passed checks can be listed too), the HTML checked, the links
+ *   and images to ask the server about, and the checks the mailing's quality
+ *   settings turned off (neither run nor listed)
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
@@ -216,17 +218,24 @@ function runQualityChecks(viewModel, options = {}) {
       checks: rules.map(failedCheck),
       html,
       resources: NO_RESOURCES,
+      turnedOff: [],
     };
   }
 
+  // A check the group or the template turned off is neither run nor listed.
+  const [turnedOff, kept] = _.partition(
+    rules,
+    (rule) => checkStateOf(ctx, rule.id) === 'off'
+  );
   // A check that cannot apply (a blocklist nobody subscribed to) is not listed.
-  const applicable = rules.filter((rule) => !rule.enabled || rule.enabled(ctx));
+  const applicable = kept.filter((rule) => !rule.enabled || rule.enabled(ctx));
   const results = applicable.map((rule) => runRule(rule, ctx));
   return {
     findings: _.flatMap(results, 'findings'),
     checks: results.map((result) => result.check),
     html,
     resources: resourcesOf(ctx),
+    turnedOff: turnedOff.map((rule) => rule.id),
   };
 }
 

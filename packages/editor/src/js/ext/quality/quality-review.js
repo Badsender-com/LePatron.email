@@ -3,6 +3,7 @@
 const axios = require('axios');
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = require('./engine');
 const { hasResources } = require('./resources');
+const { checkStateOf } = require('./settings');
 
 // The state of the last quality review, shared by the drawer, the toolbar
 // button and the commands that export the email (download, ESP send).
@@ -55,6 +56,17 @@ function installQualityReview(viewModel, ko, deps = {}) {
   const metadata = viewModel.metadata || {};
   const ignoreUrl = metadata.url && metadata.url.qualityIgnores;
   const resourcesUrl = metadata.url && metadata.url.qualityResources;
+  // The mailing's quality settings (ADR 0004): a check turned off is neither
+  // run, nor listed, nor counted; the drawer only says how many are off.
+  const settings = { config: { quality: metadata.qualitySettings || null } };
+  const isOn = (rule) => checkStateOf(settings, rule.id) !== 'off';
+  const localRules = DEFAULT_RULES.filter(isOn);
+  const remoteRules = listedRemoteRules.filter(isOn);
+  const turnedOffCount =
+    DEFAULT_RULES.length +
+    listedRemoteRules.length -
+    localRules.length -
+    remoteRules.length;
 
   const status = ko.observable('idle');
   const findings = ko.observableArray([]);
@@ -91,7 +103,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // results join the others when they come back, unless a newer run started.
   // After an export, the drawer opens if they find something to fix.
   function runRemote(id, local, { openOnIssues = false } = {}) {
-    if (!resourcesUrl || !hasResources(local.resources)) {
+    // Nothing to ask the server when every check it serves is off.
+    const remoteOn = REMOTE_RULES.some(isOn);
+    if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
       remoteStatus('idle');
       return Promise.resolve();
     }
@@ -123,7 +137,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
         console.error('Quality checks on the server failed', err);
         // Listed as checks that could not run, never as passed. A blocklist
         // may not even be configured: it is left out.
-        const failed = listedRemoteRules.map(
+        const failed = remoteRules.map(
           (rule) => ({
             ruleId: rule.id,
             category: rule.category,
@@ -175,8 +189,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     ignored,
     remoteStatus,
     // Blocklists are left out: they only run where they are configured.
-    ruleCount:
-      DEFAULT_RULES.length + (resourcesUrl ? listedRemoteRules.length : 0),
+    ruleCount: localRules.length + (resourcesUrl ? remoteRules.length : 0),
+    // How many checks the quality settings turned off, for the drawer to say.
+    turnedOffCount: ko.pureComputed(() => turnedOffCount),
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
