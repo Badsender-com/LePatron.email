@@ -2,15 +2,10 @@
 
 const _ = require('lodash');
 const { blockTexts, blockLinks } = require('../exported-content');
+const { PAIRS } = require('../merge-tag-syntax');
 
-// Personalization delimiters of the ESPs our clients use. A tag opened and
-// never closed is sent as is: "Hello {{first_name," reaches the recipient.
-const PAIRS = [
-  ['{{', '}}'],
-  ['*|', '|*'],
-  ['[[', ']]'],
-  ['<%', '%>'],
-];
+// A tag opened and never closed is sent as is: "Hello {{first_name," reaches
+// the recipient.
 const EXCERPT_RADIUS = 25;
 
 const count = (text, token) => text.split(token).length - 1;
