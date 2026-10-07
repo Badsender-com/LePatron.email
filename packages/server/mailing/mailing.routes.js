@@ -86,6 +86,7 @@ router.get(
 router.post(
   '/:mailingId/share-links',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  requireJsonBody,
   shareLinks.create
 );
 router.delete(

@@ -17,7 +17,12 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
   assertUserCanEditMailing: jest.fn(),
-  sanitizePreviewCached: jest.fn((mailing) => `clean:${mailing.previewHtml}`),
+}));
+jest.mock('../../../packages/server/utils/preview-html-sanitizer.js', () => ({
+  ...jest.requireActual(
+    '../../../packages/server/utils/preview-html-sanitizer.js'
+  ),
+  sanitizeSharedPreviewHtml: jest.fn((html) => `clean:${html}`),
 }));
 
 const {
@@ -27,6 +32,7 @@ const {
 } = require('../../../packages/server/common/models.common.js');
 const logger = require('../../../packages/server/utils/logger.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
+const previewSanitizer = require('../../../packages/server/utils/preview-html-sanitizer.js');
 const service = require('../../../packages/server/share-link/share-link.service.js');
 const pageController = require('../../../packages/server/share-link/share-page.controller.js');
 
@@ -109,8 +115,8 @@ describe('GET /share/:token', () => {
     const [view, locals] = res.render.mock.calls[0];
     expect(view).toBe('share-page');
     expect(locals).toMatchObject({ name: 'Soldes' });
-    // Sanitized, with every link opening in a new tab.
-    expect(locals.html).toBe('<base target="_blank">clean:<p>hi</p>');
+    // Sanitized, every link opening in a new tab (sanitizeSharedPreviewHtml).
+    expect(locals.html).toBe('clean:<p>hi</p>');
     expect(res.headers['Content-Security-Policy']).toContain(
       "default-src 'none'"
     );
@@ -231,7 +237,7 @@ describe('GET /share/:token', () => {
     );
     await call(pageController.renderShare, { params: { token: TOKEN } });
     await call(pageController.renderShare, { params: { token: TOKEN } });
-    expect(mailingService.sanitizePreviewCached).toHaveBeenCalledTimes(1);
+    expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(1);
   });
 
   it('never looks up a token of the wrong shape', async () => {
@@ -342,35 +348,18 @@ describe('request logs', () => {
     );
   });
 
+  it('mask the token however the path is written', () => {
+    const token = 'AbCd' + 'x'.repeat(39);
+    expect(logger.loggedUrl(tokens(`/SHARE/${token}`))).toBe('/SHARE/AbCd…');
+    expect(logger.loggedUrl(tokens(`//share/${token}`))).toBe('//share/AbCd…');
+    expect(logger.loggedUrl(tokens(`/share/%41%42${token}`))).toBe(
+      '/share/%41%…'
+    );
+  });
+
   it('leave every other address alone', () => {
     expect(logger.loggedUrl(tokens('/api/mailings/m1/share-links'))).toBe(
       '/api/mailings/m1/share-links'
-    );
-  });
-});
-
-describe('links of the shared email', () => {
-  it('open in a new tab, the <base> right after <head>', async () => {
-    ShareLinks.findOne.mockReturnValue(
-      lean({
-        _id: '507f1f77bcf86cd799439033',
-        _mailing: MAILING_ID,
-        lang: 'fr',
-        expiresAt: new Date(Date.now() + 3600 * 1000),
-      })
-    );
-    Mailings.findById.mockReturnValue(
-      lean({
-        _id: 'withhead',
-        name: 'x',
-        previewHtml: '<html><head lang="fr"><title>x</title></head></html>',
-      })
-    );
-    const { res } = await call(pageController.renderShare, {
-      params: { token: 'c'.repeat(43) },
-    });
-    expect(res.render.mock.calls[0][1].html).toBe(
-      'clean:<html><head lang="fr"><base target="_blank"><title>x</title></head></html>'
     );
   });
 });

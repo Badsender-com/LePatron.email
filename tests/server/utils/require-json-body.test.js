@@ -65,22 +65,21 @@ describe('the mailing routes that act on what the request carries', () => {
   const { guardsOf } = routeInspector(router);
 
   it.each([
-    ['/:mailingId/mosaico/download-zip', CAPABILITIES.MAILING_EXPORT],
-    ['/:mailingId/mosaico/send-test-mail', CAPABILITIES.MAILING_SEND_TEST],
-    ['/download-multiple-zip', CAPABILITIES.MAILING_EXPORT],
-  ])('%s requires a JSON body', (path, capability) => {
-    expect(guardsOf('post', path)).toEqual([
-      GUARD_CAN(capability),
-      requireJsonBody,
-    ]);
-  });
-
-  // It spends the user's runs and has the server fetch the addresses sent.
-  it('/:mailingId/quality/resources requires a JSON body', () => {
-    expect(guardsOf('post', '/:mailingId/quality/resources')).toEqual([
-      GUARD_USER,
-      requireJsonBody,
-    ]);
+    [
+      '/:mailingId/mosaico/download-zip',
+      GUARD_CAN(CAPABILITIES.MAILING_EXPORT),
+    ],
+    [
+      '/:mailingId/mosaico/send-test-mail',
+      GUARD_CAN(CAPABILITIES.MAILING_SEND_TEST),
+    ],
+    ['/download-multiple-zip', GUARD_CAN(CAPABILITIES.MAILING_EXPORT)],
+    // It spends the user's runs and has the server fetch the addresses sent.
+    ['/:mailingId/quality/resources', GUARD_USER],
+    // It creates a public link to the email.
+    ['/:mailingId/share-links', GUARD_CAN(CAPABILITIES.MAILING_EDIT_CONTENT)],
+  ])('%s requires a JSON body', (path, guard) => {
+    expect(guardsOf('post', path)).toEqual([guard, requireJsonBody]);
   });
 });
 

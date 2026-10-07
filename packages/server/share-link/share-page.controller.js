@@ -2,7 +2,7 @@
 
 const { Mailings, Groups } = require('../common/models.common.js');
 const GROUP_STATUS = require('../group/status.js');
-const mailingService = require('../mailing/mailing.service.js');
+const previewSanitizer = require('../utils/preview-html-sanitizer.js');
 const logger = require('../utils/logger.js');
 const shareLinkService = require('./share-link.service.js');
 
@@ -133,22 +133,14 @@ const PAGE_CACHE_BUDGET = 16 * 1024 * 1024; // characters
 const pages = new Map();
 let pagesSize = 0;
 
-// Every link of the email opens in a new tab: inside the frame a page could
-// not load (the CSP allows no frame), and a reader wants to try the links.
-// A <base> without href: `base-uri 'none'` only restricts its address. The
-// new tab gets no referrer, the policy of the page being inherited.
-const LINKS_IN_NEW_TAB = '<base target="_blank">';
-
-function withLinksInNewTab(html) {
-  return /<head[^>]*>/i.test(html)
-    ? html.replace(/<head[^>]*>/i, (head) => `${head}${LINKS_IN_NEW_TAB}`)
-    : `${LINKS_IN_NEW_TAB}${html}`;
-}
-
+// Every link of the email opens in a new tab, without an opener: inside the
+// frame a page could not load (the CSP allows no frame), and a reader wants to
+// try the links. The sanitizer sets it on each link (sanitizeSharedPreviewHtml).
+// The new tab gets no referrer, the policy of the page being inherited.
 function sanitizedPage(mailing) {
   const key = `${mailing._id}:${new Date(mailing.updatedAt || 0).getTime()}`;
   if (pages.has(key)) return pages.get(key);
-  const html = withLinksInNewTab(mailingService.sanitizePreviewCached(mailing));
+  const html = previewSanitizer.sanitizeSharedPreviewHtml(mailing.previewHtml);
   pages.set(key, html);
   pagesSize += html.length;
   while (pagesSize > PAGE_CACHE_BUDGET && pages.size > 1) {
