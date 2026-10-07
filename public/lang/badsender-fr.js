@@ -922,21 +922,27 @@ module.exports = {
   // text generation (epic #1163)
   // AI panel, « Outils IA » (ADR 0010)
   'ai-panel-title': 'Outils IA',
-  'ai-panel-actions': 'Actions IA',
+  'ai-panel-actions': 'Actions disponibles',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
   'ai-panel-copy-only':
-    "Cet email n'a pas ce champ : la proposition sera à copier.",
+    "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
   'ai-panel-select-invite':
     'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
   'ai-panel-all-actions': 'Toutes les actions',
   'ai-panel-no-subject':
-    "Cet email n'a pas encore d'objet. Le préheader complète l'objet : générez d'abord l'objet.",
+    "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
   'ai-panel-subject-first': "Générer d'abord l'objet",
   'ai-panel-preheader-anyway': 'Générer le préheader quand même',
   'ai-panel-next-preheader': 'Continuer avec le préheader',
-  'ai-panel-generate': 'Proposer',
   'ai-panel-loading': 'Génération en cours…',
+  'ai-panel-generate-subject': 'Proposer des objets',
+  'ai-panel-generate-preheader': 'Proposer des préheaders',
+  'ai-panel-proposed': '__count__ propositions',
+  'ai-panel-undo': 'Annuler la modification',
+  'ai-panel-undone': 'Modification annulée.',
+  'ai-panel-undo-changed':
+    "Le champ a été modifié depuis : rien n'a été annulé.",
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
   'text-generation-long': 'long : la fin sera rarement lue',
@@ -963,7 +969,6 @@ module.exports = {
   'text-generation-copy-hint':
     "L'objet de cet email n'est pas géré dans LePatron : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-applied': "Appliqué. Enregistrez l'email pour le conserver.",
-  'text-generation-undo': 'Annuler',
   'text-generation-empty-email':
     "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
   'text-generation-error-disabled':
