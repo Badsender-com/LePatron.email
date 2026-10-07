@@ -139,6 +139,21 @@ Les seuils sont ceux de la revue d'équipe du 1er octobre 2026. Le catalogue dé
 
 Le panneau « Tester votre email » (`vue/components/quality-drawer/`) remplace la bannière du lot 1. Il groupe les résultats par sévérité (erreurs, warnings, infos, réussis), et chaque résultat propose « Aller au bloc », « Ajouter un commentaire » (pré-rempli, rien n'est publié sans l'utilisateur) et « Ignorer ». Un résultat ignoré est enregistré sur le mailing par son empreinte (`PATCH /api/mailings/:mailingId/quality-ignores`) et revient si son contenu change. Le téléchargement et l'envoi ESP lancent le contrôle et ouvrent le panneau ; seul le tracking obligatoire bloque, par la modale de `displayTrackingError()`. L'onglet « Envoi de test » du panneau envoie un test et crée les liens de partage.
 
+### Réglages par groupe et par template (epic #1193, ADR 0009)
+
+Chaque contrôle a un état par groupe : **Désactivé**, **Actif** ou **Bloquant**, et ses seuils dans des bornes. Un template surcharge ces réglages un par un et suit le groupe pour le reste. Sans réglage, c'est le comportement d'origine : tout est actif, le tracking obligatoire est bloquant, avec les seuils du tableau ci-dessus.
+
+- **Catalogue** : `packages/shared/quality/checks.js`, avec pour chaque contrôle sa catégorie, son état par défaut et ses seuils (défaut, bornes, unité). L'éditeur et le serveur le lisent ; la page d'admin en garde une copie, vérifiée par un test de synchro.
+- **Stockage** : `qualitySettings` sur le groupe et sur le template, `{ checks: { [id]: { state?, thresholds? } } }`, seulement ce qui est réglé. Il est validé par `sanitizeQualitySettings` (422 `INVALID_QUALITY_SETTINGS`), via `PUT /groups/:groupId` et `PUT /templates/:templateId/quality-settings`. Les droits sont ceux du super admin, et du company admin sur son groupe.
+- **Résolution** : `resolveQualitySettings(group, template)` donne, pour chaque contrôle et chaque seuil, la valeur du template, sinon celle du groupe, sinon le défaut. L'éditeur la reçoit dans `metadata.qualitySettings`.
+- **Éditeur** : un contrôle désactivé n'est ni lancé ni listé, et le panneau dit combien le sont. Les règles lisent leurs seuils dans `ctx.config.quality`, et les messages les citent.
+- **Blocage** :
+  - les résultats d'un contrôle bloquant portent `blocking` et ne peuvent pas être ignorés ;
+  - `viewModel.quality.gate({ html })` arrête le téléchargement et l'envoi ESP (avant l'ouverture du formulaire) et liste ce qui bloque dans une modale ;
+  - un contrôle serveur bloquant fait attendre la réponse du serveur. Seul un résultat sûr bloque, un échec du serveur jamais ;
+  - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing (`resolveMailingTrackingContext`). Les autres blocages ne s'appliquent que dans l'éditeur.
+- **Admin** : Paramètres → Email Builder → Contrôle qualité. Les réglages du groupe viennent en haut, puis chaque template avec ses surcharges.
+
 ### Contrôles qualité côté serveur
 
 - **`POST /api/mailings/:mailingId/quality/resources`** (`quality-resources.service.js`) : l'éditeur envoie les liens et les images des blocs du client, le serveur répond pour chacun, sans rien enregistrer. Corps JSON obligatoire. Protection SSRF à chaque redirection (`utils/url-probe.js`, ports 80 et 443 seulement, à chaque saut), 60 liens et 40 images, une échéance de 20 s et un budget de 50 MB par passage, un passage à la fois et 20 par tranche de 10 minutes par utilisateur, 16 sondes de liens et 8 téléchargements d'images simultanés pour le processus, cache de 10 minutes par entreprise. Les limites valent par worker.
