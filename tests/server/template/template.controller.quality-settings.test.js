@@ -12,6 +12,17 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Galleries: {},
 }));
 
+// The controller's other routes pull image processing in (sharp): not this one.
+jest.mock(
+  '../../../packages/server/template/generate-preview.controller.js',
+  () => ({})
+);
+jest.mock(
+  '../../../packages/server/template/template-blocks.controller.js',
+  () => ({})
+);
+jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
+
 const {
   Templates,
 } = require('../../../packages/server/common/models.common.js');
@@ -43,8 +54,7 @@ const rejection = (promise) =>
     (error) => error
   );
 
-// Turned on by #1199 (override settings on a template)
-describe.skip('PUT /templates/:templateId/quality-settings', () => {
+describe('PUT /templates/:templateId/quality-settings', () => {
   let templates;
 
   beforeAll(() => {
