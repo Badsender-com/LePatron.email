@@ -1,12 +1,12 @@
 'use strict';
 
 const { blockImages, blockTexts } = require('../exported-content');
+const { thresholdOf } = require('../settings');
 
 // Under this much readable text, an email with images blocked shows nothing,
 // and filters that read content have nothing to read. Not a text/image ratio,
 // which the deliverability guidelines dismiss: an email with real text passes.
 // Only the text a reader sees counts: hidden text reads to nobody.
-const MIN_TEXT_LENGTH = 100;
 
 module.exports = {
   id: 'image-only-email',
@@ -14,11 +14,12 @@ module.exports = {
   severity: 'warning',
   titleKey: 'Readable text',
   passKey: 'The email has text to read when images are blocked',
-  MIN_TEXT_LENGTH,
   run(ctx) {
     if (!blockImages(ctx).length) return [];
     const length = Object.values(blockTexts(ctx)).join(' ').trim().length;
-    if (length >= MIN_TEXT_LENGTH) return [];
+    if (length >= thresholdOf(ctx, 'image-only-email', 'minTextLength')) {
+      return [];
+    }
     return [
       {
         messageKey:

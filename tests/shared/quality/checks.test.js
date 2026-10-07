@@ -10,15 +10,12 @@ const {
   REMOTE_RULES,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 
-// Turned on by #1196 (a shared check catalogue)
-describe.skip('the shared check catalogue', () => {
+describe('the shared check catalogue', () => {
   let CHECKS;
   let CHECK_STATES;
   let defaultQualitySettings;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module does not exist
-    // until #1196 ships it, and a top-level require would break the suite.
     ({
       CHECKS,
       CHECK_STATES,
