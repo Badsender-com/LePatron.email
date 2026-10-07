@@ -139,8 +139,7 @@ describe('PUT /groups/:groupId — check states', () => {
   });
 });
 
-// Turned on by #1198 (set a group's thresholds)
-describe.skip('PUT /groups/:groupId — thresholds', () => {
+describe('PUT /groups/:groupId — thresholds', () => {
   it('stores a threshold within its bounds', async () => {
     const payload = await update({
       body: {
