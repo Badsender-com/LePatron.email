@@ -25,6 +25,22 @@ const fileDate = (file) =>
 // so it is also what they will search for
 const fileLabel = (file) => file.label || file.name || '';
 
+// macOS stores file names decomposed (NFD): in "çaé" the cedilla and the acute
+// are separate combining marks, while a search box produces the composed form
+// (NFC). The two render identically and compare unequal, so a file literally
+// named "çaé.png" could not be found by typing "çaé".
+//
+// Stripping the marks rather than just composing them also makes the search
+// accent-insensitive, which is what a French user expects from a search box:
+// "separateur" finds "séparateur". The Combining Diacritical Marks block is
+// used explicitly instead of \p{Diacritic}, which the editor's older browser
+// targets do not all support.
+const foldForSearch = (value) =>
+  String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
 const fileExt = (file) => {
   const match = /\.([a-z0-9]+)$/i.exec(file.name || '');
   return match ? normalizeExt(match[1].toLowerCase()) : '';
@@ -41,8 +57,8 @@ function filterGalleryFiles(files, { search, format, sortBy } = {}) {
   // query params can arrive as arrays/objects (e.g. ?search[]=a) — only string
   // values are meaningful for these text comparisons, anything else is ignored
   if (typeof search === 'string' && search.trim()) {
-    const needle = search.trim().toLowerCase();
-    result = result.filter((f) => fileLabel(f).toLowerCase().includes(needle));
+    const needle = foldForSearch(search.trim());
+    result = result.filter((f) => foldForSearch(fileLabel(f)).includes(needle));
   }
 
   if (typeof format === 'string' && format) {

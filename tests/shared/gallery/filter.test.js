@@ -194,6 +194,45 @@ describe('filterGalleryFiles — cas ajoutés par la recherche éditeur', () => 
     ).toHaveLength(0);
   });
 
+  // macOS writes file names decomposed: the label stored for "mon image çaé.png"
+  // is c + U+0327, e + U+0301, while the search box emits the composed form.
+  describe('normalisation Unicode', () => {
+    const NFD = {
+      name: 'abc-ca.png',
+      label: 'mon image \u0063\u0327a\u0065\u0301.png',
+    };
+    const NFC = { name: 'abc-cb.png', label: 'dossier caf\u00e9.png' };
+
+    it('trouve un libellé NFD avec une saisie NFC', () => {
+      expect(filterGalleryFiles([NFD], { search: 'ça\u00e9' })).toHaveLength(1);
+    });
+
+    it('trouve un libellé NFC avec une saisie NFD', () => {
+      expect(
+        filterGalleryFiles([NFC], { search: 'caf\u0065\u0301' })
+      ).toHaveLength(1);
+    });
+
+    it('la recherche est insensible aux accents', () => {
+      expect(filterGalleryFiles([NFD], { search: 'cae' })).toHaveLength(1);
+      expect(filterGalleryFiles([NFC], { search: 'cafe' })).toHaveLength(1);
+    });
+
+    it('accepte toujours la saisie accentuée', () => {
+      expect(filterGalleryFiles([NFC], { search: 'café' })).toHaveLength(1);
+    });
+
+    it('reste insensible à la casse sur un caractère accentué', () => {
+      expect(filterGalleryFiles([NFC], { search: 'CAFÉ' })).toHaveLength(1);
+    });
+
+    it('ne confond pas deux libellés distincts', () => {
+      expect(filterGalleryFiles([NFD, NFC], { search: 'cafe' })).toHaveLength(
+        1
+      );
+    });
+  });
+
   it('ne modifie pas le tableau reçu', () => {
     const input = [...TEST_FILES];
     filterGalleryFiles(input, { sortBy: 'date_desc' });
