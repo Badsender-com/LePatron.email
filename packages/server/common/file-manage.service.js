@@ -66,6 +66,7 @@ function handleEditorUpload(fields, files, resolve) {
   const file = {
     ...formatName(rawFile.name),
     originalName: rawFile.originalName,
+    uploadedName: rawFile.uploadedName,
   };
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
@@ -151,6 +152,13 @@ function parseMultipart(req, options) {
         file.type
       );
     }
+    // What the user actually named the file, before the slug flattened its
+    // spaces and its case. `originalName` below cannot carry it: it keys the
+    // template assets map, and generate-preview.controller rebuilds that key
+    // with slugFilename too, so the two must stay spelled the same way. The
+    // gallery label reads this one instead — a search for "mon image" has to
+    // find a file called "Mon Image.jpg".
+    file.uploadedName = `${file.name}`;
     // name is only made of the file hash
     file.name = `${options.prefix}-${file.hash}.${ext}`;
     // original name is needed for templates assets (preview/other images…)
