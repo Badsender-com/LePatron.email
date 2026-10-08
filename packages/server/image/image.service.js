@@ -65,7 +65,16 @@ async function addFiles(mongoId, files) {
     files.map((file) =>
       Galleries.updateOne(
         { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
+        {
+          $push: {
+            files: {
+              ...file,
+              label: file.originalName || file.name,
+              source: 'upload',
+              externalMetadata: {},
+            },
+          },
+        }
       )
     )
   );

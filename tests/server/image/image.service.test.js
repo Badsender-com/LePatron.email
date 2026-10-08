@@ -102,7 +102,16 @@ describe('image.service.createFromUrl', () => {
     expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
     expect(Galleries.updateOne).toHaveBeenCalledWith(
       { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: result.name } },
-      { $push: { files: result } }
+      {
+        $push: {
+          files: {
+            ...result,
+            label: result.name,
+            source: 'upload',
+            externalMetadata: {},
+          },
+        },
+      }
     );
   });
 });
@@ -131,7 +140,18 @@ describe('image.service.addFiles', () => {
       expect(Galleries.updateOne).toHaveBeenCalledWith(
         // the name filter skips a file the gallery already lists
         { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
+        {
+          $push: {
+            files: {
+              ...file,
+              // a gallery image carries a user-facing label, its origin and
+              // room for a future DAM's metadata (US-01)
+              label: file.name,
+              source: 'upload',
+              externalMetadata: {},
+            },
+          },
+        }
       )
     );
   });
