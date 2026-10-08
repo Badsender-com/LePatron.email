@@ -28,6 +28,9 @@ module.exports = {
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
     'An error has occured while removing the image :(',
+  'gallery-search-placeholder': 'Search an image…',
+  'gallery-search-clear': 'Clear search',
+  'gallery-search-no-result': 'No image matches this search',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 

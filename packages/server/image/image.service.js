@@ -18,45 +18,11 @@ const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 const modelsUtils = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
+const { filterGalleryFiles } = require('../../shared/gallery/filter.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
-
-const normalizeExt = (ext) => (ext === 'jpeg' ? 'jpg' : ext);
-
-// fallback to the epoch so files without an uploadedAt sort as the oldest
-const fileDate = (file) =>
-  file.uploadedAt ? new Date(file.uploadedAt) : new Date(0);
-
-function filterGalleryFiles(files, { search, format, sortBy } = {}) {
-  let result = [...files];
-
-  // query params can arrive as arrays/objects (e.g. ?search[]=a) — only string
-  // values are meaningful for these text comparisons, anything else is ignored
-  if (typeof search === 'string' && search) {
-    const needle = search.toLowerCase();
-    result = result.filter((f) =>
-      (f.label || f.name).toLowerCase().includes(needle)
-    );
-  }
-
-  if (typeof format === 'string' && format) {
-    const normalizedFormat = format.toLowerCase();
-    result = result.filter((f) => {
-      const ext = f.name.split('.').pop().toLowerCase();
-      return normalizeExt(ext) === normalizedFormat;
-    });
-  }
-
-  if (sortBy === 'date_desc') {
-    result.sort((a, b) => fileDate(b) - fileDate(a));
-  } else if (sortBy === 'date_asc') {
-    result.sort((a, b) => fileDate(a) - fileDate(b));
-  }
-
-  return result;
-}
 
 // a gallery is owned by its parent mailing or template (creationOrWireframeId);
 // galleries themselves carry no _company, so authorization is delegated to the

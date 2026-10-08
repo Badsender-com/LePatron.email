@@ -6,6 +6,9 @@ const { RecycleScroller } = require('vue-virtual-scroller');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
 const createGalleryDraggable = require('./directives/gallery-draggable');
+const {
+  filterGalleryFiles,
+} = require('../../../../shared/gallery/filter.js');
 
 // Fixed cell size for the virtualised grid. The gallery sidebar has a fixed
 // usable width (~364px), so 3 columns of 118px fit with margin to spare.
@@ -29,17 +32,40 @@ module.exports = {
       },
       data: () => ({
         images: [],
+        search: '',
         cellSize: CELL_SIZE,
         gridColumns: GRID_COLUMNS,
       }),
       computed: {
+        // `images` stays the untouched mirror of the Knockout observable —
+        // Mosaico keeps mutating that one on upload and delete. Searching only
+        // derives from it, so a filter can never desynchronise the grid from
+        // the list the rest of the editor works with.
+        visibleImages() {
+          return filterGalleryFiles(this.images, { search: this.search });
+        },
         count() {
-          return this.images.length;
+          return this.visibleImages.length;
+        },
+        isSearching() {
+          return this.search.trim() !== '';
+        },
+        hasNoResult() {
+          return this.isSearching && this.count === 0;
         },
         countLabel() {
           const key =
             this.count === 1 ? 'gallery-image-count-one' : 'gallery-image-count';
           return vm.t(key, { count: this.count });
+        },
+        searchPlaceholder() {
+          return vm.t('gallery-search-placeholder');
+        },
+        clearSearchLabel() {
+          return vm.t('gallery-search-clear');
+        },
+        noResultLabel() {
+          return vm.t('gallery-search-no-result');
         },
       },
       created() {
@@ -69,13 +95,48 @@ module.exports = {
         onRemove(file) {
           vm.removeImage(file, this.type);
         },
+        clearSearch() {
+          this.search = '';
+          // give the field back to the user: clearing is usually a retry
+          this.$nextTick(() => {
+            if (this.$refs.searchInput) this.$refs.searchInput.focus();
+          });
+        },
       },
       template: `
         <div class="gallery-vue-panel" data-gallery-vue="ready">
+          <div class="gallery-vue-search">
+            <span class="lucide lucide-search gallery-vue-search__icon"></span>
+            <input
+              ref="searchInput"
+              v-model="search"
+              type="search"
+              class="gallery-vue-search__input"
+              data-gallery-search
+              :placeholder="searchPlaceholder"
+              :aria-label="searchPlaceholder"
+            />
+            <button
+              v-if="isSearching"
+              type="button"
+              class="gallery-vue-search__clear"
+              :title="clearSearchLabel"
+              :aria-label="clearSearchLabel"
+              @click="clearSearch"
+            >
+              <span class="lucide lucide-x"></span>
+            </button>
+          </div>
           <div class="gallery-vue-panel__count">{{ countLabel }}</div>
+          <p
+            v-if="hasNoResult"
+            class="gallery-vue-panel__empty"
+            data-gallery-no-result
+          >{{ noResultLabel }}</p>
           <recycle-scroller
+            v-else
             class="gallery-vue-scroller"
-            :items="images"
+            :items="visibleImages"
             :item-size="cellSize"
             :grid-items="gridColumns"
             :item-secondary-size="cellSize"

@@ -18,8 +18,7 @@ const imageService = require('./image.service');
 const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-
-const SORT_BY_VALUES = ['date_desc', 'date_asc'];
+const { SORT_BY_VALUES } = require('../../shared/gallery/filter.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
