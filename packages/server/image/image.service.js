@@ -7,15 +7,89 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const createError = require('http-errors');
 
-const { Galleries } = require('../common/models.common.js');
+const {
+  Galleries,
+  Mailings,
+  Templates,
+} = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const modelsUtils = require('../utils/model.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
+
+const normalizeExt = (ext) => (ext === 'jpeg' ? 'jpg' : ext);
+
+// fallback to the epoch so files without an uploadedAt sort as the oldest
+const fileDate = (file) =>
+  file.uploadedAt ? new Date(file.uploadedAt) : new Date(0);
+
+function filterGalleryFiles(files, { search, format, sortBy } = {}) {
+  let result = [...files];
+
+  // query params can arrive as arrays/objects (e.g. ?search[]=a) — only string
+  // values are meaningful for these text comparisons, anything else is ignored
+  if (typeof search === 'string' && search) {
+    const needle = search.toLowerCase();
+    result = result.filter((f) =>
+      (f.label || f.name).toLowerCase().includes(needle)
+    );
+  }
+
+  if (typeof format === 'string' && format) {
+    const normalizedFormat = format.toLowerCase();
+    result = result.filter((f) => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return normalizeExt(ext) === normalizedFormat;
+    });
+  }
+
+  if (sortBy === 'date_desc') {
+    result.sort((a, b) => fileDate(b) - fileDate(a));
+  } else if (sortBy === 'date_asc') {
+    result.sort((a, b) => fileDate(a) - fileDate(b));
+  }
+
+  return result;
+}
+
+// a gallery is owned by its parent mailing or template (creationOrWireframeId);
+// galleries themselves carry no _company, so authorization is delegated to the
+// parent. Throws Forbidden if the parent doesn't belong to the user's group.
+async function assertGalleryOwnership(user, creationOrWireframeId) {
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: creationOrWireframeId,
+  });
+  const [mailing, template] = await Promise.all([
+    Mailings.findOne(query, '_id'),
+    Templates.findOne(query, '_id'),
+  ]);
+  if (!mailing && !template) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
+  }
+}
+
+// Like every other write here, a single atomic update: the positional operator
+// renames the matched file in place, so a concurrent upload can't be lost.
+async function renameLabel(mongoId, imageName, newLabel) {
+  const gallery = await Galleries.findOneAndUpdate(
+    { creationOrWireframeId: mongoId, 'files.name': imageName },
+    { $set: { 'files.$.label': newLabel } },
+    { new: true }
+  );
+  if (gallery) return gallery;
+
+  // nothing matched: tell "no such gallery" apart from "no such image in it"
+  const exists = await Galleries.exists({ creationOrWireframeId: mongoId });
+  throw new createError.NotFound(
+    exists ? ERROR_CODES.GALLERY_IMAGE_NOT_FOUND : ERROR_CODES.GALLERY_NOT_FOUND
+  );
+}
 
 // Every write below is a single atomic update. Reading the gallery, changing
 // its `files` and saving it back lost images: two uploads validated one after
@@ -72,6 +146,7 @@ async function addFiles(mongoId, files) {
               label: file.originalName || file.name,
               source: 'upload',
               externalMetadata: {},
+              uploadedAt: new Date(),
             },
           },
         }
@@ -143,4 +218,7 @@ module.exports = {
   findOrCreateGallery,
   addFiles,
   createFromUrl,
+  filterGalleryFiles,
+  renameLabel,
+  assertGalleryOwnership,
 };

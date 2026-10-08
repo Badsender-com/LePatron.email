@@ -19,6 +19,8 @@ const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 
+const SORT_BY_VALUES = ['date_desc', 'date_asc'];
+
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
 module.exports = {
@@ -28,6 +30,7 @@ module.exports = {
   checkImageCache,
   checkSizes,
   list: asyncHandler(list),
+  updateLabel: asyncHandler(updateLabel),
   create: asyncHandler(create),
   createFromUrl: asyncHandler(createFromUrl),
   read,
@@ -486,11 +489,65 @@ function read(req, res, next) {
 // Those functions are accessible only from the editor
 // wireframes assets (preview & template fixed assets)…
 // …are handled separately in wireframes.js#update
-async function list(req, res) {
+async function list(req, res, next) {
   const { mongoId } = req.params;
+  const { search, format, sortBy } = req.query;
+
+  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
+    return next(createError.BadRequest(ERROR_CODES.INVALID_SORT_PARAM));
+  }
 
   const gallery = await imageService.findOrCreateGallery(mongoId);
-  res.json({ files: gallery.files });
+  const files = imageService.filterGalleryFiles(gallery.files, {
+    search,
+    format,
+    sortBy,
+  });
+  res.json({ files });
+}
+
+/**
+ * @api {patch} /images/gallery/:mailingOrTemplateId/:imageName/label rename an image label
+ * @apiPermission user
+ * @apiName PatchGalleryImageLabel
+ * @apiGroup Images
+ *
+ * @apiParam {string} mailingOrTemplateId
+ * @apiParam {string} imageName
+ * @apiParam (Body) {String} label The new label, 1 to 255 characters
+ *
+ */
+
+// the technical file name never changes: only the label the user reads
+async function updateLabel(req, res, next) {
+  const { mongoId, imageName } = req.params;
+  const { label } = req.body;
+
+  if (!label || typeof label !== 'string' || label.trim() === '') {
+    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
+  }
+  if (label.length > 255) {
+    return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
+  }
+
+  // the imageName is technically prefixed by its gallery's mongoId: enforce the
+  // match so a caller can't target an image outside the gallery in the URL
+  if (!imageName.startsWith(`${mongoId}-`)) {
+    return next(
+      createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
+    );
+  }
+
+  // ensure the requester's group owns the gallery's parent before mutating it
+  await imageService.assertGalleryOwnership(req.user, mongoId);
+
+  const gallery = await imageService.renameLabel(
+    mongoId,
+    imageName,
+    label.trim()
+  );
+  const file = gallery.files.find((f) => f.name === imageName);
+  res.json(file);
 }
 
 /**

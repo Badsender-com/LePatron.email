@@ -48,6 +48,21 @@ describe('gallery.schema — files getter', () => {
     });
   });
 
+  describe('uploadedAt', () => {
+    // the date sort reads this through the getter: drop it here and sorting
+    // silently falls back to the epoch for every image
+    it('retourne file.uploadedAt quand il est défini', () => {
+      const uploadedAt = new Date('2026-02-01');
+      const result = getter([{ name: 'f.jpg', uploadedAt }]);
+      expect(result[0].uploadedAt).toBe(uploadedAt);
+    });
+
+    it('retourne null comme fallback (images non encore migrées)', () => {
+      const result = getter([{ name: 'f.jpg' }]);
+      expect(result[0].uploadedAt).toBeNull();
+    });
+  });
+
   describe('source', () => {
     it('retourne file.source quand il est défini', () => {
       const result = getter([{ name: 'f.jpg', source: 'dam_bynder' }]);

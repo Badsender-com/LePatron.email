@@ -8,6 +8,7 @@ const formidable = require('formidable');
 const probe = require('probe-image-size');
 
 const config = require('../node.config.js');
+const logger = require('../utils/logger.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const slugFilename = require('../helpers/slug-filename.js');
@@ -60,7 +61,7 @@ function handleTemplatesUploads(fields, files, resolve) {
 }
 
 function handleEditorUpload(fields, files, resolve) {
-  console.log('HANDLE JQUERY FILE UPLOAD');
+  logger.log('Handling jQuery file upload');
   const rawFile = files['files[]'];
   const file = {
     ...formatName(rawFile.name),
