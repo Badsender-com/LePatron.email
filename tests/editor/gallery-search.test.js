@@ -15,7 +15,11 @@ const {
 // the plugin ever starts filtering `images` in place, these break.
 const computed = {
   visibleImages() {
-    return filterGalleryFiles(this.images, { search: this.search });
+    return filterGalleryFiles(this.images, {
+      search: this.search,
+      format: this.format,
+      sortBy: this.sortBy,
+    });
   },
   count() {
     return this.visibleImages.length;
@@ -23,13 +27,16 @@ const computed = {
   isSearching() {
     return this.search.trim() !== '';
   },
+  isFiltering() {
+    return this.isSearching || this.format !== '';
+  },
   hasNoResult() {
-    return this.isSearching && this.count === 0;
+    return this.isFiltering && this.count === 0;
   },
 };
 
-function panel(images, search = '') {
-  const vm = { images, search };
+function panel(images, search = '', format = '', sortBy = 'date_desc') {
+  const vm = { images, search, format, sortBy };
   Object.keys(computed).forEach((key) => {
     Object.defineProperty(vm, key, { get: computed[key], enumerable: true });
   });
@@ -87,5 +94,137 @@ describe('gallery panel — search', () => {
 
     expect(vm.count).toBe(1);
     expect(vm.hasNoResult).toBe(false);
+  });
+});
+
+// US-07 — format chips and date sort, on top of the same single predicate call
+describe('gallery panel — filters and sort', () => {
+  const DATED = [
+    { name: 'a-un.jpg', label: 'un.jpg', uploadedAt: new Date('2026-01-01') },
+    {
+      name: 'a-deux.png',
+      label: 'deux.png',
+      uploadedAt: new Date('2026-03-01'),
+    },
+    {
+      name: 'a-trois.gif',
+      label: 'trois.gif',
+      uploadedAt: new Date('2026-02-01'),
+    },
+    {
+      name: 'a-quatre.jpeg',
+      label: 'quatre.jpeg',
+      uploadedAt: new Date('2026-04-01'),
+    },
+  ];
+
+  it('keeps every image on the neutral format chip', () => {
+    expect(panel(DATED, '', '').count).toBe(4);
+  });
+
+  it('narrows to a format', () => {
+    expect(panel(DATED, '', 'png').count).toBe(1);
+    expect(panel(DATED, '', 'gif').count).toBe(1);
+  });
+
+  it('counts a jpeg under the JPG chip', () => {
+    const result = panel(DATED, '', 'jpg').visibleImages;
+    expect(result.map((f) => f.label).sort()).toEqual([
+      'quatre.jpeg',
+      'un.jpg',
+    ]);
+  });
+
+  // No neutral sort chip: a gallery filled one image at a time already loads
+  // newest first, so the panel opens on that order explicitly rather than
+  // relying on the document's insertion order.
+  it('opens on the newest-first order', () => {
+    expect(panel(DATED).visibleImages.map((f) => f.label)).toEqual([
+      'quatre.jpeg',
+      'deux.png',
+      'trois.gif',
+      'un.jpg',
+    ]);
+  });
+
+  it('keeps images with the same timestamp in their loaded order', () => {
+    const sameDay = [
+      {
+        name: 'a-1.jpg',
+        label: 'premier.jpg',
+        uploadedAt: new Date('2026-01-01'),
+      },
+      {
+        name: 'a-2.jpg',
+        label: 'second.jpg',
+        uploadedAt: new Date('2026-01-01'),
+      },
+      {
+        name: 'a-3.jpg',
+        label: 'troisieme.jpg',
+        uploadedAt: new Date('2026-01-01'),
+      },
+    ];
+    expect(panel(sameDay).visibleImages.map((f) => f.label)).toEqual([
+      'premier.jpg',
+      'second.jpg',
+      'troisieme.jpg',
+    ]);
+  });
+
+  it('sorts newest first', () => {
+    expect(
+      panel(DATED, '', '', 'date_desc').visibleImages.map((f) => f.label)
+    ).toEqual(['quatre.jpeg', 'deux.png', 'trois.gif', 'un.jpg']);
+  });
+
+  it('sorts oldest first', () => {
+    expect(
+      panel(DATED, '', '', 'date_asc').visibleImages.map((f) => f.label)
+    ).toEqual(['un.jpg', 'trois.gif', 'deux.png', 'quatre.jpeg']);
+  });
+
+  it('combines a search, a format and a sort', () => {
+    const images = [
+      {
+        name: 'a-logo1.jpg',
+        label: 'logo bleu.jpg',
+        uploadedAt: new Date('2026-01-01'),
+      },
+      {
+        name: 'a-logo2.jpg',
+        label: 'logo rouge.jpg',
+        uploadedAt: new Date('2026-05-01'),
+      },
+      {
+        name: 'a-logo3.png',
+        label: 'logo vert.png',
+        uploadedAt: new Date('2026-03-01'),
+      },
+    ];
+    const result = panel(images, 'logo', 'jpg', 'date_desc').visibleImages;
+    expect(result.map((f) => f.label)).toEqual([
+      'logo rouge.jpg',
+      'logo bleu.jpg',
+    ]);
+  });
+
+  it('reports an empty result for a format the gallery has none of', () => {
+    const onlyJpg = [{ name: 'a-x.jpg', label: 'x.jpg' }];
+    const vm = panel(onlyJpg, '', 'gif');
+    expect(vm.count).toBe(0);
+    expect(vm.hasNoResult).toBe(true);
+  });
+
+  it('does not claim a dead end on an empty gallery with no filter', () => {
+    expect(panel([], '', '', 'date_desc').hasNoResult).toBe(false);
+    expect(panel([], '', '', 'date_asc').hasNoResult).toBe(false);
+  });
+
+  it('never mutates the mirror while filtering or sorting', () => {
+    const images = [...DATED];
+    const result = panel(images, '', 'jpg', 'date_desc').visibleImages;
+    expect(result).toHaveLength(2);
+    expect(images).toEqual(DATED);
   });
 });

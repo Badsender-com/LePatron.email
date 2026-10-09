@@ -15,6 +15,16 @@ const {
 const GRID_COLUMNS = 3;
 const CELL_SIZE = 118;
 
+// Format chips. '' is "Tous" — the neutral state, like the mockup's first chip.
+const FORMATS = ['', 'jpg', 'png', 'gif'];
+
+// Sort chips. No neutral state: on a gallery filled one image at a time — the
+// only way a real one is filled — the order Mosaico loads is already newest
+// first, so a "default" chip would have duplicated this one while reading as
+// something else. Sorting explicitly also makes the order deterministic rather
+// than dependent on insertion order in the document.
+const SORTS = ['date_desc', 'date_asc'];
+
 module.exports = {
   viewModel(vm, ko) {
     // Expose the bridge to Knockout (mirrors badsender-events-hub's
@@ -33,6 +43,10 @@ module.exports = {
       data: () => ({
         images: [],
         search: '',
+        format: '',
+        sortBy: 'date_desc',
+        formats: FORMATS,
+        sorts: SORTS,
         cellSize: CELL_SIZE,
         gridColumns: GRID_COLUMNS,
       }),
@@ -40,9 +54,15 @@ module.exports = {
         // `images` stays the untouched mirror of the Knockout observable —
         // Mosaico keeps mutating that one on upload and delete. Searching only
         // derives from it, so a filter can never desynchronise the grid from
-        // the list the rest of the editor works with.
+        // the list the rest of the editor works with. One call carries every
+        // criterion, so search, format and sort cannot disagree about how they
+        // combine.
         visibleImages() {
-          return filterGalleryFiles(this.images, { search: this.search });
+          return filterGalleryFiles(this.images, {
+            search: this.search,
+            format: this.format,
+            sortBy: this.sortBy,
+          });
         },
         count() {
           return this.visibleImages.length;
@@ -50,8 +70,11 @@ module.exports = {
         isSearching() {
           return this.search.trim() !== '';
         },
+        isFiltering() {
+          return this.isSearching || this.format !== '';
+        },
         hasNoResult() {
-          return this.isSearching && this.count === 0;
+          return this.isFiltering && this.count === 0;
         },
         countLabel() {
           const key =
@@ -64,8 +87,19 @@ module.exports = {
         clearSearchLabel() {
           return vm.t('gallery-search-clear');
         },
+        formatGroupLabel() {
+          return vm.t('gallery-filter-group');
+        },
+        sortGroupLabel() {
+          return vm.t('gallery-sort-group');
+        },
+        // Tell the two dead ends apart: a search that matches nothing reads
+        // differently from a format the gallery simply has none of.
         noResultLabel() {
-          return vm.t('gallery-search-no-result');
+          const key = this.isSearching
+            ? 'gallery-search-no-result'
+            : 'gallery-filter-no-result';
+          return vm.t(key);
         },
       },
       created() {
@@ -94,6 +128,20 @@ module.exports = {
         // ISO with the previous grid: delete the image from the gallery
         onRemove(file) {
           vm.removeImage(file, this.type);
+        },
+        formatLabel(format) {
+          return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');
+        },
+        sortKey(sortBy) {
+          return sortBy === 'date_desc' ? 'newest' : 'oldest';
+        },
+        // The chip stays compact; the arrow alone is quicker to scan than a
+        // sentence but slower to decode, so the sentence lives in the tooltip.
+        sortLabel(sortBy) {
+          return vm.t(`gallery-sort-${this.sortKey(sortBy)}`);
+        },
+        sortTitle(sortBy) {
+          return vm.t(`gallery-sort-${this.sortKey(sortBy)}-title`);
         },
         clearSearch() {
           this.search = '';
@@ -126,6 +174,34 @@ module.exports = {
             >
               <span class="lucide lucide-x"></span>
             </button>
+          </div>
+          <div class="gallery-vue-filters">
+            <div class="gallery-vue-chips" role="group" :aria-label="formatGroupLabel">
+              <button
+                v-for="f in formats"
+                :key="'fmt-' + f"
+                type="button"
+                class="gallery-vue-chip"
+                :class="{ 'gallery-vue-chip--active': format === f }"
+                :aria-pressed="String(format === f)"
+                data-gallery-format
+                @click="format = f"
+              >{{ formatLabel(f) }}</button>
+            </div>
+            <div class="gallery-vue-chips" role="group" :aria-label="sortGroupLabel">
+              <button
+                v-for="s in sorts"
+                :key="'sort-' + s"
+                type="button"
+                class="gallery-vue-chip"
+                :class="{ 'gallery-vue-chip--active': sortBy === s }"
+                :aria-pressed="String(sortBy === s)"
+                :title="sortTitle(s)"
+                :aria-label="sortTitle(s)"
+                data-gallery-sort
+                @click="sortBy = s"
+              >{{ sortLabel(s) }}</button>
+            </div>
           </div>
           <div class="gallery-vue-panel__count">{{ countLabel }}</div>
           <p

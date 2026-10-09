@@ -95,6 +95,57 @@
   }
 }
 
+// Filter chips — two exclusive groups (format, then sort), as in the mockup
+.gallery-vue-filters {
+  flex: 0 0 auto;
+  padding: 2px 4px 4px;
+}
+
+.gallery-vue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  & + & {
+    margin-top: 4px;
+  }
+}
+
+.gallery-vue-chip {
+  padding: 3px 9px;
+  border: 1px solid #e4e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #6b767e;
+  font-size: 11px;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+
+  &:hover {
+    border-color: #c6ced4;
+    color: @gallery-text;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: @gallery-cyan;
+    box-shadow: 0 0 0 3px @gallery-cyan-soft;
+  }
+}
+
+.gallery-vue-chip--active {
+  background: @gallery-navy;
+  border-color: @gallery-navy;
+  color: #fff;
+
+  &:hover {
+    border-color: @gallery-navy;
+    color: #fff;
+  }
+}
+
 .gallery-vue-panel__empty {
   flex: 1 1 auto;
   margin: 0;
