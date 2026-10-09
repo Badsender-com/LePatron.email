@@ -141,9 +141,12 @@ module.exports = {
             :grid-items="gridColumns"
             :item-secondary-size="cellSize"
             key-field="name"
-            v-slot="{ item }"
+            v-slot="{ item, index }"
           >
-            <div class="gallery-vue-cell">
+            <!-- the scroller recycles its views, so DOM order is pool order,
+                 not list order: the index is the only reliable handle on
+                 position, for tests and for anything reading the grid -->
+            <div class="gallery-vue-cell" :data-gallery-index="index">
               <thumb
                 v-gallery-draggable="item"
                 :file="item"
