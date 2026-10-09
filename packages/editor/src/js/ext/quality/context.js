@@ -2,7 +2,8 @@
 
 const _ = require('lodash');
 const ko = require('knockout');
-const { getSubject, getPreheader } = require('./copy-fields');
+const { getSubject } = require('../email-subject');
+const { readPreheader } = require('../email-preheader');
 
 // The tracking values the client filled in, as the tracking panel stores them.
 function readTrackingUrls(viewModel) {
@@ -49,11 +50,11 @@ function buildContext(viewModel, html, remote) {
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
     trackingUrls: readTrackingUrls(viewModel),
-    // The copy outside the blocks, the client's to write (copy-fields.js):
-    // the subject (null when the ESP holds it) and the preheader (null when
-    // the template has none).
+    // The copy outside the blocks, the client's to write, through the
+    // accessors the AI actions share: the subject (null when the ESP holds it)
+    // and the preheader (null when the template has none).
     subject: getSubject(viewModel),
-    preheader: getPreheader(viewModel),
+    preheader: readPreheader(viewModel),
     // Shared by the rules of one run: what they read from the export once.
     cache: {},
     // What the server said about the links and images, for REMOTE_RULES.
