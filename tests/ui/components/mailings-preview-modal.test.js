@@ -28,4 +28,21 @@ describe('mailings preview modal', () => {
   it('never lets the preview run scripts', () => {
     expect(iframe).not.toMatch(/allow-scripts/);
   });
+
+  // A 403 used to render "the preview will be generated when you open the
+  // editor" — the text for a mailing that has no preview yet — to a user who
+  // may not open the editor at all.
+  it('tells a missing preview apart from a refused one', () => {
+    expect(source).toMatch(/e\??\.response\??\.status/);
+    expect(source).toMatch(/mailings\.previewUnavailable/);
+  });
+
+  it.each(['en', 'fr'])('translates the refused-preview message in %s', (l) => {
+    const locale = fs.readFileSync(
+      path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
+      'utf8'
+    );
+    expect(locale).toMatch(/previewUnavailable:/);
+    expect(locale).toMatch(/subPreviewUnavailable:/);
+  });
 });

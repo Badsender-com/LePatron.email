@@ -1209,6 +1209,18 @@ function handleTrackingData({ html, tracking, groupTrackingConfig }) {
   return { html: htmlWithTracking };
 }
 
+// A mailing lives in either a workspace or a folder (never both); returns the
+// workspace that owns it, or null for a mailing in neither.
+async function getOwningWorkspace(mailing) {
+  if (mailing?._parentFolder) {
+    return folderService.getWorkspaceForFolder(mailing._parentFolder);
+  }
+  if (mailing?._workspace) {
+    return workspaceService.getWorkspace(mailing._workspace);
+  }
+  return null;
+}
+
 async function copyMailing(mailingId, destination, user) {
   const { workspaceId, folderId } = destination;
 
@@ -1225,11 +1237,7 @@ async function copyMailing(mailingId, destination, user) {
   // (write), which wrongly blocked read-only users copying from a folder.
   // A mailing lives in either a workspace or a folder (never both); when it is
   // in a folder, resolve the owning workspace to run the same read check.
-  const sourceWorkspace = mailing?._parentFolder
-    ? await folderService.getWorkspaceForFolder(mailing._parentFolder)
-    : mailing?.workspace
-    ? await workspaceService.getWorkspace(mailing.workspace)
-    : null;
+  const sourceWorkspace = await getOwningWorkspace(mailing);
 
   if (sourceWorkspace) {
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
@@ -1473,7 +1481,13 @@ async function previewMail(mailingId, user) {
     _parentFolder: 1,
   }).lean();
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  await assertUserCanEditMailing(user, mailWithPreview);
+  // A READ, like the source of a copy: the preview is what lets a user choose a
+  // mailing to copy out of a workspace they are not a member of, so membership
+  // is not required, only that the workspace belongs to their company.
+  if (!user.isAdmin) {
+    const workspace = await getOwningWorkspace(mailWithPreview);
+    if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
+  }
   if (!mailWithPreview.previewHtml)
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   // Sanitized on the way out only. This response is served as `text/html`, so
