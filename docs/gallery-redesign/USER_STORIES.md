@@ -100,47 +100,58 @@ Affichage de la nouvelle grille à la place de l'ancienne, sans encore brancher 
 - Vérification visuelle des thumbnails sur 5 templates clients différents (Clarins, Editis...)
 - Test de non-régression Mosaico (cf. US-04)
 
-**US-06 — Recherche par libellé**
+**US-06 — Recherche par libellé** ✅ (terminée)
 
-Branchement de la barre de recherche sur l'API.
+> **Note d'architecture (décidée en US-06, octobre 2026).** Le filtrage se fait **côté client**, pas par appel à l'API.
+>
+> L'US avait été écrite avant le spike de l'US-00, donc avant de savoir que Mosaico charge la galerie **entière en une requête** et la conserve dans une observable Knockout qu'il mute lui-même à l'upload et à la suppression (`badsender-gallery.js`). Dans ce contexte, interroger le serveur :
+>
+> - n'apporte aucun filtrage que le client ne sache faire — le serveur n'a pas d'index et filtre ce même tableau en mémoire (mesuré sur 541 images : 16 ms de lecture Mongo, < 1 ms de filtrage) ;
+> - crée une **seconde liste à réconcilier** avec celle que Mosaico possède. Un upload pendant qu'un filtre est actif est précisément l'endroit où cette réconciliation se verrait.
+>
+> Le prédicat est donc extrait dans `packages/shared/gallery/filter.js`, consommé par `image.service.js` **et** par le plugin éditeur — une seule définition de la sémantique, pas de dérive possible entre les deux bouts.
+>
+> **L'API de recherche de l'US-02 reste en place et testée.** Elle redevient le bon outil le jour où la galerie sera paginée (V2, collections).
 
 - Barre de recherche en haut du panneau
-- Debounce de 300ms pour éviter de saturer l'API
-- Requête vers `GET /api/templates/:templateId/images?search=`
-- Affichage du résultat dans la grille
-- État vide soigné si recherche sans résultat
+- Filtrage instantané sur la liste déjà chargée — pas de debounce, pas d'état de chargement, pas d'erreur réseau à gérer
+- `visibleImages` est une `computed` dérivée de `images` : l'observable Knockout n'est jamais réécrite
+- Recherche insensible à la casse **et aux accents**, et robuste aux deux formes de normalisation Unicode (macOS écrit les noms de fichiers en NFD, le champ de saisie produit du NFC)
+- État vide soigné si la recherche ne donne rien
 
 **Procédure de test pour cette US** :
 
-- Tests unitaires Jest sur la logique de debounce et d'appel API
+- Tests unitaires Jest sur le prédicat partagé (`tests/shared/gallery/filter.test.js`) et sur le flux de données du composant (`tests/editor/gallery-search.test.js`)
 - Tests Cypress :
   - Recherche d'une image existante
   - Recherche d'une image inexistante (état vide)
   - Effacement de la recherche (retour à la galerie complète)
   - Recherche avec caractères spéciaux (accents, espaces, casse mixte)
-- Mesure de performance : temps de réponse de la recherche sur galerie de 500 images (cible : <300ms)
+  - **Upload pendant qu'un filtre est actif** — la nouvelle image doit rejoindre la grille si elle correspond
+- Mesure de performance sur galerie de 500 images
 - Vérification que la recherche ne re-render pas toutes les vignettes inutilement
 
-**US-07 — Filtres par type et par date**
+**US-07 — Filtres par type et par date** ✅ (terminée)
 
-Branchement des filtres rapides.
+Branchement des filtres rapides, sur le même prédicat partagé que l'US-06 (cf. note d'architecture ci-dessus) : un seul appel porte recherche, format et tri, donc aucune combinaison ne peut diverger.
 
-- Filtres : Tous / JPG / PNG / GIF
-- Filtres : Récent / Ancien (tri)
-- Requêtes vers l'API avec `?format=` et `?sortBy=`
-- Cumul avec la recherche (recherche + filtre)
+- Filtres de format : Tous / JPG / PNG / GIF — la chip JPG attrape aussi les `.jpeg`
+- Tri par date : `Date ↓` (du plus récent au plus ancien) / `Date ↑` (l'inverse), chacun avec son infobulle explicite
+- **Pas d'état neutre sur le tri.** Sur une galerie remplie image par image — la seule façon dont une vraie galerie se remplit — l'ordre chargé par Mosaico est déjà celui du plus récent : mesuré sur la galerie du dépôt, l'ordre chargé et un tri `date_desc` s'accordent sur les 76 positions. Une chip « Par défaut » aurait donc dupliqué le premier tri sous un nom qui disait autre chose. Trier explicitement rend aussi l'ordre déterministe, au lieu de dépendre de l'ordre d'insertion en base.
+- Cumul avec la recherche
+- États vides distincts : une recherche sans résultat ne se lit pas comme un format dont la galerie n'a aucune image
 
 **Procédure de test pour cette US** :
 
-- Tests unitaires Jest sur la logique de combinaison filtres + recherche
+- Tests unitaires Jest sur la combinaison filtres + recherche + tri, et sur la stabilité du tri à horodatages égaux
 - Tests Cypress :
   - Filtre JPG, vérification que seuls les JPG s'affichent
   - Filtre JPG avec variantes JPEG, jpg, JPEG, JpG (toutes variantes de casse)
   - Tri récent, tri ancien
   - Combinaison filtre + recherche
   - Désactivation de tous les filtres (retour à "Tous")
+  - Infobulles des chips de tri
 - Mesure de performance : temps d'application d'un filtre sur galerie de 500 images
-- Test que les requêtes ne sont pas dupliquées (vérifier le réseau dans DevTools)
 
 **US-08 — Overlay au survol des vignettes**
 
