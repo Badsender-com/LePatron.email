@@ -23,8 +23,6 @@ let unloadGuard = null;
 // only a handle for teardown, because template-loader calls `dispose` with no
 // arguments (`pluginsCall(plugins, 'dispose', undefined, true)`).
 let activeStore = null;
-// The viewModel the subject accessors were hung on, for the same reason.
-let activeVm = null;
 
 /**
  * The email settings of the Content tab: subject, planned send date, typology,
@@ -71,7 +69,6 @@ module.exports = {
 
     const store = vm.emailMetadataStore;
     activeStore = store;
-    activeVm = vm;
 
     const values = (vm.metadata && vm.metadata.emailMetadata) || {};
     const initialForm = toFormState(values);
@@ -160,13 +157,16 @@ module.exports = {
         },
       },
 
-      // The subject is this component's own state, so the AI actions write a
-      // picked proposal into the field through here (ext/email-subject.js).
-      // Removed on dispose: once the section is gone, they must offer copy.
+      // A field written from outside the section (an AI action, through
+      // ext/email-subject.js) goes to the store first; the section shows it.
       created() {
-        vm.setEmailSubject = (subject) => {
-          this.subject = subject;
-        };
+        this.stopListening = store.onWrite((name, value) => {
+          this[name] = value;
+        });
+      },
+
+      beforeDestroy() {
+        this.stopListening();
       },
 
       methods: {
@@ -216,10 +216,6 @@ module.exports = {
     if (app) {
       app.$destroy();
       app = null;
-    }
-    if (activeVm) {
-      delete activeVm.setEmailSubject;
-      activeVm = null;
     }
   },
 };
