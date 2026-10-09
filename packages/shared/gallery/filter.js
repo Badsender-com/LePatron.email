@@ -77,5 +77,6 @@ function filterGalleryFiles(files, { search, format, sortBy } = {}) {
 
 module.exports = {
   filterGalleryFiles,
+  fileExt,
   SORT_BY_VALUES,
 };
