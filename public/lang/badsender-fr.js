@@ -810,6 +810,14 @@ module.exports = {
   'ai-panel-undone': 'Modification annulée.',
   'ai-panel-undo-changed':
     "Le champ a été modifié depuis : rien n'a été annulé.",
+  'ai-panel-selected-block': 'Bloc sélectionné',
+  'ai-panel-no-action-yet': "Pas encore d'action IA pour ce bloc.",
+  'ai-panel-whole-email': "Tout l'email",
+  'ai-panel-selection-changed':
+    'Vous avez sélectionné un autre élément. Ces propositions restent ici.',
+  'ai-panel-see-its-actions': 'Voir ses actions IA',
+  'ai-field-subject-label': "Générer l'objet avec l'IA",
+  'ai-field-preheader-label': "Générer le préheader avec l'IA",
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
   'text-generation-long': 'long : la fin sera rarement lue',

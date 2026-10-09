@@ -1,0 +1,55 @@
+////////
+// AI PANEL — its targets (ADR 0004): the AI icons on the fields, and the parts
+// of the panel that follow the canvas selection. The panel itself is in
+// badsender-ai-panel.less.
+////////
+
+// Right after the label of the subject field and of the preheader property.
+// 24px for a pointer target (WCAG 2.5.8); --primary for a 3:1 contrast.
+.mo .ai-field-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 15px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// The subject's label row spreads its items apart: the icon stays by the label.
+.mo .email-metadata__label-row > .ai-field-icon {
+  align-self: center;
+  margin-right: auto;
+}
+
+#toolai .ai-panel {
+  &__section {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
