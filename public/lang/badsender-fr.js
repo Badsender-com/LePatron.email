@@ -24,6 +24,7 @@ module.exports = {
   'gallery-template': 'COMMUN AU TEMPLATE',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
+  'gallery-remove-image': "Supprimer l'image de la galerie",
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",
@@ -41,6 +42,10 @@ module.exports = {
   'gallery-sort-newest-title': 'Du plus récent au plus ancien',
   'gallery-sort-oldest': 'Date \u2191',
   'gallery-sort-oldest-title': 'Du plus ancien au plus récent',
+  'gallery-rename-image-fail':
+    "Le libellé n'a pas pu être enregistré, l'ancien a été rétabli",
+  'gallery-rename-hint': 'Double-cliquez pour renommer',
+  'gallery-rename-input-label': "Nouveau libellé de l'image",
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 

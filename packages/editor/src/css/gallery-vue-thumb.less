@@ -77,6 +77,26 @@
   text-overflow: ellipsis;
   background: @gallery-surface;
   border-top: 1px solid @gallery-border;
+
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: -2px;
+  }
+}
+
+// The input replaces the band in place, same metrics, so committing or
+// cancelling does not make the grid jump.
+.gallery-thumb__label--editing {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid @gallery-cyan;
+  border-radius: 0;
+  font-family: inherit;
+  box-shadow: inset 0 0 0 1px @gallery-cyan;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .gallery-thumb__badge {

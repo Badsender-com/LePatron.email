@@ -24,6 +24,7 @@ module.exports = {
   'gallery-template': 'TEMPLATE SHARED',
   'gallery-template-loading': 'Loading template gallery…',
   'gallery-template-empty': 'Email gallery is empty',
+  'gallery-remove-image': 'Remove the image from the gallery',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
@@ -42,6 +43,10 @@ module.exports = {
   'gallery-sort-newest-title': 'Newest first',
   'gallery-sort-oldest': 'Date \u2191',
   'gallery-sort-oldest-title': 'Oldest first',
+  'gallery-rename-image-fail':
+    'The label could not be saved, the previous one was restored',
+  'gallery-rename-hint': 'Double-click to rename',
+  'gallery-rename-input-label': 'New image label',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 

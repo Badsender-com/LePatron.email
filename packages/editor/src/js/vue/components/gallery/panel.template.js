@@ -94,8 +94,10 @@ module.exports = `
           <thumb
             v-gallery-draggable="item"
             :file="item"
+            :strings="thumbStrings"
             @select="onSelect"
             @remove="onRemove"
+            @rename="onRename"
           />
         </div>
       </recycle-scroller>

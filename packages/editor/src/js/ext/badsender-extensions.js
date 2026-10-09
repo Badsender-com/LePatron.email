@@ -15,6 +15,7 @@ const serverStorage = require('./badsender-server-storage');
 const editTitle = require('./badsender-edit-title');
 const gallery = require('./badsender-gallery');
 const removeImage = require('./badsender-remove-gallery-image');
+const renameImage = require('./badsender-rename-gallery-image');
 const espProfiles = require('./badsender-esp-profiles');
 const extendTinyMce = require('./badsender-extend-tinymce');
 const extendTinyMceColors = require('./badsender-extend-tinymce-colors');
@@ -80,6 +81,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(contentFeedMappings(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
+  customExtensions.push(renameImage);
   customExtensions.push(configExtendTinyMce(opts));
   customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
