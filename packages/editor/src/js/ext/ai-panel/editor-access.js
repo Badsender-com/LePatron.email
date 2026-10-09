@@ -4,9 +4,10 @@ const ko = require('knockout');
 const { getSubject, canWriteSubject, setSubject } = require('../email-subject');
 const { extractEmailCopy } = require('../text-generation/email-copy');
 const {
-  findPreheader,
+  readPreheader,
+  canWritePreheader,
   writePreheader,
-} = require('../text-generation/template-preheader');
+} = require('../email-preheader');
 
 /**
  * What the AI actions read from and write into the email being edited: the
@@ -15,8 +16,6 @@ const {
  * template decides whether there is a preheader.
  */
 function createEditorAccess(viewModel) {
-  const content = () => ko.toJS(viewModel.content());
-  const preheader = () => findPreheader(content());
   // A subject the user generated and copied, for an email whose subject lives
   // in the sending platform: the preheader builds on it all the same.
   let rememberedSubject = null;
@@ -30,7 +29,7 @@ function createEditorAccess(viewModel) {
       return canWriteSubject(viewModel);
     },
     get canApplyPreheader() {
-      return Boolean(preheader());
+      return canWritePreheader(viewModel);
     },
     // The text on screen, the sample values of the template left out.
     emailCopy() {
@@ -48,8 +47,10 @@ function createEditorAccess(viewModel) {
       rememberedSubject = value;
     },
     setSubject: (value) => setSubject(viewModel, value),
-    getPreheader: () => (preheader() || { value: '' }).value,
-    setPreheader: (value) => writePreheader(viewModel.content, value),
+    // A preheader switched off is no current text: it shows nowhere.
+    getPreheader: () =>
+      canWritePreheader(viewModel) ? readPreheader(viewModel).value : '',
+    setPreheader: (value) => writePreheader(viewModel, value),
     startMultiple: () => viewModel.startMultiple(),
     stopMultiple: () => viewModel.stopMultiple(),
     // The context the action registry decides from.
@@ -62,7 +63,7 @@ function createEditorAccess(viewModel) {
         hasSubject: Boolean(knownSubject().trim()),
         hasSubjectField: canWriteSubject(viewModel),
         // The whole content is read only when an action may need it.
-        hasPreheaderField: textGeneration && Boolean(preheader()),
+        hasPreheaderField: textGeneration && canWritePreheader(viewModel),
       };
     },
   };
