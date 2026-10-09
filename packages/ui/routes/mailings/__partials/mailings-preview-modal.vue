@@ -14,6 +14,7 @@ export default {
     return {
       loading: false,
       errorPreview: false,
+      previewRefused: false,
       previewHtml: null,
       iframeHeight: null,
     };
@@ -21,6 +22,7 @@ export default {
   methods: {
     async open(item) {
       this.errorPreview = false;
+      this.previewRefused = false;
       this.data = item;
       await this.fetchPreview();
       this.$refs.previewMailModal.open();
@@ -28,6 +30,7 @@ export default {
     async fetchPreview() {
       this.loading = true;
       this.errorPreview = false;
+      this.previewRefused = false;
       try {
         this.previewHtml = await this.$axios.$get(
           imageFromPreviews(this.data?.mail?.id),
@@ -36,6 +39,9 @@ export default {
           }
         );
       } catch (e) {
+        // 404: the mailing has no preview yet, opening the editor generates one.
+        // Anything else (refused, network) must not claim that.
+        this.previewRefused = e?.response?.status !== 404;
         this.errorPreview = true;
       } finally {
         this.loading = false;
@@ -71,10 +77,25 @@ export default {
           <div class="d-flex align-start">
             <lucide-alert-circle :size="24" class="warning-icon" />
             <div class="pl-4">
-              <p class="mb-0 text-h6" v-html="$t('mailings.errorPreview')" />
+              <p
+                class="mb-0 text-h6"
+                v-html="
+                  $t(
+                    previewRefused
+                      ? 'mailings.previewUnavailable'
+                      : 'mailings.errorPreview'
+                  )
+                "
+              />
               <p
                 class="mb-0 text-subtitle-1"
-                v-html="$t('mailings.subErrorPreview')"
+                v-html="
+                  $t(
+                    previewRefused
+                      ? 'mailings.subPreviewUnavailable'
+                      : 'mailings.subErrorPreview'
+                  )
+                "
               />
             </div>
           </div>

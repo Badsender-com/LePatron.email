@@ -21,9 +21,12 @@ jest.mock('../../../packages/server/common/models.common', () => ({
 }));
 jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   hasAccess: jest.fn(),
+  getWorkspace: jest.fn(),
+  doesUserHaveReadAccess: jest.fn(),
 }));
 jest.mock('../../../packages/server/folder/folder.service.js', () => ({
   hasAccess: jest.fn(),
+  getWorkspaceForFolder: jest.fn(),
 }));
 jest.mock('../../../packages/server/utils/preview-html-sanitizer.js', () => ({
   sanitizePreviewHtml: jest.fn((html) => `clean:${html}`),
@@ -37,6 +40,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const { Mailings } = require('../../../packages/server/common/models.common');
 const workspaceService = require('../../../packages/server/workspace/workspace.service.js');
+const folderService = require('../../../packages/server/folder/folder.service.js');
 const {
   sanitizePreviewHtml,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');
@@ -45,6 +49,8 @@ const mailingService = require('../../../packages/server/mailing/mailing.service
 const TENANT_A = '507f1f77bcf86cd799439001';
 const WORKSPACE = '507f1f77bcf86cd799439011';
 const user = { isAdmin: false, group: { id: TENANT_A } };
+const FOLDER = '507f1f77bcf86cd799439021';
+const workspace = { _id: WORKSPACE, name: 'Other team', group: TENANT_A };
 
 let sequence = 0;
 function mockPreview(overrides = {}) {
@@ -63,7 +69,9 @@ function mockPreview(overrides = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  workspaceService.hasAccess.mockResolvedValue(true);
+  workspaceService.doesUserHaveReadAccess.mockReset();
+  workspaceService.getWorkspace.mockResolvedValue(workspace);
+  folderService.getWorkspaceForFolder.mockResolvedValue(workspace);
 });
 
 describe('mailingService.previewMail', () => {
@@ -78,14 +86,61 @@ describe('mailingService.previewMail', () => {
     });
   });
 
-  it('refuses a user without access to the workspace', async () => {
+  // The preview helps a user pick a mailing to copy: like the copy, it is a READ
+  // of the source, so workspace membership is not required.
+  it('serves the preview of a workspace the user is not a member of', async () => {
     const doc = mockPreview();
-    workspaceService.hasAccess.mockResolvedValue(false);
+
+    await expect(mailingService.previewMail(doc._id, user)).resolves.toBe(
+      'clean:<p>preview</p>'
+    );
+    expect(workspaceService.getWorkspace).toHaveBeenCalledWith(WORKSPACE);
+    expect(workspaceService.doesUserHaveReadAccess).toHaveBeenCalledWith(
+      user,
+      workspace
+    );
+    expect(workspaceService.hasAccess).not.toHaveBeenCalled();
+  });
+
+  it('serves the preview of a mailing in a folder of such a workspace', async () => {
+    const doc = mockPreview({ _workspace: undefined, _parentFolder: FOLDER });
+
+    await expect(mailingService.previewMail(doc._id, user)).resolves.toBe(
+      'clean:<p>preview</p>'
+    );
+    expect(folderService.getWorkspaceForFolder).toHaveBeenCalledWith(FOLDER);
+    expect(folderService.hasAccess).not.toHaveBeenCalled();
+  });
+
+  it('refuses a workspace outside the caller company', async () => {
+    const doc = mockPreview();
+    const { NotFound } = require('http-errors');
+    workspaceService.doesUserHaveReadAccess.mockImplementation(() => {
+      throw new NotFound('WORKSPACE_NOT_FOUND');
+    });
 
     await expect(
       mailingService.previewMail(doc._id, user)
-    ).rejects.toMatchObject({ status: 403 });
+    ).rejects.toMatchObject({ status: 404 });
     expect(sanitizePreviewHtml).not.toHaveBeenCalled();
+  });
+
+  it('lets a super admin read any preview', async () => {
+    const doc = mockPreview();
+    const admin = { isAdmin: true };
+
+    await expect(mailingService.previewMail(doc._id, admin)).resolves.toBe(
+      'clean:<p>preview</p>'
+    );
+    expect(workspaceService.doesUserHaveReadAccess).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 when the mailing has no preview yet', async () => {
+    const doc = mockPreview({ previewHtml: '' });
+
+    await expect(
+      mailingService.previewMail(doc._id, user)
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it('answers 404 for a mailing of another company', async () => {

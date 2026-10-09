@@ -1,6 +1,6 @@
 # Aperçu d'un email d'un workspace non-membre
 
-Statut : analyse faite, correctif à écrire (test d'abord).
+Statut : correctif écrit (test d'abord), aligné sur la copie.
 Branche : `fix/preview-non-member-workspace`.
 
 ## Symptôme
@@ -43,7 +43,7 @@ L'aperçu est la seule action de lecture qui exige l'appartenance. `copyMailing`
 1. **Serveur.** Dans `previewMail`, remplacer `assertUserCanEditMailing` par le contrôle de lecture de `copyMailing` : résoudre le workspace (`folderService.getWorkspaceForFolder` pour un email en dossier, `workspaceService.getWorkspace` sinon), puis `workspaceService.doesUserHaveReadAccess(user, workspace)`. Extraire cette résolution en helper partagé avec `copyMailing`. Garder `addGroupFilter` et la sanitisation en sortie. Vérifier que le super admin passe toujours.
 2. **UI.** Dans le `catch` du modal, lire `e.response?.status` : le 404 garde le message actuel, les autres erreurs (403, réseau) affichent un message « Aperçu indisponible » distinct. Nouvelles clés dans `fr.js` et `en.js` (pas de DE dans `packages/ui/helpers/locales`).
 
-## Décision de périmètre ouverte
+## Décision de périmètre (tranchée : aligné sur la copie)
 
 Quand `userHasAccessToAllWorkspaces` est `false`, le non-membre ne voit pas le workspace dans le listing, mais pourrait appeler `/preview` s'il connaît l'id. `copyMailing` a déjà ce comportement. Proposition : s'aligner sur `copyMailing`. L'alternative stricte est de refuser quand `restrictAccessingWorkspacesForNonMemberUser` est vrai (`workspace.service.js:50-59`) ; l'aperçu et la copie divergeraient alors. À trancher avant d'écrire le correctif.
 
