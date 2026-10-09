@@ -39,7 +39,7 @@ function createIcon(kind, { onOpen, label, anchor }) {
   icon.setAttribute('aria-label', label);
   // A Mosaico property label already shows its own tooltip on hover.
   if (!anchor.closest('[title]')) icon.title = label;
-  icon.innerHTML = '<span class="lucide lucide-wand-2" aria-hidden="true"></span>';
+  icon.innerHTML = '<span class="lucide lucide-bot" aria-hidden="true"></span>';
   icon.addEventListener('click', (event) => {
     // The preheader label sits in a property editor that selects on click.
     event.stopPropagation();
