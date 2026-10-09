@@ -110,4 +110,53 @@ describe('ai panel: the action registry', () => {
       });
     });
   });
+
+  // Adding an AI action means adding its definition (#1192): the registry, the
+  // session and the icons derive from it.
+  describe('an action added by its definition alone', () => {
+    let ACTIONS;
+    const rewrite = {
+      id: 'rewrite-text',
+      family: 'proposals',
+      feature: 'textGeneration',
+      targets: ['blockField'],
+      describe: () => ({ canApply: true }),
+    };
+    const titleOfCover = {
+      kind: 'blockField',
+      blockId: 'ko_coverBlock_1',
+      blockType: 'coverBlock',
+      field: 'titleText',
+    };
+
+    beforeAll(() => {
+      ({
+        ACTIONS,
+      } = require('../../../packages/editor/src/js/ext/ai-panel/actions'));
+    });
+
+    it('is offered on its targets, and opens directly when it is the only one', () => {
+      expect(availableActions(titleOfCover, ON, [...ACTIONS, rewrite])).toEqual(
+        {
+          actions: [{ id: 'rewrite-text', canApply: true }],
+          opens: 'action',
+        }
+      );
+    });
+
+    it('is offered nowhere else', () => {
+      expect(
+        ids(availableActions({ kind: 'email' }, ON, [...ACTIONS, rewrite]))
+      ).toEqual(['generate-subject', 'generate-preheader']);
+    });
+
+    it('is not offered when its AI feature is off', () => {
+      expect(
+        availableActions(titleOfCover, { ...ON, textGeneration: false }, [
+          ...ACTIONS,
+          rewrite,
+        ]).actions
+      ).toEqual([]);
+    });
+  });
 });
