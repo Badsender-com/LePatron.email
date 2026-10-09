@@ -30,6 +30,7 @@ describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
     });
 
     it('mounts the Vue #gallery-panel mount point', () => {
+      cy.openGallery();
       cy.get('#gallery-panel').should('exist');
       cy.get('[data-gallery-vue="ready"]').should('exist');
     });
@@ -42,6 +43,9 @@ describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
     });
 
     it('displays email gallery and template gallery tabs', () => {
+      // the panes live behind `ko if: $root.showGallery`, so they exist only
+      // once the gallery is open
+      cy.openGallery();
       cy.get('#toolimagesgallery').should('exist');
       cy.get('#toolimagesgallerytemplate').should('exist');
     });
@@ -62,6 +66,7 @@ describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
   describe('Knockout ↔ Vue bridge', () => {
     it('emits GALLERY_READY when the Vue component mounts', () => {
       // Verified via the data attribute set by the Vue component on mount
+      cy.openGallery();
       cy.get('[data-gallery-vue="ready"]').should('exist');
     });
   });
