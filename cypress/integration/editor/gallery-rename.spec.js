@@ -131,11 +131,39 @@ describe('US-11 — rename a gallery image', () => {
     cy.get(LABEL_AT(0)).should('have.text', 'persiste apres rechargement.png');
   });
 
-  it('opens the editor from the keyboard too', () => {
-    // a double-click cannot be performed on a keyboard; the band is focusable
-    // and Enter opens the same editor
-    cy.get(LABEL_AT(0)).focus().type('{enter}');
-    cy.get(INPUT).should('exist');
-    cy.get(INPUT).type('{esc}');
+  // jQuery UI's draggable excludes `input, textarea, button, select, option`
+  // from its handle. Making the label a <button> for its keyboard semantics
+  // therefore carved a dead strip out of the tile's drag area — the image and
+  // its label have to be one object to drag onto the email.
+  //
+  // jQuery UI reads pageX/pageY, not clientX/clientY: a drag driven by the
+  // latter never starts, and the test passes or fails for the wrong reason.
+  it('can still be dragged onto the email by its label', () => {
+    cy.get(LABEL_AT(0)).then(($label) => {
+      const box = $label[0].getBoundingClientRect();
+      const x = box.left + box.width / 2;
+      const y = box.top + box.height / 2;
+
+      cy.wrap($label)
+        .trigger('mousedown', { which: 1, button: 0, pageX: x, pageY: y })
+        .trigger('mousemove', {
+          which: 1,
+          button: 0,
+          pageX: x + 8,
+          pageY: y - 8,
+          force: true,
+        })
+        .trigger('mousemove', {
+          which: 1,
+          button: 0,
+          pageX: x + 70,
+          pageY: y - 90,
+          force: true,
+        });
+
+      cy.get('.gallery-drag-helper').should('exist');
+      cy.get('body').trigger('mouseup', { force: true });
+      cy.get('.gallery-drag-helper').should('not.exist');
+    });
   });
 });

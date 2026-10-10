@@ -6,6 +6,14 @@
 //   - `select` (file): click to use the image (KO $root.addImage)
 //   - `remove` (file): delete the image (KO $root.removeImage) — ISO with old grid
 //   - `rename` (file, label): a new label was committed (KO $root.renameImage)
+//   - `reject` (messageKey): the input was refused before reaching the server
+//
+// The label band is a plain element, not a button: jQuery UI's draggable
+// excludes `input, textarea, button, select, option` from its drag handle, so
+// making it a button took the band out of the thumbnail's drag area. The whole
+// thumbnail — image and label — has to stay draggable onto the email. The
+// keyboard path to renaming therefore waits for the dedicated button US-08 puts
+// in the hover overlay, which is what ADR-0002 planned for it anyway.
 const { fileExt } = require('../../../../../../shared/gallery/filter.js');
 const {
   sanitizeLabel,
@@ -72,12 +80,10 @@ module.exports = {
     },
     cancelEdit() {
       this.editing = false;
-      this.restoreFocus();
     },
     commitEdit() {
       if (!this.editing) return;
       this.editing = false;
-      this.restoreFocus();
       const next = sanitizeLabel(this.draft);
       // unchanged is a no-op; empty is a refusal, and used to be a silent one
       if (next === this.label) return;
@@ -86,15 +92,6 @@ module.exports = {
         return;
       }
       this.$emit('rename', this.file, next);
-    },
-    // Closing the editor destroys the focused input, which drops focus on the
-    // body: a keyboard user renaming the 40th thumbnail would come back to the
-    // top of the document and have to tab all the way down again.
-    restoreFocus() {
-      this.$nextTick(() => {
-        const trigger = this.$refs.trigger;
-        if (trigger && document.activeElement === document.body) trigger.focus();
-      });
     },
     // Enter also confirms a candidate in an IME. Committing then would save a
     // half-composed word and close the editor mid-sentence.
@@ -143,18 +140,14 @@ module.exports = {
         @keyup.esc="cancelEdit"
         @blur="commitEdit"
       />
-      <button
+      <div
         v-else
-        ref="trigger"
-        type="button"
         class="gallery-thumb__label"
         data-gallery-label
         :title="label"
-        :aria-label="strings.renameAction.replace('__label__', label)"
         @click.stop
         @dblclick.stop="startEdit"
-        @keydown.enter.stop.prevent="startEdit"
-      >{{ label }}</button>
+      >{{ label }}</div>
     </div>
   `,
 };

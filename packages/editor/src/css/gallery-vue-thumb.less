@@ -72,13 +72,9 @@
   box-sizing: border-box;
   width: 100%;
   padding: 0 6px;
-  text-align: left;
-  // it is a <button>, so it would otherwise inherit none of the band's look
-  border: 0;
-  font: inherit;
-  // the thumbnail is a pointer target, this band is not: a single click here
-  // does nothing, and a hand cursor would promise otherwise
-  cursor: text;
+  // cursor deliberately left to inherit the thumbnail's `pointer`: image and
+  // label are one object to drag onto the email, and the band should not
+  // advertise itself as a separate kind of target
   font-size: 10.5px;
   color: @gallery-text;
   white-space: nowrap;
@@ -87,10 +83,6 @@
   background: @gallery-surface;
   border-top: 1px solid @gallery-border;
 
-  &:focus-visible {
-    outline: 2px solid @gallery-navy;
-    outline-offset: -2px;
-  }
 }
 
 // The input replaces the band in place, same metrics, so committing or

@@ -49,35 +49,23 @@ describe('thumbnail rename — entering edit mode', () => {
     vm.$destroy();
   });
 
-  // A double-click is invisible to anyone who does not know it and impossible
-  // on a keyboard. The band is a real <button>, so Enter and Space both reach
-  // it — dispatch the event rather than calling the method, or removing the
-  // handler would keep this green.
-  it('opens the same editor with Enter on the label', async () => {
+  // jQuery UI's draggable excludes `input, textarea, button, select, option`
+  // from its drag handle. A <button> here therefore carved a dead strip out of
+  // the thumbnail's drag area, and the whole tile — image and label — has to
+  // stay draggable onto the email.
+  it('leaves the label as a plain element, so the tile stays draggable', () => {
     const vm = mount();
-    label(vm).dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13 })
-    );
-    await Vue.nextTick();
-    expect(input(vm)).not.toBeNull();
+    const el = label(vm);
+    expect(el.tagName).toBe('DIV');
+    expect(el.getAttribute('role')).toBeNull();
+    expect(el.getAttribute('tabindex')).toBeNull();
     vm.$destroy();
   });
 
-  // A <button> answers to Space for free; a div with role="button" did not.
-  it('is a real button, so the platform gives it Space', () => {
+  // At 118px the label is usually truncated, and the tooltip is the only way
+  // to read the whole name.
+  it('keeps the full name in the tooltip', () => {
     const vm = mount();
-    expect(label(vm).tagName).toBe('BUTTON');
-    expect(label(vm).getAttribute('type')).toBe('button');
-    vm.$destroy();
-  });
-
-  // The name is action + object. It used to repeat "double-click to rename" on
-  // every cell — an instruction, and one a keyboard user cannot follow.
-  it('names the control by what it does to which image', () => {
-    const vm = mount();
-    expect(label(vm).getAttribute('aria-label')).toBe('Rename mon image.png');
-    // the tooltip stays the full name: at 118px the label is usually truncated
-    // and this is the only way to read it
     expect(label(vm).getAttribute('title')).toBe('mon image.png');
     vm.$destroy();
   });
