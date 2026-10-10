@@ -67,6 +67,8 @@ function handleEditorUpload(fields, files, resolve) {
     ...formatName(rawFile.name),
     originalName: rawFile.originalName,
     uploadedName: rawFile.uploadedName,
+    width: rawFile.width,
+    height: rawFile.height,
   };
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
@@ -99,22 +101,45 @@ function resolveUploadExtension(file) {
     return declaredExtension;
   }
 
+  const probed = sniffImage(file);
+  const sniffedExtension = probed
+    ? mime.extension(probed.mime) || probed.type
+    : null;
+  // not an image: keep whatever the declared type mapped to, so uploads that
+  // legitimately aren't images keep working exactly as before
+  return sniffedExtension || declaredExtension || null;
+}
+
+// Reads the head of an upload once and hands back what `probe` made of it.
+// Shared by the extension resolver and the dimension capture, so neither has
+// to know how the other reads the file.
+function sniffImage(file) {
   try {
     const head = Buffer.alloc(SNIFF_BYTES);
     const descriptor = fs.openSync(file.path, 'r');
     const read = fs.readSync(descriptor, head, 0, SNIFF_BYTES, 0);
     fs.closeSync(descriptor);
-    const probed = probe.sync(head.subarray(0, read));
-    const sniffedExtension = probed
-      ? mime.extension(probed.mime) || probed.type
-      : null;
-    // not an image: keep whatever the declared type mapped to, so uploads that
-    // legitimately aren't images keep working exactly as before
-    return sniffedExtension || declaredExtension || null;
+    return probe.sync(head.subarray(0, read));
   } catch (e) {
-    console.log(chalk.red('[UPLOAD] unable to sniff'), file.path, e.message);
-    return declaredExtension || null;
+    logger.log('[UPLOAD] unable to sniff', file.path, e.message);
+    return null;
   }
+}
+
+/**
+ * The original dimensions of an upload, which the gallery tooltip shows.
+ *
+ * `probe` already computes them while recognising the format — they were being
+ * dropped. They cannot be recovered later from the thumbnail, which is a square
+ * 111px crop of the original.
+ *
+ * @param {object} file as formidable hands it over, before renaming
+ * @returns {{width: number, height: number}|null} null when not an image
+ */
+function probeImageDimensions(file) {
+  const probed = sniffImage(file);
+  if (!probed || !probed.width || !probed.height) return null;
+  return { width: probed.width, height: probed.height };
 }
 
 // multipart/form-data
@@ -159,6 +184,11 @@ function parseMultipart(req, options) {
     // gallery label reads this one instead — a search for "mon image" has to
     // find a file called "Mon Image.jpg".
     file.uploadedName = `${file.name}`;
+    const dimensions = probeImageDimensions(file);
+    if (dimensions) {
+      file.width = dimensions.width;
+      file.height = dimensions.height;
+    }
     // name is only made of the file hash
     file.name = `${options.prefix}-${file.hash}.${ext}`;
     // original name is needed for templates assets (preview/other images…)
@@ -186,6 +216,7 @@ function parseMultipart(req, options) {
 
 module.exports = {
   resolveUploadExtension,
+  probeImageDimensions,
   streamImage,
   streamImageFromPreviews,
   list: listImages,

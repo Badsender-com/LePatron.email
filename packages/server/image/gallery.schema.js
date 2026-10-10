@@ -35,6 +35,10 @@ const GallerySchema = Schema(
           source: file.source || 'upload',
           externalMetadata: file.externalMetadata || {},
           uploadedAt: file.uploadedAt || null,
+          // original dimensions; null for anything uploaded before US-09, and
+          // for an upload whose bytes could not be probed
+          width: file.width || null,
+          height: file.height || null,
         }));
       },
     },

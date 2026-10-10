@@ -99,8 +99,16 @@ module.exports = `
             @remove="onRemove"
             @rename="onRename"
             @reject="onRenameRejected"
+            @hover="onHover"
+            @unhover="onUnhover"
           />
         </div>
       </recycle-scroller>
+      <tooltip
+        :file="hoveredFile"
+        :anchor="hoveredAnchor"
+        :bounds="panelBounds"
+        :strings="tooltipStrings"
+      />
     </div>
 `;

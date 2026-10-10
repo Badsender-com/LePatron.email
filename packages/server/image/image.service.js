@@ -18,6 +18,8 @@ const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 const modelsUtils = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
+const probe = require('probe-image-size');
+
 const { filterGalleryFiles } = require('../../shared/gallery/filter.js');
 const { labelForUpload } = require('../../shared/gallery/label.js');
 
@@ -181,6 +183,13 @@ async function createFromUrl(mongoId, imageUrl) {
   await fileManager.writeStreamFromStream(source, fileName);
 
   const uploadedFile = formatName(fileName);
+  // the gallery tooltip shows the original dimensions, and this path never
+  // goes through the upload parser that captures them
+  const probed = probe.sync(buffer);
+  if (probed && probed.width && probed.height) {
+    uploadedFile.width = probed.width;
+    uploadedFile.height = probed.height;
+  }
 
   const [storedFile] = await addFiles(mongoId, [uploadedFile]);
 

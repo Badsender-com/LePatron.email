@@ -5,6 +5,7 @@ const ko = require('knockout');
 const { RecycleScroller } = require('vue-virtual-scroller');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
+const Tooltip = require('./components/gallery/tooltip');
 const createGalleryDraggable = require('./directives/gallery-draggable');
 const template = require('./components/gallery/panel.template.js');
 const {
@@ -30,7 +31,7 @@ const SORTS = ['date_desc', 'date_asc'];
 // drive the real component options instead of a copy of them.
 function createGalleryPanel(vm) {
   return {
-    components: { Thumb, RecycleScroller },
+    components: { Thumb, Tooltip, RecycleScroller },
     directives: { galleryDraggable: createGalleryDraggable(vm) },
   props: {
     // 'mailing' or 'template' — one instance per gallery pane
@@ -41,6 +42,10 @@ function createGalleryPanel(vm) {
     search: '',
     format: '',
     sortBy: 'date_desc',
+    // the single tooltip this panel owns, and what it currently describes
+    hoveredFile: null,
+    hoveredAnchor: null,
+    panelBounds: null,
     // copied per instance: a module-level array put straight into data() is
     // observed once by Vue and then shared by both panels (mailing, template)
     formats: [...FORMATS],
@@ -97,6 +102,16 @@ function createGalleryPanel(vm) {
     },
     // handed down to each thumbnail so the component needs no viewModel of
     // its own; computed once rather than per cell
+    tooltipStrings() {
+      return {
+        // a translation entry whose value is a locale tag, so the date follows
+        // the editor's language rather than the browser's
+        locale: vm.t('gallery-date-locale'),
+        dimensions: vm.t('gallery-tooltip-dimensions'),
+        format: vm.t('gallery-tooltip-format'),
+        uploadedAt: vm.t('gallery-tooltip-uploaded-at'),
+      };
+    },
     thumbStrings() {
       return {
         remove: vm.t('gallery-remove-image'),
@@ -134,6 +149,7 @@ function createGalleryPanel(vm) {
   },
   created() {
     this._subscription = null;
+    this._hoverTimer = null;
   },
   mounted() {
     // Mirror the Knockout observableArray into Vue reactive data. Vue
@@ -149,6 +165,7 @@ function createGalleryPanel(vm) {
   },
   beforeDestroy() {
     if (this._subscription) this._subscription.dispose();
+    this.cancelHover();
   },
   methods: {
     // ISO with the previous grid: click replaces the selected email image
@@ -170,6 +187,29 @@ function createGalleryPanel(vm) {
     // the thumbnail refused the input before it ever reached the server
     onRenameRejected(messageKey) {
       vm.notifier.error(vm.t(messageKey));
+    },
+    // A delay, so sweeping across the grid on the way somewhere else does not
+    // flash a tooltip over every cell on the path.
+    onHover(file, element) {
+      this.cancelHover();
+      this._hoverTimer = setTimeout(() => {
+        // the scroller may have recycled this cell away during the delay
+        if (!element.isConnected) return;
+        this.hoveredFile = file;
+        this.hoveredAnchor = element.getBoundingClientRect();
+        this.panelBounds = this.$el.getBoundingClientRect();
+      }, Tooltip.OPEN_DELAY_MS);
+    },
+    // Immediate on leave: a tooltip that lingers covers what the pointer is
+    // heading for.
+    onUnhover() {
+      this.cancelHover();
+      this.hoveredFile = null;
+      this.hoveredAnchor = null;
+    },
+    cancelHover() {
+      if (this._hoverTimer) clearTimeout(this._hoverTimer);
+      this._hoverTimer = null;
     },
     formatLabel(format) {
       return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');

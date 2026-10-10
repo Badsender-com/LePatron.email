@@ -13,6 +13,10 @@
 }
 
 .gallery-vue-panel {
+  // The tooltip is placed against this box, so it has to be the positioning
+  // context — otherwise it would resolve against whatever ancestor happens to
+  // be positioned, somewhere up in Mosaico's own markup.
+  position: relative;
   // The RecycleScroller owns the scroll, so the panel itself must not scroll.
   display: flex;
   flex-direction: column;
@@ -194,4 +198,48 @@
   width: 100%;
   height: 100%;
   padding: 4px;
+}
+
+// Metadata tooltip (US-09). Positioned by the panel, which is the only
+// ancestor that neither clips nor transforms it — a thumbnail is
+// `overflow: hidden` and the scroller's cells are absolutely positioned.
+.gallery-tooltip {
+  position: absolute;
+  z-index: 10;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: @gallery-navy;
+  color: @gallery-surface;
+  font-size: 11px;
+  line-height: 1.45;
+  box-shadow: 0 4px 12px fade(@gallery-navy, 35%);
+  // it follows the pointer's target: it must never become one itself
+  pointer-events: none;
+  // the panel caps maxHeight to the room it has; this keeps a long label from
+  // spilling past that cap rather than being cut by the panel's own edge
+  overflow: hidden;
+}
+
+.gallery-tooltip__label {
+  margin: 0 0 4px;
+  font-weight: 600;
+  // the full name is the point of the tooltip, so it wraps rather than
+  // truncating the way the band under the thumbnail has to
+  overflow-wrap: anywhere;
+}
+
+.gallery-tooltip__meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 8px;
+  margin: 0;
+
+  dt {
+    opacity: 0.7;
+  }
+
+  dd {
+    margin: 0;
+  }
 }

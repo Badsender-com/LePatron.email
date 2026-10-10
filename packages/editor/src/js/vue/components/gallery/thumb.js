@@ -6,6 +6,9 @@
 //   - `select` (file): click to use the image (KO $root.addImage)
 //   - `remove` (file): delete the image (KO $root.removeImage) — ISO with old grid
 //   - `rename` (file, label): a new label was committed (KO $root.renameImage)
+//   - `hover` (file, element) / `unhover`: the panel owns the single metadata
+//     tooltip, because one rendered in here would be clipped by this element's
+//     own `overflow: hidden` and by the virtual scroller
 //   - `reject` (messageKey): the input was refused before reaching the server
 //
 // The label band is a plain element, not a button: jQuery UI's draggable
@@ -107,7 +110,12 @@ module.exports = {
     },
   },
   template: `
-    <div class="gallery-thumb" @click="editing || $emit('select', file)">
+    <div
+      class="gallery-thumb"
+      @click="editing || $emit('select', file)"
+      @mouseenter="$emit('hover', file, $event.currentTarget)"
+      @mouseleave="$emit('unhover')"
+    >
       <button
         type="button"
         class="gallery-thumb__remove"
