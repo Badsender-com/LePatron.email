@@ -152,7 +152,6 @@ module.exports = {
         v-else
         class="gallery-thumb__label"
         data-gallery-label
-        :title="label"
         @click.stop
         @dblclick.stop="startEdit"
       >{{ label }}</div>

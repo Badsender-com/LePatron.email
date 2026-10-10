@@ -62,11 +62,12 @@ describe('thumbnail rename — entering edit mode', () => {
     vm.$destroy();
   });
 
-  // At 118px the label is usually truncated, and the tooltip is the only way
-  // to read the whole name.
-  it('keeps the full name in the tooltip', () => {
+  // At 118px the label is usually truncated. Reading the whole name is the
+  // metadata tooltip's job (US-09); a native `title` here would pop a second,
+  // differently-styled tooltip over the first one on the same hover.
+  it('leaves the full name to the metadata tooltip', () => {
     const vm = mount();
-    expect(label(vm).getAttribute('title')).toBe('mon image.png');
+    expect(label(vm).getAttribute('title')).toBeNull();
     vm.$destroy();
   });
 

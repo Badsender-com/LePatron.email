@@ -14,15 +14,20 @@
  * Reads only the head of each file, not the whole image. Idempotent: a file
  * that already has dimensions is skipped, so an interrupted run resumes.
  *
- * WARNING — run this while nobody is editing. Like migrate-gallery-v1.js, it
- * reads a gallery, changes it and writes it back. An upload overlapping that
- * read-modify-write makes one of the two saves fail; when it is the user's
- * upload that loses, their image is stored but never listed. See that script's
- * entry in README.md.
+ * Writes one field pair at a time, through a positional update that touches
+ * nothing else in the document. Reading `gallery.files` and saving it back
+ * would be the obvious shape and is the wrong one twice over: the schema's
+ * getter PROJECTS each file onto a fixed set of keys, so writing that
+ * projection back silently drops everything else it holds; and rewriting the
+ * whole array loses any upload that landed while the script was reading.
+ * Neither failure announces itself.
+ *
+ * Safe to run while the application is serving.
  */
 
+const path = require('path');
+
 const mongoose = require('mongoose');
-const probe = require('probe-image-size');
 
 const config = require('../node.config.js');
 const { Galleries } = require('../common/models.common.js');
@@ -30,9 +35,14 @@ const fileManager = require('../common/file-manage.service.js');
 
 const isDryRun = process.argv.includes('--dry-run');
 
-// Enough for every image header we care about; the same budget the upload
-// parser uses.
-const SNIFF_BYTES = 4096;
+// Pull enough for the shared reader to reach a JPEG's SOF0 behind a maximal
+// EXIF segment. It caps what it hands the prober itself, so reading more here
+// is safe.
+const READ_BYTES = 128 * 1024;
+
+// A stalled storage read — the ordinary way a flaky S3 connection fails — would
+// otherwise hang the whole run at file k of n, with no output and no exit.
+const READ_TIMEOUT_MS = 10000;
 
 // ---------------------------------------------------------------------------
 // Pure logic — testable without a database or a storage backend
@@ -82,13 +92,22 @@ function buildBackfilledFiles(files, sizes) {
 // longer exists in storage, and that must not stop the run.
 function readDimensions(imageName) {
   return new Promise((resolve) => {
+    // Names are server-generated, but this script walks every record in the
+    // collection — including anything a DAM import or a direct write put
+    // there — and feeds them to a path join.
+    if (!imageName || path.basename(imageName) !== imageName) {
+      return resolve(null);
+    }
+
     let settled = false;
+    let timer = null;
     const chunks = [];
     let total = 0;
 
     const done = (value) => {
       if (settled) return;
       settled = true;
+      if (timer) clearTimeout(timer);
       resolve(value);
     };
 
@@ -99,54 +118,61 @@ function readDimensions(imageName) {
       return done(null);
     }
 
+    timer = setTimeout(() => {
+      done(null);
+      stream.destroy();
+    }, READ_TIMEOUT_MS);
+
     stream.on('error', () => done(null));
     stream.on('data', (chunk) => {
       chunks.push(chunk);
       total += chunk.length;
-      if (total >= SNIFF_BYTES) {
-        stream.destroy();
+      if (total >= READ_BYTES) {
+        // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
+        // emits `error` — and the error handler would win the race and report
+        // every single file as unreadable.
         finish();
+        stream.destroy();
       }
     });
     stream.on('end', finish);
 
     function finish() {
-      try {
-        const probed = probe.sync(Buffer.concat(chunks));
-        done(
-          probed && probed.width && probed.height
-            ? { width: probed.width, height: probed.height }
-            : null
-        );
-      } catch (error) {
-        done(null);
-      }
+      // the shared reader caps what it hands the prober and rounds the result
+      done(fileManager.probeImageDimensions(Buffer.concat(chunks)));
     }
   });
 }
 
 async function backfillGallery(gallery, dryRun) {
-  const pending = gallery.files.filter(needsDimensions);
+  // `.get(..., { getters: false })` reads what is stored, not what the schema
+  // projects — the projection is missing fields this script must not erase.
+  const files = gallery.get('files', null, { getters: false }) || [];
+  const pending = files.filter(needsDimensions);
   const sizes = new Map();
 
   // Sequential on purpose: a gallery can hold hundreds of files, and the point
-  // is not to be fast but to not hammer the storage backend during a window
-  // where the application is also serving.
+  // is not to be fast but to not hammer the storage backend.
   for (const file of pending) {
     // eslint-disable-next-line no-await-in-loop
     const size = await readDimensions(file.name);
     if (size) sizes.set(file.name, size);
   }
 
-  const result = buildBackfilledFiles(gallery.files, sizes);
-
-  if (!dryRun && result.filled > 0) {
-    gallery.files = result.updatedFiles;
-    gallery.markModified('files');
-    await gallery.save();
+  if (!dryRun) {
+    for (const [name, size] of sizes) {
+      // eslint-disable-next-line no-await-in-loop
+      await Galleries.updateOne(
+        {
+          creationOrWireframeId: gallery.creationOrWireframeId,
+          'files.name': name,
+        },
+        { $set: { 'files.$.width': size.width, 'files.$.height': size.height } }
+      );
+    }
   }
 
-  return result;
+  return buildBackfilledFiles(files, sizes);
 }
 
 // ---------------------------------------------------------------------------

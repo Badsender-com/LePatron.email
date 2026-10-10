@@ -146,6 +146,15 @@ function createGalleryPanel(vm) {
     search: 'resetScroll',
     format: 'resetScroll',
     sortBy: 'resetScroll',
+    // Chrome fires no mouseleave on an element removed from the DOM, so
+    // deleting the hovered image left its tooltip on screen describing a file
+    // that no longer exists.
+    visibleImages(images) {
+      if (!this.hoveredFile) return;
+      if (!images.some((file) => file.name === this.hoveredFile.name)) {
+        this.onUnhover();
+      }
+    },
   },
   created() {
     this._subscription = null;

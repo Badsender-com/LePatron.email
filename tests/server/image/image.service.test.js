@@ -7,6 +7,9 @@ jest.mock('../../../packages/server/utils/outbound-host.js', () => ({
 jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   list: jest.fn().mockResolvedValue([]),
+  // the shared reader: it caps what it hands the prober, which is what keeps
+  // a crafted 10MB download from blocking the event loop
+  probeImageDimensions: jest.fn().mockReturnValue(null),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   // a constructor (createGallery does `new Galleries()`) with the statics used
@@ -90,6 +93,23 @@ describe('image.service.createFromUrl', () => {
     await expect(
       imageService.createFromUrl(MONGO_ID, IMAGE_URL)
     ).rejects.toThrow(/size/i);
+  });
+
+  // The first version probed the whole downloaded buffer. `probe`'s SVG parser
+  // is quadratic in what it is given, so 10MB of crafted markup blocked the
+  // server for over an hour. Everything now goes through the capped reader.
+  it('measures the download through the shared reader, not the raw buffer', async () => {
+    mockImageResponse(Buffer.from('imagedata'));
+    Galleries.findOne.mockResolvedValue({ files: [] });
+    fileManager.probeImageDimensions.mockReturnValue({
+      width: 640,
+      height: 480,
+    });
+
+    const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
+
+    expect(fileManager.probeImageDimensions).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ width: 640, height: 480 });
   });
 
   it('stores the image and appends it to the gallery', async () => {

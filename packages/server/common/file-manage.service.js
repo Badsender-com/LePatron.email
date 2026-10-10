@@ -83,6 +83,25 @@ const formatters = {
 // header we care about fits well within this.
 const SNIFF_BYTES = 4096;
 
+// Recognising a format needs a dozen bytes; MEASURING a JPEG needs to reach
+// its SOF0 marker, which sits after APP1 — and a camera fills APP1 with an
+// EXIF thumbnail of tens of kilobytes. So JPEG, and only JPEG, gets a wider
+// window.
+//
+// Only JPEG, because `probe`'s SVG parser is quadratic in the buffer handed to
+// it: it stringifies the whole thing and backtracks a `[^>]+` over it. Handing
+// it 10MB of `<svg x<svg x…` blocks the event loop for over an hour — one
+// request, whole server. Measured here: 128KB already costs 1.2s, and every
+// doubling costs four times as much. Capping at SNIFF_BYTES keeps that path
+// under a millisecond.
+const JPEG_SNIFF_BYTES = 128 * 1024;
+
+const isJpeg = (buffer) =>
+  buffer.length > 3 &&
+  buffer[0] === 0xff &&
+  buffer[1] === 0xd8 &&
+  buffer[2] === 0xff;
+
 // types a browser sends when it has no idea: they map to an extension, so they
 // look valid, but they say nothing about the content
 const GENERIC_UPLOAD_TYPES = ['application/octet-stream'];
@@ -110,16 +129,25 @@ function resolveUploadExtension(file) {
   return sniffedExtension || declaredExtension || null;
 }
 
-// Reads the head of an upload once and hands back what `probe` made of it.
-// Shared by the extension resolver and the dimension capture, so neither has
-// to know how the other reads the file.
+// Reads the start of an upload from disk. Returns an empty buffer rather than
+// throwing: a file we cannot read is one we cannot describe, not a crash.
+function readHead(file, bytes) {
+  try {
+    const head = Buffer.alloc(bytes);
+    const descriptor = fs.openSync(file.path, 'r');
+    const read = fs.readSync(descriptor, head, 0, bytes, 0);
+    fs.closeSync(descriptor);
+    return head.subarray(0, read);
+  } catch (e) {
+    logger.log('[UPLOAD] unable to read', file.path, e.message);
+    return Buffer.alloc(0);
+  }
+}
+
+// What `probe` makes of an upload's head — the format half of the question.
 function sniffImage(file) {
   try {
-    const head = Buffer.alloc(SNIFF_BYTES);
-    const descriptor = fs.openSync(file.path, 'r');
-    const read = fs.readSync(descriptor, head, 0, SNIFF_BYTES, 0);
-    fs.closeSync(descriptor);
-    return probe.sync(head.subarray(0, read));
+    return probe.sync(readHead(file, SNIFF_BYTES));
   } catch (e) {
     logger.log('[UPLOAD] unable to sniff', file.path, e.message);
     return null;
@@ -127,19 +155,41 @@ function sniffImage(file) {
 }
 
 /**
- * The original dimensions of an upload, which the gallery tooltip shows.
+ * The original dimensions of an image, read from its header.
  *
- * `probe` already computes them while recognising the format — they were being
- * dropped. They cannot be recovered later from the thumbnail, which is a square
- * 111px crop of the original.
+ * The one place that does this, for every caller: an upload, a feed download,
+ * the backfill script. Each used to carry its own budget, which is how one of
+ * them ended up handing `probe` a whole 10MB buffer.
  *
- * @param {object} file as formidable hands it over, before renaming
- * @returns {{width: number, height: number}|null} null when not an image
+ * Never throws: a header it cannot read is a tooltip line that is not shown,
+ * not a failed upload.
+ *
+ * @param {Buffer} buffer the start of the file; more than the window is fine
+ * @returns {{width: number, height: number}|null} null when not measurable
  */
-function probeImageDimensions(file) {
-  const probed = sniffImage(file);
+function probeImageDimensions(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) return null;
+  try {
+    const head = readDimensions(buffer.subarray(0, SNIFF_BYTES));
+    if (head) return head;
+    // the dimensions sat past APP1; widen, but only for a real JPEG
+    if (!isJpeg(buffer)) return null;
+    return readDimensions(buffer.subarray(0, JPEG_SNIFF_BYTES));
+  } catch (e) {
+    logger.log('[UPLOAD] unable to measure', e.message);
+    return null;
+  }
+}
+
+// `probe` reports SVG sizes as floats, and in whatever unit the document
+// declared — `21 × 29.693548387096772` centimetres would otherwise be printed
+// as pixels with sixteen decimals.
+function readDimensions(window) {
+  const probed = probe.sync(window);
   if (!probed || !probed.width || !probed.height) return null;
-  return { width: probed.width, height: probed.height };
+  const unit = probed.wUnits || 'px';
+  if (unit !== 'px' || probed.hUnits !== unit) return null;
+  return { width: Math.round(probed.width), height: Math.round(probed.height) };
 }
 
 // multipart/form-data
@@ -184,7 +234,7 @@ function parseMultipart(req, options) {
     // gallery label reads this one instead — a search for "mon image" has to
     // find a file called "Mon Image.jpg".
     file.uploadedName = `${file.name}`;
-    const dimensions = probeImageDimensions(file);
+    const dimensions = probeImageDimensions(readHead(file, JPEG_SNIFF_BYTES));
     if (dimensions) {
       file.width = dimensions.width;
       file.height = dimensions.height;

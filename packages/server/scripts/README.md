@@ -74,3 +74,46 @@ Aucune des deux erreurs ne se signale. Le script lit donc le document brut (`gal
 - Vérifier les logs après exécution (ligne `Erreurs : N` absente = OK)
 - Si des erreurs apparaissent, relancer : le script est idempotent et reprendra les galeries manquées
 - La valeur de `uploadedAt` pour les images existantes est une approximation (`gallery.createdAt`) — ce n'est pas la vraie date d'upload
+
+---
+
+## backfill-gallery-dimensions.js
+
+Script **one-shot** — à lancer une seule fois après le déploiement de l'US-09 (tooltip de métadonnées).
+
+### Ce que le script fait
+
+Le tooltip de la galerie affiche les dimensions d'origine d'une image. Les uploads les enregistrent depuis l'US-09, mais rien de ce qui a été stocké avant ne les possède — et elles ne sont pas récupérables depuis la vignette, qui est un carré de 111px. Le script relit donc chaque fichier stocké pour le mesurer.
+
+Pour chaque image de chaque galerie :
+
+- **Skip** si `width` et `height` sont déjà renseignés (idempotent — relançable sans risque)
+- **Sinon** : lit **l'en-tête seulement** du fichier (128 Ko au plus, pas l'image entière), le mesure, et écrit `width` / `height`
+- **Illisible** : une image listée en galerie mais absente du stockage, ou qui n'est pas une image, est comptée et passée — son tooltip n'affichera pas de dimensions, rien d'autre ne casse
+
+### Usage
+
+```bash
+# 1. Dry-run sur une copie de prod
+MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
+  node packages/server/scripts/backfill-gallery-dimensions.js --dry-run
+
+# 2. Réel
+MONGODB_URI=mongodb://<prod-uri> \
+  node packages/server/scripts/backfill-gallery-dimensions.js
+```
+
+### Propriétés
+
+| Propriété             | Détail                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Idempotent**        | Relançable sans risque — les images déjà mesurées sont skippées                                               |
+| **Resumable**         | Une interruption se rattrape par une relance                                                                  |
+| **Dry-run**           | `--dry-run` simule sans écrire en base                                                                        |
+| **Écriture atomique** | Chaque paire `width`/`height` est écrite par un update positionnel qui ne touche à rien d'autre du document   |
+| **Sans arrêt**        | Peut tourner pendant que l'application sert                                                                   |
+| **Doux**              | Lecture séquentielle, en-tête uniquement, timeout de 10s par fichier pour ne pas bloquer sur un stockage lent |
+
+### Pourquoi l'écriture positionnelle
+
+Même raison que pour `migrate-gallery-v1.js` ci-dessus, et elle vaut la peine d'être répétée : lire `gallery.files` et le réécrire efface tout ce que le getter du schéma ne projette pas, et perd les uploads arrivés pendant la lecture. Aucune des deux erreurs ne se signale.

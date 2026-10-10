@@ -14,21 +14,36 @@
 //
 // The panel tells it which file to describe and where the cell is; it places
 // itself relative to the panel.
+//
+// ACCEPTED LIMITATION — this tooltip is mouse-only. It opens on `mouseenter`
+// and nothing else: there is no keyboard path to it (the thumbnail is not
+// focusable) and no touch path. The dimensions and the upload date are
+// therefore unavailable to a keyboard or touch user. `pointer-events: none`
+// also makes it physically unreachable, so its text cannot be selected.
+// Knowingly deferred for V1 by the product owner; making the grid focusable
+// is the prerequisite and belongs to its own ticket.
 
 // Enough hover to mean "tell me more", short enough not to feel stuck.
 const OPEN_DELAY_MS = 500;
 
 const GAP = 8;
 
+// Below this there is not enough room to show anything useful, and a 0px box
+// with `overflow: hidden` is a tooltip that opens invisibly.
+const MIN_HEIGHT = 56;
+const MIN_WIDTH = 140;
+
 module.exports = {
   name: 'GalleryTooltip',
   props: {
     // the file to describe, or null when nothing is hovered
     file: { type: Object, default: null },
-    // the hovered cell, in viewport coordinates
-    anchor: { type: Object, default: null },
-    // the panel's own box, so the tooltip can place itself inside it
-    bounds: { type: Object, default: null },
+    // The hovered cell and the panel's own box, in viewport coordinates.
+    // `type: null` because these are DOMRects: Vue 2 checks `Object` with
+    // `isPlainObject`, which a DOMRect fails, and the dev build would warn
+    // twice on every open.
+    anchor: { type: null, default: null },
+    bounds: { type: null, default: null },
     strings: { type: Object, required: true },
   },
   computed: {
@@ -49,15 +64,19 @@ module.exports = {
       if (!this.file || !this.file.uploadedAt) return null;
       const date = new Date(this.file.uploadedAt);
       if (Number.isNaN(date.getTime())) return null;
+      const format = { year: 'numeric', month: 'long', day: 'numeric' };
       // `undefined` would follow the browser's locale, which is not the
       // editor's: a French interface was printing "8 October 2026". The tag
-      // rides along with the rest of the copy, the only channel here that
-      // already knows which language is in use.
-      return date.toLocaleDateString(this.strings.locale, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
+      // travels as a translation value so a translator owns the regional
+      // variant — which also means a typo in a translation file reaches here.
+      // `toLocaleDateString` throws a RangeError on a malformed tag, and this
+      // runs inside a computed the template reads: unguarded, one bad string
+      // blanks the whole panel.
+      try {
+        return date.toLocaleDateString(this.strings.locale, format);
+      } catch (error) {
+        return date.toLocaleDateString(undefined, format);
+      }
     },
     // Clamped to the panel on both axes, so a thumbnail in the last column
     // cannot push the tooltip off the sidebar and one near an edge cannot push
@@ -84,11 +103,16 @@ module.exports = {
       const roomAbove = topInPanel - GAP * 2;
       const roomBelow = this.bounds.height - bottomInPanel - GAP * 2;
       const above = roomAbove >= roomBelow;
+      const room = above ? roomAbove : roomBelow;
+
+      // Nothing rather than a sliver: a short panel used to render a 0px box
+      // that `v-if` considered open and the user could not see.
+      if (room < MIN_HEIGHT || width < MIN_WIDTH) return null;
 
       return {
         width: `${width}px`,
         left: `${left - half}px`,
-        maxHeight: `${Math.max(0, above ? roomAbove : roomBelow)}px`,
+        maxHeight: `${room}px`,
         top: above ? 'auto' : `${bottomInPanel + GAP}px`,
         bottom: above ? `${this.bounds.height - topInPanel + GAP}px` : 'auto',
       };
