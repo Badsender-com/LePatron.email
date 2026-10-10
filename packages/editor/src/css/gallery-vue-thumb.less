@@ -69,7 +69,16 @@
   flex: 0 0 26px;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  width: 100%;
   padding: 0 6px;
+  text-align: left;
+  // it is a <button>, so it would otherwise inherit none of the band's look
+  border: 0;
+  font: inherit;
+  // the thumbnail is a pointer target, this band is not: a single click here
+  // does nothing, and a hand cursor would promise otherwise
+  cursor: text;
   font-size: 10.5px;
   color: @gallery-text;
   white-space: nowrap;
@@ -85,17 +94,22 @@
 }
 
 // The input replaces the band in place, same metrics, so committing or
-// cancelling does not make the grid jump.
+// cancelling does not make the grid jump. `display: block` rather than the
+// band's flex: `align-items` cannot reach an input's value, which lives in
+// shadow DOM, and the inherited ellipsis means nothing on a focused field.
 .gallery-thumb__label--editing {
-  width: 100%;
-  border: 0;
+  display: block;
+  line-height: 24px;
   border-top: 1px solid @gallery-cyan;
   border-radius: 0;
-  font-family: inherit;
-  box-shadow: inset 0 0 0 1px @gallery-cyan;
+  cursor: text;
 
+  // The cyan ring is 2.60:1 against white — decoration, not an indicator
+  // (WCAG 1.4.11 asks 3:1). The navy outline carries that job, as it does on
+  // the search box and the chips.
   &:focus {
-    outline: none;
+    outline: 2px solid @gallery-navy;
+    outline-offset: -2px;
   }
 }
 
@@ -123,8 +137,9 @@
   top: 4px;
   left: 4px;
   z-index: 2;
-  width: 18px;
-  height: 18px;
+  // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: flex;
   align-items: center;

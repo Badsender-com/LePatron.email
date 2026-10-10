@@ -29,6 +29,9 @@ function viewModel(files = [FILE, OTHER]) {
 }
 
 const accepted = () => Promise.resolve({});
+// jQuery rejects with a jqXHR object, not an Error
+const jqXHR = (status) =>
+  Object.assign(new Error(`HTTP ${status}`), { status });
 const refused = () => Promise.reject(new Error('500'));
 
 beforeEach(() => $.ajax.mockReset());
@@ -60,15 +63,48 @@ describe('renameImage — the request', () => {
     });
   });
 
-  it('says nothing when the label is unchanged, empty, or the file unknown', async () => {
+  it('sends nothing, and says nothing, when the label is unchanged', async () => {
     const vm = viewModel();
-
     await vm.renameImage(vm.mailingGallery()[0], 'mailing', 'avant.png');
-    await vm.renameImage(vm.mailingGallery()[0], 'mailing', '   ');
-    await vm.renameImage({ name: 'not-a-mongo-id.png' }, 'mailing', 'x.png');
-    await vm.renameImage({ name: `${MONGO_ID}-gone.png` }, 'mailing', 'x.png');
-
     expect($.ajax).not.toHaveBeenCalled();
+    expect(vm.notifier.error).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing, and says nothing, for an empty label', async () => {
+    const vm = viewModel();
+    await vm.renameImage(vm.mailingGallery()[0], 'mailing', '   ');
+    expect($.ajax).not.toHaveBeenCalled();
+    expect(vm.notifier.error).not.toHaveBeenCalled();
+  });
+
+  // These two are failures, not no-ops, and used to pass in silence — the user
+  // watched the new name vanish with no explanation. Pre-V1 images are exactly
+  // the ones whose stored name may not follow the convention, and repairing
+  // their labels is what this story is for.
+  it('tells the user when the file name does not carry a gallery id', async () => {
+    const vm = viewModel();
+    const ok = await vm.renameImage(
+      { name: 'not-a-mongo-id.png' },
+      'mailing',
+      'x.png'
+    );
+    expect(ok).toBe(false);
+    expect($.ajax).not.toHaveBeenCalled();
+    expect(vm.notifier.error).toHaveBeenCalledWith(
+      'gallery-rename-image-unsupported'
+    );
+  });
+
+  it('tells the user when the image is no longer in the gallery', async () => {
+    const vm = viewModel();
+    const ok = await vm.renameImage(
+      { name: `${MONGO_ID}-gone.png` },
+      'mailing',
+      'x.png'
+    );
+    expect(ok).toBe(false);
+    expect($.ajax).not.toHaveBeenCalled();
+    expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-gone');
   });
 });
 
@@ -181,5 +217,105 @@ describe('renameImage — the undo', () => {
 
     expect(vm.mailingGallery()[0].label).toBe('neuve.png');
     expect(vm.mailingGallery()[1].label).toBe('avant.png');
+  });
+});
+
+describe('renameImage — the server has the last word', () => {
+  // The controller answers with the file as it stored it, precisely so the
+  // editor can push it back. Ignoring it left the grid on our own guess.
+  it('takes the stored file from the response rather than its own guess', async () => {
+    $.ajax.mockImplementation(() =>
+      Promise.resolve({
+        name: FILE.name,
+        label: 'normalise par le serveur.png',
+        uploadedAt: '2026-10-10T00:00:00.000Z',
+      })
+    );
+    const vm = viewModel();
+
+    await vm.renameImage(vm.mailingGallery()[0], 'mailing', 'ce que je tape');
+
+    expect(vm.mailingGallery()[0].label).toBe('normalise par le serveur.png');
+    expect(vm.mailingGallery()[0].uploadedAt).toBe('2026-10-10T00:00:00.000Z');
+  });
+
+  it('maps the refusal to a message that says which refusal it was', async () => {
+    const cases = [
+      [400, 'gallery-rename-image-invalid'],
+      [422, 'gallery-rename-image-invalid'],
+      [403, 'gallery-rename-image-forbidden'],
+      [404, 'gallery-rename-image-gone'],
+      [500, 'gallery-rename-image-fail'],
+    ];
+    for (const [status, key] of cases) {
+      $.ajax.mockImplementation(() => Promise.reject(jqXHR(status)));
+      const vm = viewModel();
+      // eslint-disable-next-line no-await-in-loop
+      await vm.renameImage(vm.mailingGallery()[0], 'mailing', 'apres.png');
+      expect(vm.notifier.error).toHaveBeenCalledWith(key);
+    }
+  });
+
+  it('gives up on a hung request instead of leaving the label hanging', async () => {
+    $.ajax.mockImplementation(accepted);
+    const vm = viewModel();
+    await vm.renameImage(vm.mailingGallery()[0], 'mailing', 'apres.png');
+    expect($.ajax.mock.calls[0][0].timeout).toBeGreaterThan(0);
+  });
+});
+
+describe('renameImage — two renames of the same image', () => {
+  function deferred() {
+    let settle;
+    const promise = new Promise((resolve, reject) => {
+      settle = { resolve, reject };
+    });
+    return { promise, settle };
+  }
+
+  // The first request's failure used to restore the label captured when IT
+  // started — undoing a second rename the user had already made, and claiming
+  // "the previous one was restored" about a value that had succeeded.
+  it('ignores an older failure once a newer rename has landed', async () => {
+    const first = deferred();
+    const second = deferred();
+    $.ajax
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const vm = viewModel();
+
+    const p1 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'B.png');
+    const p2 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'C.png');
+
+    second.settle.resolve({ name: FILE.name, label: 'C.png' });
+    await p2;
+    first.settle.reject(jqXHR(500));
+    await p1;
+
+    expect(vm.mailingGallery()[0].label).toBe('C.png');
+    expect(vm.notifier.error).not.toHaveBeenCalled();
+  });
+
+  // And when the newest one is the one that fails, the revert goes back to
+  // what was there before the whole burst — not to the intermediate value our
+  // own first request optimistically wrote.
+  it('reverts to the label from before the burst, not to its own guess', async () => {
+    const first = deferred();
+    const second = deferred();
+    $.ajax
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const vm = viewModel();
+
+    const p1 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'B.png');
+    const p2 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'C.png');
+
+    first.settle.resolve({ name: FILE.name, label: 'B.png' });
+    await p1;
+    second.settle.reject(jqXHR(500));
+    await p2;
+
+    expect(vm.mailingGallery()[0].label).toBe('avant.png');
+    expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-fail');
   });
 });

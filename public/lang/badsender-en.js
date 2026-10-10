@@ -43,9 +43,17 @@ module.exports = {
   'gallery-sort-newest-title': 'Newest first',
   'gallery-sort-oldest': 'Date \u2191',
   'gallery-sort-oldest-title': 'Oldest first',
+  'gallery-rename-image-success': 'The label was saved',
+  'gallery-rename-image-empty': 'The label cannot be empty',
+  'gallery-rename-image-invalid': 'The server refused this label',
+  'gallery-rename-image-forbidden': 'You are not allowed to rename this image',
+  'gallery-rename-image-gone':
+    'This image is no longer in the gallery, the label was not saved',
+  'gallery-rename-image-unsupported':
+    'This image cannot be renamed: its name does not follow the gallery convention',
   'gallery-rename-image-fail':
     'The label could not be saved, the previous one was restored',
-  'gallery-rename-hint': 'Double-click to rename',
+  'gallery-rename-action': 'Rename __label__',
   'gallery-rename-input-label': 'New image label',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',

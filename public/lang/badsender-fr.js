@@ -42,9 +42,18 @@ module.exports = {
   'gallery-sort-newest-title': 'Du plus récent au plus ancien',
   'gallery-sort-oldest': 'Date \u2191',
   'gallery-sort-oldest-title': 'Du plus ancien au plus récent',
+  'gallery-rename-image-success': 'Le libellé a été enregistré',
+  'gallery-rename-image-empty': 'Le libellé ne peut pas être vide',
+  'gallery-rename-image-invalid': 'Ce libellé a été refusé par le serveur',
+  'gallery-rename-image-forbidden':
+    "Vous n'avez pas le droit de renommer cette image",
+  'gallery-rename-image-gone':
+    "Cette image n'est plus dans la galerie, le libellé n'a pas été enregistré",
+  'gallery-rename-image-unsupported':
+    'Cette image ne peut pas être renommée : son nom ne suit pas la convention de la galerie',
   'gallery-rename-image-fail':
     "Le libellé n'a pas pu être enregistré, l'ancien a été rétabli",
-  'gallery-rename-hint': 'Double-cliquez pour renommer',
+  'gallery-rename-action': 'Renommer __label__',
   'gallery-rename-input-label': "Nouveau libellé de l'image",
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',

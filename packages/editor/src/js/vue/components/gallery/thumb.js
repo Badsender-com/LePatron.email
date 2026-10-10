@@ -48,7 +48,11 @@ module.exports = {
   watch: {
     // The scroller recycles a view onto another image. An edit left open would
     // otherwise carry over to whatever image lands in this cell next.
-    file() {
+    //
+    // Watches the name, not the object: the gallery replaces entries in place
+    // — a rename, a delete elsewhere in the list — and watching identity
+    // closed the editor and threw away the draft every time that happened.
+    'file.name': function onRecycled() {
       this.editing = false;
     },
   },
@@ -68,24 +72,51 @@ module.exports = {
     },
     cancelEdit() {
       this.editing = false;
+      this.restoreFocus();
     },
     commitEdit() {
       if (!this.editing) return;
       this.editing = false;
+      this.restoreFocus();
       const next = sanitizeLabel(this.draft);
-      // nothing to tell the server if it comes back unchanged, or empty — an
-      // empty label would leave the thumbnail with nothing to read
-      if (!next || next === this.label) return;
+      // unchanged is a no-op; empty is a refusal, and used to be a silent one
+      if (next === this.label) return;
+      if (!next) {
+        this.$emit('reject', 'gallery-rename-image-empty');
+        return;
+      }
       this.$emit('rename', this.file, next);
+    },
+    // Closing the editor destroys the focused input, which drops focus on the
+    // body: a keyboard user renaming the 40th thumbnail would come back to the
+    // top of the document and have to tab all the way down again.
+    restoreFocus() {
+      this.$nextTick(() => {
+        const trigger = this.$refs.trigger;
+        if (trigger && document.activeElement === document.body) trigger.focus();
+      });
+    },
+    // Enter also confirms a candidate in an IME. Committing then would save a
+    // half-composed word and close the editor mid-sentence.
+    onEnter(event) {
+      if (event.isComposing || event.keyCode === 229) return;
+      this.commitEdit();
+    },
+    // Blur commits, so clicking the delete button would first save a rename on
+    // an image that is about to disappear. Drop the edit before that click
+    // lands — mousedown runs before the input loses focus.
+    onRemoveDown() {
+      this.editing = false;
     },
   },
   template: `
-    <div class="gallery-thumb" @click="$emit('select', file)">
+    <div class="gallery-thumb" @click="editing || $emit('select', file)">
       <button
         type="button"
         class="gallery-thumb__remove"
         :title="strings.remove"
         :aria-label="strings.remove"
+        @mousedown="onRemoveDown"
         @click.stop="$emit('remove', file)"
       >
         <span class="lucide lucide-x"></span>
@@ -108,22 +139,22 @@ module.exports = {
         :aria-label="strings.renameInput"
         @click.stop
         @dblclick.stop
-        @keyup.enter="commitEdit"
+        @keyup.enter="onEnter"
         @keyup.esc="cancelEdit"
         @blur="commitEdit"
       />
-      <div
+      <button
         v-else
+        ref="trigger"
+        type="button"
         class="gallery-thumb__label"
         data-gallery-label
-        tabindex="0"
-        role="button"
-        :title="strings.renameHint + ' — ' + label"
-        :aria-label="strings.renameHint + ' — ' + label"
+        :title="label"
+        :aria-label="strings.renameAction.replace('__label__', label)"
         @click.stop
         @dblclick.stop="startEdit"
         @keydown.enter.stop.prevent="startEdit"
-      >{{ label }}</div>
+      >{{ label }}</button>
     </div>
   `,
 };

@@ -36,11 +36,18 @@ const EXTENSION = /\.([a-z0-9]+)$/i;
  */
 function sanitizeLabel(value) {
   if (typeof value !== 'string') return '';
-  return value
-    .replace(UNSAFE_CHARS, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_LABEL_LENGTH);
+  return dropDanglingSurrogate(
+    value.replace(UNSAFE_CHARS, '').replace(/\s+/g, ' ').trim()
+  ).slice(0, MAX_LABEL_LENGTH);
+}
+
+// `slice` counts UTF-16 code units, so a cut landing inside an emoji leaves a
+// lone high surrogate — not valid UTF-8, and it comes back out of the database
+// as a replacement character.
+function dropDanglingSurrogate(value) {
+  if (value.length <= MAX_LABEL_LENGTH) return value;
+  const cut = value.slice(0, MAX_LABEL_LENGTH);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
 }
 
 /**

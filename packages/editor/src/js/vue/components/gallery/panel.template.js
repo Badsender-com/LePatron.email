@@ -98,6 +98,7 @@ module.exports = `
             @select="onSelect"
             @remove="onRemove"
             @rename="onRename"
+            @reject="onRenameRejected"
           />
         </div>
       </recycle-scroller>

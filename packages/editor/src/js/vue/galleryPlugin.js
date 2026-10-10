@@ -100,7 +100,7 @@ function createGalleryPanel(vm) {
     thumbStrings() {
       return {
         remove: vm.t('gallery-remove-image'),
-        renameHint: vm.t('gallery-rename-hint'),
+        renameAction: vm.t('gallery-rename-action'),
         renameInput: vm.t('gallery-rename-input-label'),
       };
     },
@@ -163,7 +163,13 @@ function createGalleryPanel(vm) {
     // that array is what the rest of the editor reads, so the optimistic
     // update has to land there and flow back through the subscription.
     onRename(file, label) {
-      vm.renameImage(file, this.type, label);
+      vm.renameImage(file, this.type, label).then((saved) => {
+        if (saved) vm.notifier.success(vm.t('gallery-rename-image-success'));
+      });
+    },
+    // the thumbnail refused the input before it ever reached the server
+    onRenameRejected(messageKey) {
+      vm.notifier.error(vm.t(messageKey));
     },
     formatLabel(format) {
       return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');
