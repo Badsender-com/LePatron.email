@@ -35,7 +35,7 @@ MONGODB_URI=mongodb://<prod-uri> \
 
 ```
 Migration galerie V1
-Galeries : 47 | Images totales : 312
+Galeries : 47
 
 [1/47] 507f1f77bcf86cd799439011 — 8 migrée(s), 2 déjà à jour
 [2/47] 507f1f77bcf86cd799439022 — 0 migrée(s), 5 déjà à jour
@@ -43,41 +43,34 @@ Galeries : 47 | Images totales : 312
 
 --- Résultat ---
 Galeries traitées : 47/47
+Images totales    : 312
 Images migrées    : 287
 Images skippées   : 25
 ```
 
 ### Propriétés
 
-| Propriété      | Détail                                                                               |
-| -------------- | ------------------------------------------------------------------------------------ |
-| **Idempotent** | Relançable sans risque — les images déjà migrées sont skippées                       |
-| **Resumable**  | Par conception : si le script est interrompu, relancer reprend là où il s'est arrêté |
-| **Dry-run**    | `--dry-run` simule sans écrire en base                                               |
-| **Batché**     | Traite les galeries par lots de 10                                                   |
-| **Résilient**  | Une erreur sur une galerie n'arrête pas la migration des suivantes                   |
+| Propriété             | Détail                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| **Idempotent**        | Relançable sans risque — les images déjà migrées sont skippées                             |
+| **Resumable**         | Par conception : si le script est interrompu, relancer reprend là où il s'est arrêté       |
+| **Dry-run**           | `--dry-run` simule sans écrire en base                                                     |
+| **Écriture atomique** | Chaque image est écrite par un update positionnel qui ne touche à rien d'autre du document |
+| **Sans arrêt**        | Peut tourner pendant que l'application sert                                                |
+| **Résilient**         | Une erreur sur une galerie n'arrête pas la migration des suivantes                         |
 
-### ⚠️ À lancer galerie au repos — écriture non atomique
+### Pourquoi l'écriture positionnelle
 
-**Le script lit une galerie, la modifie et la réécrit** (`gallery.save()`). C'est précisément le motif que le serveur a abandonné pour les écritures galerie : lors d'un upload concurrent, le second enregistrement porte une version périmée et Mongoose le refuse avec une `VersionError`. L'image était stockée mais n'apparaissait jamais dans la galerie.
+La première version lisait `gallery.files`, modifiait le tableau et le réécrivait (`gallery.save()`). Cette forme est fausse deux fois :
 
-**Conséquence si le script tourne pendant que des utilisateurs uploadent :**
+- le getter du schéma **projette** chaque fichier sur un jeu de clés fixe, donc réécrire cette projection efface silencieusement tout ce qu'elle ne liste pas — `originalName` en particulier ;
+- réécrire le tableau entier perd tout upload arrivé pendant la lecture, et c'est exactement le motif que le serveur a abandonné pour les écritures galerie (`VersionError` sur upload concurrent).
 
-| Risque             | Détail                                                                                                     |
-| ------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Galerie non migrée | Le `save()` du script échoue sur une `VersionError` — cette galerie est comptée en erreur et passée        |
-| **Upload perdu**   | À l'inverse, c'est l'upload de l'utilisateur qui peut échouer, et son image ne jamais rejoindre la galerie |
-
-Le premier cas est bénin : le script est résilient et reprenable, une relance rattrape la galerie. **Le second ne l'est pas** — l'utilisateur perd son image sans que le script le sache.
-
-**Donc : lancer le script quand personne n'édite.** Hors heures de bureau, ou mieux, en fenêtre de maintenance. Ce n'est pas une recommandation de confort, c'est la condition pour ne pas faire perdre de données.
-
-Le script n'a volontairement pas été réécrit en écritures atomiques : c'est un one-shot, et une migration en fenêtre de maintenance est de toute façon la bonne pratique pour un backfill de cette nature.
+Aucune des deux erreurs ne se signale. Le script lit donc le document brut (`gallery.get('files', null, { getters: false })`) et n'écrit que les champs V1 des images qu'il migre, un `$set` positionnel à la fois. **Il n'a donc plus besoin d'une fenêtre de maintenance.**
 
 ### Précautions
 
 - Tester sur un dump de prod avant de lancer en environnement réel
-- **Lancer hors heures de bureau** (voir l'avertissement ci-dessus — ce n'est pas optionnel)
 - Vérifier les logs après exécution (ligne `Erreurs : N` absente = OK)
 - Si des erreurs apparaissent, relancer : le script est idempotent et reprendra les galeries manquées
 - La valeur de `uploadedAt` pour les images existantes est une approximation (`gallery.createdAt`) — ce n'est pas la vraie date d'upload
