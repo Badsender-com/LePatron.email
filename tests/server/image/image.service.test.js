@@ -100,19 +100,17 @@ describe('image.service.createFromUrl', () => {
 
     expect(fileManager.writeStreamFromStream).toHaveBeenCalledTimes(1);
     expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
+    // createFromUrl now answers with the stored file, so the response and the
+    // pushed document are the same object
+    expect(result).toMatchObject({
+      label: result.name,
+      source: 'upload',
+      externalMetadata: {},
+      uploadedAt: expect.any(Date),
+    });
     expect(Galleries.updateOne).toHaveBeenCalledWith(
       { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: result.name } },
-      {
-        $push: {
-          files: {
-            ...result,
-            label: result.name,
-            source: 'upload',
-            externalMetadata: {},
-            uploadedAt: expect.any(Date),
-          },
-        },
-      }
+      { $push: { files: result } }
     );
   });
 });
@@ -156,6 +154,28 @@ describe('image.service.addFiles', () => {
         }
       )
     );
+  });
+
+  // The editor pushes the upload response straight into its gallery list. When
+  // that response lacked the V1 fields, a fresh thumbnail showed its technical
+  // file name instead of its label until the next full reload.
+  it('returns the stored files, V1 fields included', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const stored = await imageService.addFiles(MONGO_ID, [
+      { name: `${MONGO_ID}-a.png`, originalName: 'logo.png' },
+    ]);
+
+    expect(stored).toEqual([
+      {
+        name: `${MONGO_ID}-a.png`,
+        originalName: 'logo.png',
+        label: 'logo.png',
+        source: 'upload',
+        externalMetadata: {},
+        uploadedAt: expect.any(Date),
+      },
+    ]);
   });
 
   it('creates the gallery first when the creation has none yet', async () => {

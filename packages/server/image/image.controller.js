@@ -570,11 +570,14 @@ async function create(req, res) {
     formatter: 'editor',
   };
   const uploads = await fileManager.parseMultipart(req, multipartOptions);
-  await imageService.addFiles(mongoId, uploads.files);
+  const files = await imageService.addFiles(mongoId, uploads.files);
 
   // send only the new uploads
   // front-application will iterate over them to update the gallery previews
-  res.json(uploads);
+  // — answer with what was stored, label included: the editor pushes this very
+  // object into its gallery list, and a response without the V1 fields made the
+  // fresh thumbnail show its technical file name until the next full reload
+  res.json({ ...uploads, files });
 }
 
 /**

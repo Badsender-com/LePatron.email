@@ -131,28 +131,35 @@ async function findOrCreateGallery(mongoId) {
   }
 }
 
+// A gallery image carries more than the uploader returns: the V1 fields of
+// US-01. Build them in one place, so a stored document and the response that
+// announces it can never describe the same image differently.
+function toGalleryFile(file) {
+  return {
+    ...file,
+    label: file.originalName || file.name,
+    source: 'upload',
+    externalMetadata: {},
+    uploadedAt: new Date(),
+  };
+}
+
 // Append the files the gallery doesn't list yet. The name filter makes the
-// "already there?" check part of the same atomic update as the push.
+// "already there?" check part of the same atomic update as the push. Returns
+// what was stored, so the caller can answer with it rather than with the
+// thinner object the upload parser produced.
 async function addFiles(mongoId, files) {
   await findOrCreateGallery(mongoId);
+  const galleryFiles = files.map(toGalleryFile);
   await Promise.all(
-    files.map((file) =>
+    galleryFiles.map((file) =>
       Galleries.updateOne(
         { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
-        {
-          $push: {
-            files: {
-              ...file,
-              label: file.originalName || file.name,
-              source: 'upload',
-              externalMetadata: {},
-              uploadedAt: new Date(),
-            },
-          },
-        }
+        { $push: { files: file } }
       )
     )
   );
+  return galleryFiles;
 }
 
 /**
@@ -205,11 +212,11 @@ async function createFromUrl(mongoId, imageUrl) {
 
   const uploadedFile = formatName(fileName);
 
-  await addFiles(mongoId, [uploadedFile]);
+  const [storedFile] = await addFiles(mongoId, [uploadedFile]);
 
   logger.log('Downloaded feed image into gallery', mongoId, fileName);
 
-  return uploadedFile;
+  return storedFile;
 }
 
 module.exports = {
@@ -217,6 +224,7 @@ module.exports = {
   createGallery,
   findOrCreateGallery,
   addFiles,
+  toGalleryFile,
   createFromUrl,
   filterGalleryFiles,
   renameLabel,

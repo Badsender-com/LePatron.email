@@ -29,10 +29,15 @@ describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
       });
     });
 
-    it('mounts the Vue #gallery-panel mount point', () => {
+    it('mounts a Vue panel in each of the two gallery panes', () => {
+      // US-04 mounted a single `#gallery-panel`. Replacing the Knockout grid
+      // moves the panel inside each pane instead: one instance for the mailing
+      // gallery, one for the template one.
       cy.openGallery();
-      cy.get('#gallery-panel').should('exist');
-      cy.get('[data-gallery-vue="ready"]').should('exist');
+      cy.get('#toolimagesgallery .gallery-vue-host').should('exist');
+      cy.get('#toolimagesgallerytemplate .gallery-vue-host').should('exist');
+      cy.get('[data-gallery-vue="ready"]').should('have.length', 2);
+      cy.get('#gallery-panel').should('not.exist');
     });
   });
 
