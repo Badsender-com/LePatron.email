@@ -55,6 +55,11 @@ module.exports = {
     'The label could not be saved, the previous one was restored',
   'gallery-rename-action': 'Rename __label__',
   'gallery-rename-input-label': 'New image label',
+  // the locale tag the tooltip formats its date with
+  'gallery-date-locale': 'en-GB',
+  'gallery-tooltip-dimensions': 'Dimensions',
+  'gallery-tooltip-format': 'Format',
+  'gallery-tooltip-uploaded-at': 'Added on',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 

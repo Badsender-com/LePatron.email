@@ -87,6 +87,7 @@ module.exports = `
         :item-secondary-size="cellSize"
         key-field="name"
         v-slot="{ item, index }"
+        @scroll.native="onScroll"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
              list order: the index is the only reliable handle on position -->
@@ -99,8 +100,16 @@ module.exports = `
             @remove="onRemove"
             @rename="onRename"
             @reject="onRenameRejected"
+            @hover="onHover"
+            @unhover="onUnhover"
           />
         </div>
       </recycle-scroller>
+      <tooltip
+        :file="hoveredFile"
+        :anchor="hoveredAnchor"
+        :bounds="panelBounds"
+        :strings="tooltipStrings"
+      />
     </div>
 `;

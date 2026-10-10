@@ -55,6 +55,11 @@ module.exports = {
     "Le libellé n'a pas pu être enregistré, l'ancien a été rétabli",
   'gallery-rename-action': 'Renommer __label__',
   'gallery-rename-input-label': "Nouveau libellé de l'image",
+  // the locale tag the tooltip formats its date with
+  'gallery-date-locale': 'fr-FR',
+  'gallery-tooltip-dimensions': 'Dimensions',
+  'gallery-tooltip-format': 'Format',
+  'gallery-tooltip-uploaded-at': 'Ajoutée le',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 

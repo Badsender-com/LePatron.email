@@ -181,6 +181,15 @@ async function createFromUrl(mongoId, imageUrl) {
   await fileManager.writeStreamFromStream(source, fileName);
 
   const uploadedFile = formatName(fileName);
+  // The gallery tooltip shows the original dimensions, and this path never
+  // goes through the upload parser that captures them. Through the shared
+  // reader, which caps how much of the buffer it hands to the prober —
+  // measuring the whole 10MB download let one crafted file block the server.
+  const dimensions = fileManager.probeImageDimensions(buffer);
+  if (dimensions) {
+    uploadedFile.width = dimensions.width;
+    uploadedFile.height = dimensions.height;
+  }
 
   const [storedFile] = await addFiles(mongoId, [uploadedFile]);
 
