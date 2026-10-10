@@ -19,8 +19,16 @@ function removeGalleryImage(viewModel) {
         viewModel.notifier.success(viewModel.t('gallery-remove-image-success'));
         var gallery = viewModel[type + 'Gallery'];
         var status = viewModel[type + 'GalleryStatus'];
-        status(res.files.length);
-        gallery(res.files.reverse());
+        // Remove just this one instead of swapping the whole array for the
+        // server's copy. Replacing it changed the identity of every file,
+        // which cancelled any rename in flight and closed every open inline
+        // editor in the grid — deleting one image should not disturb the rest.
+        var current = gallery();
+        var index = current.findIndex(function (f) {
+          return f.name === data.name;
+        });
+        if (index !== -1) gallery.splice(index, 1);
+        status(gallery().length);
       },
       error: function (err) {
         console.log(err);

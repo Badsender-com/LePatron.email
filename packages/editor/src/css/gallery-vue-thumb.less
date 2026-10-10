@@ -69,7 +69,12 @@
   flex: 0 0 26px;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  width: 100%;
   padding: 0 6px;
+  // cursor deliberately left to inherit the thumbnail's `pointer`: image and
+  // label are one object to drag onto the email, and the band should not
+  // advertise itself as a separate kind of target
   font-size: 10.5px;
   color: @gallery-text;
   white-space: nowrap;
@@ -77,6 +82,27 @@
   text-overflow: ellipsis;
   background: @gallery-surface;
   border-top: 1px solid @gallery-border;
+
+}
+
+// The input replaces the band in place, same metrics, so committing or
+// cancelling does not make the grid jump. `display: block` rather than the
+// band's flex: `align-items` cannot reach an input's value, which lives in
+// shadow DOM, and the inherited ellipsis means nothing on a focused field.
+.gallery-thumb__label--editing {
+  display: block;
+  line-height: 24px;
+  border-top: 1px solid @gallery-cyan;
+  border-radius: 0;
+  cursor: text;
+
+  // The cyan ring is 2.60:1 against white — decoration, not an indicator
+  // (WCAG 1.4.11 asks 3:1). The navy outline carries that job, as it does on
+  // the search box and the chips.
+  &:focus {
+    outline: 2px solid @gallery-navy;
+    outline-offset: -2px;
+  }
 }
 
 .gallery-thumb__badge {
@@ -103,8 +129,9 @@
   top: 4px;
   left: 4px;
   z-index: 2;
-  width: 18px;
-  height: 18px;
+  // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: flex;
   align-items: center;

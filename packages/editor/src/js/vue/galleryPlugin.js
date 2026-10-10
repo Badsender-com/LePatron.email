@@ -95,6 +95,15 @@ function createGalleryPanel(vm) {
     emptyGalleryLabel() {
       return vm.t(`gallery-${this.type}-empty`);
     },
+    // handed down to each thumbnail so the component needs no viewModel of
+    // its own; computed once rather than per cell
+    thumbStrings() {
+      return {
+        remove: vm.t('gallery-remove-image'),
+        renameAction: vm.t('gallery-rename-action'),
+        renameInput: vm.t('gallery-rename-input-label'),
+      };
+    },
     clearSearchLabel() {
       return vm.t('gallery-search-clear');
     },
@@ -149,6 +158,18 @@ function createGalleryPanel(vm) {
     // ISO with the previous grid: delete the image from the gallery
     onRemove(file) {
       vm.removeImage(file, this.type);
+    },
+    // The rename writes into the Knockout observable, not into this mirror:
+    // that array is what the rest of the editor reads, so the optimistic
+    // update has to land there and flow back through the subscription.
+    onRename(file, label) {
+      vm.renameImage(file, this.type, label).then((saved) => {
+        if (saved) vm.notifier.success(vm.t('gallery-rename-image-success'));
+      });
+    },
+    // the thumbnail refused the input before it ever reached the server
+    onRenameRejected(messageKey) {
+      vm.notifier.error(vm.t(messageKey));
     },
     formatLabel(format) {
       return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');
