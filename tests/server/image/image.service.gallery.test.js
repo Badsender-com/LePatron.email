@@ -39,7 +39,7 @@ describe('imageService.renameLabel', () => {
     jest.clearAllMocks();
   });
 
-  it('renomme le libellé en une seule mise à jour atomique', async () => {
+  it('renames the label in a single atomic update', async () => {
     const gallery = { files: [{ name: IMAGE_NAME, label: 'nouveau.jpg' }] };
     Galleries.findOneAndUpdate.mockResolvedValue(gallery);
 
@@ -56,7 +56,7 @@ describe('imageService.renameLabel', () => {
     expect(Galleries.findOne).not.toHaveBeenCalled();
   });
 
-  it('lève GALLERY_NOT_FOUND si la galerie est introuvable', async () => {
+  it('raises GALLERY_NOT_FOUND when the gallery does not exist', async () => {
     Galleries.findOneAndUpdate.mockResolvedValue(null);
     Galleries.exists.mockResolvedValue(null);
 
@@ -65,7 +65,7 @@ describe('imageService.renameLabel', () => {
     ).rejects.toThrow('GALLERY_NOT_FOUND');
   });
 
-  it("lève GALLERY_IMAGE_NOT_FOUND si l'image n'est pas dans la galerie", async () => {
+  it('raises GALLERY_IMAGE_NOT_FOUND when the image is not in the gallery', async () => {
     Galleries.findOneAndUpdate.mockResolvedValue(null);
     Galleries.exists.mockResolvedValue({ _id: 'gallery-1' });
 
@@ -86,7 +86,7 @@ describe('imageService.assertGalleryOwnership', () => {
     jest.clearAllMocks();
   });
 
-  it('ne lève rien si un mailing du groupe possède la galerie', async () => {
+  it('passes when a mailing of the group owns the gallery', async () => {
     Mailings.findOne.mockResolvedValue({ _id: MONGO_ID });
     Templates.findOne.mockResolvedValue(null);
 
@@ -95,7 +95,7 @@ describe('imageService.assertGalleryOwnership', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('ne lève rien si un template du groupe possède la galerie', async () => {
+  it('passes when a template of the group owns the gallery', async () => {
     Mailings.findOne.mockResolvedValue(null);
     Templates.findOne.mockResolvedValue({ _id: MONGO_ID });
 
@@ -104,7 +104,7 @@ describe('imageService.assertGalleryOwnership', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('lève Forbidden si ni mailing ni template du groupe ne correspond', async () => {
+  it('raises Forbidden when neither a mailing nor a template matches', async () => {
     Mailings.findOne.mockResolvedValue(null);
     Templates.findOne.mockResolvedValue(null);
 
@@ -113,7 +113,7 @@ describe('imageService.assertGalleryOwnership', () => {
     ).rejects.toThrow('FORBIDDEN_GALLERY_ACCESS');
   });
 
-  it("scope la requête au groupe de l'utilisateur (_company)", async () => {
+  it('scopes the query to the user group', async () => {
     Mailings.findOne.mockResolvedValue({ _id: MONGO_ID });
     Templates.findOne.mockResolvedValue(null);
 

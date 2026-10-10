@@ -4,6 +4,8 @@
 // Emits:
 //   - `select` (file): click to use the image (KO $root.addImage)
 //   - `remove` (file): delete the image (KO $root.removeImage) — ISO with old grid
+const { fileExt } = require('../../../../../../shared/gallery/filter.js');
+
 module.exports = {
   name: 'Thumb',
   props: {
@@ -13,13 +15,15 @@ module.exports = {
     label() {
       return this.file.label || this.file.name;
     },
+    // the same reader the filter chips use, so a thumbnail and the chip that
+    // selected it can never disagree on what format an image is
     format() {
-      const match = /\.([a-z0-9]+)$/i.exec(this.file.name || '');
-      return match ? match[1].toLowerCase() : '';
+      return fileExt(this.file);
     },
-    // JPG has no transparency → solid background instead of the checkerboard
+    // JPG has no transparency → solid background instead of the checkerboard.
+    // fileExt already folds jpeg into jpg.
     isSolid() {
-      return this.format === 'jpg' || this.format === 'jpeg';
+      return this.format === 'jpg';
     },
     isGif() {
       return this.format === 'gif';

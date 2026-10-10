@@ -19,6 +19,10 @@ const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { SORT_BY_VALUES } = require('../../shared/gallery/filter.js');
+const {
+  sanitizeLabel,
+  MAX_LABEL_LENGTH,
+} = require('../../shared/gallery/label.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -495,6 +499,11 @@ async function list(req, res, next) {
   if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
     return next(createError.BadRequest(ERROR_CODES.INVALID_SORT_PARAM));
   }
+  // filtering folds every label against the needle on every request; no label
+  // can exceed MAX_LABEL_LENGTH, so a longer needle could only match nothing
+  if (typeof search === 'string' && search.length > MAX_LABEL_LENGTH) {
+    return next(createError.BadRequest(ERROR_CODES.SEARCH_TOO_LONG));
+  }
 
   const gallery = await imageService.findOrCreateGallery(mongoId);
   const files = imageService.filterGalleryFiles(gallery.files, {
@@ -522,11 +531,14 @@ async function updateLabel(req, res, next) {
   const { mongoId, imageName } = req.params;
   const { label } = req.body;
 
-  if (!label || typeof label !== 'string' || label.trim() === '') {
-    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
-  }
-  if (label.length > 255) {
+  if (typeof label === 'string' && label.length > MAX_LABEL_LENGTH) {
     return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
+  }
+  // the same cleanup an upload goes through, so one path cannot store a label
+  // the other would refuse
+  const cleanLabel = sanitizeLabel(label);
+  if (!cleanLabel) {
+    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
   }
 
   // the imageName is technically prefixed by its gallery's mongoId: enforce the
@@ -543,7 +555,7 @@ async function updateLabel(req, res, next) {
   const gallery = await imageService.renameLabel(
     mongoId,
     imageName,
-    label.trim()
+    cleanLabel
   );
   const file = gallery.files.find((f) => f.name === imageName);
   res.json(file);

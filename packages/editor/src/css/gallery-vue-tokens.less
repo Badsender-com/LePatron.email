@@ -1,0 +1,31 @@
+// Vue gallery panel — shared design tokens (US-04+)
+//
+// Aliased from the design-system tokens (style_variables.less), in scope
+// because the gallery stylesheets are imported from badsender-editor.less.
+// Kept in their own file so the panel and the thumbnail can each import them
+// without depending on the order badsender-editor.less imports them in.
+//
+// The greys below are NOT in style_variables.less, which carries the brand
+// (white-label) colours only. They are named here rather than spelled out at
+// each use, so the next change happens in one place — and each carries the
+// WCAG ratio it was picked for, because a grey that drifts a shade lighter
+// stops being legible without anything flagging it.
+
+@gallery-navy: @bs-primary-color;
+@gallery-cyan: @bs-accent-color;
+@gallery-cyan-soft: tint(@bs-accent-color, 90%);
+
+@gallery-surface: #fff;
+// mockup --lp-panel-alt: the input sits a shade below the panel
+@gallery-surface-alt: #f9fafb;
+@gallery-grey: #f5f5f5;
+
+// mockup --lp-border / --lp-border-strong
+@gallery-border: #e4e7eb;
+@gallery-border-strong: #cfd4da;
+
+@gallery-text: #333;
+// 5.87:1 on white — body copy and chip labels, down to 11px
+@gallery-text-muted: #5b6670;
+// 4.39:1 on white, 4.20:1 on @gallery-surface-alt — meaningful icons need 3:1
+@gallery-text-faint: #6f7a82;

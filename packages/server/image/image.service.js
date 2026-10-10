@@ -19,6 +19,7 @@ const modelsUtils = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { filterGalleryFiles } = require('../../shared/gallery/filter.js');
+const { labelForUpload } = require('../../shared/gallery/label.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -106,7 +107,7 @@ function toGalleryFile(file) {
   const { uploadedName, ...stored } = file;
   return {
     ...stored,
-    label: uploadedName || file.originalName || file.name,
+    label: labelForUpload(file.name, uploadedName || file.originalName),
     source: 'upload',
     externalMetadata: {},
     uploadedAt: new Date(),
