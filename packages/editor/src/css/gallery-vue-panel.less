@@ -233,7 +233,11 @@
 // single seam, which is what makes the pairs read as pairs.
 .gallery-tooltip__meta {
   display: grid;
-  grid-template-columns: auto 1fr;
+  // Both columns sized to their content, and the pair centred as a block.
+  // `1fr` on the second stretched it to the full width, which pinned the
+  // labels to the left edge and left the slack on the right.
+  grid-template-columns: auto auto;
+  justify-content: center;
   // 10px between the columns, so the seam is a gutter and not a collision
   gap: 2px 10px;
   margin: 0;
