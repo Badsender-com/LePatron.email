@@ -229,17 +229,22 @@
   overflow-wrap: anywhere;
 }
 
+// Labels ragged-right against values ragged-left: the two columns meet at a
+// single seam, which is what makes the pairs read as pairs.
 .gallery-tooltip__meta {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 1px 8px;
+  // 10px between the columns, so the seam is a gutter and not a collision
+  gap: 2px 10px;
   margin: 0;
 
   dt {
+    text-align: right;
     opacity: 0.7;
   }
 
   dd {
     margin: 0;
+    text-align: left;
   }
 }
