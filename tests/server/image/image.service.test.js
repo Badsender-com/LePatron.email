@@ -178,6 +178,36 @@ describe('image.service.addFiles', () => {
     ]);
   });
 
+  // The uploader slugs the stored file name and lowercases it. The label is
+  // what the user reads and searches, so it keeps the name they chose.
+  it('labels an upload with the name the user gave it, not the slug', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const [stored] = await imageService.addFiles(MONGO_ID, [
+      {
+        name: `${MONGO_ID}-abc123.jpg`,
+        originalName: 'mon-image.jpg',
+        uploadedName: 'Mon Image.jpg',
+      },
+    ]);
+
+    expect(stored.label).toBe('Mon Image.jpg');
+    // the slug still keys the template assets map, untouched
+    expect(stored.originalName).toBe('mon-image.jpg');
+    // and the helper field is not stored twice
+    expect(stored).not.toHaveProperty('uploadedName');
+  });
+
+  it('falls back to the slug when no uploaded name reached the service', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const [stored] = await imageService.addFiles(MONGO_ID, [
+      { name: `${MONGO_ID}-abc123.jpg`, originalName: 'mon-image.jpg' },
+    ]);
+
+    expect(stored.label).toBe('mon-image.jpg');
+  });
+
   it('creates the gallery first when the creation has none yet', async () => {
     Galleries.findOne.mockResolvedValue(null);
     const save = jest.fn().mockResolvedValue({ files: [] });

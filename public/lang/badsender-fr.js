@@ -27,6 +27,9 @@ module.exports = {
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",
+  'gallery-search-placeholder': 'Rechercher une image…',
+  'gallery-search-clear': 'Effacer la recherche',
+  'gallery-search-no-result': 'Aucune image ne correspond à cette recherche',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
 
