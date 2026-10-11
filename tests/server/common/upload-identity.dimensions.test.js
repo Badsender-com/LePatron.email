@@ -2,7 +2,7 @@
 
 const {
   probeImageDimensions,
-} = require('../../../packages/server/common/file-manage.service.js');
+} = require('../../../packages/server/common/upload-identity.service.js');
 
 // A JPEG keeps its dimensions in SOF0, which sits after APP1 — and a camera
 // fills APP1 with an EXIF thumbnail. 65533 is the largest a segment can

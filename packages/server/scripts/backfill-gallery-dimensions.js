@@ -32,6 +32,7 @@ const mongoose = require('mongoose');
 const config = require('../node.config.js');
 const { Galleries } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
+const uploadIdentity = require('../common/upload-identity.service.js');
 
 const isDryRun = process.argv.includes('--dry-run');
 
@@ -139,7 +140,7 @@ function readDimensions(imageName) {
 
     function finish() {
       // the shared reader caps what it hands the prober and rounds the result
-      done(fileManager.probeImageDimensions(Buffer.concat(chunks)));
+      done(uploadIdentity.probeImageDimensions(Buffer.concat(chunks)));
     }
   });
 }
