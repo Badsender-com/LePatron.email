@@ -192,6 +192,20 @@
     transform: none;
     transition: none;
   }
+
+  // the card's hover lift is decoration — the border and shadow already signal
+  // hover; drop the travel but keep the colour change
+  .gallery-thumb {
+    transition: border-color 0.12s, box-shadow 0.12s;
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  .gallery-thumb__overlay {
+    transition: none;
+  }
 }
 
 .gallery-thumb__action {

@@ -4,6 +4,10 @@ const $ = require('jquery');
 const ko = require('knockout');
 const _find = require('lodash.find');
 
+// Same budget as the rename and delete calls. A list fetch with no ceiling can
+// strand the panel on "loading…" indefinitely.
+const LOAD_TIMEOUT_MS = 15000;
+
 function galleryLoader(opts) {
   var galleryUrl = opts.fileuploadConfig.url;
 
@@ -19,18 +23,24 @@ function galleryLoader(opts) {
       var status = viewModel[type + 'GalleryStatus'];
       return function () {
         status('loading');
-        // retrieve the full list of remote files
-        $.getJSON(url, function (data) {
-          for (var i = 0; i < data.files.length; i++)
-            data.files[i] = viewModel.remoteFileProcessor(data.files[i]);
-          status(data.files.length);
-          gallery(data.files.reverse());
-        }).fail(function () {
-          status(false);
-          viewModel.notifier.error(
-            viewModel.t('Unexpected error listing files')
-          );
-        });
+        // `$.ajax` rather than `$.getJSON`, only to carry a timeout: a stalled
+        // list fetch would otherwise leave the panel stuck on "loading…"
+        // forever, with no error and no way back.
+        $.ajax({ url: url, dataType: 'json', timeout: LOAD_TIMEOUT_MS })
+          .done(function (data) {
+            for (var i = 0; i < data.files.length; i++)
+              data.files[i] = viewModel.remoteFileProcessor(data.files[i]);
+            status(data.files.length);
+            gallery(data.files.reverse());
+          })
+          .fail(function () {
+            // back to `false`, so the "Load gallery" button returns and the
+            // user can retry rather than being stranded on "loading…".
+            status(false);
+            viewModel.notifier.error(
+              viewModel.t('Unexpected error listing files')
+            );
+          });
       };
     }
 
