@@ -9,6 +9,9 @@ const {
 } = require('../../../../shared/gallery/label.js');
 const { isEditableImage } = require('../../../../shared/gallery/filter.js');
 
+// Same budget as the rename and delete calls.
+const FETCH_TIMEOUT_MS = 15000;
+
 // Reopening the image editor on an image that is already stored — from a
 // gallery thumbnail (US-10) and from the pencil on an image block, which has
 // always done the same thing.
@@ -106,10 +109,18 @@ function openEditorOn(viewModel, { input, storedName, type, sourceLabel }) {
     labelsIn(viewModel, type)
   );
 
+  // `fetch` has no native timeout, so a stalled read of the stored file would
+  // hang the "edit" action with no feedback. Abort it on the same 15s budget
+  // the rename and delete calls use. `AbortController` is available in every
+  // browser the editor already targets.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   // Same origin: the stored file is served by this application, whatever the
   // gallery list happens to carry as a display URL.
   return fetch(`/api/images/${encodeURIComponent(storedName)}`, {
     credentials: 'same-origin',
+    signal: controller.signal,
   })
     .then((response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -129,7 +140,8 @@ function openEditorOn(viewModel, { input, storedName, type, sourceLabel }) {
       console.error('[gallery] could not load the image for editing', error);
       viewModel.notifier.error(viewModel.t('gallery-edit-image-fail'));
       return false;
-    });
+    })
+    .finally(() => clearTimeout(timer));
 }
 
 // The upload widget lives in the `.uploadzone` of the gallery being written

@@ -75,6 +75,7 @@ module.exports = `
       <p
         v-else-if="isEmptyGallery"
         class="gallery-vue-panel__empty"
+        role="status"
         data-gallery-empty
       >{{ emptyGalleryLabel }}</p>
       <recycle-scroller

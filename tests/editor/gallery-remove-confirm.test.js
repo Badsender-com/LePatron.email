@@ -113,3 +113,44 @@ describe('deleting a gallery image', () => {
     expect(message).not.toContain('__');
   });
 });
+
+describe('deleting a gallery image — when the request fails', () => {
+  beforeEach(() => {
+    window.confirm = jest.fn().mockReturnValue(true);
+  });
+
+  // A stalled connection used to leave the thumbnail in place with no error
+  // and no way to tell whether the delete went through.
+  it('gives the request a timeout', () => {
+    viewModel.removeImage(FILE, 'mailing');
+
+    expect(requests[0].timeout).toBeGreaterThan(0);
+  });
+
+  it('tells the user when the delete is refused, and keeps the image', () => {
+    // drive the error branch jQuery would call
+    $.ajax = (settings) => {
+      settings.error({ status: 500 }, 'error');
+      return settings;
+    };
+
+    viewModel.removeImage(FILE, 'mailing');
+
+    // `t` resolves the key to its French string here, so assert an error was
+    // shown and the image survived, not the raw key
+    expect(viewModel.notifier.error).toHaveBeenCalledTimes(1);
+    expect(viewModel.mailingGallery()).toHaveLength(1);
+  });
+
+  it('tells the user when the delete times out', () => {
+    $.ajax = (settings) => {
+      settings.error({ status: 0 }, 'timeout');
+      return settings;
+    };
+
+    viewModel.removeImage(FILE, 'mailing');
+
+    expect(viewModel.notifier.error).toHaveBeenCalled();
+    expect(viewModel.mailingGallery()).toHaveLength(1);
+  });
+});

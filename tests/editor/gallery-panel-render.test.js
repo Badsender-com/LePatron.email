@@ -103,7 +103,10 @@ describe('gallery panel — rendering', () => {
     const empty = mount([]);
     await Vue.nextTick();
     expect(empty.$el.querySelector('[data-gallery-search]')).toBeNull();
-    expect(empty.$el.querySelector('[data-gallery-empty]')).not.toBeNull();
+    const emptyMessage = empty.$el.querySelector('[data-gallery-empty]');
+    expect(emptyMessage).not.toBeNull();
+    // announces itself when the grid empties out, like the no-result sibling
+    expect(emptyMessage.getAttribute('role')).toBe('status');
     empty.$destroy();
   });
 

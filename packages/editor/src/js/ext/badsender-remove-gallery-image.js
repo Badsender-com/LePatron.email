@@ -2,7 +2,11 @@
 
 var console = require('console');
 var $ = require('jquery');
-var ko = require('knockout');
+
+// Matches the rename extension's budget. Without it, a stalled connection
+// leaves the thumbnail in place with no error and no way to tell whether the
+// delete went through.
+var TIMEOUT_MS = 15000;
 
 function removeGalleryImage(viewModel) {
   viewModel.removeImage = function (data, type) {
@@ -32,6 +36,7 @@ function removeGalleryImage(viewModel) {
       // Use `type` because `method` is not supported jQuery prior to 1.9.0.
       // actual bower version is 1.12.4 :(
       type: 'DELETE',
+      timeout: TIMEOUT_MS,
       success: function (res) {
         viewModel.notifier.success(viewModel.t('gallery-remove-image-success'));
         var gallery = viewModel[type + 'Gallery'];

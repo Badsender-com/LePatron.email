@@ -86,9 +86,10 @@ describe('editGalleryImage — the handover', () => {
       panel('mailing')
     );
 
-    expect(global.fetch).toHaveBeenCalledWith(`/api/images/${PNG}`, {
-      credentials: 'same-origin',
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/images/${PNG}`,
+      expect.objectContaining({ credentials: 'same-origin' })
+    );
   });
 
   it('hands the file to the upload widget of its own pane', async () => {

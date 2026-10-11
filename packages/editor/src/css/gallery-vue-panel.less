@@ -58,6 +58,8 @@
   font-family: inherit;
   color: @gallery-text;
   background: @gallery-surface-alt;
+  // the focus ring and the background used to snap in; ease them
+  transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
 
   // The cyan ring is brand decoration: at 2.60:1 against white it cannot be
   // the focus indicator on its own (WCAG 1.4.11 asks 3:1). The navy outline
@@ -96,6 +98,7 @@
   cursor: pointer;
   background: transparent;
   color: @gallery-text-faint;
+  transition: color 0.12s;
 
   &:hover {
     color: @gallery-navy;
@@ -167,6 +170,18 @@
   }
 }
 
+// A short fade, so a message or a tooltip that was absent a frame ago eases in
+// rather than snapping. Shared by the empty states and the tooltip. Honoured
+// at mount time, so it works on `v-if` elements without a Vue transition.
+@keyframes gallery-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .gallery-vue-panel__empty {
   flex: 1 1 auto;
   margin: 0;
@@ -176,6 +191,7 @@
   // 5.87:1 — this is the one message a user must read to understand an empty
   // grid, so it cannot be the least legible text in the panel
   color: @gallery-text-muted;
+  animation: gallery-fade-in 0.15s ease-out;
 }
 
 .gallery-vue-panel__count {
@@ -219,6 +235,18 @@
   // the panel caps maxHeight to the room it has; this keeps a long label from
   // spilling past that cap rather than being cut by the panel's own edge
   overflow: hidden;
+  // eases in after the 500ms open delay instead of popping; closing stays
+  // immediate (v-if unmount), which is what "leave dismisses it" wants
+  animation: gallery-fade-in 0.12s ease-out;
+}
+
+// Motion is decoration here — every end state is reached instantly without it.
+// Honour the system preference by dropping the fades and the card lift.
+@media (prefers-reduced-motion: reduce) {
+  .gallery-vue-panel__empty,
+  .gallery-tooltip {
+    animation: none;
+  }
 }
 
 .gallery-tooltip__label {
