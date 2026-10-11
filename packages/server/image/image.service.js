@@ -13,6 +13,7 @@ const {
   Templates,
 } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
+const uploadIdentity = require('../common/upload-identity.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 const modelsUtils = require('../utils/model.js');
@@ -185,7 +186,7 @@ async function createFromUrl(mongoId, imageUrl) {
   // goes through the upload parser that captures them. Through the shared
   // reader, which caps how much of the buffer it hands to the prober —
   // measuring the whole 10MB download let one crafted file block the server.
-  const dimensions = fileManager.probeImageDimensions(buffer);
+  const dimensions = uploadIdentity.probeImageDimensions(buffer);
   if (dimensions) {
     uploadedFile.width = dimensions.width;
     uploadedFile.height = dimensions.height;

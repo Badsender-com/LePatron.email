@@ -7,6 +7,8 @@ jest.mock('../../../packages/server/utils/outbound-host.js', () => ({
 jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   list: jest.fn().mockResolvedValue([]),
+}));
+jest.mock('../../../packages/server/common/upload-identity.service.js', () => ({
   // the shared reader: it caps what it hands the prober, which is what keeps
   // a crafted 10MB download from blocking the event loop
   probeImageDimensions: jest.fn().mockReturnValue(null),
@@ -30,6 +32,7 @@ const {
   assertOutboundHostAllowed,
 } = require('../../../packages/server/utils/outbound-host.js');
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
+const uploadIdentity = require('../../../packages/server/common/upload-identity.service.js');
 const {
   Galleries,
 } = require('../../../packages/server/common/models.common.js');
@@ -101,14 +104,14 @@ describe('image.service.createFromUrl', () => {
   it('measures the download through the shared reader, not the raw buffer', async () => {
     mockImageResponse(Buffer.from('imagedata'));
     Galleries.findOne.mockResolvedValue({ files: [] });
-    fileManager.probeImageDimensions.mockReturnValue({
+    uploadIdentity.probeImageDimensions.mockReturnValue({
       width: 640,
       height: 480,
     });
 
     const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
 
-    expect(fileManager.probeImageDimensions).toHaveBeenCalledTimes(1);
+    expect(uploadIdentity.probeImageDimensions).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ width: 640, height: 480 });
   });
 

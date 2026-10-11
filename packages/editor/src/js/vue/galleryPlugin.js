@@ -112,9 +112,13 @@ function createGalleryPanel(vm) {
         uploadedAt: vm.t('gallery-tooltip-uploaded-at'),
       };
     },
+    // Three of these carry a `__label__` token the thumbnail substitutes for
+    // itself: the bag is computed once for the whole panel, and the accessible
+    // name of an icon button has to name the image it acts on.
     thumbStrings() {
       return {
         remove: vm.t('gallery-remove-image'),
+        editAction: vm.t('gallery-edit-action'),
         renameAction: vm.t('gallery-rename-action'),
         renameInput: vm.t('gallery-rename-input-label'),
       };
@@ -180,6 +184,12 @@ function createGalleryPanel(vm) {
     // ISO with the previous grid: click replaces the selected email image
     onSelect(file) {
       vm.addImage(file);
+    },
+    // US-10 — reopen the image editor on an image already in the gallery.
+    // The panel's own root is what the extension uses to find the upload
+    // widget of this pane rather than the other one's.
+    onEdit(file) {
+      vm.editGalleryImage(file, this.type, this.$el);
     },
     // ISO with the previous grid: delete the image from the gallery
     onRemove(file) {

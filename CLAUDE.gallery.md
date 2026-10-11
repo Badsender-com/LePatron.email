@@ -38,7 +38,7 @@ Conséquences concrètes à respecter :
 - L'upload direct dans l'email continue de déclencher le resize auto
 - La suppression d'une image dans la galerie ne propage rien dans les emails (comportement actuel)
 - Pas de notion de "corbeille" : la suppression reste définitive et immédiate (comme aujourd'hui)
-- Pas d'avertissement à la suppression (l'image dans les emails n'est pas affectée, donc rien à avertir)
+- ~~Pas d'avertissement à la suppression~~ — **révisé le 2026-10-11 à la demande du PO.** Un `window.confirm` protège désormais la suppression : l'US-08 a remplacé le ✕ isolé dans un coin par une corbeille au milieu d'une barre de trois icônes révélée au survol, un clic bien plus facile à manquer. La boîte nomme l'image et rappelle que les emails qui l'utilisent ne sont pas touchés. Même procédé que pour supprimer un commentaire ou abandonner un bloc en cours.
 - L'API consommée par Mosaico reste compatible à 100%
 
 **Tout ce qui n'est pas explicitement listé dans le périmètre V1 (section 3) doit conserver le comportement actuel.**
@@ -74,9 +74,9 @@ Conséquences concrètes à respecter :
 
 4. **Actions sur une image**
 
-   - **Éditer** : relance l'éditeur Konva sur l'image existante (NOUVEAU)
+   - **Éditer** : relance l'éditeur Konva sur l'image existante (NOUVEAU). **L'enregistrement ajoute une copie numérotée, il ne remplace jamais l'originale** — le nom de stockage est l'empreinte du contenu, et d'autres emails peuvent déjà utiliser cette image. Voir `docs/adr/0003-editing-a-gallery-image-adds-a-copy.md`, qui explique aussi pourquoi cela contredit le texte de l'US-10.
    - **Renommer le libellé** : le nom de fichier technique reste inchangé (NOUVEAU)
-   - **Supprimer** : ISO comportement actuel, pas d'avertissement, pas de corbeille
+   - **Supprimer** : ISO comportement actuel (définitif, pas de corbeille), mais **avec confirmation** depuis le 2026-10-11 (voir la note en §« Conséquences »)
    - **Télécharger** : ISO comportement actuel
 
 5. **Préparation technique pour évolutions futures**
@@ -97,7 +97,7 @@ Conséquences concrètes à respecter :
 - **Soft delete et corbeille 30 jours** + UI de restauration
 - **Mode Détails** complet (panneau enrichi avec métadonnées étendues, usage, etc.)
 - **Indicateur d'usage** ("utilisée dans X email(s)") affiché ou utilisé
-- **Avertissement à la suppression**
+- ~~**Avertissement à la suppression**~~ — livré avec l'US-08 (confirmation `window.confirm`), à la demande du PO
 - **Question du lien image ↔ email** (cascade ou pas en cas de modification/suppression — décision produit reportée explicitement)
 
 ### Hors scope V3+ (encore plus tard)
@@ -215,7 +215,7 @@ L'UI galerie s'injecte dans l'éditeur Mosaico via le **pattern plugin Vue exist
 1. **Mosaico** : l'API images existante doit rester compatible. C'est la zone la plus risquée. Avant toute modif du modèle de données ou des endpoints, **comprendre exactement comment Mosaico consomme les images** (US-00).
 2. **Vue 2 / Vuetify 1.12** : versions anciennes (Vue 2 en fin de vie). Pas de migration prévue. Choisir des composants/libs compatibles.
 3. **Performance** : galeries de plusieurs centaines d'images chez gros clients (Clarins ~300 utilisateurs, 18 marchés, un template). Virtualisation front + indexation Mongo indispensables.
-4. **Comportement asymétrique upload existant** : upload dans la galerie → déclenche l'éditeur Konva. Upload direct dans l'email → resize auto. **À PRÉSERVER ABSOLUMENT.**
+4. **Comportement asymétrique upload existant** : upload dans la galerie → passe par l'éditeur Konva **avant** l'envoi (étape `cropImage` de la `processQueue`, pas une action de fin d'upload). Upload direct dans l'email → resize auto. **À PRÉSERVER ABSOLUMENT.** L'US-10 branche une troisième entrée sur ce même tuyau plutôt que d'en ouvrir un second.
 
 ---
 

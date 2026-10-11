@@ -1,9 +1,10 @@
 'use strict';
 
-// Gallery thumbnail (US-05, US-11). Bare Vue + inline template, no Vuetify
-// (see AGENTS.md).
+// Gallery thumbnail (US-05, US-08, US-11). Bare Vue + inline template, no
+// Vuetify (see AGENTS.md).
 // Emits:
 //   - `select` (file): click to use the image (KO $root.addImage)
+//   - `edit` (file): reopen the Konva editor on this image (US-10)
 //   - `remove` (file): delete the image (KO $root.removeImage) — ISO with old grid
 //   - `rename` (file, label): a new label was committed (KO $root.renameImage)
 //   - `hover` (file, element) / `unhover`: the panel owns the single metadata
@@ -15,9 +16,15 @@
 // excludes `input, textarea, button, select, option` from its drag handle, so
 // making it a button took the band out of the thumbnail's drag area. The whole
 // thumbnail — image and label — has to stay draggable onto the email. The
-// keyboard path to renaming therefore waits for the dedicated button US-08 puts
-// in the hover overlay, which is what ADR-0002 planned for it anyway.
-const { fileExt } = require('../../../../../../shared/gallery/filter.js');
+// keyboard path to renaming is the overlay's rename button instead, which is
+// what ADR-0002 planned for it anyway.
+//
+// That same exclusion is why the overlay's action bar is kept small and the
+// overlay itself never takes the pointer: see the template below.
+const {
+  fileExt,
+  isEditableImage,
+} = require('../../../../../../shared/gallery/filter.js');
 const {
   sanitizeLabel,
   MAX_LABEL_LENGTH,
@@ -52,6 +59,27 @@ module.exports = {
     isGif() {
       return this.format === 'gif';
     },
+    // The Konva editor is skipped for GIF and SVG by the upload pipeline
+    // itself (badsender-fileupload-extension), because it flattens what it
+    // opens — an animated GIF would come back as a single still frame.
+    //
+    // The button is dropped rather than disabled. Clicking it would have
+    // re-uploaded the identical bytes, and the content-addressed name turns
+    // that into a no-op nothing on screen reports; and a disabled button is
+    // the one place a `title` does not reliably show, so the explanation
+    // would have been invisible anyway. The GIF badge already says why.
+    canEdit() {
+      return isEditableImage(this.file);
+    },
+    editTitle() {
+      return this.withLabel(this.strings.editAction);
+    },
+    renameTitle() {
+      return this.withLabel(this.strings.renameAction);
+    },
+    removeTitle() {
+      return this.withLabel(this.strings.remove);
+    },
     maxLength() {
       return MAX_LABEL_LENGTH;
     },
@@ -68,6 +96,13 @@ module.exports = {
     },
   },
   methods: {
+    // The three overlay buttons are icons with no text, side by side on every
+    // cell. Naming the image in each one is what tells "delete" on this
+    // thumbnail apart from "delete" on the next, both in a screen reader's
+    // list of buttons and for voice control.
+    withLabel(template) {
+      return String(template || '').replace('__label__', this.label);
+    },
     startEdit() {
       if (this.editing) return;
       this.draft = this.label;
@@ -116,22 +151,58 @@ module.exports = {
       @mouseenter="$emit('hover', file, $event.currentTarget)"
       @mouseleave="$emit('unhover')"
     >
-      <button
-        type="button"
-        class="gallery-thumb__remove"
-        :title="strings.remove"
-        :aria-label="strings.remove"
-        @mousedown="onRemoveDown"
-        @click.stop="$emit('remove', file)"
-      >
-        <span class="lucide lucide-x"></span>
-      </button>
       <span v-if="isGif" class="gallery-thumb__badge gallery-thumb__badge--gif">GIF</span>
       <div
         class="gallery-thumb__img"
         :class="{ 'gallery-thumb__img--solid': isSolid }"
       >
         <img :src="file.thumbnailUrl" :alt="label" />
+        <!-- Actions on hover (US-08), inside the image area only: the label
+             band below stays reachable, which is what a rename double-click
+             needs (ADR-0002).
+
+             The overlay keeps \`pointer-events: none\` even while visible, and
+             only the small action bar takes the pointer back. The mockup gave
+             the whole overlay \`pointer-events: auto\` on hover, which would
+             have covered the image area — and jQuery UI's draggable excludes
+             buttons from its handle, so that version made the thumbnail
+             undraggable exactly while the user could see it. -->
+        <div class="gallery-thumb__overlay" data-gallery-overlay>
+          <div class="gallery-thumb__actions">
+            <button
+              v-if="canEdit"
+              type="button"
+              class="gallery-thumb__action"
+              data-gallery-edit
+              :title="editTitle"
+              :aria-label="editTitle"
+              @click.stop="$emit('edit', file)"
+            >
+              <span class="lucide lucide-pencil"></span>
+            </button>
+            <button
+              type="button"
+              class="gallery-thumb__action"
+              data-gallery-rename
+              :title="renameTitle"
+              :aria-label="renameTitle"
+              @click.stop="startEdit"
+            >
+              <span class="lucide lucide-tag"></span>
+            </button>
+            <button
+              type="button"
+              class="gallery-thumb__action gallery-thumb__action--danger"
+              data-gallery-remove
+              :title="removeTitle"
+              :aria-label="removeTitle"
+              @mousedown="onRemoveDown"
+              @click.stop="$emit('remove', file)"
+            >
+              <span class="lucide lucide-trash-2"></span>
+            </button>
+          </div>
+        </div>
       </div>
       <input
         v-if="editing"

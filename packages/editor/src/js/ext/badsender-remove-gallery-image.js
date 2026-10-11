@@ -5,8 +5,25 @@ var $ = require('jquery');
 var ko = require('knockout');
 
 function removeGalleryImage(viewModel) {
-  viewModel.removeImage = function (data, type, event) {
+  viewModel.removeImage = function (data, type) {
     var deleteUrl = data.deleteUrl;
+
+    // A bare window.confirm, the same stop sign this editor already puts in
+    // front of deleting a comment and of discarding a block being built. It
+    // guards the action rather than the button, so a second caller cannot
+    // skip it by accident.
+    //
+    // It names the image: the button that opened it is one of three 24px
+    // icons that appear under the pointer, and a mis-click is the whole
+    // thing being guarded against. It also says what is NOT at stake —
+    // deletion only removes the image from the gallery list, the stored file
+    // stays where it is so emails already built with it keep working.
+    var label = data.label || data.name;
+    if (
+      !window.confirm(viewModel.t('gallery-remove-image-confirm', { label }))
+    ) {
+      return;
+    }
 
     $.ajax({
       url: deleteUrl,

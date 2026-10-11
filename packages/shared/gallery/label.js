@@ -82,8 +82,80 @@ function labelForUpload(storedName, uploadedName) {
   return sanitizeLabel(`${base}.${storedExt[1].toLowerCase()}`);
 }
 
+// " (2)", " (17)" — the series a desktop file manager appends, recognised so
+// that editing a copy continues the series instead of nesting inside it.
+const COPY_SUFFIX = /\s\((\d+)\)$/;
+
+/**
+ * Name the copy that editing an image produces (US-10).
+ *
+ * Editing never replaces the original — the stored name is the md5 of the
+ * content, so the result is always an additional gallery entry. Two entries
+ * under one label would be indistinguishable in the grid and in a search, so
+ * the copy takes the next free number in the series, the way macOS and Windows
+ * both already do it.
+ *
+ * Numbering starts at 2: "(1)" reads as the first of a series, and the first
+ * of the series is the file that has no number at all.
+ *
+ * @param {string} label the label of the image being edited
+ * @param {Array<string>} [existingLabels] every label already in the gallery
+ * @returns {string} a label no image in that list is using
+ */
+function nextCopyLabel(label, existingLabels) {
+  const clean = sanitizeLabel(label);
+  if (!clean) return clean;
+
+  const matched = EXTENSION.exec(clean);
+  const extension = matched ? matched[0] : '';
+  const base = (extension ? clean.slice(0, -extension.length) : clean).replace(
+    COPY_SUFFIX,
+    ''
+  );
+
+  // Case-folded: two labels differing only in case are indistinguishable at a
+  // glance, which is the whole thing this avoids.
+  const taken = new Set(
+    (existingLabels || []).map((value) => String(value).toLowerCase())
+  );
+
+  // At most one more candidate than there are labels can be taken, so this
+  // terminates without needing an arbitrary ceiling.
+  for (let n = 2; n <= taken.size + 2; n++) {
+    const candidate = withinLimit(base, ` (${n})${extension}`);
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  // unreachable: the loop runs one past the number of labels that can collide
+  return withinLimit(base, ` (${taken.size + 2})${extension}`);
+}
+
+// Cut a string to at most `length` UTF-16 code units without splitting a
+// surrogate pair: `slice` counts code units, so a cut inside an emoji would
+// leave a lone high surrogate, which comes back from the database as a
+// replacement character.
+function trimTo(value, length) {
+  if (value.length <= length) return value;
+  const cut = value.slice(0, length);
+  return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+}
+
+// A 255-character label plus " (2).png" is no longer a 255-character label.
+// The base gives way, not the suffix: the number is what makes the name
+// unique, and the extension is what says what the file is. Every branch stays
+// within the cap — including the pathological one where the "extension" alone
+// is longer than the cap — so the name this returns is the name the server's
+// own `sanitizeLabel` would keep, and the uniqueness check above is not made
+// against a string that storage would then truncate to something else.
+function withinLimit(base, suffix) {
+  const room = MAX_LABEL_LENGTH - suffix.length;
+  if (room <= 0) return trimTo(`${base}${suffix}`, MAX_LABEL_LENGTH);
+  if (base.length <= room) return `${base}${suffix}`;
+  return `${trimTo(base, room).trim()}${suffix}`;
+}
+
 module.exports = {
   sanitizeLabel,
   labelForUpload,
+  nextCopyLabel,
   MAX_LABEL_LENGTH,
 };

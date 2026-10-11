@@ -59,14 +59,25 @@ Appelé via le composant jQuery File Upload intégré à Mosaico (binding `fileu
 galerie. Mosaico ajoute ces fichiers à son observable local.
 
 **Comportement critique à préserver :**
-À la fin de l'upload dans la galerie, Mosaico lance automatiquement l'éditeur Konva
-(comportement intentionnel, distinct de l'upload direct dans un bloc email).
+Un fichier déposé sur la galerie passe par l'éditeur Konva **avant** d'être envoyé, pas après :
+`cropImage` est une étape de la `processQueue` de blueimp, et c'est sa résolution qui déclenche
+le POST (`data.process().done(() => data.submit())`). L'éditeur remplace le `File` dans la file
+d'attente, et c'est ce `File`-là qui part. Un upload direct dans un bloc email, lui, est
+redimensionné automatiquement sans passer par l'éditeur — la distinction est intentionnelle.
+
+**Troisième entrée dans ce même tuyau (US-10) :** le bouton « modifier » d'une vignette, et le
+crayon d'une image déjà posée dans l'email, ne parlent pas à Konva directement. Ils relisent les
+octets stockés, en font un `File`, et le confient au même widget d'upload — qui ouvre l'éditeur
+par la même étape `cropImage`. Le drapeau `editingExistingImage` est la seule chose qui distingue
+ce cas d'un import : il fait lire au bouton d'enregistrement « Enregistrer comme nouveau fichier »,
+parce que c'est ce qui se passe (voir `docs/adr/0003-editing-a-gallery-image-adds-a-copy.md`).
+GIF et SVG ne passent jamais par l'éditeur, qui les aplatirait.
 
 ---
 
 ### 1.3 `DELETE /api/images/:imageName` — supprimer une image
 
-Appelé via le bouton ✕ dans la galerie Mosaico. Requête XHR uniquement (`req.xhr` vérifié côté serveur).
+Appelé via le bouton corbeille de la barre d'actions d'une vignette (US-08 ; c'était le ✕ en haut à gauche avant elle). Requête XHR uniquement (`req.xhr` vérifié côté serveur).
 
 **Réponse attendue :**
 
