@@ -97,6 +97,7 @@ module.exports = `
             :file="item"
             :strings="thumbStrings"
             @select="onSelect"
+            @edit="onEdit"
             @remove="onRemove"
             @rename="onRename"
             @reject="onRenameRejected"

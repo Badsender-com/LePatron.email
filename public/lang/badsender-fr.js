@@ -24,7 +24,13 @@ module.exports = {
   'gallery-template': 'COMMUN AU TEMPLATE',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
-  'gallery-remove-image': "Supprimer l'image de la galerie",
+  'gallery-remove-image': 'Supprimer __label__',
+  // The no-break spaces inside the French quotation marks are escaped:
+  // invisible in the file, they get replaced by an ordinary space at the
+  // first copy-paste.
+  'gallery-remove-image-confirm':
+    'Supprimer «\u00a0__label__\u00a0» de la galerie ?\n\n' +
+    "L'image disparaît de la liste. Les emails qui l'utilisent déjà ne sont pas modifiés.",
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",
@@ -54,6 +60,10 @@ module.exports = {
   'gallery-rename-image-fail':
     "Le libellé n'a pas pu être enregistré, l'ancien a été rétabli",
   'gallery-rename-action': 'Renommer __label__',
+  'gallery-edit-action': 'Modifier __label__',
+  'gallery-edit-image-unsupported':
+    'Les images GIF et SVG ne peuvent pas être retouchées dans l’éditeur',
+  'gallery-edit-image-fail': "L'image n'a pas pu être ouverte dans l'éditeur",
   'gallery-rename-input-label': "Nouveau libellé de l'image",
   // the locale tag the tooltip formats its date with
   'gallery-date-locale': 'fr-FR',
@@ -128,6 +138,10 @@ module.exports = {
   'editor-text-font': 'Police',
   cancel: 'Annuler',
   upload: 'Enregistrer',
+  // Reopening the editor on a stored image can only ever add one: the stored
+  // name is the md5 of the content, so the original is never overwritten.
+  // The button says so rather than leaving it unsaid.
+  'upload-as-new-file': 'Enregistrer comme nouveau fichier',
 
   // Profile form esp
   'sender-name': "Nom de l'expéditeur",

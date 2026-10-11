@@ -123,12 +123,78 @@
   color: @gallery-navy;
 }
 
-// Delete button — ISO with the old grid, revealed on hover (overlay styling comes in US-08)
-.gallery-thumb__remove {
+// Actions on hover (US-08) — edit, rename, delete, in the image area only.
+//
+// The scrim is decorative: it darkens the bottom of the image so a white
+// action bar stays legible over a light photo. It must NEVER take the pointer,
+// hence `pointer-events: none` here with no hover override — only the bar
+// itself takes it back below. The mockup flipped the whole overlay to
+// `pointer-events: auto` on hover, which would have put a transparent lid over
+// the image area; jQuery UI's draggable excludes buttons from its handle, so
+// that version made the thumbnail undraggable exactly while it was visible.
+.gallery-thumb__overlay {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 4px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 55%,
+    fade(@gallery-navy, 75%) 100%
+  );
+  transition: opacity 0.12s ease-out;
+}
+
+// Discreet on arrival: the bar rises by its own padding rather than appearing
+// in place. `prefers-reduced-motion` keeps the fade, which carries the
+// information, and drops the travel, which does not.
+.gallery-thumb__actions {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: fade(@gallery-surface, 96%);
+  box-shadow: 0 1px 4px fade(@gallery-navy, 30%);
+  // No target while the overlay is hidden. The bar sits at the bottom-centre
+  // of the image area, so on a touch screen — where there is no hover and the
+  // overlay never fades in — the first tap there would otherwise hit an
+  // invisible button (the trash, worst of all) instead of selecting the image.
+  // It is handed the pointer back only when the overlay is actually shown.
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: transform 0.12s ease-out;
+}
+
+// Shown on hover, and on focus so the buttons can be reached from a keyboard —
+// a control that is focusable but invisible is worse than one that is neither.
+.gallery-thumb:hover .gallery-thumb__overlay,
+.gallery-thumb:focus-within .gallery-thumb__overlay {
+  opacity: 1;
+}
+
+.gallery-thumb:hover .gallery-thumb__actions,
+.gallery-thumb:focus-within .gallery-thumb__actions {
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-thumb__actions {
+    transform: none;
+    transition: none;
+  }
+}
+
+.gallery-thumb__action {
   // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
   width: 24px;
   height: 24px;
@@ -139,18 +205,34 @@
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  background: fade(@gallery-navy, 85%);
-  color: @gallery-surface;
-  opacity: 0;
-  transition: opacity 0.12s;
+  background: transparent;
+  // 5.87:1 on the bar — an icon carrying the whole meaning of a button is held
+  // to text contrast, not to the 3:1 of a decorative glyph
+  color: @gallery-text-muted;
 
   .lucide {
     font-size: 12px;
   }
+
+  &:hover {
+    background: @gallery-cyan-soft;
+    color: @gallery-navy;
+  }
+
+  // Same navy ring as the search box and the chips. `outline-offset: -1px`
+  // keeps it inside the bar, which is 28px tall and would otherwise clip it.
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: -1px;
+  }
 }
 
-.gallery-thumb:hover .gallery-thumb__remove {
-  opacity: 1;
+// Only the destructive one is coloured, and only on hover: colour carries
+// meaning here rather than decorating three identical buttons
+// (docs/UX_GUIDELINES.md, "Action Icon Color Rules").
+.gallery-thumb__action--danger:hover {
+  background: @gallery-danger-soft;
+  color: @gallery-danger;
 }
 
 // Compact drag proxy (appended to #page while dragging a thumbnail).

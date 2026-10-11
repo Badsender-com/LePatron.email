@@ -194,6 +194,7 @@ var start = function (
         editor_background_save: vm.t('editor-background-save'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
+        upload_as_new: vm.t('upload-as-new-file'),
       },
     };
     // fileUpload options.

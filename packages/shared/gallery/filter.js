@@ -46,6 +46,16 @@ const fileExt = (file) => {
   return match ? normalizeExt(match[1].toLowerCase()) : '';
 };
 
+// The image editor flattens whatever it opens: an animated GIF comes back as a
+// single still frame, and an SVG is rasterised. So those two are not offered to
+// it — the thumbnail hides its edit button (US-08) and the edit extension
+// refuses the action (US-10). One predicate, so the two cannot drift apart and
+// leave a button that does nothing: editing an unchanged image re-uploads
+// identical bytes, which the content-addressed name turns into a silent no-op.
+const NON_EDITABLE_FORMATS = ['gif', 'svg'];
+
+const isEditableImage = (file) => !NON_EDITABLE_FORMATS.includes(fileExt(file));
+
 /**
  * @param {Array<object>} files gallery files, as the Gallery getter exposes them
  * @param {{search?: string, format?: string, sortBy?: string}} [criteria]
@@ -78,5 +88,7 @@ function filterGalleryFiles(files, { search, format, sortBy } = {}) {
 module.exports = {
   filterGalleryFiles,
   fileExt,
+  isEditableImage,
+  NON_EDITABLE_FORMATS,
   SORT_BY_VALUES,
 };

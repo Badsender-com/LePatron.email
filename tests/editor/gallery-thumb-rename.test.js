@@ -13,7 +13,8 @@ const Vue = require('vue/dist/vue.common');
 const Thumb = require('../../packages/editor/src/js/vue/components/gallery/thumb.js');
 
 const STRINGS = {
-  remove: 'remove',
+  remove: 'Delete __label__',
+  editAction: 'Edit __label__',
   renameAction: 'Rename __label__',
   renameInput: 'rename-input',
 };
@@ -242,7 +243,7 @@ describe('thumbnail rename — collisions with the other actions', () => {
     vm.draft = 'jamais enregistre.png';
 
     vm.$el
-      .querySelector('.gallery-thumb__remove')
+      .querySelector('[data-gallery-remove]')
       .dispatchEvent(new Event('mousedown'));
     input(vm) && input(vm).dispatchEvent(new Event('blur'));
     await Vue.nextTick();
