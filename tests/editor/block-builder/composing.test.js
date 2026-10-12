@@ -16,7 +16,7 @@ describe('composing', () => {
   it('starts empty', () => {
     const { modal } = open();
 
-    expect(modal.state.elements).toEqual([]);
+    expect(modal.columnElements).toEqual([]);
     expect(modal.isEmpty).toBe(true);
     expect(modal.html).toBe('');
   });
@@ -26,7 +26,7 @@ describe('composing', () => {
 
     modal.addElement('button');
 
-    expect(modal.state.elements).toHaveLength(1);
+    expect(modal.columnElements).toHaveLength(1);
     expect(modal.selected.type).toBe('button');
     // The template default, not an empty object.
     expect(modal.selected.backgroundColor).toBe('#000000');
@@ -38,7 +38,7 @@ describe('composing', () => {
     modal.addElement('text');
     modal.addElement('text');
 
-    const [first, second] = modal.state.elements;
+    const [first, second] = modal.columnElements;
     expect(first.id).not.toBe(second.id);
   });
 
@@ -59,7 +59,7 @@ describe('composing', () => {
 
     modal.applySetting({ key: 'content', value: 'Second' });
 
-    expect(modal.state.elements.find((e) => e.id === first).content).toBe('');
+    expect(modal.columnElements.find((e) => e.id === first).content).toBe('');
     expect(modal.selected.content).toBe('Second');
   });
 
@@ -80,7 +80,7 @@ describe('reordering and removing', () => {
     return context;
   }
 
-  const types = (modal) => modal.state.elements.map((element) => element.type);
+  const types = (modal) => modal.columnElements.map((element) => element.type);
 
   it('moves the selected element up', () => {
     const { modal } = withThree();
@@ -92,7 +92,7 @@ describe('reordering and removing', () => {
 
   it('moves it down', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.state.elements[0].id;
+    modal.selectedId = modal.columnElements[0].id;
 
     modal.move(1);
 
@@ -101,19 +101,19 @@ describe('reordering and removing', () => {
 
   it('does not move past either end', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.state.elements[0].id;
+    modal.selectedId = modal.columnElements[0].id;
 
     modal.move(-1);
     expect(types(modal)).toEqual(['text', 'button', 'divider']);
 
-    modal.selectedId = modal.state.elements[2].id;
+    modal.selectedId = modal.columnElements[2].id;
     modal.move(1);
     expect(types(modal)).toEqual(['text', 'button', 'divider']);
   });
 
   it('removes the selected element and selects a neighbour', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.state.elements[1].id;
+    modal.selectedId = modal.columnElements[1].id;
 
     modal.removeSelected();
 

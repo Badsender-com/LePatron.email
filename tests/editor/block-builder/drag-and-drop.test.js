@@ -233,6 +233,6 @@ describe('dropping', () => {
 
     dropAt(doc, 10);
 
-    expect(modal.state.elements).toHaveLength(1);
+    expect(modal.columnElements).toHaveLength(1);
   });
 });

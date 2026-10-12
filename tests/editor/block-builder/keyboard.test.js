@@ -89,7 +89,7 @@ describe('the element list', () => {
 describe('the palette entries', () => {
   const entries = () => Array.from(document.querySelectorAll('.bb-modal__add'));
   const typesOf = (modal) =>
-    modal.state.elements.map((element) => element.type);
+    modal.columnElements.map((element) => element.type);
 
   function key(target, type, name) {
     const event = new window.KeyboardEvent(type, {
@@ -168,7 +168,7 @@ describe('the reorder buttons', () => {
     expect(buttons()[0].disabled).toBe(false);
     expect(buttons()[1].disabled).toBe(true);
 
-    modal.selectedId = modal.state.elements[0].id;
+    modal.selectedId = modal.columnElements[0].id;
     await Vue.nextTick();
 
     expect(buttons()[0].disabled).toBe(true);
