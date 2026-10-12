@@ -817,7 +817,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var blackLinesRegex = /^\s*[\r\n]/gm;
     content = content.replace(blackLinesRegex, '');
 
-    // LAST step, on purpose: put the pasted markup of every HTML code block back,
+    // LAST step, on purpose: put the markup of every synthetic block back,
     // byte for byte, now that none of the transformations above can reach it.
     content = substituteMarkers(content);
 
@@ -831,7 +831,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // The substitution session opens BEFORE the frame is bound: from then on the
-  // HTML code block renders an inert marker instead of the pasted markup, and the
+  // synthetic blocks render an inert marker instead of their markup, and the
   // raw bytes are put back at the very end of the export — after every regex has
   // run. See ext/synthetic-blocks/export-substitution.js.
   //

@@ -151,22 +151,22 @@ function exactZone(html, tag, remaining) {
  * Each zone gives the range of the marker element (`start`, `end`, what the
  * string replacement and the sanitizer keep out) and of its content
  * (`contentStart`, `contentEnd`, the block's markup itself, which is what the
- * composed-block swap replaces). `matched` is the index, in `htmlCodes`, of the
+ * composed-block swap replaces). `matched` is the index, in `markups`, of the
  * stored markup the zone was matched on exactly, or -1 when it was located by
  * counting `<div>`.
  *
  * @param {string} html
- * @param {string[]} [htmlCodes] the markup stored in the mailing's synthetic
+ * @param {string[]} [markups] the markup stored in the mailing's synthetic
  *   blocks, in document order. When given, each zone is matched on it exactly.
  * @returns {Array<{start: number, end: number, contentStart: number,
  *   contentEnd: number, matched: number, markerClass: string}>}
  */
-function findHtmlCodeBlockRanges(html, htmlCodes) {
+function findSyntheticBlockRanges(html, markups) {
   const ranges = [];
   if (!html || typeof html !== 'string') return ranges;
 
   // Empty blocks render no zone at all, and '' would match anywhere.
-  const remaining = (htmlCodes || [])
+  const remaining = (markups || [])
     .map((raw, index) => ({ raw, index }))
     .filter(({ raw }) => typeof raw === 'string' && raw !== '');
 
@@ -201,12 +201,12 @@ function findHtmlCodeBlockRanges(html, htmlCodes) {
  *
  * @param {string} html
  * @param {Function} transform (segment: string) => string
- * @param {string[]} [htmlCodes] see findHtmlCodeBlockRanges
+ * @param {string[]} [markups] see findSyntheticBlockRanges
  * @returns {string}
  */
-function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
+function transformOutsideSyntheticBlocks(html, transform, markups) {
   if (!html || typeof html !== 'string') return html;
-  const ranges = findHtmlCodeBlockRanges(html, htmlCodes);
+  const ranges = findSyntheticBlockRanges(html, markups);
   if (ranges.length === 0) return transform(html);
 
   let result = '';
@@ -224,7 +224,7 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  * Apply a WHOLE-document transform — the sanitizer — to `html`, and put every
  * synthetic block's markup back untouched afterwards.
  *
- * Unlike transformOutsideHtmlCodeBlocks, the transform needs the full document
+ * Unlike transformOutsideSyntheticBlocks, the transform needs the full document
  * to make sense of it, so each block's markup is swapped for an inert token
  * first — ASCII, no markup, which a sanitizer keeps as text — then restored.
  * Same technique as the editor export (packages/editor/src/js/ext/
@@ -250,12 +250,12 @@ function transformOutsideHtmlCodeBlocks(html, transform, htmlCodes) {
  *
  * @param {string} html
  * @param {Function} transform (document: string) => string
- * @param {string[]} [htmlCodes] see findHtmlCodeBlockRanges
+ * @param {string[]} [markups] see findSyntheticBlockRanges
  * @returns {string}
  */
-function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
+function transformDocumentKeepingSyntheticBlocks(html, transform, markups) {
   if (!html || typeof html !== 'string') return transform(html);
-  const ranges = findHtmlCodeBlockRanges(html, htmlCodes).filter(
+  const ranges = findSyntheticBlockRanges(html, markups).filter(
     (range) => range.matched !== -1
   );
   if (ranges.length === 0) return transform(html);
@@ -283,8 +283,8 @@ function transformDocumentKeepingHtmlCodeBlocks(html, transform, htmlCodes) {
 }
 
 module.exports = {
-  transformOutsideHtmlCodeBlocks,
-  transformDocumentKeepingHtmlCodeBlocks,
-  findHtmlCodeBlockRanges,
+  transformOutsideSyntheticBlocks,
+  transformDocumentKeepingSyntheticBlocks,
+  findSyntheticBlockRanges,
   MARKER_CLASSES,
 };

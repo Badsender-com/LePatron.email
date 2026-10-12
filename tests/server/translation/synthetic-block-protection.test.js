@@ -4,8 +4,8 @@ const {
   updatePreviewWithTranslations,
 } = require('../../../packages/server/translation/preview-html-updater');
 const {
-  findHtmlCodeBlockRanges,
-  transformOutsideHtmlCodeBlocks,
+  findSyntheticBlockRanges,
+  transformOutsideSyntheticBlocks,
 } = require('../../../packages/server/translation/synthetic-block-protection.js');
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
@@ -111,10 +111,10 @@ describe('HTML code block protection in previewHtml translation', () => {
   });
 });
 
-describe('findHtmlCodeBlockRanges', () => {
+describe('findSyntheticBlockRanges', () => {
   it('covers the marker element and its content', () => {
     const html = 'before<div class="lp-html-block">x</div>after';
-    const [range] = findHtmlCodeBlockRanges(html);
+    const [range] = findSyntheticBlockRanges(html);
     expect(html.slice(range.start, range.end)).toBe(
       '<div class="lp-html-block">x</div>'
     );
@@ -123,7 +123,7 @@ describe('findHtmlCodeBlockRanges', () => {
   it('counts nested divs so the zone ends at the right closing tag', () => {
     const inner = '<div><div>deep</div></div>';
     const html = `a<div class="lp-html-block">${inner}</div>b`;
-    const [range] = findHtmlCodeBlockRanges(html);
+    const [range] = findSyntheticBlockRanges(html);
     expect(html.slice(range.start, range.end)).toBe(
       `<div class="lp-html-block">${inner}</div>`
     );
@@ -134,7 +134,7 @@ describe('findHtmlCodeBlockRanges', () => {
     const inner =
       '<!--[if mso]><div><![endif]-->kept<!--[if mso]></div><![endif]-->';
     const html = `a<div class="lp-html-block">${inner}</div>b`;
-    const [range] = findHtmlCodeBlockRanges(html);
+    const [range] = findSyntheticBlockRanges(html);
     expect(html.slice(range.start, range.end)).toBe(
       `<div class="lp-html-block">${inner}</div>`
     );
@@ -142,44 +142,44 @@ describe('findHtmlCodeBlockRanges', () => {
 
   it('does not match the block root class', () => {
     expect(
-      findHtmlCodeBlockRanges('<div class="lp-html-block-root">x</div>')
+      findSyntheticBlockRanges('<div class="lp-html-block-root">x</div>')
     ).toEqual([]);
   });
 
   it('does not match a class that merely contains the name', () => {
     expect(
-      findHtmlCodeBlockRanges('<div class="not-lp-html-block-either">x</div>')
+      findSyntheticBlockRanges('<div class="not-lp-html-block-either">x</div>')
     ).toEqual([]);
   });
 
   it('matches when other classes sit alongside', () => {
     const html = '<div class="a lp-html-block b">x</div>';
-    expect(findHtmlCodeBlockRanges(html)).toHaveLength(1);
+    expect(findSyntheticBlockRanges(html)).toHaveLength(1);
   });
 
   // Fail safe, not fail open: better an untranslated tail than corrupted markup.
   it('protects to the end of the document when the markup is unbalanced', () => {
     const html = 'a<div class="lp-html-block"><div>oops</div>tail';
-    const [range] = findHtmlCodeBlockRanges(html);
+    const [range] = findSyntheticBlockRanges(html);
     expect(range.end).toBe(html.length);
   });
 
   it('returns nothing for empty or non-string input', () => {
-    expect(findHtmlCodeBlockRanges('')).toEqual([]);
-    expect(findHtmlCodeBlockRanges(null)).toEqual([]);
+    expect(findSyntheticBlockRanges('')).toEqual([]);
+    expect(findSyntheticBlockRanges(null)).toEqual([]);
   });
 });
 
-describe('transformOutsideHtmlCodeBlocks', () => {
+describe('transformOutsideSyntheticBlocks', () => {
   const shout = (s) => s.toUpperCase();
 
   it('transforms everything when there is no block', () => {
-    expect(transformOutsideHtmlCodeBlocks('abc', shout)).toBe('ABC');
+    expect(transformOutsideSyntheticBlocks('abc', shout)).toBe('ABC');
   });
 
   it('skips the block zone only', () => {
     expect(
-      transformOutsideHtmlCodeBlocks(
+      transformOutsideSyntheticBlocks(
         'a<div class="lp-html-block">keep</div>b',
         shout
       )
@@ -187,15 +187,15 @@ describe('transformOutsideHtmlCodeBlocks', () => {
   });
 
   it('passes through empty and non-string input', () => {
-    expect(transformOutsideHtmlCodeBlocks('', shout)).toBe('');
-    expect(transformOutsideHtmlCodeBlocks(null, shout)).toBeNull();
+    expect(transformOutsideSyntheticBlocks('', shout)).toBe('');
+    expect(transformOutsideSyntheticBlocks(null, shout)).toBeNull();
   });
 });
 
 // The marker's opening tag used to be found by one regex with a lookahead over
 // the attribute list, which backtracked quadratically: seconds of blocked event
 // loop for 100KB of `<div class="`, run synchronously on a duplicate-translate.
-describe('findHtmlCodeBlockRanges on crafted input', () => {
+describe('findSyntheticBlockRanges on crafted input', () => {
   it.each([
     ['unterminated class attributes', '<div class="'.repeat(40000)],
     [
@@ -205,7 +205,7 @@ describe('findHtmlCodeBlockRanges on crafted input', () => {
     ['unclosed tags', '<div '.repeat(100000)],
   ])('stays linear on %s', (_label, crafted) => {
     const started = Date.now();
-    findHtmlCodeBlockRanges(crafted);
+    findSyntheticBlockRanges(crafted);
     expect(Date.now() - started).toBeLessThan(500);
   });
 });
@@ -213,12 +213,12 @@ describe('findHtmlCodeBlockRanges on crafted input', () => {
 // Counting `<div>` cannot tell where pasted markup ends when it is unbalanced —
 // an extra `</div>` closed the zone early and left the rest of the pasted markup
 // to the string replacement. The stored markup says exactly where it ends.
-describe('findHtmlCodeBlockRanges with the stored markup', () => {
+describe('findSyntheticBlockRanges with the stored markup', () => {
   const pasted = '<p>Hello</p></div><p>Hello again</p>';
   const html = `<p>Hello</p><div class="lp-html-block">${pasted}</div><p>Hello</p>`;
 
   it('covers the whole pasted markup, an extra </div> included', () => {
-    const [range] = findHtmlCodeBlockRanges(html, [pasted]);
+    const [range] = findSyntheticBlockRanges(html, [pasted]);
     expect(html.slice(range.start, range.end)).toBe(
       `<div class="lp-html-block">${pasted}</div>`
     );
@@ -229,7 +229,7 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
       html,
       { k: 'Hello' },
       { k: 'Bonjour' },
-      { htmlCodes: [pasted] }
+      { markups: [pasted] }
     );
     expect(result).toBe(
       `<p>Bonjour</p><div class="lp-html-block">${pasted}</div><p>Bonjour</p>`
@@ -238,7 +238,7 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
 
   it('matches two identical blocks in turn', () => {
     const twice = `<div class="lp-html-block">${pasted}</div>x<div class="lp-html-block">${pasted}</div>`;
-    const ranges = findHtmlCodeBlockRanges(twice, [pasted, pasted]);
+    const ranges = findSyntheticBlockRanges(twice, [pasted, pasted]);
     expect(ranges).toHaveLength(2);
     expect(twice.slice(ranges[1].start, ranges[1].end)).toBe(
       `<div class="lp-html-block">${pasted}</div>`
@@ -248,9 +248,10 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
   it('falls back on counting divs when the stored markup does not match', () => {
     const [
       range,
-    ] = findHtmlCodeBlockRanges('a<div class="lp-html-block"><b>x</b></div>b', [
-      '<i>other</i>',
-    ]);
+    ] = findSyntheticBlockRanges(
+      'a<div class="lp-html-block"><b>x</b></div>b',
+      ['<i>other</i>']
+    );
     expect(range).toMatchObject({ start: 1, end: 42, matched: -1 });
   });
 
@@ -258,7 +259,7 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
   // which stored block it is.
   it('gives the content range and the stored markup it matched', () => {
     const doc = `<div class="lp-html-block">${pasted}</div>`;
-    const [range] = findHtmlCodeBlockRanges(doc, ['<i>other</i>', pasted]);
+    const [range] = findSyntheticBlockRanges(doc, ['<i>other</i>', pasted]);
     expect(range.matched).toBe(1);
     expect(range.markerClass).toBe('lp-html-block');
     expect(doc.slice(range.contentStart, range.contentEnd)).toBe(pasted);
@@ -266,7 +267,7 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
 
   it('gives the content range of a zone located by counting divs', () => {
     const doc = 'a<div class="lp-builder-block"><b>x</b></div>b';
-    const [range] = findHtmlCodeBlockRanges(doc);
+    const [range] = findSyntheticBlockRanges(doc);
     expect(range.markerClass).toBe('lp-builder-block');
     expect(doc.slice(range.contentStart, range.contentEnd)).toBe('<b>x</b>');
   });

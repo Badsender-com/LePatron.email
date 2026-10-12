@@ -394,13 +394,13 @@ Deux chemins traduisent une créa, et il fallait les couvrir tous les deux :
 | Chemin         | Mécanisme                          | Exclusion du bloc                                               |
 | -------------- | ---------------------------------- | --------------------------------------------------------------- |
 | `mailing.data` | extraction champ par champ         | `htmlCode` dans `EXCLUDED_FIELDS` (`mosaico-text-extractor.js`) |
-| `previewHtml`  | remplacement de chaînes en aveugle | garde de zone (`html-code-block-protection.js`)                 |
+| `previewHtml`  | remplacement de chaînes en aveugle | garde de zone (`synthetic-block-protection.js`)                 |
 
 Le second était le trou : `updatePreviewWithTranslations` remplace les textes source
 partout dans la chaîne, donc un texte identique à celui d'un bloc natif était aussi
 réécrit **à l'intérieur** du HTML collé.
 
-`transformOutsideHtmlCodeBlocks` applique le remplacement à tous les segments **sauf**
+`transformOutsideSyntheticBlocks` applique le remplacement à tous les segments **sauf**
 les zones `lp-html-block`. La zone est délimitée en comptant la profondeur des `<div>`
 depuis l'élément marqueur, en **ignorant les commentaires HTML** — un commentaire
 conditionnel contient couramment un `<div>` non apparié pour Outlook, qui déséquilibrerait
@@ -457,16 +457,16 @@ Retours de review, corrigés dans la PR :
 | Rôle                          | Fichier                                                                    |
 | ----------------------------- | -------------------------------------------------------------------------- |
 | Descripteurs des blocs        | `packages/shared/synthetic-blocks.js` (éditeur et serveur)                 |
-| Constantes dérivées (éditeur) | `packages/editor/src/js/ext/html-code-block/constants.js`                  |
-| Injection + ordre palette     | `packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js`    |
-| Neutralisation aperçu canvas  | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
-| Zone protégée inliner         | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
-| Limite de taille (éditeur)    | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
-| Prédicats d'état d'un bloc    | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
-| Retrait d'un bloc vide        | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
-| Substitution à l'export       | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
-| Garde de traduction           | `packages/server/translation/html-code-block-protection.js`                |
-| Binding de rendu              | `packages/editor/src/js/bindings/html-code-block.js`                       |
+| Constantes dérivées (éditeur) | `packages/editor/src/js/ext/synthetic-blocks/constants.js`                 |
+| Injection + ordre palette     | `packages/editor/src/js/ext/synthetic-blocks/inject-synthetic-blocks.js`   |
+| Neutralisation aperçu canvas  | `packages/editor/src/js/ext/synthetic-blocks/neutralize-html.js`           |
+| Zone protégée inliner         | `packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js`      |
+| Limite de taille (éditeur)    | `packages/editor/src/js/ext/synthetic-blocks/validate.js`                  |
+| Prédicats d'état d'un bloc    | `packages/editor/src/js/ext/synthetic-blocks/block-state.js`               |
+| Retrait d'un bloc vide        | `packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js`        |
+| Substitution à l'export       | `packages/editor/src/js/ext/synthetic-blocks/export-substitution.js`       |
+| Garde de traduction           | `packages/server/translation/synthetic-block-protection.js`                |
+| Binding de rendu              | `packages/editor/src/js/bindings/synthetic-block.js`                       |
 | Widget `code`                 | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
 | Modale CodeMirror             | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
 | Limite de taille (serveur)    | `packages/server/mailing/synthetic-block-guard.js`                         |

@@ -6,8 +6,8 @@
 
 const jQuery = require('jquery');
 const {
-  detachPastedMarkup,
-  restorePastedMarkup,
+  detachSyntheticMarkup,
+  restoreSyntheticMarkup,
 } = require('../../../packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js');
 
 const $ = jQuery;
@@ -28,13 +28,13 @@ describe('protect-from-inliner', () => {
     const holder = () => doc.querySelector('.lp-html-block').innerHTML;
     const before = holder();
 
-    const detached = detachPastedMarkup($, doc);
+    const detached = detachSyntheticMarkup($, doc);
     expect(holder()).toBe('');
     // Nothing of the pasted markup is reachable while it is detached, which is
     // exactly what keeps the inliner from touching it.
     expect(doc.querySelectorAll('.lp-html-block img')).toHaveLength(0);
 
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(holder()).toBe(before);
   });
 
@@ -42,8 +42,8 @@ describe('protect-from-inliner', () => {
     const pasted =
       'lead<!--[if mso]><table><tr><td>outlook</td></tr></table><![endif]-->tail';
     const doc = buildDoc(BLOCK(pasted));
-    const detached = detachPastedMarkup($, doc);
-    restorePastedMarkup(detached);
+    const detached = detachSyntheticMarkup($, doc);
+    restoreSyntheticMarkup(detached);
     expect(doc.querySelector('.lp-html-block').innerHTML).toBe(pasted);
   });
 
@@ -57,13 +57,13 @@ describe('protect-from-inliner', () => {
       );
     const before = holders();
 
-    restorePastedMarkup(detachPastedMarkup($, doc));
+    restoreSyntheticMarkup(detachSyntheticMarkup($, doc));
     expect(holders()).toEqual(before);
   });
 
   it('leaves the wrapper itself in the document', () => {
     const doc = buildDoc(BLOCK('<b>x</b>'));
-    detachPastedMarkup($, doc);
+    detachSyntheticMarkup($, doc);
     // The wrapper stays, so it keeps behaving like any other template element.
     expect(doc.querySelectorAll('.lp-html-block')).toHaveLength(1);
   });
@@ -71,20 +71,20 @@ describe('protect-from-inliner', () => {
   it('does nothing when there is no HTML code block', () => {
     const doc = buildDoc('<table><tr><td><b>plain</b></td></tr></table>');
     const before = doc.body.innerHTML;
-    const detached = detachPastedMarkup($, doc);
+    const detached = detachSyntheticMarkup($, doc);
     expect(detached).toEqual([]);
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(doc.body.innerHTML).toBe(before);
   });
 
   it('skips an empty block', () => {
     const doc = buildDoc(BLOCK(''));
-    expect(detachPastedMarkup($, doc)).toEqual([]);
+    expect(detachSyntheticMarkup($, doc)).toEqual([]);
   });
 
   it('tolerates a bad restore argument', () => {
-    expect(() => restorePastedMarkup(undefined)).not.toThrow();
-    expect(() => restorePastedMarkup(null)).not.toThrow();
+    expect(() => restoreSyntheticMarkup(undefined)).not.toThrow();
+    expect(() => restoreSyntheticMarkup(null)).not.toThrow();
   });
 
   // The point of the whole module: prove a generic template rule reaches a
@@ -106,9 +106,9 @@ describe('protect-from-inliner', () => {
 
     it('leaves the pasted image untouched while detached', () => {
       const doc = buildDoc(BLOCK('<img src="a.png">'));
-      const detached = detachPastedMarkup($, doc);
+      const detached = detachSyntheticMarkup($, doc);
       inlineImgBorders(doc);
-      restorePastedMarkup(detached);
+      restoreSyntheticMarkup(detached);
       expect(
         doc.querySelector('.lp-html-block img').hasAttribute('style')
       ).toBe(false);
@@ -118,9 +118,9 @@ describe('protect-from-inliner', () => {
       const doc = buildDoc(
         '<img src="template.png">' + BLOCK('<img src="pasted.png">')
       );
-      const detached = detachPastedMarkup($, doc);
+      const detached = detachSyntheticMarkup($, doc);
       inlineImgBorders(doc);
-      restorePastedMarkup(detached);
+      restoreSyntheticMarkup(detached);
 
       expect(
         doc.querySelector('img[src="template.png"]').getAttribute('style')

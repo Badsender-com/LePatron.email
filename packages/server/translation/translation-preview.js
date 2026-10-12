@@ -4,7 +4,7 @@ const mailingService = require('../mailing/mailing.service');
 const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
 const {
-  transformDocumentKeepingHtmlCodeBlocks,
+  transformDocumentKeepingSyntheticBlocks,
 } = require('./synthetic-block-protection.js');
 const {
   findSyntheticBlocks,
@@ -47,7 +47,7 @@ async function buildTranslatedPreview({
   originalTexts,
   translations,
 }) {
-  const htmlCodes = markupsOf(source.data);
+  const markups = markupsOf(source.data);
   // Only the generic keys. A composed block's texts reach the preview
   // through the swap below; replaced here as strings, their source
   // wording would also be rewritten wherever else it appears — in a
@@ -59,7 +59,7 @@ async function buildTranslatedPreview({
       source.previewHtml,
       genericOriginals,
       genericTranslations,
-      { htmlCodes }
+      { markups }
     )
   );
 
@@ -71,7 +71,7 @@ async function buildTranslatedPreview({
   // block had already moved on.
   const translatedMarkups = markupsOf(translatedData);
   const swapped = await runTranslationStep('swapBuilderMarkup', () =>
-    swapBuilderMarkup(translated, htmlCodes, translatedMarkups)
+    swapBuilderMarkup(translated, markups, translatedMarkups)
   );
 
   // Provider output was injected into previewHtml above; sanitize the
@@ -90,7 +90,7 @@ async function buildTranslatedPreview({
   // one for composed blocks. One that matches no stored markup is still
   // found by counting `<div>` from its marker, and kept out all the same.
   const sanitized = await runTranslationStep('sanitizePreview', () =>
-    transformDocumentKeepingHtmlCodeBlocks(
+    transformDocumentKeepingSyntheticBlocks(
       swapped.html,
       sanitizePreviewHtml,
       translatedMarkups

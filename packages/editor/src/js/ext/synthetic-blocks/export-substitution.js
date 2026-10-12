@@ -20,7 +20,8 @@
 // bytes at the very end of the cascade — after every regex has run. The markup is
 // therefore never parsed, never serialized, never pattern-matched.
 //
-// Scope: this only ever touches the inside of an `lp-html-block` zone. Design
+// Scope: this only ever touches the inside of a synthetic block's marker
+// element (`lp-html-block`, `lp-builder-block`). Design
 // system blocks and the template markup have no raw source to substitute and keep
 // their current behaviour, untouched.
 

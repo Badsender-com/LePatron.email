@@ -18,7 +18,7 @@ const {
   updatePreviewWithTranslations,
 } = require('../../../packages/server/translation/preview-html-updater');
 const {
-  findHtmlCodeBlockRanges,
+  findSyntheticBlockRanges,
 } = require('../../../packages/server/translation/synthetic-block-protection.js');
 const {
   findSyntheticBlocks,
@@ -55,15 +55,15 @@ const previewHtml = [
 
 // What the translation controller hands the protection: every synthetic
 // block's markup, in document order, read with the guard's own helper.
-const htmlCodes = findSyntheticBlocks(data).map(htmlOf);
+const markups = findSyntheticBlocks(data).map(htmlOf);
 
 describe('a mailing with both synthetic blocks', () => {
   it('lists the markup of both types, in document order', () => {
-    expect(htmlCodes).toEqual([COMPOSED, PASTED]);
+    expect(markups).toEqual([COMPOSED, PASTED]);
   });
 
   it('finds one zone per block, each ending where its markup does', () => {
-    const ranges = findHtmlCodeBlockRanges(previewHtml, htmlCodes);
+    const ranges = findSyntheticBlockRanges(previewHtml, markups);
 
     expect(ranges).toHaveLength(2);
     expect(previewHtml.slice(ranges[0].start, ranges[0].end)).toBe(
@@ -79,7 +79,7 @@ describe('a mailing with both synthetic blocks', () => {
       previewHtml,
       { k: 'Hello world' },
       { k: 'Bonjour le monde' },
-      { htmlCodes }
+      { markups }
     );
 
     expect(result).toContain(
@@ -107,7 +107,7 @@ describe('a mailing with both synthetic blocks', () => {
       swapped,
       { k: 'Hello world' },
       { k: 'Bonjour le monde' },
-      { htmlCodes: [PASTED, COMPOSED] }
+      { markups: [PASTED, COMPOSED] }
     );
 
     expect(result).toContain(`<div class="lp-html-block">${PASTED}</div>`);

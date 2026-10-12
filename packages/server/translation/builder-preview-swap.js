@@ -1,7 +1,7 @@
 'use strict';
 
 const { BLOCK_BUILDER_BLOCK } = require('../../shared/synthetic-blocks.js');
-const { findHtmlCodeBlockRanges } = require('./synthetic-block-protection.js');
+const { findSyntheticBlockRanges } = require('./synthetic-block-protection.js');
 const logger = require('../utils/logger.js');
 
 // Putting a rebuilt composed block back into previewHtml.
@@ -54,7 +54,7 @@ function swapBuilderMarkup(html, before, after) {
   );
   if (changed.size === 0) return { html, missed: 0 };
 
-  const zones = findHtmlCodeBlockRanges(html, stored).filter(
+  const zones = findSyntheticBlockRanges(html, stored).filter(
     (zone) =>
       zone.markerClass === BLOCK_BUILDER_BLOCK.markerClass &&
       changed.has(zone.matched)

@@ -10,7 +10,7 @@ const { SYNTHETIC_BLOCKS } = require('./block-types.js');
 // silently gain `style="border:0;display:block"`, and an inline image inside a
 // link would turn into a block.
 //
-// So the pasted nodes are detached before the inliner runs and put back straight
+// So the block's nodes are detached before the inliner runs and put back straight
 // after. Only the *contents* of the marker element are moved: the wrapper itself
 // is LePatron's own markup and keeps behaving like any other template element.
 //
@@ -27,14 +27,14 @@ const { SYNTHETIC_BLOCKS } = require('./block-types.js');
  * Detach the markup of every synthetic block.
  *
  * Must run BEFORE the inliner copies `style` into `replacedstyle`: otherwise the
- * pasted nodes get a `replacedstyle` copy of their own `style`, which the export
+ * detached nodes get a `replacedstyle` copy of their own `style`, which the export
  * regexes in viewmodel.js would then restore over the original attribute.
  *
  * @param {Function} $ jQuery
  * @param {Document} doc the document about to be inlined
- * @returns {Array} opaque handles to pass back to restorePastedMarkup
+ * @returns {Array} opaque handles to pass back to restoreSyntheticMarkup
  */
-function detachPastedMarkup($, doc) {
+function detachSyntheticMarkup($, doc) {
   const detached = [];
   const selector = SYNTHETIC_BLOCKS.map((d) => '.' + d.markerClass).join(',');
   $(selector, doc).each(function (index, element) {
@@ -49,15 +49,15 @@ function detachPastedMarkup($, doc) {
 }
 
 /**
- * Put the pasted markup back, in its original order.
+ * Put the detached markup back, in its original order.
  *
- * @param {Array} detached the value returned by detachPastedMarkup
+ * @param {Array} detached the value returned by detachSyntheticMarkup
  */
-function restorePastedMarkup(detached) {
+function restoreSyntheticMarkup(detached) {
   if (!Array.isArray(detached)) return;
   detached.forEach(function (entry) {
     entry.holder.append(entry.contents);
   });
 }
 
-module.exports = { detachPastedMarkup, restorePastedMarkup };
+module.exports = { detachSyntheticMarkup, restoreSyntheticMarkup };

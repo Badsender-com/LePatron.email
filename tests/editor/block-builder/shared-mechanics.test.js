@@ -25,8 +25,8 @@ const {
   stripEmptySyntheticBlocks,
 } = require('../../../packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js');
 const {
-  detachPastedMarkup,
-  restorePastedMarkup,
+  detachSyntheticMarkup,
+  restoreSyntheticMarkup,
 } = require('../../../packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js');
 const {
   beginExportSubstitution,
@@ -92,10 +92,10 @@ describe('the inliner protection, on a composed block', () => {
       document.querySelector(`.${BLOCK_BUILDER_BLOCK.markerClass}`);
     const before = holder().innerHTML;
 
-    const detached = detachPastedMarkup(jQuery, document);
+    const detached = detachSyntheticMarkup(jQuery, document);
     expect(holder().innerHTML).toBe('');
 
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(holder().innerHTML).toBe(before);
   });
 
@@ -106,11 +106,11 @@ describe('the inliner protection, on a composed block', () => {
       marker(BLOCK_BUILDER_BLOCK, COMPOSED);
     const before = document.body.innerHTML;
 
-    const detached = detachPastedMarkup(jQuery, document);
+    const detached = detachSyntheticMarkup(jQuery, document);
     expect(detached).toHaveLength(2);
     expect(document.querySelectorAll('td')).toHaveLength(0);
 
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(document.body.innerHTML).toBe(before);
   });
 });
