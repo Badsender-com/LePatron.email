@@ -84,6 +84,16 @@ function createAiPanel({
     selectedTarget = selected();
     const followed = selectedTarget;
     if (session()) {
+      // An action of blocks run on the whole email covers every block:
+      // selecting one (« Aller au bloc ») is no other element.
+      const { action, target: under } = session().state;
+      const actsOnBlocks = definitionOf(action, definitions).targets.includes(
+        'block'
+      );
+      if (under.kind === 'email' && actsOnBlocks) {
+        selectionChanged(null);
+        return;
+      }
       const offers =
         block && offer(followed, editor.context()).actions.length > 0;
       selectionChanged(offers ? followed : null);
@@ -93,8 +103,16 @@ function createAiPanel({
     if (isOpen()) refresh();
   }
 
+  // The action shown gives way: it stops asking, as when the panel closes, and
+  // keeps what it found for when the user comes back to it.
+  function show(next) {
+    const current = session();
+    if (current && current !== next && current.stop) current.stop();
+    session(next);
+  }
+
   function showList(listed = selectedTarget) {
-    session(null);
+    show(null);
     selectionChanged(null);
     target(listed);
     refresh();
@@ -114,6 +132,8 @@ function createAiPanel({
     ) {
       return last.session;
     }
+    // The session it replaces is let go of: what it still asks is cancelled.
+    if (last && last.session.cancel) last.session.cancel();
     const created = createActionSession({
       action: id,
       target: on,
@@ -136,7 +156,7 @@ function createAiPanel({
     if (!offered) return false;
     const opened = sessionOf(id, on);
     // The one already shown: the panel keeps its steps as they are.
-    if (session() !== opened) session(opened);
+    if (session() !== opened) show(opened);
     selectionChanged(null);
     refresh();
     isOpen(true);
@@ -157,8 +177,11 @@ function createAiPanel({
   }
 
   const subscriptions = [
+    // Closed: the action under way stops asking, and keeps what it found.
     isOpen.subscribe((open) => {
+      const current = session();
       if (open) refresh();
+      else if (current && current.stop) current.stop();
     }),
     selection.subscribe(follow),
     ...(fieldSelection ? [fieldSelection.subscribe(follow)] : []),
@@ -185,8 +208,10 @@ function createAiPanel({
     offerNow,
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      kept.forEach(({ session: left }) => left.cancel && left.cancel());
       kept.clear();
       stopHistory();
+      session(null);
     },
   };
 }

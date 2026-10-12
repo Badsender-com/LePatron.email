@@ -21,6 +21,7 @@ const KEYS_BY_CODE = {
 
 // When the code is missing or unknown.
 const KEYS_BY_STATUS = {
+  401: 'text-generation-error-signed-out',
   403: 'text-generation-error-forbidden',
   413: 'text-generation-error-too-large',
   429: 'text-generation-error-rate-limited',
