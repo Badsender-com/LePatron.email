@@ -69,6 +69,8 @@ router.patch(
 router.patch(
   '/:mailingId/quality-ignores',
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  // A form posted from another site must not change what the team ignores.
+  requireJsonBody,
   mailingQuality.updateQualityIgnores
 );
 router.post(
