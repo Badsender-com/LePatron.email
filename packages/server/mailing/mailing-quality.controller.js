@@ -93,9 +93,14 @@ async function checkResources(req, res) {
   const mailing = await mailingService.findOneForUser(mailingId, user);
 
   // The editor cancels a run it replaced: the socket closes, and the run
-  // stops fetching. (After the answer, the signal aborts for nothing.)
+  // stops fetching. Watched on the response: since Node 16 the request's
+  // own 'close' fires as soon as its body is read, long before the client
+  // could go away. A response closed before it was finished is the client
+  // gone.
   const caller = new AbortController();
-  req.on('close', () => caller.abort());
+  res.on('close', () => {
+    if (!res.writableFinished) caller.abort();
+  });
 
   const result = await qualityResourcesService.checkResources(resources, {
     userKey: String(user.id || user._id || 'admin'),
