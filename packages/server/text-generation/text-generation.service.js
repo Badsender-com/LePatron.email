@@ -1,22 +1,21 @@
 'use strict';
 
-const createError = require('http-errors');
 const { z } = require('zod');
 
 const skillInvocation = require('../ai-skill/services/skill-invocation.service.js');
 const AIFeatureTypes = require('../constant/ai-feature-type.js');
-const ERROR_CODES = require('../constant/error-codes.js');
-const {
-  InvocationStatuses,
-} = require('../ai-skill/constant/skill-constants.js');
 const { screenProposals } = require('./proposal-checks.js');
 const {
   EMAIL_COPY_LIMITS,
 } = require('../../shared/text-generation/email-copy-limits.js');
-const { prepare, compact } = require('./invocation-context.js');
 const {
-  PROVIDER_ERROR_CODES,
-} = require('../integration-providers/provider-error.js');
+  readRequest,
+  prepare,
+  compact,
+  toSkillExpertise,
+  toConsumed,
+  toHttpError,
+} = require('./invocation-context.js');
 
 /**
  * Text generation: the subject and the preheader of an email (ADR 0016).
@@ -79,80 +78,6 @@ const preheaderRequestSchema = requestSchema.extend({
   subject: optionalText,
   currentPreheader: optionalText,
 });
-
-function readRequest(schema, body) {
-  const parsed = schema.safeParse(body || {});
-  if (!parsed.success) {
-    throw createError(400, ERROR_CODES.INVALID_TEXT_GENERATION_REQUEST);
-  }
-  return parsed.data;
-}
-
-// The fields a skill reads; the repository's bookkeeping stays out of the prompt.
-const toSkillExpertise = ({
-  expertiseId,
-  title,
-  body,
-  examplesGood,
-  examplesBad,
-}) => ({
-  expertiseId,
-  title,
-  body,
-  examplesGood,
-  examplesBad,
-});
-
-const toConsumed = ({ expertiseId, versionMajor, versionMinor }) => ({
-  expertiseId,
-  versionMajor,
-  versionMinor,
-});
-
-const ACCOUNT_FAILURES = new Set([
-  PROVIDER_ERROR_CODES.INVALID_CREDENTIALS,
-  PROVIDER_ERROR_CODES.QUOTA_EXCEEDED,
-  PROVIDER_ERROR_CODES.CONFIG_ERROR,
-]);
-
-/**
- * Turn an invocation failure into what the user can act on. The detail stays in
- * the invocation log.
- */
-function toHttpError(err) {
-  if (err?.featureResolutionReason) {
-    return createError(403, ERROR_CODES.TEXT_GENERATION_DISABLED);
-  }
-  // Failures that retrying will not fix: a skill missing or kept to the
-  // platform company, the skill refusing the input this feature built (its
-  // active version expects another contract), or a provider refusing the
-  // account itself — key, credits, configuration. An administrator has to act,
-  // so the user is told so, not to retry.
-  const skillClosed =
-    err?.message === ERROR_CODES.SKILL_NOT_AVAILABLE_TO_COMPANY;
-  const contractBroken = err?.skillError?.code === 'INPUT_VALIDATION';
-  const accountRefused = ACCOUNT_FAILURES.has(err?.failureCode);
-  if (
-    err?.invocationStatus === InvocationStatuses.CONFIG_ERROR ||
-    skillClosed ||
-    contractBroken ||
-    accountRefused
-  ) {
-    return createError(503, ERROR_CODES.TEXT_GENERATION_UNAVAILABLE);
-  }
-  if (
-    [
-      InvocationStatuses.PROVIDER_ERROR,
-      InvocationStatuses.TIMEOUT,
-      InvocationStatuses.VALIDATION_ERROR,
-    ].includes(err?.invocationStatus)
-  ) {
-    const failed = createError(502, ERROR_CODES.TEXT_GENERATION_FAILED);
-    failed.invocationId = err.invocationId;
-    return failed;
-  }
-  return err;
-}
 
 /**
  * Three subject proposals for the email the user is editing.

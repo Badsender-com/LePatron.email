@@ -10,8 +10,7 @@
  * there only, so tags, attributes, entities and merge tags stay as they were.
  */
 
-// Turned on by #1254 (correct a field)
-describe.skip('spelling correction: placing a correction', () => {
+describe('spelling correction: placing a correction', () => {
   let placeCorrection;
   let visibleText;
 

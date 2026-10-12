@@ -32,9 +32,15 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
 }));
 jest.mock('../../../packages/server/account/auth.guard', () => ({
-  GUARD_USER: function GUARD_USER(req, res, next) {
-    if (req.user) return next();
-    return res.status(401).json({ message: 'Unauthorized' });
+  // The capability guard has its own tests: here it only has to be on the
+  // route, with the right capability.
+  GUARD_CAN: (capability) => {
+    const guard = function capabilityGuard(req, res, next) {
+      if (req.user) return next();
+      return res.status(401).json({ message: 'Unauthorized' });
+    };
+    guard.access = { capabilities: [capability] };
+    return guard;
   },
 }));
 // The AI rate limit has its own tests: here it only has to be on the route.
@@ -147,20 +153,16 @@ function loadModules() {
 const post = (payload = body, app = makeApp()) =>
   request(app).post('/api/text-generation/corrections').send(payload);
 
-// Turned on by #1254 (correct a field)
-describe.skip('spelling correction: POST /api/text-generation/corrections', () => {
+describe('spelling correction: POST /api/text-generation/corrections', () => {
   beforeEach(loadModules);
 
   describe('access', () => {
-    it('is guarded by the user guard, then the AI rate limit', () => {
-      const {
-        GUARD_USER,
-      } = require('../../../packages/server/account/auth.guard');
+    it('asks for the capability to edit content, then the AI rate limit', () => {
       const guards = routeInspector(textGenerationRouter).guardsOf(
         'post',
         '/corrections'
       );
-      expect(guards[0]).toBe(GUARD_USER);
+      expect(guards[0].access.capabilities).toEqual(['mailing.edit-content']);
       expect(guards.map((guard) => guard.name)).toContain(
         'aiRateLimitMiddleware'
       );
@@ -227,6 +229,40 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
       );
       expect(call.input).toEqual({ fields: FIELDS, expertise: [] });
     });
+  });
+
+  it('leaves out the transversal writing expertise: correcting is not rewriting', async () => {
+    findApplicable.mockResolvedValue([
+      {
+        expertiseId: 'redaction.principes-email',
+        title: 'Principes de rédaction email',
+        body: '## [lecteur-d-abord] Le lecteur d’abord',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: true,
+        versionMajor: 1,
+        versionMinor: 1,
+      },
+      {
+        expertiseId: 'correction.marques',
+        title: 'Marques à ne jamais corriger',
+        body: '## [marques] Marques',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: false,
+        versionMajor: 1,
+        versionMinor: 0,
+      },
+    ]);
+    invoke.mockResolvedValue(corrections());
+    await post();
+    const call = invoke.mock.calls[0][0];
+    expect(call.input.expertise.map((e) => e.expertiseId)).toEqual([
+      'correction.marques',
+    ]);
+    expect(call.expertiseConsumed).toEqual([
+      { expertiseId: 'correction.marques', versionMajor: 1, versionMinor: 0 },
+    ]);
   });
 
   describe('the corrections', () => {
