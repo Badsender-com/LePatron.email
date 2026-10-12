@@ -66,24 +66,35 @@ function sanitizePreviewHtml(previewHtml) {
   }
 }
 
-// The public share page (share-link/share-page.controller.js) opens every link
-// of the email in a new tab, with no opener: the reader wants to try them, and
-// a page opened from a shared email must not reach back to it. Set on the
-// sanitized DOM by a hook of a DOMPurify instance of its own, never by editing
-// the sanitized HTML as a string: a regex there can match inside an attribute
-// value and turn it back into markup.
+// The public share page (share-link/share-page.controller.js) opens every web
+// link of the email in a new tab, with no opener: the reader wants to try
+// them, and a page opened from a shared email must not reach back to it. Set
+// on the sanitized DOM by a hook of a DOMPurify instance of its own, never by
+// editing the sanitized HTML as a string: a regex there can match inside an
+// attribute value and turn it back into markup.
+//
+// Only http(s) and protocol-relative addresses are sent to a new tab. An
+// anchor of the email itself (#top), an empty href, a mailto: or tel: must
+// stay in the frame: with a target, the sandboxed frame opened a blank tab
+// instead of scrolling, or of handing the address to the mail client.
 const { window: shareWindow } = new JSDOM('');
 const ShareDOMPurify = createDOMPurify(shareWindow);
+const WEB_HREF = /^(https?:)?\/\//i;
 ShareDOMPurify.addHook('afterSanitizeAttributes', (node) => {
-  if (node.tagName === 'A' || node.tagName === 'AREA') {
+  // localName: an <a> inside an <svg> has a lowercase tagName.
+  if (node.localName !== 'a' && node.localName !== 'area') return;
+  const href = (node.getAttribute('href') || '').trim();
+  if (WEB_HREF.test(href)) {
     node.setAttribute('target', '_blank');
     node.setAttribute('rel', 'noopener noreferrer');
+  } else {
+    node.removeAttribute('target');
   }
 });
 
 /**
  * Sanitize a preview for the public share page: the same rules as
- * sanitizePreviewHtml, every link opening in a new tab without an opener.
+ * sanitizePreviewHtml, every web link opening in a new tab without an opener.
  * @param {string} previewHtml
  * @returns {string}
  */
