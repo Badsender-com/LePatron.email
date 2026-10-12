@@ -18,7 +18,7 @@ const {
 // `allow-same-origin`), so the parent can write into it and listen on it even
 // though scripts inside it cannot run.
 //
-// The component is expected to provide: `state`, `selectedId`, `isEmpty`,
+// The component is expected to provide: `state`, `selectedElementId`, `isEmpty`,
 // `previewMarkup`, `vm`, and a `previewFrame` ref.
 //
 // It knows nothing of the drag. What the drag needs from it is public and
@@ -245,7 +245,7 @@ const PreviewSurfaceMixin = {
       event.preventDefault();
 
       const row = this.elementRowFromEvent(event);
-      if (row) this.selectedId = row.getAttribute(ELEMENT_ATTRIBUTE);
+      if (row) this.selectedElementId = row.getAttribute(ELEMENT_ATTRIBUTE);
     },
 
     // The row of the composed element an event happened in, or null: for the
@@ -276,7 +276,7 @@ const PreviewSurfaceMixin = {
     applySelectionHighlight() {
       const frame = this.$refs.previewFrame;
       this.previewRows(frame && frame.contentDocument).forEach((row) => {
-        const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedId;
+        const selected = row.getAttribute(ELEMENT_ATTRIBUTE) === this.selectedElementId;
         row.classList.toggle(SELECTED_CLASS, selected);
       });
     },

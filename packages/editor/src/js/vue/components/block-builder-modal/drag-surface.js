@@ -159,7 +159,7 @@ const DragSurfaceMixin = {
     // outside the preview. It moved nothing, so it changes no selection
     // either: the one its dragstart replaced comes back.
     handleDragEnd() {
-      if (this.draggingId) this.selectedId = this.selectionBeforeDrag;
+      if (this.draggingId) this.selectedElementId = this.selectionBeforeDrag;
       this.releasePage();
       this.fadedType = null;
       this.draggingType = null;
@@ -224,8 +224,8 @@ const DragSurfaceMixin = {
       // Selecting what is being moved, so the settings panel follows the thing
       // under the cursor rather than staying on whatever was selected before
       // — which is kept, for a drag that ends without a drop.
-      this.selectionBeforeDrag = this.selectedId;
-      this.selectedId = id;
+      this.selectionBeforeDrag = this.selectedElementId;
+      this.selectedElementId = id;
       row.ownerDocument.body.classList.add(DRAGGING_CLASS);
       // Dimmed once the browser has taken its picture, as the palette entry is.
       this.fadeTimer = window.setTimeout(() => {

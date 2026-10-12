@@ -92,7 +92,7 @@ describe('reordering and removing', () => {
 
   it('moves it down', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.columnElements[0].id;
+    modal.selectedElementId = modal.columnElements[0].id;
 
     modal.move(1);
 
@@ -101,19 +101,19 @@ describe('reordering and removing', () => {
 
   it('does not move past either end', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.columnElements[0].id;
+    modal.selectedElementId = modal.columnElements[0].id;
 
     modal.move(-1);
     expect(types(modal)).toEqual(['text', 'button', 'divider']);
 
-    modal.selectedId = modal.columnElements[2].id;
+    modal.selectedElementId = modal.columnElements[2].id;
     modal.move(1);
     expect(types(modal)).toEqual(['text', 'button', 'divider']);
   });
 
   it('removes the selected element and selects a neighbour', () => {
     const { modal } = withThree();
-    modal.selectedId = modal.columnElements[1].id;
+    modal.selectedElementId = modal.columnElements[1].id;
 
     modal.removeSelected();
 
