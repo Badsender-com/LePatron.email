@@ -756,4 +756,6 @@ module.exports = {
   'This email already has __count__ active links: turn one off first':
     'This email already has __count__ active links: turn one off first',
   'Copy the link: __link__': 'Copy the link: __link__',
+  'The link could not be copied': 'The link could not be copied',
+  'The links could not be loaded': 'The links could not be loaded',
 };
