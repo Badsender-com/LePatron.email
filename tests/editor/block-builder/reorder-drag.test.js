@@ -104,7 +104,7 @@ describe('a rendered row can be picked up', () => {
 
   it('records what is being moved, and says so to the browser', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [, second] = modal.state.elements;
+    const [, second] = modal.columnElements;
 
     const event = fireIn(doc, 'dragstart', rowsOf(doc)[1]);
 
@@ -118,7 +118,7 @@ describe('a rendered row can be picked up', () => {
   // pasted there: the element id, as text.
   it('carries nothing a text field would paste', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first] = modal.state.elements;
+    const [first] = modal.columnElements;
 
     const event = fireIn(doc, 'dragstart', rowsOf(doc)[0]);
 
@@ -128,7 +128,7 @@ describe('a rendered row can be picked up', () => {
   // An image or a link a browser lets start the drag anyway moves its row.
   it('picks up the row when the drag starts on its image or link', async () => {
     const { modal, doc } = await openModal(['image', 'button']);
-    const [image, button] = modal.state.elements;
+    const [image, button] = modal.columnElements;
 
     const fromImage = fireIn(doc, 'dragstart', doc.body.querySelector('img'));
     expect(fromImage.defaultPrevented).toBe(false);
@@ -179,7 +179,7 @@ describe('a rendered row can be picked up', () => {
   // So the settings panel follows the thing being moved.
   it('selects what is being moved', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first] = modal.state.elements;
+    const [first] = modal.columnElements;
     modal.selectedId = null;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);

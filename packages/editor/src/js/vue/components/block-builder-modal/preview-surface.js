@@ -261,7 +261,7 @@ const PreviewSurfaceMixin = {
           : null;
       if (!row) return null;
       const id = row.getAttribute(ELEMENT_ATTRIBUTE);
-      return this.state.elements.some((element) => element.id === id)
+      return this.columnElements.some((element) => element.id === id)
         ? row
         : null;
     },

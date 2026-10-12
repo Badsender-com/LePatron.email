@@ -68,7 +68,7 @@ describe('the preview holds still during a drag', () => {
   it('holds a render whose frame was requested before the drag began', async () => {
     const frames = captureFrames();
     const { modal, doc } = await openSettled(frames);
-    modal.state.elements[0].content = 'changé avant le drag';
+    modal.columnElements[0].content = 'changé avant le drag';
     await Vue.nextTick();
     expect(frames).toHaveLength(1);
 
@@ -83,7 +83,7 @@ describe('the preview holds still during a drag', () => {
     const frames = captureFrames();
     const { modal, doc } = await openSettled(frames);
     startPaletteDrag('image');
-    modal.state.elements[0].content = 'changé après coup';
+    modal.columnElements[0].content = 'changé après coup';
     await Vue.nextTick();
 
     modal.handleDragEnd();
@@ -101,7 +101,7 @@ describe('the preview holds still during a drag', () => {
     const { modal, doc } = await openSettled(frames);
     const render = jest.spyOn(modal, 'renderPreview');
     startPaletteDrag('divider');
-    modal.state.elements[0].content = 'changé pendant le drag';
+    modal.columnElements[0].content = 'changé pendant le drag';
     await Vue.nextTick();
 
     dropAt(doc, 90);
@@ -163,7 +163,7 @@ describe('clicking the palette still works', () => {
 
     modal.addElement('divider');
 
-    expect(modal.state.elements.map((element) => element.type)).toEqual([
+    expect(modal.columnElements.map((element) => element.type)).toEqual([
       'text',
       'divider',
     ]);
