@@ -280,6 +280,19 @@ function singleColumnElements(state) {
   return column && Array.isArray(column.elements) ? column.elements : null;
 }
 
+/**
+ * The rows a brand new composition starts from: one row, one full-width column.
+ *
+ * Here rather than in the modal so that "a composition always has somewhere to
+ * put an element" is a property of the shape, not of whichever screen happens
+ * to create one.
+ *
+ * @returns {Array<Object>}
+ */
+function emptyRows() {
+  return [{ id: newRowId(), columns: [{ width: FULL_WIDTH, elements: [] }] }];
+}
+
 module.exports = {
   MAX_COLUMNS,
   MAX_ROWS,
@@ -287,6 +300,7 @@ module.exports = {
   FULL_WIDTH,
   newRowId,
   areUsableWidths,
+  emptyRows,
   usableWidths,
   singleColumnRows,
   readRows,

@@ -14,6 +14,9 @@ const {
 const {
   parseState,
 } = require('../../../packages/shared/block-builder/state.js');
+const {
+  elementsOf,
+} = require('../../../packages/shared/block-builder/composition.js');
 
 afterEach(unmountAll);
 
@@ -56,7 +59,9 @@ describe('re-opening a block', () => {
 
     expect(written).toHaveLength(1);
     expect(stateAccessor.writes).toHaveLength(1);
-    expect(JSON.parse(stateAccessor.writes[0]).elements).toHaveLength(1);
+    expect(elementsOf(parseState(stateAccessor.writes[0]).rows)).toHaveLength(
+      1
+    );
   });
 
   // The stored markup is frozen until the user applies, and applying rebuilds
@@ -70,7 +75,13 @@ describe('re-opening a block', () => {
 
     it('says nothing when the stored markup is what applying would write', () => {
       const state = composedState();
-      const markup = generate(parseState(state));
+      // Generated the way the MODAL would, not the way the stored composition
+      // renders: a composition stored before columns renders as it was stored
+      // (see state.js), and the modal composes rows. The two differ on purpose,
+      // and this test is about the case where they agree.
+      const composition = parseState(state);
+      delete composition.elements;
+      const markup = generate(composition);
 
       const { modal } = open({ markup, state });
 
