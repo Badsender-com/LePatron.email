@@ -17,10 +17,12 @@ const {
   validateResourcesPayload,
   checkResources,
   MAX_LINKS,
-  MAX_LINK_PROBES,
   RUNS_PER_WINDOW,
   clearCacheForTests,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
+const {
+  MAX_LINK_PROBES,
+} = require('../../../packages/server/mailing/quality-links.service.js');
 const {
   measuredUrl,
   fetchOwn,

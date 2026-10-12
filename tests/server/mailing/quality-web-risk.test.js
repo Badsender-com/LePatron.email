@@ -18,8 +18,10 @@ const {
 const {
   checkResources,
   clearCacheForTests,
-  WEB_RISK_LOOKUPS_PER_DAY,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
+const {
+  WEB_RISK_LOOKUPS_PER_DAY,
+} = require('../../../packages/server/mailing/quality-threats.service.js');
 
 const KEY = 'AIza-test-key';
 const answer = (status, body) => ({
