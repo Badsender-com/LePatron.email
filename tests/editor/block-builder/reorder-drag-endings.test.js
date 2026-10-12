@@ -44,7 +44,7 @@ describe('a reorder ends', () => {
     // The browser fires dragend after the drop: it must not undo the choice.
     fireIn(doc, 'dragend', rowsOf(doc)[0]);
 
-    expect(modal.selectedId).toBe(second.id);
+    expect(modal.selectedElementId).toBe(second.id);
     expect(modal.selected.type).toBe('button');
   });
 
@@ -80,23 +80,23 @@ describe('a reorder ends', () => {
   it('gives the selection back when the drag ends without a drop', async () => {
     const { modal, doc } = await openModal(['text', 'button', 'divider']);
     const [first] = modal.columnElements;
-    modal.selectedId = first.id;
+    modal.selectedElementId = first.id;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[2]);
     expect(modal.selected.type).toBe('divider');
     fireIn(doc, 'dragend', rowsOf(doc)[2]);
 
-    expect(modal.selectedId).toBe(first.id);
+    expect(modal.selectedElementId).toBe(first.id);
   });
 
   it('gives back no selection when there was none', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    modal.selectedId = null;
+    modal.selectedElementId = null;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[1]);
     fireIn(doc, 'dragend', rowsOf(doc)[1]);
 
-    expect(modal.selectedId).toBeNull();
+    expect(modal.selectedElementId).toBeNull();
   });
 });
 

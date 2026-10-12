@@ -168,7 +168,7 @@ describe('the reorder buttons', () => {
     expect(buttons()[0].disabled).toBe(false);
     expect(buttons()[1].disabled).toBe(true);
 
-    modal.selectedId = modal.columnElements[0].id;
+    modal.selectedElementId = modal.columnElements[0].id;
     await Vue.nextTick();
 
     expect(buttons()[0].disabled).toBe(true);
