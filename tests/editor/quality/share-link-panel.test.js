@@ -30,7 +30,8 @@ async function mount(url = URL, active = true) {
         key
       ),
     notifier: { error: jest.fn() },
-    metadata: { url: { shareLinks: url } },
+    // The limit comes with the address, from the server.
+    metadata: { url: { shareLinks: url }, shareLinks: { maxActive: 5 } },
   };
   document.body.innerHTML = '<div id="root"></div>';
   const app = new Vue({
@@ -114,7 +115,23 @@ describe('ShareLinkPanel', () => {
     el.querySelector('.qc-share__create button').click();
     await flush();
     expect(vm.notifier.error).toHaveBeenCalledWith(
-      'This email already has 20 active links: turn one off first'
+      'This email already has 5 active links: turn one off first'
+    );
+  });
+
+  it('says when the list could not be loaded', async () => {
+    axios.get.mockRejectedValue(new Error('500'));
+    const { vm, el } = await mount();
+    expect(vm.notifier.error).toHaveBeenCalledWith(
+      'The links could not be loaded'
+    );
+    expect(el.querySelectorAll('.qc-share__item')).toHaveLength(0);
+  });
+
+  it('shows until when each link lasts, to the minute', async () => {
+    const { el } = await mount();
+    expect(el.querySelector('.qc-share__meta').textContent).toMatch(
+      /until .*\d{1,2}:\d{2}/
     );
   });
 
@@ -136,6 +153,59 @@ describe('ShareLinkPanel', () => {
     await flush();
     expect(writeText).toHaveBeenCalledWith('https://app.test/share/old');
     expect(copy.textContent.trim()).toBe('Copied');
+  });
+
+  // The Clipboard API may refuse (permission, focus lost): the field is
+  // selected and copied the old way before giving up.
+  it('copies through the field when the Clipboard API refuses', async () => {
+    Object.defineProperty(window, 'isSecureContext', {
+      value: true,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: jest.fn(() => Promise.reject(new Error('denied'))) },
+      configurable: true,
+    });
+    document.execCommand = jest.fn(() => true);
+    const { vm, el } = await mount();
+    const copy = Array.from(
+      el.querySelectorAll('.qc-share__item button')
+    ).find((b) => /^Copy the link/.test(b.getAttribute('aria-label')));
+    copy.click();
+    await flush();
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
+    expect(copy.textContent.trim()).toBe('Copied');
+    expect(vm.notifier.error).not.toHaveBeenCalled();
+  });
+
+  it('gives the advice to select the link only where the link is on screen', async () => {
+    Object.defineProperty(window, 'isSecureContext', {
+      value: false,
+      configurable: true,
+    });
+    document.execCommand = jest.fn(() => false);
+    axios.post.mockResolvedValue({
+      data: { id: 'l2', url: 'https://app.test/share/abc', copyable: true },
+    });
+    const { vm, el } = await mount();
+
+    // From the list: its field is hidden, nothing to select by hand.
+    Array.from(el.querySelectorAll('.qc-share__item button'))
+      .find((b) => /^Copy the link/.test(b.getAttribute('aria-label')))
+      .click();
+    await flush();
+    expect(vm.notifier.error).toHaveBeenLastCalledWith(
+      'The link could not be copied'
+    );
+
+    // From the block of the link just created: the field is on screen.
+    el.querySelector('.qc-share__create button').click();
+    await flush();
+    el.querySelector('.qc-share__created button').click();
+    await flush();
+    expect(vm.notifier.error).toHaveBeenLastCalledWith(
+      'Copy failed: select the link and copy it'
+    );
   });
 
   it('loads the list only once its tab is shown', async () => {
