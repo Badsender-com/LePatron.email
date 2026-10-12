@@ -90,9 +90,9 @@ async function checkResources(req, res) {
   const result = await qualityResourcesService.checkResources(resources, {
     userKey: String(user.id || user._id || 'admin'),
     cacheScope: String(mailing._company || 'admin'),
-    // The editor builds image URLs from the page it runs on; the configured
-    // host covers a proxy that rewrites Host.
-    ownHosts: [req.get('host'), config.host].filter(Boolean),
+    // The editor builds image URLs from the configured host (mosaico-editor
+    // .pug), never from the page's: what the request names is not consulted.
+    ownHosts: [config.host].filter(Boolean),
   });
   res.json(result);
 }
