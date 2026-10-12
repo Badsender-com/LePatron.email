@@ -35,6 +35,7 @@ const {
 } = require('../../../packages/server/mailing/quality-links.service.js');
 const {
   measuredUrl,
+  measureImage,
   fetchOwn,
 } = require('../../../packages/server/mailing/quality-images.service.js');
 const {
@@ -299,7 +300,7 @@ describe('images', () => {
       expect.stringMatching(
         /^http:\/\/127\.0\.0\.1:\d+\/api\/images\/resize\/600x0\/a\.png$/
       ),
-      expect.any(Number)
+      expect.objectContaining({ timeoutMs: expect.any(Number) })
     );
     expect(d.probe).not.toHaveBeenCalled();
   });
@@ -367,6 +368,49 @@ describe('images', () => {
     expect(d.probe.mock.calls.length).toBeLessThan(urls.length);
   });
 
+  it('leaves unread an image whose announced size does not fit in what is left of the budget', async () => {
+    const MB = 1024 * 1024;
+    // The server announces the size; the body stays small here, the
+    // accounting is what is pinned.
+    const announcing = (contentLength) =>
+      jest.fn(async (url, options) =>
+        options.acceptBody({ contentLength })
+          ? { status: 200, body: ONE_PIXEL_PNG }
+          : { status: 200, body: null }
+      );
+    const target = { own: false, url: 'https://cdn.test/a.jpg' };
+    const nearlySpent = () => ({
+      deadline: Date.now() + 20000,
+      bytes: 45 * MB,
+    });
+
+    // Decided on the announcement, before the body: the request is made.
+    let run = nearlySpent();
+    let probe = announcing(10 * MB);
+    await expect(measureImage(target, run, { probe })).resolves.toEqual({
+      state: 'unverifiable',
+    });
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(run.bytes).toBe(45 * MB);
+
+    // What fits is taken from the budget at the announcement, then settled
+    // against what was read.
+    run = nearlySpent();
+    probe = announcing(5 * MB);
+    await expect(measureImage(target, run, { probe })).resolves.toMatchObject({
+      state: 'ok',
+      bytes: ONE_PIXEL_PNG.length,
+    });
+    expect(run.bytes).toBe(45 * MB + ONE_PIXEL_PNG.length);
+
+    // At most MAX_IMAGE_BYTES is read of an image, whatever it announces.
+    run = { deadline: Date.now() + 20000, bytes: 0 };
+    probe = announcing(60 * MB);
+    await expect(measureImage(target, run, { probe })).resolves.toMatchObject({
+      state: 'ok',
+    });
+  });
+
   it('says "at least" for an image past the ceiling', async () => {
     const d = deps({
       probe: jest.fn(async () => {
@@ -399,13 +443,37 @@ describe('images', () => {
     const fetchImpl = jest.fn(async () => ({
       ok: true,
       status: 200,
+      headers: { get: () => null },
       buffer: async () => ONE_PIXEL_PNG,
     }));
-    await fetchOwn('http://127.0.0.1:3000/api/images/a.png', 5000, fetchImpl);
+    await fetchOwn('http://127.0.0.1:3000/api/images/a.png', {
+      timeoutMs: 5000,
+      fetchImpl,
+    });
     expect(fetchImpl.mock.calls[0][1]).toMatchObject({
       headers: { 'X-Forwarded-Proto': 'https' },
       redirect: 'manual',
     });
+  });
+
+  it('leaves the body of our own image unread when the caller declines its announced size', async () => {
+    const body = { destroy: jest.fn() };
+    const fetchImpl = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => '2048' },
+      body,
+      buffer: async () => ONE_PIXEL_PNG,
+    }));
+    const acceptBody = jest.fn(() => false);
+    const result = await fetchOwn('http://127.0.0.1:3000/api/images/a.png', {
+      timeoutMs: 5000,
+      fetchImpl,
+      acceptBody,
+    });
+    expect(acceptBody).toHaveBeenCalledWith({ contentLength: 2048 });
+    expect(result).toEqual({ status: 200, body: null });
+    expect(body.destroy).toHaveBeenCalled();
   });
 
   it('does not judge an image our backend answers with a redirect or an error', async () => {
