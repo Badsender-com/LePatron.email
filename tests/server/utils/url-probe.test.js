@@ -187,6 +187,26 @@ describe('probeUrl', () => {
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.TIMEOUT });
   });
 
+  it('calls missing only a name under a public suffix', async () => {
+    const missing = () =>
+      jest
+        .fn()
+        .mockRejectedValue(
+          Object.assign(new Error('getaddrinfo'), { code: 'ENOTFOUND' })
+        );
+    // A name outside the public DNS gets the same answer whether or not the
+    // server's resolver knows it: the answer says nothing about that resolver.
+    await expect(
+      probeUrl('https://nexiste-pas.invalid', { fetchImpl: missing() })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.REFUSED });
+    await expect(
+      probeUrl('https://intranet', { fetchImpl: missing() })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.REFUSED });
+    await expect(
+      probeUrl('https://nexiste-pas.example.com', { fetchImpl: missing() })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.NOT_FOUND });
+  });
+
   it('does not call a domain missing when the resolver only failed for a moment', async () => {
     const again = Object.assign(new Error('getaddrinfo EAI_AGAIN'), {
       code: 'EAI_AGAIN',
