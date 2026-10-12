@@ -29,8 +29,9 @@ const imageDownloads = limiter(MAX_IMAGE_DOWNLOADS);
 
 // The addresses the export gets our images at: the image itself, or its
 // resized or cropped version (image.routes.js). Never a placeholder, never
-// the gallery.
-const OWN_IMAGE_PATH = /^\/api\/images\/(?:(?:resize|cover)\/(?:\d{1,4}|null)x(?:\d{1,4}|null)\/)?[^/]+$/;
+// the gallery, and no percent-encoded name: the route would decode it into
+// something this pattern did not see.
+const OWN_IMAGE_PATH = /^\/api\/images\/(?:(?:resize|cover)\/(?:\d{1,4}|null)x(?:\d{1,4}|null)\/)?[^/%]+$/;
 
 /**
  * The address to measure an image at. Images of LePatron's own backend are
