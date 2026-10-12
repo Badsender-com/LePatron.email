@@ -131,16 +131,17 @@ function linkState({ status }) {
 async function checkLink(url, run, deps) {
   if (!onDefaultPort(url) || Date.now() > run.deadline) return UNVERIFIABLE;
   try {
-    return linkState(
-      await linkProbes(() => {
-        if (Date.now() > run.deadline) return Promise.resolve({ status: 0 });
-        return deps.probe(withoutCredentials(url), {
-          timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
-          readBody: false,
-          defaultPortsOnly: true,
-        });
-      })
+    const response = await linkProbes(() =>
+      // The deadline may pass while waiting for a probe slot: not judged.
+      Date.now() > run.deadline
+        ? null
+        : deps.probe(withoutCredentials(url), {
+            timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
+            readBody: false,
+            defaultPortsOnly: true,
+          })
     );
+    return response ? linkState(response) : UNVERIFIABLE;
   } catch (error) {
     if (error.reason === PROBE_FAILURES.NOT_FOUND) {
       return { state: 'broken', reason: error.reason };
@@ -216,9 +217,9 @@ function spendWebRiskLookup(scope) {
   return true;
 }
 
-// Google matches an address on its host and path: the query string changes
-// nothing to the answer, and `?utm_content=1`, `?utm_content=2`… must not each
-// cost a lookup.
+// One lookup per host and path: Google canonicalises the query string too,
+// and could list one of `?utm_content=1`, `?utm_content=2`… alone, but an
+// email's tagged links differ only there, and each lookup costs. A compromise.
 function webRiskKeyOf(url) {
   const parsed = new URL(url);
   return `${parsed.origin}${parsed.pathname}`;
@@ -321,5 +322,6 @@ module.exports = {
   MAX_IMAGES,
   RUNS_PER_WINDOW,
   WEB_RISK_LOOKUPS_PER_DAY,
+  MAX_LINK_PROBES,
   clearCacheForTests,
 };
