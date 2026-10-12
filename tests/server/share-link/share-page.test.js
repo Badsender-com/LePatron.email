@@ -47,7 +47,12 @@ function fakeRes() {
   const res = {
     headers: {},
     statusCode: 200,
-    set: jest.fn((headers) => Object.assign(res.headers, headers)),
+    set: jest.fn((headers, value) =>
+      Object.assign(
+        res.headers,
+        typeof headers === 'string' ? { [headers]: value } : headers
+      )
+    ),
     status: jest.fn((code) => {
       res.statusCode = code;
       return res;
@@ -70,6 +75,7 @@ async function call(handler, req) {
       get: () => 'evil.test',
       is: (type) => type === 'application/json',
       protocol: 'http',
+      ip: '10.0.0.1',
       ...req,
     },
     res,
@@ -496,7 +502,7 @@ describe('GET /share/:token, the edges', () => {
     });
   });
 
-  it('stops a link opened too often', async () => {
+  it('stops a reader opening a link too often, and says when to retry', async () => {
     ShareLinks.findOne.mockReturnValue(lean(link));
     Mailings.findById.mockReturnValue(
       lean({ _id: 'm2', name: 'x', previewHtml: '<p>x</p>' })
@@ -505,8 +511,74 @@ describe('GET /share/:token, the edges', () => {
     for (let i = 0; i < 301; i += 1) {
       last = await call(pageController.renderShare, {
         params: { token: TOKEN },
+        ip: '10.0.0.1',
       });
     }
     expect(last.res.statusCode).toBe(429);
+    const retryAfter = Number(last.res.headers['Retry-After']);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(600);
+
+    // Another reader of the same link is not locked out.
+    const other = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+      ip: '10.0.0.2',
+    });
+    expect(other.res.statusCode).toBe(200);
+  });
+
+  it('answers every made-up token with a 404, however many there are', async () => {
+    ShareLinks.findOne.mockReturnValue(lean(null));
+    let last;
+    for (let i = 0; i < 1001; i += 1) {
+      last = await call(pageController.renderShare, {
+        params: { token: 'c'.repeat(43) },
+        ip: '10.0.0.1',
+      });
+    }
+    expect(last.res.statusCode).toBe(404);
+  });
+
+  it('answers with a page when the headers cannot be set', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    ShareLinks.findOne.mockReturnValue(lean(link));
+    const res = fakeRes();
+    res.set.mockImplementationOnce(() => {
+      throw new Error('headers already sent');
+    });
+    let error;
+    await pageController.renderShare(
+      { params: { token: TOKEN }, get: () => '', ip: '10.0.0.1' },
+      res,
+      (err) => {
+        error = err;
+      }
+    );
+    expect(error).toBeUndefined();
+    expect(res.statusCode).toBe(500);
+    expect(res.render.mock.calls[0][0]).toBe('share-page');
+    console.error.mockRestore();
+  });
+
+  it('hands a failure of the error page itself to Express, never crashing', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    ShareLinks.findOne.mockReturnValue({
+      lean: jest.fn().mockRejectedValue(new Error('Mongo down')),
+    });
+    const res = fakeRes();
+    const broken = new Error('template broken');
+    res.render.mockImplementation(() => {
+      throw broken;
+    });
+    let error;
+    await pageController.renderShare(
+      { params: { token: TOKEN }, get: () => '', ip: '10.0.0.1' },
+      res,
+      (err) => {
+        error = err;
+      }
+    );
+    expect(error).toBe(broken);
+    console.error.mockRestore();
   });
 });
