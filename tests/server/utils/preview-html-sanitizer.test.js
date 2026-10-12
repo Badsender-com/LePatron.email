@@ -11,16 +11,46 @@ const {
 const reparsed = (html) => new JSDOM(html).window.document;
 
 describe('sanitizeSharedPreviewHtml (the public share page)', () => {
-  it('opens every link in a new tab, without an opener', () => {
+  it('opens every web link in a new tab, without an opener', () => {
     const doc = reparsed(
       sanitizeSharedPreviewHtml(
-        '<html><head></head><body><a href="https://a.test" target="win" rel="opener">a</a><map><area href="https://b.test" target="_top"></map></body></html>'
+        '<html><head></head><body><a href="https://a.test" target="win" rel="opener">a</a><map><area href="https://b.test" target="_top"></map><a href=" HTTP://c.test ">c</a><a href="//d.test/x">d</a></body></html>'
       )
     );
-    doc.querySelectorAll('a, area').forEach((link) => {
+    const links = doc.querySelectorAll('a, area');
+    expect(links).toHaveLength(4);
+    links.forEach((link) => {
       expect(link.getAttribute('target')).toBe('_blank');
       expect(link.getAttribute('rel')).toBe('noopener noreferrer');
     });
+  });
+
+  // In the sandboxed frame, a link with a target opens a tab: "back to top"
+  // must scroll, and a mailto: must go to the mail client, not to a blank tab.
+  it.each([
+    ['an anchor of the email', '<a href="#top" target="_blank">top</a>'],
+    ['an empty href', '<a href="" target="_blank">x</a>'],
+    ['no href at all', '<a name="top" target="_blank">x</a>'],
+    ['a mailto:', '<a href="mailto:a@b.test" target="_blank">mail</a>'],
+    ['a tel:', '<a href="tel:+33100000000" target="_top">call</a>'],
+    ['an area of the email', '<map><area href="#top" target="_blank"></map>'],
+  ])('keeps %s inside the frame', (_label, html) => {
+    const doc = reparsed(sanitizeSharedPreviewHtml(`<body>${html}</body>`));
+    const link = doc.querySelector('a, area');
+    expect(link).not.toBeNull();
+    expect(link.hasAttribute('target')).toBe(false);
+  });
+
+  it('treats a link drawn in an SVG like any other', () => {
+    const doc = reparsed(
+      sanitizeSharedPreviewHtml(
+        '<body><svg><a href="https://a.test"><text>a</text></a><a href="#top"><text>top</text></a></svg></body>'
+      )
+    );
+    const [web, anchor] = doc.querySelectorAll('svg a');
+    expect(web.getAttribute('target')).toBe('_blank');
+    expect(web.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(anchor.hasAttribute('target')).toBe(false);
   });
 
   it('lets nothing come back through an attribute that looks like markup', () => {
