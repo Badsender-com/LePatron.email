@@ -29,7 +29,9 @@ module.exports = `
 
     <template v-if="!session">
       <template v-if="target.kind !== 'email'">
-        <p class="ai-panel__section">{{ t('ai-panel-selected-block') }}</p>
+        <p class="ai-panel__section">
+          {{ target.kind === 'blockField' ? t('ai-panel-selected-field') : t('ai-panel-selected-block') }}
+        </p>
         <ul v-if="targetActions.length" class="ai-panel__actions">
           <li v-for="item in targetActions" :key="item.id">
             <button type="button" class="ai-panel__action" @click="openAction(item.id, target)">

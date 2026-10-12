@@ -1,5 +1,6 @@
 'use strict';
 
+const _ = require('lodash');
 const ko = require('knockout');
 const { getSubject, canWriteSubject, setSubject } = require('../email-subject');
 const { extractEmailCopy } = require('../text-generation/email-copy');
@@ -8,6 +9,66 @@ const {
   canWritePreheader,
   writePreheader,
 } = require('../email-preheader');
+const { listTextFields } = require('../block-text-fields');
+const { getBlockDefault } = require('../quality/ownership');
+const {
+  injectBlockTranslations,
+} = require('../../utils/block-content-extractor');
+
+const unwrap = ko.utils.unwrapObservable;
+
+const hasId = (block, blockId) => {
+  const value = unwrap(block);
+  return Boolean(value) && typeof value === 'object' && unwrap(value.id) === blockId;
+};
+
+/**
+ * A block of the email by its id, as the observable its fields are written
+ * to: a block of a container (`xBlocks`, converter/parser.js), or one of the
+ * template's fixed blocks, declared at the root of the content (a header, a
+ * footer).
+ */
+function blockById(viewModel, blockId) {
+  const content = viewModel.content() || {};
+  for (const key of Object.keys(content)) {
+    if (hasId(content[key], blockId)) return content[key];
+    if (/Blocks$/.test(key)) {
+      const container = unwrap(content[key]);
+      const blocks = (container && unwrap(container.blocks)) || [];
+      const found = blocks.find((block) => hasId(block, blockId));
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Whether the rendering hides an element: by itself or by an ancestor, up to
+// its block.
+function isHiddenIn(element, block) {
+  const view = element.ownerDocument.defaultView;
+  for (let node = element; node && node !== block; node = node.parentElement) {
+    if (node.hidden) return true;
+    const style = view.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden') return true;
+  }
+  return false;
+}
+
+/**
+ * Whether the canvas hides a field. Each editable text is rendered with the id
+ * `<blockId>_<path>`, the first dot an underscore: a text field the canvas does
+ * not render at all is hidden too. An alternative text has no element of its
+ * own: it shows with its block.
+ */
+function hiddenInCanvas(blockId) {
+  const block = document.getElementById(blockId);
+  return (path, role) => {
+    if (!block) return true;
+    if (role === 'alt') return isHiddenIn(block, null);
+    const element = document.getElementById(`${blockId}_${path.replace('.', '_')}`);
+    return !element || isHiddenIn(element, block);
+  };
+}
 
 /**
  * What the AI actions read from and write into the email being edited: the
@@ -51,6 +112,19 @@ function createEditorAccess(viewModel) {
     getPreheader: () =>
       canWritePreheader(viewModel) ? readPreheader(viewModel).value : '',
     setPreheader: (value) => writePreheader(viewModel, value),
+    // The text fields of a block, with their HTML, as the rendering shows them.
+    textFieldsOf(blockId) {
+      const block = ko.toJS(blockById(viewModel, blockId)) || {};
+      const blockDef = getBlockDefault(ko.toJS(viewModel.blockDefs), block.type);
+      return listTextFields(block, {
+        blockDef,
+        isHidden: hiddenInCanvas(blockId),
+      }).map((field) => ({ ...field, html: field.value }));
+    },
+    readField: (blockId, path) =>
+      _.get(ko.toJS(blockById(viewModel, blockId)), path),
+    writeField: (blockId, path, html) =>
+      injectBlockTranslations(blockById(viewModel, blockId), { [path]: html }),
     startMultiple: () => viewModel.startMultiple(),
     stopMultiple: () => viewModel.stopMultiple(),
     // The context the action registry decides from.
