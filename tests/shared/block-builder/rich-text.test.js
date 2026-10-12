@@ -8,6 +8,9 @@
 const {
   sanitizeRichText,
 } = require('../../../packages/shared/block-builder/rich-text.js');
+const {
+  BUILDER_STATE_MAX_LENGTH,
+} = require('../../../packages/shared/synthetic-blocks.js');
 
 describe('what is allowed', () => {
   test.each([
@@ -159,11 +162,13 @@ describe('known bypass attempts', () => {
 // regexes the scanner replaced: a `<` the scan read to the end of the input
 // from every start, or an attribute name read again from each of its letters.
 describe('adversarial input stays linear', () => {
-  const SIZE = 100000;
-  // Between the two durations that matter: the regexes this guards against
-  // took 4 to 16 seconds per 100KB, the scanner takes 3 to 30ms, and a loaded
-  // CI run has been seen to stretch that to 209ms. A red run here means the
-  // scanner regressed, not that the machine was busy.
+  // The largest text a stored state can hold, so the budget below reads as
+  // "no field blocks the server for more than a second", whatever its size.
+  const SIZE = BUILDER_STATE_MAX_LENGTH;
+  // The scanner takes 2 to 30ms here; a loaded CI run once stretched a run at
+  // half this size to 209ms. The regexes this guards against took seconds per
+  // 100KB. A red run here means the scanner regressed, not that the
+  // machine was busy.
   const BUDGET_MS = 1000;
 
   test.each([
