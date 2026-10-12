@@ -1,29 +1,30 @@
 'use strict';
 
 const createError = require('http-errors');
+const { zipObject } = require('lodash');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const { probeUrl, PROBE_FAILURES } = require('../utils/url-probe.js');
+const { probeUrl } = require('../utils/url-probe.js');
 const blocklists = require('./quality-blocklists.service.js');
 const webRisk = require('./quality-web-risk.service.js');
 const images = require('./quality-images.service.js');
+const links = require('./quality-links.service.js');
+const threats = require('./quality-threats.service.js');
 const {
   cached,
   throttled,
-  limiter,
   mapLimited,
-  onDefaultPort,
-  withoutCredentials,
-  timeLeft,
-  UNVERIFIABLE,
+  CONCURRENCY,
   RUNS_PER_WINDOW,
   clearForTests,
 } = require('./quality-limits.js');
 
 /**
  * What the quality checks need from the outside world: whether the links of an
- * email answer, what its images weigh once the export has processed them, and
- * whether a link's domain sits on a blocklist.
+ * email answer (quality-links.service.js), what its images weigh once the
+ * export has processed them (quality-images.service.js), and what blocklists
+ * and Google Web Risk say of its links (quality-threats.service.js). This
+ * module validates what the editor sends, and runs the four within the bounds.
  *
  * The editor decides which links and images are the client's (it knows the
  * template); the server only measures them. Any logged-in user can have the
@@ -43,19 +44,8 @@ const {
 const MAX_LINKS = 60;
 const MAX_IMAGES = 40;
 const MAX_URL_LENGTH = 2048;
-const CONCURRENCY = 4;
-const LINK_TIMEOUT_MS = 5000;
 // Short enough to answer before a hosting router gives up on the request.
 const RUN_DEADLINE_MS = 20000;
-// Link probes in parallel for the whole process, whoever asks: each user gets
-// CONCURRENCY of them, so many users at once must not fan out without end.
-const MAX_LINK_PROBES = 16;
-const linkProbes = limiter(MAX_LINK_PROBES);
-// Web Risk lookups a company may make in a day, past the cache. A run asks
-// 60 at most: this lets a company run the checks some fifty times a day, and
-// bounds what one account can cost past Google's free tier.
-const WEB_RISK_LOOKUPS_PER_DAY = 3000;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 // ----- Payload
 
@@ -109,60 +99,6 @@ function validateResourcesPayload(body) {
   };
 }
 
-// ----- Links
-
-/**
- * How a link answers:
- *   - ok: a 2xx at the end of the redirects;
- *   - broken: the page is gone (404, 410), or the server fails on it (500).
- *     Every reader would hit it;
- *   - unverifiable: anything a robot meets and a reader may not: 401, 403,
- *     429, 503 (Cloudflare's challenge), 502 and 504 (a proxy having a bad
- *     moment), LinkedIn's 999. Only worth a look.
- */
-function linkState({ status }) {
-  if (status >= 200 && status < 300) return { state: 'ok', httpStatus: status };
-  if (status === 404 || status === 410 || status === 500) {
-    return { state: 'broken', httpStatus: status };
-  }
-  return { state: 'unverifiable', httpStatus: status };
-}
-
-async function checkLink(url, run, deps) {
-  if (!onDefaultPort(url) || Date.now() > run.deadline) return UNVERIFIABLE;
-  try {
-    const response = await linkProbes(() =>
-      // The deadline may pass while waiting for a probe slot: not judged.
-      Date.now() > run.deadline
-        ? null
-        : deps.probe(withoutCredentials(url), {
-            timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
-            readBody: false,
-            defaultPortsOnly: true,
-          })
-    );
-    return response ? linkState(response) : UNVERIFIABLE;
-  } catch (error) {
-    if (error.reason === PROBE_FAILURES.NOT_FOUND) {
-      return { state: 'broken', reason: error.reason };
-    }
-    if (error.reason === PROBE_FAILURES.TIMEOUT) {
-      return { state: 'unverifiable', reason: error.reason };
-    }
-    // Refused (a private network), reset, too many redirects: the answer does
-    // not say which, or it would map what the server can reach.
-    return UNVERIFIABLE;
-  }
-}
-
-// Kept for the next runs: a page that answers or is gone, a domain that does
-// not exist. A server error or a refusal may change within minutes.
-const isDefinitiveLink = (result) =>
-  result.state === 'ok' ||
-  result.httpStatus === 404 ||
-  result.httpStatus === 410 ||
-  result.reason === PROBE_FAILURES.NOT_FOUND;
-
 // ----- Run
 
 const DEFAULT_DEPS = {
@@ -173,83 +109,6 @@ const DEFAULT_DEPS = {
   webRiskKey: () => webRisk.apiKey(),
   webRiskLookup: (url, key, options) => webRisk.lookup(url, key, options),
 };
-
-const byKey = (keys, values) =>
-  keys.reduce((acc, key, i) => {
-    acc[key] = values[i];
-    return acc;
-  }, {});
-
-async function checkDomains(links, zones, key, run, deps) {
-  if (!zones.length) return { enabled: false, listed: {} };
-  const domains = [
-    ...new Set(links.map(blocklists.registrableDomain).filter(Boolean)),
-  ];
-  const results = await mapLimited(domains, CONCURRENCY, (domain) =>
-    // Past the run's deadline, a domain is not judged (and not cached).
-    Date.now() > run.deadline
-      ? Promise.resolve([])
-      : cached(
-          key('dnsbl', domain),
-          () => blocklists.listedOn(domain, zones, deps.resolve4),
-          () => true
-        )
-  );
-  const listed = byKey(domains, results);
-  Object.keys(listed).forEach((domain) => {
-    if (!listed[domain].length) delete listed[domain];
-  });
-  return { enabled: true, listed };
-}
-
-const webRiskLookups = new Map(); // cacheScope -> { since, count }
-
-// Takes one lookup from the company's daily budget; false once it is spent.
-function spendWebRiskLookup(scope) {
-  const now = Date.now();
-  const budget = webRiskLookups.get(scope);
-  if (!budget || now - budget.since > DAY_MS) {
-    webRiskLookups.set(scope, { since: now, count: 1 });
-    return true;
-  }
-  if (budget.count >= WEB_RISK_LOOKUPS_PER_DAY) return false;
-  budget.count += 1;
-  return true;
-}
-
-// One lookup per host and path: Google canonicalises the query string too,
-// and could list one of `?utm_content=1`, `?utm_content=2`… alone, but an
-// email's tagged links differ only there, and each lookup costs. A compromise.
-function webRiskKeyOf(url) {
-  const parsed = new URL(url);
-  return `${parsed.origin}${parsed.pathname}`;
-}
-
-// Links Google lists as phishing, malware or unwanted software. A failed
-// lookup, one past the run's deadline or past the company's daily budget is
-// not judged, and not kept for the next runs.
-async function checkThreats(links, apiKey, key, run, scope, deps) {
-  if (!apiKey) return { enabled: false, threats: {} };
-  const results = await mapLimited(links, CONCURRENCY, (url) =>
-    cached(
-      key('webrisk', webRiskKeyOf(url)),
-      () => {
-        if (Date.now() > run.deadline || !spendWebRiskLookup(scope)) {
-          return Promise.resolve(null);
-        }
-        return deps.webRiskLookup(withoutCredentials(url), apiKey, {
-          timeoutMs: timeLeft(run, webRisk.TIMEOUT_MS),
-        });
-      },
-      (types) => types !== null
-    )
-  );
-  const threats = byKey(links, results);
-  Object.keys(threats).forEach((url) => {
-    if (!threats[url] || !threats[url].length) delete threats[url];
-  });
-  return { enabled: true, threats };
-}
 
 /**
  * @param {{ links: string[], images: string[] }} resources - validated
@@ -271,12 +130,12 @@ function checkResources(
     const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
 
-    const [linkResults, imageResults, domains, threats] = await Promise.all([
+    const [linkResults, imageResults, domains, dangerous] = await Promise.all([
       mapLimited(resources.links, CONCURRENCY, (url) =>
         cached(
           key('link', url),
-          () => checkLink(url, run, deps),
-          isDefinitiveLink
+          () => links.checkLink(url, run, deps),
+          links.isDefinitiveLink
         )
       ),
       mapLimited(resources.images, CONCURRENCY, (url) => {
@@ -289,8 +148,8 @@ function checkResources(
           images.isDefinitiveImage
         );
       }),
-      checkDomains(resources.links, deps.zones(), key, run, deps),
-      checkThreats(
+      threats.checkDomains(resources.links, deps.zones(), key, run, deps),
+      threats.checkThreats(
         resources.links,
         deps.webRiskKey(),
         key,
@@ -301,27 +160,24 @@ function checkResources(
     ]);
 
     return {
-      links: byKey(resources.links, linkResults),
-      images: byKey(resources.images, imageResults),
+      links: zipObject(resources.links, linkResults),
+      images: zipObject(resources.images, imageResults),
       blocklists: domains,
-      webRisk: threats,
+      webRisk: dangerous,
     };
   });
 }
 
 function clearCacheForTests() {
   clearForTests();
-  webRiskLookups.clear();
+  threats.clearBudgetsForTests();
 }
 
 module.exports = {
   validateResourcesPayload,
   checkResources,
-  linkState,
   MAX_LINKS,
   MAX_IMAGES,
   RUNS_PER_WINDOW,
-  WEB_RISK_LOOKUPS_PER_DAY,
-  MAX_LINK_PROBES,
   clearCacheForTests,
 };
