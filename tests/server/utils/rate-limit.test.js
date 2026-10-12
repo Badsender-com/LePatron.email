@@ -150,6 +150,23 @@ describe('clientIp', () => {
     ).toBe('203.0.113.7');
   });
 
+  it('skips the internal hops appended after the client', () => {
+    expect(
+      clientIp({
+        headers: {
+          'x-forwarded-for':
+            '198.51.100.9, 203.0.113.7, 10.2.0.4, ::ffff:172.17.0.2',
+        },
+      })
+    ).toBe('203.0.113.7');
+  });
+
+  it('keeps the last entry of a chain made of internal hops only', () => {
+    expect(
+      clientIp({ headers: { 'x-forwarded-for': '10.0.0.1, 192.168.1.2' } })
+    ).toBe('192.168.1.2');
+  });
+
   it('ignores an empty forwarded chain', () => {
     expect(
       clientIp({ headers: { 'x-forwarded-for': ' , ' }, ip: '198.51.100.2' })

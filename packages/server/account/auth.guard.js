@@ -109,6 +109,21 @@ passport.use(
       if (!passwordMatches(user, password)) {
         return done(null, false, { message: 'password.error.incorrect' });
       }
+      // Signing in with the password closes a reset the person asked for:
+      // the emailed link stops working, rather than staying valid a week.
+      // Not saving it does not bar the way in.
+      if (user.token) {
+        user.token = undefined;
+        user.tokenExpire = undefined;
+        await user
+          .save()
+          .catch((error) =>
+            logger.error(
+              `[account] pending reset not closed for ${user.id}`,
+              error
+            )
+          );
+      }
       return done(null, user);
     } catch (err) {
       console.error(err);

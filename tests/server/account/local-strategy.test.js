@@ -31,6 +31,7 @@ function account(overrides) {
     id: 'u1',
     email: 'someone@client.test',
     password: HASH,
+    save: jest.fn().mockResolvedValue(),
     comparePassword(password) {
       return !!this.password && bcrypt.compareSync(password, this.password);
     },
@@ -86,6 +87,20 @@ describe('signing in with a password', () => {
 
     expect(user.id).toBe('u1');
     expect(Users.findOne.mock.calls[0][0]).not.toHaveProperty('token');
+  });
+
+  it('closes a pending reset the person asked for once the password signs in', async () => {
+    const record = account({
+      token: 'pending',
+      tokenExpire: new Date(Date.now() + 1000),
+    });
+    Users.findOne.mockResolvedValue(record);
+
+    await signIn('someone@client.test', 'right-password');
+
+    expect(record.token).toBeUndefined();
+    expect(record.tokenExpire).toBeUndefined();
+    expect(record.save).toHaveBeenCalled();
   });
 
   it('refuses an account without a password, invited or reset by an admin', async () => {
