@@ -24,4 +24,12 @@ router.post(
   textGeneration.generatePreheader
 );
 
+// Spelling corrections of the fields of one block (ADR 0005).
+router.post(
+  '/corrections',
+  GUARD_USER,
+  aiRateLimit(),
+  textGeneration.correctText
+);
+
 module.exports = router;

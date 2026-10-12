@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const textGenerationService = require('./text-generation.service.js');
+const textCorrectionService = require('./text-correction.service.js');
 
 /**
  * @api {post} /text-generation/subject Subject proposals for an email
@@ -52,7 +53,30 @@ async function generatePreheader(req, res) {
   );
 }
 
+/**
+ * @api {post} /text-generation/corrections Spelling corrections of a block's fields
+ * @apiPermission user
+ * @apiName CorrectText
+ * @apiGroup TextGeneration
+ *
+ * @apiParam (Body) {String} mailingId the email being edited
+ * @apiParam (Body) {Object} target the block or block field: `{ kind, blockId, blockType, field? }`
+ * @apiParam (Body) {Object[]} fields their visible text: `{ path, role, text }`
+ *
+ * @apiSuccess {Object[]} corrections `{ field, before, after, reason }`
+ * @apiSuccess {Number} dropped corrections the code could not place
+ */
+async function correctText(req, res) {
+  res.json(
+    await textCorrectionService.correctText({
+      user: req.user,
+      body: req.body,
+    })
+  );
+}
+
 module.exports = {
   generateSubject: asyncHandler(generateSubject),
   generatePreheader: asyncHandler(generatePreheader),
+  correctText: asyncHandler(correctText),
 };

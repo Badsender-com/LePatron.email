@@ -109,6 +109,44 @@ const preheaderGenInput = z
 
 const preheaderGenOutput = textProposalsOutput;
 
+// Spelling correction (ADR 0005): the visible text of the fields of one block,
+// each with its path; the skill answers corrections the code then places.
+const FIELD_ROLES = ['title', 'text', 'button', 'alt'];
+
+const correctionInput = z
+  .object({
+    fields: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1),
+            role: z.enum(FIELD_ROLES),
+            text: z.string().min(1),
+          })
+          .strict()
+      )
+      .min(1),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const correctionOutput = z
+  .object({
+    // None for a text without mistake.
+    corrections: z.array(
+      z
+        .object({
+          field: z.string().min(1),
+          // An exact excerpt of the field's text, long enough to be found once.
+          before: z.string().min(1),
+          after: z.string(),
+          reason: z.string().min(1),
+        })
+        .strict()
+    ),
+  })
+  .strict();
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
@@ -116,6 +154,8 @@ const schemas = Object.freeze({
   subjectGenOutput,
   preheaderGenInput,
   preheaderGenOutput,
+  correctionInput,
+  correctionOutput,
 });
 
 /**

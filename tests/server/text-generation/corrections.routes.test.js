@@ -147,8 +147,7 @@ function loadModules() {
 const post = (payload = body, app = makeApp()) =>
   request(app).post('/api/text-generation/corrections').send(payload);
 
-// Turned on by #1254 (correct a field)
-describe.skip('spelling correction: POST /api/text-generation/corrections', () => {
+describe('spelling correction: POST /api/text-generation/corrections', () => {
   beforeEach(loadModules);
 
   describe('access', () => {
@@ -227,6 +226,40 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
       );
       expect(call.input).toEqual({ fields: FIELDS, expertise: [] });
     });
+  });
+
+  it('leaves out the transversal writing expertise: correcting is not rewriting', async () => {
+    findApplicable.mockResolvedValue([
+      {
+        expertiseId: 'redaction.principes-email',
+        title: 'Principes de rédaction email',
+        body: '## [lecteur-d-abord] Le lecteur d’abord',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: true,
+        versionMajor: 1,
+        versionMinor: 1,
+      },
+      {
+        expertiseId: 'correction.marques',
+        title: 'Marques à ne jamais corriger',
+        body: '## [marques] Marques',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: false,
+        versionMajor: 1,
+        versionMinor: 0,
+      },
+    ]);
+    invoke.mockResolvedValue(corrections());
+    await post();
+    const call = invoke.mock.calls[0][0];
+    expect(call.input.expertise.map((e) => e.expertiseId)).toEqual([
+      'correction.marques',
+    ]);
+    expect(call.expertiseConsumed).toEqual([
+      { expertiseId: 'correction.marques', versionMajor: 1, versionMinor: 0 },
+    ]);
   });
 
   describe('the corrections', () => {
