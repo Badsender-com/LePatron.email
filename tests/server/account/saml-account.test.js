@@ -128,6 +128,13 @@ describe('signing in through SSO', () => {
     ).toBeNull();
   });
 
+  it('signs in an account with a pending password reset', async () => {
+    const { user } = await signInWith(idpOfY.signedResponse('someone@y.test'));
+
+    expect(user._id).toBe('u-y');
+    expect(Users.findOne.mock.calls[0][0]).not.toHaveProperty('token');
+  });
+
   it('refuses a response before any company was picked', async () => {
     expect(await accountOfResponse({}, { nameID: 'someone@y.test' })).toBe(
       null

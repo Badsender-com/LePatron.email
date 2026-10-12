@@ -71,13 +71,14 @@ function nameIdOf(samlResponse) {
   }
 }
 
+// A pending password reset does not bar the way in: an SSO account signs in
+// through its identity provider, whatever happens to its password.
 function findAccount(email) {
   if (typeof email !== 'string' || email.trim() === '') return null;
   if (normalizeString(email) !== asciiLowercase(email.trim())) return null;
   return Users.findOne({
     email: normalizeString(email),
     isDeactivated: { $ne: true },
-    token: { $exists: false },
   });
 }
 
