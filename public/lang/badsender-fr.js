@@ -741,6 +741,8 @@ module.exports = {
     'Aucun lien ne pointe vers un domaine sur liste noire',
   'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
     "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
+  'Domain could not be checked against the blocklists: __domain__':
+    "Le domaine n'a pas pu être vérifié sur les listes noires : __domain__",
   'Checking links and images…': 'Vérification des liens et des images…',
   'Dangerous links': 'Liens dangereux',
   'Google lists none of the links as dangerous':
@@ -753,6 +755,8 @@ module.exports = {
     'Google signale ce lien comme un logiciel indésirable : __label__',
   'Google lists this link as unsafe: __label__':
     'Google signale ce lien comme dangereux : __label__',
+  'Google could not check this link, check it by hand: __label__':
+    "Google n'a pas pu vérifier ce lien, vérifiez-le vous-même : __label__",
   'Share a preview': 'Partager un aperçu',
   'Anyone with the link sees the last saved version of the email, without an account.':
     "Toute personne qui a le lien voit la dernière version enregistrée de l'email, sans compte.",

@@ -266,9 +266,53 @@ describe('dangerous-links', () => {
   it('passes when Google lists none', () => {
     const { checks } = check(dangerousLinks, html, {
       ...remoteOf(),
-      webRisk: { enabled: true, threats: {} },
+      webRisk: { enabled: true, threats: {}, unchecked: [] },
     });
     expect(checks[0].status).toBe('passed');
+  });
+
+  it('is not listed when Google could be asked about none of the links', () => {
+    // A revoked key, a spent budget: "lists none as dangerous" would be false.
+    const { checks, findings } = check(dangerousLinks, html, {
+      ...remoteOf(),
+      webRisk: {
+        enabled: true,
+        threats: {},
+        unchecked: ['https://bad.test/login'],
+      },
+    });
+    expect(checks).toEqual([]);
+    expect(findings).toEqual([]);
+  });
+
+  it('notes the links Google could not be asked about, next to the ones it lists', () => {
+    const { findings } = check(
+      dangerousLinks,
+      html + '<a href="https://other.test/">Other</a>',
+      {
+        ...remoteOf(),
+        webRisk: {
+          enabled: true,
+          threats: { 'https://bad.test/login': ['MALWARE'] },
+          unchecked: ['https://other.test/'],
+        },
+      }
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        severity: 'error',
+        messageKey: 'Google lists this link as malware: __label__',
+      }),
+      expect.objectContaining({
+        severity: 'info',
+        messageKey:
+          'Google could not check this link, check it by hand: __label__',
+        params: { label: 'Other' },
+        blockId: 'b1',
+      }),
+    ]);
+    // Ignoring "could not check" must not hide a later listing.
+    expect(findings[0].fingerprint).not.toBe(findings[1].fingerprint);
   });
 });
 
@@ -294,6 +338,37 @@ describe('domain-blocklists', () => {
       expect.objectContaining({
         blockId: 'b1',
         params: { domain: 'shady.co.uk', lists: 'Spamhaus DBL' },
+      }),
+    ]);
+  });
+
+  it("is not listed when the blocklists could be asked about none of the links' domains", () => {
+    const { checks } = check(
+      domainBlocklists,
+      html,
+      remoteOf({
+        blocklists: { enabled: true, listed: {}, unchecked: ['shady.co.uk'] },
+      })
+    );
+    expect(checks).toEqual([]);
+  });
+
+  it('notes the domains the blocklists could not be asked about, on the block of their link', () => {
+    const { findings, checks } = check(
+      domainBlocklists,
+      html + '<a href="https://fine.test/">Fine</a>',
+      remoteOf({
+        blocklists: { enabled: true, listed: {}, unchecked: ['shady.co.uk'] },
+      })
+    );
+    expect(checks[0].status).toBe('failed');
+    expect(findings).toEqual([
+      expect.objectContaining({
+        severity: 'info',
+        messageKey:
+          'Domain could not be checked against the blocklists: __domain__',
+        params: { domain: 'shady.co.uk' },
+        blockId: 'b1',
       }),
     ]);
   });

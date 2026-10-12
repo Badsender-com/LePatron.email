@@ -719,6 +719,8 @@ module.exports = {
     'No link points to a blocklisted domain',
   'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
     'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__',
+  'Domain could not be checked against the blocklists: __domain__':
+    'Domain could not be checked against the blocklists: __domain__',
   'Checking links and images…': 'Checking links and images…',
   'Dangerous links': 'Dangerous links',
   'Google lists none of the links as dangerous':
@@ -731,6 +733,8 @@ module.exports = {
     'Google lists this link as unwanted software: __label__',
   'Google lists this link as unsafe: __label__':
     'Google lists this link as unsafe: __label__',
+  'Google could not check this link, check it by hand: __label__':
+    'Google could not check this link, check it by hand: __label__',
   'Share a preview': 'Share a preview',
   'Anyone with the link sees the last saved version of the email, without an account.':
     'Anyone with the link sees the last saved version of the email, without an account.',
