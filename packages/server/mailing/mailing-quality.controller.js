@@ -70,9 +70,12 @@ async function updateQualityIgnores(req, res) {
  *   httpStatus?, reason? }`
  * @apiSuccess {Object} images by address: `{ state: ok|unreachable|unverifiable,
  *   bytes, width, height, type, atLeast? }`, as the export will ship them
- * @apiSuccess {Object} blocklists `{ enabled, listed: { domain: [names] } }`
- * @apiSuccess {Object} webRisk `{ enabled, threats: { url: [threat types] } }`,
- *   Google Web Risk, where QC_WEB_RISK_API_KEY is set
+ * @apiSuccess {Object} blocklists `{ enabled, listed: { domain: [names] },
+ *   unchecked: [domains] }`, where QC_DOMAIN_BLOCKLISTS is set
+ * @apiSuccess {Object} webRisk `{ enabled, threats: { url: [threat types] },
+ *   unchecked: [urls] }`, Google Web Risk, where QC_WEB_RISK_API_KEY is set.
+ *   `unchecked` lists what the third party could not answer for: a check
+ *   that answered for nothing has not run.
  *
  * @apiDescription Reading the email is enough: nothing is stored. One run at a
  *   time per user, a second one waiting its turn (a third is a 429

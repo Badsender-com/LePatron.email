@@ -1,7 +1,5 @@
 'use strict';
 
-const { zipObject } = require('lodash');
-
 const { QualityBudgets } = require('../common/models.common.js');
 const { KEEP_SPENT_SECONDS } = require('./quality-budget.schema.js');
 const logger = require('../utils/logger.js');
@@ -30,26 +28,37 @@ const WEB_RISK_KIND = 'webrisk';
 // MongoDB's error for a document that breaks a unique index.
 const DUPLICATE_KEY = 11000;
 
+const UNCHECKED_DOMAIN = Object.freeze({ names: [], checked: false });
+
+/**
+ * The blocklists listing the registrable domain of each link. A domain a
+ * zone could not answer for (resolver down, query refused, out of time) is
+ * `unchecked`, and not kept for the next runs: "listed by none" must not be
+ * taken for "clean".
+ * @returns {Promise<{ enabled: boolean, listed: Object, unchecked: string[] }>}
+ */
 async function checkDomains(links, zones, key, run, deps) {
-  if (!zones.length) return { enabled: false, listed: {} };
+  if (!zones.length) return { enabled: false, listed: {}, unchecked: [] };
   const domains = [
     ...new Set(links.map(blocklists.registrableDomain).filter(Boolean)),
   ];
   const results = await mapLimited(domains, CONCURRENCY, (domain) =>
-    // Past the run's deadline, a domain is not judged (and not cached).
     Date.now() > run.deadline
-      ? Promise.resolve([])
+      ? Promise.resolve(UNCHECKED_DOMAIN)
       : cached(
           key('dnsbl', domain),
           () => blocklists.listedOn(domain, zones, deps.resolve4),
-          () => true
+          (result) => result.checked
         )
   );
-  const listed = zipObject(domains, results);
-  Object.keys(listed).forEach((domain) => {
-    if (!listed[domain].length) delete listed[domain];
+  const listed = {};
+  const unchecked = [];
+  domains.forEach((domain, i) => {
+    const { names, checked } = results[i];
+    if (names.length) listed[domain] = names;
+    else if (!checked) unchecked.push(domain);
   });
-  return { enabled: true, listed };
+  return { enabled: true, listed, unchecked };
 }
 
 const dayOf = (date) => date.toISOString().slice(0, 10);
@@ -107,11 +116,14 @@ function webRiskKeyOf(url) {
   return `${parsed.origin}${parsed.pathname}`;
 }
 
-// Links Google lists as phishing, malware or unwanted software. A failed
-// lookup, one past the run's deadline or past the company's daily budget is
-// not judged, and not kept for the next runs.
+/**
+ * Links Google lists as phishing, malware or unwanted software. A failed
+ * lookup (a revoked key, Google down), one past the run's deadline or past
+ * the company's daily budget is `unchecked`, and not kept for the next runs.
+ * @returns {Promise<{ enabled: boolean, threats: Object, unchecked: string[] }>}
+ */
 async function checkThreats(links, apiKey, key, run, scope, deps) {
-  if (!apiKey) return { enabled: false, threats: {} };
+  if (!apiKey) return { enabled: false, threats: {}, unchecked: [] };
   const results = await mapLimited(links, CONCURRENCY, (url) =>
     cached(
       key('webrisk', webRiskKeyOf(url)),
@@ -125,11 +137,13 @@ async function checkThreats(links, apiKey, key, run, scope, deps) {
       (types) => types !== null
     )
   );
-  const threats = zipObject(links, results);
-  Object.keys(threats).forEach((url) => {
-    if (!threats[url] || !threats[url].length) delete threats[url];
+  const threats = {};
+  const unchecked = [];
+  links.forEach((url, i) => {
+    if (results[i] === null) unchecked.push(url);
+    else if (results[i].length) threats[url] = results[i];
   });
-  return { enabled: true, threats };
+  return { enabled: true, threats, unchecked };
 }
 
 module.exports = {

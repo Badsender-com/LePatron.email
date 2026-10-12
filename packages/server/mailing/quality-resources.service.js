@@ -151,7 +151,8 @@ function cutShortOnAbort(run, signal) {
  * @param {AbortSignal} [context.signal] - aborted once the caller is gone
  * @returns {Promise<{ links: Object, images: Object, blocklists: Object,
  *   webRisk: Object }>} results keyed by URL; blocklists: `{ enabled, listed:
- *   { domain: names } }`; webRisk: `{ enabled, threats: { url: types } }`
+ *   { domain: names }, unchecked: domains }`; webRisk: `{ enabled, threats:
+ *   { url: types }, unchecked: urls }`
  */
 function checkResources(
   resources,
