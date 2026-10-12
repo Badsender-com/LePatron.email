@@ -107,7 +107,7 @@ describe('ai panel: the controller', () => {
         blockId: 'ko_coverBlock_1',
         blockType: 'coverBlock',
       });
-      expect(panel.targetActions()).toEqual([]);
+      expect(ids(panel.targetActions())).toEqual(['correct-text']);
       selection(null);
       expect(panel.target()).toEqual({ kind: 'email' });
     });
@@ -151,7 +151,10 @@ describe('ai panel: the controller', () => {
     });
 
     it('keeps the action under way, and says the selection changed only for an element with actions', () => {
-      const { panel, selection } = mount();
+      // A block with no action: the definitions without « Corriger ».
+      const { panel, selection } = mount({
+        definitions: ACTIONS.filter((action) => action.id !== 'correct-text'),
+      });
       panel.openAction('generate-subject');
       selection(COVER);
       expect(panel.selectionChanged()).toBeNull();
@@ -178,7 +181,7 @@ describe('ai panel: the controller', () => {
         definitions: [...ACTIONS, rewrite],
       });
       selection(COVER);
-      panel.openTarget(panel.target());
+      expect(panel.openAction('rewrite-block', panel.target())).toBe(true);
       expect(panel.session().state.action).toBe('rewrite-block');
       expect(panel.session().state.target).toEqual({
         kind: 'block',

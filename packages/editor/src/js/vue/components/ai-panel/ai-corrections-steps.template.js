@@ -14,6 +14,11 @@ module.exports = `
     <span class="qc-spinner" aria-hidden="true"></span>{{ t('ai-panel-correcting') }}
   </p>
 
+  <p v-else-if="state.nothingToCorrect" ref="summary" tabindex="-1" class="qc-notice ai-panel__applied">
+    <span class="lucide lucide-info" aria-hidden="true"></span>
+    <span class="qc-notice__text">{{ t('ai-panel-nothing-to-correct') }}</span>
+  </p>
+
   <p v-else-if="state.done && !state.corrections.length" ref="summary" tabindex="-1" class="qc-notice ai-panel__applied">
     <span class="lucide lucide-check" aria-hidden="true"></span>
     <span class="qc-notice__text">{{ t('ai-panel-no-correction') }}</span>
@@ -32,6 +37,9 @@ module.exports = `
     <ul class="ai-panel__corrections" aria-labelledby="ai-panel-corrections">
       <li v-for="correction in state.corrections" :key="correction.id" class="ai-panel__correction"
           :class="['ai-panel__correction--' + correction.status, { 'ai-panel__correction--answered': !isOpen(correction) }]">
+        <p v-if="isOpen(correction) && state.target.kind !== 'blockField' && ROLE_LABELS[correction.role]" class="ai-panel__field-label">
+          {{ t(ROLE_LABELS[correction.role]) }}
+        </p>
         <p :id="'ai-correction-' + correction.id" class="ai-panel__change">
           <span class="qc-sr-only">{{ t('ai-panel-correction-before') }}</span>
           <del class="ai-panel__before">{{ correction.before }}</del>
@@ -54,8 +62,15 @@ module.exports = `
       </li>
     </ul>
 
-    <p v-if="state.dropped" class="ai-panel__hint">{{ tCount('ai-panel-corrections-dropped', state.dropped) }}</p>
     <p v-if="hasAccepted" class="ai-panel__hint">{{ t('ai-panel-correction-undo-hint', { keys: undoKeys }) }}</p>
+  </template>
+
+  <template v-if="state.done">
+    <p v-if="state.leftOut && state.leftOut.sample" class="ai-panel__hint">
+      {{ tCount('ai-panel-left-out-sample', state.leftOut.sample) }}
+    </p>
+    <p v-if="state.tooLong" class="ai-panel__hint">{{ tCount('ai-panel-left-out-too-long', state.tooLong) }}</p>
+    <p v-if="state.dropped" class="ai-panel__hint">{{ tCount('ai-panel-corrections-dropped', state.dropped) }}</p>
   </template>
 </div>
 `;

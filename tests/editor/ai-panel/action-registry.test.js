@@ -100,18 +100,6 @@ describe('ai panel: the action registry', () => {
     });
   });
 
-  // Replaced by the « Corriger » block below when #1255 turns it on.
-  describe('blocks', () => {
-    it('offer no action yet', () => {
-      expect(
-        availableActions({ kind: 'block', blockType: 'coverBlock' }, ON)
-      ).toEqual({
-        actions: [],
-        opens: 'none',
-      });
-    });
-  });
-
   // Adding an AI action means adding its definition (#1192): the registry, the
   // session and the icons derive from it.
   describe('an action added by its definition alone', () => {
@@ -189,8 +177,7 @@ describe('ai panel: the action registry', () => {
       });
     });
 
-    // Turned on by #1255 (correct a block)
-    describe.skip('on a block', () => {
+    describe('on a block', () => {
       it('is the block’s single action, opened directly', () => {
         expect(availableActions(BLOCK, ON)).toEqual({
           actions: [{ id: 'correct-text', canApply: true }],

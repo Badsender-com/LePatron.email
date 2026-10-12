@@ -387,8 +387,7 @@ describe('spelling correction: the steps of a correction', () => {
     });
   });
 
-  // Turned on by #1255 (correct a block)
-  describe.skip('a block', () => {
+  describe('a block', () => {
     it('sends every visible text field, alternative texts included, and leaves hidden and sample fields out', async () => {
       api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
       const session = open(BLOCK_TARGET);
@@ -406,7 +405,73 @@ describe('spelling correction: the steps of a correction', () => {
         },
         { path: 'image.alt', role: 'alt', text: 'Une robe en lin bleu' },
       ]);
-      expect(session.state.leftOut).toEqual({ hidden: 1, sample: 1 });
+      // A hidden field is left out quietly; one at its sample text is counted.
+      expect(session.state.leftOut).toEqual({ sample: 1 });
+    });
+
+    it('leaves out, and counts, a field too long to be checked', async () => {
+      editor.textFieldsOf = () => [
+        { ...FIELDS.ko_textBlock_3[0] },
+        {
+          path: 'longText',
+          role: 'text',
+          html: `<p>${'a'.repeat(5001)}</p>`,
+          hidden: false,
+          sample: false,
+        },
+      ];
+      api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
+      const session = open(BLOCK_TARGET);
+      await session.request();
+      expect(api.generate.mock.calls[0][1].fields.map((f) => f.path)).toEqual([
+        'titleText',
+      ]);
+      expect(session.state.tooLong).toBe(1);
+    });
+
+    it('sends a block of many fields in several requests', async () => {
+      editor.textFieldsOf = () =>
+        Array.from({ length: 45 }, (_, i) => ({
+          path: `text${i}`,
+          role: 'text',
+          html: `Texte ${i}`,
+          hidden: false,
+          sample: false,
+        }));
+      api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
+      await open(BLOCK_TARGET).request();
+      expect(
+        api.generate.mock.calls.map(([, body]) => body.fields.length)
+      ).toEqual([40, 5]);
+    });
+
+    it('says there is nothing to correct when every field is hidden or left at its sample, without a request', async () => {
+      editor.textFieldsOf = () => [
+        {
+          path: 'buttonText',
+          role: 'button',
+          html: 'Bouton',
+          hidden: false,
+          sample: true,
+        },
+      ];
+      const session = open(BLOCK_TARGET);
+      await session.request();
+      expect(api.generate).not.toHaveBeenCalled();
+      expect(session.state.nothingToCorrect).toBe(true);
+      expect(session.state.done).toBe(true);
+    });
+
+    it('tells each correction’s field by its role', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [
+          fix('image.alt', 'robe en lin bleu', 'robe en lin bleue'),
+        ],
+        dropped: 0,
+      });
+      const session = open(BLOCK_TARGET);
+      await session.request();
+      expect(session.state.corrections[0].role).toBe('alt');
     });
 
     it('accepts all the corrections of the block as one step of the editor undo', async () => {
