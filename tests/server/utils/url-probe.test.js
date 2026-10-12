@@ -166,6 +166,28 @@ describe('probeUrl', () => {
     expect(skipped.body).toBeNull();
   });
 
+  it('lets the caller decline a body once its announced size is known', async () => {
+    const answer = response(200, { 'content-length': '12' }, 'abc');
+    const fetchImpl = jest.fn(async () => answer);
+    const acceptBody = jest.fn(() => false);
+    const result = await probeUrl('https://a.test', {
+      fetchImpl,
+      readBody: true,
+      acceptBody,
+    });
+    expect(acceptBody).toHaveBeenCalledWith({ contentLength: 12 });
+    expect(result).toMatchObject({ status: 200, body: null });
+    expect(answer.body.destroy).toHaveBeenCalled();
+
+    const unknown = jest.fn(() => true);
+    await probeUrl('https://a.test', {
+      fetchImpl: async () => response(200, {}, 'abc'),
+      readBody: true,
+      acceptBody: unknown,
+    });
+    expect(unknown).toHaveBeenCalledWith({ contentLength: null });
+  });
+
   it('names the failure: missing domain, timeout', async () => {
     const dnsError = Object.assign(new Error('getaddrinfo'), {
       code: 'ENOTFOUND',
