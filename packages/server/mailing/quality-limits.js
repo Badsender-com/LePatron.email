@@ -100,6 +100,16 @@ async function mapLimited(items, limit, task) {
 // Emails link to web pages: another port is a service, not a page.
 const onDefaultPort = (url) => new URL(url).port === '';
 
+// What is fetched: the address without the credentials its author may have
+// typed in it, which the server would otherwise present to a third party.
+function withoutCredentials(url) {
+  const parsed = new URL(url);
+  if (!parsed.username && !parsed.password) return url;
+  parsed.username = '';
+  parsed.password = '';
+  return parsed.toString();
+}
+
 // What is not judged: out of time, refused, or a hint of bot protection.
 const UNVERIFIABLE = Object.freeze({ state: 'unverifiable' });
 
@@ -119,6 +129,7 @@ module.exports = {
   limiter,
   mapLimited,
   onDefaultPort,
+  withoutCredentials,
   timeLeft,
   UNVERIFIABLE,
   RUNS_PER_WINDOW,
