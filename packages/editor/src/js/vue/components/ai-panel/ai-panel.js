@@ -5,11 +5,13 @@ const { definitionOf } = require('../../../ext/ai-panel/actions');
 const { placeFieldIcons } = require('../../../ext/ai-panel/field-icons');
 const { FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
 const { AiProposalsSteps } = require('./ai-proposals-steps');
+const { AiCorrectionsSteps } = require('./ai-corrections-steps');
 const template = require('./ai-panel.template');
 
 // The component that renders the steps of each family of AI actions.
 const STEPS_BY_FAMILY = {
   proposals: 'AiProposalsSteps',
+  corrections: 'AiCorrectionsSteps',
 };
 
 // What the controller holds, mirrored here so Vue renders it.
@@ -30,7 +32,7 @@ const MIRRORED = [
  * (ext/right-panel.js); it also places the AI icons on the fields.
  */
 const AiPanel = Vue.component('AiPanel', {
-  components: { AiProposalsSteps },
+  components: { AiProposalsSteps, AiCorrectionsSteps },
   props: {
     vm: { type: Object, required: true },
     panel: { type: Object, required: true },

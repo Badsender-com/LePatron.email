@@ -2,6 +2,7 @@
 
 const { ACTIONS, definitionOf } = require('./actions');
 const { createProposalsSession } = require('./sessions/proposals');
+const { createCorrectionsSession } = require('./sessions/corrections');
 
 /**
  * The steps of one AI action, outside any component, so that the AI panel only
@@ -12,6 +13,7 @@ const { createProposalsSession } = require('./sessions/proposals');
  */
 const FAMILIES = {
   proposals: createProposalsSession,
+  corrections: createCorrectionsSession,
 };
 
 const EMAIL = Object.freeze({ kind: 'email' });
@@ -23,6 +25,7 @@ const EMAIL = Object.freeze({ kind: 'email' });
  *   api: Object,
  *   editor: Object,
  *   definitions?: Array,
+ *   wait?: Function,
  * }} params
  */
 function createActionSession({
@@ -31,6 +34,7 @@ function createActionSession({
   api,
   editor,
   definitions = ACTIONS,
+  wait,
 }) {
   const definition = definitionOf(action, definitions);
   if (!definition) throw new Error(`Unknown AI action "${action}"`);
@@ -38,7 +42,7 @@ function createActionSession({
   if (!create) {
     throw new Error(`No steps for the "${definition.family}" family of AI actions`);
   }
-  return create({ definition, target, api, editor });
+  return create({ definition, target, api, editor, wait });
 }
 
 module.exports = { createActionSession, FAMILIES };

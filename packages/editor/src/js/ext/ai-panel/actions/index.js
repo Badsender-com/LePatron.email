@@ -11,6 +11,7 @@
 const ACTIONS = Object.freeze([
   require('./generate-subject'),
   require('./generate-preheader'),
+  require('./correct-text'),
 ]);
 
 /**

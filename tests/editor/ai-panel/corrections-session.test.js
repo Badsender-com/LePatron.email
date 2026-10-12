@@ -139,8 +139,7 @@ describe('spelling correction: the steps of a correction', () => {
       wait,
     });
 
-  // Turned on by #1254 (correct a field)
-  describe.skip('a field', () => {
+  describe('a field', () => {
     it('sends the visible text of the targeted field only', async () => {
       api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
       await open(FIELD_TARGET).request();
@@ -223,6 +222,24 @@ describe('spelling correction: the steps of a correction', () => {
       expect(editor.html['ko_textBlock_3:titleText']).toBe(
         '<p>Nos soldes démarrent</p>'
       );
+    });
+
+    it('leaves out a correction that crosses the formatting, and counts it', async () => {
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les <strong>soldes</strong> commence demain</p>';
+      api.generate.mockResolvedValue({
+        corrections: [
+          fix('titleText', 'soldes commence', 'soldes commencent'),
+          fix('titleText', 'demain', 'demain matin'),
+        ],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      expect(session.state.corrections.map((c) => c.before)).toEqual([
+        'demain',
+      ]);
+      expect(session.state.dropped).toBe(1);
     });
 
     it('corrects a field the user targets even when it holds sample text', async () => {
