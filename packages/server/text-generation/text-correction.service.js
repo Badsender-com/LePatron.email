@@ -7,6 +7,7 @@ const AIFeatureTypes = require('../constant/ai-feature-type.js');
 const { FIELD_ROLES } = require('../ai-skill/schemas/index.js');
 const {
   locateCorrection,
+  isNoLoss,
 } = require('../../shared/text-correction/place-correction.js');
 const {
   readRequest,
@@ -83,7 +84,9 @@ const fromSkill = (correction) => ({
   after: fromSkillText(correction.after),
 });
 
-// Corrections the code can place in the text it sent; the others are counted.
+// Corrections the code can place in the text it sent; the others are
+// counted, except those that are no loss: changing nothing, or already in
+// the text.
 function screenCorrections(corrections, fields) {
   const textOf = new Map(fields.map((field) => [field.path, field.text]));
   // A correction the model repeats is one correction.
@@ -98,11 +101,17 @@ function screenCorrections(corrections, fields) {
     seen.add(key);
     return true;
   });
+  let dropped = 0;
   const kept = unique.filter((correction) => {
     const text = textOf.get(correction.field);
-    return text !== undefined && !locateCorrection(text, correction).refused;
+    const located =
+      text === undefined
+        ? { refused: 'not-found' }
+        : locateCorrection(text, correction);
+    if (located.refused && !isNoLoss(located)) dropped += 1;
+    return !located.refused;
   });
-  return { corrections: kept, dropped: unique.length - kept.length };
+  return { corrections: kept, dropped };
 }
 
 /**
