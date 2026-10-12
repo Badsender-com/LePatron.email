@@ -133,13 +133,14 @@ describe('in a quality run', () => {
     expect(webRisk).toEqual({
       enabled: true,
       threats: { 'https://bad.test': ['MALWARE'] },
+      unchecked: [],
     });
   });
 
   it('is off, and asks nothing, without a key', async () => {
     const d = deps({ webRiskKey: () => null });
     const { webRisk } = await run(['https://bad.test'], d);
-    expect(webRisk).toEqual({ enabled: false, threats: {} });
+    expect(webRisk).toEqual({ enabled: false, threats: {}, unchecked: [] });
     expect(d.webRiskLookup).not.toHaveBeenCalled();
   });
 
@@ -168,17 +169,27 @@ describe('in a quality run', () => {
     expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
 
     const { webRisk } = await run(['https://bad.test/late'], d, 'u2');
-    expect(webRisk.threats).toEqual({});
+    // Not asked is not "clean".
+    expect(webRisk).toEqual({
+      enabled: true,
+      threats: {},
+      unchecked: ['https://bad.test/late'],
+    });
     expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
     // Not spent for nothing: a cached answer asks no budget.
     await run(['https://a.test/'], d, 'u3');
     expect(d.spendWebRiskLookup).toHaveBeenCalledTimes(3);
   });
 
-  it('asks again what Google could not answer', async () => {
+  it('says what Google could not answer, and asks again next time', async () => {
     const d = deps({ webRiskLookup: jest.fn(async () => null) });
-    await run(['https://a.test'], d);
+    const { webRisk } = await run(['https://a.test', 'https://b.test'], d);
+    expect(webRisk).toEqual({
+      enabled: true,
+      threats: {},
+      unchecked: ['https://a.test', 'https://b.test'],
+    });
     await run(['https://a.test'], d, 'u2');
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(3);
   });
 });
