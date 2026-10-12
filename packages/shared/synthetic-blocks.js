@@ -15,15 +15,15 @@
 // places and would eventually be made in one.
 //
 // In packages/shared because both sides read this table: the editor injects and
-// renders the blocks (ext/html-code-block/block-types.js re-exports it), and the
+// renders the blocks (ext/synthetic-blocks/block-types.js re-exports it), and the
 // server gates and measures them (mailing/synthetic-block-guard.js,
 // mailing/synthetic-block-sizes.js) and keeps
-// their zones out of translation (translation/html-code-block-protection.js).
+// their zones out of translation (translation/synthetic-block-protection.js).
 // One table, so a renamed property cannot leave the server guarding a block
 // that no longer exists — and letting everything through.
 //
 // ADDING A BLOCK HERE IS NOT FREE. The definitions are injected
-// unconditionally (see packages/editor/src/js/ext/html-code-block/
+// unconditionally (see packages/editor/src/js/ext/synthetic-blocks/
 // inject-synthetic-blocks.js), so a type that ever ships must keep being
 // declared forever: checkmodel.js splices out stored blocks whose type it cannot
 // find, and the autosave then persists that loss.

@@ -2,10 +2,10 @@ const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
 const {
   validateHtmlCodeLength,
-} = require('../../../ext/html-code-block/validate.js');
+} = require('../../../ext/synthetic-blocks/validate.js');
 const {
   HTML_CODE_MAX_LENGTH,
-} = require('../../../ext/html-code-block/constants.js');
+} = require('../../../ext/synthetic-blocks/constants.js');
 
 // CodeMirror comes from the concatenated editor libs as a global, like tinymce
 // (see gulpfile.js mosaicoLibList).

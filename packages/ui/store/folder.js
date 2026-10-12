@@ -37,6 +37,7 @@ export const SET_NODE_CHILDREN = 'SET_NODE_CHILDREN';
 export const SET_ARE_LOADING_WORKSPACES = 'SET_ARE_LOADING_WORKSPACES';
 
 export const IS_LOADING_WORKSPACE_OR_FOLDER = 'IS_LOADING_WORKSPACE_OR_FOLDER';
+export const SET_LOCATION_NOT_FOUND = 'SET_LOCATION_NOT_FOUND';
 
 export const FETCH_WORKSPACES = 'FETCH_WORKSPACES';
 export const FETCH_MAILINGS = 'fetchMailings';
@@ -75,6 +76,10 @@ export const state = () => ({
   isLoadingMailingsForFilterUpdate: false,
   isLoadingMailingsForWorkspaceUpdate: false,
   isLoadingWorkspaceOrFolder: false,
+  // The workspace or folder of the route answered 404: deleted, or hidden from
+  // this user since (company setting "access to all workspaces" turned off).
+  // The workspace tree leaves it for the first workspace.
+  locationNotFound: false,
   areLoadingWorkspaces: [],
   workspaces: [],
   workspacesHasRight: [],
@@ -164,11 +169,30 @@ export const mutations = {
   [SET_HAS_ACCESS](store, hasAccess) {
     store.hasAccess = hasAccess;
   },
+  [SET_LOCATION_NOT_FOUND](store, locationNotFound) {
+    store.locationNotFound = locationNotFound;
+  },
 };
+
+function showError(commit, $t) {
+  if (!$t) return;
+  commit(
+    `${PAGE}/${SHOW_SNACKBAR}`,
+    { text: $t('global.errors.errorOccured'), color: 'error' },
+    { root: true }
+  );
+}
+
+// A 404 on the route's location is not an error to report: the workspace tree
+// moves the user to a location they can reach.
+function isNotFound(error) {
+  return error?.response?.status === 404;
+}
 
 export const actions = {
   async [FETCH_FOLDER_OR_WORKSPACE]({ commit, dispatch }, { query, $t }) {
     commit(IS_LOADING_WORKSPACE_OR_FOLDER, true);
+    commit(SET_LOCATION_NOT_FOUND, false);
     try {
       if (!this.$axios || !query) {
         return;
@@ -198,16 +222,11 @@ export const actions = {
           $t,
         });
       }
-    } catch {
-      if ($t) {
-        commit(
-          `${PAGE}/${SHOW_SNACKBAR}`,
-          {
-            text: $t('global.errors.errorOccured'),
-            color: 'error',
-          },
-          { root: true }
-        );
+    } catch (e) {
+      if (isNotFound(e)) {
+        commit(SET_LOCATION_NOT_FOUND, true);
+      } else {
+        showError(commit, $t);
       }
     } finally {
       commit(IS_LOADING_WORKSPACE_OR_FOLDER, false);
@@ -260,15 +279,11 @@ export const actions = {
           itemsLength,
         });
       } catch (e) {
-        if ($t) {
-          commit(
-            `${PAGE}/${SHOW_SNACKBAR}`,
-            {
-              text: $t('global.errors.errorOccured'),
-              color: 'error',
-            },
-            { root: true }
-          );
+        if (isNotFound(e)) {
+          commit(SET_MAILINGS, []);
+          commit(SET_LOCATION_NOT_FOUND, true);
+        } else {
+          showError(commit, $t);
         }
       }
     }
@@ -290,16 +305,23 @@ export const actions = {
     { query, $t, pagination }
   ) {
     commit(SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE, true);
-    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
-    commit(SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
+    // In `finally`: a throw left the flag up and the list on its skeleton.
+    try {
+      await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    } finally {
+      commit(SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
+    }
   },
   async [FETCH_MAILINGS_FOR_WORKSPACE_UPDATE](
     { commit, dispatch },
     { query, $t, pagination }
   ) {
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
-    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
-    commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+    try {
+      await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    } finally {
+      commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+    }
   },
   // Lazy-loads the direct children of a tree node on expand. Returns the
   // children mapped to the treeview shape; the caller (v-treeview load-children)

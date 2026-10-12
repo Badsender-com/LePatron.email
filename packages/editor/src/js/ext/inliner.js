@@ -4,19 +4,19 @@ var console = require('console');
 var $ = require('jquery');
 var inlineDocument = require('juice/lib/inline')({}).inlineDocument;
 var {
-  detachPastedMarkup,
-  restorePastedMarkup,
-} = require('./html-code-block/protect-from-inliner.js');
+  detachSyntheticMarkup,
+  restoreSyntheticMarkup,
+} = require('./synthetic-blocks/protect-from-inliner.js');
 
 var inlinerPlugin = function (vm) {
   vm.inline = function (doc) {
-    // Take the pasted markup of any "HTML code" block out of the document first:
+    // Take the markup of every synthetic block out of the document first:
     // the template's `data-inline="true"` rules are generic (`img { ... }`) and
-    // would otherwise be inlined onto markup the user wrote and owns.
+    // would otherwise be inlined onto markup the template does not own.
     // This has to happen before the style -> replacedstyle copy below, or those
     // nodes would get a replacedstyle duplicate that the export regexes in
     // viewmodel.js would restore over their original style attribute.
-    var protectedMarkup = detachPastedMarkup($, doc);
+    var protectedMarkup = detachSyntheticMarkup($, doc);
 
     // tinymce may have added style attributes to elements that will also have global styles to be inlined
     $('[style]:not([replacedstyle])', doc).each(function (index, el) {
@@ -44,7 +44,7 @@ var inlinerPlugin = function (vm) {
       styleAttributeName: 'replacedstyle',
     });
 
-    restorePastedMarkup(protectedMarkup);
+    restoreSyntheticMarkup(protectedMarkup);
   };
 };
 

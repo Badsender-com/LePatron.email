@@ -389,8 +389,14 @@ export default {
     duplicateNotice: 'Are you sure to duplicate: <strong>{name}</strong> ?',
     name: 'Email name',
     errorPreview: 'No preview available for this email',
+    locationUnreachable:
+      'This workspace or folder is no longer available. Back to the first workspace.',
     subErrorPreview:
       'A preview will be generated when opening the email editor',
+    subErrorPreviewReadOnly:
+      'A preview will be generated when a member of the workspace opens the email in the editor',
+    previewUnavailable: 'The preview could not be loaded',
+    subPreviewUnavailable: 'Please try again, or contact your administrator',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedMailings: 'email selected | emails selected',

@@ -1,6 +1,6 @@
 'use strict';
 
-// Keeps the pasted markup of an "HTML code" block OUT of the export DOM entirely.
+// Keeps the markup of a synthetic block OUT of the export DOM entirely.
 //
 // Without this, the markup makes a full round trip through the export frame's DOM
 // and then through the regex cascade at the end of viewmodel.js exportHTML. That
@@ -20,7 +20,8 @@
 // bytes at the very end of the cascade — after every regex has run. The markup is
 // therefore never parsed, never serialized, never pattern-matched.
 //
-// Scope: this only ever touches the inside of an `lp-html-block` zone. Design
+// Scope: this only ever touches the inside of a synthetic block's marker
+// element (`lp-html-block`, `lp-builder-block`). Design
 // system blocks and the template markup have no raw source to substitute and keep
 // their current behaviour, untouched.
 

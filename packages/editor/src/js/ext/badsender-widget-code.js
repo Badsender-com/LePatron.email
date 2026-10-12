@@ -1,6 +1,6 @@
 'use strict';
 
-const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
+const { HTML_CODE_BLOCK } = require('./synthetic-blocks/block-types.js');
 
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.

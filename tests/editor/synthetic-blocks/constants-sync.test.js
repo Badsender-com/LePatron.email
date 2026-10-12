@@ -11,10 +11,10 @@
 // synthetic block added there fails here until the server knows how to refuse it.
 
 const SHARED = require('../../../packages/shared/synthetic-blocks.js');
-const editorBlockTypes = require('../../../packages/editor/src/js/ext/html-code-block/block-types.js');
-const editorConstants = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+const editorBlockTypes = require('../../../packages/editor/src/js/ext/synthetic-blocks/block-types.js');
+const editorConstants = require('../../../packages/editor/src/js/ext/synthetic-blocks/constants.js');
 const guard = require('../../../packages/server/mailing/synthetic-block-guard.js');
-const protection = require('../../../packages/server/translation/html-code-block-protection.js');
+const protection = require('../../../packages/server/translation/synthetic-block-protection.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const builderTexts = require('../../../packages/server/translation/builder-block-texts.js');
 
