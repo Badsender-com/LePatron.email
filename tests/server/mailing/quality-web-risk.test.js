@@ -80,11 +80,19 @@ describe('lookup', () => {
         fetchImpl: async () => {
           throw Object.assign(new Error(`timeout ${KEY}`), {
             name: 'FetchError',
+            type: 'request-timeout',
+            code: 'ETIMEDOUT',
           });
         },
       })
     ).toBeNull();
     expect(JSON.stringify(logger.warn.mock.calls)).not.toContain(KEY);
+    // What went wrong, for whoever reads the logs: the kind, never the message.
+    expect(logger.warn).toHaveBeenLastCalledWith(expect.any(String), {
+      error: 'FetchError',
+      type: 'request-timeout',
+      code: 'ETIMEDOUT',
+    });
   });
 
   it('is off without a key', () => {
