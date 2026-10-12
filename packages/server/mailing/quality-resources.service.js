@@ -105,7 +105,7 @@ function validateResourcesPayload(body) {
 
 const DEFAULT_DEPS = {
   probe: probeUrl,
-  fetchOwn: (url, timeoutMs) => images.fetchOwn(url, timeoutMs),
+  fetchOwn: (url, options) => images.fetchOwn(url, options),
   resolve4: blocklists.resolve4,
   zones: () => blocklists.blocklistZones(),
   webRiskKey: () => webRisk.apiKey(),
