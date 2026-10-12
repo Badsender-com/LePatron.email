@@ -63,7 +63,7 @@ describe('applying', () => {
     it('stays open on the composition', () => {
       const { modal } = oversized();
 
-      expect(modal.state.elements).toHaveLength(1);
+      expect(modal.columnElements).toHaveLength(1);
     });
 
     it('drops the message once the composition changes', () => {
@@ -113,7 +113,7 @@ describe('applying', () => {
 
     modal.closeModal();
 
-    expect(modal.state.elements).toEqual([]);
+    expect(modal.columnElements).toEqual([]);
     expect(modal.selected).toBeNull();
   });
 });

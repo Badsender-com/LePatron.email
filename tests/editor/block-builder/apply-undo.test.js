@@ -4,6 +4,13 @@
 
 'use strict';
 
+const {
+  parseState,
+} = require('../../../packages/shared/block-builder/state.js');
+const {
+  elementsOf,
+} = require('../../../packages/shared/block-builder/composition.js');
+
 // One apply is one undo step, restoring BOTH properties.
 //
 // The builder writes two properties of its block — the markup and the state it
@@ -95,7 +102,7 @@ describe('applying a composition, on the real undo stack', () => {
     composeAndApply(editor);
 
     expect(editor.builderHtml()).toContain('Après');
-    expect(JSON.parse(editor.builderState()).elements).toHaveLength(1);
+    expect(elementsOf(parseState(editor.builderState()).rows)).toHaveLength(1);
   });
 
   it('costs exactly one undo step', () => {
@@ -125,7 +132,7 @@ describe('applying a composition, on the real undo stack', () => {
     editor.viewModel.redo.execute();
 
     expect(editor.builderHtml()).toContain('Après');
-    expect(JSON.parse(editor.builderState()).elements).toHaveLength(1);
+    expect(elementsOf(parseState(editor.builderState()).rows)).toHaveLength(1);
   });
 
   // Without the merge, the stack's "once" mode still holds the two writes as

@@ -18,6 +18,9 @@ const {
   emptyState,
 } = require('../../../../../../shared/block-builder/generate.js');
 const {
+  emptyRows,
+} = require('../../../../../../shared/block-builder/composition.js');
+const {
   parseState,
   serialiseState,
 } = require('../../../../../../shared/block-builder/state.js');
@@ -86,9 +89,28 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
     mobileWidth: MOBILE_WIDTH,
   }),
   computed: {
+    // The row and column the element list works in. One of each for now: the
+    // structure a user can change arrives with the ticket that adds row
+    // settings, and every list operation is written against these two rather
+    // than against `state` so that it does.
+    activeRow() {
+      return (this.state.rows && this.state.rows[0]) || null;
+    },
+
+    activeColumn() {
+      const row = this.activeRow;
+      return (row && row.columns && row.columns[0]) || null;
+    },
+
+    columnElements() {
+      return this.activeColumn ? this.activeColumn.elements : [];
+    },
+
     selected() {
       return (
-        this.state.elements.find((element) => element.id === this.selectedId) ||
+        this.columnElements.find(
+          (element) => element.id === this.selectedId
+        ) ||
         null
       );
     },
@@ -120,7 +142,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       );
     },
     isEmpty() {
-      return this.state.elements.length === 0;
+      return this.columnElements.length === 0;
     },
     tooLarge() {
       return (
@@ -166,14 +188,24 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       const existingMarkup = this.accessor ? this.accessor() : '';
 
       this.state = restored || emptyState();
+      // A composition always has somewhere to put an element. One stored before
+      // columns arrives as rows already (state.js reads it that way); what it
+      // also carries is the flat view the generator uses to render it as it was
+      // stored, and the modal is that view's last reader. Dropping it here is
+      // what makes the preview show what APPLYING would store, rather than what
+      // is stored now.
+      if (!Array.isArray(this.state.rows) || this.state.rows.length === 0) {
+        this.state.rows = emptyRows();
+      }
+      delete this.state.elements;
       // Markup with no state behind it: composing would throw it away.
       this.replacesExistingMarkup =
         !restored &&
         typeof existingMarkup === 'string' &&
         existingMarkup !== '';
       this.rebuildsMarkup = Boolean(restored) && existingMarkup !== this.html;
-      this.selectedId = this.state.elements.length
-        ? this.state.elements[0].id
+      this.selectedId = this.columnElements.length
+        ? this.columnElements[0].id
         : null;
       this.previewWidth = DESKTOP_WIDTH;
       this.rememberOpenedState();
@@ -239,7 +271,7 @@ const BlockBuilderModalComponent = Vue.component('BlockBuilderModal', {
       this.replacesExistingMarkup = false;
       this.rebuildsMarkup = false;
       this.refusedState = null;
-      this.state = emptyState();
+      this.state = { ...emptyState(), rows: emptyRows() };
       this.selectedId = null;
       this.openedState = '';
     },
