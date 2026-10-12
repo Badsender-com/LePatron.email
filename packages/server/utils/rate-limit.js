@@ -13,6 +13,10 @@ const createError = require('http-errors');
  * @param {number} options.max calls allowed per key and per window
  * @param {Function} options.keyOf the key of a request, or a falsy value to
  *   skip the limit for it
+ * @param {boolean} [options.refundSuccess] give the call back once it
+ *   answers below 400, so only the failed calls use the budget (a sign-in
+ *   that works never locks out the colleagues behind the same address). The
+ *   call counts while it runs, so parallel attempts cannot overtake the limit.
  * @param {Function} [options.now] clock, for tests
  * @returns {Function} an express middleware answering 429 past the limit
  */
@@ -20,19 +24,27 @@ function createRateLimiter({
   windowMs,
   max,
   keyOf,
+  refundSuccess = false,
   now = Date.now,
   maxEntries = 10000,
 }) {
   const windows = new Map();
 
   // Keys come from requests, so the store is bounded: expired windows go
-  // first, then the oldest ones (a Map keeps insertion order).
+  // first, then the oldest ones still under their limit (a Map keeps
+  // insertion order), so that filling the store with new keys does not clear
+  // the counter of a key that reached it. Only a store full of exhausted
+  // windows drops those, oldest first.
   function prune(at) {
     for (const [key, entry] of windows) {
       if (entry.resetAt <= at) windows.delete(key);
     }
+    for (const [key, entry] of windows) {
+      if (windows.size < maxEntries) return;
+      if (entry.count < max) windows.delete(key);
+    }
     for (const key of windows.keys()) {
-      if (windows.size < maxEntries) break;
+      if (windows.size < maxEntries) return;
       windows.delete(key);
     }
   }
@@ -53,6 +65,11 @@ function createRateLimiter({
       res.set('Retry-After', String(Math.ceil((entry.resetAt - at) / 1000)));
       return next(new createError.TooManyRequests());
     }
+    if (refundSuccess) {
+      res.on('finish', () => {
+        if (res.statusCode < 400 && entry.count > 0) entry.count -= 1;
+      });
+    }
     next();
   };
 }
@@ -60,7 +77,10 @@ function createRateLimiter({
 // Behind the platform's proxy, `req.ip` is the proxy. The proxy appends the
 // address it saw to the forwarded chain, so the last entry is the client as
 // the proxy knows it; the earlier entries are whatever the client sent and
-// are never used as a key.
+// are never used as a key. This holds with exactly one proxy in front, as on
+// Clever Cloud: another layer in front of it (a CDN) would make its own
+// address the key, and no proxy at all would let the client pick the key.
+// Such a deployment needs this function revisited.
 function clientIp(req) {
   const forwarded = req.headers && req.headers['x-forwarded-for'];
   if (typeof forwarded === 'string') {

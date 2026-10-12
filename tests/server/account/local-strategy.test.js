@@ -5,7 +5,7 @@
 // current password keeps working until the emailed link is used.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Users: { findOne: jest.fn() },
+  Users: { findOne: jest.fn(), findOneForApi: jest.fn() },
   Groups: {},
   OAuthClients: {},
   OAuthTokens: {},
@@ -21,6 +21,7 @@ const passport = require('passport');
 const bcrypt = require('bcryptjs');
 
 const { Users } = require('../../../packages/server/common/models.common.js');
+const config = require('../../../packages/server/node.config.js');
 require('../../../packages/server/account/auth.guard.js');
 
 const HASH = bcrypt.hashSync('right-password', 4);
@@ -94,5 +95,59 @@ describe('signing in with a password', () => {
 
     expect(user).toBe(false);
     expect(info).toEqual({ message: 'password.error.incorrect' });
+  });
+
+  it('finds the account whatever the case of the typed email', async () => {
+    Users.findOne.mockResolvedValue(account());
+
+    const { user } = await signIn(' Someone@Client.test ', 'right-password');
+
+    expect(user.id).toBe('u1');
+    expect(Users.findOne.mock.calls[0][0].email).toBe('someone@client.test');
+  });
+
+  it('lets the administrator of the configuration in with its password', async () => {
+    const { user } = await signIn(config.admin.username, config.admin.password);
+
+    expect(user.isAdmin).toBe(true);
+    expect(Users.findOne).not.toHaveBeenCalled();
+  });
+
+  it('refuses the administrator of the configuration a wrong password', async () => {
+    const { user, info } = await signIn(config.admin.username, 'wrong');
+
+    expect(user).toBe(false);
+    expect(info).toEqual({ message: 'password.error.incorrect' });
+  });
+});
+
+describe('reading the account of a session', () => {
+  function deserialize(id) {
+    return new Promise((resolve) => {
+      passport.deserializeUser(id, (err, user) => resolve({ err, user }));
+    });
+  }
+
+  it('keeps the session while a reset asked by the person is pending', async () => {
+    Users.findOneForApi.mockResolvedValue({
+      id: 'u1',
+      toJSON: () => ({ id: 'u1' }),
+    });
+
+    const { user } = await deserialize('u1');
+
+    expect(user).toEqual({ id: 'u1' });
+    expect(Users.findOneForApi.mock.calls[0][0]).not.toHaveProperty('token');
+  });
+
+  it('ends the session of a deactivated account', async () => {
+    Users.findOneForApi.mockResolvedValue(null);
+
+    const { user } = await deserialize('u1');
+
+    expect(user).toBe(false);
+    expect(Users.findOneForApi.mock.calls[0][0]).toMatchObject({
+      isDeactivated: { $ne: true },
+    });
   });
 });

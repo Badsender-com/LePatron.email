@@ -246,7 +246,6 @@ export default {
       passwordConfirm: 'Confirmation du mot de passe',
       passwordReset: 'Réinitialisation du mot de passe',
       login: 'Connexion',
-      adminLogin: 'Connexion administrateur',
       sendLink: 'Envoyer le lien de réinitialisation',
       forgottenPassword: 'Mot de passe oublié ?',
       validate: 'Valider',

@@ -278,14 +278,10 @@ if (cluster.isMaster) {
     }
   );
 
-  app.post(
-    '/account/login/admin/',
-    passport.authenticate('local', {
-      successReturnToOrRedirect: '/groups',
-      failureRedirect: '/account/login/admin',
-      failureFlash: true,
-      successFlash: true,
-    })
+  // The administrator of the configuration signs in on the login page like
+  // everyone, through its rate-limited API; the old admin page is gone.
+  app.get(['/account/admin', '/account/login/admin'], (req, res) =>
+    res.redirect('/account/login')
   );
 
   app.get('/account/logout', (req, res) => {

@@ -183,12 +183,17 @@ UserSchema.methods.deactivate = function deactivate() {
 };
 
 // `type` is 'admin' when an administrator resets the account (the current
-// password stops working at once) or 'user' when the person asked for a new
-// one (the current password keeps working until the emailed link is used,
-// so that asking in someone's name locks nobody out).
+// password stops working at once and the open sessions end) or 'user' when
+// the person asked for a new one (the current password and the open sessions
+// keep working until the emailed link is used, so that asking in someone's
+// name locks nobody out).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  if (type !== 'user') user.password = undefined;
+  if (type !== 'user') {
+    user.password = undefined;
+    // No session carries this id: the session validation ends them all.
+    user.activeSessionId = randToken.generate(30);
+  }
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
   lang = lang || 'en';

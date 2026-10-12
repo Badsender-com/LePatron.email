@@ -66,10 +66,78 @@ describe('createRateLimiter', () => {
     expect((await run(small, { key: 'd' })).err.status).toBe(429);
   });
 
+  it('keeps a window that reached its limit when new keys fill the store', async () => {
+    const small = createRateLimiter({
+      windowMs: 60_000,
+      max: 2,
+      keyOf: (req) => req.key,
+      now: () => clock,
+      maxEntries: 3,
+    });
+    await run(small, { key: 'victim' });
+    await run(small, { key: 'victim' });
+    for (const key of ['b', 'c', 'd', 'e']) await run(small, { key });
+
+    expect((await run(small, { key: 'victim' })).err.status).toBe(429);
+  });
+
   it('skips a request without a key', async () => {
     for (let i = 0; i < 5; i += 1) {
       expect((await run(limiter, { key: null })).err).toBeUndefined();
     }
+  });
+});
+
+describe('createRateLimiter counting the failed calls only', () => {
+  const EventEmitter = require('events');
+
+  function call(limiter, statusCode) {
+    return new Promise((resolve) => {
+      const res = Object.assign(new EventEmitter(), { set: jest.fn() });
+      limiter({ key: 'a' }, res, (err) => {
+        if (!err) {
+          res.statusCode = statusCode;
+          res.emit('finish');
+        }
+        resolve(err);
+      });
+    });
+  }
+
+  let limiter;
+  beforeEach(() => {
+    limiter = createRateLimiter({
+      windowMs: 60_000,
+      max: 2,
+      keyOf: (req) => req.key,
+      refundSuccess: true,
+      now: () => 1_000_000,
+    });
+  });
+
+  it('gives a successful call back', async () => {
+    for (let i = 0; i < 5; i += 1) {
+      expect(await call(limiter, 200)).toBeUndefined();
+    }
+  });
+
+  it('answers 429 once the failed calls reach the limit', async () => {
+    await call(limiter, 400);
+    await call(limiter, 400);
+
+    expect((await call(limiter, 200)).status).toBe(429);
+  });
+
+  it('counts a call while it runs, so parallel attempts do not overtake the limit', async () => {
+    const pending = () =>
+      new Promise((resolve) => {
+        const res = Object.assign(new EventEmitter(), { set: jest.fn() });
+        limiter({ key: 'a' }, res, resolve);
+      });
+    await pending();
+    await pending();
+
+    expect((await pending()).status).toBe(429);
   });
 });
 

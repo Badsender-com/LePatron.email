@@ -382,6 +382,9 @@ async function setPassword(req, res) {
       resolve();
     });
   });
+  // This session becomes the account's only one, as on any sign-in: the
+  // sessions opened before the new password end.
+  await updateSessionTracking(req, user);
   const updatedUser = await Users.findOneForApi({ _id: user._id });
   res.json(updatedUser);
 }

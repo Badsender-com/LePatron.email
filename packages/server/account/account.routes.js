@@ -16,9 +16,11 @@ const HOUR = 60 * 60 * 1000;
 
 // Public, unauthenticated endpoints: bounded per client address, each with
 // its own budget (a login is two calls: profile, then login), and the
-// password reset per account too, so nobody can flood an inbox.
-const perAddress = () =>
-  createRateLimiter({ windowMs: HOUR, max: 120, keyOf: clientIp });
+// password reset per account too, so nobody can flood an inbox. The login
+// counts the failed attempts only: a whole team behind one address signs in
+// every morning.
+const perAddress = (options) =>
+  createRateLimiter({ windowMs: HOUR, max: 120, keyOf: clientIp, ...options });
 // Keyed as the account stores its email, so no spelling of one address
 // gets a budget of its own.
 const limitResetPerAccount = createRateLimiter({
@@ -33,7 +35,7 @@ function requireEmailParam(req, res, next) {
   next();
 }
 
-router.post('/login', perAddress(), users.login);
+router.post('/login', perAddress({ refundSuccess: true }), users.login);
 router.get('/:username', perAddress(), users.getPublicProfile);
 router.delete(
   '/:email/password',

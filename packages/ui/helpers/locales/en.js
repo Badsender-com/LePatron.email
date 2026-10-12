@@ -245,7 +245,6 @@ export default {
       passwordConfirm: 'Password confirmation',
       passwordReset: 'Password reset',
       login: 'Login',
-      adminLogin: 'Admin Login',
       sendLink: 'Send reset link',
       forgottenPassword: 'Forgotten password ?',
       validate: 'Validate',
