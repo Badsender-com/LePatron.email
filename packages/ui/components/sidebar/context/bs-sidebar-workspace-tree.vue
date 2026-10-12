@@ -98,13 +98,8 @@ export default {
   },
   watch: {
     $route: ['onRouteChange', 'checkIfNotData'],
-    // Immediate: on a cold load the 404 may already be in the server-rendered
-    // state when this component is created.
-    locationNotFound: {
-      handler(notFound) {
-        if (notFound) this.leaveUnreachableLocation();
-      },
-      immediate: true,
+    locationNotFound(notFound) {
+      if (notFound) this.leaveUnreachableLocation();
     },
     treeviewWorkspaces: {
       handler(newWorkspaces, oldWorkspaces) {
@@ -124,6 +119,12 @@ export default {
     // Non-reactive instance state: per-key timers to debounce the remote (DB)
     // persistence PUTs so rapid navigation doesn't spam the backend.
     this._remoteSaveTimers = {};
+  },
+  // On a cold load the 404 is already in the server-rendered state, so the
+  // watcher never sees it change. Not an immediate watcher: that runs before
+  // `created` (no save timers yet) and before hydration (no navigation yet).
+  mounted() {
+    if (this.locationNotFound) this.leaveUnreachableLocation();
   },
   beforeDestroy() {
     Object.values(this._remoteSaveTimers || {}).forEach((t) => clearTimeout(t));
@@ -337,6 +338,7 @@ export default {
     // user back to it on every visit. Selecting the first workspace overwrites
     // that selection in both.
     leaveUnreachableLocation() {
+      // The server fetch sets the flag too; only the browser navigates.
       if (typeof window === 'undefined') return;
       const { wid, fid } = this.$route.query;
       if (!wid && !fid) return;
