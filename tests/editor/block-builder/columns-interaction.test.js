@@ -28,7 +28,7 @@ const shapeOf = (modal) =>
   );
 
 // Turned on by #1210 (selecting a row, and setting its structure)
-describe.skip('selecting a row', () => {
+describe('selecting a row', () => {
   it('starts with one row of one column', async () => {
     const { modal } = await openModal(['text']);
 

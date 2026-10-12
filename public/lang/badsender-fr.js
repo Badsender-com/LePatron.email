@@ -360,6 +360,18 @@ module.exports = {
     'Glissez un élément ici ou cliquez-en un dans la palette',
   'block-builder-starter-text': 'Saisissez votre texte…',
   'block-builder-starter-button': 'Votre bouton',
+  'block-builder-rows': 'Lignes',
+  'block-builder-row': 'Ligne',
+  'block-builder-add-row': 'Ajouter une ligne',
+  'block-builder-structure': 'Structure de la ligne',
+  'block-builder-structure-full': 'Une colonne',
+  'block-builder-structure-halves': 'Deux colonnes égales',
+  'block-builder-structure-two-thirds-left':
+    'Deux tiers à gauche, un tiers à droite',
+  'block-builder-structure-two-thirds-right':
+    'Un tiers à gauche, deux tiers à droite',
+  'block-builder-structure-thirds': 'Trois colonnes égales',
+  'block-builder-structure-quarters': 'Quatre colonnes égales',
   'block-builder-elements': 'Éléments',
   'block-builder-empty': 'Aucun élément. Ajoutez-en un pour commencer.',
   'block-builder-desktop': 'Bureau',

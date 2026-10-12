@@ -44,6 +44,60 @@ module.exports = `<modal-component
           @keydown="onPaletteKeydown($event, item.type)"
           @keyup="onPaletteKeyup($event, item.type)">+ {{ vm.t(item.labelKey) }}</div>
 
+        <p class="bb-modal__section">{{ vm.t('block-builder-rows') }}</p>
+        <ul class="bb-modal__rows" role="listbox" :aria-label="vm.t('block-builder-rows')">
+          <li
+            v-for="(row, index) in state.rows"
+            :key="row.id"
+            role="option"
+            :aria-selected="String(row.id === selectedRowId)"
+            tabindex="0"
+            class="bb-modal__row"
+            :class="{ 'bb-modal__row--on': row.id === selectedRowId }"
+            @click="selectRow(row.id)"
+            @keydown.enter.prevent="selectRow(row.id)">{{ vm.t('block-builder-row') }} {{ index + 1 }} — {{ row.columns.length }}</li>
+        </ul>
+        <button
+          type="button"
+          class="bb-modal__add-row"
+          @click.prevent="addRow">+ {{ vm.t('block-builder-add-row') }}</button>
+
+        <div v-if="selectedRow" class="bb-modal__structure">
+          <p class="bb-modal__section">{{ vm.t('block-builder-structure') }}</p>
+          <div class="bb-modal__presets">
+            <button
+              v-for="preset in presets"
+              :key="preset.key"
+              type="button"
+              class="bb-modal__preset"
+              :class="{ 'bb-modal__preset--on': isPresetActive(preset) }"
+              :aria-pressed="String(isPresetActive(preset))"
+              :title="presetLabel(preset)"
+              :aria-label="presetLabel(preset)"
+              @click.prevent="applyPreset(preset)"><span
+                v-for="(width, index) in preset.widths"
+                :key="index"
+                class="bb-modal__preset-cell"
+                :style="{ width: width + '%' }"></span></button>
+          </div>
+          <div class="bb-modal__widths">
+            <label
+              v-for="(width, index) in selectedRowWidths"
+              :key="index"
+              class="bb-modal__width">
+              <span class="bb-modal__width-label">{{ index + 1 }}</span>
+              <input
+                type="number"
+                min="10"
+                max="100"
+                :value="width"
+                :disabled="index === selectedRowWidths.length - 1"
+                @change="setColumnWidth(index, Number($event.target.value))" />
+              <span>%</span>
+            </label>
+          </div>
+        </div>
+
         <p :id="listLabelId" class="bb-modal__section">{{ vm.t('block-builder-elements') }}</p>
         <p v-if="isEmpty" class="bb-modal__empty">{{ vm.t('block-builder-empty') }}</p>
         <ul v-else class="bb-modal__list" role="listbox" :aria-labelledby="listLabelId">
@@ -51,11 +105,11 @@ module.exports = `<modal-component
             v-for="(element, index) in columnElements"
             :key="element.id"
             role="option"
-            :aria-selected="String(element.id === selectedId)"
+            :aria-selected="String(element.id === selectedElementId)"
             :tabindex="optionTabIndex(index)"
             class="bb-modal__item"
-            :class="{ 'bb-modal__item--on': element.id === selectedId }"
-            @click="selectedId = element.id"
+            :class="{ 'bb-modal__item--on': element.id === selectedElementId }"
+            @click="selectElement(element.id)"
             @keydown="onOptionKeydown($event, index)">{{ labelFor(element) }}</li>
         </ul>
         <div v-if="selected" class="bb-modal__actions">
