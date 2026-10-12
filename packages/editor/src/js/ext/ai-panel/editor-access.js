@@ -15,6 +15,13 @@ const { getBlockDefault } = require('../quality/ownership');
 const {
   injectBlockTranslations,
 } = require('../../utils/block-content-extractor');
+const { goToBlock, findBlockById } = require('../block-navigation');
+const {
+  getBlockLabelWithNumber,
+  formatBlockName,
+} = require('../comments-utils');
+
+const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
 
 const unwrap = ko.utils.unwrapObservable;
 
@@ -113,6 +120,33 @@ function createEditorAccess(viewModel) {
     getPreheader: () =>
       canWritePreheader(viewModel) ? readPreheader(viewModel).value : '',
     setPreheader: (value) => writePreheader(viewModel, value),
+    // The blocks of the email in reading order, as the canvas renders them.
+    blocks() {
+      const canvas = document.getElementById('main-wysiwyg-area') || document;
+      return Array.from(canvas.querySelectorAll('[id^="ko_"]'))
+        .map((element) => BLOCK_ID.exec(element.id))
+        .filter(Boolean)
+        .map(([blockId, blockType]) => ({ blockId, blockType }));
+    },
+    // How the quality drawer and the comments name a block: « Texte 2 ».
+    blockLabel(blockId) {
+      let blocks = [];
+      try {
+        blocks = viewModel.content().mainBlocks().blocks();
+      } catch (e) {
+        // A template without a main container.
+      }
+      // A fixed block of the template (a header, a footer) is named by type.
+      const match = BLOCK_ID.exec(blockId);
+      return (
+        getBlockLabelWithNumber(blocks, blockId) ||
+        (match ? formatBlockName(match[1]) : blockId)
+      );
+    },
+    // Only the blocks of the email can be reached, not the template's fixed
+    // ones (a header, a footer).
+    canGoToBlock: (blockId) => Boolean(findBlockById(viewModel, blockId)),
+    goToBlock: (blockId) => goToBlock(viewModel, blockId),
     // The text fields of a block, with their HTML, as the rendering shows them.
     textFieldsOf(blockId) {
       const block = ko.toJS(blockById(viewModel, blockId)) || {};
