@@ -27,6 +27,7 @@ export default {
         downloadMailingWithCdnImages: false,
         downloadMailingWithFtpImages: false,
         enableEmailBuilder: true,
+        enableShareLinks: true,
         enableCrmIntelligence: false,
         userHasAccessToAllWorkspaces: false,
       },
@@ -75,6 +76,7 @@ export default {
         downloadMailingWithCdnImages: false,
         downloadMailingWithFtpImages: false,
         enableEmailBuilder: true,
+        enableShareLinks: true,
         enableCrmIntelligence: false,
         userHasAccessToAllWorkspaces: false,
       };

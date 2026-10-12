@@ -3,8 +3,9 @@
 const crypto = require('crypto');
 const createError = require('http-errors');
 
-const { ShareLinks } = require('../common/models.common.js');
+const { ShareLinks, Groups } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const GROUP_STATUS = require('../group/status.js');
 const logger = require('../utils/logger.js');
 const { encrypt, decrypt } = require('../utils/crypto.js');
 
@@ -100,9 +101,42 @@ function toApi(link, urlOf) {
 }
 
 /**
+ * Whether the emails of a company may be shared: it is active, has the email
+ * builder, and has not turned the preview links off (enableShareLinks, on the
+ * company form). An email without a company, the admin's, always may. Also
+ * says whether the company writes the subject in LePatron (email metadata):
+ * the public page then shows the subject and the preheader.
+ * @param {ObjectId} [companyId]
+ * @returns {Promise<{ allowed: boolean, metadata: boolean }>}
+ */
+async function companySharing(companyId) {
+  if (!companyId) return { allowed: true, metadata: false };
+  const group = await Groups.findById(companyId, {
+    status: 1,
+    enableEmailBuilder: 1,
+    enableShareLinks: 1,
+    emailMetadata: 1,
+  }).lean();
+  const allowed = Boolean(
+    group &&
+      group.status !== GROUP_STATUS.INACTIVE &&
+      group.enableEmailBuilder !== false &&
+      group.enableShareLinks !== false
+  );
+  // Off unless the company opted in, as GUARD_EMAIL_METADATA reads it.
+  const metadata = Boolean(group && group.emailMetadata?.enabled === true);
+  return { allowed, metadata };
+}
+
+/**
  * @returns {Promise<{ link: Object, token: string }>}
+ * @throws 403 SHARE_LINKS_DISABLED when the email's company may not share
  */
 async function createShareLink({ mailing, user, expiresInDays }) {
+  const sharing = await companySharing(mailing._company);
+  if (!sharing.allowed) {
+    throw new createError.Forbidden(ERROR_CODES.SHARE_LINKS_DISABLED);
+  }
   const active = await ShareLinks.countDocuments(activeQuery(mailing._id));
   if (active >= MAX_ACTIVE_LINKS) {
     throw new createError.UnprocessableEntity(
@@ -141,6 +175,16 @@ async function revokeLink(mailingId, linkId) {
 }
 
 /**
+ * Every active link of an email stops working: on a transfer, the links were
+ * made for its previous owner and company.
+ */
+async function revokeAllForMailing(mailingId) {
+  await ShareLinks.updateMany(activeQuery(mailingId), {
+    revokedAt: new Date(),
+  });
+}
+
+/**
  * The link a token opens.
  * @returns {Promise<{ state: 'active'|'expired'|'unknown', link?: Object }>}
  *   A revoked link reads as unknown: who revoked it wanted it gone.
@@ -160,7 +204,9 @@ module.exports = {
   createShareLink,
   listActiveLinks,
   revokeLink,
+  revokeAllForMailing,
   resolveToken,
+  companySharing,
   toApi,
   hashToken,
   EXPIRY_DAYS,
