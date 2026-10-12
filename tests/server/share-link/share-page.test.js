@@ -101,7 +101,7 @@ describe('GET /share/:token', () => {
     _id: LINK_ID,
     _mailing: MAILING_ID,
     lang: 'fr',
-    expiresAt: new Date(Date.now() + 3600 * 1000),
+    expiresAt: new Date('2030-10-13T16:42:00Z'),
   };
 
   it('shows the last saved version, sanitized, under a strict policy', async () => {
@@ -121,6 +121,8 @@ describe('GET /share/:token', () => {
     const [view, locals] = res.render.mock.calls[0];
     expect(view).toBe('share-page');
     expect(locals).toMatchObject({ name: 'Soldes' });
+    // Until when, to the minute, in the platform's zone, named.
+    expect(locals.meta).toMatch(/jusqu'au 13 octobre 2030.*18:42 UTC\+2/);
     // Sanitized, every link opening in a new tab (sanitizeSharedPreviewHtml).
     expect(locals.html).toBe('clean:<p>hi</p>');
     expect(res.headers['Content-Security-Policy']).toContain(
