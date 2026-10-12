@@ -44,7 +44,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
+      enum: [Roles.SUPER_ADMIN, Roles.GROUP_ADMIN, Roles.REGULAR_USER],
       required: false,
     },
     externalUsername: {
@@ -125,6 +125,14 @@ UserSchema.plugin(mongooseHidden, {
   },
 });
 
+// The links in the emails use the scheme the site is served with: https
+// everywhere but in development, as the FORCE HTTPS middleware of index.js
+// decides (`forcessl` arrives as a string from the environment, "false"
+// included, so it cannot tell).
+function siteOrigin() {
+  return `http${config.isDev ? '' : 's'}://${config.host}`;
+}
+
 function encodePassword(password) {
   if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
@@ -152,9 +160,11 @@ UserSchema.virtual('isReinitialized').get(function () {
   return false;
 });
 
-// for better session handling
+// Platform-wide rights (ADR 0002). The bootstrap account carries the same
+// flag from outside the database; see account/bootstrap-account.js for the
+// checks that must tell the two apart.
 UserSchema.virtual('isAdmin').get(function () {
-  return false;
+  return this.role === Roles.SUPER_ADMIN;
 });
 
 UserSchema.virtual('isGroupAdmin').get(function () {
@@ -172,19 +182,31 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
+// `type` is 'admin' when an administrator resets the account (the current
+// password stops working at once and the open sessions end) or 'user' when
+// the person asked for a new one (the current password and the open sessions
+// keep working until the emailed link is used, so that asking in someone's
+// name locks nobody out).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = undefined;
+  if (type !== 'user') {
+    user.password = undefined;
+    // No session carries this id: the session validation ends them all.
+    user.activeSessionId = randToken.generate(30);
+  }
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
+  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
+    user.token
+  }`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
@@ -208,7 +230,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const loginUrl = `http://${config.host}/account/login`;
+  const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
@@ -224,6 +246,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
 };
 
 UserSchema.methods.comparePassword = function comparePassword(password) {
+  if (!this.password) return false;
   return bcrypt.compareSync(password, this.password);
 };
 

@@ -101,7 +101,6 @@ module.exports = {
   treeShake: true,
   env: {
     APP_VERSION: pkg.version,
-    ADMIN_USERNAME: config.admin.username,
     API_PREFIX: config.nuxt.API_PREFIX,
     HELP_URL: config.helpUrl,
     // API_BASE_URL: config.apiBaseURL,

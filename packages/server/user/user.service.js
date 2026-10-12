@@ -3,12 +3,10 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Users, Mailings } = require('../common/models.common.js');
-const mongoose = require('mongoose');
 
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
-  findByGroupId: asyncHandler(findByGroupId),
   getPersistedLocalStorageKey,
   updatePersistedLocalStorageKey,
 };
@@ -23,13 +21,17 @@ async function createUser(userParams) {
   return user;
 }
 
-async function updateUser(userParams) {
-  const user = await Users.findOneForApi({ _id: userParams.userId });
+// `loaded` is the target when the caller already has it.
+async function updateUser(userParams, loaded) {
+  const user =
+    loaded || (await Users.findOneForApi({ _id: userParams.userId }));
   if (!user) {
     throw new createError.NotFound();
   }
   // we don't need for this DB request to finish to give the user the response
-  const nameChanged = user.name !== userParams.name;
+  // An update without a name (a role change alone) renames nobody.
+  const nameChanged =
+    userParams.name !== undefined && user.name !== userParams.name;
   if (nameChanged) {
     Mailings.updateMany(
       { _user: userParams.userId },
@@ -43,19 +45,13 @@ async function updateUser(userParams) {
     userParams,
     {
       runValidators: true,
+      new: true,
     }
   ).populate({
     path: '_company',
     select: 'id name',
   });
   return updatedUser;
-}
-
-async function findByGroupId(groupId) {
-  const users = await Users.find({
-    _company: mongoose.Types.ObjectId(groupId),
-  });
-  return users;
 }
 
 /**

@@ -70,7 +70,7 @@ const MailingSchema = Schema(
       // catches a write that does not go through updateMosaico.
       maxlength: HEAD_CSS_MAX_LENGTH,
     },
-    // _user can't be required: admin doesn't set a _user
+    // _user can't be required: the bootstrap account has none to set
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
     author: {
@@ -107,7 +107,7 @@ const MailingSchema = Schema(
       // • so just make an alias
       alias: 'templateName',
     },
-    // _company can't be required: admin doesn't have a _company
+    // _company can't be required: the bootstrap account has none
     _company: {
       type: ObjectId,
       ref: GroupModel,
@@ -448,25 +448,34 @@ MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
     email.tags = email.tags.filter((label) => !tagLabels.includes(label));
     await email.save();
 
-    // Decrement the usage count for the specified tags
-    await mongoose.models.Tag.updateMany(
-      { label: { $in: tagLabels }, companyId: email._company },
-      { $inc: { usageCount: -1 } }
-    );
+    await this.releaseTags(email._company, tagLabels);
+  }
+};
 
-    // Retrieve the updated tags to check their usage count
-    const updatedTags = await mongoose.models.Tag.find({
-      label: { $in: tagLabels },
-      companyId: email._company,
-    });
+// releaseTags: one use less for each tag of a company, and the tags no longer
+// used are deleted. Also called once an email is deleted, with its tags.
+MailingSchema.statics.releaseTags = async function releaseTags(
+  companyId,
+  tagLabels
+) {
+  // Decrement the usage count for the specified tags
+  await mongoose.models.Tag.updateMany(
+    { label: { $in: tagLabels }, companyId },
+    { $inc: { usageCount: -1 } }
+  );
 
-    // Delete tags with a usage count of zero
-    const tagsToRemove = updatedTags
-      .filter((tag) => tag.usageCount <= 0)
-      .map((tag) => tag._id);
-    if (tagsToRemove.length > 0) {
-      await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
-    }
+  // Retrieve the updated tags to check their usage count
+  const updatedTags = await mongoose.models.Tag.find({
+    label: { $in: tagLabels },
+    companyId,
+  });
+
+  // Delete tags with a usage count of zero
+  const tagsToRemove = updatedTags
+    .filter((tag) => tag.usageCount <= 0)
+    .map((tag) => tag._id);
+  if (tagsToRemove.length > 0) {
+    await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
   }
 };
 

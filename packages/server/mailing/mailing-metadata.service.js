@@ -185,7 +185,7 @@ async function validateEmailType(rawId, { companyId }) {
     throw invalid();
   }
 
-  // A mailing created by a super admin carries no company (see
+  // A mailing created by the bootstrap account carries no company (see
   // mailing.service.js#createInsideWorkspaceOrFolder). There is then no company
   // to check the typology against, so we refuse rather than store a reference
   // nobody can validate.

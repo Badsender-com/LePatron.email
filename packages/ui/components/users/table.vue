@@ -14,7 +14,7 @@ export default {
     BsRowActions,
     LucideUsers: Users,
   },
-  model: { prop: 'loading', event: 'update' },
+  model: { prop: 'loading', event: 'update:loading' },
   props: {
     users: { type: Array, default: () => [] },
     hiddenCols: { type: Array, default: () => [] },
@@ -28,25 +28,53 @@ export default {
   },
   computed: {
     tableHeaders() {
+      // Columns are styled by class, not by position: callers hide columns.
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        { text: this.$t('users.email'), align: 'left', value: 'email' },
-        { text: '', value: 'role', sortable: false, width: '80px' },
+        {
+          text: this.$t('users.email'),
+          align: 'left',
+          value: 'email',
+          cellClass: 'col-email',
+        },
+        {
+          text: '',
+          value: 'role',
+          sortable: false,
+          width: '80px',
+          cellClass: 'col-role',
+        },
         {
           text: this.$tc('global.group', 1),
           align: 'left',
           value: 'group',
           sort: (a, b) => String(b.name).localeCompare(a.name),
         },
-        { text: this.$t('global.status'), value: 'status', align: 'center' },
-        { text: this.$t('users.lang'), value: 'lang', align: 'center' },
-        { text: this.$t('global.createdAt'), value: 'createdAt' },
+        {
+          text: this.$t('global.status'),
+          value: 'status',
+          align: 'center',
+          cellClass: 'col-status',
+        },
+        {
+          text: this.$t('users.lang'),
+          value: 'lang',
+          align: 'center',
+          cellClass: 'col-lang',
+        },
+        {
+          text: this.$t('global.createdAt'),
+          value: 'createdAt',
+          cellClass: 'col-created-at',
+        },
         {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
           align: 'right',
           width: '140px',
+          class: 'col-actions',
+          cellClass: 'col-actions',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
@@ -55,14 +83,16 @@ export default {
         return this.loading;
       },
       set(newLoading) {
-        this.$emit('update', newLoading);
+        this.$emit('update:loading', newLoading);
       },
     },
   },
   methods: {
+    // A super admin is managed from the super admins screen and the global
+    // user page, never from their group's settings (ADR 0002).
     userPath(user) {
       const groupId = user.group?.id || this.$route.params.groupId;
-      return groupId
+      return groupId && user.role !== Roles.SUPER_ADMIN
         ? `/groups/${groupId}/settings/users/${user.id}`
         : `/users/${user.id}`;
     },
@@ -116,12 +146,7 @@ export default {
       this.$emit('update', user);
     },
     navigateToUser(user) {
-      const groupId = user.group?.id || this.$route.params.groupId;
-      if (groupId) {
-        this.$router.push(`/groups/${groupId}/settings/users/${user.id}`);
-      } else {
-        this.$router.push(`/users/${user.id}`);
-      }
+      this.$router.push(this.userPath(user));
     },
     // Returns the i18n KEY, not the translated string: BsRowActions calls
     // $t(action.text) on its side, so returning $t(...) here would translate
@@ -215,12 +240,20 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="item.role === roles.GROUP_ADMIN"
+          v-if="item.role === roles.SUPER_ADMIN"
+          x-small
+          color="primary"
+          dark
+        >
+          {{ $t('users.roles.chip.superAdmin') }}
+        </v-chip>
+        <v-chip
+          v-else-if="item.role === roles.GROUP_ADMIN"
           x-small
           color="accent"
           dark
         >
-          Admin
+          {{ $t('users.roles.chip.groupAdmin') }}
         </v-chip>
       </template>
 
@@ -287,14 +320,12 @@ export default {
 }
 
 .bs-users-table {
-  /* Email column */
-  ::v-deep .v-data-table tbody td:nth-child(2) {
+  ::v-deep .v-data-table tbody td.col-email {
     font-family: var(--font-mono);
     font-size: 12px !important;
   }
 
-  /* Role column */
-  ::v-deep .v-data-table tbody td:nth-child(3) {
+  ::v-deep .v-data-table tbody td.col-role {
     text-align: center;
 
     .v-chip {
@@ -305,8 +336,7 @@ export default {
     }
   }
 
-  /* Status column */
-  ::v-deep .v-data-table tbody td:nth-child(5) {
+  ::v-deep .v-data-table tbody td.col-status {
     text-align: center;
 
     .v-chip {
@@ -317,23 +347,20 @@ export default {
     }
   }
 
-  /* Lang column */
-  ::v-deep .v-data-table tbody td:nth-child(6) {
+  ::v-deep .v-data-table tbody td.col-lang {
     text-align: center;
     color: rgba(0, 0, 0, 0.54) !important;
     font-weight: 600 !important;
     font-size: 11px !important;
   }
 
-  /* CreatedAt column */
-  ::v-deep .v-data-table tbody td:nth-child(7) {
+  ::v-deep .v-data-table tbody td.col-created-at {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  /* Actions column */
-  ::v-deep .v-data-table tbody td:last-child,
-  ::v-deep .v-data-table thead th:last-child {
+  ::v-deep .v-data-table tbody td.col-actions,
+  ::v-deep .v-data-table thead th.col-actions {
     text-align: right !important;
     width: 140px;
     white-space: nowrap;

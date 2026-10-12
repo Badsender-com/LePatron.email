@@ -11,6 +11,9 @@ export default {
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
+      passwordLinkExpired:
+        'This link has expired or was already used. Ask for a new one from the login page.',
+      tooManyRequests: 'Too many attempts. Try again later.',
       createMailingFailed: 'An error has occurred while creating the mailing',
       required: 'This field is required',
       userRequired: 'A user is required',
@@ -244,7 +247,6 @@ export default {
       passwordConfirm: 'Password confirmation',
       passwordReset: 'Password reset',
       login: 'Login',
-      adminLogin: 'Admin Login',
       sendLink: 'Send reset link',
       forgottenPassword: 'Forgotten password ?',
       validate: 'Validate',
@@ -499,6 +501,15 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    roles: {
+      superAdmin: 'Super admin',
+      groupAdmin: 'Company admin',
+      regularUser: 'Regular user',
+      chip: {
+        superAdmin: 'Super admin',
+        groupAdmin: 'Admin',
+      },
+    },
     noUsersAvailable: 'No users available',
     sections: {
       statusSecurity: 'Status & Security',
@@ -1153,6 +1164,45 @@ export default {
       image: 'item image (image)',
       pubDate: 'item publication date (pubDate)',
       ctaLabel: 'default CTA label (static text)',
+    },
+  },
+  superAdmins: {
+    pageTitle: 'Super admins',
+    add: 'Add a super admin',
+    addDescription:
+      'The account is created in the platform group. Then send it the password email from its row, as for any new account.',
+    promote: 'Promote a member',
+    promoteAction: 'Promote',
+    promoteDescription:
+      'Pick a member of the platform group: they become a super admin and keep their account. Like every super admin, they will no longer create mailings: they read and open those of every group from its settings.',
+    promoted: 'Super admin promoted',
+    member: 'Member',
+    noMember: 'No member of the platform group to promote.',
+    noPlatformGroup:
+      'No platform group is set up on this environment: no super admin can be created.',
+    demote: {
+      title: 'Revoke the super admin role',
+      action: 'Revoke the role',
+      notice:
+        'This account will no longer be a super admin. Are you sure you want to revoke the role of',
+    },
+    loadError: 'The super admins could not be loaded. Reload the page.',
+    errors: {
+      FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
+        'Only a super admin can grant or revoke this role.',
+      FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
+        'Only a super admin can manage a super admin.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:
+        'You cannot revoke your own super admin role.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
+        'You cannot deactivate your own account.',
+      SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
+        'A super admin must belong to the platform group.',
+      PLATFORM_GROUP_NOT_FOUND:
+        'No platform group is set up on this environment.',
+      PLATFORM_GROUP_HAS_SUPER_ADMINS:
+        'This group hosts active super admins. To move it, set another group as the platform group with the configuration administrator: they will follow it. To unset it, that account must first deactivate or demote them.',
+      INVALID_ROLE_PARAM: 'This role does not exist.',
     },
   },
   settingsNav: {
