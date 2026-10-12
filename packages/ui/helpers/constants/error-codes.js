@@ -5,6 +5,8 @@ export const ERROR_CODES = {
   ESP_PROVIDER_INSTANCE_NOT_DEFINED: 'ESP_PROVIDER_INSTANCE_NOT_DEFINED',
   API_PROVIDER_NOT_DEFINED: 'API_PROVIDER_NOT_DEFINED',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
+  // Kept in sync with the server by tests/ui/helpers/error-codes-sync.test.js.
+  MAILING_PREVIEW_NOT_GENERATED: 'MAILING_PREVIEW_NOT_GENERATED',
 
   // Taxonomy — kept in sync with packages/server/constant/error-codes.js by
   // tests/ui/helpers/error-codes-sync.test.js, not by this comment.

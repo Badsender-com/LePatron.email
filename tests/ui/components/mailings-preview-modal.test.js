@@ -28,4 +28,22 @@ describe('mailings preview modal', () => {
   it('never lets the preview run scripts', () => {
     expect(iframe).not.toMatch(/allow-scripts/);
   });
+
+  // Which message, for which failure, is tested on the helper itself
+  // (tests/ui/helpers/preview-error.test.js); here, only that the modal uses it.
+  it('picks its error message from the server error code', () => {
+    expect(source).toMatch(/previewErrorMessages\(e, \{/);
+    expect(source).toMatch(/\$t\(errorMessages\.title\)/);
+    expect(source).toMatch(/\$t\(errorMessages\.subtitle\)/);
+  });
+
+  it.each(['en', 'fr'])('translates the preview error messages in %s', (l) => {
+    const locale = fs.readFileSync(
+      path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
+      'utf8'
+    );
+    expect(locale).toMatch(/previewUnavailable:/);
+    expect(locale).toMatch(/subPreviewUnavailable:/);
+    expect(locale).toMatch(/subErrorPreviewReadOnly:/);
+  });
 });

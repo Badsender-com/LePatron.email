@@ -391,6 +391,10 @@ export default {
     errorPreview: 'No preview available for this email',
     subErrorPreview:
       'A preview will be generated when opening the email editor',
+    subErrorPreviewReadOnly:
+      'A preview will be generated when a member of the workspace opens the email in the editor',
+    previewUnavailable: 'The preview could not be loaded',
+    subPreviewUnavailable: 'Please try again, or contact your administrator',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedMailings: 'email selected | emails selected',
