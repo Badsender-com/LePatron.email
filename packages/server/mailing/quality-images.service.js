@@ -19,6 +19,13 @@ const {
  */
 
 const IMAGE_TIMEOUT_MS = 10000;
+// How long a measure of one of our own images is kept (quality-resources
+// .service.js). The image route re-runs sharp on every request unless
+// `config.images.cache` is on (image.controller.js, checkImageCache: off by
+// default), so a measure must not be asked again every ten minutes; and an
+// upload is named by its content hash (file-manage.service.js), so the image
+// at a given URL does not change.
+const OWN_IMAGE_TTL_MS = 24 * 60 * 60 * 1000;
 // Past this, an image is "at least" this heavy: enough to say it is too heavy.
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const RUN_IMAGE_BUDGET_BYTES = 50 * 1024 * 1024;
@@ -146,4 +153,5 @@ module.exports = {
   isDefinitiveImage,
   MAX_IMAGE_BYTES,
   MAX_IMAGE_DOWNLOADS,
+  OWN_IMAGE_TTL_MS,
 };
