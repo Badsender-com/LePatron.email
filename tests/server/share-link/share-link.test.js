@@ -26,7 +26,6 @@ jest.mock('../../../packages/server/utils/crypto.js', () => ({
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
   assertUserCanEditMailing: jest.fn(),
-  sanitizePreviewCached: jest.fn((mailing) => `clean:${mailing.previewHtml}`),
 }));
 
 const {

@@ -43,6 +43,9 @@ const IMAGES_FOLDER = 'images';
 const createPromise = require('../helpers/create-promise.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
 const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
+const {
+  createSanitizedPreviewCache,
+} = require('../utils/sanitized-preview-cache.js');
 const Ftp = require('./ftp-client.service.js');
 
 const request = require('request');
@@ -91,7 +94,6 @@ module.exports = {
   listMailingForWorkspaceOrFolder,
   listTagsForWorkspaceOrFolder,
   previewMail,
-  sanitizePreviewCached,
   downloadZip,
   downloadMultipleZip,
   validateMailExist,
@@ -1489,58 +1491,21 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
-// Sanitized previews, keyed on the mailing and its last write. DOMPurify on a
-// whole document costs real CPU, synchronously, and a preview is opened far more
-// often than it changes.
-//
-// Bounded by the total size held, not by a number of entries: previewHtml can
-// weigh up to PREVIEW_HTML_MAX_LENGTH, and twenty of those would be hundreds of MB
-// per worker. Real previews are around 50KB, so the budget holds a few hundred of
-// them; a preview larger than a tenth of it is sanitized every time instead.
+// Sanitized previews, held per version: see utils/sanitized-preview-cache.js.
 const PREVIEW_CACHE_BUDGET = 8 * 1024 * 1024; // characters
-const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
 // The largest sanitized preview kept: MCP reads no larger one (ADR 0012).
+const PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_BUDGET / 10;
+const { sanitizeCached: sanitizePreviewCached, keyOf: previewCacheKeyOf } =
+  createSanitizedPreviewCache({
+    sanitize: sanitizePreviewHtml,
+    budget: PREVIEW_CACHE_BUDGET,
+    maxEntry: PREVIEW_CACHE_MAX_ENTRY,
+  });
+// MCP reads a mailing's content through the same cache (mcp/mcp-mailing-read.js),
+// and keys the previews it relays on the same version.
 module.exports.PREVIEW_CACHE_MAX_ENTRY = PREVIEW_CACHE_MAX_ENTRY;
-const sanitizedPreviews = new Map();
-let sanitizedPreviewsSize = 0;
-
-function evictOldestPreview() {
-  const [oldestKey, oldestHtml] = sanitizedPreviews.entries().next().value;
-  sanitizedPreviews.delete(oldestKey);
-  sanitizedPreviewsSize -= oldestHtml.length;
-}
-
-// What tells one saved preview of a mailing from another: its last write, and
-// its length should two writes share a millisecond.
-function previewCacheKeyOf(mailing) {
-  const updatedAt = mailing.updatedAt
-    ? new Date(mailing.updatedAt).getTime()
-    : 0;
-  return `${mailing._id}:${updatedAt}:${mailing.previewHtml.length}`;
-}
 module.exports.previewCacheKeyOf = previewCacheKeyOf;
-
-function sanitizePreviewCached(mailing) {
-  const key = previewCacheKeyOf(mailing);
-
-  if (sanitizedPreviews.has(key)) {
-    const html = sanitizedPreviews.get(key);
-    // Refresh its position: the Map iterates in insertion order, oldest first.
-    sanitizedPreviews.delete(key);
-    sanitizedPreviews.set(key, html);
-    return html;
-  }
-
-  const html = sanitizePreviewHtml(mailing.previewHtml);
-  if (html.length > PREVIEW_CACHE_MAX_ENTRY) return html;
-
-  sanitizedPreviews.set(key, html);
-  sanitizedPreviewsSize += html.length;
-  while (sanitizedPreviewsSize > PREVIEW_CACHE_BUDGET) {
-    evictOldestPreview();
-  }
-  return html;
-}
+module.exports.sanitizePreviewCached = sanitizePreviewCached;
 
 async function previewMail(mailingId, user) {
   // Scoped like every other mailing read: the company first, then the workspace
