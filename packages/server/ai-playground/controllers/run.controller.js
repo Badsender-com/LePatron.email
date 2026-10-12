@@ -1,10 +1,13 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const { isBootstrapAccount } = require('../../account/bootstrap-account.js');
 const runService = require('../services/run.service.js');
 
 function userIdOf(req) {
-  return req.user && !req.user.isAdmin ? req.user.id : null;
+  // The bootstrap account has no document to own anything; a persisted
+  // super admin owns what it creates like any user.
+  return req.user && !isBootstrapAccount(req.user) ? req.user.id : null;
 }
 
 module.exports = {

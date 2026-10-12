@@ -56,11 +56,13 @@ async function seedGroups() {
       _company: mongoose.Types.ObjectId(company.id),
     });
 
+    // A super admin keeps the role: only the guardrails of ADR 0002 take it.
     const updateUsers = await Users.updateMany(
       {
         _id: {
           $in: companyUsers.map((user) => mongoose.Types.ObjectId(user._id)),
         },
+        role: { $ne: Roles.SUPER_ADMIN },
       },
       { role: Roles.REGULAR_USER }
     );
@@ -125,8 +127,11 @@ async function findFullById(groupId) {
 async function findUserByGroupId(groupId) {
   const [group, users] = await Promise.all([
     Groups.findById(groupId).select('_id'),
+    // Super admins live in the platform group but are managed from their own
+    // screen (ADR 0002): a group's user list never shows them.
     Users.find({
       _company: groupId,
+      role: { $ne: Roles.SUPER_ADMIN },
     })
       .populate({ path: '_company', select: 'id name entryPoint issuer' })
       .sort({ email: 1 }),
@@ -140,7 +145,7 @@ async function createGroup(group) {
 }
 
 async function deleteGroup(groupId) {
-  findById(groupId);
+  await findById(groupId);
 
   const groupWorkspaces = await workspaceService.findWorkspaces({ groupId });
 

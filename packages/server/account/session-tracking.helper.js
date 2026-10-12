@@ -2,6 +2,7 @@
 
 const logger = require('../utils/logger.js');
 const { Users } = require('../common/models.common.js');
+const { isBootstrapAccount } = require('./bootstrap-account.js');
 
 /**
  * Updates session tracking information for a user after login
@@ -10,8 +11,9 @@ const { Users } = require('../common/models.common.js');
  * @returns {Promise<void>}
  */
 async function updateSessionTracking(req, user) {
-  // Skip for admin users (admins can have multiple sessions)
-  if (user.isAdmin) {
+  // The bootstrap account has no document to record a session on, and may
+  // hold several sessions. A persisted super admin is tracked like any user.
+  if (isBootstrapAccount(user)) {
     return;
   }
 
