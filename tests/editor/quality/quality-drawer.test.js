@@ -47,9 +47,13 @@ async function mountDrawer(result) {
   const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
   vm.selectBlock = jest.fn();
   vm.notifier = { warning: jest.fn() };
+  vm.metadata.url = { qualityIgnores: '/api/mailings/m1/quality-ignores' };
   installQualityReview(vm, ko, {
     run: () => result,
     defer: (fn) => fn(),
+    persist: (_url, change) =>
+      Promise.resolve(change.ignored ? [change.fingerprint] : []),
+    watchContent: () => () => {},
   });
   document.body.innerHTML =
     '<div id="root"></div><button id="quality-toggle"></button>';

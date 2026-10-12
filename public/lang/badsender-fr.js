@@ -475,6 +475,8 @@ module.exports = {
   '__count__ infos': '__count__ info(s)',
   '__count__ checks passed': '__count__ contrôle(s) réussi(s)',
   '__count__ issues': '__count__ point(s) à corriger',
+  '__count__ issues to fix: open the quality control':
+    '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'All checks passed': 'Tous les contrôles sont réussis',
   '__passed__ of __total__ checks · __when__':
     '__passed__ contrôles sur __total__ · __when__',

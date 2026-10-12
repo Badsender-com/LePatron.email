@@ -463,6 +463,8 @@ module.exports = {
   '__count__ infos': '__count__ infos',
   '__count__ checks passed': '__count__ checks passed',
   '__count__ issues': '__count__ issues',
+  '__count__ issues to fix: open the quality control':
+    '__count__ issues to fix: open the quality control',
   'All checks passed': 'All checks passed',
   '__passed__ of __total__ checks · __when__':
     '__passed__ of __total__ checks · __when__',
