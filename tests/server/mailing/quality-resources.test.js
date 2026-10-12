@@ -9,8 +9,10 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
 }));
 
+const config = require('../../../packages/server/node.config.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 const controller = require('../../../packages/server/mailing/mailing-quality.controller.js');
+const qualityResourcesService = require('../../../packages/server/mailing/quality-resources.service.js');
 const {
   validateResourcesPayload,
   checkResources,
@@ -237,6 +239,7 @@ describe('images', () => {
     'https://app.test/api/images/placeholder/30000x30000.png',
     'https://app.test/api/images/resize/99999x1/a.png',
     'https://app.test/api/images/gallery/abc',
+    'https://app.test/api/images/a%2Fb.png',
   ])('goes through the guarded probe for %s', (url) => {
     expect(measuredUrl(url, ['app.test']).own).toBe(false);
   });
@@ -462,5 +465,24 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
     );
     expect(error).toBe(notFound);
     expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it('takes our images from the configured host, never from the host the request names', async () => {
+    mailingService.findOneForUser.mockResolvedValue({ _company: 'c1' });
+    const check = jest
+      .spyOn(qualityResourcesService, 'checkResources')
+      .mockResolvedValue({});
+    await controller.checkResources(
+      {
+        params: { mailingId: 'm1' },
+        body: { images: [{ url: 'https://evil.test/api/images/a.png' }] },
+        user: { id: 'u1' },
+        get: () => 'evil.test',
+      },
+      { json: jest.fn() },
+      jest.fn()
+    );
+    expect(check.mock.calls[0][1].ownHosts).toEqual([config.host]);
+    check.mockRestore();
   });
 });
