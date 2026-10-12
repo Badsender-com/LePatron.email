@@ -322,6 +322,21 @@ describe('images', () => {
     expect(measuredUrl(url, ['app.test']).own).toBe(false);
   });
 
+  it('keeps the measure of one of our own images for a day, of another image a few minutes', async () => {
+    const d = deps();
+    const resources = {
+      images: ['https://app.test/api/images/a.png', 'https://cdn.test/a.png'],
+    };
+    await run(resources, d);
+    const now = Date.now;
+    jest.spyOn(Date, 'now').mockImplementation(() => now() + 60 * 60 * 1000);
+    await run(resources, d, { userKey: 'u2' });
+    Date.now.mockRestore();
+    // The image at a given URL of ours does not change: measured once.
+    expect(d.fetchOwn).toHaveBeenCalledTimes(1);
+    expect(d.probe).toHaveBeenCalledTimes(2);
+  });
+
   it('does not let the host a caller names decide what an URL reads', async () => {
     const d = deps();
     // Measured as ours, under our path: never under the victim's URL.

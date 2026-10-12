@@ -179,7 +179,8 @@ function checkResources(
         return cached(
           key('image', target.own ? `own:${target.path}` : url),
           () => images.measureImage(target, run, deps),
-          images.isDefinitiveImage
+          images.isDefinitiveImage,
+          target.own ? images.OWN_IMAGE_TTL_MS : undefined
         );
       }),
       threats.checkDomains(resources.links, deps.zones(), key, run, deps),
