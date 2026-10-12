@@ -8,6 +8,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   error: jest.fn(),
 }));
+// The budget's own tests are in quality-threats.test.js: here it is injected.
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  QualityBudgets: { findOneAndUpdate: jest.fn() },
+}));
 
 const logger = require('../../../packages/server/utils/logger.js');
 const {
@@ -19,9 +23,6 @@ const {
   checkResources,
   clearCacheForTests,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
-const {
-  WEB_RISK_LOOKUPS_PER_DAY,
-} = require('../../../packages/server/mailing/quality-threats.service.js');
 
 const KEY = 'AIza-test-key';
 const answer = (status, body) => ({
@@ -114,6 +115,7 @@ describe('in a quality run', () => {
     webRiskLookup: jest.fn(async (url) =>
       url.includes('bad') ? ['MALWARE'] : []
     ),
+    spendWebRiskLookup: jest.fn(async () => true),
     ...overrides,
   });
   const run = (links, d, userKey = 'u1') =>
@@ -153,23 +155,24 @@ describe('in a quality run', () => {
     expect(d.webRiskLookup).toHaveBeenCalledTimes(1);
   });
 
-  it("stops asking once the company's daily budget is spent", async () => {
-    const d = deps();
-    const links = (n) =>
-      Array.from({ length: n }, (_, i) => `https://site${i}.test/`);
-    const runs = Math.ceil(WEB_RISK_LOOKUPS_PER_DAY / 60);
-    for (let i = 0; i < runs; i++) {
-      // Distinct users: the per-user throttle is not what is tested here.
-      await run(
-        links(60).map((url) => `${url}${i}`),
-        d,
-        `u${i}`
-      );
-    }
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
-    const { webRisk } = await run(['https://bad.test/late'], d, 'late');
+  it("draws on the company's daily budget before each lookup, and stops once it is spent", async () => {
+    const d = deps({
+      spendWebRiskLookup: jest
+        .fn()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValue(false),
+    });
+    await run(['https://a.test/', 'https://b.test/'], d);
+    expect(d.spendWebRiskLookup).toHaveBeenCalledWith('c1');
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+
+    const { webRisk } = await run(['https://bad.test/late'], d, 'u2');
     expect(webRisk.threats).toEqual({});
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+    // Not spent for nothing: a cached answer asks no budget.
+    await run(['https://a.test/'], d, 'u3');
+    expect(d.spendWebRiskLookup).toHaveBeenCalledTimes(3);
   });
 
   it('asks again what Google could not answer', async () => {

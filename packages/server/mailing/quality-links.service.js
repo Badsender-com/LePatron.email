@@ -16,8 +16,9 @@ const {
  */
 
 const LINK_TIMEOUT_MS = 5000;
-// Link probes in parallel for the whole process, whoever asks: each user gets
-// CONCURRENCY of them, so many users at once must not fan out without end.
+// Link probes in parallel for the worker, whoever asks: each user gets
+// CONCURRENCY of them, so many users at once must not fan out without end
+// (×WORKERS for the instance, see quality-limits.js).
 const MAX_LINK_PROBES = 16;
 const linkProbes = limiter(MAX_LINK_PROBES);
 

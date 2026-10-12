@@ -22,8 +22,9 @@ const IMAGE_TIMEOUT_MS = 10000;
 // Past this, an image is "at least" this heavy: enough to say it is too heavy.
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const RUN_IMAGE_BUDGET_BYTES = 50 * 1024 * 1024;
-// Image downloads in parallel for the whole process, every user included:
-// bodies are buffered, so this bounds the memory the checks can take.
+// Image downloads in parallel for the worker, every user included: bodies
+// are buffered, so this bounds the memory the checks can take (×WORKERS for
+// the instance, see quality-limits.js).
 const MAX_IMAGE_DOWNLOADS = 8;
 
 const imageDownloads = limiter(MAX_IMAGE_DOWNLOADS);
@@ -144,4 +145,5 @@ module.exports = {
   fetchOwn,
   isDefinitiveImage,
   MAX_IMAGE_BYTES,
+  MAX_IMAGE_DOWNLOADS,
 };
