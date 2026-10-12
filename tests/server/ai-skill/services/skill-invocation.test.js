@@ -166,9 +166,15 @@ describe('skill-invocation.invoke', () => {
         userId: USER_ID,
         invocationSource: 'demo',
       });
+      // The output schema rides along: providers that can enforce a shape
+      // rather than ask for one need it (Anthropic builds a forced tool call
+      // from it). Those that cannot ignore the extra field.
       expect(
         mockProvider.chatComplete.mock.calls[0][0].responseFormat
-      ).toEqual({ type: 'json_object' });
+      ).toMatchObject({ type: 'json_object' });
+      expect(
+        mockProvider.chatComplete.mock.calls[0][0].responseFormat.schema
+      ).toEqual(expect.objectContaining({ type: 'object' }));
       delete mockProvider.supportsJsonResponseFormat;
     });
 

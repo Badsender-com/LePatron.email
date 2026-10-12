@@ -615,9 +615,9 @@ export default {
     handleTranslated() {
       this.$emit('on-refetch');
     },
-    showTranslationWarning() {
+    showTranslationWarning(warningKeys) {
       if (this.$refs.translationWarningDialog) {
-        this.$refs.translationWarningDialog.open();
+        this.$refs.translationWarningDialog.open(warningKeys);
       }
     },
   },

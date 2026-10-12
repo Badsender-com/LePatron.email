@@ -44,7 +44,8 @@ describe('OpenAIProvider', () => {
 
   describe('getDefaultTranslationModel', () => {
     it('should return default model when not configured', () => {
-      expect(provider.getDefaultTranslationModel()).toBe('gpt-4o-mini');
+      // Comes from the central catalogue now, not a constant in this class.
+      expect(provider.getDefaultTranslationModel()).toBe('gpt-5-mini');
     });
 
     it('should return configured model', () => {
@@ -72,7 +73,10 @@ describe('OpenAIProvider', () => {
         'https://api.openai.com/v1/models',
         expect.objectContaining({
           method: 'GET',
-          headers: { Authorization: 'Bearer sk-test-key-12345' },
+          // Built by the dialect now, so it also carries Content-Type.
+          headers: expect.objectContaining({
+            Authorization: 'Bearer sk-test-key-12345',
+          }),
         })
       );
     });
@@ -223,6 +227,199 @@ describe('OpenAIProvider', () => {
       });
 
       expect(result).toBe('Hello');
+    });
+  });
+
+  // The pattern that let gpt-6-astra reach staging. Reading the generation
+  // rather than listing names is what stops the next one repeating it.
+  describe('new-contract detection', () => {
+    it.each(['gpt-5', 'gpt-5-mini', 'gpt-5.6-luna', 'gpt-6-astra', 'o1', 'o3'])(
+      'sends max_completion_tokens for %s',
+      (model) => {
+        expect(provider._maxTokensParamName(model)).toBe(
+          'max_completion_tokens'
+        );
+        expect(provider._supportsTemperature(model)).toBe(false);
+      }
+    );
+
+    it.each(['gpt-4o', 'gpt-4.1', 'gpt-4-turbo', 'gpt-3.5-turbo'])(
+      'keeps max_tokens for %s',
+      (model) => {
+        expect(provider._maxTokensParamName(model)).toBe('max_tokens');
+        expect(provider._supportsTemperature(model)).toBe(true);
+      }
+    );
+
+    // The reason this reads a number: a character class would stop at gpt-9.
+    it('covers a generation that does not exist yet', () => {
+      expect(provider._isNewContractModel('gpt-7-nova')).toBe(true);
+      expect(provider._isNewContractModel('gpt-12')).toBe(true);
+    });
+
+    it('claims nothing about a name it cannot read', () => {
+      expect(provider._isNewContractModel('mistral-small')).toBe(false);
+      expect(provider._isNewContractModel('')).toBe(false);
+      expect(provider._isNewContractModel(undefined)).toBe(false);
+    });
+  });
+
+  // A reasoning model served over an OpenAI-compatible API returns blocks
+  // rather than a string. Assuming a string crashed with
+  // `content.trim is not a function` — a JavaScript error with nothing in it
+  // for whoever reads the log. Found on Mistral's zai-glm-5.
+  describe('content shape', () => {
+    function parse(content) {
+      return provider._parseResponse({
+        choices: [{ message: { content } }],
+        usage: {},
+      }).content;
+    }
+
+    it('reads a plain string', () => {
+      expect(parse('hello')).toBe('hello');
+    });
+
+    it('concatenates text blocks and drops the reasoning', () => {
+      expect(
+        parse([
+          { type: 'thinking', thinking: [{ type: 'text', text: 'internal' }] },
+          { type: 'text', text: 'Hello ' },
+          { type: 'text', text: 'world' },
+        ])
+      ).toBe('Hello world');
+    });
+
+    it('survives a shape it cannot read', () => {
+      expect(parse(null)).toBe('');
+      expect(parse(undefined)).toBe('');
+    });
+  });
+
+  // Truncation used to pass unnoticed on this dialect, which backs six
+  // providers: Anthropic and Gemini both reported it, OpenAI did not. It
+  // matters more since gpt-5-mini became the default — a reasoning model
+  // spends output budget before it answers.
+  describe('truncation', () => {
+    it('reports a length finish as truncation', () => {
+      expect(
+        provider._getFinishReason({ choices: [{ finish_reason: 'length' }] })
+      ).toBe('length');
+    });
+
+    it.each([['stop'], ['tool_calls'], [undefined]])(
+      'does not report %s as truncation',
+      (reason) => {
+        expect(
+          provider._getFinishReason({ choices: [{ finish_reason: reason }] })
+        ).toBeNull();
+      }
+    );
+
+    it('tolerates a payload with no choices', () => {
+      expect(provider._getFinishReason({})).toBeNull();
+    });
+
+    it('types a cut translation as truncation', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            { message: { content: '{"a": "Bonj' }, finish_reason: 'length' },
+          ],
+        }),
+      });
+
+      await expect(
+        provider.translateBatch({
+          texts: { a: 'Hello' },
+          sourceLanguage: 'en',
+          targetLanguage: 'fr',
+        })
+      ).rejects.toMatchObject({ code: 'PROVIDER_OUTPUT_TRUNCATED' });
+    });
+
+    it('reports a complete answer as not truncated', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+        }),
+      });
+
+      const result = await provider.chatComplete({
+        messages: [{ role: 'user', content: 'x' }],
+      });
+
+      expect(result.truncated).toBe(false);
+    });
+  });
+
+  // gpt-5 and the o-series reject `max_tokens` and any explicit temperature
+  // with a 400; gpt-4o and gpt-4.1 still take both. Verified live in this PR.
+  describe('request contract per model generation', () => {
+    function mockCompletion() {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: '{"text": "Hello"}' } }],
+        }),
+      });
+    }
+
+    function sentBody() {
+      return JSON.parse(mockFetch.mock.calls[0][1].body);
+    }
+
+    function providerOn(model) {
+      return new OpenAIProvider({ ...mockIntegration, config: { model } });
+    }
+
+    const translate = (p) =>
+      p.translateBatch({
+        texts: { text: 'Bonjour' },
+        sourceLanguage: 'fr',
+        targetLanguage: 'en',
+      });
+
+    it.each(['gpt-5-mini', 'gpt-5', 'o3-mini', 'o4-mini'])(
+      '%s gets max_completion_tokens, no temperature, a low reasoning effort',
+      async (model) => {
+        mockCompletion();
+
+        await translate(providerOn(model));
+
+        const body = sentBody();
+        expect(body.max_completion_tokens).toBeGreaterThan(0);
+        expect(body).not.toHaveProperty('max_tokens');
+        expect(body).not.toHaveProperty('temperature');
+        expect(body.reasoning_effort).toBe('low');
+      }
+    );
+
+    it.each(['gpt-4o-mini', 'gpt-4.1-mini'])(
+      '%s keeps max_tokens and temperature, and gets no reasoning effort',
+      async (model) => {
+        mockCompletion();
+
+        await translate(providerOn(model));
+
+        const body = sentBody();
+        expect(body.max_tokens).toBeGreaterThan(0);
+        expect(body.temperature).toBe(0.3);
+        expect(body).not.toHaveProperty('reasoning_effort');
+      }
+    );
+
+    // The effort is a translation choice: skills keep the model's default.
+    it('sends no reasoning effort from chatComplete', async () => {
+      mockCompletion();
+
+      await providerOn('gpt-5-mini').chatComplete({
+        messages: [{ role: 'user', content: 'Hi' }],
+      });
+
+      expect(sentBody()).not.toHaveProperty('reasoning_effort');
     });
   });
 });

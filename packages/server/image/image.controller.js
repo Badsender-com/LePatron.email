@@ -13,7 +13,7 @@ const { green, red } = require('chalk');
 
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
-const { CacheImages, Galleries } = require('../common/models.common.js');
+const { CacheImages } = require('../common/models.common.js');
 const imageService = require('./image.service');
 const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -87,7 +87,7 @@ const onWriteResizeEnd = (datas) => () => {
     .save()
     .then(() => console.log(green('cache image infos saved in DB', path)))
     .catch((e) => {
-      console.log(red('[IMAGE] can\'t save cache image infos in DB'), path);
+      console.log(red("[IMAGE] can't save cache image infos in DB"), path);
       console.log(inspect(e));
     });
 };
@@ -98,7 +98,7 @@ const getResizedImageName = (path) => {
 };
 
 const onWriteResizeError = (path) => (e) => {
-  console.log('[IMAGE] can\'t upload resize/placeholder result', path);
+  console.log("[IMAGE] can't upload resize/placeholder result", path);
   console.log(inspect(e));
 };
 
@@ -489,16 +489,8 @@ function read(req, res, next) {
 async function list(req, res) {
   const { mongoId } = req.params;
 
-  const gallery = await Galleries.findOne(
-    {
-      creationOrWireframeId: mongoId,
-    },
-    'files'
-  );
-
-  const responseGallery =
-    gallery || (await imageService.createGallery(mongoId));
-  res.json(responseGallery);
+  const gallery = await imageService.findOrCreateGallery(mongoId);
+  res.json({ files: gallery.files });
 }
 
 /**
@@ -520,27 +512,8 @@ async function create(req, res) {
     prefix: mongoId,
     formatter: 'editor',
   };
-  const [uploads, gallery] = await Promise.all([
-    fileManager.parseMultipart(req, multipartOptions),
-    Galleries.findOne({ creationOrWireframeId: mongoId }),
-  ]);
-
-  // gallery could not be created at this point
-  // without opening galleries panel in the editor no automatic DB gallery creation :(
-  const safeGallery = gallery || (await imageService.createGallery(mongoId));
-  const galleryImages = safeGallery.files.map((file) => ({ ...file }));
-  const galleryImagesName = galleryImages.map((file) => file.name);
-
-  uploads.files.forEach((upload) => {
-    const imageName = upload.name;
-    const hasAlreadyCurrentFile = galleryImagesName.includes(imageName);
-    if (hasAlreadyCurrentFile) return;
-    galleryImages.push(upload);
-  });
-  safeGallery.files = galleryImages;
-
-  safeGallery.markModified('files');
-  await safeGallery.save();
+  const uploads = await fileManager.parseMultipart(req, multipartOptions);
+  await imageService.addFiles(mongoId, uploads.files);
 
   // send only the new uploads
   // front-application will iterate over them to update the gallery previews

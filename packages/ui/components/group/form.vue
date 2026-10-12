@@ -8,6 +8,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsTextField from '~/components/form/bs-text-field';
+import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { escapeHtml } from '~/helpers/escape-html';
@@ -27,6 +28,7 @@ export default {
   components: {
     BsModalConfirmForm,
     BsTextField,
+    BsTextarea,
     BsSelect,
     BsFormSection,
     LucidePalette: Palette,
@@ -125,6 +127,7 @@ export default {
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
         currentGroup.issuer = '';
+        currentGroup.idpCert = '';
       }
       this.$emit('submit', this.group);
     },
@@ -326,6 +329,19 @@ export default {
                     :disabled="disabled"
                   />
                 </v-col>
+                <!-- Required for SSO to be offered at all: without the identity
+                     provider's certificate, no response signature can be
+                     checked, so the login page falls back to the password. -->
+                <v-col cols="12">
+                  <bs-textarea
+                    v-model="localModel.idpCert"
+                    :label="$t('forms.group.idpCert')"
+                    :hint="$t('forms.group.idpCertHint')"
+                    :disabled="disabled"
+                    rows="6"
+                    class="group-form__idp-cert"
+                  />
+                </v-col>
               </v-row>
             </div>
           </v-expand-transition>
@@ -394,6 +410,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// A PEM certificate is read line by line: monospace keeps it recognisable.
+.group-form__idp-cert ::v-deep textarea {
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
 .module-card {
   display: flex;
   align-items: center;

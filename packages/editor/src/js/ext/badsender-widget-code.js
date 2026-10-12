@@ -1,5 +1,7 @@
 'use strict';
 
+const { HTML_CODE_BLOCK } = require('./html-code-block/block-types.js');
+
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
 //
@@ -10,6 +12,22 @@
 // The editing surface is not in this panel: #main-toolbox is 400px wide, which is
 // unusable for HTML. The button opens the CodeMirror modal instead — same shape
 // as badsender-widget-bgimage.js, whose button opens the gallery dialog.
+//
+// A second button opens the email's head CSS. That stylesheet belongs to the
+// mailing, not to this block, and it also lives at the bottom of the global
+// Style tab — but this is where someone who just pasted markup looks for a way
+// to make it responsive. Two entry points, one value: both open the same editor
+// on the same observable. The hint under the button says the scope is the whole
+// email, so nobody expects it to be per-block. Whether it shows is
+// `viewModel.isHeadCssEditable`'s call (ext/head-css/view-model.js), as for
+// the Style tab. With the flag off, CSS the email still exports is offered
+// read-only instead, with its delete (`viewModel.isHeadCssReadOnly`), the way
+// this block itself stays without being editable.
+//
+// The block builder is NOT here. It has a block type of its own, and its own
+// widget (badsender-widget-block-builder.js): offering "compose visually" from
+// inside a block named "HTML code" made the choice between the two invisible at
+// the only moment it matters — when the user picks a block from the palette.
 
 // The hidden input keeps the property bound (and focus-tracked) the way native
 // widgets do, so selecting the block still highlights it in the canvas.
@@ -17,7 +35,7 @@
 // With the template flag off, the block stays — the server keeps accepting the
 // markup already stored, so the email remains savable — but it cannot be edited:
 // the server refuses any markup the mailing did not already hold
-// (packages/server/mailing/html-code-block-guard.js). The button gives way to a
+// (packages/server/mailing/synthetic-block-guard.js). The button gives way to a
 // sentence saying so, rather than letting the user edit and then fail to save.
 function html(propAccessor, onfocusbinding, parameters) {
   return `
@@ -25,6 +43,10 @@ function html(propAccessor, onfocusbinding, parameters) {
     <div class="html-code-widget">
       <button class="html-code-widget__button" data-bind="visible: $root.isHtmlBlockEditable(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
+      <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.isHeadCssEditable(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
+      <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
+      <button class="html-code-widget__button html-code-widget__button--secondary html-code-widget__button--view-css" data-bind="visible: $root.isHeadCssReadOnly(), button: { icons: { primary: 'lucide lucide-eye' } }, text: $root.t('widget-code-view-css'), click: function() { $root.openHeadCssViewer(); }">View the email CSS</button>
+      <p class="html-code-widget__hint html-code-widget__hint--read-only" data-bind="visible: $root.isHeadCssReadOnly(), text: $root.t('head-css-read-only-hint')"></p>
     </div>
   `;
 }
@@ -32,7 +54,7 @@ function html(propAccessor, onfocusbinding, parameters) {
 module.exports = () => {
   function widget() {
     return {
-      widget: 'code',
+      widget: HTML_CODE_BLOCK.widget,
       defaultParameters: Object.freeze({}),
       html,
     };
@@ -45,7 +67,7 @@ module.exports = () => {
     vm.toggleHtmlCodeModal = null;
 
     vm.isHtmlBlockEditable = function () {
-      return Boolean(vm.metadata && vm.metadata.htmlBlockEnabled);
+      return Boolean(vm.metadata && vm.metadata[HTML_CODE_BLOCK.flag]);
     };
 
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {

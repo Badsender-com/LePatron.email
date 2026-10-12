@@ -9,6 +9,7 @@ const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
 const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
+const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
 
@@ -31,15 +32,22 @@ router.post('/move-many', GUARD_USER, mailings.moveMany);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
   GUARD_USER,
+  requireJsonBody,
   mailings.sendTestMail
 );
 router.post(
   '/:mailingId/mosaico/download-zip',
   GUARD_USER,
+  requireJsonBody,
   mailings.downloadZip
 );
 
-router.post('/download-multiple-zip', GUARD_USER, mailings.downloadMultipleZip);
+router.post(
+  '/download-multiple-zip',
+  GUARD_USER,
+  requireJsonBody,
+  mailings.downloadMultipleZip
+);
 
 router.patch(
   '/:mailingId/metadata',

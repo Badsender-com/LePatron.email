@@ -54,6 +54,39 @@ describe('MosaicoTextInjector', () => {
 
       expect(result).toBe(false);
     });
+
+    // The keys come back from a provider: a path only follows the object's
+    // own properties, and never writes anything but an existing one.
+    describe('only through own properties', () => {
+      it.each([
+        ['an inherited property', 'toString'],
+        ['a constructor path', 'constructor.prototype.toString'],
+        ['a __proto__ path', '__proto__.toString'],
+        ['a nested constructor path', 'a.constructor.prototype.toString'],
+        ['a path through a string', 'a.b.constructor.prototype.trim'],
+        ['an empty segment', 'a..b'],
+      ])('refuses %s', (_label, path) => {
+        const obj = { a: { b: 'value' } };
+        const trim = String.prototype.trim;
+        const toString = Object.prototype.toString;
+
+        expect(setByPath(obj, path, 'x')).toBe(false);
+        expect(String.prototype.trim).toBe(trim);
+        expect(Object.prototype.toString).toBe(toString);
+        expect(obj).toEqual({ a: { b: 'value' } });
+      });
+
+      it('refuses a path that is not a string', () => {
+        expect(setByPath({ a: 'v' }, ['a'], 'x')).toBe(false);
+      });
+
+      it('still writes an existing own property set to null', () => {
+        const obj = { a: null };
+
+        expect(setByPath(obj, 'a', 'x')).toBe(true);
+        expect(obj.a).toBe('x');
+      });
+    });
   });
 
   describe('deepClone', () => {

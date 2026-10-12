@@ -14,6 +14,9 @@ const {
 const {
   HtmlCodeModalComponent,
 } = require('./components/html-code-modal/html-code-modal');
+const {
+  BlockBuilderModalComponent,
+} = require('./components/block-builder-modal/block-builder-modal.js');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -26,6 +29,7 @@ module.exports = {
         TranslateBlockModalComponent,
         ContentFeedModalComponent,
         HtmlCodeModalComponent,
+        BlockBuilderModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -36,7 +40,7 @@ module.exports = {
           <delete-block-modal :vm="viewModel"></delete-block-modal>
           <translate-block-modal :vm="viewModel"></translate-block-modal>
           <content-feed-modal :vm="viewModel"></content-feed-modal>
-          <html-code-modal :vm="viewModel"></html-code-modal>
+          <html-code-modal :vm="viewModel"></html-code-modal><block-builder-modal :vm="viewModel"></block-builder-modal>
         </div>
       `,
     });

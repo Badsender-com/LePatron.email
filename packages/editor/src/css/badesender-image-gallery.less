@@ -41,19 +41,17 @@
     background-color: rgba(0, 172, 220, 0.04);
   }
 
-  &.ui-state-highlight:before {
-    .makeDroppable();
-    line-height: 45px;
-    height: auto;
-    top: -10px;
-    bottom: -10px;
+  // While a file is dragged over the page, the zone's own frame lights up.
+  // No `makeDroppable` overlay here: it drew a second dashed frame 10px around
+  // the one the zone already has.
+  &.ui-state-highlight {
+    border-color: var(--v-accent-base, #00acdc);
+    background-color: rgba(0, 172, 220, 0.06);
   }
 
-  &.ui-state-draghover,
-  &.ui-state-draghover:before {
+  &.ui-state-draghover {
     background-color: rgba(0, 172, 220, 0.1);
     border-color: var(--v-accent-base, #00acdc);
-    animation: none;
   }
 }
 

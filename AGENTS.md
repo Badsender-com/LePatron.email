@@ -53,6 +53,60 @@ yarn editor:build
 yarn build:ui
 ```
 
+## New Feature Workflow
+
+**When the user asks for a new feature, do not start coding.** Grill it first. A new feature is anything that adds a capability, a screen, an endpoint, a data model or an integration. Bug fixes, refactors, dependency bumps and small changes inside an existing behavior skip this workflow; when in doubt, ask.
+
+Each step has a skill in `.claude/skills/` (Claude Code invokes them by name; other agents read the `SKILL.md`):
+
+| Step | Skill             | Output                                                                               |
+| ---- | ----------------- | ------------------------------------------------------------------------------------ |
+| 1    | `grill-with-docs` | Shared understanding of the design, agreed test seams, an ADR, `GLOSSARY.md` updates |
+| 2    | `to-prd`          | The PRD, published as a GitHub issue labelled `⛰ Epic`                               |
+| 3    | `to-issues`       | Tracer-bullet tickets, as sub-issues of the epic with their blocking edges           |
+| 4    | `tdd`             | The first PR: the ADR, the glossary, and the acceptance tests, skipped               |
+| 5    | `tdd`             | One PR per ticket: turn its tests on (red), implement (green), review with `/review` |
+
+1. **Grill.** Interview the user round by round until every branch of the design is settled; look facts up in the code yourself, leave only decisions to the user. Terms go into `GLOSSARY.md` as they are resolved, decisions into an ADR in `docs/adr/` (`Status: proposed`), on a `feat/<feature>-adr-tests` branch created from `develop` before the first file is written. Nothing moves on before the user confirms the shared understanding.
+2. **Epic.** Synthesize the grilling into a PRD (problem, solution, user stories, implementation and testing decisions, out of scope), show it, and publish it once the user agrees. The repository is public: no client name, unfixed vulnerability or secret in any issue.
+3. **Tickets.** Split the epic into vertical slices, each one PR, each with its blockers. Ticket 01 is always the ADR + tests PR, and blocks the others. The user approves the breakdown before anything is published.
+4. **First PR** (`feat/<feature>-adr-tests`, closes ticket 01). The ADR, the `GLOSSARY.md` changes, and the tests at the agreed seams, written in full as the epic's acceptance criteria inside `describe.skip` blocks that name the ticket turning them on. No production code, CI stays green.
+5. **Ticket PRs** (`feat/<feature>-<ticket>`, one per ticket, frontier first). Remove the `.skip` of the ticket's blocks, implement until they pass, add the smaller tests the implementation needs. When the first PR merges, the ADR moves to `Status: accepted`.
+
+Before exploring the code for any task, read `GLOSSARY.md` (if it exists) and the ADRs in `docs/adr/` that touch the area. Use the glossary's terms in code, tests and issues. If a change contradicts an ADR, say so explicitly instead of silently overriding it.
+
+## Parallel Work
+
+Other people and other agents work on this repository at the same time. Before starting a task (a grilling, a ticket, a fix), and again before opening a PR, look for work that overlaps it:
+
+```bash
+# Open PRs touching the same area (adapt the path pattern)
+gh pr list --state open --limit 50 --json number,title,author,files \
+  --jq '.[] | select(any(.files[].path; test("packages/server/mailing/"))) | "#\(.number) \(.title) (@\(.author.login))"'
+
+# Issues and PRs on the same subject, open or recently closed
+gh issue list --state all --search "<keywords>" --limit 10
+gh pr list --state merged --search "<keywords>" --limit 10
+
+# Other local sessions, and what landed on develop since the branch started
+git worktree list
+git fetch origin develop && git log --oneline HEAD..origin/develop -- <paths>
+```
+
+Nothing found: carry on without comment. Something found: stop, and warn the user in a short block, in their language, before going further:
+
+```
+⚠️ Overlapping work
+- #1138 (open PR, @someone): changes the quality drawer this task touches
+- #1141 (merged yesterday): already fixes the truncated responses
+
+1. Update first? (rebase, pick up their changes, refresh the ticket)
+2. Does it change the decision or the scope of this task?
+3. Wait for #1138 to merge before going further?
+```
+
+Each question gets the user's answer; do not settle them yourself. Never edit, comment on or close someone else's issue or PR without being asked.
+
 ## Code Conventions
 
 ### General
@@ -422,7 +476,8 @@ Supported providers in `packages/server/esp/`:
 
 - [CONTRIBUTING.md](./docs/CONTRIBUTING.md) - Contribution guidelines
 - [TEMPLATE_DEVELOPER_GUIDE.md](./docs/TEMPLATE_DEVELOPER_GUIDE.md) - Mosaico template development
-- [docs/agents/](./docs/agents/) - Additional agent documentation
+- [docs/adr/](./docs/adr/) - Architecture Decision Records
+- [.claude/skills/](./.claude/skills/) - Agent skills, including the new feature workflow
 - [docs/index.md](./docs/index.md) - Complete documentation index
 - [packages/documentation/](./packages/documentation/) - Technical documentation
 

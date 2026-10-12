@@ -251,43 +251,23 @@ describe('findHtmlCodeBlockRanges with the stored markup', () => {
     ] = findHtmlCodeBlockRanges('a<div class="lp-html-block"><b>x</b></div>b', [
       '<i>other</i>',
     ]);
-    expect(range).toEqual({ start: 1, end: 42 });
-  });
-});
-
-// The translated copy's previewHtml is sanitized before storage. Sanitizing the
-// pasted markup with it stripped the ESP scripts the block exists for, so the
-// copy's ZIP no longer matched its export.
-describe('transformDocumentKeepingHtmlCodeBlocks', () => {
-  const {
-    transformDocumentKeepingHtmlCodeBlocks,
-  } = require('../../../packages/server/translation/html-code-block-protection.js');
-  const {
-    sanitizePreviewHtml,
-  } = require('../../../packages/server/utils/preview-html-sanitizer.js');
-
-  const pasted = '<script>espTracking("$&")</script><p>kept</p>';
-  const html = [
-    '<html><head></head><body>',
-    '<p>translated<img src="x" onerror="alert(1)"></p>',
-    `<div class="lp-html-block-root"><div class="lp-html-block">${pasted}</div></div>`,
-    '</body></html>',
-  ].join('');
-
-  it('sanitizes the document but puts the pasted markup back byte for byte', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
-      html,
-      sanitizePreviewHtml,
-      [pasted]
-    );
-    expect(result).not.toMatch(/onerror/);
-    expect(result).toContain(`<div class="lp-html-block">${pasted}</div>`);
+    expect(range).toMatchObject({ start: 1, end: 42, matched: -1 });
   });
 
-  it('is the plain transform without any block', () => {
-    const shout = (s) => s.toUpperCase();
-    expect(transformDocumentKeepingHtmlCodeBlocks('<p>a</p>', shout)).toBe(
-      '<P>A</P>'
-    );
+  // What the composed-block swap anchors on: the block's own markup, and
+  // which stored block it is.
+  it('gives the content range and the stored markup it matched', () => {
+    const doc = `<div class="lp-html-block">${pasted}</div>`;
+    const [range] = findHtmlCodeBlockRanges(doc, ['<i>other</i>', pasted]);
+    expect(range.matched).toBe(1);
+    expect(range.markerClass).toBe('lp-html-block');
+    expect(doc.slice(range.contentStart, range.contentEnd)).toBe(pasted);
+  });
+
+  it('gives the content range of a zone located by counting divs', () => {
+    const doc = 'a<div class="lp-builder-block"><b>x</b></div>b';
+    const [range] = findHtmlCodeBlockRanges(doc);
+    expect(range.markerClass).toBe('lp-builder-block');
+    expect(doc.slice(range.contentStart, range.contentEnd)).toBe('<b>x</b>');
   });
 });

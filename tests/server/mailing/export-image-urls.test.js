@@ -2,31 +2,17 @@
 
 // The collection and the guard are plain string work inside
 // handleRelativeOrFtpImages; the regexes are the whole behaviour, so they are
-// what these tests pin down. Requiring mailing.service.js would drag in
-// mongoose models and an FTP client for no benefit here.
-const SOURCE = require('fs').readFileSync(
-  require('path').resolve(
-    __dirname,
-    '../../../packages/server/mailing/mailing.service.js'
-  ),
-  'utf8'
-);
-
-// keep in sync with mailing.service.js — the test fails loudly if they drift
-const extract = (name) => {
-  const line = SOURCE.split('\n').find((l) => l.includes(`const ${name} = /`));
-  if (!line) throw new Error(`${name} not found in mailing.service.js`);
-  const body = line.slice(line.indexOf('/') + 1, line.lastIndexOf('/'));
-  const flags = line.slice(line.lastIndexOf('/') + 1).replace(/[;\s]/g, '');
-  return new RegExp(body, flags);
-};
-
-const urlsRegexUrl = extract('urlsRegexUrl');
-const ownImages = extract('OWN_IMAGES_URL_REGEX');
+// what these tests pin down. They live in a module of their own so that these
+// tests need not drag in mailing.service.js, its mongoose models and its FTP
+// client.
+const {
+  IMAGE_FILE_URL_REGEX: urlsRegexUrl,
+  OWN_IMAGES_URL_REGEX: ownImages,
+} = require('../../../packages/server/mailing/export-image-urls.js');
 
 const OURS = 'https://builder.badsender.com/api/images';
 
-describe('collecte des URLs d\'images à l\'export', () => {
+describe("collecte des URLs d'images à l'export", () => {
   it('collecte les extensions raster habituelles', () => {
     for (const ext of ['jpg', 'jpeg', 'png', 'gif', 'webp']) {
       expect(
@@ -46,6 +32,21 @@ describe('collecte des URLs d\'images à l\'export', () => {
     expect(line.match(urlsRegexUrl)).toHaveLength(2);
   });
 
+  it('ne traverse pas le CSS minifié entre deux url() d’une même ligne', () => {
+    const line =
+      `.a{background:url(${OURS}/a.png)}` +
+      `.b{background:url('${OURS}/b.png')}`;
+    expect(line.match(urlsRegexUrl)).toEqual([
+      `${OURS}/a.png`,
+      `${OURS}/b.png`,
+    ]);
+  });
+
+  it('garde les URLs dont la query string porte un &amp;', () => {
+    const url = `${OURS}/resize?w=600&amp;src=a.png`;
+    expect(`<img src="${url}">`.match(urlsRegexUrl)).toEqual([url]);
+  });
+
   it('rattrape nos URLs quelle que soit l’extension', () => {
     for (const ext of ['bin', 'false', 'svg', 'png']) {
       expect(`${OURS}/cover/176xnull/abc.${ext}`.match(ownImages)).toHaveLength(
@@ -58,6 +59,13 @@ describe('collecte des URLs d\'images à l\'export', () => {
     expect(
       'https://assets.vorwerk.fr/vorwerk/builder/rea.png'.match(ownImages)
     ).toBeNull();
+  });
+
+  it('ne remonte pas jusqu’à une url() précédente du CSS minifié', () => {
+    const line =
+      '.a{background:url(https://cdn.example/a.png)}' +
+      `.b{background:url(${OURS}/b.bin)}`;
+    expect(line.match(ownImages)).toEqual([`${OURS}/b.bin`]);
   });
 
   it('s’arrête aux délimiteurs de balise', () => {

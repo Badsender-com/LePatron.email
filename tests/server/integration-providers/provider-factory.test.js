@@ -95,12 +95,16 @@ describe('ProviderFactory', () => {
     it('should return array of supported providers', () => {
       const providers = ProviderFactory.getSupportedProviders();
 
-      expect(providers).toContain(IntegrationProviders.OPENAI);
-      expect(providers).toContain(IntegrationProviders.MISTRAL);
-      expect(providers).toContain(IntegrationProviders.INFOMANIAK);
-      expect(providers).toContain(IntegrationProviders.DEEPL);
-      expect(providers).toContain(IntegrationProviders.RSS);
-      expect(providers.length).toBe(5);
+      // Every declared provider must be wired: an id present in the enum but
+      // missing from the factory map is accepted by the schema and then fails
+      // at call time with "Unsupported provider".
+      for (const id of Object.values(IntegrationProviders)) {
+        if (id === IntegrationProviders.METABASE) continue; // dashboard, not built here
+        expect(providers).toContain(id);
+      }
+      expect(providers.length).toBe(
+        Object.values(IntegrationProviders).length - 1
+      );
     });
   });
 });

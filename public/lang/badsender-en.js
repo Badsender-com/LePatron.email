@@ -217,6 +217,10 @@ module.exports = {
     'An error occurred while loading folders. Please contact support with this ID: {logId}.',
   'snackbar-error': 'An error occurred. Please try again.',
 
+  // Block toolbar
+  'Save block to library': 'Save block to library',
+  'Translate block': 'Translate block',
+
   // Comments
   'Comment block': 'Comment this block',
   'comments-title': 'Comments',
@@ -320,15 +324,107 @@ module.exports = {
   'html-code-modal-title': 'HTML code',
   'html-code-modal-apply': 'Apply',
   'html-code-modal-cancel': 'Cancel',
+  'html-code-modal-close': 'Close',
   'html-code-placeholder':
     'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
   'html-code-too-large':
     'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
+  'widget-code-edit-css': 'Edit the email CSS',
+  'widget-code-view-css': 'View the email CSS',
+  'widget-code-css-hint':
+    "Added to the <head> of the exported email. Shared by every block of this mailing. At export, the template's styles are inlined and win over this CSS unless !important.",
+  // Block builder
+  'block-builder-select-element': 'Select an element to edit it.',
+  'block-builder-choose-image': 'Choose an image',
+  'block-builder-change-image': 'Change the image',
+  'block-builder-replaces-markup':
+    'This block already holds HTML that was not composed here. Applying will replace it with your composition.',
+  'block-builder-block-name': 'Composed block',
+  'block-builder-block-empty': 'Composed block — double-click to compose',
+  'widget-block-builder-compose': 'Compose a block',
+  'block-builder-tool-compose': 'Compose block',
+  'widget-block-builder-disabled':
+    'The block builder is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
+  'block-builder-modal-title': 'Compose a block',
+  'block-builder-add': 'Add',
+  'block-builder-drop-here': 'Drag an element here or click one in the palette',
+  'block-builder-starter-text': 'Type your text…',
+  'block-builder-starter-button': 'Your button',
+  'block-builder-elements': 'Elements',
+  'block-builder-empty': 'No element yet. Add one to start.',
+  'block-builder-desktop': 'Desktop',
+  'block-builder-mobile': 'Mobile',
+  'block-builder-element-text': 'Text',
+  'block-builder-element-image': 'Image',
+  'block-builder-element-button': 'Button',
+  'block-builder-element-divider': 'Divider',
+  'block-builder-element-spacer': 'Spacer',
+  'block-builder-field-text': 'Text',
+  'block-builder-field-align': 'Alignment',
+  'block-builder-field-font-size': 'Size',
+  'block-builder-field-line-height': 'Line height',
+  'block-builder-field-color': 'Color',
+  'block-builder-field-image': 'Image',
+  'block-builder-field-alt': 'Alternative text',
+  'block-builder-field-link-optional': 'Link (optional)',
+  'block-builder-field-width': 'Width',
+  'block-builder-field-label': 'Label',
+  'block-builder-field-link': 'Link',
+  'block-builder-field-background': 'Background',
+  'block-builder-field-text-color': 'Text',
+  'block-builder-field-radius': 'Corner radius',
+  'block-builder-field-thickness': 'Thickness',
+  'block-builder-field-height': 'Height',
+  'block-builder-align-left': 'Left',
+  'block-builder-align-center': 'Center',
+  'block-builder-align-right': 'Right',
+  'block-builder-preview-title': 'Preview',
+  'block-builder-move-up': 'Move up',
+  'block-builder-move-down': 'Move down',
+  'block-builder-remove': 'Remove',
+  'block-builder-preview-hint':
+    'Click an element to edit it, drag it to move it. Indicative preview — browser rendering, not mail client rendering.',
+  'block-builder-rebuilds-markup':
+    'This block was built by an earlier version of the builder. Applying will rebuild it with the current one, and its rendering may change slightly.',
+  'block-builder-discard-confirm':
+    'Close without applying? Your changes to this composition will be lost.',
+  'block-builder-too-large':
+    'This composition is too large to be saved. Remove elements or shorten the texts before applying.',
   'widget-code-disabled':
     'The HTML code block is no longer enabled on this template: this block is kept as is, but can no longer be edited.',
   'save-message-html-code-disabled':
     'Save refused: the HTML code block is not enabled on this template.',
+  'save-message-block-builder-disabled':
+    'Save refused: the block builder is not enabled on this template.',
   'save-message-html-code-too-large':
     'Save refused: an HTML code block exceeds the maximum size.',
+  'save-message-block-builder-too-large':
+    'Save refused: a composed block exceeds the maximum size.',
+  'save-message-block-builder-state-unreadable':
+    'Save refused: a composed block can no longer be read. Delete it, or recompose it, then save again.',
+  'save-message-synthetic-content-too-large':
+    'Save refused: together, the HTML code and composed blocks of this email exceed the maximum size. Remove some of them.',
   'save-message-preview-too-large': 'Save refused: the email is too large.',
+  // Head CSS — a stylesheet for the whole email, gated by the same flag
+  'head-css-section-title': 'Custom CSS',
+  'head-css-section-hint':
+    "Added to the <head> of the exported email. Useful to make markup pasted in an HTML code block responsive. At export, the template's styles are inlined and win over this CSS unless !important.",
+  'head-css-section-button': 'Edit the CSS',
+  'head-css-not-exported-hint':
+    'Not exported for now: this CSS is added to the email only while it contains an HTML code block.',
+  'head-css-view-button': 'View the CSS',
+  'head-css-read-only-hint':
+    'This template no longer allows editing the custom CSS. It is kept as is and still exported with the HTML code blocks; it can only be deleted.',
+  'head-css-delete': 'Delete the CSS',
+  'head-css-delete-confirm':
+    'Delete the custom CSS of this email? This template no longer allows writing it again.',
+  'head-css-modal-title': 'Custom CSS (email <head>)',
+  'head-css-placeholder':
+    'Write your CSS here. It is added to the <head> of the exported email, as written, and is not applied to the template blocks.',
+  'head-css-too-large':
+    'The CSS is over the __max__ character limit. Shorten it before applying.',
+  'save-message-head-css-disabled':
+    'Saving refused: custom CSS is not enabled on this template.',
+  'save-message-head-css-too-large':
+    'Saving refused: the custom CSS is over the maximum size.',
 };

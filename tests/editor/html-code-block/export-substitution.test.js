@@ -97,7 +97,7 @@ describe('export substitution', () => {
 
     // A replacement STRING would interpret these; the module must use a function.
     it('does not interpret String.replace special patterns in the markup', () => {
-      const raw = '<td>$& $1 $` $\' $$ cost $5</td>';
+      const raw = "<td>$& $1 $` $' $$ cost $5</td>";
       const marker = registerMarkup(raw);
       expect(substituteMarkers(marker)).toBe(raw);
     });

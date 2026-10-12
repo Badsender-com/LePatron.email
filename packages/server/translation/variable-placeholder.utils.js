@@ -20,7 +20,10 @@ const VARIABLE_PATTERNS = [
   // Double bracket: [[variable]]
   { regex: /\[\[[^\]]+\]\]/g, name: 'bracket' },
   // Badsender custom tags: <badsender-unsubscribe>, <badsender-mirror>
-  { regex: /<badsender-[a-z-]+(?:\s[^>]*)?(?:\/>|>[^<]*<\/badsender-[a-z-]+>|>)/gi, name: 'badsender' },
+  {
+    regex: /<badsender-[a-z-]+(?:\s[^>]*)?(?:\/>|>[^<]*<\/badsender-[a-z-]+>|>)/gi,
+    name: 'badsender',
+  },
 ];
 
 // Placeholder format: __LPVAR_{index}__ (LP = LePatron)

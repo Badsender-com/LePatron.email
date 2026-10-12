@@ -7,6 +7,7 @@ const router = express.Router();
 const profiles = require('./profile.controller.js');
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const { requireJsonBody } = require('../utils/require-json-body.js');
 
 router.post('/', GUARD_ADMIN, profiles.createProfile);
 
@@ -24,9 +25,12 @@ router.post(
   profiles.actitoTargetTableList
 );
 router.post('/:profileId', GUARD_ADMIN, profiles.updateProfile);
+// Pushes the HTML the request carries to the ESP: JSON only, like the mailing
+// routes that export or send it (see require-json-body.js).
 router.post(
   '/:mailingId/send-campaign-mail',
   GUARD_USER,
+  requireJsonBody,
   profiles.sendCampaignMail
 );
 

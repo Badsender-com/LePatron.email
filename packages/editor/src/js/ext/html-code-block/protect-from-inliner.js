@@ -1,8 +1,8 @@
 'use strict';
 
-const { HTML_CODE_MARKER_CLASS } = require('./constants.js');
+const { SYNTHETIC_BLOCKS } = require('./block-types.js');
 
-// Keeps the pasted markup of an "HTML code" block out of the CSS inliner.
+// Keeps the markup of a synthetic block out of the CSS inliner.
 //
 // juice inlines every `<style data-inline="true">` rule of the template onto the
 // whole document. Those rules are generic — versafix ships
@@ -24,7 +24,7 @@ const { HTML_CODE_MARKER_CLASS } = require('./constants.js');
 // where the markup is injected directly.
 
 /**
- * Detach the pasted markup of every HTML code block.
+ * Detach the markup of every synthetic block.
  *
  * Must run BEFORE the inliner copies `style` into `replacedstyle`: otherwise the
  * pasted nodes get a `replacedstyle` copy of their own `style`, which the export
@@ -36,7 +36,8 @@ const { HTML_CODE_MARKER_CLASS } = require('./constants.js');
  */
 function detachPastedMarkup($, doc) {
   const detached = [];
-  $('.' + HTML_CODE_MARKER_CLASS, doc).each(function (index, element) {
+  const selector = SYNTHETIC_BLOCKS.map((d) => '.' + d.markerClass).join(',');
+  $(selector, doc).each(function (index, element) {
     const $holder = $(element);
     // `contents()` covers text and comment nodes too — conditional comments in
     // the pasted markup must survive as-is.

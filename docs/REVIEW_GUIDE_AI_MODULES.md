@@ -597,3 +597,132 @@ dans `userIdOf`. À rediscuter.
 Le gate d'activation ne vérifie pas `hasSchema` : passé de HIGH à LOW, le hook
 `pre('validate')` empêchant la persistance d'un id inconnu et le null-check
 d'`outputSchemaId` transformant le résidu en 500 propre avant tout appel facturé.
+
+---
+
+## 9. Conformité des modèles — `yarn check-models`
+
+### Pourquoi
+
+La liste des modèles est récupérée **en direct** chez le fournisseur : l'écran
+propose donc des modèles dont personne ici ne connaît le contrat d'appel.
+`gpt-6-astra` est arrivé en staging et a échoué sur un nom de paramètre, parce
+qu'un motif écrit à la main (`NEW_CONTRACT_MODELS`) décidait seul de la forme
+de la requête.
+
+Deux réponses, toutes deux en place :
+
+- **À l'exécution**, un refus de paramètre est corrigé et rejoué
+  (`adaptive-chat-call.js`), et la correction est mémorisée par modèle. Le
+  produit ne tombe plus sur un modèle inconnu.
+- **En amont**, ce script dit _quels_ modèles ont besoin de cette correction,
+  et lesquels échouent pour une raison que rien ne peut rattraper.
+
+### Les deux chemins, et pourquoi les deux
+
+Le chemin des skills et celui de la traduction **n'envoient pas la même
+requête** :
+
+| Paramètre          | Skill                                       | Traduction                          |
+| ------------------ | ------------------------------------------- | ----------------------------------- |
+| `temperature`      | souvent absente                             | toujours 0,3                        |
+| `reasoning_effort` | jamais                                      | toujours `low`                      |
+| `max_tokens`       | explicite                                   | jamais (donc le plafond par défaut) |
+| `response_format`  | avec schéma (force un outil chez Anthropic) | sans schéma, absent chez Anthropic  |
+
+Un modèle peut passer l'un et échouer l'autre. C'est exactement ce qui s'est
+produit : le Playground seul n'aurait pas reproduit la panne de staging.
+
+### Usage
+
+```bash
+yarn check-models                      # plan et coût, n'appelle rien
+node scripts/check-model-conformance.js --provider=openai
+node scripts/check-model-conformance.js --model=gpt-6-astra --samples=3
+node scripts/check-model-conformance.js --all --max-calls=400
+node scripts/check-model-conformance.js --integration=<id>   # hors groupe plateforme
+```
+
+Options : `--provider=` · `--model=` · `--integration=` ·
+`--path=skill|translation` · `--samples=` · `--retries=` · `--max-calls=` ·
+`--all` · `--dry`.
+
+**Périmètre** : par défaut, seules les intégrations du **groupe plateforme**
+(`yarn flag-platform-group`) sont sondées. Lancé contre la prod, le script
+facturerait sinon les comptes OpenAI, Anthropic ou Mistral des clients. Sonder
+une autre intégration demande de la nommer avec `--integration=<id>`. Deux
+intégrations sur le même point d'appel (fournisseur, hôte, produit, déploiement
+Azure) ne sont sondées qu'une fois.
+
+**Plafond** : `--max-calls` compte les requêtes de complétion **réellement
+envoyées**, ré-essais, rejeux d'adaptation et lots de traduction compris. Une
+fois atteint, plus rien ne part et les sondes restantes sont `SKIPPED`. Le
+chiffre affiché par le plan est une estimation basse.
+
+Codes de sortie : `0` conforme · `1` refus structurel · `2` avertissements.
+
+### Lire le rapport
+
+| Verdict     | Ce que ça veut dire                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| `OK`        | rien à signaler                                                                                         |
+| `ADAPTED`   | fonctionne, mais a coûté une requête refusée — le motif de raccourci est en retard, il peut être élargi |
+| `FAIL`      | refus reproductible : à traiter                                                                         |
+| `FLAKY`     | les tentatives se contredisent — **jamais arbitré automatiquement**                                     |
+| `TRANSIENT` | aléa fournisseur après ré-essais                                                                        |
+| `SKIPPED`   | clé refusée, modèle hors abonnement, ou plafond d'appels atteint                                        |
+
+### Quand le lancer — et quand surtout pas
+
+**Avant une livraison touchant à l'intégration IA**, à l'ajout d'un fournisseur
+ou d'un modèle, et quand un fournisseur annonce une génération.
+
+**Jamais en intégration continue.** Il dépense de l'argent réel, prend
+plusieurs minutes, et dépend de fournisseurs qui répondent parfois
+différemment au même appel — il produirait des échecs fantômes. C'est
+l'inverse de `yarn check-skills`, qui tourne à sec.
+
+> ⚠️ Il lit les intégrations de **la base à laquelle il se connecte**, donc les
+> clés de cet environnement. Vérifiez où vous pointez avant de le lancer sans
+> `--dry`. Le périmètre affiché en tête de sortie dit quelles clés seront
+> utilisées.
+
+### Ce qu'il a trouvé à ses premières exécutions
+
+Des défauts qu'aucun test unitaire ne pouvait voir, parce qu'ils ne sont
+visibles que dans la réponse du vrai fournisseur :
+
+- `gpt-3.5-turbo` et `gpt-4-turbo` plafonnent les complétions à 4096 jetons,
+  alors que la traduction envoie le défaut de 16000 — **ces modèles ne
+  pouvaient pas traduire du tout**. Le plafond annoncé par le fournisseur est
+  désormais respecté automatiquement.
+- `gpt-5.3-codex` et `gpt-live-1` étaient proposés dans la liste mais ne
+  répondent pas sur l'endpoint de conversation. Filtrés.
+- `zai-glm-5` renvoie son `content` en **tableau de blocs** et non en chaîne,
+  parce qu'il y joint son raisonnement. Le dialecte OpenAI supposait une
+  chaîne et plantait sur `content.trim is not a function` — une erreur
+  JavaScript qui n'apprend rien à qui lit le journal.
+- Gemini annonce `generateContent` pour `antigravity`, `deep-research`,
+  `omni` et `lyria`, qui répondent ensuite « This model only supports
+  Interactions API ». Filtrés. **Troisième occurrence du même schéma** après
+  les alias Infomaniak et les identifiants datés de Gemini : un listing dit ce
+  qu'un modèle est, jamais ce que l'endpoint accepte.
+
+### Un faux positif, et ce qu'il a appris
+
+La première exécution rapportait `claude-fable-5` en échec sur la traduction
+(`stop_reason: refusal`). Jonathan a signalé que la traduction de bloc
+fonctionne sans problème sur staging avec ce modèle.
+
+Vérification faite : sur quatre configurations de contenu, trois passent. Le
+refus dépendait du contenu artificiel de la sonde — deux chaînes de deux mots
+sous les clés `data.a` / `data.b`, qui ne ressemblent à rien qu'un client
+enverrait. **La sonde mesurait la sonde, pas le produit.**
+
+La sonde de traduction envoie désormais un bloc d'e-mail réaliste
+(`data.header.titleText`, `data.body.text`, `data.cta.label`). Fable 5 passe
+les deux chemins.
+
+À retenir pour qui étend ce script : **une sonde doit ressembler à ce que le
+produit envoie.** Un verdict d'échec sur un contenu que personne n'enverrait
+coûte plus cher qu'une absence de test, parce qu'on le croit.

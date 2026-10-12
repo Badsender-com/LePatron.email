@@ -60,6 +60,15 @@ const IntegrationSchema = Schema(
       type: String,
       required: false,
     },
+    // Product identifier required by providers that scope their API per
+    // product (Infomaniak builds its base URL from it). Declared here because
+    // `strict` mode silently drops undeclared fields: the service writes it and
+    // the provider throws CONFIG_ERROR without it, so an omission here makes
+    // the provider unusable rather than merely degraded.
+    productId: {
+      type: String,
+      required: false,
+    },
     // Provider-specific configuration (flexible schema)
     config: {
       type: Schema.Types.Mixed,

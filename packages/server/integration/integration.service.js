@@ -17,7 +17,13 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
-const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const {
+  normalizeProductId,
+  assertApiKeyResent,
+  validateIntegrationConfig,
+  validateApiHost,
+  isHostChange,
+} = require('./integration.validation.js');
 
 module.exports = {
   createIntegration,
@@ -50,21 +56,6 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
- * Validate that a URL uses an allowed scheme AND does not resolve to an
- * internal/private address (SSRF guard). `apiHost` becomes the target of
- * server-side requests carrying the integration's secret, so a bare scheme
- * check is not enough — see utils/outbound-host.js.
- */
-async function validateApiHost(apiHost) {
-  if (!apiHost) return;
-  try {
-    await assertOutboundHostAllowed(apiHost);
-  } catch {
-    throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
-  }
-}
-
-/**
  * Create a new integration
  */
 async function createIntegration({
@@ -77,7 +68,8 @@ async function createIntegration({
   config,
   _company,
 }) {
-  await validateApiHost(apiHost);
+  await validateApiHost(apiHost, { type });
+  const normalizedProductId = normalizeProductId(productId);
 
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
@@ -90,8 +82,8 @@ async function createIntegration({
     provider,
     apiKey,
     apiHost,
-    productId,
-    config: config || {},
+    productId: normalizedProductId,
+    config: validateIntegrationConfig(provider, config),
     _company,
     isActive: true,
     validationStatus: 'pending',
@@ -128,7 +120,27 @@ async function updateIntegration({
     }
   }
 
-  await validateApiHost(apiHost);
+  // Only a new host is checked: one saved before a rule tightened (an AI
+  // endpoint on http://) must stay editable — renamed, switched off — without
+  // being refused over a host nobody touched.
+  if (isHostChange({ integration, apiHost })) {
+    await validateApiHost(apiHost, { type: type || integration.type });
+  }
+  const normalizedProductId = normalizeProductId(productId);
+  assertApiKeyResent({ integration, provider, apiHost, apiKey });
+  const providerChanged =
+    provider !== undefined && provider !== integration.provider;
+  let validatedConfig;
+  if (config !== undefined) {
+    validatedConfig = validateIntegrationConfig(
+      provider || integration.provider,
+      config
+    );
+  } else if (providerChanged) {
+    // The old provider's settings mean nothing to the new one, and were only
+    // ever checked against the old one.
+    validatedConfig = {};
+  }
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;
@@ -136,8 +148,8 @@ async function updateIntegration({
   if (provider !== undefined) integration.provider = provider;
   if (apiKey !== undefined) integration.apiKey = apiKey;
   if (apiHost !== undefined) integration.apiHost = apiHost;
-  if (productId !== undefined) integration.productId = productId;
-  if (config !== undefined) integration.config = config;
+  if (productId !== undefined) integration.productId = normalizedProductId;
+  if (validatedConfig !== undefined) integration.config = validatedConfig;
   if (isActive !== undefined) integration.isActive = isActive;
 
   // Reset validation status if credentials changed

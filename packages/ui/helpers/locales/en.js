@@ -180,6 +180,8 @@ export default {
       enableSaml: 'Enable SAML authentication',
       entryPointHint: 'Login URL provided by your identity provider',
       issuerHint: 'Unique identifier for your application at the provider',
+      idpCertHint:
+        'Signing certificate of the identity provider (PEM), found in its SAML metadata. Required: without it, SSO sign-in is not offered.',
       dangerZone: {
         title: 'Danger zone',
         description: 'Actions in this zone are irreversible. Proceed with caution.',
@@ -226,6 +228,7 @@ export default {
       ftpConnectionSuccess: 'Connection successful',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
+      idpCert: 'Identity provider certificate',
       userHasAccessToAllWorkspaces:
         'Give access to all workspaces to regular users',
     },
@@ -428,9 +431,13 @@ export default {
     successTitle: 'Translation complete',
     successMessage: 'Your email has been duplicated and translated successfully.',
     warningTitle: 'Please verify:',
-    warningLinks: 'Links in the email',
-    warningImages: 'Images containing text',
-    warningVariants: 'Template variant if applicable',
+    // Keyed as the server sends them in a job's warningKeys.
+    warnings: {
+      checkLinks: 'Links in the email',
+      checkImages: 'Images containing text',
+      checkVariant: 'Template variant if applicable',
+      composedBlockUntranslated: 'Composed blocks: some could not be translated, or were rebuilt with a newer version of the block builder',
+    },
     understood: 'Got it',
     translatingNotice: 'Translation in progress, please wait...',
     progressStarting: 'Starting translation...',
@@ -884,6 +891,30 @@ export default {
     contactBadsender: 'Contact Badsender',
   },
   integrations: {
+    // Keyed by the server error code, so a failed save can say what to fix
+    // instead of showing the raw code.
+    errors: {
+      INTEGRATION_NAME_ALREADY_EXIST:
+        'An integration of this group already has this name. Pick another one.',
+      INTEGRATION_NOT_FOUND:
+        'This integration no longer exists: it may have been deleted. Reload the page.',
+      FORBIDDEN_INTEGRATION_ACCESS: 'You do not have access to this integration.',
+      INTEGRATION_HOST_NOT_PUBLIC:
+        'This address is private or local. For security reasons LePatron only calls public addresses: an AI hosted on your internal network cannot be reached from the server.',
+      INTEGRATION_HOST_UNREACHABLE:
+        'This domain name cannot be found. Check the spelling of the URL.',
+      INTEGRATION_HOST_INVALID:
+        'This URL is not valid. Expected a full address, e.g. https://example.com',
+      INTEGRATION_HOST_HTTPS_REQUIRED:
+        'This address must start with https://: the integration sends a key there, which would travel in clear over http.',
+      INTEGRATION_API_KEY_REQUIRED:
+        'The API address changed: enter the API key again.',
+      INVALID_PRODUCT_ID: 'The Product ID contains digits only.',
+      INTEGRATION_CONFIG_INVALID:
+        'One of the integration settings is not valid for this provider.',
+    },
+    apiKeyRequiredOnHostChange:
+      'The API address changed: enter the key again to confirm it should be sent there.',
     title: 'Integrations',
     name: 'Name',
     provider: 'Provider',
@@ -932,7 +963,36 @@ export default {
     infomaniak: {
       apiKeyPlaceholder: 'Your Infomaniak API key',
       productId: 'Product ID',
-      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools',
+      productIdInvalid: 'The Product ID contains digits only'
+    },
+    anthropic: {
+      apiKeyPlaceholder: 'Your Anthropic API key',
+      apiHostHint: 'Leave empty for the public Anthropic API; set it only if you go through a corporate gateway.'
+    },
+    gemini: {
+      apiKeyPlaceholder: 'Your Google AI Studio API key',
+      apiHostHint: 'Leave empty for the public Gemini API.'
+    },
+    azureOpenai: {
+      apiKeyPlaceholder: 'Your Azure OpenAI API key',
+      apiHostHint: 'Your Azure resource URL, e.g. https://my-instance.openai.azure.com. The deployment name stands in for the model.',
+      reasoningModel: 'The deployment runs a reasoning model (gpt-5, o-series)',
+      reasoningModelHint: 'Tick it if the deployment runs gpt-5, o1, o3 or o4: these models refuse temperature and max_tokens, and the deployment name gives no way to tell. It applies to every deployment used with this integration: if one of them is a reasoning model, tick it — the others keep working, they only lose the temperature setting.'
+    },
+    openaiCompatible: {
+      apiKeyPlaceholder: 'Your endpoint API key',
+      apiHostHint: 'Any endpoint speaking the OpenAI API. Private and loopback addresses are refused for security reasons.',
+      supportsJsonMode: 'The endpoint supports JSON mode (response_format)',
+      supportsJsonModeHint: 'Tick it only if the endpoint guarantees a valid JSON answer: skills then rely on it. Otherwise the answer is repaired afterwards.'
+    },
+    scaleway: {
+      apiKeyPlaceholder: 'Your Scaleway API key',
+      apiHostHint: 'Leave empty unless your account requires a project-scoped URL.'
+    },
+    ovh: {
+      apiKeyPlaceholder: 'Your OVHcloud API key',
+      apiHostHint: 'Leave empty for the public OVHcloud AI Endpoints.'
     },
     deepl: {
       apiKeyPlaceholder: 'Your DeepL API key',
@@ -1121,12 +1181,10 @@ export default {
       languagesHint: 'Select at least 2 languages (source and target)',
       minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
-      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityHint: 'Applied to target languages that distinguish formal and informal address. Other languages keep a neutral tone.',
       formalityDefault: 'Default',
       formalityMore: 'Formal',
-      formalityLess: 'Informal',
-      formalityPreferMore: 'Prefer formal',
-      formalityPreferLess: 'Prefer informal'
+      formalityLess: 'Informal'
     },
     skill: {
       title: 'Skills engine',
@@ -1134,8 +1192,16 @@ export default {
       enableLabel: 'Enable the Skills engine',
       model: 'AI model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
-      modelDefaultOption: 'Provider default ({model})',
-      modelDefaultOptionUnknown: 'Provider default'
+    },
+    model: {
+      defaultOption: 'Provider default ({model})',
+      defaultOptionUnknown: 'Provider default',
+      requiredPlaceholder: 'Type or pick a model',
+      required: 'This provider has no default model: pick one, or every call will fail.',
+      deprecated: 'deprecated',
+      invalidId: 'Not saved — model identifiers accept letters, digits and . _ - : / @ only, no spaces.',
+      customHint: 'Hand-typed model: it has not been checked against the provider.',
+      loadFailed: 'Model list unavailable: only known models are offered. You can type an identifier.',
     },
     textGeneration: {
       title: 'Text generation',
@@ -1144,9 +1210,6 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Unable to load available models.',
     }
   },
   colors: {
@@ -1185,6 +1248,12 @@ export default {
     htmlBlock: {
       name: 'HTML code block',
       description: 'Allows pasting free HTML code between two template blocks.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
+    blockBuilder: {
+      name: 'Block builder',
+      description:
+        'Lets users compose a block visually. LePatron writes the HTML.',
       hint: 'The block will show up at the end of the editor palette.',
     },
   },

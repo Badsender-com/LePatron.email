@@ -120,6 +120,13 @@ const GroupSchema = Schema(
       type: String,
       default: '',
     },
+    // The certificate the identity provider signs its SAML responses with, as
+    // PEM. Without it SSO is unusable (account/saml-config.js): passport-saml
+    // only checks a signature when it is given a certificate.
+    idpCert: {
+      type: String,
+      default: '',
+    },
     colorScheme: {
       type: [String],
       default: [],

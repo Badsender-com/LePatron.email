@@ -15,6 +15,10 @@ const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const { isSamlConfigured } = require('../account/saml-config.js');
+const {
+  MAILING_LIST_PROJECTION,
+} = require('../constant/mailing-list-projection.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -177,7 +181,7 @@ async function readMailings(req, res) {
   // Retrieve mailings and their total count
   const [mailings, totalItems] = await Promise.all([
     Mailings.find({ _user: userId })
-      .select('-previewHtml -data')
+      .select(MAILING_LIST_PROJECTION)
       .skip(offset)
       .limit(parsedLimit),
     Mailings.countDocuments({ _user: userId }), // Count all mailings for this user
@@ -372,13 +376,14 @@ async function getPublicProfile(req, res) {
   });
 
   const { name, email, isDeactivated } = user;
-  const { name: groupName, entryPoint, issuer } = group;
 
   return res.json({
     name,
     email,
     isDeactivated,
-    group: { name: groupName, isSAMLAuthentication: entryPoint && issuer },
+    // SSO is offered only when it can be verified: a company without its
+    // identity provider's certificate signs in with a password.
+    group: { name: group.name, isSAMLAuthentication: isSamlConfigured(group) },
   });
 }
 

@@ -7,6 +7,9 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const { trimString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names');
+const {
+  TEMPLATE_FLAG_PROJECTION,
+} = require('../mailing/synthetic-block-guard.js');
 
 /**
  * @apiDefine templates
@@ -18,6 +21,7 @@ const { GroupModel } = require('../constant/model.names');
  * @apiSuccess {Date} updatedAt last update date
  * @apiSuccess {Boolean} hasMarkup whereas this template has a mosaico's template uploaded or not
  * @apiSuccess {Boolean} htmlBlockEnabled whereas the generic "HTML code" block is available in this template
+ * @apiSuccess {Boolean} blockBuilderEnabled whereas the block builder is available in this template
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
  * @apiSuccess {String} group.name
@@ -34,6 +38,7 @@ const { GroupModel } = require('../constant/model.names');
  * @apiSuccess {String} markup the template's markup
  * @apiSuccess {Object} assets all the images with `key` the image name at the upload & `value` the name once uploaded
  * @apiSuccess {Boolean} htmlBlockEnabled whereas the generic "HTML code" block is available in this template
+ * @apiSuccess {Boolean} blockBuilderEnabled whereas the block builder is available in this template
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
  * @apiSuccess {String} group.name
@@ -108,6 +113,18 @@ const TemplateSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // Super-admin only, and independent of htmlBlockEnabled: makes the block
+    // builder available in this template's block palette. Two flags rather than
+    // one because they are two different offers — a client can be given the
+    // builder and its guard rails *without* being handed responsibility for raw
+    // HTML, and that is the more common case.
+    //
+    // Same caveat as above: the block definition is always injected client-side,
+    // this flag only drives palette visibility.
+    blockBuilderEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true, getters: true } }
 );
@@ -137,7 +154,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     _company: 1,
     assets: 1,
     trackingConfig: 1,
-    htmlBlockEnabled: 1,
+    ...TEMPLATE_FLAG_PROJECTION,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })

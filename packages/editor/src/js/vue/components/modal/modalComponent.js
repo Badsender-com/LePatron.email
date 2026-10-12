@@ -38,6 +38,13 @@ const ModalComponent = Vue.component('ModalComponent', {
       type: [String, Number],
       default: 560,
     },
+    // Asked before a DISMISSAL — Escape or a backdrop click — with the event
+    // that triggered it; returning false keeps the modal open. Not asked before
+    // an explicit closeModal(): a Cancel button means what it says.
+    beforeDismiss: {
+      type: Function,
+      default: null,
+    },
   },
   data: () => ({
     isOpen: false,
@@ -78,13 +85,20 @@ const ModalComponent = Vue.component('ModalComponent', {
         this.onClose();
       }
     },
-    handleBackdropClick() {
-      if (!this.persistent && !this.isLoading) {
+    canDismiss(event) {
+      if (this.persistent || this.isLoading) return false;
+      return (
+        typeof this.beforeDismiss !== 'function' ||
+        this.beforeDismiss(event) !== false
+      );
+    },
+    handleBackdropClick(e) {
+      if (this.canDismiss(e)) {
         this.closeModal();
       }
     },
     handleKeydown(e) {
-      if (e.key === 'Escape' && this.isOpen && !this.persistent && !this.isLoading) {
+      if (e.key === 'Escape' && this.isOpen && this.canDismiss(e)) {
         this.closeModal();
       }
     },

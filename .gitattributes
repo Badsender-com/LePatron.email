@@ -1,0 +1,4 @@
+# The block builder's components are compiled to committed files, and a golden
+# test compares the two byte for byte. A CRLF checkout of either side would make
+# that test fail on a file nobody edited — so these stay LF on every platform.
+packages/shared/block-builder/components/* text eol=lf

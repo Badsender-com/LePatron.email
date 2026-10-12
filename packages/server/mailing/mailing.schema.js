@@ -18,6 +18,14 @@ const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
 const { EmailTriggerValues } = require('../constant/email-trigger');
 const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
+const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
+const {
+  TEMPLATE_FLAG_PROJECTION,
+  syntheticBlockFlagsOf,
+} = require('./synthetic-block-guard.js');
+const {
+  MAILING_LIST_PROJECTION,
+} = require('../constant/mailing-list-projection.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -46,6 +54,21 @@ const MailingSchema = Schema(
     },
     previewHtml: {
       type: String,
+    },
+    // Stylesheet injected into the <head> of this mailing's export, so pasted
+    // markup can carry responsive rules the template's own CSS does not
+    // provide. Stored outside `data` on purpose: Mosaico's checkModel splices
+    // out any property its block definitions do not declare, and this one
+    // belongs to the mailing rather than to a block.
+    // Guarded by head-css-guard.js; injected by packages/shared/head-css.
+    // Left out of every list payload (findForApi, the admin group and user
+    // listings): only the editor reads it, through findOneForMosaico.
+    headCss: {
+      type: String,
+      default: '',
+      // The route refuses it first, with its own error code; this bound only
+      // catches a write that does not go through updateMosaico.
+      maxlength: HEAD_CSS_MAX_LENGTH,
     },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
@@ -216,7 +239,7 @@ MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { previewHtml: 0, data: 0 });
+  return this.find(query, MAILING_LIST_PROJECTION);
 };
 
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
@@ -468,6 +491,8 @@ const translations = {
  * @apiSuccess {String} metadata.name name
  * @apiSuccess {String} metadata.template the URL where Mosaico will fetch the markup
  * @apiSuccess {Boolean} metadata.htmlBlockEnabled whereas the "HTML code" block shows up in the palette
+ * @apiSuccess {String} metadata.headCss stylesheet injected into the &lt;head&gt; of this mailing's export
+ * @apiSuccess {Boolean} metadata.blockBuilderEnabled whereas the block builder shows up in the palette
  * @apiSuccess {Object} metadata.url an object of useful urls for Mosaico
  * @apiSuccess {String} metadata.url.update update URL
  * @apiSuccess {String} metadata.url.send send by mail URL
@@ -502,7 +527,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         _company: 1,
         assets: 1,
         trackingConfig: 1,
-        htmlBlockEnabled: 1,
+        ...TEMPLATE_FLAG_PROJECTION,
       },
     });
   if (!mailing) return mailing;
@@ -572,10 +597,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
       hasTranslationFeature,
-      // Drives palette visibility of the generic "HTML code" block only — the
-      // block definition is always injected client-side. See
-      // docs/plans/html-code-block.md
-      htmlBlockEnabled: !!mailing._wireframe.htmlBlockEnabled,
+      // Drive palette visibility of the two synthetic blocks only — their
+      // definitions are always injected client-side. Independent of each other.
+      // Named after the descriptors' flags, which the editor reads them by.
+      // See docs/plans/html-code-block.md
+      ...syntheticBlockFlagsOf(mailing._wireframe),
+      // The editor injects this into the <head> of every export it produces.
+      // Gated by the same flag as the HTML code block it exists to style.
+      headCss: mailing.headCss || '',
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {
