@@ -93,9 +93,17 @@ it('keeps the tags when the service refuses the deletion', async () => {
   expect(Mailings.releaseTags).not.toHaveBeenCalled();
 });
 
+it('releases nothing when a concurrent deletion already removed the email', async () => {
+  mailingService.assertUserCanEditMailing.mockResolvedValue();
+  mailingService.deleteMailing.mockResolvedValue({ ok: 1, deletedCount: 0 });
+
+  expect((await remove()).status).toBe(200);
+  expect(Mailings.releaseTags).not.toHaveBeenCalled();
+});
+
 it('deletes, then releases the tags, when every check passes', async () => {
   mailingService.assertUserCanEditMailing.mockResolvedValue();
-  mailingService.deleteMailing.mockResolvedValue();
+  mailingService.deleteMailing.mockResolvedValue({ ok: 1, deletedCount: 1 });
 
   expect((await remove()).status).toBe(200);
   expect(Mailings.releaseTags).toHaveBeenCalledWith('company-b', ['launch']);

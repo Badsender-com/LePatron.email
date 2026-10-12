@@ -27,6 +27,8 @@ const COMPANY_A = '507f1f77bcf86cd799439001';
 const COMPANY_B = '507f1f77bcf86cd799439002';
 
 const member = { id: 'u1', group: { id: COMPANY_A } };
+const colleague = { id: 'u3', group: { id: COMPANY_A } };
+const companyAdminOfA = { ...colleague, isGroupAdmin: true };
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
 const companyAdminOfB = { ...outsider, isGroupAdmin: true };
 const admin = { id: 'admin', isAdmin: true };
@@ -52,6 +54,18 @@ describe('assertAccess', () => {
   it('refuses an admin, without a group, with an answer rather than a crash', async () => {
     await expect(
       workspaceService.assertAccess(admin, WORKSPACE)
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('lets a company admin of the company write in it, member or not', async () => {
+    await expect(
+      workspaceService.assertAccess(companyAdminOfA, WORKSPACE)
+    ).resolves.toBeUndefined();
+  });
+
+  it('refuses a user of the company who is not a member', async () => {
+    await expect(
+      workspaceService.assertAccess(colleague, WORKSPACE)
     ).rejects.toMatchObject({ status: 404 });
   });
 

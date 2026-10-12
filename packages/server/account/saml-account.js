@@ -22,6 +22,26 @@ const MAX_RESPONSE_LENGTH = 256 * 1024;
 const asciiLowercase = (value) =>
   value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 
+// The parser leaves entities alone (no DOCTYPE expansion); the predefined ones
+// and character references are decoded here, as passport-saml reads them.
+const PREDEFINED_ENTITIES = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+};
+function decodeEntities(value) {
+  return value.replace(
+    /&(?:#x([0-9a-f]+)|#(\d+)|(amp|lt|gt|quot|apos));/gi,
+    (match, hex, decimal, name) => {
+      if (name) return PREDEFINED_ENTITIES[name.toLowerCase()];
+      const code = parseInt(hex || decimal, hex ? 16 : 10);
+      return code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    }
+  );
+}
+
 /**
  * The NameID of a SAML response, read before its signature is checked: it
  * only picks the certificate to check the response with. Whatever the
@@ -43,22 +63,21 @@ function nameIdOf(samlResponse) {
       processEntities: false,
     });
     const nameId = parser.parse(xml)?.Response?.Assertion?.Subject?.NameID;
-    return typeof nameId === 'object' && nameId !== null
-      ? nameId['#text']
-      : nameId;
+    const text =
+      typeof nameId === 'object' && nameId !== null ? nameId['#text'] : nameId;
+    return typeof text === 'string' ? decodeEntities(text) : undefined;
   } catch (error) {
     return undefined;
   }
 }
 
-// A pending password reset does not bar the way in: an SSO account signs in
-// through its identity provider, whatever happens to its password.
 function findAccount(email) {
   if (typeof email !== 'string' || email.trim() === '') return null;
   if (normalizeString(email) !== asciiLowercase(email.trim())) return null;
   return Users.findOne({
     email: normalizeString(email),
     isDeactivated: { $ne: true },
+    token: { $exists: false },
   });
 }
 

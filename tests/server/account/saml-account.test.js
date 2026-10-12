@@ -117,12 +117,6 @@ describe('signing in through SSO', () => {
     ).toBeNull();
   });
 
-  it('signs in an account with a pending password reset', async () => {
-    await signInWith(idpOfY.signedResponse('someone@y.test'));
-
-    expect(Users.findOne.mock.calls[0][0]).not.toHaveProperty('token');
-  });
-
   it('refuses a NameID that only matches an account through a non-ASCII letter', async () => {
     const kelvin = '\u212Aate@x.test';
 
@@ -179,6 +173,16 @@ describe('nameIdOf', () => {
       '</saml2p:Response>';
 
     expect(nameIdOf(base64(xml))).toBeUndefined();
+  });
+
+  it('decodes the entities of the NameID, and expands no DOCTYPE entity', () => {
+    const xml =
+      '<!DOCTYPE r [<!ENTITY x "expanded">]>' +
+      '<samlp:Response xmlns:samlp="p" xmlns:saml="a"><saml:Assertion><saml:Subject>' +
+      '<saml:NameID>o&apos;brien&amp;co&#39;s&x;@y.test</saml:NameID>' +
+      '</saml:Subject></saml:Assertion></samlp:Response>';
+
+    expect(nameIdOf(base64(xml))).toBe("o'brien&co's&x;@y.test");
   });
 
   it('reads nothing from an oversized response', () => {

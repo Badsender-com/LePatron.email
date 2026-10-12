@@ -723,16 +723,17 @@ async function deleteMailing(req, res) {
   // the right to edit the mailing, then the service's checks on the location.
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  await mailingService.deleteMailing({
+  const deletion = await mailingService.deleteMailing({
     mailingId,
     workspaceId,
     parentFolderId,
     user,
   });
 
-  // Once the email is gone, its tags count one use less.
+  // Once the email is gone, its tags count one use less; a concurrent
+  // deletion that removed nothing releases nothing.
   const tagLabels = mailing.tags || [];
-  if (tagLabels.length > 0) {
+  if (tagLabels.length > 0 && deletion?.deletedCount !== 0) {
     await Mailings.releaseTags(mailing._company, tagLabels);
   }
 
