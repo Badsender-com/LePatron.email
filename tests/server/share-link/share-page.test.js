@@ -126,14 +126,20 @@ describe('GET /share/:token', () => {
     expect(res.headers['Cache-Control']).toContain('no-store');
   });
 
-  it('closes with the company: inactive, or without the email builder', async () => {
+  it('closes with the company: inactive, without the email builder, or sharing turned off', async () => {
     ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
     Mailings.findById.mockReturnValue(
-      lean({ _id: MAILING_ID, name: 'Soldes', previewHtml: '<p>hi</p>' })
+      lean({
+        _id: MAILING_ID,
+        _company: 'c1',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
     );
     for (const group of [
       { status: 'inactive' },
       { status: 'active', enableEmailBuilder: false },
+      { status: 'active', enableEmailBuilder: true, enableShareLinks: false },
       null,
     ]) {
       Groups.findById.mockReturnValue(lean(group));
@@ -141,13 +147,39 @@ describe('GET /share/:token', () => {
         params: { token: TOKEN },
       });
       expect(res.statusCode).toBe(404);
+      expect(res.render.mock.calls[0][1].title).toBe('Lien introuvable');
     }
+  });
+
+  it('judges the company the email belongs to now, not the one of the link', async () => {
+    // Transferred since the link was made: the link's company is fine, the
+    // email's current one is inactive.
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _company: 'c2',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    Groups.findById.mockImplementation((id) =>
+      lean(id === 'c2' ? { status: 'inactive' } : { status: 'active' })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(Groups.findById).toHaveBeenCalledTimes(1);
+    expect(Groups.findById.mock.calls[0][0]).toBe('c2');
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({ _company: 1 });
   });
 
   it('shows the subject and the preheader when the company writes them in LePatron', async () => {
     ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
     const saved = {
       _id: MAILING_ID,
+      _company: 'c1',
       name: 'Soldes',
       subject: ' Nos soldes ',
       data: { preheaderBlock: { preheaderText: "Jusqu'à -50 %" } },
@@ -186,6 +218,7 @@ describe('GET /share/:token', () => {
     Mailings.findById.mockReturnValue(
       lean({
         _id: MAILING_ID,
+        _company: 'c1',
         name: 'Soldes',
         subject: 'Nos soldes',
         data: { preheaderText: 'Caché', preheaderVisible: false },
@@ -211,6 +244,7 @@ describe('GET /share/:token', () => {
     Mailings.findById.mockReturnValue(
       lean({
         _id: MAILING_ID,
+        _company: 'c1',
         name: 'Soldes',
         subject: '',
         data: { preheaderText: 'Vu en premier' },

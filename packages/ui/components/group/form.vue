@@ -19,6 +19,7 @@ import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
   LineChart,
+  Link,
   ArrowRight,
   AlertTriangle,
   Building2,
@@ -43,6 +44,7 @@ export default {
     BsGroupFeatureSwitch,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
+    LucideLink: Link,
     LucideArrowRight: ArrowRight,
     LucideAlertTriangle: AlertTriangle,
     LucideBuilding2: Building2,
@@ -263,6 +265,26 @@ export default {
               <bs-group-feature-switch
                 v-model="localModel.enableEmailBuilder"
                 :label="$t('groups.modules.emailBuilder.name')"
+                :on-text="$t('global.states.on')"
+                :off-text="$t('global.states.off')"
+                :disabled="disabled"
+              />
+            </template>
+          </bs-group-setting-card>
+
+          <!-- Share Links Module (public preview links of the emails) -->
+          <bs-group-setting-card>
+            <template #icon><lucide-link :size="28" /></template>
+            <template #name>
+              {{ $t('groups.modules.shareLinks.name') }}
+            </template>
+            <template #description>
+              {{ $t('groups.modules.shareLinks.description') }}
+            </template>
+            <template #control>
+              <bs-group-feature-switch
+                v-model="localModel.enableShareLinks"
+                :label="$t('groups.modules.shareLinks.name')"
                 :on-text="$t('global.states.on')"
                 :off-text="$t('global.states.off')"
                 :disabled="disabled"
