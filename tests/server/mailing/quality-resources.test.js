@@ -8,6 +8,16 @@
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
 }));
+// The Web Risk budget lives in the database (quality-threats.test.js); here
+// every dependency is injected, and the bounds log stays out of the output.
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  QualityBudgets: { findOneAndUpdate: jest.fn() },
+}));
+jest.mock('../../../packages/server/utils/logger.js', () => ({
+  warn: jest.fn(),
+  log: jest.fn(),
+  error: jest.fn(),
+}));
 
 const config = require('../../../packages/server/node.config.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
@@ -53,6 +63,7 @@ function deps(overrides = {}) {
     zones: () => [],
     webRiskKey: () => null,
     webRiskLookup: jest.fn(),
+    spendWebRiskLookup: jest.fn(async () => true),
     ...overrides,
   };
 }
@@ -212,7 +223,7 @@ describe('links', () => {
   });
 });
 
-describe('link probes for the whole process', () => {
+describe('link probes for the worker', () => {
   const flush = () => new Promise((resolve) => setImmediate(resolve));
 
   it('are capped whoever asks, and a run out of time while waiting judges nothing', async () => {
@@ -226,7 +237,7 @@ describe('link probes for the whole process', () => {
       ),
     });
     // Enough users, each with a run's worth of parallel probes, to fill the
-    // process' slots; the next run waits for one.
+    // worker's slots; the next run waits for one.
     const perRun = 4;
     const runs = [];
     for (let u = 0; u < MAX_LINK_PROBES / perRun; u += 1) {
