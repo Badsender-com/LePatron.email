@@ -10,6 +10,7 @@ jest.mock('../../../packages/server/utils/outbound-host.js', () => {
   return { ...actual, assertOutboundHostAllowed: jest.fn() };
 });
 
+const dns = require('dns');
 const outboundHost = require('../../../packages/server/utils/outbound-host.js');
 const {
   probeUrl,
@@ -26,9 +27,15 @@ function response(status, headers = {}, body = '') {
   };
 }
 
+const never = () => new Promise(() => {});
+
 beforeEach(() => {
   outboundHost.assertOutboundHostAllowed.mockReset();
   outboundHost.assertOutboundHostAllowed.mockResolvedValue();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe('probeUrl', () => {
@@ -47,6 +54,32 @@ describe('probeUrl', () => {
     ]);
     // No redirect is left to node-fetch, which would not check the new host.
     expect(fetchImpl.mock.calls[0][1]).toMatchObject({ redirect: 'manual' });
+  });
+
+  it('connects only to addresses the guarded lookup accepted', async () => {
+    const fetchImpl = jest.fn(async () => response(200));
+    await probeUrl('https://a.test', { fetchImpl });
+
+    // node-fetch asks the agent per URL; the socket then resolves the name
+    // through the agent's lookup, the only guard against a name that resolves
+    // to a private address (or starts doing so after the first check).
+    const { agent } = fetchImpl.mock.calls[0][1];
+    const lookup = agent(new URL('https://a.test')).options.lookup;
+    expect(lookup).toBe(outboundHost.guardedLookup);
+    expect(agent(new URL('http://a.test')).options.lookup).toBe(
+      outboundHost.guardedLookup
+    );
+
+    jest
+      .spyOn(dns, 'lookup')
+      .mockImplementation((hostname, options, cb) =>
+        cb(null, [{ address: '10.0.0.1', family: 4 }])
+      );
+    const refused = await new Promise((resolve) =>
+      lookup('a.test', {}, (err, address) => resolve({ err, address }))
+    );
+    expect(refused.address).toBeUndefined();
+    expect(refused.err.code).toBe(outboundHost.BLOCKED_HOST_ERROR_CODE);
   });
 
   it('stops at a redirect towards a private address', async () => {
@@ -68,6 +101,27 @@ describe('probeUrl', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('resolves a relative redirect against the address that sent it', async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValueOnce(response(302, { location: '../next?x=1' }))
+      .mockResolvedValueOnce(response(200));
+    const result = await probeUrl('https://a.test/dir/sub/page', { fetchImpl });
+    expect(result.url).toBe('https://a.test/dir/next?x=1');
+    expect(outboundHost.assertOutboundHostAllowed).toHaveBeenLastCalledWith(
+      'https://a.test/dir/next?x=1'
+    );
+  });
+
+  it('gives up on a redirect without a target', async () => {
+    const redirect = response(302);
+    const fetchImpl = jest.fn().mockResolvedValueOnce(redirect);
+    await expect(
+      probeUrl('https://a.test', { fetchImpl })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.UNREACHABLE });
+    expect(redirect.body.destroy).toHaveBeenCalled();
+  });
+
   it('refuses a redirect to another port when asked for the default ones', async () => {
     const fetchImpl = jest
       .fn()
@@ -78,6 +132,16 @@ describe('probeUrl', () => {
       probeUrl('https://a.test', { fetchImpl, defaultPortsOnly: true })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.UNREACHABLE });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes an explicit default port for the default one', async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValueOnce(response(302, { location: 'http://b.test:80/' }))
+      .mockResolvedValueOnce(response(200));
+    await expect(
+      probeUrl('https://a.test:443/x', { fetchImpl, defaultPortsOnly: true })
+    ).resolves.toMatchObject({ status: 200, url: 'http://b.test/' });
   });
 
   it('gives up after too many redirects', async () => {
@@ -107,7 +171,7 @@ describe('probeUrl', () => {
       code: 'ENOTFOUND',
     });
     await expect(
-      probeUrl('https://gone.test', {
+      probeUrl('https://gone.example.com', {
         fetchImpl: jest.fn().mockRejectedValue(dnsError),
       })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.NOT_FOUND });
@@ -128,7 +192,7 @@ describe('probeUrl', () => {
       code: 'EAI_AGAIN',
     });
     await expect(
-      probeUrl('https://a.test', {
+      probeUrl('https://a.example.com', {
         fetchImpl: jest.fn().mockRejectedValue(again),
       })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.UNREACHABLE });
@@ -142,24 +206,51 @@ describe('probeUrl', () => {
       dnsFailed({ code: 'EAI_AGAIN' })
     );
     await expect(
-      probeUrl('https://a.test', { fetchImpl: jest.fn() })
+      probeUrl('https://a.example.com', { fetchImpl: jest.fn() })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.UNREACHABLE });
 
     outboundHost.assertOutboundHostAllowed.mockRejectedValueOnce(
       dnsFailed({ code: 'ENOTFOUND' })
     );
     await expect(
-      probeUrl('https://gone.test', { fetchImpl: jest.fn() })
+      probeUrl('https://gone.example.com', { fetchImpl: jest.fn() })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.NOT_FOUND });
   });
 
   it('gives up on a host check that outlives the deadline', async () => {
-    outboundHost.assertOutboundHostAllowed.mockReturnValueOnce(
-      new Promise(() => {})
-    );
+    outboundHost.assertOutboundHostAllowed.mockReturnValueOnce(never());
     await expect(
       probeUrl('https://slow-dns.test', { fetchImpl: jest.fn(), timeoutMs: 20 })
     ).rejects.toMatchObject({ reason: PROBE_FAILURES.TIMEOUT });
+  });
+
+  it('gives up on a request that outlives the deadline, and closes its late answer', async () => {
+    let answer;
+    const fetchImpl = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        })
+    );
+    await expect(
+      probeUrl('https://slow.test', { fetchImpl, timeoutMs: 20 })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.TIMEOUT });
+    const late = response(200);
+    answer(late);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(late.body.destroy).toHaveBeenCalled();
+  });
+
+  it('gives up on a body that outlives the deadline, and closes it', async () => {
+    const slow = { ...response(200), buffer: never };
+    await expect(
+      probeUrl('https://slow.test', {
+        fetchImpl: jest.fn(async () => slow),
+        readBody: true,
+        timeoutMs: 20,
+      })
+    ).rejects.toMatchObject({ reason: PROBE_FAILURES.TIMEOUT });
+    expect(slow.body.destroy).toHaveBeenCalled();
   });
 
   it('sends no cookie and no credential', async () => {

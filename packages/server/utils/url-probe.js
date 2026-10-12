@@ -108,6 +108,29 @@ function dropBody(response) {
   }
 }
 
+// node-fetch's `timeout` is two timers, one for the headers and one for the
+// body, each as long as the time left: a hop could last twice that. Both
+// steps are held to the deadline here, and a response that arrives late is
+// closed, as is a body left half-read.
+async function fetchBeforeDeadline(fetchImpl, url, options, deadline) {
+  const fetching = fetchImpl(url, options);
+  try {
+    return await beforeDeadline(fetching, deadline);
+  } catch (error) {
+    fetching.then(dropBody, () => {});
+    throw error;
+  }
+}
+
+async function readBeforeDeadline(response, deadline) {
+  try {
+    return await beforeDeadline(response.buffer(), deadline);
+  } catch (error) {
+    dropBody(response);
+    throw error;
+  }
+}
+
 /**
  * GETs a URL, following redirects, every hop checked by the SSRF guard.
  *
@@ -146,15 +169,20 @@ async function probeUrl(
         throw new ProbeError(PROBE_FAILURES.UNREACHABLE);
       }
       await beforeDeadline(assertOutboundHostAllowed(currentUrl), deadline);
-      const response = await fetchImpl(currentUrl, {
-        method: 'GET',
-        headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
-        agent: agentFor,
-        redirect: 'manual',
-        compress: false,
-        size: maxBytes,
-        timeout: Math.max(1, deadline - Date.now()),
-      });
+      const response = await fetchBeforeDeadline(
+        fetchImpl,
+        currentUrl,
+        {
+          method: 'GET',
+          headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
+          agent: agentFor,
+          redirect: 'manual',
+          compress: false,
+          size: maxBytes,
+          timeout: Math.max(1, deadline - Date.now()),
+        },
+        deadline
+      );
       if (isRedirect(response.status)) {
         dropBody(response);
         const location = response.headers.get('location');
@@ -170,8 +198,11 @@ async function probeUrl(
         contentType: response.headers.get('content-type'),
         body: null,
       };
-      if (readBody && response.ok) result.body = await response.buffer();
-      else dropBody(response);
+      if (readBody && response.ok) {
+        result.body = await readBeforeDeadline(response, deadline);
+      } else {
+        dropBody(response);
+      }
       return result;
     }
   } catch (error) {
