@@ -2,7 +2,9 @@
 
 const http = require('http');
 const https = require('https');
+const net = require('net');
 const fetch = require('node-fetch');
+const psl = require('psl');
 const {
   assertOutboundHostAllowed,
   guardedLookup,
@@ -35,7 +37,8 @@ const PROBE_FAILURES = Object.freeze({
   NOT_FOUND: 'not-found',
   // No answer in time: maybe slow, maybe down, maybe blocking robots.
   TIMEOUT: 'timeout',
-  // An address we refuse to reach (private network, bad scheme).
+  // An address we refuse to judge: a private network, a bad scheme, a name
+  // outside the public DNS.
   REFUSED: 'refused',
   // Too many redirects, a redirect without a target, a connection reset.
   UNREACHABLE: 'unreachable',
@@ -53,12 +56,34 @@ class ProbeError extends Error {
 // The resolver's answers for a name that does not exist.
 const NO_SUCH_NAME = new Set(['ENOTFOUND', 'ENODATA']);
 
-function failureOf(error) {
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^\[|\]$/g, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * "Not found" is said of a name under a public suffix only: it does not exist
+ * for anyone. A name outside the public DNS (`intranet`, `*.test`, `*.local`)
+ * gets the same answer whether the server's resolver knows it or not, so the
+ * answer never says what that resolver knows.
+ */
+function missingName(hostname) {
+  return new ProbeError(
+    !net.isIP(hostname) && psl.isValid(hostname)
+      ? PROBE_FAILURES.NOT_FOUND
+      : PROBE_FAILURES.REFUSED
+  );
+}
+
+function failureOf(error, hostname) {
   if (error instanceof ProbeError) return error;
   const code = error && error.code;
   // Only a name that does not exist: EAI_AGAIN is the resolver failing for a
   // moment, and must not call a link broken.
-  if (NO_SUCH_NAME.has(code)) return new ProbeError(PROBE_FAILURES.NOT_FOUND);
+  if (NO_SUCH_NAME.has(code)) return missingName(hostname);
   if (
     code === BLOCKED_HOST_ERROR_CODE ||
     code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS ||
@@ -70,11 +95,9 @@ function failureOf(error) {
   if (code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
     // No cause: the name resolved to no address at all.
     const cause = error.cause && error.cause.code;
-    return new ProbeError(
-      !cause || NO_SUCH_NAME.has(cause)
-        ? PROBE_FAILURES.NOT_FOUND
-        : PROBE_FAILURES.UNREACHABLE
-    );
+    return !cause || NO_SUCH_NAME.has(cause)
+      ? missingName(hostname)
+      : new ProbeError(PROBE_FAILURES.UNREACHABLE);
   }
   if (error && error.name === 'FetchError') {
     if (error.type === 'request-timeout' || error.type === 'body-timeout') {
@@ -206,7 +229,7 @@ async function probeUrl(
       return result;
     }
   } catch (error) {
-    throw failureOf(error);
+    throw failureOf(error, hostnameOf(currentUrl));
   }
 }
 
