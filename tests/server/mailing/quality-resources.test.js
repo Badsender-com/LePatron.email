@@ -461,7 +461,82 @@ describe('blocklists', () => {
 });
 
 describe('throttle', () => {
-  it('runs one check at a time per user', async () => {
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+  it('runs one check at a time per user, the next one waiting its turn, a third refused', async () => {
+    const releases = [];
+    const d = deps({
+      probe: jest.fn(
+        () =>
+          new Promise((resolve) => {
+            releases.push(() => resolve({ status: 200 }));
+          })
+      ),
+    });
+    const first = run({ links: ['https://a.test'] }, d);
+    // A second tab, or an export during a run: it waits for the first.
+    let secondDone = false;
+    const second = run({ links: ['https://b.test'] }, d).then((result) => {
+      secondDone = true;
+      return result;
+    });
+    await flush();
+    expect(d.probe).toHaveBeenCalledTimes(1);
+    expect(secondDone).toBe(false);
+    // Only one can wait: a script firing more is refused.
+    await expect(run({ links: ['https://c.test'] }, d)).rejects.toMatchObject({
+      status: 429,
+      message: 'QUALITY_CHECK_RUNNING',
+    });
+    // Another user is not held up.
+    await expect(
+      run({ links: [] }, d, { userKey: 'u2' })
+    ).resolves.toBeDefined();
+
+    releases.shift()();
+    await first;
+    await flush();
+    expect(d.probe).toHaveBeenCalledTimes(2);
+    releases.shift()();
+    await expect(second).resolves.toMatchObject({
+      links: { 'https://b.test': { state: 'ok' } },
+    });
+    await expect(run({ links: ['https://a.test'] }, d)).resolves.toBeDefined();
+  });
+
+  it('runs the waiting check even when the first one failed', async () => {
+    const d = deps({ probe: jest.fn(async () => ({ status: 200 })) });
+    // An address the validation would have refused makes the run itself fail.
+    const failing = checkResources(
+      { links: [], images: [{ url: 'not a url' }] },
+      { userKey: 'u1', cacheScope: 'c1', ownHosts: [] },
+      d
+    );
+    const second = run({ links: ['https://b.test'] }, d);
+    await expect(failing).rejects.toBeDefined();
+    await expect(second).resolves.toMatchObject({
+      links: { 'https://b.test': { state: 'ok' } },
+    });
+  });
+
+  it('fetches nothing more for a run whose caller is gone', async () => {
+    const d = deps({ probe: jest.fn(async () => ({ status: 200 })) });
+    const caller = new AbortController();
+    caller.abort();
+    const { links, images } = await run(
+      {
+        links: ['https://a.test'],
+        images: ['https://cdn.test/a.png'],
+      },
+      d,
+      { signal: caller.signal }
+    );
+    expect(links['https://a.test']).toEqual({ state: 'unverifiable' });
+    expect(images['https://cdn.test/a.png']).toEqual({ state: 'unverifiable' });
+    expect(d.probe).not.toHaveBeenCalled();
+  });
+
+  it('stops fetching for a run cancelled while it waits its turn', async () => {
     let release;
     const d = deps({
       probe: jest.fn(
@@ -472,17 +547,17 @@ describe('throttle', () => {
       ),
     });
     const first = run({ links: ['https://a.test'] }, d);
-    await expect(run({ links: ['https://b.test'] }, d)).rejects.toMatchObject({
-      status: 429,
-      message: 'QUALITY_CHECK_RUNNING',
+    const caller = new AbortController();
+    const second = run({ links: ['https://b.test'] }, d, {
+      signal: caller.signal,
     });
-    // Another user is not held up.
-    await expect(
-      run({ links: [] }, d, { userKey: 'u2' })
-    ).resolves.toBeDefined();
+    await flush();
+    caller.abort();
     release();
     await first;
-    await expect(run({ links: ['https://a.test'] }, d)).resolves.toBeDefined();
+    const { links } = await second;
+    expect(links['https://b.test']).toEqual({ state: 'unverifiable' });
+    expect(d.probe).toHaveBeenCalledTimes(1);
   });
 
   it('allows a few runs per window, then refuses', async () => {
@@ -524,6 +599,7 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
         body: { links: ['https://a.test'] },
         user: { id: 'u1' },
         get: () => 'app.test',
+        on: jest.fn(),
       },
       res,
       (err) => {
@@ -545,11 +621,38 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
         body: { images: [{ url: 'https://evil.test/api/images/a.png' }] },
         user: { id: 'u1' },
         get: () => 'evil.test',
+        on: jest.fn(),
       },
       { json: jest.fn() },
       jest.fn()
     );
     expect(check.mock.calls[0][1].ownHosts).toEqual([config.host]);
+    check.mockRestore();
+  });
+
+  it('cuts the run short once the client closed the request', async () => {
+    mailingService.findOneForUser.mockResolvedValue({ _company: 'c1' });
+    const check = jest
+      .spyOn(qualityResourcesService, 'checkResources')
+      .mockResolvedValue({});
+    const listeners = {};
+    await controller.checkResources(
+      {
+        params: { mailingId: 'm1' },
+        body: { links: ['https://a.test'] },
+        user: { id: 'u1' },
+        get: () => 'app.test',
+        on: (event, listener) => {
+          listeners[event] = listener;
+        },
+      },
+      { json: jest.fn() },
+      jest.fn()
+    );
+    const { signal } = check.mock.calls[0][1];
+    expect(signal.aborted).toBe(false);
+    listeners.close();
+    expect(signal.aborted).toBe(true);
     check.mockRestore();
   });
 });
