@@ -13,7 +13,6 @@ const ClientPasswordStrategy = require('passport-oauth2-client-password')
   .Strategy;
 const BearerStrategy = require('passport-http-bearer').Strategy;
 const createError = require('http-errors');
-const { XMLParser } = require('fast-xml-parser');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
@@ -24,7 +23,6 @@ const {
   Users,
   OAuthClients,
   OAuthTokens,
-  Groups,
 } = require('../common/models.common.js');
 
 // Compared against when the email is unknown or the account has no password,
@@ -237,58 +235,33 @@ passport.use(
 );
 
 const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
-const { samlOptionsFor } = require('./saml-config.js');
+const {
+  samlOptionsForRequest,
+  accountOfResponse,
+} = require('./saml-account.js');
 
 passport.use(
   new MultiSamlStrategy(
     {
       passReqToCallback: true, // makes req available in callback
-      getSamlOptions: async (request, done) => {
-        let email = request.query.email;
-
-        if (!email) {
-          const buff = Buffer.from(request.body.SAMLResponse, 'base64');
-          const parser = new XMLParser({
-            ignoreAttributes: false,
-            trimValues: true,
-          });
-          const jsonObject = parser.parse(buff.toString());
-          email =
-            jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject'][
-              'saml2:NameID'
-            ];
-        }
-
-        const user = await Users.findOne({
-          email: normalizeString(email),
-          isDeactivated: { $ne: true },
-        });
-
-        if (user) {
-          const group = await Groups.findOne({
-            _id: user.group,
-          });
-          // Never options without the identity provider's certificate:
-          // passport-saml verifies a response's signature only when it has one.
-          const samlOptions = samlOptionsFor(group);
-          if (samlOptions) {
-            return done(null, samlOptions);
-          }
-          return done(new Error('Provider informations not found'), null);
-        }
-        return done(new Error('SAML provider not found'), null);
+      getSamlOptions: (request, done) => {
+        samlOptionsForRequest(request).then(
+          (samlOptions) => done(null, samlOptions),
+          (error) => done(error, null)
+        );
       },
     },
     async (req, profile, done) => {
-      const user = await Users.findOne({
-        email: normalizeString(profile.nameID),
-        isDeactivated: { $ne: true },
-      });
-      if (!user)
-        return done(new Error('No user found'), false, {
-          message: 'password.error.nouser',
-        });
-      done(null, user);
+      try {
+        const user = await accountOfResponse(req, profile);
+        // A refusal, not an error: the callback's failureRedirect applies.
+        if (!user) {
+          return done(null, false, { message: 'password.error.nouser' });
+        }
+        done(null, user);
+      } catch (error) {
+        done(error);
+      }
     }
   )
 );
