@@ -16,6 +16,14 @@ const PAGES = require('./share-page.locales.js');
  * account: the last saved version of the email, sanitized, in an iframe with
  * no permission (share-page.pug). Nothing on it runs a script, and every
  * failure is a page, never the API's JSON error.
+ *
+ * Two residual risks, accepted (docs/adr, quality control):
+ * - The page publishes the name of the email (its title, so the reader's
+ *   browser history, and the bar), and the subject and preheader when the
+ *   company writes them in LePatron. Whoever holds the link reads them.
+ * - The token travels in the URL. The request logs mask it (utils/logger.js),
+ *   but the HTTP to HTTPS redirect (index.js) sends it back in `Location`,
+ *   and the reverse proxy logs the full URL, upstream of this code.
  */
 
 // The page never runs a script and loads nothing but what the email itself
@@ -157,6 +165,9 @@ async function showShare(req, res) {
   }
   // A known link speaks its creator's language.
   const lang = link.lang === 'en' ? 'en' : 'fr';
+  // 410 rather than 404 tells that the link existed, and the page speaks its
+  // creator's language: a choice, for the reader who kept an old link and
+  // would otherwise wonder whether it was ever right.
   if (state === 'expired') return renderNotice(res, 410, lang, 'expired');
   const retryAfter = viewBlockedFor(`${link._id}|${req.ip}`);
   if (retryAfter > 0) {

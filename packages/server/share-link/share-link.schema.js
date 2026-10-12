@@ -69,6 +69,10 @@ const ShareLinkSchema = new Schema(
   { timestamps: true }
 );
 
+// MongoDB keeps the first options an index was created with: changing
+// KEEP_EXPIRED_SECONDS makes autoIndex fail on "already exists with different
+// options" until the index is dropped by hand (db.sharelinks.dropIndex) and
+// created again at the next start.
 ShareLinkSchema.index(
   { expiresAt: 1 },
   { expireAfterSeconds: KEEP_EXPIRED_SECONDS }
