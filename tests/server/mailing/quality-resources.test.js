@@ -776,29 +776,49 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
     check.mockRestore();
   });
 
-  it('cuts the run short once the client closed the request', async () => {
+  it('cuts the run short once the client went away, not once it answered', async () => {
     mailingService.findOneForUser.mockResolvedValue({ _company: 'c1' });
     const check = jest
       .spyOn(qualityResourcesService, 'checkResources')
       .mockResolvedValue({});
-    const listeners = {};
-    await controller.checkResources(
-      {
-        params: { mailingId: 'm1' },
-        body: { links: ['https://a.test'] },
-        user: { id: 'u1' },
-        get: () => 'app.test',
+    const request = (res) =>
+      controller.checkResources(
+        {
+          params: { mailingId: 'm1' },
+          body: { links: ['https://a.test'] },
+          user: { id: 'u1' },
+          get: () => 'app.test',
+          on: jest.fn(),
+        },
+        res,
+        jest.fn()
+      );
+    const response = () => {
+      const listeners = {};
+      return {
+        listeners,
+        writableFinished: false,
+        json: jest.fn(),
         on: (event, listener) => {
           listeners[event] = listener;
         },
-      },
-      { json: jest.fn() },
-      jest.fn()
-    );
+      };
+    };
+
+    // The client closes before the answer: the run stops fetching.
+    const gone = response();
+    await request(gone);
     const { signal } = check.mock.calls[0][1];
     expect(signal.aborted).toBe(false);
-    listeners.close();
+    gone.listeners.close();
     expect(signal.aborted).toBe(true);
+
+    // The response is complete: its closing is no cancellation.
+    const answered = response();
+    await request(answered);
+    answered.writableFinished = true;
+    answered.listeners.close();
+    expect(check.mock.calls[1][1].signal.aborted).toBe(false);
     check.mockRestore();
   });
 });
