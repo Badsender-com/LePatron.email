@@ -225,19 +225,80 @@ describe('GET /share/:token', () => {
     ]);
   });
 
-  it('sanitizes a shared version once, however large', async () => {
-    ShareLinks.findOne.mockReturnValue(lean(activeLink));
-    Mailings.findById.mockReturnValue(
-      lean({
-        _id: 'big',
-        name: 'Big',
-        updatedAt: new Date('2026-09-01'),
-        previewHtml: 'x'.repeat(2 * 1024 * 1024),
-      })
+  // The stored mailing, read as the page reads it: previewHtml only when the
+  // projection asks for it, so that the reads of it can be counted.
+  function storedMailing(doc) {
+    Mailings.findById.mockReset();
+    Mailings.findById.mockImplementation((id, projection) =>
+      lean(projection.previewHtml ? doc : { ...doc, previewHtml: undefined })
     );
-    await call(pageController.renderShare, { params: { token: TOKEN } });
-    await call(pageController.renderShare, { params: { token: TOKEN } });
+    return () =>
+      Mailings.findById.mock.calls.filter(([, projection]) =>
+        Object.prototype.hasOwnProperty.call(projection, 'previewHtml')
+      ).length;
+  }
+
+  it('sanitizes a shared version once, and reads its HTML once', async () => {
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    const previewReads = storedMailing({
+      _id: 'big',
+      name: 'Big',
+      updatedAt: new Date('2026-09-01'),
+      previewHtml: 'x'.repeat(2 * 1024 * 1024),
+    });
+    const first = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    const second = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
     expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(1);
+    expect(previewReads()).toBe(1);
+    expect(second.res.render.mock.calls[0][1].html).toBe(
+      first.res.render.mock.calls[0][1].html
+    );
+    // The first read of a view never carries the HTML.
+    expect(Mailings.findById.mock.calls[0][1]).not.toHaveProperty(
+      'previewHtml'
+    );
+  });
+
+  it('reads and sanitizes again once the email was saved', async () => {
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    storedMailing({
+      _id: 'edited',
+      name: 'v1',
+      updatedAt: new Date('2026-09-01'),
+      previewHtml: '<p>v1</p>',
+    });
+    await call(pageController.renderShare, { params: { token: TOKEN } });
+    const previewReads = storedMailing({
+      _id: 'edited',
+      name: 'v2',
+      updatedAt: new Date('2026-09-02'),
+      previewHtml: '<p>v2</p>',
+    });
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.render.mock.calls[0][1].html).toBe('clean:<p>v2</p>');
+    expect(previewReads()).toBe(1);
+  });
+
+  it('does not hold on to a page past the cap, and still serves it', async () => {
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    storedMailing({
+      _id: 'huge',
+      name: 'Huge',
+      updatedAt: new Date('2026-09-01'),
+      previewHtml: 'x'.repeat(5 * 1024 * 1024),
+    });
+    await call(pageController.renderShare, { params: { token: TOKEN } });
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(2);
+    expect(res.statusCode).toBe(200);
   });
 
   it('never looks up a token of the wrong shape', async () => {
@@ -269,7 +330,7 @@ describe('GET /share/:token', () => {
 
   it('says so when the email was never saved, or is gone', async () => {
     ShareLinks.findOne.mockReturnValue(lean(activeLink));
-    Mailings.findById.mockReturnValue(lean({ _id: MAILING_ID, name: 'x' }));
+    Mailings.findById.mockReturnValue(lean({ _id: 'unsaved', name: 'x' }));
     const empty = await call(pageController.renderShare, {
       params: { token: TOKEN },
     });
