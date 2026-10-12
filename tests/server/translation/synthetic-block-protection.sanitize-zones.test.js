@@ -14,9 +14,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const {
-  transformDocumentKeepingHtmlCodeBlocks,
-  transformOutsideHtmlCodeBlocks,
-} = require('../../../packages/server/translation/html-code-block-protection.js');
+  transformDocumentKeepingSyntheticBlocks,
+  transformOutsideSyntheticBlocks,
+} = require('../../../packages/server/translation/synthetic-block-protection.js');
 const {
   sanitizePreviewHtml,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');
@@ -29,9 +29,9 @@ const doc = (...parts) =>
 const stored = '<script>espTracking()</script><p>stored</p>';
 const unknown = '<p>written<img src="x" onerror="alert(1)"></p>';
 
-describe('transformDocumentKeepingHtmlCodeBlocks', () => {
+describe('transformDocumentKeepingSyntheticBlocks', () => {
   it('keeps a zone matched on its stored markup', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       doc(zone(stored)),
       sanitizePreviewHtml,
       [stored]
@@ -41,7 +41,7 @@ describe('transformDocumentKeepingHtmlCodeBlocks', () => {
   });
 
   it('sanitizes a zone that matches no stored markup', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       doc(zone(stored), zone(unknown)),
       sanitizePreviewHtml,
       [stored]
@@ -52,7 +52,7 @@ describe('transformDocumentKeepingHtmlCodeBlocks', () => {
   });
 
   it('sanitizes every zone when no stored markup is given', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       doc(zone(unknown)),
       sanitizePreviewHtml
     );
@@ -61,11 +61,11 @@ describe('transformDocumentKeepingHtmlCodeBlocks', () => {
   });
 });
 
-describe('transformOutsideHtmlCodeBlocks', () => {
+describe('transformOutsideSyntheticBlocks', () => {
   it('still keeps an unmatched zone out of the string replacement', () => {
     const upper = (part) => part.toUpperCase();
 
-    const result = transformOutsideHtmlCodeBlocks(
+    const result = transformOutsideSyntheticBlocks(
       doc('<p>text</p>', zone('<p>pasted</p>')),
       upper,
       []
@@ -79,7 +79,7 @@ describe('transformOutsideHtmlCodeBlocks', () => {
 // The translated copy's previewHtml is sanitized before storage. Sanitizing the
 // pasted markup with it stripped the ESP scripts the block exists for, so the
 // copy's ZIP no longer matched its export.
-describe('transformDocumentKeepingHtmlCodeBlocks, the pasted markup', () => {
+describe('transformDocumentKeepingSyntheticBlocks, the pasted markup', () => {
   const pasted = '<script>espTracking("$&")</script><p>kept</p>';
   const html = [
     '<html><head></head><body>',
@@ -89,7 +89,7 @@ describe('transformDocumentKeepingHtmlCodeBlocks, the pasted markup', () => {
   ].join('');
 
   it('sanitizes the document but puts the pasted markup back byte for byte', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       html,
       sanitizePreviewHtml,
       [pasted]
@@ -100,7 +100,7 @@ describe('transformDocumentKeepingHtmlCodeBlocks, the pasted markup', () => {
 
   it('is the plain transform without any block', () => {
     const shout = (s) => s.toUpperCase();
-    expect(transformDocumentKeepingHtmlCodeBlocks('<p>a</p>', shout)).toBe(
+    expect(transformDocumentKeepingSyntheticBlocks('<p>a</p>', shout)).toBe(
       '<P>A</P>'
     );
   });
@@ -108,12 +108,12 @@ describe('transformDocumentKeepingHtmlCodeBlocks, the pasted markup', () => {
 
 // The marker element around the markup is LePatron's own: nothing in it needs
 // protecting, and a previewHtml written by hand could hang anything on it.
-describe('transformDocumentKeepingHtmlCodeBlocks, the marker element', () => {
+describe('transformDocumentKeepingSyntheticBlocks, the marker element', () => {
   const crafted = (inner) =>
     `<div class="lp-html-block" onmouseover="alert(1)">${inner}</div>`;
 
   it('goes through the transform with the rest of the document', () => {
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       doc(crafted(stored)),
       sanitizePreviewHtml,
       [stored]
@@ -127,7 +127,7 @@ describe('transformDocumentKeepingHtmlCodeBlocks, the marker element', () => {
     const inner = '<div>kept</div>';
     const tag = (part) => part.replace(/<div/g, '<div data-t');
 
-    const result = transformDocumentKeepingHtmlCodeBlocks(
+    const result = transformDocumentKeepingSyntheticBlocks(
       `<div class="lp-html-block">${inner}</div>`,
       tag,
       [inner]

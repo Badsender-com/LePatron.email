@@ -11,7 +11,7 @@
 
 const {
   CONTENT_TOOL,
-} = require('../../../packages/editor/src/js/ext/html-code-block/canvas-entry.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/canvas-entry.js');
 const {
   TEMPLATE,
   composedBlock,

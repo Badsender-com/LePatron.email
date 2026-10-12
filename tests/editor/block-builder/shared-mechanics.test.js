@@ -19,20 +19,20 @@ global.$ = global.jQuery = jQuery;
 global.ko = ko;
 window.DOMPurify = createDOMPurify(window);
 
-require('../../../packages/editor/src/js/bindings/html-code-block.js');
+require('../../../packages/editor/src/js/bindings/synthetic-block.js');
 require('../../../packages/editor/src/js/bindings/blocks.js');
 const {
   stripEmptySyntheticBlocks,
-} = require('../../../packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js');
 const {
-  detachPastedMarkup,
-  restorePastedMarkup,
-} = require('../../../packages/editor/src/js/ext/html-code-block/protect-from-inliner.js');
+  detachSyntheticMarkup,
+  restoreSyntheticMarkup,
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js');
 const {
   beginExportSubstitution,
   endExportSubstitution,
   substituteMarkers,
-} = require('../../../packages/editor/src/js/ext/html-code-block/export-substitution.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/export-substitution.js');
 const {
   BLOCK_BUILDER_BLOCK,
   HTML_CODE_BLOCK,
@@ -92,10 +92,10 @@ describe('the inliner protection, on a composed block', () => {
       document.querySelector(`.${BLOCK_BUILDER_BLOCK.markerClass}`);
     const before = holder().innerHTML;
 
-    const detached = detachPastedMarkup(jQuery, document);
+    const detached = detachSyntheticMarkup(jQuery, document);
     expect(holder().innerHTML).toBe('');
 
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(holder().innerHTML).toBe(before);
   });
 
@@ -106,11 +106,11 @@ describe('the inliner protection, on a composed block', () => {
       marker(BLOCK_BUILDER_BLOCK, COMPOSED);
     const before = document.body.innerHTML;
 
-    const detached = detachPastedMarkup(jQuery, document);
+    const detached = detachSyntheticMarkup(jQuery, document);
     expect(detached).toHaveLength(2);
     expect(document.querySelectorAll('td')).toHaveLength(0);
 
-    restorePastedMarkup(detached);
+    restoreSyntheticMarkup(detached);
     expect(document.body.innerHTML).toBe(before);
   });
 });
@@ -122,8 +122,8 @@ describe('the export substitution, on a composed block', () => {
     const host = document.createElement('div');
     host.innerHTML =
       '<div data-bind="withProperties: { templateMode: \'show\' }">' +
-      '<div data-bind="lpHtmlCode: htmlCode"></div>' +
-      '<div data-bind="lpHtmlCode: builderHtml"></div></div>';
+      '<div data-bind="lpSyntheticBlock: htmlCode"></div>' +
+      '<div data-bind="lpSyntheticBlock: builderHtml"></div></div>';
     document.body.appendChild(host);
     ko.applyBindings(model, host);
     return host;

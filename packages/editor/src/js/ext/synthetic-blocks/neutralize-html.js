@@ -1,6 +1,6 @@
 'use strict';
 
-// Neutralizes the pasted markup of an "HTML code" block FOR THE CANVAS PREVIEW
+// Neutralizes the markup of a synthetic block FOR THE CANVAS PREVIEW
 // ONLY. The stored value and every export path (download, test send, ESP) keep
 // the markup exactly as pasted.
 //

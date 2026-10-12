@@ -2,7 +2,7 @@
 
 const {
   stripEmptySyntheticBlocks,
-} = require('../../../packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js');
 
 const page = (body) => `<html><body>${body}</body></html>`;
 

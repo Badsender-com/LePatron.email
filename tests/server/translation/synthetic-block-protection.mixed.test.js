@@ -2,7 +2,7 @@
 
 // A mailing holding both synthetic blocks, translated.
 //
-// html-code-block-protection.test.js covers the zones with the HTML code
+// synthetic-block-protection.test.js covers the zones with the HTML code
 // block's marker; this is the mailing a client with both flags actually has —
 // pasted markup and a composed block side by side, each sharing wording with a
 // native block. Every zone must come out of the string replacement untouched,
@@ -18,8 +18,8 @@ const {
   updatePreviewWithTranslations,
 } = require('../../../packages/server/translation/preview-html-updater');
 const {
-  findHtmlCodeBlockRanges,
-} = require('../../../packages/server/translation/html-code-block-protection.js');
+  findSyntheticBlockRanges,
+} = require('../../../packages/server/translation/synthetic-block-protection.js');
 const {
   findSyntheticBlocks,
   htmlOf,
@@ -55,15 +55,15 @@ const previewHtml = [
 
 // What the translation controller hands the protection: every synthetic
 // block's markup, in document order, read with the guard's own helper.
-const htmlCodes = findSyntheticBlocks(data).map(htmlOf);
+const markups = findSyntheticBlocks(data).map(htmlOf);
 
 describe('a mailing with both synthetic blocks', () => {
   it('lists the markup of both types, in document order', () => {
-    expect(htmlCodes).toEqual([COMPOSED, PASTED]);
+    expect(markups).toEqual([COMPOSED, PASTED]);
   });
 
   it('finds one zone per block, each ending where its markup does', () => {
-    const ranges = findHtmlCodeBlockRanges(previewHtml, htmlCodes);
+    const ranges = findSyntheticBlockRanges(previewHtml, markups);
 
     expect(ranges).toHaveLength(2);
     expect(previewHtml.slice(ranges[0].start, ranges[0].end)).toBe(
@@ -79,7 +79,7 @@ describe('a mailing with both synthetic blocks', () => {
       previewHtml,
       { k: 'Hello world' },
       { k: 'Bonjour le monde' },
-      { htmlCodes }
+      { markups }
     );
 
     expect(result).toContain(
@@ -107,7 +107,7 @@ describe('a mailing with both synthetic blocks', () => {
       swapped,
       { k: 'Hello world' },
       { k: 'Bonjour le monde' },
-      { htmlCodes: [PASTED, COMPOSED] }
+      { markups: [PASTED, COMPOSED] }
     );
 
     expect(result).toContain(`<div class="lp-html-block">${PASTED}</div>`);

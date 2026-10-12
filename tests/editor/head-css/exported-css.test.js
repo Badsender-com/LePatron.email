@@ -47,7 +47,7 @@ const builderBlock = () => ({
 });
 
 // The shape Mosaico gives the content once instrumented: every level an
-// observable, `type` included (see html-code-block/block-state.js).
+// observable, `type` included (see synthetic-blocks/block-state.js).
 function field(value, name) {
   const observable = Array.isArray(value)
     ? ko.observableArray(value)

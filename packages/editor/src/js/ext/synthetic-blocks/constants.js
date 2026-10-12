@@ -17,10 +17,10 @@ const {
 // binding for both: what it does — neutralise in the canvas, hand an inert
 // marker to the export — depends on the rendering mode, never on which block
 // asked.
-const HTML_CODE_BINDING = 'lpHtmlCode';
+const SYNTHETIC_BLOCK_BINDING = 'lpSyntheticBlock';
 
 module.exports = {
-  HTML_CODE_BINDING,
+  SYNTHETIC_BLOCK_BINDING,
   HTML_CODE_MAX_LENGTH,
   BUILDER_STATE_MAX_LENGTH,
 };
