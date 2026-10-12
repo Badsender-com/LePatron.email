@@ -110,7 +110,7 @@ describe('session tracking', () => {
 
   // Turned on by #1155 (super admin as a persisted role: admin status,
   // guardrails and listing).
-  describe.skip('a persisted super admin (#1155)', () => {
+  describe('a persisted super admin (#1155)', () => {
     it('has the login session recorded, like any user', async () => {
       await updateSessionTracking(loginRequest('sess-new'), actor(ALICE));
 

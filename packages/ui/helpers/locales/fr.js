@@ -504,6 +504,15 @@ export default {
     lang: 'Langue',
     details: 'Informations',
     role: 'Rôle',
+    roles: {
+      superAdmin: 'Super administrateur',
+      groupAdmin: 'Administrateur du groupe',
+      regularUser: 'Utilisateur',
+      chip: {
+        superAdmin: 'Super admin',
+        groupAdmin: 'Admin',
+      },
+    },
     noUsersAvailable: 'Aucun utilisateur disponible',
     sections: {
       statusSecurity: 'Statut & Sécurité',
@@ -1170,16 +1179,56 @@ export default {
     contactAdmin: 'Veuillez contacter votre administrateur ou Badsender pour activer cette fonctionnalité.',
     contactBadsender: 'Contacter Badsender',
   },
+  superAdmins: {
+    pageTitle: 'Super administrateurs',
+    add: 'Ajouter un super administrateur',
+    addDescription:
+      'Le compte est créé dans le groupe plateforme. Envoyez-lui ensuite l\'email de mot de passe depuis sa ligne, comme pour tout nouveau compte.',
+    promote: 'Promouvoir un membre',
+    promoteAction: 'Promouvoir',
+    promoteDescription:
+      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il ne créera plus d\'emails : il consultera et ouvrira ceux de chaque groupe depuis ses paramètres.',
+    promoted: 'Super administrateur promu',
+    member: 'Membre',
+    noMember: 'Aucun membre du groupe plateforme à promouvoir.',
+    noPlatformGroup:
+      'Aucun groupe plateforme n\'est configuré sur cet environnement : aucun super administrateur ne peut être créé.',
+    demote: {
+      title: 'Retirer le rôle de super administrateur',
+      action: 'Retirer le rôle',
+      notice:
+        'Ce compte ne sera plus super administrateur. Êtes-vous sûr de vouloir retirer le rôle de',
+    },
+    loadError:
+      'Impossible de charger les super administrateurs. Rechargez la page.',
+    errors: {
+      FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
+        'Seul un super administrateur peut attribuer ou retirer ce rôle.',
+      FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
+        'Seul un super administrateur peut gérer un super administrateur.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:
+        'Vous ne pouvez pas retirer votre propre rôle de super administrateur.',
+      FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
+        'Vous ne pouvez pas désactiver votre propre compte.',
+      SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
+        'Un super administrateur doit appartenir au groupe plateforme.',
+      PLATFORM_GROUP_NOT_FOUND:
+        'Aucun groupe plateforme n\'est configuré sur cet environnement.',
+      PLATFORM_GROUP_HAS_SUPER_ADMINS:
+        'Ce groupe héberge des super administrateurs actifs. Pour le déplacer, activez le groupe plateforme sur un autre groupe avec le compte administrateur de la configuration : ils le suivront. Pour le retirer, ce compte doit d\'abord les désactiver ou les rétrograder.',
+      INVALID_ROLE_PARAM: 'Ce rôle n\'existe pas.',
+    },
+  },
   settingsNav: {
     categories: {
-      superAdmin: 'Super Admin',
+      superAdmin: 'Super administrateur',
       general: 'Général',
       emailBuilder: 'Email Builder',
       crmIntelligence: 'CRM Intelligence',
     },
     companiesList: 'Liste des entreprises',
     companiesEmpty: 'Aucune entreprise pour le moment',
-    superAdminOnly: 'Super admin uniquement',
+    superAdminOnly: 'Super administrateur uniquement',
     switchCompany: 'Choisir une entreprise…',
     colors: 'Couleurs',
   },

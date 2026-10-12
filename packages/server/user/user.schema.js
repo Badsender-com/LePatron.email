@@ -44,7 +44,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
+      enum: [Roles.SUPER_ADMIN, Roles.GROUP_ADMIN, Roles.REGULAR_USER],
       required: false,
     },
     externalUsername: {
@@ -152,9 +152,11 @@ UserSchema.virtual('isReinitialized').get(function () {
   return false;
 });
 
-// for better session handling
+// Platform-wide rights (ADR 0002). The bootstrap account carries the same
+// flag from outside the database; see account/bootstrap-account.js for the
+// checks that must tell the two apart.
 UserSchema.virtual('isAdmin').get(function () {
-  return false;
+  return this.role === Roles.SUPER_ADMIN;
 });
 
 UserSchema.virtual('isGroupAdmin').get(function () {
@@ -172,6 +174,7 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };

@@ -187,6 +187,11 @@ function createStore() {
       if (record) Object.assign(record, update.$set || update);
       return { nModified: record ? 1 : 0 };
     },
+    updateMany: async (filter, update) => {
+      const targets = users.filter((u) => matches(u, filter));
+      targets.forEach((u) => Object.assign(u, update.$set || update));
+      return { nModified: targets.length };
+    },
   };
 
   function toGroupDocument(record) {
@@ -216,6 +221,11 @@ function createStore() {
   }
 
   const Groups = {
+    updateOne: async (filter, update) => {
+      const record = groups.find((g) => matches(g, filter));
+      if (record) Object.assign(record, update.$set || update);
+      return { nModified: record ? 1 : 0 };
+    },
     findById: (id) =>
       query(() => toGroupDocument(groups.find((g) => matches(g, { _id: id })))),
     findOne: (filter) =>
