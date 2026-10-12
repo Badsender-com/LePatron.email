@@ -415,6 +415,8 @@ export default {
           name: mailing.name,
           id: mailing.id,
         },
+        // Read-only users are not told to open the editor to get a preview.
+        canEdit: this.hasAccess,
       });
     },
     closeCopyMailDialog() {

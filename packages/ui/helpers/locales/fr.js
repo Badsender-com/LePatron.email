@@ -396,6 +396,8 @@ export default {
       'Impossible de télécharger un email sans aperçu. Veuillez ouvrir l\'email dans l\'éditeur pour en générer un.',
     errorPreview: 'Pas d’aperçu disponible pour cet email',
     subErrorPreview: 'L\'aperçu sera généré lors de l\'ouverture dans l\'éditeur',
+    subErrorPreviewReadOnly:
+      'L’aperçu sera généré quand un membre du workspace ouvrira l’email dans l’éditeur',
     previewUnavailable: 'L’aperçu n’a pas pu être chargé',
     subPreviewUnavailable: 'Veuillez réessayer, ou contacter votre administrateur',
     rename: 'Renommer l\'email',

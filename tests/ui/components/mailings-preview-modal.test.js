@@ -29,20 +29,21 @@ describe('mailings preview modal', () => {
     expect(iframe).not.toMatch(/allow-scripts/);
   });
 
-  // A 403 used to render "the preview will be generated when you open the
-  // editor" — the text for a mailing that has no preview yet — to a user who
-  // may not open the editor at all.
-  it('tells a missing preview apart from a refused one', () => {
-    expect(source).toMatch(/e\??\.response\??\.status/);
-    expect(source).toMatch(/mailings\.previewUnavailable/);
+  // Which message, for which failure, is tested on the helper itself
+  // (tests/ui/helpers/preview-error.test.js); here, only that the modal uses it.
+  it('picks its error message from the server error code', () => {
+    expect(source).toMatch(/previewErrorMessages\(e, \{/);
+    expect(source).toMatch(/\$t\(errorMessages\.title\)/);
+    expect(source).toMatch(/\$t\(errorMessages\.subtitle\)/);
   });
 
-  it.each(['en', 'fr'])('translates the refused-preview message in %s', (l) => {
+  it.each(['en', 'fr'])('translates the preview error messages in %s', (l) => {
     const locale = fs.readFileSync(
       path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
       'utf8'
     );
     expect(locale).toMatch(/previewUnavailable:/);
     expect(locale).toMatch(/subPreviewUnavailable:/);
+    expect(locale).toMatch(/subErrorPreviewReadOnly:/);
   });
 });

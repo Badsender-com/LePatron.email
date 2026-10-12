@@ -1,6 +1,6 @@
 # Aperçu d'un email d'un workspace non-membre
 
-Statut : correctif écrit (test d'abord), aligné sur la copie.
+Statut : correctif écrit (test d'abord). Règle retenue : l'aperçu se lit comme la source d'une copie.
 Branche : `fix/preview-non-member-workspace`.
 
 ## Symptôme
@@ -12,7 +12,7 @@ Dans une company où `userHasAccessToAllWorkspaces` est actif, un `regular_user`
 Régression confirmée par lecture du code. Elle n'a pas été reproduite dans un navigateur.
 
 - Commit `d913872a` (2026-09-24, « appliquer le flag htmlBlockEnabled côté serveur, protéger l'aperçu »). Il a ajouté `addGroupFilter` et `assertUserCanEditMailing` à `previewMail` (`packages/server/mailing/mailing.service.js`, appel ligne 1476).
-- Avant ce commit, `previewMail` n'avait aucun contrôle : tout utilisateur connecté lisait n'importe quel aperçu, y compris d'une autre company. Le filtre de company est donc correct et doit rester.
+- Le filtre de company ajouté par ce commit est correct et reste.
 - `assertUserCanEditMailing` (l. 274-292) exige l'appartenance au workspace via `workspaceService.hasAccess` (`workspace.service.js:61-71`). Cette fonction ne lit jamais `userHasAccessToAllWorkspaces` :
   - email dans un workspace : 403 `FORBIDDEN_RESOURCE_OR_ACTION` ;
   - email dans un dossier : `folderService.hasAccess` lève un 404.
@@ -41,22 +41,34 @@ L'aperçu est la seule action de lecture qui exige l'appartenance. `copyMailing`
 ## Correctif prévu
 
 1. **Serveur.** Dans `previewMail`, remplacer `assertUserCanEditMailing` par le contrôle de lecture de `copyMailing` : résoudre le workspace (`folderService.getWorkspaceForFolder` pour un email en dossier, `workspaceService.getWorkspace` sinon), puis `workspaceService.doesUserHaveReadAccess(user, workspace)`. Extraire cette résolution en helper partagé avec `copyMailing`. Garder `addGroupFilter` et la sanitisation en sortie. Vérifier que le super admin passe toujours.
-2. **UI.** Dans le `catch` du modal, lire `e.response?.status` : le 404 garde le message actuel, les autres erreurs (403, réseau) affichent un message « Aperçu indisponible » distinct. Nouvelles clés dans `fr.js` et `en.js` (pas de DE dans `packages/ui/helpers/locales`).
+2. **Serveur.** Un aperçu vide répond 404 avec son propre code, `MAILING_PREVIEW_NOT_GENERATED`, après le contrôle d'accès. Un 404 veut aussi dire « email, workspace ou dossier introuvable » : le statut seul ne suffit pas à choisir le message.
+3. **UI.** Le message suit le code d'erreur, via `previewErrorMessages` (`packages/ui/helpers/preview-error.js`) :
 
-## Décision de périmètre (tranchée : aligné sur la copie)
+   - aperçu pas encore généré, utilisateur qui peut éditer : message actuel (« sera généré lors de l'ouverture dans l'éditeur ») ;
+   - aperçu pas encore généré, utilisateur en lecture seule : « sera généré quand un membre du workspace ouvrira l'email dans l'éditeur » ;
+   - toute autre erreur : « L'aperçu n'a pas pu être chargé ».
 
-Quand `userHasAccessToAllWorkspaces` est `false`, le non-membre ne voit pas le workspace dans le listing, mais pourrait appeler `/preview` s'il connaît l'id. `copyMailing` a déjà ce comportement. Proposition : s'aligner sur `copyMailing`. L'alternative stricte est de refuser quand `restrictAccessingWorkspacesForNonMemberUser` est vrai (`workspace.service.js:50-59`) ; l'aperçu et la copie divergeraient alors. À trancher avant d'écrire le correctif.
+   Le listing passe `canEdit` (son `hasAccess`) au modal. Nouvelles clés dans `fr.js` et `en.js` (pas de DE dans `packages/ui/helpers/locales`).
+
+## Règle d'accès retenue
+
+Tout utilisateur de la company peut prévisualiser un email de n'importe quel workspace de cette company, membre ou non, quel que soit `userHasAccessToAllWorkspaces`. Ce réglage décide de ce que le listing montre ; il ne restreint ni l'aperçu ni la copie. Une URL d'aperçu partagée entre collègues d'une même company s'ouvre donc pour chacun d'eux.
+
+Ce choix aligne l'aperçu sur la copie (`copyMailing`), qui suit déjà cette règle. Les deux passent par `getOwningWorkspace` puis `doesUserHaveReadAccess`, et des tests figent la règle sur les deux chemins.
 
 ## Tests
 
-Étendre `tests/server/mailing/mailing.service.preview-mail.test.js` :
+`tests/server/mailing/mailing.service.preview-mail.test.js`, avec le vrai `doesUserHaveReadAccess` :
 
-- non-membre avec le flag actif : l'aperçu est retourné (email en workspace et en dossier) ;
-- utilisateur d'une autre company : NotFound (non-régression de `d913872a`) ;
-- membre et super admin : inchangés ;
-- `previewHtml` vide : NotFound.
+- non-membre : l'aperçu est retourné (email en workspace et en dossier), sans lire le réglage de la company ;
+- email ni en workspace ni en dossier : servi sur le seul filtre de company ;
+- workspace d'une autre company : NotFound, avant de dire si l'aperçu existe ;
+- super admin : inchangé ;
+- `previewHtml` vide : NotFound `MAILING_PREVIEW_NOT_GENERATED`.
 
-Modal : si un test existe, 403 → nouveau message, 404 → message actuel.
+`tests/server/mailing/mailing.service.copy-access.test.js` : la même règle pour la source d'une copie (workspace, dossier, autre company), et l'écriture toujours exigée sur la destination.
+
+`tests/ui/helpers/preview-error.test.js` : le message affiché pour chaque erreur, selon que l'utilisateur peut éditer.
 
 ## Vérification
 

@@ -1,5 +1,6 @@
 <script>
 import { imageFromPreviews } from '~/helpers/api-routes';
+import { previewErrorMessages } from '~/helpers/preview-error';
 import BsModalConfirm from '~/components/modal-confirm';
 import { AlertCircle, Eye } from 'lucide-vue';
 
@@ -14,7 +15,7 @@ export default {
     return {
       loading: false,
       errorPreview: false,
-      previewRefused: false,
+      errorMessages: null,
       previewHtml: null,
       iframeHeight: null,
     };
@@ -22,7 +23,7 @@ export default {
   methods: {
     async open(item) {
       this.errorPreview = false;
-      this.previewRefused = false;
+      this.errorMessages = null;
       this.data = item;
       await this.fetchPreview();
       this.$refs.previewMailModal.open();
@@ -30,7 +31,7 @@ export default {
     async fetchPreview() {
       this.loading = true;
       this.errorPreview = false;
-      this.previewRefused = false;
+      this.errorMessages = null;
       try {
         this.previewHtml = await this.$axios.$get(
           imageFromPreviews(this.data?.mail?.id),
@@ -39,9 +40,9 @@ export default {
           }
         );
       } catch (e) {
-        // 404: the mailing has no preview yet, opening the editor generates one.
-        // Anything else (refused, network) must not claim that.
-        this.previewRefused = e?.response?.status !== 404;
+        this.errorMessages = previewErrorMessages(e, {
+          canEdit: Boolean(this.data?.canEdit),
+        });
         this.errorPreview = true;
       } finally {
         this.loading = false;
@@ -77,26 +78,12 @@ export default {
           <div class="d-flex align-start">
             <lucide-alert-circle :size="24" class="warning-icon" />
             <div class="pl-4">
-              <p
-                class="mb-0 text-h6"
-                v-html="
-                  $t(
-                    previewRefused
-                      ? 'mailings.previewUnavailable'
-                      : 'mailings.errorPreview'
-                  )
-                "
-              />
-              <p
-                class="mb-0 text-subtitle-1"
-                v-html="
-                  $t(
-                    previewRefused
-                      ? 'mailings.subPreviewUnavailable'
-                      : 'mailings.subErrorPreview'
-                  )
-                "
-              />
+              <p class="mb-0 text-h6">
+                {{ $t(errorMessages.title) }}
+              </p>
+              <p class="mb-0 text-subtitle-1">
+                {{ $t(errorMessages.subtitle) }}
+              </p>
             </div>
           </div>
         </div>

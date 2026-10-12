@@ -1481,15 +1481,18 @@ async function previewMail(mailingId, user) {
     _parentFolder: 1,
   }).lean();
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  // A READ, like the source of a copy: the preview is what lets a user choose a
-  // mailing to copy out of a workspace they are not a member of, so membership
-  // is not required, only that the workspace belongs to their company.
+  // A READ, like the source of a copy: any user of the company may preview a
+  // mailing of any of its workspaces, member or not, whatever the company's
+  // "access to all workspaces" setting. The preview is how a user picks a
+  // mailing to copy, and a preview URL can be shared with a colleague.
   if (!user.isAdmin) {
     const workspace = await getOwningWorkspace(mailWithPreview);
     if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
   }
+  // Its own code, after the access check: the UI tells "not generated yet" from
+  // a refusal, and only a reader allowed in learns that there is no preview.
   if (!mailWithPreview.previewHtml)
-    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+    throw new NotFound(ERROR_CODES.MAILING_PREVIEW_NOT_GENERATED);
   // Sanitized on the way out only. This response is served as `text/html`, so
   // anything scriptable would run with the session of whoever opens the preview
   // — and the HTML code block lets a user paste a `<script>` where TinyMCE used to
