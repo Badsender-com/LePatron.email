@@ -3,24 +3,12 @@
 const _ = require('lodash');
 const { getBlockDefault } = require('../ownership');
 const { blockTexts } = require('../exported-content');
+const { listTextFields } = require('../../block-text-fields');
 
 const LOREM = /\blorem ipsum\b/i;
-// Text properties by the naming convention of our templates, the one the
-// translation extractor relies on (utils/block-content-extractor.js). A style
-// value left at its default ("center", "Arial") is never sample text.
-const TEXT_KEY = /(text|title|label|caption|content|heading|description)$/i;
 const MIN_LENGTH = 3;
 const EXCERPT_LENGTH = 60;
 const normalize = (text) => text.replace(/\s+/g, ' ').trim().toLowerCase();
-
-// Every string of a block model, with its path.
-function stringLeaves(value, path = []) {
-  if (typeof value === 'string') return [{ path, value }];
-  if (!value || typeof value !== 'object') return [];
-  return _.flatMap(Object.keys(value), (key) =>
-    stringLeaves(value[key], path.concat(key))
-  );
-}
 
 // The text a rich-text value shows: tags dropped, entities decoded, in the
 // inert export document so nothing is fetched.
@@ -58,13 +46,12 @@ module.exports = {
       // may be kept on purpose.
       const def = getBlockDefault(ctx.blockDefs, block.type);
       if (!def) return [];
-      return stringLeaves(block)
-        .filter(
-          (leaf) =>
-            TEXT_KEY.test(String(_.last(leaf.path))) &&
-            leaf.value === _.get(def, leaf.path)
-        )
-        .map((leaf) => ({ ...leaf, text: plainText(ctx, leaf.value) }))
+      // The block's text fields (ext/block-text-fields.js), as translation and
+      // the AI actions read them; an alternative text is not shown text. A
+      // style value left at its default ("center", "Arial") is never one.
+      return listTextFields(block, { blockDef: def })
+        .filter((field) => field.sample && field.role !== 'alt')
+        .map((field) => ({ ...field, text: plainText(ctx, field.value) }))
         .filter(
           (leaf) =>
             (leaf.text.match(/\p{L}/gu) || []).length >= MIN_LENGTH &&
@@ -75,7 +62,7 @@ module.exports = {
           severity: 'warning',
           params: { text: excerpt(leaf.text) },
           blockId: block.id,
-          propertyPath: leaf.path.join('.'),
+          propertyPath: leaf.path,
           value: leaf.value,
         }));
     });
