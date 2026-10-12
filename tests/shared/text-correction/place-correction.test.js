@@ -116,6 +116,11 @@ describe('spelling correction: placing a correction', () => {
         '<p>Bonjour %%PRENOM%%</p>',
         { before: '%%PRENOM%%', after: '%%Prénom%%' },
       ],
+      [
+        'invalid-text',
+        '<p>Bon taux de clic: où</p>',
+        { before: 'de clic:', after: 'de clic\b\ffinal:' },
+      ],
       ['unchanged', '<p>Les soldes</p>', { before: 'soldes', after: 'soldes' }],
     ])(
       'refuses (%s) and leaves the HTML as it was',

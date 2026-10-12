@@ -10,6 +10,7 @@
  * stay as they were. A correction it cannot place safely is refused, with the
  * reason:
  * - `unchanged`: `after` is `before`;
+ * - `invalid-text`: `after` holds a control character, a model's slip;
  * - `not-found`: no whole-word occurrence of `before`;
  * - `ambiguous`: several;
  * - `merge-tag`: the occurrence touches a merge tag;
@@ -51,6 +52,9 @@ const BLOCK_TAG = /^(p|div|li|ul|ol|h[1-6]|tr|td|th|table|blockquote|br)$/;
 // The personalization variables of the sending platforms and of Mosaico.
 const MERGE_TAG = /\{\{[^}]*\}\}|%%[^%]*%%|\*\|[^|]*\|\*|\[\[[^\]]*\]\]|@\[[^\]]*\]/g;
 const WORD_CHAR = /[\p{L}\p{N}]/u;
+// Control characters other than a line break: never text a reader sees.
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f]/;
 
 function decodeEntity(raw, body) {
   if (body[0] === '#') {
@@ -169,6 +173,7 @@ function touchesMergeTag(text, start, end) {
  */
 function locateCorrection(text, { before, after }) {
   if (!before || before === after) return { refused: 'unchanged' };
+  if (CONTROL_CHAR.test(after)) return { refused: 'invalid-text' };
   const found = occurrences(text, before);
   if (!found.length) return { refused: 'not-found' };
   if (found.length > 1) return { refused: 'ambiguous' };
