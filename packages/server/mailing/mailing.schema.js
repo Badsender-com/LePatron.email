@@ -165,7 +165,10 @@ const MailingSchema = Schema(
           _id: false,
           fingerprint: { type: String, required: true, maxlength: 512 },
           ruleId: { type: String, maxlength: 64 },
-          _user: { type: ObjectId, ref: UserModel },
+          // Who ignored it is kept for audit and read by nobody: left out of
+          // every query unless asked for, as the JSON transform below cannot
+          // cover `toObject()` and `lean()`.
+          _user: { type: ObjectId, ref: UserModel, select: false },
           ignoredAt: { type: Date, default: Date.now },
         },
       ],

@@ -247,14 +247,16 @@ async function findOne(mailingId) {
 // duplicate-translate) MUST use this instead to avoid cross-tenant reads:
 // a group admin of group A could otherwise load a mailing of group B by id.
 // Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
-async function findOneForUser(mailingId, user) {
+// `projection` limits what is read: a caller that only decides a right has no
+// use for `data` and `previewHtml`.
+async function findOneForUser(mailingId, user, projection) {
   if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
   const query = modelsUtils.addGroupFilter(user, {
     _id: mongoose.Types.ObjectId(mailingId),
   });
-  const mailing = await Mailings.findOne(query);
+  const mailing = await Mailings.findOne(query, projection);
   if (!mailing) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }

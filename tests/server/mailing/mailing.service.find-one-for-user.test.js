@@ -85,3 +85,37 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
     expect(Mailings.findOne).not.toHaveBeenCalled();
   });
 });
+
+describe('mailingService.findOneForUser (projection)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reads only the fields a caller asks for, still scoped to the caller group', async () => {
+    const doc = { _id: MAILING_ID, _company: TENANT_A, _workspace: 'w1' };
+    Mailings.findOne.mockResolvedValue(doc);
+    const projection = { _company: 1, _workspace: 1, _parentFolder: 1 };
+
+    const result = await mailingService.findOneForUser(
+      MAILING_ID,
+      { isAdmin: false, group: { id: TENANT_A } },
+      projection
+    );
+
+    expect(result).toBe(doc);
+    const [filter, fields] = Mailings.findOne.mock.calls[0];
+    expect(filter._company).toBe(TENANT_A);
+    expect(fields).toBe(projection);
+  });
+
+  it('reads the whole document when no projection is given', async () => {
+    Mailings.findOne.mockResolvedValue({ _id: MAILING_ID });
+
+    await mailingService.findOneForUser(MAILING_ID, {
+      isAdmin: false,
+      group: { id: TENANT_A },
+    });
+
+    expect(Mailings.findOne.mock.calls[0][1]).toBeUndefined();
+  });
+});
