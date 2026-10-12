@@ -14,6 +14,8 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 5000;
 const RUNS_PER_WINDOW = 20;
 const RUN_WINDOW_MS = 10 * 60 * 1000;
+// Requests of one kind in parallel within a run.
+const CONCURRENCY = 4;
 
 const cache = new Map();
 
@@ -132,6 +134,7 @@ module.exports = {
   withoutCredentials,
   timeLeft,
   UNVERIFIABLE,
+  CONCURRENCY,
   RUNS_PER_WINDOW,
   clearForTests,
 };
