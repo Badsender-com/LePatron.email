@@ -131,6 +131,12 @@ describe('in a quality run', () => {
     expect(d.webRiskLookup).not.toHaveBeenCalled();
   });
 
+  it('asks about an address without the credentials typed in it', async () => {
+    const d = deps();
+    await run(['https://user:secret@a.test/p'], d);
+    expect(d.webRiskLookup.mock.calls[0][0]).toBe('https://a.test/p');
+  });
+
   it('asks once for addresses that differ only by their query string', async () => {
     const d = deps();
     await run(['https://a.test/p?utm=1', 'https://a.test/p?utm=2'], d);
