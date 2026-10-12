@@ -46,13 +46,13 @@ function isListing(address) {
   );
 }
 
-function resolve4(name) {
-  const resolver = new dns.promises.Resolver({
-    timeout: DNS_TIMEOUT_MS,
-    tries: 1,
-  });
-  return resolver.resolve4(name);
-}
+// One resolver for the process: its sockets are reused across queries.
+const resolver = new dns.promises.Resolver({
+  timeout: DNS_TIMEOUT_MS,
+  tries: 1,
+});
+
+const resolve4 = (name) => resolver.resolve4(name);
 
 /**
  * @returns {Promise<string[]>} the names of the blocklists listing `domain`
