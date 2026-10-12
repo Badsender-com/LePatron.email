@@ -20,7 +20,7 @@ jest.mock('../../../packages/server/folder/folder.service.js', () => ({
   hasAccess: jest.fn(),
 }));
 jest.mock('../../../packages/server/template/template.service.js', () => ({
-  findOne: jest.fn().mockResolvedValue({ _id: 't1', name: 'Template' }),
+  findOne: jest.fn(),
   doesUserHaveAccess: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
@@ -33,6 +33,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const { NotFound } = require('http-errors');
 const { Mailings } = require('../../../packages/server/common/models.common');
 const workspaceService = require('../../../packages/server/workspace/workspace.service.js');
+const templateService = require('../../../packages/server/template/template.service.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service');
 
 const WORKSPACE = '507f1f77bcf86cd799439011';
@@ -42,6 +43,32 @@ const user = { id: 'u1', name: 'Someone', group: { id: 'company-b' } };
 beforeEach(() => {
   jest.clearAllMocks();
   workspaceService.assertAccess.mockRejectedValue(new NotFound());
+  templateService.findOne.mockResolvedValue({ _id: 't1', name: 'Template' });
+  templateService.doesUserHaveAccess.mockResolvedValue();
+});
+
+const create = () =>
+  mailingService.createInsideWorkspaceOrFolder({
+    templateId: '507f1f77bcf86cd799439021',
+    mailingName: 'Newsletter',
+    workspaceId: WORKSPACE,
+    user,
+  });
+
+it('creates nothing from a template of another company', async () => {
+  workspaceService.assertAccess.mockResolvedValue();
+  templateService.doesUserHaveAccess.mockRejectedValue(new NotFound());
+
+  await expect(create()).rejects.toMatchObject({ status: 404 });
+  expect(Mailings.create).not.toHaveBeenCalled();
+});
+
+it('creates nothing from a template that does not exist', async () => {
+  workspaceService.assertAccess.mockResolvedValue();
+  templateService.findOne.mockResolvedValue(null);
+
+  await expect(create()).rejects.toMatchObject({ status: 404 });
+  expect(Mailings.create).not.toHaveBeenCalled();
 });
 
 it('creates nothing in a workspace the user may not write in', async () => {

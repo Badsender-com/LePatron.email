@@ -344,7 +344,8 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   });
 
   const template = await templateService.findOne({ templateId });
-  templateService.doesUserHaveAccess(user, template);
+  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  await templateService.doesUserHaveAccess(user, template);
 
   let mailParentParam = null;
 

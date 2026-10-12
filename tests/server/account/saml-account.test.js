@@ -43,6 +43,7 @@ const COMPANIES = [
 const ACCOUNTS = [
   { _id: 'u-x', email: 'someone@x.test', _company: 'company-x' },
   { _id: 'u-y', email: 'someone@y.test', _company: 'company-y' },
+  { _id: 'u-k', email: 'kate@x.test', _company: 'company-x' },
 ];
 
 beforeEach(() => {
@@ -116,6 +117,23 @@ describe('signing in through SSO', () => {
     ).toBeNull();
   });
 
+  it('signs in an account with a pending password reset', async () => {
+    await signInWith(idpOfY.signedResponse('someone@y.test'));
+
+    expect(Users.findOne.mock.calls[0][0]).not.toHaveProperty('token');
+  });
+
+  it('refuses a NameID that only matches an account through a non-ASCII letter', async () => {
+    const kelvin = '\u212Aate@x.test';
+
+    expect(
+      await accountOfResponse(
+        { samlCompanyId: 'company-x' },
+        { nameID: kelvin }
+      )
+    ).toBeNull();
+  });
+
   it('refuses a response before any company was picked', async () => {
     expect(await accountOfResponse({}, { nameID: 'someone@y.test' })).toBe(
       null
@@ -161,6 +179,10 @@ describe('nameIdOf', () => {
       '</saml2p:Response>';
 
     expect(nameIdOf(base64(xml))).toBeUndefined();
+  });
+
+  it('reads nothing from an oversized response', () => {
+    expect(nameIdOf('A'.repeat(256 * 1024 + 1))).toBeUndefined();
   });
 
   it('reads nothing from something that is not a response', () => {

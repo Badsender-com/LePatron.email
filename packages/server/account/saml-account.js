@@ -13,6 +13,15 @@ const { samlOptionsFor } = require('./saml-config.js');
 
 const companyIdOf = (user) => String(user._company?._id || user._company);
 
+// Far above any real response; a bigger one is not parsed at all.
+const MAX_RESPONSE_LENGTH = 256 * 1024;
+
+// The account's email is stored lowercased. A NameID that only lowercases to
+// it through a non-ASCII letter (the Kelvin sign for "k", say) is another
+// name, not another spelling.
+const asciiLowercase = (value) =>
+  value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+
 /**
  * The NameID of a SAML response, read before its signature is checked: it
  * only picks the certificate to check the response with. Whatever the
@@ -23,12 +32,15 @@ const companyIdOf = (user) => String(user._company?._id || user._company);
  * @returns {string|undefined}
  */
 function nameIdOf(samlResponse) {
+  if (String(samlResponse).length > MAX_RESPONSE_LENGTH) return undefined;
   try {
     const xml = Buffer.from(String(samlResponse), 'base64').toString();
     const parser = new XMLParser({
       ignoreAttributes: false,
       removeNSPrefix: true,
       trimValues: true,
+      parseTagValue: false,
+      processEntities: false,
     });
     const nameId = parser.parse(xml)?.Response?.Assertion?.Subject?.NameID;
     return typeof nameId === 'object' && nameId !== null
@@ -39,12 +51,14 @@ function nameIdOf(samlResponse) {
   }
 }
 
+// A pending password reset does not bar the way in: an SSO account signs in
+// through its identity provider, whatever happens to its password.
 function findAccount(email) {
   if (typeof email !== 'string' || email.trim() === '') return null;
+  if (normalizeString(email) !== asciiLowercase(email.trim())) return null;
   return Users.findOne({
     email: normalizeString(email),
     isDeactivated: { $ne: true },
-    token: { $exists: false },
   });
 }
 

@@ -708,32 +708,33 @@ async function deleteMailing(req, res) {
   const { user } = req;
   const { workspaceId, parentFolderId } = req.body;
 
-  // Find the email before deleting it
-  const mailing = await Mailings.findById(mailingId);
+  // Find the email before deleting it, within the user's company: a mailing
+  // of another company answers like one that does not exist.
+  const mailing = await Mailings.findOne(
+    modelsUtils.addGroupFilter(user, { _id: mailingId })
+  );
 
   // If mailing doesn't exist, nothing to delete
   if (!mailing) {
     return res.send();
   }
 
-  // Nothing is touched, its tags included, before the user is known to have
-  // the right to delete it.
+  // Nothing is touched, its tags included, before every check has passed:
+  // the right to edit the mailing, then the service's checks on the location.
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  const tagLabels = mailing.tags || [];
-
-  // Decrement the tag count if the tag is used
-  if (tagLabels.length > 0) {
-    await Mailings.removeTagsFromEmail(mailingId, tagLabels);
-  }
-
-  // Delete the email
   await mailingService.deleteMailing({
     mailingId,
     workspaceId,
     parentFolderId,
     user,
   });
+
+  // Once the email is gone, its tags count one use less.
+  const tagLabels = mailing.tags || [];
+  if (tagLabels.length > 0) {
+    await Mailings.releaseTags(mailing._company, tagLabels);
+  }
 
   res.send();
 }

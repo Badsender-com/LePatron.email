@@ -1,7 +1,7 @@
 'use strict';
 
 // Writing in a workspace: the workspace of one's own company, as a member or a
-// company admin; an admin anywhere. `assertAccess` throws where `hasAccess`
+// company admin; an admin, who creates no mailing, nowhere. `assertAccess` throws where `hasAccess`
 // answers, so a caller cannot forget to read the answer.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
@@ -49,10 +49,10 @@ describe('assertAccess', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('lets an admin write anywhere, without a group', async () => {
+  it('refuses an admin, without a group, with an answer rather than a crash', async () => {
     await expect(
       workspaceService.assertAccess(admin, WORKSPACE)
-    ).resolves.toBeUndefined();
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it('refuses a user of another company', async () => {

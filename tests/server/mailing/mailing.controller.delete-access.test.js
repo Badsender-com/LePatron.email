@@ -1,10 +1,11 @@
 'use strict';
 
-// Deleting a mailing: nothing is touched, its tags included, before the user
-// is known to have the right to edit it.
+// Deleting a mailing: a mailing of another company answers like one that does
+// not exist, and nothing is touched, its tags included, before every check has
+// passed.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Mailings: { findById: jest.fn(), removeTagsFromEmail: jest.fn() },
+  Mailings: { findOne: jest.fn(), releaseTags: jest.fn() },
   Templates: {},
   Galleries: {},
   Users: {},
@@ -56,27 +57,46 @@ function remove() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  Mailings.findById.mockResolvedValue({
+  Mailings.findOne.mockResolvedValue({
     _id: MAILING_ID,
+    _company: 'company-b',
     _workspace: WORKSPACE,
     tags: ['launch'],
   });
+});
+
+it("looks the mailing up within the user's company", async () => {
+  Mailings.findOne.mockResolvedValue(null);
+
+  expect((await remove()).status).toBe(200);
+  expect(Mailings.findOne.mock.calls[0][0]).toMatchObject({
+    _id: MAILING_ID,
+    _company: 'company-b',
+  });
+  expect(mailingService.deleteMailing).not.toHaveBeenCalled();
+  expect(Mailings.releaseTags).not.toHaveBeenCalled();
 });
 
 it('touches nothing when the user may not edit the mailing', async () => {
   mailingService.assertUserCanEditMailing.mockRejectedValue(new Forbidden());
 
   expect((await remove()).status).toBe(403);
-  expect(Mailings.removeTagsFromEmail).not.toHaveBeenCalled();
+  expect(Mailings.releaseTags).not.toHaveBeenCalled();
   expect(mailingService.deleteMailing).not.toHaveBeenCalled();
 });
 
-it('removes the tags and deletes when the user may edit it', async () => {
+it('keeps the tags when the service refuses the deletion', async () => {
   mailingService.assertUserCanEditMailing.mockResolvedValue();
+  mailingService.deleteMailing.mockRejectedValue(new Forbidden());
+
+  expect((await remove()).status).toBe(403);
+  expect(Mailings.releaseTags).not.toHaveBeenCalled();
+});
+
+it('deletes, then releases the tags, when every check passes', async () => {
+  mailingService.assertUserCanEditMailing.mockResolvedValue();
+  mailingService.deleteMailing.mockResolvedValue();
 
   expect((await remove()).status).toBe(200);
-  expect(Mailings.removeTagsFromEmail).toHaveBeenCalledWith(MAILING_ID, [
-    'launch',
-  ]);
-  expect(mailingService.deleteMailing).toHaveBeenCalled();
+  expect(Mailings.releaseTags).toHaveBeenCalledWith('company-b', ['launch']);
 });

@@ -65,10 +65,10 @@ async function hasAccess(user, workspaceId) {
   if (!workspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
-  // An admin reaches every workspace, and the bootstrap account has no group.
-  if (user.isAdmin) return true;
+  // An admin creates no mailing: without a group, it writes in no workspace
+  // (and gets an answer instead of a TypeError).
   return (
-    isWorkspaceInGroup(workspace, user.group.id) &&
+    isWorkspaceInGroup(workspace, user.group?.id) &&
     isUserWorkspaceMember(user, workspace)
   );
 }

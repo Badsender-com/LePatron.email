@@ -252,12 +252,16 @@ passport.use(
       },
     },
     async (req, profile, done) => {
-      const user = await accountOfResponse(req, profile);
-      if (!user)
-        return done(new Error('No user found'), false, {
-          message: 'password.error.nouser',
-        });
-      done(null, user);
+      try {
+        const user = await accountOfResponse(req, profile);
+        // A refusal, not an error: the callback's failureRedirect applies.
+        if (!user) {
+          return done(null, false, { message: 'password.error.nouser' });
+        }
+        done(null, user);
+      } catch (error) {
+        done(error);
+      }
     }
   )
 );
