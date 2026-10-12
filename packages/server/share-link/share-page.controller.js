@@ -1,7 +1,6 @@
 'use strict';
 
-const { Mailings, Groups } = require('../common/models.common.js');
-const GROUP_STATUS = require('../group/status.js');
+const { Mailings } = require('../common/models.common.js');
 const previewSanitizer = require('../utils/preview-html-sanitizer.js');
 const {
   createSanitizedPreviewCache,
@@ -157,27 +156,6 @@ async function sanitizedPage(mailing) {
   });
 }
 
-// A link lives no longer than the company's access to the email builder.
-// Links made by the admin, who has no company, have no company to check.
-// Also says whether the company writes the subject in LePatron (email
-// metadata): the page then shows the subject and the preheader.
-async function companySharing(link) {
-  if (!link._company) return { allowed: true, metadata: false };
-  const group = await Groups.findById(link._company, {
-    status: 1,
-    enableEmailBuilder: 1,
-    emailMetadata: 1,
-  }).lean();
-  const allowed = Boolean(
-    group &&
-      group.status !== GROUP_STATUS.INACTIVE &&
-      group.enableEmailBuilder !== false
-  );
-  // Off unless the company opted in, as GUARD_EMAIL_METADATA reads it.
-  const metadata = Boolean(group && group.emailMetadata?.enabled === true);
-  return { allowed, metadata };
-}
-
 // Templates declare their preheader at the root or in a root-level
 // `preheaderBlock`, and versafix-like ones can turn it off: read as the editor
 // does (ext/quality/copy-fields.js), the first path that holds a string.
@@ -242,13 +220,12 @@ async function showShare(req, res) {
   if (!allowView(String(link._id))) {
     return renderNotice(res, 429, lang, 'busy');
   }
-  const sharing = await companySharing(link);
-  if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
 
   // Never previewHtml here: sanitizedPage reads it when it needs it.
   const mailing = await Mailings.findById(link._mailing, {
     updatedAt: 1,
     name: 1,
+    _company: 1,
     subject: 1,
     // Only the preheader of the content model, never the whole of it.
     'data.preheaderText': 1,
@@ -256,6 +233,10 @@ async function showShare(req, res) {
     'data.preheaderVisible': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
+  // The company the email belongs to now, not the one of the link: a transfer
+  // moves an email, and the link follows the email.
+  const sharing = await shareLinkService.companySharing(mailing._company);
+  if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
   const html = await sanitizedPage(mailing);
   if (!html) return renderNotice(res, 404, lang, 'empty');
 
@@ -275,8 +256,9 @@ async function showShare(req, res) {
  * @apiName ShareMailingPreview
  * @apiGroup Mailings
  * @apiDescription The last saved version, sanitized, in a sandboxed iframe.
- *   404 for an unknown or revoked link, or one whose company lost the email
- *   builder; 410 for an expired one.
+ *   404 for an unknown or revoked link, or one of an email whose company is
+ *   inactive, lost the email builder or turned the preview links off; 410 for
+ *   an expired one.
  */
 async function renderShare(req, res) {
   setShareHeaders(res);

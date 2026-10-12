@@ -328,6 +328,10 @@ export default {
         name: 'Email Builder',
         description: 'Création et édition d\'emails responsive',
       },
+      shareLinks: {
+        name: "Liens d'aperçu",
+        description: "Liens publics vers l'aperçu d'un email, sans compte",
+      },
       crmIntelligence: {
         name: 'CRM Intelligence',
         description: 'Tableaux de bord et analytics',
