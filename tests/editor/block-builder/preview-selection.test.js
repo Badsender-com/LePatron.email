@@ -63,7 +63,7 @@ describe('the preview document', () => {
 describe('clicking an element in the preview', () => {
   it('selects the one that was clicked', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [, second] = modal.state.elements;
+    const [, second] = modal.columnElements;
     modal.selectedId = null;
 
     clickIn(doc, rowOf(doc, second.id));
@@ -75,7 +75,7 @@ describe('clicking an element in the preview', () => {
   // Nobody clicks the row: they click a word, or a pixel of an image.
   it('selects it from a click on something inside it', async () => {
     const { modal, doc } = await openModal(['button']);
-    const [element] = modal.state.elements;
+    const [element] = modal.columnElements;
     modal.selectedId = null;
 
     const link = doc.body.querySelector('a');
@@ -97,7 +97,7 @@ describe('clicking an element in the preview', () => {
 
   it('keeps the current selection when the click lands on nothing', async () => {
     const { modal, doc } = await openModal(['text']);
-    const [element] = modal.state.elements;
+    const [element] = modal.columnElements;
 
     clickIn(doc, doc.body);
 
@@ -108,7 +108,7 @@ describe('clicking an element in the preview', () => {
 describe('the selected element is outlined in the preview', () => {
   it('marks the selected row and no other', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first, second] = modal.state.elements;
+    const [first, second] = modal.columnElements;
 
     // addElement selected the last one.
     expect(rowOf(doc, second.id).classList.contains(SELECTED_CLASS)).toBe(true);
@@ -119,7 +119,7 @@ describe('the selected element is outlined in the preview', () => {
   // without the body being rewritten — rewriting it refetches every image.
   it('follows a selection made outside the preview', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [first, second] = modal.state.elements;
+    const [first, second] = modal.columnElements;
     const row = rowOf(doc, first.id);
 
     modal.selectedId = first.id;
@@ -134,7 +134,7 @@ describe('the selected element is outlined in the preview', () => {
 
   it('survives a re-render, which replaces the body', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
-    const [, second] = modal.state.elements;
+    const [, second] = modal.columnElements;
 
     modal.renderPreview();
 

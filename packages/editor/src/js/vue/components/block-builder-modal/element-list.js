@@ -66,7 +66,7 @@ const ElementListMixin = {
     // quick path, it is what a keyboard reaches, and it is the fallback when a
     // drag is dropped somewhere that refuses it.
     addElement(type) {
-      this.insertElement(type, this.state.elements.length);
+      this.insertElement(type, this.columnElements.length);
     },
 
     // A palette entry is a `div role="button"`, not a <button>: Firefox does
@@ -95,8 +95,8 @@ const ElementListMixin = {
       // element is a starter drawn there and nowhere else (see STARTERS in
       // element-settings.js): nothing the user did not type reaches the state.
       const element = { id: newElementId(), type, ...defaultsFor(type) };
-      const at = Math.max(0, Math.min(index, this.state.elements.length));
-      this.state.elements.splice(at, 0, element);
+      const at = Math.max(0, Math.min(index, this.columnElements.length));
+      this.columnElements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
       // and editing are one gesture, not two.
       this.selectedId = element.id;
@@ -106,8 +106,8 @@ const ElementListMixin = {
     removeSelected() {
       const index = this.indexOfSelected();
       if (index === -1) return;
-      this.state.elements.splice(index, 1);
-      const next = this.state.elements[index] || this.state.elements[index - 1];
+      this.columnElements.splice(index, 1);
+      const next = this.columnElements[index] || this.columnElements[index - 1];
       this.selectedId = next ? next.id : null;
     },
 
@@ -134,7 +134,7 @@ const ElementListMixin = {
      * The moved element ends up selected, so the settings panel stays on it.
      */
     moveElementTo(id, index) {
-      const from = this.state.elements.findIndex(
+      const from = this.columnElements.findIndex(
         (element) => element.id === id
       );
       if (from === -1) return;
@@ -143,8 +143,8 @@ const ElementListMixin = {
       const to = index > from ? index - 1 : index;
       if (to === from) return;
 
-      const [element] = this.state.elements.splice(from, 1);
-      this.state.elements.splice(to, 0, element);
+      const [element] = this.columnElements.splice(from, 1);
+      this.columnElements.splice(to, 0, element);
     },
 
     // Whether the selected element can move by `offset`, so the buttons are
@@ -152,7 +152,7 @@ const ElementListMixin = {
     canMove(offset) {
       const index = this.indexOfSelected();
       const target = index + offset;
-      return index !== -1 && target >= 0 && target < this.state.elements.length;
+      return index !== -1 && target >= 0 && target < this.columnElements.length;
     },
 
     // The list is a listbox with a roving tabindex: one Tab stop — the selected
@@ -166,15 +166,15 @@ const ElementListMixin = {
       const { key } = event;
       if (key === 'Enter' || key === ' ') {
         event.preventDefault();
-        this.selectedId = this.state.elements[index].id;
+        this.selectedId = this.columnElements[index].id;
         return;
       }
       if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
 
       event.preventDefault();
       const next = index + (key === 'ArrowDown' ? 1 : -1);
-      if (next < 0 || next >= this.state.elements.length) return;
-      this.selectedId = this.state.elements[next].id;
+      if (next < 0 || next >= this.columnElements.length) return;
+      this.selectedId = this.columnElements[next].id;
       // After the render, which moves the tabindex onto the new option.
       this.$nextTick(() => {
         const options = this.$el.querySelectorAll('[role="option"]');
@@ -183,7 +183,7 @@ const ElementListMixin = {
     },
 
     indexOfSelected() {
-      return this.state.elements.findIndex(
+      return this.columnElements.findIndex(
         (element) => element.id === this.selectedId
       );
     },

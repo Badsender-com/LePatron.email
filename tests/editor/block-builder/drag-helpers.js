@@ -181,7 +181,7 @@ const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
 const dropLineOf = (doc) => doc.getElementById(DROP_LINE_ID);
 
 /** The element types currently composed, in order. */
-const typesOf = (modal) => modal.state.elements.map((element) => element.type);
+const typesOf = (modal) => modal.columnElements.map((element) => element.type);
 
 module.exports = {
   openModal,

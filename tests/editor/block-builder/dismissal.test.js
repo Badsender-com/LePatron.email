@@ -71,7 +71,7 @@ describe('dismissing a modified composition', () => {
     pressEscape();
 
     expect(isOpen(modal)).toBe(true);
-    expect(modal.state.elements).toHaveLength(1);
+    expect(modal.columnElements).toHaveLength(1);
   });
 
   it('closes and forgets it when the user accepts', async () => {
@@ -82,7 +82,7 @@ describe('dismissing a modified composition', () => {
     pressEscape();
 
     expect(isOpen(modal)).toBe(false);
-    expect(modal.state.elements).toEqual([]);
+    expect(modal.columnElements).toEqual([]);
   });
 
   it('asks on a click on the backdrop too', async () => {
