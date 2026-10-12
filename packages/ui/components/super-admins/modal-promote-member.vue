@@ -20,6 +20,16 @@ export default {
     },
   },
   methods: {
+    // A member without a name reads as their email, and both are searched.
+    memberLabel(member) {
+      return member.name || member.email;
+    },
+    matchesMember(member, search) {
+      const query = (search || '').toLowerCase();
+      return [member.name, member.email].some(
+        (value) => value && value.toLowerCase().includes(query)
+      );
+    },
     open() {
       this.userId = null;
       this.$refs.modal.open();
@@ -53,7 +63,8 @@ export default {
       v-model="userId"
       :label="$t('superAdmins.member')"
       :items="candidates"
-      item-text="name"
+      :item-text="memberLabel"
+      :filter="matchesMember"
       item-value="id"
       :disabled="loading"
       outlined
@@ -62,7 +73,7 @@ export default {
     >
       <template #item="{ item }">
         <v-list-item-content>
-          <v-list-item-title>{{ item.name }}</v-list-item-title>
+          <v-list-item-title>{{ memberLabel(item) }}</v-list-item-title>
           <v-list-item-subtitle>{{ item.email }}</v-list-item-subtitle>
         </v-list-item-content>
       </template>

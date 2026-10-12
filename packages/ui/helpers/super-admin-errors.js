@@ -16,11 +16,7 @@ import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 export function superAdminErrorMessage(vm, err) {
   const code =
     err && err.response && err.response.data && err.response.data.message;
-  if (code && ERROR_CODES[code] === code) {
-    const key = `superAdmins.errors.${code}`;
-    const label = vm.$t(key);
-    // vue-i18n echoes the key back when there is no entry for it.
-    if (label !== key) return label;
-  }
+  const key = `superAdmins.errors.${code}`;
+  if (code && ERROR_CODES[code] === code && vm.$te(key)) return vm.$t(key);
   return vm.$t('global.errors.errorOccured');
 }

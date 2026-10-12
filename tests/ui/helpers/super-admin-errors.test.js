@@ -2,13 +2,14 @@ import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 
 // A guardrail refusal reads as its own sentence; anything else reads as the
 // generic error, so a renamed code never surfaces as a raw identifier.
+const MESSAGES = {
+  'superAdmins.errors.LAST_SUPER_ADMIN_PROTECTED':
+    'At least one active super admin must remain.',
+  'global.errors.errorOccured': 'An error occurred',
+};
 const vm = {
-  $t: (key) =>
-    ({
-      'superAdmins.errors.LAST_SUPER_ADMIN_PROTECTED':
-        'At least one active super admin must remain.',
-      'global.errors.errorOccured': 'An error occurred',
-    }[key] || key),
+  $t: (key) => MESSAGES[key] || key,
+  $te: (key) => key in MESSAGES,
 };
 
 const axiosError = (message) => ({ response: { data: { message } } });

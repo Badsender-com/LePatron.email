@@ -417,6 +417,7 @@ export default {
         :title="$t('superAdmins.demote.title')"
         :action-label="$t('superAdmins.demote.action')"
         @confirm="submitUser"
+        @cancel="user.role = savedRole"
         >{{ $t('superAdmins.demote.notice') }}
         <b>{{ user.name | capitalizeEach }}</b
         >?</bs-modal-confirm

@@ -11,7 +11,7 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import { Roles } from '~/helpers/constants/roles';
+import { Roles, roleItems } from '~/helpers/constants/roles';
 import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
@@ -41,7 +41,7 @@ export default {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
+    const { $axios, params, redirect } = nuxtContext;
     try {
       const [
         groupResponse,
@@ -52,6 +52,11 @@ export default {
         $axios.$get(apiRoutes.usersItem(params)),
         $axios.$get(apiRoutes.groupsWorkspaces(params)),
       ]);
+      // A super admin is managed from the global user page, never from their
+      // group's settings (ADR 0002), whichever link led here.
+      if (userResponse.role === Roles.SUPER_ADMIN) {
+        return redirect(`/users/${userResponse.id}`);
+      }
       return {
         group: groupResponse,
         user: userResponse,
@@ -95,10 +100,7 @@ export default {
   },
   computed: {
     roles() {
-      return [
-        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
-        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
-      ];
+      return roleItems(this);
     },
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;

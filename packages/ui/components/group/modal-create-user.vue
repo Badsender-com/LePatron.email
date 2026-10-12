@@ -4,7 +4,7 @@ import { required, email } from 'vuelidate/lib/validators';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import { Roles } from '~/helpers/constants/roles';
+import { roleItems } from '~/helpers/constants/roles';
 
 export default {
   name: 'BsModalCreateUser',
@@ -43,10 +43,7 @@ export default {
   },
   computed: {
     roles() {
-      return [
-        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
-        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
-      ];
+      return roleItems(this);
     },
     emailErrors() {
       const errors = [];

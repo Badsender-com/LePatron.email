@@ -3,7 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import { Roles } from '~/helpers/constants/roles';
+import { roleItems } from '~/helpers/constants/roles';
 
 export default {
   name: 'BsUserForm',
@@ -34,17 +34,7 @@ export default {
   },
   computed: {
     roles() {
-      const roles = [
-        { text: this.$t('users.roles.groupAdmin'), value: Roles.GROUP_ADMIN },
-        { text: this.$t('users.roles.regularUser'), value: Roles.REGULAR_USER },
-      ];
-      if (this.includeSuperAdmin) {
-        roles.unshift({
-          text: this.$t('users.roles.superAdmin'),
-          value: Roles.SUPER_ADMIN,
-        });
-      }
-      return roles;
+      return roleItems(this, { includeSuperAdmin: this.includeSuperAdmin });
     },
     localModel: {
       get() {

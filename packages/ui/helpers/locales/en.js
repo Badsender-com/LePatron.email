@@ -1168,7 +1168,7 @@ export default {
     pageTitle: 'Super admins',
     add: 'Add a super admin',
     addDescription:
-      'The account is created in the platform group and receives an email to choose its password.',
+      'The account is created in the platform group. Then send it the password email from its row, as for any new account.',
     promote: 'Promote a member',
     promoteAction: 'Promote',
     promoteDescription:
@@ -1201,7 +1201,7 @@ export default {
       PLATFORM_GROUP_NOT_FOUND:
         'No platform group is set up on this environment.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'This group hosts active super admins: it stays the platform group.',
+        'This group hosts active super admins: only the configuration administrator can move the platform group, and the super admins follow it. It cannot be unset while they are in it.',
       INVALID_ROLE_PARAM: 'This role does not exist.',
     },
   },

@@ -1183,7 +1183,7 @@ export default {
     pageTitle: 'Super administrateurs',
     add: 'Ajouter un super administrateur',
     addDescription:
-      'Le compte est créé dans le groupe plateforme et reçoit un email pour choisir son mot de passe.',
+      'Le compte est créé dans le groupe plateforme. Envoyez-lui ensuite l\'email de mot de passe depuis sa ligne, comme pour tout nouveau compte.',
     promote: 'Promouvoir un membre',
     promoteAction: 'Promouvoir',
     promoteDescription:
@@ -1217,7 +1217,7 @@ export default {
       PLATFORM_GROUP_NOT_FOUND:
         'Aucun groupe plateforme n\'est configuré sur cet environnement.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'Ce groupe héberge des super administrateurs actifs : il reste le groupe plateforme.',
+        'Ce groupe héberge des super administrateurs actifs : seul le compte administrateur de la configuration peut déplacer le groupe plateforme, et les super administrateurs le suivent. Le retirer reste impossible tant qu\'ils y sont.',
       INVALID_ROLE_PARAM: 'Ce rôle n\'existe pas.',
     },
   },
