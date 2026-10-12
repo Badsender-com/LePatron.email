@@ -1,5 +1,7 @@
 'use strict';
 
+const asyncHandler = require('express-async-handler');
+
 const { Mailings } = require('../common/models.common.js');
 const previewSanitizer = require('../utils/preview-html-sanitizer.js');
 const {
@@ -100,32 +102,29 @@ function setShareHeaders(res) {
   });
 }
 
-// Views per link, and unknown tokens for the process, per window. Guessing a
-// token is hopeless (256 bits); this keeps a shared link from being hammered,
-// and answers a flood of made-up tokens with a page that costs nothing to
-// render. Each made-up token still costs one indexed lookup; the counters are
-// per worker.
+// Views per link and per reader (req.ip), per window: a shared link must not
+// be hammered, and one reader must not lock the link for the others. The
+// counters are per worker. Made-up tokens are not counted: their shape is
+// checked before any lookup (resolveToken), and 256 bits make enumeration
+// hopeless, so each costs one indexed lookup and a page that costs nothing
+// to render. A process-wide counter of them let a flood of made-up tokens
+// answer 429 to every reader holding a wrong or revoked link.
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_VIEWS_PER_LINK = 300;
-const MAX_UNKNOWN_PER_WINDOW = 1000;
+const MAX_VIEWS_PER_WINDOW = 300;
+const MAX_TRACKED_VIEWERS = 10000;
 const views = new Map();
-let unknown = { since: Date.now(), count: 0 };
 
-function allowView(key, now = Date.now()) {
+/** @returns {number} seconds before the next view is allowed, 0 to go ahead */
+function viewBlockedFor(key, now = Date.now()) {
   const entry = views.get(key);
   if (!entry || entry.since < now - WINDOW_MS) {
-    if (views.size > 10000) views.clear();
+    if (views.size > MAX_TRACKED_VIEWERS) views.clear();
     views.set(key, { since: now, count: 1 });
-    return true;
+    return 0;
   }
   entry.count += 1;
-  return entry.count <= MAX_VIEWS_PER_LINK;
-}
-
-function allowUnknown(now = Date.now()) {
-  if (unknown.since < now - WINDOW_MS) unknown = { since: now, count: 0 };
-  unknown.count += 1;
-  return unknown.count <= MAX_UNKNOWN_PER_WINDOW;
+  if (entry.count <= MAX_VIEWS_PER_WINDOW) return 0;
+  return Math.ceil((entry.since + WINDOW_MS - now) / 1000);
 }
 
 // The sanitized email of each shared version (utils/sanitized-preview-cache.js):
@@ -209,15 +208,14 @@ function formatDate(date, lang) {
 async function showShare(req, res) {
   const { state, link } = await shareLinkService.resolveToken(req.params.token);
   if (state === 'unknown') {
-    const lang = pickLang(req);
-    return allowUnknown()
-      ? renderNotice(res, 404, lang, 'unknown')
-      : renderNotice(res, 429, lang, 'busy');
+    return renderNotice(res, 404, pickLang(req), 'unknown');
   }
   // A known link speaks its creator's language.
   const lang = link.lang === 'en' ? 'en' : 'fr';
   if (state === 'expired') return renderNotice(res, 410, lang, 'expired');
-  if (!allowView(String(link._id))) {
+  const retryAfter = viewBlockedFor(`${link._id}|${req.ip}`);
+  if (retryAfter > 0) {
+    res.set('Retry-After', String(retryAfter));
     return renderNotice(res, 429, lang, 'busy');
   }
 
@@ -261,14 +259,15 @@ async function showShare(req, res) {
  *   an expired one.
  */
 async function renderShare(req, res) {
-  setShareHeaders(res);
   try {
+    setShareHeaders(res);
     await showShare(req, res);
   } catch (error) {
-    // Whatever failed stays in the logs: the reader gets a page.
+    // Whatever failed stays in the logs: the reader gets a page. Should that
+    // page fail too, asyncHandler hands the error to Express: never a crash.
     logger.error('[SHARE] preview page failed', error);
     renderNotice(res, 500, pickLang(req), 'error');
   }
 }
 
-module.exports = { renderShare };
+module.exports = { renderShare: asyncHandler(renderShare) };
