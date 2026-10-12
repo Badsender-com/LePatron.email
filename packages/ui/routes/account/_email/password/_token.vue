@@ -55,6 +55,14 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    errorMessage(error) {
+      const status = error.response?.status;
+      if (status === 429) return this.$t('global.errors.tooManyRequests');
+      // The server answers 400 for an unknown, expired or used link (and for
+      // two different passwords, which the form already prevents).
+      if (status === 400) return this.$t('global.errors.passwordLinkExpired');
+      return this.$t('global.errors.errorOccured');
+    },
     async setPassword() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
@@ -69,10 +77,7 @@ export default {
         $router.push('/');
       } catch (error) {
         this.showSnackbar({
-          text:
-            error.response?.status === 429
-              ? this.$t('global.errors.tooManyRequests')
-              : this.$t('global.errors.errorOccured'),
+          text: this.errorMessage(error),
           color: 'error',
         });
         console.log(error);

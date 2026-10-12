@@ -246,6 +246,14 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // The password link opens on a signed-out page: a session of the account
+  // left in this browser (current, or replaced since) is closed first, so the
+  // link is never lost to a redirection.
+  app.get('/account/:email/password/:token', (req, res, next) => {
+    if (req.isAuthenticated()) req.logout();
+    next();
+  });
+
   // Session validation middleware (checks for session replacement)
   app.use(sessionValidationMiddleware());
 

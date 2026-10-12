@@ -89,7 +89,7 @@ passport.use(
     if (username === config.admin.username) {
       // Same cost as a stored account, and a comparison that takes the same
       // time however much of the password is right.
-      bcrypt.compareSync(String(password), UNKNOWN_USER_HASH);
+      await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
       if (isConfigAdminPassword(password)) {
         return done(null, { ...adminUser });
       }
@@ -106,7 +106,7 @@ passport.use(
 
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
-      if (!passwordMatches(user, password)) {
+      if (!(await passwordMatches(user, password))) {
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:
@@ -132,12 +132,13 @@ passport.use(
   })
 );
 
-function passwordMatches(user, password) {
+// Asynchronous: a sign-in attempt, refused or not, never blocks the process.
+async function passwordMatches(user, password) {
   if (!user || !user.password) {
-    bcrypt.compareSync(String(password), UNKNOWN_USER_HASH);
+    await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
     return false;
   }
-  return user.comparePassword(password);
+  return bcrypt.compare(String(password), user.password);
 }
 
 function isConfigAdminPassword(password) {

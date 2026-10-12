@@ -11,6 +11,8 @@ export default {
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
+      passwordLinkExpired:
+        'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau depuis la page de connexion.',
       tooManyRequests:
         'Trop de tentatives. Réessayez plus tard.',
       createMailingFailed: 'Une erreur est survenue lors de la création du mailing',
