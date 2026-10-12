@@ -24,6 +24,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
 }));
 
 const mongoose = require('mongoose');
+const GroupSchema = require('../../../packages/server/group/group.schema.js');
 const MailingSchema = require('../../../packages/server/mailing/mailing.schema');
 const {
   GroupModel,
@@ -74,5 +75,18 @@ describe('findOneForMosaico and the preview links', () => {
     const metadata = await metadataFor({ _id: 'c1', enableShareLinks: false });
     expect('shareLinks' in metadata.url).toBe(false);
     expect('shareLinks' in metadata).toBe(false);
+  });
+});
+
+describe('a company and its preview links', () => {
+  const Group = mongoose.model('GroupShareLinksDefault', GroupSchema);
+
+  // On by default: the switch arrives without changing anything for the
+  // companies that already share previews.
+  it('shares them unless the super admin turned them off', () => {
+    expect(new Group({ name: 'Acme' }).enableShareLinks).toBe(true);
+    expect(
+      new Group({ name: 'Acme', enableShareLinks: false }).enableShareLinks
+    ).toBe(false);
   });
 });
