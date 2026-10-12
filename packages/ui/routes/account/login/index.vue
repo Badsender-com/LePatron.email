@@ -95,7 +95,10 @@ export default {
           }
         } catch (err) {
           this.isLoading = false;
-          const errorMessage = this.$t('global.errors.password.error.nouser');
+          const errorMessage =
+            err.response?.status === 429
+              ? this.$t('global.errors.tooManyRequests')
+              : this.$t('global.errors.errorOccured');
           this.showSnackbar({
             text: errorMessage,
             color: 'error',
@@ -128,9 +131,10 @@ export default {
           }
         } catch (err) {
           this.isLoading = false;
-          const errorMessage = this.$t(
-            'global.errors.password.error.incorrect'
-          );
+          const errorMessage =
+            err.response?.status === 429
+              ? this.$t('global.errors.tooManyRequests')
+              : this.$t('global.errors.password.error.incorrect');
           this.showSnackbar({
             text: errorMessage,
             color: 'error',

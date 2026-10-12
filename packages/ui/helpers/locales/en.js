@@ -11,6 +11,9 @@ export default {
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
+      passwordLinkExpired:
+        'This link has expired or was already used. Ask for a new one from the login page.',
+      tooManyRequests: 'Too many attempts. Try again later.',
       createMailingFailed: 'An error has occurred while creating the mailing',
       required: 'This field is required',
       userRequired: 'A user is required',
@@ -244,7 +247,6 @@ export default {
       passwordConfirm: 'Password confirmation',
       passwordReset: 'Password reset',
       login: 'Login',
-      adminLogin: 'Admin Login',
       sendLink: 'Send reset link',
       forgottenPassword: 'Forgotten password ?',
       validate: 'Validate',

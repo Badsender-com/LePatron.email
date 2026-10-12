@@ -246,6 +246,14 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // The password link opens on a signed-out page: a session of the account
+  // left in this browser (current, or replaced since) is closed first, so the
+  // link is never lost to a redirection.
+  app.get('/account/:email/password/:token', (req, res, next) => {
+    if (req.isAuthenticated()) req.logout();
+    next();
+  });
+
   // Session validation middleware (checks for session replacement)
   app.use(sessionValidationMiddleware());
 
@@ -278,14 +286,10 @@ if (cluster.isMaster) {
     }
   );
 
-  app.post(
-    '/account/login/admin/',
-    passport.authenticate('local', {
-      successReturnToOrRedirect: '/groups',
-      failureRedirect: '/account/login/admin',
-      failureFlash: true,
-      successFlash: true,
-    })
+  // The administrator of the configuration signs in on the login page like
+  // everyone, through its rate-limited API; the old admin page is gone.
+  app.get(['/account/admin', '/account/login/admin'], (req, res) =>
+    res.redirect('/account/login')
   );
 
   app.get('/account/logout', (req, res) => {

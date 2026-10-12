@@ -4,7 +4,9 @@
 // https://github.com/awais786327/oauth2orize-examples
 // https://github.com/solderjs/example-oauth2orize-consumer
 
+const crypto = require('crypto');
 const passport = require('passport');
+const bcrypt = require('bcryptjs');
 const LocalStrategy = require('passport-local').Strategy;
 const BasicStrategy = require('passport-http').BasicStrategy;
 const ClientPasswordStrategy = require('passport-oauth2-client-password')
@@ -16,6 +18,7 @@ const { XMLParser } = require('fast-xml-parser');
 const config = require('../node.config.js');
 const Roles = require('./roles');
 const logger = require('../utils/logger.js');
+const { normalizeString } = require('../utils/model.js');
 
 const {
   Users,
@@ -23,6 +26,10 @@ const {
   OAuthTokens,
   Groups,
 } = require('../common/models.common.js');
+
+// Compared against when the email is unknown or the account has no password,
+// so that every refusal costs the same time as a wrong password.
+const UNKNOWN_USER_HASH = bcrypt.hashSync('unknown-user', 10);
 
 const adminUser = Object.freeze({
   isAdmin: true,
@@ -80,26 +87,42 @@ passport.use(
   new LocalStrategy(async (username, password, done) => {
     // admin
     if (username === config.admin.username) {
-      if (password === config.admin.password) {
+      // Same cost as a stored account, and a comparison that takes the same
+      // time however much of the password is right.
+      await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
+      if (isConfigAdminPassword(password)) {
         return done(null, { ...adminUser });
       }
       return done(null, false, { message: 'password.error.incorrect' });
     }
     // user
     try {
+      // A pending reset does not bar the way in: an invited account has no
+      // password yet, an admin reset cleared it, and both fail below.
       const user = await Users.findOne({
-        email: username,
+        email: normalizeString(username),
         isDeactivated: { $ne: true },
-        token: { $exists: false },
       });
 
-      if (!user) {
-        return done(null, false, { message: 'password.error.nouser' });
-      }
-
-      const isPasswordValid = user.comparePassword(password);
-      if (!isPasswordValid) {
+      // Same message and same cost whether the email is unknown, the account
+      // has no password or the password is wrong.
+      if (!(await passwordMatches(user, password))) {
         return done(null, false, { message: 'password.error.incorrect' });
+      }
+      // Signing in with the password closes a reset the person asked for:
+      // the emailed link stops working, rather than staying valid a week.
+      // Not saving it does not bar the way in.
+      if (user.token) {
+        user.token = undefined;
+        user.tokenExpire = undefined;
+        await user
+          .save()
+          .catch((error) =>
+            logger.error(
+              `[account] pending reset not closed for ${user.id}`,
+              error
+            )
+          );
       }
       return done(null, user);
     } catch (err) {
@@ -109,6 +132,24 @@ passport.use(
   })
 );
 
+// Asynchronous: a sign-in attempt, refused or not, never blocks the process.
+async function passwordMatches(user, password) {
+  if (!user || !user.password) {
+    await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
+    return false;
+  }
+  return bcrypt.compare(String(password), user.password);
+}
+
+function isConfigAdminPassword(password) {
+  const digest = (value) =>
+    crypto.createHash('sha256').update(String(value)).digest();
+  return crypto.timingSafeEqual(
+    digest(password),
+    digest(config.admin.password)
+  );
+}
+
 passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
@@ -117,10 +158,12 @@ passport.deserializeUser(async (id, done) => {
   }
 
   try {
+    // A pending reset keeps the session: one asked in someone's name must not
+    // sign them out. An admin reset ends the sessions through the session
+    // tracking instead (see `resetPassword` in user.schema.js).
     const user = await Users.findOneForApi({
       _id: id,
       isDeactivated: { $ne: true },
-      token: { $exists: false },
     });
 
     if (!user) {
@@ -217,9 +260,8 @@ passport.use(
         }
 
         const user = await Users.findOne({
-          email: email,
+          email: normalizeString(email),
           isDeactivated: { $ne: true },
-          token: { $exists: false },
         });
 
         if (user) {
@@ -239,9 +281,8 @@ passport.use(
     },
     async (req, profile, done) => {
       const user = await Users.findOne({
-        email: profile.nameID,
+        email: normalizeString(profile.nameID),
         isDeactivated: { $ne: true },
-        token: { $exists: false },
       });
       if (!user)
         return done(new Error('No user found'), false, {
