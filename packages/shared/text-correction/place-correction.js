@@ -12,6 +12,8 @@
  * - `unchanged`: `after` is `before`;
  * - `invalid-text`: `after` holds a control or bidirectional character;
  * - `multiline`: the excerpt straddles two lines of the visible text;
+ * - `already-applied`: no `before`, but `after` is there: the text already
+ *   holds the correction (a non-breaking space the model could not see);
  * - `not-found`: no whole-word occurrence of `before`;
  * - `ambiguous`: several;
  * - `merge-tag`: the occurrence touches a merge tag, or `after` brings one;
@@ -342,7 +344,11 @@ function locateCorrection(text, { before, after }) {
     return { refused: 'merge-tag' };
   }
   const found = occurrences(text, before);
-  if (!found.length) return { refused: 'not-found' };
+  if (!found.length) {
+    return occurrences(text, after).length
+      ? { refused: 'already-applied' }
+      : { refused: 'not-found' };
+  }
   if (found.length > 1) return { refused: 'ambiguous' };
   const [index] = found;
   const end = index + before.length;
@@ -432,4 +438,16 @@ function visibleText(html, { plainText = false } = {}) {
     .replace(/^[ \n]+|[ \n]+$/g, '');
 }
 
-module.exports = { placeCorrection, locateCorrection, visibleText };
+/**
+ * Whether a refusal is no loss for the user: the correction changes nothing,
+ * or the text already holds it.
+ */
+const isNoLoss = (result) =>
+  result.refused === 'already-applied' || result.refused === 'unchanged';
+
+module.exports = {
+  placeCorrection,
+  locateCorrection,
+  visibleText,
+  isNoLoss,
+};

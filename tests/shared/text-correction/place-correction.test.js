@@ -155,7 +155,7 @@ describe('spelling correction: placing a correction', () => {
       [
         'not-found',
         '<p>Les soldes commencent</p>',
-        { before: 'Les solde', after: 'Les soldes' },
+        { before: 'Les solde', after: 'Les soldés' },
       ],
       ['ambiguous', '<p>la la la</p>', { before: 'la', after: 'là' }],
       [
@@ -203,6 +203,12 @@ describe('spelling correction: placing a correction', () => {
         'multiline',
         '<p>Les soldes</p><p>commence demain</p>',
         { before: 'soldes\ncommence', after: 'soldes\ncommencent' },
+      ],
+      // The text already holds the non-breaking space the model could not see.
+      [
+        'already-applied',
+        '<p>Verdict&nbsp;: anonymiser</p>',
+        { before: 'Verdict : anonymiser', after: 'Verdict\u00a0: anonymiser' },
       ],
     ])(
       'refuses (%s) and leaves the HTML as it was',

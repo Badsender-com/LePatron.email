@@ -3,6 +3,14 @@
 const Vue = require('vue/dist/vue.common');
 const template = require('./ai-corrections-steps.template');
 
+// Which field a correction is in, on a block or the whole email.
+const ROLE_LABELS = {
+  title: 'ai-panel-field-title',
+  text: 'ai-panel-field-text',
+  button: 'ai-panel-field-button',
+  alt: 'ai-panel-field-alt',
+};
+
 // What a correction that is no longer pending says.
 const STATUS_LABELS = {
   accepted: 'ai-panel-correction-accepted',
@@ -38,7 +46,11 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
     action: { type: Object, default: null },
     labelsOf: { type: Function, required: true },
   },
-  data: () => ({ STATUS_LABELS, undoKeys: IS_MAC ? '⌘Z' : 'Ctrl+Z' }),
+  data: () => ({
+    STATUS_LABELS,
+    ROLE_LABELS,
+    undoKeys: IS_MAC ? '⌘Z' : 'Ctrl+Z',
+  }),
   computed: {
     state() {
       return this.session.state;
