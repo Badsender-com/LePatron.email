@@ -154,6 +154,12 @@ async function readBeforeDeadline(response, deadline) {
   }
 }
 
+const contentLengthOf = (response) => {
+  const header = response.headers.get('content-length');
+  const length = header === null ? NaN : Number(header);
+  return Number.isInteger(length) && length >= 0 ? length : null;
+};
+
 /**
  * GETs a URL, following redirects, every hop checked by the SSRF guard.
  *
@@ -166,6 +172,9 @@ async function readBeforeDeadline(response, deadline) {
  *   port than 80 or 443, redirects included: a redirector must not turn the
  *   probe into a port scanner of public hosts
  * @param {number} [options.maxBytes] - ceiling on the body read
+ * @param {Function} [options.acceptBody] - asked `{ contentLength }` (null
+ *   when the server does not say) before a body is read; `false` leaves the
+ *   body unread (`body: null`)
  * @param {Function} [options.fetchImpl] - injectable for tests
  * @returns {Promise<{ status: number, url: string, contentType: string|null,
  *   body: Buffer|null }>}
@@ -179,6 +188,7 @@ async function probeUrl(
     readBody = false,
     defaultPortsOnly = false,
     maxBytes = 0,
+    acceptBody = () => true,
     fetchImpl = fetch,
   } = {}
 ) {
@@ -221,11 +231,12 @@ async function probeUrl(
         contentType: response.headers.get('content-type'),
         body: null,
       };
-      if (readBody && response.ok) {
-        result.body = await readBeforeDeadline(response, deadline);
-      } else {
-        dropBody(response);
-      }
+      const wanted =
+        readBody &&
+        response.ok &&
+        acceptBody({ contentLength: contentLengthOf(response) });
+      if (wanted) result.body = await readBeforeDeadline(response, deadline);
+      else dropBody(response);
       return result;
     }
   } catch (error) {
@@ -233,4 +244,10 @@ async function probeUrl(
   }
 }
 
-module.exports = { probeUrl, ProbeError, PROBE_FAILURES, USER_AGENT };
+module.exports = {
+  probeUrl,
+  contentLengthOf,
+  ProbeError,
+  PROBE_FAILURES,
+  USER_AGENT,
+};
