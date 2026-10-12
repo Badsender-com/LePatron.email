@@ -125,9 +125,12 @@ UserSchema.plugin(mongooseHidden, {
   },
 });
 
-// The links in the emails use the scheme the site is served with.
+// The links in the emails use the scheme the site is served with: https
+// everywhere but in development, as the FORCE HTTPS middleware of index.js
+// decides (`forcessl` arrives as a string from the environment, "false"
+// included, so it cannot tell).
 function siteOrigin() {
-  return `http${config.forcessl ? 's' : ''}://${config.host}`;
+  return `http${config.isDev ? '' : 's'}://${config.host}`;
 }
 
 function encodePassword(password) {

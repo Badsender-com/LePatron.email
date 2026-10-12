@@ -46,3 +46,25 @@ describe('resetting a password', () => {
     expect(user.token).toBeTruthy();
   });
 });
+
+describe('the link of the reset email', () => {
+  const mail = require('../../../packages/server/mailing/mail.service.js');
+  const config = require('../../../packages/server/node.config.js');
+
+  const { isDev } = config;
+  afterEach(() => {
+    config.isDev = isDev;
+  });
+
+  it.each([
+    [true, 'http://'],
+    [false, 'https://'],
+  ])('with isDev %s, starts with %s', async (isDev, scheme) => {
+    config.isDev = isDev;
+
+    await account().resetPassword('user', 'en');
+
+    const { text } = mail.send.mock.calls[mail.send.mock.calls.length - 1][0];
+    expect(text).toContain(`${scheme}${config.host}/account/`);
+  });
+});
