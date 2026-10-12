@@ -180,11 +180,11 @@ describe('a rendered row can be picked up', () => {
   it('selects what is being moved', async () => {
     const { modal, doc } = await openModal(['text', 'button']);
     const [first] = modal.columnElements;
-    modal.selectedId = null;
+    modal.selectedElementId = null;
 
     fireIn(doc, 'dragstart', rowsOf(doc)[0]);
 
-    expect(modal.selectedId).toBe(first.id);
+    expect(modal.selectedElementId).toBe(first.id);
   });
 
   it('ignores a drag that did not start on a row', async () => {
