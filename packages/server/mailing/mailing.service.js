@@ -349,7 +349,7 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   let mailParentParam = null;
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
 
     mailParentParam = { workspace: workspaceId };
   }
@@ -1511,7 +1511,7 @@ async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
   }
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
   }
 
   const mailing = await findOne(mailingId);

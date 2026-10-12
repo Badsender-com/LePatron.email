@@ -23,6 +23,7 @@ module.exports = {
   doesUserHaveWriteAccess,
   doesUserHaveReadAccess,
   hasAccess,
+  assertAccess,
   isWorkspaceInGroup,
   isUserWorkspaceMember,
   deleteFolderContent,
@@ -64,10 +65,22 @@ async function hasAccess(user, workspaceId) {
   if (!workspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+  // An admin reaches every workspace, and the bootstrap account has no group.
+  if (user.isAdmin) return true;
   return (
     isWorkspaceInGroup(workspace, user.group.id) &&
     isUserWorkspaceMember(user, workspace)
   );
+}
+
+/**
+ * Throws unless the user may write in the workspace, like the folder check:
+ * `hasAccess` answers a boolean, which a caller can forget to read.
+ */
+async function assertAccess(user, workspaceId) {
+  if (!(await hasAccess(user, workspaceId))) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
 }
 
 async function getWorkspaceWithAccessRight(id, user) {

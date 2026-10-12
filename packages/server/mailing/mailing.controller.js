@@ -716,6 +716,10 @@ async function deleteMailing(req, res) {
     return res.send();
   }
 
+  // Nothing is touched, its tags included, before the user is known to have
+  // the right to delete it.
+  await mailingService.assertUserCanEditMailing(user, mailing);
+
   const tagLabels = mailing.tags || [];
 
   // Decrement the tag count if the tag is used
