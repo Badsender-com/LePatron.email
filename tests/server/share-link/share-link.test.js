@@ -1,101 +1,23 @@
 'use strict';
 
 // A share link opens an email to anyone who holds it, without an account. The
-// token is the only credential: it must be unguessable, never stored as is,
-// and the public page must serve nothing that can run.
-
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  ShareLinks: {
-    countDocuments: jest.fn(),
-    create: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    findOneAndUpdate: jest.fn(),
-    updateMany: jest.fn(),
-  },
-  Mailings: { findById: jest.fn() },
-  Groups: { findById: jest.fn() },
-}));
-// A key-independent stand-in for AES: what matters here is that the token is
-// sealed, opened back, and never stored as is.
-jest.mock('../../../packages/server/utils/crypto.js', () => ({
-  encrypt: jest.fn((text) => `sealed:${Buffer.from(text).toString('hex')}`),
-  decrypt: jest.fn((sealed) =>
-    Buffer.from(sealed.replace('sealed:', ''), 'hex').toString()
-  ),
-}));
-jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
-  findOneForUser: jest.fn(),
-  assertUserCanEditMailing: jest.fn(),
-}));
+// token is the only credential: it must be unguessable and never stored as is.
 
 const {
   ShareLinks,
   Groups,
-} = require('../../../packages/server/common/models.common.js');
+  mailingService,
+  MAILING_ID,
+  LINK_ID,
+  lean,
+  call,
+  resetMocks,
+} = require('./share-link.harness.js');
 const config = require('../../../packages/server/node.config.js');
-const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 const service = require('../../../packages/server/share-link/share-link.service.js');
-const crypto = require('../../../packages/server/utils/crypto.js');
 const controller = require('../../../packages/server/share-link/share-link.controller.js');
 
-const MAILING_ID = '507f1f77bcf86cd799439001';
-const LINK_ID = '507f1f77bcf86cd799439011';
-const user = { id: '507f1f77bcf86cd799439099', name: 'Ana', lang: 'fr' };
-const mailing = { _id: MAILING_ID, _company: 'c1' };
-
-const lean = (value) => ({ lean: jest.fn().mockResolvedValue(value) });
-
-function fakeRes() {
-  const res = {
-    headers: {},
-    statusCode: 200,
-    set: jest.fn((headers, value) =>
-      Object.assign(
-        res.headers,
-        typeof headers === 'string' ? { [headers]: value } : headers
-      )
-    ),
-    status: jest.fn((code) => {
-      res.statusCode = code;
-      return res;
-    }),
-    json: jest.fn(),
-    end: jest.fn(),
-    render: jest.fn(),
-  };
-  return res;
-}
-
-async function call(handler, req) {
-  const res = fakeRes();
-  let error;
-  await handler(
-    {
-      params: {},
-      body: {},
-      user,
-      get: () => 'evil.test',
-      is: (type) => type === 'application/json',
-      protocol: 'http',
-      ...req,
-    },
-    res,
-    (err) => {
-      error = err;
-    }
-  );
-  return { res, error };
-}
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  mailingService.findOneForUser.mockResolvedValue(mailing);
-  mailingService.assertUserCanEditMailing.mockResolvedValue();
-  Groups.findById.mockReturnValue(
-    lean({ status: 'active', enableEmailBuilder: true })
-  );
-});
+beforeEach(resetMocks);
 
 describe('validateCreatePayload', () => {
   it('takes 1, 7 or 30 days, 7 by default', () => {
@@ -321,72 +243,5 @@ describe('more on links', () => {
       lang: 'en',
     });
     expect(res.json.mock.calls[0][0].createdBy).toBeNull();
-  });
-});
-
-describe('copying a link again', () => {
-  const TOKEN = 'T'.repeat(43);
-  const listed = (docs) =>
-    ShareLinks.find.mockReturnValue({
-      sort: () => ({ populate: () => lean(docs) }),
-    });
-
-  it('stores the token sealed, and says the link can be copied again', async () => {
-    ShareLinks.countDocuments.mockResolvedValue(0);
-    ShareLinks.create.mockImplementation(async (doc) => ({
-      _id: LINK_ID,
-      ...doc,
-    }));
-    const { res } = await call(controller.create, {
-      params: { mailingId: MAILING_ID },
-    });
-    const stored = ShareLinks.create.mock.calls[0][0];
-    const { url, copyable } = res.json.mock.calls[0][0];
-    const token = url.split('/share/')[1];
-    expect(stored.tokenEncrypted).toBe(crypto.encrypt(token));
-    expect(copyable).toBe(true);
-  });
-
-  it('gives the editors the link of each active one', async () => {
-    listed([
-      { _id: LINK_ID, tokenEncrypted: crypto.encrypt(TOKEN), _user: null },
-      { _id: 'old', _user: null },
-    ]);
-    const { res } = await call(controller.list, {
-      params: { mailingId: MAILING_ID },
-    });
-    const { items } = res.json.mock.calls[0][0];
-    expect(items[0].url).toBe(`https://${config.host}/share/${TOKEN}`);
-    // Created before tokens were sealed: nothing to show again.
-    expect(items[1].url).toBeNull();
-    expect(res.headers['Cache-Control']).toContain('no-store');
-    expect(JSON.stringify(items)).not.toContain('sealed:');
-  });
-
-  it('shows nothing for a token that does not open', async () => {
-    crypto.decrypt.mockImplementationOnce(() => 'garbage');
-    listed([{ _id: LINK_ID, tokenEncrypted: 'sealed:zz', _user: null }]);
-    const { res } = await call(controller.list, {
-      params: { mailingId: MAILING_ID },
-    });
-    expect(res.json.mock.calls[0][0].items[0].url).toBeNull();
-  });
-
-  it('still creates a link without a key, shown once', async () => {
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    crypto.encrypt.mockImplementationOnce(() => {
-      throw new Error('Invalid key length');
-    });
-    ShareLinks.countDocuments.mockResolvedValue(0);
-    ShareLinks.create.mockImplementation(async (doc) => ({
-      _id: LINK_ID,
-      ...doc,
-    }));
-    const { res } = await call(controller.create, {
-      params: { mailingId: MAILING_ID },
-    });
-    expect(ShareLinks.create.mock.calls[0][0].tokenEncrypted).toBeUndefined();
-    expect(res.json.mock.calls[0][0]).toMatchObject({ copyable: false });
-    console.warn.mockRestore();
   });
 });
