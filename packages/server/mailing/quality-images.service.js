@@ -8,6 +8,7 @@ const { PROBE_FAILURES } = require('../utils/url-probe.js');
 const {
   limiter,
   onDefaultPort,
+  withoutCredentials,
   timeLeft,
   UNVERIFIABLE,
 } = require('./quality-limits.js');
@@ -50,7 +51,7 @@ function measuredUrl(url, ownHosts) {
       url: `http://127.0.0.1:${config.PORT}${parsed.pathname}`,
     };
   }
-  return { own: false, url };
+  return { own: false, url: withoutCredentials(url) };
 }
 
 // Our own backend, on the loopback: no SSRF guard (it would refuse 127.0.0.1),
