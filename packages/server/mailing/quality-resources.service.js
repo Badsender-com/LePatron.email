@@ -4,6 +4,7 @@ const createError = require('http-errors');
 const { zipObject } = require('lodash');
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
 const { probeUrl } = require('../utils/url-probe.js');
 const blocklists = require('./quality-blocklists.service.js');
 const webRisk = require('./quality-web-risk.service.js');
@@ -16,6 +17,7 @@ const {
   mapLimited,
   CONCURRENCY,
   RUNS_PER_WINDOW,
+  RUN_WINDOW_MS,
   clearForTests,
 } = require('./quality-limits.js');
 
@@ -108,7 +110,24 @@ const DEFAULT_DEPS = {
   zones: () => blocklists.blocklistZones(),
   webRiskKey: () => webRisk.apiKey(),
   webRiskLookup: (url, key, options) => webRisk.lookup(url, key, options),
+  spendWebRiskLookup: (scope) => threats.spendWebRiskLookup(scope),
 };
+
+// Said once per worker: the in-memory bounds hold per worker (index.js runs
+// WORKERS of them, counted as it does), the Web Risk budget for the cluster.
+const cpuCount = require('os').cpus().length;
+const workers =
+  process.env.WORKERS <= cpuCount ? Number(process.env.WORKERS) || 1 : 1;
+logger.log('[QUALITY] resource check bounds', {
+  workers,
+  perWorker: {
+    runsPerUser: `${RUNS_PER_WINDOW} per ${RUN_WINDOW_MS / 60000} min`,
+    linkProbes: links.MAX_LINK_PROBES,
+    imageDownloads: images.MAX_IMAGE_DOWNLOADS,
+  },
+  perRun: { deadlineMs: RUN_DEADLINE_MS, concurrency: CONCURRENCY },
+  shared: { webRiskLookupsPerCompanyPerDay: threats.WEB_RISK_LOOKUPS_PER_DAY },
+});
 
 // A run whose caller is gone (the editor replaced it, the tab closed) is cut
 // short: its deadline is brought to now, so nothing more is fetched for it.
@@ -184,7 +203,6 @@ function checkResources(
 
 function clearCacheForTests() {
   clearForTests();
-  threats.clearBudgetsForTests();
 }
 
 module.exports = {
