@@ -2,6 +2,7 @@
 
 // What the user can act on, by status of the text generation routes.
 const ERROR_KEYS = {
+  401: 'text-generation-error-signed-out',
   403: 'text-generation-error-disabled',
   413: 'text-generation-error-too-large',
   429: 'text-generation-error-rate-limited',

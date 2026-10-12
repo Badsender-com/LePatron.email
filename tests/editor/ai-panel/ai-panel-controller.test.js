@@ -73,6 +73,7 @@ describe('ai panel: the controller', () => {
       expect(ids(panel.actions())).toEqual([
         'generate-subject',
         'generate-preheader',
+        'correct-text',
       ]);
       expect(panel.session()).toBeNull();
     });
@@ -143,6 +144,14 @@ describe('ai panel: the controller', () => {
       expect(panel.target()).toEqual(title);
     });
 
+    it('says nothing when a block is selected during an action on the whole email, which it is part of', () => {
+      const { panel, selection } = mount();
+      panel.openAction('correct-text');
+      // « Aller au bloc » from the corrections of the whole email.
+      selection(COVER);
+      expect(panel.selectionChanged()).toBeNull();
+    });
+
     it('offers the preheader’s actions on the block that holds it', () => {
       const { panel, isOpen, selection } = mount();
       isOpen(true);
@@ -203,6 +212,41 @@ describe('ai panel: the controller', () => {
     panel.session().refresh = refresh;
     history(1);
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  describe('the action under way', () => {
+    const title = {
+      kind: 'blockField',
+      blockId: 'ko_coverBlock_1',
+      blockType: 'coverBlock',
+      field: 'titleText',
+    };
+
+    it.each([
+      ['going back to the list', (panel) => panel.showList()],
+      [
+        'opening another action',
+        (panel) => panel.openAction('generate-subject'),
+      ],
+      ['disposing of the panel', (panel) => panel.dispose()],
+    ])('is cancelled when %s', (_label, leave) => {
+      const { panel } = mount();
+      panel.openTarget(title);
+      const cancel = jest.fn();
+      panel.session().cancel = cancel;
+      leave(panel);
+      expect(cancel).toHaveBeenCalled();
+    });
+
+    it('stops, keeping what it found, when the panel closes', () => {
+      const { panel, isOpen } = mount();
+      panel.openTarget(title);
+      const stop = jest.fn();
+      panel.session().stop = stop;
+      isOpen(false);
+      expect(stop).toHaveBeenCalled();
+      expect(panel.session()).not.toBeNull();
+    });
   });
 
   it('lets go of the view model on dispose', () => {
