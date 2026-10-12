@@ -2,6 +2,9 @@
 
 const { zipObject } = require('lodash');
 
+const { QualityBudgets } = require('../common/models.common.js');
+const { KEEP_SPENT_SECONDS } = require('./quality-budget.schema.js');
+const logger = require('../utils/logger.js');
 const blocklists = require('./quality-blocklists.service.js');
 const webRisk = require('./quality-web-risk.service.js');
 const {
@@ -23,7 +26,9 @@ const {
 // 60 at most: this lets a company run the checks some fifty times a day, and
 // bounds what one account can cost past Google's free tier.
 const WEB_RISK_LOOKUPS_PER_DAY = 3000;
-const DAY_MS = 24 * 60 * 60 * 1000;
+const WEB_RISK_KIND = 'webrisk';
+// MongoDB's error for a document that breaks a unique index.
+const DUPLICATE_KEY = 11000;
 
 async function checkDomains(links, zones, key, run, deps) {
   if (!zones.length) return { enabled: false, listed: {} };
@@ -47,19 +52,51 @@ async function checkDomains(links, zones, key, run, deps) {
   return { enabled: true, listed };
 }
 
-const webRiskLookups = new Map(); // cacheScope -> { since, count }
+const dayOf = (date) => date.toISOString().slice(0, 10);
 
-// Takes one lookup from the company's daily budget; false once it is spent.
-function spendWebRiskLookup(scope) {
-  const now = Date.now();
-  const budget = webRiskLookups.get(scope);
-  if (!budget || now - budget.since > DAY_MS) {
-    webRiskLookups.set(scope, { since: now, count: 1 });
-    return true;
+// When the day's document may go: the day after, so that it can be read.
+const dayExpiry = (date) =>
+  new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1) +
+      KEEP_SPENT_SECONDS * 1000
+  );
+
+/**
+ * Takes one lookup from the company's daily budget; false once it is spent.
+ *
+ * The budget is the one thing that costs money, so it is shared by every
+ * worker of the cluster, in the database: one document per company and UTC
+ * day, incremented only while under the limit. Past it the filter matches
+ * nothing, the upsert then runs into the day's document, and that duplicate
+ * key is the answer "spent". Two workers opening the same day at once meet
+ * the same error, hence one retry. Without the database, nothing is spent.
+ */
+async function spendWebRiskLookup(scope, now = new Date()) {
+  const day = dayOf(now);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await QualityBudgets.findOneAndUpdate(
+        {
+          scope,
+          kind: WEB_RISK_KIND,
+          day,
+          count: { $lt: WEB_RISK_LOOKUPS_PER_DAY },
+        },
+        { $inc: { count: 1 }, $setOnInsert: { expiresAt: dayExpiry(now) } },
+        { upsert: true }
+      );
+      return true;
+    } catch (error) {
+      if (error.code !== DUPLICATE_KEY) {
+        logger.warn('[QUALITY] Web Risk budget unavailable', {
+          error: error.name,
+          code: error.code,
+        });
+        return false;
+      }
+    }
   }
-  if (budget.count >= WEB_RISK_LOOKUPS_PER_DAY) return false;
-  budget.count += 1;
-  return true;
+  return false;
 }
 
 // One lookup per host and path: Google canonicalises the query string too,
@@ -78,10 +115,9 @@ async function checkThreats(links, apiKey, key, run, scope, deps) {
   const results = await mapLimited(links, CONCURRENCY, (url) =>
     cached(
       key('webrisk', webRiskKeyOf(url)),
-      () => {
-        if (Date.now() > run.deadline || !spendWebRiskLookup(scope)) {
-          return Promise.resolve(null);
-        }
+      async () => {
+        if (Date.now() > run.deadline) return null;
+        if (!(await deps.spendWebRiskLookup(scope))) return null;
         return deps.webRiskLookup(withoutCredentials(url), apiKey, {
           timeoutMs: timeLeft(run, webRisk.TIMEOUT_MS),
         });
@@ -96,13 +132,9 @@ async function checkThreats(links, apiKey, key, run, scope, deps) {
   return { enabled: true, threats };
 }
 
-function clearBudgetsForTests() {
-  webRiskLookups.clear();
-}
-
 module.exports = {
   checkDomains,
   checkThreats,
+  spendWebRiskLookup,
   WEB_RISK_LOOKUPS_PER_DAY,
-  clearBudgetsForTests,
 };

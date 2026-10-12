@@ -34,6 +34,7 @@ const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 const SecurityEventSchema = require('../two-factor/security-event.schema.js');
 const ShareLinkSchema = require('../share-link/share-link.schema.js');
+const { QualityBudgetSchema } = require('../mailing/quality-budget.schema.js');
 
 /// ///
 // EXPORTS
@@ -110,6 +111,10 @@ const SecurityEvents = mongoose.model(
   SecurityEventSchema
 );
 const ShareLinks = mongoose.model(modelNames.ShareLinkModel, ShareLinkSchema);
+const QualityBudgets = mongoose.model(
+  modelNames.QualityBudgetModel,
+  QualityBudgetSchema
+);
 
 module.exports = {
   mongoose,
@@ -130,6 +135,7 @@ module.exports = {
   Tags,
   Comments,
   ShareLinks,
+  QualityBudgets,
   Integrations,
   Dashboards,
   AIFeatureConfigs,
