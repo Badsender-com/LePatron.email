@@ -3,6 +3,9 @@
 const { Mailings, Groups } = require('../common/models.common.js');
 const GROUP_STATUS = require('../group/status.js');
 const previewSanitizer = require('../utils/preview-html-sanitizer.js');
+const {
+  createSanitizedPreviewCache,
+} = require('../utils/sanitized-preview-cache.js');
 const logger = require('../utils/logger.js');
 const shareLinkService = require('./share-link.service.js');
 
@@ -126,29 +129,32 @@ function allowUnknown(now = Date.now()) {
   return unknown.count <= MAX_UNKNOWN_PER_WINDOW;
 }
 
-// The sanitized email of each shared version, whatever its size: the
-// sanitizer is synchronous (about a second per MB), and a large preview must
-// not be sanitized again at every view of a public page.
+// The sanitized email of each shared version (utils/sanitized-preview-cache.js):
+// a public page can be hammered with views, and each must cost neither a
+// sanitization nor the transfer of previewHtml (up to PREVIEW_HTML_MAX_LENGTH)
+// from the database. previewHtml is read only when the version is not held.
+// Every web link of the email opens in a new tab, without an opener: inside
+// the frame a page could not load (the CSP allows no frame), and a reader
+// wants to try the links. The sanitizer sets it (sanitizeSharedPreviewHtml);
+// the new tab gets no referrer, the policy of the page being inherited.
 const PAGE_CACHE_BUDGET = 16 * 1024 * 1024; // characters
-const pages = new Map();
-let pagesSize = 0;
+const pageCache = createSanitizedPreviewCache({
+  sanitize: previewSanitizer.sanitizeSharedPreviewHtml,
+  budget: PAGE_CACHE_BUDGET,
+  // A single very large page must not push every other one out.
+  maxEntry: PAGE_CACHE_BUDGET / 4,
+});
 
-// Every link of the email opens in a new tab, without an opener: inside the
-// frame a page could not load (the CSP allows no frame), and a reader wants to
-// try the links. The sanitizer sets it on each link (sanitizeSharedPreviewHtml).
-// The new tab gets no referrer, the policy of the page being inherited.
-function sanitizedPage(mailing) {
-  const key = `${mailing._id}:${new Date(mailing.updatedAt || 0).getTime()}`;
-  if (pages.has(key)) return pages.get(key);
-  const html = previewSanitizer.sanitizeSharedPreviewHtml(mailing.previewHtml);
-  pages.set(key, html);
-  pagesSize += html.length;
-  while (pagesSize > PAGE_CACHE_BUDGET && pages.size > 1) {
-    const [oldestKey, oldest] = pages.entries().next().value;
-    pages.delete(oldestKey);
-    pagesSize -= oldest.length;
-  }
-  return html;
+/** @returns {Promise<string>} empty when the email was never saved */
+async function sanitizedPage(mailing) {
+  const held = pageCache.peek(mailing);
+  if (held !== undefined) return held;
+  const saved = await Mailings.findById(mailing._id, { previewHtml: 1 }).lean();
+  if (!saved || !saved.previewHtml) return '';
+  return pageCache.sanitizeCached({
+    ...mailing,
+    previewHtml: saved.previewHtml,
+  });
 }
 
 // A link lives no longer than the company's access to the email builder.
@@ -239,8 +245,8 @@ async function showShare(req, res) {
   const sharing = await companySharing(link);
   if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
 
+  // Never previewHtml here: sanitizedPage reads it when it needs it.
   const mailing = await Mailings.findById(link._mailing, {
-    previewHtml: 1,
     updatedAt: 1,
     name: 1,
     subject: 1,
@@ -250,7 +256,8 @@ async function showShare(req, res) {
     'data.preheaderVisible': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
-  if (!mailing.previewHtml) return renderNotice(res, 404, lang, 'empty');
+  const html = await sanitizedPage(mailing);
+  if (!html) return renderNotice(res, 404, lang, 'empty');
 
   return res.render('share-page', {
     lang,
@@ -258,7 +265,7 @@ async function showShare(req, res) {
     name: mailing.name,
     meta: PAGES[lang].meta(formatDate(link.expiresAt, lang)),
     copy: copyLines(mailing, lang, sharing.metadata),
-    html: sanitizedPage(mailing),
+    html,
   });
 }
 
