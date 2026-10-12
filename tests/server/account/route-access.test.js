@@ -113,6 +113,7 @@ const ROLE_ROUTES = {
   'POST /api/translation/jobs/:jobId/cancel': C.MAILING_EDIT_CONTENT,
   'POST /api/text-generation/subject': C.MAILING_EDIT_CONTENT,
   'POST /api/text-generation/preheader': C.MAILING_EDIT_CONTENT,
+  'POST /api/text-generation/corrections': C.MAILING_EDIT_CONTENT,
   'POST /api/images/gallery/:mongoId': C.GALLERY_MANAGE,
   'POST /api/images/gallery/:mongoId/from-url': C.GALLERY_MANAGE,
   'PATCH /api/images/gallery/:mongoId/:imageName/label': C.GALLERY_MANAGE,
