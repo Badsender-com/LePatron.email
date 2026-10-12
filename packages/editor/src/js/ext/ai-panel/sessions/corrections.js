@@ -33,11 +33,50 @@ function sideOf(value, correction) {
   return placeCorrection(value, reverse, options).refused ? null : 'after';
 }
 
-// The fields a target corrects: the one the user points at, sample text or not.
+/**
+ * The fields a target corrects, and those left out.
+ * - A field: the one the user points at, sample text or not.
+ * - A block: its text fields the rendering shows, alternative texts included;
+ *   a hidden field is left out quietly, one still holding the template's
+ *   sample text is left out and counted.
+ */
 function fieldsOf(editor, target) {
-  return editor
-    .textFieldsOf(target.blockId)
-    .filter((field) => field.path === target.field);
+  const all = editor.textFieldsOf(target.blockId);
+  if (target.kind === 'blockField') {
+    return { fields: all.filter((field) => field.path === target.field) };
+  }
+  const shown = all.filter((field) => !field.hidden);
+  return {
+    fields: shown.filter((field) => !field.sample),
+    leftOut: { sample: shown.filter((field) => field.sample).length },
+  };
+}
+
+// What the corrections route accepts in one request
+// (server/text-generation/text-correction.service.js).
+const MAX_FIELDS = 40;
+const MAX_FIELD_LENGTH = 5000;
+const MAX_TOTAL_LENGTH = 50000;
+
+// The fields of a block in requests the route accepts, in their order.
+function batchesOf(fields) {
+  const batches = [];
+  let batch = [];
+  let length = 0;
+  fields.forEach((field) => {
+    if (
+      batch.length === MAX_FIELDS ||
+      length + field.text.length > MAX_TOTAL_LENGTH
+    ) {
+      batches.push(batch);
+      batch = [];
+      length = 0;
+    }
+    batch.push(field);
+    length += field.text.length;
+  });
+  if (batch.length) batches.push(batch);
+  return batches;
 }
 
 /**
@@ -58,18 +97,16 @@ function createCorrectionsSession({ definition, target, api, editor }) {
     // Corrections set aside: by the server, or because they cross the
     // formatting of the field (a word half in bold), which only the HTML shows.
     dropped: 0,
+    // The fields of a block left out: { sample }.
+    leftOut: null,
+    // Fields too long to be checked, left out.
+    tooLong: 0,
+    // No field had any text to correct: nothing was asked.
+    nothingToCorrect: false,
   };
   let nextId = 1;
 
-  async function correct(blockTarget, fields) {
-    const sent = fields
-      .map((field) => ({
-        path: field.path,
-        role: field.role,
-        text: visibleText(field.html, optionsOf(field.role)),
-      }))
-      .filter((field) => field.text);
-    if (!sent.length) return;
+  async function correctBatch(blockTarget, sent) {
     const data = await api.generate(definition.route, {
       mailingId: editor.mailingId,
       target: blockTarget,
@@ -88,16 +125,32 @@ function createCorrectionsSession({ definition, target, api, editor }) {
         status: 'pending',
       })
     );
-    const placeable = corrections.filter(
-      (correction) =>
-        sideOf(
-          editor.readField(correction.blockId, correction.field),
-          correction
-        ) === 'before'
+    const sides = corrections.map((correction) =>
+      sideOf(editor.readField(correction.blockId, correction.field), correction)
     );
+    // Already in the text: no loss, not counted.
     state.dropped +=
-      (data.dropped || 0) + corrections.length - placeable.length;
-    state.corrections = state.corrections.concat(placeable);
+      (data.dropped || 0) + sides.filter((side) => side === null).length;
+    state.corrections = state.corrections.concat(
+      corrections.filter((_, i) => sides[i] === 'before')
+    );
+  }
+
+  /** @returns {Promise<boolean>} whether anything was sent */
+  async function correct(blockTarget, fields) {
+    const withText = fields
+      .map((field) => ({
+        path: field.path,
+        role: field.role,
+        text: visibleText(field.html, optionsOf(field.role)),
+      }))
+      .filter((field) => field.text);
+    const sent = withText.filter((field) => field.text.length <= MAX_FIELD_LENGTH);
+    state.tooLong += withText.length - sent.length;
+    for (const batch of batchesOf(sent)) {
+      await correctBatch(blockTarget, batch);
+    }
+    return sent.length > 0;
   }
 
   // Write one correction in its field as it stands now: its status says how
@@ -153,7 +206,9 @@ function createCorrectionsSession({ definition, target, api, editor }) {
       state.done = false;
       state.isLoading = true;
       try {
-        await correct(target, fieldsOf(editor, target));
+        const { fields, leftOut = null } = fieldsOf(editor, target);
+        state.leftOut = leftOut;
+        state.nothingToCorrect = !(await correct(target, fields));
         state.done = true;
       } catch (err) {
         state.error = errorKey(err);

@@ -825,10 +825,23 @@ module.exports = {
     "1 non appliquée : le texte a changé depuis l'analyse.",
   'ai-panel-correction-undo-hint':
     '__keys__ annule la dernière correction acceptée.',
+  'ai-panel-nothing-to-correct': "Il n'y a pas de texte à corriger ici.",
+  'ai-panel-field-title': 'Titre',
+  'ai-panel-field-text': 'Texte',
+  'ai-panel-field-button': 'Bouton',
+  'ai-panel-field-alt': 'Texte alternatif',
+  'ai-panel-left-out-sample':
+    "__count__ champs encore à leur texte d'exemple laissés de côté.",
+  'ai-panel-left-out-sample-one':
+    "1 champ encore à son texte d'exemple laissé de côté.",
+  'ai-panel-left-out-too-long':
+    '__count__ champs trop longs pour être vérifiés laissés de côté.',
+  'ai-panel-left-out-too-long-one':
+    '1 champ trop long pour être vérifié laissé de côté.',
   'ai-panel-corrections-dropped':
-    '__count__ corrections écartées : elles touchaient à la mise en forme ou à une variable.',
+    "__count__ corrections écartées : elles ne pouvaient pas s'appliquer sans risque pour la mise en forme ou les variables.",
   'ai-panel-corrections-dropped-one':
-    '1 correction écartée : elle touchait à la mise en forme ou à une variable.',
+    "1 correction écartée : elle ne pouvait pas s'appliquer sans risque pour la mise en forme ou les variables.",
   'ai-panel-correction-before': 'Avant :',
   'ai-panel-correction-after': 'Après :',
   'ai-panel-generate-subject': 'Proposer des objets',

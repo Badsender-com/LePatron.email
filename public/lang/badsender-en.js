@@ -800,10 +800,21 @@ module.exports = {
     '1 not applied: the text changed since the check.',
   'ai-panel-correction-undo-hint':
     '__keys__ undoes the last accepted correction.',
+  'ai-panel-nothing-to-correct': 'There is no text to correct here.',
+  'ai-panel-field-title': 'Title',
+  'ai-panel-field-text': 'Text',
+  'ai-panel-field-button': 'Button',
+  'ai-panel-field-alt': 'Alternative text',
+  'ai-panel-left-out-sample':
+    '__count__ fields still at their sample text left out.',
+  'ai-panel-left-out-sample-one': '1 field still at its sample text left out.',
+  'ai-panel-left-out-too-long':
+    '__count__ fields too long to be checked left out.',
+  'ai-panel-left-out-too-long-one': '1 field too long to be checked left out.',
   'ai-panel-corrections-dropped':
-    '__count__ corrections set aside: they touched the formatting or a merge tag.',
+    '__count__ corrections set aside: they could not be applied safely to the formatting or the merge tags.',
   'ai-panel-corrections-dropped-one':
-    '1 correction set aside: it touched the formatting or a merge tag.',
+    '1 correction set aside: it could not be applied safely to the formatting or the merge tags.',
   'ai-panel-correction-before': 'Before:',
   'ai-panel-correction-after': 'After:',
   'ai-panel-generate-subject': 'Suggest subjects',
