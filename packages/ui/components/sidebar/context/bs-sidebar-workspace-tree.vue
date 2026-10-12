@@ -70,7 +70,8 @@ export default {
     const { dispatch } = this.$store;
     await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
       query: this.$route.query,
-      $t: this.$t || null,
+      // Bound: vue-i18n's $t reads `this`, and the store calls it detached.
+      $t: (...args) => this.$t(...args),
     });
   },
   computed: {
@@ -78,6 +79,7 @@ export default {
       'workspaces',
       'areLoadingWorkspaces',
       'treeviewWorkspaces',
+      'locationNotFound',
     ]),
     ...mapState(USER, {
       userInfo: 'info',
@@ -96,6 +98,14 @@ export default {
   },
   watch: {
     $route: ['onRouteChange', 'checkIfNotData'],
+    // Immediate: on a cold load the 404 may already be in the server-rendered
+    // state when this component is created.
+    locationNotFound: {
+      handler(notFound) {
+        if (notFound) this.leaveUnreachableLocation();
+      },
+      immediate: true,
+    },
     treeviewWorkspaces: {
       handler(newWorkspaces, oldWorkspaces) {
         const isInitialLoad =
@@ -321,6 +331,21 @@ export default {
         this.restoreSelectedNode();
       }
     },
+    // The route's workspace or folder answered 404: deleted, or hidden from this
+    // user since the company turned off "access to all workspaces". Left as is,
+    // the list stays empty, and the saved selection (browser and DB) brings the
+    // user back to it on every visit. Selecting the first workspace overwrites
+    // that selection in both.
+    leaveUnreachableLocation() {
+      if (typeof window === 'undefined') return;
+      const { wid, fid } = this.$route.query;
+      if (!wid && !fid) return;
+      this.showSnackbar({
+        text: this.$t('mailings.locationUnreachable'),
+        color: 'warning',
+      });
+      this.selectFirstWorkspace();
+    },
     // Default selection: the first workspace. Used when arriving on the email
     // builder with nothing selected (menu, bare /mailings URL, or a saved
     // selection that no longer exists). Persists it and updates the route.
@@ -462,7 +487,7 @@ export default {
       await Promise.all([
         dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
           query: this.$route.query,
-          $t: this.$t || null,
+          $t: (...args) => this.$t(...args),
         }),
         commit(`${FOLDER}/${SET_PAGINATION}`, {
           page: 1,

@@ -389,6 +389,8 @@ export default {
     duplicateNotice: 'Are you sure to duplicate: <strong>{name}</strong> ?',
     name: 'Email name',
     errorPreview: 'No preview available for this email',
+    locationUnreachable:
+      'This workspace or folder is no longer available. Back to the first workspace.',
     subErrorPreview:
       'A preview will be generated when opening the email editor',
     subErrorPreviewReadOnly:
