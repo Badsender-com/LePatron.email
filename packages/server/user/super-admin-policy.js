@@ -139,15 +139,13 @@ function logAction(actor, action, target, role, previousRole) {
 /**
  * Before the platform flag leaves `group`: unset, moved to `destination`, or
  * gone with the group. Active super admins hold it there, except when the
- * bootstrap account moves it to another group: the super admins then follow
- * it, so that they stay in the platform group (ADR 0002).
- *
- * @returns {Promise<boolean>} whether the super admins must follow the flag
+ * bootstrap account moves it to another group; once it moves, every super
+ * admin follows it (`moveSuperAdmins`, ADR 0002).
  */
 async function assertFlagCanLeave(group, { actor, destination } = {}) {
-  if (!group) return false;
-  if ((await countActiveSuperAdmins(group._id)) === 0) return false;
-  if (destination && isBootstrapAccount(actor)) return true;
+  if (!group) return;
+  if ((await countActiveSuperAdmins(group._id)) === 0) return;
+  if (destination && isBootstrapAccount(actor)) return;
   throw new Conflict(ERROR_CODES.PLATFORM_GROUP_HAS_SUPER_ADMINS);
 }
 
@@ -160,6 +158,7 @@ async function moveSuperAdmins(actor, from, to) {
     { _company: from._id, role: Roles.SUPER_ADMIN },
     { $set: { _company: to._id } }
   );
+  if (!result.nModified) return;
   logger.info(
     `[super-admin] ${result.nModified} moved with the platform flag from ${from._id} to ${to._id} by ${actor?.id}`
   );

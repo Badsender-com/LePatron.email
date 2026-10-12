@@ -173,6 +173,21 @@ describe('the platform flag', () => {
       });
     });
 
+    it('takes the deactivated super admins along when it moves', async () => {
+      const deactivated = USERS.map((u) =>
+        u.role === 'super_admin' ? { ...u, isDeactivated: true } : u
+      );
+      store.seed({ groups: GROUPS, users: deactivated });
+      const alice = actorFrom(USERS.find((u) => u._id === ALICE));
+
+      const { status } = await setPlatform(CLIENT_GROUP, true, alice);
+
+      expect(status).toBe(200);
+      expect(await groupOfUser(ALICE)).toBe(CLIENT_GROUP);
+      expect(await groupOfUser(BOB)).toBe(CLIENT_GROUP);
+      expect(await groupOfUser(CAROL)).toBe(PLATFORM_GROUP);
+    });
+
     it('can leave once every super admin of the group is deactivated', async () => {
       store.seed({
         groups: GROUPS,

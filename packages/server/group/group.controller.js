@@ -109,8 +109,8 @@ async function setPlatform(req, res) {
   if (!isPlatform) {
     // The flag cannot leave a group with active super admins (ADR 0002).
     await superAdminPolicy.assertFlagCanLeave(group);
+    await Groups.updateOne({ _id: group._id }, { $set: { isPlatform: false } });
     group.isPlatform = false;
-    await group.save();
     return res.json(group.toJSON());
   }
 
@@ -121,18 +121,22 @@ async function setPlatform(req, res) {
     isPlatform: true,
     _id: { $ne: group._id },
   });
-  let superAdminsFollow = false;
   if (current) {
-    superAdminsFollow = await superAdminPolicy.assertFlagCanLeave(current, {
+    await superAdminPolicy.assertFlagCanLeave(current, {
       actor: req.user,
       destination: group,
     });
-    current.isPlatform = false;
-    await current.save();
+    // Only the flag changes: no validation of the rest of the document.
+    await Groups.updateOne(
+      { _id: current._id },
+      { $set: { isPlatform: false } }
+    );
   }
   group.isPlatform = true;
   await group.save();
-  if (superAdminsFollow) {
+  // Every super admin of the group, deactivated ones included, follows the
+  // flag, so that a reactivation still finds them in the platform group.
+  if (current) {
     await superAdminPolicy.moveSuperAdmins(req.user, current, group);
   }
   res.json(group.toJSON());
