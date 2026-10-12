@@ -3,8 +3,8 @@ import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 // A guardrail refusal reads as its own sentence; anything else reads as the
 // generic error, so a renamed code never surfaces as a raw identifier.
 const MESSAGES = {
-  'superAdmins.errors.LAST_SUPER_ADMIN_PROTECTED':
-    'At least one active super admin must remain.',
+  'superAdmins.errors.FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION':
+    'You cannot take the role away from yourself.',
   'global.errors.errorOccured': 'An error occurred',
 };
 const vm = {
@@ -17,8 +17,11 @@ const axiosError = (message) => ({ response: { data: { message } } });
 describe('superAdminErrorMessage', () => {
   it('translates a guardrail refusal', () => {
     expect(
-      superAdminErrorMessage(vm, axiosError('LAST_SUPER_ADMIN_PROTECTED'))
-    ).toBe('At least one active super admin must remain.');
+      superAdminErrorMessage(
+        vm,
+        axiosError('FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION')
+      )
+    ).toBe('You cannot take the role away from yourself.');
   });
 
   it('falls back to the generic error for a code outside the guardrails', () => {

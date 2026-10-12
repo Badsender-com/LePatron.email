@@ -1172,7 +1172,7 @@ export default {
     promote: 'Promote a member',
     promoteAction: 'Promote',
     promoteDescription:
-      'Pick a member of the platform group: they become a super admin and keep their account.',
+      'Pick a member of the platform group: they become a super admin and keep their account. Like every super admin, they will no longer create mailings: they read and open those of every group from its settings.',
     promoted: 'Super admin promoted',
     member: 'Member',
     noMember: 'No member of the platform group to promote.',
@@ -1194,14 +1194,12 @@ export default {
         'You cannot revoke your own super admin role.',
       FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
         'You cannot deactivate your own account.',
-      LAST_SUPER_ADMIN_PROTECTED:
-        'At least one active super admin must remain.',
       SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
         'A super admin must belong to the platform group.',
       PLATFORM_GROUP_NOT_FOUND:
         'No platform group is set up on this environment.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'This group hosts active super admins: only the configuration administrator can move the platform group, and the super admins follow it. It cannot be unset while they are in it.',
+        'This group hosts active super admins. To move it, set another group as the platform group with the configuration administrator: they will follow it. To unset it, that account must first deactivate or demote them.',
       INVALID_ROLE_PARAM: 'This role does not exist.',
     },
   },

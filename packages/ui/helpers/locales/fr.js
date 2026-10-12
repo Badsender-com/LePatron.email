@@ -1187,7 +1187,7 @@ export default {
     promote: 'Promouvoir un membre',
     promoteAction: 'Promouvoir',
     promoteDescription:
-      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte.',
+      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il ne créera plus d\'emails : il consultera et ouvrira ceux de chaque groupe depuis ses paramètres.',
     promoted: 'Super administrateur promu',
     member: 'Membre',
     noMember: 'Aucun membre du groupe plateforme à promouvoir.',
@@ -1210,14 +1210,12 @@ export default {
         'Vous ne pouvez pas retirer votre propre rôle de super administrateur.',
       FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
         'Vous ne pouvez pas désactiver votre propre compte.',
-      LAST_SUPER_ADMIN_PROTECTED:
-        'Il doit rester au moins un super administrateur actif.',
       SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
         'Un super administrateur doit appartenir au groupe plateforme.',
       PLATFORM_GROUP_NOT_FOUND:
         'Aucun groupe plateforme n\'est configuré sur cet environnement.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'Ce groupe héberge des super administrateurs actifs : seul le compte administrateur de la configuration peut déplacer le groupe plateforme, et les super administrateurs le suivent. Le retirer reste impossible tant qu\'ils y sont.',
+        'Ce groupe héberge des super administrateurs actifs. Pour le déplacer, activez le groupe plateforme sur un autre groupe avec le compte administrateur de la configuration : ils le suivront. Pour le retirer, ce compte doit d\'abord les désactiver ou les rétrograder.',
       INVALID_ROLE_PARAM: 'Ce rôle n\'existe pas.',
     },
   },
