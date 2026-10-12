@@ -17,6 +17,7 @@ const {
   validateResourcesPayload,
   checkResources,
   MAX_LINKS,
+  MAX_LINK_PROBES,
   RUNS_PER_WINDOW,
   clearCacheForTests,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
@@ -206,6 +207,47 @@ describe('links', () => {
       state: 'unverifiable',
     });
     expect(d.probe).not.toHaveBeenCalled();
+  });
+});
+
+describe('link probes for the whole process', () => {
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+  it('are capped whoever asks, and a run out of time while waiting judges nothing', async () => {
+    const pending = [];
+    const d = deps({
+      probe: jest.fn(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() => resolve({ status: 200 }));
+          })
+      ),
+    });
+    // Enough users, each with a run's worth of parallel probes, to fill the
+    // process' slots; the next run waits for one.
+    const perRun = 4;
+    const runs = [];
+    for (let u = 0; u < MAX_LINK_PROBES / perRun; u += 1) {
+      const links = Array.from(
+        { length: perRun },
+        (_, i) => `https://site${u}-${i}.test/`
+      );
+      runs.push(run({ links }, d, { userKey: `u${u}` }));
+    }
+    const late = run({ links: ['https://late.test/'] }, d, { userKey: 'late' });
+    await flush();
+    expect(d.probe).toHaveBeenCalledTimes(MAX_LINK_PROBES);
+
+    // Its deadline passes while it waits: the slot it gets is not used.
+    const now = Date.now;
+    jest.spyOn(Date, 'now').mockImplementation(() => now() + 60 * 1000);
+    pending.forEach((release) => release());
+    await Promise.all(runs);
+    const { links } = await late;
+    Date.now.mockRestore();
+
+    expect(links['https://late.test/']).toEqual({ state: 'unverifiable' });
+    expect(d.probe).toHaveBeenCalledTimes(MAX_LINK_PROBES);
   });
 });
 
