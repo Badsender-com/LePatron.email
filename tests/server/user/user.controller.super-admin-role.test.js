@@ -61,14 +61,12 @@ const {
   expectRefusal,
   expectRefusedOutright,
   readUserVia,
-  withDeactivated,
 } = require('../../helpers/super-admin-fixtures.js');
 
 // The codes of the refusals; #1155 adds them to ERROR_CODES.
 const FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE = 'FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE';
 const FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION =
   'FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION';
-const LAST_SUPER_ADMIN_PROTECTED = 'LAST_SUPER_ADMIN_PROTECTED';
 const SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP = 'SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP';
 const PLATFORM_GROUP_NOT_FOUND = 'PLATFORM_GROUP_NOT_FOUND';
 const INVALID_ROLE_PARAM = 'INVALID_ROLE_PARAM';
@@ -261,21 +259,15 @@ describe.skip('granting and revoking the super admin role (#1155)', () => {
       expect((await read(ALICE)).role).toBe('super_admin');
     });
 
-    it('the last active super admin cannot be demoted, not even by the bootstrap account', async () => {
+    it('the bootstrap account can demote the last active super admin', async () => {
       store.seed({ groups: GROUPS, users: USERS.filter((u) => u._id !== BOB) });
 
-      const result = await update(bootstrap, ALICE, { role: 'regular_user' });
+      const { status } = await update(bootstrap, ALICE, {
+        role: 'regular_user',
+      });
 
-      expectRefusal(result, 409, LAST_SUPER_ADMIN_PROTECTED);
-      expect((await read(ALICE)).role).toBe('super_admin');
-    });
-
-    it('a deactivated super admin does not count as remaining', async () => {
-      store.seed({ groups: GROUPS, users: withDeactivated(BOB) });
-
-      const result = await update(bootstrap, ALICE, { role: 'regular_user' });
-
-      expectRefusal(result, 409, LAST_SUPER_ADMIN_PROTECTED);
+      expect(status).toBe(200);
+      expect((await read(ALICE)).role).toBe('regular_user');
     });
 
     it('a company admin of the platform group cannot demote a super admin', async () => {

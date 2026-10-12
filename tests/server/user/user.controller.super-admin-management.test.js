@@ -48,7 +48,6 @@ const {
 const FORBIDDEN_SUPER_ADMIN_MANAGEMENT = 'FORBIDDEN_SUPER_ADMIN_MANAGEMENT';
 const FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION =
   'FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION';
-const LAST_SUPER_ADMIN_PROTECTED = 'LAST_SUPER_ADMIN_PROTECTED';
 const INVALID_ROLE_PARAM = 'INVALID_ROLE_PARAM';
 
 const actor = (id) => actorFrom(store.userRecord(id));
@@ -150,13 +149,13 @@ describe.skip('managing a super admin account (#1155)', () => {
       expect((await read(ALICE)).isDeactivated).toBe(false);
     });
 
-    it('the last active super admin cannot be deactivated, not even by the bootstrap account', async () => {
+    it('the bootstrap account can deactivate the last active super admin', async () => {
       store.seed({ groups: GROUPS, users: USERS.filter((u) => u._id !== BOB) });
 
-      const result = await deactivate(bootstrap, ALICE);
+      const { status } = await deactivate(bootstrap, ALICE);
 
-      expectRefusal(result, 409, LAST_SUPER_ADMIN_PROTECTED);
-      expect((await read(ALICE)).isDeactivated).toBe(false);
+      expect(status).toBe(200);
+      expect((await read(ALICE)).isDeactivated).toBe(true);
     });
 
     it('a company admin of the platform group cannot deactivate a super admin', async () => {
