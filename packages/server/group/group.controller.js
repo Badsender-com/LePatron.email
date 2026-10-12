@@ -115,18 +115,26 @@ async function setPlatform(req, res) {
   }
 
   // Move the flag: the current platform group gives it up first, so the
-  // partial unique index never trips, then this one takes it.
+  // partial unique index never trips, then this one takes it. Moved by the
+  // bootstrap account, the flag takes the super admins along (ADR 0002).
   const current = await Groups.findOne({
     isPlatform: true,
     _id: { $ne: group._id },
   });
+  let superAdminsFollow = false;
   if (current) {
-    await superAdminPolicy.assertFlagCanLeave(current);
+    superAdminsFollow = await superAdminPolicy.assertFlagCanLeave(current, {
+      actor: req.user,
+      destination: group,
+    });
     current.isPlatform = false;
     await current.save();
   }
   group.isPlatform = true;
   await group.save();
+  if (superAdminsFollow) {
+    await superAdminPolicy.moveSuperAdmins(req.user, current, group);
+  }
   res.json(group.toJSON());
 }
 

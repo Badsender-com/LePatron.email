@@ -5,7 +5,8 @@
 // the platform group (ADR 0002), and the invariant is checked when the role
 // is granted; so the flag cannot leave a group while active super admins
 // belong to it, and such a group cannot be deleted, or the invariant and the
-// "last super admin" rule would break after the grant.
+// "last super admin" rule would break after the grant. The bootstrap account
+// alone can move it to another group: the super admins then move with it.
 
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const { createStore } = require('../../helpers/fake-user-models.js');
@@ -60,6 +61,10 @@ const {
   CLIENT_GROUP,
   GROUPS,
   USERS,
+  ALICE,
+  BOB,
+  CAROL,
+  actorFrom,
   bootstrap,
   call,
 } = require('../../helpers/super-admin-fixtures.js');
@@ -67,12 +72,15 @@ const {
 // The code of the refusal; #1155 adds it to ERROR_CODES.
 const PLATFORM_GROUP_HAS_SUPER_ADMINS = 'PLATFORM_GROUP_HAS_SUPER_ADMINS';
 
-const setPlatform = (groupId, isPlatform) =>
+const setPlatform = (groupId, isPlatform, user = bootstrap) =>
   call(controller.setPlatform, {
-    user: bootstrap,
+    user,
     params: { groupId },
     body: { isPlatform },
   });
+
+const groupOfUser = async (userId) =>
+  String((await store.Users.findById(userId))._company);
 
 const deleteGroup = (groupId) =>
   call(controller.deleteGroup, { user: bootstrap, params: { groupId } });
@@ -125,8 +133,10 @@ describe('the platform flag', () => {
       expect(await isPlatform(PLATFORM_GROUP)).toBe(true);
     });
 
-    it('cannot be moved to another group', async () => {
-      const result = await setPlatform(CLIENT_GROUP, true);
+    it('cannot be moved to another group by a super admin', async () => {
+      const alice = actorFrom(USERS.find((u) => u._id === ALICE));
+
+      const result = await setPlatform(CLIENT_GROUP, true, alice);
 
       expect(result).toEqual({
         status: 409,
@@ -134,6 +144,24 @@ describe('the platform flag', () => {
       });
       expect(await isPlatform(PLATFORM_GROUP)).toBe(true);
       expect(await isPlatform(CLIENT_GROUP)).toBe(false);
+    });
+
+    it('moves to another group with its super admins when the bootstrap account moves it', async () => {
+      store.seed({
+        groups: GROUPS,
+        users: USERS.map((u) =>
+          u._id === BOB ? { ...u, isDeactivated: true } : u
+        ),
+      });
+
+      const { status } = await setPlatform(CLIENT_GROUP, true);
+
+      expect(status).toBe(200);
+      expect(await isPlatform(CLIENT_GROUP)).toBe(true);
+      expect(await isPlatform(PLATFORM_GROUP)).toBe(false);
+      expect(await groupOfUser(ALICE)).toBe(CLIENT_GROUP);
+      expect(await groupOfUser(BOB)).toBe(CLIENT_GROUP);
+      expect(await groupOfUser(CAROL)).toBe(PLATFORM_GROUP);
     });
 
     it('cannot be deleted with them', async () => {

@@ -6,6 +6,7 @@ const Roles = require('../account/roles.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Users, Groups } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 
 /**
  * The guardrails of the super admin role (ADR 0002), as checks the user and
@@ -70,10 +71,11 @@ async function groupForCreation(actor, { role, groupId }) {
   return assertPlatformGroupIs(groupId);
 }
 
-// After the action, at least one active super admin must remain.
+// After the action, at least one active super admin must remain. Acting on
+// a deactivated super admin does not change the count.
 async function assertNotLastSuperAdmin(target) {
-  const active = await countActiveSuperAdmins();
-  const remaining = target.isDeactivated ? active : active - 1;
+  if (target.isDeactivated) return;
+  const remaining = (await countActiveSuperAdmins()) - 1;
   if (remaining < 1) {
     throw new Conflict(ERROR_CODES.LAST_SUPER_ADMIN_PROTECTED);
   }
@@ -133,22 +135,47 @@ async function assertCanDeactivate(actor, target) {
 /**
  * A trace of who did what to a super admin account, until the audit log
  * (#1102) records it: logged when the target is a super admin or becomes one.
+ * `role` is the requested role; `previousRole` the role before the action.
+ * Ids only, no personal data.
  */
-function logAction(actor, action, target, role) {
+function logAction(actor, action, target, role, previousRole) {
   if (!isSuperAdmin(target) && role !== Roles.SUPER_ADMIN) return;
+  const transition =
+    role !== undefined && previousRole !== undefined && role !== previousRole
+      ? ` (${previousRole} -> ${role})`
+      : '';
   logger.info(
-    `[super-admin] ${action} on ${target.id} (${target.email}) by ${actor?.id}`
+    `[super-admin] ${action}${transition} on ${target.id} by ${actor?.id}`
   );
 }
 
 /**
- * Before the platform flag leaves `group`, whether unset or moved elsewhere.
+ * Before the platform flag leaves `group`: unset, moved to `destination`, or
+ * gone with the group. Active super admins hold it there, except when the
+ * bootstrap account moves it to another group: the super admins then follow
+ * it, so that they stay in the platform group (ADR 0002).
+ *
+ * @returns {Promise<boolean>} whether the super admins must follow the flag
  */
-async function assertFlagCanLeave(group) {
-  if (!group) return;
-  if ((await countActiveSuperAdmins(group._id)) > 0) {
-    throw new Conflict(ERROR_CODES.PLATFORM_GROUP_HAS_SUPER_ADMINS);
-  }
+async function assertFlagCanLeave(group, { actor, destination } = {}) {
+  if (!group) return false;
+  if ((await countActiveSuperAdmins(group._id)) === 0) return false;
+  if (destination && isBootstrapAccount(actor)) return true;
+  throw new Conflict(ERROR_CODES.PLATFORM_GROUP_HAS_SUPER_ADMINS);
+}
+
+/**
+ * Moves every super admin of `from`, deactivated ones included, to `to`,
+ * once the platform flag moved there.
+ */
+async function moveSuperAdmins(actor, from, to) {
+  const result = await Users.updateMany(
+    { _company: from._id, role: Roles.SUPER_ADMIN },
+    { $set: { _company: to._id } }
+  );
+  logger.info(
+    `[super-admin] ${result.nModified} moved with the platform flag from ${from._id} to ${to._id} by ${actor?.id}`
+  );
 }
 
 module.exports = {
@@ -159,5 +186,6 @@ module.exports = {
   assertCanActivate,
   assertCanDeactivate,
   assertFlagCanLeave,
+  moveSuperAdmins,
   logAction,
 };

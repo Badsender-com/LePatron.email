@@ -107,7 +107,9 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const role = req.body.role || Roles.REGULAR_USER;
+  // No role means a regular user; any other value must be a role (an empty
+  // one is refused, as on the update).
+  const role = req.body.role === undefined ? Roles.REGULAR_USER : req.body.role;
   const groupId = await superAdminPolicy.groupForCreation(req.user, {
     role,
     groupId: req.body.groupId,
@@ -232,8 +234,15 @@ async function update(req, res) {
   if (!target) throw new createError.NotFound();
   await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
 
+  const previousRole = target.role;
   const updatedUser = await userService.updateUser({ userId, ...userParams });
-  superAdminPolicy.logAction(req.user, 'update', target, userParams.role);
+  superAdminPolicy.logAction(
+    req.user,
+    'update',
+    target,
+    userParams.role,
+    previousRole
+  );
 
   res.json(updatedUser);
 }

@@ -56,11 +56,13 @@ async function seedGroups() {
       _company: mongoose.Types.ObjectId(company.id),
     });
 
+    // A super admin keeps the role: only the guardrails of ADR 0002 take it.
     const updateUsers = await Users.updateMany(
       {
         _id: {
           $in: companyUsers.map((user) => mongoose.Types.ObjectId(user._id)),
         },
+        role: { $ne: Roles.SUPER_ADMIN },
       },
       { role: Roles.REGULAR_USER }
     );

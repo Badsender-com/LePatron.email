@@ -187,6 +187,11 @@ function createStore() {
       if (record) Object.assign(record, update.$set || update);
       return { nModified: record ? 1 : 0 };
     },
+    updateMany: async (filter, update) => {
+      const targets = users.filter((u) => matches(u, filter));
+      targets.forEach((u) => Object.assign(u, update.$set || update));
+      return { nModified: targets.length };
+    },
   };
 
   function toGroupDocument(record) {

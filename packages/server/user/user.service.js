@@ -27,7 +27,9 @@ async function updateUser(userParams) {
     throw new createError.NotFound();
   }
   // we don't need for this DB request to finish to give the user the response
-  const nameChanged = user.name !== userParams.name;
+  // An update without a name (a role change alone) renames nobody.
+  const nameChanged =
+    userParams.name !== undefined && user.name !== userParams.name;
   if (nameChanged) {
     Mailings.updateMany(
       { _user: userParams.userId },
