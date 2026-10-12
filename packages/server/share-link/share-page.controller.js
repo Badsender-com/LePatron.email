@@ -9,6 +9,7 @@ const {
 } = require('../utils/sanitized-preview-cache.js');
 const logger = require('../utils/logger.js');
 const shareLinkService = require('./share-link.service.js');
+const PAGES = require('./share-page.locales.js');
 
 /**
  * The public page a preview link opens (GET /share/:token), without an
@@ -16,67 +17,6 @@ const shareLinkService = require('./share-link.service.js');
  * no permission (share-page.pug). Nothing on it runs a script, and every
  * failure is a page, never the API's JSON error.
  */
-
-const PAGES = {
-  fr: {
-    unknown: {
-      title: 'Lien introuvable',
-      message:
-        "Ce lien d'aperçu n'existe pas ou a été désactivé. Demandez un nouveau lien à la personne qui vous l'a envoyé.",
-    },
-    expired: {
-      title: 'Lien expiré',
-      message:
-        "Ce lien d'aperçu a expiré. Demandez un nouveau lien à la personne qui vous l'a envoyé.",
-    },
-    empty: {
-      title: 'Aperçu indisponible',
-      message:
-        "Cet email n'a pas encore d'aperçu : il doit d'abord être enregistré dans l'éditeur.",
-    },
-    busy: {
-      title: 'Trop de consultations',
-      message: 'Ce lien a été ouvert trop souvent. Réessayez dans un moment.',
-    },
-    error: {
-      title: 'Aperçu indisponible',
-      message: "L'aperçu n'a pas pu être affiché. Réessayez dans un moment.",
-    },
-    meta: (date) =>
-      `Aperçu de la dernière version enregistrée · lien valable jusqu'au ${date} · les liens de l'email s'ouvrent dans un nouvel onglet`,
-    subject: 'Objet',
-    preheader: 'Préheader',
-  },
-  en: {
-    unknown: {
-      title: 'Link not found',
-      message:
-        'This preview link does not exist or was turned off. Ask whoever sent it for a new one.',
-    },
-    expired: {
-      title: 'Link expired',
-      message:
-        'This preview link has expired. Ask whoever sent it for a new one.',
-    },
-    empty: {
-      title: 'Preview unavailable',
-      message:
-        'This email has no preview yet: it must first be saved in the editor.',
-    },
-    busy: {
-      title: 'Too many views',
-      message: 'This link was opened too often. Try again in a moment.',
-    },
-    error: {
-      title: 'Preview unavailable',
-      message: 'The preview could not be shown. Try again in a moment.',
-    },
-    meta: (date) =>
-      `Preview of the last saved version · link valid until ${date} · links in the email open in a new tab`,
-    subject: 'Subject',
-    preheader: 'Preheader',
-  },
-};
 
 // The page never runs a script and loads nothing but what the email itself
 // shows. Inherited by the email's iframe (srcdoc), which is sandboxed too.
@@ -194,14 +134,19 @@ function renderNotice(res, status, lang, kind) {
   });
 }
 
-// The platform's clients are in France: dates read in Paris time, where a
-// one-day link created in the evening ends the next day.
+// When the link ends, to the minute, as the editor shows it (share-link-panel.js
+// formatDate): a day alone read differently on each side of midnight. The
+// editor shows the author's own clock; the reader may be anywhere, so the page
+// names the zone, the platform's (its clients are in France).
 function formatDate(date, lang) {
-  return new Date(date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', {
+  return new Date(date).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
     timeZone: 'Europe/Paris',
+    timeZoneName: 'short',
   });
 }
 
