@@ -37,6 +37,7 @@ const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
+const shareLinkService = require('../share-link/share-link.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -798,6 +799,9 @@ async function transferToUser(req, res) {
     mailing._emailType = undefined;
   }
   await mailing.save();
+  // The public preview links were made for the previous owner and company:
+  // none survives the transfer.
+  await shareLinkService.revokeAllForMailing(mailing._id);
 
   const updatedMailing = await Mailings.findById(mailingId);
   // strangely toJSON doesn't render the data object

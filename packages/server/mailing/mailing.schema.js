@@ -643,6 +643,11 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
+  // Lazy require like the services above: share-link.service reaches
+  // models.common, which reaches back here.
+  const shareLinkService = require('../share-link/share-link.service.js');
+  const shareLinksEnabled = group.enableShareLinks !== false;
+
   let redirectUrl = null;
 
   // The bootstrap account stays in the settings; a super admin goes back to
@@ -687,8 +692,16 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
         qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
         qualityResources: `/api/mailings/${mailingId}/quality/resources`,
-        shareLinks: `/api/mailings/${mailingId}/share-links`,
+        // Absent when the company turned the preview links off: the editor
+        // shows the sharing section only when the address is there.
+        ...(shareLinksEnabled && {
+          shareLinks: `/api/mailings/${mailingId}/share-links`,
+        }),
       },
+      // The limit the sharing section quotes, from the service that holds it.
+      ...(shareLinksEnabled && {
+        shareLinks: { maxActive: shareLinkService.MAX_ACTIVE_LINKS },
+      }),
       // Fingerprints of the quality findings ignored on this email.
       qualityIgnores: (mailing.qualityIgnores || []).map(
         (ignore) => ignore.fingerprint

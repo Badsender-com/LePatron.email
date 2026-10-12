@@ -11,6 +11,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     find: jest.fn(),
     findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
+    updateMany: jest.fn(),
   },
   Mailings: { findById: jest.fn() },
   Groups: { findById: jest.fn() },
@@ -157,6 +158,54 @@ describe('creating a link', () => {
     expect(ShareLinks.create).not.toHaveBeenCalled();
   });
 
+  it('refuses when the company turned the preview links off', async () => {
+    Groups.findById.mockReturnValue(
+      lean({
+        status: 'active',
+        enableEmailBuilder: true,
+        enableShareLinks: false,
+      })
+    );
+    const { error } = await call(controller.create, {
+      params: { mailingId: MAILING_ID },
+    });
+    expect(error).toMatchObject({
+      status: 403,
+      message: 'SHARE_LINKS_DISABLED',
+    });
+    expect(Groups.findById.mock.calls[0][0]).toBe('c1');
+    expect(ShareLinks.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses for an inactive company, or one without the email builder', async () => {
+    for (const group of [
+      { status: 'inactive' },
+      { status: 'active', enableEmailBuilder: false },
+      null,
+    ]) {
+      Groups.findById.mockReturnValue(lean(group));
+      const { error } = await call(controller.create, {
+        params: { mailingId: MAILING_ID },
+      });
+      expect(error).toMatchObject({ status: 403 });
+    }
+    expect(ShareLinks.create).not.toHaveBeenCalled();
+  });
+
+  it("creates a link for the admin's email, which has no company", async () => {
+    mailingService.findOneForUser.mockResolvedValue({ _id: MAILING_ID });
+    ShareLinks.countDocuments.mockResolvedValue(0);
+    ShareLinks.create.mockImplementation(async (doc) => ({
+      _id: LINK_ID,
+      ...doc,
+    }));
+    const { res } = await call(controller.create, {
+      params: { mailingId: MAILING_ID },
+    });
+    expect(Groups.findById).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(201);
+  });
+
   it('stops at 20 active links per email', async () => {
     ShareLinks.countDocuments.mockResolvedValue(20);
     const { error } = await call(controller.create, {
@@ -212,6 +261,15 @@ describe('listing and revoking', () => {
       _mailing: MAILING_ID,
     });
     expect(error).toMatchObject({ status: 404 });
+  });
+
+  it('revokes every active link of an email at once', async () => {
+    ShareLinks.updateMany.mockResolvedValue({ nModified: 2 });
+    await service.revokeAllForMailing(MAILING_ID);
+    const [query, update] = ShareLinks.updateMany.mock.calls[0];
+    expect(query).toMatchObject({ _mailing: MAILING_ID, revokedAt: null });
+    expect(query.expiresAt.$gt).toBeInstanceOf(Date);
+    expect(update.revokedAt).toBeInstanceOf(Date);
   });
 
   it('answers a malformed link id with a 404, not a cast error', async () => {
