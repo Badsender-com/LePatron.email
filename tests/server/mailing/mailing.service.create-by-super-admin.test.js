@@ -19,8 +19,9 @@ jest.mock('../../../packages/server/template/template.service.js', () => ({
   findOne: jest.fn(),
   doesUserHaveAccess: jest.fn(),
 }));
+// The access checks have their own suites: here they pass, to pin who signs.
 jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
-  hasAccess: jest.fn(),
+  assertAccess: jest.fn(),
 }));
 jest.mock('../../../packages/server/folder/folder.service.js', () => ({
   hasAccess: jest.fn(),

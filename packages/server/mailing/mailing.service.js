@@ -357,12 +357,13 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   });
 
   const template = await templateService.findOne({ templateId });
-  templateService.doesUserHaveAccess(user, template);
+  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  await templateService.doesUserHaveAccess(user, template);
 
   let mailParentParam = null;
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
 
     mailParentParam = { workspace: workspaceId };
   }
@@ -1528,7 +1529,7 @@ async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
   }
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
   }
 
   const mailing = await findOne(mailingId);
