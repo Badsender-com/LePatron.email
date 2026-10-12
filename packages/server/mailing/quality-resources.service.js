@@ -110,6 +110,18 @@ const DEFAULT_DEPS = {
   webRiskLookup: (url, key, options) => webRisk.lookup(url, key, options),
 };
 
+// A run whose caller is gone (the editor replaced it, the tab closed) is cut
+// short: its deadline is brought to now, so nothing more is fetched for it.
+// What is in flight ends on its own timeout.
+function cutShortOnAbort(run, signal) {
+  if (!signal) return;
+  const cut = () => {
+    run.deadline = 0;
+  };
+  if (signal.aborted) cut();
+  else signal.addEventListener('abort', cut, { once: true });
+}
+
 /**
  * @param {{ links: string[], images: string[] }} resources - validated
  * @param {Object} context
@@ -117,17 +129,19 @@ const DEFAULT_DEPS = {
  * @param {string} context.cacheScope - answers are shared within this scope
  *   only (the company): another company must not learn what was checked
  * @param {string[]} [context.ownHosts] - the hosts the editor reaches us at
+ * @param {AbortSignal} [context.signal] - aborted once the caller is gone
  * @returns {Promise<{ links: Object, images: Object, blocklists: Object,
  *   webRisk: Object }>} results keyed by URL; blocklists: `{ enabled, listed:
  *   { domain: names } }`; webRisk: `{ enabled, threats: { url: types } }`
  */
 function checkResources(
   resources,
-  { userKey, cacheScope, ownHosts = [] },
+  { userKey, cacheScope, ownHosts = [], signal },
   deps = DEFAULT_DEPS
 ) {
   return throttled(userKey, async () => {
     const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
+    cutShortOnAbort(run, signal);
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
 
     const [linkResults, imageResults, domains, dangerous] = await Promise.all([

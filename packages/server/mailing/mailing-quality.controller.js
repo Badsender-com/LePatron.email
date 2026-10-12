@@ -75,9 +75,11 @@ async function updateQualityIgnores(req, res) {
  *   Google Web Risk, where QC_WEB_RISK_API_KEY is set
  *
  * @apiDescription Reading the email is enough: nothing is stored. One run at a
- *   time per user (429 `QUALITY_CHECK_RUNNING`) and 20 per 10 minutes (429
+ *   time per user, a second one waiting its turn (a third is a 429
+ *   `QUALITY_CHECK_RUNNING`), and 20 per 10 minutes (429
  *   `QUALITY_CHECKS_TOO_FREQUENT`); anything else in the body, or too many
- *   addresses, is a 422 `INVALID_QUALITY_RESOURCES`.
+ *   addresses, is a 422 `INVALID_QUALITY_RESOURCES`. A request the client
+ *   closes before the answer fetches nothing more.
  */
 async function checkResources(req, res) {
   const { user } = req;
@@ -87,12 +89,18 @@ async function checkResources(req, res) {
   // Tenant-scoped: only someone who can open the email has it checked.
   const mailing = await mailingService.findOneForUser(mailingId, user);
 
+  // The editor cancels a run it replaced: the socket closes, and the run
+  // stops fetching. (After the answer, the signal aborts for nothing.)
+  const caller = new AbortController();
+  req.on('close', () => caller.abort());
+
   const result = await qualityResourcesService.checkResources(resources, {
     userKey: String(user.id || user._id || 'admin'),
     cacheScope: String(mailing._company || 'admin'),
     // The editor builds image URLs from the configured host (mosaico-editor
     // .pug), never from the page's: what the request names is not consulted.
     ownHosts: [config.host].filter(Boolean),
+    signal: caller.signal,
   });
   res.json(result);
 }
