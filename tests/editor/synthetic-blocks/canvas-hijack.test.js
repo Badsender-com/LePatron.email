@@ -22,7 +22,7 @@ const ko = require('knockout');
 const createDOMPurify = require('dompurify');
 const {
   neutralizeHtmlForPreview,
-} = require('../../../packages/editor/src/js/ext/html-code-block/neutralize-html.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/neutralize-html.js');
 
 const purifier = createDOMPurify(window);
 const neutralize = (html) => neutralizeHtmlForPreview(html, purifier);

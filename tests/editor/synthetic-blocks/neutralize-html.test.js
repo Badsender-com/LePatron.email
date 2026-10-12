@@ -7,7 +7,7 @@
 const createDOMPurify = require('dompurify');
 const {
   neutralizeHtmlForPreview,
-} = require('../../../packages/editor/src/js/ext/html-code-block/neutralize-html.js');
+} = require('../../../packages/editor/src/js/ext/synthetic-blocks/neutralize-html.js');
 
 // The editor gets DOMPurify as a global from the concatenated libs; inject an
 // instance here instead of faking that global.

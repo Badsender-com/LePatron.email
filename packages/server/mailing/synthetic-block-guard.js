@@ -19,7 +19,7 @@ const {
 //
 // Permission: the block DEFINITIONS are injected into every template
 // client-side, whatever the flags (see packages/editor/src/js/ext/
-// html-code-block/inject-synthetic-blocks.js) — gating them would make
+// synthetic-blocks/inject-synthetic-blocks.js) — gating them would make
 // checkModel splice stored blocks out of existing mailings. The flags only hide
 // the palette entries, so on their own they stop nobody who writes the request
 // by hand. This is where they hold.

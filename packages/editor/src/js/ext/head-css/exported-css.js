@@ -1,8 +1,8 @@
 'use strict';
 
 const ko = require('knockout');
-const { descriptorFor } = require('../html-code-block/block-state.js');
-const { HTML_CODE_BLOCK } = require('../html-code-block/block-types.js');
+const { descriptorFor } = require('../synthetic-blocks/block-state.js');
+const { HTML_CODE_BLOCK } = require('../synthetic-blocks/block-types.js');
 
 // The HTML code block only, not the builder's: that one writes its own styles
 // inline and has nothing for this stylesheet to style.

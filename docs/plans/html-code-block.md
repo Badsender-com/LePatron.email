@@ -166,7 +166,7 @@ filtré) est passé à `initializeViewmodel`, `blockDefs` restant **intact** pou
   <div
     class="lp-html-block"
     data-ko-display="htmlCode"
-    data-bind="lpHtmlCode: htmlCode"
+    data-bind="lpSyntheticBlock: htmlCode"
   ></div>
 </div>
 ```
@@ -243,7 +243,7 @@ applique et **n'est jamais exporté** (l'export passe par une iframe créée à 
 `exportHTML`, `viewmodel.js:645-650`) ; et le XSS canvas est critique (même document,
 même origine, même session).
 
-**Rendu d'un bloc rempli** : binding `lpHtmlCode` calqué sur `virtualHtml`
+**Rendu d'un bloc rempli** : binding `lpSyntheticBlock` calqué sur `virtualHtml`
 (`bindings/virtuals.js:83-116`), `init: ko.bindingHandlers.html.init` → donc
 `controlsDescendantBindings: true` : les `data-bind` du HTML collé sont **inertes**. Le
 rendu est celui du navigateur (`innerHTML`), mais l'intérieur est **opaque** : aucun
@@ -347,7 +347,7 @@ Pendant un export (`exportHTML`) :
 
 1. `beginExportSubstitution()` ouvre une session, avant que la frame d'export ne soit
    bindée ;
-2. le binding `lpHtmlCode`, en mode non-wysiwyg, enregistre la chaîne brute et rend
+2. le binding `lpSyntheticBlock`, en mode non-wysiwyg, enregistre la chaîne brute et rend
    un **marqueur inerte** ASCII (`@@LPHTMLBLOCK_<nonce>_<index>@@`) à sa place ;
 3. `substituteMarkers()` réinjecte les octets exacts en **toute dernière étape**,
    après que chaque transformation a été appliquée ;
@@ -394,13 +394,13 @@ Deux chemins traduisent une créa, et il fallait les couvrir tous les deux :
 | Chemin         | Mécanisme                          | Exclusion du bloc                                               |
 | -------------- | ---------------------------------- | --------------------------------------------------------------- |
 | `mailing.data` | extraction champ par champ         | `htmlCode` dans `EXCLUDED_FIELDS` (`mosaico-text-extractor.js`) |
-| `previewHtml`  | remplacement de chaînes en aveugle | garde de zone (`html-code-block-protection.js`)                 |
+| `previewHtml`  | remplacement de chaînes en aveugle | garde de zone (`synthetic-block-protection.js`)                 |
 
 Le second était le trou : `updatePreviewWithTranslations` remplace les textes source
 partout dans la chaîne, donc un texte identique à celui d'un bloc natif était aussi
 réécrit **à l'intérieur** du HTML collé.
 
-`transformOutsideHtmlCodeBlocks` applique le remplacement à tous les segments **sauf**
+`transformOutsideSyntheticBlocks` applique le remplacement à tous les segments **sauf**
 les zones `lp-html-block`. La zone est délimitée en comptant la profondeur des `<div>`
 depuis l'élément marqueur, en **ignorant les commentaires HTML** — un commentaire
 conditionnel contient couramment un `<div>` non apparié pour Outlook, qui déséquilibrerait
@@ -445,7 +445,7 @@ Retours de review, corrigés dans la PR :
 | 1   | Flag serveur                 | schéma, `findForApi`, populate, `metadata`, cast multipart            |
 | 2   | UI admin                     | switch super-admin dans le formulaire de template + i18n              |
 | 3   | Injection + palette          | fonction pure d'injection, `paletteBlockDefs`, vignette, libellés     |
-| 4   | Rendu neutralisé + état vide | DOMPurify client, binding `lpHtmlCode`, état vide CSS + i18n          |
+| 4   | Rendu neutralisé + état vide | DOMPurify client, binding `lpSyntheticBlock`, état vide CSS + i18n    |
 | 5   | Modale CodeMirror            | dépendance, build, widget `code`, modale, placeholder, limite 100 000 |
 | 6   | Zone protégée inliner        | extraction/réinsertion du sous-arbre                                  |
 | 7   | Neutralisation aperçu        | sanitize en sortie de `previewMail()`                                 |
@@ -457,16 +457,16 @@ Retours de review, corrigés dans la PR :
 | Rôle                          | Fichier                                                                    |
 | ----------------------------- | -------------------------------------------------------------------------- |
 | Descripteurs des blocs        | `packages/shared/synthetic-blocks.js` (éditeur et serveur)                 |
-| Constantes dérivées (éditeur) | `packages/editor/src/js/ext/html-code-block/constants.js`                  |
-| Injection + ordre palette     | `packages/editor/src/js/ext/html-code-block/inject-synthetic-blocks.js`    |
-| Neutralisation aperçu canvas  | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
-| Zone protégée inliner         | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
-| Limite de taille (éditeur)    | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
-| Prédicats d'état d'un bloc    | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
-| Retrait d'un bloc vide        | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
-| Substitution à l'export       | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
-| Garde de traduction           | `packages/server/translation/html-code-block-protection.js`                |
-| Binding de rendu              | `packages/editor/src/js/bindings/html-code-block.js`                       |
+| Constantes dérivées (éditeur) | `packages/editor/src/js/ext/synthetic-blocks/constants.js`                 |
+| Injection + ordre palette     | `packages/editor/src/js/ext/synthetic-blocks/inject-synthetic-blocks.js`   |
+| Neutralisation aperçu canvas  | `packages/editor/src/js/ext/synthetic-blocks/neutralize-html.js`           |
+| Zone protégée inliner         | `packages/editor/src/js/ext/synthetic-blocks/protect-from-inliner.js`      |
+| Limite de taille (éditeur)    | `packages/editor/src/js/ext/synthetic-blocks/validate.js`                  |
+| Prédicats d'état d'un bloc    | `packages/editor/src/js/ext/synthetic-blocks/block-state.js`               |
+| Retrait d'un bloc vide        | `packages/editor/src/js/ext/synthetic-blocks/strip-empty-blocks.js`        |
+| Substitution à l'export       | `packages/editor/src/js/ext/synthetic-blocks/export-substitution.js`       |
+| Garde de traduction           | `packages/server/translation/synthetic-block-protection.js`                |
+| Binding de rendu              | `packages/editor/src/js/bindings/synthetic-block.js`                       |
 | Widget `code`                 | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
 | Modale CodeMirror             | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
 | Limite de taille (serveur)    | `packages/server/mailing/synthetic-block-guard.js`                         |
