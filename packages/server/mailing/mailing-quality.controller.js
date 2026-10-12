@@ -21,8 +21,7 @@ module.exports = {
  * @apiParam {string} mailingId
  *
  * @apiParam (Body) {String} fingerprint the finding's fingerprint, as the
- *   editor's quality engine computes it
- * @apiParam (Body) {String} [ruleId] the check that raised it, kept for audit
+ *   editor's quality engine computes it (the check that raised it opens it)
  * @apiParam (Body) {Boolean} ignored `true` to ignore it, `false` to stop
  *
  * @apiSuccess {String[]} qualityIgnores the fingerprints ignored on the email
@@ -38,16 +37,20 @@ async function updateQualityIgnores(req, res) {
   // Validated before any read: a malformed request costs no database access.
   const change = mailingQualityService.validateIgnorePayload(req.body);
 
-  // Tenant-scoped read, and a 404 rather than a CastError on a malformed id.
-  const mailing = await mailingService.findOneForUser(mailingId, user);
+  // Tenant-scoped read of what the right needs (never the content), and a
+  // 404 rather than a CastError on a malformed id.
+  const mailing = await mailingService.findOneForUser(
+    mailingId,
+    user,
+    mailingQualityService.IGNORE_PROJECTION
+  );
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  const qualityIgnores = mailingQualityService.applyIgnore(
-    mailing,
+  const qualityIgnores = await mailingQualityService.setIgnored(
+    mailing._id,
     change,
     user
   );
-  await mailing.save();
 
   // Only what this endpoint owns: never `data` or `previewHtml`.
   res.json({ qualityIgnores });
