@@ -19,11 +19,12 @@ const finding = (fingerprint, severity = 'error') => ({
   severity,
 });
 
-function setup({ ignored = [], persist } = {}) {
+function setup({ ignored = [], persist, url = URL } = {}) {
   const vm = {
     t: (key) => key,
     notifier: { error: jest.fn() },
-    metadata: { url: { qualityIgnores: URL }, qualityIgnores: ignored },
+    exportHTML: () => '<p></p>',
+    metadata: { url: { qualityIgnores: url }, qualityIgnores: ignored },
   };
   const result = {
     findings: [finding('a'), finding('b', 'warning')],
@@ -32,9 +33,10 @@ function setup({ ignored = [], persist } = {}) {
   installQualityReview(vm, ko, {
     run: () => result,
     defer: (fn) => fn(),
+    watchContent: () => () => {},
     persist:
       persist ||
-      jest.fn((url, change) => Promise.resolve(change.ignored ? ['a'] : [])),
+      jest.fn((_url, change) => Promise.resolve(change.ignored ? ['a'] : [])),
   });
   vm.quality.run();
   return vm;
@@ -55,7 +57,7 @@ describe('ignored findings', () => {
     expect(vm.quality.issueCount()).toBe(1);
   });
 
-  it('ignores at once and stores the change', async () => {
+  it('ignores at once and stores the change, by fingerprint alone', async () => {
     const persist = jest.fn(() => Promise.resolve(['a']));
     const vm = setup({ persist });
 
@@ -65,7 +67,6 @@ describe('ignored findings', () => {
 
     expect(persist).toHaveBeenCalledWith(URL, {
       fingerprint: 'a',
-      ruleId: 'unfilled-links',
       ignored: true,
     });
   });
@@ -98,6 +99,62 @@ describe('ignored findings', () => {
       URL,
       expect.objectContaining({ ignored: false })
     );
+  });
+
+  it('sends two quick changes one after the other, and keeps both meanwhile', async () => {
+    const answers = [];
+    const persist = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          answers.push(resolve);
+        })
+    );
+    const vm = setup({ persist });
+
+    vm.quality.ignore(finding('a'));
+    vm.quality.ignore(finding('b'));
+    expect(vm.quality.ignored()).toEqual(['a', 'b']);
+    await flush();
+    // The second waits for the first: the server rewrites the whole list.
+    expect(persist).toHaveBeenCalledTimes(1);
+
+    // The first answer knows nothing of "b": it must not erase it.
+    answers[0](['a']);
+    await flush();
+    expect(vm.quality.ignored()).toEqual(['a', 'b']);
+    expect(persist).toHaveBeenCalledTimes(2);
+
+    // The last answer carries everyone's choices, including another user's.
+    answers[1](['a', 'b', 'c']);
+    await flush();
+    expect(vm.quality.ignored()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('puts back only the change that failed, and goes on with the next', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    let call = 0;
+    const persist = jest.fn(() =>
+      ++call === 1 ? Promise.reject(new Error('500')) : Promise.resolve(['b'])
+    );
+    const vm = setup({ persist });
+
+    vm.quality.ignore(finding('a'));
+    vm.quality.ignore(finding('b'));
+    await flush();
+    await flush();
+
+    expect(vm.quality.ignored()).toEqual(['b']);
+    expect(persist).toHaveBeenCalledTimes(2);
+    console.error.mockRestore();
+  });
+
+  it('cannot ignore anything without the endpoint, and says so to the drawer', () => {
+    const vm = setup({ url: null });
+    expect(vm.quality.canIgnore).toBe(false);
+    vm.quality.ignore(finding('a'));
+    expect(vm.quality.ignored()).toEqual([]);
+
+    expect(setup().quality.canIgnore).toBe(true);
   });
 
   it('does not open the drawer on export when every finding is ignored', () => {

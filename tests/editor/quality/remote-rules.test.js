@@ -407,7 +407,8 @@ describe('the review, with the server', () => {
       {
         links: ['https://brand.com/x'],
         images: [],
-      }
+      },
+      expect.objectContaining({ cancelToken: expect.anything() })
     );
 
     answer(
