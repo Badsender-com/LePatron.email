@@ -177,6 +177,19 @@ describe('links', () => {
     expect(links['https://intranet.test']).toEqual({ state: 'unverifiable' });
   });
 
+  it('fetches an address without the credentials typed in it, and answers under the address as sent', async () => {
+    const d = deps({ probe: jest.fn(async () => ({ status: 200 })) });
+    const { links } = await run(
+      { links: ['https://user:secret@a.test/x?y=1'] },
+      d
+    );
+    expect(d.probe.mock.calls[0][0]).toBe('https://a.test/x?y=1');
+    expect(links['https://user:secret@a.test/x?y=1']).toEqual({
+      state: 'ok',
+      httpStatus: 200,
+    });
+  });
+
   it('does not fetch a port other than the default ones', async () => {
     const d = deps();
     const { links, images } = await run(
@@ -197,6 +210,16 @@ describe('links', () => {
 });
 
 describe('images', () => {
+  it('downloads an image without the credentials typed in its address', async () => {
+    const d = deps();
+    const { images } = await run(
+      { images: ['https://user:secret@cdn.test/a.png'] },
+      d
+    );
+    expect(d.probe.mock.calls[0][0]).toBe('https://cdn.test/a.png');
+    expect(images['https://user:secret@cdn.test/a.png'].state).toBe('ok');
+  });
+
   it('weighs an image and reads its size', async () => {
     const { images } = await run(
       { images: ['https://cdn.test/a.png'] },

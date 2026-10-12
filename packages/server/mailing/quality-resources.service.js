@@ -13,6 +13,7 @@ const {
   limiter,
   mapLimited,
   onDefaultPort,
+  withoutCredentials,
   timeLeft,
   UNVERIFIABLE,
   RUNS_PER_WINDOW,
@@ -77,7 +78,8 @@ function checkUrl(value) {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw invalid();
   }
-  // As sent: the editor finds its results back by the address it asked for.
+  // As sent, credentials included: the editor finds its results back by the
+  // address it asked for. What is fetched is `withoutCredentials(value)`.
   return value;
 }
 
@@ -132,7 +134,7 @@ async function checkLink(url, run, deps) {
     return linkState(
       await linkProbes(() => {
         if (Date.now() > run.deadline) return Promise.resolve({ status: 0 });
-        return deps.probe(url, {
+        return deps.probe(withoutCredentials(url), {
           timeoutMs: timeLeft(run, LINK_TIMEOUT_MS),
           readBody: false,
           defaultPortsOnly: true,
@@ -234,7 +236,7 @@ async function checkThreats(links, apiKey, key, run, scope, deps) {
         if (Date.now() > run.deadline || !spendWebRiskLookup(scope)) {
           return Promise.resolve(null);
         }
-        return deps.webRiskLookup(url, apiKey, {
+        return deps.webRiskLookup(withoutCredentials(url), apiKey, {
           timeoutMs: timeLeft(run, webRisk.TIMEOUT_MS),
         });
       },
