@@ -48,6 +48,10 @@ function generatePreheaders() {
   return `${prefixApi}/text-generation/preheader`;
 }
 
+function correctText() {
+  return `${prefixApi}/text-generation/corrections`;
+}
+
 function getTranslationLanguages() {
   return `${prefixApi}/translation/languages`;
 }
@@ -67,6 +71,7 @@ function uploadGalleryImageFromUrl(mailingId) {
 module.exports = {
   generateSubjects,
   generatePreheaders,
+  correctText,
   getEspIds,
   getProfileDetail,
   getCampaignDetail,

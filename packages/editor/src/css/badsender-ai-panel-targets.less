@@ -53,3 +53,64 @@
     }
   }
 }
+
+// ===== The corrections (ADR 0005) =====
+#toolai .ai-panel {
+  &__corrections-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__corrections {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__correction {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: @qc-radius;
+
+    &--accepted,
+    &--ignored,
+    &--stale {
+      background: var(--gray-50);
+    }
+  }
+
+  &__change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  &__before {
+    color: var(--gray-700);
+    text-decoration: line-through;
+  }
+
+  &__after {
+    font-weight: 600;
+    color: var(--gray-900);
+    text-decoration: none;
+  }
+
+  &__buttons--start {
+    justify-content: flex-start;
+  }
+
+  &__status-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-700);
+  }
+}
