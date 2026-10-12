@@ -14,9 +14,8 @@ const { isBootstrapAccount } = require('../account/bootstrap-account.js');
  *
  * - only a super admin grants or revokes the role, or manages a super admin;
  * - a super admin always belongs to the platform group;
- * - nobody demotes or deactivates themselves;
- * - at least one active super admin remains in the database, the bootstrap
- *   account not counting;
+ * - nobody demotes or deactivates themselves (so a super admin acting on
+ *   another always leaves one; the bootstrap account may remove the last);
  * - the platform flag cannot leave a group with active super admins.
  *
  * Each refusal is its own error code, so the UI shows its own message.
@@ -71,16 +70,6 @@ async function groupForCreation(actor, { role, groupId }) {
   return assertPlatformGroupIs(groupId);
 }
 
-// After the action, at least one active super admin must remain. Acting on
-// a deactivated super admin does not change the count.
-async function assertNotLastSuperAdmin(target) {
-  if (target.isDeactivated) return;
-  const remaining = (await countActiveSuperAdmins()) - 1;
-  if (remaining < 1) {
-    throw new Conflict(ERROR_CODES.LAST_SUPER_ADMIN_PROTECTED);
-  }
-}
-
 function assertCanManage(actor, target) {
   if (isSuperAdmin(target) && !actor?.isAdmin) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
@@ -110,7 +99,6 @@ async function assertCanUpdate(actor, target, role) {
   if (isSelf(actor, target)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION);
   }
-  await assertNotLastSuperAdmin(target);
 }
 
 /**
@@ -129,7 +117,6 @@ async function assertCanDeactivate(actor, target) {
   if (isSelf(actor, target)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION);
   }
-  await assertNotLastSuperAdmin(target);
 }
 
 /**

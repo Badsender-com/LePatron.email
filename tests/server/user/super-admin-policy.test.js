@@ -30,7 +30,7 @@ const {
 
 beforeEach(() => jest.clearAllMocks());
 
-it('lets a deactivated super admin be demoted when no active one remains', async () => {
+it('lets the bootstrap account demote a deactivated super admin when no active one remains', async () => {
   store.seed({
     groups: GROUPS,
     users: USERS.map((u) =>

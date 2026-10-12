@@ -4,8 +4,8 @@
 // and a group can be deleted with its users. A super admin always belongs to
 // the platform group (ADR 0002), and the invariant is checked when the role
 // is granted; so the flag cannot leave a group while active super admins
-// belong to it, and such a group cannot be deleted, or the invariant and the
-// "last super admin" rule would break after the grant. The bootstrap account
+// belong to it, and such a group cannot be deleted, or the invariant would
+// break after the grant. The bootstrap account
 // alone can move it to another group: the super admins then move with it.
 
 jest.mock('../../../packages/server/common/models.common.js', () => {
