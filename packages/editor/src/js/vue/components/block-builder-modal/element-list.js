@@ -11,10 +11,10 @@ const {
 // reordering and removing.
 //
 // A Vue 2 mixin for the same reason as the preview surface (preview-surface.js):
-// every one of these reads or writes the component's `state` and `selectedId`,
+// every one of these reads or writes the component's `state` and `selectedElementId`,
 // and a mixin keeps `this` meaning the component.
 //
-// The component is expected to provide: `state`, `selectedId` and `vm`.
+// The component is expected to provide: `state`, `selectedElementId` and `vm`.
 
 const PALETTE = [
   { type: 'text', labelKey: 'block-builder-element-text' },
@@ -99,7 +99,7 @@ const ElementListMixin = {
       this.columnElements.splice(at, 0, element);
       // Selected on arrival, so the settings panel is already on it — dropping
       // and editing are one gesture, not two.
-      this.selectedId = element.id;
+      this.selectedElementId = element.id;
       return element;
     },
 
@@ -108,7 +108,7 @@ const ElementListMixin = {
       if (index === -1) return;
       this.columnElements.splice(index, 1);
       const next = this.columnElements[index] || this.columnElements[index - 1];
-      this.selectedId = next ? next.id : null;
+      this.selectedElementId = next ? next.id : null;
     },
 
     // The arrows, through the drag's own move so the splice exists once.
@@ -118,7 +118,7 @@ const ElementListMixin = {
       if (!this.canMove(offset)) return;
       const target = this.indexOfSelected() + offset;
       const position = offset > 0 ? target + 1 : target;
-      this.moveElementTo(this.selectedId, position);
+      this.moveElementTo(this.selectedElementId, position);
     },
 
     /**
@@ -139,12 +139,70 @@ const ElementListMixin = {
       );
       if (from === -1) return;
 
-      this.selectedId = id;
+      this.selectedElementId = id;
       const to = index > from ? index - 1 : index;
       if (to === from) return;
 
       const [element] = this.columnElements.splice(from, 1);
       this.columnElements.splice(to, 0, element);
+    },
+
+    /**
+     * Moves an element to a column, at a position inside it.
+     *
+     * The operation, not the gesture: the drag that will call it arrives with
+     * its own ticket. It lives here because a structure change needs it too —
+     * a column that disappears hands its elements to the one that survives,
+     * and losing a paragraph to a layout change is the kind of thing a user
+     * never forgives and never reports precisely enough to reproduce.
+     *
+     * The element keeps its identity and its settings: it is moved, never
+     * recreated.
+     *
+     * @param {string} id
+     * @param {{rowId: string, columnIndex: number, index: number}} target
+     * @returns {boolean} whether it moved
+     */
+    moveElement(id, target) {
+      const from = this.locateElement(id);
+      const row = (this.state.rows || []).find(
+        (entry) => entry.id === (target && target.rowId)
+      );
+      const to = row && row.columns[target.columnIndex];
+      if (!from || !to) return false;
+
+      const [element] = from.column.elements.splice(from.index, 1);
+      // Counted with the element still in place, as a drop position is: taking
+      // it out first shifts everything after it up by one. Only within the same
+      // column — across columns nothing moved underneath.
+      const sameColumn = from.column === to;
+      const at =
+        sameColumn && target.index > from.index
+          ? target.index - 1
+          : target.index;
+      to.elements.splice(Math.max(0, Math.min(at, to.elements.length)), 0, element);
+
+      this.selectedElementId = id;
+      this.selectedRowId = null;
+      this.scheduleRender();
+      return true;
+    },
+
+    /** Where an element sits: its row, its column and its index, or null. */
+    locateElement(id) {
+      const rows = this.state.rows || [];
+      for (let r = 0; r < rows.length; r += 1) {
+        const columns = rows[r].columns || [];
+        for (let c = 0; c < columns.length; c += 1) {
+          const index = columns[c].elements.findIndex(
+            (element) => element.id === id
+          );
+          if (index !== -1) {
+            return { row: rows[r], column: columns[c], index };
+          }
+        }
+      }
+      return null;
     },
 
     // Whether the selected element can move by `offset`, so the buttons are
@@ -166,7 +224,7 @@ const ElementListMixin = {
       const { key } = event;
       if (key === 'Enter' || key === ' ') {
         event.preventDefault();
-        this.selectedId = this.columnElements[index].id;
+        this.selectElement(this.columnElements[index].id);
         return;
       }
       if (key !== 'ArrowDown' && key !== 'ArrowUp') return;
@@ -174,17 +232,22 @@ const ElementListMixin = {
       event.preventDefault();
       const next = index + (key === 'ArrowDown' ? 1 : -1);
       if (next < 0 || next >= this.columnElements.length) return;
-      this.selectedId = this.columnElements[next].id;
+      this.selectElement(this.columnElements[next].id);
       // After the render, which moves the tabindex onto the new option.
       this.$nextTick(() => {
-        const options = this.$el.querySelectorAll('[role="option"]');
+        // Scoped to the element list: the row list is a listbox of its own,
+        // and an unscoped query walks into it — which is exactly what happened
+        // the first time a second listbox appeared in this panel.
+        const options = this.$el.querySelectorAll(
+          '.bb-modal__list [role="option"]'
+        );
         if (options[next]) options[next].focus();
       });
     },
 
     indexOfSelected() {
       return this.columnElements.findIndex(
-        (element) => element.id === this.selectedId
+        (element) => element.id === this.selectedElementId
       );
     },
   },
