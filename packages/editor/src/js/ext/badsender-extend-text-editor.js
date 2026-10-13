@@ -51,8 +51,20 @@ module.exports = (opts) => {
       tinymceConfigFull.language = 'fr_FR';
     }
 
+    // The AI button opens the field's actions; only a group with text
+    // generation has any (#1257).
+    const aiOptions =
+      viewModel.metadata && viewModel.metadata.hasTextGenerationFeature
+        ? {
+            plugins: [`${tinymceConfigFull.plugins.join(' ')} aiactions`],
+            // First: the toolbar is wider than a narrow canvas, its end hidden.
+            toolbar1: `aiactions | ${tinymceConfigFull.toolbar1}`,
+          }
+        : {};
+
     const textEditorOptions = {
       ...tinymceConfigFull,
+      ...aiOptions,
       ...tinyMceTextColorConfig,
       ...tinyMceColorPickerConfig,
     };

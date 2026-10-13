@@ -32,9 +32,25 @@ let panel = null;
 // The view model the panel waits for the current user of: a template swapped
 // in the meantime mounts nothing for the one it left.
 let pending = null;
+let editor = null;
+
+// The block field an element belongs to (the text being edited).
+const fieldOf = (element) =>
+  editor &&
+  fieldTargetOf(element, {
+    pathsOf: (blockId) =>
+      editor.textFieldsOf(blockId).map((field) => field.path),
+  });
+
+// A block of the canvas, as the toolbar of the block hands it.
+const blockTarget = (block) => ({
+  kind: 'block',
+  blockId: ko.unwrap(block.id),
+  blockType: ko.unwrap(block.type),
+});
 
 function mount(vm) {
-  const editor = createEditorAccess(vm);
+  editor = createEditorAccess(vm);
   panel = createAiPanel({
     ko,
     editor,
@@ -44,12 +60,9 @@ function mount(vm) {
     // A click in a text selects it: the field being edited is the element
     // that has the focus, matched against its block's text fields.
     fieldSelection: vm.selectedItem,
-    editedField: () =>
-      fieldTargetOf(document.activeElement, {
-        pathsOf: (blockId) =>
-          editor.textFieldsOf(blockId).map((field) => field.path),
-      }),
+    editedField: () => fieldOf(document.activeElement),
   });
+  vm.aiPanelReady(true);
 
   Vue.component('AiPanelPlugin', {
     components: { AiPanel },
@@ -67,6 +80,19 @@ module.exports = {
     vm.showAi = installRightPanel(vm, ko).flag('ai');
     // The condition of the top bar button, the same as the panel's.
     vm.canUseTextGeneration = () => canUseTextGeneration(vm);
+
+    // The entry points of the toolbars (#1257). The panel exists once the
+    // editor is initialised: the block toolbar re-reads the offer then.
+    vm.aiPanelReady = ko.observable(false);
+    vm.offersAiOnBlock = (block) =>
+      vm.aiPanelReady() &&
+      panel.offerNow()(blockTarget(block)).actions.length > 0;
+    vm.openAiOnBlock = (block) => panel && panel.openTarget(blockTarget(block));
+    // From the text editor's toolbar: the field it edits.
+    vm.openAiOnElement = (element) => {
+      const target = panel && fieldOf(element);
+      if (target) panel.openTarget(target);
+    };
   },
   init(vm) {
     if (!document.getElementById('ai-panel')) return;
@@ -96,6 +122,7 @@ module.exports = {
     if (panel) {
       panel.dispose();
       panel = null;
+      editor = null;
     }
   },
 };
