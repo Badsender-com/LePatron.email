@@ -529,9 +529,11 @@ async function updateLabel(req, res, next) {
     return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
   }
 
+  // a gallery id is an ObjectId: anything else would fail as a cast error
+  // (a 500) when the owner is looked up
   // the imageName is technically prefixed by its gallery's mongoId: enforce the
   // match so a caller can't target an image outside the gallery in the URL
-  if (!imageName.startsWith(`${mongoId}-`)) {
+  if (!/^[a-f\d]{24}$/i.test(mongoId) || !imageName.startsWith(`${mongoId}-`)) {
     return next(
       createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
     );

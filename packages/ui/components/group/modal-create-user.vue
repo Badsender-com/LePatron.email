@@ -1,10 +1,12 @@
 <script>
+import { mapGetters } from 'vuex';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import { roleItems } from '~/helpers/constants/roles';
+import { IS_ADMIN, IS_GROUP_ADMIN_TECH, USER } from '~/store/user';
 
 export default {
   name: 'BsModalCreateUser',
@@ -42,8 +44,14 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
+    }),
     roles() {
-      return roleItems(this);
+      return roleItems(this, {
+        includeTechAdmin: this.isAdmin || this.isGroupAdminTech,
+      });
     },
     emailErrors() {
       const errors = [];

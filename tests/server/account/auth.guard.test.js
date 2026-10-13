@@ -1,3 +1,5 @@
+'use strict';
+
 // Route protection is one word per route, and nothing else notices which
 // account a guard lets through. `GUARD_ADMIN` had no test of its own: the only
 // admin was the bootstrap account, a frozen object outside the database.

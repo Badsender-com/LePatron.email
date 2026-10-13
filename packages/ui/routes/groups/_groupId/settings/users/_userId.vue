@@ -1,5 +1,5 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -12,6 +12,7 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { Roles, roleItems } from '~/helpers/constants/roles';
+import { IS_ADMIN, IS_GROUP_ADMIN_TECH, USER } from '~/store/user';
 import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
@@ -99,8 +100,17 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
+    }),
     roles() {
-      return roleItems(this);
+      return roleItems(this, {
+        includeTechAdmin:
+          this.isAdmin ||
+          this.isGroupAdminTech ||
+          this.user.role === Roles.GROUP_ADMIN_TECH,
+      });
     },
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
