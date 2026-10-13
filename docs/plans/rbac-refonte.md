@@ -8,12 +8,14 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 - **Un lien de partage public existe déjà**, mais ce n'est que l'aperçu en lecture seule du contrôle qualité v2 (lot 7, PR #1138) : pas de commentaire possible. [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (spectateur qui commente) doit s'appuyer sur ce socle (section 5).
 - La gestion des utilisateurs a été durcie (PR #1161) : un `company_admin` n'atteint que les comptes de sa propre company (`user-scope.js`).
 
+**Mise à jour du 2026-10-13** : la branche a été rebasée sur `develop` (51 commits de retard, `staging` n'ayant rien de plus que `develop` hors merges de PR). Le chantier **super admin est traité par Héloïse** (epic #1153, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) et **fait foi** : là où la branche et `develop` divergent sur le super admin, les comptes ou le durcissement de la gestion des utilisateurs, c'est la version de `develop` qui est gardée. Le détail est dans « Resynchronisation du 2026-10-13 » ci-dessous.
+
 **Scope réduit le 2026-08-27** : le chantier RBAC initial couvrait tout en un seul cadrage (nouveaux rôles, `super_admin` en rôle DB multi-comptes, notion d'équipe, spectateur non loggué, audit log). Jugé trop "epic" et risqué pour un seul incrément, il est désormais découpé :
 
 - **Ce document/incrément** : ajout des rôles `company_admin_tech`, `reviewer`, `writer`. Issue GitHub [#1099](https://github.com/Badsender-com/LePatron.email/issues/1099).
 - Spectateur non loggué via lien de partage — différé, issue [#1104](https://github.com/Badsender-com/LePatron.email/issues/1104) (voir section 5) ; le socle « lien de partage » existe depuis le QC v2.
 - Team / notion d'équipe au sein d'une company — différé, issue [#1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
-- `super_admin` en rôle persistant multi-comptes — **livré ailleurs** (epic #1153, PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) ; l'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui reste (section 8).
+- `super_admin` en rôle persistant multi-comptes — **traité et livré par Héloïse** (epic #1153, PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) ; l'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui reste (section 8).
 - Audit log des changements de rôle et réglages sensibles — différé, issue [#1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 - Gestion granulaire des droits par feature et action — différé, issue [#1103](https://github.com/Badsender-com/LePatron.email/issues/1103).
 
@@ -87,7 +89,7 @@ La branche `feat/roles-permissions` a rapatrié toutes les PR ouvertes à cette 
 | Chantier rapatrié                           | PR                  | Effet sur les rôles                                                                                                                                                                                                 |
 | ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Contrôle qualité v2, lots 1 à 7             | #1122 à #1138       | Nouveau panneau dans l'éditeur (contrôles, envoi de test, ignorer un résultat, le transformer en commentaire, lien de partage). **Aucune de ces actions n'est soumise aux rôles** `reviewer`/`writer` aujourd'hui.  |
-| Super admin persisté                        | #1157 à #1159       | `super_admin` entre dans l'enum `role`, `isAdmin` dérive du rôle, `superAdminPolicy` encadre chaque action de `user.controller.js`. Fusionné avec `userScope` (#1161) : les deux contrôles s'appliquent à la suite. |
+| Super admin persisté (par Héloïse)          | #1157 à #1159       | `super_admin` entre dans l'enum `role`, `isAdmin` dérive du rôle, `superAdminPolicy` encadre chaque action de `user.controller.js`. Fusionné avec `userScope` (#1161) : les deux contrôles s'appliquent à la suite. |
 | Durcissement de la gestion des utilisateurs | #1161               | `user-scope.js` : un `company_admin` n'atteint que sa company.                                                                                                                                                      |
 | Génération de texte IA                      | #1145, #1170, #1171 | Nouvelle fonctionnalité IA par group (sujet, préheader) dans l'éditeur : à classer dans la matrice 3.2 (qui configure, qui utilise).                                                                                |
 | Refonte de la galerie                       | #1068               | Métadonnées d'image, filtres, contrôle de propriété. Écritures atomiques de `develop` conservées.                                                                                                                   |
@@ -129,6 +131,16 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 6. Échec de `/api/users/current-user` : tout reste verrouillé sans message ; `canEditStyle` et `canEditStructure` portent la même règle (deux booléens).
 7. Bloc code HTML rangé avec la structure : **à confirmer avec le produit** (un `writer` ne peut plus corriger le HTML collé).
 8. Enforcement serveur de tout le reste (#1103) et QA multi-navigateurs ; lignes 16 et 18 de la matrice 3.2 toujours ouvertes.
+
+### Resynchronisation du 2026-10-13
+
+Rebase de `feat/roles-permissions` sur `origin/develop` (le 2026-10-13, 51 commits absorbés, 61 commits d'avance ensuite, 4558 tests verts). Règle appliquée : **le travail super admin d'Héloïse est prioritaire**.
+
+- **Super admin / durcissement du compte** : 10 commits de la branche étaient des copies anciennes de commits d'Héloïse déjà sur `develop` (ADR 0002, rôle persisté, écran super admins, durcissement du compte). Les conflits ont été résolus en gardant la version de `develop` ; le diff de la branche contre `develop` ne touche plus `super-admin-policy.js`, `user-scope.js`, l'écran `super-admins` ni l'ADR 0002, hormis l'ajout des trois rôles dans l'enum (`user.schema.js`, `auth.guard.js`, `roles.js`).
+- **Rôles côté UI** : `packages/ui/helpers/constants/roles.js` (Héloïse) reste le point d'entrée (`Roles`, `roleItems`). Il porte maintenant les 6 valeurs et construit la liste des sélecteurs à partir de `helpers/roles.js` (`ASSIGNABLE_ROLES`, libellés). Les libellés d'Héloïse (`users.roles.groupAdmin`, `users.roles.chip.*`) l'emportent ; les nôtres s'y ajoutent (`writer`, `reviewer`, `companyAdminTech`). Le tableau des utilisateurs garde sa colonne de rôle sans en-tête avec chip (super admin en `primary`) ; les autres rôles y apparaissent aussi en chip.
+- **Fusionné sans changer le comportement** : renommage `html-code-block` → `synthetic-blocks` (chemins mis à jour dans le moteur QC), double-clic et clic du bloc dans le canvas, outil Compose (rangé avec la structure, donc masqué au `writer` : **décision à confirmer par le produit**, voir le point 7 ci-dessus), `MAILING_LIST_PROJECTION` (+ `qualityIgnores`), galerie (`renameLabel` atomique, codes d'erreur US-02).
+- **Tests adaptés** : `roles.test.js` (liste des rôles élargie à 5), `mailing.list-projections.test.js` (+ `qualityIgnores`), `control-quality.test.js` supprimé avec la fonction qu'il testait.
+- **À refaire après ce rebase** : `yarn editor:build`, puis un passage dans le navigateur sur l'éditeur (templates et CSS fusionnés).
 
 ---
 
@@ -194,7 +206,7 @@ Pas de rôles sur-mesure demandés, et pas de moteur générique de permissions 
   ```
   Depuis l'ADR 0002, `SUPER_ADMIN` **fait partie** de l'enum `role` persisté (`user.schema.js`) : l'enum compte donc 6 valeurs. `super_admin` n'est pas assignable depuis une company : on l'accorde depuis l'écran des super admins, sous les garde-fous de `super-admin-policy.js`.
 - `packages/server/account/auth.guard.js` (existant, étendu) — nouveau guard additif `GUARD_GROUP_ADMIN_OR_TECH = guard([Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH])`, sans toucher `GUARD_GROUP_ADMIN`/`GUARD_ADMIN`/`GUARD_USER` existants (zéro régression sur les routes déjà en place).
-- `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 valeurs de rôle (les 5 assignables + `super_admin`, proposé par le sélecteur uniquement sur demande via `includeSuperAdmin` ou quand l'utilisateur l'est déjà) avec labels i18n ; `packages/ui/helpers/constants/roles.js` (objet `Roles`, repris du chantier super admin) en porte les mêmes valeurs, remplace les deux listes dupliquées de `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`.
+- `packages/ui/helpers/roles.js` (nouveau) — liste unique des 6 valeurs de rôle (les 5 assignables + `super_admin`, proposé par le sélecteur uniquement sur demande via `includeSuperAdmin` ou quand l'utilisateur l'est déjà) avec labels i18n ; `packages/ui/helpers/constants/roles.js` (objet `Roles` et `roleItems`, du chantier super admin d'Héloïse, étendu aux 6 valeurs et alimenté par `helpers/roles.js`) en porte les mêmes valeurs, remplace les deux listes dupliquées de `packages/ui/components/users/form.vue` et `packages/ui/routes/groups/_groupId/settings/users/_userId.vue`.
 
 ### 3.2 `company_admin` vs `company_admin_tech` : matrice de droits par feature
 
@@ -459,7 +471,7 @@ Cinq chantiers sont explicitement sortis de cet incrément et suivis dans des is
 
 - **Spectateur non loggué qui commente via lien de partage** — [issue #1104](https://github.com/Badsender-com/LePatron.email/issues/1104), voir section 5 (le lien d'aperçu en lecture seule existe déjà).
 - **Team / notion d'équipe au sein d'une company** — [issue #1100](https://github.com/Badsender-com/LePatron.email/issues/1100).
-- **`super_admin` en rôle persistant multi-comptes** — **livré par l'epic #1153** (PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) : flip d'`isAdmin`, garde-fous, écran de gestion. Le compte en variable d'environnement reste le bootstrap permanent. L'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui n'a pas été repris.
+- **`super_admin` en rôle persistant multi-comptes** — **traité et livré par Héloïse, epic #1153** (PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)) : flip d'`isAdmin`, garde-fous, écran de gestion. Le compte en variable d'environnement reste le bootstrap permanent. L'issue [#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est à fermer ou à réduire à ce qui n'a pas été repris.
 - **Audit log** des changements de rôle et réglages sensibles — [issue #1102](https://github.com/Badsender-com/LePatron.email/issues/1102).
 - **Gestion granulaire des droits par feature et action** (moteur de permissions générique, enforcement serveur fin pour `writer`) — [issue #1103](https://github.com/Badsender-com/LePatron.email/issues/1103), avec un premier inventaire des features administrables actuelles.
 
