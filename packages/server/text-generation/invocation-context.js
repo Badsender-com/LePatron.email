@@ -24,10 +24,8 @@ const {
 
 // The expertise each invocation reads, as the manifest declares it: one
 // declaration for this code, `yarn check-skills` and the activation alert.
-function expertiseCategories(scope) {
-  const filter = manifest.expertiseFilters.find((f) => f.scope.includes(scope));
-  return filter.categories;
-}
+const expertiseFilter = (scope) =>
+  manifest.expertiseFilters.find((f) => f.scope.includes(scope));
 
 // Undefined fields are left out, so the skill never reads an empty tag as data.
 const compact = (object) =>
@@ -85,14 +83,18 @@ async function prepare({ user, mailingId, scope, byEmailType = true }) {
   const emailType = byEmailType
     ? await mailingMetadataService.findCanonicalEmailType(mailing)
     : null;
-  const expertise = await expertiseRepo.findApplicable(
+  const filter = expertiseFilter(scope);
+  const applicable = await expertiseRepo.findApplicable(
     compact({
       scope,
-      categories: expertiseCategories(scope),
+      categories: filter.categories,
       emailType: emailType || undefined,
       groupId,
     })
   );
+  const expertise = filter.excludeTransversal
+    ? applicable.filter((e) => !e.isTransversal)
+    : applicable;
 
   return {
     groupId,

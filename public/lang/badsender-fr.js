@@ -940,17 +940,28 @@ module.exports = {
   'ai-panel-selected-field': 'Champ sélectionné',
   'ai-panel-correcting': 'Analyse en cours…',
   'ai-panel-no-correction': 'Aucune faute trouvée.',
-  'ai-panel-corrections-count': '__count__ correction(s)',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
   'ai-panel-accept': 'Accepter',
   'ai-panel-ignore': 'Ignorer',
   'ai-panel-accept-all': 'Tout accepter',
   'ai-panel-correction-accepted': 'Acceptée',
   'ai-panel-correction-ignored': 'Ignorée',
-  'ai-panel-correction-stale': 'Texte modifié depuis',
-  'ai-panel-corrections-accepted': '__count__ correction(s) acceptée(s)',
-  'ai-panel-correction-undo-hint': 'Ctrl+Z annule une correction acceptée.',
+  'ai-panel-correction-undone': 'Annulée',
+  'ai-panel-correction-stale':
+    "Non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-accepted': '__count__ corrections acceptées.',
+  'ai-panel-corrections-accepted-one': '1 correction acceptée.',
+  'ai-panel-corrections-stale':
+    "__count__ non appliquées : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-stale-one':
+    "1 non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-correction-undo-hint':
+    '__keys__ annule la dernière correction acceptée.',
   'ai-panel-corrections-dropped':
-    '__count__ correction(s) écartée(s) : elles touchaient à la mise en forme ou à une variable.',
+    '__count__ corrections écartées : elles touchaient à la mise en forme ou à une variable.',
+  'ai-panel-corrections-dropped-one':
+    '1 correction écartée : elle touchait à la mise en forme ou à une variable.',
   'ai-panel-correction-before': 'Avant :',
   'ai-panel-correction-after': 'Après :',
   'ai-panel-generate-subject': 'Proposer des objets',

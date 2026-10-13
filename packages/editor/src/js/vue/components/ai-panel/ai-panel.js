@@ -146,8 +146,12 @@ const AiPanel = Vue.component('AiPanel', {
       this.panel.openTarget(target);
       this.focusHeading();
     },
+    // Emptied first: the same message twice is said twice.
     announce(message) {
-      this.liveMessage = message;
+      this.liveMessage = '';
+      this.$nextTick(() => {
+        this.liveMessage = message;
+      });
     },
     // The subject and preheader fields re-render (Vue, Knockout): the icons are
     // placed again on every change where they live, never twice; the email is

@@ -41,6 +41,8 @@ function mount({
   const selection = ko.observable(null);
   const fieldSelection = ko.observable(null);
   let edited = null;
+  // The editor's undo stack: each step calls back.
+  const history = ko.observable(0);
   const editor = {
     context: () => context,
     mailingId: 'mailing-1',
@@ -51,6 +53,10 @@ function mount({
       return this.subject;
     },
     getPreheader: () => '',
+    onHistory(callback) {
+      const subscription = history.subscribe(callback);
+      return () => subscription.dispose();
+    },
   };
   const panel = createAiPanel({
     ko,
@@ -72,7 +78,7 @@ function mount({
   const blur = () => {
     edited = null;
   };
-  return { panel, isOpen, selection, editor, editField, blur };
+  return { panel, isOpen, selection, editor, editField, blur, history };
 }
 
 const ids = (actions) => actions.map((action) => action.id);
@@ -311,9 +317,29 @@ describe('ai panel: the controller', () => {
     });
   });
 
+  it('refreshes the action under way after each step of the editor undo', () => {
+    const { panel, history } = mount();
+    panel.openTarget({
+      kind: 'blockField',
+      blockId: 'ko_coverBlock_1',
+      blockType: 'coverBlock',
+      field: 'titleText',
+    });
+    const refresh = jest.fn();
+    panel.session().refresh = refresh;
+    history(1);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('lets go of the view model on dispose', () => {
-    const { panel, isOpen, selection } = mount();
+    const { panel, isOpen, selection, history } = mount();
+    panel.openTarget({ kind: 'preheader' });
+    const refresh = jest.fn();
+    panel.session().refresh = refresh;
     panel.dispose();
+    history(1);
+    expect(refresh).not.toHaveBeenCalled();
+    panel.showList();
     isOpen(true);
     selection(COVER);
     expect(panel.target()).toEqual({ kind: 'email' });

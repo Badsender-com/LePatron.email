@@ -29,7 +29,7 @@ const {
   fitEmailCopy,
 } = require('../../../../../shared/text-generation/email-copy-limits.js');
 
-const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
+const { BLOCK_ID } = require('../block-element-ids');
 const TITLE = /title|heading/i;
 const BUTTON = /button|cta/i;
 const BLOCK_LEVEL = 'p, div, li, h1, h2, h3, h4, h5, h6, td, tr';

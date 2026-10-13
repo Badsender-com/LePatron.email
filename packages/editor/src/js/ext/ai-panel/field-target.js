@@ -12,9 +12,7 @@
  * dot, and an id that two fields could have targets nothing.
  */
 
-const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
-
-const idOfPath = (path) => path.replace('.', '_');
+const { BLOCK_ID, idOfPath } = require('../block-element-ids');
 
 /**
  * @param {Element} element the element being edited, or inside it
