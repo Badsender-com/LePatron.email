@@ -1,9 +1,14 @@
 <script>
+import { EyeOff, Lock, Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
-import { TEMPLATE, exceptionsOf } from '~/helpers/quality-exceptions.js';
+import {
+  TEMPLATE,
+  exceptionsOf,
+  generalOf,
+} from '~/helpers/quality-exceptions.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinUnsavedChanges from '~/helpers/mixins/mixin-unsaved-changes.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
@@ -33,6 +38,9 @@ async function fetchTemplates(nuxtContext) {
 export default {
   name: 'BsPageSettingsQualityTemplate',
   components: {
+    EyeOff,
+    Lock,
+    Plus,
     BsPageHeader,
     BsBreadcrumb,
     BsModalConfirm,
@@ -78,9 +86,14 @@ export default {
     appliedGeneral() {
       const general = exceptionsOf(this.group.qualitySettings);
       const own = exceptionsOf(this.template && this.template.qualitySettings);
-      return CATALOGUE_ORDER.filter(
-        (id) => general[id] && !own[id]
-      ).map((id) => ({ id, text: this.exceptionText(id, general[id]) }));
+      const applied = generalOf(this.group.qualitySettings);
+      return CATALOGUE_ORDER.filter((id) => general[id] && !own[id]).map(
+        (id) => ({
+          id,
+          state: applied[id].state,
+          text: this.appliedText(id, applied[id]),
+        })
+      );
     },
   },
   methods: {
@@ -116,6 +129,7 @@ export default {
       </template>
       <template v-if="template" #actions>
         <v-btn color="accent" elevation="0" @click="$refs.editor.openAdd()">
+          <plus :size="16" class="mr-1" />
           {{ $t('qualitySettings.addException') }}
         </v-btn>
       </template>
@@ -144,23 +158,43 @@ export default {
             <h3 class="applied__title">
               {{ $t('qualitySettings.template.applied') }}
             </h3>
-            <p v-if="!appliedGeneral.length" class="applied__none">
-              {{ $t('qualitySettings.template.appliedNone') }}
-            </p>
-            <ul v-else class="applied__list">
-              <li v-for="item in appliedGeneral" :key="item.id">
-                <span class="applied__name">{{ checkName(item.id) }}</span>
-                <span class="applied__text">{{ item.text }}</span>
-              </li>
-            </ul>
-            <p class="applied__more">
-              <template v-if="appliedGeneral.length">
-                {{ $t('qualitySettings.general.others') }}
+            <i18n
+              v-if="appliedGeneral.length"
+              path="qualitySettings.template.appliedFrom"
+              tag="p"
+              class="applied__intro"
+            >
+              <template #link>
+                <nuxt-link
+                  :to="qualityRoute"
+                  v-text="$t('qualitySettings.template.appliedFromLink')"
+                />
               </template>
+            </i18n>
+            <p v-else class="applied__intro">
+              {{ $t('qualitySettings.template.appliedNone') }}
               <nuxt-link :to="qualityRoute">
                 {{ $t('qualitySettings.template.appliedLink') }}
               </nuxt-link>
             </p>
+            <ul v-if="appliedGeneral.length" class="applied__list">
+              <li v-for="item in appliedGeneral" :key="item.id">
+                <span class="applied__name">{{ checkName(item.id) }}</span>
+                <span class="applied__text">
+                  <lock
+                    v-if="item.state === 'blocking'"
+                    :size="14"
+                    class="applied__icon applied__icon--error"
+                  />
+                  <eye-off
+                    v-else-if="item.state === 'off'"
+                    :size="14"
+                    class="applied__icon"
+                  />
+                  {{ item.text }}
+                </span>
+              </li>
+            </ul>
           </section>
         </template>
       </div>
@@ -179,9 +213,9 @@ export default {
 
 <style lang="scss" scoped>
 .quality-intro {
+  margin: 8px 0 16px;
   font-size: 0.875rem;
   color: var(--gray-700);
-  max-width: 760px;
 }
 
 .applied {
@@ -207,6 +241,7 @@ export default {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
+      align-items: center;
       gap: 4px 16px;
       padding: 10px 16px;
       font-size: 0.8125rem;
@@ -223,14 +258,27 @@ export default {
   }
 
   &__text,
-  &__none,
-  &__more {
+  &__intro {
     color: var(--gray-700);
     font-size: 0.8125rem;
   }
 
-  &__more {
-    margin-top: 8px;
+  &__intro {
+    margin: 0 0 12px;
+
+    a {
+      color: var(--v-accent-base);
+    }
+  }
+
+  &__text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__icon--error {
+    color: var(--v-error-base);
   }
 }
 </style>

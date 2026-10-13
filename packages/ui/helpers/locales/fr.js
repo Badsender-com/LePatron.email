@@ -849,7 +849,9 @@ export default {
       unchangedTemplate: 'Ce contrôle suit encore les réglages généraux. Changez son état ou un seuil ; sinon il sera retiré de la liste à l\'enregistrement.',
       off: 'Ni lancé ni listé dans l\'éditeur.',
       blocking: 'Empêche le téléchargement et l\'envoi ESP depuis l\'éditeur.',
-      blocksFrom: 'Bloque dès le premier niveau : {label} {value} {unit}.',
+      blockingTemplate: 'Pour ce template, empêche le téléchargement et l\'envoi ESP depuis l\'éditeur.',
+      recommendedShort: 'Recommandé : {value}',
+      blocksFrom: 'Bloque dès {value} {unit} ({level}).',
       blocksOn: 'Bloque sur : {cases}. Un lien ou une image non vérifiable (le serveur refuse ou ne répond pas) ne bloque jamais.',
       recommendedHint: 'Recommandé : {value}, de {min} à {max}',
       generalHint: 'Réglage général : {value}, de {min} à {max}',
@@ -876,6 +878,8 @@ export default {
       title: 'Ajouter une exception',
       titleTemplate: 'Ajouter une exception pour ce template',
       search: 'Rechercher un contrôle',
+      intro: 'Choisissez le contrôle à modifier. Il apparaîtra dans la liste avec ses valeurs recommandées, que vous pourrez ensuite changer.',
+      introTemplate: 'Choisissez le contrôle à modifier. Il apparaîtra dans la liste avec les réglages généraux, que vous pourrez ensuite changer pour ce template.',
       none: 'Aucun contrôle ne correspond.',
     },
     templates: {
@@ -886,6 +890,7 @@ export default {
       withExceptions: 'Avec exceptions',
       template: 'Template',
       exceptions: 'Exceptions du template',
+      open: 'Ouvrir {name}',
       none: 'Aucune',
       empty: 'Vous n\'avez pas encore de template. Chaque nouveau template suivra les réglages généraux.',
     },
@@ -896,6 +901,8 @@ export default {
       applied: 'Exceptions générales appliquées à ce template',
       appliedNone: 'Aucune exception générale : les autres contrôles appliquent les valeurs recommandées.',
       appliedLink: 'Voir les réglages généraux',
+      appliedFrom: 'Elles viennent des {link}. Les autres contrôles appliquent les valeurs recommandées.',
+      appliedFromLink: 'réglages généraux',
       notFound: 'Ce template est introuvable.',
     },
     unsaved: {
@@ -915,6 +922,15 @@ export default {
       px: 'px',
       KB: 'Ko',
       ratio: '×',
+    },
+    thresholdsShort: {
+      default: 'seuil',
+      subject: { long: 'info', tooLong: 'avertissement' },
+      preheader: { long: 'info', tooLong: 'avertissement' },
+      'small-font': { minSize: 'minimale', minSizeHeaderFooter: 'en-tête et pied de page' },
+      'text-layout': { minLineHeight: 'interligne', centredMaxChars: 'texte centré' },
+      'image-weight': { maxKb: 'image', maxGifKb: 'GIF' },
+      'images-total-weight': { warningKb: 'avertissement', errorKb: 'erreur' },
     },
     thresholds: {
       subject: {

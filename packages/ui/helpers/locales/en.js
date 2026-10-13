@@ -1049,7 +1049,9 @@ export default {
       unchangedTemplate: 'This check still follows the general settings. Change its state or a threshold; otherwise it leaves the list when you save.',
       off: 'Neither run nor listed in the editor.',
       blocking: 'Stops the download and the ESP send from the editor.',
-      blocksFrom: 'Blocks from the first level: {label} {value} {unit}.',
+      blockingTemplate: 'For this template, stops the download and the ESP send from the editor.',
+      recommendedShort: 'Recommended: {value}',
+      blocksFrom: 'Blocks from {value} {unit} ({level}).',
       blocksOn: 'Blocks on: {cases}. A link or an image that cannot be checked (the server refuses or does not answer) never blocks.',
       recommendedHint: 'Recommended: {value}, from {min} to {max}',
       generalHint: 'General setting: {value}, from {min} to {max}',
@@ -1076,6 +1078,8 @@ export default {
       title: 'Add an exception',
       titleTemplate: 'Add an exception for this template',
       search: 'Search a check',
+      intro: 'Pick the check to change. It joins the list with its recommended values, which you can then change.',
+      introTemplate: 'Pick the check to change. It joins the list with the general settings, which you can then change for this template.',
       none: 'No check matches.',
     },
     templates: {
@@ -1086,6 +1090,7 @@ export default {
       withExceptions: 'With exceptions',
       template: 'Template',
       exceptions: 'Template exceptions',
+      open: 'Open {name}',
       none: 'None',
       empty: 'You have no template yet. Every new template will follow the general settings.',
     },
@@ -1096,6 +1101,8 @@ export default {
       applied: 'General exceptions applied to this template',
       appliedNone: 'No general exception: the other checks apply their recommended values.',
       appliedLink: 'See the general settings',
+      appliedFrom: 'They come from the {link}. The other checks apply their recommended values.',
+      appliedFromLink: 'general settings',
       notFound: 'This template cannot be found.',
     },
     unsaved: {
@@ -1115,6 +1122,15 @@ export default {
       px: 'px',
       KB: 'KB',
       ratio: '×',
+    },
+    thresholdsShort: {
+      default: 'threshold',
+      subject: { long: 'info', tooLong: 'warning' },
+      preheader: { long: 'info', tooLong: 'warning' },
+      'small-font': { minSize: 'minimum', minSizeHeaderFooter: 'header and footer' },
+      'text-layout': { minLineHeight: 'line height', centredMaxChars: 'centred text' },
+      'image-weight': { maxKb: 'image', maxGifKb: 'GIF' },
+      'images-total-weight': { warningKb: 'warning', errorKb: 'error' },
     },
     thresholds: {
       subject: {
