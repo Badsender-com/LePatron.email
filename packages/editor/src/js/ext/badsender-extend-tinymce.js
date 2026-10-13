@@ -25,6 +25,18 @@ function extendTinyMce(opts, viewModel) {
   tinymce.PluginManager.add('variables', function (editor) {
     personalizedVariables(editor, viewModel);
   });
+
+  //----- AI ACTIONS (ADR 0004): the field being edited, in the AI panel
+
+  tinymce.PluginManager.add('aiactions', function (editor) {
+    editor.addButton('aiactions', {
+      tooltip: viewModel.t('ai-field-correct-label'),
+      icon: 'ai-bot',
+      onclick() {
+        if (viewModel.openAiOnElement) viewModel.openAiOnElement(editor.getElement());
+      },
+    });
+  });
 }
 
 module.exports = extendTinyMce;
