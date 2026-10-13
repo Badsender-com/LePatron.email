@@ -18,6 +18,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsQualityExceptionCard from '~/components/quality/quality-exception-card.vue';
 import BsQualityExceptionDialog from '~/components/quality/quality-exception-dialog.vue';
 import BsQualitySaveBar from '~/components/quality/quality-save-bar.vue';
+import BsQualityExceptionsEmpty from '~/components/quality/quality-exceptions-empty.vue';
 
 const CATALOGUE_ORDER = Object.keys(CHECKS);
 
@@ -27,6 +28,7 @@ const CATALOGUE_ORDER = Object.keys(CHECKS);
 export default {
   name: 'BsQualityExceptionsEditor',
   components: {
+    BsQualityExceptionsEmpty,
     BsQualityExceptionCard,
     BsQualityExceptionDialog,
     BsQualitySaveBar,
@@ -80,8 +82,11 @@ export default {
         ])
       );
     },
-    invalid() {
-      return Object.values(this.errors).some((e) => Object.keys(e).length);
+    invalidCount() {
+      return Object.values(this.errors).reduce(
+        (count, e) => count + Object.keys(e).length,
+        0
+      );
     },
     title() {
       return this.isGeneral
@@ -224,23 +229,17 @@ export default {
         />
       </div>
     </template>
-    <div v-else class="qx-editor__empty">
-      <p>
-        {{
-          isGeneral
-            ? $t('qualitySettings.general.empty')
-            : $t('qualitySettings.template.empty')
-        }}
-      </p>
-      <v-btn color="accent" elevation="0" @click="openAdd">
-        {{ $t('qualitySettings.addException') }}
-      </v-btn>
-    </div>
+    <bs-quality-exceptions-empty
+      v-else
+      :is-general="isGeneral"
+      @add="openAdd"
+    />
 
     <bs-quality-save-bar
+      v-if="changeCount || invalidCount || loading"
       :change-count="changeCount"
       :loading="loading"
-      :invalid="invalid"
+      :invalid-count="invalidCount"
       @cancel="reset"
       @save="submit"
     />
@@ -281,17 +280,8 @@ export default {
   &__cards {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  &__empty {
-    padding: 24px;
-    text-align: center;
-    border: 1px dashed var(--gray-300);
-    border-radius: 8px;
-    color: var(--gray-700);
-    font-size: 0.875rem;
+    gap: 12px;
+    margin-top: 16px;
   }
 }
 </style>
