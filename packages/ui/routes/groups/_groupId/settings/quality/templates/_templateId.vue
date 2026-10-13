@@ -60,7 +60,8 @@ export default {
     return { ...groupData, template };
   },
   data() {
-    return { group: {}, template: null };
+    // The checks the template sets, as edited (saved or not).
+    return { group: {}, template: null, ownIds: [] };
   },
   head() {
     return { title: this.settingsTitle };
@@ -82,18 +83,17 @@ export default {
         { text: this.template ? this.template.name : '…', to: null },
       ];
     },
-    // The general exceptions this template has not replaced.
+    // The general exceptions this template does not replace, as edited.
     appliedGeneral() {
       const general = exceptionsOf(this.group.qualitySettings);
-      const own = exceptionsOf(this.template && this.template.qualitySettings);
       const applied = generalOf(this.group.qualitySettings);
-      return CATALOGUE_ORDER.filter((id) => general[id] && !own[id]).map(
-        (id) => ({
-          id,
-          state: applied[id].state,
-          text: this.appliedText(id, applied[id]),
-        })
-      );
+      return CATALOGUE_ORDER.filter(
+        (id) => general[id] && !this.ownIds.includes(id)
+      ).map((id) => ({
+        id,
+        state: applied[id].state,
+        text: this.appliedText(id, applied[id]),
+      }));
     },
   },
   methods: {
@@ -151,6 +151,7 @@ export default {
             :group-id="$route.params.groupId"
             :save="saveTemplate"
             @changes="unsavedChanges = $event"
+            @exceptions="ownIds = $event"
             @saved="refresh"
           />
 
