@@ -32,6 +32,15 @@ describe('the shared check catalogue', () => {
     expect(Object.keys(CHECKS).sort()).toEqual(ruleIds.sort());
   });
 
+  it('names the checks the server runs, as the editor runs them', () => {
+    const {
+      SERVER_CHECKS,
+    } = require('../../../packages/shared/quality/checks.js');
+    expect([...SERVER_CHECKS].sort()).toEqual(
+      REMOTE_RULES.map((rule) => rule.id).sort()
+    );
+  });
+
   it('gives each check the category its rule declares', () => {
     DEFAULT_RULES.concat(REMOTE_RULES).forEach((rule) => {
       expect([rule.id, CHECKS[rule.id].category]).toEqual([
