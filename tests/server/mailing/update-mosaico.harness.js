@@ -70,11 +70,11 @@ function mockFlags(flags) {
 }
 
 // Resolves with the error passed to `next`, or null when the request succeeded.
-function save(body) {
+function save(body, actor = user) {
   return new Promise((resolve) => {
     const res = { json: () => resolve(null) };
     controller.updateMosaico(
-      { params: { mailingId: MAILING_ID }, body, user },
+      { params: { mailingId: MAILING_ID }, body, user: actor },
       res,
       resolve
     );
