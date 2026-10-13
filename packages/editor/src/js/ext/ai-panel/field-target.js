@@ -14,6 +14,28 @@
 
 const { BLOCK_ID, idOfPath } = require('../block-element-ids');
 
+// The container of the block an element is in, or null.
+function blockElementOf(element) {
+  let block = element;
+  while (block && !BLOCK_ID.test(block.id || '')) block = block.parentElement;
+  return block || null;
+}
+
+/**
+ * The block an element is in, for an element no field matches.
+ * @param {Element} element
+ * @returns {{ kind: 'block', blockId: string, blockType: string } | null}
+ */
+function blockTargetOf(element) {
+  const block = element && blockElementOf(element);
+  if (!block) return null;
+  return {
+    kind: 'block',
+    blockId: block.id,
+    blockType: BLOCK_ID.exec(block.id)[1],
+  };
+}
+
 /**
  * @param {Element} element the element being edited, or inside it
  * @param {{ pathsOf: (blockId: string) => string[] }} options the paths of the
@@ -23,8 +45,7 @@ const { BLOCK_ID, idOfPath } = require('../block-element-ids');
 function fieldTargetOf(element, { pathsOf }) {
   const editable = element && element.closest('[contenteditable]');
   if (!editable || !editable.id) return null;
-  let block = editable.parentElement;
-  while (block && !BLOCK_ID.test(block.id || '')) block = block.parentElement;
+  const block = blockElementOf(editable.parentElement);
   if (!block || !editable.id.startsWith(`${block.id}_`)) return null;
 
   const suffix = editable.id.slice(block.id.length + 1);
@@ -38,4 +59,4 @@ function fieldTargetOf(element, { pathsOf }) {
   };
 }
 
-module.exports = { fieldTargetOf };
+module.exports = { fieldTargetOf, blockTargetOf };
