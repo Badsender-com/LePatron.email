@@ -89,7 +89,12 @@ export default {
 </script>
 
 <template>
-  <v-card outlined class="qx-card" :data-exception="checkId">
+  <v-card
+    outlined
+    class="qx-card"
+    :class="{ 'qx-card--new': isNew }"
+    :data-exception="checkId"
+  >
     <div class="qx-card__head">
       <div class="qx-card__heading">
         <div class="qx-card__title">
@@ -103,7 +108,8 @@ export default {
             </template>
             {{ $t('qualitySettings.card.onlineTip') }}
           </v-tooltip>
-          <v-chip v-if="isDirty" x-small color="warning" text-color="black">
+          <v-chip v-if="isDirty" x-small class="qx-card__unsaved">
+            <span class="qx-card__unsaved-dot" />
             {{
               isNew
                 ? $t('qualitySettings.card.new')
@@ -203,6 +209,24 @@ export default {
     padding: 12px 16px;
   }
 
+  &--new {
+    border-color: var(--v-accent-base) !important;
+  }
+
+  &__unsaved {
+    background: rgba(255, 180, 0, 0.2) !important;
+    color: var(--gray-900) !important;
+    font-weight: 600;
+  }
+
+  &__unsaved-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--v-warning-base);
+  }
+
   &__heading {
     min-width: 0;
   }
@@ -216,13 +240,13 @@ export default {
   }
 
   &__name {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     color: var(--gray-900);
   }
 
   &__category {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--gray-700);
   }
 
@@ -230,6 +254,10 @@ export default {
     display: flex;
     align-items: center;
     gap: 4px;
+
+    ::v-deep .v-btn-toggle .v-btn {
+      height: 32px !important;
+    }
   }
 
   &__icon {
@@ -242,8 +270,8 @@ export default {
   }
 
   &__body {
-    padding: 0 16px 12px;
-    font-size: 0.8125rem;
+    padding: 0 16px 14px;
+    font-size: 0.875rem;
     color: var(--gray-900);
 
     p {
@@ -260,7 +288,7 @@ export default {
   &__thresholds {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px 24px;
+    gap: 16px 15px;
     margin-top: 16px;
   }
 }

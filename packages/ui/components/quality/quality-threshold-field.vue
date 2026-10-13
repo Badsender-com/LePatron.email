@@ -77,19 +77,21 @@ export default {
       persistent-placeholder
       hide-details
       @input="$emit('input', $event)"
-    />
+    >
+      <template v-if="unsaved" #append>
+        <span
+          class="qx-threshold__dot"
+          :title="$t('qualitySettings.card.unsavedValue')"
+          :aria-label="$t('qualitySettings.card.unsavedValue')"
+          role="img"
+        />
+      </template>
+    </v-text-field>
     <div
       :id="hintId"
       class="qx-threshold__hint"
       :class="{ 'qx-threshold__hint--error': error }"
     >
-      <span
-        v-if="unsaved"
-        class="qx-threshold__dot"
-        :title="$t('qualitySettings.card.unsavedValue')"
-        :aria-label="$t('qualitySettings.card.unsavedValue')"
-        role="img"
-      />
       {{ errors.length ? errors[0] : hint }}
       <a
         v-if="canRestore && !disabled && !errors.length"
@@ -132,6 +134,8 @@ export default {
   }
 
   &__dot {
+    display: inline-block;
+    align-self: center;
     width: 8px;
     height: 8px;
     border-radius: 50%;

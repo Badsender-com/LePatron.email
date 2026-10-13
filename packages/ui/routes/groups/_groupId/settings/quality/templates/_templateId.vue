@@ -238,13 +238,12 @@ export default {
     border-radius: 8px;
 
     li {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       align-items: center;
       gap: 4px 16px;
-      padding: 10px 16px;
-      font-size: 0.8125rem;
+      padding: 14px 16px;
+      font-size: 0.875rem;
 
       & + li {
         border-top: 1px solid var(--gray-300);
@@ -253,14 +252,13 @@ export default {
   }
 
   &__name {
-    font-weight: 600;
     color: var(--gray-900);
   }
 
   &__text,
   &__intro {
     color: var(--gray-700);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 
   &__intro {

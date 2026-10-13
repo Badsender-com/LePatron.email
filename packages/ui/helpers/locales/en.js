@@ -1028,7 +1028,8 @@ export default {
     general: {
       intro: 'Every check applies to all your templates with its recommended values. Add an exception only for a check you want to turn off, make blocking, or whose thresholds you want to change.',
       others: 'The other checks apply their recommended values.',
-      empty: 'No exception: every check applies its recommended values. All are on, except "Required tracking parameters", blocking.',
+      empty: 'No exception: every check applies its recommended values.',
+      emptyDetail: 'All are on, except "Required tracking parameters", blocking.',
     },
     reference: {
       toggle: 'See the {count} checks and what applies',
@@ -1107,6 +1108,7 @@ export default {
     },
     unsaved: {
       status: 'Nothing to save | {count} unsaved change | {count} unsaved changes',
+      invalid: 'Every value is valid | A value is not valid: fix the field shown | {count} values are not valid: fix the fields shown',
       cancel: 'Discard the changes',
       leaveTitle: 'Unsaved changes',
       leaveText: 'You have unsaved changes. Leave without saving them?',
