@@ -7,6 +7,7 @@ const router = express.Router();
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
+const { GUARD_NOT_REVIEWER } = require('./reviewer-read-only.guard.js');
 const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
@@ -24,14 +25,14 @@ router.get('', GUARD_USER, mailings.list);
 // Must be declared before the '/:mailingId' routes below, otherwise "tags"
 // would be captured as a mailingId.
 router.get('/tags', GUARD_USER, mailings.listTags);
-router.post('', GUARD_USER, mailings.create);
-router.patch('/:mailingId', GUARD_USER, mailings.rename);
+router.post('', GUARD_USER, GUARD_NOT_REVIEWER, mailings.create);
+router.patch('/:mailingId', GUARD_USER, GUARD_NOT_REVIEWER, mailings.rename);
 router.get('/:mailingId/preview', GUARD_USER, mailings.previewHtml);
 router.get('/:mailingId/esp-ids', GUARD_USER, mailings.readMailingEpsIds);
-router.delete('/:mailingId', GUARD_USER, mailings.delete);
-router.post('/copy', GUARD_USER, mailings.copy);
-router.post('/:mailingId/move', GUARD_USER, mailings.move);
-router.post('/move-many', GUARD_USER, mailings.moveMany);
+router.delete('/:mailingId', GUARD_USER, GUARD_NOT_REVIEWER, mailings.delete);
+router.post('/copy', GUARD_USER, GUARD_NOT_REVIEWER, mailings.copy);
+router.post('/:mailingId/move', GUARD_USER, GUARD_NOT_REVIEWER, mailings.move);
+router.post('/move-many', GUARD_USER, GUARD_NOT_REVIEWER, mailings.moveMany);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
   GUARD_USER,
@@ -55,12 +56,14 @@ router.post(
 router.patch(
   '/:mailingId/metadata',
   GUARD_USER,
+  GUARD_NOT_REVIEWER,
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
 );
 router.patch(
   '/:mailingId/quality-ignores',
   GUARD_USER,
+  GUARD_NOT_REVIEWER,
   mailingQuality.updateQualityIgnores
 );
 router.post(
@@ -73,10 +76,16 @@ router.post('/:mailingId/share-links', GUARD_USER, shareLinks.create);
 router.delete('/:mailingId/share-links/:linkId', GUARD_USER, shareLinks.revoke);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
-router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);
+router.post(
+  '/:mailingId/duplicate',
+  GUARD_USER,
+  GUARD_NOT_REVIEWER,
+  mailings.duplicate
+);
 router.post(
   '/:mailingId/duplicate-translate',
   GUARD_USER,
+  GUARD_NOT_REVIEWER,
   // One request starts a whole-email job: it counts once, like the others.
   aiRateLimit(),
   translation.duplicateAndTranslate
@@ -87,7 +96,7 @@ router.post(
   mailings.transferToUser
 );
 router.get('/:mailingId', GUARD_USER, mailings.read);
-router.put('', GUARD_USER, mailings.bulkUpdate);
+router.put('', GUARD_USER, GUARD_NOT_REVIEWER, mailings.bulkUpdate);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

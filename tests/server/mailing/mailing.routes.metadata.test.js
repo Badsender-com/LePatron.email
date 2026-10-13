@@ -15,6 +15,9 @@ const {
 const {
   GUARD_EMAIL_METADATA,
 } = require('../../../packages/server/mailing/email-metadata.guard.js');
+const {
+  GUARD_NOT_REVIEWER,
+} = require('../../../packages/server/mailing/reviewer-read-only.guard.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 const router = require('../../../packages/server/mailing/mailing.routes.js');
 
@@ -28,6 +31,7 @@ describe('mailing routes — the metadata endpoint is behind the flag', () => {
   it('gates it with GUARD_EMAIL_METADATA', () => {
     expect(guardsOf('patch', '/:mailingId/metadata')).toEqual([
       GUARD_USER,
+      GUARD_NOT_REVIEWER,
       GUARD_EMAIL_METADATA,
     ]);
   });

@@ -130,7 +130,7 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 5. Gardes de défense en profondeur dans le viewModel (`removeBlock`, `duplicateBlock`, `moveBlock`, `addBlock`, undo/redo) ; dépôt d'image sur le canvas (les drops jQuery UI sont géométriques, ni `inert` ni le calque ne les arrêtent).
 6. Échec de `/api/users/current-user` : tout reste verrouillé sans message ; `canEditStyle` et `canEditStructure` portent la même règle (deux booléens).
 7. ~~Outil Compose, bloc code HTML, CSS de l'email~~ **Confirmé par le produit le 2026-10-13** : rangés avec la structure, donc refusés au `writer` et au `reviewer` (un `writer` ne peut pas corriger le HTML collé). Aucun changement de code, c'était déjà le comportement.
-8. Enforcement serveur de tout le reste (#1103) et QA multi-navigateurs ; lignes 16 et 18 de la matrice 3.2 toujours ouvertes.
+8. Enforcement serveur du rédacteur et du reste (#1103) ; le relecteur est tenu côté serveur depuis le 2026-10-13, et QA multi-navigateurs ; lignes 16 et 18 de la matrice 3.2 toujours ouvertes.
 
 ### Resynchronisation du 2026-10-13
 
@@ -142,6 +142,7 @@ Rebase de `feat/roles-permissions` sur `origin/develop` (le 2026-10-13, 51 commi
 - **Tests adaptés** : `roles.test.js` (liste des rôles élargie à 5), `mailing.list-projections.test.js` (+ `qualityIgnores`), `control-quality.test.js` supprimé avec la fonction qu'il testait.
 - **Décision produit du 2026-10-13 sur l'admin technique** : il est un admin company avec les intégrations en plus (`isGroupAdmin` vrai pour les deux rôles, `isGroupAdminTech` pour lui seul). La matrice 3.2 est lue en conséquence.
 - **Attribution du rôle admin technique (2026-10-13)** : seul un super admin ou un admin technique l'accorde ou le retire (`tech-admin-policy.js`, code `FORBIDDEN_TECH_ADMIN_ROLE_CHANGE`) ; un admin company ne le voit plus dans les sélecteurs de rôle et le serveur le refuse. Un admin company peut en revanche encore modifier, désactiver ou réinitialiser le mot de passe d'un admin technique (non encadré). Le rôle super admin garde sa règle propre (ADR 0002).
+- **Garde serveur du relecteur (2026-10-13)** : `GUARD_NOT_REVIEWER` (`mailing/reviewer-read-only.guard.js`) refuse un `reviewer` sur les routes qui écrivent un mailing (création, renommage, déplacement, copie, suppression, tags, paramètres de l'email, résultats QC ignorés, duplication). L'enregistrement `PUT /mosaico` lui est refusé sauf pour l'email sans aperçu, ce qui conserve la sauvegarde unique faite à l'ouverture. Le rédacteur n'est pas encadré côté serveur (#1103).
 - **Décisions produit du 2026-10-13** : outil Compose confirmé (masqué au `writer`) ; galerie, exports et génération de texte IA ouverts à tous les rôles (inchangé) ; bouton « Approuver » étendu à tous les rôles (`badsender-comments.js`).
 - **À refaire après ce rebase** : `yarn editor:build`, puis un passage dans le navigateur sur l'éditeur (templates et CSS fusionnés).
 
