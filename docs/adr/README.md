@@ -7,7 +7,8 @@ Each file records one decision that is hard to reverse, surprising without conte
 - Sequential numbering, `NNNN-slug.md`, in English. A reversed decision gets a new ADR; the old one is marked `superseded by ADR-NNNN`.
 - The repository is public: no client name, no unfixed vulnerability, no secret.
 
-| ADR                                            | Decision                                                                                                                             | Status                       |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| [0001](./0001-grill-first-feature-workflow.md) | New features start with a grilling, an ADR, an epic and tickets                                                                      | proposed                     |
-| [0002](./0002-super-admin-persisted-role.md)   | Super admin is a persisted role; the bootstrap account creates the first one; a super admin works in the modules of a selected group | accepted, amendment proposed |
+| ADR                                                | Decision                                                                                                                             | Status                       |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| [0001](./0001-grill-first-feature-workflow.md)     | New features start with a grilling, an ADR, an epic and tickets                                                                      | proposed                     |
+| [0002](./0002-super-admin-persisted-role.md)       | Super admin is a persisted role; the bootstrap account creates the first one; a super admin works in the modules of a selected group | accepted, amendment proposed |
+| [0004](./0004-reviewer-writer-tech-admin-roles.md) | Reviewer, writer and tech admin are fixed roles, restricted mostly in the interface                                                  | proposed                     |
