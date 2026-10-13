@@ -1,7 +1,6 @@
 <script>
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
-import BsTextField from '~/components/form/bs-text-field.vue';
 
 const isSet = (value) => value !== null && value !== undefined && value !== '';
 
@@ -10,7 +9,6 @@ const isSet = (value) => value !== null && value !== undefined && value !== '';
 // placeholder and in the hint.
 export default {
   name: 'BsQualityThresholdField',
-  components: { BsTextField },
   mixins: [mixinQualityTexts],
   props: {
     checkId: { type: String, required: true },
@@ -38,6 +36,9 @@ export default {
       const value = isSet(this.value) ? Number(this.value) : null;
       return value !== this.savedValue;
     },
+    hintId() {
+      return `qx-hint-${this.checkId}-${this.name}`;
+    },
     errors() {
       return this.error ? [this.$t(this.error.key, this.error.params)] : [];
     },
@@ -59,22 +60,29 @@ export default {
 
 <template>
   <div class="qx-threshold">
-    <bs-text-field
+    <v-text-field
       :value="isSetValue ? value : ''"
       :label="$t(`qualitySettings.thresholds.${checkId}.${name}`)"
       :placeholder="String(baseValue)"
       :suffix="unitName(checkId, name)"
-      :error-messages="errors"
+      :error="Boolean(error)"
       :disabled="disabled"
       :data-threshold="`${checkId}.${name}`"
+      :aria-describedby="hintId"
+      :aria-invalid="error ? 'true' : 'false'"
       type="number"
       :step="threshold.unit === 'ratio' ? 0.1 : 1"
       outlined
       dense
-      hide-details="auto"
+      persistent-placeholder
+      hide-details
       @input="$emit('input', $event)"
     />
-    <div class="qx-threshold__hint">
+    <div
+      :id="hintId"
+      class="qx-threshold__hint"
+      :class="{ 'qx-threshold__hint--error': error }"
+    >
       <span
         v-if="unsaved"
         class="qx-threshold__dot"
@@ -82,9 +90,10 @@ export default {
         :aria-label="$t('qualitySettings.card.unsavedValue')"
         role="img"
       />
-      {{ hint }}
+      {{ errors.length ? errors[0] : hint }}
       <a
-        v-if="canRestore && !disabled"
+        v-if="canRestore && !disabled && !errors.length"
+        class="qx-threshold__restore"
         href="#"
         @click.prevent="$emit('input', null)"
       >
@@ -104,9 +113,22 @@ export default {
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 8px;
-    margin-top: 4px;
+    margin: 2px 0 0 12px;
     font-size: 0.75rem;
     color: var(--gray-700);
+  }
+
+  &__hint--error {
+    color: var(--v-error-base);
+  }
+
+  &__restore {
+    color: var(--v-accent-base);
+  }
+
+  ::v-deep input::placeholder {
+    color: rgba(0, 0, 0, 0.5) !important;
+    opacity: 1;
   }
 
   &__dot {
