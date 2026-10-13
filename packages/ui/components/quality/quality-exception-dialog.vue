@@ -56,7 +56,7 @@ export default {
 <template>
   <v-dialog
     :value="value"
-    max-width="620"
+    max-width="640"
     scrollable
     @input="$emit('input', $event)"
   >
@@ -68,8 +68,8 @@ export default {
       <div class="qx-dialog__search">
         <v-text-field
           v-model="search"
-          :label="$t('qualitySettings.dialog.search')"
-          prepend-inner-icon="mdi-magnify"
+          :placeholder="$t('qualitySettings.dialog.search')"
+          :aria-label="$t('qualitySettings.dialog.search')"
           outlined
           dense
           hide-details
@@ -83,7 +83,7 @@ export default {
           {{ $t('qualitySettings.dialog.none') }}
         </p>
         <v-list v-for="group in groups" :key="group.category" dense>
-          <v-subheader>
+          <v-subheader class="qx-dialog__category">
             {{ $t(`qualitySettings.categories.${group.category}`) }}
           </v-subheader>
           <v-list-item
@@ -104,7 +104,7 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn text color="primary" @click="$emit('input', false)">
+        <v-btn text color="accent" @click="$emit('input', false)">
           {{ $t('global.cancel') }}
         </v-btn>
       </v-card-actions>
@@ -129,10 +129,28 @@ export default {
     color: var(--gray-700);
   }
 
+  &__category {
+    height: 32px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gray-700);
+  }
+
   &__applies {
-    max-width: 50%;
-    white-space: normal;
+    font-size: 12px;
+    white-space: nowrap;
     text-align: right;
+  }
+
+  ::v-deep .v-list-item {
+    min-height: 40px;
+  }
+
+  ::v-deep .v-list-item__title {
+    font-size: 14px;
+    font-weight: 400;
   }
 }
 </style>

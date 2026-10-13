@@ -139,7 +139,7 @@ export default {
     <v-tabs
       :key="tabsKey"
       :value="tab"
-      class="hub-tabs"
+      class="hub-tabs quality-tabs"
       background-color="transparent"
       @change="onTab"
     >
@@ -150,7 +150,7 @@ export default {
     </v-tabs>
     <v-divider />
     <v-container fluid>
-      <div class="settings-content">
+      <div class="settings-content quality-content">
         <div v-if="tab === 'general'">
           <p class="quality-intro">{{ $t('qualitySettings.general.intro') }}</p>
           <bs-quality-exceptions-editor
@@ -186,6 +186,14 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.quality-tabs {
+  padding: 0 24px;
+}
+
+.quality-content {
+  padding: 0 24px;
+}
+
 .quality-intro {
   margin: 8px 0 16px;
   font-size: 0.875rem;

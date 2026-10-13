@@ -34,10 +34,17 @@ export default {
     },
     showOptions() {
       return [
-        { value: 'all', text: this.$t('qualitySettings.templates.all') },
+        {
+          value: 'all',
+          text: `${this.$t('qualitySettings.templates.all')} (${
+            this.rows.length
+          })`,
+        },
         {
           value: 'with',
-          text: this.$t('qualitySettings.templates.withExceptions'),
+          text: `${this.$t('qualitySettings.templates.withExceptions')} (${
+            this.rows.filter((row) => row.count > 0).length
+          })`,
         },
       ];
     },
@@ -82,8 +89,8 @@ export default {
     <div v-if="templates.length" class="qx-templates__filters">
       <v-text-field
         v-model="search"
-        :label="$t('qualitySettings.templates.search')"
-        prepend-inner-icon="mdi-magnify"
+        :placeholder="$t('qualitySettings.templates.search')"
+        :aria-label="$t('qualitySettings.templates.search')"
         outlined
         dense
         hide-details
@@ -107,12 +114,15 @@ export default {
       clickable
       @click:row="open"
     >
+      <template #item.name="{ item }">
+        <span class="qx-templates__name">{{ item.name }}</span>
+      </template>
       <template #item.count="{ item }">
         <span v-if="!item.count" class="qx-templates__none">
           {{ $t('qualitySettings.templates.none') }}
         </span>
         <span v-else class="qx-templates__exceptions">
-          <v-chip x-small color="accent" outlined>
+          <v-chip x-small class="qx-templates__chip">
             {{ $tc('qualitySettings.exceptionCount', item.count) }}
           </v-chip>
           <span class="qx-templates__summary">{{ item.summary }}</span>
@@ -137,6 +147,7 @@ export default {
 <style lang="scss" scoped>
 .qx-templates {
   &__intro {
+    max-width: 760px;
     margin: 8px 0 16px;
     font-size: 0.875rem;
     color: var(--gray-700);
@@ -160,6 +171,17 @@ export default {
 
   &__open {
     color: var(--gray-700);
+  }
+
+  &__chip {
+    background: rgba(0, 172, 220, 0.14) !important;
+    color: var(--gray-900) !important;
+    font-weight: 600;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--gray-900);
   }
 
   &__none {
