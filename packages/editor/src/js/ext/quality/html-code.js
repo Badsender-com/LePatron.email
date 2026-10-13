@@ -1,6 +1,6 @@
 'use strict';
 
-const { HTML_CODE_BLOCK } = require('../html-code-block/block-types');
+const { HTML_CODE_BLOCK } = require('../synthetic-blocks/block-types');
 const { allEditedRichTexts } = require('./user-styles');
 
 // Markup the client wrote themselves: the code pasted in an "HTML code"

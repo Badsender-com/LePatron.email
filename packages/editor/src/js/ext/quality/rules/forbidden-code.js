@@ -5,7 +5,7 @@ const { clientMarkup, parseMarkup } = require('../html-code');
 
 // What no email client runs and every filter distrusts: scripts, embedded
 // pages, forms, plug-ins, external stylesheets and event handlers. The canvas
-// already neutralizes them for the preview (html-code-block/neutralize-html.js),
+// already neutralizes them for the preview (synthetic-blocks/neutralize-html.js),
 // so the client does not see them misbehave: the export keeps them as pasted.
 const FORBIDDEN_TAGS = ['script', 'iframe', 'form', 'embed', 'object', 'applet'];
 
