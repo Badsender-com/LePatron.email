@@ -58,6 +58,24 @@ describe('manifest-registry.filterMatchesExpertise', () => {
     ).toBe(true);
   });
 
+  it('does NOT match a transversal expertise when the filter leaves it out', () => {
+    expect(
+      filterMatchesExpertise(
+        {
+          scope: ['correction'],
+          categories: ['redaction'],
+          excludeTransversal: true,
+        },
+        {
+          category: 'redaction',
+          scope: [],
+          isTransversal: true,
+          appliesToEmailTypes: [],
+        }
+      )
+    ).toBe(false);
+  });
+
   it('respects the expertise emailType restriction when the filter has an emailType', () => {
     expect(
       filterMatchesExpertise(ctaRedactionPromo, {

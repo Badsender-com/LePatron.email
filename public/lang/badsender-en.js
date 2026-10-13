@@ -783,17 +783,27 @@ module.exports = {
   'ai-panel-selected-field': 'Selected field',
   'ai-panel-correcting': 'Checking…',
   'ai-panel-no-correction': 'No mistake found.',
-  'ai-panel-corrections-count': '__count__ correction(s)',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
   'ai-panel-accept': 'Accept',
   'ai-panel-ignore': 'Ignore',
   'ai-panel-accept-all': 'Accept all',
   'ai-panel-correction-accepted': 'Accepted',
   'ai-panel-correction-ignored': 'Ignored',
-  'ai-panel-correction-stale': 'Text changed since',
-  'ai-panel-corrections-accepted': '__count__ correction(s) accepted',
-  'ai-panel-correction-undo-hint': 'Ctrl+Z undoes an accepted correction.',
+  'ai-panel-correction-undone': 'Undone',
+  'ai-panel-correction-stale': 'Not applied: the text changed since the check.',
+  'ai-panel-corrections-accepted': '__count__ corrections accepted.',
+  'ai-panel-corrections-accepted-one': '1 correction accepted.',
+  'ai-panel-corrections-stale':
+    '__count__ not applied: the text changed since the check.',
+  'ai-panel-corrections-stale-one':
+    '1 not applied: the text changed since the check.',
+  'ai-panel-correction-undo-hint':
+    '__keys__ undoes the last accepted correction.',
   'ai-panel-corrections-dropped':
-    '__count__ correction(s) set aside: they touched the formatting or a merge tag.',
+    '__count__ corrections set aside: they touched the formatting or a merge tag.',
+  'ai-panel-corrections-dropped-one':
+    '1 correction set aside: it touched the formatting or a merge tag.',
   'ai-panel-correction-before': 'Before:',
   'ai-panel-correction-after': 'After:',
   'ai-panel-generate-subject': 'Suggest subjects',
@@ -806,7 +816,7 @@ module.exports = {
   'ai-panel-no-action-yet': 'No AI action for this block yet.',
   'ai-panel-whole-email': 'Whole email',
   'ai-panel-selection-changed':
-    'You selected another element. These proposals stay here.',
+    'You selected another element. This action stays open here.',
   'ai-panel-see-its-actions': 'See its AI actions',
   'ai-field-subject-label': 'Generate the subject with AI',
   'ai-field-preheader-label': 'Generate the preheader with AI',

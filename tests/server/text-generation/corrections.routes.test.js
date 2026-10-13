@@ -190,6 +190,44 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
         { ...body, fields: [{ role: 'text', text: 'Texte' }] },
       ],
       ['no target', { mailingId: MAILING_ID, fields: FIELDS }],
+      [
+        'a field target without its field',
+        { ...body, target: { ...TARGET, kind: 'blockField' } },
+      ],
+      [
+        'a field target sending other fields',
+        {
+          ...body,
+          target: { ...TARGET, kind: 'blockField', field: 'titleText' },
+        },
+      ],
+      [
+        'a block target naming a field',
+        { ...body, target: { ...TARGET, field: 'titleText' } },
+      ],
+      ['a field sent twice', { ...body, fields: [FIELDS[0], FIELDS[0]] }],
+      [
+        'more than 40 fields',
+        {
+          ...body,
+          fields: Array.from({ length: 41 }, (_, i) => ({
+            path: `f${i}`,
+            role: 'text',
+            text: 'Texte',
+          })),
+        },
+      ],
+      [
+        'more text than a block holds',
+        {
+          ...body,
+          fields: Array.from({ length: 11 }, (_, i) => ({
+            path: `f${i}`,
+            role: 'text',
+            text: 'a'.repeat(5000),
+          })),
+        },
+      ],
     ])(
       'answers 400 for %s, without invoking anything',
       async (_label, payload) => {
@@ -296,7 +334,6 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
         'not in the text',
         fix('longText', 'la colection de lin', 'la collection de lin'),
       ],
-      ['found twice', fix('longText', 'l', 'L')],
       ['touching a merge tag', fix('longText', '{{prenom}},', '{{prenom}} ,')],
       ['changing nothing', fix('titleText', 'demain', 'demain')],
       [
@@ -312,6 +349,37 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
         fix('longText', 'la colection', 'la collection'),
       ]);
       expect(res.body.dropped).toBe(1);
+    });
+
+    it('drops and counts a correction found twice in its field', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('titleText', 'la', 'là'),
+          fix('titleText', 'Tra', 'Trois')
+        )
+      );
+      const res = await post({
+        ...body,
+        fields: [{ path: 'titleText', role: 'title', text: 'Tra la la' }],
+      });
+      expect(res.body).toEqual({
+        corrections: [fix('titleText', 'Tra', 'Trois')],
+        dropped: 1,
+      });
+    });
+
+    it('returns a correction the model repeats once', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('longText', 'la colection', 'la collection'),
+          fix('longText', 'la colection', 'la collection')
+        )
+      );
+      const res = await post();
+      expect(res.body).toEqual({
+        corrections: [fix('longText', 'la colection', 'la collection')],
+        dropped: 0,
+      });
     });
 
     it('answers no correction for a text without mistake', async () => {
