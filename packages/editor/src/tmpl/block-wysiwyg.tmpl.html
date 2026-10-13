@@ -30,7 +30,7 @@
     </div>
     <!-- ko if: $root.currentUser()?.canEditStructure -->
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
-    <!-- Delete block (destructive action - always last) -->
+    <!-- Delete block (destructive action - last of the structure tools) -->
     <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
     <!-- /ko -->
     <!-- Translate / content feed: content-level actions, available to writer (canEditContent) even though structure tools above are hidden -->

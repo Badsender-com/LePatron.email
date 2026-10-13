@@ -33,4 +33,13 @@ describe('roleItems', () => {
       'users.roles.superAdmin'
     );
   });
+
+  it('leaves the tech admin role out where the actor cannot grant it', () => {
+    const values = roleItems(vm, { includeTechAdmin: false }).map(
+      (item) => item.value
+    );
+
+    expect(values).not.toContain(Roles.GROUP_ADMIN_TECH);
+    expect(values).toContain(Roles.GROUP_ADMIN);
+  });
 });

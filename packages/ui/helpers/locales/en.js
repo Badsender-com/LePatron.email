@@ -1194,6 +1194,8 @@ export default {
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Only a super admin can grant or revoke this role.',
+      FORBIDDEN_TECH_ADMIN_ROLE_CHANGE:
+        'Only a super admin or a tech admin can grant or revoke the tech admin role.',
       FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
         'Only a super admin can manage a super admin.',
       FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:
