@@ -1,5 +1,6 @@
 <script>
 import { mapGetters } from 'vuex';
+import { Plus } from 'lucide-vue';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { safeFetchGroup } from '~/helpers/safe-fetch-group';
@@ -23,6 +24,7 @@ const TABS = ['general', 'templates'];
 export default {
   name: 'BsPageSettingsQuality',
   components: {
+    Plus,
     BsPageHeader,
     BsModalConfirm,
     BsQualityExceptionsEditor,
@@ -129,6 +131,7 @@ export default {
       </template>
       <template v-if="tab === 'general'" #actions>
         <v-btn color="accent" elevation="0" @click="$refs.editor.openAdd()">
+          <plus :size="16" class="mr-1" />
           {{ $t('qualitySettings.addException') }}
         </v-btn>
       </template>
@@ -184,8 +187,8 @@ export default {
 
 <style lang="scss" scoped>
 .quality-intro {
+  margin: 8px 0 16px;
   font-size: 0.875rem;
   color: var(--gray-700);
-  max-width: 760px;
 }
 </style>

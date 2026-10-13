@@ -25,6 +25,15 @@ const storedChecks = (settings) =>
 
 export const isServerCheck = (id) => SERVER_CHECKS.includes(id);
 
+// The checks whose card carries a note: a setting elsewhere it depends on.
+const NOTE_CHECKS = [
+  'tracking-params',
+  'domain-blocklists',
+  'dangerous-links',
+  'color-contrast',
+];
+export const hasNote = (id) => NOTE_CHECKS.includes(id);
+
 /** The catalogue's values of a check: what applies when nothing is set. */
 export function recommendedOf(id) {
   const { defaultState, thresholds } = CHECKS[id];
