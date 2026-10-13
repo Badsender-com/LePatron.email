@@ -267,3 +267,15 @@ export const CHECKS = {
     ordered: [],
   },
 };
+
+// The checks the server runs on the export, once the others are done: when
+// one of them blocks, the export waits for its answer (up to the 20 s the
+// server gives itself, quality-resources.service.js).
+export const SERVER_CHECKS = [
+  'broken-links',
+  'dangerous-links',
+  'domain-blocklists',
+  'image-weight',
+  'images-total-weight',
+  'oversized-images',
+];
