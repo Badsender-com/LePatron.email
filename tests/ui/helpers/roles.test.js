@@ -7,15 +7,25 @@ const vm = { $t: (key) => key };
 describe('roleItems', () => {
   it('offers the group roles', () => {
     expect(roleItems(vm).map((item) => item.value)).toEqual([
-      Roles.GROUP_ADMIN,
       Roles.REGULAR_USER,
+      Roles.WRITER,
+      Roles.REVIEWER,
+      Roles.GROUP_ADMIN_TECH,
+      Roles.GROUP_ADMIN,
     ]);
   });
 
   it('puts the super admin role first when asked', () => {
     expect(
       roleItems(vm, { includeSuperAdmin: true }).map((item) => item.value)
-    ).toEqual([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN, Roles.REGULAR_USER]);
+    ).toEqual([
+      Roles.SUPER_ADMIN,
+      Roles.REGULAR_USER,
+      Roles.WRITER,
+      Roles.REVIEWER,
+      Roles.GROUP_ADMIN_TECH,
+      Roles.GROUP_ADMIN,
+    ]);
   });
 
   it('translates every label', () => {

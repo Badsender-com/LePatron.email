@@ -16,7 +16,6 @@ import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import { User, Shield, Users, Mail } from 'lucide-vue';
-import { ASSIGNABLE_ROLES, getRoleLabelKey } from '~/helpers/roles.js';
 
 export default {
   name: 'BsPageSettingsUserEdit',
@@ -105,12 +104,6 @@ export default {
     },
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
-    },
-    roleOptions() {
-      return ASSIGNABLE_ROLES.map((value) => ({
-        value,
-        text: this.$t(getRoleLabelKey(value)),
-      }));
     },
     workspaceHeaders() {
       return [
