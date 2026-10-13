@@ -6,20 +6,26 @@ import {
   effectiveOf,
   matchesBase,
   sameException,
-  blocksFrom,
+  hasNote,
   isServerCheck,
 } from '~/helpers/quality-exceptions.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
+import BsQualityExceptionNotes from '~/components/quality/quality-exception-notes.vue';
 import BsQualityThresholdField from '~/components/quality/quality-threshold-field.vue';
 
 const STATES = ['off', 'on', 'blocking'];
-const NOTES = ['tracking-params', 'domain-blocklists', 'dangerous-links'];
 
 // One exception: a check whose state or thresholds differ from what applies
 // below it (the recommended values, or the general settings on a template).
 export default {
   name: 'BsQualityExceptionCard',
-  components: { BsQualityThresholdField, EyeOff, Lock, Trash2 },
+  components: {
+    BsQualityExceptionNotes,
+    BsQualityThresholdField,
+    EyeOff,
+    Lock,
+    Trash2,
+  },
   mixins: [mixinQualityTexts],
   props: {
     checkId: { type: String, required: true },
@@ -57,25 +63,16 @@ export default {
     isServer() {
       return isServerCheck(this.checkId);
     },
-    note() {
-      if (this.checkId === 'color-contrast' || NOTES.includes(this.checkId)) {
-        return this.$t(`qualitySettings.notes.${this.checkId}`);
-      }
-      return '';
+    showThresholds() {
+      return this.thresholdNames.length > 0 && this.applied.state !== 'off';
     },
-    trackingRoute() {
-      return `/groups/${this.groupId}/settings/tracking`;
-    },
-    blocksFromText() {
-      const from = blocksFrom(this.checkId, this.applied.thresholds);
-      if (!from) return '';
-      return this.$t('qualitySettings.card.blocksFrom', {
-        label: this.$t(
-          `qualitySettings.thresholds.${this.checkId}.${from.name}`
-        ),
-        value: from.value,
-        unit: this.unitName(this.checkId, from.name),
-      });
+    hasBody() {
+      return (
+        this.showThresholds ||
+        this.changesNothing ||
+        this.applied.state !== 'on' ||
+        hasNote(this.checkId)
+      );
     },
     thresholdNames() {
       return Object.keys(CHECKS[this.checkId].thresholds);
@@ -94,24 +91,27 @@ export default {
 <template>
   <v-card outlined class="qx-card" :data-exception="checkId">
     <div class="qx-card__head">
-      <div class="qx-card__title">
-        <span class="qx-card__name">{{ checkName(checkId) }}</span>
-        <span class="qx-card__category">{{ categoryName(checkId) }}</span>
-        <v-tooltip v-if="isServer" bottom max-width="320">
-          <template #activator="{ on, attrs }">
-            <v-chip x-small outlined v-bind="attrs" v-on="on">
-              {{ $t('qualitySettings.card.online') }}
-            </v-chip>
-          </template>
-          {{ $t('qualitySettings.card.onlineTip') }}
-        </v-tooltip>
-        <v-chip v-if="isDirty" x-small color="warning" text-color="black">
-          {{
-            isNew
-              ? $t('qualitySettings.card.new')
-              : $t('qualitySettings.card.unsaved')
-          }}
-        </v-chip>
+      <div class="qx-card__heading">
+        <div class="qx-card__title">
+          <span class="qx-card__name">{{ checkName(checkId) }}</span>
+          <span class="qx-card__category">{{ categoryName(checkId) }}</span>
+          <v-tooltip v-if="isServer" bottom max-width="320">
+            <template #activator="{ on, attrs }">
+              <v-chip x-small outlined v-bind="attrs" v-on="on">
+                {{ $t('qualitySettings.card.online') }}
+              </v-chip>
+            </template>
+            {{ $t('qualitySettings.card.onlineTip') }}
+          </v-tooltip>
+          <v-chip v-if="isDirty" x-small color="warning" text-color="black">
+            {{
+              isNew
+                ? $t('qualitySettings.card.new')
+                : $t('qualitySettings.card.unsaved')
+            }}
+          </v-chip>
+        </div>
+        <p v-if="baseText" class="qx-card__base">{{ baseText }}</p>
       </div>
       <div class="qx-card__controls">
         <v-btn-toggle
@@ -162,46 +162,15 @@ export default {
       </div>
     </div>
 
-    <div class="qx-card__body">
-      <p v-if="baseText" class="qx-card__base">{{ baseText }}</p>
-      <p v-if="changesNothing" class="qx-card__unchanged" role="status">
-        {{
-          isGeneral
-            ? $t('qualitySettings.card.unchangedGeneral')
-            : $t('qualitySettings.card.unchangedTemplate')
-        }}
-      </p>
-      <p v-if="applied.state === 'off'" class="qx-card__effect">
-        {{ $t('qualitySettings.card.off') }}
-      </p>
-      <div v-if="applied.state === 'blocking'" class="qx-card__effect">
-        <p>
-          <lock :size="14" class="qx-card__icon qx-card__icon--error" />
-          {{ $t('qualitySettings.card.blocking') }}
-          {{ blocksFromText }}
-        </p>
-        <template v-if="isServer">
-          <p>
-            {{
-              $t('qualitySettings.card.blocksOn', {
-                cases: $t(`qualitySettings.blocksOn.${checkId}`),
-              })
-            }}
-          </p>
-          <p>{{ $t('qualitySettings.serverWait') }}</p>
-        </template>
-      </div>
-      <p v-if="note" class="qx-card__note">
-        {{ note }}
-        <nuxt-link v-if="checkId === 'tracking-params'" :to="trackingRoute">
-          {{ $t('qualitySettings.notes.trackingLink') }}
-        </nuxt-link>
-      </p>
-
-      <div
-        v-if="thresholdNames.length && applied.state !== 'off'"
-        class="qx-card__thresholds"
-      >
+    <div v-if="hasBody" class="qx-card__body">
+      <bs-quality-exception-notes
+        :check-id="checkId"
+        :level="level"
+        :applied="applied"
+        :changes-nothing="changesNothing"
+        :group-id="groupId"
+      />
+      <div v-if="showThresholds" class="qx-card__thresholds">
         <bs-quality-threshold-field
           v-for="name in thresholdNames"
           :key="name"
@@ -228,10 +197,14 @@ export default {
   &__head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 8px 16px;
     padding: 12px 16px;
+  }
+
+  &__heading {
+    min-width: 0;
   }
 
   &__title {
@@ -278,22 +251,17 @@ export default {
     }
   }
 
-  &__base,
-  &__note {
+  &__base {
+    margin: 2px 0 0;
+    font-size: 0.75rem;
     color: var(--gray-700);
-  }
-
-  &__unchanged {
-    padding: 8px 12px;
-    border-radius: 4px;
-    background: var(--surface-muted, #f5f5f5);
   }
 
   &__thresholds {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 24px;
-    margin-top: 8px;
+    gap: 16px 24px;
+    margin-top: 16px;
   }
 }
 </style>
