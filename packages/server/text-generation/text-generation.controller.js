@@ -61,10 +61,18 @@ async function generatePreheader(req, res) {
  *
  * @apiParam (Body) {String} mailingId the email being edited
  * @apiParam (Body) {Object} target the block or block field: `{ kind, blockId, blockType, field? }`
- * @apiParam (Body) {Object[]} fields their visible text: `{ path, role, text }`
+ * @apiParam (Body) {Object[]} fields their visible text: `{ path, role, text }`,
+ *   at most 40, a path once, 50,000 characters in all; a field target sends its
+ *   field alone
  *
  * @apiSuccess {Object[]} corrections `{ field, before, after, reason }`
  * @apiSuccess {Number} dropped corrections the code could not place
+ *
+ * @apiError (400) INVALID_TEXT_GENERATION_REQUEST the body breaks the rules above
+ * @apiError (403) TEXT_GENERATION_DISABLED text generation is off for the group
+ * @apiError (404) mailing not found for the user
+ * @apiError (429) AI rate limit reached, `retryAfterSeconds` in the body
+ * @apiError (503) TEXT_GENERATION_UNAVAILABLE the skill or the engine is missing
  */
 async function correctText(req, res) {
   res.json(

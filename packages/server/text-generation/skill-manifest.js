@@ -20,7 +20,12 @@ module.exports = {
     { scope: ['subject'], categories: ['redaction', 'deliverability'] },
     { scope: ['preheader'], categories: ['redaction', 'deliverability'] },
     // None written today: a house rule (a brand never to correct) can be
-    // added in the admin, without code.
-    { scope: ['correction'], categories: ['redaction'] },
+    // added in the admin, without code. The transversal writing principles
+    // are left out: they would push the skill towards rewriting.
+    {
+      scope: ['correction'],
+      categories: ['redaction'],
+      excludeTransversal: true,
+    },
   ],
 };
