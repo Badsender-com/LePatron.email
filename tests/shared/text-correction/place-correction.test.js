@@ -30,6 +30,22 @@ describe('spelling correction: placing a correction', () => {
       ).toBe('Les soldes\ncommencent\ndemain');
     });
 
+    it('decodes the entities by their case, and the whole Latin-1 set', () => {
+      expect(
+        visibleText('&Eacute;t&eacute; c&oelig;ur &agrave; &Ccedil;a')
+      ).toBe('\u00c9t\u00e9 c\u0153ur \u00e0 \u00c7a');
+    });
+
+    it('keeps an entity out of the Unicode range as it is, rather than failing', () => {
+      expect(visibleText('a &#1114112; b')).toBe('a &#1114112; b');
+    });
+
+    it('reads the line breaks and indentation of the source as one space, as the rendering does', () => {
+      expect(
+        visibleText('<p>D\u00e9couvrez nos\n      nouveaut\u00e9s</p>')
+      ).toBe('D\u00e9couvrez nos nouveaut\u00e9s');
+    });
+
     it('decodes the entities, a non-breaking space kept as one', () => {
       expect(visibleText('L&#39;été arrive&nbsp;! R&amp;D')).toBe(
         "L'été arrive\u00a0! R&D"
@@ -78,6 +94,52 @@ describe('spelling correction: placing a correction', () => {
       ).toEqual({ html: 'L&#39;été arrive bientot ! Vite&nbsp;!' });
     });
 
+    it('places a correction across the indentation of the source', () => {
+      expect(
+        placeCorrection('<p>D\u00e9couvrez nos\n   nouveaut\u00e9</p>', {
+          before: 'nos nouveaut\u00e9',
+          after: 'nos nouveaut\u00e9s',
+        })
+      ).toEqual({ html: '<p>D\u00e9couvrez nos nouveaut\u00e9s</p>' });
+    });
+
+    it('reads an attribute holding a ">" as part of its tag, never as text', () => {
+      const html =
+        '<p>Voir <a href="https://x.fr" title="Prix > 10">notre ofre</a></p>';
+      expect(
+        placeCorrection(html, { before: 'notre ofre', after: 'notre offre' })
+      ).toEqual({
+        html:
+          '<p>Voir <a href="https://x.fr" title="Prix > 10">notre offre</a></p>',
+      });
+      // The attribute's text is not visible: a correction cannot reach it.
+      expect(
+        placeCorrection(html, {
+          before: '10',
+          after: '10" onmouseover="alert(1)',
+        })
+      ).toEqual({ refused: 'not-found' });
+    });
+
+    it('escapes the quotes it writes too', () => {
+      expect(
+        placeCorrection('<p>Il dit bonjour</p>', {
+          before: 'dit bonjour',
+          after: 'dit "bonjour"',
+        })
+      ).toEqual({ html: '<p>Il dit &quot;bonjour&quot;</p>' });
+    });
+
+    it('writes a plain text value as it is: an alternative text is no HTML', () => {
+      expect(
+        placeCorrection(
+          'Une robe en lin bleu de R et D',
+          { before: 'R et D', after: 'R&D' },
+          { plainText: true }
+        )
+      ).toEqual({ html: 'Une robe en lin bleu de R&D' });
+    });
+
     it('escapes what it writes', () => {
       expect(
         placeCorrection('Notre equipe R et D', {
@@ -122,6 +184,26 @@ describe('spelling correction: placing a correction', () => {
         { before: 'de clic:', after: 'de clic\b\ffinal:' },
       ],
       ['unchanged', '<p>Les soldes</p>', { before: 'soldes', after: 'soldes' }],
+      // A correction never brings a merge tag the text did not have: the
+      // sending platform would run it.
+      [
+        'merge-tag',
+        '<p>Bonjour, \u00e0 demain</p>',
+        { before: 'Bonjour', after: 'Bonjour {{prenom}}' },
+      ],
+      // A bidirectional control character would disguise the change shown.
+      [
+        'invalid-text',
+        '<p>Les soldes</p>',
+        { before: 'soldes', after: 'sol\u202edes' },
+      ],
+      // The visible text has a line per paragraph; the model's excerpt may
+      // not straddle two.
+      [
+        'multiline',
+        '<p>Les soldes</p><p>commence demain</p>',
+        { before: 'soldes\ncommence', after: 'soldes\ncommencent' },
+      ],
     ])(
       'refuses (%s) and leaves the HTML as it was',
       (reason, html, correction) => {
