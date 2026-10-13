@@ -828,6 +828,7 @@ export default {
     templateInherits: 'Hérité du groupe',
     templateOverrides: '{count} réglage(s) propre(s) au template',
     thresholdHint: 'Défaut {default}, de {min} à {max}',
+    serverWait: 'Le téléchargement et l\'envoi ESP attendront cette vérification en ligne : quelques secondes, parfois une vingtaine.',
     orderError: 'Ne peut pas être inférieur au niveau précédent',
     thresholdError: 'Entre {min} et {max}',
     units: {

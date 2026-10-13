@@ -142,9 +142,22 @@ function defaultQualitySettings() {
   };
 }
 
+// The checks the server runs on the export, once the others are done: when
+// one of them blocks, the export waits for its answer (up to the 20 s the
+// server gives itself, quality-resources.service.js).
+const SERVER_CHECKS = Object.freeze([
+  'broken-links',
+  'dangerous-links',
+  'domain-blocklists',
+  'image-weight',
+  'images-total-weight',
+  'oversized-images',
+]);
+
 module.exports = {
   CHECK_STATES,
   CHECKS,
+  SERVER_CHECKS,
   defaultThresholds,
   defaultQualitySettings,
 };

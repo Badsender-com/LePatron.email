@@ -1028,6 +1028,7 @@ export default {
     templateInherits: 'Inherited from the group',
     templateOverrides: '{count} setting(s) set on the template',
     thresholdHint: 'Default {default}, from {min} to {max}',
+    serverWait: 'The download and the ESP send will wait for this online check: a few seconds, sometimes about twenty.',
     orderError: 'Must not be lower than the level before it',
     thresholdError: 'Between {min} and {max}',
     units: {
