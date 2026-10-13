@@ -27,6 +27,7 @@ describe('ai panel: the action registry', () => {
   const ids = (result) => result.actions.map((action) => action.id);
 
   describe('the whole email (« Outils IA » with nothing selected)', () => {
+    // Updated by #1256: « Corriger » joins them on the whole email.
     it('offers both actions as a list', () => {
       const result = availableActions({ kind: 'email' }, ON);
       expect(ids(result)).toEqual(['generate-subject', 'generate-preheader']);
@@ -99,6 +100,7 @@ describe('ai panel: the action registry', () => {
     });
   });
 
+  // Replaced by the « Corriger » blocks below when #1254 and #1255 turn them on.
   describe('blocks and block fields', () => {
     it.each([
       [{ kind: 'block', blockType: 'coverBlock' }],
@@ -157,6 +159,59 @@ describe('ai panel: the action registry', () => {
           rewrite,
         ]).actions
       ).toEqual([]);
+    });
+  });
+
+  // The spelling correction (epic #1251, ADR 0005): « Corriger » on a block
+  // field, a block and the whole email, with text generation.
+  describe('« Corriger »', () => {
+    const FIELD = {
+      kind: 'blockField',
+      blockId: 'ko_textBlock_3',
+      blockType: 'textBlock',
+      field: 'titleText',
+    };
+    const BLOCK = {
+      kind: 'block',
+      blockId: 'ko_textBlock_3',
+      blockType: 'textBlock',
+    };
+
+    // Turned on by #1254 (correct a field)
+    describe.skip('on a block field', () => {
+      it('is the field’s single action, opened directly', () => {
+        expect(availableActions(FIELD, ON)).toEqual({
+          actions: [{ id: 'correct-text', canApply: true }],
+          opens: 'action',
+        });
+      });
+
+      it('is not offered without text generation', () => {
+        expect(
+          availableActions(FIELD, { ...ON, textGeneration: false })
+        ).toEqual({ actions: [], opens: 'none' });
+      });
+    });
+
+    // Turned on by #1255 (correct a block)
+    describe.skip('on a block', () => {
+      it('is the block’s single action, opened directly', () => {
+        expect(availableActions(BLOCK, ON)).toEqual({
+          actions: [{ id: 'correct-text', canApply: true }],
+          opens: 'action',
+        });
+      });
+    });
+
+    // Turned on by #1256 (correct the whole email)
+    describe.skip('on the whole email', () => {
+      it('comes after generating the subject and the preheader', () => {
+        expect(ids(availableActions({ kind: 'email' }, ON))).toEqual([
+          'generate-subject',
+          'generate-preheader',
+          'correct-text',
+        ]);
+      });
     });
   });
 });

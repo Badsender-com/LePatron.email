@@ -12,7 +12,7 @@ _UI_: Fonctionnalité IA
 _Avoid_: Feature config, AI module
 
 **Text generation**:
-The AI feature that writes text for the user to pick from: today the subject and the preheader of an email.
+The AI feature that writes or corrects the text of an email for the user to accept: proposals to pick from (the subject, the preheader) or corrections to accept one by one.
 _UI_: Génération de texte
 _Avoid_: Textgen, copywriting, AI writing
 
@@ -48,6 +48,11 @@ _Avoid_: Run, execution, request
 One piece of text an AI feature offers the user, who picks it or not; nothing is written into the email until the user picks.
 _UI_: Proposition
 _Avoid_: Suggestion, variant, generation
+
+**Correction**:
+One localized change to the spelling, grammar or typography of a text, with the text before, the text after and the reason; the user accepts it or ignores it, and nothing is written until they accept. Never a change of style or meaning.
+_UI_: Correction
+_Avoid_: Suggestion, fix, mistake
 
 ### Email
 

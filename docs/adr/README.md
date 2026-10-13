@@ -12,3 +12,4 @@ Each file records one decision that is hard to reverse, surprising without conte
 | [0001](./0001-grill-first-feature-workflow.md)          | New features start with a grilling, an ADR, an epic and tickets                    | proposed |
 | [0003](./0003-text-generation-skills-and-expertises.md) | Text generation runs on Badsender skills and expertises, as its own AI feature     | proposed |
 | [0004](./0004-ai-panel-and-ai-actions.md)               | AI actions live in a right-hand AI panel, shared with comments and quality control | proposed |
+| [0005](./0005-spelling-correction-located-in-code.md)   | Spelling correction is a text generation action whose corrections the code places  | proposed |
