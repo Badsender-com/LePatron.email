@@ -91,7 +91,7 @@ export default {
     candidates() {
       return CATALOGUE_ORDER.filter((id) => !this.drafts[id]).map((id) => ({
         id,
-        applies: this.baseText(id),
+        applies: this.baseText(id, true),
       }));
     },
   },
@@ -116,16 +116,20 @@ export default {
       return this.isGeneral ? recommendedOf(id) : this.general[id];
     },
 
-    // What applies without this level's exception.
-    baseText(id) {
-      const general = !this.isGeneral && this.generalExceptions[id];
-      return general
-        ? this.$t('qualitySettings.card.general', {
-            value: this.exceptionText(id, general),
-          })
-        : this.$t('qualitySettings.card.recommended', {
-            value: this.stateName(recommendedOf(id).state),
-          });
+    // What applies without this level's exception: the general setting
+    // where the group has an exception, else the recommended values.
+    baseText(id, short = false) {
+      if (!this.isGeneral && this.generalExceptions[id]) {
+        return this.$t('qualitySettings.card.general', {
+          value: this.appliedText(id, this.general[id]),
+        });
+      }
+      return this.$t(
+        short
+          ? 'qualitySettings.card.recommendedShort'
+          : 'qualitySettings.card.recommended',
+        { value: this.appliedText(id, recommendedOf(id)) }
+      );
     },
 
     reset() {
@@ -248,6 +252,11 @@ export default {
           ? $t('qualitySettings.dialog.title')
           : $t('qualitySettings.dialog.titleTemplate')
       "
+      :intro="
+        isGeneral
+          ? $t('qualitySettings.dialog.intro')
+          : $t('qualitySettings.dialog.introTemplate')
+      "
       :candidates="candidates"
       @pick="add"
     />
@@ -272,8 +281,8 @@ export default {
   &__cards {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: 16px;
+    gap: 8px;
+    margin-top: 12px;
   }
 
   &__empty {
