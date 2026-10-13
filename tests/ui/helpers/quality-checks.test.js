@@ -2,6 +2,7 @@ import {
   CHECKS,
   CHECK_STATES,
   CHECK_CATEGORIES,
+  SERVER_CHECKS,
 } from '~/helpers/constants/quality-checks.js';
 import en from '~/helpers/locales/en.js';
 import fr from '~/helpers/locales/fr.js';
@@ -16,6 +17,10 @@ describe('the settings pages check catalogue', () => {
   it('is the shared one', () => {
     expect(CHECKS).toBe(SHARED.CHECKS);
     expect(CHECK_STATES).toBe(SHARED.CHECK_STATES);
+  });
+
+  it('reads the checks run by the server from the shared catalogue', () => {
+    expect(SERVER_CHECKS).toBe(SHARED.SERVER_CHECKS);
   });
 
   it('lists every category its checks belong to', () => {

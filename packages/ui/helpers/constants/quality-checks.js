@@ -5,7 +5,11 @@
 // a setting the server would refuse, nor miss a check the editor runs. Only
 // how the pages lay the checks out is theirs.
 
-export { CHECKS, CHECK_STATES } from '../../../shared/quality/checks.js';
+export {
+  CHECKS,
+  CHECK_STATES,
+  SERVER_CHECKS,
+} from '../../../shared/quality/checks.js';
 
 // In the order the pages list them: by category, as the editor's drawer does.
 export const CHECK_CATEGORIES = [
