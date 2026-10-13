@@ -8,7 +8,14 @@ const { createAiPanel } = require('../ext/ai-panel/ai-panel-controller');
 const {
   canUseTextGeneration,
 } = require('../ext/ai-panel/text-generation-access');
-const { fieldTargetOf } = require('../ext/ai-panel/field-target');
+const {
+  fieldTargetOf,
+  blockTargetOf,
+} = require('../ext/ai-panel/field-target');
+const { targetOfBlock } = require('../ext/ai-panel/targets');
+const {
+  extractBlockTranslatableContent,
+} = require('../utils/block-content-extractor');
 const {
   generateSubjects,
   generatePreheaders,
@@ -33,21 +40,39 @@ let panel = null;
 // in the meantime mounts nothing for the one it left.
 let pending = null;
 let editor = null;
+let viewModel = null;
 
 // The block field an element belongs to (the text being edited).
 const fieldOf = (element) =>
   editor &&
   fieldTargetOf(element, {
-    pathsOf: (blockId) =>
-      editor.textFieldsOf(blockId).map((field) => field.path),
+    pathsOf: (blockId) => editor.textFieldsOf(blockId).map((field) => field.path),
   });
 
-// A block of the canvas, as the toolbar of the block hands it.
-const blockTarget = (block) => ({
-  kind: 'block',
-  blockId: ko.unwrap(block.id),
-  blockType: ko.unwrap(block.type),
-});
+// A block of the canvas, as the toolbar of the block hands it: the block that
+// holds the preheader is the preheader's target, as in the panel.
+const blockTarget = (block) =>
+  targetOfBlock({
+    type: () => ko.unwrap(block.type),
+    id: () => ko.unwrap(block.id),
+  });
+
+// What the targets offer, the email read once for all the block toolbars
+// rendered together.
+let offers = null;
+function offerOnBlocks(target) {
+  if (!offers) {
+    offers = panel.offerNow();
+    setTimeout(() => {
+      offers = null;
+    });
+  }
+  return offers(target).actions.length > 0;
+}
+
+// Whether a block has any text to work on: cheaper than listing its fields.
+const hasText = (block) =>
+  Object.keys(extractBlockTranslatableContent(ko.toJS(block))).length > 0;
 
 function mount(vm) {
   editor = createEditorAccess(vm);
@@ -84,13 +109,24 @@ module.exports = {
     // The entry points of the toolbars (#1257). The panel exists once the
     // editor is initialised: the block toolbar re-reads the offer then.
     vm.aiPanelReady = ko.observable(false);
+    viewModel = vm;
+    // Read in a binding: only the panel's readiness is a dependency, not the
+    // content the offer reads, nor the block's own fields.
     vm.offersAiOnBlock = (block) =>
       vm.aiPanelReady() &&
-      panel.offerNow()(blockTarget(block)).actions.length > 0;
+      Boolean(panel) &&
+      ko.ignoreDependencies(() => {
+        const target = blockTarget(block);
+        return (
+          (target.kind !== 'block' || hasText(block)) && offerOnBlocks(target)
+        );
+      });
     vm.openAiOnBlock = (block) => panel && panel.openTarget(blockTarget(block));
-    // From the text editor's toolbar: the field it edits.
+    // From the text editor's toolbar: the field it edits, or its block when no
+    // text field matches it.
     vm.openAiOnElement = (element) => {
-      const target = panel && fieldOf(element);
+      if (!panel) return;
+      const target = fieldOf(element) || blockTargetOf(element);
       if (target) panel.openTarget(target);
     };
   },
@@ -124,5 +160,8 @@ module.exports = {
       panel = null;
       editor = null;
     }
+    offers = null;
+    // Its toolbars offer nothing until a panel exists again.
+    if (viewModel) viewModel.aiPanelReady(false);
   },
 };
