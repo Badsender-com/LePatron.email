@@ -129,7 +129,7 @@ Les capacités de l'éditeur (`canEditStructure`, `canEditContent`, `canEditStyl
 4. ~~Approbation~~ **Décidé le 2026-10-13 : le bouton « Approuver » est visible pour tous les rôles** (`canPostDecision` ne demande plus que l'utilisateur soit chargé). `decision` n'est pas contrôlée côté serveur, ce qui est cohérent avec cette décision.
 5. Gardes de défense en profondeur dans le viewModel (`removeBlock`, `duplicateBlock`, `moveBlock`, `addBlock`, undo/redo) ; dépôt d'image sur le canvas (les drops jQuery UI sont géométriques, ni `inert` ni le calque ne les arrêtent).
 6. Échec de `/api/users/current-user` : tout reste verrouillé sans message ; `canEditStyle` et `canEditStructure` portent la même règle (deux booléens).
-7. Outil Compose (bloc composé) rangé avec la structure, donc refusé au `writer` : **confirmé par le produit le 2026-10-13**. Bloc code HTML et CSS de l'email, rangés de la même façon : **encore à confirmer** (un `writer` ne peut plus corriger le HTML collé).
+7. ~~Outil Compose, bloc code HTML, CSS de l'email~~ **Confirmé par le produit le 2026-10-13** : rangés avec la structure, donc refusés au `writer` et au `reviewer` (un `writer` ne peut pas corriger le HTML collé). Aucun changement de code, c'était déjà le comportement.
 8. Enforcement serveur de tout le reste (#1103) et QA multi-navigateurs ; lignes 16 et 18 de la matrice 3.2 toujours ouvertes.
 
 ### Resynchronisation du 2026-10-13
