@@ -1,16 +1,34 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
-import {
-  GROUP_ADMIN,
-  GROUP_ADMIN_TECH,
-  REGULAR_USER,
-  getRoleLabelKey,
-} from '~/helpers/roles.js';
+import { getRoleLabelKey } from '~/helpers/roles.js';
 import { Roles } from '~/helpers/constants/roles';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+
+// One pastel chip per role (light background, darker text of the same hue):
+// red for every admin, yellow for the roles that review or write, grey for the
+// regular user. Listed from the most to the least privileged, which is also
+// the sort order of the column.
+const ADMIN_CHIP = { color: 'red lighten-4', textColor: 'red darken-3' };
+const REVIEW_WRITE_CHIP = {
+  color: 'amber lighten-4',
+  textColor: 'brown darken-2',
+};
+const ROLE_CHIPS = {
+  [Roles.SUPER_ADMIN]: ADMIN_CHIP,
+  [Roles.GROUP_ADMIN]: ADMIN_CHIP,
+  [Roles.GROUP_ADMIN_TECH]: ADMIN_CHIP,
+  [Roles.REVIEWER]: REVIEW_WRITE_CHIP,
+  [Roles.WRITER]: REVIEW_WRITE_CHIP,
+  [Roles.REGULAR_USER]: { color: 'grey lighten-3', textColor: 'grey darken-2' },
+};
+const ROLE_ORDER = Object.keys(ROLE_CHIPS);
+const roleRank = (role) => {
+  const rank = ROLE_ORDER.indexOf(role);
+  return rank === -1 ? ROLE_ORDER.length : rank;
+};
 
 export default {
   name: 'BsUsersTable',
@@ -28,7 +46,6 @@ export default {
   },
   data() {
     return {
-      superAdminRole: Roles.SUPER_ADMIN,
       selectedUser: { group: {} },
     };
   },
@@ -44,10 +61,11 @@ export default {
           cellClass: 'col-email',
         },
         {
-          text: '',
+          text: this.$t('users.role'),
           value: 'role',
-          sortable: false,
-          width: '80px',
+          align: 'center',
+          width: '130px',
+          sort: (a, b) => roleRank(a) - roleRank(b),
           cellClass: 'col-role',
         },
         {
@@ -129,14 +147,10 @@ export default {
       return status === 'confirmed' || status === 'saml-authentication';
     },
     showRoleChip(role) {
-      return !!role && role !== REGULAR_USER;
+      return !!role;
     },
-    isAdminTierRole(role) {
-      return role === GROUP_ADMIN || role === GROUP_ADMIN_TECH;
-    },
-    getRoleColor(role) {
-      if (role === Roles.SUPER_ADMIN) return 'primary';
-      return this.isAdminTierRole(role) ? 'accent' : 'grey';
+    getRoleChip(role) {
+      return ROLE_CHIPS[role] || ROLE_CHIPS[Roles.REGULAR_USER];
     },
     getRoleLabel(role) {
       if (role === Roles.SUPER_ADMIN)
@@ -266,8 +280,8 @@ export default {
         <v-chip
           v-if="showRoleChip(item.role)"
           x-small
-          :color="getRoleColor(item.role)"
-          :dark="isAdminTierRole(item.role) || item.role === superAdminRole"
+          :color="getRoleChip(item.role).color"
+          :text-color="getRoleChip(item.role).textColor"
         >
           {{ getRoleLabel(item.role) }}
         </v-chip>
