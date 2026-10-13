@@ -876,7 +876,7 @@ module.exports = {
   'ai-field-subject-label': "Générer l'objet avec l'IA",
   'ai-field-preheader-label': "Générer le préheader avec l'IA",
   'ai-block-tool': 'Outils IA du bloc',
-  'ai-field-correct-label': 'Outils IA du champ',
+  'ai-field-correct-label': "Corriger avec l'IA",
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
   'text-generation-long': 'long : la fin sera rarement lue',
