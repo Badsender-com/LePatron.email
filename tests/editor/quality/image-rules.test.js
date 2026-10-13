@@ -83,6 +83,9 @@ describe('image-only-email', () => {
 describe('unsupported-image-formats', () => {
   it.each([
     ['https://cdn.brand.com/hero.webp', 'WEBP'],
+    // A version parameter does not hide the extension (QC review, 13/10).
+    ['https://cdn.brand.com/hero.webp?v=2', 'WEBP'],
+    ['https://cdn.brand.com/hero.webp#v2', 'WEBP'],
     ['http://localhost:3000/api/images/cover/600x300/hero.avif', 'AVIF'],
     ['data:image/svg+xml;base64,PHN2Zz4=', 'SVG'],
   ])('warns about %s', (src, format) => {
