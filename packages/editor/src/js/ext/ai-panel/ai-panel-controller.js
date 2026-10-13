@@ -131,6 +131,13 @@ function createAiPanel({
     selection.subscribe(follow),
     ...(fieldSelection ? [fieldSelection.subscribe(follow)] : []),
   ];
+  // The action under way follows the editor's undo: a correction taken back.
+  const stopHistory = editor.onHistory
+    ? editor.onHistory(() => {
+        const current = session();
+        if (current && current.refresh) current.refresh();
+      })
+    : () => {};
 
   return {
     target,
@@ -146,6 +153,7 @@ function createAiPanel({
     offerNow,
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      stopHistory();
     },
   };
 }

@@ -18,7 +18,8 @@
  *   nobody wrote it, and it would mislead the model.
  */
 
-const BLOCK_ID = /^ko_([A-Za-z][A-Za-z0-9]*)_(\d+)$/;
+const { BLOCK_ID } = require('../block-element-ids');
+
 const FRAME_BLOCK = /header|footer|preheader/i;
 const TITLE = /title|heading/i;
 const BUTTON = /button|cta/i;

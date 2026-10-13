@@ -10,6 +10,7 @@ const {
   writePreheader,
 } = require('../email-preheader');
 const { listTextFields } = require('../block-text-fields');
+const { idOfPath } = require('../block-element-ids');
 const { getBlockDefault } = require('../quality/ownership');
 const {
   injectBlockTranslations,
@@ -65,7 +66,7 @@ function hiddenInCanvas(blockId) {
   return (path, role) => {
     if (!block) return true;
     if (role === 'alt') return isHiddenIn(block, null);
-    const element = document.getElementById(`${blockId}_${path.replace('.', '_')}`);
+    const element = document.getElementById(`${blockId}_${idOfPath(path)}`);
     return !element || isHiddenIn(element, block);
   };
 }
@@ -127,6 +128,15 @@ function createEditorAccess(viewModel) {
       injectBlockTranslations(blockById(viewModel, blockId), { [path]: html }),
     startMultiple: () => viewModel.startMultiple(),
     stopMultiple: () => viewModel.stopMultiple(),
+    undo: () => viewModel.undo.execute(),
+    redo: () => viewModel.redo.execute(),
+    // Called after each step of the undo stack: an edit, an undo, a redo.
+    onHistory(callback) {
+      const subscriptions = [viewModel.undoCount, viewModel.redoCount]
+        .filter(ko.isSubscribable)
+        .map((count) => count.subscribe(() => callback()));
+      return () => subscriptions.forEach((s) => s.dispose());
+    },
     // The context the action registry decides from.
     context() {
       const textGeneration = Boolean(

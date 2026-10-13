@@ -4,6 +4,7 @@ const { z } = require('zod');
 
 const skillInvocation = require('../ai-skill/services/skill-invocation.service.js');
 const AIFeatureTypes = require('../constant/ai-feature-type.js');
+const { FIELD_ROLES } = require('../ai-skill/schemas/index.js');
 const {
   locateCorrection,
 } = require('../../shared/text-correction/place-correction.js');
@@ -27,37 +28,69 @@ const {
 
 // A block's fields, each a few lines of an email: these keep a request to a
 // block, not a document. The AI rate limit caps the request itself.
-const MAX_FIELDS = 60;
+const MAX_FIELDS = 40;
 const MAX_FIELD_LENGTH = 5000;
+const MAX_TOTAL_LENGTH = 50000;
 
-const requestSchema = z.object({
-  mailingId: z.string().min(1),
-  target: z.object({
-    kind: z.enum(['blockField', 'block']),
-    blockId: z.string().min(1),
-    blockType: z.string().min(1),
-    field: z.string().optional(),
-  }),
-  fields: z
-    .array(
-      z.object({
-        path: z.string().min(1),
-        role: z.enum(['title', 'text', 'button', 'alt']),
-        text: z.string().min(1).max(MAX_FIELD_LENGTH),
+const requestSchema = z
+  .object({
+    mailingId: z.string().min(1),
+    target: z
+      .object({
+        kind: z.enum(['blockField', 'block']),
+        blockId: z.string().min(1),
+        blockType: z.string().min(1),
+        field: z.string().min(1).optional(),
       })
-    )
-    .min(1)
-    .max(MAX_FIELDS),
-});
+      .strict(),
+    fields: z
+      .array(
+        z.object({
+          path: z.string().min(1),
+          role: z.enum(FIELD_ROLES),
+          text: z.string().min(1).max(MAX_FIELD_LENGTH),
+        })
+      )
+      .min(1)
+      .max(MAX_FIELDS),
+  })
+  .superRefine(({ target, fields }, ctx) => {
+    const paths = fields.map((field) => field.path);
+    const issue = (message) =>
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+    if (new Set(paths).size !== paths.length) issue('a field sent twice');
+    const total = fields.reduce((sum, field) => sum + field.text.length, 0);
+    if (total > MAX_TOTAL_LENGTH) issue('more text than a block holds');
+    // A field target sends that field alone; a block target names none.
+    if (target.kind === 'blockField') {
+      if (paths.length !== 1 || paths[0] !== target.field) {
+        issue('a field target sends its field alone');
+      }
+    } else if (target.field !== undefined) {
+      issue('a block target names no field');
+    }
+  });
 
 // Corrections the code can place in the text it sent; the others are counted.
 function screenCorrections(corrections, fields) {
   const textOf = new Map(fields.map((field) => [field.path, field.text]));
-  const kept = corrections.filter((correction) => {
+  // A correction the model repeats is one correction.
+  const seen = new Set();
+  const unique = corrections.filter((correction) => {
+    const key = JSON.stringify([
+      correction.field,
+      correction.before,
+      correction.after,
+    ]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const kept = unique.filter((correction) => {
     const text = textOf.get(correction.field);
     return text !== undefined && !locateCorrection(text, correction).refused;
   });
-  return { corrections: kept, dropped: corrections.length - kept.length };
+  return { corrections: kept, dropped: unique.length - kept.length };
 }
 
 /**
@@ -74,9 +107,7 @@ async function correctText({ user, body }) {
     scope: 'correction',
     byEmailType: false,
   });
-  // Only the expertise written for correcting: the transversal writing
-  // principles would push the skill towards rewriting.
-  const expertise = prepared.expertise.filter((e) => !e.isTransversal);
+  const { expertise } = prepared;
 
   let result;
   try {
