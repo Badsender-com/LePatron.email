@@ -174,9 +174,14 @@ UserSchema.virtual('isAdmin').get(function () {
   return this.role === Roles.SUPER_ADMIN;
 });
 
+// A tech admin is a company admin with the integrations on top (product
+// decision of 2026-10-13): every company-admin right applies to both roles.
+// What belongs to the tech admin alone is guarded by isGroupAdminTech.
 UserSchema.virtual('isGroupAdmin').get(function () {
   const user = this;
-  return user.role === Roles.GROUP_ADMIN;
+  return (
+    user.role === Roles.GROUP_ADMIN || user.role === Roles.GROUP_ADMIN_TECH
+  );
 });
 
 UserSchema.virtual('isGroupAdminTech').get(function () {

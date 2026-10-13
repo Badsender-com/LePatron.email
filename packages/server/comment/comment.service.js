@@ -308,7 +308,7 @@ async function deleteComment({ commentId, user }) {
   // Check permission: author, group admin, or super admin
   const userId = user._id || user.id;
   const isAuthor = comment._author.toString() === userId.toString();
-  const isGroupAdmin = user.isAdmin || user.role === 'company_admin';
+  const isGroupAdmin = user.isAdmin || user.isGroupAdmin;
 
   if (!isAuthor && !isGroupAdmin) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);

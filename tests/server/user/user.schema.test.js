@@ -42,6 +42,25 @@ describe('User roles', () => {
     expect(user.isAdmin).toBe(false);
   });
 
+  it('a tech admin is a company admin too, with the integrations on top', () => {
+    const user = build({ role: 'company_admin_tech' });
+
+    expect(user.isGroupAdmin).toBe(true);
+    expect(user.isGroupAdminTech).toBe(true);
+    expect(user.isAdmin).toBe(false);
+  });
+
+  it('a company admin is not a tech admin', () => {
+    expect(build({ role: 'company_admin' }).isGroupAdminTech).toBe(false);
+  });
+
+  it.each(['reviewer', 'writer'])('a %s administers nothing', (role) => {
+    const user = build({ role });
+
+    expect(user.isGroupAdmin).toBe(false);
+    expect(user.isGroupAdminTech).toBe(false);
+  });
+
   it('a regular user is neither a company admin nor an admin', () => {
     const user = build({ role: 'regular_user' });
 
