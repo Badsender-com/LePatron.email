@@ -172,8 +172,11 @@ describe('the roles added by the roles and permissions epic', () => {
     expect(await runGuard(GUARD_USER, user)).toEqual(PASSES);
   });
 
+  it('a company_admin_tech passes the group admin guard: a tech admin is a company admin too', async () => {
+    expect(await runGuard(GUARD_GROUP_ADMIN, tech)).toEqual(PASSES);
+  });
+
   it.each([
-    ['company_admin_tech', tech],
     ['reviewer', reviewer],
     ['writer', writer],
   ])('a %s is rejected by the group admin guard', (_role, user) =>

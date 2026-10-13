@@ -615,7 +615,7 @@ describe('Comment Service', () => {
 
       const result = await commentService.deleteComment({
         commentId: commentId.toString(),
-        user: { _id: adminId, role: 'company_admin' },
+        user: { _id: adminId, role: 'company_admin', isGroupAdmin: true },
       });
 
       expect(result.success).toBe(true);
