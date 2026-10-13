@@ -846,17 +846,12 @@ function commentsLoader(opts) {
     };
 
     /**
-     * Check if current user can post an approval decision (reviewer's
-     * "validate" mechanism — see docs/plans/rbac-refonte.md section 3.4).
+     * Check if current user can post an approval decision. Every role can
+     * approve (product decision of 2026-10-13, see docs/plans/rbac-refonte.md
+     * section 3.4); the user only has to be loaded.
      */
     viewModel.canPostDecision = function () {
-      const currentUser = viewModel.currentUser();
-      if (!currentUser) return false;
-      return (
-        currentUser.role === 'reviewer' ||
-        currentUser.isAdminOfCurrentGroup ||
-        currentUser.isAdmin
-      );
+      return !!viewModel.currentUser();
     };
 
     /**
