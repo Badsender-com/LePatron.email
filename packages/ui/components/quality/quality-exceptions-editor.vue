@@ -113,6 +113,14 @@ export default {
         this.$emit('changes', count);
       },
     },
+    // The checks this level sets, as edited: a template's page lists the
+    // general exceptions it does not replace.
+    ids: {
+      immediate: true,
+      handler(ids) {
+        this.$emit('exceptions', ids);
+      },
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
