@@ -219,3 +219,13 @@ _Avoid_: Limit, setting
 The state and thresholds of every rule for a company. A template overrides them one by one; whatever it does not set is inherited from its company.
 _UI_: Réglages du contrôle qualité
 _Avoid_: QC config, quality configuration
+
+**Recommended values**:
+The state and thresholds of a rule when nothing is set: the catalogue's. They cannot be changed.
+_UI_: Valeurs recommandées ; « Recommandé : 40 »
+_Avoid_: Default (in UI text)
+
+**Exception**:
+A rule whose state or thresholds a group or a template sets differently from what applies below it. The group's exceptions are its **general settings**, for all its templates; a template's own exceptions apply over them, for that template only. The settings page lists exceptions only. In the UI the word "groupe" is avoided: a company admin does not know it.
+_UI_: Exception ; Réglages généraux ; Exception propre à ce template ; « Réglage général : … »
+_Avoid_: Override, surcharge, Hérité du groupe, Propre au template
