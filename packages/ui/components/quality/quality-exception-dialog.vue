@@ -15,6 +15,7 @@ export default {
   props: {
     value: { type: Boolean, default: false },
     title: { type: String, required: true },
+    intro: { type: String, default: '' },
     // The checks offered, each with what applies to it today.
     candidates: { type: Array, required: true }, // [{ id, applies }]
   },
@@ -61,6 +62,9 @@ export default {
   >
     <v-card>
       <v-card-title class="qx-dialog__title">{{ title }}</v-card-title>
+      <v-card-subtitle v-if="intro" class="qx-dialog__intro">
+        {{ intro }}
+      </v-card-subtitle>
       <div class="qx-dialog__search">
         <v-text-field
           v-model="search"

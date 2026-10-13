@@ -2,6 +2,7 @@
 import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import { exceptionsOf } from '~/helpers/quality-exceptions.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
+import { ChevronRight } from 'lucide-vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 
 const CATALOGUE_ORDER = Object.keys(CHECKS);
@@ -10,7 +11,7 @@ const CATALOGUE_ORDER = Object.keys(CHECKS);
 // itself. A row opens the template's exceptions.
 export default {
   name: 'BsQualityTemplatesTable',
-  components: { BsDataTable },
+  components: { BsDataTable, ChevronRight },
   mixins: [mixinQualityTexts],
   props: {
     templates: { type: Array, default: () => [] },
@@ -28,6 +29,7 @@ export default {
           value: 'count',
           sortable: true,
         },
+        { text: '', value: 'open', sortable: false, width: 48 },
       ];
     },
     showOptions() {
@@ -48,13 +50,7 @@ export default {
           name: template.name,
           count: ids.length,
           summary: ids
-            .map(
-              (id) =>
-                `${this.checkName(id)} : ${this.exceptionText(
-                  id,
-                  exceptions[id]
-                )}`
-            )
+            .map((id) => this.exceptionSummary(id, exceptions[id]))
             .join(' · '),
         };
       });
@@ -122,6 +118,15 @@ export default {
           <span class="qx-templates__summary">{{ item.summary }}</span>
         </span>
       </template>
+      <template #item.open="{ item }">
+        <chevron-right
+          :size="16"
+          :aria-label="
+            $t('qualitySettings.templates.open', { name: item.name })
+          "
+          class="qx-templates__open"
+        />
+      </template>
     </bs-data-table>
     <div v-else class="qx-templates__empty">
       {{ $t('qualitySettings.templates.empty') }}
@@ -132,6 +137,7 @@ export default {
 <style lang="scss" scoped>
 .qx-templates {
   &__intro {
+    margin: 8px 0 16px;
     font-size: 0.875rem;
     color: var(--gray-700);
   }
@@ -150,6 +156,10 @@ export default {
 
   &__show {
     flex: 0 1 240px;
+  }
+
+  &__open {
+    color: var(--gray-700);
   }
 
   &__none {
