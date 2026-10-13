@@ -16,6 +16,7 @@ const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('./super-admin-policy.js');
+const techAdminPolicy = require('./tech-admin-policy.js');
 const userScope = require('./user-scope.js');
 const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -112,6 +113,7 @@ async function create(req, res) {
   // No role means a regular user; any other value must be a role (an empty
   // one is refused, as on the update).
   const role = req.body.role === undefined ? Roles.REGULAR_USER : req.body.role;
+  techAdminPolicy.assertCanSetRole(req.user, undefined, role);
   const groupId = await superAdminPolicy.groupForCreation(req.user, {
     role,
     groupId: req.body.groupId,
@@ -239,6 +241,7 @@ async function update(req, res) {
   if (!target) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, target);
   await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
+  techAdminPolicy.assertCanSetRole(req.user, target, userParams.role);
 
   const previousRole = target.role;
   const updatedUser = await userService.updateUser(

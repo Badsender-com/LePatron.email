@@ -146,9 +146,6 @@ export default {
     isActiveStatus(status) {
       return status === 'confirmed' || status === 'saml-authentication';
     },
-    showRoleChip(role) {
-      return !!role;
-    },
     getRoleChip(role) {
       return ROLE_CHIPS[role] || ROLE_CHIPS[Roles.REGULAR_USER];
     },
@@ -278,7 +275,7 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="showRoleChip(item.role)"
+          v-if="item.role"
           x-small
           :color="getRoleChip(item.role).color"
           :text-color="getRoleChip(item.role).textColor"
