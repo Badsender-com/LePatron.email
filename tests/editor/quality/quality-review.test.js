@@ -9,7 +9,7 @@ const {
   installQualityReview,
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
 const {
-  REMOTE_RULES,
+  SERVER_ANSWER_RULES,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 
 const finding = (severity) => ({ severity, fingerprint: severity });
@@ -338,7 +338,8 @@ describe("the server's checks", () => {
       expect.objectContaining({ cancelToken: expect.anything() })
     );
     expect(run).toHaveBeenCalledTimes(1);
-    expect(runRules).toHaveBeenCalledWith(ctx, REMOTE_RULES);
+    // The server's rules, and the local ones with a second look at its answer.
+    expect(runRules).toHaveBeenCalledWith(ctx, SERVER_ANSWER_RULES);
     expect(ctx.remote).toBe(remote);
     expect(vm.quality.remoteStatus()).toBe('done');
     expect(vm.quality.findings().map((f) => f.ruleId)).toEqual([

@@ -1,6 +1,6 @@
 'use strict';
 
-const { REMOTE_RULES } = require('./engine');
+const { REMOTE_RULES, SERVER_ANSWER_RULES } = require('./engine');
 const { hasResources } = require('./resources');
 const remoteApi = require('./quality-remote');
 
@@ -20,6 +20,30 @@ const remoteCheck = (status) => (rule) => ({
   titleKey: rule.titleKey,
   status,
 });
+
+// A check listed by both runs (a local rule with a second look at the
+// server's answer) is listed once: failed if either run found something.
+const STATUS_RANK = { passed: 0, error: 1, failed: 2 };
+function mergeChecks(local, remote) {
+  const byId = new Map(local.map((check) => [check.ruleId, check]));
+  const added = [];
+  remote.forEach((check) => {
+    const listed = byId.get(check.ruleId);
+    if (!listed) {
+      added.push(check);
+      return;
+    }
+    byId.set(check.ruleId, {
+      ...listed,
+      status:
+        STATUS_RANK[check.status] > STATUS_RANK[listed.status]
+          ? check.status
+          : listed.status,
+      count: (listed.count || 0) + (check.count || 0),
+    });
+  });
+  return local.map((check) => byId.get(check.ruleId)).concat(added);
+}
 
 /**
  * @param {Object} options
@@ -46,15 +70,19 @@ function createRemoteChecks(options) {
   // The local results the server's checks complete.
   let lastLocal = null;
 
-  // The server's rules read its answer on the context of the local pass
-  // (parsed once).
+  // The server's rules, and the local ones with a second look at its answer,
+  // read it on the context of the local pass (parsed once).
   function evaluate(local, answer) {
     if (local.ctx && typeof runRules === 'function') {
       local.ctx.remote = answer;
-      return runRules(local.ctx, REMOTE_RULES);
+      return runRules(local.ctx, SERVER_ANSWER_RULES);
     }
     // An engine that hands no context back: the export is read again.
-    return runEngine({ html: local.html, rules: REMOTE_RULES, remote: answer });
+    return runEngine({
+      html: local.html,
+      rules: SERVER_ANSWER_RULES,
+      remote: answer,
+    });
   }
 
   // The answer to the previous run would be dropped: aborted rather than
@@ -107,7 +135,7 @@ function createRemoteChecks(options) {
         const result = evaluate(local, remote);
         const outcome = {
           findings: local.findings.concat(result.findings),
-          checks: local.checks.concat(result.checks),
+          checks: mergeChecks(local.checks, result.checks),
           status: 'done',
           failure: null,
         };
