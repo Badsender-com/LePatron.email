@@ -73,7 +73,7 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
             <span class="lucide lucide-ban" aria-hidden="true"></span>
             {{ t('Ignore') }}
           </button>
-          <button v-else type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('unignore')">
+          <button v-else-if="ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('unignore')">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>
             {{ t('Stop ignoring') }}
           </button>
