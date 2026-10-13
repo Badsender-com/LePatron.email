@@ -819,7 +819,8 @@ export default {
     general: {
       intro: 'Tous les contrôles s\'appliquent à tous vos templates avec les valeurs recommandées. Ajoutez une exception seulement pour un contrôle que vous voulez désactiver, rendre bloquant ou dont vous voulez changer les seuils.',
       others: 'Les autres contrôles appliquent les valeurs recommandées.',
-      empty: 'Aucune exception : tous les contrôles appliquent les valeurs recommandées. Tous sont actifs, sauf « Paramètres de tracking obligatoires », bloquant.',
+      empty: 'Aucune exception : tous les contrôles appliquent les valeurs recommandées.',
+      emptyDetail: 'Tous sont actifs, sauf « Paramètres de tracking obligatoires », bloquant.',
     },
     reference: {
       toggle: 'Voir les {count} contrôles et ce qui s\'applique',
@@ -898,6 +899,7 @@ export default {
     },
     unsaved: {
       status: 'Aucune modification à enregistrer | {count} modification non enregistrée | {count} modifications non enregistrées',
+      invalid: 'Toutes les valeurs sont valides | Une valeur n\'est pas valide : corrigez le champ signalé | {count} valeurs ne sont pas valides : corrigez les champs signalés',
       cancel: 'Annuler les modifications',
       leaveTitle: 'Modifications non enregistrées',
       leaveText: 'Vous avez des modifications non enregistrées. Quitter sans les enregistrer ?',
