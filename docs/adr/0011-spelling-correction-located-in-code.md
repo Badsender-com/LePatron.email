@@ -16,6 +16,10 @@ Correcting the spelling, grammar and typography of a field, a block or the whole
 
 ## Consequences
 
-- The whole email is corrected one block at a time, one invocation each, so a block that fails loses only itself; when the AI rate limit stops it, the panel waits for the delay the server gives and goes on.
-- Fields still holding the template's sample text are left out of a block or the whole email, and said so; a field the user targets is corrected all the same.
-- A field is targeted from the element being edited: its DOM id is matched against the text fields of its block.
+- The whole email is the blocks of the email, corrected one at a time, one invocation each, so a block that fails loses only itself; the subject and the preheader field are not part of it. A failure of the feature itself (switched off, unavailable, signed out, no network) stops it. When the AI rate limit stops it, the panel waits for the delay the server gives and goes on, if that delay is short; a longer one stops it. The user can stop it at any time and keeps what it found.
+- The quota: correcting the whole email costs one invocation per block with text, against the group's text generation rate limit. A long email can reach the limit; the pause above is the answer, not a larger limit for this action.
+- Fields still holding the template's sample text are left out of a block or the whole email, and said so; a field the rendering hides is left out quietly; a field the user targets is corrected all the same.
+- Only the expertise of scope `correction` is read: the transversal writing principles would push the skill towards rewriting. The skill manifest declares it, so the activation alert agrees.
+- Placing a correction refuses more than a missing or repeated excerpt: a correction that brings a merge tag the text did not have, a control or bidirectional character, or an excerpt straddling two lines. A correction the text already holds (a non-breaking space the model could not see) is no loss and is not counted.
+- An accepted correction the editor's undo took back shows as undone, and can be accepted again; Ctrl+Z (⌘Z) in the panel undoes in the editor.
+- A field is targeted from the element being edited: its DOM id is matched against the text fields of its block. The AI button comes first in the text editor's toolbar, which is wider than a narrow canvas; on an element no field matches, it opens the block.
