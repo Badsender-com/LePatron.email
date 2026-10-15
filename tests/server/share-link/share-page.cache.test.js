@@ -87,19 +87,22 @@ describe('GET /share/:token, the cache', () => {
     expect(previewReads()).toBe(1);
   });
 
-  it('does not hold on to a page past the cap, and still serves it', async () => {
+  // Above maxEntry, a page would be sanitized again on every view (about a
+  // second per MB, synchronously): the largest preview the editor may save
+  // must be held.
+  it('holds a page as large as the editor may save, sanitized once', async () => {
     ShareLinks.findOne.mockReturnValue(lean(activeLink));
     storedMailing({
       _id: 'huge',
       name: 'Huge',
       updatedAt: new Date('2026-09-01'),
-      previewHtml: 'x'.repeat(5 * 1024 * 1024),
+      previewHtml: 'x'.repeat(4.5 * 1000 * 1000),
     });
     await call(pageController.renderShare, { params: { token: TOKEN } });
     const { res } = await call(pageController.renderShare, {
       params: { token: TOKEN },
     });
-    expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(2);
+    expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(1);
     expect(res.statusCode).toBe(200);
   });
 });
