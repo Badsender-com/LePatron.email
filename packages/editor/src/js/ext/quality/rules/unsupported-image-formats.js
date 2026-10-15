@@ -41,7 +41,10 @@ module.exports = {
   // Once the server answered: an address that names no format (a CDN's
   // /img/12345) is judged by the type the server read in the image it
   // weighed. Not sure, so never blocking: a CDN may send a reader's client
-  // another format than the one the server got.
+  // another format than the one the server got. Not judged: an image the
+  // server could not read (unreachable, or over its size cap, with no type),
+  // and every one when the server fails, the check then keeping its local
+  // status.
   remoteRun(ctx) {
     return checkableImages(ctx)
       .filter((image) => !formatOf(image))
