@@ -20,9 +20,13 @@ function summaryOf(group) {
     ? {
         id: String(group._id),
         name: group.name,
-        enableEmailBuilder: group.enableEmailBuilder,
-        enableCrmIntelligence: group.enableCrmIntelligence,
-        downloadMailingWithFtpImages: group.downloadMailingWithFtpImages,
+        // Read lean, so without the schema's defaults: a group stored before
+        // a flag existed has none, and takes the default of group.schema.js
+        // (Email Builder on, the others off).
+        enableEmailBuilder: group.enableEmailBuilder !== false,
+        enableCrmIntelligence: group.enableCrmIntelligence === true,
+        downloadMailingWithFtpImages:
+          group.downloadMailingWithFtpImages === true,
       }
     : null;
 }

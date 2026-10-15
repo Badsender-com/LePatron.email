@@ -169,6 +169,34 @@ describe('the selected group endpoint', () => {
     });
   });
 
+  describe('the module flags of the selected group', () => {
+    it("are the group's stored flags", async () => {
+      seed(
+        [{ ...ACME, enableEmailBuilder: false, enableCrmIntelligence: true }],
+        { [ALICE]: CLIENT_GROUP }
+      );
+
+      const res = await read(ALICE);
+
+      expect(res.body.selectedGroup).toMatchObject({
+        enableEmailBuilder: false,
+        enableCrmIntelligence: true,
+      });
+    });
+
+    it('follow the defaults of a group stored before the flags existed: Email Builder on, the others off', async () => {
+      seed([ACME], { [ALICE]: CLIENT_GROUP });
+
+      const res = await read(ALICE);
+
+      expect(res.body.selectedGroup).toMatchObject({
+        enableEmailBuilder: true,
+        enableCrmIntelligence: false,
+        downloadMailingWithFtpImages: false,
+      });
+    });
+  });
+
   describe('selecting a group', () => {
     it('stores it on the account of a super admin, for the next requests', async () => {
       const res = await select(ALICE, OTHER_CLIENT_GROUP);
