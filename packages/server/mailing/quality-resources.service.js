@@ -34,8 +34,8 @@ const {
  * side:
  *   - per run: number of addresses, parallel requests, one deadline (what is
  *     left past it is "unverifiable"), a budget of bytes downloaded;
- *   - per user: one run at a time (a second one waits), and 20 runs per 10
- *     minutes;
+ *   - per user: one run at a time (a second one waits a few seconds), and 20
+ *     runs per 10 minutes;
  *   - per worker: a ceiling on link probes and on image downloads in
  *     parallel (every in-memory bound is per worker, see quality-limits.js);
  *   - for the whole cluster: a daily budget of Web Risk lookups per company,
@@ -170,9 +170,11 @@ function checkResources(
   { userKey, cacheScope, ownHosts = [], signal },
   deps = DEFAULT_DEPS
 ) {
+  // From the arrival of the request, waiting for a turn included: the editor
+  // gives up after its own timeout, whatever the server was doing.
+  const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
+  cutShortOnAbort(run, signal);
   return throttled(userKey, async () => {
-    const run = { deadline: Date.now() + RUN_DEADLINE_MS, bytes: 0 };
-    cutShortOnAbort(run, signal);
     const key = (kind, value) => `${cacheScope}|${kind}|${value}`;
 
     const [linkResults, imageResults, domains, dangerous] = await Promise.all([
