@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const { getBlockDefault } = require('./ownership');
+const { parseDeclarations } = require('./inline-style');
+const { SYNTHETIC_BLOCKS } = require('../html-code-block/block-types');
 
 // What the client formatted by hand in the rich texts of a block: the inline
 // styles TinyMCE writes (font size, colour, alignment, line height…) and the
@@ -12,7 +14,17 @@ const { getBlockDefault } = require('./ownership');
 // Block style properties are left out on purpose: some client templates map
 // them to their own design tokens ("h1_times", "primary"), not to CSS.
 
-const TEXT_KEY = /(text|title|label|caption|content|heading|description)$/i;
+// Client templates name their rich texts freely (`legal`, `body`, `paragraph`):
+// a rich text is any string holding markup, except the properties that hold an
+// address, a colour or a style token by convention, and the markup of the
+// synthetic blocks (pasted code, the builder's output and state), which is
+// the client's but no rich text: the HTML code rules read it.
+const NOT_A_RICH_TEXT = /^(id|type)$|(src|href|url|link|image|color|style)$/i;
+const SYNTHETIC_PROPERTIES = new Set(
+  _.flatMap(SYNTHETIC_BLOCKS, (block) =>
+    [block.htmlProperty, block.stateProperty].filter(Boolean)
+  )
+);
 const HAS_MARKUP = /<[a-z]/i;
 
 function stringLeaves(value, path = []) {
@@ -23,51 +35,86 @@ function stringLeaves(value, path = []) {
   );
 }
 
+// TinyMCE reserialises a text it only displayed: attributes it adds for
+// itself and whitespace do not make a text the client's.
+const normalizeMarkup = (html) =>
+  String(html || '')
+    .replace(/ data-mce-[a-z-]+="[^"]*"/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 // "prop:value" of every inline declaration under a root element.
-function declarationsOf(root) {
+const declarationKey = (prop, value) =>
+  `${prop}:${String(value).replace(/\s+/g, '')}`.toLowerCase();
+
+function declarationsUnder(root) {
   return new Set(
     _.flatMap(Array.from(root.querySelectorAll('[style]')), (el) =>
-      el
-        .getAttribute('style')
-        .split(';')
-        .map((decl) => decl.replace(/\s+/g, '').toLowerCase())
-        .filter(Boolean)
+      parseDeclarations(el.getAttribute('style')).map(({ prop, value }) =>
+        declarationKey(prop, value)
+      )
     )
   );
+}
+
+function parseIn(ctx, html) {
+  const root = ctx.doc.createElement('div');
+  root.innerHTML = html || '';
+  return root;
+}
+
+// The template's default of one rich text, parsed once per run for every
+// block of that type.
+function templateRichText(ctx, type, path) {
+  const cache =
+    ctx.cache.templateRichTexts || (ctx.cache.templateRichTexts = {});
+  const key = `${type}|${path.join('.')}`;
+  if (!cache[key]) {
+    const def = getBlockDefault(ctx.blockDefs, type) || {};
+    const root = parseIn(ctx, _.get(def, path));
+    cache[key] = {
+      markup: normalizeMarkup(root.innerHTML),
+      declarations: declarationsUnder(root),
+    };
+  }
+  return cache[key];
 }
 
 /**
  * The rich texts of a block the client edited, parsed in the inert export
  * document. Each comes with `isUserDeclaration(prop, value)`, true when that
  * declaration is not the template's.
+ * A rich text inside an array (`items[1].text`) has no default at its path
+ * when the template declares fewer items: it is then the client's as a whole.
  * @returns {Array<{ blockId: string, path: string, root: Element,
  *   isUserDeclaration: Function }>}
  */
 function editedRichTexts(ctx, block) {
-  const def = getBlockDefault(ctx.blockDefs, block.type) || {};
-  const parse = (html) => {
-    const root = ctx.doc.createElement('div');
-    root.innerHTML = html || '';
-    return root;
-  };
   return stringLeaves(block)
     .filter(({ path, value }) => {
       const key = String(_.last(path));
-      return TEXT_KEY.test(key) && HAS_MARKUP.test(value);
+      return (
+        !NOT_A_RICH_TEXT.test(key) &&
+        !SYNTHETIC_PROPERTIES.has(key) &&
+        HAS_MARKUP.test(value)
+      );
     })
-    .filter(({ path, value }) => value !== _.get(def, path))
-    .map(({ path, value }) => {
-      const templateDeclarations = declarationsOf(parse(_.get(def, path)));
-      return {
-        blockId: block.id,
-        path: path.join('.'),
-        root: parse(value),
-        isUserDeclaration: (prop, val) =>
-          !templateDeclarations.has(
-            `${prop}:${String(val).replace(/\s+/g, '')}`.toLowerCase()
-          ),
-      };
-    });
+    .map(({ path, value }) => ({
+      path,
+      root: parseIn(ctx, value),
+      template: templateRichText(ctx, block.type, path),
+    }))
+    .filter(
+      ({ root, template }) =>
+        normalizeMarkup(root.innerHTML) !== template.markup
+    )
+    .map(({ path, root, template }) => ({
+      blockId: block.id,
+      path: path.join('.'),
+      root,
+      isUserDeclaration: (prop, val) =>
+        !template.declarations.has(declarationKey(prop, val)),
+    }));
 }
 
 /** The edited rich texts of every block of the client, read once per run. */
@@ -81,39 +128,34 @@ function allEditedRichTexts(ctx) {
 }
 
 /**
- * Every inline declaration the client wrote, with its element.
- * @returns {Array<{ blockId, path, element: Element, prop, value }>}
+ * Every inline declaration the client wrote, with its element, read once per
+ * run: four rules go through them.
+ * @returns {Array<{ blockId, path, richText, element: Element, prop, value }>}
  */
 function userDeclarations(ctx) {
-  return _.flatMap(allEditedRichTexts(ctx), (richText) =>
-    _.flatMap(Array.from(richText.root.querySelectorAll('[style]')), (element) =>
-      element
-        .getAttribute('style')
-        .split(';')
-        .map((decl) => decl.split(':'))
-        .filter(([prop, ...rest]) => prop && rest.length)
-        .map(([prop, ...rest]) => ({
-          prop: prop.trim().toLowerCase(),
-          value: rest.join(':').trim(),
-        }))
-        .filter(({ prop, value }) => richText.isUserDeclaration(prop, value))
-        .map(({ prop, value }) => ({
-          blockId: richText.blockId,
-          path: richText.path,
-          element,
-          prop,
-          value,
-        }))
-    )
-  );
-}
-
-// A CSS length in px (pt converted), or null (em, %, keywords…).
-function toPx(value) {
-  const m = /^([\d.]+)\s*(px|pt)?$/i.exec(String(value || '').trim());
-  if (!m) return null;
-  const n = Number(m[1]);
-  return (m[2] || 'px').toLowerCase() === 'pt' ? n * (4 / 3) : n;
+  if (!ctx.cache.userDeclarations) {
+    ctx.cache.userDeclarations = _.flatMap(
+      allEditedRichTexts(ctx),
+      (richText) =>
+        _.flatMap(
+          Array.from(richText.root.querySelectorAll('[style]')),
+          (element) =>
+            parseDeclarations(element.getAttribute('style'))
+              .filter(({ prop, value }) =>
+                richText.isUserDeclaration(prop, value)
+              )
+              .map(({ prop, value }) => ({
+                blockId: richText.blockId,
+                path: richText.path,
+                richText,
+                element,
+                prop,
+                value,
+              }))
+        )
+    );
+  }
+  return ctx.cache.userDeclarations;
 }
 
 const hasText = (el) => /\S/.test(el.textContent || '');
@@ -121,6 +163,6 @@ const hasText = (el) => /\S/.test(el.textContent || '');
 module.exports = {
   allEditedRichTexts,
   userDeclarations,
-  toPx,
+  normalizeMarkup,
   hasText,
 };
