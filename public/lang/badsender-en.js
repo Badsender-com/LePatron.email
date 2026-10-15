@@ -659,6 +659,8 @@ module.exports = {
     'Tag never closed in the HTML code: <__tag__>',
   'Closing tag with no opening one in the HTML code: </__tag__>':
     'Closing tag with no opening one in the HTML code: </__tag__>',
+  'Tag closed in the wrong order in the HTML code: <__tag__>':
+    'Tag closed in the wrong order in the HTML code: <__tag__>',
   'Email-safe code': 'Email-safe code',
   'The code of HTML code blocks only uses what email clients support':
     'The code of HTML code blocks only uses what email clients support',
@@ -669,6 +671,8 @@ module.exports = {
     'The HTML code uses full addresses and valid colours',
   'Relative address in the HTML code, it only works on its original site: __urls__':
     'Relative address in the HTML code, it only works on its original site: __urls__',
+  'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__':
+    'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__',
   'Colour an email client cannot read in the HTML code: __colors__':
     'Colour an email client cannot read in the HTML code: __colors__',
   'Send a test': 'Send a test',

@@ -30,13 +30,29 @@ describe('forbidden-code', () => {
     ['<script>alert(1)</script><p>Hi</p>', '<script>'],
     ['<iframe src="https://brand.com"></iframe>', '<iframe>'],
     ['<form action="/x"><input></form>', '<form>'],
-    ['<link rel="stylesheet" href="a.css">', '<link rel="stylesheet">'],
+    ['<link rel="stylesheet" href="a.css">', '<link>'],
     ['<img src="a.jpg" onerror="x()">', 'onerror'],
+    ['<img src="a.jpg" srcset="b.jpg 2x">', 'srcset'],
     ['<a href="javascript:go()">Go</a>', 'javascript:'],
+    ['<a href=" JavaScript:go()">Go</a>', 'javascript:'],
+    ['<object data="data:text/html,x"></object>', 'data:text/html'],
   ])('reports %s', (htmlCode, code) => {
     const [finding] = codeFindings(forbiddenCode, htmlCode);
     expect(finding.severity).toBe('error');
     expect(finding.params.code).toContain(code);
+    expect(finding.propertyPath).toBe('htmlCode');
+  });
+
+  it('reads the code of a block once, as code and not as a rich text', () => {
+    expect(codeFindings(forbiddenCode, '<script>x</script>')).toHaveLength(1);
+  });
+
+  it('keeps its fingerprint when the code is reordered', () => {
+    const fingerprintOf = (htmlCode) =>
+      codeFindings(forbiddenCode, htmlCode)[0].fingerprint;
+    expect(fingerprintOf('<script></script><iframe></iframe>')).toBe(
+      fingerprintOf('<iframe></iframe><script></script>')
+    );
   });
 
   it('also reads the rich texts the client edited', () => {
@@ -62,7 +78,7 @@ describe('forbidden-code', () => {
     expect(
       codeFindings(
         forbiddenCode,
-        '<table role="presentation"><tr><td>Hi</td></tr></table>'
+        '<table role="presentation"><tr><td><a href="https://brand.com">Hi</a></td></tr></table>'
       )
     ).toEqual([]);
   });
@@ -76,39 +92,56 @@ describe('malformed-html', () => {
     ['<p>Hello<br>world</p><img src="a.jpg">', null],
     ['<!--[if mso]><table><tr><td><![endif]--><div>Hi</div>', null],
     ['<% if (x) { %><div>Hi</div><% } %>', null],
+    // eslint-disable-next-line no-template-curly-in-string
+    ['<#list items as i><div>${i}</div></#list>', null],
+    ['<div/>Hi</div>', null],
+    ['<a href=http://x.com/>Link</a>', null],
     ['<div><span>Hello</div>', { kind: 'unclosed', tag: 'span' }],
     ['<div>Hello', { kind: 'unclosed', tag: 'div' }],
     ['<p>Hello</p></span>', { kind: 'unexpected', tag: 'span' }],
+    ['<b><i>x</b></i>', { kind: 'misnested', tag: 'i' }],
   ])('judges %s', (html, problem) => {
     expect(nestingProblem(html)).toEqual(problem);
   });
 
   it('reports the block of the problem', () => {
     const [finding] = codeFindings(malformedHtml, '<div><b>Bold</div>');
-    expect(finding).toMatchObject({ blockId: 'b1', params: { tag: 'b' } });
+    expect(finding).toMatchObject({
+      blockId: 'b1',
+      propertyPath: 'htmlCode',
+      params: { tag: 'b' },
+    });
+  });
+
+  it('names tags closed in the wrong order', () => {
+    const [finding] = codeFindings(malformedHtml, '<b><i>x</b></i>');
+    expect(finding.messageKey).toBe(
+      'Tag closed in the wrong order in the HTML code: <__tag__>'
+    );
   });
 });
 
 describe('unsupported-code', () => {
-  it('lists what some clients ignore', () => {
+  it('lists what some clients ignore, named by the code itself', () => {
     const [finding] = codeFindings(
       unsupportedCode,
       '<style>@import url(x.css); .a { display: flex }</style><div style="position:absolute;color:var(--brand)"><svg></svg></div>'
     );
     expect(finding.params.features.split(', ')).toEqual([
-      'flexbox',
-      'position: absolute/fixed/sticky',
-      'CSS variables',
-      '@import',
       '<svg>',
+      '@import',
+      'display:flex',
+      'position:absolute',
+      'var(--…)',
     ]);
+    expect(finding.propertyPath).toBe('htmlCode');
   });
 
-  it('leaves table-based code alone', () => {
+  it('leaves table-based code, and comments, alone', () => {
     expect(
       codeFindings(
         unsupportedCode,
-        '<table><tr><td style="display:block;position:relative">Hi</td></tr></table>'
+        '<style>/* display:flex */ .a { display:block }</style><table><tr><td style="display:block;position:relative">Hi</td></tr></table>'
       )
     ).toEqual([]);
   });
@@ -124,14 +157,39 @@ describe('loose-code', () => {
       { urls: '/offer, img/a.png' },
       { colors: '#11223344, #ff00f' },
     ]);
+    expect(findings[0].propertyPath).toBe('htmlCode');
   });
 
-  it('leaves full addresses, merge tags, anchors and id selectors alone', () => {
+  it('reports an address without protocol on its own', () => {
+    const [finding] = codeFindings(
+      looseCode,
+      '<img src="//cdn.brand.com/a.png">'
+    );
+    expect(finding).toMatchObject({
+      messageKey:
+        'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__',
+      params: { urls: '//cdn.brand.com/a.png' },
+    });
+  });
+
+  it('survives an empty address', () => {
+    expect(codeFindings(looseCode, '<a href="">x</a><img src="">')).toEqual([]);
+  });
+
+  it('leaves full addresses, merge tags, anchors, id selectors and comments alone', () => {
     expect(
       codeFindings(
         looseCode,
-        '<style>#fade-in { color: #fff }</style><a href="https://brand.com">a</a><a href="{{url}}">b</a><a href="#top">c</a><table><tr><td bgcolor="#093040">x</td></tr></table>'
+        '<style>#fade-in { color: #fff } /* color: #ff00f */</style><a href="https://brand.com">a</a><a href="{{url}}">b</a><a href="#top">c</a><a href="whatsapp://send?text=hi">d</a><a href="ftp://files.brand.com/x">e</a><table><tr><td bgcolor="#093040">x</td></tr></table>'
       )
     ).toEqual([]);
+  });
+
+  it('keeps its fingerprint when the code is reordered', () => {
+    const fingerprintOf = (htmlCode) =>
+      codeFindings(looseCode, htmlCode)[0].fingerprint;
+    expect(fingerprintOf('<a href="/a">x</a><a href="/b">y</a>')).toBe(
+      fingerprintOf('<a href="/b">y</a><a href="/a">x</a>')
+    );
   });
 });
