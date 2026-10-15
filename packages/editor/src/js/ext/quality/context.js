@@ -60,7 +60,6 @@ function buildContext(viewModel, html, remote) {
     remote: remote || null,
     // The editor's configuration, read once: rules never reach the view model.
     config: {
-      placeholderUrl: _.get(viewModel, 'metadata.imagesUrl.placeholder'),
       // Every route of LePatron's image backend: images, cover, crop, placeholder.
       imagesUrl: _.get(viewModel, 'metadata.imagesUrl') || {},
       trackingConfig: _.get(viewModel, 'metadata.trackingConfig'),
