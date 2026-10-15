@@ -91,6 +91,18 @@ function installQualityReview(viewModel, ko, deps = {}) {
       () => active().filter((f) => severities.includes(f.severity)).length
     );
   const issueCount = countOf('error', 'warning');
+  // A check that could not run, or was cancelled, was never judged: no green
+  // tick while one is left, as the drawer's "all passed" (allPassed).
+  const ranCount = ko.pureComputed(
+    () =>
+      checks().filter((c) => c.status !== 'error' && c.status !== 'cancelled')
+        .length
+  );
+  // Nothing to fix, every check judged. A check whose findings are ignored or
+  // only infos is not "passed", and still clears the email.
+  const cleared = ko.pureComputed(
+    () => issueCount() === 0 && ranCount() === checks().length
+  );
 
   const freshness = () => (resultVersion === contentVersion ? 'done' : 'stale');
 
@@ -240,6 +252,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
     passedCount: ko.pureComputed(
       () => checks().filter((c) => c.status === 'passed').length
     ),
+    ranCount,
+    cleared,
 
     /** Opens the drawer on a tab: 'checks' or 'send'. */
     open(name = 'checks') {
