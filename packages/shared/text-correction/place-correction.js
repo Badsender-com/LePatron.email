@@ -170,7 +170,7 @@ const WORD_CHAR = /[\p{L}\p{N}]/u;
 // Never text a reader sees: control characters other than a line break, and
 // the bidirectional ones, which would disguise the change shown for review.
 // eslint-disable-next-line no-control-regex
-const INVALID_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f‪-‮⁦-⁩]/;
+const INVALID_CHAR = /[\u0000-\u0009\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/;
 // Spaces the rendering collapses into one; a non-breaking space is not one.
 const COLLAPSIBLE = /^[ \t\n\r\f]$/;
 
