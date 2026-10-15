@@ -26,7 +26,7 @@ function createSanitizedPreviewCache({
   budget = DEFAULT_BUDGET,
   maxEntry = budget / 10,
 }) {
-  const entries = new Map();
+  const entries = new Map(); // key -> { html, sourceLength }
   let size = 0;
 
   // A version of the mailing: `save()` and findByIdAndUpdate both bump
@@ -36,35 +36,44 @@ function createSanitizedPreviewCache({
       mailing.updatedAt ? new Date(mailing.updatedAt).getTime() : 0
     }`;
 
-  function evictOldest() {
-    const [oldestKey, oldestHtml] = entries.entries().next().value;
-    entries.delete(oldestKey);
-    size -= oldestHtml.length;
+  function drop(key) {
+    size -= entries.get(key).html.length;
+    entries.delete(key);
   }
 
   /**
    * The sanitized preview of this version when it is held, else undefined:
-   * `_id` and `updatedAt` are enough to ask.
+   * `_id` and `updatedAt` are enough to ask. When previewHtml is given, its
+   * length must match too: two writes within the same millisecond (a
+   * translated copy, then its preview) share an updatedAt.
    */
   function peek(mailing) {
     const key = keyOf(mailing);
-    if (!entries.has(key)) return undefined;
-    const html = entries.get(key);
+    const held = entries.get(key);
+    if (!held) return undefined;
+    if (
+      typeof mailing.previewHtml === 'string' &&
+      mailing.previewHtml.length !== held.sourceLength
+    ) {
+      return undefined;
+    }
     // Refresh its position: the Map iterates in insertion order, oldest first.
     entries.delete(key);
-    entries.set(key, html);
-    return html;
+    entries.set(key, held);
+    return held.html;
   }
 
   /** The sanitized preview, held for the next time when it fits. */
   function sanitizeCached(mailing) {
-    const held = peek(mailing);
-    if (held !== undefined) return held;
+    const cached = peek(mailing);
+    if (cached !== undefined) return cached;
     const html = sanitize(mailing.previewHtml);
+    const key = keyOf(mailing);
+    if (entries.has(key)) drop(key);
     if (html.length > maxEntry) return html;
-    entries.set(keyOf(mailing), html);
+    entries.set(key, { html, sourceLength: mailing.previewHtml.length });
     size += html.length;
-    while (size > budget) evictOldest();
+    while (size > budget) drop(entries.keys().next().value);
     return html;
   }
 

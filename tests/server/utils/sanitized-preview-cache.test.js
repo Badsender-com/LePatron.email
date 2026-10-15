@@ -41,6 +41,19 @@ describe('createSanitizedPreviewCache', () => {
     expect(cache.peek(version('m1', '02'))).toBeUndefined();
   });
 
+  // A translated copy, then its preview: two writes can share a millisecond,
+  // so an updatedAt alone may name two versions.
+  it('tells apart two versions written within the same millisecond, by their length', () => {
+    const { sanitize, cache } = makeCache();
+    cache.sanitizeCached(version('m1', '01', '<p>copy</p>'));
+    expect(cache.sanitizeCached(version('m1', '01', '<p>translated</p>'))).toBe(
+      'clean:<p>translated</p>'
+    );
+    expect(sanitize).toHaveBeenCalledTimes(2);
+    // Without the HTML, the version held is the last one sanitized.
+    expect(cache.peek(version('m1', '01'))).toBe('clean:<p>translated</p>');
+  });
+
   it('leaves out an entry past the cap', () => {
     const { sanitize, cache } = makeCache({ budget: 1000, maxEntry: 100 });
     const big = version('m1', '01', 'x'.repeat(200));
