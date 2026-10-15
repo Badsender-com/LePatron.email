@@ -8,7 +8,9 @@ const {
   createSanitizedPreviewCache,
 } = require('../utils/sanitized-preview-cache.js');
 const logger = require('../utils/logger.js');
+const { clientIp } = require('../utils/client-ip.js');
 const shareLinkService = require('./share-link.service.js');
+const { createShareViewLimiter } = require('./share-view-limiter.js');
 const PAGES = require('./share-page.locales.js');
 const { preheaderOf } = require('../../shared/quality/preheader.js');
 
@@ -51,30 +53,22 @@ function setShareHeaders(res) {
   });
 }
 
-// Views per link and per reader (req.ip), per window: a shared link must not
-// be hammered, and one reader must not lock the link for the others. The
-// counters are per worker. Made-up tokens are not counted: their shape is
-// checked before any lookup (resolveToken), and 256 bits make enumeration
-// hopeless, so each costs one indexed lookup and a page that costs nothing
-// to render. A process-wide counter of them let a flood of made-up tokens
-// answer 429 to every reader holding a wrong or revoked link.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_VIEWS_PER_WINDOW = 300;
-const MAX_TRACKED_VIEWERS = 10000;
-const views = new Map();
-
-/** @returns {number} seconds before the next view is allowed, 0 to go ahead */
-function viewBlockedFor(key, now = Date.now()) {
-  const entry = views.get(key);
-  if (!entry || entry.since < now - WINDOW_MS) {
-    if (views.size > MAX_TRACKED_VIEWERS) views.clear();
-    views.set(key, { since: now, count: 1 });
-    return 0;
-  }
-  entry.count += 1;
-  if (entry.count <= MAX_VIEWS_PER_WINDOW) return 0;
-  return Math.ceil((entry.since + WINDOW_MS - now) / 1000);
-}
+// Views per reader of a link and per link, per window
+// (share-view-limiter.js): a shared link must not be hammered, and one reader
+// must not lock the link for the others. The reader is the client address as
+// the platform's proxy saw it (clientIp), never `req.ip`, which is the proxy.
+// Made-up tokens are not counted: their shape is checked before any lookup
+// (resolveToken), and 256 bits make enumeration hopeless, so each costs one
+// indexed lookup and a page that costs nothing to render. A process-wide
+// counter of them let a flood of made-up tokens answer 429 to every reader
+// holding a wrong or revoked link.
+const MAX_VIEWS_PER_READER = 300;
+const viewLimiter = createShareViewLimiter({
+  windowMs: 10 * 60 * 1000,
+  maxPerReader: MAX_VIEWS_PER_READER,
+  maxPerLink: MAX_VIEWS_PER_READER * 10,
+  maxEntries: 10000,
+});
 
 // The sanitized email of each shared version (utils/sanitized-preview-cache.js):
 // a public page can be hammered with views, and each must cost neither a
@@ -162,7 +156,7 @@ async function showShare(req, res) {
   // creator's language: a choice, for the reader who kept an old link and
   // would otherwise wonder whether it was ever right.
   if (state === 'expired') return renderNotice(res, 410, lang, 'expired');
-  const retryAfter = viewBlockedFor(`${link._id}|${req.ip}`);
+  const retryAfter = viewLimiter.blockedFor(link._id, clientIp(req));
   if (retryAfter > 0) {
     res.set('Retry-After', String(retryAfter));
     return renderNotice(res, 429, lang, 'busy');
