@@ -624,6 +624,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       template: `/api/templates/${templateId}/markup`,
       url: {
         update: `/api/mailings/${mailingId}/mosaico`,
+        preview: `/api/mailings/${mailingId}/preview`,
         send: `/api/mailings/${mailingId}/mosaico/send-test-mail`,
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,

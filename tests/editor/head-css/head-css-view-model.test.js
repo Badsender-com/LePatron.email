@@ -11,6 +11,7 @@
 //     exported, and the CSS is kept for when one comes back.
 
 const ko = require('knockout');
+const { userOfRole } = require('../helpers/current-user.js');
 
 const {
   addHeadCssToViewModel,
@@ -31,7 +32,7 @@ function makeViewModel({ htmlBlockEnabled, css = CSS, withBlock = true }) {
     content: ko.observable({ mainBlocks: ko.observable({ blocks }) }),
     metadata: { htmlBlockEnabled },
     toggleHtmlCodeModal: jest.fn(),
-    currentUser: () => ({ canEditStyle: true }),
+    currentUser: userOfRole('regular_user'),
   };
   addHeadCssToViewModel(viewModel);
   viewModel.headCss(css);
@@ -125,7 +126,7 @@ describe('isHeadCssAwaitingBlock', () => {
 describe('the openers, by role', () => {
   it('refuses the editor to a user without style rights, not the viewer', () => {
     const { viewModel } = makeViewModel({ htmlBlockEnabled: true });
-    viewModel.currentUser = () => ({ canEditStyle: false });
+    viewModel.currentUser = userOfRole('writer');
 
     expect(viewModel.canEditHeadCss()).toBe(false);
     viewModel.openHeadCssEditor();

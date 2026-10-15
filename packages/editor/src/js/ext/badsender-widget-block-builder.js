@@ -2,6 +2,7 @@
 
 const { BLOCK_BUILDER_BLOCK } = require('./synthetic-blocks/block-types.js');
 const { userCan } = require('./user-can.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 // Widget for the `blockBuilder` property type, declared by the injected block
 // definitions as `builderHtml { widget: blockBuilder; }`.
@@ -49,7 +50,10 @@ module.exports = () => {
     // structure edit a writer or reviewer does not have. The panel keeps its
     // "disabled" sentence for the flag only, it would mislead about a role.
     vm.canComposeBlocks = function () {
-      return vm.isBlockBuilderEditable() && userCan(vm, 'canEditStructure');
+      return (
+        vm.isBlockBuilderEditable() &&
+        userCan(vm, CAPABILITIES.MAILING_EDIT_STRUCTURE)
+      );
     };
 
     vm.openBlockBuilder = function (propAccessor, blockProperties) {

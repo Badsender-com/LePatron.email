@@ -2,7 +2,7 @@
   <div class="mo-blockselectionhelper"></div>
   <div class="tools" data-bind="tooltips: {}">
     <!-- ko if: typeof $index != 'undefined' -->
-    <!-- ko if: $root.currentUser()?.canEditStructure -->
+    <!-- ko if: $root.userCan('mailing.edit-structure') -->
     <!-- Drag handle -->
     <div title="Drag this handle to move the block" data-bind="attr: { title: $root.t('Drag this handle to move the block') }" class="tool handle"><span class="lucide lucide-fw lucide-grip-vertical"></span></div>
     <!-- Move up/down -->
@@ -28,13 +28,13 @@
       <span class="comment-count-badge" data-bind="text: $root.getBlockCommentCount($data.id)"></span>
       <!-- /ko -->
     </div>
-    <!-- ko if: $root.currentUser()?.canEditStructure -->
+    <!-- ko if: $root.userCan('mailing.edit-structure') -->
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
     <!-- Delete block (destructive action - last of the structure tools) -->
     <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
     <!-- /ko -->
-    <!-- Translate / content feed: content-level actions, available to writer (canEditContent) even though structure tools above are hidden -->
-    <!-- ko if: $root.currentUser()?.canEditContent -->
+    <!-- Translate / content feed: content-level actions, available to whoever edits the content even though structure tools above are hidden -->
+    <!-- ko if: $root.userCan('mailing.edit-content') -->
     <!-- Translate block — hidden on both synthetic blocks: AI translation
          would rewrite the HTML code block's pasted markup, and the per-block
          route cannot rebuild a composed block's markup (it is translated with
@@ -49,7 +49,7 @@
        the keyboard and the pointer: the overlay below only stops the mouse, a Tab
        still reached the inline editors. Only an attribute is toggled, the DOM the
        block bindings own stays as is. Locked until the current user is known. -->
-  <div class="block-content-wrapper" data-bind="attr: { inert: $root.currentUser()?.canEditContent ? null : '' }">
+  <div class="block-content-wrapper" data-bind="attr: { inert: $root.userCan('mailing.edit-content') ? null : '' }">
     <!-- ko block: $data --><!-- /ko -->
     <!-- Placeholder for an empty synthetic block: its content is hidden by a
          `ko if` until it holds markup, leaving nothing to click on. The wording
@@ -60,7 +60,7 @@
     <!-- ko if: $root.isEmptyHtmlBlock && $root.isEmptyHtmlBlock($rawData) -->
     <div class="lp-html-block-empty" data-bind="text: $root.t($root.emptyBlockLabelKey($rawData))"></div>
     <!-- /ko -->
-    <!-- ko if: !$root.currentUser()?.canEditContent -->
+    <!-- ko if: !$root.userCan('mailing.edit-content') -->
     <div class="canvas-readonly-overlay"></div>
     <!-- /ko -->
   </div>

@@ -636,13 +636,13 @@ var templateCompiler = function (
     model: viewModel,
     init: function () {
       pluginsCall(plugins, 'init', [viewModel], true);
-      // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
+      // An email without a preview gets one on its first opening, whoever
+      // opens it: only the rendering is stored, nothing else of the email.
       if (
         !metadata.hasHtmlPreview &&
-        viewModel.save &&
-        viewModel.save.execute
+        typeof viewModel.storeFirstPreview === 'function'
       ) {
-        viewModel.save.execute();
+        viewModel.storeFirstPreview();
       }
     },
     dispose: function () {

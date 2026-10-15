@@ -2,6 +2,8 @@
 
 const $ = require('jquery');
 const ko = require('knockout');
+const { userCan } = require('./user-can.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 // Import utility functions
 const {
@@ -846,12 +848,12 @@ function commentsLoader(opts) {
     };
 
     /**
-     * Check if current user can post an approval decision. Every role can
-     * approve (product decision of 2026-10-13, see docs/plans/rbac-refonte.md
-     * section 3.4); the user only has to be loaded.
+     * Approving is commenting with a decision: every role that comments can
+     * (product decision of 2026-10-13, see docs/plans/rbac-refonte.md
+     * section 3.4).
      */
     viewModel.canPostDecision = function () {
-      return !!viewModel.currentUser();
+      return userCan(viewModel, CAPABILITIES.MAILING_COMMENT);
     };
 
     /**

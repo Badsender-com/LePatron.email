@@ -11,6 +11,7 @@
 // be edited, rather than let the user edit it and then fail to save.
 
 const ko = require('knockout');
+const { userOfRole } = require('../helpers/current-user.js');
 
 const widgetCode = require('../../../packages/editor/src/js/ext/badsender-widget-code.js');
 
@@ -25,7 +26,7 @@ function renderPanel(
   htmlBlockEnabled,
   headCssEditable = htmlBlockEnabled,
   headCssReadOnly = false,
-  currentUser = () => ({ canEditStructure: true })
+  currentUser = userOfRole('regular_user')
 ) {
   const plugin = widgetCode();
   const vm = {
@@ -83,7 +84,7 @@ describe('HTML code widget', () => {
       true,
       true,
       false,
-      () => ({ canEditStructure: false })
+      userOfRole('writer')
     );
     expect(vm.canEditHtmlBlock()).toBe(false);
     expect(button.style.display).toBe('none');

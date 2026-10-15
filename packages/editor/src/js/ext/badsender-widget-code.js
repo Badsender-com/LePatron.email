@@ -2,6 +2,7 @@
 
 const { HTML_CODE_BLOCK } = require('./synthetic-blocks/block-types.js');
 const { userCan } = require('./user-can.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 // Widget for the `code` property type, declared by the injected block
 // definitions as `htmlCode { widget: code; }`.
@@ -45,7 +46,7 @@ function html(propAccessor, onfocusbinding, parameters) {
       <button class="html-code-widget__button" data-bind="visible: $root.canEditHtmlBlock(), button: { icons: { primary: 'lucide lucide-code-2' } }, text: $root.t('widget-code-edit'), click: function(blockProperties, evt) { $root.openHtmlCodeEditor('${propAccessor}', blockProperties); }">Edit HTML code</button>
       <p class="html-code-widget__disabled" data-bind="visible: !$root.isHtmlBlockEditable(), text: $root.t('widget-code-disabled')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary" data-bind="visible: $root.canEditHeadCss(), button: { icons: { primary: 'lucide lucide-paintbrush' } }, text: $root.t('widget-code-edit-css'), click: function() { $root.openHeadCssEditor(); }">Edit the email CSS</button>
-      <p class="html-code-widget__hint" data-bind="visible: $root.isHeadCssEditable(), text: $root.t('widget-code-css-hint')"></p>
+      <p class="html-code-widget__hint" data-bind="visible: $root.canEditHeadCss(), text: $root.t('widget-code-css-hint')"></p>
       <button class="html-code-widget__button html-code-widget__button--secondary html-code-widget__button--view-css" data-bind="visible: $root.isHeadCssReadOnly(), button: { icons: { primary: 'lucide lucide-eye' } }, text: $root.t('widget-code-view-css'), click: function() { $root.openHeadCssViewer(); }">View the email CSS</button>
       <p class="html-code-widget__hint html-code-widget__hint--read-only" data-bind="visible: $root.isHeadCssReadOnly(), text: $root.t('head-css-read-only-hint')"></p>
     </div>
@@ -75,7 +76,10 @@ module.exports = () => {
     // structure, which a writer or reviewer does not edit. The panel's
     // "disabled" sentence stays tied to the flag alone.
     vm.canEditHtmlBlock = function () {
-      return vm.isHtmlBlockEditable() && userCan(vm, 'canEditStructure');
+      return (
+        vm.isHtmlBlockEditable() &&
+        userCan(vm, CAPABILITIES.MAILING_EDIT_STRUCTURE)
+      );
     };
 
     vm.openHtmlCodeEditor = function (propAccessor, blockProperties) {

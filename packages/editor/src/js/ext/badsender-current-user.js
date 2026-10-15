@@ -1,8 +1,6 @@
 const axios = require('axios');
 const { userCan } = require('./user-can.js');
-
-const REVIEWER = 'reviewer';
-const WRITER = 'writer';
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 module.exports = (opts) => {
   // Retrieve the current group ID from the metadata
@@ -11,16 +9,43 @@ module.exports = (opts) => {
   function viewModel(viewModel) {
     // Initialize observable for the current user
     viewModel.currentUser = ko.observable(null);
+    // Without the current user, the editor knows none of its rights and
+    // locks everything: it says so instead of claiming a refusal.
+    viewModel.currentUserFailed = ko.observable(false);
+
+    // What the user may do, as the server sent it with the current user.
+    viewModel.userCan = function (capability) {
+      return userCan(viewModel, capability);
+    };
+    // A reviewer changes nothing, so the toolbar's Save has nothing to write.
     viewModel.canSave = function () {
-      return userCan(viewModel, 'canSave');
+      return userCan(viewModel, CAPABILITIES.MAILING_EDIT_CONTENT);
+    };
+    // Nothing to edit anywhere: the toolbox drops its tabs and shows a single
+    // message instead of one per panel. Only once the user is known, so the
+    // tabs do not flicker away while it loads.
+    viewModel.isReadOnly = ko.pureComputed(function () {
+      return (
+        !!viewModel.currentUser() &&
+        !userCan(viewModel, CAPABILITIES.MAILING_EDIT_STRUCTURE) &&
+        !userCan(viewModel, CAPABILITIES.MAILING_EDIT_CONTENT) &&
+        !userCan(viewModel, CAPABILITIES.MAILING_EDIT_STYLE)
+      );
+    });
+    // The message of a locked toolbox panel: still loading, unknown rights, or
+    // the right the role lacks. `area` is structure, content or style.
+    viewModel.lockMessageKey = function (area) {
+      if (viewModel.currentUserFailed()) return 'toolbox-rights-unavailable';
+      if (!viewModel.currentUser()) return 'toolbox-rights-loading';
+      if (viewModel.isReadOnly()) return 'toolbox-readonly-all';
+      return 'toolbox-readonly-' + area;
     };
 
     // API call to get the current user
     axios
       .get('/api/users/current-user')
       .then((response) => {
-        const { isGroupAdmin, group, role, ...restOfCurrentUser } =
-          response.data;
+        const { isGroupAdmin, group, ...restOfCurrentUser } = response.data;
 
         // Whoever manages the mailing's group: its company admin, or a super
         // admin, who has every right in every group (ADR 0002, amended).
@@ -28,56 +53,29 @@ module.exports = (opts) => {
           restOfCurrentUser.isAdmin === true ||
           (isGroupAdmin && !!group && group.id === currentGroupId);
 
-        // reviewer: fully read-only on structure/content/style.
-        // writer: content only. Every other role (regular_user,
-        // company_admin_tech, company_admin, super_admin) is unrestricted.
-        // Consumed only as additive read-only overlays (toolbox.tmpl.html,
-        // block-wysiwyg.tmpl.html) — never to hide/remove existing elements,
-        // which broke the vendored tab-switching mechanism, see git history.
-        const canEditStructure = role !== REVIEWER && role !== WRITER;
-        const canEditContent = role !== REVIEWER;
-        const canEditStyle = role !== REVIEWER && role !== WRITER;
-        // Renaming the mailing is an organisation action, like the listing's
-        // rename (hidden for reviewer in mailings-table.vue).
-        const canRename = role !== REVIEWER;
-        // Ignoring a quality result is a decision for the whole team.
-        const canIgnoreQuality = role !== REVIEWER && role !== WRITER;
-        // A reviewer changes nothing, so the toolbar's Save has nothing to write.
-        // The save run once on opening a mailing without a preview is not this
-        // button, and stays for every role (template-loader.js).
-        const canSave = role !== REVIEWER;
-        // Nothing to edit anywhere: the toolbox drops its tabs and shows a
-        // single message instead of one per panel.
-        const isReadOnly = !canEditStructure && !canEditContent && !canEditStyle;
-
-        // Update the observable with the current user along with the new attribute
+        // The capabilities are consumed only as additive read-only overlays
+        // (toolbox.tmpl.html, block-wysiwyg.tmpl.html) — never to hide/remove
+        // existing elements, which broke the vendored tab-switching mechanism,
+        // see git history.
         viewModel.currentUser({
           ...restOfCurrentUser,
-          role,
           isAdminOfCurrentGroup,
           isGroupAdmin,
           group,
-          canEditStructure,
-          canEditContent,
-          canEditStyle,
-          canRename,
-          canSave,
-          canIgnoreQuality,
-          isReadOnly,
         });
 
-        // A reviewer can edit nothing: the comments panel is what they came for,
-        // and open on arrival it shows what they can actually do. Only them —
-        // the other roles open it themselves.
+        // Someone who can edit nothing came for the comments: open on arrival,
+        // the panel shows what they can actually do. The others open it
+        // themselves.
         if (
-          role === REVIEWER &&
+          viewModel.isReadOnly() &&
           typeof viewModel.showComments === 'function'
         ) {
           viewModel.showComments(true);
         }
       })
       .catch((error) => {
-        // Handle error
+        viewModel.currentUserFailed(true);
         console.log(error);
       });
   }
