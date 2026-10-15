@@ -4,9 +4,19 @@ const { blockImages } = require('../exported-content');
 
 // Formats a part of the audience cannot see (caniemail): Outlook for Windows
 // shows no WebP, few clients show AVIF, HEIC or TIFF, and SVG is stripped by
-// Gmail. LePatron's upload accepts WebP (bindings/fileupload.js) and turns SVG
-// into PNG, so WebP and external URLs are what this finds in practice.
-const UNSUPPORTED = new Set(['webp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'svg']);
+// Gmail. LePatron's upload accepts WebP (bindings/fileupload.js) and keeps an
+// SVG as uploaded: the image backend only rasterises it to PNG when it
+// resizes or crops it (image.controller.js, rasterizeVector), so an SVG
+// placed at its own size is sent as SVG.
+const UNSUPPORTED = new Set([
+  'webp',
+  'avif',
+  'heic',
+  'heif',
+  'tif',
+  'tiff',
+  'svg',
+]);
 
 function formatOf(image) {
   if (!image.src) return null;
