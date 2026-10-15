@@ -362,6 +362,29 @@ describe("the server's checks", () => {
     expect(checkResources).toHaveBeenCalledTimes(2);
   });
 
+  it('aborts the request of the previous run when a new one starts', async () => {
+    const tokens = [];
+    const checkResources = jest.fn(
+      (_url, _resources, options) =>
+        new Promise((resolve, reject) => {
+          tokens.push(options.cancelToken);
+          options.cancelToken.promise.then(reject);
+        })
+    );
+    const { vm, flush } = setupRemote(checkResources);
+    vm.quality.run();
+    flush();
+    await tick();
+    vm.quality.run();
+    flush();
+    await tick();
+    await tick();
+    expect(checkResources).toHaveBeenCalledTimes(2);
+    expect(tokens[0].reason).toBeDefined();
+    expect(tokens[1].reason).toBeUndefined();
+    expect(vm.quality.remoteStatus()).toBe('running');
+  });
+
   it('tells a user who ran too many checks apart from a failure', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     const tooFrequent = {
