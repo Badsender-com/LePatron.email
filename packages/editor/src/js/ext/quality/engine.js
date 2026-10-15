@@ -10,15 +10,84 @@ const unfilledLinks = require('./rules/unfilled-links');
 const imagesWithoutLink = require('./rules/images-without-link');
 const unreplacedImages = require('./rules/unreplaced-images');
 const backgroundImages = require('./rules/background-images');
+const malformedLinks = require('./rules/malformed-links');
+const displayedUrls = require('./rules/displayed-urls');
+const suspiciousLinks = require('./rules/suspicious-links');
+const insecureUrls = require('./rules/insecure-urls');
+const unnamedImageLinks = require('./rules/unnamed-image-links');
+const altTextQuality = require('./rules/alt-text-quality');
+const imageOnlyEmail = require('./rules/image-only-email');
+const unsupportedImageFormats = require('./rules/unsupported-image-formats');
+const subject = require('./rules/subject');
+const preheader = require('./rules/preheader');
+const mergeTags = require('./rules/merge-tags');
+const emptyBlocks = require('./rules/empty-blocks');
+const uppercaseText = require('./rules/uppercase-text');
+const smallFont = require('./rules/small-font');
+const hiddenText = require('./rules/hidden-text');
+const colorContrast = require('./rules/color-contrast');
+const textLayout = require('./rules/text-layout');
+const indistinctLinks = require('./rules/indistinct-links');
+const headings = require('./rules/headings');
+const altRedundant = require('./rules/alt-redundant');
+const emojiPlacement = require('./rules/emoji-placement');
+const forbiddenCode = require('./rules/forbidden-code');
+const malformedHtml = require('./rules/malformed-html');
+const unsupportedCode = require('./rules/unsupported-code');
+const looseCode = require('./rules/loose-code');
+const brokenLinks = require('./rules/broken-links');
+const imageWeight = require('./rules/image-weight');
+const imagesTotalWeight = require('./rules/images-total-weight');
+const oversizedImages = require('./rules/oversized-images');
+const domainBlocklists = require('./rules/domain-blocklists');
+const dangerousLinks = require('./rules/dangerous-links');
+const { collectResources } = require('./resources');
 
 // Order is the order checks are listed in; severity grouping happens in the UI.
 const DEFAULT_RULES = [
+  subject,
+  preheader,
+  mergeTags,
+  emptyBlocks,
+  uppercaseText,
+  hiddenText,
+  smallFont,
+  colorContrast,
+  textLayout,
+  indistinctLinks,
+  headings,
+  altRedundant,
+  emojiPlacement,
   trackingParams,
   unfilledLinks,
+  malformedLinks,
+  displayedUrls,
+  suspiciousLinks,
   imagesWithoutLink,
+  unnamedImageLinks,
   unreplacedImages,
+  altTextQuality,
   backgroundImages,
+  unsupportedImageFormats,
+  imageOnlyEmail,
+  insecureUrls,
+  forbiddenCode,
+  malformedHtml,
+  unsupportedCode,
+  looseCode,
   htmlSize,
+];
+
+// Rules that read what the server found (`options.remote`): links that do not
+// answer, image weight once exported, blocklisted domains. They run once the
+// server has answered, on the same export as the rules above.
+const REMOTE_RULES = [
+  brokenLinks,
+  dangerousLinks,
+  domainBlocklists,
+  imageWeight,
+  imagesTotalWeight,
+  oversizedImages,
 ];
 
 // djb2: enough to tell two values apart in a fingerprint, not a security hash.
@@ -80,6 +149,33 @@ function rankFingerprints(findings) {
   });
 }
 
+const NO_RESOURCES = Object.freeze({ links: [], images: [] });
+
+// What to ask the server about. Never in the way of the local checks.
+function resourcesOf(ctx) {
+  try {
+    return collectResources(ctx);
+  } catch (err) {
+    console.error('Quality checks could not list the links and images', err);
+    return NO_RESOURCES;
+  }
+}
+
+// What a passed check says ("Exported HTML weighs 12 KB"): a parameter that
+// cannot be computed leaves the check passed, with nothing to say.
+function passParamsOf(rule, ctx) {
+  if (!rule.passParams) return {};
+  try {
+    return rule.passParams(ctx) || {};
+  } catch (err) {
+    console.error(
+      `Quality check "${rule.id}" could not describe its pass`,
+      err
+    );
+    return {};
+  }
+}
+
 function runRule(rule, ctx) {
   try {
     const findings = rankFingerprints(
@@ -96,7 +192,7 @@ function runRule(rule, ctx) {
         count: findings.length,
         // What a passed check says: "Every link has a destination".
         passKey: rule.passKey,
-        passParams: rule.passParams ? rule.passParams(ctx) : {},
+        passParams: status === 'passed' ? passParamsOf(rule, ctx) : {},
       },
     };
   } catch (err) {
@@ -106,14 +202,50 @@ function runRule(rule, ctx) {
   }
 }
 
+// A check that cannot apply (a blocklist nobody subscribed to) is not listed;
+// neither is one that cannot even tell, rather than taking the run down.
+function applicableRules(ctx, rules) {
+  return rules.filter((rule) => {
+    if (!rule.enabled) return true;
+    try {
+      return Boolean(rule.enabled(ctx));
+    } catch (err) {
+      console.error(
+        `Quality check "${rule.id}" could not tell whether it applies`,
+        err
+      );
+      return false;
+    }
+  });
+}
+
+/**
+ * Runs rules on a context already built: the local rules first, then the
+ * remote ones on the same context once the server has answered
+ * (`ctx.remote = remote; runRules(ctx, REMOTE_RULES)`).
+ * @returns {{ findings: Array, checks: Array }}
+ */
+function runRules(ctx, rules) {
+  const results = applicableRules(ctx, rules).map((rule) => runRule(rule, ctx));
+  return {
+    findings: _.flatMap(results, 'findings'),
+    checks: results.map((result) => result.check),
+  };
+}
+
 /**
  * Runs every quality check against the current email.
  * @param {Object} viewModel - the editor view model
  * @param {Object} [options]
  * @param {string} [options.html] - an already exported HTML, to avoid exporting twice
  * @param {Array} [options.rules] - rules to run instead of the default set
- * @returns {{ findings: Array, checks: Array }} findings to show, and one entry
- *   per check with its status, so passed checks can be listed too
+ * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
+ * @returns {{ findings: Array, checks: Array, html: string, resources: Object,
+ *   ctx: Object|null }}
+ *   findings to show, one entry per check with its status (so passed checks
+ *   can be listed too), the HTML checked, the links and images to ask the
+ *   server about (listed on the local pass only), and the context built, for
+ *   the remote pass to reuse
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
@@ -122,23 +254,32 @@ function runQualityChecks(viewModel, options = {}) {
 
   let ctx;
   try {
-    ctx = buildContext(viewModel, html);
+    ctx = buildContext(viewModel, html, options.remote);
   } catch (err) {
     // Download and ESP send run the checks first: a model the engine cannot
     // read must cost the checks, never the export.
     console.error('Quality checks could not read the email', err);
-    return { findings: [], checks: rules.map(failedCheck) };
+    return {
+      findings: [],
+      checks: rules.map(failedCheck),
+      html,
+      resources: NO_RESOURCES,
+      ctx: null,
+    };
   }
 
-  const results = rules.map((rule) => runRule(rule, ctx));
   return {
-    findings: _.flatMap(results, 'findings'),
-    checks: results.map((result) => result.check),
+    ...runRules(ctx, rules),
+    html,
+    resources: options.remote ? NO_RESOURCES : resourcesOf(ctx),
+    ctx,
   };
 }
 
 module.exports = {
   runQualityChecks,
+  runRules,
   // The drawer announces how many checks it runs.
   DEFAULT_RULES,
+  REMOTE_RULES,
 };
