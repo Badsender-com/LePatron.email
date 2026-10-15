@@ -156,7 +156,7 @@ describe('in a quality run', () => {
     expect(d.webRiskLookup).toHaveBeenCalledTimes(1);
   });
 
-  it("draws on the company's daily budget before each lookup, and stops once it is spent", async () => {
+  it("draws on the user's and the company's daily budgets before each lookup, and stops once spent", async () => {
     const d = deps({
       spendWebRiskLookup: jest
         .fn()
@@ -165,7 +165,10 @@ describe('in a quality run', () => {
         .mockResolvedValue(false),
     });
     await run(['https://a.test/', 'https://b.test/'], d);
-    expect(d.spendWebRiskLookup).toHaveBeenCalledWith('c1');
+    expect(d.spendWebRiskLookup).toHaveBeenCalledWith({
+      company: 'c1',
+      user: 'u1',
+    });
     expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
 
     const { webRisk } = await run(['https://bad.test/late'], d, 'u2');

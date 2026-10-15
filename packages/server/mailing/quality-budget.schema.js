@@ -8,14 +8,15 @@ const { Schema } = mongoose;
 const KEEP_SPENT_SECONDS = 7 * 24 * 60 * 60;
 
 /**
- * What a company spent of a paid quality lookup today (Web Risk, for now):
+ * What a company, or one of its users, spent of a paid quality lookup today (Web Risk, for now):
  * one document per scope, kind and day, counted with an atomic conditional
  * increment (quality-threats.service.js). In the database rather than in
  * memory because every worker of the cluster must draw on the same budget.
  */
 const QualityBudgetSchema = new Schema(
   {
-    // The company's id, or 'admin' for the user without one.
+    // The company's id, or 'admin' for the user without one; `user:<id>`
+    // for a user's share of their company's budget.
     scope: {
       type: String,
       required: true,
