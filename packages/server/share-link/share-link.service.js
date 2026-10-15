@@ -212,20 +212,6 @@ async function revokeAllForMailing(mailingId) {
 }
 
 /**
- * Every active link of a company's emails stops working: the company turned
- * sharing off, often to stop a link that leaked, and turning it back on must
- * not reopen it. A link stores the company that allowed it
- * (sharingCompanyOf), and the page refuses one stored under another company
- * than the email's: these are all the links the company could open.
- */
-async function revokeAllForCompany(companyId) {
-  await ShareLinks.updateMany(
-    { _company: companyId, revokedAt: null, expiresAt: { $gt: new Date() } },
-    { revokedAt: new Date() }
-  );
-}
-
-/**
  * The link a token opens.
  * @returns {Promise<{ state: 'active'|'expired'|'unknown', link?: Object }>}
  *   A revoked link reads as unknown: who revoked it wanted it gone.
@@ -246,7 +232,6 @@ module.exports = {
   listActiveLinks,
   revokeLink,
   revokeAllForMailing,
-  revokeAllForCompany,
   resolveToken,
   companySharing,
   sharingCompanyOf,
