@@ -152,7 +152,7 @@ describe('ShareLinkPanel', () => {
     copy.click();
     await flush();
     expect(writeText).toHaveBeenCalledWith('https://app.test/share/old');
-    expect(copy.textContent.trim()).toBe('Copied');
+    expect(copy.textContent.trim()).toBe('quality-share-copied');
   });
 
   // The Clipboard API may refuse (permission, focus lost): the field is
@@ -174,7 +174,7 @@ describe('ShareLinkPanel', () => {
     copy.click();
     await flush();
     expect(document.execCommand).toHaveBeenCalledWith('copy');
-    expect(copy.textContent.trim()).toBe('Copied');
+    expect(copy.textContent.trim()).toBe('quality-share-copied');
     expect(vm.notifier.error).not.toHaveBeenCalled();
   });
 
