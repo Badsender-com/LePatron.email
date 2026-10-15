@@ -99,55 +99,43 @@ describe('Comment Service', () => {
       expect(result._author.name).toBe('Test User');
     });
 
-    it('should create a comment carrying an approval decision', async () => {
-      const mailingId = mockObjectId();
-      const userId = mockObjectId();
-      const groupId = mockObjectId();
-      const commentId = mockObjectId();
+    describe('decision', () => {
+      const createWith = async (fields) => {
+        const mailingId = mockObjectId();
+        const groupId = mockObjectId();
+        const commentId = mockObjectId();
 
-      mockMailingAccess(mailingId, groupId);
+        mockMailingAccess(mailingId, groupId);
 
-      Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
-      Comments.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue({ _id: commentId }),
+        Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
+        Comments.findById = jest.fn().mockReturnValue({
+          populate: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockResolvedValue({ _id: commentId }),
+        });
+
+        await commentService.createComment({
+          mailingId: mailingId.toString(),
+          user: createTestUser(mockObjectId(), groupId),
+          text: 'Test comment',
+          ...fields,
+        });
+      };
+
+      it('should create a comment carrying an approval decision', async () => {
+        await createWith({ decision: COMMENT_DECISIONS.APPROVED });
+
+        expect(Comments.create).toHaveBeenCalledWith(
+          expect.objectContaining({ decision: COMMENT_DECISIONS.APPROVED })
+        );
       });
 
-      await commentService.createComment({
-        mailingId: mailingId.toString(),
-        user: createTestUser(userId, groupId),
-        text: 'Looks good',
-        decision: COMMENT_DECISIONS.APPROVED,
+      it('should default decision to null when not provided', async () => {
+        await createWith({});
+
+        expect(Comments.create).toHaveBeenCalledWith(
+          expect.objectContaining({ decision: null })
+        );
       });
-
-      expect(Comments.create).toHaveBeenCalledWith(
-        expect.objectContaining({ decision: COMMENT_DECISIONS.APPROVED })
-      );
-    });
-
-    it('should default decision to null when not provided', async () => {
-      const mailingId = mockObjectId();
-      const userId = mockObjectId();
-      const groupId = mockObjectId();
-      const commentId = mockObjectId();
-
-      mockMailingAccess(mailingId, groupId);
-
-      Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
-      Comments.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue({ _id: commentId }),
-      });
-
-      await commentService.createComment({
-        mailingId: mailingId.toString(),
-        user: createTestUser(userId, groupId),
-        text: 'Test comment',
-      });
-
-      expect(Comments.create).toHaveBeenCalledWith(
-        expect.objectContaining({ decision: null })
-      );
     });
 
     it('should throw NotFound if mailing does not exist', async () => {
