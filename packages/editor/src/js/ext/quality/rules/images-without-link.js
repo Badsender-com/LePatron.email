@@ -16,7 +16,7 @@ module.exports = {
   titleKey: 'Clickable images',
   passKey: 'Every clickable image has a link',
   run(ctx) {
-    const { placeholderUrl } = ctx.config;
+    const placeholderUrl = ctx.config.imagesUrl.placeholder;
     return (
       findUnfilledAnchors(ctx)
         .filter((link) => !link.label && link.anchor.querySelector('img'))
