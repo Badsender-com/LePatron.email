@@ -4,9 +4,14 @@ const { blockImages, textOf } = require('../exported-content');
 
 // An alternative text that repeats the text next to the image makes screen
 // readers say it twice. Only a short caption-like text is compared: the alt
-// must equal a whole element's text in the same block.
+// must equal a whole element's text in the same block. The template's own
+// default alt is judged with the rest, as "alt-text-quality" does: it is what
+// the recipient hears.
 const normalize = (text) =>
-  String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 
 module.exports = {
   id: 'alt-redundant',
@@ -20,12 +25,15 @@ module.exports = {
       .filter((image) => {
         const root = ctx.doc.getElementById(image.blockId);
         const alt = normalize(image.alt);
-        return Array.from(root.querySelectorAll('p,h1,h2,h3,h4,h5,h6,a,span,td,div'))
+        return Array.from(
+          root.querySelectorAll('p,h1,h2,h3,h4,h5,h6,a,span,td,div')
+        )
           .filter((el) => !el.contains(image.img))
           .some((el) => normalize(textOf(el)) === alt);
       })
       .map((image) => ({
-        messageKey: 'Alternative text repeats the text next to the image: __alt__',
+        messageKey:
+          'Alternative text repeats the text next to the image: __alt__',
         params: { alt: image.alt.trim() },
         blockId: image.blockId,
         value: image.alt,

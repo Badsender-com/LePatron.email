@@ -1,9 +1,11 @@
 'use strict';
 
 const _ = require('lodash');
-const { userDeclarations, toPx, hasText } = require('../user-styles');
-const { textOf } = require('../exported-content');
-const { parseColor, contrastRatio, styleValue, backgroundOf } = require('../colors');
+const { userDeclarations, hasText } = require('../user-styles');
+const { textOf, excerpt } = require('../exported-content');
+const { inherited, fontPxOf } = require('../inline-style');
+const { parseColor, contrastRatio, backgroundOf } = require('../colors');
+const { exportedElementOf } = require('../export-match');
 
 // WCAG AA: 4.5:1 for body text, 3:1 for large text (24 px, or 18.66 px bold).
 // Under 1.5:1 the text is as good as hidden, which filters distrust.
@@ -15,38 +17,19 @@ const AAA_TEXT = 7;
 const AAA_LARGE = 4.5;
 const INVISIBLE = 1.5;
 
-// Within the client's rich text: the nearest declaration of a property.
-function inherited(element, prop, parse) {
-  for (let el = element; el && el.nodeType === 1; el = el.parentElement) {
-    const value = parse(styleValue(el, prop));
-    if (value) return value;
-  }
-  return null;
-}
+const colorOf = (element) => inherited(element, 'color', parseColor);
 
+// Large text, by the size and weight the text is drawn at: read in the
+// export, where the template's own size on the container shows (a 30 px bold
+// title the client only coloured). A heading tag alone says nothing of
+// weight: templates style them as they please.
 function isLarge(element) {
-  const px = inherited(element, 'font-size', toPx) || 16;
-  const bold = /^(bold|[6-9]00)$/i.test(
-    inherited(element, 'font-weight', (v) => v || null) || ''
-  ) || !!element.closest('b,strong,h1,h2,h3,h4,h5,h6');
+  const px = fontPxOf(element) || 16;
+  const weight = inherited(element, 'font-weight', (v) => v || null) || '';
+  const bold =
+    /^(bold|bolder|[6-9]00)$/i.test(weight) || !!element.closest('b,strong');
   return px >= 24 || (bold && px >= 18.66);
 }
-
-// The background behind the client's text: declared in their rich text, or
-// read from the export, from the element showing the same text in the block.
-function backgroundFor(ctx, blockId, element) {
-  const declared = inherited(element, 'background-color', parseColor);
-  if (declared) return declared;
-  const root = ctx.doc.getElementById(blockId);
-  if (!root) return null;
-  const text = textOf(element);
-  const shown = Array.from(root.querySelectorAll('*')).find(
-    (el) => textOf(el) === text && !Array.from(el.children).some((c) => textOf(c) === text)
-  );
-  return backgroundOf(shown || root);
-}
-
-const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);
 
 module.exports = {
   id: 'color-contrast',
@@ -60,12 +43,22 @@ module.exports = {
         (prop === 'color' || prop === 'background-color') && hasText(element)
     );
     return _.uniqBy(coloured, 'element')
-      .map(({ blockId, path, element }) => {
-        const color = inherited(element, 'color', parseColor);
-        const background = color && backgroundFor(ctx, blockId, element);
-        if (!background) return null;
+      .map(({ blockId, path, richText, element }) => {
+        // The element as exported, inside the template's colours and sizes;
+        // the rich text alone when the export does not show it.
+        const shown = exportedElementOf(ctx, richText, element);
+        const drawn = shown || ctx.doc.getElementById(blockId);
+        if (!drawn) return null;
+        // A background the client set under the template's text colour is
+        // judged too: the colour is then the template's, read in the export.
+        const color = colorOf(element) || (shown && colorOf(shown));
+        const background =
+          color &&
+          (inherited(element, 'background-color', parseColor) ||
+            backgroundOf(drawn));
+        if (!color || !background) return null;
         const ratio = contrastRatio(color, background);
-        const large = isLarge(element);
+        const large = isLarge(shown || element);
         const required = large ? AA_LARGE : AA_TEXT;
         if (ratio >= required) return null;
         const params = {
