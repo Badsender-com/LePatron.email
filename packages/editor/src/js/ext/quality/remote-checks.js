@@ -63,8 +63,10 @@ function createRemoteChecks(options) {
   const { state, isCurrent, surface, isOn, url } = options;
   const { checkResources, runRules, run: runEngine } = options;
   const listed = listedRemoteRules.filter(isOn);
-  // Nothing to ask the server when every check it serves is off.
-  const anyOn = REMOTE_RULES.some(isOn);
+  // Nothing to ask the server when every check reading its answer is off:
+  // asked as soon as one is on, a server check or a local one with a second
+  // look (the format of an image without an extension).
+  const anyOn = SERVER_ANSWER_RULES.some(isOn);
   let inFlight = Promise.resolve();
   let pending = null;
   // The local results the server's checks complete.

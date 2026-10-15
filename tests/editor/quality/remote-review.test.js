@@ -382,4 +382,36 @@ describe('the format of an image whose address names none', () => {
     await flush();
     expect(formatsOf(vm).findings.map((f) => f.blocking)).toEqual([false]);
   });
+
+  it('neither makes the export wait nor blocks it', async () => {
+    const vm = review('webp', 'blocking');
+    const verdict = vm.quality.gate({ html: vm.exportHTML() });
+    // No wait shown: the gate waits only for a blocking check of the server.
+    expect(document.querySelector('.quality-wait-modal')).toBeNull();
+    const { leaves, blocked } = await verdict;
+    expect(blocked).toBe(false);
+    expect(leaves).toBe(true);
+  });
+
+  it('asks the server even when every server check is off', async () => {
+    const vm = vmWith(`<img src="${src}" width="600">`);
+    vm.metadata.url = { qualityResources: '/x' };
+    vm.metadata.qualitySettings = {
+      checks: Object.fromEntries(
+        REMOTE_RULES.map((rule) => [rule.id, { state: 'off', thresholds: {} }])
+      ),
+    };
+    const checkResources = jest.fn(() =>
+      Promise.resolve(
+        remoteOf({ images: { [src]: { state: 'ok', bytes: 1, type: 'webp' } } })
+      )
+    );
+    installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
+    vm.quality.run();
+    await flush();
+    expect(checkResources).toHaveBeenCalled();
+    expect(formatsOf(vm).findings.map((f) => f.params.format)).toEqual([
+      'WEBP',
+    ]);
+  });
 });
