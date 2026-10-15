@@ -165,10 +165,13 @@ const MailingSchema = Schema(
           _id: false,
           fingerprint: { type: String, required: true, maxlength: 512 },
           ruleId: { type: String, maxlength: 64 },
-          // Who ignored it is kept for audit and read by nobody: left out of
-          // every query unless asked for, as the JSON transform below cannot
-          // cover `toObject()` and `lean()`.
-          _user: { type: ObjectId, ref: UserModel, select: false },
+          // Who ignored it is kept for audit and shown to nobody: the JSON
+          // transform below drops the whole list, and the editor's metadata
+          // (findOneForMosaico) keeps only the fingerprints. Never
+          // `select: false`: Mongoose would add `qualityIgnores._user: 0` to
+          // the lists' projection, which already excludes `qualityIgnores`,
+          // and MongoDB 4.4+ rejects that path collision.
+          _user: { type: ObjectId, ref: UserModel },
           ignoredAt: { type: Date, default: Date.now },
         },
       ],
