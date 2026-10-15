@@ -6,6 +6,7 @@ const { zipObject } = require('lodash');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { probeUrl } = require('../utils/url-probe.js');
+const { workerCount } = require('../utils/worker-count.js');
 const blocklists = require('./quality-blocklists.service.js');
 const webRisk = require('./quality-web-risk.service.js');
 const images = require('./quality-images.service.js');
@@ -122,11 +123,8 @@ const DEFAULT_DEPS = {
 // WORKERS of them, counted as it does), the Web Risk budget for the cluster.
 // index.js loads the routes in its master too, which serves nothing: silent.
 function logBounds() {
-  const cpuCount = require('os').cpus().length;
-  const workers =
-    process.env.WORKERS <= cpuCount ? Number(process.env.WORKERS) || 1 : 1;
   logger.log('[QUALITY] resource check bounds', {
-    workers,
+    workers: workerCount(),
     perWorker: {
       runsPerUser: `${RUNS_PER_WINDOW} per ${RUN_WINDOW_MS / 60000} min`,
       linkProbes: links.MAX_LINK_PROBES,
