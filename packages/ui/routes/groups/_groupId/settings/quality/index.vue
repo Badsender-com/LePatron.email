@@ -72,8 +72,9 @@ export default {
     },
   },
   watch: {
+    // Back and forward between tabs ask too, as a click on a tab does.
     '$route.query.tab'(tab) {
-      if (TABS.includes(tab) && tab !== this.tab) this.tab = tab;
+      if (TABS.includes(tab) && tab !== this.tab) this.onTab(tab);
     },
   },
   methods: {
@@ -175,6 +176,7 @@ export default {
     </v-container>
     <bs-modal-confirm
       ref="leaveModal"
+      persistent
       :title="$t('qualitySettings.unsaved.leaveTitle')"
       :action-label="$t('qualitySettings.unsaved.leave')"
       @confirm="confirmLeave"

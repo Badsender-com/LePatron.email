@@ -72,10 +72,12 @@ export default {
     },
   },
   methods: {
+    routeOf(row) {
+      return `/groups/${this.groupId}/settings/quality/templates/${row.id}`;
+    },
+
     open(row) {
-      this.$router.push(
-        `/groups/${this.groupId}/settings/quality/templates/${row.id}`
-      );
+      this.$router.push(this.routeOf(row));
     },
   },
 };
@@ -115,7 +117,12 @@ export default {
       @click:row="open"
     >
       <template #item.name="{ item }">
-        <span class="qx-templates__name">{{ item.name }}</span>
+        <nuxt-link
+          :to="routeOf(item)"
+          class="qx-templates__name"
+          @click.native.stop
+          >{{ item.name }}</nuxt-link
+        >
       </template>
       <template #item.count="{ item }">
         <span v-if="!item.count" class="qx-templates__none">
@@ -182,6 +189,12 @@ export default {
   &__name {
     font-weight: 600;
     color: var(--gray-900);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
   }
 
   &__none {
