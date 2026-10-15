@@ -30,7 +30,10 @@ const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
 const selectedGroupRouter = require('./account/selected-group.routes');
-const { attachSelectedGroup } = require('./account/selected-group.js');
+const {
+  attachSelectedGroup,
+  forgetSessionSelection,
+} = require('./account/selected-group.js');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
@@ -299,6 +302,7 @@ if (cluster.isMaster) {
   );
 
   app.get('/account/logout', (req, res) => {
+    forgetSessionSelection(req);
     req.logout();
     res.redirect('/account/login');
   });

@@ -84,9 +84,8 @@ export default {
     },
   },
   mounted() {
-    // Sidebar lives outside this page; the resource's group becomes the
-    // selected group (ADR 0002, amended), and
-    // and force the SETTINGS module so navigation stays coherent on /templates/:id.
+    // Sidebar lives outside this page: force the SETTINGS module, and make
+    // the resource's group the selected group (ADR 0002, amended).
     this.$store.commit(`sidebar/${SET_ACTIVE_MODULE}`, 'settings');
     if (this.group?.id) {
       this.$store

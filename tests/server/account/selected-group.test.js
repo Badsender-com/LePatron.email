@@ -35,6 +35,7 @@ const {
 } = require('../../../packages/server/common/models.common.js');
 const {
   attachSelectedGroup,
+  forgetSessionSelection,
 } = require('../../../packages/server/account/selected-group.js');
 const selectedGroupRouter = require('../../../packages/server/account/selected-group.routes.js');
 const {
@@ -81,6 +82,10 @@ describe('the selected group on every request', () => {
       next();
     });
     server.use('/api/users/me/selected-group', selectedGroupRouter);
+    server.get('/sign-out', (req, res) => {
+      forgetSessionSelection(req);
+      res.json({});
+    });
     server.use(attachSelectedGroup);
     server.get('/probe', (req, res) =>
       res.json({
@@ -151,5 +156,30 @@ describe('the selected group on every request', () => {
     seed([PLATFORM, ACME, BETA], { [FRANK]: PLATFORM_GROUP });
 
     expect(await probe(FRANK)).toBe(CLIENT_GROUP);
+  });
+
+  it("forgets the bootstrap account's choice when it signs out or in again", async () => {
+    await request(app(bootstrap.id))
+      .put('/api/users/me/selected-group')
+      .send({ groupId: OTHER_CLIENT_GROUP });
+
+    await request(app(bootstrap.id)).get('/sign-out');
+
+    expect(await probe(bootstrap.id)).toBeNull();
+  });
+
+  it('lets the request go on without a selected group when the lookup fails', async () => {
+    seed([PLATFORM, ACME, BETA], { [ALICE]: CLIENT_GROUP });
+    const findById = jest
+      .spyOn(store.Groups, 'findById')
+      .mockImplementation(() => {
+        throw new Error('database down');
+      });
+
+    const res = await request(app(ALICE)).get('/probe');
+
+    findById.mockRestore();
+    expect(res.status).toBe(200);
+    expect(res.body.selectedGroupId).toBeNull();
   });
 });

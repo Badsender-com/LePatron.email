@@ -80,7 +80,6 @@ import BsSidebarToggle from './bs-sidebar-toggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
 import { isModuleLocked } from '~/helpers/module-activation';
 import { HELP_DOCS_URL } from '~/helpers/constants/external-urls';
-import { USER, SELECT_GROUP } from '~/store/user';
 import {
   SET_COLLAPSED,
   SET_ACTIVE_MODULE,
@@ -168,20 +167,6 @@ export default {
       handler(moduleId) {
         if (moduleId) {
           this.setActiveModule(moduleId);
-        }
-      },
-    },
-    // A page of another group's resource selects that group (ADR 0002,
-    // amended): the resource wins over the selection.
-    '$route.params.groupId': {
-      immediate: true,
-      handler(groupId) {
-        if (groupId) {
-          // The page answers for an unknown group itself; a refused
-          // selection only leaves the previous one in place.
-          this.$store
-            .dispatch(`${USER}/${SELECT_GROUP}`, groupId)
-            .catch(() => {});
         }
       },
     },

@@ -1234,6 +1234,7 @@ export default {
     superAdminOnly: 'Super administrateur uniquement',
     switchCompany: 'Choisir une entreprise…',
     selectedGroup: 'Groupe sélectionné : {name}',
+    selectionFailed: 'Impossible de sélectionner ce groupe. Réessayez.',
     colors: 'Couleurs',
   },
   aiFeatures: {

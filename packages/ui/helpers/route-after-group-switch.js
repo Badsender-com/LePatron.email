@@ -6,6 +6,9 @@
 
 const SETTINGS_TAB = /^\/groups\/[^/]+\/settings\/([^/?#]+)\/?(?:[?#].*)?$/;
 const UNDER_A_GROUP = /^\/groups\/(?!new(?:[/?#]|$))[^/?#]+/;
+// A user's or a template's own page belongs to its group, like the pages under
+// it: the lists of every group's users and templates do not.
+const GROUP_RESOURCE = /^\/(?:users|templates)\/[^/?#]+/;
 
 /**
  * @param {string} path the current full path, query included
@@ -15,6 +18,8 @@ const UNDER_A_GROUP = /^\/groups\/(?!new(?:[/?#]|$))[^/?#]+/;
 export function routeAfterGroupSwitch(path, groupId) {
   const tab = path.match(SETTINGS_TAB);
   if (tab) return `/groups/${groupId}/settings/${tab[1]}`;
-  if (UNDER_A_GROUP.test(path)) return `/groups/${groupId}/settings/general`;
+  if (UNDER_A_GROUP.test(path) || GROUP_RESOURCE.test(path)) {
+    return `/groups/${groupId}/settings/general`;
+  }
   return path;
 }

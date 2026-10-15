@@ -10,6 +10,10 @@ const {
   updateSessionTracking,
 } = require('../account/session-tracking.helper.js');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
+const {
+  resolveSelectedGroup,
+  forgetSessionSelection,
+} = require('../account/selected-group.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -450,6 +454,9 @@ async function login(req, res, next) {
       return next(new createError.BadRequest('User not found'));
     }
 
+    // A choice kept in the session belongs to the previous sign-in.
+    forgetSessionSelection(req);
+
     req.logIn(user, async (err) => {
       if (err) {
         logger.error('[Login] Login failed:', err);
@@ -467,6 +474,13 @@ async function login(req, res, next) {
         completeUser = await Users.findOneForApi({ _id: user._id });
       }
 
+      // The selected group comes with the account, so the screens show it
+      // without waiting for the next request (ADR 0002, amended).
+      const payload = completeUser.toJSON
+        ? completeUser.toJSON()
+        : { ...completeUser };
+      payload.selectedGroup = await resolveSelectedGroup(payload, req.session);
+
       // Force session save before sending response
       req.session.save((saveErr) => {
         if (saveErr) {
@@ -474,7 +488,7 @@ async function login(req, res, next) {
           return next(new createError.InternalServerError(saveErr));
         }
 
-        return res.json(completeUser);
+        return res.json(payload);
       });
     });
   })(req, res);

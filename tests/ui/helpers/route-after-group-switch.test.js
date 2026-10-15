@@ -48,6 +48,8 @@ describe('switching group in the settings', () => {
     ['a new profile', `/groups/${PREVIOUS}/new-profile`],
     ['a new emails group', `/groups/${PREVIOUS}/new-emails-group`],
     ['the group page', `/groups/${PREVIOUS}`],
+    ['the page of a user', '/users/507f1f77bcf86cd799439101'],
+    ['the page of a template', '/templates/507f1f77bcf86cd799439051'],
   ])(
     'opens the general settings of the new group from %s of the previous one',
     (_label, path) => {

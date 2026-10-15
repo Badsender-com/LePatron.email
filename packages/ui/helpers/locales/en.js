@@ -1217,6 +1217,7 @@ export default {
     superAdminOnly: 'Super admin only',
     switchCompany: 'Pick a company…',
     selectedGroup: 'Selected group: {name}',
+    selectionFailed: 'This group could not be selected. Try again.',
     colors: 'Colors',
   },
   aiFeatures: {

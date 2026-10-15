@@ -1,6 +1,7 @@
 'use strict';
 
-const { Groups } = require('../common/models.common.js');
+const { Groups, Users } = require('../common/models.common.js');
+const logger = require('../utils/logger.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 
@@ -44,6 +45,11 @@ async function resolveSelectedGroup(user, session) {
 
   const stored = await findGroupSummary(user._selectedGroup);
   if (stored) return stored;
+  if (user._selectedGroup) {
+    // The stored group is gone: forget it, so the fallbacks below are not
+    // searched again on every request.
+    await Users.updateOne({ _id: user.id }, { $unset: { _selectedGroup: 1 } });
+  }
 
   const platform = await Groups.findOne({ isPlatform: true })
     .select('name')
@@ -61,21 +67,31 @@ async function resolveSelectedGroup(user, session) {
  * one value.
  */
 async function attachSelectedGroup(req, res, next) {
+  // The bundles and static files need no user.
+  if (!req.user || req.path.startsWith('/_nuxt/')) return next();
+  let selectedGroup = null;
   try {
-    if (req.user) {
-      req.user = {
-        ...req.user,
-        selectedGroup: await resolveSelectedGroup(req.user, req.session),
-      };
-    }
-    return next();
+    selectedGroup = await resolveSelectedGroup(req.user, req.session);
   } catch (error) {
-    return next(error);
+    // Like the session validation: log, and let the request go on without a
+    // selected group rather than fail every request of a super admin.
+    logger.error('[selected group] resolution failed:', error);
   }
+  req.user = { ...req.user, selectedGroup };
+  return next();
+}
+
+/**
+ * The bootstrap account's choice lives in the session, which a sign-out or a
+ * new sign-in keeps: both forget it.
+ */
+function forgetSessionSelection(req) {
+  if (req.session) delete req.session.selectedGroupId;
 }
 
 module.exports = {
   resolveSelectedGroup,
   findGroupSummary,
   attachSelectedGroup,
+  forgetSessionSelection,
 };

@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, SELECTED_GROUP, SELECT_GROUP, USER } from '~/store/user';
 import { SET_COLLAPSED } from '~/store/sidebar';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes';
 import { routeAfterGroupSwitch } from '~/helpers/route-after-group-switch';
 
@@ -20,6 +21,8 @@ export default {
     return {
       companies: [],
       loading: false,
+      // Bumped to redraw the input on the selected group after a refusal.
+      inputKey: 0,
     };
   },
   computed: {
@@ -72,7 +75,16 @@ export default {
     },
     async onChange(companyId) {
       if (!companyId || companyId === this.currentGroupId) return;
-      await this.$store.dispatch(`${USER}/${SELECT_GROUP}`, companyId);
+      try {
+        await this.$store.dispatch(`${USER}/${SELECT_GROUP}`, companyId);
+      } catch (error) {
+        this.inputKey += 1;
+        this.$store.commit(`${PAGE}/${SHOW_SNACKBAR}`, {
+          text: this.$t('settingsNav.selectionFailed'),
+          color: 'error',
+        });
+        return;
+      }
       const next = routeAfterGroupSwitch(this.$route.fullPath, companyId);
       if (next !== this.$route.fullPath) this.$router.push(next);
     },
@@ -104,6 +116,7 @@ export default {
     </v-tooltip>
     <v-autocomplete
       v-else
+      :key="inputKey"
       :value="currentGroupId"
       :items="options"
       :placeholder="$t('settingsNav.switchCompany')"
