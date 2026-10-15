@@ -148,6 +148,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // The server's checks, on the export the local ones just read. Their
   // results join the others when they come back, unless a newer run started.
   function runRemote(id, local, { silent = false } = {}) {
+    // The answer to the previous run would be dropped: aborted rather than
+    // waited for, it frees the server's turn for this one.
+    if (cancelRemote) cancelRemote.cancel();
     if (!resourcesUrl || !hasResources(local.resources)) {
       remoteStatus('idle');
       return Promise.resolve();
