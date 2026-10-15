@@ -133,6 +133,26 @@ describe('SendTestPanel', () => {
     console.error.mockRestore();
   });
 
+  it('says when the email cannot be exported, sends nothing, and lets the user try again', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { vm, el, panel } = await mountPanel({ status: 'done' });
+    vm.exportHTML.mockImplementation(() => {
+      throw new Error('export failed');
+    });
+    panel.recipients = 'a@b.co';
+    await Vue.nextTick();
+
+    submit(el);
+    await flush();
+    await Vue.nextTick();
+
+    expect(vm.exportHTML).toHaveBeenCalledTimes(1);
+    expect(axios.post).not.toHaveBeenCalled();
+    expect(vm.notifier.error).toHaveBeenCalledWith('send-test-error');
+    expect(el.querySelector('button[type="submit"]').disabled).toBe(false);
+    console.error.mockRestore();
+  });
+
   it('refuses to send to an invalid address, and says why', async () => {
     const { el, panel } = await mountPanel({ status: 'done' });
     panel.recipients = 'not an email';
