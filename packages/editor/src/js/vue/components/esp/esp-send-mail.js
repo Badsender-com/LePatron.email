@@ -240,7 +240,11 @@ const EspComponent = Vue.component('EspForm', {
           this.vm.notifier.success(this.vm.t(successText));
           // Judge the HTML that was sent rather than export the email again,
           // and never let the review stand in the way of the send confirmation.
-          if (this.vm.quality) this.vm.quality.review({ html: unprocessedHtml });
+          try {
+            if (this.vm.quality) this.vm.quality.review({ html: unprocessedHtml });
+          } catch (err) {
+            console.error('Quality review failed', err);
+          }
           this.closeModal();
         })
         .catch((error) => {
