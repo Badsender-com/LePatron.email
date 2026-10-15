@@ -25,6 +25,13 @@ function findingItems(findings, t) {
   });
 }
 
+// What a check with no finding says of itself.
+function checkDescription(check, t) {
+  if (check.status === 'passed') return t(check.passKey, check.passParams);
+  if (check.status === 'cancelled') return t('This check was cancelled');
+  return t('This check could not run');
+}
+
 /**
  * @param {Array} checks - checks of the engine
  * @param {Function} t - translation
@@ -36,12 +43,9 @@ function checkItems(checks, t) {
     .map((check) => ({
       id: `check:${check.ruleId}`,
       // A check that could not run is shown, never counted as passed.
-      severity: check.status === 'passed' ? 'success' : 'info',
+      severity: check.status === 'passed' ? 'success' : 'not-run',
       title: t(check.titleKey),
-      description:
-        check.status === 'passed'
-          ? t(check.passKey, check.passParams)
-          : t('This check could not run'),
+      description: checkDescription(check, t),
       category: t(CATEGORY_KEYS[check.category]),
       blockId: null,
       blockLabel: null,
@@ -49,4 +53,16 @@ function checkItems(checks, t) {
     }));
 }
 
-module.exports = { findingItems, checkItems };
+const pad = (n) => String(n).padStart(2, '0');
+
+/**
+ * The time of day a run happened, `HH:mm`: an absolute time stays true,
+ * where "just now" would have to be refreshed.
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatTime(date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+module.exports = { findingItems, checkItems, formatTime };

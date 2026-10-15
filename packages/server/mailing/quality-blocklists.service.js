@@ -38,38 +38,50 @@ function blocklistZones(
 
 // 127.0.0.1 is how URIBL and SURBL refuse a query, 127.255.255.x how Spamhaus
 // does: neither says anything about the domain.
+const isRefusal = (address) =>
+  address === '127.0.0.1' || /^127\.255\.255\./.test(address);
+
 function isListing(address) {
-  return (
-    /^127\./.test(address) &&
-    address !== '127.0.0.1' &&
-    !/^127\.255\.255\./.test(address)
-  );
+  return /^127\./.test(address) && !isRefusal(address);
 }
 
-function resolve4(name) {
-  const resolver = new dns.promises.Resolver({
-    timeout: DNS_TIMEOUT_MS,
-    tries: 1,
-  });
-  return resolver.resolve4(name);
+// The resolver's answers for a name the zone does not list.
+const NOT_LISTED = new Set(['ENOTFOUND', 'ENODATA']);
+
+async function askZone(domain, { name, zone }, lookup) {
+  try {
+    const addresses = await lookup(`${domain}.${zone}`);
+    if (addresses.some(isListing)) return { name, listed: true };
+    // A refusal, or an answer outside 127/8: the zone said nothing.
+    return { name, listed: false, failed: addresses.length > 0 };
+  } catch (error) {
+    if (NOT_LISTED.has(error.code)) return { name, listed: false };
+    // A timeout, a resolver down, SERVFAIL: not "not listed".
+    return { name, listed: false, failed: true };
+  }
 }
+
+// One resolver for the process: its sockets are reused across queries.
+const resolver = new dns.promises.Resolver({
+  timeout: DNS_TIMEOUT_MS,
+  tries: 1,
+});
+
+const resolve4 = (name) => resolver.resolve4(name);
 
 /**
- * @returns {Promise<string[]>} the names of the blocklists listing `domain`
+ * @returns {Promise<{ names: string[], checked: boolean }>} the names of the
+ *   blocklists listing `domain`; `checked` is false when a zone could not
+ *   answer, so that "listed by none" is not taken for "clean"
  */
 async function listedOn(domain, zones, lookup = resolve4) {
-  const names = await Promise.all(
-    zones.map(async ({ name, zone }) => {
-      try {
-        const addresses = await lookup(`${domain}.${zone}`);
-        return addresses.some(isListing) ? name : null;
-      } catch (e) {
-        // NXDOMAIN is the normal answer: not listed.
-        return null;
-      }
-    })
+  const answers = await Promise.all(
+    zones.map((entry) => askZone(domain, entry, lookup))
   );
-  return names.filter(Boolean);
+  return {
+    names: answers.filter((answer) => answer.listed).map(({ name }) => name),
+    checked: answers.every((answer) => !answer.failed),
+  };
 }
 
 // What the blocklists list: the registrable domain (brand.co.uk), not the host.

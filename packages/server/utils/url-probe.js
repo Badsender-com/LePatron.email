@@ -2,7 +2,9 @@
 
 const http = require('http');
 const https = require('https');
+const net = require('net');
 const fetch = require('node-fetch');
+const psl = require('psl');
 const {
   assertOutboundHostAllowed,
   guardedLookup,
@@ -35,7 +37,8 @@ const PROBE_FAILURES = Object.freeze({
   NOT_FOUND: 'not-found',
   // No answer in time: maybe slow, maybe down, maybe blocking robots.
   TIMEOUT: 'timeout',
-  // An address we refuse to reach (private network, bad scheme).
+  // An address we refuse to judge: a private network, a bad scheme, a name
+  // outside the public DNS.
   REFUSED: 'refused',
   // Too many redirects, a redirect without a target, a connection reset.
   UNREACHABLE: 'unreachable',
@@ -53,12 +56,34 @@ class ProbeError extends Error {
 // The resolver's answers for a name that does not exist.
 const NO_SUCH_NAME = new Set(['ENOTFOUND', 'ENODATA']);
 
-function failureOf(error) {
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^\[|\]$/g, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * "Not found" is said of a name under a public suffix only: it does not exist
+ * for anyone. A name outside the public DNS (`intranet`, `*.test`, `*.local`)
+ * gets the same answer whether the server's resolver knows it or not, so the
+ * answer never says what that resolver knows.
+ */
+function missingName(hostname) {
+  return new ProbeError(
+    !net.isIP(hostname) && psl.isValid(hostname)
+      ? PROBE_FAILURES.NOT_FOUND
+      : PROBE_FAILURES.REFUSED
+  );
+}
+
+function failureOf(error, hostname) {
   if (error instanceof ProbeError) return error;
   const code = error && error.code;
   // Only a name that does not exist: EAI_AGAIN is the resolver failing for a
   // moment, and must not call a link broken.
-  if (NO_SUCH_NAME.has(code)) return new ProbeError(PROBE_FAILURES.NOT_FOUND);
+  if (NO_SUCH_NAME.has(code)) return missingName(hostname);
   if (
     code === BLOCKED_HOST_ERROR_CODE ||
     code === OUTBOUND_HOST_ERRORS.PRIVATE_ADDRESS ||
@@ -70,11 +95,9 @@ function failureOf(error) {
   if (code === OUTBOUND_HOST_ERRORS.DNS_FAILED) {
     // No cause: the name resolved to no address at all.
     const cause = error.cause && error.cause.code;
-    return new ProbeError(
-      !cause || NO_SUCH_NAME.has(cause)
-        ? PROBE_FAILURES.NOT_FOUND
-        : PROBE_FAILURES.UNREACHABLE
-    );
+    return !cause || NO_SUCH_NAME.has(cause)
+      ? missingName(hostname)
+      : new ProbeError(PROBE_FAILURES.UNREACHABLE);
   }
   if (error && error.name === 'FetchError') {
     if (error.type === 'request-timeout' || error.type === 'body-timeout') {
@@ -108,6 +131,35 @@ function dropBody(response) {
   }
 }
 
+// node-fetch's `timeout` is two timers, one for the headers and one for the
+// body, each as long as the time left: a hop could last twice that. Both
+// steps are held to the deadline here, and a response that arrives late is
+// closed, as is a body left half-read.
+async function fetchBeforeDeadline(fetchImpl, url, options, deadline) {
+  const fetching = fetchImpl(url, options);
+  try {
+    return await beforeDeadline(fetching, deadline);
+  } catch (error) {
+    fetching.then(dropBody, () => {});
+    throw error;
+  }
+}
+
+async function readBeforeDeadline(response, deadline) {
+  try {
+    return await beforeDeadline(response.buffer(), deadline);
+  } catch (error) {
+    dropBody(response);
+    throw error;
+  }
+}
+
+const contentLengthOf = (response) => {
+  const header = response.headers.get('content-length');
+  const length = header === null ? NaN : Number(header);
+  return Number.isInteger(length) && length >= 0 ? length : null;
+};
+
 /**
  * GETs a URL, following redirects, every hop checked by the SSRF guard.
  *
@@ -120,6 +172,9 @@ function dropBody(response) {
  *   port than 80 or 443, redirects included: a redirector must not turn the
  *   probe into a port scanner of public hosts
  * @param {number} [options.maxBytes] - ceiling on the body read
+ * @param {Function} [options.acceptBody] - asked `{ contentLength }` (null
+ *   when the server does not say) before a body is read; `false` leaves the
+ *   body unread (`body: null`)
  * @param {Function} [options.fetchImpl] - injectable for tests
  * @returns {Promise<{ status: number, url: string, contentType: string|null,
  *   body: Buffer|null }>}
@@ -133,6 +188,7 @@ async function probeUrl(
     readBody = false,
     defaultPortsOnly = false,
     maxBytes = 0,
+    acceptBody = () => true,
     fetchImpl = fetch,
   } = {}
 ) {
@@ -146,15 +202,20 @@ async function probeUrl(
         throw new ProbeError(PROBE_FAILURES.UNREACHABLE);
       }
       await beforeDeadline(assertOutboundHostAllowed(currentUrl), deadline);
-      const response = await fetchImpl(currentUrl, {
-        method: 'GET',
-        headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
-        agent: agentFor,
-        redirect: 'manual',
-        compress: false,
-        size: maxBytes,
-        timeout: Math.max(1, deadline - Date.now()),
-      });
+      const response = await fetchBeforeDeadline(
+        fetchImpl,
+        currentUrl,
+        {
+          method: 'GET',
+          headers: { 'User-Agent': USER_AGENT, Accept: '*/*' },
+          agent: agentFor,
+          redirect: 'manual',
+          compress: false,
+          size: maxBytes,
+          timeout: Math.max(1, deadline - Date.now()),
+        },
+        deadline
+      );
       if (isRedirect(response.status)) {
         dropBody(response);
         const location = response.headers.get('location');
@@ -170,13 +231,23 @@ async function probeUrl(
         contentType: response.headers.get('content-type'),
         body: null,
       };
-      if (readBody && response.ok) result.body = await response.buffer();
+      const wanted =
+        readBody &&
+        response.ok &&
+        acceptBody({ contentLength: contentLengthOf(response) });
+      if (wanted) result.body = await readBeforeDeadline(response, deadline);
       else dropBody(response);
       return result;
     }
   } catch (error) {
-    throw failureOf(error);
+    throw failureOf(error, hostnameOf(currentUrl));
   }
 }
 
-module.exports = { probeUrl, ProbeError, PROBE_FAILURES, USER_AGENT };
+module.exports = {
+  probeUrl,
+  contentLengthOf,
+  ProbeError,
+  PROBE_FAILURES,
+  USER_AGENT,
+};

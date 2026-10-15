@@ -21,8 +21,7 @@ module.exports = {
  * @apiParam {string} mailingId
  *
  * @apiParam (Body) {String} fingerprint the finding's fingerprint, as the
- *   editor's quality engine computes it
- * @apiParam (Body) {String} [ruleId] the check that raised it, kept for audit
+ *   editor's quality engine computes it (the check that raised it opens it)
  * @apiParam (Body) {Boolean} ignored `true` to ignore it, `false` to stop
  *
  * @apiSuccess {String[]} qualityIgnores the fingerprints ignored on the email
@@ -38,16 +37,20 @@ async function updateQualityIgnores(req, res) {
   // Validated before any read: a malformed request costs no database access.
   const change = mailingQualityService.validateIgnorePayload(req.body);
 
-  // Tenant-scoped read, and a 404 rather than a CastError on a malformed id.
-  const mailing = await mailingService.findOneForUser(mailingId, user);
+  // Tenant-scoped read of what the right needs (never the content), and a
+  // 404 rather than a CastError on a malformed id.
+  const mailing = await mailingService.findOneForUser(
+    mailingId,
+    user,
+    mailingQualityService.IGNORE_PROJECTION
+  );
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  const qualityIgnores = mailingQualityService.applyIgnore(
-    mailing,
+  const qualityIgnores = await mailingQualityService.setIgnored(
+    mailing._id,
     change,
     user
   );
-  await mailing.save();
 
   // Only what this endpoint owns: never `data` or `previewHtml`.
   res.json({ qualityIgnores });
@@ -70,14 +73,19 @@ async function updateQualityIgnores(req, res) {
  *   httpStatus?, reason? }`
  * @apiSuccess {Object} images by address: `{ state: ok|unreachable|unverifiable,
  *   bytes, width, height, type, atLeast? }`, as the export will ship them
- * @apiSuccess {Object} blocklists `{ enabled, listed: { domain: [names] } }`
- * @apiSuccess {Object} webRisk `{ enabled, threats: { url: [threat types] } }`,
- *   Google Web Risk, where QC_WEB_RISK_API_KEY is set
+ * @apiSuccess {Object} blocklists `{ enabled, listed: { domain: [names] },
+ *   unchecked: [domains] }`, where QC_DOMAIN_BLOCKLISTS is set
+ * @apiSuccess {Object} webRisk `{ enabled, threats: { url: [threat types] },
+ *   unchecked: [urls] }`, Google Web Risk, where QC_WEB_RISK_API_KEY is set.
+ *   `unchecked` lists what the third party could not answer for: a check
+ *   that answered for nothing has not run.
  *
  * @apiDescription Reading the email is enough: nothing is stored. One run at a
- *   time per user (429 `QUALITY_CHECK_RUNNING`) and 20 per 10 minutes (429
+ *   time per user, a second one waiting its turn (a third is a 429
+ *   `QUALITY_CHECK_RUNNING`), and 20 per 10 minutes (429
  *   `QUALITY_CHECKS_TOO_FREQUENT`); anything else in the body, or too many
- *   addresses, is a 422 `INVALID_QUALITY_RESOURCES`.
+ *   addresses, is a 422 `INVALID_QUALITY_RESOURCES`. A request the client
+ *   closes before the answer fetches nothing more.
  */
 async function checkResources(req, res) {
   const { user } = req;
@@ -87,12 +95,23 @@ async function checkResources(req, res) {
   // Tenant-scoped: only someone who can open the email has it checked.
   const mailing = await mailingService.findOneForUser(mailingId, user);
 
+  // The editor cancels a run it replaced: the socket closes, and the run
+  // stops fetching. Watched on the response: since Node 16 the request's
+  // own 'close' fires as soon as its body is read, long before the client
+  // could go away. A response closed before it was finished is the client
+  // gone.
+  const caller = new AbortController();
+  res.on('close', () => {
+    if (!res.writableFinished) caller.abort();
+  });
+
   const result = await qualityResourcesService.checkResources(resources, {
     userKey: String(user.id || user._id || 'admin'),
     cacheScope: String(mailing._company || 'admin'),
-    // The editor builds image URLs from the page it runs on; the configured
-    // host covers a proxy that rewrites Host.
-    ownHosts: [req.get('host'), config.host].filter(Boolean),
+    // The editor builds image URLs from the configured host (mosaico-editor
+    // .pug), never from the page's: what the request names is not consulted.
+    ownHosts: [config.host].filter(Boolean),
+    signal: caller.signal,
   });
   res.json(result);
 }

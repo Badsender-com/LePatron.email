@@ -10,6 +10,7 @@ const Vue = require('vue/dist/vue.common');
  * - value: Object { label, code } - Selected option
  * - options: Array<{ label, code }> - Available options
  * - placeholder: String - Placeholder text when no selection
+ * - labelledby: String - id of the visible label, for the <select>'s name
  *
  * Events:
  * - input: Emits selected option object for v-model
@@ -28,6 +29,10 @@ const SimpleSelect = Vue.component('SimpleSelect', {
       type: String,
       default: '',
     },
+    labelledby: {
+      type: String,
+      default: null,
+    },
   },
   computed: {
     selectedCode() {
@@ -41,7 +46,9 @@ const SimpleSelect = Vue.component('SimpleSelect', {
         this.$emit('input', null);
         return;
       }
-      const selectedOption = this.options.find((opt) => String(opt.code) === code);
+      const selectedOption = this.options.find(
+        (opt) => String(opt.code) === code
+      );
       this.$emit('input', selectedOption || null);
     },
   },
@@ -51,6 +58,7 @@ const SimpleSelect = Vue.component('SimpleSelect', {
         :value="selectedCode"
         @change="handleChange"
         class="simple-select__input"
+        :aria-labelledby="labelledby"
       >
         <option value="" disabled>{{ placeholder }}</option>
         <option

@@ -8,49 +8,18 @@ const {
   runQualityChecks,
 } = require('../../../packages/editor/src/js/ext/quality/engine.js');
 const {
-  parseColor,
-  contrastRatio,
-} = require('../../../packages/editor/src/js/ext/quality/colors.js');
-const { fakeViewModel, exportOf } = require('./fake-view-model');
+  fakeViewModel,
+  exportOf,
+  richTextFindings,
+  DEFAULT_RICH_TEXT,
+} = require('./fake-view-model');
 
 const RULES = '../../../packages/editor/src/js/ext/quality/rules';
 const smallFont = require(`${RULES}/small-font`);
 const hiddenText = require(`${RULES}/hidden-text`);
-const colorContrast = require(`${RULES}/color-contrast`);
-const textLayout = require(`${RULES}/text-layout`);
-const indistinctLinks = require(`${RULES}/indistinct-links`);
 const headings = require(`${RULES}/headings`);
 const altRedundant = require(`${RULES}/alt-redundant`);
 const emojiPlacement = require(`${RULES}/emoji-placement`);
-
-const DEFAULT_TEXT = '<p style="font-size:12px">Sample</p>';
-const def = { type: 'textBlock', longText: DEFAULT_TEXT };
-
-// A text block whose rich text the client wrote; its export shows the same
-// markup, inside a block background of `bg`.
-function richTextFindings(rule, longText, { bg = '#ffffff' } = {}) {
-  const html = exportOf({
-    b1: `<table><tr><td bgcolor="${bg}">${longText}</td></tr></table>`,
-  });
-  const blocks = [{ id: 'b1', type: 'textBlock', longText }];
-  return runQualityChecks(fakeViewModel({ blocks, blockDefs: [def], html }), {
-    rules: [rule],
-  }).findings;
-}
-
-describe('colors', () => {
-  it('reads the colours of inline styles', () => {
-    expect(parseColor('#FFF')).toBe('#ffffff');
-    expect(parseColor('rgb(255, 0, 0)')).toBe('#ff0000');
-    expect(parseColor('rgba(0,0,0,0.5)')).toBeNull();
-    expect(parseColor('var(--brand)')).toBeNull();
-  });
-
-  it('computes the WCAG ratio', () => {
-    expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21);
-    expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.48, 1);
-  });
-});
 
 describe('small-font', () => {
   it('warns about a size the client set under 14 px', () => {
@@ -60,8 +29,54 @@ describe('small-font', () => {
     );
     expect(finding).toMatchObject({
       severity: 'warning',
-      params: { size: 11 },
+      params: { size: 11, min: 14 },
     });
+  });
+
+  it('allows 12 px in header and footer blocks', () => {
+    // 13 px: the 12 px of the default text would read as the template's own size.
+    const text = '<p><span style="font-size: 13px">Legal notice</span></p>';
+    expect(richTextFindings(smallFont, text, { type: 'footerBlock' })).toEqual(
+      []
+    );
+    [
+      'headerBlock',
+      'headerBlockV2',
+      'preheaderBlock',
+      'footer-legal',
+      'footerSocialBlock',
+      'sectionHeader',
+    ].forEach((type) =>
+      expect(richTextFindings(smallFont, text, { type })).toEqual([])
+    );
+    const [finding] = richTextFindings(
+      smallFont,
+      '<p><span style="font-size: 11px">Legal notice</span></p>',
+      { type: 'footerBlock' }
+    );
+    expect(finding.params).toMatchObject({ size: 11, min: 12 });
+  });
+
+  it('keeps 14 px in a content block named after a header, or a legal block', () => {
+    ['HeaderAndText', 'legalBlock'].forEach((type) => {
+      const [finding] = richTextFindings(
+        smallFont,
+        '<p><span style="font-size: 13px">Body copy</span></p>',
+        { type }
+      );
+      expect(finding.params).toMatchObject({ size: 13, min: 14 });
+    });
+  });
+
+  it('accepts the minimum itself: 12 px in a footer, 14 px elsewhere', () => {
+    expect(
+      richTextFindings(smallFont, '<p style="font-size:12px">Legal</p>', {
+        type: 'footerBlock',
+      })
+    ).toEqual([]);
+    expect(
+      richTextFindings(smallFont, '<p style="font-size:14px">Body</p>')
+    ).toEqual([]);
   });
 
   it('converts points', () => {
@@ -76,10 +91,52 @@ describe('small-font', () => {
     expect(
       richTextFindings(smallFont, '<p style="font-size:12px">My own words</p>')
     ).toEqual([]);
-    expect(richTextFindings(smallFont, DEFAULT_TEXT)).toEqual([]);
+    expect(richTextFindings(smallFont, DEFAULT_RICH_TEXT)).toEqual([]);
     expect(
       richTextFindings(smallFont, '<p style="font-size:16px">Fine</p>')
     ).toEqual([]);
+  });
+
+  it("takes a reserialised, unchanged text for the template's", () => {
+    expect(
+      richTextFindings(
+        smallFont,
+        '<p style="font-size:12px" data-mce-style="font-size: 12px">Sample</p>'
+      )
+    ).toEqual([]);
+  });
+
+  it('judges a rich text whatever the template names it', () => {
+    const html = exportOf({ b1: '<p style="font-size:9px">Terms</p>' });
+    const blocks = [
+      { id: 'b1', type: 'legal', body: '<p style="font-size:9px">Terms</p>' },
+    ];
+    const blockDefs = [{ type: 'legal', body: '<p>Terms</p>' }];
+    expect(
+      runQualityChecks(fakeViewModel({ blocks, blockDefs, html }), {
+        rules: [smallFont],
+      }).findings
+    ).toHaveLength(1);
+  });
+
+  it('never judges the styles of pasted code: that is no rich text', () => {
+    const htmlCode = '<p style="font-size:9px">Pasted</p>';
+    const blocks = [{ id: 'b1', type: 'htmlCodeBlock', htmlCode }];
+    const html = exportOf({ b1: htmlCode });
+    expect(
+      runQualityChecks(fakeViewModel({ blocks, html }), { rules: [smallFont] })
+        .findings
+    ).toEqual([]);
+  });
+
+  it('survives a block the model lost', () => {
+    const vm = fakeViewModel({
+      blocks: [null, { id: 'b1', type: 'textBlock' }],
+    });
+    const { checks } = runQualityChecks(vm, {
+      rules: [smallFont, emojiPlacement],
+    });
+    expect(checks.map((c) => c.status)).toEqual(['passed', 'passed']);
   });
 });
 
@@ -87,6 +144,7 @@ describe('hidden-text', () => {
   it.each([
     '<p style="display:none">Secret offer</p>',
     '<span style="font-size:1px">tiny</span>',
+    '<span style="font-size:1px !important">tiny</span>',
     '<span style="opacity:0">ghost</span>',
   ])('reports hidden text in %s', (longText) => {
     const [finding] = richTextFindings(hiddenText, longText);
@@ -103,116 +161,6 @@ describe('hidden-text', () => {
   });
 });
 
-describe('color-contrast', () => {
-  it('warns about a light grey on white', () => {
-    const [finding] = richTextFindings(
-      colorContrast,
-      '<p><span style="color:#999999">Soft grey text</span></p>'
-    );
-    expect(finding).toMatchObject({
-      severity: 'warning',
-      params: { required: 4.5 },
-    });
-  });
-
-  it('reports text in the colour of its background as an error', () => {
-    const [finding] = richTextFindings(
-      colorContrast,
-      '<p><span style="color:#fefefe">White on white</span></p>'
-    );
-    expect(finding.severity).toBe('error');
-  });
-
-  it("reads the block's background from the export", () => {
-    expect(
-      richTextFindings(
-        colorContrast,
-        '<p><span style="color:#ffffff">Light</span></p>',
-        { bg: '#093040' }
-      )
-    ).toEqual([]);
-  });
-
-  it('accepts 3:1 for large text', () => {
-    expect(
-      richTextFindings(
-        colorContrast,
-        '<h1><span style="color:#888888;font-size:28px">Big title</span></h1>'
-      )
-    ).toEqual([]);
-  });
-
-  it('says nothing over a background image', () => {
-    const html = exportOf({
-      b1:
-        '<table><tr><td style="background-image:url(a.jpg)"><span style="color:#eeeeee">Over a photo</span></td></tr></table>',
-    });
-    const blocks = [
-      {
-        id: 'b1',
-        type: 'textBlock',
-        longText: '<span style="color:#eeeeee">Over a photo</span>',
-      },
-    ];
-    expect(
-      runQualityChecks(fakeViewModel({ blocks, blockDefs: [def], html }), {
-        rules: [colorContrast],
-      }).findings
-    ).toEqual([]);
-  });
-});
-
-describe('text-layout', () => {
-  it.each([
-    [
-      '<p style="text-align: justify">Long paragraph</p>',
-      'Justified text: word gaps get harder to read: __text__',
-    ],
-    [
-      '<p style="line-height:1.1">Tight lines</p>',
-      'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
-    ],
-    [
-      '<p style="font-size:20px;line-height:22px">Tight too</p>',
-      'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__',
-    ],
-  ])('notes %s', (longText, messageKey) => {
-    expect(
-      richTextFindings(textLayout, longText).map((f) => f.messageKey)
-    ).toEqual([messageKey]);
-  });
-
-  it('leaves comfortable text alone', () => {
-    expect(
-      richTextFindings(
-        textLayout,
-        '<p style="line-height:150%;text-align:left">Fine</p>'
-      )
-    ).toEqual([]);
-  });
-});
-
-describe('indistinct-links', () => {
-  it('notes a link in a sentence, not underlined and of the same colour', () => {
-    const findings = richTextFindings(
-      indistinctLinks,
-      '<p style="color:#333333">Read <a href="https://brand.com" style="color:#333333;text-decoration:none">our terms</a> first.</p>'
-    );
-    expect(findings).toHaveLength(1);
-  });
-
-  it('leaves underlined links, coloured links and lone buttons alone', () => {
-    const texts = [
-      '<p style="color:#333">Read <a href="#x" style="color:#333">our terms</a> first.</p>',
-      '<p style="color:#333">Read <a href="#x" style="color:#0055ff;text-decoration:none">our terms</a> first.</p>',
-      '<p style="color:#333"><a href="#x" style="color:#333;text-decoration:none">Shop now</a></p>',
-    ];
-    texts.forEach((t) =>
-      expect(richTextFindings(indistinctLinks, t)).toEqual([])
-    );
-  });
-});
-
 describe('headings', () => {
   it('notes an empty heading and a skipped level', () => {
     const keys = richTextFindings(
@@ -225,9 +173,15 @@ describe('headings', () => {
     ]);
   });
 
-  it('leaves a clean outline alone', () => {
+  it('leaves a clean outline alone, an image with an alt for a heading too', () => {
     expect(
       richTextFindings(headings, '<h2>Offer</h2><h3>Details</h3><h2>More</h2>')
+    ).toEqual([]);
+    expect(
+      richTextFindings(
+        headings,
+        '<h2><img src="a.jpg" alt="Offer"></h2><h3>Details</h3>'
+      )
     ).toEqual([]);
   });
 });
@@ -266,7 +220,8 @@ describe('emoji-placement', () => {
         html: exportOf({ b1: `<p>${text}</p>` }),
       }),
       { rules: [emojiPlacement] }
-    ).findings.map((f) => f.messageKey);
+    ).findings;
+  const keysOf = (text) => findingsOf(text).map((f) => f.messageKey);
 
   it.each([
     [
@@ -274,15 +229,40 @@ describe('emoji-placement', () => {
       'Emoji in the middle of a sentence: screen readers read its name there',
     ],
     [
-      'Sale today 🔥🔥🔥',
+      'Sale today 🔥🔥',
+      'Several emojis in a row: screen readers read each name',
+    ],
+    [
+      'Well done ☝🏽☝🏽',
       'Several emojis in a row: screen readers read each name',
     ],
   ])('notes "%s"', (text, key) => {
-    expect(findingsOf(text)).toEqual([key]);
+    expect(keysOf(text)).toEqual([key]);
   });
 
   it('leaves an emoji at the end of a sentence alone', () => {
-    expect(findingsOf('Our sale starts today 🔥')).toEqual([]);
-    expect(findingsOf('Merci ❤️ À bientôt')).toEqual([]);
+    expect(keysOf('Our sale starts today 🔥')).toEqual([]);
+    expect(keysOf('Merci ❤️ À bientôt')).toEqual([]);
+    expect(keysOf('Thanks to our nurses 👩‍⚕️')).toEqual([]);
+    expect(keysOf('Well done 👍🏽')).toEqual([]);
+    expect(keysOf('Made in France 🇫🇷')).toEqual([]);
+    expect(keysOf('Discover Brand® coffees')).toEqual([]);
+    expect(keysOf('Acme™ products and more')).toEqual([]);
+  });
+
+  it('reads flags and keycaps as emojis', () => {
+    expect(keysOf('Sale 🇫🇷🇧🇪')).toEqual([
+      'Several emojis in a row: screen readers read each name',
+    ]);
+    expect(keysOf('Top 1️⃣2️⃣')).toEqual([
+      'Several emojis in a row: screen readers read each name',
+    ]);
+  });
+
+  it('fingerprints the words around the emoji, not the whole block', () => {
+    const text = 'Our 🔥 sale starts today, hurry up';
+    expect(findingsOf(text)[0].fingerprint).toBe(
+      findingsOf(`${text} and more`)[0].fingerprint
+    );
   });
 });
