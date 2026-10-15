@@ -92,6 +92,9 @@ const UserSchema = Schema(
       select: false,
     },
     lastActivity: { type: Date, default: Date.now },
+    // The group a super admin works in (ADR 0002, amended): resolved on every
+    // request by account/selected-group.js, fallbacks included.
+    _selectedGroup: { type: ObjectId, ref: GroupModel },
     localStorage: {
       type: Map,
       of: Schema.Types.Mixed,

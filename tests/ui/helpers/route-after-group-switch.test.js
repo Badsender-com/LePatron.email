@@ -1,3 +1,5 @@
+import { routeAfterGroupSwitch } from '~/helpers/route-after-group-switch.js';
+
 // Where a super admin lands after choosing another group in the selector
 // (ADR 0002, amended). In the settings, it stays on the same page of the new
 // group, unless the page belongs to a resource of the previous group; in a
@@ -9,20 +11,7 @@
 const PREVIOUS = '507f1f77bcf86cd799439a01';
 const NEXT = '507f1f77bcf86cd799439b01';
 
-let routeAfterGroupSwitch;
-
-// Required in the blocks, not at the top of the file: the helper doesn't exist
-// until #1274 ships it, and a top-level import would break the suite.
-function loadHelper() {
-  ({
-    routeAfterGroupSwitch,
-  } = require('~/helpers/route-after-group-switch.js'));
-}
-
-// Turned on by #1274 (the selected group)
-describe.skip('switching group in the settings', () => {
-  beforeAll(loadHelper);
-
+describe('switching group in the settings', () => {
   it.each([
     ['general'],
     ['templates'],
@@ -84,8 +73,6 @@ describe.skip('switching group in the settings', () => {
 
 // Turned on by #1275 (super admins in the modules of their selected group)
 describe.skip('switching group in a module', () => {
-  beforeAll(loadHelper);
-
   it.each([
     ['/mailings'],
     ['/mailings?wid=507f1f77bcf86cd799439011'],

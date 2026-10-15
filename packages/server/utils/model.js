@@ -6,6 +6,7 @@ const SPACE_TYPE = require('../constant/space-type');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
+  isObjectIdString,
   trimString,
   normalizeString,
   isFromGroup,
@@ -15,6 +16,13 @@ module.exports = {
   validatePaginationJSON,
   validateFiltersJSON,
 };
+
+// A 24-hex-digit id, as the routes receive it. Mongoose alone also accepts any
+// 12-character string, and lets "undefined" reach a cast that fails as a
+// server error.
+function isObjectIdString(value) {
+  return typeof value === 'string' && /^[0-9a-f]{24}$/i.test(value);
+}
 
 // normalize string to have a better ordering
 function normalizeString(string) {

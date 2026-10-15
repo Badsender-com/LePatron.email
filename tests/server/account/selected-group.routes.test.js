@@ -35,6 +35,7 @@ const request = require('supertest');
 const {
   __store: store,
 } = require('../../../packages/server/common/models.common.js');
+const selectedGroupRouter = require('../../../packages/server/account/selected-group.routes.js');
 const {
   ALICE,
   ERIN,
@@ -67,16 +68,7 @@ function actor(id) {
   return actorFrom(store.userRecord(id));
 }
 
-// Turned on by #1274 (the selected group)
-describe.skip('the selected group endpoint', () => {
-  let selectedGroupRouter;
-
-  beforeAll(() => {
-    // Required here, not at the top of the file: the router doesn't exist
-    // until #1274 ships it, and a top-level require would break the suite.
-    selectedGroupRouter = require('../../../packages/server/account/selected-group.routes.js');
-  });
-
+describe('the selected group endpoint', () => {
   // One session per test, shared by its requests, like a browser's cookie.
   let session;
 

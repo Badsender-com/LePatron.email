@@ -34,6 +34,10 @@ const {
   __store: store,
 } = require('../../../packages/server/common/models.common.js');
 const {
+  attachSelectedGroup,
+} = require('../../../packages/server/account/selected-group.js');
+const selectedGroupRouter = require('../../../packages/server/account/selected-group.routes.js');
+const {
   ALICE,
   ERIN,
   FRANK,
@@ -64,20 +68,7 @@ function actor(id) {
   return actorFrom(store.userRecord(id));
 }
 
-// Turned on by #1274 (the selected group)
-describe.skip('the selected group on every request', () => {
-  let attachSelectedGroup;
-  let selectedGroupRouter;
-
-  beforeAll(() => {
-    // Required here, not at the top of the file: the modules don't exist
-    // until #1274 ships them, and a top-level require would break the suite.
-    ({
-      attachSelectedGroup,
-    } = require('../../../packages/server/account/selected-group.js'));
-    selectedGroupRouter = require('../../../packages/server/account/selected-group.routes.js');
-  });
-
+describe('the selected group on every request', () => {
   let session;
 
   // An app whose probe route answers the selected group the request carries.
