@@ -24,7 +24,13 @@
 import { Settings, HelpCircle, LogOut } from 'lucide-vue';
 import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import { USER, IS_ADMIN, IS_GROUP_ADMIN, GROUP } from '~/store/user';
+import {
+  GROUP,
+  IS_ADMIN,
+  IS_GROUP_ADMIN,
+  SELECTED_GROUP,
+  USER,
+} from '~/store/user';
 
 const ICON_MAP = {
   Settings,
@@ -48,6 +54,7 @@ export default {
   computed: {
     ...mapGetters(USER, {
       userGroup: GROUP,
+      selectedGroup: SELECTED_GROUP,
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
@@ -66,8 +73,13 @@ export default {
       });
     },
 
-    groupId() {
-      return this.userGroup?._id || this.userGroup?.id;
+    // The settings of the selected group (ADR 0002, amended): a super admin's
+    // choice, anyone else's own group. The bootstrap account before it chooses
+    // a group has none, and opens the groups list instead.
+    settingsRoute() {
+      const groupId =
+        this.selectedGroup?.id || this.userGroup?._id || this.userGroup?.id;
+      return groupId ? `/groups/${groupId}/settings/general` : '/groups';
     },
   },
   methods: {
@@ -88,9 +100,7 @@ export default {
     handleClick(item) {
       if (item.route) {
         const route =
-          item.route === '/groups'
-            ? `/groups/${this.groupId}/settings/general`
-            : item.route;
+          item.route === '/groups' ? this.settingsRoute : item.route;
         this.$router.push(route);
       } else if (item.action === 'openHelp') {
         this.$emit('open-help');

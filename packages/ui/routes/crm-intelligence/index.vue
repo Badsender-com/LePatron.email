@@ -7,7 +7,7 @@ import {
   getCrmIntelligenceEmbedUrl,
 } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
-import { IS_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, IS_BOOTSTRAP_ACCOUNT, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
@@ -52,7 +52,9 @@ export default {
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER, sidebarModule: 'crm-intelligence' },
   middleware({ store, redirect }) {
-    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+    // The bootstrap account stays in the settings; a super admin works in the
+    // modules of its selected group (ADR 0002, amended).
+    if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
       redirect('/groups');
     }
   },
@@ -125,6 +127,12 @@ export default {
     }),
   },
   watch: {
+    // A new selected group shows its own dashboards (ADR 0002, amended).
+    'userInfo.selectedGroup.id'(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.reloadForGroup();
+      }
+    },
     '$route.query.dashboardId': {
       immediate: true,
       handler(dashboardId) {
@@ -157,6 +165,23 @@ export default {
 
     onScreenshotError() {
       this.screenshotAvailable = false;
+    },
+
+    async reloadForGroup() {
+      this.selectedDashboard = null;
+      this.embedUrl = null;
+      try {
+        this.status = await this.$axios.$get(getCrmIntelligenceStatus());
+        this.dashboards =
+          this.status.enabled && this.status.configured
+            ? await this.$axios.$get(getCrmIntelligenceDashboards())
+            : [];
+      } catch (err) {
+        this.dashboards = [];
+      }
+      if (this.isEnabled && this.dashboards.length > 0) {
+        this.selectDashboard(this.dashboards[0]);
+      }
     },
 
     async selectDashboard(dashboard) {

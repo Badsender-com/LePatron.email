@@ -49,7 +49,13 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
+import {
+  GROUP,
+  IS_ADMIN,
+  IS_GROUP_ADMIN,
+  SELECTED_GROUP,
+  USER,
+} from '~/store/user';
 import { Shield, Sparkles, FlaskConical, UserCog } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
@@ -72,15 +78,13 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
       group: GROUP,
-    }),
-    ...mapGetters('sidebar', {
-      lastGroupId: 'lastGroupId',
+      selectedGroup: SELECTED_GROUP,
     }),
 
     groupId() {
       return (
         this.$route.params.groupId ||
-        this.lastGroupId ||
+        this.selectedGroup?.id ||
         this.group?._id ||
         this.group?.id ||
         null

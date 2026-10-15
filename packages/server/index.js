@@ -29,6 +29,11 @@ const profileRouter = require('./profile/profile.routes');
 const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
+const selectedGroupRouter = require('./account/selected-group.routes');
+const {
+  attachSelectedGroup,
+  forgetSessionSelection,
+} = require('./account/selected-group.js');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
@@ -257,6 +262,10 @@ if (cluster.isMaster) {
   // Session validation middleware (checks for session replacement)
   app.use(sessionValidationMiddleware());
 
+  // The selected group on the request's user (ADR 0002, amended), for the
+  // routes and for the first server-rendered page.
+  app.use(attachSelectedGroup);
+
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
@@ -293,6 +302,7 @@ if (cluster.isMaster) {
   );
 
   app.get('/account/logout', (req, res) => {
+    forgetSessionSelection(req);
     req.logout();
     res.redirect('/account/login');
   });
@@ -310,6 +320,7 @@ if (cluster.isMaster) {
   app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
+  app.use('/api/users/me/selected-group', selectedGroupRouter);
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
   app.use('/api/emails-groups', EmailGroupRouter);

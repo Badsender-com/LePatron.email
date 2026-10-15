@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
-import { USER, USER_SET } from '~/store/user';
+import { IS_BOOTSTRAP_ACCOUNT, USER, USER_SET } from '~/store/user';
 
 export default {
   name: 'BsPageLogin',
@@ -123,8 +123,10 @@ export default {
           // Use action to fetch complete group data with module flags
           await this.$store.dispatch(`${USER}/${USER_SET}`, user);
 
-          // Redirect to home page, which will handle routing to the first enabled module
-          if (user.isAdmin) {
+          // Redirect to home page, which will handle routing to the first
+          // enabled module; the bootstrap account, which has no role, stays
+          // in the settings (ADR 0002, amended).
+          if (this.$store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
             await $router.push('/groups');
           } else {
             await $router.push('/');

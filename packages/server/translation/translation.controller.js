@@ -7,6 +7,7 @@ const translationJobs = require('./translation-jobs');
 const { processTranslationAsync } = require('./translation-job-runner.js');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const { selectedGroupIdOf } = require('../account/request-scope.js');
 
 // TODO(security): /translation/block, /translation/text and
 // /mailings/:id/duplicate-translate forward arbitrary user payloads to the
@@ -144,7 +145,8 @@ async function translateText(req, res) {
   const { user, body } = req;
   const { text, targetLanguage, sourceLanguage = 'auto' } = body;
 
-  const groupId = user.group && user.group.id;
+  // The selected group: a super admin's choice, anyone else's own group.
+  const groupId = selectedGroupIdOf(user);
 
   const translatedText = await translationService.translateText({
     groupId,
@@ -180,7 +182,8 @@ async function translateBlock(req, res) {
     throw createError(400, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
   }
 
-  const groupId = user.group && user.group.id;
+  // The selected group: a super admin's choice, anyone else's own group.
+  const groupId = selectedGroupIdOf(user);
 
   const translatedBlock = await translationService.translateBlockContent({
     groupId,
@@ -205,7 +208,8 @@ async function translateBlock(req, res) {
  */
 async function getLanguages(req, res) {
   const { user } = req;
-  const groupId = user.group && user.group.id;
+  // The selected group: a super admin's choice, anyone else's own group.
+  const groupId = selectedGroupIdOf(user);
 
   const languageConfig = await translationService.getAvailableLanguages({
     groupId,

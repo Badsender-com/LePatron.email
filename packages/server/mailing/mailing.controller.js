@@ -36,6 +36,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const { listingGroupIdOf } = require('../account/request-scope.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -566,7 +567,9 @@ async function updateMosaico(req, res) {
 
 async function bulkUpdate(req, res) {
   const { items, tags: tagsChanges = {} } = req.body;
-  const { id: companyId } = req.user._company;
+  // The mailings of the list on screen: the selected group's for a super
+  // admin, the user's own group's for anyone else (ADR 0002, amended).
+  const companyId = listingGroupIdOf(req.user);
   const hadId = Array.isArray(items) && items.length;
   const hasTagsChanges =
     Array.isArray(tagsChanges.added) && Array.isArray(tagsChanges.removed);
@@ -598,9 +601,10 @@ async function bulkUpdate(req, res) {
     );
   }
 
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
+  const mailingQuery = {
     _id: { $in: items.map(mongoose.Types.ObjectId) },
-  });
+    _company: mongoose.Types.ObjectId(companyId),
+  };
 
   // Ensure mailings belong to the same group
   const userMailings = await Mailings.find(mailingQuery).select({
@@ -638,7 +642,7 @@ async function bulkUpdate(req, res) {
 
   const [mailings, tags] = await Promise.all([
     Mailings.findForApi(mailingQuery),
-    Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {})),
+    Mailings.findTags({ _company: mongoose.Types.ObjectId(companyId) }),
   ]);
 
   res.json({
@@ -664,9 +668,11 @@ async function bulkDestroy(req, res) {
   const { items } = req.body;
   if (!Array.isArray(items) || !items.length) throw new UnprocessableEntity();
 
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
+  const companyId = listingGroupIdOf(req.user);
+  const mailingQuery = {
     _id: { $in: items.map(mongoose.Types.ObjectId) },
-  });
+    _company: mongoose.Types.ObjectId(companyId),
+  };
   // ensure the mailings are from the same group
   const userMailings = await Mailings.find(mailingQuery)
     .select({ _id: 1 })
@@ -683,9 +689,9 @@ async function bulkDestroy(req, res) {
       creationOrWireframeId: { $in: safeMailingsIdList },
     }),
   ]);
-  const tags = await Mailings.findTags(
-    modelsUtils.addStrictGroupFilter(req.user, {})
-  );
+  const tags = await Mailings.findTags({
+    _company: mongoose.Types.ObjectId(companyId),
+  });
 
   res.json({
     meta: { tags },

@@ -112,6 +112,8 @@ export function usersItemPassword(routeParams = {}) {
 export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
+export const selectedGroup = () => '/users/me/selected-group';
+
 export const getUserPersistedLocalStorageKey = (key) =>
   `/users/me/storage/${encodeURIComponent(key)}`;
 
