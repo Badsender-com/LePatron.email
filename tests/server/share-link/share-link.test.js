@@ -225,6 +225,15 @@ describe('listing and revoking', () => {
     expect(update.revokedAt).toBeInstanceOf(Date);
   });
 
+  it("revokes every active link of a company's emails at once", async () => {
+    ShareLinks.updateMany.mockResolvedValue({ nModified: 3 });
+    await service.revokeAllForCompany('c1');
+    const [query, update] = ShareLinks.updateMany.mock.calls[0];
+    expect(query).toMatchObject({ _company: 'c1', revokedAt: null });
+    expect(query.expiresAt.$gt).toBeInstanceOf(Date);
+    expect(update.revokedAt).toBeInstanceOf(Date);
+  });
+
   it('answers a malformed link id with a 404, not a cast error', async () => {
     const { error } = await call(controller.revoke, {
       params: { mailingId: MAILING_ID, linkId: 'nope' },
