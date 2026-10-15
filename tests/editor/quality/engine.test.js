@@ -97,6 +97,27 @@ describe('runQualityChecks', () => {
     ]);
   });
 
+  it('returns the context it built, for the remote pass to reuse', () => {
+    const { ctx } = runQualityChecks(fakeViewModel({ blocks: heroBlocks }), {
+      rules: [],
+    });
+    expect(ctx.blocks).toHaveLength(2);
+    expect(ctx.remote).toBeNull();
+  });
+
+  it('lists what to ask the server about on the local pass only', () => {
+    const html = exportOf({
+      ko_heroBlock_1: '<a href="https://brand.com">Go</a>',
+    });
+    const vm = fakeViewModel({ blocks: heroBlocks, html });
+    expect(runQualityChecks(vm, { rules: [] }).resources.links).toEqual([
+      'https://brand.com',
+    ]);
+    expect(
+      runQualityChecks(vm, { rules: [], remote: { links: {} } }).resources
+    ).toEqual({ links: [], images: [] });
+  });
+
   it('says what a passed check found, with its parameters', () => {
     const passing = {
       ...reportEveryBlock,
@@ -201,6 +222,10 @@ describe('runQualityChecks', () => {
       expect(runQualityChecks(vm, { rules: [reportEveryBlock] })).toEqual({
         findings: [],
         checks: [{ ruleId: 'fake', category: 'content', status: 'error' }],
+        // Nothing to ask the server about either.
+        html: '<html><body></body></html>',
+        resources: { links: [], images: [] },
+        ctx: null,
       });
     });
 

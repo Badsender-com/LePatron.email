@@ -742,6 +742,33 @@ function commentsLoader(opts) {
     };
 
     /**
+     * Start a comment from a quality control finding (the quality drawer's
+     * "Add comment"): the comments panel opens on the finding's block, or on
+     * the whole email for a finding with no block, with the form filled in.
+     * Nothing is posted: the user reviews it and sends it themselves.
+     * @param {{ blockId: ?string, text: string, severity: string, category: string }} draft
+     *   severity and category in the comment's own terms (blocking/important/info,
+     *   design/content/general)
+     */
+    viewModel.createCommentFromQc = function (draft) {
+      viewModel.replyingTo(null);
+      // A block deleted since the check: the comment is about the whole email.
+      if (draft.blockId && findBlockById(viewModel, draft.blockId)) {
+        viewModel.openCommentsForBlock(draft.blockId);
+      } else {
+        viewModel.showAllComments();
+        viewModel.showComments(true);
+      }
+      // A comment being written is kept: the finding follows it.
+      const current = viewModel.newCommentText() || '';
+      viewModel.newCommentText(
+        current.trim() ? current + '\n\n' + draft.text : draft.text
+      );
+      viewModel.newCommentSeverity(draft.severity);
+      viewModel.newCommentCategory(draft.category);
+    };
+
+    /**
      * Comment block - called from block toolbar
      * @param {Object} blockData - The raw block data ($rawData)
      * @param {Object} parent - The parent container
