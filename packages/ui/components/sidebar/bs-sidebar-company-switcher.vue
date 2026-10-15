@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, SELECTED_GROUP, SELECT_GROUP, USER } from '~/store/user';
 import { SET_COLLAPSED } from '~/store/sidebar';
+import { FOLDER, FETCH_WORKSPACES } from '~/store/folder';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes';
 import { routeAfterGroupSwitch } from '~/helpers/route-after-group-switch';
@@ -86,7 +87,14 @@ export default {
         return;
       }
       const next = routeAfterGroupSwitch(this.$route.fullPath, companyId);
-      if (next !== this.$route.fullPath) this.$router.push(next);
+      // The workspace tree of the new group first: landing on Email Builder
+      // with the previous group's tree would reopen one of its workspaces,
+      // and select that group again.
+      if (next === '/mailings') {
+        await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
+      }
+      // The module pages reload their data when the selected group changes.
+      if (next !== this.$route.fullPath) await this.$router.push(next);
     },
     expand() {
       this.$store.commit(`sidebar/${SET_COLLAPSED}`, false);

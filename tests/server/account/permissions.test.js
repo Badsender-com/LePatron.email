@@ -9,8 +9,6 @@
 // of its group when the group opens them all, and writes in the ones it
 // belongs to.
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({}));
-
 const {
   ALICE,
   CAROL,
@@ -23,6 +21,8 @@ const {
   actorFrom,
   bootstrap,
 } = require('../../helpers/super-admin-fixtures.js');
+
+const permissions = require('../../../packages/server/account/permissions.js');
 
 const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
 
@@ -55,16 +55,7 @@ const cases = (rows) =>
     ...rest,
   ]);
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('permissions', () => {
-  let permissions;
-
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module doesn't exist
-    // until #1275 ships it, and a top-level require would break the suite.
-    permissions = require('../../../packages/server/account/permissions.js');
-  });
-
+describe('permissions', () => {
   describe('managing a group', () => {
     it.each(
       cases([

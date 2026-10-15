@@ -73,8 +73,7 @@ describe('switching group in the settings', () => {
   });
 });
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('switching group in a module', () => {
+describe('switching group in a module', () => {
   it.each([
     ['/mailings'],
     ['/mailings?wid=507f1f77bcf86cd799439011'],

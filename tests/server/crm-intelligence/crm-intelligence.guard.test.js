@@ -98,8 +98,7 @@ describe('guardCrmIntelligenceProbe (non-enforcing variant)', () => {
   });
 });
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
+describe('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
   const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
   const CLIENT_GROUP = '507f1f77bcf86cd799439b01';
   const { bootstrap } = require('../../helpers/super-admin-fixtures.js');

@@ -39,6 +39,7 @@
     <!-- Zone 2: Contextual -->
     <bs-sidebar-context-zone
       :active-module="activeModule"
+      :active-module-locked="activeModuleLocked"
       :collapsed="collapsed && !isMobile"
     />
 
@@ -107,7 +108,7 @@ export default {
   computed: {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
     ...mapGetters('user', {
-      userGroup: 'GROUP',
+      modulesGroup: 'MODULES_GROUP',
       isAdmin: 'IS_ADMIN',
       isGroupAdmin: 'IS_GROUP_ADMIN',
     }),
@@ -119,7 +120,7 @@ export default {
       const userLike = { isAdmin: this.isAdmin };
       return SIDEBAR_MODULES.map((module) => ({
         ...module,
-        locked: isModuleLocked(module, userLike, this.userGroup),
+        locked: isModuleLocked(module, userLike, this.modulesGroup),
       }));
     },
 
@@ -151,6 +152,10 @@ export default {
       return null;
     },
 
+    activeModuleLocked() {
+      const active = this.modules.find((m) => m.id === this.activeModule);
+      return !!(active && active.locked);
+    },
     sidebarStyle() {
       return {
         width: `${this.sidebarWidth}px`,

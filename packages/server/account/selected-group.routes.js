@@ -4,15 +4,10 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 
-const { Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { guard } = require('./auth.guard.js');
-const { isBootstrapAccount } = require('./bootstrap-account.js');
-const {
-  resolveSelectedGroup,
-  findGroupSummary,
-} = require('./selected-group.js');
+const { resolveSelectedGroup, selectGroup } = require('./selected-group.js');
 
 const router = express.Router();
 
@@ -44,15 +39,9 @@ router.put(
       throw new createError.BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
     }
 
-    const selectedGroup = await findGroupSummary(groupId);
+    const selectedGroup = await selectGroup(req, groupId);
     if (!selectedGroup) {
       throw new createError.NotFound(ERROR_CODES.GROUP_NOT_FOUND);
-    }
-
-    if (isBootstrapAccount(user)) {
-      req.session.selectedGroupId = selectedGroup.id;
-    } else {
-      await Users.updateOne({ _id: user.id }, { _selectedGroup: groupId });
     }
 
     res.json({ selectedGroup });

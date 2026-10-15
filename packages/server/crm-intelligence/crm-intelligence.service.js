@@ -101,7 +101,9 @@ async function getDashboards(groupId, group) {
  * @returns {Promise<Object>} Object with embedUrl
  */
 async function getEmbedUrl(groupId, dashboardId, group, user) {
-  if (!group.enableCrmIntelligence) {
+  // The lock is part of a super admin's view, never a refusal (ADR 0002,
+  // amended).
+  if (!group.enableCrmIntelligence && !(user && user.isAdmin)) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 

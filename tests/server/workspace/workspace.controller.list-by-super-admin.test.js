@@ -72,8 +72,7 @@ function listAs(user) {
 const tree = ({ items }) =>
   items.map(({ name, hasRights }) => ({ name, hasRights }));
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('the workspace tree of a super admin', () => {
+describe('the workspace tree of a super admin', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('shows every workspace of the selected group, with the right to write in each', async () => {

@@ -117,8 +117,7 @@ const list = (user) =>
 
 const names = ({ items }) => items.map((m) => m.name);
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('listing the mailings of a workspace as a super admin', () => {
+describe('listing the mailings of a workspace as a super admin', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('lists the mailings of the workspace, member or not', async () => {

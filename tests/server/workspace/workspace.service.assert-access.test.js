@@ -1,8 +1,10 @@
 'use strict';
 
 // Writing in a workspace: the workspace of one's own company, as a member or a
-// company admin; an admin, who creates no mailing, nowhere. `assertAccess` throws where `hasAccess`
-// answers, so a caller cannot forget to read the answer.
+// company admin; a super admin in any workspace; the bootstrap account, which
+// stays in the settings, in none (ADR 0002, amended).
+// `assertAccess` throws where `hasAccess` answers, so a caller cannot forget
+// to read the answer.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Workspaces: { exists: jest.fn(), findById: jest.fn() },
@@ -31,7 +33,6 @@ const colleague = { id: 'u3', group: { id: COMPANY_A } };
 const companyAdminOfA = { ...colleague, isGroupAdmin: true };
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
 const companyAdminOfB = { ...outsider, isGroupAdmin: true };
-const admin = { id: 'admin', isAdmin: true };
 
 beforeEach(() => {
   Workspaces.exists.mockResolvedValue(true);
@@ -49,15 +50,6 @@ describe('assertAccess', () => {
     await expect(
       workspaceService.assertAccess(member, WORKSPACE)
     ).resolves.toBeUndefined();
-  });
-
-  // Today's behaviour, replaced by the block at the end of this file in #1275:
-  // a super admin, and the bootstrap account, have every right (ADR 0002,
-  // amended); the modules keep the bootstrap account out by the scope.
-  it('refuses an admin, without a group, with an answer rather than a crash', async () => {
-    await expect(
-      workspaceService.assertAccess(admin, WORKSPACE)
-    ).rejects.toMatchObject({ status: 404 });
   });
 
   it('lets a company admin of the company write in it, member or not', async () => {
@@ -85,8 +77,7 @@ describe('assertAccess', () => {
   });
 });
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('assertAccess for a super admin (ADR 0002, amended)', () => {
+describe('assertAccess for a super admin (ADR 0002, amended)', () => {
   const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
   const superAdmin = {
     id: 'alice',
@@ -110,10 +101,12 @@ describe.skip('assertAccess for a super admin (ADR 0002, amended)', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('lets the bootstrap account write there too: its rights are whole, the modules refuse it upstream', async () => {
+  it('refuses the bootstrap account, which stays in the settings', async () => {
+    const { bootstrap } = require('../../helpers/super-admin-fixtures.js');
+
     await expect(
-      workspaceService.assertAccess(admin, WORKSPACE)
-    ).resolves.toBeUndefined();
+      workspaceService.assertAccess({ ...bootstrap }, WORKSPACE)
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('still refuses a company admin of another company', async () => {
