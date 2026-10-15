@@ -7,12 +7,13 @@ const { isPlaceholderSrc } = require('./images');
 
 // The links and images of the client's blocks that only the server can check
 // (does the link answer, what does the image weigh once exported). Same bounds
-// as the server (quality-resources.service.js): past them, the first ones are
-// checked and the rest left out.
-const MAX_LINKS = 60;
-const MAX_IMAGES = 40;
-// Longer addresses are refused by the server, which would fail the whole run.
-const MAX_URL_LENGTH = 2048;
+// as the server, from packages/shared: past them, the first ones are checked
+// and the rest left out, and a longer address is not sent at all.
+const { RESOURCES } = require('../../../../../shared/quality/limits.js');
+
+const MAX_LINKS = RESOURCES.maxLinks;
+const MAX_IMAGES = RESOURCES.maxImages;
+const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 
 const isWeb = (url, raw) =>
   Boolean(url) &&

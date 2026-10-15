@@ -17,8 +17,10 @@ const { encrypt, decrypt } = require('../utils/crypto.js');
  * so that the editors can copy it again.
  */
 
-const EXPIRY_DAYS = [1, 7, 30];
-const DEFAULT_EXPIRY_DAYS = 7;
+const { SHARE_LINK_EXPIRY } = require('../../shared/quality/limits.js');
+
+const EXPIRY_DAYS = SHARE_LINK_EXPIRY.days;
+const DEFAULT_EXPIRY_DAYS = SHARE_LINK_EXPIRY.defaultDays;
 // Active links per email: enough for every reviewer, not a way to fill the
 // collection. Counted before each creation: parallel requests may go a link
 // or two past it, which is harmless.
