@@ -162,6 +162,12 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // Public preview links of the company's emails (share-link/). On by
+    // default: nothing changes for the companies that already share them.
+    enableShareLinks: {
+      type: Boolean,
+      default: true,
+    },
     // Platform group: an internal Badsender-owned group that holds the AI
     // engine used by the super-admin AI Playground (R&D / benchmark), instead
     // of borrowing a client group's integration. Excluded from client-facing

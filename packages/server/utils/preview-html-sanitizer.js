@@ -66,6 +66,43 @@ function sanitizePreviewHtml(previewHtml) {
   }
 }
 
+// The public share page (share-link/share-page.controller.js) opens every web
+// link of the email in a new tab, with no opener: the reader wants to try
+// them, and a page opened from a shared email must not reach back to it. Set
+// on the sanitized DOM by a hook of a DOMPurify instance of its own, never by
+// editing the sanitized HTML as a string: a regex there can match inside an
+// attribute value and turn it back into markup.
+//
+// Only http(s) and protocol-relative addresses are sent to a new tab. An
+// anchor of the email itself (#top), an empty href, a mailto: or tel: must
+// stay in the frame: with a target, the sandboxed frame opened a blank tab
+// instead of scrolling, or of handing the address to the mail client.
+const { window: shareWindow } = new JSDOM('');
+const ShareDOMPurify = createDOMPurify(shareWindow);
+const WEB_HREF = /^(https?:)?\/\//i;
+ShareDOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  // localName: an <a> inside an <svg> has a lowercase tagName.
+  if (node.localName !== 'a' && node.localName !== 'area') return;
+  const href = (node.getAttribute('href') || '').trim();
+  if (WEB_HREF.test(href)) {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer');
+  } else {
+    node.removeAttribute('target');
+  }
+});
+
+/**
+ * Sanitize a preview for the public share page: the same rules as
+ * sanitizePreviewHtml, every web link opening in a new tab without an opener.
+ * @param {string} previewHtml
+ * @returns {string}
+ */
+function sanitizeSharedPreviewHtml(previewHtml) {
+  if (!previewHtml || typeof previewHtml !== 'string') return previewHtml;
+  return ShareDOMPurify.sanitize(previewHtml, SANITIZE_CONFIG);
+}
+
 // Upper bound on a stored previewHtml, in characters, enforced on save
 // (mailing.controller.js updateMosaico). Sanitizing is synchronous and roughly
 // linear — about a second per megabyte — so an unbounded preview is an easy way
@@ -73,4 +110,8 @@ function sanitizePreviewHtml(previewHtml) {
 // the dev database is 116KB; Gmail clips above 102KB).
 const PREVIEW_HTML_MAX_LENGTH = 5 * 1024 * 1024;
 
-module.exports = { sanitizePreviewHtml, PREVIEW_HTML_MAX_LENGTH };
+module.exports = {
+  sanitizePreviewHtml,
+  sanitizeSharedPreviewHtml,
+  PREVIEW_HTML_MAX_LENGTH,
+};

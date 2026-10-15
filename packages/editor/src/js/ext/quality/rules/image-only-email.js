@@ -1,10 +1,11 @@
 'use strict';
 
-const { blockImages, textOf } = require('../exported-content');
+const { blockImages, blockTexts } = require('../exported-content');
 
 // Under this much readable text, an email with images blocked shows nothing,
 // and filters that read content have nothing to read. Not a text/image ratio,
 // which the deliverability guidelines dismiss: an email with real text passes.
+// Only the text a reader sees counts: hidden text reads to nobody.
 const MIN_TEXT_LENGTH = 100;
 
 module.exports = {
@@ -16,19 +17,16 @@ module.exports = {
   MIN_TEXT_LENGTH,
   run(ctx) {
     if (!blockImages(ctx).length) return [];
-    const length = ctx.blocks
-      .map((block) => ctx.doc.getElementById(block.id))
-      .filter(Boolean)
-      .map(textOf)
-      .join(' ')
-      .trim().length;
+    const length = Object.values(blockTexts(ctx)).join(' ').trim().length;
     if (length >= MIN_TEXT_LENGTH) return [];
     return [
       {
         messageKey:
           'The email has almost no text besides its images (__count__ characters): with images blocked, nothing can be read',
         params: { count: length },
-        value: length,
+        // One advice for the whole email: the count changes at every
+        // keystroke, and ignoring the advice must last.
+        value: null,
       },
     ];
   },

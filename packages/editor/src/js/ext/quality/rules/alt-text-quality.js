@@ -4,12 +4,15 @@ const { blockImages } = require('../exported-content');
 
 // Beyond this, screen readers read a paragraph where a caption was expected.
 const MAX_ALT_LENGTH = 150;
-const FILE_NAME = /(\.(jpe?g|png|gif|webp|avif|svg|bmp|tiff?)$)|(^(img|dsc|dcim|image|photo|pxl)[-_ ]?\d+)/i;
+// A camera's or a stock site's name, and nothing else: "Photo 2024 of the
+// collection" describes the image.
+const FILE_NAME = /\.(jpe?g|png|gif|webp|avif|svg|bmp|tiff?)$|^(img|dsc|dcim|image|photo|pxl)[-_ ]?\d+(\.[a-z0-9]+)?$/i;
 const URL_LIKE = /^(https?:\/\/|www\.)/i;
 
 // Only the form of an alternative text is judged: whether it describes the
 // image is a matter of meaning, left to a later AI check. An empty alt is
-// never reported here: it is right for a decorative image.
+// never reported here: it is right for a decorative image. The template's own
+// default alt is judged with the rest: it is what the recipient hears.
 function problemOf(alt) {
   const text = (alt || '').trim();
   if (!text) return null;
