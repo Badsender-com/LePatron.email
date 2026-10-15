@@ -782,10 +782,11 @@ async function transferToUser(req, res) {
   if (changesCompany) {
     mailing._emailType = undefined;
   }
-  await mailing.save();
   // The public preview links were made for the previous owner and company:
-  // none survives the transfer.
+  // none survives the transfer. Revoked first: should that fail, the email
+  // stays where it was, rather than moving with its links still open.
   await shareLinkService.revokeAllForMailing(mailing._id);
+  await mailing.save();
 
   const updatedMailing = await Mailings.findById(mailingId);
   // strangely toJSON doesn't render the data object

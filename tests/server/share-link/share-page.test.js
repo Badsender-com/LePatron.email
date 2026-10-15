@@ -83,10 +83,10 @@ describe('GET /share/:token', () => {
     }
   });
 
-  it('judges the company the email belongs to now, not the one of the link', async () => {
-    // Transferred since the link was made: the link's company is fine, the
-    // email's current one is inactive.
-    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+  it('judges the company the email belongs to now', async () => {
+    // A link that stored no company (the email had none): the email's
+    // current company decides, and it is inactive.
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
     Mailings.findById.mockReturnValue(
       lean({
         _id: MAILING_ID,
@@ -105,6 +105,33 @@ describe('GET /share/:token', () => {
     expect(Groups.findById).toHaveBeenCalledTimes(1);
     expect(Groups.findById.mock.calls[0][0]).toBe('c2');
     expect(Mailings.findById.mock.calls[0][1]).toMatchObject({ _company: 1 });
+  });
+
+  // A transfer revokes the links first; one that survived it all the same
+  // must not open in a company that never shared it.
+  it('closes a link made under another company than the email has now', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _company: 'c2',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.render.mock.calls[0][1].title).toBe('Lien introuvable');
+
+    Mailings.findById.mockReturnValue(
+      lean({ _id: MAILING_ID, _company: 'c1', previewHtml: '<p>hi</p>' })
+    );
+    const same = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(same.res.statusCode).toBe(200);
   });
 
   // As the editor and the creation judge it (sharingCompanyOf): an email of
