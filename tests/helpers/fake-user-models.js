@@ -44,17 +44,35 @@ function matches(record, filter = {}) {
   );
 }
 
+// Orders a list like MongoDB's `sort`, eg. `{ name: 1 }`.
+function sortedBy(spec, list) {
+  if (!spec || !Array.isArray(list)) return list;
+  const keys = Object.entries(spec);
+  return [...list].sort((a, b) => {
+    for (const [key, direction] of keys) {
+      const order = String(a[key]).localeCompare(String(b[key]));
+      if (order !== 0) return order * (direction < 0 ? -1 : 1);
+    }
+    return 0;
+  });
+}
+
 // Mongoose queries are thenables with a fluent API; the controllers chain
 // `populate`, `select`, `sort` and `lean` before awaiting.
 function query(resolveTo) {
+  let sortSpec;
+  const resolve = () => sortedBy(sortSpec, resolveTo());
   const chain = {
     populate: () => chain,
     select: () => chain,
-    sort: () => chain,
+    sort: (spec) => {
+      sortSpec = spec;
+      return chain;
+    },
     lean: () => chain,
-    exec: () => Promise.resolve(resolveTo()),
+    exec: () => Promise.resolve(resolve()),
     then: (onFulfilled, onRejected) =>
-      Promise.resolve().then(resolveTo).then(onFulfilled, onRejected),
+      Promise.resolve().then(resolve).then(onFulfilled, onRejected),
   };
   return chain;
 }
@@ -226,6 +244,7 @@ function createStore() {
       if (record) Object.assign(record, update.$set || update);
       return { nModified: record ? 1 : 0 };
     },
+    exists: async (filter) => groups.some((g) => matches(g, filter)),
     findById: (id) =>
       query(() => toGroupDocument(groups.find((g) => matches(g, { _id: id })))),
     findOne: (filter) =>

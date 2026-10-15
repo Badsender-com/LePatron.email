@@ -51,6 +51,9 @@ describe('assertAccess', () => {
     ).resolves.toBeUndefined();
   });
 
+  // Today's behaviour, replaced by the block at the end of this file in #1275:
+  // a super admin, and the bootstrap account, have every right (ADR 0002,
+  // amended); the modules keep the bootstrap account out by the scope.
   it('refuses an admin, without a group, with an answer rather than a crash', async () => {
     await expect(
       workspaceService.assertAccess(admin, WORKSPACE)
@@ -76,6 +79,44 @@ describe('assertAccess', () => {
   });
 
   it('refuses a company admin of another company', async () => {
+    await expect(
+      workspaceService.assertAccess(companyAdminOfB, WORKSPACE)
+    ).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+// Turned on by #1275 (super admins in the modules of their selected group)
+describe.skip('assertAccess for a super admin (ADR 0002, amended)', () => {
+  const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
+  const superAdmin = {
+    id: 'alice',
+    role: 'super_admin',
+    isAdmin: true,
+    group: { id: PLATFORM_GROUP },
+    selectedGroup: { id: COMPANY_A },
+  };
+
+  it('lets a super admin write in the workspace of a client company, member or not', async () => {
+    await expect(
+      workspaceService.assertAccess(superAdmin, WORKSPACE)
+    ).resolves.toBeUndefined();
+  });
+
+  it('lets a super admin write there whatever group it has selected: a write takes the group of its destination', async () => {
+    const elsewhere = { ...superAdmin, selectedGroup: { id: COMPANY_B } };
+
+    await expect(
+      workspaceService.assertAccess(elsewhere, WORKSPACE)
+    ).resolves.toBeUndefined();
+  });
+
+  it('lets the bootstrap account write there too: its rights are whole, the modules refuse it upstream', async () => {
+    await expect(
+      workspaceService.assertAccess(admin, WORKSPACE)
+    ).resolves.toBeUndefined();
+  });
+
+  it('still refuses a company admin of another company', async () => {
     await expect(
       workspaceService.assertAccess(companyAdminOfB, WORKSPACE)
     ).rejects.toMatchObject({ status: 404 });

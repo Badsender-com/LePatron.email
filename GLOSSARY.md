@@ -15,6 +15,11 @@ _Avoid_: Company, organization, account
 The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
 _Avoid_: Badsender group, admin group
 
+**Selected group**:
+The group a super admin is working in, chosen in the group selector and shared by the modules and the settings. Every other user's selected group is their own group.
+_UI_: Groupe
+_Avoid_: Current company, active group, working group
+
 ### Roles
 
 **Regular user**:

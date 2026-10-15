@@ -1,7 +1,8 @@
-# Super admin is a persisted role; the bootstrap account creates the first one
+# Super admin is a persisted role; the bootstrap account creates the first one; a super admin works in the modules of a selected group
 
 - Status: proposed
 - Date: 2026-10-05
+- Amended: 2026-10-15 (the modules of a selected group)
 - Epic: #1153
 
 Until now the only super admin was the account defined by the deployment configuration: a frozen object outside the database, one per environment, shared by everyone who operates the platform. `super_admin` becomes a value of the `role` field of `User`, and a user's admin status derives from that role, so several named super admin accounts can exist. The bootstrap account is kept, unchanged: it is what creates the first super admin of a new environment, and it stays the one account the application never lists, demotes or removes. We chose this over a one-off migration script because the account already passes the admin guard without any data, so the management screen is the only creation path to build and test.
@@ -10,11 +11,17 @@ A super admin always belongs to the platform group (`Group.isPlatform`), reusing
 
 Super admins are managed from a dedicated screen, not from the platform group's user tab, where they are hidden. Only a super admin can grant or revoke the role, and edit, deactivate, reactivate or reset the password of a super admin, including existing members of the platform group; and a super admin can neither demote nor deactivate themselves. No rule keeps a last active super admin: a super admin acting on another always leaves at least themselves, and the bootstrap account, which is what keeps the platform reachable, may deactivate or demote the last one. Demotion is allowed and leaves the account in the platform group with the role chosen by the actor. The platform flag cannot be unset or moved while active super admins belong to the group, since the invariant would otherwise break after the grant, with one exception: the bootstrap account can move it to another group, and every super admin of the group moves with it. A role the product does not define is refused wherever a role is read: creation, update and the listing filter.
 
+A super admin uses the Email Builder and CRM Intelligence modules of a **selected group** through the same entry points as a company admin of that group (workspaces, search, dashboards), and keeps every right it has elsewhere: the modules give it a view, not a lower role. The selected group is chosen in the group selector, shared by the modules and the settings, and stored on the super admin's account, so the server, the first server-rendered page and the editor all know it; it falls back to the platform group, then to the first group, when none is stored or the stored one is gone. The bootstrap account, which has no stored account, keeps its choice in its session and stays in the settings. To make this possible, the server separates two questions that the user's own group answered together: the scope of a request (which group it reads or writes) and the rights of the user (what it may do there). The scope is resolved in one place: the user's own group, or a super admin's selected group for listings, and the destination's group for writes. The rights are answered by one permissions module, where a super admin always passes and a company admin passes for its own group; the scattered role checks go through it. A module disabled for the selected group is locked for the super admin, as it is for the group's users; its settings stay reachable.
+
 ## Considered Options
 
 - **`_company` optional for super admins**: rejected, every group-scoped query and guard assumes a company on the user; the platform group costs nothing and already exists.
 - **Atomic permissions skeleton in the same change** (the RBAC plan's increment A): rejected, it has no consumer until the new roles of #1099 land, and this change is the riskiest of the RBAC work.
 - **Forbidding demotion, deactivation only**: rejected, a demoted operator keeps their history and their account in the platform group.
+- **Acting as a company admin in the modules** (the server swaps the super admin for a company admin of the selected group on module routes): rejected, the super admin would lose rights in the modules, and every service would read a super admin as something it is not.
+- **Teaching each service about super admins, with an explicit `groupId` on every request**: rejected, every rule would be written twice, a forgotten service would silently diverge, and the editor's requests would all need the parameter.
+- **A request header carrying the selected group**: rejected, the editor (jQuery and its own HTTP client) and full page navigations do not send it.
+- **The selected group in the browser's storage only**: rejected, the server needs it for listings and for the first server-rendered page.
 
 ## Consequences
 
@@ -24,7 +31,10 @@ Super admins are managed from a dedicated screen, not from the platform group's 
 - Two super admins demoting or deactivating each other at the same moment can leave none. Accepted, since the bootstrap account creates a new one.
 - Moving the flag with the active super admins is the bootstrap account's job; every super admin of the group, deactivated ones included, moves with the flag, so that a reactivation still finds them in the platform group. Unsetting it, or deleting the group, needs no active super admin left in it, which only the bootstrap account can arrange, by deactivating or demoting the last ones.
 - The same holds for a promotion racing a move of the flag: checked before the write, it can leave a super admin outside the platform group. Accepted for the same reason; the bootstrap account moves them.
-- A super admin is an operator, like the bootstrap account: the app routes it to the groups and offers it no mailing screen, and it reads and opens the mailings of every group from that group's settings. A member promoted leaves the mailing screens of their group; the promotion says so before it is confirmed. A mailing a super admin creates through the API anyway is signed in the company it lands in.
+- A super admin reaches the module screens of its selected group like a company admin of that group, and keeps its admin extras there (links to the user and template pages). A link to a workspace, a folder or a mailing of another group switches the selected group to that group. A mailing a super admin creates is signed in the group it lands in. The bootstrap account stays an operator: the app routes it to the groups and offers it no module screen.
+- The selected group is stored on the account, so two tabs share it: switching in one changes the listings of the other at its next request. Writes are not affected, since they take the group of their destination.
+- A CRM Intelligence dashboard that locks the user's identity in its embed token shows a super admin its own rows; viewing it as another user is #1271.
+- Restricting the company admin later changes its branch of the permissions module only, and the super admin keeps every right. The atomic permissions of #1103 plug into the same module.
 - Hiding super admins from the platform group's user listing also removes them from that group's workspace member pickers, so saving such a workspace drops a promoted member from it. A super admin reaches every workspace anyway; a demoted one is added back like any member.
-- The screen is a global admin page without a group in its URL, so it is exposed to #1074, fixed separately.
+- The screen is a global admin page without a group in its URL; the selected group stored on the account fixes #1074 for it and for the other global admin pages.
 - The screen refuses to create anything on an environment with no platform group, with an explicit message, instead of creating one.
