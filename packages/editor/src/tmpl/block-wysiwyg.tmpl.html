@@ -32,6 +32,9 @@
          route cannot rebuild a composed block's markup (it is translated with
          the whole mailing instead). See offersBlockTranslation. -->
     <!-- ko if: $root.metadata.hasTranslationFeature && $root.offersBlockTranslation && $root.offersBlockTranslation($rawData) --><div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-languages"></span></div><!-- /ko -->
+    <!-- AI actions of the block (ADR 0004): opens the « Outils IA » panel on
+         them, the action itself when the block has only one. -->
+    <!-- ko if: $root.offersAiOnBlock && $root.offersAiOnBlock($data) --><div title="AI tools" class="tool ai-actions" data-bind="attr: { title: $root.t('ai-block-tool') }, click: $root.openAiOnBlock.bind($element, $data), clickBubble: false"><span class="lucide lucide-fw lucide-bot"></span></div><!-- /ko -->
     <!-- Import from content feed (only for blocks with an active feed mapping) -->
     <!-- ko if: $root.isFeedMappableBlock($rawData) --><div title="Import from feed" class="tool content-feed" data-bind="attr: { title: $root.t('Import from feed') }, click: $root.openContentFeedModal.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-rss"></span></div><!-- /ko -->
     <!-- Delete block (destructive action - always last) -->

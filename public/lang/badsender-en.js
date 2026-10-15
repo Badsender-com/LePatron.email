@@ -846,6 +846,8 @@ module.exports = {
   'ai-panel-see-its-actions': 'See its AI actions',
   'ai-field-subject-label': 'Generate the subject with AI',
   'ai-field-preheader-label': 'Generate the preheader with AI',
+  'ai-block-tool': 'AI tools of the block',
+  'ai-field-correct-label': 'Correct with AI',
   'text-generation-applied-preheader': 'Preheader:',
   'text-generation-applied-subject': 'Subject:',
   'text-generation-long': 'long: its end will rarely be read',
