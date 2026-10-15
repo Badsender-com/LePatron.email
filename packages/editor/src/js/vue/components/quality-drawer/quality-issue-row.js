@@ -12,6 +12,8 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
     // Ignored by the team: shown muted, with "Stop ignoring" instead.
     ignored: { type: Boolean, default: false },
     canComment: { type: Boolean, default: false },
+    // Whether the choice can be stored on the email (quality-ignores.js).
+    canIgnore: { type: Boolean, default: false },
     t: { type: Function, required: true },
   },
   computed: {
@@ -32,7 +34,7 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
         type="button"
         class="qc-row__head"
         :aria-expanded="expanded ? 'true' : 'false'"
-        :aria-controls="panelId"
+        :aria-controls="expanded ? panelId : null"
         @click="$emit('toggle')"
       >
         <span
@@ -64,11 +66,11 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
             <span class="lucide lucide-message-circle" aria-hidden="true"></span>
             {{ t('Add comment') }}
           </button>
-          <button v-if="!ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('ignore')">
+          <button v-if="!ignored && canIgnore" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('ignore')">
             <span class="lucide lucide-ban" aria-hidden="true"></span>
-            {{ t('Ignore') }}
+            {{ t('quality-action-ignore') }}
           </button>
-          <button v-else type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('unignore')">
+          <button v-if="ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('unignore')">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>
             {{ t('Stop ignoring') }}
           </button>
