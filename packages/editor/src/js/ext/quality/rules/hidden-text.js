@@ -1,8 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const { userDeclarations, toPx, hasText } = require('../user-styles');
-const { textOf } = require('../exported-content');
+const { userDeclarations, hasText } = require('../user-styles');
+const { textOf, excerpt, HIDING } = require('../exported-content');
+const { toPx } = require('../inline-style');
 const { HIDDEN_SIZE } = require('./small-font');
 
 // Text the client hid by hand. Gmail's sender guidelines ask not to hide
@@ -10,17 +11,12 @@ const { HIDDEN_SIZE } = require('./small-font');
 // Text drawn in (almost) the colour of its background is reported by
 // "color-contrast", with the same severity.
 const HIDES = {
-  display: (v) => /^none\b/i.test(v),
-  visibility: (v) => /^hidden\b/i.test(v),
-  opacity: (v) => Number(v) === 0,
+  ...HIDING,
   'font-size': (v) => {
     const px = toPx(v);
     return px !== null && px <= HIDDEN_SIZE;
   },
-  'max-height': (v) => toPx(v) === 0,
 };
-
-const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);
 
 module.exports = {
   id: 'hidden-text',
@@ -35,7 +31,8 @@ module.exports = {
     );
     // One finding per element, whatever the number of hiding declarations.
     return _.uniqBy(hidden, 'element').map(({ blockId, path, element }) => ({
-      messageKey: 'Hidden text: filters read hidden content as an attempt to fool them: __text__',
+      messageKey:
+        'Hidden text: filters read hidden content as an attempt to fool them: __text__',
       params: { text: excerpt(textOf(element)) },
       blockId,
       propertyPath: path,
