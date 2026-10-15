@@ -91,6 +91,15 @@ const REMOTE_RULES = [
   oversizedImages,
 ];
 
+// Local rules with a second look once the server has answered (`remoteRun`):
+// their findings join the check the local run already listed.
+const LATE_RULES = DEFAULT_RULES.filter((rule) => rule.remoteRun).map(
+  (rule) => ({ ...rule, run: rule.remoteRun })
+);
+
+// What runs on the server's answer.
+const SERVER_ANSWER_RULES = REMOTE_RULES.concat(LATE_RULES);
+
 // djb2: enough to tell two values apart in a fingerprint, not a security hash.
 function hashString(value) {
   const str = String(value === undefined || value === null ? '' : value);
@@ -219,9 +228,15 @@ function runQualityChecks(viewModel, options = {}) {
     // Download and ESP send run the checks first: a model the engine cannot
     // read must cost the checks, never the export.
     console.error('Quality checks could not read the email', err);
+    // A check turned off stays unlisted, failed run or not.
+    const settings = {
+      config: { quality: _.get(viewModel, 'metadata.qualitySettings') || null },
+    };
     return {
       findings: [],
-      checks: rules.map(failedCheck),
+      checks: rules
+        .filter((rule) => checkStateOf(settings, rule.id) !== 'off')
+        .map(failedCheck),
       html,
       resources: NO_RESOURCES,
       turnedOff: [],
@@ -250,4 +265,5 @@ module.exports = {
   // The drawer announces how many checks it runs.
   DEFAULT_RULES,
   REMOTE_RULES,
+  SERVER_ANSWER_RULES,
 };

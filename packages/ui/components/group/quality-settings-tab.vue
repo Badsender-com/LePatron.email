@@ -2,7 +2,7 @@
 import { mapMutations } from 'vuex';
 import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
-import { CHECKS } from '~/helpers/constants/quality-checks.js';
+import { CHECKS, SERVER_CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   statesOf,
   thresholdsOf,
@@ -66,6 +66,11 @@ export default {
     },
   },
   methods: {
+    // Checked on the server: blocking, it makes the export wait for it.
+    isServerCheck(id) {
+      return SERVER_CHECKS.includes(id);
+    },
+
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
     statesFor(id) {
@@ -206,6 +211,12 @@ export default {
               </v-btn>
             </v-btn-toggle>
           </div>
+          <p
+            v-if="states[id] === 'blocking' && isServerCheck(id)"
+            class="quality-settings__wait"
+          >
+            {{ $t('qualitySettings.serverWait') }}
+          </p>
           <div
             v-if="thresholdsFor(id).length"
             class="quality-settings__thresholds"
@@ -272,6 +283,12 @@ export default {
 }
 
 .quality-settings {
+  &__wait {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: var(--gray-700);
+  }
+
   &__category + &__category {
     margin-top: 1.5rem;
   }

@@ -1,7 +1,12 @@
 'use strict';
 
 const axios = require('axios');
-const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = require('./engine');
+const {
+  runQualityChecks,
+  DEFAULT_RULES,
+  REMOTE_RULES,
+  SERVER_ANSWER_RULES,
+} = require('./engine');
 const { hasResources } = require('./resources');
 const { checkStateOf } = require('./settings');
 const { displayBlockingFindings } = require('../badsender-control-quality');
@@ -36,6 +41,30 @@ function postResources(url, resources, retried = false) {
         () => postResources(url, resources, true)
       );
     });
+}
+
+// A check listed by both runs (a local rule with a second look at the
+// server's answer) is listed once: failed if either run found something.
+const STATUS_RANK = { passed: 0, error: 1, failed: 2 };
+function mergeChecks(local, remote) {
+  const byId = new Map(local.map((check) => [check.ruleId, check]));
+  const added = [];
+  remote.forEach((check) => {
+    const listed = byId.get(check.ruleId);
+    if (!listed) {
+      added.push(check);
+      return;
+    }
+    byId.set(check.ruleId, {
+      ...listed,
+      status:
+        STATUS_RANK[check.status] > STATUS_RANK[listed.status]
+          ? check.status
+          : listed.status,
+      count: (listed.count || 0) + (check.count || 0),
+    });
+  });
+  return local.map((check) => byId.get(check.ruleId)).concat(added);
 }
 
 // The server's checks that are always listed; a blocklist is only where the
@@ -111,7 +140,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // for a gate that waits on it.
   function runRemote(id, local, { openOnIssues = false, answer = false } = {}) {
     // Nothing to ask the server when every check it serves is off.
-    const remoteOn = REMOTE_RULES.some(isOn);
+    // Asked as soon as a check reads its answer: a server check, or a local
+    // one with a second look (the format of an image without an extension).
+    const remoteOn = SERVER_ANSWER_RULES.some(isOn);
     if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
       if (id === runId) remoteStatus('idle');
       return Promise.resolve([]);
@@ -130,12 +161,12 @@ function installQualityReview(viewModel, ko, deps = {}) {
         if (remote === null) return [];
         const result = run(viewModel, {
           html: local.html,
-          rules: REMOTE_RULES,
+          rules: SERVER_ANSWER_RULES,
           remote,
         });
         if (id !== runId) return result.findings;
         findings(local.findings.concat(result.findings));
-        checks(local.checks.concat(result.checks));
+        checks(mergeChecks(local.checks, result.checks));
         remoteStatus('done');
         const issues = result.findings.filter(
           (f) => !isIgnored(f) && (f.severity === 'error' || f.severity === 'warning')
