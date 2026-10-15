@@ -327,7 +327,8 @@ export default {
       },
       shareLinks: {
         name: 'Preview links',
-        description: 'Public links to the preview of an email, without an account',
+        description:
+          'Public links to the preview of an email, without an account. Turning sharing off also disables the existing links',
       },
       crmIntelligence: {
         name: 'CRM Intelligence',

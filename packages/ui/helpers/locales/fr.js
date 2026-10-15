@@ -330,7 +330,8 @@ export default {
       },
       shareLinks: {
         name: "Liens d'aperçu",
-        description: "Liens publics vers l'aperçu d'un email, sans compte",
+        description:
+          "Liens publics vers l'aperçu d'un email, sans compte. Couper le partage désactive aussi les liens existants",
       },
       crmIntelligence: {
         name: 'CRM Intelligence',

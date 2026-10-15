@@ -14,6 +14,7 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
+const shareLinkService = require('../share-link/share-link.service.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -548,6 +549,17 @@ async function update(req, res) {
         }).lean()
       )?.logRetentionDays
     : undefined;
+
+  // Turning the preview links off revokes them, before the write: should the
+  // revocation fail, the switch is still on and saving again retries it.
+  if (groupToUpdate.enableShareLinks === false) {
+    const stored = await Groups.findById(req.params.groupId, {
+      enableShareLinks: 1,
+    }).lean();
+    if (stored && stored.enableShareLinks !== false) {
+      await shareLinkService.revokeAllForCompany(req.params.groupId);
+    }
+  }
 
   await groupService.updateGroup(groupToUpdate);
 
