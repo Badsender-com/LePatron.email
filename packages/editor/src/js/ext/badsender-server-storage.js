@@ -215,7 +215,11 @@ function loader(opts) {
       // Quality review of the same export the ZIP is built from: the drawer
       // opens when there is something to see, the download goes on anyway.
       const html = viewModel.exportHTML();
-      if (viewModel.quality) viewModel.quality.review({ html });
+      try {
+        if (viewModel.quality) viewModel.quality.review({ html });
+      } catch (err) {
+        console.error('Quality review failed', err);
+      }
 
       downloadCmd.enabled(false);
 
