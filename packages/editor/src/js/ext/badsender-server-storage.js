@@ -173,18 +173,6 @@ function loader(opts) {
     };
 
     /// ///
-    // EMAIL
-    /// ///
-    const testCmd = {
-      name: 'Test', // l10n happens in the template
-      enabled: ko.observable(true),
-    };
-    // Sending a test lives in the quality drawer, next to the checks.
-    testCmd.execute = function () {
-      if (viewModel.quality) viewModel.quality.open('send');
-    };
-
-    /// ///
     // ZIP
     /// ///
 
@@ -260,7 +248,7 @@ function loader(opts) {
     };
 
     viewModel.save = saveCmd;
-    viewModel.test = testCmd;
+    // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
   };
 }
