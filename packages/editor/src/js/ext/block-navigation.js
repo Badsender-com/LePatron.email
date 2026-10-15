@@ -20,7 +20,9 @@ function findBlockById(viewModel, blockId) {
   if (!blockId) return null;
   try {
     const content = viewModel.content();
-    const containers = Object.keys(content).filter((key) => /Blocks$/.test(key));
+    const containers = Object.keys(content).filter((key) =>
+      /Blocks$/.test(key)
+    );
     for (const key of containers) {
       const container = unwrap(content[key]);
       const blocks = (container && unwrap(container.blocks)) || [];
@@ -51,16 +53,21 @@ function findBlockElement(blockId) {
  * @param {Object} viewModel
  * @param {string} blockId
  * @param {Function} [onScrolled] - receives the block element once shown
+ * @param {Function} [onMissing] - called when the block exists in the model
+ *   but has no element on the canvas once selected (a template being rebuilt)
  * @returns {boolean} false when the block no longer exists
  */
-function goToBlock(viewModel, blockId, onScrolled) {
+function goToBlock(viewModel, blockId, onScrolled, onMissing) {
   const block = findBlockById(viewModel, blockId);
   if (!block) return false;
 
   viewModel.selectBlock(block, true);
   setTimeout(() => {
     const element = findBlockElement(blockId);
-    if (!element) return;
+    if (!element) {
+      if (onMissing) onMissing();
+      return;
+    }
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (onScrolled) onScrolled(element);
   }, SCROLL_DELAY_MS);
