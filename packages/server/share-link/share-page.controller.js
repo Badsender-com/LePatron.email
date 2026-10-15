@@ -10,6 +10,7 @@ const {
 const logger = require('../utils/logger.js');
 const shareLinkService = require('./share-link.service.js');
 const PAGES = require('./share-page.locales.js');
+const { preheaderOf } = require('../../shared/quality/preheader.js');
 
 /**
  * The public page a preview link opens (GET /share/:token), without an
@@ -101,17 +102,6 @@ async function sanitizedPage(mailing) {
     ...mailing,
     previewHtml: saved.previewHtml,
   });
-}
-
-// Templates declare their preheader at the root or in a root-level
-// `preheaderBlock`, and versafix-like ones can turn it off: read as the editor
-// does (ext/quality/copy-fields.js), the first path that holds a string.
-function preheaderOf(data) {
-  if (!data || data.preheaderVisible === false) return '';
-  const value = [data.preheaderText, data.preheaderBlock?.preheaderText].find(
-    (candidate) => typeof candidate === 'string'
-  );
-  return value ? value.trim() : '';
 }
 
 // The subject and preheader lines of the bar, when the company writes them in
