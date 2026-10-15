@@ -584,6 +584,12 @@ module.exports = {
     'Personalization tag not closed in the subject (__token__): __excerpt__',
   'Personalization tag not closed in the preheader (__token__): __excerpt__':
     'Personalization tag not closed in the preheader (__token__): __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign',
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign',
   'Empty blocks': 'Empty blocks',
   'Every block shows something': 'Every block shows something',
   'Empty block: it shows no text and no image':

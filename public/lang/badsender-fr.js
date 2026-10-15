@@ -603,6 +603,12 @@ module.exports = {
     "Variable de personnalisation non fermée dans l'objet (__token__) : __excerpt__",
   'Personalization tag not closed in the preheader (__token__): __excerpt__':
     'Variable de personnalisation non fermée dans le préheader (__token__) : __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    "%% non apparié dans l'objet (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé",
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié dans le préheader (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
   'Empty blocks': 'Blocs vides',
   'Every block shows something': 'Tous les blocs affichent du contenu',
   'Empty block: it shows no text and no image':

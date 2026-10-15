@@ -1,6 +1,8 @@
 'use strict';
 
 const ko = require('knockout');
+const { stripMergeTags } = require('./merge-tag-syntax');
+const { EMOJI_REGEX } = require('./emoji');
 
 // The copy that lives outside the blocks: the subject (email metadata) and the
 // preheader (a template property). Both are the client's to write.
@@ -19,28 +21,62 @@ function getSubject(viewModel) {
 
 // Templates declare their preheader either at the root (`preheaderText`) or in
 // a root-level `preheaderBlock` (docs/TEMPLATE_DEVELOPER_GUIDE.md, preheader).
-const PREHEADER_PATHS = [['preheaderText'], ['preheaderBlock', 'preheaderText']];
+const PREHEADER_PATHS = [
+  ['preheaderText'],
+  ['preheaderBlock', 'preheaderText'],
+];
 
-const get = (object, path) =>
-  path.reduce((value, key) => (value == null ? undefined : value[key]), object);
+// Some templates declare one preheader per market instead (`autPreheaderText`,
+// `bel_frPreheaderText`…), each bound to its own block: which one the email
+// sends cannot be told, so none is judged.
+const MARKET_PREHEADER = /.PreheaderText$/;
+
+// One property read along a path, unwrapping observables step by step: the
+// whole content model is never unfolded for two strings.
+const read = (object, path) =>
+  path.reduce(
+    (value, key) =>
+      value == null ? undefined : ko.unwrap(ko.unwrap(value)[key]),
+    object
+  );
+
+const keysOf = (value) => Object.keys(ko.unwrap(value) || {});
 
 /**
- * The preheader of the email, or null when the template has none.
+ * The preheader of the email, or null when the template has none, or several.
  * @returns {{ value: string, templateDefault: string, turnedOff: boolean }|null}
  */
 function getPreheader(viewModel) {
-  const content = ko.toJS(viewModel.content()) || {};
+  const content = viewModel.content() || {};
   const path = PREHEADER_PATHS.find(
-    (candidate) => typeof get(content, candidate) === 'string'
+    (candidate) => typeof read(content, candidate) === 'string'
   );
   if (!path) return null;
+  const perMarket = keysOf(content)
+    .concat(keysOf(content.preheaderBlock))
+    .some((key) => MARKET_PREHEADER.test(key));
+  if (perMarket) return null;
   const defaults = viewModel.templateDefaults || {};
   return {
-    value: get(content, path),
-    templateDefault: get(defaults, path) || '',
+    value: read(content, path),
+    templateDefault: read(defaults, path) || '',
     // versafix-like templates can switch the preheader off entirely.
-    turnedOff: content.preheaderVisible === false,
+    turnedOff: ko.unwrap(content.preheaderVisible) === false,
   };
 }
 
-module.exports = { getSubject, getPreheader, PREHEADER_PATHS };
+/**
+ * The length of a subject or preheader as an inbox shows it: merge tags out
+ * (their value is only known at send time), one emoji one character whatever
+ * its code points, and accents composed (an é typed as e + ´ is one).
+ */
+const inboxLength = (text) =>
+  Array.from(
+    stripMergeTags(text)
+      .normalize('NFC')
+      .replace(EMOJI_REGEX, 'x')
+      .replace(/\s+/g, ' ')
+      .trim()
+  ).length;
+
+module.exports = { getSubject, getPreheader, inboxLength, PREHEADER_PATHS };
