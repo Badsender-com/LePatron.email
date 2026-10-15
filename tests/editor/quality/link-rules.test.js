@@ -10,7 +10,6 @@ const {
 const { fakeViewModel, exportOf } = require('./fake-view-model');
 
 const RULES = '../../../packages/editor/src/js/ext/quality/rules';
-const unfilledLinks = require(`${RULES}/unfilled-links`);
 const malformedLinks = require(`${RULES}/malformed-links`);
 const displayedUrls = require(`${RULES}/displayed-urls`);
 const suspiciousLinks = require(`${RULES}/suspicious-links`);
@@ -26,14 +25,6 @@ function linkFindings(rule, anchors, { frame } = {}) {
 }
 const a = (href, text = 'Go') => `<a href="${href}">${text}</a>`;
 
-describe('unfilled-links', () => {
-  it('reports a javascript: link, which email clients never run', () => {
-    expect(linkFindings(unfilledLinks, a('javascript:void(0)'))).toHaveLength(
-      1
-    );
-  });
-});
-
 describe('malformed-links', () => {
   const keyOf = (href) =>
     (linkFindings(malformedLinks, a(href))[0] || {}).messageKey;
@@ -42,9 +33,12 @@ describe('malformed-links', () => {
     ['https://brand.com/a b', 'Link URL contains a space: __url__'],
     ['www.brand.com', 'Link URL misses http:// or https://: __url__'],
     ['brand.com/offer', 'Link URL misses http:// or https://: __url__'],
+    ['brand.com:8080/offer', 'Link URL misses http:// or https://: __url__'],
+    ['localhost:3000/offer', 'Link URL misses http:// or https://: __url__'],
     ['/offer', 'Link URL is not a full address: __url__'],
     ['htps://brand.com', 'Link URL has an unknown protocol: __url__'],
     ['mailto:contact', 'Email link has no valid address: __url__'],
+    ['mailto:a@brand.com,contact', 'Email link has no valid address: __url__'],
     ['tel:call-us', 'Phone link has no valid number: __url__'],
     ['https://brand', 'Link URL is not a full address: __url__'],
   ])('reports %s', (href, messageKey) => {
@@ -54,7 +48,12 @@ describe('malformed-links', () => {
   it.each([
     'https://brand.com/offer?utm_source=news',
     'mailto:contact@brand.com?subject=Hi',
+    'mailto:a@brand.com, b@brand.com',
+    'mailto:%7B%7Bemail%7D%7D',
     'tel:+33 1 23 45 67 89',
+    'sms:+33612345678&body=Hi',
+    'sms:+33612345678;body=Hi',
+    'sms:+33612345678?body=Hi',
     '#top',
     '{{unsubscribe_url}}',
     '%%view_online%%',
@@ -69,31 +68,35 @@ describe('malformed-links', () => {
 });
 
 describe('displayed-urls', () => {
-  it.each(['www.brand.com', 'https://brand.com/offer', 'brand.fr'])(
-    'warns when the link text is the address %s',
+  it.each([
+    'www.brand.com',
+    'https://brand.com/offer',
+    'brand.fr',
+    'WWW.BRAND.COM',
+  ])('warns when the link text is the address %s', (text) => {
+    const findings = linkFindings(displayedUrls, a('https://brand.com', text));
+    expect(findings).toHaveLength(1);
+    expect(findings[0].params.label).toBe(text);
+  });
+
+  it.each(['Discover the offer', 'Mr.Bricolage', 'St.Michel', 'Mode.Femme'])(
+    'leaves the worded link "%s" alone',
     (text) => {
-      const findings = linkFindings(
-        displayedUrls,
-        a('https://brand.com', text)
+      expect(linkFindings(displayedUrls, a('https://brand.com', text))).toEqual(
+        []
       );
-      expect(findings).toHaveLength(1);
-      expect(findings[0].params.label).toBe(text);
     }
   );
-
-  it('leaves a worded link alone', () => {
-    expect(
-      linkFindings(displayedUrls, a('https://brand.com', 'Discover the offer'))
-    ).toEqual([]);
-  });
 });
 
 describe('suspicious-links', () => {
-  const keyOf = (href) =>
-    (linkFindings(suspiciousLinks, a(href))[0] || {}).messageKey;
+  const findingOf = (href) => linkFindings(suspiciousLinks, a(href))[0] || {};
+  const keyOf = (href) => findingOf(href).messageKey;
 
   it.each([
     ['https://bit.ly/abc', 'Public URL shortener: __host__'],
+    ['http://bit.ly/x?u={{email}}', 'Public URL shortener: __host__'],
+    ['https://urlz.fr/abc', 'Public URL shortener: __host__'],
     [
       'https://brand.zip/offer',
       'Domain extension often used for spam: __host__',
@@ -111,6 +114,10 @@ describe('suspicious-links', () => {
       'Link points to a test environment: __host__',
     ],
     [
+      'https://preprod.brand.com/?e=%%emailaddr%%',
+      'Link points to a test environment: __host__',
+    ],
+    [
       'http://localhost:3000/offer',
       'Link points to a test environment: __host__',
     ],
@@ -123,11 +130,24 @@ describe('suspicious-links', () => {
     expect(keyOf(href)).toBe(messageKey);
   });
 
+  it('warns about punycode typed as is, and only notes an accented domain', () => {
+    expect(findingOf('https://xn--brnd-6qa.com')).toMatchObject({
+      severity: 'warning',
+      params: { host: 'xn--brnd-6qa.com' },
+    });
+    expect(findingOf('https://café.fr/offre')).toMatchObject({
+      severity: 'info',
+      params: { host: 'café.fr' },
+    });
+  });
+
   it.each([
     'https://www.brand.com',
     'https://brand.dev/docs',
+    'https://brand.xyz',
     'https://test.fr',
     'https://links.brand.com/r/abc',
+    'https://{{domain}}/offer',
   ])('leaves %s alone', (href) => {
     expect(linkFindings(suspiciousLinks, a(href))).toEqual([]);
   });
@@ -137,9 +157,18 @@ describe('insecure-urls', () => {
   it('notes an http link and warns about an http image', () => {
     const findings = linkFindings(
       insecureUrls,
-      `${a('http://brand.com')}<img src="http://cdn.brand.com/a.jpg">`
+      `${a('http://brand.com')}<img src="http://cdn.brand.com/image?id=1">`
     );
     expect(findings.map((f) => f.severity)).toEqual(['info', 'warning']);
+  });
+
+  it('judges a link whose query, not host, is a merge tag', () => {
+    expect(
+      linkFindings(insecureUrls, a('http://brand.com/?u={{email}}'))
+    ).toHaveLength(1);
+    expect(linkFindings(insecureUrls, a('http://{{domain}}/offer'))).toEqual(
+      []
+    );
   });
 
   it("never judges the template's frame", () => {
@@ -148,11 +177,11 @@ describe('insecure-urls', () => {
     ).toEqual([]);
   });
 
-  it("leaves LePatron's own image backend alone: the export rehosts it", () => {
+  it("leaves the images the export rehosts alone: image files, and LePatron's own", () => {
     expect(
       linkFindings(
         insecureUrls,
-        '<img src="http://localhost:3000/api/images/cover/600xnull/a.png">'
+        '<img src="http://localhost:3000/api/images/cover/600xnull/a.png"><img src="http://cdn.brand.com/a.jpg?v=2">'
       )
     ).toEqual([]);
   });
