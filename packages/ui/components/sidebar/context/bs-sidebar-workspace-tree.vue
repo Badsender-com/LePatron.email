@@ -87,6 +87,9 @@ export default {
     selectedItem() {
       return { id: this.currentLocation };
     },
+    selectedGroupId() {
+      return this.userInfo?.selectedGroup?.id || null;
+    },
     storageKey() {
       const userId = this.userInfo?.id || 'anonymous';
       return `${TREE_STATE_STORAGE_KEY}_${userId}`;
@@ -98,6 +101,12 @@ export default {
   },
   watch: {
     $route: ['onRouteChange', 'checkIfNotData'],
+    // The tree of a super admin is its selected group's (ADR 0002, amended).
+    selectedGroupId(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.fetchWorkspacesData();
+      }
+    },
     locationNotFound(notFound) {
       if (notFound) this.leaveUnreachableLocation();
     },

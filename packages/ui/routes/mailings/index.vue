@@ -12,7 +12,14 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import { IS_ADMIN, IS_GROUP_ADMIN, HAS_FTP_ACCESS, USER } from '~/store/user';
+import {
+  IS_ADMIN,
+  IS_BOOTSTRAP_ACCOUNT,
+  IS_GROUP_ADMIN,
+  HAS_FTP_ACCESS,
+  MODULES_GROUP,
+  USER,
+} from '~/store/user';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -41,7 +48,9 @@ export default {
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER, sidebarModule: 'email-builder' },
   middleware({ store, redirect }) {
-    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+    // The bootstrap account stays in the settings; a super admin works in the
+    // modules of its selected group (ADR 0002, amended).
+    if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
       redirect('/groups');
     }
   },
@@ -74,14 +83,14 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
       hasFtpAccess: HAS_FTP_ACCESS,
+      modulesGroup: MODULES_GROUP,
     }),
     groupAdminUrl() {
-      return `/groups/${this.$store.state.user?.info?.group?.id}`;
+      return `/groups/${this.modulesGroup?.id}`;
     },
     isEmailBuilderEnabled() {
       // Default to true if not set (backward compatibility)
-      const enabled = this.$store.state.user?.info?.group?.enableEmailBuilder;
-      return enabled !== false;
+      return this.modulesGroup?.enableEmailBuilder !== false;
     },
     itemsLength() {
       return this.pagination?.itemsLength;

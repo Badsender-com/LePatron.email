@@ -123,8 +123,10 @@ export default {
           // Use action to fetch complete group data with module flags
           await this.$store.dispatch(`${USER}/${USER_SET}`, user);
 
-          // Redirect to home page, which will handle routing to the first enabled module
-          if (user.isAdmin) {
+          // Redirect to home page, which will handle routing to the first
+          // enabled module; the bootstrap account, which has no role, stays
+          // in the settings (ADR 0002, amended).
+          if (user.isAdmin && user.role !== 'super_admin') {
             await $router.push('/groups');
           } else {
             await $router.push('/');

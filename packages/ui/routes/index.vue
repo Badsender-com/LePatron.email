@@ -9,18 +9,24 @@
  * If no modules are enabled, shows the Email Builder placeholder
  */
 import MailingsPage from '~/routes/mailings/index.vue';
-import { USER, IS_ADMIN } from '~/store/user';
+import {
+  USER,
+  IS_ADMIN,
+  IS_BOOTSTRAP_ACCOUNT,
+  MODULES_GROUP,
+} from '~/store/user';
 
 export default {
   ...MailingsPage,
   middleware({ store, redirect, query }) {
-    // Super admin goes to groups management
-    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+    // The bootstrap account stays in the settings; a super admin lands on the
+    // modules of its selected group, like a company admin of that group
+    // (ADR 0002, amended).
+    if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
       return redirect('/groups');
     }
 
-    const userInfo = store.state.user?.info;
-    const group = userInfo?.group;
+    const group = store.getters[`${USER}/${MODULES_GROUP}`];
 
     // Check module activation status (default to true for backward compatibility)
     const isEmailBuilderEnabled = group?.enableEmailBuilder !== false;
@@ -39,7 +45,11 @@ export default {
       return redirect('/crm-intelligence', query);
     }
 
-    // If no modules are enabled, continue to show Email Builder placeholder
+    // No module enabled: a super admin opens the group's settings, anyone else
+    // gets the Email Builder placeholder.
+    if (store.getters[`${USER}/${IS_ADMIN}`] && group?.id) {
+      return redirect(`/groups/${group.id}/settings/general`);
+    }
   },
 };
 </script>

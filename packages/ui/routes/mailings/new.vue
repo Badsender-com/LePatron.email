@@ -3,6 +3,7 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { moduleTemplatesParams } from '~/store/template';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 
 export default {
@@ -13,9 +14,11 @@ export default {
     acl: acls.ACL_USER,
   },
   async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext;
+    const { $axios, store } = nuxtContext;
     try {
-      const { items } = await $axios.$get(apiRoutes.templates());
+      const { items } = await $axios.$get(apiRoutes.templates(), {
+        params: moduleTemplatesParams(store.getters),
+      });
       return {
         templates: items.filter((template) => template.hasMarkup),
         templatesIsLoading: false,

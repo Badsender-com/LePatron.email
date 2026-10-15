@@ -7,7 +7,7 @@ import {
   getCrmIntelligenceEmbedUrl,
 } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
-import { IS_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, IS_BOOTSTRAP_ACCOUNT, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
@@ -52,7 +52,9 @@ export default {
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER, sidebarModule: 'crm-intelligence' },
   middleware({ store, redirect }) {
-    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+    // The bootstrap account stays in the settings; a super admin works in the
+    // modules of its selected group (ADR 0002, amended).
+    if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
       redirect('/groups');
     }
   },

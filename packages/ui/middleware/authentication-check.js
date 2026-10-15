@@ -1,5 +1,5 @@
 import * as pageAcl from '~/helpers/pages-acls.js';
-import { USER, SESSION_ACL } from '~/store/user';
+import { USER, SESSION_ACL, IS_BOOTSTRAP_ACCOUNT } from '~/store/user';
 function flattenMeta(acc, meta) {
   return { ...acc, ...meta };
 }
@@ -12,7 +12,10 @@ export default async function authMiddleware(nuxtContext) {
   if (authorizations.notConnected && userSessionInfo.isConnected) {
     if (userSessionInfo.isUser) return redirect('/');
     if (userSessionInfo.isGroupAdmin) return redirect('/');
-    if (userSessionInfo.isAdmin) return redirect('/groups');
+    if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
+      return redirect('/groups');
+    }
+    if (userSessionInfo.isAdmin) return redirect('/');
   }
 
   if (

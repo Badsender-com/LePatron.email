@@ -107,7 +107,7 @@ export default {
   computed: {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
     ...mapGetters('user', {
-      userGroup: 'GROUP',
+      modulesGroup: 'MODULES_GROUP',
       isAdmin: 'IS_ADMIN',
       isGroupAdmin: 'IS_GROUP_ADMIN',
     }),
@@ -119,7 +119,7 @@ export default {
       const userLike = { isAdmin: this.isAdmin };
       return SIDEBAR_MODULES.map((module) => ({
         ...module,
-        locked: isModuleLocked(module, userLike, this.userGroup),
+        locked: isModuleLocked(module, userLike, this.modulesGroup),
       }));
     },
 

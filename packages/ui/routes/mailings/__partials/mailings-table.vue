@@ -201,7 +201,9 @@ export default {
     },
   },
   async mounted() {
-    const groupId = this.$store.state.user?.info?.group?.id;
+    // The group whose mailings are listed: a super admin's selected group,
+    // anyone else's own group (ADR 0002, amended).
+    const groupId = this.$store.getters['user/MODULES_GROUP']?.id;
     if (!groupId) return;
     try {
       const config = await this.$axios.$get(aiFeatures(groupId));

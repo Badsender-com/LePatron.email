@@ -57,6 +57,20 @@ export default {
     dashboards: [],
     loading: true,
   }),
+  computed: {
+    selectedGroupId() {
+      return this.$store.state.user?.info?.selectedGroup?.id || null;
+    },
+  },
+  watch: {
+    // The dashboards of a super admin are its selected group's (ADR 0002,
+    // amended).
+    selectedGroupId(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.fetchDashboards();
+      }
+    },
+  },
   async mounted() {
     await this.fetchDashboards();
   },
