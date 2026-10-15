@@ -1,7 +1,8 @@
 'use strict';
 
-// A super admin turns a company's preview links off to stop one that leaked:
-// the links must be gone, not suspended until the switch is turned back on.
+// Turning a company's preview links off suspends them: the share page checks
+// the switch at every view, so nothing is revoked when it is saved, and the
+// links open again if it is turned back on. Only a super admin holds it.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
@@ -30,13 +31,9 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   createWorkspace: jest.fn(),
   findWorkspaces: jest.fn(),
 }));
-jest.mock('../../../packages/server/share-link/share-link.service.js', () => ({
-  revokeAllForCompany: jest.fn(),
-}));
 
 const { Groups } = require('../../../packages/server/common/models.common.js');
 const groupService = require('../../../packages/server/group/group.service.js');
-const shareLinkService = require('../../../packages/server/share-link/share-link.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
@@ -62,49 +59,25 @@ beforeEach(() => {
 });
 
 describe('PUT /groups/:groupId — preview links', () => {
-  it('revokes the active links when sharing is turned off, before saving', async () => {
+  it('saves the switch turned off, and revokes no link', async () => {
     storedSharing(true);
-    const order = [];
-    shareLinkService.revokeAllForCompany.mockImplementation(async () =>
-      order.push('revoke')
-    );
-    groupService.updateGroup.mockImplementation(async () => order.push('save'));
-
     await update(superAdmin, { enableShareLinks: false });
-
-    expect(shareLinkService.revokeAllForCompany).toHaveBeenCalledWith(GROUP_ID);
-    expect(order).toEqual(['revoke', 'save']);
+    expect(groupService.updateGroup.mock.calls[0][0]).toMatchObject({
+      enableShareLinks: false,
+    });
   });
 
-  it('revokes them for a company that predates the switch', async () => {
-    storedSharing(undefined);
-    await update(superAdmin, { enableShareLinks: false });
-    expect(shareLinkService.revokeAllForCompany).toHaveBeenCalledTimes(1);
-  });
-
-  it('saves nothing when the links cannot be revoked', async () => {
-    storedSharing(true);
-    shareLinkService.revokeAllForCompany.mockRejectedValue(new Error('down'));
-    await expect(
-      update(superAdmin, { enableShareLinks: false })
-    ).rejects.toThrow('down');
-    expect(groupService.updateGroup).not.toHaveBeenCalled();
-  });
-
-  it('revokes nothing when sharing stays off, is turned on, or is not sent', async () => {
-    storedSharing(false);
-    await update(superAdmin, { enableShareLinks: false });
+  it('saves the switch turned back on', async () => {
     storedSharing(false);
     await update(superAdmin, { enableShareLinks: true });
-    storedSharing(true);
-    await update(superAdmin, { name: 'Acme' });
-    expect(shareLinkService.revokeAllForCompany).not.toHaveBeenCalled();
+    expect(groupService.updateGroup.mock.calls[0][0]).toMatchObject({
+      enableShareLinks: true,
+    });
   });
 
   it('leaves the switch to the super admin', async () => {
     storedSharing(true);
     await update(groupAdmin, { enableShareLinks: false });
-    expect(shareLinkService.revokeAllForCompany).not.toHaveBeenCalled();
     expect(groupService.updateGroup.mock.calls[0][0]).not.toHaveProperty(
       'enableShareLinks'
     );
