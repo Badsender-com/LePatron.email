@@ -1190,7 +1190,7 @@ export default {
     promote: 'Promouvoir un membre',
     promoteAction: 'Promouvoir',
     promoteDescription:
-      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il ne créera plus d\'emails : il consultera et ouvrira ceux de chaque groupe depuis ses paramètres.',
+      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il aura tous les droits sur chaque groupe, et travaillera dans Email Builder et CRM Intelligence sur le groupe qu\'il sélectionne.',
     promoted: 'Super administrateur promu',
     member: 'Membre',
     noMember: 'Aucun membre du groupe plateforme à promouvoir.',
@@ -1233,6 +1233,7 @@ export default {
     companiesEmpty: 'Aucune entreprise pour le moment',
     superAdminOnly: 'Super administrateur uniquement',
     switchCompany: 'Choisir une entreprise…',
+    selectedGroup: 'Groupe sélectionné : {name}',
     colors: 'Couleurs',
   },
   aiFeatures: {

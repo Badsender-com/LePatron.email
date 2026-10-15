@@ -1,4 +1,4 @@
-import { groupsItem } from '~/helpers/api-routes.js';
+import { groupsItem, selectedGroup } from '~/helpers/api-routes.js';
 
 export const USER = 'user';
 
@@ -16,6 +16,9 @@ export const SESSION_ACL = 'SESSION_ACL';
 // keep one source of truth on the group document.
 export const HAS_FTP_ACCESS = 'HAS_FTP_ACCESS';
 export const GROUP = 'GROUP';
+// The group a super admin works in (ADR 0002, amended), resolved by the
+// server on every request; anyone else's own group.
+export const SELECTED_GROUP = 'SELECTED_GROUP';
 
 export const getters = {
   [IS_CONNECTED](state) {
@@ -39,6 +42,9 @@ export const getters = {
   },
   [GROUP](state) {
     return state.info != null && state.info.group ? state.info.group : null;
+  },
+  [SELECTED_GROUP](state) {
+    return (state.info && state.info.selectedGroup) || null;
   },
   [SESSION_ACL](state) {
     const hasSession = state.info != null;
@@ -66,6 +72,7 @@ export const mutations = {
 };
 
 export const USER_SET = 'USER_SET';
+export const SELECT_GROUP = 'SELECT_GROUP';
 
 export const actions = {
   async [USER_SET](vuexCtx, user) {
@@ -92,6 +99,17 @@ export const actions = {
     if (group) {
       commit(M_USER_SET, { group });
     }
+  },
+  // A super admin, or the bootstrap account, selects the group it works in;
+  // the server keeps it for the next requests and pages.
+  async [SELECT_GROUP]({ commit, state }, groupId) {
+    if (!groupId || !state.info || state.info.isAdmin !== true) return;
+    const current = state.info.selectedGroup;
+    if (current && String(current.id) === String(groupId)) return;
+    const { selectedGroup: group } = await this.$axios.$put(selectedGroup(), {
+      groupId,
+    });
+    commit(M_USER_SET, { selectedGroup: group });
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

@@ -80,11 +80,11 @@ import BsSidebarToggle from './bs-sidebar-toggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
 import { isModuleLocked } from '~/helpers/module-activation';
 import { HELP_DOCS_URL } from '~/helpers/constants/external-urls';
+import { USER, SELECT_GROUP } from '~/store/user';
 import {
   SET_COLLAPSED,
   SET_ACTIVE_MODULE,
   SET_WIDTH,
-  SET_LAST_GROUP_ID,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from '~/store/sidebar';
@@ -128,6 +128,14 @@ export default {
     // lives in SIDEBAR_MODULES so adding a new module is a single-file edit.
     detectedModule() {
       const path = this.$route.path;
+      // A page without a module in its path (the global admin pages, such as
+      // /ai-skills or /super-admins) declares the one it belongs to, so it
+      // keeps the settings menu after a reload.
+      const declared = []
+        .concat(this.$route.meta || [])
+        .map((meta) => meta && meta.sidebarModule)
+        .find(Boolean);
+      if (declared) return declared;
       const match = SIDEBAR_MODULES.find((m) =>
         (m.pathPrefixes || []).some((prefix) => path.startsWith(prefix))
       );
@@ -163,11 +171,17 @@ export default {
         }
       },
     },
+    // A page of another group's resource selects that group (ADR 0002,
+    // amended): the resource wins over the selection.
     '$route.params.groupId': {
       immediate: true,
       handler(groupId) {
         if (groupId) {
-          this.setLastGroupId(groupId);
+          // The page answers for an unknown group itself; a refused
+          // selection only leaves the previous one in place.
+          this.$store
+            .dispatch(`${USER}/${SELECT_GROUP}`, groupId)
+            .catch(() => {});
         }
       },
     },
@@ -187,7 +201,6 @@ export default {
       setCollapsed: SET_COLLAPSED,
       setActiveModule: SET_ACTIVE_MODULE,
       setWidth: SET_WIDTH,
-      setLastGroupId: SET_LAST_GROUP_ID,
     }),
 
     handleToggle() {
