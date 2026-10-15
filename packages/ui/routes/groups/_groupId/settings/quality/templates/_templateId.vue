@@ -22,7 +22,7 @@ const CATALOGUE_ORDER = Object.keys(CHECKS);
 // A template's own exceptions, over the general settings of its group
 // (docs/adr/0004-quality-settings-per-group-and-template.md). The template is
 // looked up among its group's: an address naming another group's template
-// finds nothing.
+// finds nothing. Resolves with null when the list cannot be read.
 async function fetchTemplates(nuxtContext) {
   try {
     const response = await nuxtContext.$axios.$get(
@@ -31,7 +31,7 @@ async function fetchTemplates(nuxtContext) {
     return response.items || [];
   } catch (error) {
     console.error('[Quality] Failed to load the templates:', error);
-    return [];
+    return null;
   }
 }
 
@@ -56,7 +56,8 @@ export default {
       fetchTemplates(nuxtContext),
     ]);
     const template =
-      templates.find((t) => t.id === nuxtContext.params.templateId) || null;
+      (templates || []).find((t) => t.id === nuxtContext.params.templateId) ||
+      null;
     return { ...groupData, template };
   },
   data() {
@@ -111,6 +112,8 @@ export default {
         $axios: this.$axios,
         params: this.$route.params,
       });
+      // A failed refetch keeps what is shown: the save itself went through.
+      if (!templates) return;
       this.template =
         templates.find((t) => t.id === this.$route.params.templateId) || null;
     },
@@ -202,6 +205,7 @@ export default {
     </v-container>
     <bs-modal-confirm
       ref="leaveModal"
+      persistent
       :title="$t('qualitySettings.unsaved.leaveTitle')"
       :action-label="$t('qualitySettings.unsaved.leave')"
       @confirm="confirmLeave"

@@ -229,6 +229,20 @@ describe('the payload that saves a level', () => {
     ).toEqual({ checks: {} });
   });
 
+  // Code review: stored values equal to the recommended ones (set through
+  // the API, or the catalogue's default changed since) made a removal look
+  // like no change, and the exception came back on reload.
+  it('removes a general exception equal to the recommended values', () => {
+    const saved = exceptionsOf({
+      checks: { subject: { state: 'on', thresholds: { long: 40 } } },
+    });
+    expect(exceptionsPayload('general', {}, saved)).toEqual({
+      checks: { subject: { state: null, thresholds: null } },
+    });
+    // Left in place, it is no change.
+    expect(exceptionsPayload('general', saved, saved)).toEqual({ checks: {} });
+  });
+
   it("keeps a template's value equal to the general one", () => {
     // It will not follow the general settings' later changes.
     const drafts = { 'merge-tags': { state: 'blocking', thresholds: {} } };
