@@ -31,6 +31,14 @@ describe('html-size', () => {
   it('stays silent below the limit', () => {
     expect(findingsOf(htmlSize, { html: '<p>short</p>' })).toEqual([]);
   });
+
+  it('warns from 100 KB exactly: passing means under 100 KB', () => {
+    expect(findingsOf(htmlSize, { html: 'a'.repeat(100 * 1024 - 1) })).toEqual(
+      []
+    );
+    const [finding] = findingsOf(htmlSize, { html: 'a'.repeat(100 * 1024) });
+    expect(finding.params.size).toBe(100);
+  });
 });
 
 describe('tracking-params', () => {
