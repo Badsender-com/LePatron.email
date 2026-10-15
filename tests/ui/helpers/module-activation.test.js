@@ -23,8 +23,7 @@ const withCrm = { enableEmailBuilder: true, enableCrmIntelligence: true };
 const withoutCrm = { enableEmailBuilder: true, enableCrmIntelligence: false };
 const withoutEmailBuilder = { enableEmailBuilder: false };
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('a module of the selected group, for a super admin', () => {
+describe('a module of the selected group, for a super admin', () => {
   it('is locked when the selected group does not have it', () => {
     expect(isModuleLocked(CRM_INTELLIGENCE, superAdmin, withoutCrm)).toBe(true);
   });

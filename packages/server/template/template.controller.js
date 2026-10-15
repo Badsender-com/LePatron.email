@@ -12,6 +12,7 @@ const {
 } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const modelsUtils = require('../utils/model.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
@@ -50,7 +51,18 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const templateQuery = modelsUtils.addGroupFilter(req.user, {});
+  const { user, query = {} } = req;
+  // Shared by the global templates page, which lists every group's to a super
+  // admin, and the new-mailing screen, which names the selected group
+  // (ADR 0002, amended). Anyone else gets their own group's.
+  if (user.isAdmin && query.groupId !== undefined) {
+    if (!modelsUtils.isObjectIdString(query.groupId)) {
+      throw new createError.BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
+    }
+    const templates = await Templates.findForApi({ _company: query.groupId });
+    return res.json({ items: templates });
+  }
+  const templateQuery = modelsUtils.addGroupFilter(user, {});
   const templates = await Templates.findForApi(templateQuery);
   res.json({ items: templates });
 }

@@ -11,8 +11,6 @@
 // The selected group on the user is the resolved one (#1274 resolves it on
 // every request, fallbacks included).
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({}));
-
 const {
   ALICE,
   ERIN,
@@ -23,6 +21,11 @@ const {
   actorFrom,
   bootstrap,
 } = require('../../helpers/super-admin-fixtures.js');
+
+const {
+  listingGroupIdOf,
+  resourceGroupIdOf,
+} = require('../../../packages/server/account/request-scope.js');
 
 const OTHER_CLIENT_GROUP = '507f1f77bcf86cd799439b02';
 
@@ -38,18 +41,7 @@ function refusalOf(fn) {
   return 'no refusal';
 }
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('the group a module listing reads', () => {
-  let listingGroupIdOf;
-
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module doesn't exist
-    // until #1275 ships it, and a top-level require would break the suite.
-    ({
-      listingGroupIdOf,
-    } = require('../../../packages/server/account/request-scope.js'));
-  });
-
+describe('the group a module listing reads', () => {
   it("is a super admin's selected group, not its own platform group", () => {
     const superAdmin = actor(ALICE, { _selectedGroup: CLIENT_GROUP });
 
@@ -97,16 +89,7 @@ describe.skip('the group a module listing reads', () => {
   });
 });
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('the group a module request naming a resource reads or writes', () => {
-  let resourceGroupIdOf;
-
-  beforeAll(() => {
-    ({
-      resourceGroupIdOf,
-    } = require('../../../packages/server/account/request-scope.js'));
-  });
-
+describe('the group a module request naming a resource reads or writes', () => {
   it("is the resource's group for a super admin, whatever group is selected", () => {
     const superAdmin = actor(ALICE, { _selectedGroup: OTHER_CLIENT_GROUP });
 

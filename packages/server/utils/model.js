@@ -1,6 +1,5 @@
 'use strict';
 
-const mongoose = require('mongoose');
 const { BadRequest } = require('http-errors');
 const SPACE_TYPE = require('../constant/space-type');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -11,7 +10,6 @@ module.exports = {
   normalizeString,
   isFromGroup,
   addGroupFilter,
-  addStrictGroupFilter,
   addMailQueryParamFilter,
   validatePaginationJSON,
   validateFiltersJSON,
@@ -49,14 +47,6 @@ function isFromGroup(user, groupId) {
 function addGroupFilter(user, filter) {
   if (user.isAdmin) return filter;
   filter._company = user.group.id;
-  return filter;
-}
-
-// Strict difference from above:
-// Admin can't get content with a group
-function addStrictGroupFilter(user, filter) {
-  const group = user.isAdmin ? { $exists: false } : user.group.id;
-  filter._company = mongoose.Types.ObjectId(group);
   return filter;
 }
 

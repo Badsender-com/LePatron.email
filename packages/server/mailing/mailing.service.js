@@ -57,6 +57,8 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const permissions = require('../account/permissions.js');
+const { resourceGroupIdOf } = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
@@ -113,29 +115,24 @@ async function listMailingForWorkspaceOrFolder({
     group = await Groups.findById(workspace.group);
   }
 
-  if (!user.isGroupAdmin) {
-    if (
-      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
-        workspace,
-        user,
-        group
-      )
-    ) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
+  if (!permissions.canReadWorkspace(user, workspace, group)) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+  // A list names its workspace or folder: it reads that resource's group
+  // (ADR 0002, amended).
+  const groupId = resourceGroupIdOf(user, workspace.group);
 
   if (parentFolderId) {
     mailings = await findMailings({
       parentFolderId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
   } else {
     mailings = await findMailings({
       workspaceId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
@@ -1689,10 +1686,12 @@ async function validateMailExist(mailingId) {
 }
 
 function applyFilters(query) {
-  const { user, workspaceId, parentFolderId, ...restQuery } = query;
+  const { groupId, workspaceId, parentFolderId, ...restQuery } = query;
 
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
-  let workspaceOrFolderFilter = { ...mailingQueryStrictGroup, ...restQuery };
+  let workspaceOrFolderFilter = {
+    _company: mongoose.Types.ObjectId(String(groupId)),
+    ...restQuery,
+  };
 
   if (workspaceId) {
     workspaceOrFolderFilter = {

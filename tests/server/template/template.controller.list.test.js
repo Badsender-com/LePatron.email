@@ -76,8 +76,7 @@ function listAs(user, query = {}) {
 
 const names = ({ body }) => body.items.map((t) => t.name);
 
-// Turned on by #1275 (super admins in the modules of their selected group)
-describe.skip('the templates of the new-mailing screen, for a super admin', () => {
+describe('the templates of the new-mailing screen, for a super admin', () => {
   it('are the templates of the group the screen passes', async () => {
     expect(names(await listAs(superAdmin, { groupId: CLIENT_GROUP }))).toEqual([
       'Client newsletter',
