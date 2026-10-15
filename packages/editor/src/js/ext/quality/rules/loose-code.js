@@ -1,33 +1,53 @@
 'use strict';
 
 const _ = require('lodash');
-const { htmlCodeBlocks, parseMarkup } = require('../html-code');
+const { htmlCodeBlocks, stripCssComments } = require('../html-code');
 const { isDynamic } = require('../exported-content');
 
 // Pasted code often comes from a web page: relative addresses that only work
-// on that site, and colours an email client cannot read.
-const ABSOLUTE = /^(https?:|mailto:|tel:|sms:|cid:|data:|#)/i;
+// on that site, addresses without a protocol, and colours an email client
+// cannot read.
+// Any scheme is a full address here (`whatsapp://`, `ftp:`): what filters
+// refuse among them is reported by "forbidden-code".
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+const PROTOCOL_RELATIVE = /^\/\//;
 const HEX = /#[0-9a-f]+\b/gi;
 const VALID_HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
-function relativeUrls(root) {
+const URL_ATTRS = ['href', 'src', 'background'];
+
+// Every address of the markup, as written. An attribute may be empty
+// (`href=""`): read one by one, strings only.
+function addressesOf(root) {
   return _.uniq(
-    Array.from(root.querySelectorAll('[href], [src], [background]'))
-      .map((el) => el.getAttribute('href') || el.getAttribute('src') || el.getAttribute('background'))
-      .map((url) => url.trim())
-      .filter((url) => url && !ABSOLUTE.test(url) && !isDynamic(url))
+    _.flatMap(
+      Array.from(root.querySelectorAll('[href], [src], [background]')),
+      (el) =>
+        URL_ATTRS.map((name) => el.getAttribute(name))
+          .filter((value) => typeof value === 'string')
+          .map((value) => value.trim())
+          .filter(Boolean)
+    )
   );
 }
 
+const isRelative = (url) =>
+  !url.startsWith('#') &&
+  !HAS_SCHEME.test(url) &&
+  !PROTOCOL_RELATIVE.test(url) &&
+  !isDynamic(url);
+
 // The values of CSS declarations only: in a stylesheet, `#fade-in { }` is an
-// id selector, not a colour.
+// id selector, not a colour, and a comment is nothing at all.
 const declarationValues = (css) =>
-  ((css || '').match(/:[^;{}]+/g) || []).join(' ');
+  (stripCssComments(css).match(/:[^;{}]+/g) || []).join(' ');
 
 // Hex colours of the wrong length: #ff00f, or the 8-digit #rrggbbaa most
 // clients (Outlook first) cannot read.
 function invalidColors(root) {
-  const values = Array.from(root.querySelectorAll('[style], [bgcolor], [color]'))
+  const values = Array.from(
+    root.querySelectorAll('[style], [bgcolor], [color]')
+  )
     .map((el) =>
       [
         declarationValues(el.getAttribute('style')),
@@ -47,6 +67,14 @@ function invalidColors(root) {
   );
 }
 
+// One finding per kind, its values sorted: the fingerprint must not change
+// when the client reorders the code.
+const finding = (messageKey, name, values) => ({
+  messageKey,
+  params: { [name]: values.slice(0, 3).join(', ') },
+  value: values.join('|'),
+});
+
 module.exports = {
   id: 'loose-code',
   category: 'technical',
@@ -55,25 +83,45 @@ module.exports = {
   passKey: 'The HTML code uses full addresses and valid colours',
   run(ctx) {
     return _.flatMap(htmlCodeBlocks(ctx), (block) => {
-      const root = parseMarkup(ctx, block.html);
-      const urls = relativeUrls(root);
-      const colors = invalidColors(root);
+      const addresses = addressesOf(block.root);
+      const relative = addresses.filter(isRelative).sort();
+      const protocolRelative = addresses
+        .filter((url) => PROTOCOL_RELATIVE.test(url))
+        .sort();
+      const colors = invalidColors(block.root).sort();
       const findings = [];
-      if (urls.length) {
-        findings.push({
-          messageKey: 'Relative address in the HTML code, it only works on its original site: __urls__',
-          params: { urls: urls.slice(0, 3).join(', ') },
-          value: urls.join('|'),
-        });
+      if (relative.length) {
+        findings.push(
+          finding(
+            'Relative address in the HTML code, it only works on its original site: __urls__',
+            'urls',
+            relative
+          )
+        );
+      }
+      if (protocolRelative.length) {
+        findings.push(
+          finding(
+            'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__',
+            'urls',
+            protocolRelative
+          )
+        );
       }
       if (colors.length) {
-        findings.push({
-          messageKey: 'Colour an email client cannot read in the HTML code: __colors__',
-          params: { colors: colors.slice(0, 3).join(', ') },
-          value: colors.join('|'),
-        });
+        findings.push(
+          finding(
+            'Colour an email client cannot read in the HTML code: __colors__',
+            'colors',
+            colors
+          )
+        );
       }
-      return findings.map((f) => ({ ...f, blockId: block.blockId, propertyPath: 'htmlCode' }));
+      return findings.map((f) => ({
+        ...f,
+        blockId: block.blockId,
+        propertyPath: block.path,
+      }));
     });
   },
 };
