@@ -34,9 +34,12 @@ const {
  * side:
  *   - per run: number of addresses, parallel requests, one deadline (what is
  *     left past it is "unverifiable"), a budget of bytes downloaded;
- *   - per user: one run at a time, and 20 runs per 10 minutes;
- *   - for the whole process: a ceiling on link probes and on image downloads
- *     in parallel, and a daily budget of Web Risk lookups per company;
+ *   - per user: one run at a time (a second one waits), and 20 runs per 10
+ *     minutes;
+ *   - per worker: a ceiling on link probes and on image downloads in
+ *     parallel (every in-memory bound is per worker, see quality-limits.js);
+ *   - for the whole cluster: a daily budget of Web Risk lookups per company,
+ *     in the database;
  *   - only the default ports (80, 443), redirects included;
  *   - answers say what a reader would see, never why a request was refused.
  * Definitive answers are cached a few minutes, per company: a re-run after
@@ -115,19 +118,25 @@ const DEFAULT_DEPS = {
 
 // Said once per worker: the in-memory bounds hold per worker (index.js runs
 // WORKERS of them, counted as it does), the Web Risk budget for the cluster.
-const cpuCount = require('os').cpus().length;
-const workers =
-  process.env.WORKERS <= cpuCount ? Number(process.env.WORKERS) || 1 : 1;
-logger.log('[QUALITY] resource check bounds', {
-  workers,
-  perWorker: {
-    runsPerUser: `${RUNS_PER_WINDOW} per ${RUN_WINDOW_MS / 60000} min`,
-    linkProbes: links.MAX_LINK_PROBES,
-    imageDownloads: images.MAX_IMAGE_DOWNLOADS,
-  },
-  perRun: { deadlineMs: RUN_DEADLINE_MS, concurrency: CONCURRENCY },
-  shared: { webRiskLookupsPerCompanyPerDay: threats.WEB_RISK_LOOKUPS_PER_DAY },
-});
+// index.js loads the routes in its master too, which serves nothing: silent.
+function logBounds() {
+  const cpuCount = require('os').cpus().length;
+  const workers =
+    process.env.WORKERS <= cpuCount ? Number(process.env.WORKERS) || 1 : 1;
+  logger.log('[QUALITY] resource check bounds', {
+    workers,
+    perWorker: {
+      runsPerUser: `${RUNS_PER_WINDOW} per ${RUN_WINDOW_MS / 60000} min`,
+      linkProbes: links.MAX_LINK_PROBES,
+      imageDownloads: images.MAX_IMAGE_DOWNLOADS,
+    },
+    perRun: { deadlineMs: RUN_DEADLINE_MS, concurrency: CONCURRENCY },
+    shared: {
+      webRiskLookupsPerCompanyPerDay: threats.WEB_RISK_LOOKUPS_PER_DAY,
+    },
+  });
+}
+if (require('cluster').isWorker) logBounds();
 
 // A run whose caller is gone (the editor replaced it, the tab closed) is cut
 // short: its deadline is brought to now, so nothing more is fetched for it.
