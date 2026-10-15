@@ -167,6 +167,7 @@ async function showShare(req, res) {
     updatedAt: 1,
     name: 1,
     _company: 1,
+    _wireframe: 1,
     subject: 1,
     // Only the preheader of the content model, never the whole of it.
     'data.preheaderText': 1,
@@ -176,7 +177,9 @@ async function showShare(req, res) {
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
   // The company the email belongs to now, not the one of the link: a transfer
   // moves an email, and the link follows the email.
-  const sharing = await shareLinkService.companySharing(mailing._company);
+  const sharing = await shareLinkService.companySharing(
+    await shareLinkService.sharingCompanyOf(mailing)
+  );
   if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
   const html = await sanitizedPage(mailing);
   if (!html) return renderNotice(res, 404, lang, 'empty');
