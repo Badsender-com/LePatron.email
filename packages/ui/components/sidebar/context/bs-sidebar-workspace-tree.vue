@@ -276,13 +276,33 @@ export default {
         // deleted the fetch fails harmlessly and the tree stays put. Crucially,
         // we must NOT clearSelection() here: that would wipe a valid sub-folder
         // selection just because it wasn't pre-loaded.
-        this.safeNavigate('replace', { query: { fid: nodeId } });
+        this.restoreFolder(nodeId);
       } catch (error) {
         console.error(
           '[BsSidebarWorkspaceTree] Error restoring selected node:',
           error
         );
       }
+    },
+    // A super admin reopens a saved folder only if it is in the selected
+    // group: a folder of another group would select that group again
+    // (ADR 0002, amended).
+    async restoreFolder(folderId) {
+      if (this.userInfo?.isAdmin) {
+        try {
+          const folder = await this.$axios.$get(getFolder(folderId));
+          if (String(folder._company) !== String(this.selectedGroupId)) {
+            this.clearSelection();
+            this.selectFirstWorkspace();
+            return;
+          }
+        } catch (error) {
+          this.clearSelection();
+          this.selectFirstWorkspace();
+          return;
+        }
+      }
+      this.safeNavigate('replace', { query: { fid: folderId } });
     },
     saveSelectedNode(nodeId, nodeType) {
       try {
