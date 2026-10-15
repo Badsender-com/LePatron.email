@@ -2,8 +2,9 @@
 
 const crypto = require('crypto');
 const createError = require('http-errors');
+const mongoose = require('mongoose');
 
-const { ShareLinks, Groups } = require('../common/models.common.js');
+const { ShareLinks, Groups, Templates } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const GROUP_STATUS = require('../group/status.js');
 const logger = require('../utils/logger.js');
@@ -105,7 +106,7 @@ function toApi(link, urlOf) {
 /**
  * Whether the emails of a company may be shared: it is active, has the email
  * builder, and has not turned the preview links off (enableShareLinks, on the
- * company form). An email without a company, the admin's, always may. Also
+ * company form). Without a company (sharingCompanyOf found none), it may. Also
  * says whether the company writes the subject in LePatron (email metadata):
  * the public page then shows the subject and the preheader.
  * @param {ObjectId} [companyId]
@@ -130,12 +131,36 @@ async function companySharing(companyId) {
   return { allowed, metadata };
 }
 
+const idOf = (ref) => (ref && ref._id) || ref || undefined;
+const isReference = (value) =>
+  typeof value === 'string' || value instanceof mongoose.Types.ObjectId;
+
+/**
+ * The company whose setting decides whether an email may be shared: its own,
+ * or, for an email of the admin (no company), the company of its template,
+ * the one the editor is configured from (findOneForMosaico). Every side of
+ * the sharing (the editor's section, creation, the public page) asks this,
+ * so that none can allow what another hides.
+ * @param {Object} mailing - with `_company` and `_wireframe`, either
+ *   populated or references
+ * @returns {Promise<ObjectId|undefined>}
+ */
+async function sharingCompanyOf(mailing) {
+  if (mailing._company) return idOf(mailing._company);
+  const template = mailing._wireframe;
+  if (!template) return undefined;
+  if (!isReference(template)) return idOf(template._company);
+  const stored = await Templates.findById(template, { _company: 1 }).lean();
+  return (stored && stored._company) || undefined;
+}
+
 /**
  * @returns {Promise<{ link: Object, token: string }>}
  * @throws 403 SHARE_LINKS_DISABLED when the email's company may not share
  */
 async function createShareLink({ mailing, user, expiresInDays }) {
-  const sharing = await companySharing(mailing._company);
+  const companyId = await sharingCompanyOf(mailing);
+  const sharing = await companySharing(companyId);
   if (!sharing.allowed) {
     throw new createError.Forbidden(ERROR_CODES.SHARE_LINKS_DISABLED);
   }
@@ -150,7 +175,7 @@ async function createShareLink({ mailing, user, expiresInDays }) {
     tokenHash: hashToken(token),
     tokenEncrypted: sealToken(token),
     _mailing: mailing._id,
-    _company: mailing._company,
+    _company: companyId,
     _user: user.isAdmin ? undefined : user.id,
     lang: user.lang === 'en' ? 'en' : 'fr',
     expiresAt: new Date(Date.now() + expiresInDays * DAY_MS),
@@ -209,6 +234,7 @@ module.exports = {
   revokeAllForMailing,
   resolveToken,
   companySharing,
+  sharingCompanyOf,
   toApi,
   hashToken,
   EXPIRY_DAYS,

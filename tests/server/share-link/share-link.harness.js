@@ -17,6 +17,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   },
   Mailings: { findById: jest.fn() },
   Groups: { findById: jest.fn() },
+  Templates: { findById: jest.fn() },
 }));
 // A key-independent stand-in for AES: what matters is that the token is
 // sealed, opened back, and never stored as is.
@@ -41,6 +42,7 @@ const {
   ShareLinks,
   Mailings,
   Groups,
+  Templates,
 } = require('../../../packages/server/common/models.common.js');
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 
@@ -108,6 +110,7 @@ module.exports = {
   ShareLinks,
   Mailings,
   Groups,
+  Templates,
   mailingService,
   MAILING_ID,
   LINK_ID,
