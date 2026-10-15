@@ -1,6 +1,7 @@
 'use strict';
 
 const { stripMergeTags } = require('../merge-tag-syntax');
+const { inboxLength } = require('../copy-fields');
 
 // Thresholds weighed against real truncation and other tools (Notion, "Seuils
 // objet et préheader"): Litmus and Stripo advise 90 to 100; Dyspatch sees
@@ -10,14 +11,18 @@ const { stripMergeTags } = require('../merge-tag-syntax');
 const LONG = 100;
 const TOO_LONG = 140;
 
-// Compared without case, spacing, merge tags or end punctuation: "Spring
-// sale!" repeats "spring sale".
+// Compared without case, spacing, merge tags, accents decomposed, nor the
+// punctuation and symbols around: "« Spring sale ! »" repeats "spring sale 🔥".
 const normalise = (text) =>
   stripMergeTags(text)
+    .normalize('NFC')
     .toLowerCase()
     .replace(/\s+/g, ' ')
-    .replace(/[\s.!?…:;,]+$/u, '')
+    .replace(/^[\p{P}\p{S}\s]+|[\p{P}\p{S}\s]+$/gu, '')
     .trim();
+
+// Words are runs of letters or digits: what is left of a merge tag is none.
+const wordCount = (text) => (text.match(/[\p{L}\p{N}]+/gu) || []).length;
 
 // The preheader repeats the subject: the same words, or the subject then more.
 function repeatsSubject(preheader, subject) {
@@ -25,28 +30,23 @@ function repeatsSubject(preheader, subject) {
   const s = normalise(subject);
   // Two words at least: a one-word subject ("New") is only the start of many
   // preheaders.
-  if (s.split(' ').length < 2 || !p.startsWith(s)) return false;
+  if (wordCount(s) < 2 || !p.startsWith(s)) return false;
   // The subject as a whole, not the start of a longer word: "Sale" is not
   // repeated by "Salesforce".
   return p.length === s.length || /^[\s\p{P}]/u.test(p.slice(s.length));
 }
 
-// Merge tags do not count: their value is only known at send time.
-const visibleLength = (text) =>
-  Array.from(stripMergeTags(text).replace(/\s+/g, ' ').trim()).length;
-
 module.exports = {
   id: 'preheader',
   category: 'copy',
   severity: 'warning',
-  titleKey: 'Preheader',
+  titleKey: 'quality-title-preheader',
   passKey: 'The preheader is filled in and __count__ characters long',
   LONG,
   TOO_LONG,
-  passParams: (ctx) => {
-    const preheader = ctx.preheader;
-    return { count: preheader ? visibleLength(preheader.value) : 0 };
-  },
+  // A template without a preheader has nothing to pass: the check is not listed.
+  enabled: (ctx) => Boolean(ctx.preheader),
+  passParams: (ctx) => ({ count: inboxLength(ctx.preheader.value) }),
   run(ctx) {
     const preheader = ctx.preheader;
     if (!preheader) return [];
@@ -60,10 +60,17 @@ module.exports = {
         },
       ];
     }
-    if (preheader.templateDefault && value === preheader.templateDefault.trim()) {
+    // The template's default is the one the editor loaded: a mailing
+    // translated by the AI, or a template re-uploaded with a new sample text,
+    // no longer matches it, and the sample then passes as the client's.
+    if (
+      preheader.templateDefault &&
+      value === preheader.templateDefault.trim()
+    ) {
       return [
         {
-          messageKey: 'Preheader still the sample text of the template: __text__',
+          messageKey:
+            'Preheader still the sample text of the template: __text__',
           params: { text: value },
           value,
         },
@@ -76,11 +83,13 @@ module.exports = {
           {
             messageKey:
               'The preheader repeats the subject: inboxes show the same words twice',
-            value,
+            // Its own fingerprint, tied to the subject: ignoring it must not
+            // ignore "too long" as well, and a new subject brings it back.
+            value: `repeats:${ctx.subject}|${value}`,
           },
         ]
       : [];
-    const count = visibleLength(value);
+    const count = inboxLength(value);
     const finding = (messageKey, severity) =>
       findings.concat({ messageKey, severity, params: { count }, value });
     if (count > TOO_LONG) {

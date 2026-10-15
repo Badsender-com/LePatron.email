@@ -32,6 +32,11 @@ describe('unfilled-links', () => {
     });
   });
 
+  it('reports a javascript: link, which email clients never run', () => {
+    const html = exportOf({ b1: '<a href="javascript:void(0)">Go</a>' });
+    expect(findingsOf(unfilledLinks, { blocks, html })).toHaveLength(1);
+  });
+
   it('reports empty and bare "#" links too', () => {
     const html = exportOf({ b1: '<a href="">a</a><a href="#">b</a>' });
     expect(findingsOf(unfilledLinks, { blocks, html })).toHaveLength(2);

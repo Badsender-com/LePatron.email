@@ -8,6 +8,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   error: jest.fn(),
 }));
+// The budget's own tests are in quality-threats.test.js: here it is injected.
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  QualityBudgets: { findOneAndUpdate: jest.fn() },
+}));
 
 const logger = require('../../../packages/server/utils/logger.js');
 const {
@@ -18,7 +22,6 @@ const {
 const {
   checkResources,
   clearCacheForTests,
-  WEB_RISK_LOOKUPS_PER_DAY,
 } = require('../../../packages/server/mailing/quality-resources.service.js');
 
 const KEY = 'AIza-test-key';
@@ -80,11 +83,19 @@ describe('lookup', () => {
         fetchImpl: async () => {
           throw Object.assign(new Error(`timeout ${KEY}`), {
             name: 'FetchError',
+            type: 'request-timeout',
+            code: 'ETIMEDOUT',
           });
         },
       })
     ).toBeNull();
     expect(JSON.stringify(logger.warn.mock.calls)).not.toContain(KEY);
+    // What went wrong, for whoever reads the logs: the kind, never the message.
+    expect(logger.warn).toHaveBeenLastCalledWith(expect.any(String), {
+      error: 'FetchError',
+      type: 'request-timeout',
+      code: 'ETIMEDOUT',
+    });
   });
 
   it('is off without a key', () => {
@@ -104,6 +115,7 @@ describe('in a quality run', () => {
     webRiskLookup: jest.fn(async (url) =>
       url.includes('bad') ? ['MALWARE'] : []
     ),
+    spendWebRiskLookup: jest.fn(async () => true),
     ...overrides,
   });
   const run = (links, d, userKey = 'u1') =>
@@ -121,14 +133,21 @@ describe('in a quality run', () => {
     expect(webRisk).toEqual({
       enabled: true,
       threats: { 'https://bad.test': ['MALWARE'] },
+      unchecked: [],
     });
   });
 
   it('is off, and asks nothing, without a key', async () => {
     const d = deps({ webRiskKey: () => null });
     const { webRisk } = await run(['https://bad.test'], d);
-    expect(webRisk).toEqual({ enabled: false, threats: {} });
+    expect(webRisk).toEqual({ enabled: false, threats: {}, unchecked: [] });
     expect(d.webRiskLookup).not.toHaveBeenCalled();
+  });
+
+  it('asks about an address without the credentials typed in it', async () => {
+    const d = deps();
+    await run(['https://user:secret@a.test/p'], d);
+    expect(d.webRiskLookup.mock.calls[0][0]).toBe('https://a.test/p');
   });
 
   it('asks once for addresses that differ only by their query string', async () => {
@@ -137,29 +156,43 @@ describe('in a quality run', () => {
     expect(d.webRiskLookup).toHaveBeenCalledTimes(1);
   });
 
-  it("stops asking once the company's daily budget is spent", async () => {
-    const d = deps();
-    const links = (n) =>
-      Array.from({ length: n }, (_, i) => `https://site${i}.test/`);
-    const runs = Math.ceil(WEB_RISK_LOOKUPS_PER_DAY / 60);
-    for (let i = 0; i < runs; i++) {
-      // Distinct users: the per-user throttle is not what is tested here.
-      await run(
-        links(60).map((url) => `${url}${i}`),
-        d,
-        `u${i}`
-      );
-    }
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
-    const { webRisk } = await run(['https://bad.test/late'], d, 'late');
-    expect(webRisk.threats).toEqual({});
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(WEB_RISK_LOOKUPS_PER_DAY);
+  it("draws on the user's and the company's daily budgets before each lookup, and stops once spent", async () => {
+    const d = deps({
+      spendWebRiskLookup: jest
+        .fn()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValue(false),
+    });
+    await run(['https://a.test/', 'https://b.test/'], d);
+    expect(d.spendWebRiskLookup).toHaveBeenCalledWith({
+      company: 'c1',
+      user: 'u1',
+    });
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+
+    const { webRisk } = await run(['https://bad.test/late'], d, 'u2');
+    // Not asked is not "clean".
+    expect(webRisk).toEqual({
+      enabled: true,
+      threats: {},
+      unchecked: ['https://bad.test/late'],
+    });
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+    // Not spent for nothing: a cached answer asks no budget.
+    await run(['https://a.test/'], d, 'u3');
+    expect(d.spendWebRiskLookup).toHaveBeenCalledTimes(3);
   });
 
-  it('asks again what Google could not answer', async () => {
+  it('says what Google could not answer, and asks again next time', async () => {
     const d = deps({ webRiskLookup: jest.fn(async () => null) });
-    await run(['https://a.test'], d);
+    const { webRisk } = await run(['https://a.test', 'https://b.test'], d);
+    expect(webRisk).toEqual({
+      enabled: true,
+      threats: {},
+      unchecked: ['https://a.test', 'https://b.test'],
+    });
     await run(['https://a.test'], d, 'u2');
-    expect(d.webRiskLookup).toHaveBeenCalledTimes(2);
+    expect(d.webRiskLookup).toHaveBeenCalledTimes(3);
   });
 });

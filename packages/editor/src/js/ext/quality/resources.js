@@ -7,12 +7,13 @@ const { isPlaceholderSrc } = require('./images');
 
 // The links and images of the client's blocks that only the server can check
 // (does the link answer, what does the image weigh once exported). Same bounds
-// as the server (quality-resources.service.js): past them, the first ones are
-// checked and the rest left out.
-const MAX_LINKS = 60;
-const MAX_IMAGES = 40;
-// Longer addresses are refused by the server, which would fail the whole run.
-const MAX_URL_LENGTH = 2048;
+// as the server, from packages/shared: past them, the first ones are checked
+// and the rest left out, and a longer address is not sent at all.
+const { RESOURCES } = require('../../../../../shared/quality/limits.js');
+
+const MAX_LINKS = RESOURCES.maxLinks;
+const MAX_IMAGES = RESOURCES.maxImages;
+const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 
 const isWeb = (url, raw) =>
   Boolean(url) &&
@@ -22,6 +23,9 @@ const isWeb = (url, raw) =>
 /**
  * Links worth fetching: web addresses the client typed, merge tags excluded
  * (only the ESP knows where they lead), unfilled ones left to "unfilled-links".
+ * A link dynamic in its query only (`https://brand.com/?id=%%ID%%`) is left
+ * out as well: fetched with the tag as typed, the page answers for an id that
+ * does not exist, and a "broken link" on it would be the check's mistake.
  */
 function checkableLinks(ctx) {
   return blockLinks(ctx).filter(
@@ -35,7 +39,7 @@ function checkableLinks(ctx) {
  * "unreplaced-images", merge tags left out (only the ESP knows the address).
  */
 function checkableImages(ctx) {
-  const { placeholderUrl } = ctx.config;
+  const placeholderUrl = ctx.config.imagesUrl.placeholder;
   return blockImages(ctx).filter(
     (image) =>
       isWeb(image.url, image.src) &&

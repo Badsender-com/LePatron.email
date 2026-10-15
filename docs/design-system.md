@@ -310,7 +310,7 @@ Utiliser **Font Awesome** (déjà intégré) avec les conventions suivantes :
 | Aller au bloc | 🔗 | `fa-external-link` |
 | Info | ℹ️ | `fa-info-circle` |
 | Warning | ⚠️ | `fa-exclamation-triangle` |
-| Bloquant | 🚫 | `fa-ban` |
+| Bloquant | ⚠️ | `lucide-alert-circle` (comme « Erreurs » du contrôle qualité ; `lucide-ban` reste réservé à « Ignorer ») |
 | Général | 💬 | `fa-comment-o` |
 | Design | 🎨 | `fa-paint-brush` |
 | Contenu | 📝 | `fa-file-text-o` |

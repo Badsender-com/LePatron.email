@@ -40,7 +40,11 @@ const ShareLinkSchema = new Schema(
       required: true,
       index: true,
     },
-    // Absent for the admin, who has no company (as on mailings).
+    // The company whose setting allowed the link (sharingCompanyOf): the
+    // email's, or its template's for an email of the admin. Whether the link
+    // still opens is judged on the email's current company
+    // (share-page.controller.js), which a transfer can change. Absent when
+    // neither has one.
     _company: {
       type: ObjectId,
       ref: GroupModel,
@@ -66,6 +70,10 @@ const ShareLinkSchema = new Schema(
   { timestamps: true }
 );
 
+// MongoDB keeps the first options an index was created with: changing
+// KEEP_EXPIRED_SECONDS makes autoIndex fail on "already exists with different
+// options" until the index is dropped by hand (db.sharelinks.dropIndex) and
+// created again at the next start.
 ShareLinkSchema.index(
   { expiresAt: 1 },
   { expireAfterSeconds: KEEP_EXPIRED_SECONDS }

@@ -1,78 +1,33 @@
 'use strict';
 
-const { Mailings, Groups } = require('../common/models.common.js');
-const GROUP_STATUS = require('../group/status.js');
+const asyncHandler = require('express-async-handler');
+
+const { Mailings } = require('../common/models.common.js');
 const previewSanitizer = require('../utils/preview-html-sanitizer.js');
+const {
+  createSanitizedPreviewCache,
+} = require('../utils/sanitized-preview-cache.js');
 const logger = require('../utils/logger.js');
+const { clientIp } = require('../utils/client-ip.js');
 const shareLinkService = require('./share-link.service.js');
+const { createShareViewLimiter } = require('./share-view-limiter.js');
+const PAGES = require('./share-page.locales.js');
+const { preheaderOf } = require('../../shared/quality/preheader.js');
 
 /**
  * The public page a preview link opens (GET /share/:token), without an
  * account: the last saved version of the email, sanitized, in an iframe with
  * no permission (share-page.pug). Nothing on it runs a script, and every
  * failure is a page, never the API's JSON error.
+ *
+ * Two residual risks, accepted (docs/adr, quality control):
+ * - The page publishes the name of the email (its title, so the reader's
+ *   browser history, and the bar), and the subject and preheader when the
+ *   company writes them in LePatron. Whoever holds the link reads them.
+ * - The token travels in the URL. The request logs mask it (utils/logger.js),
+ *   but the HTTP to HTTPS redirect (index.js) sends it back in `Location`,
+ *   and the reverse proxy logs the full URL, upstream of this code.
  */
-
-const PAGES = {
-  fr: {
-    unknown: {
-      title: 'Lien introuvable',
-      message:
-        "Ce lien d'aperçu n'existe pas ou a été désactivé. Demandez un nouveau lien à la personne qui vous l'a envoyé.",
-    },
-    expired: {
-      title: 'Lien expiré',
-      message:
-        "Ce lien d'aperçu a expiré. Demandez un nouveau lien à la personne qui vous l'a envoyé.",
-    },
-    empty: {
-      title: 'Aperçu indisponible',
-      message:
-        "Cet email n'a pas encore d'aperçu : il doit d'abord être enregistré dans l'éditeur.",
-    },
-    busy: {
-      title: 'Trop de consultations',
-      message: 'Ce lien a été ouvert trop souvent. Réessayez dans un moment.',
-    },
-    error: {
-      title: 'Aperçu indisponible',
-      message: "L'aperçu n'a pas pu être affiché. Réessayez dans un moment.",
-    },
-    meta: (date) =>
-      `Aperçu de la dernière version enregistrée · lien valable jusqu'au ${date} · les liens de l'email s'ouvrent dans un nouvel onglet`,
-    subject: 'Objet',
-    preheader: 'Préheader',
-  },
-  en: {
-    unknown: {
-      title: 'Link not found',
-      message:
-        'This preview link does not exist or was turned off. Ask whoever sent it for a new one.',
-    },
-    expired: {
-      title: 'Link expired',
-      message:
-        'This preview link has expired. Ask whoever sent it for a new one.',
-    },
-    empty: {
-      title: 'Preview unavailable',
-      message:
-        'This email has no preview yet: it must first be saved in the editor.',
-    },
-    busy: {
-      title: 'Too many views',
-      message: 'This link was opened too often. Try again in a moment.',
-    },
-    error: {
-      title: 'Preview unavailable',
-      message: 'The preview could not be shown. Try again in a moment.',
-    },
-    meta: (date) =>
-      `Preview of the last saved version · link valid until ${date} · links in the email open in a new tab`,
-    subject: 'Subject',
-    preheader: 'Preheader',
-  },
-};
 
 // The page never runs a script and loads nothing but what the email itself
 // shows. Inherited by the email's iframe (srcdoc), which is sandboxed too.
@@ -98,89 +53,52 @@ function setShareHeaders(res) {
   });
 }
 
-// Views per link, and unknown tokens for the process, per window. Guessing a
-// token is hopeless (256 bits); this keeps a shared link from being hammered,
-// and answers a flood of made-up tokens with a page that costs nothing to
-// render. Each made-up token still costs one indexed lookup; the counters are
-// per worker.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_VIEWS_PER_LINK = 300;
-const MAX_UNKNOWN_PER_WINDOW = 1000;
-const views = new Map();
-let unknown = { since: Date.now(), count: 0 };
+// Views per reader of a link and per link, per window
+// (share-view-limiter.js): a shared link must not be hammered, and one reader
+// must not lock the link for the others. The reader is the client address as
+// the platform's proxy saw it (clientIp), never `req.ip`, which is the proxy.
+// Made-up tokens are not counted: their shape is checked before any lookup
+// (resolveToken), and 256 bits make enumeration hopeless, so each costs one
+// indexed lookup and a page that costs nothing to render. A process-wide
+// counter of them let a flood of made-up tokens answer 429 to every reader
+// holding a wrong or revoked link.
+const MAX_VIEWS_PER_READER = 300;
+const viewLimiter = createShareViewLimiter({
+  windowMs: 10 * 60 * 1000,
+  maxPerReader: MAX_VIEWS_PER_READER,
+  maxPerLink: MAX_VIEWS_PER_READER * 10,
+  maxEntries: 10000,
+});
 
-function allowView(key, now = Date.now()) {
-  const entry = views.get(key);
-  if (!entry || entry.since < now - WINDOW_MS) {
-    if (views.size > 10000) views.clear();
-    views.set(key, { since: now, count: 1 });
-    return true;
-  }
-  entry.count += 1;
-  return entry.count <= MAX_VIEWS_PER_LINK;
-}
+// The sanitized email of each shared version (utils/sanitized-preview-cache.js):
+// a public page can be hammered with views, and each must cost neither a
+// sanitization nor the transfer of previewHtml (up to PREVIEW_HTML_MAX_LENGTH)
+// from the database. previewHtml is read only when the version is not held.
+// Every web link of the email opens in a new tab, without an opener: inside
+// the frame a page could not load (the CSP allows no frame), and a reader
+// wants to try the links. The sanitizer sets it (sanitizeSharedPreviewHtml);
+// the new tab gets no referrer, the policy of the page being inherited.
+// Every preview the editor may save must fit: one left out is sanitized again
+// on each public view, a worker blocked for seconds. The sanitized page can
+// outgrow its source (each web link gains a target and a rel), hence the
+// headroom; three of the largest fit, so a single one never empties the cache.
+const PAGE_CACHE_MAX_ENTRY = previewSanitizer.PREVIEW_HTML_MAX_LENGTH * 1.5;
+const pageCache = createSanitizedPreviewCache({
+  sanitize: previewSanitizer.sanitizeSharedPreviewHtml,
+  budget: PAGE_CACHE_MAX_ENTRY * 3,
+  maxEntry: PAGE_CACHE_MAX_ENTRY,
+});
 
-function allowUnknown(now = Date.now()) {
-  if (unknown.since < now - WINDOW_MS) unknown = { since: now, count: 0 };
-  unknown.count += 1;
-  return unknown.count <= MAX_UNKNOWN_PER_WINDOW;
-}
-
-// The sanitized email of each shared version, whatever its size: the
-// sanitizer is synchronous (about a second per MB), and a large preview must
-// not be sanitized again at every view of a public page.
-const PAGE_CACHE_BUDGET = 16 * 1024 * 1024; // characters
-const pages = new Map();
-let pagesSize = 0;
-
-// Every link of the email opens in a new tab, without an opener: inside the
-// frame a page could not load (the CSP allows no frame), and a reader wants to
-// try the links. The sanitizer sets it on each link (sanitizeSharedPreviewHtml).
-// The new tab gets no referrer, the policy of the page being inherited.
-function sanitizedPage(mailing) {
-  const key = `${mailing._id}:${new Date(mailing.updatedAt || 0).getTime()}`;
-  if (pages.has(key)) return pages.get(key);
-  const html = previewSanitizer.sanitizeSharedPreviewHtml(mailing.previewHtml);
-  pages.set(key, html);
-  pagesSize += html.length;
-  while (pagesSize > PAGE_CACHE_BUDGET && pages.size > 1) {
-    const [oldestKey, oldest] = pages.entries().next().value;
-    pages.delete(oldestKey);
-    pagesSize -= oldest.length;
-  }
-  return html;
-}
-
-// A link lives no longer than the company's access to the email builder.
-// Links made by the admin, who has no company, have no company to check.
-// Also says whether the company writes the subject in LePatron (email
-// metadata): the page then shows the subject and the preheader.
-async function companySharing(link) {
-  if (!link._company) return { allowed: true, metadata: false };
-  const group = await Groups.findById(link._company, {
-    status: 1,
-    enableEmailBuilder: 1,
-    emailMetadata: 1,
-  }).lean();
-  const allowed = Boolean(
-    group &&
-      group.status !== GROUP_STATUS.INACTIVE &&
-      group.enableEmailBuilder !== false
-  );
-  // Off unless the company opted in, as GUARD_EMAIL_METADATA reads it.
-  const metadata = Boolean(group && group.emailMetadata?.enabled === true);
-  return { allowed, metadata };
-}
-
-// Templates declare their preheader at the root or in a root-level
-// `preheaderBlock`, and versafix-like ones can turn it off: read as the editor
-// does (ext/quality/copy-fields.js), the first path that holds a string.
-function preheaderOf(data) {
-  if (!data || data.preheaderVisible === false) return '';
-  const value = [data.preheaderText, data.preheaderBlock?.preheaderText].find(
-    (candidate) => typeof candidate === 'string'
-  );
-  return value ? value.trim() : '';
+/** @returns {Promise<string>} empty when the email was never saved */
+async function sanitizedPage(mailing) {
+  const held = pageCache.peek(mailing);
+  if (held !== undefined) return held;
+  const saved = await Mailings.findById(mailing._id, { previewHtml: 1 }).lean();
+  if (!saved || !saved.previewHtml) return '';
+  return pageCache.sanitizeCached({
+    ...mailing,
+    previewHtml: saved.previewHtml,
+  });
 }
 
 // The subject and preheader lines of the bar, when the company writes them in
@@ -211,38 +129,45 @@ function renderNotice(res, status, lang, kind) {
   });
 }
 
-// The platform's clients are in France: dates read in Paris time, where a
-// one-day link created in the evening ends the next day.
+// When the link ends, to the minute, as the editor shows it (share-link-panel.js
+// formatDate): a day alone read differently on each side of midnight. The
+// editor shows the author's own clock; the reader may be anywhere, so the page
+// names the zone, the platform's (its clients are in France).
 function formatDate(date, lang) {
-  return new Date(date).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', {
+  return new Date(date).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
     timeZone: 'Europe/Paris',
+    timeZoneName: 'short',
   });
 }
 
 async function showShare(req, res) {
   const { state, link } = await shareLinkService.resolveToken(req.params.token);
   if (state === 'unknown') {
-    const lang = pickLang(req);
-    return allowUnknown()
-      ? renderNotice(res, 404, lang, 'unknown')
-      : renderNotice(res, 429, lang, 'busy');
+    return renderNotice(res, 404, pickLang(req), 'unknown');
   }
   // A known link speaks its creator's language.
   const lang = link.lang === 'en' ? 'en' : 'fr';
+  // 410 rather than 404 tells that the link existed, and the page speaks its
+  // creator's language: a choice, for the reader who kept an old link and
+  // would otherwise wonder whether it was ever right.
   if (state === 'expired') return renderNotice(res, 410, lang, 'expired');
-  if (!allowView(String(link._id))) {
+  const retryAfter = viewLimiter.blockedFor(link._id, clientIp(req));
+  if (retryAfter > 0) {
+    res.set('Retry-After', String(retryAfter));
     return renderNotice(res, 429, lang, 'busy');
   }
-  const sharing = await companySharing(link);
-  if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
 
+  // Never previewHtml here: sanitizedPage reads it when it needs it.
   const mailing = await Mailings.findById(link._mailing, {
-    previewHtml: 1,
     updatedAt: 1,
     name: 1,
+    _company: 1,
+    _wireframe: 1,
     subject: 1,
     // Only the preheader of the content model, never the whole of it.
     'data.preheaderText': 1,
@@ -250,7 +175,21 @@ async function showShare(req, res) {
     'data.preheaderVisible': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
-  if (!mailing.previewHtml) return renderNotice(res, 404, lang, 'empty');
+  // The company the email belongs to now decides. A link made under another
+  // one is closed: a transfer revokes the links, and should one survive it,
+  // it must not open in a company that never shared it.
+  const companyId = await shareLinkService.sharingCompanyOf(mailing);
+  if (
+    link._company &&
+    companyId &&
+    String(link._company) !== String(companyId)
+  ) {
+    return renderNotice(res, 404, lang, 'unknown');
+  }
+  const sharing = await shareLinkService.companySharing(companyId);
+  if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
+  const html = await sanitizedPage(mailing);
+  if (!html) return renderNotice(res, 404, lang, 'empty');
 
   return res.render('share-page', {
     lang,
@@ -258,7 +197,7 @@ async function showShare(req, res) {
     name: mailing.name,
     meta: PAGES[lang].meta(formatDate(link.expiresAt, lang)),
     copy: copyLines(mailing, lang, sharing.metadata),
-    html: sanitizedPage(mailing),
+    html,
   });
 }
 
@@ -268,18 +207,20 @@ async function showShare(req, res) {
  * @apiName ShareMailingPreview
  * @apiGroup Mailings
  * @apiDescription The last saved version, sanitized, in a sandboxed iframe.
- *   404 for an unknown or revoked link, or one whose company lost the email
- *   builder; 410 for an expired one.
+ *   404 for an unknown or revoked link, or one of an email whose company is
+ *   inactive, lost the email builder or turned the preview links off; 410 for
+ *   an expired one.
  */
 async function renderShare(req, res) {
-  setShareHeaders(res);
   try {
+    setShareHeaders(res);
     await showShare(req, res);
   } catch (error) {
-    // Whatever failed stays in the logs: the reader gets a page.
+    // Whatever failed stays in the logs: the reader gets a page. Should that
+    // page fail too, asyncHandler hands the error to Express: never a crash.
     logger.error('[SHARE] preview page failed', error);
     renderNotice(res, 500, pickLang(req), 'error');
   }
 }
 
-module.exports = { renderShare };
+module.exports = { renderShare: asyncHandler(renderShare) };

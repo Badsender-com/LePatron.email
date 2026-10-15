@@ -1,9 +1,9 @@
 'use strict';
 
 const _ = require('lodash');
-const { userDeclarations, toPx, hasText } = require('../user-styles');
-const { textOf } = require('../exported-content');
-const { styleValue } = require('../colors');
+const { userDeclarations, hasText } = require('../user-styles');
+const { textOf, excerpt } = require('../exported-content');
+const { styleValue, toPx, fontPxOf } = require('../inline-style');
 
 // Justified text opens irregular gaps between words. A line height under 1
 // makes lines overlap: that is what is reported (team decision of 1 October
@@ -16,22 +16,10 @@ const MIN_LINE_HEIGHT = 1;
 // would bury the advice.
 const CENTRED_MAX_CHARS = 200;
 
-const excerpt = (text) => (text.length > 40 ? `${text.slice(0, 40)}…` : text);
-
-// The font size an element's text is drawn at, within the client's rich
-// text; null when only the template knows it.
-function fontPxOf(element) {
-  for (let el = element; el && el.nodeType === 1; el = el.parentElement) {
-    const px = toPx(styleValue(el, 'font-size'));
-    if (px) return px;
-  }
-  return null;
-}
-
 // A line height as a multiple of the font size, or null when unknown. A line
-// height in px or pt is only judged against a font size the client set: the
-// template's own size (a 12 px footer) is out of sight, and guessing 16 px
-// would report lines that do not overlap.
+// height in px or pt is only judged against a font size declared inline in
+// the rich text: the template's own size (a 12 px footer) is out of sight,
+// and guessing 16 px would report lines that do not overlap.
 function lineHeightRatio(value, element) {
   const text = String(value).trim().toLowerCase();
   if (/^[\d.]+$/.test(text)) return Number(text);
@@ -58,6 +46,34 @@ function centredLength(element) {
   return length;
 }
 
+const hasCentredAncestor = (element, root) => {
+  for (
+    let el = element.parentElement;
+    el && el !== root;
+    el = el.parentElement
+  ) {
+    if (isCentred(styleValue(el, 'text-align'))) return true;
+  }
+  return false;
+};
+
+// TinyMCE centres each paragraph on its own: the centred text of a rich text
+// is summed over its paragraphs, each counted once.
+function hasLongCentredText(declarations) {
+  const centred = declarations.filter(
+    ({ prop, value }) => prop === 'text-align' && isCentred(value)
+  );
+  return Object.values(_.groupBy(centred, 'path')).some(
+    (ofOneText) =>
+      _.sumBy(
+        ofOneText.filter(
+          ({ element, richText }) => !hasCentredAncestor(element, richText.root)
+        ),
+        ({ element }) => centredLength(element)
+      ) > CENTRED_MAX_CHARS
+  );
+}
+
 module.exports = {
   id: 'text-layout',
   category: 'accessibility',
@@ -69,23 +85,23 @@ module.exports = {
     const declarations = userDeclarations(ctx).filter(({ element }) =>
       hasText(element)
     );
-    const longCentred = declarations.some(
-      ({ prop, value, element }) =>
-        prop === 'text-align' &&
-        isCentred(value) &&
-        centredLength(element) > CENTRED_MAX_CHARS
-    );
     const findings = declarations
       .map((decl) => {
         if (decl.prop === 'text-align' && /^justify/i.test(decl.value)) {
-          return { ...decl, messageKey: 'Justified text: word gaps get harder to read: __text__' };
+          return {
+            ...decl,
+            messageKey:
+              'Justified text: word gaps get harder to read: __text__',
+          };
         }
         const ratio =
-          decl.prop === 'line-height' && lineHeightRatio(decl.value, decl.element);
+          decl.prop === 'line-height' &&
+          lineHeightRatio(decl.value, decl.element);
         if (typeof ratio === 'number' && ratio < MIN_LINE_HEIGHT) {
           return {
             ...decl,
-            messageKey: 'Line height under 1 (__ratio__): the lines overlap: __text__',
+            messageKey:
+              'Line height under 1 (__ratio__): the lines overlap: __text__',
             severity: 'warning',
             params: { ratio: Math.round(ratio * 100) / 100 },
           };
@@ -103,7 +119,7 @@ module.exports = {
         value: `${f.prop}:${f.value}`,
       })
     );
-    if (!longCentred) return perBlock;
+    if (!hasLongCentredText(declarations)) return perBlock;
     return perBlock.concat({
       messageKey:
         'Centred text over about three lines is hard to read: align long texts to the left',

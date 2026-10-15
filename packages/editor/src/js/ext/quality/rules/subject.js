@@ -1,6 +1,7 @@
 'use strict';
 
 const { countEmojis } = require('../emoji');
+const { inboxLength } = require('../copy-fields');
 
 // Truncation, not performance: subject length does not change read rates
 // (Return Path, 9 million subjects). Team decision of 1 October 2026: under 40
@@ -9,8 +10,12 @@ const LONG = 40;
 const TOO_LONG = 60;
 
 // Reply and forward prefixes, in the languages our clients write in. Gmail
-// asks not to fake them.
-const FAKE_REPLY = /^\s*(re|fw|fwd|tr|aw|wg|rv|sv|vs|r|odp|antw)\s*:/i;
+// asks not to fake them. A prefix of one or two letters must end the word
+// ("RE: offer"): "Re:Think" and "re:boot" are brand names.
+const SHORT_PREFIX = /^\s*(re|fw|tr|aw|wg|rv|sv|vs|r)\s*:(?=\s|$)/i;
+const LONG_PREFIX = /^\s*(fwd|odp|antw)\s*:/i;
+const fakeReply = (subject) =>
+  SHORT_PREFIX.exec(subject) || LONG_PREFIX.exec(subject);
 const REPEATED_PUNCTUATION = /(!{2,}|\?{2,}|\${2,}|€{2,})/;
 const MIN_LETTERS_FOR_CAPS = 8;
 const CAPS_RATIO = 0.7;
@@ -23,7 +28,8 @@ function capsRatio(text) {
 
 // What makes a subject look like spam, or null (an info, never blocking).
 function aggressiveness(subject) {
-  if (capsRatio(subject) > CAPS_RATIO) return 'Subject mostly in capital letters';
+  if (capsRatio(subject) > CAPS_RATIO)
+    return 'Subject mostly in capital letters';
   if (REPEATED_PUNCTUATION.test(subject)) {
     return 'Subject repeats punctuation (!!, ??, $$)';
   }
@@ -37,22 +43,22 @@ module.exports = {
   id: 'subject',
   category: 'copy',
   severity: 'warning',
-  titleKey: 'Subject',
+  titleKey: 'quality-title-subject',
   passKey: 'The subject is filled in and __count__ characters long',
   LONG,
   TOO_LONG,
-  passParams: (ctx) => ({
-    count: Array.from((ctx.subject || '').trim()).length,
-  }),
+  // The ESP holds the subject: nothing to pass, the check is not listed.
+  enabled: (ctx) => ctx.subject !== null,
+  passParams: (ctx) => ({ count: inboxLength(ctx.subject || '') }),
   run(ctx) {
     const raw = ctx.subject;
-    if (raw === null) return []; // the ESP holds the subject
+    if (raw === null) return [];
     const subject = raw.trim();
     if (!subject) {
       return [{ messageKey: 'No subject', value: '' }];
     }
     const findings = [];
-    const count = Array.from(subject).length;
+    const count = inboxLength(subject);
     if (count > TOO_LONG) {
       findings.push({
         messageKey:
@@ -67,10 +73,12 @@ module.exports = {
         params: { count },
       });
     }
-    if (FAKE_REPLY.test(subject)) {
+    const prefix = fakeReply(subject);
+    if (prefix) {
       findings.push({
-        messageKey: 'Subject starts like a reply or a forward (__prefix__) without being one',
-        params: { prefix: FAKE_REPLY.exec(subject)[0].trim() },
+        messageKey:
+          'Subject starts like a reply or a forward (__prefix__) without being one',
+        params: { prefix: prefix[0].trim() },
       });
     }
     const aggressive = aggressiveness(subject);

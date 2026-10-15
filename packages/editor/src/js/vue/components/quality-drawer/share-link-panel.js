@@ -7,9 +7,13 @@ const {
   copyText,
 } = require('./share-link-api');
 
-const EXPIRY_OPTIONS = [1, 7, 30];
-// As many as the server allows (share-link.service.js).
-const MAX_ACTIVE_LINKS = 20;
+const {
+  SHARE_LINK_EXPIRY,
+} = require('../../../../../../shared/quality/limits.js');
+
+const EXPIRY_OPTIONS = SHARE_LINK_EXPIRY.days;
+// The 422 of share-link.service.js when the email has all the links it may.
+const LIMIT_REACHED_CODE = 'SHARE_LINKS_LIMIT_REACHED';
 
 // "Share a preview", under the send form of the drawer: a link anyone can
 // open without an account, to the last saved version of the email. The active
@@ -38,14 +42,22 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
       const urls = (this.vm.metadata && this.vm.metadata.url) || {};
       return urls.shareLinks || null;
     },
+    // Active links per email, as the server states it with the address.
+    maxActiveLinks() {
+      const sharing = (this.vm.metadata && this.vm.metadata.shareLinks) || {};
+      return sharing.maxActive;
+    },
     expiryOptions() {
       return EXPIRY_OPTIONS.map((days) => ({
         code: days,
-        label: days === 1 ? this.t('1 day') : this.t('__count__ days', { count: days }),
+        label:
+          days === 1
+            ? this.t('1 day')
+            : this.t('__count__ days', { count: days }),
       }));
     },
     days() {
-      return this.expiry ? this.expiry.code : 7;
+      return this.expiry ? this.expiry.code : SHARE_LINK_EXPIRY.defaultDays;
     },
   },
   watch: {
@@ -63,17 +75,26 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     t(key, params) {
       return this.vm.t(key, params);
     },
-    // In the language of the page the editor runs in.
-    formatDate(value, withTime = false) {
-      const options = { day: 'numeric', month: 'long', year: 'numeric' };
-      if (withTime) Object.assign(options, { hour: '2-digit', minute: '2-digit' });
-      return new Date(value).toLocaleString(document.documentElement.lang || undefined, options);
+    // In the language of the page the editor runs in, to the minute, in the
+    // author's own clock; the public page shows the same moment in the
+    // platform's zone (share-page.controller.js formatDate).
+    formatDate(value) {
+      return new Date(value).toLocaleString(
+        document.documentElement.lang || undefined,
+        {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }
+      );
     },
     // Two links of the same day must read differently: when each was made.
     describe(link) {
       const params = {
         name: link.createdBy,
-        created: this.formatDate(link.createdAt, true),
+        created: this.formatDate(link.createdAt),
         date: this.formatDate(link.expiresAt),
       };
       return link.createdBy
@@ -85,7 +106,9 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
         .then((links) => {
           this.links = links;
         })
-        .catch((error) => console.error('Loading the preview links failed', error));
+        .catch(() =>
+          this.vm.notifier.error(this.t('The links could not be loaded'))
+        );
     },
     create() {
       if (this.busy) return;
@@ -94,18 +117,26 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
         .then((link) => {
           this.created = link;
           this.copiedId = null;
-          this.links = [{ ...link, url: link.copyable ? link.url : null }].concat(
-            this.links
+          this.links = [
+            { ...link, url: link.copyable ? link.url : null },
+          ].concat(this.links);
+          this.$nextTick(
+            () => this.$refs.createdUrl && this.$refs.createdUrl.focus()
           );
-          this.$nextTick(() => this.$refs.createdUrl && this.$refs.createdUrl.focus());
         })
         .catch((error) => {
-          const code = error.response && error.response.data && error.response.data.message;
+          const code =
+            error.response &&
+            error.response.data &&
+            error.response.data.message;
           this.vm.notifier.error(
-            code === 'SHARE_LINKS_LIMIT_REACHED'
-              ? this.t('This email already has __count__ active links: turn one off first', {
-                  count: MAX_ACTIVE_LINKS,
-                })
+            code === LIMIT_REACHED_CODE
+              ? this.t(
+                  'This email already has __count__ active links: turn one off first',
+                  {
+                    count: this.maxActiveLinks,
+                  }
+                )
               : this.t('The link could not be created')
           );
         })
@@ -116,7 +147,17 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     copy(link, field) {
       copyText(link.url, field).then((ok) => {
         this.copiedId = ok ? link.id : null;
-        if (!ok) this.vm.notifier.error(this.t('Copy failed: select the link and copy it'));
+        if (ok) return;
+        // Only the link just created has its address on screen to select by
+        // hand: the addresses of the list are in hidden fields.
+        const onScreen = this.created && this.created.id === link.id;
+        this.vm.notifier.error(
+          this.t(
+            onScreen
+              ? 'Copy failed: select the link and copy it'
+              : 'The link could not be copied'
+          )
+        );
       });
     },
     revoke(link) {
@@ -127,7 +168,9 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
           this.links = this.links.filter((l) => l.id !== link.id);
           if (this.created && this.created.id === link.id) this.created = null;
         })
-        .catch(() => this.vm.notifier.error(this.t('The link could not be turned off')))
+        .catch(() =>
+          this.vm.notifier.error(this.t('The link could not be turned off'))
+        )
         .finally(() => {
           this.revoking = this.revoking.filter((id) => id !== link.id);
         });
@@ -160,7 +203,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             @focus="$event.target.select()"
           >
           <button type="button" class="qc-button qc-button--cta qc-share__button" @click="copy(created, $refs.createdUrl)">
-            <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('Copied') : t('Copy link') }}
+            <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('quality-share-copied') : t('Copy link') }}
           </button>
         </div>
         <p v-if="!created.copyable" class="qc-field__help">{{ t('Copy it now: it will not be shown again.') }}</p>
@@ -175,7 +218,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             class="qc-link-button"
             :aria-label="t('Copy the link: __link__', { link: describe(link) })"
             @click="copy(link, $refs['url-' + link.id][0])"
-          >{{ copiedId === link.id ? t('Copied') : t('Copy link') }}</button>
+          >{{ copiedId === link.id ? t('quality-share-copied') : t('Copy link') }}</button>
           <input
             v-if="link.url"
             :ref="'url-' + link.id"

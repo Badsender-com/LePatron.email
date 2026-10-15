@@ -153,7 +153,6 @@ module.exports = {
     "Une erreur s'est produite lors de la communication avec l'API.",
 
   // test list
-  'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
   'placeholder-input-emails-test':
@@ -163,7 +162,6 @@ module.exports = {
     'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
-  'send-test-mails': 'Envoyer',
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
@@ -440,6 +438,43 @@ module.exports = {
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
   // Quality control (ext/quality)
   'Quality control': 'Contrôle qualité',
+  // Prefixed: this dictionary is merged with Mosaico's, where a bare
+  // "Error" or "Copy" would collide.
+  'quality-action-close': 'Fermer',
+  'quality-action-cancel': 'Annuler',
+  'quality-action-ignore': 'Ignorer',
+  'quality-action-undo': 'Annuler',
+  // The editor's own undo button (undomanager/undomain.js).
+  Undo: 'Annuler',
+  'quality-severity-error': 'Erreur',
+  'quality-severity-warning': 'Avertissement',
+  'quality-severity-info': 'Info',
+  'quality-severity-not-run': 'Non exécuté',
+  'quality-severity-passed': 'Contrôle réussi',
+  'quality-group-errors': 'Erreurs',
+  'quality-group-warnings': 'Avertissements',
+  'quality-group-infos': 'Infos',
+  'quality-group-not-run': 'Non exécutés',
+  'quality-group-passed': 'Réussis',
+  'quality-group-ignored': 'Ignorés',
+  'quality-category-technical': 'Technique',
+  'quality-category-content': 'Contenu',
+  'quality-category-accessibility': 'Accessibilité',
+  'quality-category-copy': 'Rédaction',
+  'quality-category-performance': 'Performance',
+  'quality-badge-stale': 'À relancer',
+  '__count__ checks not run': '__count__ contrôle(s) non exécuté(s)',
+  '__count__ ignored findings': '__count__ résultat(s) ignoré(s)',
+  '__passed__ of __total__ checks passed':
+    '__passed__ contrôle(s) réussi(s) sur __total__',
+  'The results date from before your last changes':
+    "Les résultats datent d'avant vos dernières modifications",
+  'This check was cancelled': 'Ce contrôle a été annulé',
+  'Too many checks in a short time: try again in a few minutes':
+    'Trop de contrôles en peu de temps : réessayez dans quelques minutes',
+  'The links and images could not be checked':
+    "Les liens et les images n'ont pas pu être vérifiés",
+  'The block could not be shown': "Le bloc n'a pas pu être affiché",
   'Link not filled in: __label__': 'Lien non renseigné : __label__',
   'Clickable image has no link': 'Image cliquable sans lien',
   'Image not replaced': 'Image non remplacée',
@@ -453,47 +488,35 @@ module.exports = {
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
   'Test your email': 'Tester votre email',
-  Close: 'Fermer',
   'Run quality checks': 'Lancer le contrôle qualité',
   'Links, images and weight are checked before you send a test.':
     "Les liens, les images et le poids de l'email sont vérifiés avant l'envoi d'un test.",
   '__count__ checks': '__count__ contrôles',
   'Running checks…': 'Contrôle en cours…',
   'Running…': 'En cours…',
-  Cancel: 'Annuler',
   'Re-run': 'Relancer',
-  Error: 'Erreur',
-  Warning: 'Avertissement',
-  Info: 'Info',
-  Passed: 'Réussis',
-  'Check passed': 'Contrôle réussi',
-  Errors: 'Erreurs',
-  Warnings: 'Avertissements',
-  Infos: 'Infos',
   '__count__ errors': '__count__ erreur(s)',
   '__count__ warnings': '__count__ avertissement(s)',
   '__count__ infos': '__count__ info(s)',
   '__count__ checks passed': '__count__ contrôle(s) réussi(s)',
   '__count__ issues': '__count__ point(s) à corriger',
+  '__count__ issues to fix: open the quality control':
+    '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'All checks passed': 'Tous les contrôles sont réussis',
   '__passed__ of __total__ checks · __when__':
     '__passed__ contrôles sur __total__ · __when__',
   'Go to block': 'Aller au bloc',
   'Send a test email': 'Envoyer un email de test',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
-  Technical: 'Technique',
-  Accessibility: 'Accessibilité',
-  Copy: 'Rédaction',
-  Performance: 'Performance',
   'Required tracking parameters': 'Paramètres de tracking obligatoires',
   'All required tracking parameters are filled in':
     'Tous les paramètres de tracking obligatoires sont renseignés',
-  Links: 'Liens',
+  'quality-title-links': 'Liens',
   'Every link has a destination': 'Tous les liens ont une destination',
   'Clickable images': 'Images cliquables',
   'Every clickable image has a link':
     'Toutes les images cliquables ont un lien',
-  Images: 'Images',
+  'quality-title-images': 'Images',
   'Every image has been replaced': 'Toutes les images ont été remplacées',
   'Background images': 'Images de fond',
   'Every background image turned on is set':
@@ -568,7 +591,7 @@ module.exports = {
     'Toutes les images utilisent un format affiché par les clients mail',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
-  Subject: 'Objet',
+  'quality-title-subject': 'Objet',
   'The subject is filled in and __count__ characters long':
     "L'objet est renseigné et fait __count__ caractères",
   'No subject': "Pas d'objet",
@@ -583,7 +606,7 @@ module.exports = {
   'Subject repeats punctuation (!!, ??, $$)':
     "L'objet répète de la ponctuation (!!, ??, $$)",
   'Subject has more than one emoji': "L'objet contient plus d'un emoji",
-  Preheader: 'Préheader',
+  'quality-title-preheader': 'Préheader',
   'The preheader is filled in and __count__ characters long':
     'Le préheader est renseigné et fait __count__ caractères',
   'No preheader: inboxes show the first words of the body instead':
@@ -603,6 +626,12 @@ module.exports = {
     "Variable de personnalisation non fermée dans l'objet (__token__) : __excerpt__",
   'Personalization tag not closed in the preheader (__token__): __excerpt__':
     'Variable de personnalisation non fermée dans le préheader (__token__) : __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    "%% non apparié dans l'objet (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé",
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié dans le préheader (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
   'Empty blocks': 'Blocs vides',
   'Every block shows something': 'Tous les blocs affichent du contenu',
   'Empty block: it shows no text and no image':
@@ -644,7 +673,7 @@ module.exports = {
     'Tous les liens se distinguent du texte qui les entoure',
   'Link neither underlined nor coloured differently from its text: __label__':
     "Lien ni souligné ni d'une autre couleur que son texte : __label__",
-  Headings: 'Titres',
+  'quality-title-headings': 'Titres',
   'Headings are filled in and follow each other':
     'Les titres sont renseignés et se suivent',
   'Empty heading (__tag__)': 'Titre vide (__tag__)',
@@ -655,7 +684,7 @@ module.exports = {
     'Aucun texte alternatif ne répète le texte voisin',
   'Alternative text repeats the text next to the image: __alt__':
     "Le texte alternatif répète le texte à côté de l'image : __alt__",
-  Emojis: 'Emojis',
+  'quality-title-emojis': 'Emojis',
   'Emojis sit at the end of sentences':
     'Les emojis sont placés en fin de phrase',
   'Several emojis in a row: screen readers read each name':
@@ -673,6 +702,8 @@ module.exports = {
     'Balise jamais fermée dans le code HTML : <__tag__>',
   'Closing tag with no opening one in the HTML code: </__tag__>':
     'Balise fermante sans ouverture dans le code HTML : </__tag__>',
+  'Tag closed in the wrong order in the HTML code: <__tag__>':
+    'Balise fermée dans le mauvais ordre dans le code HTML : <__tag__>',
   'Email-safe code': 'Code compatible email',
   'The code of HTML code blocks only uses what email clients support':
     "Le code des blocs de code HTML n'utilise que ce que les clients mail prennent en charge",
@@ -683,6 +714,8 @@ module.exports = {
     'Le code HTML utilise des adresses complètes et des couleurs valides',
   'Relative address in the HTML code, it only works on its original site: __urls__':
     "Adresse relative dans le code HTML, elle ne fonctionne que sur son site d'origine : __urls__",
+  'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__':
+    "Adresse sans protocole dans le code HTML (//…), certaines messageries ne peuvent pas l'ouvrir : __urls__",
   'Colour an email client cannot read in the HTML code: __colors__':
     'Couleur illisible par les clients mail dans le code HTML : __colors__',
   'Send a test': 'Envoi de test',
@@ -694,13 +727,12 @@ module.exports = {
   'Separate addresses with a semicolon':
     'Séparez les adresses par un point-virgule',
   'Saved list of addresses': "Liste d'adresses enregistrée",
+  'The saved lists of addresses could not be loaded':
+    "Les listes d'adresses enregistrées n'ont pas pu être chargées",
   'Send the test email': "Envoyer l'email de test",
   'Add comment': 'Ajouter un commentaire',
-  Ignore: 'Ignorer',
   'Stop ignoring': 'Ne plus ignorer',
-  Ignored: 'Ignorés',
   'Ignored: __title__': 'Ignoré : __title__',
-  Undo: 'Annuler',
   'The change could not be saved':
     "La modification n'a pas pu être enregistrée",
   'Broken links': 'Liens cassés',
@@ -741,6 +773,8 @@ module.exports = {
     'Aucun lien ne pointe vers un domaine sur liste noire',
   'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
     "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
+  'Domain could not be checked against the blocklists: __domain__':
+    "Le domaine n'a pas pu être vérifié sur les listes noires : __domain__",
   'Checking links and images…': 'Vérification des liens et des images…',
   'Dangerous links': 'Liens dangereux',
   'Google lists none of the links as dangerous':
@@ -753,6 +787,8 @@ module.exports = {
     'Google signale ce lien comme un logiciel indésirable : __label__',
   'Google lists this link as unsafe: __label__':
     'Google signale ce lien comme dangereux : __label__',
+  'Google could not check this link, check it by hand: __label__':
+    "Google n'a pas pu vérifier ce lien, vérifiez-le vous-même : __label__",
   'Share a preview': 'Partager un aperçu',
   'Anyone with the link sees the last saved version of the email, without an account.':
     "Toute personne qui a le lien voit la dernière version enregistrée de l'email, sans compte.",
@@ -761,7 +797,7 @@ module.exports = {
   '__count__ days': '__count__ jours',
   'Create a link': 'Créer un lien',
   'Preview link': "Lien d'aperçu",
-  Copied: 'Copié',
+  'quality-share-copied': 'Copié',
   'Copy it now: it will not be shown again.':
     'Copiez-le maintenant : il ne sera plus affiché.',
   'Active links': 'Liens actifs',
@@ -779,4 +815,6 @@ module.exports = {
   'This email already has __count__ active links: turn one off first':
     "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
   'Copy the link: __link__': 'Copier le lien : __link__',
+  'The link could not be copied': "Le lien n'a pas pu être copié",
+  'The links could not be loaded': "Les liens n'ont pas pu être chargés",
 };
