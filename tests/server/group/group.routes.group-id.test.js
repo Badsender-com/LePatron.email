@@ -24,6 +24,7 @@ jest.mock('../../../packages/server/account/auth.guard.js', () => {
   return {
     GUARD_ADMIN: pass,
     GUARD_GROUP_ADMIN: pass,
+    GUARD_GROUP_ADMIN_OR_TECH: pass,
     GUARD_USER: pass,
     guard: () => pass,
   };
