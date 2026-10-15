@@ -152,15 +152,47 @@ What the email search looks through: the emails sitting directly in the current 
 _UI_: Dossier courant, Tous mes espaces de travail
 _Avoid_: Search mode, global search (in UI text)
 
-### Quality control (contrôle qualité)
+### Quality control
 
-- **Quality run** (passage de contrôle): one execution of the quality control on an email: one HTML export, parsed once, every rule run on the same context. Started from the panel, or by a download or an ESP send on the HTML they export.
-- **Rule** (règle, contrôle): one file in `ext/quality/rules/`, with an id, a category, a default severity, a title and a "passed" message. A **local rule** runs in the browser on the export; a **remote rule** judges what the server measured (link states, image weights, threat lists). An **optional rule** is listed only when the platform is configured for it (Web Risk key, DNS blocklists).
-- **Check** (contrôle): the outcome of one rule in a run: `passed`, `failed` (with findings) or `error` (the rule could not run). A rule that has nothing to judge in this email is not listed (`enabled`).
-- **Finding** (résultat): one problem reported by a rule: message, severity (`error`, `warning`, `info`), category, the block it belongs to, the faulty value, and a fingerprint.
-- **Fingerprint** (empreinte): `rule|block|property|hash(faulty value)|rank`. It identifies a finding across runs without storing it. "Ignore" stores fingerprints on the mailing (`qualityIgnores`); a finding whose value changes gets a new fingerprint and comes back.
-- **Client's edit** (édition du client): what the quality control judges. A node of the export belongs to a block through the id of the block root; the template's frame (header, footer, wrapper outside blocks) is never judged. A value left at the template's default (sample image, `#toreplace` link) counts as forgotten by the client.
-- **Resources** (ressources): the links and images of the client's blocks that the editor sends to `POST /api/mailings/:mailingId/quality/resources` for the server to measure. The server measures and answers; it never judges and never stores.
-- **Ignore** (ignorer): hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it.
-- **Share link** (lien d'aperçu, lien de partage): a public URL `/share/<token>` that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the company allows it (`enableShareLinks`). Revoked by hand, by expiry, when the mailing changes company, or when the company turns sharing off (turning it back on reopens none).
-- **Required tracking parameters** (paramètres de tracking obligatoires): the only check that blocks a download or an ESP send today. Configured per company; becomes one blocking check among others with the quality settings (lot 8).
+**Quality run**:
+One execution of the quality control on an email: one HTML export, parsed once, every rule run on the same context. Started from the quality panel, or by a download or an ESP send on the HTML they export.
+_UI_: Contrôle qualité
+_Avoid_: Scan, audit
+
+**Rule**:
+One check the quality control knows, in `ext/quality/rules/`: an id, a category, a default severity, a title and a "passed" message. A local rule runs in the browser on the export; a remote rule judges what the server measured (link states, image weights, threat lists); an optional rule is listed only when the platform is configured for it.
+_UI_: Contrôle
+
+**Check**:
+The outcome of one rule in a quality run: passed, failed (with findings), or not run (the rule failed or was cancelled). A rule with nothing to judge in this email is not listed.
+_Avoid_: Test
+
+**Finding**:
+One problem a rule reports: a message, a severity (error, warning, info), a category, the block it belongs to, and a fingerprint.
+_UI_: Résultat
+_Avoid_: Issue, alert, warning (a warning is one severity)
+
+**Fingerprint**:
+What identifies a finding across quality runs without storing it: `rule|block|property|hash(faulty value)|rank`. It changes when the faulty value changes, and only then.
+_UI_: Empreinte
+
+**Client's edit**:
+What the quality control judges: what the client put in the blocks of the email. The template's frame (header, footer, wrapper outside blocks) is never judged; a value left at the template's default (sample image, placeholder link) counts as forgotten by the client.
+_Avoid_: User content
+
+**Resources**:
+The links and images of the client's blocks that the editor sends to the server for it to measure. The server measures and answers; it never judges and never stores.
+
+**Ignore**:
+Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it.
+_UI_: Ignorer
+_Avoid_: Dismiss, mute
+
+**Share link**:
+A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the email's group allows it. Revoked by hand, by expiry, when the mailing changes group, or when the group turns sharing off (turning it back on reopens none).
+_UI_: Lien d'aperçu
+_Avoid_: Public link, preview URL
+
+**Required tracking parameters**:
+The only check that blocks a download or an ESP send today. Configured per group; becomes one blocking check among others with the quality settings.
+_UI_: Paramètres de tracking obligatoires
