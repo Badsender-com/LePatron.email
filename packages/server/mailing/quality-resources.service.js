@@ -40,7 +40,7 @@ const {
  *   - per worker: a ceiling on link probes and on image downloads in
  *     parallel (every in-memory bound is per worker, see quality-limits.js);
  *   - for the whole cluster: a daily budget of Web Risk lookups per company,
- *     in the database;
+ *     and a quarter of it per user, in the database;
  *   - only the default ports (80, 443), redirects included;
  *   - answers say what a reader would see, never why a request was refused.
  * Definitive answers are cached a few minutes, per company: a re-run after
@@ -133,6 +133,7 @@ function logBounds() {
     perRun: { deadlineMs: RUN_DEADLINE_MS, concurrency: CONCURRENCY },
     shared: {
       webRiskLookupsPerCompanyPerDay: threats.WEB_RISK_LOOKUPS_PER_DAY,
+      webRiskLookupsPerUserPerDay: threats.WEB_RISK_LOOKUPS_PER_USER_PER_DAY,
     },
   });
 }
@@ -200,7 +201,7 @@ function checkResources(
         deps.webRiskKey(),
         key,
         run,
-        cacheScope,
+        { company: cacheScope, user: userKey },
         deps
       ),
     ]);
