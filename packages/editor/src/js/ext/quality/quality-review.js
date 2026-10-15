@@ -3,6 +3,7 @@
 const engine = require('./engine');
 const { hasResources } = require('./resources');
 const { createIgnores } = require('./quality-ignores');
+const { createCounts } = require('./quality-counts');
 const remoteApi = require('./quality-remote');
 const { watchContent } = require('./content-watch');
 
@@ -86,23 +87,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
 
   const isIgnored = (finding) => ignores.has(finding.fingerprint);
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));
-  const countOf = (...severities) =>
-    ko.pureComputed(
-      () => active().filter((f) => severities.includes(f.severity)).length
-    );
-  const issueCount = countOf('error', 'warning');
-  // A check that could not run, or was cancelled, was never judged: no green
-  // tick while one is left, as the drawer's "all passed" (allPassed).
-  const ranCount = ko.pureComputed(
-    () =>
-      checks().filter((c) => c.status !== 'error' && c.status !== 'cancelled')
-        .length
-  );
-  // Nothing to fix, every check judged. A check whose findings are ignored or
-  // only infos is not "passed", and still clears the email.
-  const cleared = ko.pureComputed(
-    () => issueCount() === 0 && ranCount() === checks().length
-  );
+  const counts = createCounts(ko, { active, checks });
+  const { issueCount } = counts;
 
   const freshness = () => (resultVersion === contentVersion ? 'done' : 'stale');
 
@@ -246,14 +232,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
-    errorCount: countOf('error'),
-    // What the toolbar badge counts: what should be fixed, not the infos.
-    issueCount,
-    passedCount: ko.pureComputed(
-      () => checks().filter((c) => c.status === 'passed').length
-    ),
-    ranCount,
-    cleared,
+    ...counts,
 
     /** Opens the drawer on a tab: 'checks' or 'send'. */
     open(name = 'checks') {
