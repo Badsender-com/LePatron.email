@@ -40,6 +40,8 @@ describe('GUARD_EMAIL_BUILDER', () => {
     expect(Groups.findById).not.toHaveBeenCalled();
   });
 
+  // Kept by ADR 0002, amended: a module disabled for the selected group is
+  // locked on the screen only; the server never refuses a super admin for it.
   it('lets a super-admin through without checking the flag', async () => {
     const err = await runGuard({ user: { isAdmin: true } });
     expect(err).toBeUndefined();

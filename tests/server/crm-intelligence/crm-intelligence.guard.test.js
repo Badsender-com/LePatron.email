@@ -97,3 +97,105 @@ describe('guardCrmIntelligenceProbe (non-enforcing variant)', () => {
     expect(err.status).toBe(404);
   });
 });
+
+describe('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
+  const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
+  const CLIENT_GROUP = '507f1f77bcf86cd799439b01';
+  const { bootstrap } = require('../../helpers/super-admin-fixtures.js');
+
+  const superAdmin = {
+    id: 'alice',
+    role: 'super_admin',
+    isAdmin: true,
+    group: { id: PLATFORM_GROUP },
+    selectedGroup: { id: CLIENT_GROUP },
+  };
+
+  // The stored groups, answered by id.
+  function mockGroups(groups) {
+    Groups.findById.mockImplementation((id) => ({
+      select: jest.fn().mockReturnValue({
+        lean: jest
+          .fn()
+          .mockResolvedValue(
+            groups.find((g) => String(g._id) === String(id)) || null
+          ),
+      }),
+    }));
+  }
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('opens the dashboards of the selected group, not of the platform group', async () => {
+    mockGroups([
+      { _id: PLATFORM_GROUP, enableCrmIntelligence: true },
+      { _id: CLIENT_GROUP, enableCrmIntelligence: true },
+    ]);
+
+    const { err, req } = await runGuard(guardCrmIntelligence, {
+      user: superAdmin,
+    });
+
+    expect(err).toBeUndefined();
+    expect(req.crmGroup._id).toBe(CLIENT_GROUP);
+  });
+
+  it('lets a super admin through when the selected group does not have the module: the lock is a view, shown by the screen', async () => {
+    mockGroups([
+      { _id: PLATFORM_GROUP, enableCrmIntelligence: true },
+      { _id: CLIENT_GROUP, enableCrmIntelligence: false },
+    ]);
+
+    const { err, req } = await runGuard(guardCrmIntelligence, {
+      user: superAdmin,
+    });
+
+    expect(err).toBeUndefined();
+    expect(req.crmGroup._id).toBe(CLIENT_GROUP);
+  });
+
+  it('tells the probe the module is off for the selected group, so the screen shows the lock', async () => {
+    mockGroups([
+      { _id: PLATFORM_GROUP, enableCrmIntelligence: true },
+      { _id: CLIENT_GROUP, enableCrmIntelligence: false },
+    ]);
+
+    const { err, req } = await runGuard(guardCrmIntelligenceProbe, {
+      user: superAdmin,
+    });
+
+    expect(err).toBeUndefined();
+    expect(req.crmGroup).toEqual({
+      _id: CLIENT_GROUP,
+      enableCrmIntelligence: false,
+    });
+  });
+
+  it('keeps a company admin on its own group, whatever selected group the request claims', async () => {
+    mockGroups([
+      { _id: GROUP_ID, enableCrmIntelligence: true },
+      { _id: CLIENT_GROUP, enableCrmIntelligence: true },
+    ]);
+    const companyAdmin = {
+      id: 'erin',
+      role: 'company_admin',
+      isGroupAdmin: true,
+      group: { id: GROUP_ID },
+      selectedGroup: { id: CLIENT_GROUP },
+    };
+
+    const { req } = await runGuard(guardCrmIntelligence, {
+      user: companyAdmin,
+    });
+
+    expect(req.crmGroup._id).toBe(GROUP_ID);
+  });
+
+  it('refuses the bootstrap account, which stays in the settings', async () => {
+    const { err } = await runGuard(guardCrmIntelligence, {
+      user: { ...bootstrap },
+    });
+
+    expect(err.status).toBe(403);
+  });
+});

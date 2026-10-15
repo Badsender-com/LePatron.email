@@ -14,9 +14,11 @@ module.exports = (opts) => {
       .then((response) => {
         const { isGroupAdmin, group, ...restOfCurrentUser } = response.data;
 
-        // Determine if the current user is an admin of the current group
+        // Whoever manages the mailing's group: its company admin, or a super
+        // admin, who has every right in every group (ADR 0002, amended).
         const isAdminOfCurrentGroup =
-          isGroupAdmin && group.id === currentGroupId;
+          restOfCurrentUser.isAdmin === true ||
+          (isGroupAdmin && !!group && group.id === currentGroupId);
 
         // Update the observable with the current user along with the new attribute
         viewModel.currentUser({

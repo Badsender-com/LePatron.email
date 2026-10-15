@@ -57,9 +57,11 @@ async function loadSource({ mailingId, user }) {
     mailingService.findOneForUser(mailingId, user)
   );
 
+  // The mailing's group first: a super admin translates in the group of the
+  // mailing, not in its own platform group (ADR 0002, amended).
   const groupId =
-    (user.group && user.group.id) ||
-    (mailing._company && mailing._company.toString());
+    (mailing._company && mailing._company.toString()) ||
+    (user.group && user.group.id);
 
   let templateMarkup = null;
   let blockBuilderEnabled = false;

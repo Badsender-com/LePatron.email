@@ -46,7 +46,11 @@ module.exports = {
     },
   },
   router: {
-    middleware: ['maintenance-check', 'authentication-check'],
+    middleware: [
+      'maintenance-check',
+      'authentication-check',
+      'select-route-group',
+    ],
   },
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },

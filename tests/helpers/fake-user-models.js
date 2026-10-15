@@ -44,20 +44,54 @@ function matches(record, filter = {}) {
   );
 }
 
+// Orders a list like MongoDB's `sort`, eg. `{ name: 1 }`: plain binary order
+// of the values, so uppercase sorts before lowercase, as in MongoDB.
+function sortedBy(spec, list) {
+  if (!spec) return list;
+  const keys = Object.entries(spec);
+  const compare = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  return [...list].sort((a, b) => {
+    for (const [key, direction] of keys) {
+      const order = compare(String(a[key]), String(b[key]));
+      if (order !== 0) return order * (direction < 0 ? -1 : 1);
+    }
+    return 0;
+  });
+}
+
 // Mongoose queries are thenables with a fluent API; the controllers chain
-// `populate`, `select`, `sort` and `lean` before awaiting.
-function query(resolveTo) {
+// `populate`, `select`, `sort`, `limit` and `lean` before awaiting. `list`
+// returns the matching records; `shape` turns them into what the query
+// answers (one document for `findOne`, every document for `find`), after the
+// sort and the limit.
+function query(list, shape) {
+  let sortSpec;
+  let limit;
+  const resolve = () => {
+    const sorted = sortedBy(sortSpec, list());
+    return shape(limit === undefined ? sorted : sorted.slice(0, limit));
+  };
   const chain = {
     populate: () => chain,
     select: () => chain,
-    sort: () => chain,
+    sort: (spec) => {
+      sortSpec = spec;
+      return chain;
+    },
+    limit: (count) => {
+      limit = count;
+      return chain;
+    },
     lean: () => chain,
-    exec: () => Promise.resolve(resolveTo()),
+    exec: () => Promise.resolve(resolve()),
     then: (onFulfilled, onRejected) =>
-      Promise.resolve().then(resolveTo).then(onFulfilled, onRejected),
+      Promise.resolve().then(resolve).then(onFulfilled, onRejected),
   };
   return chain;
 }
+
+const first = (toDocument) => (records) => toDocument(records[0]);
+const every = (toDocument) => (records) => records.map(toDocument);
 
 const VIRTUALS = ['isAdmin', 'isGroupAdmin', 'group', 'status'];
 // What an update may write, as `UserSchema` declares it.
@@ -151,13 +185,20 @@ function createStore() {
 
   const Users = {
     find: (filter) =>
-      query(() =>
-        users.filter((u) => matches(u, filter)).map((u) => toDocument(u))
+      query(
+        () => users.filter((u) => matches(u, filter)),
+        every((u) => toDocument(u))
       ),
     findOne: (filter) =>
-      query(() => toDocument(users.find((u) => matches(u, filter)))),
+      query(
+        () => users.filter((u) => matches(u, filter)),
+        first((u) => toDocument(u))
+      ),
     findById: (id) =>
-      query(() => toDocument(users.find((u) => matches(u, { _id: id })))),
+      query(
+        () => users.filter((u) => matches(u, { _id: id })),
+        first((u) => toDocument(u))
+      ),
     findOneForApi: async (filter) =>
       toDocument(
         users.find((u) => matches(u, filter)),
@@ -171,20 +212,27 @@ function createStore() {
       return toDocument(record);
     },
     findByIdAndUpdate: (id, update) =>
-      query(() => {
-        const record = users.find((u) => matches(u, { _id: id }));
-        if (!record) return null;
-        const fields = update.$set || update;
-        Object.entries(fields).forEach(([key, value]) => {
-          if (value !== undefined && STORED_FIELDS.includes(key)) {
-            record[key] = value;
-          }
-        });
-        return toDocument(record, { populated: true });
-      }),
+      query(
+        () => {
+          const record = users.find((u) => matches(u, { _id: id }));
+          if (!record) return [];
+          const fields = update.$set || update;
+          Object.entries(fields).forEach(([key, value]) => {
+            if (value !== undefined && STORED_FIELDS.includes(key)) {
+              record[key] = value;
+            }
+          });
+          return [record];
+        },
+        first((u) => toDocument(u, { populated: true }))
+      ),
     updateOne: async (filter, update) => {
       const record = users.find((u) => matches(u, filter));
-      if (record) Object.assign(record, update.$set || update);
+      if (record) {
+        const { $set, $unset, ...plain } = update;
+        Object.assign(record, $set || plain);
+        Object.keys($unset || {}).forEach((key) => delete record[key]);
+      }
       return { nModified: record ? 1 : 0 };
     },
     updateMany: async (filter, update) => {
@@ -226,13 +274,21 @@ function createStore() {
       if (record) Object.assign(record, update.$set || update);
       return { nModified: record ? 1 : 0 };
     },
+    exists: async (filter) => groups.some((g) => matches(g, filter)),
     findById: (id) =>
-      query(() => toGroupDocument(groups.find((g) => matches(g, { _id: id })))),
+      query(
+        () => groups.filter((g) => matches(g, { _id: id })),
+        first(toGroupDocument)
+      ),
     findOne: (filter) =>
-      query(() => toGroupDocument(groups.find((g) => matches(g, filter)))),
+      query(
+        () => groups.filter((g) => matches(g, filter)),
+        first(toGroupDocument)
+      ),
     find: (filter) =>
-      query(() =>
-        groups.filter((g) => matches(g, filter)).map(toGroupDocument)
+      query(
+        () => groups.filter((g) => matches(g, filter)),
+        every(toGroupDocument)
       ),
     updateMany: async (filter, update) => {
       const targets = groups.filter((g) => matches(g, filter));

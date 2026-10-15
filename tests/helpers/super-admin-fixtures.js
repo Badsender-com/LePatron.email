@@ -57,6 +57,14 @@ function actorFrom(record) {
     isAdmin: record.role === 'super_admin',
     isGroupAdmin: record.role === 'company_admin',
     group: { id: String(record._company) },
+    // The selected group a super admin stored on its account, as passport
+    // hands it over, and as the request carries it once resolved (#1274
+    // resolves it on every request, fallbacks included). The module suites
+    // take the stored one as the resolved one.
+    ...(record._selectedGroup && {
+      _selectedGroup: String(record._selectedGroup),
+      selectedGroup: { id: String(record._selectedGroup) },
+    }),
   };
 }
 

@@ -13,6 +13,7 @@ export default {
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+    sidebarModule: 'settings',
   },
   data() {
     return {

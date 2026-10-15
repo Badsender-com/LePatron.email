@@ -10,6 +10,8 @@ const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound, Forbidden } = require('http-errors');
 const logger = require('../utils/logger');
+const permissions = require('../account/permissions.js');
+const { refuseBootstrapAccount } = require('../account/request-scope.js');
 
 module.exports = {
   createWorkspace,
@@ -19,15 +21,12 @@ module.exports = {
   findWorkspaces,
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
-  workspaceContainsUser,
   doesUserHaveWriteAccess,
   doesUserHaveReadAccess,
   hasAccess,
   assertAccess,
   isWorkspaceInGroup,
-  isUserWorkspaceMember,
   deleteFolderContent,
-  restrictAccessingWorkspacesForNonMemberUser,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
@@ -48,29 +47,15 @@ async function getWorkspace(id) {
   });
 }
 
-async function restrictAccessingWorkspacesForNonMemberUser(
-  workspace,
-  user,
-  group
-) {
-  return (
-    !workspaceContainsUser(workspace, user) &&
-    group.userHasAccessToAllWorkspaces === false
-  );
-}
-
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
   if (!workspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
-  // An admin creates no mailing: without a group, it writes in no workspace
-  // (and gets an answer instead of a TypeError).
-  return (
-    isWorkspaceInGroup(workspace, user.group?.id) &&
-    isUserWorkspaceMember(user, workspace)
-  );
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
+  return permissions.canWriteWorkspace(user, workspace);
 }
 
 /**
@@ -87,16 +72,8 @@ async function getWorkspaceWithAccessRight(id, user) {
   const workspace = await getWorkspace(id);
   const group = await Groups.findById(workspace._company);
 
-  // Super admins have full access to all workspaces
-  const isAdmin = user?.isAdmin;
-  const isGroupAdmin = user?.isGroupAdmin;
-
-  if (!isAdmin && !isGroupAdmin) {
-    if (
-      await restrictAccessingWorkspacesForNonMemberUser(workspace, user, group)
-    ) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
+  if (!permissions.canReadWorkspace(user, workspace, group)) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
   let workspaceWithAccess = {
@@ -104,11 +81,7 @@ async function getWorkspaceWithAccessRight(id, user) {
     hasAccess: false,
   };
 
-  if (
-    isAdmin ||
-    isGroupAdmin ||
-    workspaceContainsUser(workspaceWithAccess, user)
-  ) {
+  if (permissions.canWriteWorkspace(user, workspace)) {
     workspaceWithAccess = {
       ...workspaceWithAccess,
       hasAccess: true,
@@ -262,66 +235,45 @@ async function attachHasChildrenFlag(workspaces) {
   });
 }
 
-async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
+// The workspace tree of a group: the workspaces the user may read, each with
+// whether it may write in it (ADR 0002, amended).
+async function findWorkspacesWithRights({ groupId, user }) {
   const workspaces = await findWorkspaces({ groupId });
   const group = await Groups.findById(groupId);
 
   // findWorkspaces already returns plain objects (folders enriched with
   // `hasChildren`), so no `.toObject()` is needed here.
-  let workspacesWithRights = workspaces?.map((workspace) => ({
-    ...workspace,
-    hasRights: true,
-  }));
-
-  if (!isGroupAdmin) {
-    workspacesWithRights = workspacesWithRights
-      .filter(
-        (workspace) =>
-          (!group.userHasAccessToAllWorkspaces &&
-            workspace._users?.toString().includes(userId)) ||
-          group.userHasAccessToAllWorkspaces
-      )
-      .map((workspace) => {
-        if (!workspace._users?.toString().includes(userId)) {
-          return {
-            ...workspace,
-            hasRights: false,
-          };
-        }
-        return workspace;
-      });
-  }
-
-  return workspacesWithRights.sort(
-    (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
-  );
+  return (workspaces || [])
+    .filter((workspace) => permissions.canReadWorkspace(user, workspace, group))
+    .map((workspace) => ({
+      ...workspace,
+      hasRights: permissions.canWriteWorkspace(user, workspace),
+    }))
+    .sort((a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name));
 }
 
 function isWorkspaceInGroup(workspace, groupId) {
   return workspace?.group.toString() === groupId;
 }
 
-function workspaceContainsUser(workspace, user) {
-  return workspace._users?.toString().includes(user.id);
-}
-
-function isUserWorkspaceMember(user, workspace) {
-  if (user.isGroupAdmin) {
-    return true;
-  }
-  return workspaceContainsUser(workspace, user);
-}
-
 function doesUserHaveWriteAccess(user, workspace) {
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
   doesUserHaveReadAccess(user, workspace);
 
-  if (!isUserWorkspaceMember(user, workspace)) {
+  if (!permissions.canWriteWorkspace(user, workspace)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
   }
 }
 
+// The workspace is in a group the user reaches: its own, or any group for a
+// super admin. Whether it may read the workspace's content is
+// `canReadWorkspace`'s business.
 function doesUserHaveReadAccess(user, workspace) {
-  if (!isWorkspaceInGroup(workspace, user?.group?.id)) {
+  if (
+    !isWorkspaceInGroup(workspace, user?.group?.id) &&
+    !permissions.canManageGroup(user, workspace?.group)
+  ) {
     throw new NotFound(
       `${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`
     );

@@ -1174,7 +1174,7 @@ export default {
     promote: 'Promote a member',
     promoteAction: 'Promote',
     promoteDescription:
-      'Pick a member of the platform group: they become a super admin and keep their account. Like every super admin, they will no longer create mailings: they read and open those of every group from its settings.',
+      'Pick a member of the platform group: they become a super admin and keep their account. Like every super admin, they will have every right on every group, and work in Email Builder and CRM Intelligence on the group they select.',
     promoted: 'Super admin promoted',
     member: 'Member',
     noMember: 'No member of the platform group to promote.',
@@ -1216,6 +1216,8 @@ export default {
     companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
     switchCompany: 'Pick a company…',
+    selectedGroup: 'Selected group: {name}',
+    selectionFailed: 'This group could not be selected. Try again.',
     colors: 'Colors',
   },
   aiFeatures: {

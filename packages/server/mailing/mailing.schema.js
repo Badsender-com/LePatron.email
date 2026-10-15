@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
@@ -585,7 +586,9 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
 
   let redirectUrl = null;
 
-  if (user?.isAdmin) {
+  // The bootstrap account stays in the settings; a super admin goes back to
+  // the module, like a company admin (ADR 0002, amended).
+  if (isBootstrapAccount(user)) {
     redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
   } else {
     // Target the Email Builder route directly (`/mailings`), not the app root
