@@ -335,7 +335,6 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
         fix('longText', 'la colection de lin', 'la collection de lin'),
       ],
       ['touching a merge tag', fix('longText', '{{prenom}},', '{{prenom}} ,')],
-      ['changing nothing', fix('titleText', 'demain', 'demain')],
       [
         'on a field that was not sent',
         fix('buttonText', 'Je choisi', 'Je choisis'),
@@ -433,6 +432,17 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
           fix('longText', 'vendredi\u00a0!', 'vendredi\u00a0!!'),
         ]);
       });
+    });
+
+    it('ignores, without counting them, a correction the text already has and one changing nothing', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('titleText', 'soldes  commence', 'soldes commence'),
+          fix('titleText', 'demain', 'demain')
+        )
+      );
+      const res = await post();
+      expect(res.body).toEqual({ corrections: [], dropped: 0 });
     });
 
     it('answers no correction for a text without mistake', async () => {
