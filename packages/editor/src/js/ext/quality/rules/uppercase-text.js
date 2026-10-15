@@ -12,7 +12,10 @@ const isUppercaseWord = (word) => {
   return letters.length >= 2 && letters.every((l) => l !== l.toLowerCase());
 };
 
-// The longest run of uppercase words, as text.
+// The longest run of uppercase words, as text. A word without a letter ("2024",
+// "-", "50%") does not break the run: a screen reader spells on through it.
+// The text of a block is read as one, so words of two cells form one
+// sentence, which is how a screen reader reads a table of text too.
 function longestUppercaseRun(text) {
   let best = [];
   let current = [];
@@ -37,10 +40,14 @@ module.exports = {
   run(ctx) {
     const texts = blockTexts(ctx);
     return ctx.blocks
-      .map((block) => ({ block, run: longestUppercaseRun(texts[block.id] || '') }))
+      .map((block) => ({
+        block,
+        run: longestUppercaseRun(texts[block.id] || ''),
+      }))
       .filter(({ run }) => run.length > MAX_UPPERCASE_WORDS)
       .map(({ block, run }) => ({
-        messageKey: 'Long passage in capital letters (__count__ words): __excerpt__',
+        messageKey:
+          'Long passage in capital letters (__count__ words): __excerpt__',
         params: { count: run.length, excerpt: run.slice(0, 8).join(' ') },
         blockId: block.id,
         value: run.join(' '),
