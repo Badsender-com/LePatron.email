@@ -173,18 +173,6 @@ function loader(opts) {
     };
 
     /// ///
-    // EMAIL
-    /// ///
-    const testCmd = {
-      name: 'Test', // l10n happens in the template
-      enabled: ko.observable(true),
-    };
-    // Sending a test lives in the quality drawer, next to the checks.
-    testCmd.execute = function () {
-      if (viewModel.quality) viewModel.quality.open('send');
-    };
-
-    /// ///
     // ZIP
     /// ///
 
@@ -215,7 +203,11 @@ function loader(opts) {
       // Quality review of the same export the ZIP is built from: the drawer
       // opens when there is something to see, the download goes on anyway.
       const html = viewModel.exportHTML();
-      if (viewModel.quality) viewModel.quality.review({ html });
+      try {
+        if (viewModel.quality) viewModel.quality.review({ html });
+      } catch (err) {
+        console.error('Quality review failed', err);
+      }
 
       downloadCmd.enabled(false);
 
@@ -256,7 +248,7 @@ function loader(opts) {
     };
 
     viewModel.save = saveCmd;
-    viewModel.test = testCmd;
+    // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
   };
 }

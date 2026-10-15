@@ -36,9 +36,12 @@ describe('unnamed-image-links', () => {
   it.each([
     '<a href="https://brand.com"><img src="a.jpg" alt="Spring sale"></a>',
     '<a href="https://brand.com" aria-label="Spring sale"><img src="a.jpg" alt=""></a>',
+    '<a href="https://brand.com" title="Spring sale"><img src="a.jpg" alt=""></a>',
     '<a href="https://brand.com"><img src="a.jpg" alt="">Shop</a>',
     '<a href="#toreplace"><img src="a.jpg" alt=""></a>',
-  ])('leaves a named or unfilled link alone: %s', (blockHtml) => {
+    // Reported by unreplaced-images first.
+    '<a href="https://brand.com"><img src="http://localhost:3000/api/images/placeholder/300x200.png" alt=""></a>',
+  ])('leaves a named, unfilled or unreplaced link alone: %s', (blockHtml) => {
     expect(findingsIn(unnamedImageLinks, blockHtml)).toEqual([]);
   });
 });
@@ -50,6 +53,8 @@ describe('alt-text-quality', () => {
 
   it.each([
     ['IMG_1234.jpg', 'Alternative text looks like a file name: __alt__'],
+    ['DSC_0042', 'Alternative text looks like a file name: __alt__'],
+    ['photo-12.jpg', 'Alternative text looks like a file name: __alt__'],
     ['banner-spring.png', 'Alternative text looks like a file name: __alt__'],
     ['https://brand.com/a.jpg', 'Alternative text is an address: __alt__'],
     [
@@ -63,6 +68,7 @@ describe('alt-text-quality', () => {
   it('leaves a decorative image with an empty alt, and a real description, alone', () => {
     expect(keyOf('')).toBeUndefined();
     expect(keyOf('A woman holding the new serum')).toBeUndefined();
+    expect(keyOf('Photo 2024 de la collection')).toBeUndefined();
   });
 });
 
@@ -71,6 +77,22 @@ describe('image-only-email', () => {
     const findings = findingsIn(imageOnlyEmail, '<img src="a.jpg"><p>Hi</p>');
     expect(findings).toHaveLength(1);
     expect(findings[0].params.count).toBe(2);
+  });
+
+  it('counts the text a reader sees only', () => {
+    expect(
+      findingsIn(
+        imageOnlyEmail,
+        `<img src="a.jpg"><p style="display:none">${'a'.repeat(200)}</p>`
+      )
+    ).toHaveLength(1);
+  });
+
+  it('keeps one fingerprint whatever the count, so ignoring it lasts', () => {
+    const fingerprintOf = (text) =>
+      findingsIn(imageOnlyEmail, `<img src="a.jpg"><p>${text}</p>`)[0]
+        .fingerprint;
+    expect(fingerprintOf('Hi')).toBe(fingerprintOf('Hello there'));
   });
 
   it('stays silent with real text, or without images', () => {

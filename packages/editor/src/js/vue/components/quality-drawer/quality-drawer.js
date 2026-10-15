@@ -5,10 +5,15 @@ const {
 } = require('./quality-checks-panel');
 const { SendTestPanel } = require('./send-test-panel');
 
-const TABS = [
-  { name: 'checks', labelKey: 'Quality control', icon: 'lucide-shield-check' },
-  { name: 'send', labelKey: 'Send a test', icon: 'lucide-send' },
-];
+// Frozen: the template reads it, and Vue would otherwise make it reactive.
+const TABS = Object.freeze([
+  Object.freeze({
+    name: 'checks',
+    labelKey: 'Quality control',
+    icon: 'lucide-shield-check',
+  }),
+  Object.freeze({ name: 'send', labelKey: 'Send a test', icon: 'lucide-send' }),
+]);
 
 // The quality drawer, "Test your email": the checks of the email and sending
 // a test of it, as two tabs. Its state lives on the view model
@@ -22,12 +27,13 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     open: false,
     tab: 'checks',
     status: 'idle',
+    remoteStatus: 'idle',
+    remoteError: null,
     findings: [],
+    ignoredFindings: [],
     checks: [],
     ranAt: null,
     errorCount: 0,
-    subscriptions: [],
-    tabs: TABS,
   }),
   computed: {
     currentTab() {
@@ -48,17 +54,30 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       }
     },
   },
+  created() {
+    this.tabs = TABS;
+    this.subscriptions = [];
+  },
   mounted() {
     const q = this.vm.quality;
-    this.sync();
+    // Each observable feeds its own field: a change repaints only what it
+    // touches, instead of every list on every notification.
+    const bind = (observable, apply) => {
+      apply(observable());
+      return observable.subscribe(apply);
+    };
     this.subscriptions = [
-      this.vm.showQuality,
-      q.tab,
-      q.status,
-      q.findings,
-      q.checks,
-      q.ranAt,
-    ].map((observable) => observable.subscribe(this.sync));
+      bind(this.vm.showQuality, (value) => (this.open = value)),
+      bind(q.tab, (value) => (this.tab = value)),
+      bind(q.status, (value) => (this.status = value)),
+      bind(q.remoteStatus, (value) => (this.remoteStatus = value)),
+      bind(q.remoteError, (value) => (this.remoteError = value)),
+      bind(q.activeFindings, (value) => (this.findings = value)),
+      bind(q.ignoredFindings, (value) => (this.ignoredFindings = value)),
+      bind(q.checks, (value) => (this.checks = value)),
+      bind(q.ranAt, (value) => (this.ranAt = value)),
+      bind(q.errorCount, (value) => (this.errorCount = value)),
+    ];
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
@@ -67,28 +86,26 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     t(key, params) {
       return this.vm.t(key, params);
     },
-    sync() {
-      const q = this.vm.quality;
-      this.open = this.vm.showQuality();
-      this.tab = q.tab();
-      this.status = q.status();
-      this.findings = q.findings();
-      this.checks = q.checks();
-      this.ranAt = q.ranAt();
-      this.errorCount = q.errorCount();
-    },
     select(name) {
       this.vm.quality.tab(name);
+    },
+    // A tab chosen from inside a panel: the button that was clicked goes
+    // out of view with its panel, so the focus moves to the tab itself.
+    goTo(name) {
+      this.select(name);
+      this.$nextTick(() => {
+        const tab = this.$refs[`tab-${name}`];
+        if (tab && tab[0]) tab[0].focus();
+      });
     },
     // Arrow keys move between tabs, as in any tablist.
     onTabKey(event) {
       const i = TABS.findIndex((tab) => tab.name === this.tab);
-      const next = TABS[(i + (event.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
-      this.select(next.name);
-      this.$nextTick(() => this.$refs[`tab-${next.name}`][0].focus());
+      const step = event.key === 'ArrowRight' ? 1 : TABS.length - 1;
+      this.goTo(TABS[(i + step) % TABS.length].name);
     },
     runFromSend() {
-      this.select('checks');
+      this.goTo('checks');
       this.vm.quality.run();
     },
     close() {
@@ -108,7 +125,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
           <p class="qc-drawer__eyebrow">{{ t('Test your email') }}</p>
           <h2 id="qc-drawer-title" class="qc-drawer__title">{{ t(currentTab.labelKey) }}</h2>
         </div>
-        <button ref="close" type="button" class="qc-icon-button" :aria-label="t('Close')" :title="t('Close')" @click="close">
+        <button ref="close" type="button" class="qc-icon-button" :aria-label="t('quality-action-close')" :title="t('quality-action-close')" @click="close">
           <span class="lucide lucide-x" aria-hidden="true"></span>
         </button>
       </header>
@@ -140,10 +157,13 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         class="qc-drawer__tabpanel"
         :vm="vm"
         :status="status"
+        :remote-status="remoteStatus"
+        :remote-error="remoteError"
         :findings="findings"
+        :ignored-findings="ignoredFindings"
         :checks="checks"
         :ran-at="ranAt"
-        @send-test="select('send')"
+        @send-test="goTo('send')"
       ></quality-checks-panel>
       <send-test-panel
         v-show="tab === 'send'"
@@ -154,7 +174,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :vm="vm"
         :status="status"
         :error-count="errorCount"
-        @show-results="select('checks')"
+        :active="open && tab === 'send'"
+        @show-results="goTo('checks')"
         @run-checks="runFromSend"
       ></send-test-panel>
     </section>

@@ -153,7 +153,6 @@ module.exports = {
     "Une erreur s'est produite lors de la communication avec l'API.",
 
   // test list
-  'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
   'placeholder-input-emails-test':
@@ -163,7 +162,6 @@ module.exports = {
     'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
-  'send-test-mails': 'Envoyer',
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
@@ -440,6 +438,43 @@ module.exports = {
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
   // Quality control (ext/quality)
   'Quality control': 'Contrôle qualité',
+  // Prefixed: this dictionary is merged with Mosaico's, where a bare
+  // "Error" or "Copy" would collide.
+  'quality-action-close': 'Fermer',
+  'quality-action-cancel': 'Annuler',
+  'quality-action-ignore': 'Ignorer',
+  'quality-action-undo': 'Annuler',
+  // The editor's own undo button (undomanager/undomain.js).
+  Undo: 'Annuler',
+  'quality-severity-error': 'Erreur',
+  'quality-severity-warning': 'Avertissement',
+  'quality-severity-info': 'Info',
+  'quality-severity-not-run': 'Non exécuté',
+  'quality-severity-passed': 'Contrôle réussi',
+  'quality-group-errors': 'Erreurs',
+  'quality-group-warnings': 'Avertissements',
+  'quality-group-infos': 'Infos',
+  'quality-group-not-run': 'Non exécutés',
+  'quality-group-passed': 'Réussis',
+  'quality-group-ignored': 'Ignorés',
+  'quality-category-technical': 'Technique',
+  'quality-category-content': 'Contenu',
+  'quality-category-accessibility': 'Accessibilité',
+  'quality-category-copy': 'Rédaction',
+  'quality-category-performance': 'Performance',
+  'quality-badge-stale': 'À relancer',
+  '__count__ checks not run': '__count__ contrôle(s) non exécuté(s)',
+  '__count__ ignored findings': '__count__ résultat(s) ignoré(s)',
+  '__passed__ of __total__ checks passed':
+    '__passed__ contrôle(s) réussi(s) sur __total__',
+  'The results date from before your last changes':
+    "Les résultats datent d'avant vos dernières modifications",
+  'This check was cancelled': 'Ce contrôle a été annulé',
+  'Too many checks in a short time: try again in a few minutes':
+    'Trop de contrôles en peu de temps : réessayez dans quelques minutes',
+  'The links and images could not be checked':
+    "Les liens et les images n'ont pas pu être vérifiés",
+  'The block could not be shown': "Le bloc n'a pas pu être affiché",
   'Link not filled in: __label__': 'Lien non renseigné : __label__',
   'Clickable image has no link': 'Image cliquable sans lien',
   'Image not replaced': 'Image non remplacée',
@@ -447,60 +482,48 @@ module.exports = {
     "Image d'exemple du template non remplacée",
   'Missing Outlook background image': 'Image de fond Outlook manquante',
   'Missing mobile background image': 'Image de fond mobile manquante',
-  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
-    'Le HTML exporté pèse __size__ Ko : Gmail tronque les emails de plus de 102 Ko',
+  'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    "Le HTML exporté pèse __size__ Ko : restez sous 100 Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
   'Test your email': 'Tester votre email',
-  Close: 'Fermer',
   'Run quality checks': 'Lancer le contrôle qualité',
   'Links, images and weight are checked before you send a test.':
     "Les liens, les images et le poids de l'email sont vérifiés avant l'envoi d'un test.",
   '__count__ checks': '__count__ contrôles',
   'Running checks…': 'Contrôle en cours…',
   'Running…': 'En cours…',
-  Cancel: 'Annuler',
   'Re-run': 'Relancer',
-  Error: 'Erreur',
-  Warning: 'Avertissement',
-  Info: 'Info',
-  Passed: 'Réussis',
-  'Check passed': 'Contrôle réussi',
-  Errors: 'Erreurs',
-  Warnings: 'Avertissements',
-  Infos: 'Infos',
   '__count__ errors': '__count__ erreur(s)',
   '__count__ warnings': '__count__ avertissement(s)',
   '__count__ infos': '__count__ info(s)',
   '__count__ checks passed': '__count__ contrôle(s) réussi(s)',
   '__count__ issues': '__count__ point(s) à corriger',
+  '__count__ issues to fix: open the quality control':
+    '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'All checks passed': 'Tous les contrôles sont réussis',
   '__passed__ of __total__ checks · __when__':
     '__passed__ contrôles sur __total__ · __when__',
   'Go to block': 'Aller au bloc',
   'Send a test email': 'Envoyer un email de test',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
-  Technical: 'Technique',
-  Accessibility: 'Accessibilité',
-  Copy: 'Rédaction',
-  Performance: 'Performance',
   'Required tracking parameters': 'Paramètres de tracking obligatoires',
   'All required tracking parameters are filled in':
     'Tous les paramètres de tracking obligatoires sont renseignés',
-  Links: 'Liens',
+  'quality-title-links': 'Liens',
   'Every link has a destination': 'Tous les liens ont une destination',
   'Clickable images': 'Images cliquables',
   'Every clickable image has a link':
     'Toutes les images cliquables ont un lien',
-  Images: 'Images',
+  'quality-title-images': 'Images',
   'Every image has been replaced': 'Toutes les images ont été remplacées',
   'Background images': 'Images de fond',
   'Every background image turned on is set':
     'Toutes les images de fond activées sont renseignées',
   'Email weight': "Poids de l'email",
-  'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit':
-    'Le HTML exporté pèse __size__ Ko, sous la limite de 102 Ko de Gmail',
+  'Exported HTML weighs __size__ KB, under the 100 KB limit':
+    'Le HTML exporté pèse __size__ Ko, sous la limite de 100 Ko',
   'Link addresses': 'Adresses des liens',
   'Every link address is well formed':
     'Toutes les adresses de liens sont bien formées',
@@ -568,14 +591,14 @@ module.exports = {
     'Toutes les images utilisent un format affiché par les clients mail',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
-  Subject: 'Objet',
+  'quality-title-subject': 'Objet',
   'The subject is filled in and __count__ characters long':
     "L'objet est renseigné et fait __count__ caractères",
   'No subject': "Pas d'objet",
-  'Subject too long (__count__ characters): cut in almost every inbox':
-    'Objet trop long (__count__ caractères) : coupé dans presque toutes les boîtes de réception',
-  'Long subject (__count__ characters): may be cut on mobile and in Outlook':
-    'Objet long (__count__ caractères) : il peut être coupé sur mobile et dans Outlook',
+  'Subject too long (__count__ characters): inboxes cut it, keep it under 60':
+    'Objet trop long (__count__ caractères) : les boîtes de réception le coupent, restez sous 60',
+  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile':
+    'Objet long (__count__ caractères) : idéalement sous 40, il peut être coupé sur mobile',
   'Subject starts like a reply or a forward (__prefix__) without being one':
     "L'objet commence comme une réponse ou un transfert (__prefix__) sans en être un",
   'Subject mostly in capital letters':
@@ -583,15 +606,13 @@ module.exports = {
   'Subject repeats punctuation (!!, ??, $$)':
     "L'objet répète de la ponctuation (!!, ??, $$)",
   'Subject has more than one emoji': "L'objet contient plus d'un emoji",
-  Preheader: 'Préheader',
+  'quality-title-preheader': 'Préheader',
   'The preheader is filled in and __count__ characters long':
     'Le préheader est renseigné et fait __count__ caractères',
   'No preheader: inboxes show the first words of the body instead':
     'Pas de préheader : les boîtes de réception affichent les premiers mots du corps à la place',
-  'Preheader too short (__count__ characters)':
-    'Préheader trop court (__count__ caractères)',
-  'Short preheader (__count__ characters): some inboxes complete it with the body':
-    'Préheader court (__count__ caractères) : certaines boîtes de réception le complètent avec le corps',
+  'The preheader repeats the subject: inboxes show the same words twice':
+    "Le préheader répète l'objet : les boîtes de réception affichent deux fois les mêmes mots",
   'Preheader too long (__count__ characters): inboxes cut it well before':
     'Préheader trop long (__count__ caractères) : les boîtes de réception le coupent bien avant',
   'Long preheader (__count__ characters): its end will rarely be seen':
@@ -605,6 +626,12 @@ module.exports = {
     "Variable de personnalisation non fermée dans l'objet (__token__) : __excerpt__",
   'Personalization tag not closed in the preheader (__token__): __excerpt__':
     'Variable de personnalisation non fermée dans le préheader (__token__) : __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    "%% non apparié dans l'objet (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé",
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    '%% non apparié dans le préheader (__excerpt__) : balise de personnalisation non fermée, ou signe pour cent doublé',
   'Empty blocks': 'Blocs vides',
   'Every block shows something': 'Tous les blocs affichent du contenu',
   'Empty block: it shows no text and no image':
@@ -617,9 +644,10 @@ module.exports = {
   'Preheader still the sample text of the template: __text__':
     "Le préheader est resté au texte d'exemple du template : __text__",
   'Font size': 'Taille de police',
-  'No text was set under 14 px': "Aucun texte n'a été réduit sous 14 px",
-  'Text set to __size__ px, under the 14 px that reads comfortably: __text__':
-    "Texte réglé à __size__ px, sous les 14 px d'une lecture confortable : __text__",
+  'No text was set under 14 px, or 12 px in the header and footer':
+    "Aucun texte n'est réglé sous 14 px, ou 12 px dans l'en-tête et le pied de page",
+  'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
+    'Texte réglé à __size__ px, sous les __min__ px confortables à lire : __text__',
   'Hidden text': 'Texte masqué',
   'No text is hidden': "Aucun texte n'est masqué",
   'Hidden text: filters read hidden content as an attempt to fool them: __text__':
@@ -629,21 +657,23 @@ module.exports = {
     'Tous les textes colorés se lisent sur leur fond',
   'Text almost invisible on its background (__ratio__:1): __text__':
     'Texte presque invisible sur son fond (__ratio__:1) : __text__',
-  'Contrast too low (__ratio__:1, __required__:1 needed): __text__':
-    'Contraste insuffisant (__ratio__:1, __required__:1 requis) : __text__',
+  'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__':
+    'Contraste trop faible (__ratio__:1) : __required__:1 au minimum, __ideal__:1 idéalement : __text__',
   'Text layout': 'Mise en forme du texte',
-  'No text is justified or has tight lines':
-    "Aucun texte n'est justifié ni trop serré",
+  'No text is justified, overlaps or is centred at length':
+    "Aucun texte n'est justifié, ne se chevauche ni n'est longuement centré",
   'Justified text: word gaps get harder to read: __text__':
     'Texte justifié : les espaces irréguliers entre les mots gênent la lecture : __text__',
-  'Tight line height (__ratio__), under the 1.5 that keeps lines readable: __text__':
-    'Interligne serré (__ratio__), sous le 1,5 qui garde les lignes lisibles : __text__',
+  'Line height under 1 (__ratio__): the lines overlap: __text__':
+    'Interligne inférieur à 1 (__ratio__) : les lignes se chevauchent : __text__',
+  'Centred text over about three lines is hard to read: align long texts to the left':
+    'Un texte centré de plus de trois lignes environ se lit mal : alignez les textes longs à gauche',
   'Visible links': 'Liens visibles',
   'Every link stands out from the text around it':
     'Tous les liens se distinguent du texte qui les entoure',
   'Link neither underlined nor coloured differently from its text: __label__':
     "Lien ni souligné ni d'une autre couleur que son texte : __label__",
-  Headings: 'Titres',
+  'quality-title-headings': 'Titres',
   'Headings are filled in and follow each other':
     'Les titres sont renseignés et se suivent',
   'Empty heading (__tag__)': 'Titre vide (__tag__)',
@@ -654,7 +684,7 @@ module.exports = {
     'Aucun texte alternatif ne répète le texte voisin',
   'Alternative text repeats the text next to the image: __alt__':
     "Le texte alternatif répète le texte à côté de l'image : __alt__",
-  Emojis: 'Emojis',
+  'quality-title-emojis': 'Emojis',
   'Emojis sit at the end of sentences':
     'Les emojis sont placés en fin de phrase',
   'Several emojis in a row: screen readers read each name':
@@ -672,6 +702,8 @@ module.exports = {
     'Balise jamais fermée dans le code HTML : <__tag__>',
   'Closing tag with no opening one in the HTML code: </__tag__>':
     'Balise fermante sans ouverture dans le code HTML : </__tag__>',
+  'Tag closed in the wrong order in the HTML code: <__tag__>':
+    'Balise fermée dans le mauvais ordre dans le code HTML : <__tag__>',
   'Email-safe code': 'Code compatible email',
   'The code of HTML code blocks only uses what email clients support':
     "Le code des blocs de code HTML n'utilise que ce que les clients mail prennent en charge",
@@ -682,6 +714,8 @@ module.exports = {
     'Le code HTML utilise des adresses complètes et des couleurs valides',
   'Relative address in the HTML code, it only works on its original site: __urls__':
     "Adresse relative dans le code HTML, elle ne fonctionne que sur son site d'origine : __urls__",
+  'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__':
+    "Adresse sans protocole dans le code HTML (//…), certaines messageries ne peuvent pas l'ouvrir : __urls__",
   'Colour an email client cannot read in the HTML code: __colors__':
     'Couleur illisible par les clients mail dans le code HTML : __colors__',
   'Send a test': 'Envoi de test',
@@ -693,5 +727,94 @@ module.exports = {
   'Separate addresses with a semicolon':
     'Séparez les adresses par un point-virgule',
   'Saved list of addresses': "Liste d'adresses enregistrée",
+  'The saved lists of addresses could not be loaded':
+    "Les listes d'adresses enregistrées n'ont pas pu être chargées",
   'Send the test email': "Envoyer l'email de test",
+  'Add comment': 'Ajouter un commentaire',
+  'Stop ignoring': 'Ne plus ignorer',
+  'Ignored: __title__': 'Ignoré : __title__',
+  'The change could not be saved':
+    "La modification n'a pas pu être enregistrée",
+  'Broken links': 'Liens cassés',
+  'Links checked: __count__, all answer':
+    'Liens vérifiés : __count__, tous répondent',
+  'Broken link (__status__): __label__': 'Lien cassé (__status__) : __label__',
+  'Link to a domain that does not exist: __label__':
+    "Lien vers un domaine qui n'existe pas : __label__",
+  'Link did not answer in time, check it by hand: __label__':
+    "Le lien n'a pas répondu à temps, vérifiez-le vous-même : __label__",
+  'Link could not be checked (__status__), check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié (__status__), vérifiez-le vous-même : __label__",
+  'Link could not be checked, check it by hand: __label__':
+    "Le lien n'a pas pu être vérifié, vérifiez-le vous-même : __label__",
+  'Image weight': 'Poids des images',
+  'Images checked: __count__, each under 500 KB':
+    'Images vérifiées : __count__, chacune sous 500 Ko',
+  'Image could not be downloaded: the export will leave it out (__name__)':
+    "Image impossible à télécharger : l'export la laissera de côté (__name__)",
+  'Heavy GIF (__size__ KB): keep it under 1 MB':
+    'GIF lourd (__size__ Ko) : restez sous 1 Mo',
+  'Heavy image (__size__ KB): keep it under 500 KB':
+    'Image lourde (__size__ Ko) : restez sous 500 Ko',
+  'Total image weight': 'Poids total des images',
+  'Images weigh __size__ KB in all, under 500 KB':
+    'Les images pèsent __size__ Ko au total, sous les 500 Ko',
+  'Images weigh __size__ KB in all: over 1 MB':
+    'Les images pèsent __size__ Ko au total : plus de 1 Mo',
+  'Images weigh __size__ KB in all: over 500 KB':
+    'Les images pèsent __size__ Ko au total : plus de 500 Ko',
+  'Image dimensions': 'Dimensions des images',
+  'No image is much larger than it is shown':
+    "Aucune image n'est beaucoup plus grande que sa taille d'affichage",
+  'Image is __width__ px wide, shown at __shown__ px':
+    'Image de __width__ px de large, affichée en __shown__ px',
+  'Blocklisted domains': 'Domaines sur liste noire',
+  'No link points to a blocklisted domain':
+    'Aucun lien ne pointe vers un domaine sur liste noire',
+  'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
+    "Domaine sur liste noire (__lists__), les filtres peuvent classer l'email en spam : __domain__",
+  'Domain could not be checked against the blocklists: __domain__':
+    "Le domaine n'a pas pu être vérifié sur les listes noires : __domain__",
+  'Checking links and images…': 'Vérification des liens et des images…',
+  'Dangerous links': 'Liens dangereux',
+  'Google lists none of the links as dangerous':
+    'Google ne signale aucun des liens comme dangereux',
+  'Google lists this link as phishing: __label__':
+    "Google signale ce lien comme de l'hameçonnage : __label__",
+  'Google lists this link as malware: __label__':
+    'Google signale ce lien comme un logiciel malveillant : __label__',
+  'Google lists this link as unwanted software: __label__':
+    'Google signale ce lien comme un logiciel indésirable : __label__',
+  'Google lists this link as unsafe: __label__':
+    'Google signale ce lien comme dangereux : __label__',
+  'Google could not check this link, check it by hand: __label__':
+    "Google n'a pas pu vérifier ce lien, vérifiez-le vous-même : __label__",
+  'Share a preview': 'Partager un aperçu',
+  'Anyone with the link sees the last saved version of the email, without an account.':
+    "Toute personne qui a le lien voit la dernière version enregistrée de l'email, sans compte.",
+  'Valid for': 'Durée de validité',
+  '1 day': '1 jour',
+  '__count__ days': '__count__ jours',
+  'Create a link': 'Créer un lien',
+  'Preview link': "Lien d'aperçu",
+  'quality-share-copied': 'Copié',
+  'Copy it now: it will not be shown again.':
+    'Copiez-le maintenant : il ne sera plus affiché.',
+  'Active links': 'Liens actifs',
+  'Turn off': 'Désactiver',
+  'The link could not be created': "Le lien n'a pas pu être créé",
+  'Copy failed: select the link and copy it':
+    'La copie a échoué : sélectionnez le lien et copiez-le',
+  'The link could not be turned off': "Le lien n'a pas pu être désactivé",
+  'Copy link': 'Copier le lien',
+  'Created __created__ by __name__, until __date__':
+    "Créé le __created__ par __name__, jusqu'au __date__",
+  'Created __created__, until __date__':
+    "Créé le __created__, jusqu'au __date__",
+  'Turn off the link: __link__': 'Désactiver le lien : __link__',
+  'This email already has __count__ active links: turn one off first':
+    "Cet email a déjà __count__ liens actifs : désactivez-en un d'abord",
+  'Copy the link: __link__': 'Copier le lien : __link__',
+  'The link could not be copied': "Le lien n'a pas pu être copié",
+  'The links could not be loaded': "Les liens n'ont pas pu être chargés",
 };
