@@ -7,7 +7,11 @@ const {
   copyText,
 } = require('./share-link-api');
 
-const EXPIRY_OPTIONS = [1, 7, 30];
+const {
+  SHARE_LINK_EXPIRY,
+} = require('../../../../../../shared/quality/limits.js');
+
+const EXPIRY_OPTIONS = SHARE_LINK_EXPIRY.days;
 // The 422 of share-link.service.js when the email has all the links it may.
 const LIMIT_REACHED_CODE = 'SHARE_LINKS_LIMIT_REACHED';
 
@@ -53,7 +57,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
       }));
     },
     days() {
-      return this.expiry ? this.expiry.code : 7;
+      return this.expiry ? this.expiry.code : SHARE_LINK_EXPIRY.defaultDays;
     },
   },
   watch: {
