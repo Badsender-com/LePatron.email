@@ -6,6 +6,7 @@
 const {
   ShareLinks,
   Groups,
+  Templates,
   mailingService,
   MAILING_ID,
   LINK_ID,
@@ -126,6 +127,36 @@ describe('creating a link', () => {
     });
     expect(Groups.findById).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(201);
+  });
+
+  // An email of the admin has no company: the one of its template decides,
+  // as it decides whether the editor shows the section.
+  it("judges an admin's email by the company of its template, and stores it", async () => {
+    mailingService.findOneForUser.mockResolvedValue({
+      _id: MAILING_ID,
+      _wireframe: 'tpl1',
+    });
+    Templates.findById.mockReturnValue(lean({ _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', enableShareLinks: false })
+    );
+    const refused = await call(controller.create, {
+      params: { mailingId: MAILING_ID },
+    });
+    expect(refused.error).toMatchObject({ status: 403 });
+    expect(Groups.findById.mock.calls[0][0]).toBe('c1');
+
+    Groups.findById.mockReturnValue(lean({ status: 'active' }));
+    ShareLinks.countDocuments.mockResolvedValue(0);
+    ShareLinks.create.mockImplementation(async (doc) => ({
+      _id: LINK_ID,
+      ...doc,
+    }));
+    const { res } = await call(controller.create, {
+      params: { mailingId: MAILING_ID },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(ShareLinks.create.mock.calls[0][0]._company).toBe('c1');
   });
 
   it('stops at 20 active links per email', async () => {

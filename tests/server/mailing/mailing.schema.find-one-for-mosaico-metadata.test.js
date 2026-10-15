@@ -20,7 +20,8 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
   Mailings: {},
-  Groups: {},
+  // Whether the company shares previews (share-link.service.js): it does.
+  Groups: { findById: () => ({ lean: () => Promise.resolve({}) }) },
 }));
 
 const mongoose = require('mongoose');

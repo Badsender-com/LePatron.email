@@ -615,7 +615,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   // Lazy require like the services above: share-link.service reaches
   // models.common, which reaches back here.
   const shareLinkService = require('../share-link/share-link.service.js');
-  const shareLinksEnabled = group.enableShareLinks !== false;
+  // The company the server judges a link by, not always the template's.
+  const { allowed: shareLinksEnabled } = await shareLinkService.companySharing(
+    await shareLinkService.sharingCompanyOf(mailing)
+  );
 
   let redirectUrl = null;
 

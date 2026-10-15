@@ -40,10 +40,11 @@ const ShareLinkSchema = new Schema(
       required: true,
       index: true,
     },
-    // The company of the email when the link was made, for the audit trail:
-    // whether the link still opens is judged on the email's current company
-    // (share-page.controller.js), which a transfer can change. Absent for an
-    // email of the admin, who has no company.
+    // The company whose setting allowed the link (sharingCompanyOf): the
+    // email's, or its template's for an email of the admin. Whether the link
+    // still opens is judged on the email's current company
+    // (share-page.controller.js), which a transfer can change. Absent when
+    // neither has one.
     _company: {
       type: ObjectId,
       ref: GroupModel,
