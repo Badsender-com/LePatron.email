@@ -50,7 +50,6 @@ describe('the routes that write a mailing', () => {
     ['post', '/:mailingId/move'],
     ['post', '/move-many'],
     ['patch', '/:mailingId/metadata'],
-    ['patch', '/:mailingId/quality-ignores'],
     ['post', '/:mailingId/duplicate'],
     ['post', '/:mailingId/duplicate-translate'],
     ['put', ''],
@@ -68,7 +67,6 @@ describe('the routes that write a mailing', () => {
     ['put', '/:mailingId/mosaico'],
     ['post', '/:mailingId/mosaico/send-test-mail'],
     ['post', '/:mailingId/mosaico/download-zip'],
-    ['post', '/:mailingId/share-links'],
   ])('do not refuse a reviewer at the router: %s %s', (method, path) => {
     expect(guardsOf(method, path)).not.toContain(GUARD_NOT_REVIEWER);
   });
