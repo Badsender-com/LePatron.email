@@ -39,6 +39,7 @@
     <!-- Zone 2: Contextual -->
     <bs-sidebar-context-zone
       :active-module="activeModule"
+      :active-module-locked="activeModuleLocked"
       :collapsed="collapsed && !isMobile"
     />
 
@@ -151,6 +152,10 @@ export default {
       return null;
     },
 
+    activeModuleLocked() {
+      const active = this.modules.find((m) => m.id === this.activeModule);
+      return !!(active && active.locked);
+    },
     sidebarStyle() {
       return {
         width: `${this.sidebarWidth}px`,
