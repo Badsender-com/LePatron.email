@@ -55,7 +55,7 @@ beforeEach(() => {
 });
 
 describe('POST /mailings/:mailingId/transfer-to-user', () => {
-  it('revokes every preview link of the email once it is handed over', async () => {
+  it('revokes every preview link of the email before handing it over', async () => {
     const order = [];
     const mailing = {
       _id: MAILING_ID,
@@ -82,7 +82,25 @@ describe('POST /mailings/:mailingId/transfer-to-user', () => {
     expect(shareLinkService.revokeAllForMailing).toHaveBeenCalledWith(
       MAILING_ID
     );
-    expect(order).toEqual(['save', 'revoke']);
+    expect(order).toEqual(['revoke', 'save']);
+  });
+
+  it('leaves the email where it was when the links cannot be revoked', async () => {
+    const mailing = {
+      _id: MAILING_ID,
+      _company: 'c1',
+      _wireframe: { _company: 'c2' },
+      save: jest.fn(),
+    };
+    Users.findById.mockResolvedValue({ _id: USER_ID, _company: 'c2' });
+    Mailings.findById.mockReturnValue({
+      populate: () => Promise.resolve(mailing),
+    });
+    const failure = new Error('Mongo down');
+    shareLinkService.revokeAllForMailing.mockRejectedValue(failure);
+
+    expect(await transfer()).toBe(failure);
+    expect(mailing.save).not.toHaveBeenCalled();
   });
 
   it('keeps the links of an email that was not transferred', async () => {

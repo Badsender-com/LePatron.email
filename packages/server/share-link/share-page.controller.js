@@ -175,11 +175,18 @@ async function showShare(req, res) {
     'data.preheaderVisible': 1,
   }).lean();
   if (!mailing) return renderNotice(res, 404, lang, 'unknown');
-  // The company the email belongs to now, not the one of the link: a transfer
-  // moves an email, and the link follows the email.
-  const sharing = await shareLinkService.companySharing(
-    await shareLinkService.sharingCompanyOf(mailing)
-  );
+  // The company the email belongs to now decides. A link made under another
+  // one is closed: a transfer revokes the links, and should one survive it,
+  // it must not open in a company that never shared it.
+  const companyId = await shareLinkService.sharingCompanyOf(mailing);
+  if (
+    link._company &&
+    companyId &&
+    String(link._company) !== String(companyId)
+  ) {
+    return renderNotice(res, 404, lang, 'unknown');
+  }
+  const sharing = await shareLinkService.companySharing(companyId);
   if (!sharing.allowed) return renderNotice(res, 404, lang, 'unknown');
   const html = await sanitizedPage(mailing);
   if (!html) return renderNotice(res, 404, lang, 'empty');
