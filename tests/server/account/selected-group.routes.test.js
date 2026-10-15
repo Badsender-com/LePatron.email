@@ -30,7 +30,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const express = require('express');
+const mongoose = require('mongoose');
 const request = require('supertest');
+
+const GroupSchema = require('../../../packages/server/group/group.schema.js');
 
 const {
   __store: store,
@@ -186,8 +189,26 @@ describe('the selected group endpoint', () => {
 
     it('follow the defaults of a group stored before the flags existed: Email Builder on, the others off', async () => {
       seed([ACME], { [ALICE]: CLIENT_GROUP });
+      // The stored record has no flag at all: read through the real Group
+      // schema, as Mongoose returns it, the defaults fill them in.
+      const GroupDocument = mongoose.model(
+        'GroupSelectedGroupTest',
+        GroupSchema
+      );
+      const stored = GroupDocument.hydrate({ ...ACME });
+      const findById = jest
+        .spyOn(store.Groups, 'findById')
+        .mockImplementation(() => {
+          const chain = {
+            select: () => chain,
+            then: (resolve, reject) =>
+              Promise.resolve(stored).then(resolve, reject),
+          };
+          return chain;
+        });
 
       const res = await read(ALICE);
+      findById.mockRestore();
 
       expect(res.body.selectedGroup).toMatchObject({
         enableEmailBuilder: true,

@@ -12,6 +12,8 @@ const { isBootstrapAccount } = require('./bootstrap-account.js');
 
 // What the UI needs of the selected group: its name, the module flags the
 // sidebar locks the modules on, and the export options of the module screens.
+// Read as documents, not lean: a group stored before a flag existed has no
+// such field, and only the document gets the default of group.schema.js.
 const SUMMARY_FIELDS =
   'name enableEmailBuilder enableCrmIntelligence downloadMailingWithFtpImages';
 
@@ -20,13 +22,9 @@ function summaryOf(group) {
     ? {
         id: String(group._id),
         name: group.name,
-        // Read lean, so without the schema's defaults: a group stored before
-        // a flag existed has none, and takes the default of group.schema.js
-        // (Email Builder on, the others off).
-        enableEmailBuilder: group.enableEmailBuilder !== false,
-        enableCrmIntelligence: group.enableCrmIntelligence === true,
-        downloadMailingWithFtpImages:
-          group.downloadMailingWithFtpImages === true,
+        enableEmailBuilder: group.enableEmailBuilder,
+        enableCrmIntelligence: group.enableCrmIntelligence,
+        downloadMailingWithFtpImages: group.downloadMailingWithFtpImages,
       }
     : null;
 }
@@ -34,9 +32,7 @@ function summaryOf(group) {
 async function findGroupSummary(groupId) {
   const id = groupId && String(groupId);
   if (!isObjectIdString(id)) return null;
-  return summaryOf(
-    await Groups.findById(groupId).select(SUMMARY_FIELDS).lean()
-  );
+  return summaryOf(await Groups.findById(groupId).select(SUMMARY_FIELDS));
 }
 
 /**
@@ -70,13 +66,13 @@ async function resolveSelectedGroup(user, session) {
     await Users.updateOne({ _id: user.id }, { $unset: { _selectedGroup: 1 } });
   }
 
-  const platform = await Groups.findOne({ isPlatform: true })
-    .select(SUMMARY_FIELDS)
-    .lean();
+  const platform = await Groups.findOne({ isPlatform: true }).select(
+    SUMMARY_FIELDS
+  );
   if (platform) return summaryOf(platform);
 
   return summaryOf(
-    await Groups.findOne({}).sort({ name: 1 }).select(SUMMARY_FIELDS).lean()
+    await Groups.findOne({}).sort({ name: 1 }).select(SUMMARY_FIELDS)
   );
 }
 
