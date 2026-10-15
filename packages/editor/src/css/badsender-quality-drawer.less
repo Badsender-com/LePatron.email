@@ -217,6 +217,12 @@
 
 // Pills, groups, rows and buttons of the result list.
 @import 'badsender-quality-drawer-results.less';
+// Tabs and the "Send a test" tab.
+@import 'badsender-quality-drawer-send.less';
+// Stale results, server checks that did not run, checks not run.
+@import 'badsender-quality-drawer-notices.less';
+// The saved list field of the "Send a test" tab.
+@import (multiple) 'badsender-simple-select.less';
 } // End #toolquality
 
 // ===== Block located from the drawer =====
@@ -274,6 +280,7 @@
 
     &--error { background: @qc-error; color: var(--white); }
     &--success { background: @qc-success; color: var(--white); }
+    &--stale { background: @qc-warning; color: var(--white); }
   }
 }
 

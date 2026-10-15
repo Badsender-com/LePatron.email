@@ -118,6 +118,7 @@ describe('the list projection', () => {
       previewHtml: 0,
       data: 0,
       headCss: 0,
+      qualityIgnores: 0,
     });
   });
 });

@@ -17,9 +17,20 @@ const logger = consola.create({
 // LOGGING
 /// ///
 
+// A share link's token is its only credential (share-link.service.js): a log
+// holding it would hand out working links. Only its first characters remain,
+// enough to tell two links apart. Express routes the path however it is
+// written (/SHARE/, //share/, a token percent-encoded): everything after
+// /share/ goes, up to the query string.
+const SHARE_TOKEN_IN_URL = /^(\/+share\/+)([^?#]{0,4})[^?#]*/i;
+
+function loggedUrl(tokens, req, res) {
+  return (tokens.url(req, res) || '').replace(SHARE_TOKEN_IN_URL, '$1$2…');
+}
+
 function logRequest(tokens, req, res) {
   const method = chalk.blue(tokens.method(req, res));
-  const url = chalk.grey(tokens.url(req, res));
+  const url = chalk.grey(loggedUrl(tokens, req, res));
   return `${chalk.grey('==>')} ${method} ${url}`;
 }
 
@@ -35,7 +46,7 @@ const colorCodes = {
 
 function logResponse(tokens, req, res) {
   const method = chalk.blue(tokens.method(req, res));
-  const url = chalk.grey(tokens.url(req, res));
+  const url = chalk.grey(loggedUrl(tokens, req, res));
   const status = tokens.status(req, res);
   const responseTime = `${tokens['response-time'](req, res)}ms`;
   /* eslint no-bitwise: "off" */
@@ -54,5 +65,7 @@ const skipLog = (req) => ASSETS_REGEX.test(req.originalUrl);
 logger.logRequest = () =>
   morgan(logRequest, { immediate: true, skip: skipLog });
 logger.logResponse = () => morgan(logResponse, { skip: skipLog });
+// exported for testing
+logger.loggedUrl = loggedUrl;
 
 module.exports = logger;
