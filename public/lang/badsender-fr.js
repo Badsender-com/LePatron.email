@@ -825,6 +825,22 @@ module.exports = {
     "1 non appliquée : le texte a changé depuis l'analyse.",
   'ai-panel-correction-undo-hint':
     '__keys__ annule la dernière correction acceptée.',
+  'ai-panel-correcting-blocks': 'Analyse : bloc __done__ sur __total__…',
+  'ai-panel-correction-paused':
+    "Pause : limite d'utilisation atteinte, reprise dans __seconds__ s.",
+  'ai-panel-correction-stop': "Arrêter l'analyse",
+  'ai-panel-correction-stopped':
+    'Analyse arrêtée après __done__ blocs sur __total__.',
+  'ai-panel-correction-stopped-one':
+    'Analyse arrêtée après 1 bloc sur __total__.',
+  'ai-panel-correction-finished':
+    'Analyse terminée : __count__ corrections à examiner.',
+  'ai-panel-correction-finished-one':
+    'Analyse terminée : 1 correction à examiner.',
+  'ai-panel-blocks-failed':
+    "Ces blocs n'ont pas pu être analysés, réessayez plus tard : __blocks__.",
+  'ai-panel-accept-block': 'Tout accepter dans ce bloc',
+  'ai-panel-go-to-block': 'Aller au bloc',
   'ai-panel-nothing-to-correct': "Il n'y a pas de texte à corriger ici.",
   'ai-panel-field-title': 'Titre',
   'ai-panel-field-text': 'Texte',
@@ -895,6 +911,8 @@ module.exports = {
     "L'email est trop long pour être envoyé à l'IA.",
   'text-generation-error-failed': 'La génération a échoué. Réessayez.',
   'text-generation-error-network': 'Erreur réseau. Vérifiez votre connexion.',
+  'text-generation-error-signed-out':
+    'Votre session a expiré : rechargez la page pour vous reconnecter.',
   'text-generation-error-copy':
     'La copie a échoué : sélectionnez le texte et copiez-le à la main.',
 };

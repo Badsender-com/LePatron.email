@@ -501,8 +501,7 @@ describe('spelling correction: the steps of a correction', () => {
     });
   });
 
-  // Turned on by #1256 (correct the whole email)
-  describe.skip('the whole email', () => {
+  describe('the whole email', () => {
     it('corrects one block after the other, with the progress, the corrections grouped by block', async () => {
       api.generate
         .mockResolvedValueOnce({
@@ -539,6 +538,78 @@ describe('spelling correction: the steps of a correction', () => {
       expect(api.generate).toHaveBeenCalledTimes(3);
       expect(session.state.progress).toEqual({ done: 2, total: 2 });
       expect(session.state.error).toBeNull();
+    });
+
+    it('stops on a failure of the feature itself, rather than failing every block', async () => {
+      api.generate.mockRejectedValue({ response: { status: 403 } });
+      const session = open(EMAIL);
+      await session.request();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+      expect(session.state.error).toBe('text-generation-error-disabled');
+      expect(session.state.failedBlocks).toEqual([]);
+    });
+
+    it('stops, rather than waiting, when the rate limit holds for long', async () => {
+      api.generate.mockRejectedValue({
+        response: { status: 429, data: { retryAfterSeconds: 3600 } },
+      });
+      const session = open(EMAIL);
+      await session.request();
+      expect(wait).not.toHaveBeenCalled();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+      expect(session.state.error).toBe('text-generation-error-rate-limited');
+    });
+
+    it.each([
+      ['the network is down', {}],
+      ['the user is signed out', { response: { status: 401 } }],
+    ])('stops when %s', async (_label, failure) => {
+      api.generate.mockRejectedValue(failure);
+      const session = open(EMAIL);
+      await session.request();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+      expect(session.state.failedBlocks).toEqual([]);
+      expect(session.state.error).not.toBeNull();
+    });
+
+    it('stops after the block under way when the user asks, keeping what it found', async () => {
+      const session = open(EMAIL);
+      api.generate.mockImplementationOnce(async () => {
+        session.stop();
+        return {
+          corrections: [
+            fix('titleText', 'soldes commence', 'soldes commencent'),
+          ],
+          dropped: 0,
+        };
+      });
+      await session.request();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+      expect(session.state.stopped).toBe(true);
+      expect(session.state.corrections).toHaveLength(1);
+      expect(session.state.progress).toEqual({ done: 1, total: 2 });
+      expect(session.state.nothingToCorrect).toBe(false);
+    });
+
+    it('asks nothing more once the panel lets go of it', async () => {
+      const session = open(EMAIL);
+      api.generate.mockImplementationOnce(async () => {
+        session.cancel();
+        return { corrections: [], dropped: 0 };
+      });
+      await session.request();
+      expect(api.generate).toHaveBeenCalledTimes(1);
+    });
+
+    it('names a block and goes to it, through the editor', () => {
+      editor.blockLabel = (id) => `Bloc ${id}`;
+      editor.canGoToBlock = () => true;
+      editor.goToBlock = jest.fn();
+      const session = open(EMAIL);
+      expect(session.blockLabel('ko_textBlock_3')).toBe('Bloc ko_textBlock_3');
+      expect(session.canGoToBlock('ko_textBlock_3')).toBe(true);
+      session.goToBlock('ko_textBlock_3');
+      expect(editor.goToBlock).toHaveBeenCalledWith('ko_textBlock_3');
     });
 
     it('reports a block that failed and goes on with the others', async () => {

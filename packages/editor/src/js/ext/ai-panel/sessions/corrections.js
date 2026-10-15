@@ -5,6 +5,12 @@ const {
   visibleText,
 } = require('../../../../../../shared/text-correction/place-correction');
 const { errorKey } = require('./errors');
+const { correctEmail } = require('./correct-email');
+const {
+  fieldsOf,
+  batchesOf,
+  MAX_FIELD_LENGTH,
+} = require('./correction-fields');
 
 /**
  * The steps of an action of the "corrections" family (ADR 0005): analyse the
@@ -13,12 +19,15 @@ const { errorKey } = require('./errors');
  * field's current HTML and written as one step of the editor's undo, which
  * takes it back. A correction whose text changed since the analysis is not
  * applied: it is marked `stale`. One the undo took back is `undone`, and can
- * be accepted again.
+ * be accepted again. The whole email is corrected block by block
+ * (./correct-email.js).
  *
  * `api.generate(route, body)` calls the corrections route; `editor` lists the
- * text fields of a block, reads and writes them, and undoes
- * (ext/ai-panel/editor-access.js).
+ * blocks and their text fields, reads and writes them, names a block and goes
+ * to it, and undoes (ext/ai-panel/editor-access.js).
  */
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // An alternative text is a plain value, never HTML.
 const optionsOf = (role) => ({ plainText: role === 'alt' });
@@ -34,55 +43,15 @@ function sideOf(value, correction) {
 }
 
 /**
- * The fields a target corrects, and those left out.
- * - A field: the one the user points at, sample text or not.
- * - A block: its text fields the rendering shows, alternative texts included;
- *   a hidden field is left out quietly, one still holding the template's
- *   sample text is left out and counted.
+ * @param {{ definition: Object, target: Object, api: Object, editor: Object, wait?: Function }} params
  */
-function fieldsOf(editor, target) {
-  const all = editor.textFieldsOf(target.blockId);
-  if (target.kind === 'blockField') {
-    return { fields: all.filter((field) => field.path === target.field) };
-  }
-  const shown = all.filter((field) => !field.hidden);
-  return {
-    fields: shown.filter((field) => !field.sample),
-    leftOut: { sample: shown.filter((field) => field.sample).length },
-  };
-}
-
-// What the corrections route accepts in one request
-// (server/text-generation/text-correction.service.js).
-const MAX_FIELDS = 40;
-const MAX_FIELD_LENGTH = 5000;
-const MAX_TOTAL_LENGTH = 50000;
-
-// The fields of a block in requests the route accepts, in their order.
-function batchesOf(fields) {
-  const batches = [];
-  let batch = [];
-  let length = 0;
-  fields.forEach((field) => {
-    if (
-      batch.length === MAX_FIELDS ||
-      length + field.text.length > MAX_TOTAL_LENGTH
-    ) {
-      batches.push(batch);
-      batch = [];
-      length = 0;
-    }
-    batch.push(field);
-    length += field.text.length;
-  });
-  if (batch.length) batches.push(batch);
-  return batches;
-}
-
-/**
- * @param {{ definition: Object, target: Object, api: Object, editor: Object }} params
- */
-function createCorrectionsSession({ definition, target, api, editor }) {
+function createCorrectionsSession({
+  definition,
+  target,
+  api,
+  editor,
+  wait = sleep,
+}) {
   // Every key present from the start: the panel makes this object reactive.
   const state = {
     action: definition.id,
@@ -103,8 +72,18 @@ function createCorrectionsSession({ definition, target, api, editor }) {
     tooLong: 0,
     // No field had any text to correct: nothing was asked.
     nothingToCorrect: false,
+    // The whole email: blocks corrected so far, out of all.
+    progress: null,
+    // Seconds before the correction resumes, while the rate limit holds it.
+    pausedFor: null,
+    // Blocks whose correction failed; the others went on.
+    failedBlocks: [],
+    // The user stopped the correction of the whole email.
+    stopped: false,
   };
   let nextId = 1;
+  // The session was closed, or the user stopped it: nothing more is asked.
+  let cancelled = false;
 
   async function correctBatch(blockTarget, sent) {
     const data = await api.generate(definition.route, {
@@ -148,6 +127,7 @@ function createCorrectionsSession({ definition, target, api, editor }) {
     const sent = withText.filter((field) => field.text.length <= MAX_FIELD_LENGTH);
     state.tooLong += withText.length - sent.length;
     for (const batch of batchesOf(sent)) {
+      if (cancelled) break;
       await correctBatch(blockTarget, batch);
     }
     return sent.length > 0;
@@ -206,9 +186,24 @@ function createCorrectionsSession({ definition, target, api, editor }) {
       state.done = false;
       state.isLoading = true;
       try {
-        const { fields, leftOut = null } = fieldsOf(editor, target);
-        state.leftOut = leftOut;
-        state.nothingToCorrect = !(await correct(target, fields));
+        if (target.kind === 'email') {
+          state.leftOut = { sample: 0 };
+          await correctEmail({
+            state,
+            blocks: editor.blocks(),
+            correctBlock: (blockTarget) => {
+              const { fields, leftOut } = fieldsOf(editor, blockTarget);
+              state.leftOut.sample += leftOut.sample;
+              return correct(blockTarget, fields);
+            },
+            wait,
+            isStopped: () => cancelled,
+          });
+        } else {
+          const { fields, leftOut = null } = fieldsOf(editor, target);
+          state.leftOut = leftOut;
+          state.nothingToCorrect = !(await correct(target, fields));
+        }
         state.done = true;
       } catch (err) {
         state.error = errorKey(err);
@@ -223,6 +218,9 @@ function createCorrectionsSession({ definition, target, api, editor }) {
     },
     acceptAll() {
       return acceptMany(state.corrections);
+    },
+    acceptBlock(blockId) {
+      return acceptMany(state.corrections.filter((c) => c.blockId === blockId));
     },
     // After the editor's undo or redo: an accepted correction the text no
     // longer holds is undone, one it holds again is accepted.
@@ -239,6 +237,21 @@ function createCorrectionsSession({ definition, target, api, editor }) {
         if (side === 'after') correction.status = 'accepted';
       });
     },
+    // Stop the correction of the whole email after the block under way; what
+    // was found stays.
+    stop() {
+      if (!state.isLoading || cancelled) return;
+      cancelled = true;
+      state.stopped = true;
+    },
+    // The panel let go of the session: nothing more is asked.
+    cancel() {
+      cancelled = true;
+    },
+    // A block, as the user knows it, and going to it on the canvas.
+    blockLabel: (blockId) => editor.blockLabel(blockId),
+    canGoToBlock: (blockId) => editor.canGoToBlock(blockId),
+    goToBlock: (blockId) => editor.goToBlock(blockId),
     undo: () => editor.undo(),
     redo: () => editor.redo(),
     ignore(id) {

@@ -800,6 +800,21 @@ module.exports = {
     '1 not applied: the text changed since the check.',
   'ai-panel-correction-undo-hint':
     '__keys__ undoes the last accepted correction.',
+  'ai-panel-correcting-blocks': 'Checking: block __done__ of __total__…',
+  'ai-panel-correction-paused':
+    'Paused: usage limit reached, resuming in __seconds__ s.',
+  'ai-panel-correction-stop': 'Stop the check',
+  'ai-panel-correction-stopped':
+    'Check stopped after __done__ blocks of __total__.',
+  'ai-panel-correction-stopped-one':
+    'Check stopped after 1 block of __total__.',
+  'ai-panel-correction-finished':
+    'Check done: __count__ corrections to review.',
+  'ai-panel-correction-finished-one': 'Check done: 1 correction to review.',
+  'ai-panel-blocks-failed':
+    'These blocks could not be checked, try again later: __blocks__.',
+  'ai-panel-accept-block': 'Accept all in this block',
+  'ai-panel-go-to-block': 'Go to block',
   'ai-panel-nothing-to-correct': 'There is no text to correct here.',
   'ai-panel-field-title': 'Title',
   'ai-panel-field-text': 'Text',
@@ -867,6 +882,8 @@ module.exports = {
     'The email is too long to be sent to the AI.',
   'text-generation-error-failed': 'Generation failed. Try again.',
   'text-generation-error-network': 'Network error. Check your connection.',
+  'text-generation-error-signed-out':
+    'Your session expired: reload the page to sign in again.',
   'text-generation-error-copy':
     'Copy failed: select the text and copy it by hand.',
 };
