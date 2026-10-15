@@ -87,7 +87,5 @@
   "Unexpected error listing files": "Неожиданная ошибка при просмотре файлов",
   "__current__ of __total__": "__current__ из __total__",
   "Select from gallery": "Выберите из галереи",
-  "Error message": "Обнаруженные ошибки:",
-  "Missing link label:": "Отсутствует ссылка на:",
-  "Picture with no link": "Изображение без ссылки"
+  "Error message": "Обнаруженные ошибки:"
 }
