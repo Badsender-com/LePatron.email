@@ -201,7 +201,7 @@ describe('a composition renders as rows of columns', () => {
 });
 
 // Turned on by #1208 (a composition derives its stylesheet)
-describe.skip('a composition derives its stylesheet', () => {
+describe('a composition derives its stylesheet', () => {
   let collectCss;
   let emptyState;
 
