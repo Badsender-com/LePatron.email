@@ -40,7 +40,7 @@ module.exports = {
   id: 'preheader',
   category: 'copy',
   severity: 'warning',
-  titleKey: 'Preheader',
+  titleKey: 'quality-title-preheader',
   passKey: 'The preheader is filled in and __count__ characters long',
   LONG,
   TOO_LONG,

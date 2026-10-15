@@ -23,7 +23,7 @@ module.exports = {
   id: 'unreplaced-images',
   category: 'content',
   severity: 'error',
-  titleKey: 'Images',
+  titleKey: 'quality-title-images',
   passKey: 'Every image has been replaced',
   run(ctx) {
     // The exported images of the client's blocks, by block id.
