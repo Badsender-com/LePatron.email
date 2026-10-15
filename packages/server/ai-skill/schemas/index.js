@@ -111,6 +111,8 @@ const preheaderGenOutput = textProposalsOutput;
 
 // Spelling correction (ADR 0005): the visible text of the fields of one block,
 // each with its path; the skill answers corrections the code then places.
+// A non-breaking space is written {nbsp}, in the text as in the corrections:
+// the model can neither write the character nor tell it from a space.
 const FIELD_ROLES = ['title', 'text', 'button', 'alt'];
 
 const correctionInput = z

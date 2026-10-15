@@ -382,6 +382,59 @@ describe('spelling correction: POST /api/text-generation/corrections', () => {
       });
     });
 
+    // The model cannot write a non-breaking space, nor tell one from a space
+    // (#1258): it reads and writes them as {nbsp}.
+    describe('non-breaking spaces', () => {
+      const typography = {
+        ...body,
+        fields: [
+          {
+            path: 'longText',
+            role: 'text',
+            text: 'Votre avis compte: r\u00e9pondez avant vendredi\u00a0!',
+          },
+        ],
+      };
+
+      it('sends them to the skill as {nbsp}', async () => {
+        invoke.mockResolvedValue(corrections());
+        await post(typography);
+        expect(invoke.mock.calls[0][0].input.fields[0].text).toBe(
+          'Votre avis compte: r\u00e9pondez avant vendredi{nbsp}!'
+        );
+      });
+
+      it('returns the corrections with the characters themselves', async () => {
+        invoke.mockResolvedValue(
+          corrections(
+            fix('longText', 'compte:', 'compte{nbsp}:', 'Espace ins\u00e9cable')
+          )
+        );
+        const res = await post(typography);
+        expect(res.body).toEqual({
+          corrections: [
+            fix(
+              'longText',
+              'compte:',
+              'compte\u00a0:',
+              'Espace ins\u00e9cable'
+            ),
+          ],
+          dropped: 0,
+        });
+      });
+
+      it('finds an excerpt holding one the text already has', async () => {
+        invoke.mockResolvedValue(
+          corrections(fix('longText', 'vendredi{nbsp}!', 'vendredi{nbsp}!!'))
+        );
+        const res = await post(typography);
+        expect(res.body.corrections).toEqual([
+          fix('longText', 'vendredi\u00a0!', 'vendredi\u00a0!!'),
+        ]);
+      });
+    });
+
     it('answers no correction for a text without mistake', async () => {
       invoke.mockResolvedValue(corrections());
       const res = await post();
