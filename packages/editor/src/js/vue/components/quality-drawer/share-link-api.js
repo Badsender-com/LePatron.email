@@ -17,22 +17,27 @@ const revokeShareLink = (url, id) =>
 
 /**
  * Copies a text; resolves to whether it worked. The Clipboard API needs a
- * secure context, which a plain-http development server is not: the older
- * way, through a selected field, covers it.
+ * secure context, which a plain-http development server is not, and can
+ * refuse (permission, focus lost): the older way, through a selected field,
+ * is tried whenever it did not do the job.
  */
 function copyText(text, field) {
-  if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
-    return navigator.clipboard.writeText(text).then(
-      () => true,
-      () => false
-    );
+  const throughField = () => {
+    try {
+      field.select();
+      return document.execCommand('copy');
+    } catch (e) {
+      return false;
+    }
+  };
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    window.isSecureContext
+  ) {
+    return navigator.clipboard.writeText(text).then(() => true, throughField);
   }
-  try {
-    field.select();
-    return Promise.resolve(document.execCommand('copy'));
-  } catch (e) {
-    return Promise.resolve(false);
-  }
+  return Promise.resolve(throughField());
 }
 
 module.exports = { listShareLinks, createShareLink, revokeShareLink, copyText };

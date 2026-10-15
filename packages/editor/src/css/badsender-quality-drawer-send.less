@@ -140,6 +140,25 @@
   }
 }
 
+// The saved list select looks like the recipients field above it, not
+// like the modals' select it is imported from.
+.simple-select__input {
+  border: 1px solid var(--gray-300);
+  color: var(--gray-900);
+
+  &:hover {
+    border-color: var(--gray-400);
+  }
+
+  &:focus {
+    padding: 0 36px 0 12px;
+    border-width: 1px;
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}
+
 .qc-button[disabled] {
   cursor: not-allowed;
   opacity: 0.5;

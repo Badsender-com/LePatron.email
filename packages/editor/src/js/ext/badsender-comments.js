@@ -752,13 +752,18 @@ function commentsLoader(opts) {
      */
     viewModel.createCommentFromQc = function (draft) {
       viewModel.replyingTo(null);
-      if (draft.blockId) {
+      // A block deleted since the check: the comment is about the whole email.
+      if (draft.blockId && findBlockById(viewModel, draft.blockId)) {
         viewModel.openCommentsForBlock(draft.blockId);
       } else {
         viewModel.showAllComments();
         viewModel.showComments(true);
       }
-      viewModel.newCommentText(draft.text);
+      // A comment being written is kept: the finding follows it.
+      const current = viewModel.newCommentText() || '';
+      viewModel.newCommentText(
+        current.trim() ? current + '\n\n' + draft.text : draft.text
+      );
       viewModel.newCommentSeverity(draft.severity);
       viewModel.newCommentCategory(draft.category);
     };

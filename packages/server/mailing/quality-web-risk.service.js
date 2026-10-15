@@ -63,7 +63,12 @@ async function lookup(
     const body = await response.json();
     return (body && body.threat && body.threat.threatTypes) || [];
   } catch (error) {
-    logger.warn('[QUALITY] Web Risk lookup failed', { error: error.name });
+    // Never the message: a FetchError's names the URL it was sent to.
+    logger.warn('[QUALITY] Web Risk lookup failed', {
+      error: error.name,
+      type: error.type,
+      code: error.code,
+    });
     return null;
   }
 }

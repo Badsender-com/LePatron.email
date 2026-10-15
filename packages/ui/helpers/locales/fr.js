@@ -328,6 +328,15 @@ export default {
         name: 'Email Builder',
         description: 'Création et édition d\'emails responsive',
       },
+      shareLinks: {
+        name: "Liens d'aperçu",
+        description:
+          "Liens publics vers l'aperçu d'un email, sans compte. Couper le partage suspend les liens existants",
+        confirmOffTitle: "Couper les liens d'aperçu ?",
+        confirmOffMessage:
+          "Les liens déjà partagés par cette entreprise ne s'ouvriront plus tant que le partage restera coupé. Ils ne sont pas supprimés : réactiver le partage les rouvre jusqu'à leur date d'expiration, 30 jours au plus après leur création. Pour fermer un lien précis, désactivez-le depuis l'email, dans l'onglet « Envoi de test » du contrôle qualité.",
+        confirmOffAction: 'Couper le partage',
+      },
       crmIntelligence: {
         name: 'CRM Intelligence',
         description: 'Tableaux de bord et analytics',

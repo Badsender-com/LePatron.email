@@ -3,91 +3,21 @@
 // The public page a share link opens, without an account: it must serve
 // nothing that can run, leak nothing, and fail as a page.
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  ShareLinks: {
-    countDocuments: jest.fn(),
-    create: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    findOneAndUpdate: jest.fn(),
-  },
-  Mailings: { findById: jest.fn() },
-  Groups: { findById: jest.fn() },
-}));
-jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
-  findOneForUser: jest.fn(),
-  assertUserCanEditMailing: jest.fn(),
-}));
-jest.mock('../../../packages/server/utils/preview-html-sanitizer.js', () => ({
-  ...jest.requireActual(
-    '../../../packages/server/utils/preview-html-sanitizer.js'
-  ),
-  sanitizeSharedPreviewHtml: jest.fn((html) => `clean:${html}`),
-}));
-
 const {
   ShareLinks,
   Mailings,
   Groups,
-} = require('../../../packages/server/common/models.common.js');
-const logger = require('../../../packages/server/utils/logger.js');
-const mailingService = require('../../../packages/server/mailing/mailing.service.js');
-const previewSanitizer = require('../../../packages/server/utils/preview-html-sanitizer.js');
+  Templates,
+  MAILING_ID,
+  LINK_ID,
+  lean,
+  call,
+  resetMocks,
+} = require('./share-link.harness.js');
 const service = require('../../../packages/server/share-link/share-link.service.js');
 const pageController = require('../../../packages/server/share-link/share-page.controller.js');
 
-const MAILING_ID = '507f1f77bcf86cd799439001';
-const LINK_ID = '507f1f77bcf86cd799439011';
-const user = { id: '507f1f77bcf86cd799439099', name: 'Ana', lang: 'fr' };
-const mailing = { _id: MAILING_ID, _company: 'c1' };
-
-const lean = (value) => ({ lean: jest.fn().mockResolvedValue(value) });
-
-function fakeRes() {
-  const res = {
-    headers: {},
-    statusCode: 200,
-    set: jest.fn((headers) => Object.assign(res.headers, headers)),
-    status: jest.fn((code) => {
-      res.statusCode = code;
-      return res;
-    }),
-    json: jest.fn(),
-    end: jest.fn(),
-    render: jest.fn(),
-  };
-  return res;
-}
-
-async function call(handler, req) {
-  const res = fakeRes();
-  let error;
-  await handler(
-    {
-      params: {},
-      body: {},
-      user,
-      get: () => 'evil.test',
-      is: (type) => type === 'application/json',
-      protocol: 'http',
-      ...req,
-    },
-    res,
-    (err) => {
-      error = err;
-    }
-  );
-  return { res, error };
-}
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  mailingService.findOneForUser.mockResolvedValue(mailing);
-  mailingService.assertUserCanEditMailing.mockResolvedValue();
-  Groups.findById.mockReturnValue(
-    lean({ status: 'active', enableEmailBuilder: true })
-  );
-});
+beforeEach(resetMocks);
 
 describe('GET /share/:token', () => {
   const TOKEN = 'a'.repeat(43);
@@ -95,7 +25,7 @@ describe('GET /share/:token', () => {
     _id: LINK_ID,
     _mailing: MAILING_ID,
     lang: 'fr',
-    expiresAt: new Date(Date.now() + 3600 * 1000),
+    expiresAt: new Date('2030-10-13T16:42:00Z'),
   };
 
   it('shows the last saved version, sanitized, under a strict policy', async () => {
@@ -115,6 +45,8 @@ describe('GET /share/:token', () => {
     const [view, locals] = res.render.mock.calls[0];
     expect(view).toBe('share-page');
     expect(locals).toMatchObject({ name: 'Soldes' });
+    // Until when, to the minute, in the platform's zone, named.
+    expect(locals.meta).toMatch(/jusqu'au 13 octobre 2030.*18:42 UTC\+2/);
     // Sanitized, every link opening in a new tab (sanitizeSharedPreviewHtml).
     expect(locals.html).toBe('clean:<p>hi</p>');
     expect(res.headers['Content-Security-Policy']).toContain(
@@ -126,14 +58,20 @@ describe('GET /share/:token', () => {
     expect(res.headers['Cache-Control']).toContain('no-store');
   });
 
-  it('closes with the company: inactive, or without the email builder', async () => {
+  it('closes with the company: inactive, without the email builder, or sharing turned off', async () => {
     ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
     Mailings.findById.mockReturnValue(
-      lean({ _id: MAILING_ID, name: 'Soldes', previewHtml: '<p>hi</p>' })
+      lean({
+        _id: MAILING_ID,
+        _company: 'c1',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
     );
     for (const group of [
       { status: 'inactive' },
       { status: 'active', enableEmailBuilder: false },
+      { status: 'active', enableEmailBuilder: true, enableShareLinks: false },
       null,
     ]) {
       Groups.findById.mockReturnValue(lean(group));
@@ -141,13 +79,92 @@ describe('GET /share/:token', () => {
         params: { token: TOKEN },
       });
       expect(res.statusCode).toBe(404);
+      expect(res.render.mock.calls[0][1].title).toBe('Lien introuvable');
     }
+  });
+
+  it('judges the company the email belongs to now', async () => {
+    // A link that stored no company (the email had none): the email's
+    // current company decides, and it is inactive.
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _company: 'c2',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    Groups.findById.mockImplementation((id) =>
+      lean(id === 'c2' ? { status: 'inactive' } : { status: 'active' })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(Groups.findById).toHaveBeenCalledTimes(1);
+    expect(Groups.findById.mock.calls[0][0]).toBe('c2');
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({ _company: 1 });
+  });
+
+  // A transfer revokes the links first; one that survived it all the same
+  // must not open in a company that never shared it.
+  it('closes a link made under another company than the email has now', async () => {
+    ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _company: 'c2',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.render.mock.calls[0][1].title).toBe('Lien introuvable');
+
+    Mailings.findById.mockReturnValue(
+      lean({ _id: MAILING_ID, _company: 'c1', previewHtml: '<p>hi</p>' })
+    );
+    const same = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(same.res.statusCode).toBe(200);
+  });
+
+  // As the editor and the creation judge it (sharingCompanyOf): an email of
+  // the admin follows the company of its template.
+  it("closes an admin's email with the company of its template", async () => {
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _wireframe: 'tpl1',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    Templates.findById.mockReturnValue(lean({ _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', enableShareLinks: false })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(Groups.findById.mock.calls[0][0]).toBe('c1');
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({
+      _wireframe: 1,
+    });
   });
 
   it('shows the subject and the preheader when the company writes them in LePatron', async () => {
     ShareLinks.findOne.mockReturnValue(lean({ ...activeLink, _company: 'c1' }));
     const saved = {
       _id: MAILING_ID,
+      _company: 'c1',
       name: 'Soldes',
       subject: ' Nos soldes ',
       data: { preheaderBlock: { preheaderText: "Jusqu'à -50 %" } },
@@ -186,6 +203,7 @@ describe('GET /share/:token', () => {
     Mailings.findById.mockReturnValue(
       lean({
         _id: MAILING_ID,
+        _company: 'c1',
         name: 'Soldes',
         subject: 'Nos soldes',
         data: { preheaderText: 'Caché', preheaderVisible: false },
@@ -211,6 +229,7 @@ describe('GET /share/:token', () => {
     Mailings.findById.mockReturnValue(
       lean({
         _id: MAILING_ID,
+        _company: 'c1',
         name: 'Soldes',
         subject: '',
         data: { preheaderText: 'Vu en premier' },
@@ -223,21 +242,6 @@ describe('GET /share/:token', () => {
     expect(res.render.mock.calls[0][1].copy).toEqual([
       { label: 'Préheader', value: 'Vu en premier' },
     ]);
-  });
-
-  it('sanitizes a shared version once, however large', async () => {
-    ShareLinks.findOne.mockReturnValue(lean(activeLink));
-    Mailings.findById.mockReturnValue(
-      lean({
-        _id: 'big',
-        name: 'Big',
-        updatedAt: new Date('2026-09-01'),
-        previewHtml: 'x'.repeat(2 * 1024 * 1024),
-      })
-    );
-    await call(pageController.renderShare, { params: { token: TOKEN } });
-    await call(pageController.renderShare, { params: { token: TOKEN } });
-    expect(previewSanitizer.sanitizeSharedPreviewHtml).toHaveBeenCalledTimes(1);
   });
 
   it('never looks up a token of the wrong shape', async () => {
@@ -269,7 +273,7 @@ describe('GET /share/:token', () => {
 
   it('says so when the email was never saved, or is gone', async () => {
     ShareLinks.findOne.mockReturnValue(lean(activeLink));
-    Mailings.findById.mockReturnValue(lean({ _id: MAILING_ID, name: 'x' }));
+    Mailings.findById.mockReturnValue(lean({ _id: 'unsaved', name: 'x' }));
     const empty = await call(pageController.renderShare, {
       params: { token: TOKEN },
     });
@@ -281,137 +285,5 @@ describe('GET /share/:token', () => {
       params: { token: TOKEN },
     });
     expect(gone.res.render.mock.calls[0][1].title).toBe('Lien introuvable');
-  });
-});
-
-describe('share-page.pug', () => {
-  const pug = require('pug');
-  const path = require('path');
-  const render = (locals) =>
-    pug.renderFile(
-      path.join(
-        __dirname,
-        '../../../packages/server/html-templates/share-page.pug'
-      ),
-      locals
-    );
-
-  it('keeps the email inside a sandboxed srcdoc, escaped, and runs no script', () => {
-    // Links open in a new tab, outside the sandbox; nothing else is allowed.
-    const page = render({
-      lang: 'fr',
-      title: '"><script>alert(1)</script>',
-      name: '"><script>alert(1)</script>',
-      meta: 'meta',
-      html: '<p class="x">Hello</p>"><script>alert(2)</script>',
-    });
-    expect(page).not.toMatch(/<script/i);
-    expect(page).toMatch(
-      /<iframe[^>]*sandbox="allow-popups allow-popups-to-escape-sandbox"/
-    );
-    expect(page).toMatch(/<iframe[^>]*referrerpolicy="no-referrer"/);
-    expect(page).toContain('srcdoc="&lt;p class=&quot;x&quot;&gt;Hello');
-  });
-
-  it('shows the subject and preheader lines as text, escaped', () => {
-    const page = render({
-      lang: 'fr',
-      title: 't',
-      name: 'n',
-      meta: 'meta',
-      copy: [{ label: 'Objet', value: '<script>alert(3)</script>' }],
-      html: '<p>hi</p>',
-    });
-    expect(page).not.toMatch(/<script/i);
-    expect(page).toContain('<dt class="copy__label">Objet</dt>');
-    expect(page).toContain('&lt;script&gt;alert(3)&lt;/script&gt;');
-    expect(
-      render({
-        lang: 'fr',
-        title: 't',
-        name: 'n',
-        meta: 'm',
-        html: '<p>hi</p>',
-      })
-    ).not.toContain('class="copy');
-  });
-});
-
-describe('request logs', () => {
-  const tokens = (url) => ({ url: () => url });
-
-  it('keep only the first characters of a share token', () => {
-    const token = 'AbCd' + 'x'.repeat(39);
-    expect(logger.loggedUrl(tokens(`/share/${token}`))).toBe('/share/AbCd…');
-    expect(logger.loggedUrl(tokens(`/share/${token}?utm=1`))).toBe(
-      '/share/AbCd…?utm=1'
-    );
-  });
-
-  it('mask the token however the path is written', () => {
-    const token = 'AbCd' + 'x'.repeat(39);
-    expect(logger.loggedUrl(tokens(`/SHARE/${token}`))).toBe('/SHARE/AbCd…');
-    expect(logger.loggedUrl(tokens(`//share/${token}`))).toBe('//share/AbCd…');
-    expect(logger.loggedUrl(tokens(`/share/%41%42${token}`))).toBe(
-      '/share/%41%…'
-    );
-  });
-
-  it('leave every other address alone', () => {
-    expect(logger.loggedUrl(tokens('/api/mailings/m1/share-links'))).toBe(
-      '/api/mailings/m1/share-links'
-    );
-  });
-});
-
-describe('GET /share/:token, the edges', () => {
-  const TOKEN = 'b'.repeat(43);
-  const link = {
-    _id: '507f1f77bcf86cd799439022',
-    _mailing: MAILING_ID,
-    lang: 'en',
-    expiresAt: new Date(Date.now() + 3600 * 1000),
-  };
-
-  it('answers a failure with a page, never the JSON error', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    ShareLinks.findOne.mockReturnValue({
-      lean: jest.fn().mockRejectedValue(new Error('Mongo down')),
-    });
-    const { res, error } = await call(pageController.renderShare, {
-      params: { token: TOKEN },
-    });
-    expect(error).toBeUndefined();
-    expect(res.statusCode).toBe(500);
-    expect(res.render.mock.calls[0][0]).toBe('share-page');
-    expect(res.json).not.toHaveBeenCalled();
-    console.error.mockRestore();
-  });
-
-  it("speaks its creator's language", async () => {
-    ShareLinks.findOne.mockReturnValue(
-      lean({ ...link, expiresAt: new Date(Date.now() - 1000) })
-    );
-    const { res } = await call(pageController.renderShare, {
-      params: { token: TOKEN },
-    });
-    expect(res.render.mock.calls[0][1]).toMatchObject({
-      lang: 'en',
-      title: 'Link expired',
-    });
-  });
-
-  it('stops a link opened too often', async () => {
-    ShareLinks.findOne.mockReturnValue(lean(link));
-    Mailings.findById.mockReturnValue(
-      lean({ _id: 'm2', name: 'x', previewHtml: '<p>x</p>' })
-    );
-    let last;
-    for (let i = 0; i < 301; i += 1) {
-      last = await call(pageController.renderShare, {
-        params: { token: TOKEN },
-      });
-    }
-    expect(last.res.statusCode).toBe(429);
   });
 });

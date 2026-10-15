@@ -53,11 +53,12 @@ const {
 } = require('./ai-skill/ai-skill.routes');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
+const { workerCount } = require('./utils/worker-count.js');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
 const cpuCount = require('os').cpus().length;
-const workers = process.env.WORKERS <= cpuCount ? process.env.WORKERS : 1;
+const workers = workerCount({ cpuCount });
 
 if (cluster.isMaster) {
   // A WORKERS above the CPU count falls back to a single worker, not to the

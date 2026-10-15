@@ -4,10 +4,11 @@ const fetch = require('node-fetch');
 const probeImageSize = require('probe-image-size');
 
 const config = require('../node.config.js');
-const { PROBE_FAILURES } = require('../utils/url-probe.js');
+const { PROBE_FAILURES, contentLengthOf } = require('../utils/url-probe.js');
 const {
   limiter,
   onDefaultPort,
+  withoutCredentials,
   timeLeft,
   UNVERIFIABLE,
 } = require('./quality-limits.js');
@@ -18,19 +19,33 @@ const {
  */
 
 const IMAGE_TIMEOUT_MS = 10000;
+// How long a measure of one of our own images is kept (quality-resources
+// .service.js). The image route re-runs sharp on every request unless
+// `config.images.cache` is on (image.controller.js, checkImageCache: off by
+// default), so a measure must not be asked again every ten minutes; and an
+// upload is named by its content hash (file-manage.service.js), so the image
+// at a given URL does not change.
+const OWN_IMAGE_TTL_MS = 24 * 60 * 60 * 1000;
 // Past this, an image is "at least" this heavy: enough to say it is too heavy.
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+// Bytes a run may download in all. Counted before a download when the server
+// announces the size (Content-Length), after it otherwise. Worst case for a
+// run: the budget plus CONCURRENCY unannounced bodies of MAX_IMAGE_BYTES,
+// 90 MB; for a worker, MAX_IMAGE_DOWNLOADS × MAX_IMAGE_BYTES = 80 MB of
+// buffers at once, ×WORKERS for the instance.
 const RUN_IMAGE_BUDGET_BYTES = 50 * 1024 * 1024;
-// Image downloads in parallel for the whole process, every user included:
-// bodies are buffered, so this bounds the memory the checks can take.
+// Image downloads in parallel for the worker, every user included: bodies
+// are buffered, so this bounds the memory the checks can take (×WORKERS for
+// the instance, see quality-limits.js).
 const MAX_IMAGE_DOWNLOADS = 8;
 
 const imageDownloads = limiter(MAX_IMAGE_DOWNLOADS);
 
 // The addresses the export gets our images at: the image itself, or its
 // resized or cropped version (image.routes.js). Never a placeholder, never
-// the gallery.
-const OWN_IMAGE_PATH = /^\/api\/images\/(?:(?:resize|cover)\/(?:\d{1,4}|null)x(?:\d{1,4}|null)\/)?[^/]+$/;
+// the gallery, and no percent-encoded name: the route would decode it into
+// something this pattern did not see.
+const OWN_IMAGE_PATH = /^\/api\/images\/(?:(?:resize|cover)\/(?:\d{1,4}|null)x(?:\d{1,4}|null)\/)?[^/%]+$/;
 
 /**
  * The address to measure an image at. Images of LePatron's own backend are
@@ -49,21 +64,26 @@ function measuredUrl(url, ownHosts) {
       url: `http://127.0.0.1:${config.PORT}${parsed.pathname}`,
     };
   }
-  return { own: false, url };
+  return { own: false, url: withoutCredentials(url) };
 }
 
 // Our own backend, on the loopback: no SSRF guard (it would refuse 127.0.0.1),
 // a fixed host and a path limited to /api/images/. Outside development the
 // server sends any plain-http request to https (index.js, FORCE HTTPS): this
 // one says it came through https, as the export's request does at the proxy.
-async function fetchOwn(url, timeoutMs, fetchImpl = fetch) {
+async function fetchOwn(
+  url,
+  { timeoutMs, acceptBody = () => true, fetchImpl = fetch }
+) {
   const response = await fetchImpl(url, {
     headers: { 'X-Forwarded-Proto': 'https' },
     redirect: 'manual',
     size: MAX_IMAGE_BYTES,
     timeout: timeoutMs,
   });
-  if (!response.ok) {
+  const wanted =
+    response.ok && acceptBody({ contentLength: contentLengthOf(response) });
+  if (!wanted) {
     if (response.body && response.body.destroy) response.body.destroy();
     return { status: response.status, body: null };
   }
@@ -79,15 +99,16 @@ function dimensionsOf(buffer) {
   }
 }
 
-function download(target, run, deps) {
+function download(target, run, deps, acceptBody) {
   const timeoutMs = timeLeft(run, IMAGE_TIMEOUT_MS);
   return target.own
-    ? deps.fetchOwn(target.url, timeoutMs)
+    ? deps.fetchOwn(target.url, { timeoutMs, acceptBody })
     : deps.probe(target.url, {
         timeoutMs,
         readBody: true,
         maxBytes: MAX_IMAGE_BYTES,
         defaultPortsOnly: true,
+        acceptBody,
       });
 }
 
@@ -103,20 +124,34 @@ async function measureImage(target, run, deps) {
   if (!target.own && !onDefaultPort(target.url)) return UNVERIFIABLE;
   return imageDownloads(async () => {
     if (outOfBudget(run)) return UNVERIFIABLE;
+    // What the server announced (at most MAX_IMAGE_BYTES is read of it),
+    // taken from the budget before the download and settled against what
+    // was read. An announcement past the budget leaves the body unread: not
+    // judged.
+    let reserved = 0;
+    const acceptBody = ({ contentLength }) => {
+      if (contentLength === null) return true;
+      const cost = Math.min(contentLength, MAX_IMAGE_BYTES);
+      if (run.bytes + cost > RUN_IMAGE_BUDGET_BYTES) return false;
+      reserved = cost;
+      run.bytes += cost;
+      return true;
+    };
     try {
-      const response = await download(target, run, deps);
+      const response = await download(target, run, deps, acceptBody);
       if (!response.body) {
         return isMissing(response.status)
           ? { state: 'unreachable', httpStatus: response.status }
           : UNVERIFIABLE;
       }
-      run.bytes += response.body.length;
+      run.bytes += response.body.length - reserved;
       return {
         state: 'ok',
         bytes: response.body.length,
         ...dimensionsOf(response.body),
       };
     } catch (error) {
+      run.bytes -= reserved;
       const tooLarge =
         error.reason === PROBE_FAILURES.TOO_LARGE ||
         (error.name === 'FetchError' && error.type === 'max-size');
@@ -142,4 +177,6 @@ module.exports = {
   fetchOwn,
   isDefinitiveImage,
   MAX_IMAGE_BYTES,
+  MAX_IMAGE_DOWNLOADS,
+  OWN_IMAGE_TTL_MS,
 };
