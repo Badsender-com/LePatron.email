@@ -24,7 +24,6 @@ const personalizedVariableService = require('../personalized-variables/personali
 const groupFtpService = require('../group/group-ftp.service.js');
 const { restampLogs } = require('./log-retention.js');
 const { forgetRetention } = require('../mcp/mcp-call-log.js');
-const shareLinkService = require('../share-link/share-link.service.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -636,16 +635,7 @@ async function update(req, res) {
   // switch this request changed, and for it only.
   const switches = takeSwitches(groupToUpdate);
 
-  // Turning the preview links off revokes them, before the write: should the
-  // revocation fail, the switch is still on and saving again retries it.
-  if (groupToUpdate.enableShareLinks === false) {
-    const stored = await Groups.findById(req.params.groupId, {
-      enableShareLinks: 1,
-    }).lean();
-    if (stored && stored.enableShareLinks !== false) {
-      await shareLinkService.revokeAllForCompany(req.params.groupId);
-    }
-  }
+
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
   await recordSwitches(user, req.params.groupId, switched);
