@@ -1,13 +1,15 @@
 'use strict';
 
-const { blockLinks } = require('../exported-content');
+const { blockLinks, isDynamic } = require('../exported-content');
 const { isUnfilled } = require('../links');
 
 const KNOWN_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:', 'sms:']);
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL = /^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/;
 const PHONE = /^\+?[0-9 ().-]{3,}$/;
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const LOOKS_LIKE_DOMAIN = /^(www\.|[a-z0-9-]+(\.[a-z0-9-]+)+(\/|$))/i;
+// "localhost:3000/offer" or "brand.com:8080/x": a port, not a scheme.
+const DOMAIN_WITH_PORT = /^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)+):\d+(\/|$)/i;
 
 // A badly encoded address (a lone "%") must not stop the check.
 const safeDecode = (value) => {
@@ -18,13 +20,21 @@ const safeDecode = (value) => {
   }
 };
 
+// Several addresses in one mailto (RFC 6068): each must be one.
+const isEmailList = (list) =>
+  list.split(',').every((address) => EMAIL.test(address.trim()));
+
 /**
  * Why a link URL cannot work, or null. Merge tags, in-email anchors (#top) and
- * the links "unfilled-links" reports are never judged here.
+ * the links "unfilled-links" reports are never judged here: every check is on
+ * the form of the address, which a merge tag decides at send time.
  */
 function problemOf(link) {
   const { href } = link;
   if (link.dynamic || isUnfilled(href) || href.startsWith('#')) return null;
+  if (DOMAIN_WITH_PORT.test(href)) {
+    return 'Link URL misses http:// or https://: __url__';
+  }
   if (!HAS_SCHEME.test(href)) {
     return LOOKS_LIKE_DOMAIN.test(href)
       ? 'Link URL misses http:// or https://: __url__'
@@ -34,8 +44,11 @@ function problemOf(link) {
   if (!KNOWN_SCHEMES.has(scheme)) {
     return 'Link URL has an unknown protocol: __url__';
   }
-  const rest = safeDecode(href.slice(scheme.length).split('?')[0]);
-  if (scheme === 'mailto:' && !EMAIL.test(rest)) {
+  // The address before its parameters (`?subject=`, and `&body=` or `;body=`
+  // for sms), decoded: `mailto:%7B%7Bemail%7D%7D` is a merge tag.
+  const rest = safeDecode(href.slice(scheme.length).split(/[?&;]/)[0]);
+  if (isDynamic(rest)) return null;
+  if (scheme === 'mailto:' && !isEmailList(rest)) {
     return 'Email link has no valid address: __url__';
   }
   if ((scheme === 'tel:' || scheme === 'sms:') && !PHONE.test(rest)) {
