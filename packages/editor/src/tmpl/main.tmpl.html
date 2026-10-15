@@ -97,10 +97,17 @@
       <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() > 0 -->
       <span class="quality-toggle__badge quality-toggle__badge--error" data-bind="text: $root.quality.issueCount(), attr: { 'aria-label': $root.t('__count__ issues', { count: $root.quality.issueCount() }) }"></span>
       <!-- /ko -->
-      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 -->
+      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 && $root.quality.passedCount() === $root.quality.checks().length -->
       <span class="quality-toggle__badge quality-toggle__badge--success" data-bind="attr: { 'aria-label': $root.t('__count__ checks passed', { count: $root.quality.passedCount() }) }">
         <span class="lucide lucide-check" aria-hidden="true"></span><span aria-hidden="true" data-bind="text: $root.quality.passedCount()"></span>
       </span>
+      <!-- /ko -->
+      <!-- Nothing to fix, but a check could not run: no green tick. -->
+      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 && $root.quality.passedCount() !== $root.quality.checks().length -->
+      <span class="quality-toggle__badge" data-bind="text: $root.quality.passedCount() + '/' + $root.quality.checks().length, attr: { 'aria-label': $root.t('__passed__ of __total__ checks passed', { passed: $root.quality.passedCount(), total: $root.quality.checks().length }) }"></span>
+      <!-- /ko -->
+      <!-- ko if: $root.quality.status() === 'stale' -->
+      <span class="quality-toggle__badge quality-toggle__badge--stale" data-bind="text: $root.t('quality-badge-stale')"></span>
       <!-- /ko -->
     </button>
     <!-- /ko -->
