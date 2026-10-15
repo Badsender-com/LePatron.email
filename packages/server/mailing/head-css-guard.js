@@ -5,7 +5,13 @@ const { Forbidden } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { findSyntheticBlocks } = require('./synthetic-block-guard.js');
 const { HEAD_CSS_MAX_LENGTH } = require('../../shared/head-css/constants.js');
-const { HTML_CODE_BLOCK } = require('../../shared/synthetic-blocks.js');
+const {
+  HTML_CODE_BLOCK,
+  BLOCK_BUILDER_BLOCK,
+} = require('../../shared/synthetic-blocks.js');
+const {
+  stylesheetForComposedBlocks,
+} = require('../../shared/block-builder/block-stylesheet.js');
 
 // Server-side guards for the per-mailing head CSS: its size, and whether the
 // template allows it at all.
@@ -121,12 +127,24 @@ function hasHeadCss(css) {
  * @returns {string}
  */
 function headCssToExport({ data, headCss }) {
-  // The HTML code block only, not the builder's: that one writes its own
-  // styles inline, and has nothing for this stylesheet to style.
-  const hasHtmlCodeBlock = findSyntheticBlocks(data).some(
+  const blocks = findSyntheticBlocks(data);
+
+  // Derived from the composed blocks, and gated by nothing: it cannot exist
+  // without one to derive it from. The editor's counterpart says more about
+  // why this file used to refuse it.
+  const derived = stylesheetForComposedBlocks(
+    blocks
+      .filter((block) => block.type === BLOCK_BUILDER_BLOCK.type)
+      .map((block) => block[BLOCK_BUILDER_BLOCK.stateProperty])
+  );
+
+  // The author's, which follows the HTML code blocks. Last, so a rule written
+  // by hand still wins at equal specificity.
+  const hasHtmlCodeBlock = blocks.some(
     (block) => block.type === HTML_CODE_BLOCK.type
   );
-  return hasHtmlCodeBlock ? asCss(headCss) : '';
+
+  return derived + (hasHtmlCodeBlock ? asCss(headCss) : '');
 }
 
 module.exports = {
