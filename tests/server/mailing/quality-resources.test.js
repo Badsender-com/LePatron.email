@@ -745,7 +745,6 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
         body: { links: ['https://a.test'] },
         user: { id: 'u1' },
         get: () => 'app.test',
-        on: jest.fn(),
       },
       res,
       (err) => {
@@ -767,9 +766,8 @@ describe('POST /mailings/:mailingId/quality/resources', () => {
         body: { images: [{ url: 'https://evil.test/api/images/a.png' }] },
         user: { id: 'u1' },
         get: () => 'evil.test',
-        on: jest.fn(),
       },
-      { json: jest.fn() },
+      { json: jest.fn(), on: jest.fn() },
       jest.fn()
     );
     expect(check.mock.calls[0][1].ownHosts).toEqual([config.host]);
