@@ -46,9 +46,11 @@ const {
  * fixing one link should not fetch the forty others again.
  */
 
-const MAX_LINKS = 60;
-const MAX_IMAGES = 40;
-const MAX_URL_LENGTH = 2048;
+const { RESOURCES } = require('../../shared/quality/limits.js');
+
+const MAX_LINKS = RESOURCES.maxLinks;
+const MAX_IMAGES = RESOURCES.maxImages;
+const MAX_URL_LENGTH = RESOURCES.maxUrlLength;
 // Short enough to answer before a hosting router gives up on the request.
 const RUN_DEADLINE_MS = 20000;
 

@@ -19,12 +19,10 @@ function getSubject(viewModel) {
   return typeof subject === 'string' ? subject : '';
 }
 
-// Templates declare their preheader either at the root (`preheaderText`) or in
-// a root-level `preheaderBlock` (docs/TEMPLATE_DEVELOPER_GUIDE.md, preheader).
-const PREHEADER_PATHS = [
-  ['preheaderText'],
-  ['preheaderBlock', 'preheaderText'],
-];
+// Where a template declares its preheader, shared with the share page.
+const {
+  PREHEADER_PATHS,
+} = require('../../../../../shared/quality/preheader.js');
 
 // Some templates declare one preheader per market instead (`autPreheaderText`,
 // `bel_frPreheaderText`…), each bound to its own block: which one the email
