@@ -29,7 +29,7 @@ module.exports = {
   id: 'emoji-placement',
   category: 'accessibility',
   severity: 'info',
-  titleKey: 'Emojis',
+  titleKey: 'quality-title-emojis',
   passKey: 'Emojis sit at the end of sentences',
   run(ctx) {
     const texts = blockTexts(ctx);

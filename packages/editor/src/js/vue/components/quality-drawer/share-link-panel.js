@@ -199,7 +199,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             @focus="$event.target.select()"
           >
           <button type="button" class="qc-button qc-button--cta qc-share__button" @click="copy(created, $refs.createdUrl)">
-            <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('Copied') : t('Copy link') }}
+            <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('quality-share-copied') : t('Copy link') }}
           </button>
         </div>
         <p v-if="!created.copyable" class="qc-field__help">{{ t('Copy it now: it will not be shown again.') }}</p>
@@ -214,7 +214,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             class="qc-link-button"
             :aria-label="t('Copy the link: __link__', { link: describe(link) })"
             @click="copy(link, $refs['url-' + link.id][0])"
-          >{{ copiedId === link.id ? t('Copied') : t('Copy link') }}</button>
+          >{{ copiedId === link.id ? t('quality-share-copied') : t('Copy link') }}</button>
           <input
             v-if="link.url"
             :ref="'url-' + link.id"
