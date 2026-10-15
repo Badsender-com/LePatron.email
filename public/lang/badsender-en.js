@@ -499,11 +499,11 @@ module.exports = {
   'Required tracking parameters': 'Required tracking parameters',
   'All required tracking parameters are filled in':
     'All required tracking parameters are filled in',
-  Links: 'Links',
+  'quality-title-links': 'Links',
   'Every link has a destination': 'Every link has a destination',
   'Clickable images': 'Clickable images',
   'Every clickable image has a link': 'Every clickable image has a link',
-  Images: 'Images',
+  'quality-title-images': 'Images',
   'Every image has been replaced': 'Every image has been replaced',
   'Background images': 'Background images',
   'Every background image turned on is set':
@@ -574,7 +574,7 @@ module.exports = {
     'Every image uses a format email clients show',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF',
-  Subject: 'Subject',
+  'quality-title-subject': 'Subject',
   'The subject is filled in and __count__ characters long':
     'The subject is filled in and __count__ characters long',
   'No subject': 'No subject',
@@ -588,7 +588,7 @@ module.exports = {
   'Subject repeats punctuation (!!, ??, $$)':
     'Subject repeats punctuation (!!, ??, $$)',
   'Subject has more than one emoji': 'Subject has more than one emoji',
-  Preheader: 'Preheader',
+  'quality-title-preheader': 'Preheader',
   'The preheader is filled in and __count__ characters long':
     'The preheader is filled in and __count__ characters long',
   'No preheader: inboxes show the first words of the body instead':
@@ -654,7 +654,7 @@ module.exports = {
     'Every link stands out from the text around it',
   'Link neither underlined nor coloured differently from its text: __label__':
     'Link neither underlined nor coloured differently from its text: __label__',
-  Headings: 'Headings',
+  'quality-title-headings': 'Headings',
   'Headings are filled in and follow each other':
     'Headings are filled in and follow each other',
   'Empty heading (__tag__)': 'Empty heading (__tag__)',
@@ -665,7 +665,7 @@ module.exports = {
     'No alternative text repeats the text next to it',
   'Alternative text repeats the text next to the image: __alt__':
     'Alternative text repeats the text next to the image: __alt__',
-  Emojis: 'Emojis',
+  'quality-title-emojis': 'Emojis',
   'Emojis sit at the end of sentences': 'Emojis sit at the end of sentences',
   'Several emojis in a row: screen readers read each name':
     'Several emojis in a row: screen readers read each name',
@@ -775,7 +775,7 @@ module.exports = {
   '__count__ days': '__count__ days',
   'Create a link': 'Create a link',
   'Preview link': 'Preview link',
-  Copied: 'Copied',
+  'quality-share-copied': 'Copied',
   'Copy it now: it will not be shown again.':
     'Copy it now: it will not be shown again.',
   'Active links': 'Active links',

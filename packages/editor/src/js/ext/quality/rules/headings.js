@@ -19,7 +19,7 @@ module.exports = {
   id: 'headings',
   category: 'accessibility',
   severity: 'info',
-  titleKey: 'Headings',
+  titleKey: 'quality-title-headings',
   passKey: 'Headings are filled in and follow each other',
   run(ctx) {
     return _.flatMap(allEditedRichTexts(ctx), (richText) => {

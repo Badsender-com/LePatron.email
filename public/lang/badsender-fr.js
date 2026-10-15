@@ -511,12 +511,12 @@ module.exports = {
   'Required tracking parameters': 'Paramètres de tracking obligatoires',
   'All required tracking parameters are filled in':
     'Tous les paramètres de tracking obligatoires sont renseignés',
-  Links: 'Liens',
+  'quality-title-links': 'Liens',
   'Every link has a destination': 'Tous les liens ont une destination',
   'Clickable images': 'Images cliquables',
   'Every clickable image has a link':
     'Toutes les images cliquables ont un lien',
-  Images: 'Images',
+  'quality-title-images': 'Images',
   'Every image has been replaced': 'Toutes les images ont été remplacées',
   'Background images': 'Images de fond',
   'Every background image turned on is set':
@@ -591,7 +591,7 @@ module.exports = {
     'Toutes les images utilisent un format affiché par les clients mail',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     "Format d'image non affiché par tous les clients mail (__format__) : préférez JPG, PNG ou GIF",
-  Subject: 'Objet',
+  'quality-title-subject': 'Objet',
   'The subject is filled in and __count__ characters long':
     "L'objet est renseigné et fait __count__ caractères",
   'No subject': "Pas d'objet",
@@ -606,7 +606,7 @@ module.exports = {
   'Subject repeats punctuation (!!, ??, $$)':
     "L'objet répète de la ponctuation (!!, ??, $$)",
   'Subject has more than one emoji': "L'objet contient plus d'un emoji",
-  Preheader: 'Préheader',
+  'quality-title-preheader': 'Préheader',
   'The preheader is filled in and __count__ characters long':
     'Le préheader est renseigné et fait __count__ caractères',
   'No preheader: inboxes show the first words of the body instead':
@@ -673,7 +673,7 @@ module.exports = {
     'Tous les liens se distinguent du texte qui les entoure',
   'Link neither underlined nor coloured differently from its text: __label__':
     "Lien ni souligné ni d'une autre couleur que son texte : __label__",
-  Headings: 'Titres',
+  'quality-title-headings': 'Titres',
   'Headings are filled in and follow each other':
     'Les titres sont renseignés et se suivent',
   'Empty heading (__tag__)': 'Titre vide (__tag__)',
@@ -684,7 +684,7 @@ module.exports = {
     'Aucun texte alternatif ne répète le texte voisin',
   'Alternative text repeats the text next to the image: __alt__':
     "Le texte alternatif répète le texte à côté de l'image : __alt__",
-  Emojis: 'Emojis',
+  'quality-title-emojis': 'Emojis',
   'Emojis sit at the end of sentences':
     'Les emojis sont placés en fin de phrase',
   'Several emojis in a row: screen readers read each name':
@@ -797,7 +797,7 @@ module.exports = {
   '__count__ days': '__count__ jours',
   'Create a link': 'Créer un lien',
   'Preview link': "Lien d'aperçu",
-  Copied: 'Copié',
+  'quality-share-copied': 'Copié',
   'Copy it now: it will not be shown again.':
     'Copiez-le maintenant : il ne sera plus affiché.',
   'Active links': 'Liens actifs',
