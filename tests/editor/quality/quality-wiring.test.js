@@ -99,6 +99,12 @@ describe('the download command', () => {
     expect(vm.exportHTML).toHaveBeenCalledTimes(1);
   });
 
+  it('carries no test command: sending a test lives in the drawer', () => {
+    const vm = editorWithReview(jest.fn());
+    serverStorage({ metadata: vm.metadata })(vm);
+    expect(vm.test).toBeUndefined();
+  });
+
   it('does not wait for the checks: the review returns before they run', () => {
     const vm = editorWithReview(undefined);
     const run = jest.fn(() => ({ findings: [], checks: [] }));
