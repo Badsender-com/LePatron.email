@@ -2,6 +2,14 @@
 
 Document de conception pour l'ajout de nouveaux rôles au système de rôles et permissions de LePatron.email. Rédigé à partir de la vision produit d'Olivier Fredon et d'un audit du code existant.
 
+**Mise à jour du 2026-10-15 : la branche ne porte plus que le RBAC.** Les chantiers rapatriés des PR ouvertes (contrôle qualité v2, liens de partage, génération de texte IA, refonte de la galerie) ont été retirés pour que ce travail soit distinct et autonome. Les passages ci-dessous qui décrivent leur rapatriement restent le journal des décisions produit. Ce qui touchait ces chantiers n'est plus dans le code, et sera à rejouer quand leurs PR seront dans `develop` (les commits d'origine sont conservés dans la branche locale `backup/roles-permissions-pre-clean`) :
+
+- `canIgnoreQuality` est calculé dans `ext/badsender-current-user.js`, mais le panneau QC ne le lit pas encore (`4dcced21`), et `PATCH /:mailingId/quality-ignores` n'a pas encore son `GUARD_NOT_REVIEWER` (`08b4e64a`).
+- La révocation d'un lien de partage selon le rôle, côté serveur et éditeur (`c09c99be`), n'est pas rejouée.
+- La route `POST /:mailingId/duplicate-translate` garde `GUARD_NOT_REVIEWER`, mais sans le `aiRateLimit` de la PR IA.
+- Le correctif `updateLabel` de la galerie (identifiant invalide en 422, dans `7dafb4cb`) et `qualityIgnores` dans `MAILING_LIST_PROJECTION` (`91a62081`) appartiennent à leurs PR.
+- L'ADR 0003 (génération de texte) est absent du tableau de `docs/adr/README.md` : 0004 garde son numéro.
+
 **Mise à jour du 2026-10-06** : plusieurs chantiers voisins ont été livrés ou sont en revue sur `develop` depuis la rédaction de ce document, et en changent l'état de départ. La branche `feat/roles-permissions` les a rapatriés (voir « État de départ au 2026-10-06 » ci-dessous). En résumé :
 
 - **`super_admin` est désormais un rôle persisté**, multi-comptes ([#1101](https://github.com/Badsender-com/LePatron.email/issues/1101) est couverte par l'epic #1153 et ses PR #1157 à #1159, [ADR 0002](../adr/0002-super-admin-persisted-role.md)). Les sections 2, 3.1, 3.6, 7 et 8 qui décrivent le super admin comme « compte unique en variable d'environnement » sont corrigées ci-dessous.

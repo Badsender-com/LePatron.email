@@ -450,14 +450,4 @@ module.exports = {
     "Enregistrement refusé : le CSS personnalisé n'est pas activé sur ce template.",
   'save-message-head-css-too-large':
     'Enregistrement refusé : le CSS personnalisé dépasse la taille maximale.',
-  'comments-decision-approve': 'Approuver',
-  'comments-decision-approve-default-text': 'Je valide cet email',
-  'comments-decision-approved': 'Approuvé',
-  'comments-decision-changes-requested': 'Changements demandés',
-  'toolbox-readonly-structure':
-    "Vous n'avez pas le droit de modifier la structure de cet email",
-  'toolbox-readonly-content':
-    "Vous n'avez pas le droit de modifier le contenu de cet email",
-  'toolbox-readonly-style':
-    "Vous n'avez pas le droit de modifier le style de cet email",
 };
