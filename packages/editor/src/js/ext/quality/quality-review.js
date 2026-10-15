@@ -203,7 +203,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     // gate waits on.
     if (cancelRemote) cancelRemote.cancel();
     // Nothing to ask the server when every check it serves is off.
-    const remoteOn = REMOTE_RULES.some(isOn);
+    // Asked as soon as a check reads its answer: a server check, or a local
+    // one with a second look (the format of an image without an extension).
+    const remoteOn = SERVER_ANSWER_RULES.some(isOn);
     if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
       if (id === runId) remoteStatus('idle');
       return Promise.resolve([]);
