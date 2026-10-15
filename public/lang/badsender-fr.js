@@ -803,6 +803,34 @@ module.exports = {
   'ai-panel-preheader-anyway': 'Générer le préheader quand même',
   'ai-panel-next-preheader': 'Continuer avec le préheader',
   'ai-panel-loading': 'Génération en cours…',
+  'ai-panel-action-correct': 'Corriger',
+  'ai-panel-selected-field': 'Champ sélectionné',
+  'ai-panel-correcting': 'Analyse en cours…',
+  'ai-panel-no-correction': 'Aucune faute trouvée.',
+  'ai-panel-corrections-count': '__count__ corrections',
+  'ai-panel-corrections-count-one': '1 correction',
+  'ai-panel-accept': 'Accepter',
+  'ai-panel-ignore': 'Ignorer',
+  'ai-panel-accept-all': 'Tout accepter',
+  'ai-panel-correction-accepted': 'Acceptée',
+  'ai-panel-correction-ignored': 'Ignorée',
+  'ai-panel-correction-undone': 'Annulée',
+  'ai-panel-correction-stale':
+    "Non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-accepted': '__count__ corrections acceptées.',
+  'ai-panel-corrections-accepted-one': '1 correction acceptée.',
+  'ai-panel-corrections-stale':
+    "__count__ non appliquées : le texte a changé depuis l'analyse.",
+  'ai-panel-corrections-stale-one':
+    "1 non appliquée : le texte a changé depuis l'analyse.",
+  'ai-panel-correction-undo-hint':
+    '__keys__ annule la dernière correction acceptée.',
+  'ai-panel-corrections-dropped':
+    '__count__ corrections écartées : elles touchaient à la mise en forme ou à une variable.',
+  'ai-panel-corrections-dropped-one':
+    '1 correction écartée : elle touchait à la mise en forme ou à une variable.',
+  'ai-panel-correction-before': 'Avant :',
+  'ai-panel-correction-after': 'Après :',
   'ai-panel-generate-subject': 'Proposer des objets',
   'ai-panel-generate-preheader': 'Proposer des préheaders',
   'ai-panel-proposed': '__count__ propositions',
@@ -814,7 +842,7 @@ module.exports = {
   'ai-panel-no-action-yet': "Pas encore d'action IA pour ce bloc.",
   'ai-panel-whole-email': "Tout l'email",
   'ai-panel-selection-changed':
-    'Vous avez sélectionné un autre élément. Ces propositions restent ici.',
+    'Vous avez sélectionné un autre élément. Cette action reste ouverte ici.',
   'ai-panel-see-its-actions': 'Voir ses actions IA',
   'ai-field-subject-label': "Générer l'objet avec l'IA",
   'ai-field-preheader-label': "Générer le préheader avec l'IA",

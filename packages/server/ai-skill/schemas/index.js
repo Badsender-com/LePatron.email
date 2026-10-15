@@ -109,6 +109,54 @@ const preheaderGenInput = z
 
 const preheaderGenOutput = textProposalsOutput;
 
+// Spelling correction (ADR 0005): the visible text of the fields of one block,
+// each with its path; the skill answers corrections the code then places.
+// A non-breaking space is written {nbsp}, in the text as in the corrections:
+// the model can neither write the character nor tell it from a space.
+const FIELD_ROLES = ['title', 'text', 'button', 'alt'];
+
+const correctionInput = z
+  .object({
+    fields: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1),
+            role: z.enum(FIELD_ROLES),
+            text: z.string().min(1),
+          })
+          .strict()
+      )
+      .min(1),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+// Bounds a model's answer cannot exceed: corrections of a block, excerpts of a
+// few words.
+const MAX_CORRECTIONS = 100;
+const MAX_EXCERPT_LENGTH = 1000;
+const MAX_REASON_LENGTH = 300;
+
+const correctionOutput = z
+  .object({
+    // None for a text without mistake.
+    corrections: z
+      .array(
+        z
+          .object({
+            field: z.string().min(1),
+            // An exact excerpt of the field's text, long enough to be found once.
+            before: z.string().min(1).max(MAX_EXCERPT_LENGTH),
+            after: z.string().max(MAX_EXCERPT_LENGTH),
+            reason: z.string().min(1).max(MAX_REASON_LENGTH),
+          })
+          .strict()
+      )
+      .max(MAX_CORRECTIONS),
+  })
+  .strict();
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
@@ -116,6 +164,8 @@ const schemas = Object.freeze({
   subjectGenOutput,
   preheaderGenInput,
   preheaderGenOutput,
+  correctionInput,
+  correctionOutput,
 });
 
 /**
@@ -149,4 +199,5 @@ module.exports = {
   listSchemaIds,
   hasSchema,
   expertiseArraySchema,
+  FIELD_ROLES,
 };

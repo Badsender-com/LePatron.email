@@ -29,8 +29,7 @@ function render() {
 
 const paths = (list) => () => list;
 
-// Turned on by #1254 (correct a field)
-describe.skip('spelling correction: the targeted field', () => {
+describe('spelling correction: the targeted field', () => {
   let fieldTargetOf;
 
   beforeAll(() => {

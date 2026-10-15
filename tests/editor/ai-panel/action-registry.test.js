@@ -100,13 +100,12 @@ describe('ai panel: the action registry', () => {
     });
   });
 
-  // Replaced by the « Corriger » blocks below when #1254 and #1255 turn them on.
-  describe('blocks and block fields', () => {
-    it.each([
-      [{ kind: 'block', blockType: 'coverBlock' }],
-      [{ kind: 'blockField', blockType: 'coverBlock', field: 'titleText' }],
-    ])('offer no action yet for %o', (target) => {
-      expect(availableActions(target, ON)).toEqual({
+  // Replaced by the « Corriger » block below when #1255 turns it on.
+  describe('blocks', () => {
+    it('offer no action yet', () => {
+      expect(
+        availableActions({ kind: 'block', blockType: 'coverBlock' }, ON)
+      ).toEqual({
         actions: [],
         opens: 'none',
       });
@@ -138,12 +137,10 @@ describe('ai panel: the action registry', () => {
     });
 
     it('is offered on its targets, and opens directly when it is the only one', () => {
-      expect(availableActions(titleOfCover, ON, [...ACTIONS, rewrite])).toEqual(
-        {
-          actions: [{ id: 'rewrite-text', canApply: true }],
-          opens: 'action',
-        }
-      );
+      expect(availableActions(titleOfCover, ON, [rewrite])).toEqual({
+        actions: [{ id: 'rewrite-text', canApply: true }],
+        opens: 'action',
+      });
     });
 
     it('is offered nowhere else', () => {
@@ -177,8 +174,7 @@ describe('ai panel: the action registry', () => {
       blockType: 'textBlock',
     };
 
-    // Turned on by #1254 (correct a field)
-    describe.skip('on a block field', () => {
+    describe('on a block field', () => {
       it('is the field’s single action, opened directly', () => {
         expect(availableActions(FIELD, ON)).toEqual({
           actions: [{ id: 'correct-text', canApply: true }],

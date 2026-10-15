@@ -147,8 +147,7 @@ function loadModules() {
 const post = (payload = body, app = makeApp()) =>
   request(app).post('/api/text-generation/corrections').send(payload);
 
-// Turned on by #1254 (correct a field)
-describe.skip('spelling correction: POST /api/text-generation/corrections', () => {
+describe('spelling correction: POST /api/text-generation/corrections', () => {
   beforeEach(loadModules);
 
   describe('access', () => {
@@ -191,6 +190,44 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
         { ...body, fields: [{ role: 'text', text: 'Texte' }] },
       ],
       ['no target', { mailingId: MAILING_ID, fields: FIELDS }],
+      [
+        'a field target without its field',
+        { ...body, target: { ...TARGET, kind: 'blockField' } },
+      ],
+      [
+        'a field target sending other fields',
+        {
+          ...body,
+          target: { ...TARGET, kind: 'blockField', field: 'titleText' },
+        },
+      ],
+      [
+        'a block target naming a field',
+        { ...body, target: { ...TARGET, field: 'titleText' } },
+      ],
+      ['a field sent twice', { ...body, fields: [FIELDS[0], FIELDS[0]] }],
+      [
+        'more than 40 fields',
+        {
+          ...body,
+          fields: Array.from({ length: 41 }, (_, i) => ({
+            path: `f${i}`,
+            role: 'text',
+            text: 'Texte',
+          })),
+        },
+      ],
+      [
+        'more text than a block holds',
+        {
+          ...body,
+          fields: Array.from({ length: 11 }, (_, i) => ({
+            path: `f${i}`,
+            role: 'text',
+            text: 'a'.repeat(5000),
+          })),
+        },
+      ],
     ])(
       'answers 400 for %s, without invoking anything',
       async (_label, payload) => {
@@ -229,6 +266,40 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
     });
   });
 
+  it('leaves out the transversal writing expertise: correcting is not rewriting', async () => {
+    findApplicable.mockResolvedValue([
+      {
+        expertiseId: 'redaction.principes-email',
+        title: 'Principes de rédaction email',
+        body: '## [lecteur-d-abord] Le lecteur d’abord',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: true,
+        versionMajor: 1,
+        versionMinor: 1,
+      },
+      {
+        expertiseId: 'correction.marques',
+        title: 'Marques à ne jamais corriger',
+        body: '## [marques] Marques',
+        examplesGood: [],
+        examplesBad: [],
+        isTransversal: false,
+        versionMajor: 1,
+        versionMinor: 0,
+      },
+    ]);
+    invoke.mockResolvedValue(corrections());
+    await post();
+    const call = invoke.mock.calls[0][0];
+    expect(call.input.expertise.map((e) => e.expertiseId)).toEqual([
+      'correction.marques',
+    ]);
+    expect(call.expertiseConsumed).toEqual([
+      { expertiseId: 'correction.marques', versionMajor: 1, versionMinor: 0 },
+    ]);
+  });
+
   describe('the corrections', () => {
     it('returns the corrections the code can place', async () => {
       invoke.mockResolvedValue(
@@ -263,7 +334,6 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
         'not in the text',
         fix('longText', 'la colection de lin', 'la collection de lin'),
       ],
-      ['found twice', fix('longText', 'l', 'L')],
       ['touching a merge tag', fix('longText', '{{prenom}},', '{{prenom}} ,')],
       ['changing nothing', fix('titleText', 'demain', 'demain')],
       [
@@ -279,6 +349,90 @@ describe.skip('spelling correction: POST /api/text-generation/corrections', () =
         fix('longText', 'la colection', 'la collection'),
       ]);
       expect(res.body.dropped).toBe(1);
+    });
+
+    it('drops and counts a correction found twice in its field', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('titleText', 'la', 'là'),
+          fix('titleText', 'Tra', 'Trois')
+        )
+      );
+      const res = await post({
+        ...body,
+        fields: [{ path: 'titleText', role: 'title', text: 'Tra la la' }],
+      });
+      expect(res.body).toEqual({
+        corrections: [fix('titleText', 'Tra', 'Trois')],
+        dropped: 1,
+      });
+    });
+
+    it('returns a correction the model repeats once', async () => {
+      invoke.mockResolvedValue(
+        corrections(
+          fix('longText', 'la colection', 'la collection'),
+          fix('longText', 'la colection', 'la collection')
+        )
+      );
+      const res = await post();
+      expect(res.body).toEqual({
+        corrections: [fix('longText', 'la colection', 'la collection')],
+        dropped: 0,
+      });
+    });
+
+    // The model cannot write a non-breaking space, nor tell one from a space
+    // (#1258): it reads and writes them as {nbsp}.
+    describe('non-breaking spaces', () => {
+      const typography = {
+        ...body,
+        fields: [
+          {
+            path: 'longText',
+            role: 'text',
+            text: 'Votre avis compte: r\u00e9pondez avant vendredi\u00a0!',
+          },
+        ],
+      };
+
+      it('sends them to the skill as {nbsp}', async () => {
+        invoke.mockResolvedValue(corrections());
+        await post(typography);
+        expect(invoke.mock.calls[0][0].input.fields[0].text).toBe(
+          'Votre avis compte: r\u00e9pondez avant vendredi{nbsp}!'
+        );
+      });
+
+      it('returns the corrections with the characters themselves', async () => {
+        invoke.mockResolvedValue(
+          corrections(
+            fix('longText', 'compte:', 'compte{nbsp}:', 'Espace ins\u00e9cable')
+          )
+        );
+        const res = await post(typography);
+        expect(res.body).toEqual({
+          corrections: [
+            fix(
+              'longText',
+              'compte:',
+              'compte\u00a0:',
+              'Espace ins\u00e9cable'
+            ),
+          ],
+          dropped: 0,
+        });
+      });
+
+      it('finds an excerpt holding one the text already has', async () => {
+        invoke.mockResolvedValue(
+          corrections(fix('longText', 'vendredi{nbsp}!', 'vendredi{nbsp}!!'))
+        );
+        const res = await post(typography);
+        expect(res.body.corrections).toEqual([
+          fix('longText', 'vendredi\u00a0!', 'vendredi\u00a0!!'),
+        ]);
+      });
     });
 
     it('answers no correction for a text without mistake', async () => {
