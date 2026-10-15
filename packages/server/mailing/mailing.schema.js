@@ -154,13 +154,48 @@ const MailingSchema = Schema(
       type: String,
       enum: EmailTriggerValues,
     },
+    // Quality control findings the team chose to ignore on this email (the
+    // quality drawer's "Ignore"). Keyed by the finding's fingerprint — rule,
+    // block, property and a hash of the faulty value — so an ignored finding
+    // comes back on its own once its content changes. Shared by everyone who
+    // edits the email. Bounded by MAX_QUALITY_IGNORES in mailing-quality.service.
+    qualityIgnores: {
+      type: [
+        {
+          _id: false,
+          fingerprint: { type: String, required: true, maxlength: 512 },
+          ruleId: { type: String, maxlength: 64 },
+          // Who ignored it is kept for audit and shown to nobody: the JSON
+          // transform below drops the whole list, and the editor's metadata
+          // (findOneForMosaico) keeps only the fingerprints. Never
+          // `select: false`: Mongoose would add `qualityIgnores._user: 0` to
+          // the lists' projection, which already excludes `qualityIgnores`,
+          // and MongoDB 4.4+ rejects that path collision.
+          _user: { type: ObjectId, ref: UserModel },
+          ignoredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: undefined,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
       type: [],
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: {
+      virtuals: true,
+      // The ignored quality findings reach the editor with its own metadata
+      // (findOneForMosaico) and nowhere else: no API answer carries them, nor
+      // the ids of who ignored them.
+      transform: (doc, ret) => {
+        delete ret.qualityIgnores;
+        return ret;
+      },
+    },
+  }
 );
 
 MailingSchema.pre('find', function () {
@@ -186,6 +221,9 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   // keeping — a copy of an automated transactional email is still one; a planned
   // send date belongs to one campaign and must not be inherited.
   this.plannedSendDate = undefined;
+  // Ignored quality findings are a decision about the original: the copy is
+  // reviewed afresh (MAILING_COPY_OMITTED_FIELDS says the same for copies).
+  this.qualityIgnores = undefined;
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
@@ -574,6 +612,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     group,
   });
 
+  // Lazy require like the services above: share-link.service reaches
+  // models.common, which reaches back here.
+  const shareLinkService = require('../share-link/share-link.service.js');
+  // The company the server judges a link by, not always the template's.
+  const { allowed: shareLinksEnabled } = await shareLinkService.companySharing(
+    await shareLinkService.sharingCompanyOf(mailing)
+  );
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -613,7 +659,22 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
         sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
+        qualityIgnores: `/api/mailings/${mailingId}/quality-ignores`,
+        qualityResources: `/api/mailings/${mailingId}/quality/resources`,
+        // Absent when the company turned the preview links off: the editor
+        // shows the sharing section only when the address is there.
+        ...(shareLinksEnabled && {
+          shareLinks: `/api/mailings/${mailingId}/share-links`,
+        }),
       },
+      // The limit the sharing section quotes, from the service that holds it.
+      ...(shareLinksEnabled && {
+        shareLinks: { maxActive: shareLinkService.MAX_ACTIVE_LINKS },
+      }),
+      // Fingerprints of the quality findings ignored on this email.
+      qualityIgnores: (mailing.qualityIgnores || []).map(
+        (ignore) => ignore.fingerprint
+      ),
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
         cdnButtonLabel: group.cdnButtonLabel,

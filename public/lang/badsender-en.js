@@ -148,7 +148,6 @@ module.exports = {
   'error-api-error': 'An error occurred while communicating with the API.',
 
   // test list
-  'title-send-test-mails': 'Send a test email',
   'send-test-success': 'Email sent successfully',
   'send-test-error': 'An error has occured while sending the emai :(l',
   'placeholder-input-emails-test':
@@ -158,7 +157,6 @@ module.exports = {
     'The email addresses entered are invalid. Please separate email addresses with ";"',
   'placeholder-emails-groups': 'Select a list',
   'sending-test-mails': 'Sending test mail…',
-  'send-test-mails': 'Send',
 
   // SaveBlockModal translations
   'title-save-block': 'Save block',
@@ -429,65 +427,90 @@ module.exports = {
     'Saving refused: the custom CSS is over the maximum size.',
   // Quality control (ext/quality)
   'Quality control': 'Quality control',
+  // Prefixed: this dictionary is merged with Mosaico's, where a bare
+  // "Error" or "Copy" would collide.
+  'quality-action-close': 'Close',
+  'quality-action-cancel': 'Cancel',
+  'quality-action-ignore': 'Ignore',
+  'quality-action-undo': 'Undo',
+  // The editor's own undo button (undomanager/undomain.js).
+  Undo: 'Undo',
+  'quality-severity-error': 'Error',
+  'quality-severity-warning': 'Warning',
+  'quality-severity-info': 'Info',
+  'quality-severity-not-run': 'Not run',
+  'quality-severity-passed': 'Check passed',
+  'quality-group-errors': 'Errors',
+  'quality-group-warnings': 'Warnings',
+  'quality-group-infos': 'Infos',
+  'quality-group-not-run': 'Not run',
+  'quality-group-passed': 'Passed',
+  'quality-group-ignored': 'Ignored',
+  'quality-category-technical': 'Technical',
+  'quality-category-content': 'Content',
+  'quality-category-accessibility': 'Accessibility',
+  'quality-category-copy': 'Copy',
+  'quality-category-performance': 'Performance',
+  'quality-badge-stale': 'Re-run needed',
+  '__count__ checks not run': '__count__ checks not run',
+  '__count__ ignored findings': '__count__ ignored findings',
+  '__passed__ of __total__ checks passed':
+    '__passed__ of __total__ checks passed',
+  'The results date from before your last changes':
+    'The results date from before your last changes',
+  'This check was cancelled': 'This check was cancelled',
+  'Too many checks in a short time: try again in a few minutes':
+    'Too many checks in a short time: try again in a few minutes',
+  'The links and images could not be checked':
+    'The links and images could not be checked',
+  'The block could not be shown': 'The block could not be shown',
   'Link not filled in: __label__': 'Link not filled in: __label__',
   'Clickable image has no link': 'Clickable image has no link',
   'Image not replaced': 'Image not replaced',
   'Template sample image not replaced': 'Template sample image not replaced',
   'Missing Outlook background image': 'Missing Outlook background image',
   'Missing mobile background image': 'Missing mobile background image',
-  'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB':
-    'Exported HTML weighs __size__ KB: Gmail clips emails over 102 KB',
+  'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
+    'Exported HTML weighs __size__ KB: keep it under 100 KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
   'Required tracking parameters missing: __keys__':
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
   'Test your email': 'Test your email',
-  Close: 'Close',
   'Run quality checks': 'Run quality checks',
   'Links, images and weight are checked before you send a test.':
     'Links, images and weight are checked before you send a test.',
   '__count__ checks': '__count__ checks',
   'Running checks…': 'Running checks…',
   'Running…': 'Running…',
-  Cancel: 'Cancel',
   'Re-run': 'Re-run',
-  Error: 'Error',
-  Warning: 'Warning',
-  Info: 'Info',
-  Passed: 'Passed',
-  'Check passed': 'Check passed',
-  Errors: 'Errors',
-  Warnings: 'Warnings',
-  Infos: 'Infos',
   '__count__ errors': '__count__ errors',
   '__count__ warnings': '__count__ warnings',
   '__count__ infos': '__count__ infos',
   '__count__ checks passed': '__count__ checks passed',
   '__count__ issues': '__count__ issues',
+  '__count__ issues to fix: open the quality control':
+    '__count__ issues to fix: open the quality control',
   'All checks passed': 'All checks passed',
   '__passed__ of __total__ checks · __when__':
     '__passed__ of __total__ checks · __when__',
   'Go to block': 'Go to block',
   'Send a test email': 'Send a test email',
   'This check could not run': 'This check could not run',
-  Technical: 'Technical',
-  Accessibility: 'Accessibility',
-  Copy: 'Copy',
-  Performance: 'Performance',
   'Required tracking parameters': 'Required tracking parameters',
   'All required tracking parameters are filled in':
     'All required tracking parameters are filled in',
-  Links: 'Links',
+  'quality-title-links': 'Links',
   'Every link has a destination': 'Every link has a destination',
   'Clickable images': 'Clickable images',
   'Every clickable image has a link': 'Every clickable image has a link',
-  Images: 'Images',
+  'quality-title-images': 'Images',
   'Every image has been replaced': 'Every image has been replaced',
   'Background images': 'Background images',
   'Every background image turned on is set':
     'Every background image turned on is set',
   'Email weight': 'Email weight',
-  'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit':
-    'Exported HTML weighs __size__ KB, under the 102 KB Gmail limit',
+  'Exported HTML weighs __size__ KB, under the 100 KB limit':
+    'Exported HTML weighs __size__ KB, under the 100 KB limit',
   'Link addresses': 'Link addresses',
   'Every link address is well formed': 'Every link address is well formed',
   'Link URL contains a space: __url__': 'Link URL contains a space: __url__',
@@ -551,4 +574,224 @@ module.exports = {
     'Every image uses a format email clients show',
   'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF':
     'Image format not shown by every email client (__format__): prefer JPG, PNG or GIF',
+  'quality-title-subject': 'Subject',
+  'The subject is filled in and __count__ characters long':
+    'The subject is filled in and __count__ characters long',
+  'No subject': 'No subject',
+  'Subject too long (__count__ characters): inboxes cut it, keep it under 60':
+    'Subject too long (__count__ characters): inboxes cut it, keep it under 60',
+  'Long subject (__count__ characters): ideally under 40, it may be cut on mobile':
+    'Long subject (__count__ characters): ideally under 40, it may be cut on mobile',
+  'Subject starts like a reply or a forward (__prefix__) without being one':
+    'Subject starts like a reply or a forward (__prefix__) without being one',
+  'Subject mostly in capital letters': 'Subject mostly in capital letters',
+  'Subject repeats punctuation (!!, ??, $$)':
+    'Subject repeats punctuation (!!, ??, $$)',
+  'Subject has more than one emoji': 'Subject has more than one emoji',
+  'quality-title-preheader': 'Preheader',
+  'The preheader is filled in and __count__ characters long':
+    'The preheader is filled in and __count__ characters long',
+  'No preheader: inboxes show the first words of the body instead':
+    'No preheader: inboxes show the first words of the body instead',
+  'The preheader repeats the subject: inboxes show the same words twice':
+    'The preheader repeats the subject: inboxes show the same words twice',
+  'Preheader too long (__count__ characters): inboxes cut it well before':
+    'Preheader too long (__count__ characters): inboxes cut it well before',
+  'Long preheader (__count__ characters): its end will rarely be seen':
+    'Long preheader (__count__ characters): its end will rarely be seen',
+  'Personalization tags': 'Personalization tags',
+  'Every personalization tag is closed': 'Every personalization tag is closed',
+  'Personalization tag not closed (__token__): __excerpt__':
+    'Personalization tag not closed (__token__): __excerpt__',
+  'Personalization tag not closed in the subject (__token__): __excerpt__':
+    'Personalization tag not closed in the subject (__token__): __excerpt__',
+  'Personalization tag not closed in the preheader (__token__): __excerpt__':
+    'Personalization tag not closed in the preheader (__token__): __excerpt__',
+  'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% (__excerpt__): a personalization tag left open, or a doubled percent sign',
+  'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% in the subject (__excerpt__): a personalization tag left open, or a doubled percent sign',
+  'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign':
+    'Unbalanced %% in the preheader (__excerpt__): a personalization tag left open, or a doubled percent sign',
+  'Empty blocks': 'Empty blocks',
+  'Every block shows something': 'Every block shows something',
+  'Empty block: it shows no text and no image':
+    'Empty block: it shows no text and no image',
+  'Capital letters': 'Capital letters',
+  'No long passage is written in capital letters':
+    'No long passage is written in capital letters',
+  'Long passage in capital letters (__count__ words): __excerpt__':
+    'Long passage in capital letters (__count__ words): __excerpt__',
+  'Preheader still the sample text of the template: __text__':
+    'Preheader still the sample text of the template: __text__',
+  'Font size': 'Font size',
+  'No text was set under 14 px, or 12 px in the header and footer':
+    'No text was set under 14 px, or 12 px in the header and footer',
+  'Text set to __size__ px, under the __min__ px that reads comfortably: __text__':
+    'Text set to __size__ px, under the __min__ px that reads comfortably: __text__',
+  'Hidden text': 'Hidden text',
+  'No text is hidden': 'No text is hidden',
+  'Hidden text: filters read hidden content as an attempt to fool them: __text__':
+    'Hidden text: filters read hidden content as an attempt to fool them: __text__',
+  'Colour contrast': 'Colour contrast',
+  'Every coloured text reads against its background':
+    'Every coloured text reads against its background',
+  'Text almost invisible on its background (__ratio__:1): __text__':
+    'Text almost invisible on its background (__ratio__:1): __text__',
+  'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__':
+    'Contrast too low (__ratio__:1): __required__:1 at least, __ideal__:1 ideally: __text__',
+  'Text layout': 'Text layout',
+  'No text is justified, overlaps or is centred at length':
+    'No text is justified, overlaps or is centred at length',
+  'Justified text: word gaps get harder to read: __text__':
+    'Justified text: word gaps get harder to read: __text__',
+  'Line height under 1 (__ratio__): the lines overlap: __text__':
+    'Line height under 1 (__ratio__): the lines overlap: __text__',
+  'Centred text over about three lines is hard to read: align long texts to the left':
+    'Centred text over about three lines is hard to read: align long texts to the left',
+  'Visible links': 'Visible links',
+  'Every link stands out from the text around it':
+    'Every link stands out from the text around it',
+  'Link neither underlined nor coloured differently from its text: __label__':
+    'Link neither underlined nor coloured differently from its text: __label__',
+  'quality-title-headings': 'Headings',
+  'Headings are filled in and follow each other':
+    'Headings are filled in and follow each other',
+  'Empty heading (__tag__)': 'Empty heading (__tag__)',
+  'Heading level skipped: __from__ followed by __to__':
+    'Heading level skipped: __from__ followed by __to__',
+  'Repeated alternative texts': 'Repeated alternative texts',
+  'No alternative text repeats the text next to it':
+    'No alternative text repeats the text next to it',
+  'Alternative text repeats the text next to the image: __alt__':
+    'Alternative text repeats the text next to the image: __alt__',
+  'quality-title-emojis': 'Emojis',
+  'Emojis sit at the end of sentences': 'Emojis sit at the end of sentences',
+  'Several emojis in a row: screen readers read each name':
+    'Several emojis in a row: screen readers read each name',
+  'Emoji in the middle of a sentence: screen readers read its name there':
+    'Emoji in the middle of a sentence: screen readers read its name there',
+  'Forbidden code': 'Forbidden code',
+  'No code the email clients refuse': 'No code the email clients refuse',
+  'Code that email clients never run, and filters distrust: __code__':
+    'Code that email clients never run, and filters distrust: __code__',
+  'HTML structure': 'HTML structure',
+  'The code of HTML code blocks is well formed':
+    'The code of HTML code blocks is well formed',
+  'Tag never closed in the HTML code: <__tag__>':
+    'Tag never closed in the HTML code: <__tag__>',
+  'Closing tag with no opening one in the HTML code: </__tag__>':
+    'Closing tag with no opening one in the HTML code: </__tag__>',
+  'Tag closed in the wrong order in the HTML code: <__tag__>':
+    'Tag closed in the wrong order in the HTML code: <__tag__>',
+  'Email-safe code': 'Email-safe code',
+  'The code of HTML code blocks only uses what email clients support':
+    'The code of HTML code blocks only uses what email clients support',
+  'HTML code uses what some email clients ignore: __features__':
+    'HTML code uses what some email clients ignore: __features__',
+  'Addresses and colours in HTML code': 'Addresses and colours in HTML code',
+  'The HTML code uses full addresses and valid colours':
+    'The HTML code uses full addresses and valid colours',
+  'Relative address in the HTML code, it only works on its original site: __urls__':
+    'Relative address in the HTML code, it only works on its original site: __urls__',
+  'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__':
+    'Address without protocol in the HTML code (//…), some email clients cannot open it: __urls__',
+  'Colour an email client cannot read in the HTML code: __colors__':
+    'Colour an email client cannot read in the HTML code: __colors__',
+  'Send a test': 'Send a test',
+  '__count__ errors are still to fix: you can send a test anyway':
+    '__count__ errors are still to fix: you can send a test anyway',
+  'See the results': 'See the results',
+  'The quality checks have not run on this version yet':
+    'The quality checks have not run on this version yet',
+  'Separate addresses with a semicolon': 'Separate addresses with a semicolon',
+  'Saved list of addresses': 'Saved list of addresses',
+  'The saved lists of addresses could not be loaded':
+    'The saved lists of addresses could not be loaded',
+  'Send the test email': 'Send the test email',
+  'Add comment': 'Add comment',
+  'Stop ignoring': 'Stop ignoring',
+  'Ignored: __title__': 'Ignored: __title__',
+  'The change could not be saved': 'The change could not be saved',
+  'Broken links': 'Broken links',
+  'Links checked: __count__, all answer':
+    'Links checked: __count__, all answer',
+  'Broken link (__status__): __label__': 'Broken link (__status__): __label__',
+  'Link to a domain that does not exist: __label__':
+    'Link to a domain that does not exist: __label__',
+  'Link did not answer in time, check it by hand: __label__':
+    'Link did not answer in time, check it by hand: __label__',
+  'Link could not be checked (__status__), check it by hand: __label__':
+    'Link could not be checked (__status__), check it by hand: __label__',
+  'Link could not be checked, check it by hand: __label__':
+    'Link could not be checked, check it by hand: __label__',
+  'Image weight': 'Image weight',
+  'Images checked: __count__, each under 500 KB':
+    'Images checked: __count__, each under 500 KB',
+  'Image could not be downloaded: the export will leave it out (__name__)':
+    'Image could not be downloaded: the export will leave it out (__name__)',
+  'Heavy GIF (__size__ KB): keep it under 1 MB':
+    'Heavy GIF (__size__ KB): keep it under 1 MB',
+  'Heavy image (__size__ KB): keep it under 500 KB':
+    'Heavy image (__size__ KB): keep it under 500 KB',
+  'Total image weight': 'Total image weight',
+  'Images weigh __size__ KB in all, under 500 KB':
+    'Images weigh __size__ KB in all, under 500 KB',
+  'Images weigh __size__ KB in all: over 1 MB':
+    'Images weigh __size__ KB in all: over 1 MB',
+  'Images weigh __size__ KB in all: over 500 KB':
+    'Images weigh __size__ KB in all: over 500 KB',
+  'Image dimensions': 'Image dimensions',
+  'No image is much larger than it is shown':
+    'No image is much larger than it is shown',
+  'Image is __width__ px wide, shown at __shown__ px':
+    'Image is __width__ px wide, shown at __shown__ px',
+  'Blocklisted domains': 'Blocklisted domains',
+  'No link points to a blocklisted domain':
+    'No link points to a blocklisted domain',
+  'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__':
+    'Domain on a blocklist (__lists__), filters may send the email to spam: __domain__',
+  'Domain could not be checked against the blocklists: __domain__':
+    'Domain could not be checked against the blocklists: __domain__',
+  'Checking links and images…': 'Checking links and images…',
+  'Dangerous links': 'Dangerous links',
+  'Google lists none of the links as dangerous':
+    'Google lists none of the links as dangerous',
+  'Google lists this link as phishing: __label__':
+    'Google lists this link as phishing: __label__',
+  'Google lists this link as malware: __label__':
+    'Google lists this link as malware: __label__',
+  'Google lists this link as unwanted software: __label__':
+    'Google lists this link as unwanted software: __label__',
+  'Google lists this link as unsafe: __label__':
+    'Google lists this link as unsafe: __label__',
+  'Google could not check this link, check it by hand: __label__':
+    'Google could not check this link, check it by hand: __label__',
+  'Share a preview': 'Share a preview',
+  'Anyone with the link sees the last saved version of the email, without an account.':
+    'Anyone with the link sees the last saved version of the email, without an account.',
+  'Valid for': 'Valid for',
+  '1 day': '1 day',
+  '__count__ days': '__count__ days',
+  'Create a link': 'Create a link',
+  'Preview link': 'Preview link',
+  'quality-share-copied': 'Copied',
+  'Copy it now: it will not be shown again.':
+    'Copy it now: it will not be shown again.',
+  'Active links': 'Active links',
+  'Turn off': 'Turn off',
+  'The link could not be created': 'The link could not be created',
+  'Copy failed: select the link and copy it':
+    'Copy failed: select the link and copy it',
+  'The link could not be turned off': 'The link could not be turned off',
+  'Copy link': 'Copy link',
+  'Created __created__ by __name__, until __date__':
+    'Created __created__ by __name__, until __date__',
+  'Created __created__, until __date__': 'Created __created__, until __date__',
+  'Turn off the link: __link__': 'Turn off the link: __link__',
+  'This email already has __count__ active links: turn one off first':
+    'This email already has __count__ active links: turn one off first',
+  'Copy the link: __link__': 'Copy the link: __link__',
+  'The link could not be copied': 'The link could not be copied',
+  'The links could not be loaded': 'The links could not be loaded',
 };

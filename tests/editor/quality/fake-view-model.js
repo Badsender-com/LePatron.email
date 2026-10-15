@@ -48,6 +48,37 @@ function fakeViewModel({
   };
 }
 
+/**
+ * A view model with a subject (email metadata on) and a preheader, as the
+ * copy rules read them. `rootContent` adds other root properties of the
+ * content model (per-market preheaders, `preheaderVisible`).
+ */
+function copyViewModel({
+  subjectValue,
+  preheaderValue,
+  preheaderDefault = '',
+  rootContent = {},
+  ...rest
+} = {}) {
+  const vm = fakeViewModel(rest);
+  const content = vm.content;
+  vm.content = () => ({
+    ...content(),
+    ...mapValues(rootContent, (value) => ko.observable(value)),
+    ...(preheaderValue !== undefined && {
+      preheaderText: ko.observable(preheaderValue),
+    }),
+  });
+  vm.templateDefaults = { preheaderText: preheaderDefault };
+  if (subjectValue !== undefined) {
+    vm.emailMetadataStore = {
+      isActive: () => true,
+      snapshot: () => ({ subject: subjectValue }),
+    };
+  }
+  return vm;
+}
+
 // The export of a list of blocks: each block root keeps its id.
 function exportOf(blockHtmls, { frame = '' } = {}) {
   const body = Object.keys(blockHtmls)
@@ -61,4 +92,35 @@ function findingsOf(rule, vmOptions) {
   return runQualityChecks(fakeViewModel(vmOptions), { rules: [rule] }).findings;
 }
 
-module.exports = { fakeViewModel, exportOf, findingsOf };
+const DEFAULT_RICH_TEXT = '<p style="font-size:12px">Sample</p>';
+
+/**
+ * The findings of a rule on a text block whose rich text the client wrote;
+ * its export shows the same markup inside the template's cell, `cell` (a
+ * `<td>` of background `bg` by default).
+ */
+function richTextFindings(
+  rule,
+  longText,
+  { bg = '#ffffff', type = 'textBlock', cell } = {}
+) {
+  const td = cell || `<td bgcolor="${bg}">`;
+  const html = exportOf({
+    b1: `<table><tr>${td}${longText}</td></tr></table>`,
+  });
+  const blocks = [{ id: 'b1', type, longText }];
+  const def = { type: 'textBlock', longText: DEFAULT_RICH_TEXT };
+  const blockDefs = [def, { ...def, type }];
+  return runQualityChecks(fakeViewModel({ blocks, blockDefs, html }), {
+    rules: [rule],
+  }).findings;
+}
+
+module.exports = {
+  fakeViewModel,
+  copyViewModel,
+  exportOf,
+  findingsOf,
+  richTextFindings,
+  DEFAULT_RICH_TEXT,
+};

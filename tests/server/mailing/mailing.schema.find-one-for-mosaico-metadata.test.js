@@ -20,7 +20,8 @@ jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
   Mailings: {},
-  Groups: {},
+  // Whether the company shares previews (share-link.service.js): it does.
+  Groups: { findById: () => ({ lean: () => Promise.resolve({}) }) },
 }));
 
 const mongoose = require('mongoose');
@@ -360,5 +361,28 @@ describe('findOneForMosaico — the synthetic block flags', () => {
 
     expect(metadata[first]).toBe(true);
     others.forEach((flag) => expect(metadata[flag]).toBe(false));
+  });
+});
+
+describe('findOneForMosaico — the ignored quality findings', () => {
+  it('hands the editor the fingerprints as strings, and nothing of who ignored them', async () => {
+    const context = makeContext({
+      companyFlag: undefined,
+      mailingOverrides: {
+        qualityIgnores: [
+          {
+            fingerprint: 'unfilled-links|b1|-|x|1',
+            ruleId: 'unfilled-links',
+            _user: mongoose.Types.ObjectId('507f1f77bcf86cd799439099'),
+            ignoredAt: new Date(),
+          },
+        ],
+      },
+    });
+
+    const result = await call(context);
+
+    expect(result.metadata.qualityIgnores).toEqual(['unfilled-links|b1|-|x|1']);
+    expect(JSON.stringify(result)).not.toContain('507f1f77bcf86cd799439099');
   });
 });
