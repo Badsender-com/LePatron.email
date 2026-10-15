@@ -33,6 +33,26 @@ describe('windowCounter', () => {
     expect(counter.size()).toBe(1);
   });
 
+  it('walks every key at most once per purge interval, the key hit always fresh', () => {
+    const counter = windowCounter({
+      windowMs: 1000,
+      limit: 1,
+      purgeEveryMs: 500,
+    });
+    counter.hit('a', 0);
+    counter.hit('b', 600);
+    // `a` expired at 1000, but the last walk was at 600: it is still kept.
+    expect(counter.hit('c', 1050)).toBe(true);
+    expect(counter.size()).toBe(3);
+    // Its own hits are read fresh all the same.
+    expect(counter.hit('a', 1060)).toBe(true);
+    // The next walk, past the interval, drops what expired.
+    counter.hit('d', 1700);
+    expect(counter.size()).toBe(3);
+    counter.hit('d', 2700);
+    expect(counter.size()).toBe(1);
+  });
+
   it('does not record a refused hit', () => {
     const counter = windowCounter({ windowMs: 1000, limit: 1 });
     counter.hit('a', 0);
