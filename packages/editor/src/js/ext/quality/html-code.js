@@ -14,36 +14,6 @@ const { allEditedRichTexts } = require('./user-styles');
 // but TinyMCE rewrites them well formed: only forbidden tags are looked for
 // there.
 
-/**
- * The code of every non-empty HTML code block.
- * @returns {Array<{ blockId: string, html: string }>}
- */
-function htmlCodeBlocks(ctx) {
-  return ctx.blocks
-    .filter((block) => block && block.type === HTML_CODE_BLOCK_TYPE)
-    .map((block) => ({ blockId: block.id, html: block[HTML_CODE_PROPERTY] || '' }))
-    .filter(({ html }) => html.trim());
-}
-
-/**
- * Markup the client wrote: HTML code blocks, then edited rich texts.
- * @returns {Array<{ blockId, path: string|null, html: string, source }>}
- */
-function clientMarkup(ctx) {
-  const code = htmlCodeBlocks(ctx).map((block) => ({
-    ...block,
-    path: HTML_CODE_PROPERTY,
-    source: 'code',
-  }));
-  const richTexts = allEditedRichTexts(ctx).map((richText) => ({
-    blockId: richText.blockId,
-    path: richText.path,
-    html: richText.root.innerHTML,
-    source: 'richText',
-  }));
-  return code.concat(richTexts);
-}
-
 // The markup parsed in the inert export document: nothing runs, nothing loads.
 function parseMarkup(ctx, html) {
   const root = ctx.doc.createElement('div');
@@ -51,4 +21,47 @@ function parseMarkup(ctx, html) {
   return root;
 }
 
-module.exports = { htmlCodeBlocks, clientMarkup, parseMarkup };
+/**
+ * The code of every non-empty HTML code block, parsed once per run.
+ * @returns {Array<{ blockId: string, path: string, html: string, root: Element }>}
+ */
+function htmlCodeBlocks(ctx) {
+  if (!ctx.cache.htmlCodeBlocks) {
+    ctx.cache.htmlCodeBlocks = ctx.blocks
+      .filter((block) => block && block.type === HTML_CODE_BLOCK_TYPE)
+      .map((block) => ({
+        blockId: block.id,
+        path: HTML_CODE_PROPERTY,
+        html: block[HTML_CODE_PROPERTY] || '',
+      }))
+      .filter(({ html }) => html.trim())
+      .map((block) => ({ ...block, root: parseMarkup(ctx, block.html) }));
+  }
+  return ctx.cache.htmlCodeBlocks;
+}
+
+/**
+ * Markup the client wrote, parsed: HTML code blocks, then edited rich texts.
+ * @returns {Array<{ blockId, path: string, root: Element, source }>}
+ */
+function clientMarkup(ctx) {
+  const code = htmlCodeBlocks(ctx).map(({ blockId, path, root }) => ({
+    blockId,
+    path,
+    root,
+    source: 'code',
+  }));
+  const richTexts = allEditedRichTexts(ctx).map(({ blockId, path, root }) => ({
+    blockId,
+    path,
+    root,
+    source: 'richText',
+  }));
+  return code.concat(richTexts);
+}
+
+// `/* display:flex */` is no flexbox: comments are not CSS.
+const stripCssComments = (css) =>
+  String(css || '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+module.exports = { htmlCodeBlocks, clientMarkup, stripCssComments };
