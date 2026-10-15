@@ -68,7 +68,11 @@ module.exports = {
         const problem = problemOf(image, result);
         if (!problem) return null;
         const { kind, ...finding } = problem;
-        return { ...finding, blockId: image.blockId, value: `${kind}|${image.src}` };
+        return {
+          ...finding,
+          blockId: image.blockId,
+          value: `${kind}|${image.src}`,
+        };
       })
       .filter(Boolean);
   },
