@@ -36,6 +36,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const shareLinkService = require('../share-link/share-link.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -781,6 +782,10 @@ async function transferToUser(req, res) {
   if (changesCompany) {
     mailing._emailType = undefined;
   }
+  // The public preview links were made for the previous owner and company:
+  // none survives the transfer. Revoked first: should that fail, the email
+  // stays where it was, rather than moving with its links still open.
+  await shareLinkService.revokeAllForMailing(mailing._id);
   await mailing.save();
 
   const updatedMailing = await Mailings.findById(mailingId);

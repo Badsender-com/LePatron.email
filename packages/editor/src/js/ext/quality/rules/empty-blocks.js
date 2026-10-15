@@ -1,15 +1,21 @@
 'use strict';
 
 const _ = require('lodash');
-const { getBlockDefault } = require('../ownership');
-const { blockTexts, blockImages } = require('../exported-content');
+const { getBlockDefault, isImageUnset } = require('../ownership');
+const { blockTexts, blockImages, isShown } = require('../exported-content');
+const { hasBackgroundImage } = require('./background-images');
+const {
+  isTranslatableFieldName,
+} = require('../../../utils/block-content-extractor');
 
 // Text properties of a model, by the naming convention of our templates
-// (titleText, longText, buttonText…), with something to read by default.
-const TEXT_KEY = /text$/i;
+// (block-content-extractor.js: titleText, label, caption, heading…), with
+// something to read by default. An alternative text is read, not shown.
+const isTextKey = (key) =>
+  isTranslatableFieldName(key || '') && !/alt$/i.test(key || '');
 const hasDefaultText = (value, key) => {
   if (typeof value === 'string') {
-    return TEXT_KEY.test(key || '') && /\p{L}/u.test(value.replace(/<[^>]*>/g, ''));
+    return isTextKey(key) && /\p{L}/u.test(value.replace(/<[^>]*>/g, ''));
   }
   return (
     !!value &&
@@ -29,10 +35,21 @@ module.exports = {
   passKey: 'Every block shows something',
   run(ctx) {
     const texts = blockTexts(ctx);
-    const withImages = new Set(blockImages(ctx).map((image) => image.blockId));
+    // An image shows when it is in sight and is one: a hidden `<img>` or the
+    // blank GIF templates use as a spacer shows nothing.
+    const withImages = new Set(
+      blockImages(ctx)
+        .filter(
+          (image) =>
+            !isImageUnset(image.src) &&
+            isShown(image.img, ctx.doc.getElementById(image.blockId))
+        )
+        .map((image) => image.blockId)
+    );
     return ctx.blocks
       .filter((block) => block && block.id in texts)
       .filter((block) => !texts[block.id] && !withImages.has(block.id))
+      .filter((block) => !hasBackgroundImage(ctx, block))
       .filter((block) =>
         hasDefaultText(_.omit(getBlockDefault(ctx.blockDefs, block.type), 'id'))
       )

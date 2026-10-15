@@ -39,4 +39,8 @@ module.exports = Object.freeze({
   AIPlaygroundRunModel: 'AIPlaygroundRun',
   // Taxonomy (email metadata)
   TaxonomyItemModel: 'TaxonomyItem',
+  // Public preview links (quality drawer)
+  ShareLinkModel: 'ShareLink',
+  // Daily budgets of the paid quality lookups
+  QualityBudgetModel: 'QualityBudget',
 });
