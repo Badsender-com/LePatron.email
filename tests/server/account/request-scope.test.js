@@ -1,10 +1,15 @@
 'use strict';
 
-// Which group a module listing reads (ADR 0002, amended): the user's own group
-// for a company admin or a regular user, whatever selected group a request
-// claims; the selected group for a super admin. The bootstrap account stays in
-// the settings, so the modules refuse it. Writes take the group of their
-// destination instead, and their rights are the permissions' business.
+// Which group a module request reads or writes (ADR 0002, amended).
+// - A listing that names no resource (the workspace tree, the dashboards)
+//   reads the user's own group for a company admin or a regular user, and the
+//   selected group for a super admin.
+// - A request that names a workspace, a folder or a mailing, to read it or to
+//   write in it, takes that resource's group, whatever group is selected; the
+//   rights to do so are the permissions' business.
+// - The bootstrap account stays in the settings: the modules refuse it.
+// The selected group on the user is the resolved one (#1274 resolves it on
+// every request, fallbacks included).
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({}));
 
@@ -87,7 +92,34 @@ describe.skip('the group a module listing reads', () => {
     expect(refusalOf(() => listingGroupIdOf(withChoice))).toBe(403);
   });
 
-  it('refuses a super admin with no selected group, which only happens when no group exists', () => {
+  it('refuses a super admin with no selected group: resolved on every request, it is missing only when no group exists', () => {
     expect(refusalOf(() => listingGroupIdOf(actor(ALICE)))).toBe(400);
+  });
+});
+
+// Turned on by #1275 (super admins in the modules of their selected group)
+describe.skip('the group a module request naming a resource reads or writes', () => {
+  let resourceGroupIdOf;
+
+  beforeAll(() => {
+    ({
+      resourceGroupIdOf,
+    } = require('../../../packages/server/account/request-scope.js'));
+  });
+
+  it("is the resource's group for a super admin, whatever group is selected", () => {
+    const superAdmin = actor(ALICE, { _selectedGroup: OTHER_CLIENT_GROUP });
+
+    expect(resourceGroupIdOf(superAdmin, CLIENT_GROUP)).toBe(CLIENT_GROUP);
+  });
+
+  it("is the resource's group for a company admin, whose rights then decide", () => {
+    expect(resourceGroupIdOf(actor(ERIN), PLATFORM_GROUP)).toBe(PLATFORM_GROUP);
+  });
+
+  it('refuses the bootstrap account, on a read as on a write', () => {
+    expect(
+      refusalOf(() => resourceGroupIdOf({ ...bootstrap }, CLIENT_GROUP))
+    ).toBe(403);
   });
 });

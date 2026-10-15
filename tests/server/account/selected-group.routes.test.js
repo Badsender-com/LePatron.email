@@ -151,7 +151,7 @@ describe.skip('the selected group endpoint', () => {
     });
 
     it('is the group the bootstrap account chose in this session', async () => {
-      session.selectedGroupId = OTHER_CLIENT_GROUP;
+      await select(bootstrap.id, OTHER_CLIENT_GROUP);
 
       const res = await read(bootstrap.id);
 

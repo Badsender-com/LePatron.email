@@ -2,7 +2,9 @@
 // (ADR 0002, amended). In the settings, it stays on the same page of the new
 // group, unless the page belongs to a resource of the previous group; in a
 // module, it lands on the module's home in the new group; a global admin page
-// does not depend on a group and stays where it is.
+// does not depend on a group and stays where it is. The rule: a settings tab
+// of a group is kept; any other page under a group goes to the general
+// settings of the new group.
 
 const PREVIOUS = '507f1f77bcf86cd799439a01';
 const NEXT = '507f1f77bcf86cd799439b01';
@@ -53,6 +55,9 @@ describe.skip('switching group in the settings', () => {
     ],
     ['a new template', `/groups/${PREVIOUS}/new-template`],
     ['a new workspace', `/groups/${PREVIOUS}/new-workspace`],
+    ['a new user', `/groups/${PREVIOUS}/new-user`],
+    ['a new profile', `/groups/${PREVIOUS}/new-profile`],
+    ['a new emails group', `/groups/${PREVIOUS}/new-emails-group`],
     ['the group page', `/groups/${PREVIOUS}`],
   ])(
     'opens the general settings of the new group from %s of the previous one',
@@ -63,12 +68,18 @@ describe.skip('switching group in the settings', () => {
     }
   );
 
-  it.each([['/groups'], ['/super-admins'], ['/ai-skills'], ['/ai-playground']])(
-    'stays on the global admin page %s',
-    (path) => {
-      expect(routeAfterGroupSwitch(path, NEXT)).toBe(path);
-    }
-  );
+  it.each([
+    ['/groups'],
+    ['/groups/new'],
+    ['/templates'],
+    ['/users'],
+    ['/super-admins'],
+    ['/ai-skills'],
+    ['/ai-expertise'],
+    ['/ai-playground'],
+  ])('stays on the global admin page %s', (path) => {
+    expect(routeAfterGroupSwitch(path, NEXT)).toBe(path);
+  });
 });
 
 // Turned on by #1275 (super admins in the modules of their selected group)

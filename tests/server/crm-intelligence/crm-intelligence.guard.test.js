@@ -102,7 +102,7 @@ describe('guardCrmIntelligenceProbe (non-enforcing variant)', () => {
 describe.skip('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
   const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
   const CLIENT_GROUP = '507f1f77bcf86cd799439b01';
-  const config = require('../../../packages/server/node.config');
+  const { bootstrap } = require('../../helpers/super-admin-fixtures.js');
 
   const superAdmin = {
     id: 'alice',
@@ -141,19 +141,21 @@ describe.skip('guardCrmIntelligence for a super admin (ADR 0002, amended)', () =
     expect(req.crmGroup._id).toBe(CLIENT_GROUP);
   });
 
-  it('locks the module when the selected group does not have it, like for its users', async () => {
+  it('lets a super admin through when the selected group does not have the module: the lock is a view, shown by the screen', async () => {
     mockGroups([
       { _id: PLATFORM_GROUP, enableCrmIntelligence: true },
       { _id: CLIENT_GROUP, enableCrmIntelligence: false },
     ]);
 
-    const { err } = await runGuard(guardCrmIntelligence, { user: superAdmin });
+    const { err, req } = await runGuard(guardCrmIntelligence, {
+      user: superAdmin,
+    });
 
-    expect(err.status).toBe(403);
-    expect(err.message).toBe(ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
+    expect(err).toBeUndefined();
+    expect(req.crmGroup._id).toBe(CLIENT_GROUP);
   });
 
-  it('tells the probe the module is off for the selected group, rather than refusing', async () => {
+  it('tells the probe the module is off for the selected group, so the screen shows the lock', async () => {
     mockGroups([
       { _id: PLATFORM_GROUP, enableCrmIntelligence: true },
       { _id: CLIENT_GROUP, enableCrmIntelligence: false },
@@ -192,7 +194,7 @@ describe.skip('guardCrmIntelligence for a super admin (ADR 0002, amended)', () =
 
   it('refuses the bootstrap account, which stays in the settings', async () => {
     const { err } = await runGuard(guardCrmIntelligence, {
-      user: { id: config.admin.id, isAdmin: true },
+      user: { ...bootstrap },
     });
 
     expect(err.status).toBe(403);

@@ -21,6 +21,7 @@ const companyAdmin = { isGroupAdmin: true, role: 'company_admin' };
 
 const withCrm = { enableEmailBuilder: true, enableCrmIntelligence: true };
 const withoutCrm = { enableEmailBuilder: true, enableCrmIntelligence: false };
+const withoutEmailBuilder = { enableEmailBuilder: false };
 
 // Turned on by #1275 (super admins in the modules of their selected group)
 describe.skip('a module of the selected group, for a super admin', () => {
@@ -60,16 +61,16 @@ describe('a module of the group, for a company admin', () => {
   });
 });
 
-describe('the settings of a module disabled for the selected group', () => {
+describe('the Email Builder settings of a selected group without the module', () => {
   it('stay reachable for a super admin', () => {
-    expect(isFlagEnabled('enableCrmIntelligence', superAdmin, withoutCrm)).toBe(
-      true
-    );
+    expect(
+      isFlagEnabled('enableEmailBuilder', superAdmin, withoutEmailBuilder)
+    ).toBe(true);
   });
 
   it('stay closed to a company admin', () => {
     expect(
-      isFlagEnabled('enableCrmIntelligence', companyAdmin, withoutCrm)
+      isFlagEnabled('enableEmailBuilder', companyAdmin, withoutEmailBuilder)
     ).toBe(false);
   });
 });
