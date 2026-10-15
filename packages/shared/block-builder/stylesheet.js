@@ -61,13 +61,23 @@ function classesOf(composition) {
 }
 
 /**
- * The stylesheet a composition needs, or an empty string when it needs none.
+ * The stylesheet SEVERAL compositions need, as one block of rules.
  *
- * @param {Object} composition
+ * A mailing holds as many composed blocks as its author wants, and two of them
+ * with columns behave the same way. Collecting across all of them before
+ * emitting is what keeps that one rule rather than one per block — the same
+ * reason the class is named by value in the first place.
+ *
+ * @param {Array<Object>} compositions
  * @returns {string}
  */
-function collectCss(composition) {
-  const rules = classesOf(composition)
+function collectCssFor(compositions) {
+  const names = (compositions || []).reduce((found, composition) => {
+    classesOf(composition).forEach((name) => found.add(name));
+    return found;
+  }, new Set());
+
+  const rules = [...names]
     .map((name) => {
       // The behaviour is the part of the name after the prefix, which is how
       // the name stays a value rather than a label: a second behaviour is a
@@ -85,4 +95,20 @@ function collectCss(composition) {
   )}}`;
 }
 
-module.exports = { collectCss, classesOf, BREAKPOINT, BEHAVIOURS };
+/**
+ * The stylesheet one composition needs, or an empty string when it needs none.
+ *
+ * @param {Object} composition
+ * @returns {string}
+ */
+function collectCss(composition) {
+  return collectCssFor([composition]);
+}
+
+module.exports = {
+  collectCss,
+  collectCssFor,
+  classesOf,
+  BREAKPOINT,
+  BEHAVIOURS,
+};

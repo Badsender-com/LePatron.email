@@ -64,7 +64,7 @@ const contentWith = (...blocks) =>
   });
 
 // Turned on by #1209 (the derived stylesheet reaches the export and the canvas)
-describe.skip('a mailing whose only synthetic block is composed', () => {
+describe('a mailing whose only synthetic block is composed', () => {
   let headCssToExport;
 
   beforeAll(() => {
@@ -144,7 +144,7 @@ describe.skip('a mailing whose only synthetic block is composed', () => {
 });
 
 // Turned on by #1209 (the derived stylesheet reaches the export and the canvas)
-describe.skip('what the existing rule must keep doing', () => {
+describe('what the existing rule must keep doing', () => {
   let headCssToExport;
 
   beforeAll(() => {
