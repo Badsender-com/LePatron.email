@@ -43,7 +43,7 @@ module.exports = {
   id: 'subject',
   category: 'copy',
   severity: 'warning',
-  titleKey: 'Subject',
+  titleKey: 'quality-title-subject',
   passKey: 'The subject is filled in and __count__ characters long',
   LONG,
   TOO_LONG,
