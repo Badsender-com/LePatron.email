@@ -47,9 +47,16 @@ function addHeadCssToViewModel(viewModel) {
   };
 
   // What exportHTML injects (viewmodel.js), and what the canvas previews
-  // (canvas-preview.js): the stored CSS while an HTML code block is present,
-  // nothing otherwise. `headCss` itself is never cleared by this — the CSS is
-  // kept for an undo, or a block added back.
+  // (canvas-preview.js). Two sources: the stylesheet the composed blocks
+  // derive, which needs no gate because it cannot exist without one of them,
+  // and the author's CSS while an HTML code block is present. `headCss` itself
+  // is never cleared by this — the CSS is kept for an undo, or a block added
+  // back.
+  //
+  // The canvas gets the derived rules through this same accessor, which is
+  // what makes the desktop/mobile toggle apply to them: canvas-preview.js
+  // regenerates its sheet per preview mode (preview-media.js), and anything
+  // that did not come through here would not follow the toggle.
   viewModel.exportedHeadCss = function () {
     return headCssToExport(viewModel.content, viewModel.headCss());
   };
