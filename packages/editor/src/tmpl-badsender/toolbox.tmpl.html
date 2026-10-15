@@ -294,6 +294,14 @@
   <!-- /ko -->
 </div>
 
+<!-- Quality drawer: Vue component mounted by vue/qualityDrawerPlugin.js.
+     Inert while hidden, so Tab never reaches a panel that is off screen. -->
+<div id="toolquality" class="slidebar" data-bind="css: { hidden: $root.showQuality() === false }, attr: { inert: !$root.showQuality() }">
+  <div id="quality-drawer">
+    <quality-drawer-plugin />
+  </div>
+</div>
+
 <!-- Comments Panel -->
 <div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
@@ -362,7 +370,7 @@
         <span class="comment-badge comment-badge-important"><span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'blocking' -->
-        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-ban"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
+        <span class="comment-badge comment-badge-blocking"><span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
         <!-- /ko -->
         <!-- Category badge in header (always visible, even when collapsed) -->
         <!-- ko if: category === 'general' || !category -->
@@ -532,7 +540,7 @@
           <span class="lucide lucide-triangle-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span>
         </span>
         <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="lucide lucide-circle-slash"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
+          <span class="lucide lucide-alert-circle"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
         </span>
       </div>
 

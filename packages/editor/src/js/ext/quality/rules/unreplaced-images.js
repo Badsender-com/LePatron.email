@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const { getBlockDefault } = require('../ownership');
 const { fileNameOf, isPlaceholderSrc } = require('../images');
+const { blockImages } = require('../exported-content');
 
 // Every image of a block model: objects carrying a `src` (image widgets).
 function collectImages(value, path = []) {
@@ -18,24 +19,16 @@ function collectImages(value, path = []) {
   );
 }
 
-// The exported images of the client's blocks, by block id. Images of the
-// template's frame, outside every block, are left out.
-function exportedImagesByBlock(ctx) {
-  return _.groupBy(
-    Array.from(ctx.doc.querySelectorAll('img'))
-      .map((img) => ({ blockId: ctx.blockIdOf(img), src: img.getAttribute('src') }))
-      .filter((img) => img.blockId),
-    'blockId'
-  );
-}
-
 module.exports = {
   id: 'unreplaced-images',
   category: 'content',
   severity: 'error',
+  titleKey: 'quality-title-images',
+  passKey: 'Every image has been replaced',
   run(ctx) {
-    const shownByBlock = exportedImagesByBlock(ctx);
-    const { placeholderUrl } = ctx.config;
+    // The exported images of the client's blocks, by block id.
+    const shownByBlock = _.groupBy(blockImages(ctx), 'blockId');
+    const placeholderUrl = ctx.config.imagesUrl.placeholder;
 
     // Placeholders actually shown in the client's blocks.
     const placeholders = _.flatMap(Object.values(shownByBlock), (images) =>

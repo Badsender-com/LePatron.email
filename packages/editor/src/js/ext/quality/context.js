@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const ko = require('knockout');
+const { getSubject, getPreheader } = require('./copy-fields');
 
 // The tracking values the client filled in, as the tracking panel stores them.
 function readTrackingUrls(viewModel) {
@@ -35,7 +36,7 @@ function collectBlocks(viewModel) {
  * the plain content model, the editor's configuration and a way to trace an
  * exported node back to its block.
  */
-function buildContext(viewModel, html) {
+function buildContext(viewModel, html, remote) {
   const blocks = collectBlocks(viewModel);
   const blockIds = new Set(blocks.map((block) => block && block.id));
   // A document of its own, inert: DOMParser keeps the whole page the export
@@ -48,9 +49,19 @@ function buildContext(viewModel, html) {
     blocks,
     blockDefs: ko.toJS(viewModel.blockDefs) || [],
     trackingUrls: readTrackingUrls(viewModel),
+    // The copy outside the blocks, the client's to write (copy-fields.js):
+    // the subject (null when the ESP holds it) and the preheader (null when
+    // the template has none).
+    subject: getSubject(viewModel),
+    preheader: getPreheader(viewModel),
+    // Shared by the rules of one run: what they read from the export once.
+    cache: {},
+    // What the server said about the links and images, for REMOTE_RULES.
+    remote: remote || null,
     // The editor's configuration, read once: rules never reach the view model.
     config: {
-      placeholderUrl: _.get(viewModel, 'metadata.imagesUrl.placeholder'),
+      // Every route of LePatron's image backend: images, cover, crop, placeholder.
+      imagesUrl: _.get(viewModel, 'metadata.imagesUrl') || {},
       trackingConfig: _.get(viewModel, 'metadata.trackingConfig'),
     },
     // The block root keeps its `id` in the export (uniqueId + attr:{id}).
