@@ -62,7 +62,7 @@ const contentWith = (...blocks) =>
   });
 
 // Turned on by #1209 (the derived stylesheet reaches the export and the canvas)
-describe.skip('a mailing whose only synthetic block is composed', () => {
+describe('a mailing whose only synthetic block is composed', () => {
   let headCssToExport;
 
   beforeAll(() => {
@@ -82,8 +82,15 @@ describe.skip('a mailing whose only synthetic block is composed', () => {
     expect(headCssToExport(contentWith(composedBlock()), '')).not.toBe('');
   });
 
+  // With an HTML code block too, because that is what the author's stylesheet
+  // follows — the rule this slice did not reopen. A mailing holding only a
+  // composed block carries the derived stylesheet and nothing else, which the
+  // case above pins.
   it('carries both, the derived one first', () => {
-    const css = headCssToExport(contentWith(composedBlock()), AUTHOR_CSS);
+    const css = headCssToExport(
+      contentWith(composedBlock(), htmlBlock()),
+      AUTHOR_CSS
+    );
 
     expect(css).toContain('.lp-author');
     expect(css).toMatch(/display:\s*block/);
@@ -125,7 +132,7 @@ describe.skip('a mailing whose only synthetic block is composed', () => {
 });
 
 // Turned on by #1209 (the derived stylesheet reaches the export and the canvas)
-describe.skip('what the existing rule must keep doing', () => {
+describe('what the existing rule must keep doing', () => {
   let headCssToExport;
 
   beforeAll(() => {
@@ -156,7 +163,7 @@ describe.skip('what the existing rule must keep doing', () => {
       mainBlocks: { blocks: [composedBlock()] },
     };
 
-    expect(serverGuard.headCssToExport(model, '')).toBe(
+    expect(serverGuard.headCssToExport({ data: model, headCss: '' })).toBe(
       headCssToExport(contentWith(composedBlock()), '')
     );
   });
