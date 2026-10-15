@@ -74,12 +74,19 @@ const SendTestPanel = Vue.component('SendTestPanel', {
     send() {
       this.touched = true;
       if (!this.canSend) return;
-      this.isSending = true;
       // One export: the quality review judges the very HTML that is sent,
       // without opening anything (the user is sending, not reviewing).
       let html;
       try {
         html = this.vm.exportHTML();
+      } catch (error) {
+        // Nothing to send; a second export would only fail again.
+        console.error('Exporting the test failed', error);
+        this.vm.notifier.error(this.t('send-test-error'));
+        return;
+      }
+      this.isSending = true;
+      try {
         if (this.vm.quality) this.vm.quality.review({ html, silent: true });
       } catch (error) {
         console.error('Quality review of the test failed', error);
