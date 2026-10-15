@@ -16,6 +16,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
 
 const workspaceService = require('../workspace/workspace.service.js');
 const permissions = require('../account/permissions.js');
+const {
+  refuseBootstrapAccount,
+  assertSameGroup,
+} = require('../account/request-scope.js');
 
 module.exports = {
   listFolders,
@@ -81,6 +85,7 @@ async function listChildren(folderId, user) {
 // decide (ADR 0002, amended). It throws rather than answering, so a caller
 // that ignores the answer cannot act on a folder of another group.
 async function hasAccess(folderId, user) {
+  refuseBootstrapAccount(user);
   const workspace = await getWorkspaceForFolder(folderId);
   if (!permissions.canWriteWorkspace(user, workspace)) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
@@ -226,6 +231,7 @@ async function move(folderId, destination, user) {
   await hasAccess(folderId, user);
 
   const folder = await getFolder(folderId);
+  const sourceWorkspace = await getWorkspaceForFolder(folderId);
 
   if (!folder.name) {
     throw new UnprocessableEntity(ERROR_CODES.FOLDER_MISSING_NAME);
@@ -234,6 +240,10 @@ async function move(folderId, destination, user) {
   // moving to another folder
   if (destinationFolderId) {
     await hasAccess(destinationFolderId, user);
+    const destinationWorkspace = await getWorkspaceForFolder(
+      destinationFolderId
+    );
+    assertSameGroup(sourceWorkspace.group, destinationWorkspace.group);
 
     // if moving to another folder, destination can't be a subfolder
     await checkIsSubfolder(destinationFolderId);
@@ -266,6 +276,7 @@ async function move(folderId, destination, user) {
   if (workspaceId) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
+    assertSameGroup(sourceWorkspace.group, workspace.group);
 
     if (await isNameTakenInDestination({ workspaceId }, folder.name)) {
       throw new Conflict(

@@ -110,6 +110,12 @@ export default {
   },
   watch: {
     $route: ['resetMailingsSelection'],
+    // A new selected group offers its own templates (ADR 0002, amended).
+    'modulesGroup.id'(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.$store.dispatch(`${TEMPLATE}/${FETCH_TEMPLATES}`);
+      }
+    },
   },
   methods: {
     resetMailingsSelection() {

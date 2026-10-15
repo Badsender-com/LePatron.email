@@ -11,6 +11,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound, Forbidden } = require('http-errors');
 const logger = require('../utils/logger');
 const permissions = require('../account/permissions.js');
+const { refuseBootstrapAccount } = require('../account/request-scope.js');
 
 module.exports = {
   createWorkspace,
@@ -20,14 +21,12 @@ module.exports = {
   findWorkspaces,
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
-  workspaceContainsUser,
   doesUserHaveWriteAccess,
   doesUserHaveReadAccess,
   hasAccess,
   assertAccess,
   isWorkspaceInGroup,
   deleteFolderContent,
-  restrictAccessingWorkspacesForNonMemberUser,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
@@ -48,22 +47,14 @@ async function getWorkspace(id) {
   });
 }
 
-// Whether the user may not read the workspace: the permissions decide
-// (ADR 0002, amended).
-async function restrictAccessingWorkspacesForNonMemberUser(
-  workspace,
-  user,
-  group
-) {
-  return !permissions.canReadWorkspace(user, workspace, group);
-}
-
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
   if (!workspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
   return permissions.canWriteWorkspace(user, workspace);
 }
 
@@ -265,11 +256,9 @@ function isWorkspaceInGroup(workspace, groupId) {
   return workspace?.group.toString() === groupId;
 }
 
-function workspaceContainsUser(workspace, user) {
-  return workspace._users?.toString().includes(user.id);
-}
-
 function doesUserHaveWriteAccess(user, workspace) {
+  // A module write: the bootstrap account stays in the settings.
+  refuseBootstrapAccount(user);
   doesUserHaveReadAccess(user, workspace);
 
   if (!permissions.canWriteWorkspace(user, workspace)) {

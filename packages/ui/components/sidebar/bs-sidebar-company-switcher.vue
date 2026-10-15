@@ -86,11 +86,8 @@ export default {
         return;
       }
       const next = routeAfterGroupSwitch(this.$route.fullPath, companyId);
+      // The module pages reload their data when the selected group changes.
       if (next !== this.$route.fullPath) await this.$router.push(next);
-      // A module page shows the new group's data: run its data loading again.
-      if (next === '/mailings' || next === '/crm-intelligence') {
-        await this.$nuxt.refresh();
-      }
     },
     expand() {
       this.$store.commit(`sidebar/${SET_COLLAPSED}`, false);

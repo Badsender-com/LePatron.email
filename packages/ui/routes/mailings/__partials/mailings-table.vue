@@ -108,6 +108,9 @@ export default {
     };
   },
   computed: {
+    modulesGroupId() {
+      return this.$store.getters['user/MODULES_GROUP']?.id || null;
+    },
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     ...mapState(FOLDER, [
       'pagination',
@@ -199,27 +202,34 @@ export default {
     dialogRename(val) {
       val || this.closeRename();
     },
-  },
-  async mounted() {
     // The group whose mailings are listed: a super admin's selected group,
     // anyone else's own group (ADR 0002, amended).
-    const groupId = this.$store.getters['user/MODULES_GROUP']?.id;
-    if (!groupId) return;
-    try {
-      const config = await this.$axios.$get(aiFeatures(groupId));
-
-      const features = config?.features || [];
-
-      const translation = features.find((f) => f.featureType === 'translation');
-
-      this.hasActiveTranslation = !!(
-        translation?.isActive && translation?.integration?.isActive
-      );
-    } catch {
-      this.hasActiveTranslation = false;
-    }
+    modulesGroupId: {
+      immediate: true,
+      handler(groupId) {
+        this.loadTranslationFeature(groupId);
+      },
+    },
   },
   methods: {
+    async loadTranslationFeature(groupId) {
+      if (!groupId || process.server) return;
+      try {
+        const config = await this.$axios.$get(aiFeatures(groupId));
+
+        const features = config?.features || [];
+
+        const translation = features.find(
+          (f) => f.featureType === 'translation'
+        );
+
+        this.hasActiveTranslation = !!(
+          translation?.isActive && translation?.integration?.isActive
+        );
+      } catch {
+        this.hasActiveTranslation = false;
+      }
+    },
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     escapeHtml,
     handleRowClick(item) {

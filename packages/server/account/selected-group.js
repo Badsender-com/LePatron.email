@@ -97,6 +97,28 @@ async function attachSelectedGroup(req, res, next) {
 }
 
 /**
+ * Selects a group for a super admin (stored on its account) or the bootstrap
+ * account (kept in its session). Anyone else's selected group is their own.
+ *
+ * @param {Object} req the request, its user and session
+ * @param {string} groupId
+ * @returns {Promise<Object|null>} the selected group, or null when unknown
+ */
+async function selectGroup(req, groupId) {
+  const selectedGroup = await findGroupSummary(groupId);
+  if (!selectedGroup || !req.user || !req.user.isAdmin) return selectedGroup;
+  if (isBootstrapAccount(req.user)) {
+    req.session.selectedGroupId = selectedGroup.id;
+  } else {
+    await Users.updateOne(
+      { _id: req.user.id },
+      { _selectedGroup: selectedGroup.id }
+    );
+  }
+  return selectedGroup;
+}
+
+/**
  * The bootstrap account's choice lives in the session, which a sign-out or a
  * new sign-in keeps: both forget it.
  */
@@ -108,5 +130,6 @@ module.exports = {
   resolveSelectedGroup,
   findGroupSummary,
   attachSelectedGroup,
+  selectGroup,
   forgetSessionSelection,
 };

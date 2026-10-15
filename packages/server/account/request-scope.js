@@ -41,6 +41,23 @@ function listingGroupIdOf(user) {
 }
 
 /**
+ * A write moves or creates something within one group: a mailing from a
+ * template of its group, a copy or a move into a workspace of the same group.
+ * Only a super admin can reach two groups, so only it can trip this.
+ *
+ * @param {string} sourceGroupId
+ * @param {string} destinationGroupId
+ */
+function assertSameGroup(sourceGroupId, destinationGroupId) {
+  const groupOf = (value) => (value && value._id ? value._id : value);
+  const source = groupOf(sourceGroupId);
+  const destination = groupOf(destinationGroupId);
+  if (source && destination && String(source) !== String(destination)) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+/**
  * @param {Object} user the request user
  * @param {string} resourceGroupId the group of the workspace, folder or mailing
  * @returns {string} the group the request reads or writes
@@ -50,4 +67,10 @@ function resourceGroupIdOf(user, resourceGroupId) {
   return String(resourceGroupId);
 }
 
-module.exports = { selectedGroupIdOf, listingGroupIdOf, resourceGroupIdOf };
+module.exports = {
+  selectedGroupIdOf,
+  listingGroupIdOf,
+  resourceGroupIdOf,
+  refuseBootstrapAccount,
+  assertSameGroup,
+};

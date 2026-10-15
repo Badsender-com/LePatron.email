@@ -1,8 +1,8 @@
 'use strict';
 
 // Writing in a workspace: the workspace of one's own company, as a member or a
-// company admin; a super admin, or the bootstrap account, in any workspace
-// (ADR 0002, amended; the modules keep the bootstrap account out upstream).
+// company admin; a super admin in any workspace; the bootstrap account, which
+// stays in the settings, in none (ADR 0002, amended).
 // `assertAccess` throws where `hasAccess` answers, so a caller cannot forget
 // to read the answer.
 
@@ -33,7 +33,6 @@ const colleague = { id: 'u3', group: { id: COMPANY_A } };
 const companyAdminOfA = { ...colleague, isGroupAdmin: true };
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
 const companyAdminOfB = { ...outsider, isGroupAdmin: true };
-const admin = { id: 'admin', isAdmin: true };
 
 beforeEach(() => {
   Workspaces.exists.mockResolvedValue(true);
@@ -102,10 +101,12 @@ describe('assertAccess for a super admin (ADR 0002, amended)', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('lets the bootstrap account write there too: its rights are whole, the modules refuse it upstream', async () => {
+  it('refuses the bootstrap account, which stays in the settings', async () => {
+    const { bootstrap } = require('../../helpers/super-admin-fixtures.js');
+
     await expect(
-      workspaceService.assertAccess(admin, WORKSPACE)
-    ).resolves.toBeUndefined();
+      workspaceService.assertAccess({ ...bootstrap }, WORKSPACE)
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('still refuses a company admin of another company', async () => {

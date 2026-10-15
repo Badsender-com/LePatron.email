@@ -127,6 +127,12 @@ export default {
     }),
   },
   watch: {
+    // A new selected group shows its own dashboards (ADR 0002, amended).
+    'userInfo.selectedGroup.id'(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.reloadForGroup();
+      }
+    },
     '$route.query.dashboardId': {
       immediate: true,
       handler(dashboardId) {
@@ -159,6 +165,23 @@ export default {
 
     onScreenshotError() {
       this.screenshotAvailable = false;
+    },
+
+    async reloadForGroup() {
+      this.selectedDashboard = null;
+      this.embedUrl = null;
+      try {
+        this.status = await this.$axios.$get(getCrmIntelligenceStatus());
+        this.dashboards =
+          this.status.enabled && this.status.configured
+            ? await this.$axios.$get(getCrmIntelligenceDashboards())
+            : [];
+      } catch (err) {
+        this.dashboards = [];
+      }
+      if (this.isEnabled && this.dashboards.length > 0) {
+        this.selectDashboard(this.dashboards[0]);
+      }
     },
 
     async selectDashboard(dashboard) {

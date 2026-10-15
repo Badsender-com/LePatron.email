@@ -189,23 +189,8 @@ function isNotFound(error) {
   return error?.response?.status === 404;
 }
 
-// A workspace or folder of another group selects that group for a super
-// admin: the resource wins over the selection (ADR 0002, amended).
-async function selectGroupOf(dispatch, rootGetters, location) {
-  const groupId = location && location._company;
-  if (!groupId || !rootGetters['user/IS_ADMIN']) return;
-  try {
-    await dispatch('user/SELECT_GROUP', String(groupId), { root: true });
-  } catch (error) {
-    // The location still shows; the selection stays where it was.
-  }
-}
-
 export const actions = {
-  async [FETCH_FOLDER_OR_WORKSPACE](
-    { commit, dispatch, rootGetters },
-    { query, $t }
-  ) {
+  async [FETCH_FOLDER_OR_WORKSPACE]({ commit, dispatch }, { query, $t }) {
     commit(IS_LOADING_WORKSPACE_OR_FOLDER, true);
     commit(SET_LOCATION_NOT_FOUND, false);
     try {
@@ -222,7 +207,6 @@ export const actions = {
           commit(SET_FOLDER, folder);
           commit(SET_WORKSPACE, null);
           commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
-          await selectGroupOf(dispatch, rootGetters, folder);
         } else if (query?.wid) {
           const [workspace, hasAccessData] = await Promise.all([
             this.$axios.$get(getWorkspace(query?.wid)),
@@ -231,7 +215,6 @@ export const actions = {
           commit(SET_FOLDER, null);
           commit(SET_WORKSPACE, workspace);
           commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
-          await selectGroupOf(dispatch, rootGetters, workspace);
         }
 
         await dispatch(FETCH_MAILINGS_FOR_WORKSPACE_UPDATE, {

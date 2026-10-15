@@ -94,9 +94,14 @@ export default {
       const userId = this.userInfo?.id || 'anonymous';
       return `${TREE_STATE_STORAGE_KEY}_${userId}`;
     },
+    // A super admin's node to reopen is kept per group: switching group never
+    // reopens a node of the previous one (ADR 0002, amended).
     selectedNodeStorageKey() {
       const userId = this.userInfo?.id || 'anonymous';
-      return `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
+      const groupId = this.userInfo?.isAdmin ? this.selectedGroupId : null;
+      return groupId
+        ? `${SELECTED_NODE_STORAGE_KEY}_${userId}_${groupId}`
+        : `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
     },
   },
   watch: {

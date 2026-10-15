@@ -25,6 +25,7 @@ const {
 const {
   listingGroupIdOf,
   resourceGroupIdOf,
+  assertSameGroup,
 } = require('../../../packages/server/account/request-scope.js');
 
 const OTHER_CLIENT_GROUP = '507f1f77bcf86cd799439b02';
@@ -104,5 +105,25 @@ describe('the group a module request naming a resource reads or writes', () => {
     expect(
       refusalOf(() => resourceGroupIdOf({ ...bootstrap }, CLIENT_GROUP))
     ).toBe(403);
+  });
+});
+
+describe('a write within one group', () => {
+  it('passes when the source and the destination are in the same group', () => {
+    expect(refusalOf(() => assertSameGroup(CLIENT_GROUP, CLIENT_GROUP))).toBe(
+      'no refusal'
+    );
+  });
+
+  it('refuses a source and a destination in two groups', () => {
+    expect(refusalOf(() => assertSameGroup(PLATFORM_GROUP, CLIENT_GROUP))).toBe(
+      403
+    );
+  });
+
+  it('compares a populated group by its id', () => {
+    expect(
+      refusalOf(() => assertSameGroup({ _id: CLIENT_GROUP }, CLIENT_GROUP))
+    ).toBe('no refusal');
   });
 });

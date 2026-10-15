@@ -1,4 +1,5 @@
 import { groupsItem, selectedGroup } from '~/helpers/api-routes.js';
+import { Roles } from '~/helpers/constants/roles.js';
 
 export const USER = 'user';
 
@@ -53,7 +54,7 @@ export const getters = {
     return (
       state.info != null &&
       state.info.isAdmin === true &&
-      state.info.role !== 'super_admin'
+      state.info.role !== Roles.SUPER_ADMIN
     );
   },
   [MODULES_GROUP](state) {
