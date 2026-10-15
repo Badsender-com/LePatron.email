@@ -19,6 +19,7 @@ const {
 const {
   spendWebRiskLookup,
   WEB_RISK_LOOKUPS_PER_DAY,
+  WEB_RISK_LOOKUPS_PER_USER_PER_DAY,
 } = require('../../../packages/server/mailing/quality-threats.service.js');
 
 const duplicateKey = () =>
@@ -29,23 +30,33 @@ beforeEach(() => {
 });
 
 describe('spendWebRiskLookup', () => {
-  it("counts one lookup on the company's day, only while under the limit", async () => {
+  const scope = { company: 'c1', user: 'u1' };
+
+  it("counts one lookup on the user's day, then on the company's, only while under each limit", async () => {
     QualityBudgets.findOneAndUpdate.mockResolvedValue({});
     const now = new Date('2026-10-12T23:30:00Z');
 
-    await expect(spendWebRiskLookup('c1', now)).resolves.toBe(true);
+    await expect(spendWebRiskLookup(scope, now)).resolves.toBe(true);
 
-    const [
-      filter,
-      update,
-      options,
-    ] = QualityBudgets.findOneAndUpdate.mock.calls[0];
-    expect(filter).toEqual({
-      scope: 'c1',
-      kind: 'webrisk',
-      day: '2026-10-12',
-      count: { $lt: WEB_RISK_LOOKUPS_PER_DAY },
-    });
+    const calls = QualityBudgets.findOneAndUpdate.mock.calls;
+    expect(calls.map(([filter]) => filter)).toEqual([
+      {
+        scope: 'user:u1',
+        kind: 'webrisk',
+        day: '2026-10-12',
+        count: { $lt: WEB_RISK_LOOKUPS_PER_USER_PER_DAY },
+      },
+      {
+        scope: 'c1',
+        kind: 'webrisk',
+        day: '2026-10-12',
+        count: { $lt: WEB_RISK_LOOKUPS_PER_DAY },
+      },
+    ]);
+    expect(WEB_RISK_LOOKUPS_PER_USER_PER_DAY).toBe(
+      WEB_RISK_LOOKUPS_PER_DAY / 4
+    );
+    const [, update, options] = calls[1];
     expect(update.$inc).toEqual({ count: 1 });
     // The day's document goes by itself once it is old news.
     expect(update.$setOnInsert.expiresAt.getTime()).toBeGreaterThan(
@@ -54,19 +65,35 @@ describe('spendWebRiskLookup', () => {
     expect(options).toEqual({ upsert: true });
   });
 
-  it('answers "spent" when the day is at its limit', async () => {
-    // Nothing under the limit to update: the upsert meets the day's document.
+  // One person must not leave the whole company "unverified" for the day.
+  it('answers "spent" for a user past their share, without touching the company\'s', async () => {
     QualityBudgets.findOneAndUpdate.mockRejectedValue(duplicateKey());
-    await expect(spendWebRiskLookup('c1')).resolves.toBe(false);
+    await expect(spendWebRiskLookup(scope)).resolves.toBe(false);
+    expect(
+      QualityBudgets.findOneAndUpdate.mock.calls.map(([f]) => f.scope)
+    ).toEqual(['user:u1', 'user:u1']);
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('answers "spent" when the company\'s day is at its limit', async () => {
+    // Nothing under the limit to update: the upsert meets the day's document.
+    QualityBudgets.findOneAndUpdate.mockImplementation(async ({ scope: s }) => {
+      if (s === 'c1') throw duplicateKey();
+      return {};
+    });
+    await expect(spendWebRiskLookup(scope)).resolves.toBe(false);
+    // Another user of the company is refused just the same.
+    await expect(
+      spendWebRiskLookup({ company: 'c1', user: 'u2' })
+    ).resolves.toBe(false);
   });
 
   it('tries again once when two workers open the same day together', async () => {
     QualityBudgets.findOneAndUpdate
       .mockRejectedValueOnce(duplicateKey())
-      .mockResolvedValueOnce({});
-    await expect(spendWebRiskLookup('c1')).resolves.toBe(true);
-    expect(QualityBudgets.findOneAndUpdate).toHaveBeenCalledTimes(2);
+      .mockResolvedValue({});
+    await expect(spendWebRiskLookup(scope)).resolves.toBe(true);
+    expect(QualityBudgets.findOneAndUpdate).toHaveBeenCalledTimes(3);
   });
 
   it('spends nothing when the database does not answer', async () => {
@@ -76,7 +103,7 @@ describe('spendWebRiskLookup', () => {
         code: 'ECONNRESET',
       })
     );
-    await expect(spendWebRiskLookup('c1')).resolves.toBe(false);
+    await expect(spendWebRiskLookup(scope)).resolves.toBe(false);
     expect(logger.warn).toHaveBeenCalledWith(expect.any(String), {
       error: 'MongoNetworkError',
       code: 'ECONNRESET',
