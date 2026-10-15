@@ -7,6 +7,7 @@ import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsModalConfirm from '~/components/modal-confirm';
 import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
@@ -28,6 +29,7 @@ export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
+    BsModalConfirm,
     BsTextField,
     BsTextarea,
     BsSelect,
@@ -54,6 +56,9 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      // Re-renders the preview links switch when turning it off is cancelled:
+      // the switch keeps its own state, which the unchanged model cannot reset.
+      shareLinksSwitchKey: 0,
     };
   },
   computed: {
@@ -132,6 +137,22 @@ export default {
         currentGroup.idpCert = '';
       }
       this.$emit('submit', this.group);
+    },
+    // Turning preview links off asks first: the links already shared stop
+    // opening for everyone, and the admin should know they come back with the
+    // switch.
+    onShareLinksChange(enabled) {
+      if (enabled) {
+        this.localModel = { ...this.localModel, enableShareLinks: true };
+        return;
+      }
+      this.$refs.shareLinksOffDialog.open();
+    },
+    confirmShareLinksOff() {
+      this.localModel = { ...this.localModel, enableShareLinks: false };
+    },
+    cancelShareLinksOff() {
+      this.shareLinksSwitchKey += 1;
     },
     openDeleteGroup() {
       this.$refs.deleteDialog.open({
@@ -258,10 +279,12 @@ export default {
               </div>
             </div>
             <v-switch
-              v-model="localModel.enableShareLinks"
+              :key="shareLinksSwitchKey"
+              :input-value="localModel.enableShareLinks !== false"
               hide-details
               :disabled="disabled"
               class="module-card__switch"
+              @change="onShareLinksChange"
             />
           </div>
 
@@ -412,6 +435,20 @@ export default {
         </v-btn>
       </div>
     </v-card>
+
+    <bs-modal-confirm
+      ref="shareLinksOffDialog"
+      :title="$t('groups.modules.shareLinks.confirmOffTitle')"
+      :action-label="$t('groups.modules.shareLinks.confirmOffAction')"
+      action-button-color="primary"
+      @confirm="confirmShareLinksOff"
+      @close="cancelShareLinksOff"
+      @click-outside="cancelShareLinksOff"
+    >
+      <p class="black--text">
+        {{ $t('groups.modules.shareLinks.confirmOffMessage') }}
+      </p>
+    </bs-modal-confirm>
 
     <bs-modal-confirm-form
       ref="deleteDialog"

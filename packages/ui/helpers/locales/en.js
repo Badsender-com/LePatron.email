@@ -328,7 +328,11 @@ export default {
       shareLinks: {
         name: 'Preview links',
         description:
-          'Public links to the preview of an email, without an account. Turning sharing off also disables the existing links',
+          'Public links to the preview of an email, without an account. Turning sharing off suspends the existing links',
+        confirmOffTitle: 'Turn preview links off?',
+        confirmOffMessage:
+          'The links this company already shared will not open while sharing stays off. They are not deleted: turning sharing back on reopens them until they expire, at most 30 days after they were made. To close one link, turn it off from the email, in the "Send a test" tab of the quality control.',
+        confirmOffAction: 'Turn sharing off',
       },
       crmIntelligence: {
         name: 'CRM Intelligence',

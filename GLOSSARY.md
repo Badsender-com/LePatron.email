@@ -72,7 +72,7 @@ _UI_: Ignorer
 _Avoid_: Dismiss, mute
 
 **Share link**:
-A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the email's group allows it. Revoked by hand, by expiry, when the mailing changes group, or when the group turns sharing off (turning it back on reopens none).
+A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the email's group allows it. Revoked by hand from the email, by expiry, or when the mailing changes group. Suspended while the group has sharing turned off.
 _UI_: Lien d'aperçu
 _Avoid_: Public link, preview URL
 
