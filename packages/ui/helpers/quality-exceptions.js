@@ -190,6 +190,12 @@ export function exceptionsPayload(level, drafts, saved) {
   const ids = new Set(Object.keys(drafts).concat(Object.keys(saved)));
   const checks = {};
   ids.forEach((id) => {
+    // Removed (the trash), whatever it held: values equal to the
+    // recommended ones still have to leave the stored settings.
+    if (saved[id] && !drafts[id]) {
+      checks[id] = { state: null, thresholds: null };
+      return;
+    }
     const next = normalized(level, id, drafts[id]);
     const previous = normalized(level, id, saved[id]);
     if (isEqual(next, previous)) return;
