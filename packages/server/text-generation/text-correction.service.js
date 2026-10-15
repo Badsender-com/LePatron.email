@@ -71,6 +71,18 @@ const requestSchema = z
     }
   });
 
+// The model can neither write a non-breaking space nor tell one from a space
+// (#1258): the skill reads and writes it as this marker, which the code turns
+// back into the character.
+const NBSP_MARKER = '{nbsp}';
+const toSkillText = (text) => text.replace(/\u00a0/g, NBSP_MARKER);
+const fromSkillText = (text) => text.split(NBSP_MARKER).join('\u00a0');
+const fromSkill = (correction) => ({
+  ...correction,
+  before: fromSkillText(correction.before),
+  after: fromSkillText(correction.after),
+});
+
 // Corrections the code can place in the text it sent; the others are counted.
 function screenCorrections(corrections, fields) {
   const textOf = new Map(fields.map((field) => [field.path, field.text]));
@@ -118,7 +130,10 @@ async function correctText({ user, body }) {
       groupId: prepared.groupId,
       userId: user.id,
       input: {
-        fields: request.fields,
+        fields: request.fields.map((field) => ({
+          ...field,
+          text: toSkillText(field.text),
+        })),
         expertise: expertise.map(toSkillExpertise),
       },
       expertiseConsumed: expertise.map(toConsumed),
@@ -127,7 +142,10 @@ async function correctText({ user, body }) {
     throw toHttpError(err);
   }
 
-  return screenCorrections(result.output.corrections, request.fields);
+  return screenCorrections(
+    result.output.corrections.map(fromSkill),
+    request.fields
+  );
 }
 
 module.exports = { correctText };
