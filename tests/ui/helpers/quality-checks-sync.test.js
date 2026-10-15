@@ -38,14 +38,20 @@ describe('the settings page copy of the check catalogue', () => {
   it.each([
     ['en', en],
     ['fr', fr],
-  ])('names every check and category in %s', (_lang, locale) => {
-    Object.keys(CHECKS).forEach((id) => {
-      expect(typeof locale.qualitySettings.checks[id]).toBe('string');
-    });
-    CHECK_CATEGORIES.forEach((category) => {
-      expect(typeof locale.qualitySettings.categories[category]).toBe('string');
-    });
-  });
+  ])(
+    'names and describes every check, and names every category, in %s',
+    (_lang, locale) => {
+      Object.keys(CHECKS).forEach((id) => {
+        expect(typeof locale.qualitySettings.checks[id]).toBe('string');
+        expect(typeof locale.qualitySettings.descriptions[id]).toBe('string');
+      });
+      CHECK_CATEGORIES.forEach((category) => {
+        expect(typeof locale.qualitySettings.categories[category]).toBe(
+          'string'
+        );
+      });
+    }
+  );
 
   it.each([
     ['en', en],
