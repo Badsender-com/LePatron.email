@@ -22,6 +22,9 @@ const isWeb = (url, raw) =>
 /**
  * Links worth fetching: web addresses the client typed, merge tags excluded
  * (only the ESP knows where they lead), unfilled ones left to "unfilled-links".
+ * A link dynamic in its query only (`https://brand.com/?id=%%ID%%`) is left
+ * out as well: fetched with the tag as typed, the page answers for an id that
+ * does not exist, and a "broken link" on it would be the check's mistake.
  */
 function checkableLinks(ctx) {
   return blockLinks(ctx).filter(
@@ -35,7 +38,7 @@ function checkableLinks(ctx) {
  * "unreplaced-images", merge tags left out (only the ESP knows the address).
  */
 function checkableImages(ctx) {
-  const { placeholderUrl } = ctx.config;
+  const placeholderUrl = ctx.config.imagesUrl.placeholder;
   return blockImages(ctx).filter(
     (image) =>
       isWeb(image.url, image.src) &&

@@ -161,6 +161,21 @@ function resourcesOf(ctx) {
   }
 }
 
+// What a passed check says ("Exported HTML weighs 12 KB"): a parameter that
+// cannot be computed leaves the check passed, with nothing to say.
+function passParamsOf(rule, ctx) {
+  if (!rule.passParams) return {};
+  try {
+    return rule.passParams(ctx) || {};
+  } catch (err) {
+    console.error(
+      `Quality check "${rule.id}" could not describe its pass`,
+      err
+    );
+    return {};
+  }
+}
+
 function runRule(rule, ctx) {
   try {
     const findings = rankFingerprints(
@@ -177,7 +192,7 @@ function runRule(rule, ctx) {
         count: findings.length,
         // What a passed check says: "Every link has a destination".
         passKey: rule.passKey,
-        passParams: rule.passParams ? rule.passParams(ctx) : {},
+        passParams: status === 'passed' ? passParamsOf(rule, ctx) : {},
       },
     };
   } catch (err) {
@@ -187,6 +202,37 @@ function runRule(rule, ctx) {
   }
 }
 
+// A check that cannot apply (a blocklist nobody subscribed to) is not listed;
+// neither is one that cannot even tell, rather than taking the run down.
+function applicableRules(ctx, rules) {
+  return rules.filter((rule) => {
+    if (!rule.enabled) return true;
+    try {
+      return Boolean(rule.enabled(ctx));
+    } catch (err) {
+      console.error(
+        `Quality check "${rule.id}" could not tell whether it applies`,
+        err
+      );
+      return false;
+    }
+  });
+}
+
+/**
+ * Runs rules on a context already built: the local rules first, then the
+ * remote ones on the same context once the server has answered
+ * (`ctx.remote = remote; runRules(ctx, REMOTE_RULES)`).
+ * @returns {{ findings: Array, checks: Array }}
+ */
+function runRules(ctx, rules) {
+  const results = applicableRules(ctx, rules).map((rule) => runRule(rule, ctx));
+  return {
+    findings: _.flatMap(results, 'findings'),
+    checks: results.map((result) => result.check),
+  };
+}
+
 /**
  * Runs every quality check against the current email.
  * @param {Object} viewModel - the editor view model
@@ -194,10 +240,12 @@ function runRule(rule, ctx) {
  * @param {string} [options.html] - an already exported HTML, to avoid exporting twice
  * @param {Array} [options.rules] - rules to run instead of the default set
  * @param {Object} [options.remote] - the server's answer, for REMOTE_RULES
- * @returns {{ findings: Array, checks: Array, html: string, resources: Object }}
+ * @returns {{ findings: Array, checks: Array, html: string, resources: Object,
+ *   ctx: Object|null }}
  *   findings to show, one entry per check with its status (so passed checks
- *   can be listed too), the HTML checked, and the links and images to ask the
- *   server about
+ *   can be listed too), the HTML checked, the links and images to ask the
+ *   server about (listed on the local pass only), and the context built, for
+ *   the remote pass to reuse
  */
 function runQualityChecks(viewModel, options = {}) {
   const html =
@@ -216,22 +264,21 @@ function runQualityChecks(viewModel, options = {}) {
       checks: rules.map(failedCheck),
       html,
       resources: NO_RESOURCES,
+      ctx: null,
     };
   }
 
-  // A check that cannot apply (a blocklist nobody subscribed to) is not listed.
-  const applicable = rules.filter((rule) => !rule.enabled || rule.enabled(ctx));
-  const results = applicable.map((rule) => runRule(rule, ctx));
   return {
-    findings: _.flatMap(results, 'findings'),
-    checks: results.map((result) => result.check),
+    ...runRules(ctx, rules),
     html,
-    resources: resourcesOf(ctx),
+    resources: options.remote ? NO_RESOURCES : resourcesOf(ctx),
+    ctx,
   };
 }
 
 module.exports = {
   runQualityChecks,
+  runRules,
   // The drawer announces how many checks it runs.
   DEFAULT_RULES,
   REMOTE_RULES,
