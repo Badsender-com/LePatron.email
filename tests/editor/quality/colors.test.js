@@ -95,6 +95,29 @@ describe('inline-style', () => {
     );
   });
 
+  // A data URI carries a `;` of its own, which ends no declaration.
+  it('cuts declarations outside parentheses and quotes only', () => {
+    expect(
+      parseDeclarations(
+        'background: url(data:image/png;base64,AAAA) #ff0000; color: #000'
+      )
+    ).toEqual([
+      { prop: 'background', value: 'url(data:image/png;base64,AAAA) #ff0000' },
+      { prop: 'color', value: '#000' },
+    ]);
+    expect(
+      parseDeclarations(
+        'background-image: url(\'data:image/svg+xml;utf8,<svg/>\');font-family: "a;b", serif'
+      )
+    ).toEqual([
+      {
+        prop: 'background-image',
+        value: "url('data:image/svg+xml;utf8,<svg/>')",
+      },
+      { prop: 'font-family', value: '"a;b", serif' },
+    ]);
+  });
+
   it('keeps the last declaration of a property, as CSS does', () => {
     const el = elementOf('<p style="color:#fff;color:#000" data-t>x</p>');
     expect(styleValue(el, 'color')).toBe('#000');
