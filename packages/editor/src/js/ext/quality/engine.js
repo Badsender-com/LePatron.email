@@ -281,9 +281,15 @@ function runQualityChecks(viewModel, options = {}) {
     // Download and ESP send run the checks first: a model the engine cannot
     // read must cost the checks, never the export.
     console.error('Quality checks could not read the email', err);
+    // A check turned off stays unlisted, failed run or not.
+    const settings = {
+      config: { quality: _.get(viewModel, 'metadata.qualitySettings') || null },
+    };
     return {
       findings: [],
-      checks: rules.map(failedCheck),
+      checks: rules
+        .filter((rule) => checkStateOf(settings, rule.id) !== 'off')
+        .map(failedCheck),
       html,
       resources: NO_RESOURCES,
       ctx: null,
