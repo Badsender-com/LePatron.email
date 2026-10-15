@@ -86,6 +86,45 @@ describe('installQualityReview', () => {
     expect(vm.quality.passedCount()).toBe(1);
   });
 
+  // The toolbar's green tick: nothing to fix, every check judged. A check
+  // whose findings are ignored or only infos is not "passed", and still
+  // clears the email.
+  it('clears an email with infos and ignored findings, not one with a check that did not run', () => {
+    const result = {
+      findings: [finding('info'), finding('warning')],
+      checks: [
+        { status: 'passed' },
+        { status: 'failed' },
+        { status: 'failed' },
+      ],
+    };
+    const pending = setup(result);
+    pending.vm.quality.run();
+    pending.flush();
+    expect(pending.vm.quality.cleared()).toBe(false);
+
+    const { vm, flush } = setup(result, {
+      vm: {
+        metadata: {
+          url: { qualityIgnores: '/api/m1/quality-ignores' },
+          qualityIgnores: ['warning'],
+        },
+      },
+    });
+    vm.quality.run();
+    flush();
+    expect(vm.quality.issueCount()).toBe(0);
+    expect(vm.quality.passedCount()).toBe(1);
+    expect(vm.quality.cleared()).toBe(true);
+    expect(vm.quality.ranCount()).toBe(3);
+
+    for (const status of ['error', 'cancelled']) {
+      vm.quality.checks(result.checks.concat({ status }));
+      expect(vm.quality.cleared()).toBe(false);
+      expect(vm.quality.ranCount()).toBe(3);
+    }
+  });
+
   it('counts the errors left, for the "Send a test" tab', () => {
     const { vm, flush } = setup({
       findings: [finding('error'), finding('error'), finding('warning')],
