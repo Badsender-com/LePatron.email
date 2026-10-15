@@ -84,12 +84,15 @@ function viewBlockedFor(key, now = Date.now()) {
 // the frame a page could not load (the CSP allows no frame), and a reader
 // wants to try the links. The sanitizer sets it (sanitizeSharedPreviewHtml);
 // the new tab gets no referrer, the policy of the page being inherited.
-const PAGE_CACHE_BUDGET = 16 * 1024 * 1024; // characters
+// Every preview the editor may save must fit: one left out is sanitized again
+// on each public view, a worker blocked for seconds. The sanitized page can
+// outgrow its source (each web link gains a target and a rel), hence the
+// headroom; three of the largest fit, so a single one never empties the cache.
+const PAGE_CACHE_MAX_ENTRY = previewSanitizer.PREVIEW_HTML_MAX_LENGTH * 1.5;
 const pageCache = createSanitizedPreviewCache({
   sanitize: previewSanitizer.sanitizeSharedPreviewHtml,
-  budget: PAGE_CACHE_BUDGET,
-  // A single very large page must not push every other one out.
-  maxEntry: PAGE_CACHE_BUDGET / 4,
+  budget: PAGE_CACHE_MAX_ENTRY * 3,
+  maxEntry: PAGE_CACHE_MAX_ENTRY,
 });
 
 /** @returns {Promise<string>} empty when the email was never saved */
