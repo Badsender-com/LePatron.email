@@ -7,6 +7,7 @@ const {
   ShareLinks,
   Mailings,
   Groups,
+  Templates,
   MAILING_ID,
   LINK_ID,
   lean,
@@ -104,6 +105,32 @@ describe('GET /share/:token', () => {
     expect(Groups.findById).toHaveBeenCalledTimes(1);
     expect(Groups.findById.mock.calls[0][0]).toBe('c2');
     expect(Mailings.findById.mock.calls[0][1]).toMatchObject({ _company: 1 });
+  });
+
+  // As the editor and the creation judge it (sharingCompanyOf): an email of
+  // the admin follows the company of its template.
+  it("closes an admin's email with the company of its template", async () => {
+    ShareLinks.findOne.mockReturnValue(lean(activeLink));
+    Mailings.findById.mockReturnValue(
+      lean({
+        _id: MAILING_ID,
+        _wireframe: 'tpl1',
+        name: 'Soldes',
+        previewHtml: '<p>hi</p>',
+      })
+    );
+    Templates.findById.mockReturnValue(lean({ _company: 'c1' }));
+    Groups.findById.mockReturnValue(
+      lean({ status: 'active', enableShareLinks: false })
+    );
+    const { res } = await call(pageController.renderShare, {
+      params: { token: TOKEN },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(Groups.findById.mock.calls[0][0]).toBe('c1');
+    expect(Mailings.findById.mock.calls[0][1]).toMatchObject({
+      _wireframe: 1,
+    });
   });
 
   it('shows the subject and the preheader when the company writes them in LePatron', async () => {
