@@ -32,7 +32,11 @@ export default {
           items: ids
             .filter((id) => byId.has(id))
             .filter(
-              (id) => !query || normalized(this.checkName(id)).includes(query)
+              (id) =>
+                !query ||
+                normalized(
+                  `${this.checkName(id)} ${this.description(id)}`
+                ).includes(query)
             )
             .map((id) => byId.get(id)),
         }))
@@ -45,6 +49,10 @@ export default {
     },
   },
   methods: {
+    description(id) {
+      return this.$t(`qualitySettings.descriptions.${id}`);
+    },
+
     pick(id) {
       this.$emit('pick', id);
       this.$emit('input', false);
@@ -94,6 +102,9 @@ export default {
           >
             <v-list-item-content>
               <v-list-item-title>{{ checkName(item.id) }}</v-list-item-title>
+              <v-list-item-subtitle class="qx-dialog__description">
+                {{ description(item.id) }}
+              </v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-action-text class="qx-dialog__applies">
               {{ item.applies }}
@@ -146,6 +157,11 @@ export default {
 
   ::v-deep .v-list-item {
     min-height: 40px;
+  }
+
+  &__description {
+    white-space: normal;
+    font-size: 12px;
   }
 
   ::v-deep .v-list-item__title {
