@@ -1,8 +1,8 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { IS_ADMIN, USER } from '~/store/user';
-import { SET_ACTIVE_MODULE, SET_LAST_GROUP_ID } from '~/store/sidebar';
+import { IS_ADMIN, SELECT_GROUP, USER } from '~/store/user';
+import { SET_ACTIVE_MODULE } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -23,7 +23,7 @@ export default {
     LucideTrash2: Trash2,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN },
+  meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
@@ -84,11 +84,13 @@ export default {
     },
   },
   mounted() {
-    // Sidebar lives outside this page; tell it which group context applies
-    // and force the SETTINGS module so navigation stays coherent on /templates/:id.
+    // Sidebar lives outside this page: force the SETTINGS module, and make
+    // the resource's group the selected group (ADR 0002, amended).
     this.$store.commit(`sidebar/${SET_ACTIVE_MODULE}`, 'settings');
     if (this.group?.id) {
-      this.$store.commit(`sidebar/${SET_LAST_GROUP_ID}`, this.group.id);
+      this.$store
+        .dispatch(`${USER}/${SELECT_GROUP}`, this.group.id)
+        .catch(() => {});
     }
     if (this.template.id) {
       this.listenTemplateEvents();

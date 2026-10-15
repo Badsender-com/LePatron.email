@@ -87,17 +87,31 @@ export default {
     selectedItem() {
       return { id: this.currentLocation };
     },
+    selectedGroupId() {
+      return this.userInfo?.selectedGroup?.id || null;
+    },
     storageKey() {
       const userId = this.userInfo?.id || 'anonymous';
       return `${TREE_STATE_STORAGE_KEY}_${userId}`;
     },
+    // A super admin's node to reopen is kept per group: switching group never
+    // reopens a node of the previous one (ADR 0002, amended).
     selectedNodeStorageKey() {
       const userId = this.userInfo?.id || 'anonymous';
-      return `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
+      const groupId = this.userInfo?.isAdmin ? this.selectedGroupId : null;
+      return groupId
+        ? `${SELECTED_NODE_STORAGE_KEY}_${userId}_${groupId}`
+        : `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
     },
   },
   watch: {
     $route: ['onRouteChange', 'checkIfNotData'],
+    // The tree of a super admin is its selected group's (ADR 0002, amended).
+    selectedGroupId(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.fetchWorkspacesData();
+      }
+    },
     locationNotFound(notFound) {
       if (notFound) this.leaveUnreachableLocation();
     },
@@ -262,13 +276,33 @@ export default {
         // deleted the fetch fails harmlessly and the tree stays put. Crucially,
         // we must NOT clearSelection() here: that would wipe a valid sub-folder
         // selection just because it wasn't pre-loaded.
-        this.safeNavigate('replace', { query: { fid: nodeId } });
+        this.restoreFolder(nodeId);
       } catch (error) {
         console.error(
           '[BsSidebarWorkspaceTree] Error restoring selected node:',
           error
         );
       }
+    },
+    // A super admin reopens a saved folder only if it is in the selected
+    // group: a folder of another group would select that group again
+    // (ADR 0002, amended).
+    async restoreFolder(folderId) {
+      if (this.userInfo?.isAdmin) {
+        try {
+          const folder = await this.$axios.$get(getFolder(folderId));
+          if (String(folder._company) !== String(this.selectedGroupId)) {
+            this.clearSelection();
+            this.selectFirstWorkspace();
+            return;
+          }
+        } catch (error) {
+          this.clearSelection();
+          this.selectFirstWorkspace();
+          return;
+        }
+      }
+      this.safeNavigate('replace', { query: { fid: folderId } });
     },
     saveSelectedNode(nodeId, nodeType) {
       try {

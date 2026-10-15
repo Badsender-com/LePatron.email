@@ -11,6 +11,7 @@ export default {
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+    sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;

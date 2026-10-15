@@ -27,6 +27,7 @@ export default {
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+    sidebarModule: 'settings',
   },
   async asyncData({ $axios }) {
     try {

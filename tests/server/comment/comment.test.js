@@ -243,12 +243,10 @@ describe('Comment Service', () => {
       // Mock the re-fetch after create
       Comments.findById.mockReturnValueOnce({
         populate: jest.fn().mockReturnThis(),
-        lean: jest
-          .fn()
-          .mockResolvedValue({
-            _id: commentId,
-            _parentComment: parentCommentId,
-          }),
+        lean: jest.fn().mockResolvedValue({
+          _id: commentId,
+          _parentComment: parentCommentId,
+        }),
       });
 
       await commentService.createComment({
@@ -548,14 +546,16 @@ describe('Comment Service', () => {
       );
     });
 
-    it('should allow group admin to delete any comment', async () => {
+    it("should allow a company admin to delete any comment of its group's mailings", async () => {
       const commentId = mockObjectId();
       const authorId = mockObjectId();
       const adminId = mockObjectId();
+      const groupId = mockObjectId();
 
       const mockComment = {
         _id: commentId,
         _author: authorId,
+        _company: groupId,
         isDeleted: false,
       };
 
@@ -564,10 +564,39 @@ describe('Comment Service', () => {
 
       const result = await commentService.deleteComment({
         commentId: commentId.toString(),
-        user: { _id: adminId, role: 'company_admin' },
+        user: {
+          _id: adminId,
+          role: 'company_admin',
+          isGroupAdmin: true,
+          group: { id: groupId.toString() },
+        },
       });
 
       expect(result.success).toBe(true);
+    });
+
+    it("should forbid a company admin to delete a comment of another group's mailing", async () => {
+      const commentId = mockObjectId();
+
+      Comments.findById = jest.fn().mockResolvedValue({
+        _id: commentId,
+        _author: mockObjectId(),
+        _company: mockObjectId(),
+        isDeleted: false,
+      });
+      Comments.deleteWithReplies = jest.fn().mockResolvedValue({});
+
+      await expect(
+        commentService.deleteComment({
+          commentId: commentId.toString(),
+          user: {
+            _id: mockObjectId(),
+            role: 'company_admin',
+            isGroupAdmin: true,
+            group: { id: mockObjectId().toString() },
+          },
+        })
+      ).rejects.toMatchObject({ status: 403 });
     });
 
     it('should throw Forbidden if not author or admin', async () => {

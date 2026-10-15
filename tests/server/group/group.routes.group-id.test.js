@@ -34,8 +34,7 @@ const request = require('supertest');
 
 const VALID_GROUP = '507f1f77bcf86cd799439b01';
 
-// Turned on by #1274 (the selected group)
-describe.skip('group routes refuse an invalid group id', () => {
+describe('group routes refuse an invalid group id', () => {
   let groupRouter;
 
   beforeAll(() => {

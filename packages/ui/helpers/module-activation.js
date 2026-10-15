@@ -11,13 +11,14 @@
  * @returns {boolean} true when the module should be rendered as locked.
  *
  * Rules:
- * - Super admins are NEVER locked (platform-wide access).
  * - Modules without `enabledFlag` are always unlocked (free for everyone).
  * - Otherwise: locked iff the flag is explicitly falsy on the group.
+ * - A super admin sees the modules of its selected group as the group's users
+ *   do (ADR 0002, amended): the caller passes that group. The lock is part of
+ *   the view; the server never refuses a super admin for a module flag.
  */
 export function isModuleLocked(module, user, group) {
   if (!module || !module.enabledFlag) return false;
-  if (user && user.isAdmin) return false;
   return !group || !group[module.enabledFlag];
 }
 

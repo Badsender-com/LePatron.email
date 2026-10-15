@@ -5,6 +5,7 @@ const { BadRequest, Forbidden, NotFound } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const permissions = require('../account/permissions.js');
 const logger = require('../utils/logger.js');
 
 /**
@@ -303,12 +304,13 @@ async function updateComment({ commentId, user, updates }) {
 async function deleteComment({ commentId, user }) {
   const comment = await getCommentOrThrow(commentId);
 
-  // Check permission: author, group admin, or super admin
+  // The author, or whoever moderates the comments of the mailing's group: its
+  // company admin, a super admin (ADR 0002, amended).
   const userId = user._id || user.id;
   const isAuthor = comment._author.toString() === userId.toString();
-  const isGroupAdmin = user.isAdmin || user.role === 'company_admin';
+  const canModerate = permissions.canModerateComments(user, comment._company);
 
-  if (!isAuthor && !isGroupAdmin) {
+  if (!isAuthor && !canModerate) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);
   }
 

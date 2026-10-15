@@ -228,7 +228,11 @@ function createStore() {
       ),
     updateOne: async (filter, update) => {
       const record = users.find((u) => matches(u, filter));
-      if (record) Object.assign(record, update.$set || update);
+      if (record) {
+        const { $set, $unset, ...plain } = update;
+        Object.assign(record, $set || plain);
+        Object.keys($unset || {}).forEach((key) => delete record[key]);
+      }
       return { nModified: record ? 1 : 0 };
     },
     updateMany: async (filter, update) => {

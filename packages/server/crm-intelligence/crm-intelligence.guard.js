@@ -3,6 +3,7 @@
 const createError = require('http-errors');
 const { Groups } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
+const { listingGroupIdOf } = require('../account/request-scope.js');
 
 /**
  * Middleware that enforces CRM Intelligence access for the user's group:
@@ -29,13 +30,12 @@ async function guardCrmIntelligenceProbe(req, res, next) {
 
 async function loadGroupAndAttach(req, next, { enforceFlag }) {
   try {
-    const { user } = req;
+    const user = req.user || {};
+    // The dashboards of the user's own group, or of a super admin's selected
+    // group; the bootstrap account is refused (ADR 0002, amended).
+    const groupId = listingGroupIdOf(user);
 
-    if (!user || !user.group || !user.group.id) {
-      return next(createError(400, ERROR_CODES.GROUP_NOT_FOUND));
-    }
-
-    const group = await Groups.findById(user.group.id)
+    const group = await Groups.findById(groupId)
       .select('enableCrmIntelligence')
       .lean();
 
@@ -43,7 +43,9 @@ async function loadGroupAndAttach(req, next, { enforceFlag }) {
       return next(createError(404, ERROR_CODES.GROUP_NOT_FOUND));
     }
 
-    if (enforceFlag && group.enableCrmIntelligence !== true) {
+    // The lock is part of the view for a super admin: the screen shows it,
+    // the server never refuses a super admin for a module flag.
+    if (enforceFlag && group.enableCrmIntelligence !== true && !user.isAdmin) {
       return next(createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED));
     }
 

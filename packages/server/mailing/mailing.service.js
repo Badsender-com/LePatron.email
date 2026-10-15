@@ -57,6 +57,11 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const permissions = require('../account/permissions.js');
+const {
+  resourceGroupIdOf,
+  assertSameGroup,
+} = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
@@ -113,29 +118,24 @@ async function listMailingForWorkspaceOrFolder({
     group = await Groups.findById(workspace.group);
   }
 
-  if (!user.isGroupAdmin) {
-    if (
-      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
-        workspace,
-        user,
-        group
-      )
-    ) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
+  if (!permissions.canReadWorkspace(user, workspace, group)) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+  // A list names its workspace or folder: it reads that resource's group
+  // (ADR 0002, amended).
+  const groupId = resourceGroupIdOf(user, workspace.group);
 
   if (parentFolderId) {
     mailings = await findMailings({
       parentFolderId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
   } else {
     mailings = await findMailings({
       workspaceId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
@@ -200,9 +200,8 @@ async function findTags(query) {
   const { user, workspaceId, parentFolderId } = query;
 
   // An admin's own company is not the one being viewed (the bootstrap
-  // account has none, a super admin's is the platform group), so the
-  // regular `addStrictGroupFilter` path would produce a corrupt query and
-  // `Tag.find` would return nothing. Derive the company from the workspace
+  // account has none, a super admin's is the platform group), so filtering
+  // on it would read the wrong company and `Tag.find` would return nothing. Derive the company from the workspace
   // or parent folder being viewed instead.
   const companyId = user?.isAdmin
     ? await companyOfDestination({ workspaceId, parentFolderId })
@@ -391,6 +390,8 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     mailing.group = user.isAdmin
       ? await companyOfDestination({ workspaceId, parentFolderId })
       : user.group.id;
+    // A mailing is made from a template of the group it lands in.
+    assertSameGroup(template.group || template._company, mailing.group);
   }
 
   const newMailing = await createMailing(mailing);
@@ -1271,13 +1272,19 @@ async function copyMailing(mailingId, destination, user) {
 
   const copy = buildMailingCopy(source);
 
+  // A copy keeps its group: it goes into a workspace of that group.
   if (workspaceId) {
     const destination = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, destination);
+    assertSameGroup(mailing._company, destination.group);
 
     copy._workspace = destination;
   } else {
     await folderService.hasAccess(folderId, user);
+    const destinationWorkspace = await folderService.getWorkspaceForFolder(
+      folderId
+    );
+    assertSameGroup(mailing._company, destinationWorkspace.group);
 
     const destination = await folderService.getFolder(folderId);
     copy._parentFolder = destination;
@@ -1589,6 +1596,8 @@ async function moveMailing(user, mailing, workspaceId, parentFolderId) {
 
   workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
   workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+  // A mailing moves within its group.
+  assertSameGroup(sourceWorkspace.group, destinationWorkspace.group);
 
   const moveResponse = await Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailing.id) },
@@ -1640,9 +1649,16 @@ async function moveManyMailings(user, mailingsIds, destination) {
   // moving to a folder
   if (parentFolderId) {
     await folderService.hasAccess(parentFolderId, user);
+    const destinationWorkspace = await folderService.getWorkspaceForFolder(
+      parentFolderId
+    );
 
     const mailings = await findAllIn(mailingsIds);
     await checkAccessMailingsSource(mailings, user);
+    // Mailings move within their group.
+    mailings.forEach((mailing) =>
+      assertSameGroup(mailing._company, destinationWorkspace.group)
+    );
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
@@ -1666,6 +1682,9 @@ async function moveManyMailings(user, mailingsIds, destination) {
 
     const mailings = await findAllIn(mailingsIds);
     await checkAccessMailingsSource(mailings, user);
+    mailings.forEach((mailing) =>
+      assertSameGroup(mailing._company, destination.group)
+    );
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
@@ -1689,10 +1708,12 @@ async function validateMailExist(mailingId) {
 }
 
 function applyFilters(query) {
-  const { user, workspaceId, parentFolderId, ...restQuery } = query;
+  const { groupId, workspaceId, parentFolderId, ...restQuery } = query;
 
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
-  let workspaceOrFolderFilter = { ...mailingQueryStrictGroup, ...restQuery };
+  let workspaceOrFolderFilter = {
+    _company: mongoose.Types.ObjectId(String(groupId)),
+    ...restQuery,
+  };
 
   if (workspaceId) {
     workspaceOrFolderFilter = {

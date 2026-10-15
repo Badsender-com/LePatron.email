@@ -44,8 +44,9 @@ import {
 } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
-const COLUMN_USERNAME = 'userName';
-const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
+// A super admin works in the modules like a company admin of its selected
+// group, plus its admin shortcuts (ADR 0002, amended): nothing is hidden.
+const TABLE_HIDDEN_COLUMNS_ADMIN = [];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   ACTIONS.RENAME,
@@ -108,6 +109,9 @@ export default {
     };
   },
   computed: {
+    modulesGroupId() {
+      return this.$store.getters['user/MODULES_GROUP']?.id || null;
+    },
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     ...mapState(FOLDER, [
       'pagination',
@@ -199,25 +203,34 @@ export default {
     dialogRename(val) {
       val || this.closeRename();
     },
-  },
-  async mounted() {
-    const groupId = this.$store.state.user?.info?.group?.id;
-    if (!groupId) return;
-    try {
-      const config = await this.$axios.$get(aiFeatures(groupId));
-
-      const features = config?.features || [];
-
-      const translation = features.find((f) => f.featureType === 'translation');
-
-      this.hasActiveTranslation = !!(
-        translation?.isActive && translation?.integration?.isActive
-      );
-    } catch {
-      this.hasActiveTranslation = false;
-    }
+    // The group whose mailings are listed: a super admin's selected group,
+    // anyone else's own group (ADR 0002, amended).
+    modulesGroupId: {
+      immediate: true,
+      handler(groupId) {
+        this.loadTranslationFeature(groupId);
+      },
+    },
   },
   methods: {
+    async loadTranslationFeature(groupId) {
+      if (!groupId || process.server) return;
+      try {
+        const config = await this.$axios.$get(aiFeatures(groupId));
+
+        const features = config?.features || [];
+
+        const translation = features.find(
+          (f) => f.featureType === 'translation'
+        );
+
+        this.hasActiveTranslation = !!(
+          translation?.isActive && translation?.integration?.isActive
+        );
+      } catch {
+        this.hasActiveTranslation = false;
+      }
+    },
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     escapeHtml,
     handleRowClick(item) {
@@ -665,13 +678,23 @@ export default {
           </span>
         </template>
         <template #item.userName="{ item }">
-          <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
+          <!-- .stop: the link alone, without the row's click opening the
+               editor. -->
+          <nuxt-link
+            v-if="isAdmin"
+            :to="`/users/${item.userId}`"
+            @click.native.stop
+          >
             {{ item.userName }}
           </nuxt-link>
           <span v-else>{{ item.userName }}</span>
         </template>
         <template #item.templateName="{ item }">
-          <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
+          <nuxt-link
+            v-if="isAdmin"
+            :to="`/templates/${item.templateId}`"
+            @click.native.stop
+          >
             {{ item.templateName }}
           </nuxt-link>
           <span v-else>{{ item.templateName }}</span>

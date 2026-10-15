@@ -39,6 +39,7 @@
     <!-- Zone 2: Contextual -->
     <bs-sidebar-context-zone
       :active-module="activeModule"
+      :active-module-locked="activeModuleLocked"
       :collapsed="collapsed && !isMobile"
     />
 
@@ -84,7 +85,6 @@ import {
   SET_COLLAPSED,
   SET_ACTIVE_MODULE,
   SET_WIDTH,
-  SET_LAST_GROUP_ID,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from '~/store/sidebar';
@@ -108,7 +108,7 @@ export default {
   computed: {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
     ...mapGetters('user', {
-      userGroup: 'GROUP',
+      modulesGroup: 'MODULES_GROUP',
       isAdmin: 'IS_ADMIN',
       isGroupAdmin: 'IS_GROUP_ADMIN',
     }),
@@ -120,7 +120,7 @@ export default {
       const userLike = { isAdmin: this.isAdmin };
       return SIDEBAR_MODULES.map((module) => ({
         ...module,
-        locked: isModuleLocked(module, userLike, this.userGroup),
+        locked: isModuleLocked(module, userLike, this.modulesGroup),
       }));
     },
 
@@ -128,6 +128,14 @@ export default {
     // lives in SIDEBAR_MODULES so adding a new module is a single-file edit.
     detectedModule() {
       const path = this.$route.path;
+      // A page without a module in its path (the global admin pages, such as
+      // /ai-skills or /super-admins) declares the one it belongs to, so it
+      // keeps the settings menu after a reload.
+      const declared = []
+        .concat(this.$route.meta || [])
+        .map((meta) => meta && meta.sidebarModule)
+        .find(Boolean);
+      if (declared) return declared;
       const match = SIDEBAR_MODULES.find((m) =>
         (m.pathPrefixes || []).some((prefix) => path.startsWith(prefix))
       );
@@ -144,6 +152,10 @@ export default {
       return null;
     },
 
+    activeModuleLocked() {
+      const active = this.modules.find((m) => m.id === this.activeModule);
+      return !!(active && active.locked);
+    },
     sidebarStyle() {
       return {
         width: `${this.sidebarWidth}px`,
@@ -163,14 +175,6 @@ export default {
         }
       },
     },
-    '$route.params.groupId': {
-      immediate: true,
-      handler(groupId) {
-        if (groupId) {
-          this.setLastGroupId(groupId);
-        }
-      },
-    },
   },
   mounted() {
     // Add event listeners for resize
@@ -187,7 +191,6 @@ export default {
       setCollapsed: SET_COLLAPSED,
       setActiveModule: SET_ACTIVE_MODULE,
       setWidth: SET_WIDTH,
-      setLastGroupId: SET_LAST_GROUP_ID,
     }),
 
     handleToggle() {

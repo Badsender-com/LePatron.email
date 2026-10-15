@@ -41,6 +41,7 @@ const templateService = require('../../../packages/server/template/template.serv
 const mailingService = require('../../../packages/server/mailing/mailing.service.js');
 const {
   CLIENT_GROUP,
+  PLATFORM_GROUP,
   ALICE,
   FRANK,
   USERS,
@@ -96,6 +97,19 @@ describe('a new mailing in a client workspace', () => {
     expect(mailing.userId).toBe(ALICE);
     expect(mailing.userName).toBe('Alice');
     expect(String(mailing.group)).toBe(CLIENT_GROUP);
+  });
+
+  it("refuses a super admin a template of another group than the workspace's", async () => {
+    templateService.findOne.mockResolvedValue({
+      _id: TEMPLATE,
+      name: 'Platform digest',
+      group: PLATFORM_GROUP,
+    });
+
+    await expect(createIn(actor(ALICE))).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(Mailings.create).not.toHaveBeenCalled();
   });
 
   it('has no owner and no group for the bootstrap account', async () => {

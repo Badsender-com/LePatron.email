@@ -12,6 +12,7 @@ const {
 } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const modelsUtils = require('../utils/model.js');
+const templateService = require('./template.service.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const templateBlocks = require('./template-blocks.controller.js');
@@ -50,9 +51,8 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const templateQuery = modelsUtils.addGroupFilter(req.user, {});
-  const templates = await Templates.findForApi(templateQuery);
-  res.json({ items: templates });
+  const { groupId } = req.query || {};
+  res.json({ items: await templateService.listForUser(req.user, groupId) });
 }
 
 /**
