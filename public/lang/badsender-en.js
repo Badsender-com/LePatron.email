@@ -148,7 +148,6 @@ module.exports = {
   'error-api-error': 'An error occurred while communicating with the API.',
 
   // test list
-  'title-send-test-mails': 'Send a test email',
   'send-test-success': 'Email sent successfully',
   'send-test-error': 'An error has occured while sending the emai :(l',
   'placeholder-input-emails-test':
@@ -158,7 +157,6 @@ module.exports = {
     'The email addresses entered are invalid. Please separate email addresses with ";"',
   'placeholder-emails-groups': 'Select a list',
   'sending-test-mails': 'Sending test mail…',
-  'send-test-mails': 'Send',
 
   // SaveBlockModal translations
   'title-save-block': 'Save block',
@@ -708,6 +706,8 @@ module.exports = {
     'The quality checks have not run on this version yet',
   'Separate addresses with a semicolon': 'Separate addresses with a semicolon',
   'Saved list of addresses': 'Saved list of addresses',
+  'The saved lists of addresses could not be loaded':
+    'The saved lists of addresses could not be loaded',
   'Send the test email': 'Send the test email',
   'Add comment': 'Add comment',
   'Stop ignoring': 'Stop ignoring',

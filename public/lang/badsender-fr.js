@@ -153,7 +153,6 @@ module.exports = {
     "Une erreur s'est produite lors de la communication avec l'API.",
 
   // test list
-  'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
   'placeholder-input-emails-test':
@@ -163,7 +162,6 @@ module.exports = {
     'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
-  'send-test-mails': 'Envoyer',
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
@@ -729,6 +727,8 @@ module.exports = {
   'Separate addresses with a semicolon':
     'Séparez les adresses par un point-virgule',
   'Saved list of addresses': "Liste d'adresses enregistrée",
+  'The saved lists of addresses could not be loaded':
+    "Les listes d'adresses enregistrées n'ont pas pu être chargées",
   'Send the test email': "Envoyer l'email de test",
   'Add comment': 'Ajouter un commentaire',
   'Stop ignoring': 'Ne plus ignorer',
