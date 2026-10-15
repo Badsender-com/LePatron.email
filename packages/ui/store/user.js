@@ -1,5 +1,6 @@
 import { groupsItem, selectedGroup } from '~/helpers/api-routes.js';
 import { Roles } from '~/helpers/constants/roles.js';
+import { assertCapability } from '../../shared/access/roles.js';
 
 export const USER = 'user';
 
@@ -11,8 +12,11 @@ export const LOCALE = 'LOCALE';
 export const IS_CONNECTED = 'IS_CONNECTED';
 export const IS_ADMIN = 'IS_ADMIN';
 export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
-export const IS_GROUP_ADMIN_TECH = 'IS_GROUP_ADMIN_TECH';
-export const ROLE = 'ROLE';
+// What the user may do, as the server sent it with the user
+// (packages/shared/access/roles.js): `CAN(capability)`. The UI asks for a
+// capability, never compares roles.
+export const CAN = 'CAN';
+export const USER_CAPABILITIES = 'USER_CAPABILITIES';
 export const SESSION_ACL = 'SESSION_ACL';
 // Derived from the modules group's downloadMailingWithFtpImages. Used to be a
 // separate boolean kept in sync via USER_SET_HAS_FTP_ACCESS — removed to
@@ -36,14 +40,18 @@ export const getters = {
   [IS_GROUP_ADMIN](state) {
     return state.info != null && state.info.isGroupAdmin === true;
   },
-  [IS_GROUP_ADMIN_TECH](state) {
-    return state.info != null && state.info.isGroupAdminTech === true;
-  },
   [IS_ADMIN](state) {
     return state.info != null && state.info.isAdmin === true;
   },
-  [ROLE](state) {
-    return state.info != null ? state.info.role : null;
+  [USER_CAPABILITIES](state) {
+    return (state.info && state.info.capabilities) || [];
+  },
+  [CAN](state, getters) {
+    const capabilities = getters[USER_CAPABILITIES];
+    return (capability) => {
+      assertCapability(capability);
+      return capabilities.includes(capability);
+    };
   },
   [LOCALE](state) {
     return state.info != null && state.info.lang;

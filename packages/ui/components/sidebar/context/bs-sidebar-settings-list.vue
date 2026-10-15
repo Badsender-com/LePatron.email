@@ -49,14 +49,8 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import {
-  GROUP,
-  IS_ADMIN,
-  IS_GROUP_ADMIN,
-  IS_GROUP_ADMIN_TECH,
-  SELECTED_GROUP,
-  USER,
-} from '~/store/user';
+import { GROUP, IS_ADMIN, CAN, SELECTED_GROUP, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { Shield, Sparkles, FlaskConical, UserCog } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
@@ -77,8 +71,7 @@ export default {
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
-      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
+      can: CAN,
       group: GROUP,
       selectedGroup: SELECTED_GROUP,
     }),
@@ -98,8 +91,8 @@ export default {
     },
 
     visibleCategories() {
-      const canAccessGroupAdmin = this.isGroupAdmin || this.isAdmin;
-      const canAccessGroupAdminTech = this.isGroupAdminTech || this.isAdmin;
+      const canAccessGroupAdmin = this.can(CAPABILITIES.GROUP_MANAGE);
+      const canAccessGroupAdminTech = this.can(CAPABILITIES.GROUP_MANAGE_TECH);
       const hasGroupContext = !!this.settingsBasePath;
 
       const categories = [];
@@ -305,7 +298,7 @@ export default {
         );
       }
 
-      if (canAccessGroupAdmin || canAccessGroupAdminTech) {
+      if (canAccessGroupAdmin) {
         emailBuilderItems.push({
           id: 'variables',
           label: this.$t('global.variables'),

@@ -12,7 +12,7 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { Roles, roleItems } from '~/helpers/constants/roles';
-import { IS_ADMIN, IS_GROUP_ADMIN_TECH, USER } from '~/store/user';
+import { USER, USER_CAPABILITIES } from '~/store/user';
 import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
@@ -100,16 +100,11 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
-    }),
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
     roles() {
       return roleItems(this, {
-        includeTechAdmin:
-          this.isAdmin ||
-          this.isGroupAdminTech ||
-          this.user.role === Roles.GROUP_ADMIN_TECH,
+        grantableWith: this.capabilities,
+        currentRole: this.user.role,
       });
     },
     pageTitle() {

@@ -1,8 +1,7 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
-import { getRoleLabelKey } from '~/helpers/roles.js';
-import { Roles } from '~/helpers/constants/roles';
+import { Roles, getRoleLabelKey } from '~/helpers/constants/roles';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';

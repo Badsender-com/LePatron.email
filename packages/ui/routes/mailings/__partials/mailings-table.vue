@@ -2,8 +2,8 @@
 import { mapMutations, mapGetters, mapState } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { USER, IS_ADMIN, ROLE } from '~/store/user.js';
-import { REVIEWER, WRITER } from '~/helpers/roles.js';
+import { USER, IS_ADMIN, CAN } from '~/store/user.js';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
@@ -45,19 +45,20 @@ import {
 } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
-// A super admin works in the modules like a company admin of its selected
-// group, plus its admin shortcuts (ADR 0002, amended): nothing is hidden.
-const TABLE_HIDDEN_COLUMNS_ADMIN = [];
-const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
-const TABLE_HIDDEN_COLUMNS_REVIEWER = [
-  ACTIONS.RENAME,
-  ACTIONS.DELETE,
-  ACTIONS.MOVE_MAIL,
-  ACTIONS.COPY_MAIL,
-  ACTIONS.ADD_TAGS,
-  ACTIONS.TRANSFER,
-];
-const TABLE_HIDDEN_COLUMNS_WRITER = [ACTIONS.DELETE, ACTIONS.TRANSFER];
+// What each row action needs, as the server asks for it: an action the user
+// cannot do is not offered. A super admin can do them all, in the modules of
+// its selected group too (ADR 0002, amended).
+const ACTION_CAPABILITIES = {
+  [ACTIONS.RENAME]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.ADD_TAGS]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.COPY_MAIL]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.MOVE_MAIL]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.DUPLICATE_TRANSLATE]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.DELETE]: CAPABILITIES.MAILING_DELETE,
+  [ACTIONS.TRANSFER]: CAPABILITIES.PLATFORM_MANAGE,
+  [ACTIONS.DOWNLOAD]: CAPABILITIES.MAILING_EXPORT,
+  [ACTIONS.DOWNLOAD_FTP]: CAPABILITIES.MAILING_EXPORT,
+};
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   ACTIONS.RENAME,
   ACTIONS.DELETE,
@@ -122,26 +123,20 @@ export default {
     modulesGroupId() {
       return this.$store.getters['user/MODULES_GROUP']?.id || null;
     },
-    ...mapGetters(USER, { isAdmin: IS_ADMIN, role: ROLE }),
+    ...mapGetters(USER, { isAdmin: IS_ADMIN, can: CAN }),
     ...mapState(FOLDER, [
       'pagination',
       'tags',
       'isLoadingMailingsForFilterUpdate',
     ]),
     hiddenCols() {
-      const roleHiddenColumns = {
-        [REVIEWER]: TABLE_HIDDEN_COLUMNS_REVIEWER,
-        [WRITER]: TABLE_HIDDEN_COLUMNS_WRITER,
-      };
-      const excludedRules = this.isAdmin
-        ? TABLE_HIDDEN_COLUMNS_ADMIN
-        : roleHiddenColumns[this.role] || TABLE_HIDDEN_COLUMNS_USER;
+      const refused = Object.keys(ACTION_CAPABILITIES).filter(
+        (action) => !this.can(ACTION_CAPABILITIES[action])
+      );
       if (!this.hasAccess) {
-        return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
+        return [...refused, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }
-      // Not filtered against TABLE_HIDDEN_COLUMNS_NO_ACCESS: that stripped the
-      // rename/delete/move/tags that reviewer and writer must not get.
-      return excludedRules;
+      return refused;
     },
     selectedRows: {
       get() {

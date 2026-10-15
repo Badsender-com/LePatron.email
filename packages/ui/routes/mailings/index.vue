@@ -18,10 +18,10 @@ import {
   IS_GROUP_ADMIN,
   HAS_FTP_ACCESS,
   MODULES_GROUP,
-  ROLE,
+  CAN,
   USER,
 } from '~/store/user';
-import { REVIEWER, WRITER } from '~/helpers/roles.js';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -86,10 +86,10 @@ export default {
       isGroupAdmin: IS_GROUP_ADMIN,
       hasFtpAccess: HAS_FTP_ACCESS,
       modulesGroup: MODULES_GROUP,
-      role: ROLE,
+      can: CAN,
     }),
     canCreateMailing() {
-      return this.hasAccess && this.role !== REVIEWER && this.role !== WRITER;
+      return this.hasAccess && this.can(CAPABILITIES.MAILING_CREATE);
     },
     groupAdminUrl() {
       return `/groups/${this.modulesGroup?.id}`;
