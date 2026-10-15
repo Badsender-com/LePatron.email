@@ -78,6 +78,32 @@ describe('GET /share/:token, the edges', () => {
     expect(other.res.statusCode).toBe(200);
   });
 
+  // Behind the platform's proxy, req.ip is the proxy: the reader is the last
+  // address from the internet in X-Forwarded-For, whatever the client wrote
+  // before it.
+  it('counts a reader by the address the proxy saw, not a forged one', async () => {
+    ShareLinks.findOne.mockReturnValue(
+      lean({ ...link, _id: '507f1f77bcf86cd799439033' })
+    );
+    Mailings.findById.mockReturnValue(
+      lean({ _id: 'm3', name: 'x', previewHtml: '<p>x</p>' })
+    );
+    const viewFrom = (forwarded) =>
+      call(pageController.renderShare, {
+        params: { token: TOKEN },
+        ip: '10.0.0.9',
+        headers: { 'x-forwarded-for': forwarded },
+      });
+    let last;
+    for (let i = 0; i < 301; i += 1) {
+      last = await viewFrom(`198.51.100.${i % 250}, 203.0.113.7, 10.1.2.3`);
+    }
+    expect(last.res.statusCode).toBe(429);
+
+    const other = await viewFrom('203.0.113.8, 10.1.2.3');
+    expect(other.res.statusCode).toBe(200);
+  });
+
   it('answers every made-up token with a 404, however many there are', async () => {
     ShareLinks.findOne.mockReturnValue(lean(null));
     let last;
