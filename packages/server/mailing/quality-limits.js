@@ -25,6 +25,8 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 5000;
 const RUNS_PER_WINDOW = 20;
 const RUN_WINDOW_MS = 10 * 60 * 1000;
+// How long a run waits for the previous one of its user.
+const QUEUE_WAIT_MS = 5000;
 // Requests of one kind in parallel within a run.
 const CONCURRENCY = 4;
 
@@ -68,9 +70,11 @@ function noop() {}
  * One run at a time per user, and RUNS_PER_WINDOW runs per RUN_WINDOW_MS.
  *
  * A second run of the same user (a second tab, an export during a run) waits
- * for the first one rather than being refused: QUALITY_CHECK_RUNNING is
- * answered only when a run is already waiting. QUALITY_CHECKS_TOO_FREQUENT
- * counts every run that got in, waiting ones included.
+ * for the first one rather than being refused, for QUEUE_WAIT_MS at most:
+ * then, or when a run is already waiting, QUALITY_CHECK_RUNNING, which the
+ * editor retries. Waiting longer would let the run end past the editor's own
+ * timeout. QUALITY_CHECKS_TOO_FREQUENT counts every run that got in, waiting
+ * ones included.
  */
 async function throttled(userKey, work) {
   const previous = runs.get(userKey);
@@ -83,17 +87,33 @@ async function throttled(userKey, work) {
     );
   }
   const slot = { waiting: Boolean(previous), done: null };
-  slot.done = (async () => {
-    if (previous) await settled(previous.done);
-    slot.waiting = false;
-    return work();
-  })();
   runs.set(userKey, slot);
   try {
+    if (previous && !(await settledWithin(previous.done, QUEUE_WAIT_MS))) {
+      throw new createError.TooManyRequests(ERROR_CODES.QUALITY_CHECK_RUNNING);
+    }
+    slot.waiting = false;
+    slot.done = work();
     return await slot.done;
   } finally {
-    if (runs.get(userKey) === slot) runs.delete(userKey);
+    if (runs.get(userKey) === slot) {
+      // A run that gave up waiting hands the turn back to the one still going.
+      if (slot.waiting) runs.set(userKey, previous);
+      else runs.delete(userKey);
+    }
   }
+}
+
+/** @returns {Promise<boolean>} whether `promise` settled within `ms` */
+function settledWithin(promise, ms) {
+  let timer;
+  const expired = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(false), ms);
+  });
+  return Promise.race([
+    settled(promise).then(() => true),
+    expired,
+  ]).finally(() => clearTimeout(timer));
 }
 
 // A semaphore: at most `limit` tasks at once, whoever asks. Per worker.
@@ -156,5 +176,6 @@ module.exports = {
   CONCURRENCY,
   RUNS_PER_WINDOW,
   RUN_WINDOW_MS,
+  QUEUE_WAIT_MS,
   clearForTests,
 };
