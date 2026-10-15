@@ -34,6 +34,9 @@ const {
   MAX_LINK_PROBES,
 } = require('../../../packages/server/mailing/quality-links.service.js');
 const {
+  QUEUE_WAIT_MS,
+} = require('../../../packages/server/mailing/quality-limits.js');
+const {
   measuredUrl,
   measureImage,
   fetchOwn,
@@ -608,6 +611,9 @@ describe('blocklists', () => {
 
 describe('throttle', () => {
   const flush = () => new Promise((resolve) => setImmediate(resolve));
+  // Under fake timers, setImmediate is faked too.
+  const realSetImmediate = jest.requireActual('timers').setImmediate;
+  const flushReal = () => new Promise((resolve) => realSetImmediate(resolve));
 
   it('runs one check at a time per user, the next one waiting its turn, a third refused', async () => {
     const releases = [];
@@ -704,6 +710,72 @@ describe('throttle', () => {
     const { links } = await second;
     expect(links['https://b.test']).toEqual({ state: 'unverifiable' });
     expect(d.probe).toHaveBeenCalledTimes(1);
+  });
+
+  // The editor gives up after its own timeout: a run that waited its turn
+  // and then took a whole deadline of its own would answer nobody.
+  it('refuses as running a check that waited too long for its turn', async () => {
+    jest.useFakeTimers('modern');
+    try {
+      let release;
+      const d = deps({
+        probe: jest.fn(
+          () =>
+            new Promise((resolve) => {
+              release = () => resolve({ status: 200 });
+            })
+        ),
+      });
+      const first = run({ links: ['https://a.test'] }, d);
+      const second = run({ links: ['https://b.test'] }, d);
+      await flushReal();
+      jest.advanceTimersByTime(QUEUE_WAIT_MS);
+      await expect(second).rejects.toMatchObject({
+        status: 429,
+        message: 'QUALITY_CHECK_RUNNING',
+      });
+      // The first run still holds the turn: the next one waits for it.
+      const third = run({ links: ['https://c.test'] }, d);
+      await flushReal();
+      expect(d.probe).toHaveBeenCalledTimes(1);
+      release();
+      await first;
+      await flushReal();
+      release();
+      await expect(third).resolves.toMatchObject({
+        links: { 'https://c.test': { state: 'ok' } },
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('counts the deadline of a check from its arrival, waiting included', async () => {
+    let now = 1000000;
+    jest.spyOn(Date, 'now').mockImplementation(() => now);
+    try {
+      let release;
+      const d = deps({
+        probe: jest.fn(
+          () =>
+            new Promise((resolve) => {
+              release = () => resolve({ status: 200 });
+            })
+        ),
+      });
+      const first = run({ links: ['https://a.test'] }, d);
+      const second = run({ links: ['https://b.test'] }, d);
+      await flush();
+      // Its deadline passes before its turn comes: it fetches nothing.
+      now += 20001;
+      release();
+      await first;
+      const { links } = await second;
+      expect(links['https://b.test']).toEqual({ state: 'unverifiable' });
+      expect(d.probe).toHaveBeenCalledTimes(1);
+    } finally {
+      Date.now.mockRestore();
+    }
   });
 
   it('allows a few runs per window, then refuses', async () => {
