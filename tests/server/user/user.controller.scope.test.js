@@ -81,11 +81,19 @@ const GROUP_B = '507f1f77bcf86cd799439b01';
 const CAROL = '507f1f77bcf86cd799439103'; // company admin of A
 const DAVE = '507f1f77bcf86cd799439104'; // regular user of A
 const FRANK = '507f1f77bcf86cd799439106'; // regular user of B
+const TINA = '507f1f77bcf86cd799439107'; // tech admin of A
 
 const RECORDS = [
   { _id: CAROL, name: 'Carol', role: 'company_admin', _company: GROUP_A },
   { _id: DAVE, name: 'Dave', role: 'regular_user', _company: GROUP_A },
   { _id: FRANK, name: 'Frank', role: 'regular_user', _company: GROUP_B },
+  {
+    _id: TINA,
+    name: 'Tina',
+    email: 'tina@a.test',
+    role: 'company_admin_tech',
+    _company: GROUP_A,
+  },
 ];
 
 // As passport puts it on the request: the stored user's JSON, whose
@@ -118,48 +126,98 @@ beforeEach(() => {
   RECORDS.forEach((r) => Users.__records.push({ ...r }));
 });
 
-describe('a company admin', () => {
-  it.each([
-    [
-      'reads',
-      (u, id) => call(controller.read, { user: u, params: { userId: id } }),
-    ],
-    [
-      'updates',
-      (u, id) =>
-        call(controller.update, {
-          user: u,
-          params: { userId: id },
-          body: { name: 'Renamed' },
-        }),
-    ],
-    [
-      'activates',
-      (u, id) => call(controller.activate, { user: u, params: { userId: id } }),
-    ],
-    [
-      'deactivates',
-      (u, id) =>
-        call(controller.deactivate, { user: u, params: { userId: id } }),
-    ],
-    [
-      'resets the password of',
-      (u, id) =>
-        call(controller.adminResetPassword, {
-          user: u,
-          params: { userId: id },
-        }),
-    ],
-    [
-      'lists the mailings of',
-      (u, id) =>
-        call(controller.readMailings, { user: u, params: { userId: id } }),
-    ],
-  ])('%s a member of their own group, not of another', async (_, act) => {
-    expect((await act(companyAdminOfA, DAVE)).status).toBe(200);
+// The actions a company admin runs on another account of their group.
+const MANAGEMENT_ACTIONS = [
+  [
+    'reads',
+    (u, id) => call(controller.read, { user: u, params: { userId: id } }),
+  ],
+  [
+    'updates',
+    (u, id) =>
+      call(controller.update, {
+        user: u,
+        params: { userId: id },
+        body: { name: 'Renamed' },
+      }),
+  ],
+  [
+    'activates',
+    (u, id) => call(controller.activate, { user: u, params: { userId: id } }),
+  ],
+  [
+    'deactivates',
+    (u, id) => call(controller.deactivate, { user: u, params: { userId: id } }),
+  ],
+  [
+    'resets the password of',
+    (u, id) =>
+      call(controller.adminResetPassword, {
+        user: u,
+        params: { userId: id },
+      }),
+  ],
+  [
+    'lists the mailings of',
+    (u, id) =>
+      call(controller.readMailings, { user: u, params: { userId: id } }),
+  ],
+];
 
-    expect(await act(companyAdminOfA, FRANK)).toEqual(REFUSED);
-    expect(Users.__records.find((r) => r._id === FRANK).name).toBe('Frank');
+describe('a company admin', () => {
+  it.each(MANAGEMENT_ACTIONS)(
+    '%s a member of their own group, not of another',
+    async (_, act) => {
+      expect((await act(companyAdminOfA, DAVE)).status).toBe(200);
+
+      expect(await act(companyAdminOfA, FRANK)).toEqual(REFUSED);
+      expect(Users.__records.find((r) => r._id === FRANK).name).toBe('Frank');
+    }
+  );
+
+  // Editing a tech admin's email, then resetting the password, would hand the
+  // company admin the account and its integrations.
+  it.each(
+    MANAGEMENT_ACTIONS.filter(([label]) =>
+      [
+        'updates',
+        'activates',
+        'deactivates',
+        'resets the password of',
+      ].includes(label)
+    )
+  )('%s no tech admin of their group', async (_, act) => {
+    expect(await act(companyAdminOfA, TINA)).toEqual({
+      status: 403,
+      error: 'FORBIDDEN_USER_MANAGEMENT',
+    });
+  });
+
+  it('changes no tech admin email', async () => {
+    const refused = await call(controller.update, {
+      user: companyAdminOfA,
+      params: { userId: TINA },
+      body: { email: 'carol@a.test' },
+    });
+
+    expect(refused.status).toBe(403);
+    expect(Users.__records.find((r) => r._id === TINA).email).toBe(
+      'tina@a.test'
+    );
+  });
+
+  it('creates no tech admin', async () => {
+    expect(
+      await call(controller.create, {
+        user: companyAdminOfA,
+        body: {
+          groupId: GROUP_A,
+          email: 'new@a.test',
+          name: 'New',
+          role: 'company_admin_tech',
+        },
+      })
+    ).toEqual({ status: 403, error: 'FORBIDDEN_ROLE_GRANT' });
   });
 
   it('creates users in their own group only', async () => {

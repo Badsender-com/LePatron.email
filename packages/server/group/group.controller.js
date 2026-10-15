@@ -10,6 +10,8 @@ const {
 
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
@@ -552,10 +554,14 @@ async function update(req, res) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
       'colorScheme',
-      'trackingConfig',
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // The company's tracking belongs to its technical settings (ADR 0004):
+      // dropped for a company admin, as the other fields it cannot set.
+      ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
+        ? ['trackingConfig']
+        : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to
     // carry the id of the target.

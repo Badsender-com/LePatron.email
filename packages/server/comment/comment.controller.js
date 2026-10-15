@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const { BadRequest } = require('http-errors');
 
 const commentService = require('./comment.service.js');
+const { COMMENT_DECISIONS } = require('./comment.schema.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
@@ -144,6 +145,7 @@ async function createComment(req, res) {
   if (!text || text.trim() === '') {
     throw new BadRequest(ERROR_CODES.COMMENT_TEXT_REQUIRED);
   }
+  assertDecision(decision, parentCommentId);
 
   const comment = await commentService.createComment({
     mailingId,
@@ -158,6 +160,23 @@ async function createComment(req, res) {
   });
 
   res.status(201).json(comment);
+}
+
+/**
+ * A decision is one of COMMENT_DECISIONS, on a thread's first comment: the
+ * listing reads the last root comment of an email (findApprovedMailingIds), so
+ * a decision on a reply would be stored and never count.
+ *
+ * @param {*} decision from the request body
+ * @param {*} parentCommentId from the request body
+ * @throws {BadRequest} COMMENT_INVALID_DECISION
+ */
+function assertDecision(decision, parentCommentId) {
+  if (decision == null) return;
+  const known = Object.values(COMMENT_DECISIONS).includes(decision);
+  if (!known || parentCommentId) {
+    throw new BadRequest(ERROR_CODES.COMMENT_INVALID_DECISION);
+  }
 }
 
 /**

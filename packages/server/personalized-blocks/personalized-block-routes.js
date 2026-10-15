@@ -1,7 +1,8 @@
 'use strict';
 
 const express = require('express');
-const { guard } = require('../account/auth.guard.js');
+const { guard, GUARD_CAN } = require('../account/auth.guard.js');
+const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const {
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
@@ -24,7 +25,7 @@ router.get(
 // Create a new personalized block
 router.post(
   '/',
-  guard(),
+  GUARD_CAN(C.BLOCK_LIBRARY_ADD),
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   personalizedBlocksController.createPersonalizedBlock
 );

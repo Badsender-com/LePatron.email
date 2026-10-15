@@ -161,3 +161,34 @@ describe('permissions', () => {
     expect(permissions.canWriteWorkspace(withoutGroup, WORKSPACE)).toBe(true);
   });
 });
+
+// What a role may do anywhere, read from its capabilities
+// (packages/shared/access/roles.js); the scope is checked apart.
+describe('capabilities', () => {
+  const {
+    CAPABILITIES,
+    ALL_CAPABILITIES,
+  } = require('../../../packages/shared/access/roles.js');
+
+  it('gives a super admin and the bootstrap account every capability', () => {
+    expect(permissions.capabilitiesOf(superAdmin)).toEqual(ALL_CAPABILITIES);
+    expect(permissions.capabilitiesOf(bootstrap)).toEqual(ALL_CAPABILITIES);
+  });
+
+  it("gives anyone else their role's", () => {
+    expect(permissions.can(member, CAPABILITIES.MAILING_DELETE)).toBe(true);
+    expect(permissions.can(member, CAPABILITIES.GROUP_MANAGE)).toBe(false);
+    expect(
+      permissions.can({ role: 'reviewer' }, CAPABILITIES.MAILING_EDIT_CONTENT)
+    ).toBe(false);
+  });
+
+  it('gives nothing without a user', () => {
+    expect(permissions.capabilitiesOf(undefined)).toEqual([]);
+    expect(permissions.can(null, CAPABILITIES.MAILING_COMMENT)).toBe(false);
+  });
+
+  it('throws on a misspelt capability, even for a super admin', () => {
+    expect(() => permissions.can(superAdmin, 'mailing.remove')).toThrow();
+  });
+});

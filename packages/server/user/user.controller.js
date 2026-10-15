@@ -20,7 +20,7 @@ const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('./super-admin-policy.js');
-const techAdminPolicy = require('./tech-admin-policy.js');
+const rightsPolicy = require('./rights-policy.js');
 const userScope = require('./user-scope.js');
 const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -117,11 +117,11 @@ async function create(req, res) {
   // No role means a regular user; any other value must be a role (an empty
   // one is refused, as on the update).
   const role = req.body.role === undefined ? Roles.REGULAR_USER : req.body.role;
-  techAdminPolicy.assertCanSetRole(req.user, undefined, role);
   const groupId = await superAdminPolicy.groupForCreation(req.user, {
     role,
     groupId: req.body.groupId,
   });
+  rightsPolicy.assertCanSetRole(req.user, undefined, role);
   if (!groupId) {
     throw new createError.BadRequest(
       'user.controller : in create, no groupId provided in request'
@@ -245,7 +245,8 @@ async function update(req, res) {
   if (!target) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, target);
   await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
-  techAdminPolicy.assertCanSetRole(req.user, target, userParams.role);
+  rightsPolicy.assertCanManage(req.user, target);
+  rightsPolicy.assertCanSetRole(req.user, target, userParams.role);
 
   const previousRole = target.role;
   const updatedUser = await userService.updateUser(
@@ -281,6 +282,7 @@ async function activate(req, res) {
   if (!user) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, user);
   await superAdminPolicy.assertCanActivate(req.user, user);
+  rightsPolicy.assertCanManage(req.user, user);
 
   await user.activate();
   superAdminPolicy.logAction(req.user, 'activate', user);
@@ -306,6 +308,7 @@ async function deactivate(req, res) {
   if (!user) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, user);
   await superAdminPolicy.assertCanDeactivate(req.user, user);
+  rightsPolicy.assertCanManage(req.user, user);
 
   await user.deactivate();
   superAdminPolicy.logAction(req.user, 'deactivate', user);
@@ -331,6 +334,7 @@ async function adminResetPassword(req, res) {
   if (!user) throw new createError.NotFound();
   userScope.assertActorReaches(req.user, user);
   superAdminPolicy.assertCanManage(req.user, user);
+  rightsPolicy.assertCanManage(req.user, user);
 
   await user.resetPassword('admin', user.lang);
   superAdminPolicy.logAction(req.user, 'reset-password', user);

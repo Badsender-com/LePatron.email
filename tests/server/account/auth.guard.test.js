@@ -156,7 +156,6 @@ describe('auth guards', () => {
 describe('the roles added by the roles and permissions epic', () => {
   const {
     GUARD_GROUP_ADMIN_TECH,
-    GUARD_GROUP_ADMIN_OR_TECH,
   } = require('../../../packages/server/account/auth.guard.js');
 
   const companyAdmin = persisted('company_admin');
@@ -203,24 +202,6 @@ describe('the roles added by the roles and permissions epic', () => {
     );
   });
 
-  describe('GUARD_GROUP_ADMIN_OR_TECH', () => {
-    it.each([
-      ['company_admin', companyAdmin],
-      ['company_admin_tech', tech],
-      ['super_admin', superAdmin],
-    ])('accepts a %s', async (_role, user) => {
-      expect(await runGuard(GUARD_GROUP_ADMIN_OR_TECH, user)).toEqual(PASSES);
-    });
-
-    it.each([
-      ['reviewer', reviewer],
-      ['writer', writer],
-      ['regular_user', regular],
-    ])('rejects a %s', (_role, user) =>
-      expectRejected(GUARD_GROUP_ADMIN_OR_TECH, user)
-    );
-  });
-
   it.each([
     ['company_admin_tech', tech],
     ['reviewer', reviewer],
@@ -228,4 +209,67 @@ describe('the roles added by the roles and permissions epic', () => {
   ])('a %s is rejected by the admin guard', (_role, user) =>
     expectRejected(GUARD_ADMIN, user)
   );
+});
+
+describe('GUARD_CAN: the route needs a capability', () => {
+  const {
+    GUARD_CAN,
+  } = require('../../../packages/server/account/auth.guard.js');
+  const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
+
+  const guard = GUARD_CAN(CAPABILITIES.MAILING_DELETE);
+
+  it('lets a role that has it through', async () => {
+    expect(await runGuard(guard, persisted('regular_user'))).toEqual(PASSES);
+  });
+
+  it('refuses a role that lacks it, with its own code', async () => {
+    const { err } = await runGuard(guard, persisted('writer'));
+
+    expect(err.status).toBe(403);
+    expect(err.message).toBe('FORBIDDEN_CAPABILITY');
+  });
+
+  it('asks for a session first', async () => {
+    const { err } = await runGuard(guard, undefined);
+
+    expect(err.status).toBe(401);
+  });
+
+  it.each([
+    ['the bootstrap account', { ...adminUser }],
+    ['a super admin', persisted('super_admin')],
+  ])('lets %s through', async (_label, user) => {
+    expect(await runGuard(guard, user)).toEqual(PASSES);
+  });
+
+  it('treats an account stored before the roles as a regular user', async () => {
+    const legacy = new User({
+      email: 'legacy@platform.test',
+      _company: PLATFORM_GROUP,
+    }).toJSON();
+
+    expect(await runGuard(guard, legacy)).toEqual(PASSES);
+    expect(
+      (await runGuard(GUARD_CAN(CAPABILITIES.GROUP_MANAGE), legacy)).err.status
+    ).toBe(403);
+  });
+
+  it('refuses an unknown role everything', async () => {
+    const { err } = await runGuard(GUARD_CAN(CAPABILITIES.MAILING_COMMENT), {
+      role: 'owner',
+    });
+
+    expect(err.status).toBe(403);
+  });
+
+  it('is one middleware per capability, so routes compare by identity', () => {
+    expect(GUARD_CAN(CAPABILITIES.MAILING_DELETE)).toBe(guard);
+  });
+
+  it('throws on a misspelt capability when the routes load', () => {
+    expect(() => GUARD_CAN('mailing.remove')).toThrow(
+      'Unknown capability: mailing.remove'
+    );
+  });
 });

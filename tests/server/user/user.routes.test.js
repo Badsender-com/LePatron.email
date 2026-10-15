@@ -53,13 +53,22 @@ describe('user routes', () => {
     });
 
     it('rejects a regular user', async () => {
-      const err = await runShared({ isAdmin: false, isGroupAdmin: false });
+      const err = await runShared({ role: 'regular_user' });
 
       expect(err.status).toBe(401);
     });
 
-    it('lets a company admin through', async () => {
-      expect(await runShared({ isGroupAdmin: true })).toBeUndefined();
+    it.each(['company_admin', 'company_admin_tech'])(
+      'lets a %s through',
+      async (role) => {
+        expect(await runShared({ role })).toBeUndefined();
+      }
+    );
+
+    it.each(['writer', 'reviewer'])('rejects a %s', async (role) => {
+      const err = await runShared({ role });
+
+      expect(err.status).toBe(401);
     });
 
     it('lets the bootstrap account through', async () => {

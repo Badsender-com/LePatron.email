@@ -4,15 +4,19 @@ const express = require('express');
 const createError = require('http-errors');
 const router = express.Router();
 
-const { GUARD_ADMIN, guard } = require('../account/auth.guard.js');
+const { GUARD_ADMIN, GUARD_USER, guard } = require('../account/auth.guard.js');
 const Roles = require('../account/roles.js');
 const users = require('./user.controller.js');
 
 /// ///
 // USERS
 /// ///
-router.get('/me/storage/:key', users.getPersistedLocalStorageKey);
-router.put('/me/storage/:key', users.updatePersistedLocalStorageKey);
+router.get('/me/storage/:key', GUARD_USER, users.getPersistedLocalStorageKey);
+router.put(
+  '/me/storage/:key',
+  GUARD_USER,
+  users.updatePersistedLocalStorageKey
+);
 
 // Endpoint for getting the current user's details (any authenticated user)
 router.get('/current-user', guard(), users.getCurrentUser);

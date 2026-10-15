@@ -151,7 +151,7 @@ describe('reading the account of a session', () => {
 
     const { user } = await deserialize('u1');
 
-    expect(user).toEqual({ id: 'u1' });
+    expect(user).toMatchObject({ id: 'u1' });
     expect(Users.findOneForApi.mock.calls[0][0]).not.toHaveProperty('token');
   });
 

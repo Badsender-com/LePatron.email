@@ -15,6 +15,7 @@ const mongooseHidden = require('mongoose-hidden')();
 const config = require('../node.config.js');
 const mail = require('../mailing/mail.service.js');
 const Roles = require('../account/roles');
+const { CAPABILITIES, roleCan } = require('../../shared/access/roles.js');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
@@ -44,14 +45,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [
-        Roles.SUPER_ADMIN,
-        Roles.GROUP_ADMIN,
-        Roles.GROUP_ADMIN_TECH,
-        Roles.REGULAR_USER,
-        Roles.REVIEWER,
-        Roles.WRITER,
-      ],
+      enum: Object.values(Roles),
       required: false,
     },
     externalUsername: {
@@ -174,22 +168,19 @@ UserSchema.virtual('isReinitialized').get(function () {
 // flag from outside the database; see account/bootstrap-account.js for the
 // checks that must tell the two apart.
 UserSchema.virtual('isAdmin').get(function () {
-  return this.role === Roles.SUPER_ADMIN;
+  return roleCan(this.role, CAPABILITIES.PLATFORM_MANAGE);
 });
 
-// A tech admin is a company admin with the integrations on top (product
-// decision of 2026-10-13): every company-admin right applies to both roles.
-// What belongs to the tech admin alone is guarded by isGroupAdminTech.
+// The level of the role, read from its capabilities rather than its name
+// (packages/shared/access/roles.js): a company admin and a tech admin both
+// manage their company, the tech admin also its technical settings. A super
+// admin is neither: it manages every company.
 UserSchema.virtual('isGroupAdmin').get(function () {
-  const user = this;
-  return (
-    user.role === Roles.GROUP_ADMIN || user.role === Roles.GROUP_ADMIN_TECH
-  );
+  return !this.isAdmin && roleCan(this.role, CAPABILITIES.GROUP_MANAGE);
 });
 
 UserSchema.virtual('isGroupAdminTech').get(function () {
-  const user = this;
-  return user.role === Roles.GROUP_ADMIN_TECH;
+  return !this.isAdmin && roleCan(this.role, CAPABILITIES.GROUP_MANAGE_TECH);
 });
 
 UserSchema.methods.activate = function activate() {

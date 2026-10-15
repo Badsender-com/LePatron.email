@@ -1,16 +1,10 @@
 'use strict';
 
-const {
-  NotFound,
-  BadRequest,
-  Forbidden,
-  UnprocessableEntity,
-} = require('http-errors');
+const { NotFound, BadRequest, UnprocessableEntity } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const Roles = require('../account/roles.js');
 const { TEMPLATE_FLAG_PROJECTION } = require('./synthetic-block-guard.js');
 const {
   normalizeAndGuardSyntheticContent,
@@ -57,6 +51,7 @@ module.exports = {
   moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
+  storeFirstPreview: asyncHandler(storeFirstPreview),
   bulkUpdate: asyncHandler(bulkUpdate),
   downloadMultipleZip: asyncHandler(downloadMultipleZip),
   bulkDestroy: asyncHandler(bulkDestroy),
@@ -522,12 +517,6 @@ async function updateMosaico(req, res) {
 
   await mailingService.assertUserCanEditMailing(user, mailing);
 
-  // A reviewer writes nothing, except the save the editor runs once on
-  // opening a mailing that has no preview yet (template-loader.js).
-  if (user.role === Roles.REVIEWER && mailing.previewHtml) {
-    throw new Forbidden(ERROR_CODES.FORBIDDEN_REVIEWER_READ_ONLY);
-  }
-
   assertHeadCssSize(req.body);
   // The editor only hides the entry points: a hand-written request could add
   // either block, or a stylesheet, to any template. This is the gate.
@@ -557,6 +546,49 @@ async function updateMosaico(req, res) {
   );
 
   res.json(mailingForMosaico);
+}
+
+/**
+ * @api {put} /mailings/:mailingId/preview first preview of a mailing
+ * @apiPermission user
+ * @apiName StoreFirstMailingPreview
+ * @apiGroup Mailings
+ * @apiDescription The editor renders an email that has no preview yet, for
+ * whoever opens it, and stores the rendering here: the listing shows it. Only
+ * the preview is written, and only while there is none, so the route gives no
+ * way to change an email to a role that cannot edit it.
+ *
+ * @apiParam {string} mailingId
+ * @apiParam (Body) {String} html the rendered email
+ */
+
+async function storeFirstPreview(req, res) {
+  const { user } = req;
+  const { mailingId } = req.params;
+  const { html } = req.body;
+
+  if (typeof html !== 'string' || html.trim() === '') {
+    throw new BadRequest(ERROR_CODES.PREVIEW_HTML_REQUIRED);
+  }
+  if (html.length > PREVIEW_HTML_MAX_LENGTH) {
+    throw new BadRequest(ERROR_CODES.PREVIEW_HTML_TOO_LARGE);
+  }
+
+  const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
+  const mailing = await Mailings.findOne(query);
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  await mailingService.assertUserCanEditMailing(user, mailing);
+
+  // In the filter, not read beforehand: two editors opening the email at once
+  // store one preview, and a stored one is never replaced through this route.
+  await Mailings.updateOne(
+    { _id: mailing._id, previewHtml: { $in: [null, ''] } },
+    { $set: { previewHtml: html } }
+  );
+
+  res.status(204).send();
 }
 
 /**

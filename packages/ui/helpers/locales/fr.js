@@ -1211,8 +1211,10 @@ export default {
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Seul un super administrateur peut attribuer ou retirer ce rôle.',
-      FORBIDDEN_TECH_ADMIN_ROLE_CHANGE:
-        'Seul un super administrateur ou un administrateur technique peut attribuer ou retirer le rôle d\'administrateur technique.',
+      FORBIDDEN_ROLE_GRANT:
+        'Vous ne pouvez pas attribuer un rôle qui a plus de droits que le vôtre.',
+      FORBIDDEN_USER_MANAGEMENT:
+        'Vous ne pouvez pas gérer un compte qui a plus de droits que le vôtre.',
       FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
         'Seul un super administrateur peut gérer un super administrateur.',
       FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:

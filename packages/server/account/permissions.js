@@ -1,6 +1,13 @@
 'use strict';
 
 const { isBootstrapAccount } = require('./bootstrap-account.js');
+const {
+  ROLES,
+  ALL_CAPABILITIES,
+  assertCapability,
+  capabilitiesOfRole,
+  isRoleWithin,
+} = require('../../shared/access/roles.js');
 
 // What a user may do in a group, answered in one place (ADR 0002, amended).
 // The scope of a request says which group it reads or writes; these rules
@@ -11,7 +18,11 @@ const { isBootstrapAccount } = require('./bootstrap-account.js');
 // - a regular user reads the workspaces it belongs to, or every workspace of
 //   its group when the group opens them all, and writes in the ones it
 //   belongs to.
-// Restricting a role later changes its branch here, and nowhere else.
+// - what a role may do anywhere is its list of capabilities
+//   (packages/shared/access/roles.js), asked through `can`: a right that is
+//   not listed is refused.
+// Restricting a role later changes its branch here, or its capabilities, and
+// nowhere else.
 
 const sameId = (a, b) => a != null && b != null && String(a) === String(b);
 
@@ -36,6 +47,61 @@ function isWorkspaceMember(user, workspace) {
   return (workspace._users || []).some((member) =>
     sameId(member && member._id ? member._id : member, user.id)
   );
+}
+
+/**
+ * Everything the user may do, wherever it does it; the scope of a request is
+ * checked apart. Sent to the UI and the editor with the current user, so they
+ * show what the server will accept.
+ *
+ * @param {Object} user the request user
+ * @returns {string[]}
+ */
+function capabilitiesOf(user) {
+  if (!user) return [];
+  if (hasEveryRight(user)) return ALL_CAPABILITIES;
+  // Accounts created before roles existed carry none, and have always been
+  // regular users.
+  const role = user.role == null ? ROLES.REGULAR_USER : user.role;
+  return capabilitiesOfRole(role);
+}
+
+/**
+ * @param {Object} user the request user
+ * @param {string} capability one of CAPABILITIES; a misspelt one throws
+ * @returns {boolean}
+ */
+function can(user, capability) {
+  assertCapability(capability);
+  return capabilitiesOf(user).includes(capability);
+}
+
+/**
+ * Nobody grants a role that can do more than they can: a company admin does
+ * not make a tech admin, nor a super admin.
+ *
+ * @param {Object} actor the request user
+ * @param {string} role the role to give
+ * @returns {boolean}
+ */
+function canGrantRole(actor, role) {
+  return isRoleWithin(role, capabilitiesOf(actor));
+}
+
+/**
+ * Nobody manages an account that can do more than they can: editing it, its
+ * email included, resetting its password, deactivating or reactivating it
+ * would let a company admin take over a tech admin's account. Where the
+ * target is (`userScope`) and the super admin's own rules
+ * (`super-admin-policy`) are checked apart.
+ *
+ * @param {Object} actor the request user
+ * @param {Object} target the managed account
+ * @returns {boolean}
+ */
+function canManageUser(actor, target) {
+  const role = target.role == null ? ROLES.REGULAR_USER : target.role;
+  return canGrantRole(actor, role);
 }
 
 function canManageGroup(user, groupId) {
@@ -70,6 +136,10 @@ function canWriteWorkspace(user, workspace) {
 }
 
 module.exports = {
+  can,
+  capabilitiesOf,
+  canGrantRole,
+  canManageUser,
   canManageGroup,
   canModerateComments,
   canReadWorkspace,

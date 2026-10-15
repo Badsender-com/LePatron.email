@@ -235,3 +235,28 @@ describe('PUT /groups/:groupId — partial emailMetadata payloads', () => {
     });
   });
 });
+
+// The company's tracking belongs to its technical settings (ADR 0004): the
+// same whitelist drops it for a company admin, and keeps it for a tech admin.
+describe('PUT /groups/:groupId — trackingConfig', () => {
+  const trackingConfig = { utmSource: 'newsletter' };
+
+  it('drops it for a company admin', async () => {
+    const { payload } = await update({
+      user: { role: 'company_admin', isGroupAdmin: true, isAdmin: false },
+      body: { name: 'Company A', trackingConfig },
+    });
+
+    expect(payload.name).toBe('Company A');
+    expect(payload).not.toHaveProperty('trackingConfig');
+  });
+
+  it('keeps it for a tech admin', async () => {
+    const { payload } = await update({
+      user: { role: 'company_admin_tech', isGroupAdmin: true, isAdmin: false },
+      body: { trackingConfig },
+    });
+
+    expect(payload).toHaveProperty('trackingConfig');
+  });
+});
