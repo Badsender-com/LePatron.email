@@ -1,119 +1,109 @@
-# Scripts serveur LePatron
+# Scripts de maintenance de la galerie
 
-## migrate-gallery-v1.js
+Deux scripts, à lancer après le déploiement de la galerie V1 :
 
-Script de migration **one-shot** — à lancer une seule fois après le déploiement de la V1 galerie.
+| Script                                   | Ce qu'il fait                                                                                       | Lit le stockage    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------ |
+| `scripts/migrate-gallery-v1.js`          | donne `label`, `source`, `externalMetadata` et `uploadedAt` aux images qui n'ont pas d'`uploadedAt` | non                |
+| `scripts/backfill-gallery-dimensions.js` | sonde `width` et `height` des fichiers stockés qui n'en ont pas                                     | oui (S3 ou disque) |
 
-### Ce que le script fait
+Ils partagent le même runner (`run-gallery-script.js`) : mêmes options, même résumé, mêmes codes de sortie.
 
-Pour chaque image dans toutes les galeries :
+## Relançables, pas « one-shot »
 
-- **Skip** si `uploadedAt` est déjà défini (idempotent — relançable sans risque)
-- **Sinon** : initialise les champs V1 manquants :
-  - `label` → nom technique du fichier si l'original est perdu
-  - `source` → `'upload'`
-  - `externalMetadata` → `{}`
-  - `uploadedAt` → `gallery.createdAt` (meilleure approximation disponible)
+Les deux scripts ne lisent que les galeries qui ont encore du travail, et chaque écriture porte sa précondition. Une relance ne refait rien de ce qui est fait, une run interrompue (Ctrl-C, `kill`, coupure réseau) reprend où elle s'est arrêtée, et deux runs simultanées ne se gênent pas.
 
-### Usage
+Une galerie est créée à la première ouverture d'une création, à partir du listing du stockage. Tant que ce chemin peut produire des images sans champs V1 ou sans dimensions (les créations antérieures à la collection `galleries`), il est sûr, et utile, de relancer les deux scripts : sur une base à jour, la migration coûte une requête.
 
-```bash
-# 1. Toujours commencer par un dry-run sur une copie de prod
-MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node scripts/migrate-gallery-v1.js --dry-run
+`label` vaut le nom technique du fichier quand rien d'autre n'est connu, et `uploadedAt` la date de création de la galerie (à défaut celle de son `_id`) : c'est une approximation, pas la vraie date d'upload.
 
-# 2. Si le dry-run est OK, lancer la migration réelle sur la copie
-MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node scripts/migrate-gallery-v1.js
+## Environnement : celui de l'application
 
-# 3. Puis sur prod
-MONGODB_URI=mongodb://<prod-uri> \
-  node scripts/migrate-gallery-v1.js
+Les scripts lisent la configuration de l'application (`packages/server/node.config.js`, variables `lepatron_*`, `.env` compris). **Il n'y a pas de variable propre aux scripts.**
+
+| Variable                                      | Migration | Backfill | Valeur                            |
+| --------------------------------------------- | --------- | -------- | --------------------------------- |
+| `lepatron_database`                           | oui       | oui      | la chaîne de connexion de l'appli |
+| `lepatron_storage__type`                      |           | oui      | `aws` en production               |
+| `lepatron_storage__aws__accessKeyId`          |           | oui      | celles de l'application           |
+| `lepatron_storage__aws__secretAccessKey`      |           | oui      |                                   |
+| `lepatron_storage__aws__bucketName`           |           | oui      |                                   |
+| `lepatron_storage__aws__region`, `__endpoint` |           | oui      |                                   |
+
+Le plus sûr est de lancer les scripts **sur une instance de l'application** (Clever Cloud : `clever ssh`), où ces variables sont déjà celles de l'appli. Sans les variables de stockage, le backfill lirait le disque local et trouverait tous les fichiers « absents » ; il le détecte et s'arrête (voir plus bas), mais autant ne pas en arriver là.
+
+Au démarrage, chaque script affiche ce qu'il va toucher : les hôtes de la base (jamais la chaîne de connexion, qui porte le mot de passe) et, pour le backfill, le stockage (`S3, bucket "…" at <hôte>` ou `local directory …`). **Vérifier ces lignes avant de laisser tourner.**
+
+## Options
+
+- `--dry-run` : lit tout, compte tout, n'écrit rien. Le backfill lit quand même les fichiers (c'est ce qu'il mesure).
+- `--concurrency=N` : nombre de galeries traitées en même temps (1 à 32, 4 par défaut). Le backfill fait au plus N lectures de stockage simultanées. Sur S3 la durée est proportionnelle à la latence : 8 divise le temps par environ 7 par rapport à 1.
+
+## Procédure en production
+
+1. **Sur une copie** : restaurer un dump de production dans une base à part, faire pointer `lepatron_database` dessus (le backfill peut lire le bucket de production, il n'y écrit jamais).
+   ```bash
+   node scripts/migrate-gallery-v1.js --dry-run
+   node scripts/backfill-gallery-dimensions.js --dry-run
+   ```
+   Lire les en-têtes et le résumé (ci-dessous). Puis les lancer sans `--dry-run` sur la copie, et les relancer : la seconde migration doit annoncer `Galleries to process: 0`.
+2. **En production**, depuis une instance de l'application :
+   ```bash
+   node scripts/migrate-gallery-v1.js --dry-run
+   node scripts/migrate-gallery-v1.js
+   node scripts/backfill-gallery-dimensions.js --dry-run
+   node scripts/backfill-gallery-dimensions.js --concurrency=8
+   ```
+   Pas besoin de fenêtre de maintenance : les écritures sont atomiques et ne touchent que les champs migrés.
+3. **Lire le code de sortie** (`echo $?`). 0 : terminé. 1 : le bloc `FAILED` en fin de sortie dit pourquoi ; corriger la cause et relancer, la run reprend où elle s'est arrêtée.
+
+## Lire le résumé
+
+```
+--- Result ---
+Galleries processed  : 4499/4499
+Images migrated      : 26466
+Already up to date   : 1895
+Changed meanwhile    : 0
+Without a name       : 0
 ```
 
-### Exemple de sortie
+| Ligne                                   | Sens                                                                                                  | Action                                      |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `Images migrated` / `Dimensions filled` | écritures effectives (`modifiedCount`), pas intentions                                                |                                             |
+| `Changed meanwhile`                     | image supprimée, migrée ou mesurée par l'appli entre la lecture et l'écriture ; laissée telle quelle  | aucune                                      |
+| `Without a name` / `Unusable name`      | entrée sans nom exploitable (pas une chaîne, ou un chemin) ; jamais passée à une requête ni au disque | à examiner à la main                        |
+| `Missing from storage`, `Not an image`  | définitif ; chaque fichier est nommé dans le flux (`missing: "<nom>"`) avec sa galerie                | nettoyage éventuel ; une relance les relira |
+| `Read timed out`, `Storage error`       | transitoire ; l'erreur de stockage porte son code (`error (AccessDenied)`)                            | exit 1 : relancer                           |
 
-```
-Migration galerie V1
-Galeries : 47
+Une galerie en erreur n'arrête pas les autres ; les ids des galeries en erreur sont listés dans le bloc `FAILED`, et le code de sortie vaut 1.
 
-[1/47] 507f1f77bcf86cd799439011 — 8 migrée(s), 2 déjà à jour
-[2/47] 507f1f77bcf86cd799439022 — 0 migrée(s), 5 déjà à jour
-...
+## Garde-fous du backfill
 
---- Résultat ---
-Galeries traitées : 47/47
-Images totales    : 312
-Images migrées    : 287
-Images skippées   : 25
-```
+- **Contrôle du stockage au démarrage** : avant tout, il relit jusqu'à 3 fichiers déjà mesurés. Si aucun n'est lisible, ce n'est pas le stockage de l'application : il s'arrête avant d'avoir rien lu ni écrit (exit 1).
+- **Run qui n'a rien pu lire** : sur une base où rien n'est encore mesuré (pas de contrôle possible), une run où aucun fichier n'a pu être lu finit en exit 1 au lieu de conclure.
+- **Lecture de l'en-tête seulement** (128 Ko au plus), délai de 20 s par fichier.
+- **Noms** : un nom stocké qui n'est pas un simple nom de fichier (`../`, `/`, octet nul, pas une chaîne) n'est jamais passé au stockage.
 
-### Propriétés
+## Pourquoi ces écritures
 
-| Propriété             | Détail                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------ |
-| **Idempotent**        | Relançable sans risque — les images déjà migrées sont skippées                             |
-| **Resumable**         | Par conception : si le script est interrompu, relancer reprend là où il s'est arrêté       |
-| **Dry-run**           | `--dry-run` simule sans écrire en base                                                     |
-| **Écriture atomique** | Chaque image est écrite par un update positionnel qui ne touche à rien d'autre du document |
-| **Sans arrêt**        | Peut tourner pendant que l'application sert                                                |
-| **Résilient**         | Une erreur sur une galerie n'arrête pas la migration des suivantes                         |
+La première version lisait `gallery.files`, modifiait le tableau et le réécrivait (`gallery.save()`). C'était faux deux fois :
 
-### Pourquoi l'écriture positionnelle
+- le getter du schéma **projette** chaque fichier sur un jeu de clés fixe ; réécrire cette projection efface tout ce qu'elle ne liste pas (`originalName` en particulier) ;
+- réécrire le tableau entier perd tout upload arrivé pendant la lecture.
 
-La première version lisait `gallery.files`, modifiait le tableau et le réécrivait (`gallery.save()`). Cette forme est fausse deux fois :
+Les scripts lisent donc la collection brute (sans getter) et écrivent un `$set` par nom de fichier, avec `arrayFilters` : la précondition (« pas encore d'`uploadedAt` », « pas encore de dimensions », « pas de label ») fait partie de l'écriture. Un utilisateur qui renomme une image pendant la migration garde son libellé ; deux entrées legacy de même nom sont migrées toutes les deux.
 
-- le getter du schéma **projette** chaque fichier sur un jeu de clés fixe, donc réécrire cette projection efface silencieusement tout ce qu'elle ne liste pas — `originalName` en particulier ;
-- réécrire le tableau entier perd tout upload arrivé pendant la lecture, et c'est exactement le motif que le serveur a abandonné pour les écritures galerie (`VersionError` sur upload concurrent).
+La pagination se fait par `_id`, une requête par page de 100 galeries, sans curseur serveur : un curseur sans `getMore` pendant 10 minutes est tué par MongoDB 4.0 (le backfill y arrivait entre deux lots sur un stockage lent), une page ne peut pas expirer.
 
-Aucune des deux erreurs ne se signale. Le script lit donc le document brut (`gallery.get('files', null, { getters: false })`) et n'écrit que les champs V1 des images qu'il migre, un `$set` positionnel à la fois. **Il n'a donc plus besoin d'une fenêtre de maintenance.**
+## Ordres de grandeur
 
-### Précautions
+Mesurés sur une base jetable (MongoDB 4.4 en local, 5 000 galeries, 28 910 images) :
 
-- Tester sur un dump de prod avant de lancer en environnement réel
-- Vérifier les logs après exécution (ligne `Erreurs : N` absente = OK)
-- Si des erreurs apparaissent, relancer : le script est idempotent et reprendra les galeries manquées
-- La valeur de `uploadedAt` pour les images existantes est une approximation (`gallery.createdAt`) — ce n'est pas la vraie date d'upload
+| Run                                                               | Durée              | Mémoire max  | Requêtes Mongo                   |
+| ----------------------------------------------------------------- | ------------------ | ------------ | -------------------------------- |
+| migration, concurrence 1 / 4 / 8                                  | 14,5 / 4,5 / 3,4 s | 124 à 133 Mo | 46 lectures + 1 écriture par nom |
+| migration relancée sur base à jour                                | 0,4 s              | 103 Mo       | 1 lecture, 0 écriture            |
+| backfill, stockage à 20 ms, concurrence 1 / 8 / 16 (2 908 images) | 67 / 9 / 5 s       | 118 à 158 Mo | 1 écriture par nom mesuré        |
 
----
-
-## backfill-gallery-dimensions.js
-
-Script **one-shot** — à lancer une seule fois après le déploiement de l'US-09 (tooltip de métadonnées).
-
-### Ce que le script fait
-
-Le tooltip de la galerie affiche les dimensions d'origine d'une image. Les uploads les enregistrent depuis l'US-09, mais rien de ce qui a été stocké avant ne les possède — et elles ne sont pas récupérables depuis la vignette, qui est un carré de 111px. Le script relit donc chaque fichier stocké pour le mesurer.
-
-Pour chaque image de chaque galerie :
-
-- **Skip** si `width` et `height` sont déjà renseignés (idempotent — relançable sans risque)
-- **Sinon** : lit **l'en-tête seulement** du fichier (128 Ko au plus, pas l'image entière), le mesure, et écrit `width` / `height`
-- **Illisible** : une image listée en galerie mais absente du stockage, ou qui n'est pas une image, est comptée et passée — son tooltip n'affichera pas de dimensions, rien d'autre ne casse
-
-### Usage
-
-```bash
-# 1. Dry-run sur une copie de prod
-MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node scripts/backfill-gallery-dimensions.js --dry-run
-
-# 2. Réel
-MONGODB_URI=mongodb://<prod-uri> \
-  node scripts/backfill-gallery-dimensions.js
-```
-
-### Propriétés
-
-| Propriété             | Détail                                                                                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **Idempotent**        | Relançable sans risque — les images déjà mesurées sont skippées                                               |
-| **Resumable**         | Une interruption se rattrape par une relance                                                                  |
-| **Dry-run**           | `--dry-run` simule sans écrire en base                                                                        |
-| **Écriture atomique** | Chaque paire `width`/`height` est écrite par un update positionnel qui ne touche à rien d'autre du document   |
-| **Sans arrêt**        | Peut tourner pendant que l'application sert                                                                   |
-| **Doux**              | Lecture séquentielle, en-tête uniquement, timeout de 10s par fichier pour ne pas bloquer sur un stockage lent |
-
-### Pourquoi l'écriture positionnelle
-
-Même raison que pour `migrate-gallery-v1.js` ci-dessus, et elle vaut la peine d'être répétée : lire `gallery.files` et le réécrire efface tout ce que le getter du schéma ne projette pas, et perd les uploads arrivés pendant la lecture. Aucune des deux erreurs ne se signale.
+Le processus Node charge les modèles de l'application (environ 100 Mo à lui seul) ; une page de 100 galeries s'y ajoute, quelle que soit la taille de la collection.
