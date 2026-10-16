@@ -171,12 +171,14 @@ function createGalleryPanel(vm) {
       sortBy: 'resetScroll',
       // Chrome fires no mouseleave on an element removed from the DOM, so
       // deleting the hovered image left its tooltip on screen describing a file
-      // that no longer exists.
+      // that no longer exists. A rename replaces the entry rather than editing
+      // it, so the tooltip takes the new one.
       visibleImages(images) {
         if (!this.hoveredFile) return;
-        if (!images.some((file) => file.name === this.hoveredFile.name)) {
-          this.onUnhover();
-        }
+        const { name } = this.hoveredFile;
+        const current = images.find((file) => file.name === name);
+        if (current) this.hoveredFile = current;
+        else this.onUnhover();
       },
     },
     created() {

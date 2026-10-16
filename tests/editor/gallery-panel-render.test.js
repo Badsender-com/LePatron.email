@@ -395,6 +395,21 @@ describe('gallery panel — the tooltip it owns', () => {
     expect(panel.hoveredFile).toBeNull();
   });
 
+  // A rename replaces the entry in the Knockout list; the tooltip open over
+  // that image goes on describing it, under its new name.
+  it('follows a rename of the image it describes', async () => {
+    const vm = fakeViewModel(IMAGES.slice());
+    const panel = mountVm(vm);
+    panel.onHover(IMAGES[0], cell());
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+
+    vm.mailingGallery.splice(0, 1, { ...IMAGES[0], label: 'renamed.jpg' });
+    await Vue.nextTick();
+
+    expect(panel.hoveredFile.label).toBe('renamed.jpg');
+    panel.$destroy();
+  });
+
   // The tooltip is placed once, from the cell's box when it opened. Scrolling
   // moves the cells under a still pointer, and a recycled view stays in the
   // document, so nothing else would close a tooltip now describing another
