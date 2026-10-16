@@ -97,12 +97,12 @@
           </div>
           <div class="addblockbutton custom">
             <div class="buttons-container">
-              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+              <div data-bind="if: $root.managesCurrentGroup()">
                 <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
                   <span class="lucide lucide-trash-2"></span>
                 </a>
               </div>
-              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+              <div data-bind="if: $root.managesCurrentGroup()">
                 <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
                   <span class="lucide lucide-pencil"></span>
                 </a>
