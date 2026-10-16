@@ -53,7 +53,6 @@ export const userOfRole = (role, extra = {}) => ({
 export const bootstrapAccount = (extra = {}) => ({
   id: 'admin-id',
   name: 'admin',
-  isAdmin: true,
   capabilities: ALL_CAPABILITIES,
   ...extra,
 });

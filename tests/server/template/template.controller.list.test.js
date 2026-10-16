@@ -53,14 +53,12 @@ const templateController = require('../../../packages/server/template/template.c
 const superAdmin = {
   id: 'alice',
   role: 'super_admin',
-  isAdmin: true,
   group: { id: PLATFORM_GROUP },
   selectedGroup: { id: CLIENT_GROUP },
 };
 const companyAdmin = {
   id: 'erin',
   role: 'company_admin',
-  isGroupAdmin: true,
   group: { id: CLIENT_GROUP },
 };
 

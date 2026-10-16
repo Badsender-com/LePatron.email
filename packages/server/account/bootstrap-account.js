@@ -6,8 +6,8 @@ const config = require('../node.config.js');
  * The bootstrap account is the super admin defined by the deployment
  * configuration: it has no document in the database (ADR 0002). Checks that
  * need a stored user, such as session tracking or ownership of what the
- * account creates, key on its identity, never on `isAdmin`, which any
- * persisted super admin also carries.
+ * account creates, key on its identity: a persisted super admin has the
+ * same rights, read from its role.
  *
  * @param {Object} user the request user, as passport deserialised it
  * @returns {boolean}

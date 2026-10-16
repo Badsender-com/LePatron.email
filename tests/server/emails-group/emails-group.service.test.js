@@ -39,7 +39,6 @@ describe('emails-group.service.createEmailsGroup', () => {
   it('lets a super-admin create an emails-group in any tenant', async () => {
     const user = {
       role: 'super_admin',
-      isAdmin: true,
       group: { id: TENANT_A },
     };
 
@@ -55,7 +54,7 @@ describe('emails-group.service.createEmailsGroup', () => {
   });
 
   it('lets a group-admin create an emails-group in their own tenant when groupId matches', async () => {
-    const user = { isAdmin: false, group: { id: TENANT_A } };
+    const user = { group: { id: TENANT_A } };
 
     await emailsGroupService.createEmailsGroup({
       ...baseInput,
@@ -69,7 +68,7 @@ describe('emails-group.service.createEmailsGroup', () => {
   });
 
   it('lets a group-admin create an emails-group without passing groupId (defaults to their tenant)', async () => {
-    const user = { isAdmin: false, group: { id: TENANT_A } };
+    const user = { group: { id: TENANT_A } };
 
     await emailsGroupService.createEmailsGroup({
       ...baseInput,
@@ -83,7 +82,7 @@ describe('emails-group.service.createEmailsGroup', () => {
   });
 
   it('REJECTS a group-admin trying to create an emails-group in another tenant (H2 fix)', async () => {
-    const user = { isAdmin: false, group: { id: TENANT_A } };
+    const user = { group: { id: TENANT_A } };
 
     await expect(
       emailsGroupService.createEmailsGroup({
@@ -112,7 +111,7 @@ describe('emails-group.service.createEmailsGroup', () => {
   ])('refuses a group id given as %s, for every user', async (_l, groupId) => {
     for (const user of [
       { role: 'company_admin', group: { id: TENANT_A } },
-      { role: 'super_admin', isAdmin: true },
+      { role: 'super_admin' },
     ]) {
       await expect(
         emailsGroupService.createEmailsGroup({ ...baseInput, user, groupId })

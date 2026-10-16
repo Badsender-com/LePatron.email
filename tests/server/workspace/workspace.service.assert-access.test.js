@@ -33,13 +33,11 @@ const colleague = { id: 'u3', group: { id: COMPANY_A } };
 const companyAdminOfA = {
   ...colleague,
   role: 'company_admin',
-  isGroupAdmin: true,
 };
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
 const companyAdminOfB = {
   ...outsider,
   role: 'company_admin',
-  isGroupAdmin: true,
 };
 
 beforeEach(() => {
@@ -90,7 +88,6 @@ describe('assertAccess for a super admin (ADR 0002, amended)', () => {
   const superAdmin = {
     id: 'alice',
     role: 'super_admin',
-    isAdmin: true,
     group: { id: PLATFORM_GROUP },
     selectedGroup: { id: COMPANY_A },
   };

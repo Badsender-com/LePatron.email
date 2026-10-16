@@ -102,7 +102,7 @@ describe('list payloads leave the head CSS out', () => {
     await call(userController.readMailings, {
       // An admin reaches every user; the reach itself is specified in
       // user.controller.scope.test.js.
-      user: { role: 'super_admin', isAdmin: true },
+      user: { role: 'super_admin' },
       params: { userId: ID },
       query: {},
     });

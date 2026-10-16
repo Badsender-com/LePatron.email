@@ -65,7 +65,7 @@ describe('POST /account/login', () => {
   );
 
   it('answers the bootstrap account, which has no document, with every capability', async () => {
-    const bootstrap = { id: config.admin.id, isAdmin: true };
+    const bootstrap = { id: config.admin.id };
     const payload = await signIn(null, bootstrap);
 
     expect(Users.findOneForApi).not.toHaveBeenCalled();

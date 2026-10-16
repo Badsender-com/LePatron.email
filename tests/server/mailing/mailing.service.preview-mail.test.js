@@ -61,7 +61,7 @@ const TENANT_B = '507f1f77bcf86cd799439002';
 const WORKSPACE = '507f1f77bcf86cd799439011';
 const USER_ID = '507f1f77bcf86cd799439031';
 const OTHER_USER_ID = '507f1f77bcf86cd799439032';
-const user = { id: USER_ID, isAdmin: false, group: { id: TENANT_A } };
+const user = { id: USER_ID, group: { id: TENANT_A } };
 const FOLDER = '507f1f77bcf86cd799439021';
 // A workspace of the caller's company that the caller is not a member of.
 const workspace = {
@@ -189,7 +189,7 @@ describe('mailingService.previewMail', () => {
 
   it('lets a super admin read any preview', async () => {
     const doc = mockPreview();
-    const admin = { role: 'super_admin', isAdmin: true };
+    const admin = { role: 'super_admin' };
 
     await expect(mailingService.previewMail(doc._id, admin)).resolves.toBe(
       'clean:<p>preview</p>'

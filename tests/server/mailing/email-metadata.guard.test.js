@@ -37,7 +37,7 @@ function runGuard(req) {
   });
 }
 
-const user = { isAdmin: false, group: { id: GROUP_ID } };
+const user = { group: { id: GROUP_ID } };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -52,7 +52,7 @@ describe('GUARD_EMAIL_METADATA', () => {
 
   it('lets a super-admin through without checking the flag', async () => {
     const err = await runGuard({
-      user: { role: 'super_admin', isAdmin: true },
+      user: { role: 'super_admin' },
     });
     expect(err).toBeUndefined();
     expect(Groups.findById).not.toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe('GUARD_EMAIL_METADATA', () => {
   });
 
   it('rejects a user with no company', async () => {
-    const err = await runGuard({ user: { isAdmin: false } });
+    const err = await runGuard({ user: {} });
     expect(err.status).toBe(400);
     expect(Groups.findById).not.toHaveBeenCalled();
   });

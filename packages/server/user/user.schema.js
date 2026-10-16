@@ -15,7 +15,6 @@ const mongooseHidden = require('mongoose-hidden')();
 const config = require('../node.config.js');
 const mail = require('../mailing/mail.service.js');
 const Roles = require('../account/roles');
-const { CAPABILITIES, roleCan } = require('../../shared/access/roles.js');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
@@ -29,7 +28,7 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiSuccess {String} lang selected langue of the user
  * @apiSuccess {Boolean} isReinitialized wether the password has been reinitialized or not
  * @apiSuccess {Boolean} isDeactivated wether this account has been deactivated or not
- * @apiSuccess {Boolean} isAdmin wether this account has admin status
+ * @apiSuccess {String} role one of the product's roles (packages/shared/access/roles.js)
  * @apiSuccess {String} status on string of `deactivated` | `confirmed` | `password-mail-sent` | `to-be-initialized`
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
@@ -162,27 +161,6 @@ UserSchema.virtual('isReinitialized').get(function () {
   if (this.password) return false;
   if (this.token) return true;
   return false;
-});
-
-// Platform-wide rights (ADR 0002). The bootstrap account carries the same
-// flag from outside the database; see account/bootstrap-account.js for the
-// checks that must tell the two apart.
-// Kept in the user's JSON for compatibility: no code decides a right with
-// them. The server asks account/permissions.js, the clients the capabilities.
-UserSchema.virtual('isAdmin').get(function () {
-  return roleCan(this.role, CAPABILITIES.PLATFORM_MANAGE);
-});
-
-// The level of the role, read from its capabilities rather than its name
-// (packages/shared/access/roles.js): a company admin and a tech admin both
-// manage their company, the tech admin also its technical settings. A super
-// admin is neither: it manages every company.
-UserSchema.virtual('isGroupAdmin').get(function () {
-  return !this.isAdmin && roleCan(this.role, CAPABILITIES.GROUP_MANAGE);
-});
-
-UserSchema.virtual('isGroupAdminTech').get(function () {
-  return !this.isAdmin && roleCan(this.role, CAPABILITIES.GROUP_MANAGE_TECH);
 });
 
 UserSchema.methods.activate = function activate() {

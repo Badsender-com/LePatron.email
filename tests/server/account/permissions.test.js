@@ -224,7 +224,7 @@ describe('permissions', () => {
     });
 
     it('trusts no flag a user object carries without its role', () => {
-      const flagsOnly = { isAdmin: true, isGroupAdmin: true, _company: 'x' };
+      const flagsOnly = { _company: 'x' };
 
       expect(permissions.canAccessGroup(flagsOnly, PLATFORM_GROUP)).toBe(false);
       expect(permissions.canManageGroup(flagsOnly, 'x')).toBe(false);

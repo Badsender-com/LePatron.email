@@ -21,7 +21,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
 
 jest.mock('../../../packages/server/utils/model.js', () => ({
   addGroupFilter: jest.fn((user, filter) => {
-    if (user.isAdmin) return filter;
+    if (user.role === 'super_admin') return filter;
     return { ...filter, _company: user.group.id };
   }),
 }));
@@ -41,8 +41,8 @@ describe('feed-mapping.service authorization', () => {
   const templateId = new Types.ObjectId().toString();
   const feedMappingId = new Types.ObjectId().toString();
 
-  const regularUser = { isAdmin: false, group: { id: groupId } };
-  const adminUser = { role: 'super_admin', isAdmin: true, group: undefined };
+  const regularUser = { group: { id: groupId } };
+  const adminUser = { role: 'super_admin', group: undefined };
 
   beforeEach(() => {
     jest.clearAllMocks();

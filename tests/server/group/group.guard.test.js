@@ -22,7 +22,7 @@ describe('GUARD_CAN_ACCESS_GROUP', () => {
 
   it('lets a super-admin through regardless of groupId', async () => {
     const err = await runGuard({
-      user: { role: 'super_admin', isAdmin: true },
+      user: { role: 'super_admin' },
       params: { groupId: TENANT_B },
     });
     expect(err).toBeUndefined();
@@ -30,7 +30,7 @@ describe('GUARD_CAN_ACCESS_GROUP', () => {
 
   it('lets a regular user access their own group', async () => {
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: TENANT_A } },
+      user: { group: { id: TENANT_A } },
       params: { groupId: TENANT_A },
     });
     expect(err).toBeUndefined();
@@ -38,7 +38,7 @@ describe('GUARD_CAN_ACCESS_GROUP', () => {
 
   it('REJECTS a regular user trying to access another group (H1 fix)', async () => {
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: TENANT_A } },
+      user: { group: { id: TENANT_A } },
       params: { groupId: TENANT_B },
     });
     expect(err).toBeDefined();
@@ -102,7 +102,7 @@ describe('the group guards, for each kind of user', () => {
 describe('the group guards, on a group id that is not a string', () => {
   const guards = require('../../../packages/server/group/group.guard');
   const member = { role: 'company_admin', group: { id: TENANT_A } };
-  const superAdmin = { role: 'super_admin', isAdmin: true };
+  const superAdmin = { role: 'super_admin' };
 
   const run = (guard, req) =>
     new Promise((resolve) => guard(req, {}, (err) => resolve(err)));

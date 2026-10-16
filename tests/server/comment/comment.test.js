@@ -654,7 +654,6 @@ describe('Comment Service', () => {
         user: {
           _id: adminId,
           role: 'company_admin',
-          isGroupAdmin: true,
           group: { id: groupId.toString() },
         },
       });
@@ -679,7 +678,6 @@ describe('Comment Service', () => {
           user: {
             _id: mockObjectId(),
             role: 'company_admin',
-            isGroupAdmin: true,
             group: { id: mockObjectId().toString() },
           },
         })

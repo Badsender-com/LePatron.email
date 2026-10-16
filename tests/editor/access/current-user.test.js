@@ -230,7 +230,6 @@ describe('managesCurrentGroup', () => {
 
   it('for the bootstrap account, which has no group: true', async () => {
     const { vm, arrive } = load({
-      isAdmin: true,
       capabilities: capabilitiesOfRole(ROLES.SUPER_ADMIN),
     });
     await arrive();

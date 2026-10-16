@@ -162,8 +162,6 @@ describe('group controller — the identity provider certificate', () => {
   const groupController = require('../../../packages/server/group/group.controller.js');
   const superAdmin = {
     role: 'super_admin',
-    isAdmin: true,
-    isGroupAdmin: false,
   };
 
   const update = (body) =>

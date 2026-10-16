@@ -566,7 +566,7 @@ describe('IntegrationService', () => {
         _id: mockIntegrationId,
         _company: mockGroupId,
       };
-      const adminUser = { role: 'super_admin', isAdmin: true };
+      const adminUser = { role: 'super_admin' };
 
       Integrations.findById.mockResolvedValue(mockIntegration);
 
@@ -586,7 +586,6 @@ describe('IntegrationService', () => {
         _company: new Types.ObjectId(mockGroupId),
       };
       const groupUser = {
-        isAdmin: false,
         group: { id: mockGroupId },
       };
 
@@ -609,7 +608,6 @@ describe('IntegrationService', () => {
         _company: new Types.ObjectId(differentGroupId),
       };
       const groupUser = {
-        isAdmin: false,
         group: { id: mockGroupId },
       };
 

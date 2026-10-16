@@ -32,8 +32,9 @@ const {
 // so that every refusal costs the same time as a wrong password.
 const UNKNOWN_USER_HASH = bcrypt.hashSync('unknown-user', 10);
 
+// The bootstrap account: no document, no role. Its rights come from its
+// identity (account/bootstrap-account.js, account/permissions.js).
 const adminUser = Object.freeze({
-  isAdmin: true,
   id: config.admin.id,
   email: config.emailOptions.from,
   name: 'admin',

@@ -39,18 +39,14 @@ const ITEM_A = '507f1f77bcf86cd799439101';
 const ITEM_B = '507f1f77bcf86cd799439102';
 
 const userA = {
-  isAdmin: false,
   role: 'company_admin',
-  isGroupAdmin: true,
   group: { id: COMPANY_A },
 };
 const userB = {
-  isAdmin: false,
   role: 'company_admin',
-  isGroupAdmin: true,
   group: { id: COMPANY_B },
 };
-const superAdmin = { role: 'super_admin', isAdmin: true };
+const superAdmin = { role: 'super_admin' };
 
 // Seed: one item per company, both labelled "Infolettre" on purpose — the same
 // label on two companies is legitimate and must stay so.
@@ -674,9 +670,9 @@ describe('resolveCompanyId', () => {
   });
 
   it('refuses a user without a company', () => {
-    expect(() =>
-      taxonomyService.resolveCompanyId({ isAdmin: false, group: {} })
-    ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);
+    expect(() => taxonomyService.resolveCompanyId({ group: {} })).toThrow(
+      ERROR_CODES.MISSING_GROUP_PARAM
+    );
   });
 
   // `ObjectId.isValid` says yes to any 12-character string and reinterprets its
@@ -694,7 +690,6 @@ describe('resolveCompanyId', () => {
   it('refuses a malformed company id on the session of a regular caller', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
-        isAdmin: false,
         group: { id: 'companyAdmin' },
       })
     ).toThrow(ERROR_CODES.INVALID_GROUP_PARAM);
@@ -704,7 +699,6 @@ describe('resolveCompanyId', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
         role: 'super_admin',
-        isAdmin: true,
         group: { id: COMPANY_A },
       })
     ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);
