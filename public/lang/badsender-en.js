@@ -28,6 +28,8 @@ module.exports = {
   'gallery-remove-image-confirm':
     'Remove "__label__" from the gallery?\n\n' +
     'It disappears from the list. Emails already using it are left untouched.',
+  'gallery-request-unconfirmed':
+    'The server did not answer in time: the change may or may not have been made. The gallery is reloading to show where it stands.',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':

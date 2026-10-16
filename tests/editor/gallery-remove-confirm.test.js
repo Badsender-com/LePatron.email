@@ -145,15 +145,20 @@ describe('deleting a gallery image — when the request fails', () => {
     expect(viewModel.mailingGallery()).toHaveLength(1);
   });
 
-  it('tells the user when the delete times out', () => {
+  // Past the time budget, the DELETE may still have been applied: saying the
+  // image is kept would be a guess, so the gallery is reloaded instead.
+  it('says it cannot tell when the delete times out, and reloads', () => {
     $.ajax = (settings) => {
-      settings.error({ status: 0 }, 'timeout');
+      settings.error({ status: 0, statusText: 'timeout' }, 'timeout');
       return settings;
     };
+    viewModel.loadMailingGallery = jest.fn();
 
     viewModel.removeImage(FILE, 'mailing');
 
-    expect(viewModel.notifier.error).toHaveBeenCalled();
-    expect(viewModel.mailingGallery()).toHaveLength(1);
+    expect(viewModel.notifier.error).toHaveBeenCalledWith(
+      FR['gallery-request-unconfirmed']
+    );
+    expect(viewModel.loadMailingGallery).toHaveBeenCalledTimes(1);
   });
 });

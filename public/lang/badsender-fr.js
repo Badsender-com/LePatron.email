@@ -31,6 +31,8 @@ module.exports = {
   'gallery-remove-image-confirm':
     'Supprimer «\u00a0__label__\u00a0» de la galerie ?\n\n' +
     "L'image disparaît de la liste. Les emails qui l'utilisent déjà ne sont pas modifiés.",
+  'gallery-request-unconfirmed':
+    "Le serveur n'a pas répondu à temps : la modification a peut-être été faite, ou non. La galerie se recharge pour montrer son état réel.",
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",

@@ -363,3 +363,32 @@ describe('renameImage — the image disappears meanwhile', () => {
     expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-gone');
   });
 });
+
+// Past the time budget, the PATCH may still have been applied. Saying the old
+// label is back would be a guess; the gallery is reloaded instead.
+describe('renameImage — no answer in time', () => {
+  const timeout = () =>
+    Promise.reject(Object.assign(jqXHR(0), { statusText: 'timeout' }));
+
+  it.each([
+    ['mailing', 'loadMailingGallery'],
+    ['template', 'loadTemplateGallery'],
+  ])('says it cannot tell, and reloads the %s gallery', async (type, load) => {
+    $.ajax.mockImplementation(timeout);
+    const vm = viewModel();
+    vm.templateGallery = vm.mailingGallery;
+    vm.loadMailingGallery = jest.fn();
+    vm.loadTemplateGallery = jest.fn();
+
+    const ok = await vm.renameImage(vm.mailingGallery()[0], type, 'après.png');
+
+    expect(ok).toBe(false);
+    expect(vm[load]).toHaveBeenCalledTimes(1);
+    expect(vm.notifier.error).toHaveBeenCalledWith(
+      'gallery-request-unconfirmed'
+    );
+    expect(vm.notifier.error).not.toHaveBeenCalledWith(
+      'gallery-rename-image-fail'
+    );
+  });
+});

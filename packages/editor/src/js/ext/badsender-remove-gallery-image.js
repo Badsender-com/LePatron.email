@@ -2,7 +2,11 @@
 
 var console = require('console');
 var $ = require('jquery');
-const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+  timedOut,
+  reloadAfterTimeout,
+} = require('./gallery-request.js');
 
 function removeGalleryImage(viewModel) {
   viewModel.removeImage = function (data, type) {
@@ -48,8 +52,12 @@ function removeGalleryImage(viewModel) {
         if (index !== -1) gallery.splice(index, 1);
         status(gallery().length);
       },
-      error: function (err) {
-        console.log(err);
+      error: function (jqXHR, textStatus) {
+        console.error('gallery delete failed', jqXHR && jqXHR.status);
+        if (timedOut(jqXHR, textStatus)) {
+          reloadAfterTimeout(viewModel, type);
+          return;
+        }
         viewModel.notifier.error(viewModel.t('gallery-remove-image-fail'));
       },
     });

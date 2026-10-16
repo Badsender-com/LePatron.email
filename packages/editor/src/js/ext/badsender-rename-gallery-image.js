@@ -4,7 +4,11 @@ const $ = require('jquery');
 
 const { sanitizeLabel } = require('../../../../shared/gallery/label.js');
 const { renameGalleryImageLabel } = require('../vue/utils/apis');
-const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+  timedOut,
+  reloadAfterTimeout,
+} = require('./gallery-request.js');
 
 // A gallery file is stored as `<mongoId>-<hash>.<ext>`: the prefix is the id of
 // the mailing or template the gallery belongs to, which is what the route needs.
@@ -101,6 +105,10 @@ function renameGalleryImage(viewModel) {
         if (!settled) return false;
         // eslint-disable-next-line no-console
         console.error('gallery rename failed', jqXHR && jqXHR.status, jqXHR);
+        if (timedOut(jqXHR)) {
+          reloadAfterTimeout(viewModel, type);
+          return false;
+        }
         // The server no longer has it: restoring the thumbnail would leave
         // one whose every action fails.
         if (jqXHR && jqXHR.status === 404) {
