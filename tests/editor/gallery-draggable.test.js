@@ -134,6 +134,26 @@ describe('gallery draggable directive', () => {
     expect(ko.utils.domData.get(el, DRAGKEY)).toBe(B);
   });
 
+  // An upload finishing mid-drag shifts the list and the scroller may recycle
+  // the dragged cell onto another image. The placeholder reads the payload on
+  // drop, before `stop`: it must still be the image the user picked up.
+  it('keeps the dragged image as payload when the cell is recycled mid-drag', () => {
+    const { directive, el, options } = setup();
+    options.start({ type: 'dragstart' }, {});
+    directive.update(el, { value: B, oldValue: A });
+    expect(ko.utils.domData.get(el, DRAGKEY)).toBe(A);
+
+    options.stop({ type: 'dragstop' }, {});
+    expect(ko.utils.domData.get(el, DRAGKEY)).toBe(B);
+  });
+
+  it('keeps its payload after a drag the scroller did not disturb', () => {
+    const { el, options } = setup();
+    options.start({ type: 'dragstart' }, {});
+    options.stop({ type: 'dragstop' }, {});
+    expect(ko.utils.domData.get(el, DRAGKEY)).toBe(A);
+  });
+
   it('tears the widget down and drops the payload on unbind', () => {
     const { directive, el } = setup();
     directive.unbind(el);
