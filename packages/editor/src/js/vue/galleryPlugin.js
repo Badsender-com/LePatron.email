@@ -3,7 +3,6 @@
 const Vue = require('vue/dist/vue.common');
 const ko = require('knockout');
 const { RecycleScroller } = require('vue-virtual-scroller');
-const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
 const createGalleryDraggable = require('./directives/gallery-draggable');
 const template = require('./components/gallery/panel.template.js');
@@ -145,7 +144,6 @@ function createGalleryPanel(vm) {
     this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
       this.status = status;
     });
-    galleryBridge.ready();
   },
   beforeDestroy() {
     this._subscriptions.forEach((subscription) => subscription.dispose());
@@ -203,12 +201,6 @@ function createGalleryPanel(vm) {
 }
 
 module.exports = {
-  viewModel(vm, ko) {
-    // Expose the bridge to Knockout (mirrors badsender-events-hub's
-    // `vm.bsEventsHub`) so KO-side code can dispatch GALLERY_REFRESH and
-    // listen to GALLERY_IMAGE_SELECTED.
-    vm.galleryBridge = galleryBridge;
-  },
   init(vm) {
     const GalleryPanel = createGalleryPanel(vm);
 

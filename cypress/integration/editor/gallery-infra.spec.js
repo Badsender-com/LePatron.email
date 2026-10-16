@@ -67,12 +67,4 @@ describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
       cy.get('#toolbar').should('exist');
     });
   });
-
-  describe('Knockout ↔ Vue bridge', () => {
-    it('emits GALLERY_READY when the Vue component mounts', () => {
-      // Verified via the data attribute set by the Vue component on mount
-      cy.openGallery();
-      cy.get('[data-gallery-vue="ready"]').should('exist');
-    });
-  });
 });
