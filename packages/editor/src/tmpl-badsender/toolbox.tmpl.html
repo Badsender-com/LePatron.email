@@ -253,10 +253,8 @@
       <!-- ko if: $root.mailingGalleryStatus() === 'loading' -->
       <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading mailing gallery…</div>
       <!-- /ko -->
-      <!-- ko if: $root.mailingGalleryStatus() === 0 -->
-      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The mailing gallery is empty</div>
-      <!-- /ko -->
-      <!-- US-05: Vue thumbnail grid for the mailing gallery -->
+      <!-- US-05: Vue thumbnail grid for the mailing gallery. It shows the
+           count and the empty state once the gallery is loaded. -->
       <div class="gallery-vue-host" data-bind="vueGalleryPanel: 'mailing'"></div>
     </div>
 
@@ -273,10 +271,8 @@
       <!-- ko if: $root.templateGalleryStatus() === 'loading' -->
       <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading template gallery...</div>
       <!-- /ko -->
-      <!-- ko if: $root.templateGalleryStatus() === 0 -->
-      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The template gallery is empty</div>
-      <!-- /ko -->
-      <!-- US-05: Vue thumbnail grid for the template gallery -->
+      <!-- US-05: Vue thumbnail grid for the template gallery. It shows the
+           count and the empty state once the gallery is loaded. -->
       <div class="gallery-vue-host" data-bind="vueGalleryPanel: 'template'"></div>
     </div>
   </div>

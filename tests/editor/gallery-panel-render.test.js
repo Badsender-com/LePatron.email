@@ -13,6 +13,8 @@ jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
 
 const Vue = require('vue/dist/vue.common');
 const $ = require('jquery');
+const ko = require('knockout');
+const en = require('../../public/lang/badsender-en.js');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
@@ -35,18 +37,26 @@ const IMAGES = [
   },
 ];
 
-function mount(images) {
-  const observable = Object.assign(() => images, {
-    subscribe: () => ({ dispose() {} }),
-  });
-  const vm = {
+// The Mosaico viewModel as the panel sees it, with real Knockout observables
+// so the mirror is exercised through its subscription. A loaded gallery
+// reports its image count as status.
+function fakeViewModel(images, status = images.length) {
+  return {
     t: (key, params) => (params ? `${key}:${params.count}` : key),
     addImage() {},
     removeImage() {},
-    mailingGallery: observable,
+    mailingGallery: ko.observableArray(images),
+    mailingGalleryStatus: ko.observable(status),
   };
+}
+
+function mountVm(vm) {
   const Panel = Vue.extend(createGalleryPanel(vm));
   return new Panel({ propsData: { type: 'mailing' } }).$mount();
+}
+
+function mount(images, status) {
+  return mountVm(fakeViewModel(images, status));
 }
 
 describe('gallery panel — rendering', () => {
@@ -113,6 +123,93 @@ describe('gallery panel — rendering', () => {
     await Vue.nextTick();
     expect(panel.$el.querySelector('[data-gallery-no-result]')).not.toBeNull();
     expect(panel.$el.querySelector('.gallery-vue-scroller')).toBeNull();
+    panel.$destroy();
+  });
+});
+
+// Mosaico's `<type>GalleryStatus` is false before the first load and after a
+// failed one, 'loading' while the list is fetched, then the image count. The
+// Knockout pane owns the first two states (load button, loading text); the
+// panel must stay silent until it is a number, or it says "0 images" and
+// "the gallery is empty" under "Loading…".
+describe('gallery panel — following the gallery status', () => {
+  const count = (panel) => panel.$el.querySelector('.gallery-vue-panel__count');
+  const empty = (panel) => panel.$el.querySelector('[data-gallery-empty]');
+
+  it.each([
+    ['loading', 'loading'],
+    ['not loaded, or failed to', false],
+  ])('shows no count and no empty state while %s', async (_, status) => {
+    const panel = mount([], status);
+    await Vue.nextTick();
+    expect(count(panel)).toBeNull();
+    expect(empty(panel)).toBeNull();
+    expect(panel.$el.querySelector('[data-gallery-search]')).toBeNull();
+    panel.$destroy();
+  });
+
+  it('says the gallery is empty once it is loaded with nothing in it', async () => {
+    const panel = mount([], 0);
+    await Vue.nextTick();
+    expect(empty(panel).textContent).toBe('gallery-mailing-empty');
+    expect(count(panel).textContent).toBe('gallery-image-count:0');
+    panel.$destroy();
+  });
+
+  it('shows the images once Mosaico has loaded them', async () => {
+    const vm = fakeViewModel([], 'loading');
+    const panel = mountVm(vm);
+    await Vue.nextTick();
+    expect(count(panel)).toBeNull();
+
+    // what badsender-gallery.js does when the list arrives
+    vm.mailingGalleryStatus(IMAGES.length);
+    vm.mailingGallery(IMAGES.slice());
+    await Vue.nextTick();
+    expect(count(panel).textContent).toBe('gallery-image-count:2');
+    expect(panel.$el.querySelector('.gallery-vue-scroller')).not.toBeNull();
+    panel.$destroy();
+  });
+
+  it('follows an upload and a delete made on the Knockout side', async () => {
+    const vm = fakeViewModel(IMAGES.slice());
+    const panel = mountVm(vm);
+    vm.mailingGallery.unshift({ name: 'a-3.gif', label: 'trois.gif' });
+    await Vue.nextTick();
+    expect(panel.images.map((f) => f.name)).toEqual([
+      'a-3.gif',
+      'a-1.jpg',
+      'a-2.png',
+    ]);
+    vm.mailingGallery.splice(1, 1);
+    await Vue.nextTick();
+    expect(panel.count).toBe(2);
+    panel.$destroy();
+  });
+
+  it('stops listening to Knockout once destroyed', () => {
+    const vm = fakeViewModel(IMAGES.slice());
+    const panel = mountVm(vm);
+    panel.$destroy();
+    expect(vm.mailingGallery.getSubscriptionsCount()).toBe(0);
+    expect(vm.mailingGalleryStatus.getSubscriptionsCount()).toBe(0);
+  });
+
+  // The real strings and the `__count__` token Mosaico's `t` substitutes.
+  it('counts with the real translations', async () => {
+    const vm = fakeViewModel(IMAGES.slice(0, 1));
+    vm.t = (key, params = {}) =>
+      Object.keys(params).reduce(
+        (text, name) => text.split(`__${name}__`).join(params[name]),
+        en[key]
+      );
+    const panel = mountVm(vm);
+    await Vue.nextTick();
+    expect(count(panel).textContent).toBe('1 image');
+    vm.mailingGallery.push(IMAGES[1]);
+    vm.mailingGalleryStatus(2);
+    await Vue.nextTick();
+    expect(count(panel).textContent).toBe('2 images');
     panel.$destroy();
   });
 });

@@ -62,6 +62,7 @@ module.exports = `
         </div>
       </div>
       <div
+        v-if="isLoaded"
         class="gallery-vue-panel__count"
         aria-live="polite"
         aria-atomic="true"
