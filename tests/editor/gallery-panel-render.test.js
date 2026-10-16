@@ -395,3 +395,65 @@ describe('gallery panel — the tooltip it owns', () => {
     expect(panel.hoveredFile).toBeNull();
   });
 });
+
+// The actions on a thumbnail (rename, re-upload, delete) need
+// `gallery.manage` on the server. The panel reads the capability from the
+// current user, who is a Knockout observable loaded after the editor opens,
+// and re-reads it once the user arrives.
+describe('gallery panel — the right to manage', () => {
+  function observable(value) {
+    const subscribers = [];
+    const read = () => read.value;
+    read.value = value;
+    read.subscribe = (callback) => {
+      subscribers.push(callback);
+      return { dispose() {} };
+    };
+    read.set = (next) => {
+      read.value = next;
+      subscribers.forEach((callback) => callback(next));
+    };
+    return read;
+  }
+
+  function mountWithUser(currentUser) {
+    const vm = {
+      t: (key) => key,
+      addImage() {},
+      removeImage() {},
+      mailingGallery: observable(IMAGES),
+      currentUser,
+    };
+    const Panel = Vue.extend(createGalleryPanel(vm));
+    return new Panel({ propsData: { type: 'mailing' } }).$mount();
+  }
+
+  it('grants the actions to a user who holds gallery.manage', () => {
+    const panel = mountWithUser(
+      observable({ capabilities: ['gallery.manage'] })
+    );
+    expect(panel.canManage).toBe(true);
+    panel.$destroy();
+  });
+
+  it('denies them to a user who does not', () => {
+    const panel = mountWithUser(observable({ capabilities: [] }));
+    expect(panel.canManage).toBe(false);
+    panel.$destroy();
+  });
+
+  it('denies them while the user is unknown, then re-reads once loaded', () => {
+    const user = observable(null);
+    const panel = mountWithUser(user);
+    expect(panel.canManage).toBe(false);
+    user.set({ capabilities: ['gallery.manage'] });
+    expect(panel.canManage).toBe(true);
+    panel.$destroy();
+  });
+
+  it('survives an editor whose view-model carries no user', () => {
+    const panel = mountWithUser(undefined);
+    expect(panel.canManage).toBe(false);
+    panel.$destroy();
+  });
+});

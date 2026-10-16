@@ -106,6 +106,7 @@ module.exports = `
             v-gallery-draggable="item"
             :file="item"
             :strings="thumbStrings"
+            :can-manage="canManage"
             @select="onSelect"
             @edit="onEdit"
             @remove="onRemove"

@@ -27,7 +27,9 @@ const FILE = {
 
 function mount(file = FILE) {
   const Component = Vue.extend(Thumb);
-  return new Component({ propsData: { file, strings: STRINGS } }).$mount();
+  return new Component({
+    propsData: { file, strings: STRINGS, canManage: true },
+  }).$mount();
 }
 
 const label = (vm) => vm.$el.querySelector('[data-gallery-label]');

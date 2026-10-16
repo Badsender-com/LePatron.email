@@ -17,6 +17,7 @@ const ko = require('knockout');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
+const { userOfRole } = require('./helpers/current-user.js');
 
 $.fn.draggable = function draggable() {
   return this;
@@ -38,6 +39,8 @@ async function mount(images = IMAGES) {
     removeImage: jest.fn(),
     mailingGallery: ko.observableArray(images.slice()),
     mailingGalleryStatus: ko.observable(images.length),
+    // a user who may manage the gallery, so the action bar is rendered
+    currentUser: userOfRole('regular_user'),
   };
   const host = document.createElement('div');
   document.body.appendChild(host);

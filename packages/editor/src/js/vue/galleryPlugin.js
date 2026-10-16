@@ -8,6 +8,8 @@ const Tooltip = require('./components/gallery/tooltip');
 const createGalleryDraggable = require('./directives/gallery-draggable');
 const template = require('./components/gallery/panel.template.js');
 const { filterGalleryFiles } = require('../../../../shared/gallery/filter.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
+const { userCan } = require('../ext/user-can.js');
 
 // Fixed cell size for the virtualised grid. The gallery sidebar has a fixed
 // usable width (~364px), so 3 columns of 118px fit with margin to spare.
@@ -54,6 +56,10 @@ function createGalleryPanel(vm) {
       hoveredFile: null,
       hoveredAnchor: null,
       panelBounds: null,
+      // whether the user may rename, re-upload and delete (gallery.manage);
+      // mirrored from the Knockout side like `images`, because Vue cannot
+      // observe `vm.currentUser`, and it is null until the user has loaded
+      canManage: false,
       // copied per instance: a module-level array put straight into data() is
       // observed once by Vue and then shared by both panels (mailing, template)
       formats: [...FORMATS],
@@ -203,6 +209,11 @@ function createGalleryPanel(vm) {
           : null;
         if (known) this.reveal(array.filter((file) => !known.has(file.name)));
       });
+      // The editor opens before the user is known, and the actions have to
+      // appear once it is. Read through `userCan`, never the payload.
+      this.mirror(vm.currentUser, () => {
+        this.canManage = userCan(vm, CAPABILITIES.GALLERY_MANAGE);
+      });
     },
     beforeDestroy() {
       this._subscriptions.forEach((subscription) => subscription.dispose());
@@ -215,7 +226,9 @@ function createGalleryPanel(vm) {
       mirror(observable, assign) {
         if (!observable) return;
         assign(observable());
-        this._subscriptions.push(observable.subscribe(assign));
+        if (typeof observable.subscribe === 'function') {
+          this._subscriptions.push(observable.subscribe(assign));
+        }
       },
       // The search and format outlive the block they were typed for, so an
       // image uploaded under them could be hidden at once: no thumbnail, an
