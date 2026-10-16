@@ -7,7 +7,19 @@ const router = express.Router();
 
 const { GUARD_USER, GUARD_CAN } = require('../account/auth.guard.js');
 const { CAPABILITIES: C } = require('../../shared/access/roles.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+const { isObjectIdString } = require('../utils/model.js');
 const images = require('./image.controller.js');
+
+// A gallery is keyed by its mailing's or template's id. Anything else reached
+// the Mongoose casts and came back as a server error; it is a bad request,
+// refused here before any controller reads it.
+router.param('mongoId', (req, res, next, mongoId) => {
+  if (!isObjectIdString(mongoId)) {
+    return next(new createError.BadRequest(ERROR_CODES.INVALID_OBJECT_ID));
+  }
+  return next();
+});
 
 router.get(
   '/placeholder/:placeholderSize',
