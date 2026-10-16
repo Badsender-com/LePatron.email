@@ -399,6 +399,7 @@ ${templates.join('\n')}
         'packages/editor/src/tmpl/*.html',
         // replace some original templates by custome ones
         'packages/editor/src/tmpl-badsender/*.html',
+        // the gallery grid is a Vue panel now (vue/galleryPlugin.js)
         '!packages/editor/src/tmpl/gallery-images.tmpl.html',
         '!packages/editor/src/tmpl/toolbox.tmpl.html',
       ])
