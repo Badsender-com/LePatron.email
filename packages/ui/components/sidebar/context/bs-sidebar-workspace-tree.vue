@@ -86,6 +86,10 @@ export default {
     ...mapState(USER, {
       userInfo: 'info',
     }),
+    // Whoever manages the platform works in a group it selects.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     selectedItem() {
       return { id: this.currentLocation };
     },
@@ -100,7 +104,7 @@ export default {
     // reopens a node of the previous one (ADR 0002, amended).
     selectedNodeStorageKey() {
       const userId = this.userInfo?.id || 'anonymous';
-      const groupId = this.userInfo?.isAdmin ? this.selectedGroupId : null;
+      const groupId = this.canManagePlatform ? this.selectedGroupId : null;
       return groupId
         ? `${SELECTED_NODE_STORAGE_KEY}_${userId}_${groupId}`
         : `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
@@ -290,7 +294,7 @@ export default {
     // group: a folder of another group would select that group again
     // (ADR 0002, amended).
     async restoreFolder(folderId) {
-      if (this.userInfo?.isAdmin) {
+      if (this.canManagePlatform) {
         try {
           const folder = await this.$axios.$get(getFolder(folderId));
           if (String(folder._company) !== String(this.selectedGroupId)) {

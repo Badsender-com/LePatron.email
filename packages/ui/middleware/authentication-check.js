@@ -1,32 +1,26 @@
 import * as pageAcl from '~/helpers/pages-acls.js';
-import { USER, SESSION_ACL, IS_BOOTSTRAP_ACCOUNT } from '~/store/user';
+import { USER, IS_CONNECTED, CAN, IS_BOOTSTRAP_ACCOUNT } from '~/store/user';
+
 function flattenMeta(acc, meta) {
   return { ...acc, ...meta };
 }
 
 export default async function authMiddleware(nuxtContext) {
   const { store, redirect, route } = nuxtContext;
-  const userSessionInfo = store.getters[`${USER}/${SESSION_ACL}`];
+  const isConnected = store.getters[`${USER}/${IS_CONNECTED}`];
+  const can = store.getters[`${USER}/${CAN}`];
   const meta = route.meta.reduce(flattenMeta, {});
-  const authorizations = pageAcl.getAuthorizations(meta.acl);
-  if (authorizations.notConnected && userSessionInfo.isConnected) {
-    if (userSessionInfo.isUser) return redirect('/');
-    if (userSessionInfo.isGroupAdmin) return redirect('/');
+
+  // A signed-in user has nothing to do on the sign-in pages: the bootstrap
+  // account goes to the settings, anyone else home.
+  if (pageAcl.isNoSessionPage(meta.acl) && isConnected) {
     if (store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
       return redirect('/groups');
     }
-    if (userSessionInfo.isAdmin) return redirect('/');
+    return redirect('/');
   }
 
-  if (
-    (authorizations.groupAdmin && userSessionInfo.isGroupAdmin) ||
-    (authorizations.groupAdminTech && userSessionInfo.isGroupAdminTech) ||
-    (authorizations.admin && userSessionInfo.isAdmin) ||
-    (authorizations.user && userSessionInfo.isConnected) ||
-    (authorizations.notConnected && !userSessionInfo.isConnected)
-  ) {
-    return;
-  }
+  if (pageAcl.isPageGranted(meta.acl, { isConnected, can })) return;
 
   return redirect('/account/login');
 }

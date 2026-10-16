@@ -7,7 +7,8 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupColorsTab from '~/components/group/colors-tab.vue';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
   name: 'BsPageSettingsColors',
@@ -17,7 +18,7 @@ export default {
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   async asyncData(nuxtContext) {
     return safeFetchGroup(nuxtContext);
@@ -32,12 +33,12 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
-    }),
+    ...mapGetters(USER, { can: CAN }),
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     showGroupBadge() {
-      return this.isAdmin && this.group.name;
+      return this.canManagePlatform && this.group.name;
     },
   },
   methods: {
@@ -49,10 +50,10 @@ export default {
       } = this;
       try {
         this.loading = true;
-        const payload =
-          this.isGroupAdmin && !this.isAdmin
-            ? { name: this.group.name, colorScheme: this.group.colorScheme }
-            : this.group;
+        // A company admin changes its company's name and colours only.
+        const payload = this.canManagePlatform
+          ? this.group
+          : { name: this.group.name, colorScheme: this.group.colorScheme };
         const updatedGroup = await $axios.$put(
           apiRoutes.groupsItem(params),
           payload

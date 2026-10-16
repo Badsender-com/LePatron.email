@@ -6,7 +6,7 @@
 
 /**
  * @param {{ id?: string, enabledFlag?: string }} module A row from SIDEBAR_MODULES.
- * @param {{ isAdmin?: boolean }} user
+ * @param {{ canManagePlatform?: boolean }} user
  * @param {Object} group The user's group document (or {} if not loaded yet).
  * @returns {boolean} true when the module should be rendered as locked.
  *
@@ -29,11 +29,11 @@ export function isModuleLocked(module, user, group) {
  *
  * @param {string} flag Name of the boolean flag on the group document
  *   (e.g. 'enableEmailBuilder', 'enableCrmIntelligence').
- * @param {{ isAdmin?: boolean }} user
+ * @param {{ canManagePlatform?: boolean }} user
  * @param {Object} group
  */
 export function isFlagEnabled(flag, user, group) {
-  if (user && user.isAdmin) return true;
+  if (user && user.canManagePlatform) return true;
   if (!group) return false;
   // Treat an undefined flag as enabled — same forgiving semantics as
   // guardEmailBuilder.js server-side: legacy groups predating the flag

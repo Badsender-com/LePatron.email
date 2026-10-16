@@ -1,11 +1,12 @@
 <script>
 import { mapGetters } from 'vuex';
-import { IS_ADMIN, SELECTED_GROUP, SELECT_GROUP, USER } from '~/store/user';
+import { CAN, SELECTED_GROUP, SELECT_GROUP, USER } from '~/store/user';
 import { SET_COLLAPSED } from '~/store/sidebar';
 import { FOLDER, FETCH_WORKSPACES } from '~/store/folder';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes';
 import { routeAfterGroupSwitch } from '~/helpers/route-after-group-switch';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 // The group selector of a super admin (ADR 0002, amended): one selected group,
 // kept by the server, shared by the modules and the settings. Collapsed, the
@@ -27,7 +28,12 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN, selectedGroup: SELECTED_GROUP }),
+    ...mapGetters(USER, { can: CAN, selectedGroup: SELECTED_GROUP }),
+
+    // Whoever manages the platform works in a group it selects.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
 
     currentGroupId() {
       return this.selectedGroup ? this.selectedGroup.id : null;
@@ -51,7 +57,7 @@ export default {
     },
   },
   watch: {
-    isAdmin: {
+    canManagePlatform: {
       immediate: true,
       handler(value) {
         if (value && this.companies.length === 0) {
@@ -104,7 +110,7 @@ export default {
 </script>
 
 <template>
-  <div v-if="isAdmin" class="bs-sidebar-company-switcher">
+  <div v-if="canManagePlatform" class="bs-sidebar-company-switcher">
     <v-tooltip v-if="collapsed" right>
       <template #activator="{ on }">
         <button

@@ -88,6 +88,7 @@ import {
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from '~/store/sidebar';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsSidebar',
@@ -109,15 +110,16 @@ export default {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
     ...mapGetters('user', {
       modulesGroup: 'MODULES_GROUP',
-      isAdmin: 'IS_ADMIN',
-      isGroupAdmin: 'IS_GROUP_ADMIN',
+      can: 'CAN',
     }),
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
       // Rules centralised in helpers/module-activation.js so the sidebar
       // and the settings list can't drift apart.
-      const userLike = { isAdmin: this.isAdmin };
+      const userLike = {
+        canManagePlatform: this.can(CAPABILITIES.PLATFORM_MANAGE),
+      };
       return SIDEBAR_MODULES.map((module) => ({
         ...module,
         locked: isModuleLocked(module, userLike, this.modulesGroup),

@@ -1,7 +1,10 @@
 <script>
+import { mapGetters } from 'vuex';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { CAN, USER } from '~/store/user';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsTemplateMenu',
@@ -12,6 +15,13 @@ export default {
     template: { type: Object, default: () => ({ group: {}, assets: {} }) },
   },
   computed: {
+    ...mapGetters(USER, { can: CAN }),
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
+    canManageGroup() {
+      return this.can(CAPABILITIES.GROUP_MANAGE);
+    },
     hasCover() {
       if (this.template.assets == null) return false;
       return this.template.assets['_full.png'] != null;
@@ -48,20 +58,16 @@ export default {
   <v-row>
     <v-col cols="12">
       <v-list>
-        <v-list-item
-          v-if="isGroupAdmin || isAdmin"
-          nuxt
-          class="mb-4"
-          link
-          to="/"
-        >
+        <v-list-item v-if="canManageGroup" nuxt class="mb-4" link to="/">
           <v-list-item-avatar>
             <v-icon>arrow_back</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
               {{
-                isAdmin ? $t('global.backToGroups') : $t('global.backToMails')
+                canManagePlatform
+                  ? $t('global.backToGroups')
+                  : $t('global.backToMails')
               }}
             </v-list-item-title>
           </v-list-item-content>
@@ -69,9 +75,7 @@ export default {
         <v-subheader>{{ $tc('global.group', 1) }}</v-subheader>
         <v-list-item link nuxt :to="`/groups/${template.group.id}`">
           <v-list-item-avatar>
-            <v-icon color="primary">
-              group
-            </v-icon>
+            <v-icon color="primary"> group </v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ template.group.name }}</v-list-item-title>
@@ -80,18 +84,14 @@ export default {
         <v-subheader>{{ $t('global.actions') }}</v-subheader>
         <v-list-item :disabled="loading" link @click="confirmDeletion">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              delete_forever
-            </v-icon>
+            <v-icon color="accent"> delete_forever </v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
               {{ $t('global.delete') }}
               <v-tooltip right>
                 <template #activator="{ on }">
-                  <v-icon color="grey" small v-on="on">
-                    info
-                  </v-icon>
+                  <v-icon color="grey" small v-on="on"> info </v-icon>
                 </template>
                 <span>{{ $t('template.deleteNotice') }}</span>
               </v-tooltip>
@@ -104,9 +104,7 @@ export default {
           @click="generatePreviews"
         >
           <v-list-item-avatar>
-            <v-icon color="accent">
-              camera_alt
-            </v-icon>
+            <v-icon color="accent"> camera_alt </v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newPreview') }}</v-list-item-title>
