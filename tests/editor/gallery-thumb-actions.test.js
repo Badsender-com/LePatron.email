@@ -27,7 +27,9 @@ const FILE = {
 
 function mount(file = FILE) {
   const Component = Vue.extend(Thumb);
-  return new Component({ propsData: { file, strings: STRINGS } }).$mount();
+  return new Component({
+    propsData: { file, strings: STRINGS, canManage: true },
+  }).$mount();
 }
 
 const edit = (vm) => vm.$el.querySelector('[data-gallery-edit]');
@@ -191,5 +193,43 @@ describe('thumbnail actions — what cannot be edited', () => {
       expect(edit(vm)).not.toBeNull();
       vm.$destroy();
     });
+  });
+});
+
+// The server refuses a rename, a re-upload and a delete without
+// `gallery.manage`; the thumbnail shows what the server will accept and
+// nothing else (AGENTS.md, "Rights"). The panel reads the capability from
+// the current user and hands it down; here the prop is driven directly.
+describe('thumbnail actions — who may use them', () => {
+  function mountWithout() {
+    const Component = Vue.extend(Thumb);
+    return new Component({
+      propsData: { file: FILE, strings: STRINGS },
+    }).$mount();
+  }
+
+  it('offers no action at all without gallery.manage', () => {
+    const vm = mountWithout();
+    expect(overlay(vm)).not.toBeNull();
+    expect(edit(vm)).toBeNull();
+    expect(rename(vm)).toBeNull();
+    expect(remove(vm)).toBeNull();
+    vm.$destroy();
+  });
+
+  it('ignores the double-click on the label without gallery.manage', async () => {
+    const vm = mountWithout();
+    vm.$el
+      .querySelector('[data-gallery-label]')
+      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    await Vue.nextTick();
+    expect(vm.$el.querySelector('[data-gallery-label-input]')).toBeNull();
+    vm.$destroy();
+  });
+
+  it('is denied by default: a panel that says nothing grants nothing', () => {
+    const vm = mountWithout();
+    expect(vm.canManage).toBe(false);
+    vm.$destroy();
   });
 });

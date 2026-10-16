@@ -46,6 +46,11 @@ module.exports = {
     // the panel hands its copy down, so the thumbnail needs no access to the
     // Mosaico viewModel of its own
     strings: { type: Object, required: true },
+    // Whether the user holds `gallery.manage`, read by the panel from the
+    // current user. The server refuses a rename, a re-upload and a delete
+    // without it; a button that can only fail is not shown (AGENTS.md,
+    // "Rights"). Denied until told otherwise, like `userCan` itself.
+    canManage: { type: Boolean, default: false },
   },
   data: () => ({
     editing: false,
@@ -113,7 +118,9 @@ module.exports = {
       return String(template || '').replace('__label__', this.label);
     },
     startEdit() {
-      if (this.editing) return;
+      // the label's double-click is the second way in, and has to be refused
+      // on the same terms as the rename button
+      if (this.editing || !this.canManage) return;
       this.draft = this.label;
       this.editing = true;
       this.$nextTick(() => {
@@ -185,7 +192,7 @@ module.exports = {
              buttons from its handle, so that version made the thumbnail
              undraggable exactly while the user could see it. -->
         <div class="gallery-thumb__overlay" data-gallery-overlay>
-          <div class="gallery-thumb__actions">
+          <div v-if="canManage" class="gallery-thumb__actions">
             <button
               v-if="canEdit"
               type="button"
