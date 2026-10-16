@@ -23,7 +23,7 @@ module.exports = {
   'gallery-mailing-empty': 'The email gallery is empty',
   'gallery-template': 'TEMPLATE SHARED',
   'gallery-template-loading': 'Loading template gallery…',
-  'gallery-template-empty': 'Email gallery is empty',
+  'gallery-template-empty': 'The template gallery is empty',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
