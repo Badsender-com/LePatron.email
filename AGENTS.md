@@ -130,6 +130,8 @@ Roles, capabilities and the list of each role are defined once, in `packages/sha
 ## Testing
 
 - Jest; `tests/` mirrors `packages/` ([tests/README.md](tests/README.md)). Shared helpers in `tests/helpers/`; `tests/editor/helpers/current-user.js` gives an editor user of any role.
+- Headless, always: Jest runs in Node and jsdom, and Puppeteer and sharp are mocked. A test that needs a real browser (Vitest browser mode, Playwright, Cypress) runs it headless, locally as in CI, never in a window. The Cypress specs in `cypress/` are not run by the CI.
+- CI (`.github/workflows/develop.yml`) runs `yarn build` and `yarn test-ci` on every pull request, stacked ones included. SonarCloud's settings are in `.sonarcloud.properties`: duplication is not counted in tests nor locale files.
 - Before adding a test file, look for the one that already covers the surface and add the case there.
 - A test that checks a right covers every role, not only the one the change is about.
 - Manual checklists live in `docs/` (`comments-testing-checklist.md`…) and `packages/documentation/tests/`.
