@@ -204,6 +204,19 @@ describe('run-gallery-script', () => {
     expect(output()).toContain('nothing could be read');
   });
 
+  it('processes nothing when the preflight check refuses', async () => {
+    Galleries.collection = fakeCollection(galleries(2));
+    const checked = script({
+      preflight: jest.fn().mockRejectedValue(new Error('wrong storage')),
+    });
+
+    const code = await runGalleryScript(checked, { argv: [] });
+
+    expect(code).toBe(1);
+    expect(checked.processGallery).not.toHaveBeenCalled();
+    expect(output()).toContain('wrong storage');
+  });
+
   describe('eachWithConcurrency', () => {
     it('never runs more workers at once than asked', async () => {
       let running = 0;
