@@ -322,3 +322,44 @@ describe('renameImage — two renames of the same image', () => {
     expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-fail');
   });
 });
+
+describe('renameImage — the image disappears meanwhile', () => {
+  // deleted from this editor while the rename was on its way
+  it('announces nothing when the image left the list during the request', async () => {
+    let settle;
+    $.ajax.mockImplementation(
+      () => new Promise((resolve) => (settle = resolve))
+    );
+    const vm = viewModel();
+    const pending = vm.renameImage(
+      vm.mailingGallery()[0],
+      'mailing',
+      'après.png'
+    );
+
+    vm.mailingGallery.remove((file) => file.name === FILE.name);
+    settle({ name: FILE.name, label: 'après.png' });
+
+    await expect(pending).resolves.toBe(false);
+    expect(vm.mailingGallery().map((file) => file.name)).toEqual([OTHER.name]);
+  });
+
+  // deleted by someone else: putting it back would leave a thumbnail whose
+  // every action fails
+  it('takes the image out when the server no longer has it', async () => {
+    $.ajax.mockImplementation(() => Promise.reject(jqXHR(404)));
+    const vm = viewModel();
+    vm.mailingGalleryStatus = ko.observable(2);
+
+    const ok = await vm.renameImage(
+      vm.mailingGallery()[0],
+      'mailing',
+      'après.png'
+    );
+
+    expect(ok).toBe(false);
+    expect(vm.mailingGallery().map((file) => file.name)).toEqual([OTHER.name]);
+    expect(vm.mailingGalleryStatus()).toBe(1);
+    expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-gone');
+  });
+});

@@ -50,7 +50,7 @@ function renameGalleryImage(viewModel) {
     // name disappear with no explanation and no way to get the text back
     if (!match) return Promise.resolve(fail('gallery-rename-image-unsupported'));
 
-    const index = gallery().findIndex((f) => f.name === name);
+    const index = indexByName(gallery, name);
     if (index === -1) return Promise.resolve(fail('gallery-rename-image-gone'));
 
     const previous = gallery()[index];
@@ -90,17 +90,24 @@ function renameGalleryImage(viewModel) {
       .then(function onAccepted(stored) {
         if (!claimSettlement()) return false;
         // The server answers with the file as it stored it. Take that rather
-        // than our own guess: it carries any normalisation we did not do, and
-        // a concurrent delete may have replaced the whole array in between.
-        if (stored && stored.name) replaceByName(gallery, name, stored);
-        return true;
+        // than our own guess: it carries any normalisation we did not do.
+        // Deleted from the list meanwhile, there is nothing left to label and
+        // nothing to announce.
+        if (stored && stored.name) return replaceByName(gallery, name, stored);
+        return indexByName(gallery, name) !== -1;
       })
       .catch(function onRefused(jqXHR) {
         const settled = claimSettlement();
         if (!settled) return false;
-        replaceByName(gallery, name, settled.baseline);
         // eslint-disable-next-line no-console
         console.error('gallery rename failed', jqXHR && jqXHR.status, jqXHR);
+        // The server no longer has it: restoring the thumbnail would leave
+        // one whose every action fails.
+        if (jqXHR && jqXHR.status === 404) {
+          removeByName(gallery, name, viewModel[type + 'GalleryStatus']);
+        } else {
+          replaceByName(gallery, name, settled.baseline);
+        }
         return fail(messageForStatus(jqXHR));
       });
   };
@@ -110,10 +117,22 @@ function renameGalleryImage(viewModel) {
 // by a remembered index: an upload unshifts, a delete replaces the whole array,
 // and either can land while a request is in flight.
 function replaceByName(gallery, name, entry) {
-  const index = gallery().findIndex((f) => f.name === name);
+  const index = indexByName(gallery, name);
   if (index === -1) return false;
   gallery.splice(index, 1, entry);
   return true;
+}
+
+function removeByName(gallery, name, status) {
+  const index = indexByName(gallery, name);
+  if (index === -1) return;
+  gallery.splice(index, 1);
+  // the count the panel shows once the gallery is loaded
+  if (status) status(gallery().length);
+}
+
+function indexByName(gallery, name) {
+  return gallery().findIndex((f) => f.name === name);
 }
 
 // The server distinguishes its refusals; collapsing them into one message left
