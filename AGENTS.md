@@ -116,6 +116,7 @@ Each question gets the user's answer; do not settle them yourself. Never edit, c
 
 - Extensions in `src/js/ext/`, templates in `src/tmpl-badsender/`, translations in `public/lang/badsender-{fr,en}.js` read through `viewModel.t('key')`.
 - LESS variables from `style_variables.less`, theme CSS variables (`--v-primary-base`), jQuery UI widgets, Knockout bindings, Font Awesome 4.7 (`fa fa-*`). See `docs/design-system/04-editor-stack.md`.
+- Vue plugins in `src/js/vue/`: **bare Vue (`vue/dist/vue.common`) with inline string templates only** (no `.vue` SFC, no Vuetify: the gulp/browserify build has no `vue-loader`, and Vuetify's global CSS collides with Mosaico). Register the plugin in the `extensions` array of `src/js/app.js` and mount it on a `<div id="...">` placed in a Knockout template. A panel that lives inside a Knockout `if` is mounted by a Knockout binding instead, registered when its module loads (`vueGalleryPanel` in `vue/galleryPlugin.js`). For Knockout↔Vue interop, Vue reads an observable by copying it into `data` and subscribing (disposed in `beforeDestroy`), and an event goes through an `EventTarget` singleton exposed on the viewModel (pattern: `src/js/badsender-events-hub.js`).
 
 ## Rights
 
