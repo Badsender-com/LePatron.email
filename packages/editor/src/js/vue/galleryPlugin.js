@@ -280,7 +280,9 @@ function createGalleryPanel(vm) {
         }, Tooltip.OPEN_DELAY_MS);
       },
       // Immediate on leave: a tooltip that lingers covers what the pointer is
-      // heading for.
+      // heading for. Also on scroll: the tooltip is placed once, from the cell's
+      // box, and a scroll slides another image under a pointer that has not
+      // moved, so no mouseleave comes.
       onUnhover() {
         this.cancelHover();
         this.hoveredFile = null;

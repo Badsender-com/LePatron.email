@@ -90,7 +90,7 @@ module.exports = `
         key-field="name"
         :skip-hover="true"
         v-slot="{ item, index, active }"
-        @scroll.native="onScroll"
+        @scroll.native.passive="onUnhover"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
              list order: the index is the only reliable handle on position.

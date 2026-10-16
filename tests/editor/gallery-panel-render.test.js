@@ -394,6 +394,27 @@ describe('gallery panel — the tooltip it owns', () => {
 
     expect(panel.hoveredFile).toBeNull();
   });
+
+  // The tooltip is placed once, from the cell's box when it opened. Scrolling
+  // moves the cells under a still pointer, and a recycled view stays in the
+  // document, so nothing else would close a tooltip now describing another
+  // image at a position the image left.
+  it.each([
+    ['an open', Tooltip.OPEN_DELAY_MS],
+    ['a pending', 0],
+  ])('drops %s tooltip when the grid scrolls', async (_, wait) => {
+    const panel = mount(IMAGES);
+    await Vue.nextTick();
+    panel.onHover(IMAGES[0], cell());
+    jest.advanceTimersByTime(wait);
+
+    const scroller = panel.$el.querySelector('.gallery-vue-scroller');
+    scroller.dispatchEvent(new Event('scroll'));
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+
+    expect(panel.hoveredFile).toBeNull();
+    panel.$destroy();
+  });
 });
 
 // The actions on a thumbnail (rename, re-upload, delete) need
