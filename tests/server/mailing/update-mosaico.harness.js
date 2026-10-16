@@ -43,7 +43,6 @@ const MAILING_ID = '507f1f77bcf86cd799439001';
 const TEMPLATE_ID = '507f1f77bcf86cd799439002';
 const user = {
   id: 'user-1',
-  isAdmin: false,
   lang: 'fr',
   group: { id: '507f1f77bcf86cd799439003' },
 };

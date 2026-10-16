@@ -3,6 +3,8 @@
 const createError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
+const permissions = require('./permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 // Which group a module request reads or writes (ADR 0002, amended):
 // - a listing that names no resource (the workspace tree, the dashboards)
@@ -23,7 +25,11 @@ function refuseBootstrapAccount(user) {
  * @returns {string|null} a super admin's selected group, anyone else's own
  */
 function selectedGroupIdOf(user) {
-  const group = user && (user.isAdmin ? user.selectedGroup : user.group);
+  const group =
+    user &&
+    (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+      ? user.selectedGroup
+      : user.group);
   return group && group.id ? String(group.id) : null;
 }
 

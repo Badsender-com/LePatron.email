@@ -146,13 +146,9 @@ async function deleteWorkspace(req, res) {
       return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
-    // Super admins can delete any workspace
-    // Group admins can only delete workspaces from their group
-    const isAdmin = user?.isAdmin;
-    const userGroupId = user?.group?.id;
-    const workspaceGroupId = workspace._company?.toString();
-
-    if (!isAdmin && workspaceGroupId !== userGroupId) {
+    // A super admin reaches the workspaces of every company, anyone else
+    // those of its own company.
+    if (!permissions.canAccessGroup(user, workspace._company)) {
       return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
 
@@ -191,13 +187,9 @@ async function getWorkspace(req, res) {
       user
     );
 
-    // Super admins can access any workspace
-    // Group admins/users can only access workspaces from their group
-    const isAdmin = user?.isAdmin;
-    const userGroupId = user?.group?.id;
-    const workspaceGroupId = `${workspace._company}`;
-
-    if (!isAdmin && workspaceGroupId !== userGroupId) {
+    // A super admin reaches the workspaces of every company, anyone else
+    // those of its own company.
+    if (!permissions.canAccessGroup(user, workspace._company)) {
       return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 

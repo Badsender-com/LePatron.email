@@ -26,6 +26,19 @@ module.exports = (opts) => {
     viewModel.canSave = function () {
       return userCan(viewModel, CAPABILITIES.MAILING_EDIT_CONTENT);
     };
+    // Whoever manages the email's group: the platform, which manages every
+    // group (ADR 0002, amended), or a manager of its own group when it is the
+    // email's. Deletes any comment, edits and deletes the group's saved
+    // blocks.
+    viewModel.managesCurrentGroup = function () {
+      if (userCan(viewModel, CAPABILITIES.PLATFORM_MANAGE)) return true;
+      const user = viewModel.currentUser();
+      return (
+        userCan(viewModel, CAPABILITIES.GROUP_MANAGE) &&
+        !!user.group &&
+        user.group.id === currentGroupId
+      );
+    };
     // Nothing to edit anywhere: the toolbox drops its tabs and shows a single
     // message instead of one per panel. Only once the user is known, so the
     // tabs do not flicker away while it loads.
@@ -75,23 +88,10 @@ module.exports = (opts) => {
     axios
       .get('/api/users/current-user')
       .then((response) => {
-        const { isGroupAdmin, group, ...restOfCurrentUser } = response.data;
-
-        // Whoever manages the mailing's group: its company admin, or a super
-        // admin, who has every right in every group (ADR 0002, amended).
-        const isAdminOfCurrentGroup =
-          restOfCurrentUser.isAdmin === true ||
-          (isGroupAdmin && !!group && group.id === currentGroupId);
-
         // The toolbox's tabs are locked by overlays (toolbox.tmpl.html), never
         // removed: removing them broke the vendored tab-switching mechanism,
         // see git history. Single buttons may be hidden (`ko if: userCan`).
-        viewModel.currentUser({
-          ...restOfCurrentUser,
-          isAdminOfCurrentGroup,
-          isGroupAdmin,
-          group,
-        });
+        viewModel.currentUser({ ...response.data });
 
         // Someone who can edit nothing came for the comments: open on arrival,
         // the panel shows what they can actually do. The others open it

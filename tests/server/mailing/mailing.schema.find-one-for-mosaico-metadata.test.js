@@ -119,8 +119,7 @@ function makeContext({
   return { model, taxonomyFind, findById };
 }
 
-const call = (context) =>
-  findOneForMosaico.call(context.model, { isAdmin: false }, {});
+const call = (context) => findOneForMosaico.call(context.model, {}, {});
 
 describe('findOneForMosaico — company opted out', () => {
   it.each([
@@ -163,7 +162,7 @@ describe('findOneForMosaico — canWrite', () => {
 
   it.each([true, false])('sends the edit rule answer: %s', async (answer) => {
     mailingService.userCanEditMailing.mockResolvedValueOnce(answer);
-    const user = { isAdmin: false };
+    const user = {};
     const context = makeContext({ companyFlag: undefined });
 
     const result = await findOneForMosaico.call(context.model, user, {});

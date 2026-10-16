@@ -6,7 +6,8 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import TrackingParamsTab from '~/components/group/tracking-params-tab.vue';
 import TemplateTrackingTab from '~/components/template/template-tracking-tab.vue';
-import { IS_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
   name: 'BsPageSettingsTracking',
@@ -17,7 +18,7 @@ export default {
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: [acls.ACL_GROUP_ADMIN_TECH, acls.ACL_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE_TECH,
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -46,11 +47,9 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-    }),
+    ...mapGetters(USER, { can: CAN }),
     showGroupBadge() {
-      return this.isAdmin && this.group.name;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
   methods: {

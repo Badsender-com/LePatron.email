@@ -13,9 +13,7 @@ import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrum
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import {
-  IS_ADMIN,
   IS_BOOTSTRAP_ACCOUNT,
-  IS_GROUP_ADMIN,
   HAS_FTP_ACCESS,
   MODULES_GROUP,
   CAN,
@@ -82,8 +80,6 @@ export default {
       'filters',
     ]),
     ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
       hasFtpAccess: HAS_FTP_ACCESS,
       modulesGroup: MODULES_GROUP,
       can: CAN,

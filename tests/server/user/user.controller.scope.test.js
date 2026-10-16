@@ -101,12 +101,10 @@ const RECORDS = [
 const companyAdminOfA = {
   id: CAROL,
   role: 'company_admin',
-  isGroupAdmin: true,
-  isAdmin: false,
   _company: { id: GROUP_A, name: 'A' },
   group: { id: GROUP_A, name: 'A' },
 };
-const admin = { id: 'admin', isAdmin: true };
+const admin = { id: 'admin', role: 'super_admin' };
 
 function call(handler, { user, params = {}, body = {}, query = {} }) {
   return new Promise((resolve) => {

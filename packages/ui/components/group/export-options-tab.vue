@@ -1,9 +1,8 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-import { mapGetters, mapMutations } from 'vuex';
+import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
-import { IS_ADMIN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
 import BsTextField from '~/components/form/bs-text-field';
@@ -35,9 +34,6 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-    }),
     folderOptions() {
       return [
         {

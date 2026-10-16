@@ -7,6 +7,8 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { Users, Groups } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 /**
  * The guardrails of the super admin role (ADR 0002), as checks the user and
@@ -64,14 +66,17 @@ async function assertPlatformGroupIs(groupId) {
 async function groupForCreation(actor, { role, groupId }) {
   assertRoleParam(role);
   if (role !== Roles.SUPER_ADMIN) return groupId;
-  if (!actor?.isAdmin) {
+  if (!permissions.can(actor, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE);
   }
   return assertPlatformGroupIs(groupId);
 }
 
 function assertCanManage(actor, target) {
-  if (isSuperAdmin(target) && !actor?.isAdmin) {
+  if (
+    isSuperAdmin(target) &&
+    !permissions.can(actor, CAPABILITIES.PLATFORM_MANAGE)
+  ) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_MANAGEMENT);
   }
 }
@@ -89,7 +94,7 @@ async function assertCanUpdate(actor, target, role) {
   const givesOrTakesTheRole =
     isSuperAdmin(target) || role === Roles.SUPER_ADMIN;
   if (!givesOrTakesTheRole) return;
-  if (!actor?.isAdmin) {
+  if (!permissions.can(actor, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE);
   }
   if (role === Roles.SUPER_ADMIN) {

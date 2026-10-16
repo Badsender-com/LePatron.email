@@ -12,6 +12,7 @@ const {
 } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const modelsUtils = require('../utils/model.js');
+const permissions = require('../account/permissions.js');
 const templateService = require('./template.service.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
@@ -215,14 +216,10 @@ async function updateTrackingConfig(req, res) {
   const { user } = req;
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
-  // company_admin_tech can only edit tracking config for templates of their
-  // own company. Super admins (isAdmin) can edit any template.
-  if (!user.isAdmin) {
-    const templateCompanyId = template._company && template._company.toString();
-    const userCompanyId = user.group && user.group.id;
-    if (!templateCompanyId || templateCompanyId !== userCompanyId) {
-      throw new createError.Forbidden();
-    }
+  // A company's tech admin edits the templates of its own company only, a
+  // super admin any template.
+  if (!permissions.canAccessGroup(user, template._company)) {
+    throw new createError.Forbidden();
   }
   template.trackingConfig = sanitizeTrackingConfig(req.body, {
     allowOverrideGroupTracking: true,

@@ -3,7 +3,7 @@ import { mapGetters, mapMutations } from 'vuex';
 import { MoreVertical } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { IS_ADMIN, SELECT_GROUP, USER } from '~/store/user';
+import { CAN, SELECT_GROUP, USER } from '~/store/user';
 import { SET_ACTIVE_MODULE } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -18,6 +18,7 @@ import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsPageUser',
@@ -33,7 +34,7 @@ export default {
   mixins: [mixinPageTitle],
   TABLE_ITEMS_PER_PAGE_OPTIONS,
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
     sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {
@@ -75,7 +76,7 @@ export default {
     return { title: this.title };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
     title() {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
@@ -86,7 +87,7 @@ export default {
       return this.user.group?.name || '';
     },
     showGroupBadge() {
-      return this.isAdmin && this.groupName;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.groupName;
     },
     isSuperAdmin() {
       return this.savedRole === Roles.SUPER_ADMIN;

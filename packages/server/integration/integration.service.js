@@ -14,6 +14,7 @@ const {
 } = require('http-errors');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const permissions = require('../account/permissions.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
@@ -47,10 +48,8 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
   integrationId,
 }) {
   const integration = await findById(integrationId);
-  if (!user.isAdmin) {
-    if (user?.group?.id !== integration?._company?.toString()) {
-      throw new Unauthorized(ERROR_CODES.FORBIDDEN_INTEGRATION_ACCESS);
-    }
+  if (!permissions.canAccessGroup(user, integration?._company)) {
+    throw new Unauthorized(ERROR_CODES.FORBIDDEN_INTEGRATION_ACCESS);
   }
   return integration;
 }

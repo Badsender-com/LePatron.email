@@ -124,7 +124,8 @@ describe('signing in with a password', () => {
   it('lets the administrator of the configuration in with its password', async () => {
     const { user } = await signIn(config.admin.username, config.admin.password);
 
-    expect(user.isAdmin).toBe(true);
+    expect(user.id).toBe(config.admin.id);
+    expect(user).not.toHaveProperty('role');
     expect(Users.findOne).not.toHaveBeenCalled();
   });
 

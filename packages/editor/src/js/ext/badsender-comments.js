@@ -844,7 +844,7 @@ function commentsLoader(opts) {
       const currentUser = viewModel.currentUser();
       if (!currentUser) return false;
       if (viewModel.isCommentAuthor(comment)) return true;
-      return currentUser.isAdminOfCurrentGroup;
+      return viewModel.managesCurrentGroup();
     };
 
     /**

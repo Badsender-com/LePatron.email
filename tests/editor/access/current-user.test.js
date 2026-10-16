@@ -196,3 +196,57 @@ describe('saveOnOpen', () => {
     expect(vm.save.execute).not.toHaveBeenCalled();
   });
 });
+
+// Deleting any comment, editing and deleting the group's saved blocks: for
+// whoever manages the platform, or manages the email's own group.
+describe('managesCurrentGroup', () => {
+  const MANAGES = {
+    super_admin: { sameGroup: true, otherGroup: true },
+    company_admin_tech: { sameGroup: true, otherGroup: false },
+    company_admin: { sameGroup: true, otherGroup: false },
+    regular_user: { sameGroup: false, otherGroup: false },
+    writer: { sameGroup: false, otherGroup: false },
+    reviewer: { sameGroup: false, otherGroup: false },
+  };
+
+  it('covers every role of the product', () => {
+    expect(Object.keys(MANAGES).sort()).toEqual(
+      Object.values(ROLES).slice().sort()
+    );
+  });
+
+  it.each(Object.entries(MANAGES))(
+    'for a %s: %o',
+    async (role, { sameGroup, otherGroup }) => {
+      const inGroup = load(userOf(role));
+      const elsewhere = load({ ...userOf(role), group: { id: 'other' } });
+      await inGroup.arrive();
+      await elsewhere.arrive();
+
+      expect(inGroup.vm.managesCurrentGroup()).toBe(sameGroup);
+      expect(elsewhere.vm.managesCurrentGroup()).toBe(otherGroup);
+    }
+  );
+
+  it('for the bootstrap account, which has no group: true', async () => {
+    const { vm, arrive } = load({
+      capabilities: capabilitiesOfRole(ROLES.SUPER_ADMIN),
+    });
+    await arrive();
+
+    expect(vm.managesCurrentGroup()).toBe(true);
+  });
+
+  it('for a manager without a group: false', async () => {
+    const { vm, arrive } = load({ ...userOf('company_admin'), group: null });
+    await arrive();
+
+    expect(vm.managesCurrentGroup()).toBe(false);
+  });
+
+  it('is false while the user loads', () => {
+    const { vm } = load(userOf('super_admin'));
+
+    expect(vm.managesCurrentGroup()).toBe(false);
+  });
+});

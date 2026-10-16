@@ -2,7 +2,7 @@
 import { mapMutations, mapGetters, mapState } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { USER, IS_ADMIN, CAN } from '~/store/user.js';
+import { USER, CAN } from '~/store/user.js';
 import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
@@ -123,7 +123,11 @@ export default {
     modulesGroupId() {
       return this.$store.getters['user/MODULES_GROUP']?.id || null;
     },
-    ...mapGetters(USER, { isAdmin: IS_ADMIN, can: CAN }),
+    ...mapGetters(USER, { can: CAN }),
+    // The author's account and the template are managed by the platform.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     ...mapState(FOLDER, [
       'pagination',
       'tags',
@@ -695,7 +699,7 @@ export default {
           <!-- .stop: the link alone, without the row's click opening the
                editor. -->
           <nuxt-link
-            v-if="isAdmin"
+            v-if="canManagePlatform"
             :to="`/users/${item.userId}`"
             @click.native.stop
           >
@@ -705,7 +709,7 @@ export default {
         </template>
         <template #item.templateName="{ item }">
           <nuxt-link
-            v-if="isAdmin"
+            v-if="canManagePlatform"
             :to="`/templates/${item.templateId}`"
             @click.native.stop
           >

@@ -106,7 +106,6 @@ describe('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
   const superAdmin = {
     id: 'alice',
     role: 'super_admin',
-    isAdmin: true,
     group: { id: PLATFORM_GROUP },
     selectedGroup: { id: CLIENT_GROUP },
   };
@@ -179,7 +178,6 @@ describe('guardCrmIntelligence for a super admin (ADR 0002, amended)', () => {
     const companyAdmin = {
       id: 'erin',
       role: 'company_admin',
-      isGroupAdmin: true,
       group: { id: GROUP_ID },
       selectedGroup: { id: CLIENT_GROUP },
     };

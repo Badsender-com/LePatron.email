@@ -37,8 +37,10 @@ async function sendTestMail({
   let adresses = rcpt.split(';');
 
   if (!!emailsGroupId && typeof emailsGroupId !== 'undefined') {
-    const emailGroups = await emailsGroupService.getEmailsGroup({
-      userGroupId: user.group?.id,
+    // A list of the email's company: the sender's own, or for a super admin
+    // the company of the email it is working on.
+    const emailGroups = await emailsGroupService.getEmailsGroupOfGroup({
+      groupId: mailing._company,
       emailsGroupId,
     });
 

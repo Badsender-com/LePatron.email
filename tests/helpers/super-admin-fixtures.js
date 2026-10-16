@@ -54,8 +54,6 @@ function actorFrom(record) {
     name: record.name,
     email: record.email,
     role: record.role,
-    isAdmin: record.role === 'super_admin',
-    isGroupAdmin: record.role === 'company_admin',
     group: { id: String(record._company) },
     // The selected group a super admin stored on its account, as passport
     // hands it over, and as the request carries it once resolved (#1274
@@ -71,7 +69,6 @@ function actorFrom(record) {
 // The bootstrap account: an admin outside the database.
 const bootstrap = Object.freeze({
   id: config.admin.id,
-  isAdmin: true,
   name: 'admin',
 });
 

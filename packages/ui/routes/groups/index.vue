@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations } from 'vuex';
+import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -11,7 +11,6 @@ import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
-import { IS_ADMIN, USER } from '~/store/user';
 import { escapeHtml } from '~/helpers/escape-html';
 import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import {
@@ -44,7 +43,7 @@ export default {
   emptyIconComponent: Building2,
   mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: acls.ACL_PLATFORM_MANAGE,
     sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {
@@ -72,9 +71,6 @@ export default {
     return { title: this.pageTitle };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-    }),
     pageTitle() {
       return this.$t('settingsNav.companiesList');
     },
