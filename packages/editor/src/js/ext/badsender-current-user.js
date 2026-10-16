@@ -41,6 +41,17 @@ module.exports = (opts) => {
       return 'toolbox-readonly-' + area;
     };
 
+    // Runs `callback` once the current user is known, at once if it already
+    // is; never when it could not be loaded, since nothing is allowed then.
+    viewModel.whenCurrentUser = function (callback) {
+      if (viewModel.currentUser()) return callback();
+      const subscription = viewModel.currentUser.subscribe(function (user) {
+        if (!user) return;
+        subscription.dispose();
+        callback();
+      });
+    };
+
     // API call to get the current user
     axios
       .get('/api/users/current-user')

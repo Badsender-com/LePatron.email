@@ -1211,6 +1211,7 @@ export default {
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Seul un super administrateur peut attribuer ou retirer ce rôle.',
+      FORBIDDEN_CAPABILITY: 'Votre rôle ne permet pas cette action.',
       FORBIDDEN_ROLE_GRANT:
         'Vous ne pouvez pas attribuer un rôle qui a plus de droits que le vôtre.',
       FORBIDDEN_USER_MANAGEMENT:

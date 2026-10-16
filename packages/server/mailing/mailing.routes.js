@@ -65,13 +65,6 @@ router.put(
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
   mailings.updateMosaico
 );
-// The editor stores the first rendered preview of an email that has none, for
-// whoever opens it: the listing shows it. Writes the preview and nothing else.
-router.put(
-  '/:mailingId/preview',
-  GUARD_CAN(C.MAILING_PREVIEW),
-  mailings.storeFirstPreview
-);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post(
   '/:mailingId/duplicate',

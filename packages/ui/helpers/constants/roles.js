@@ -27,6 +27,18 @@ const ROLE_LABEL_KEYS = {
 export const getRoleLabelKey = (role) => ROLE_LABEL_KEYS[role];
 
 /**
+ * Whether the actor may manage `account` (edit, reset, deactivate,
+ * reactivate): the server's rule, nobody manages an account with more rights
+ * than their own. An account stored without a role is a regular user.
+ *
+ * @param {string[]} capabilities the actor's
+ * @param {Object} account
+ * @returns {boolean}
+ */
+export const canManageAccount = (capabilities, account) =>
+  isRoleWithin((account && account.role) || Roles.REGULAR_USER, capabilities);
+
+/**
  * The roles a user form offers, translated: those the actor may give, the
  * server's rule (nobody gives a role with more rights than their own). The
  * account's current role stays listed, so the form shows it. The super admin

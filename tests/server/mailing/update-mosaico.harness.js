@@ -8,11 +8,7 @@
 // test's module registry when this file loads.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Mailings: {
-    findOne: jest.fn(),
-    findOneForMosaico: jest.fn(),
-    updateOne: jest.fn(),
-  },
+  Mailings: { findOne: jest.fn(), findOneForMosaico: jest.fn() },
   Templates: { findById: jest.fn() },
   Galleries: {},
   Users: {},
@@ -92,7 +88,6 @@ function resetMocks() {
 }
 
 module.exports = {
-  Mailings,
   Templates,
   mailingService,
   controller,

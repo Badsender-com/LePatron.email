@@ -1,7 +1,13 @@
 <script>
+import { mapGetters } from 'vuex';
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
-import { Roles, getRoleLabelKey } from '~/helpers/constants/roles';
+import {
+  Roles,
+  canManageAccount,
+  getRoleLabelKey,
+} from '~/helpers/constants/roles';
+import { USER, USER_CAPABILITIES } from '~/store/user';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -49,6 +55,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
     tableHeaders() {
       // Columns are styled by class, not by position: callers hide columns.
       return [
@@ -207,24 +214,29 @@ export default {
     buildQuickActions(item) {
       const actions = [];
       const statusActions = this.getStatusActions(item.status);
+      // The server refuses to manage an account with more rights than the
+      // actor's: its actions are not offered, its page stays readable.
+      const canManage = canManageAccount(this.capabilities, item);
 
-      if (statusActions.activate) {
-        actions.push({
-          key: 'activate',
-          icon: UserCheck,
-          text: 'global.enable',
-          onClick: () => this.activate(item),
-        });
-      } else if (item.status !== 'to-be-initialized') {
-        actions.push({
-          key: 'deactivate',
-          icon: UserX,
-          text: 'global.disable',
-          onClick: () => this.deactivate(item),
-        });
+      if (canManage) {
+        if (statusActions.activate) {
+          actions.push({
+            key: 'activate',
+            icon: UserCheck,
+            text: 'global.enable',
+            onClick: () => this.activate(item),
+          });
+        } else if (item.status !== 'to-be-initialized') {
+          actions.push({
+            key: 'deactivate',
+            icon: UserX,
+            text: 'global.disable',
+            onClick: () => this.deactivate(item),
+          });
+        }
       }
 
-      if (this.showMailAction(item.status)) {
+      if (canManage && this.showMailAction(item.status)) {
         const isReset = statusActions.resetPassword;
         actions.push({
           key: 'mail-action',

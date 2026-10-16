@@ -8,7 +8,7 @@ Document de conception pour l'ajout de nouveaux rôles au système de rôles et 
 - Le serveur demande une capacité (`permissions.can`, `GUARD_CAN`) sur **chaque** route qui écrit. `tests/server/account/route-access.test.js` échoue sur une route d'écriture sans capacité ni exemption motivée. `GUARD_NOT_REVIEWER` et `tech-admin-policy.js` n'existent plus.
 - Le serveur tient désormais aussi le `writer` sur ce qu'une route sait distinguer : créer un email, supprimer un email ou un dossier, ajouter un bloc à la bibliothèque. Seules la structure et le style **à l'intérieur d'une sauvegarde** restent tenus par l'éditeur (#1103).
 - Supprimer un dossier supprime ses emails : capacité `folder.delete`, refusée au `writer` et au `reviewer`.
-- La sauvegarde faite à l'ouverture d'un email sans aperçu passe par `PUT /mailings/:id/preview`, qui n'écrit que l'aperçu, et seulement s'il n'y en a pas.
+- La sauvegarde faite à l'ouverture d'un email sans aperçu n'est lancée que pour qui peut enregistrer, une fois ses droits chargés : l'aperçu stocké est le HTML que les exports envoient, un `reviewer` ne l'écrit pas. Le listing reste sans aperçu tant qu'aucun auteur n'a ouvert l'email (revient sur la décision du 2026-10-06).
 - Personne n'attribue un rôle ni ne gère un compte qui a plus de capacités que soi (`rights-policy.js`) : un `company_admin` ne crée, ne modifie (email compris), ne réinitialise, ne désactive ni ne réactive un `company_admin_tech`.
 - Le tracking de la company n'est plus modifiable par un `company_admin` via `PUT /groups/:groupId`.
 - À rejouer avec le QC : ignorer un résultat devient une capacité (`quality.ignore` par exemple), à ajouter à la carte et à demander sur `PATCH /:mailingId/quality-ignores`.
@@ -376,7 +376,7 @@ Légende : **Full** = accordé · **Own** = dans sa company · **Assigned** = da
 | Company (réglages généraux), users, workspaces            | —            | —           | —           | Own                | Own           |
 | Rôles attribuables                                        | —            | —           | —           | tous sauf super    | sauf tech     |
 | Workspaces (accès)                                        | Assigned     | Assigned    | Assigned    | Own                | Own           |
-| Mailing — créer                                           | Full         | —           | —           | Own                | Own           |
+| Mailing — créer depuis un template                        | Full         | —           | —           | Own                | Own           |
 | Mailing — renommer / déplacer / copier / dupliquer / tags | Full         | Full        | —           | Own                | Own           |
 | Mailing — supprimer                                       | Full         | —           | —           | Own                | Own           |
 | Mailing — enregistrer, paramètres de l'email, traduire    | Full         | Full        | —           | Own                | Own           |

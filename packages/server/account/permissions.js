@@ -67,6 +67,18 @@ function capabilitiesOf(user) {
 }
 
 /**
+ * The user as the clients receive it, with its capabilities: the UI and the
+ * editor show what the server will accept. On every request user and in the
+ * sign-in answer.
+ *
+ * @param {Object} user a plain user, as serialised
+ * @returns {Object}
+ */
+function withCapabilities(user) {
+  return { ...user, capabilities: capabilitiesOf(user) };
+}
+
+/**
  * @param {Object} user the request user
  * @param {string} capability one of CAPABILITIES; a misspelt one throws
  * @returns {boolean}
@@ -138,6 +150,7 @@ function canWriteWorkspace(user, workspace) {
 module.exports = {
   can,
   capabilitiesOf,
+  withCapabilities,
   canGrantRole,
   canManageUser,
   canManageGroup,

@@ -1194,6 +1194,7 @@ export default {
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Only a super admin can grant or revoke this role.',
+      FORBIDDEN_CAPABILITY: 'Your role does not allow this action.',
       FORBIDDEN_ROLE_GRANT:
         'You cannot give a role that has more rights than yours.',
       FORBIDDEN_USER_MANAGEMENT:

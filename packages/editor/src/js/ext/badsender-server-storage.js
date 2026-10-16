@@ -174,23 +174,6 @@ function loader(opts) {
       }
     };
 
-    /**
-     * Stores the rendering of an email that has no preview yet, for whoever
-     * opens it: the listing shows it. A route of its own, which writes the
-     * preview and nothing else, so opening an email changes nothing of it,
-     * whatever the role (template-loader.js).
-     */
-    viewModel.storeFirstPreview = function () {
-      return $.ajax({
-        url: opts.metadata.url.preview,
-        method: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify({ html: viewModel.exportHTML() }),
-      }).fail(function (jqXHR) {
-        console.warn('first preview not stored', jqXHR && jqXHR.status);
-      });
-    };
-
     /// ///
     // EMAIL
     /// ///

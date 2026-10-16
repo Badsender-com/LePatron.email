@@ -44,8 +44,6 @@ const CAPABILITIES = Object.freeze({
   // apart in a save until #1103.
   MAILING_EDIT_STRUCTURE: 'mailing.edit-structure',
   MAILING_EDIT_STYLE: 'mailing.edit-style',
-  // Store the first rendered preview of an email that has none.
-  MAILING_PREVIEW: 'mailing.preview',
   // Comment, reply, resolve, approve.
   MAILING_COMMENT: 'mailing.comment',
   MAILING_SEND_TEST: 'mailing.send-test',
@@ -71,15 +69,15 @@ const C = CAPABILITIES;
 
 // Reads, comments, approves, sends tests and exports. Writes no email.
 const REVIEWER_CAPABILITIES = [
-  C.MAILING_PREVIEW,
   C.MAILING_COMMENT,
   C.MAILING_SEND_TEST,
   C.MAILING_EXPORT,
   C.GALLERY_MANAGE,
 ];
 
-// Edits the content and declines variants. Creates no email and deletes
-// nothing; the structure and the style are locked in the editor.
+// Edits the content and declines the existing emails into variants (copy,
+// duplicate). Starts no email from a template and deletes nothing; the
+// structure and the style are locked in the editor.
 const WRITER_CAPABILITIES = REVIEWER_CAPABILITIES.concat([
   C.MAILING_EDIT_CONTENT,
   C.MAILING_ORGANIZE,

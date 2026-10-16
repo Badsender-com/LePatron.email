@@ -21,6 +21,7 @@ const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('./super-admin-policy.js');
 const rightsPolicy = require('./rights-policy.js');
+const permissions = require('../account/permissions.js');
 const userScope = require('./user-scope.js');
 const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -483,9 +484,11 @@ async function login(req, res, next) {
 
       // The selected group comes with the account, so the screens show it
       // without waiting for the next request (ADR 0002, amended).
-      const payload = completeUser.toJSON
-        ? completeUser.toJSON()
-        : { ...completeUser };
+      // With its capabilities, as on every later request: the screens the
+      // sign-in opens show what the user may do without a reload.
+      const payload = permissions.withCapabilities(
+        completeUser.toJSON ? completeUser.toJSON() : { ...completeUser }
+      );
       payload.selectedGroup = await resolveSelectedGroup(payload, req.session);
 
       // Force session save before sending response

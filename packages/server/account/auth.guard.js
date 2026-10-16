@@ -18,7 +18,7 @@ const config = require('../node.config.js');
 const Roles = require('./roles');
 const permissions = require('./permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
-const ERROR_CODES = require('../constant/error-codes.js');
+const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
 
@@ -87,37 +87,6 @@ function guard(roles = [Roles.REGULAR_USER], redirect) {
       : next(new createError.Unauthorized());
   };
   middleware.access = anySignedInUser ? { signedIn: true } : { capabilities };
-  return middleware;
-}
-
-const capabilityGuards = new Map();
-
-/**
- * The route needs `capability`; a role without it is refused, whatever the
- * route, so a new route that writes declares what it needs or a test fails.
- * One middleware per capability, so tests compare guards by identity.
- *
- * @param {string} capability one of CAPABILITIES; a misspelt one throws here,
- *   when the routes load, rather than refusing everyone
- * @returns {Function} express middleware
- */
-function GUARD_CAN(capability) {
-  permissions.can(null, capability);
-  if (!capabilityGuards.has(capability)) {
-    capabilityGuards.set(capability, capabilityGuard(capability));
-  }
-  return capabilityGuards.get(capability);
-}
-
-function capabilityGuard(capability) {
-  const middleware = (req, res, next) => {
-    if (!req.user) return next(new createError.Unauthorized());
-    if (!permissions.can(req.user, capability)) {
-      return next(new createError.Forbidden(ERROR_CODES.FORBIDDEN_CAPABILITY));
-    }
-    return next();
-  };
-  middleware.access = { capabilities: [capability] };
   return middleware;
 }
 
@@ -197,16 +166,9 @@ function isConfigAdminPassword(password) {
 
 passport.serializeUser((user, done) => done(null, user.id));
 
-// The request user carries its capabilities: the UI and the editor read
-// them with the current user, and show what the server will accept.
-const withCapabilities = (user) => ({
-  ...user,
-  capabilities: permissions.capabilitiesOf(user),
-});
-
 passport.deserializeUser(async (id, done) => {
   if (id === config.admin.id) {
-    return done(null, withCapabilities({ ...adminUser }));
+    return done(null, permissions.withCapabilities({ ...adminUser }));
   }
 
   try {
@@ -223,7 +185,7 @@ passport.deserializeUser(async (id, done) => {
       return done(null, false);
     }
 
-    done(null, withCapabilities(user.toJSON()));
+    done(null, permissions.withCapabilities(user.toJSON()));
   } catch (err) {
     logger.error('[Passport] Error deserializing user:', err);
     done(null, false, err);

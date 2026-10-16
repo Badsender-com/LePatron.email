@@ -1,4 +1,8 @@
-import { Roles, roleItems } from '~/helpers/constants/roles.js';
+import {
+  Roles,
+  canManageAccount,
+  roleItems,
+} from '~/helpers/constants/roles.js';
 import { capabilitiesOfRole } from '../../../packages/shared/access/roles.js';
 
 // The user forms offer the roles the actor may give, by the server's rule:
@@ -62,5 +66,23 @@ describe('roleItems', () => {
       'users.roles.companyAdminTech',
       'users.roles.groupAdmin',
     ]);
+  });
+});
+
+// The user table offers to manage only the accounts the server lets the
+// actor manage: none with more rights than their own.
+describe('canManageAccount', () => {
+  it.each([
+    [Roles.GROUP_ADMIN, Roles.WRITER, true],
+    [Roles.GROUP_ADMIN, Roles.GROUP_ADMIN, true],
+    [Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH, false],
+    [Roles.GROUP_ADMIN_TECH, Roles.GROUP_ADMIN_TECH, true],
+  ])('a %s manages a %s: %s', (actor, role, expected) => {
+    expect(canManageAccount(as(actor), { role })).toBe(expected);
+  });
+
+  it('reads an account stored without a role as a regular user', () => {
+    expect(canManageAccount(as(Roles.GROUP_ADMIN), {})).toBe(true);
+    expect(canManageAccount(as(Roles.WRITER), {})).toBe(false);
   });
 });

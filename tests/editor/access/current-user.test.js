@@ -97,3 +97,38 @@ describe('the current user of the editor', () => {
     expect(vm.showComments).toHaveBeenCalledWith(true);
   });
 });
+
+// The save on opening an email without preview waits for the rights: an
+// author's runs once they are known, a reviewer's never does.
+describe('whenCurrentUser', () => {
+  it('waits for the user, then runs once', async () => {
+    const { vm, arrive } = load(userOf('reviewer'));
+    const callback = jest.fn();
+    vm.whenCurrentUser(callback);
+
+    expect(callback).not.toHaveBeenCalled();
+    await arrive();
+    vm.currentUser({ ...vm.currentUser() });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs at once when the user is already known', async () => {
+    const { vm, arrive } = load(userOf('regular_user'));
+    await arrive();
+    const callback = jest.fn();
+    vm.whenCurrentUser(callback);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('never runs when the user could not be loaded', async () => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    const { vm, arrive } = load(null);
+    const callback = jest.fn();
+    vm.whenCurrentUser(callback);
+    await arrive();
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+});
