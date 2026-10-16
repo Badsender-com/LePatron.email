@@ -128,6 +128,9 @@ function listenForStop() {
 
 async function processAll(script, { dryRun, concurrency, run, signal }) {
   const { collection } = Galleries;
+  if (script.preflight) {
+    addCounts(run.totals, await script.preflight({ collection, dryRun }));
+  }
   run.toProcess = await collection.countDocuments(script.query);
   console.log(
     `Galleries to process: ${run.toProcess} (concurrency ${concurrency})\n`
@@ -168,6 +171,8 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
  * @param {Function} script.describeCounts counts => one line
  * @param {Function} script.summarize (totals, { dryRun }) => lines
  * @param {Function} [script.describeEnvironment] () => lines
+ * @param {Function} [script.preflight] ({ collection }) => counts; throws to
+ *   stop before anything is processed
  * @param {Function} [script.assess] (totals, { dryRun }) => failure lines
  * @returns {Promise<number>} the exit code
  */

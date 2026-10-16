@@ -2,195 +2,232 @@
 'use strict';
 
 /**
- * One-shot backfill — gallery image dimensions (US-09)
+ * Gallery dimensions backfill: probes the width and height of every stored
+ * gallery file that has none yet.
  *
- * The gallery tooltip shows an image's original dimensions. Uploads have
- * carried them since US-09, but everything stored before that has not: the
- * dimensions cannot be recovered from the thumbnail, which is a square 111px
- * crop. So each stored file is read back and probed.
+ * The gallery tooltip shows an image's original dimensions. Uploads carry
+ * them since US-09, but everything stored before has not, and they cannot be
+ * recovered from the thumbnail, a square 111px crop. So each stored file is
+ * read back, its head only, and probed.
+ *
+ * Rerunnable: a file that already has dimensions is skipped, so an interrupted
+ * run resumes. A file missing from the storage stays without dimensions, and
+ * is read again by every run. See scripts/gallery/README.md before running it
+ * on production: it reads the storage the application is configured with.
  *
  * Usage:
  *   node scripts/backfill-gallery-dimensions.js [--dry-run] [--concurrency=N]
- *
- * Reads only the head of each file, not the whole image. Rerunnable: a file
- * that already has dimensions is skipped, so an interrupted run resumes.
- * See scripts/gallery/README.md before running it on production.
- *
- * Writes one field pair at a time, through a positional update that touches
- * nothing else in the document. Reading `gallery.files` and saving it back
- * would be the obvious shape and is the wrong one twice over: the schema's
- * getter PROJECTS each file onto a fixed set of keys, so writing that
- * projection back silently drops everything else it holds; and rewriting the
- * whole array loses any upload that landed while the script was reading.
- * Neither failure announces itself.
- *
- * Safe to run while the application is serving.
  */
-
-const path = require('path');
 
 require('dotenv').config();
-const fileManager = require('../packages/server/common/file-manage.service.js');
-const uploadIdentity = require('../packages/server/common/upload-identity.service.js');
 const { runGalleryScript } = require('./gallery/run-gallery-script.js');
+const {
+  readDimensions,
+  describeStorage,
+  READ_STATUS,
+} = require('./gallery/read-dimensions.js');
 
-// Pull enough for the shared reader to reach a JPEG's SOF0 behind a maximal
-// EXIF segment. It caps what it hands the prober itself, so reading more here
-// is safe.
-const READ_BYTES = 128 * 1024;
+// 0 is not a dimension an image can have, and the tooltip would print "0 × 0".
+const MISSING_DIMENSION = { $in: [null, 0] };
+const LACKS_DIMENSIONS = [
+  { width: MISSING_DIMENSION },
+  { height: MISSING_DIMENSION },
+];
 
-// A stalled storage read — the ordinary way a flaky S3 connection fails — would
-// otherwise hang the whole run at file k of n, with no output and no exit.
-const READ_TIMEOUT_MS = 10000;
+// Read again on a rerun, and worth one: the storage was slow or failing.
+const TRANSIENT = [READ_STATUS.TIMEOUT, READ_STATUS.ERROR];
+// Not fixed by a rerun: the file is gone, or is not an image.
+const PERMANENT = [
+  READ_STATUS.MISSING,
+  READ_STATUS.NOT_AN_IMAGE,
+  READ_STATUS.INVALID_NAME,
+];
 
 // ---------------------------------------------------------------------------
-// Pure logic — testable without a database or a storage backend
+// Pure logic, testable without a database or a storage backend
 // ---------------------------------------------------------------------------
 
-/**
- * @param {object} file a gallery file as stored
- * @returns {boolean} whether this one still needs reading
- */
 function needsDimensions(file) {
   return !file.width || !file.height;
 }
 
 /**
- * @param {Array<object>} files
- * @param {Map<string, {width: number, height: number}>} sizes by file name
- * @returns {{updatedFiles: Array<object>, filled: number, skipped: number, unreadable: number}}
+ * @param {Array<object>} files as stored
+ * @returns {{pending: Map<*, number>, known: number}} the names to read, with
+ *   how many entries carry each (legacy galleries can list a name twice)
  */
-function buildBackfilledFiles(files, sizes) {
-  let filled = 0;
-  let skipped = 0;
-  let unreadable = 0;
-
-  const updatedFiles = files.map((file) => {
-    if (!needsDimensions(file)) {
-      skipped++;
-      return file;
+function planGalleryBackfill(files) {
+  const pending = new Map();
+  let known = 0;
+  for (const file of files) {
+    if (needsDimensions(file)) {
+      pending.set(file.name, (pending.get(file.name) || 0) + 1);
+    } else {
+      known += 1;
     }
-    const size = sizes.get(file.name);
-    if (!size) {
-      unreadable++;
-      return file;
-    }
-    filled++;
-    return { ...file, width: size.width, height: size.height };
-  });
+  }
+  return { pending, known };
+}
 
-  return { updatedFiles, filled, skipped, unreadable };
+// Under the precondition, so a pair written meanwhile (an upload, another run)
+// is left alone and the write is not counted; on every entry of that name.
+function buildDimensionsUpdate(galleryId, name, { width, height }) {
+  return {
+    filter: {
+      _id: galleryId,
+      files: { $elemMatch: { name, $or: LACKS_DIMENSIONS } },
+    },
+    update: {
+      $set: { 'files.$[file].width': width, 'files.$[file].height': height },
+    },
+    options: {
+      arrayFilters: [
+        {
+          'file.name': name,
+          $or: [
+            { 'file.width': MISSING_DIMENSION },
+            { 'file.height': MISSING_DIMENSION },
+          ],
+        },
+      ],
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Storage
+// One gallery
 // ---------------------------------------------------------------------------
-
-// Reads just the head of a stored file and probes it. Resolves to null for
-// anything unreadable or not an image — a gallery can reference a file that no
-// longer exists in storage, and that must not stop the run.
-function readDimensions(imageName) {
-  return new Promise((resolve) => {
-    // Names are server-generated, but this script walks every record in the
-    // collection — including anything a DAM import or a direct write put
-    // there — and feeds them to a path join.
-    if (!imageName || path.basename(imageName) !== imageName) {
-      return resolve(null);
-    }
-
-    let settled = false;
-    let timer = null;
-    const chunks = [];
-    let total = 0;
-
-    const done = (value) => {
-      if (settled) return;
-      settled = true;
-      if (timer) clearTimeout(timer);
-      resolve(value);
-    };
-
-    let stream;
-    try {
-      stream = fileManager.streamImage(imageName);
-    } catch (error) {
-      return done(null);
-    }
-
-    timer = setTimeout(() => {
-      done(null);
-      stream.destroy();
-    }, READ_TIMEOUT_MS);
-
-    stream.on('error', () => done(null));
-    stream.on('data', (chunk) => {
-      chunks.push(chunk);
-      total += chunk.length;
-      if (total >= READ_BYTES) {
-        // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
-        // emits `error` — and the error handler would win the race and report
-        // every single file as unreadable.
-        finish();
-        stream.destroy();
-      }
-    });
-    stream.on('end', finish);
-
-    function finish() {
-      // the shared reader caps what it hands the prober and rounds the result
-      done(uploadIdentity.probeImageDimensions(Buffer.concat(chunks)));
-    }
-  });
-}
 
 // The gallery is read raw (no Mongoose document, so no schema getter): the
 // projection is missing fields this script must not erase. Each pair is
 // written as soon as it is read, so an interruption loses at most one read.
-async function backfillGallery(gallery, { dryRun, collection }) {
-  const files = gallery.files || [];
-  const pending = files.filter(needsDimensions);
-  const sizes = new Map();
+// Sequential within a gallery: the runner bounds how many galleries run at
+// once, so the storage never sees more reads than that.
+async function backfillGallery(gallery, context) {
+  const { dryRun, collection, log, read = readDimensions } = context;
+  const { pending, known } = planGalleryBackfill(gallery.files || []);
+  const counts = { filled: 0, known, changedMeanwhile: 0 };
+  for (const status of [...TRANSIENT, ...PERMANENT]) counts[status] = 0;
 
-  // Sequential within a gallery: the runner bounds how many galleries run at
-  // once, so the storage never sees more reads than that.
-  for (const file of pending) {
+  for (const [name, entries] of pending) {
     // eslint-disable-next-line no-await-in-loop
-    const size = await readDimensions(file.name);
-    if (!size) continue;
-    sizes.set(file.name, size);
-    if (dryRun) continue;
+    const result = await read(name);
+    const shownName = JSON.stringify(name) || String(name);
+    if (result.status !== READ_STATUS.OK) {
+      counts[result.status] += entries;
+      log(
+        `${result.status}${
+          result.code ? ` (${result.code})` : ''
+        }: ${shownName}`
+      );
+      continue;
+    }
+    if (dryRun) {
+      counts.filled += entries;
+      continue;
+    }
+    const { filter, update, options } = buildDimensionsUpdate(
+      gallery._id,
+      name,
+      result
+    );
     // eslint-disable-next-line no-await-in-loop
-    await collection.updateOne(
-      { _id: gallery._id, 'files.name': file.name },
-      { $set: { 'files.$.width': size.width, 'files.$.height': size.height } }
+    const { modifiedCount } = await collection.updateOne(
+      filter,
+      update,
+      options
+    );
+    if (modifiedCount > 0) {
+      counts.filled += entries;
+    } else {
+      counts.changedMeanwhile += entries;
+      log(`${shownName} removed or measured meanwhile, left as is`);
+    }
+  }
+  return counts;
+}
+
+// Before anything is read for real: a few files already measured must be
+// readable, or this is not the storage the application uses (a shell without
+// its storage settings reads the local disk) and every file would come out
+// "missing".
+const STORAGE_CHECK_SAMPLES = 3;
+const MEASURED = { width: { $gt: 0 }, height: { $gt: 0 } };
+
+async function checkStorage({ collection }, read = readDimensions) {
+  const samples = await collection
+    .find({ files: { $elemMatch: MEASURED } }, { projection: { 'files.$': 1 } })
+    .limit(STORAGE_CHECK_SAMPLES)
+    .toArray();
+  if (samples.length === 0) {
+    console.log('Storage check: no measured file to check against, skipped.');
+    return {};
+  }
+  const results = [];
+  for (const sample of samples) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await read(sample.files[0].name);
+    if (result.status === READ_STATUS.OK) {
+      console.log('Storage check: a file already measured was read back.');
+      return { storageVerified: 1 };
+    }
+    results.push(result.code || result.status);
+  }
+  throw new Error(
+    `storage check failed: none of ${samples.length} file(s) already ` +
+      `measured could be read (${results.join(', ')}). Is this the storage ` +
+      'the application uses?'
+  );
+}
+
+const sum = (totals, statuses) =>
+  statuses.reduce((total, status) => total + (totals[status] || 0), 0);
+
+// A run that could read nothing has not shown anything about the files: far
+// more likely, it read the wrong storage (a shell without the application's
+// storage settings reads the local disk).
+function assessBackfill(totals) {
+  const failures = [];
+  const unread = sum(totals, [...TRANSIENT, ...PERMANENT]);
+  const read = (totals.filled || 0) + (totals.changedMeanwhile || 0);
+  if (unread > 0 && read === 0 && !totals.storageVerified) {
+    failures.push(
+      `None of the ${unread} file(s) to measure could be read. Check that ` +
+        'the storage above is the one the application uses before trusting ' +
+        'this run.'
     );
   }
-
-  const { filled, skipped, unreadable } = buildBackfilledFiles(files, sizes);
-  return { filled, skipped, unreadable };
+  const transient = sum(totals, TRANSIENT);
+  if (transient > 0) {
+    failures.push(
+      `${transient} read(s) timed out or failed: rerun to retry them.`
+    );
+  }
+  return failures;
 }
 
 const backfill = {
   title: 'Gallery dimensions backfill',
-  query: {
-    files: {
-      $elemMatch: {
-        $or: [{ width: { $in: [null, 0] } }, { height: { $in: [null, 0] } }],
-      },
-    },
-  },
+  query: { files: { $elemMatch: { $or: LACKS_DIMENSIONS } } },
   projection: { creationOrWireframeId: 1, files: 1 },
   processGallery: backfillGallery,
-  describeCounts: ({ filled, skipped, unreadable }) =>
-    `${filled} filled, ${skipped} already known, ${unreadable} unreadable`,
+  describeEnvironment: () => [describeStorage()],
+  preflight: (context) => checkStorage(context),
+  describeCounts: (counts) =>
+    `${counts.filled} filled, ${counts.known} already known, ` +
+    `${sum(counts, [...TRANSIENT, ...PERMANENT])} unreadable`,
   summarize: (totals, { dryRun }) => [
-    `Dimensions ${dryRun ? 'to fill' : 'filled'}   : ${totals.filled || 0}`,
-    `Already known       : ${totals.skipped || 0}`,
-    `Unreadable          : ${totals.unreadable || 0}`,
+    `Dimensions ${dryRun ? 'to fill' : 'filled '}   : ${totals.filled || 0}`,
+    `Already known       : ${totals.known || 0}`,
+    `Changed meanwhile   : ${totals.changedMeanwhile || 0}`,
+    'Unreadable, permanent (missing / not an image / bad name): ' +
+      PERMANENT.map((status) => totals[status] || 0).join(' / '),
+    'Unreadable, transient (timeout / storage error): ' +
+      TRANSIENT.map((status) => totals[status] || 0).join(' / '),
   ],
+  assess: assessBackfill,
 };
 
-// only run when executed directly, not when required by a test
 if (require.main === module) {
   runGalleryScript(backfill).then(
     (code) => {
@@ -205,8 +242,10 @@ if (require.main === module) {
 
 module.exports = {
   needsDimensions,
-  buildBackfilledFiles,
-  readDimensions,
+  planGalleryBackfill,
+  buildDimensionsUpdate,
   backfillGallery,
+  assessBackfill,
+  checkStorage,
   backfill,
 };
