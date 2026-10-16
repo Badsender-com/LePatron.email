@@ -23,6 +23,7 @@ const customizedBlockPlugin = require('./vue/customizedBlockPlugin');
 const personalizedBlocksPlugin = require('./vue/personalizedBlocksPlugin.js');
 const trackingParamsPlugin = require('./vue/trackingParamsPlugin');
 const emailMetadataPlugin = require('./vue/emailMetadataPlugin');
+const galleryPlugin = require('./vue/galleryPlugin');
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
@@ -193,6 +194,7 @@ var start = function (
         editor_background_save: vm.t('editor-background-save'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
+        upload_as_new: vm.t('upload-as-new-file'),
       },
     };
     // fileUpload options.
@@ -235,6 +237,7 @@ var start = function (
     personalizedBlocksPlugin,
     trackingParamsPlugin,
     emailMetadataPlugin,
+    galleryPlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)

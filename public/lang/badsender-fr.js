@@ -24,9 +24,54 @@ module.exports = {
   'gallery-template': 'COMMUN AU TEMPLATE',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
+  'gallery-remove-image': 'Supprimer __label__',
+  // The no-break spaces inside the French quotation marks are escaped:
+  // invisible in the file, they get replaced by an ordinary space at the
+  // first copy-paste.
+  'gallery-remove-image-confirm':
+    'Supprimer «\u00a0__label__\u00a0» de la galerie ?\n\n' +
+    "L'image disparaît de la liste. Les emails qui l'utilisent déjà ne sont pas modifiés.",
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",
+  'gallery-search-placeholder': 'Rechercher une image…',
+  'gallery-search-clear': 'Effacer la recherche',
+  'gallery-search-no-result': 'Aucune image ne correspond à cette recherche',
+  'gallery-filter-group': 'Filtrer par format',
+  'gallery-filter-all': 'Tous',
+  'gallery-filter-jpg': 'JPG',
+  'gallery-filter-png': 'PNG',
+  'gallery-filter-gif': 'GIF',
+  'gallery-filter-no-result': 'Aucune image de ce format dans la galerie',
+  'gallery-sort-group': 'Trier les images',
+  'gallery-sort-newest': 'Date \u2193',
+  'gallery-sort-newest-title': 'Du plus récent au plus ancien',
+  'gallery-sort-oldest': 'Date \u2191',
+  'gallery-sort-oldest-title': 'Du plus ancien au plus récent',
+  'gallery-rename-image-success': 'Le libellé a été enregistré',
+  'gallery-rename-image-empty': 'Le libellé ne peut pas être vide',
+  'gallery-rename-image-invalid': 'Ce libellé a été refusé par le serveur',
+  'gallery-rename-image-forbidden':
+    "Vous n'avez pas le droit de renommer cette image",
+  'gallery-rename-image-gone':
+    "Cette image n'est plus dans la galerie, le libellé n'a pas été enregistré",
+  'gallery-rename-image-unsupported':
+    'Cette image ne peut pas être renommée : son nom ne suit pas la convention de la galerie',
+  'gallery-rename-image-fail':
+    "Le libellé n'a pas pu être enregistré, l'ancien a été rétabli",
+  'gallery-rename-action': 'Renommer __label__',
+  'gallery-edit-action': 'Modifier __label__',
+  'gallery-edit-image-unsupported':
+    'Les images GIF et SVG ne peuvent pas être retouchées dans l’éditeur',
+  'gallery-edit-image-fail': "L'image n'a pas pu être ouverte dans l'éditeur",
+  'gallery-rename-input-label': "Nouveau libellé de l'image",
+  // the locale tag the tooltip formats its date with
+  'gallery-date-locale': 'fr-FR',
+  'gallery-tooltip-dimensions': 'Dimensions',
+  'gallery-tooltip-format': 'Format',
+  'gallery-tooltip-uploaded-at': 'Ajoutée le',
+  'gallery-image-count-one': '__count__ image',
+  'gallery-image-count': '__count__ images',
 
   // bgimage widget
   'widget-bgimage-button': 'Choisir image',
@@ -93,6 +138,10 @@ module.exports = {
   'editor-text-font': 'Police',
   cancel: 'Annuler',
   upload: 'Enregistrer',
+  // Reopening the editor on a stored image can only ever add one: the stored
+  // name is the md5 of the content, so the original is never overwritten.
+  // The button says so rather than leaving it unsaid.
+  'upload-as-new-file': 'Enregistrer comme nouveau fichier',
 
   // Profile form esp
   'sender-name': "Nom de l'expéditeur",

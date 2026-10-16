@@ -909,55 +909,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // viewModel.editImage = function(src, done) {} : implement this method to enable image editing (src is a wirtableObservable).
   // viewModel.linkDialog = function() {}: implement this method using "this" to find the input element $(this).val is a writableObservable.
 
-  /**
- * Opens the image editor for a specified image and uploads it to the server.
- *
- * @param {Function} src - A knockout observable containing the image source (URL or filename).
- * @param {HTMLElement} domElement - The DOM element where the "Edit Image" button is attached.
- * @param {Object} vm - The current ViewModel instance.
- *
- */
-  viewModel.editImage = function (src, domElement, vm) {
-    // Locate the corresponding file upload input within the nearest upload zone
-    var $uploadInput = $(domElement).closest('.uploadzone').find('input.fileupload');
-
-    // Construct the full image URL if it's not already an absolute path
-    var sourceValue = src();
-    var src = sourceValue.startsWith('http')
-      ? sourceValue
-      : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
-
-    // Fetch the image from the URL and convert it to a Blob, then simulate a File object
-    fetch(src)
-      .then(res => res.blob())
-      .then(blob => {
-        const file = new File([blob], 'edited-image.png', { type: blob.type });
-
-        // Prepare a file data object compatible with jQuery File Upload
-        const fileData = {
-          files: [file],
-          submit: function (e, data) {
-            return $uploadInput.fileupload('send', data);
-          }
-        };
-
-        // Simulate a file being added to the upload input
-        $uploadInput.fileupload('add', fileData);
-
-        // Log if the upload fails
-        $uploadInput.on('fileuploadfail', function (e, data) {
-          console.error('Image upload failed:', data.errorThrown || data);
-        });
-      })
-      .catch(err => {
-        console.error('Failed to load image for editing:', err);
-        if (vm && vm.notifier && typeof vm.notifier.error === 'function') {
-          vm.notifier.error('Unable to load image for editing. Please try again.');
-        }
-      });
-  };
-
-
+  // `editImage` is implemented as a view-model extension instead, in
+  // ext/badsender-edit-image.js: the gallery thumbnail (US-10) and this
+  // pencil open the same editor on an already-stored image, and one
+  // implementation of that is enough.
 
   viewModel.loadImage = function (img) {
     // push image at top of "recent" gallery
