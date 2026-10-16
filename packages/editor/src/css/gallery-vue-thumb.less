@@ -26,6 +26,15 @@
     box-shadow: 0 2px 8px fade(@gallery-navy, 12%);
     transform: translateY(-1px);
   }
+
+  // Reached with Tab, picked with Enter or Space. Same indicator as the chips:
+  // the navy outline meets 3:1, the cyan border is decoration. The offset
+  // stays inside the cell's 4px padding, which the scroller does not clip.
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: 2px;
+    border-color: @gallery-cyan;
+  }
 }
 
 // Image area fills the whole thumbnail (the label overlays the bottom, so the
@@ -92,7 +101,8 @@
   color: @gallery-navy;
 }
 
-// Delete button — ISO with the old grid, revealed on hover (overlay styling comes in US-08)
+// Delete button — ISO with the old grid, revealed on hover, pointer only
+// (overlay styling comes in US-08)
 .gallery-thumb__remove {
   position: absolute;
   top: 4px;
