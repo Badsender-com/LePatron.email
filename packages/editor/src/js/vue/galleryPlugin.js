@@ -38,6 +38,11 @@ function createGalleryPanel(vm) {
   },
   data: () => ({
     images: [],
+    // Mosaico's `<type>GalleryStatus`: false until loaded (or after a failed
+    // load), 'loading' while the list is fetched, then the image count. The
+    // Knockout pane shows the first two states (load button, loading text);
+    // the panel takes over once it is a number.
+    status: false,
     search: '',
     format: '',
     sortBy: 'date_desc',
@@ -71,18 +76,23 @@ function createGalleryPanel(vm) {
     isFiltering() {
       return this.isSearching || this.format !== '';
     },
+    // An empty list means nothing before the gallery is loaded: neither a
+    // count of 0 nor an empty gallery.
+    isLoaded() {
+      return typeof this.status === 'number';
+    },
     hasNoResult() {
       return this.isFiltering && this.count === 0;
     },
     // A gallery with nothing in it is not a filter that matched nothing, and
     // the panel has to say so rather than show an unexplained blank.
     isEmptyGallery() {
-      return !this.isFiltering && this.images.length === 0;
+      return this.isLoaded && !this.isFiltering && this.images.length === 0;
     },
     // Nothing to search or filter through until the gallery holds something —
     // the toolbar would otherwise sit above the "Load gallery" button.
     showToolbar() {
-      return this.images.length > 0 || this.isFiltering;
+      return this.isLoaded && (this.images.length > 0 || this.isFiltering);
     },
     countLabel() {
       const key =
@@ -124,24 +134,29 @@ function createGalleryPanel(vm) {
     sortBy: 'resetScroll',
   },
   created() {
-    this._subscription = null;
+    this._subscriptions = [];
   },
   mounted() {
-    // Mirror the Knockout observableArray into Vue reactive data. Vue
-    // cannot observe KO observables directly, so we snapshot + subscribe.
-    const observable = vm[this.type + 'Gallery'];
-    if (observable) {
-      this.images = observable().slice();
-      this._subscription = observable.subscribe((array) => {
-        this.images = array.slice();
-      });
-    }
+    // The list stays Mosaico's: upload and delete keep mutating the Knockout
+    // observableArray. A copy, so Vue does not take over that array.
+    this.mirror(vm[this.type + 'Gallery'], (array) => {
+      this.images = array.slice();
+    });
+    this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
+      this.status = status;
+    });
     galleryBridge.ready();
   },
   beforeDestroy() {
-    if (this._subscription) this._subscription.dispose();
+    this._subscriptions.forEach((subscription) => subscription.dispose());
   },
   methods: {
+    // Vue cannot observe a Knockout observable: read it now, then on change.
+    mirror(observable, assign) {
+      if (!observable) return;
+      assign(observable());
+      this._subscriptions.push(observable.subscribe(assign));
+    },
     // ISO with the previous grid: click replaces the selected email image
     onSelect(file) {
       vm.addImage(file);

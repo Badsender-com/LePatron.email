@@ -25,8 +25,10 @@ const options = createGalleryPanel(fakeViewModel);
 // Bind the component's own computed getters to a plain object standing in for a
 // Vue instance. Vue resolves `this` the same way, so the getters under test are
 // exactly the ones that ship.
+// `status` is Mosaico's gallery status: a loaded gallery reports its count.
 function panel(images, search = '', format = '', sortBy = 'date_desc') {
-  const vm = { ...options.data(), images, search, format, sortBy };
+  const status = images.length;
+  const vm = { ...options.data(), images, search, format, sortBy, status };
   Object.keys(options.computed).forEach((key) => {
     Object.defineProperty(vm, key, {
       get: options.computed[key],
@@ -106,6 +108,18 @@ describe('gallery panel — search', () => {
   it('tells an empty gallery apart from a dead-end filter', () => {
     expect(panel([], '').isEmptyGallery).toBe(true);
     expect(panel(IMAGES, 'zzz').isEmptyGallery).toBe(false);
+  });
+
+  // Before the list arrives, or after it failed to, an empty `images` says
+  // nothing: the Knockout pane shows the loading text or the load button.
+  it('claims nothing about an empty gallery until it is loaded', () => {
+    ['loading', false].forEach((status) => {
+      const vm = panel([]);
+      vm.status = status;
+      expect(vm.isLoaded).toBe(false);
+      expect(vm.isEmptyGallery).toBe(false);
+      expect(vm.showToolbar).toBe(false);
+    });
   });
 
   // The invariant US-06 rests on: Mosaico keeps mutating `images` on upload and
