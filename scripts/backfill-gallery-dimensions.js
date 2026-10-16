@@ -9,7 +9,7 @@
  * crop. So each stored file is read back and probed.
  *
  * Usage:
- *   node packages/server/scripts/backfill-gallery-dimensions.js [--dry-run]
+ *   node scripts/backfill-gallery-dimensions.js [--dry-run]
  *
  * Reads only the head of each file, not the whole image. Idempotent: a file
  * that already has dimensions is skipped, so an interrupted run resumes.
@@ -29,10 +29,10 @@ const path = require('path');
 
 const mongoose = require('mongoose');
 
-const config = require('../node.config.js');
-const { Galleries } = require('../common/models.common.js');
-const fileManager = require('../common/file-manage.service.js');
-const uploadIdentity = require('../common/upload-identity.service.js');
+const config = require('../packages/server/node.config.js');
+const { Galleries } = require('../packages/server/common/models.common.js');
+const fileManager = require('../packages/server/common/file-manage.service.js');
+const uploadIdentity = require('../packages/server/common/upload-identity.service.js');
 
 const isDryRun = process.argv.includes('--dry-run');
 

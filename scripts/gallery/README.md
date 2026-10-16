@@ -20,15 +20,15 @@ Pour chaque image dans toutes les galeries :
 ```bash
 # 1. Toujours commencer par un dry-run sur une copie de prod
 MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node packages/server/scripts/migrate-gallery-v1.js --dry-run
+  node scripts/migrate-gallery-v1.js --dry-run
 
 # 2. Si le dry-run est OK, lancer la migration réelle sur la copie
 MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node packages/server/scripts/migrate-gallery-v1.js
+  node scripts/migrate-gallery-v1.js
 
 # 3. Puis sur prod
 MONGODB_URI=mongodb://<prod-uri> \
-  node packages/server/scripts/migrate-gallery-v1.js
+  node scripts/migrate-gallery-v1.js
 ```
 
 ### Exemple de sortie
@@ -96,11 +96,11 @@ Pour chaque image de chaque galerie :
 ```bash
 # 1. Dry-run sur une copie de prod
 MONGODB_URI=mongodb://localhost:27017/lepatron-prod-copy \
-  node packages/server/scripts/backfill-gallery-dimensions.js --dry-run
+  node scripts/backfill-gallery-dimensions.js --dry-run
 
 # 2. Réel
 MONGODB_URI=mongodb://<prod-uri> \
-  node packages/server/scripts/backfill-gallery-dimensions.js
+  node scripts/backfill-gallery-dimensions.js
 ```
 
 ### Propriétés

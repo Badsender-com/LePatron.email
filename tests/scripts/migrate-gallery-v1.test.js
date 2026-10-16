@@ -1,16 +1,14 @@
 'use strict';
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({
+jest.mock('../../packages/server/common/models.common.js', () => ({
   Galleries: { updateOne: jest.fn().mockResolvedValue({}) },
 }));
 
-const {
-  Galleries,
-} = require('../../../packages/server/common/models.common.js');
+const { Galleries } = require('../../packages/server/common/models.common.js');
 const {
   buildMigratedFiles,
   migrateGallery,
-} = require('../../../packages/server/scripts/migrate-gallery-v1');
+} = require('../../scripts/migrate-gallery-v1');
 
 const MONGO_ID = '507f1f77bcf86cd799439011';
 const GALLERY_CREATED_AT = new Date('2025-06-01T10:00:00.000Z');
