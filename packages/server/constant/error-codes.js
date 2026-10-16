@@ -273,4 +273,6 @@ module.exports = {
   INVALID_IMAGE_NAME: 'INVALID_IMAGE_NAME',
   INVALID_SORT_PARAM: 'INVALID_SORT_PARAM',
   SEARCH_TOO_LONG: 'SEARCH_TOO_LONG',
+  // an upload that could not be named, so was never stored
+  UPLOAD_NOT_STORED: 'UPLOAD_NOT_STORED',
 };

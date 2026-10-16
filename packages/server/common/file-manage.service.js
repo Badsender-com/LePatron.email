@@ -1,12 +1,12 @@
 'use strict';
 
 const fs = require('fs-extra');
-const chalk = require('chalk');
 const formidable = require('formidable');
 const createError = require('http-errors');
 
 const config = require('../node.config.js');
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const {
@@ -80,7 +80,7 @@ function handleEditorUpload(fields, files, resolve, reject) {
   // wrong. Say no instead.
   if (!rawFile || !rawFile.uploadedName) {
     return reject(
-      new createError.UnprocessableEntity('This file could not be stored')
+      new createError.UnprocessableEntity(ERROR_CODES.UPLOAD_NOT_STORED)
     );
   }
   const file = {
@@ -128,7 +128,6 @@ function parseMultipart(req, options) {
   }
 
   function onFileUnsafe(name, file) {
-    console.log('upload:', name);
     // remove empty files
     if (file.size === 0) return;
     // markup will be saved in DB
@@ -136,7 +135,8 @@ function parseMultipart(req, options) {
     // put all other files in the right place (S3 || local)
     const names = resolveUploadNames(file, options.prefix);
     if (!names) {
-      return console.warn('unable to upload', file.name, file.type);
+      logger.warn('[UPLOAD] unable to name the upload', file.name, file.type);
+      return;
     }
     // What the user actually named the file, before the slug flattened its
     // spaces and its case. `originalName` below cannot carry it: it keys the
@@ -160,7 +160,7 @@ function parseMultipart(req, options) {
 
   function onEnd(err, fields, files) {
     if (err) return deferred.reject(err);
-    console.log(chalk.green('form.parse', uploads.length));
+    logger.log('[UPLOAD] form parsed', uploads.length);
     // wait all TMP files to be moved in the good location (s3 or local)
     Promise.all(uploads)
       .then(() => {
