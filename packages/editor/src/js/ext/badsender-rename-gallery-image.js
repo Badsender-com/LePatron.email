@@ -4,16 +4,13 @@ const $ = require('jquery');
 
 const { sanitizeLabel } = require('../../../../shared/gallery/label.js');
 const { renameGalleryImageLabel } = require('../vue/utils/apis');
+const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 // A gallery file is stored as `<mongoId>-<hash>.<ext>`: the prefix is the id of
 // the mailing or template the gallery belongs to, which is what the route needs.
 // `apis.renameGalleryImageLabel` interpolates this capture into a URL without
 // encoding it — safe only because the class cannot produce `/`, `?` or `#`.
 const MONGO_ID = /^([a-f\d]{24})-/;
-
-// A hung request would otherwise leave the optimistic label in place forever,
-// with nothing to tell the user it never landed.
-const TIMEOUT_MS = 15000;
 
 function renameGalleryImage(viewModel) {
   // One entry per file name while a rename is in flight. Without it, two
@@ -87,7 +84,7 @@ function renameGalleryImage(viewModel) {
       method: 'PATCH',
       type: 'PATCH',
       contentType: 'application/json',
-      timeout: TIMEOUT_MS,
+      timeout: GALLERY_REQUEST_TIMEOUT_MS,
       data: JSON.stringify({ label: label }),
     })
       .then(function onAccepted(stored) {

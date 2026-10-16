@@ -10,9 +10,7 @@ const {
 const { isEditableImage } = require('../../../../shared/gallery/filter.js');
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 const { userCan } = require('./user-can.js');
-
-// Same budget as the rename and delete calls.
-const FETCH_TIMEOUT_MS = 15000;
+const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 // Reopening the image editor on an image that is already stored — from a
 // gallery thumbnail (US-10) and from the pencil on an image block, which has
@@ -136,12 +134,13 @@ function handOver(viewModel, { input, storedName, type, sourceLabel }) {
     labelsIn(viewModel, type)
   );
 
-  // `fetch` has no native timeout, so a stalled read of the stored file would
-  // hang the "edit" action with no feedback. Abort it on the same 15s budget
-  // the rename and delete calls use. `AbortController` is available in every
-  // browser the editor already targets.
+  // `fetch` has no timeout of its own, so a stalled read of the stored file
+  // would hang the "edit" action with no feedback.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(
+    () => controller.abort(),
+    GALLERY_REQUEST_TIMEOUT_MS
+  );
 
   // Same origin: the stored file is served by this application, whatever the
   // gallery list happens to carry as a display URL.

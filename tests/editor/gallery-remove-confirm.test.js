@@ -12,6 +12,9 @@
 const $ = require('jquery');
 const ko = require('knockout');
 const removeGalleryImage = require('../../packages/editor/src/js/ext/badsender-remove-gallery-image.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+} = require('../../packages/editor/src/js/ext/gallery-request.js');
 // the real strings, so a key that exists nowhere fails here rather than
 // reaching a user as its own name
 const FR = require('../../public/lang/badsender-fr.js');
@@ -124,7 +127,7 @@ describe('deleting a gallery image — when the request fails', () => {
   it('gives the request a timeout', () => {
     viewModel.removeImage(FILE, 'mailing');
 
-    expect(requests[0].timeout).toBeGreaterThan(0);
+    expect(requests[0].timeout).toBe(GALLERY_REQUEST_TIMEOUT_MS);
   });
 
   it('tells the user when the delete is refused, and keeps the image', () => {

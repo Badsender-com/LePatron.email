@@ -3,10 +3,7 @@
 const $ = require('jquery');
 const ko = require('knockout');
 const _find = require('lodash.find');
-
-// Same budget as the rename and delete calls. A list fetch with no ceiling can
-// strand the panel on "loading…" indefinitely.
-const LOAD_TIMEOUT_MS = 15000;
+const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 function galleryLoader(opts) {
   var galleryUrl = opts.fileuploadConfig.url;
@@ -26,7 +23,7 @@ function galleryLoader(opts) {
         // `$.ajax` rather than `$.getJSON`, only to carry a timeout: a stalled
         // list fetch would otherwise leave the panel stuck on "loading…"
         // forever, with no error and no way back.
-        $.ajax({ url: url, dataType: 'json', timeout: LOAD_TIMEOUT_MS })
+        $.ajax({ url: url, dataType: 'json', timeout: GALLERY_REQUEST_TIMEOUT_MS })
           .done(function (data) {
             for (var i = 0; i < data.files.length; i++)
               data.files[i] = viewModel.remoteFileProcessor(data.files[i]);

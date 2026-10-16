@@ -14,6 +14,9 @@
 const $ = require('jquery');
 const editImagePlugin = require('../../packages/editor/src/js/ext/badsender-edit-image.js');
 const { userOfRole } = require('./helpers/current-user.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+} = require('../../packages/editor/src/js/ext/gallery-request.js');
 
 const PNG = '507f1f77bcf86cd799439011-aaa.png';
 const JPG = '507f1f77bcf86cd799439011-bbb.jpg';
@@ -360,6 +363,24 @@ describe('editGalleryImage — when it cannot', () => {
 
     expect(opened).toBe(false);
     expect(viewModel.notifier.error).toHaveBeenCalled();
+  });
+
+  // `fetch` has no timeout of its own: a stalled read would hang the action.
+  it('stops waiting for the stored file after the gallery budget', () => {
+    jest.useFakeTimers();
+    global.fetch = jest.fn(() => new Promise(() => {}));
+
+    viewModel.editGalleryImage(
+      { name: PNG, label: 'photo.png' },
+      'mailing',
+      panel('mailing')
+    );
+    const { signal } = global.fetch.mock.calls[0][1];
+    jest.advanceTimersByTime(GALLERY_REQUEST_TIMEOUT_MS - 1);
+    expect(signal.aborted).toBe(false);
+    jest.advanceTimersByTime(1);
+    expect(signal.aborted).toBe(true);
+    jest.useRealTimers();
   });
 
   // The panel can be mounted while its upload zone is not, and a click that

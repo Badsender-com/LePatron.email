@@ -13,6 +13,9 @@ jest.mock('jquery', () => {
 const $ = require('jquery');
 const ko = require('knockout');
 const renameGalleryImage = require('../../packages/editor/src/js/ext/badsender-rename-gallery-image.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+} = require('../../packages/editor/src/js/ext/gallery-request.js');
 
 const MONGO_ID = '6a2135b7f802c2a6f99a4242';
 const FILE = { name: `${MONGO_ID}-abc.png`, label: 'avant.png', url: 'x' };
@@ -260,7 +263,7 @@ describe('renameImage — the server has the last word', () => {
     $.ajax.mockImplementation(accepted);
     const vm = viewModel();
     await vm.renameImage(vm.mailingGallery()[0], 'mailing', 'apres.png');
-    expect($.ajax.mock.calls[0][0].timeout).toBeGreaterThan(0);
+    expect($.ajax.mock.calls[0][0].timeout).toBe(GALLERY_REQUEST_TIMEOUT_MS);
   });
 });
 

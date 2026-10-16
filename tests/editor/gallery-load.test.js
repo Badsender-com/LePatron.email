@@ -12,6 +12,9 @@
 const $ = require('jquery');
 const ko = require('knockout');
 const galleryLoader = require('../../packages/editor/src/js/ext/badsender-gallery.js');
+const {
+  GALLERY_REQUEST_TIMEOUT_MS,
+} = require('../../packages/editor/src/js/ext/gallery-request.js');
 
 const URL = {
   mailing: '/api/images/gallery/abc',
@@ -88,7 +91,7 @@ describe('loading the gallery list', () => {
 
     viewModel.loadMailingGallery();
 
-    expect(ajaxArgs.timeout).toBeGreaterThan(0);
+    expect(ajaxArgs.timeout).toBe(GALLERY_REQUEST_TIMEOUT_MS);
   });
 
   // The failure the timeout exists for: status goes back to `false` (so the
