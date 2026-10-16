@@ -17,9 +17,25 @@ const SORT_BY_VALUES = ['date_desc', 'date_asc'];
 
 const normalizeExt = (ext) => (ext === 'jpeg' ? 'jpg' : ext);
 
-// fallback to the epoch so files without an uploadedAt sort as the oldest
-const fileDate = (file) =>
-  file.uploadedAt ? new Date(file.uploadedAt) : new Date(0);
+// A file without a readable uploadedAt sorts as the oldest: missing, or a
+// string `Date` cannot read, which would otherwise compare as NaN and leave
+// the order of the whole sort to chance.
+const fileTime = (file) => {
+  const time = file.uploadedAt ? new Date(file.uploadedAt).getTime() : 0;
+  return Number.isNaN(time) ? 0 : time;
+};
+
+// Each date is read once, not once per comparison: the editor sorts on every
+// keystroke of its search box, from JSON where every date is a string to
+// parse, and n log n parses of a 5,000-image gallery cost tens of
+// milliseconds a keystroke. The sort is stable, so equal dates keep the
+// given order.
+function sortByDate(files, direction) {
+  return files
+    .map((file) => ({ file, time: fileTime(file) }))
+    .sort((a, b) => direction * (a.time - b.time))
+    .map((entry) => entry.file);
+}
 
 // an image not yet migrated has no label: its file name is what the user sees,
 // so it is also what they will search for
@@ -76,11 +92,8 @@ function filterGalleryFiles(files, { search, format, sortBy } = {}) {
     result = result.filter((f) => fileExt(f) === normalizedFormat);
   }
 
-  if (sortBy === 'date_desc') {
-    result.sort((a, b) => fileDate(b) - fileDate(a));
-  } else if (sortBy === 'date_asc') {
-    result.sort((a, b) => fileDate(a) - fileDate(b));
-  }
+  if (sortBy === 'date_desc') return sortByDate(result, -1);
+  if (sortBy === 'date_asc') return sortByDate(result, 1);
 
   return result;
 }

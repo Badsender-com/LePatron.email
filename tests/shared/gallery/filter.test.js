@@ -126,6 +126,49 @@ describe('filterGalleryFiles', () => {
       expect(result[0].label).toBe('icone.png'); // null counts as the epoch: the oldest
       expect(result[3].label).toBe('Animation.gif'); // 2026-03-01
     });
+
+    // the editor gets its files from JSON: the dates are ISO strings there
+    it('sorts ISO strings like the dates they spell', () => {
+      const fromJson = JSON.parse(JSON.stringify(TEST_FILES));
+
+      const labels = filterGalleryFiles(fromJson, { sortBy: 'date_desc' }).map(
+        (f) => f.label
+      );
+
+      expect(labels).toEqual([
+        'Animation.gif',
+        'banniere.jpeg',
+        'logo.jpg',
+        'icone.png',
+      ]);
+    });
+
+    // An unreadable date compared as NaN, which no comparator can order: the
+    // whole sort came out depending on where that file happened to sit.
+    it('counts an unreadable date as the epoch, like a missing one', () => {
+      const files = [
+        { name: 'b.png', uploadedAt: '2026-02-01' },
+        { name: 'x.png', uploadedAt: 'not a date' },
+        { name: 'a.png', uploadedAt: '2026-01-01' },
+        { name: 'c.png', uploadedAt: '2026-03-01' },
+      ];
+
+      const names = (sortBy) =>
+        filterGalleryFiles(files, { sortBy }).map((f) => f.name);
+
+      expect(names('date_asc')).toEqual(['x.png', 'a.png', 'b.png', 'c.png']);
+      expect(names('date_desc')).toEqual(['c.png', 'b.png', 'a.png', 'x.png']);
+    });
+
+    it('keeps the given order between images of the same date', () => {
+      const files = ['a', 'b', 'c'].map((n) => ({ name: `${n}.png` }));
+
+      const names = filterGalleryFiles(files, { sortBy: 'date_desc' }).map(
+        (f) => f.name
+      );
+
+      expect(names).toEqual(['a.png', 'b.png', 'c.png']);
+    });
   });
 
   describe('combinations', () => {
