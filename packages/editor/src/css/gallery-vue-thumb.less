@@ -1,5 +1,5 @@
 // Vue gallery panel — the thumbnail: image area, checkerboard, label, badges,
-// delete button and the drag proxy. The panel chrome around it lives in
+// action bar and the drag proxy. The panel chrome around it lives in
 // gallery-vue-panel.less.
 
 @import 'gallery-vue-tokens.less';
@@ -11,8 +11,13 @@
 // a light brand cannot wash it out (6.1:1)
 @gif-badge: #e8a93a;
 
+// Two bands: the image, then an opaque label strip (ADR-0005). The hover
+// overlay of US-08 lives inside the image area, so it cannot cover the label —
+// which is what a rename has to double-click.
 .gallery-thumb {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   border: 1px solid @gallery-border;
@@ -28,25 +33,31 @@
     transform: translateY(-1px);
   }
 
-  // Reached with Tab, picked with Enter or Space. Same indicator as the chips:
-  // the primary outline meets 3:1, the accent border is decoration. The offset
-  // stays inside the cell's 4px padding, which the scroller does not clip.
-  &:focus-visible {
-    outline: 2px solid @gallery-primary;
-    outline-offset: 2px;
+  // the accent border is decoration, the image control's primary ring below is
+  // the focus indicator
+  &:focus-within {
     border-color: @gallery-accent;
   }
 }
 
-// Image area fills the whole thumbnail (the label overlays the bottom, so the
-// image is not squeezed by it). The checkerboard is the background; the image
-// covers it entirely when opaque, and shows it through genuine transparency.
+// The image area takes whatever the label band leaves. `min-height: 0`
+// because a flex item defaults to min-content, which would push the band out
+// of the box. It holds the image control and, over it, the action overlay.
+.gallery-thumb__media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+// The "insert" control, reached with Tab and picked with Enter or Space. The
+// checkerboard is the background; the image covers it entirely when opaque,
+// and shows it through genuine transparency.
 .gallery-thumb__img {
   position: absolute;
   top: 0;
-  left: 0;
   right: 0;
   bottom: 0;
+  left: 0;
   background-color: @gallery-surface;
   background-image: linear-gradient(45deg, @checker 25%, transparent 25%),
     linear-gradient(-45deg, @checker 25%, transparent 25%),
@@ -61,6 +72,13 @@
     object-fit: cover;
     display: block;
   }
+
+  // Same indicator as the chips, the primary outline meets 3:1. Drawn inside:
+  // the thumbnail's `overflow: hidden` clips anything outside it.
+  &:focus-visible {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -2px;
+  }
 }
 
 // JPG is always opaque: skip the checkerboard entirely
@@ -68,20 +86,46 @@
   background-image: none;
 }
 
-// Label overlays the bottom of the image (translucent, image shows through)
+// Its own band under the image, opaque so legibility never depends on what the
+// image happens to show. Height in pixels, not a percentage: a percentage
+// resolves against a flex height that is not known yet, and the band collapses.
 .gallery-thumb__label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 4px 6px;
+  flex: 0 0 26px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 6px;
+  // cursor deliberately left to inherit the thumbnail's `pointer`: image and
+  // label are one object to drag onto the email, and the band should not
+  // advertise itself as a separate kind of target
   font-size: 10.5px;
   color: @gallery-text;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: fade(@gallery-surface, 90%);
-  border-top: 1px solid fade(@gallery-border, 80%);
+  background: @gallery-surface;
+  border-top: 1px solid @gallery-border;
+}
+
+// The input replaces the band in place, same metrics, so committing or
+// cancelling does not make the grid jump. `display: block` rather than the
+// band's flex: `align-items` cannot reach an input's value, which lives in
+// shadow DOM, and the inherited ellipsis means nothing on a focused field.
+.gallery-thumb__label--editing {
+  display: block;
+  line-height: 24px;
+  border-top: 1px solid @gallery-accent;
+  border-radius: 0;
+  cursor: text;
+
+  // The accent border (cyan by default, 2.60:1 against white) is decoration,
+  // not an indicator (WCAG 1.4.11 asks 3:1). The primary outline carries that
+  // job, as it does on the search box and the chips.
+  &:focus {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -2px;
+  }
 }
 
 .gallery-thumb__badge {
@@ -102,17 +146,95 @@
   color: @gallery-text;
 }
 
-// Delete button — ISO with the old grid, revealed on hover, pointer only.
-// No target while faded out: on a touch screen, where nothing is hovered, a
-// tap in the corner would otherwise delete the image, unconfirmed, instead of
-// inserting it. The old grid's ✕ was `display: none` until hovered.
-.gallery-thumb__remove {
+// Actions on hover (US-08) — edit, rename, delete, in the image area only.
+//
+// The scrim is decorative: it darkens the bottom of the image so a white
+// action bar stays legible over a light photo. It must NEVER take the pointer,
+// hence `pointer-events: none` here with no hover override — only the bar
+// itself takes it back below. The mockup flipped the whole overlay to
+// `pointer-events: auto` on hover, which would have put a transparent lid over
+// the image area; jQuery UI's draggable excludes buttons from its handle, so
+// that version made the thumbnail undraggable exactly while it was visible.
+.gallery-thumb__overlay {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 2;
-  width: 18px;
-  height: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 4px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 55%,
+    fade(@gallery-primary-fixed, 75%) 100%
+  );
+  transition: opacity 0.12s ease-out;
+}
+
+// Discreet on arrival: the bar rises by its own padding rather than appearing
+// in place. `prefers-reduced-motion` keeps the fade, which carries the
+// information, and drops the travel, which does not.
+.gallery-thumb__actions {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: fade(@gallery-surface, 96%);
+  box-shadow: 0 1px 4px fade(@gallery-primary-fixed, 30%);
+  // No target while the overlay is hidden. The bar sits at the bottom-centre
+  // of the image area, so on a touch screen — where there is no hover and the
+  // overlay never fades in — the first tap there would otherwise hit an
+  // invisible button (the trash, worst of all) instead of selecting the image.
+  // It is handed the pointer back only when the overlay is actually shown.
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: transform 0.12s ease-out;
+}
+
+// Shown on hover, and on focus so the buttons can be reached from a keyboard —
+// a control that is focusable but invisible is worse than one that is neither.
+.gallery-thumb:hover .gallery-thumb__overlay,
+.gallery-thumb:focus-within .gallery-thumb__overlay {
+  opacity: 1;
+}
+
+.gallery-thumb:hover .gallery-thumb__actions,
+.gallery-thumb:focus-within .gallery-thumb__actions {
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-thumb__actions {
+    transform: none;
+    transition: none;
+  }
+
+  // the card's hover lift is decoration — the border and shadow already signal
+  // hover; drop the travel but keep the colour change
+  .gallery-thumb {
+    transition: border-color 0.12s, box-shadow 0.12s;
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  .gallery-thumb__overlay {
+    transition: none;
+  }
+}
+
+.gallery-thumb__action {
+  // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
+  width: 24px;
+  height: 24px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -120,25 +242,34 @@
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  background: fade(@gallery-primary-fixed, 85%);
-  color: @gallery-surface;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s;
+  background: transparent;
+  // 5.87:1 on the bar — an icon carrying the whole meaning of a button is held
+  // to text contrast, not to the 3:1 of a decorative glyph
+  color: @gallery-text-muted;
 
   .lucide {
     font-size: 12px;
   }
+
+  &:hover {
+    background: @gallery-accent-soft;
+    color: @gallery-primary;
+  }
+
+  // Same primary ring as the search box and the chips. `outline-offset: -1px`
+  // keeps it inside the bar, which is 28px tall and would otherwise clip it.
+  &:focus-visible {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -1px;
+  }
 }
 
-// Only where a pointer really hovers. On a touch screen a tap leaves :hover
-// stuck on the thumbnail it inserted, and a second tap in the corner would
-// then delete the image with no confirmation to stop it.
-@media (hover: hover) {
-  .gallery-thumb:hover .gallery-thumb__remove {
-    opacity: 1;
-    pointer-events: auto;
-  }
+// Only the destructive one is coloured, and only on hover: colour carries
+// meaning here rather than decorating three identical buttons
+// (docs/UX_GUIDELINES.md, "Action Icon Color Rules").
+.gallery-thumb__action--danger:hover {
+  background: @gallery-danger-soft;
+  color: @gallery-danger;
 }
 
 // Compact drag proxy (appended to #page while dragging a thumbnail).

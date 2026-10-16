@@ -76,6 +76,7 @@ module.exports = `
       <p
         v-else-if="isEmptyGallery"
         class="gallery-vue-panel__empty"
+        role="status"
         data-gallery-empty
       >{{ emptyGalleryLabel }}</p>
       <recycle-scroller
@@ -89,6 +90,7 @@ module.exports = `
         key-field="name"
         :skip-hover="true"
         v-slot="{ item, index, active }"
+        @scroll.native="onScroll"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
              list order: the index is the only reliable handle on position.
@@ -103,10 +105,22 @@ module.exports = `
           <thumb
             v-gallery-draggable="item"
             :file="item"
+            :strings="thumbStrings"
             @select="onSelect"
+            @edit="onEdit"
             @remove="onRemove"
+            @rename="onRename"
+            @reject="onRenameRejected"
+            @hover="onHover"
+            @unhover="onUnhover"
           />
         </div>
       </recycle-scroller>
+      <tooltip
+        :file="hoveredFile"
+        :anchor="hoveredAnchor"
+        :bounds="panelBounds"
+        :strings="tooltipStrings"
+      />
     </div>
 `;

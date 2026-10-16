@@ -18,7 +18,21 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
       const next = () => dfd.resolveWith(this, [data]);
       const abort = () => dfd.rejectWith(this, [data]);
 
-      const {files, index, messages } = data;
+      const { files, index } = data;
+      // Reopening the editor on a stored image can only ever produce a new
+      // gallery entry — the stored name is the md5 of the content, so the
+      // original is never touched. The button says so rather than promising
+      // a save in place. `editingExistingImage` is set by
+      // ext/badsender-edit-image.js and reaches here because blueimp merges
+      // whatever is handed to `add` into the options the process queue sees.
+      //
+      // The fallback matters: the hardcoded message bag in fileupload.js is
+      // incomplete, and a missing key would otherwise label the button
+      // "undefined".
+      const bag = data.messages || {};
+      const messages = data.editingExistingImage
+        ? $.extend({}, bag, { upload: bag.upload_as_new || bag.upload })
+        : bag;
       const originalFile = files[index];
       const { name, type } = originalFile;
       // The editor modal is appended to document.body in initEditor(), so this
