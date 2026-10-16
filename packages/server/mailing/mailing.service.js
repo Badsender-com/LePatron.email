@@ -58,6 +58,7 @@ const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
 const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const {
   resourceGroupIdOf,
   assertSameGroup,
@@ -72,6 +73,7 @@ module.exports = {
   findOne,
   findOneForUser,
   assertUserCanEditMailing,
+  userCanEditMailing,
   buildMailingCopy,
   renameMailing,
   deleteMailing,
@@ -203,7 +205,7 @@ async function findTags(query) {
   // account has none, a super admin's is the platform group), so filtering
   // on it would read the wrong company and `Tag.find` would return nothing. Derive the company from the workspace
   // or parent folder being viewed instead.
-  const companyId = user?.isAdmin
+  const companyId = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
     ? await companyOfDestination({ workspaceId, parentFolderId })
     : user?.group?.id;
 
@@ -231,7 +233,7 @@ async function findOne(mailingId) {
 // tenant boundary, so callers that act on behalf of a user (duplicate, copy,
 // duplicate-translate) MUST use this instead to avoid cross-tenant reads:
 // a group admin of group A could otherwise load a mailing of group B by id.
-// Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
+// Super admins are unfiltered, matching addGroupFilter.
 async function findOneForUser(mailingId, user) {
   if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
@@ -260,7 +262,7 @@ async function findOneForUser(mailingId, user) {
  * @throws {Forbidden} when the user has access to neither
  */
 async function assertUserCanEditMailing(user, mailing) {
-  if (user.isAdmin) return;
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) return;
 
   const { _workspace, _parentFolder } = mailing;
 
@@ -276,6 +278,25 @@ async function assertUserCanEditMailing(user, mailing) {
 
   if (!hasAccess) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+/**
+ * The same rule as `assertUserCanEditMailing`, as an answer: the editor shows
+ * what a save would get, so a member who may read the workspace but not write
+ * in it gets a read-only editor rather than a refused save.
+ *
+ * @param {Object} user
+ * @param {Object} mailing a Mailings document
+ * @returns {Promise<boolean>}
+ */
+async function userCanEditMailing(user, mailing) {
+  try {
+    await assertUserCanEditMailing(user, mailing);
+    return true;
+  } catch (error) {
+    if (error.status === 403 || error.status === 404) return false;
+    throw error;
   }
 }
 
@@ -387,7 +408,7 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   if (!isBootstrapAccount(user)) {
     mailing.userId = user.id;
     mailing.userName = user.name;
-    mailing.group = user.isAdmin
+    mailing.group = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
       ? await companyOfDestination({ workspaceId, parentFolderId })
       : user.group.id;
     // A mailing is made from a template of the group it lands in.
@@ -1510,7 +1531,7 @@ async function previewMail(mailingId, user) {
   // mailing of any of its workspaces, member or not, whatever the company's
   // "access to all workspaces" setting. The preview is how a user picks a
   // mailing to copy, and a preview URL can be shared with a colleague.
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     const workspace = await getOwningWorkspace(mailWithPreview);
     if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
   }

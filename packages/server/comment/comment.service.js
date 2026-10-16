@@ -6,6 +6,7 @@ const { BadRequest, Forbidden, NotFound } = require('http-errors');
 const { Comments, Mailings, Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const logger = require('../utils/logger.js');
 
 /**
@@ -75,21 +76,6 @@ const POPULATE_AUTHOR = {
 };
 
 /**
- * Extract user's company ID from various formats
- * Handles populated objects, raw ObjectIds, and aliased fields
- */
-function getUserCompanyId(user) {
-  return (
-    user._company?._id ||
-    user._company?.id ||
-    user._company ||
-    user.group?._id ||
-    user.group?.id ||
-    user.group
-  );
-}
-
-/**
  * Verify user has access to a mailing
  * @param {string} mailingId - The mailing ID
  * @param {Object} user - The user object
@@ -107,21 +93,9 @@ async function verifyMailingAccess(mailingId, user) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
 
-  // Super admin has access to all mailings
-  if (user?.isAdmin) {
-    return mailing;
-  }
-
-  const userCompanyId = getUserCompanyId(user);
-  const mailingCompanyId = mailing._wireframe?._company;
-
-  if (!userCompanyId || !mailingCompanyId) {
-    throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
-  }
-
-  const hasAccess = String(userCompanyId) === String(mailingCompanyId);
-
-  if (!hasAccess) {
+  // A super admin reaches the mailings of every company, anyone else
+  // those of its own company.
+  if (!permissions.canAccessGroup(user, mailing._wireframe?._company)) {
     throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
   }
 
@@ -158,7 +132,7 @@ async function createComment({
   }
 
   // Validate mentions belong to the mailing's company
-  const userCompanyId = getUserCompanyId(user);
+  const userCompanyId = permissions.groupIdOf(user);
   const mentionCompanyId = mailing._wireframe?._company || userCompanyId;
   await validateMentions(mentions, mentionCompanyId);
 
@@ -280,7 +254,9 @@ async function updateComment({ commentId, user, updates }) {
 
   // Handle mentions update — validate against the mailing's company
   if (updates.mentions !== undefined) {
-    const companyId = user?.isAdmin ? comment._company : getUserCompanyId(user);
+    const companyId = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+      ? comment._company
+      : permissions.groupIdOf(user);
     await validateMentions(updates.mentions, companyId);
     updateData.mentions = updates.mentions;
   }

@@ -4,6 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
 var userCan = require('./user-can.js').userCan;
+var CAPABILITIES = require('../../../../shared/access/roles.js').CAPABILITIES;
 
 function handleCreationName(viewModel) {
   var originalValue;
@@ -14,9 +15,10 @@ function handleCreationName(viewModel) {
     return viewModel.metadata.name();
   }, viewModel);
 
-  // Locked until the current user is known, like the toolbox panels.
+  // Renaming is organising the email, like the listing's rename. Locked
+  // until the current user is known, like the toolbox panels.
   viewModel.canRenameCreation = function () {
-    return userCan(viewModel, 'canRename');
+    return userCan(viewModel, CAPABILITIES.MAILING_ORGANIZE);
   };
 
   viewModel.enableEditCreationName = function (data, event) {

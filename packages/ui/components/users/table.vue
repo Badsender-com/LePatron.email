@@ -1,34 +1,17 @@
 <script>
-import * as userStatusHelpers from '~/helpers/user-status.js';
+import { mapGetters } from 'vuex';
 import BsUserActions from '~/components/user/actions.vue';
-import { getRoleLabelKey } from '~/helpers/roles.js';
-import { Roles } from '~/helpers/constants/roles';
+import { Roles, getRoleLabelKey } from '~/helpers/constants/roles';
+import {
+  roleChip,
+  roleRank,
+  mailActionOf,
+  rowActionKeys,
+} from '~/helpers/user-row-actions.js';
+import { USER, USER_CAPABILITIES } from '~/store/user';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-
-// One pastel chip per role (light background, darker text of the same hue):
-// red for every admin, yellow for the roles that review or write, grey for the
-// regular user. Listed from the most to the least privileged, which is also
-// the sort order of the column.
-const ADMIN_CHIP = { color: 'red lighten-4', textColor: 'red darken-3' };
-const REVIEW_WRITE_CHIP = {
-  color: 'amber lighten-4',
-  textColor: 'brown darken-2',
-};
-const ROLE_CHIPS = {
-  [Roles.SUPER_ADMIN]: ADMIN_CHIP,
-  [Roles.GROUP_ADMIN]: ADMIN_CHIP,
-  [Roles.GROUP_ADMIN_TECH]: ADMIN_CHIP,
-  [Roles.REVIEWER]: REVIEW_WRITE_CHIP,
-  [Roles.WRITER]: REVIEW_WRITE_CHIP,
-  [Roles.REGULAR_USER]: { color: 'grey lighten-3', textColor: 'grey darken-2' },
-};
-const ROLE_ORDER = Object.keys(ROLE_CHIPS);
-const roleRank = (role) => {
-  const rank = ROLE_ORDER.indexOf(role);
-  return rank === -1 ? ROLE_ORDER.length : rank;
-};
 
 export default {
   name: 'BsUsersTable',
@@ -50,6 +33,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
     tableHeaders() {
       // Columns are styled by class, not by position: callers hide columns.
       return [
@@ -120,9 +104,6 @@ export default {
         ? `/groups/${groupId}/settings/users/${user.id}`
         : `/users/${user.id}`;
     },
-    getStatusActions(status) {
-      return userStatusHelpers.getStatusActions(status);
-    },
     getStatusColor(status) {
       const colors = {
         confirmed: 'success',
@@ -147,7 +128,7 @@ export default {
       return status === 'confirmed' || status === 'saml-authentication';
     },
     getRoleChip(role) {
-      return ROLE_CHIPS[role] || ROLE_CHIPS[Roles.REGULAR_USER];
+      return roleChip(role);
     },
     getRoleLabel(role) {
       if (role === Roles.SUPER_ADMIN)
@@ -183,66 +164,40 @@ export default {
     navigateToUser(user) {
       this.$router.push(this.userPath(user));
     },
-    // Returns the i18n KEY, not the translated string: BsRowActions calls
-    // $t(action.text) on its side, so returning $t(...) here would translate
-    // twice and fall back to the literal string in every locale.
-    getMailActionTooltipKey(status) {
-      const actions = this.getStatusActions(status);
-      if (actions.resetPassword) return 'users.passwordTooltip.reset';
-      if (actions.sendPassword) return 'users.passwordTooltip.send';
-      if (actions.reSendPassword) return 'users.passwordTooltip.resend';
-      return '';
-    },
-    handleMailAction(user) {
-      const actions = this.getStatusActions(user.status);
-      if (actions.resetPassword) return this.resetPassword(user);
-      if (actions.sendPassword) return this.sendPassword(user);
-      if (actions.reSendPassword) return this.resendPassword(user);
-    },
-    showMailAction(status) {
-      const actions = this.getStatusActions(status);
-      return (
-        actions.resetPassword || actions.sendPassword || actions.reSendPassword
-      );
-    },
+    // `text` is an i18n KEY: BsRowActions translates it.
     buildQuickActions(item) {
-      const actions = [];
-      const statusActions = this.getStatusActions(item.status);
-
-      if (statusActions.activate) {
-        actions.push({
-          key: 'activate',
+      const mail = mailActionOf(item.status);
+      const MAIL_METHODS = {
+        resetPassword: this.resetPassword,
+        sendPassword: this.sendPassword,
+        reSendPassword: this.resendPassword,
+      };
+      const ACTIONS = {
+        activate: {
           icon: UserCheck,
           text: 'global.enable',
           onClick: () => this.activate(item),
-        });
-      } else if (item.status !== 'to-be-initialized') {
-        actions.push({
-          key: 'deactivate',
+        },
+        deactivate: {
           icon: UserX,
           text: 'global.disable',
           onClick: () => this.deactivate(item),
-        });
-      }
-
-      if (this.showMailAction(item.status)) {
-        const isReset = statusActions.resetPassword;
-        actions.push({
-          key: 'mail-action',
-          icon: isReset ? RotateCcw : Send,
-          text: this.getMailActionTooltipKey(item.status),
-          onClick: () => this.handleMailAction(item),
-        });
-      }
-
-      actions.push({
-        key: 'edit',
-        icon: Pencil,
-        text: 'global.edit',
-        onClick: () => this.navigateToUser(item),
-      });
-
-      return actions;
+        },
+        'mail-action': mail && {
+          icon: mail.action === 'resetPassword' ? RotateCcw : Send,
+          text: mail.textKey,
+          onClick: () => MAIL_METHODS[mail.action](item),
+        },
+        edit: {
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.navigateToUser(item),
+        },
+      };
+      return rowActionKeys(item, this.capabilities).map((key) => ({
+        key,
+        ...ACTIONS[key],
+      }));
     },
   },
 };

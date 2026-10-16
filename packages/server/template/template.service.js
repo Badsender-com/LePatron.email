@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { refuseBootstrapAccount } = require('../account/request-scope.js');
 const mongoose = require('mongoose');
 
@@ -55,7 +56,10 @@ function isTemplateInGroup(template, groupId) {
  * @param {string} [groupId] the group the screen names
  */
 async function listForUser(user, groupId) {
-  if (user.isAdmin && groupId !== undefined) {
+  if (
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    groupId !== undefined
+  ) {
     if (!modelsUtils.isObjectIdString(groupId)) {
       throw new BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
     }

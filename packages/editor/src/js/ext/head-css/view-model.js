@@ -7,6 +7,9 @@ const {
 const { hasHtmlCodeBlock, headCssToExport } = require('./exported-css.js');
 const { HTML_CODE_BLOCK } = require('../synthetic-blocks/block-types.js');
 const { userCan } = require('../user-can.js');
+const {
+  CAPABILITIES,
+} = require('../../../../../shared/access/roles.js');
 
 // The head CSS members of the editor's view model: the stylesheet itself, the
 // predicates the two entry points read (toolbox.tmpl.html,
@@ -82,9 +85,12 @@ function addHeadCssToViewModel(viewModel) {
   };
 
   // The template flag AND the role: the email's CSS is style, which a writer
-  // or reviewer does not edit. They can still read it (openHeadCssViewer).
+  // or reviewer does not edit, and the Style tab is locked for them.
   viewModel.canEditHeadCss = function () {
-    return viewModel.isHeadCssEditable() && userCan(viewModel, 'canEditStyle');
+    return (
+      viewModel.isHeadCssEditable() &&
+      userCan(viewModel, CAPABILITIES.MAILING_EDIT_STYLE)
+    );
   };
 
   // Opens the shared CodeMirror modal on the stylesheet instead of a block

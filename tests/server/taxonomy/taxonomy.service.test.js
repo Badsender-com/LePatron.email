@@ -38,9 +38,15 @@ const COMPANY_B = '507f1f77bcf86cd799439b01';
 const ITEM_A = '507f1f77bcf86cd799439101';
 const ITEM_B = '507f1f77bcf86cd799439102';
 
-const userA = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY_A } };
-const userB = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY_B } };
-const superAdmin = { isAdmin: true };
+const userA = {
+  role: 'company_admin',
+  group: { id: COMPANY_A },
+};
+const userB = {
+  role: 'company_admin',
+  group: { id: COMPANY_B },
+};
+const superAdmin = { role: 'super_admin' };
 
 // Seed: one item per company, both labelled "Infolettre" on purpose — the same
 // label on two companies is legitimate and must stay so.
@@ -664,9 +670,9 @@ describe('resolveCompanyId', () => {
   });
 
   it('refuses a user without a company', () => {
-    expect(() =>
-      taxonomyService.resolveCompanyId({ isAdmin: false, group: {} })
-    ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);
+    expect(() => taxonomyService.resolveCompanyId({ group: {} })).toThrow(
+      ERROR_CODES.MISSING_GROUP_PARAM
+    );
   });
 
   // `ObjectId.isValid` says yes to any 12-character string and reinterprets its
@@ -684,16 +690,46 @@ describe('resolveCompanyId', () => {
   it('refuses a malformed company id on the session of a regular caller', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
-        isAdmin: false,
         group: { id: 'companyAdmin' },
       })
     ).toThrow(ERROR_CODES.INVALID_GROUP_PARAM);
   });
 
-  it('refuses a super admin falling back on a company of their own', () => {
+  // A super admin works in the group it selected (ADR 0002, amended): a
+  // request that names no company reads that one, never the platform's own.
+  it('gives a super admin who names no company its selected group', () => {
+    const company = taxonomyService.resolveCompanyId({
+      role: 'super_admin',
+      group: { id: COMPANY_A },
+      selectedGroup: { id: COMPANY_B },
+    });
+
+    expect(String(company)).toBe(COMPANY_B);
+  });
+
+  it('prefers the company a super admin names to its selected group', () => {
+    const company = taxonomyService.resolveCompanyId(
+      { role: 'super_admin', selectedGroup: { id: COMPANY_B } },
+      COMPANY_A
+    );
+
+    expect(String(company)).toBe(COMPANY_A);
+  });
+
+  it('ignores the selected group of anyone else', () => {
+    const company = taxonomyService.resolveCompanyId({
+      role: 'company_admin',
+      group: { id: COMPANY_A },
+      selectedGroup: { id: COMPANY_B },
+    });
+
+    expect(String(company)).toBe(COMPANY_A);
+  });
+
+  it('refuses a super admin with no selected group rather than use its own', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
-        isAdmin: true,
+        role: 'super_admin',
         group: { id: COMPANY_A },
       })
     ).toThrow(ERROR_CODES.MISSING_GROUP_PARAM);

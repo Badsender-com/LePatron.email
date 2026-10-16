@@ -1,16 +1,10 @@
 'use strict';
 
-const {
-  NotFound,
-  BadRequest,
-  Forbidden,
-  UnprocessableEntity,
-} = require('http-errors');
+const { NotFound, BadRequest, UnprocessableEntity } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const Roles = require('../account/roles.js');
 const { TEMPLATE_FLAG_PROJECTION } = require('./synthetic-block-guard.js');
 const {
   normalizeAndGuardSyntheticContent,
@@ -364,6 +358,8 @@ async function duplicate(req, res) {
     Galleries.findOne({ creationOrWireframeId: mailingId }),
   ]);
   if (!mailing) throw new NotFound();
+  // The copy lands next to the original: writing there takes the same right.
+  await mailingService.assertUserCanEditMailing(req.user, mailing);
 
   const duplicatedMailing = mailing.duplicate(req.user);
   // Be sure that all images are duplicated before saving the duplicated creation
@@ -521,12 +517,6 @@ async function updateMosaico(req, res) {
   }
 
   await mailingService.assertUserCanEditMailing(user, mailing);
-
-  // A reviewer writes nothing, except the save the editor runs once on
-  // opening a mailing that has no preview yet (template-loader.js).
-  if (user.role === Roles.REVIEWER && mailing.previewHtml) {
-    throw new Forbidden(ERROR_CODES.FORBIDDEN_REVIEWER_READ_ONLY);
-  }
 
   assertHeadCssSize(req.body);
   // The editor only hides the entry points: a hand-written request could add

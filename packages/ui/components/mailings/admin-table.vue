@@ -2,7 +2,8 @@
 import { mapGetters } from 'vuex';
 import { Mail, Pencil } from 'lucide-vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsMailingsAdminTable',
@@ -18,12 +19,9 @@ export default {
     pagination: { type: Object, default: () => ({}) },
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
-    }),
+    ...mapGetters(USER, { can: CAN }),
     canAccessUsers() {
-      return this.isAdmin || this.isGroupAdmin;
+      return this.can(CAPABILITIES.GROUP_MANAGE);
     },
     routeGroupId() {
       return this.$route.params.groupId;

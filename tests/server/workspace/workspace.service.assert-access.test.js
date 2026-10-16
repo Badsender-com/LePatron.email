@@ -30,9 +30,15 @@ const COMPANY_B = '507f1f77bcf86cd799439002';
 
 const member = { id: 'u1', group: { id: COMPANY_A } };
 const colleague = { id: 'u3', group: { id: COMPANY_A } };
-const companyAdminOfA = { ...colleague, isGroupAdmin: true };
+const companyAdminOfA = {
+  ...colleague,
+  role: 'company_admin',
+};
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
-const companyAdminOfB = { ...outsider, isGroupAdmin: true };
+const companyAdminOfB = {
+  ...outsider,
+  role: 'company_admin',
+};
 
 beforeEach(() => {
   Workspaces.exists.mockResolvedValue(true);
@@ -82,7 +88,6 @@ describe('assertAccess for a super admin (ADR 0002, amended)', () => {
   const superAdmin = {
     id: 'alice',
     role: 'super_admin',
-    isAdmin: true,
     group: { id: PLATFORM_GROUP },
     selectedGroup: { id: COMPANY_A },
   };

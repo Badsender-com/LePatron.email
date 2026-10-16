@@ -1,11 +1,10 @@
 'use strict';
 
-// Every guard and service branches on `user.isAdmin`, a virtual of the User
-// schema that returned `false` for every stored user: the only admin was the
-// bootstrap account, outside the database. With super admin as a persisted
-// role (ADR 0002) the admin status derives from `role`. Exercised against a
-// real Mongoose model, because the enum and the virtuals live in the schema:
-// a mocked document would never run them.
+// The User schema: the roles it accepts, and what a user's JSON carries. What
+// a role may do is read from `role` by account/permissions.js, never from a
+// flag of the document. Exercised against a real Mongoose model, because the
+// enum and the virtuals live in the schema: a mocked document would never run
+// them.
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -35,44 +34,22 @@ const build = (overrides) =>
   });
 
 describe('User roles', () => {
-  it('a company admin administers their group and is not an admin', () => {
-    const user = build({ role: 'company_admin' });
+  // Rights are read from the role (account/permissions.js): the document
+  // carries no admin flag a client or a check could read instead.
+  it.each([
+    'super_admin',
+    'company_admin_tech',
+    'company_admin',
+    'regular_user',
+    'writer',
+    'reviewer',
+  ])('serialises a %s with its role and no admin flag', (role) => {
+    const json = build({ role }).toJSON();
 
-    expect(user.isGroupAdmin).toBe(true);
-    expect(user.isAdmin).toBe(false);
-  });
-
-  it('a tech admin is a company admin too, with the integrations on top', () => {
-    const user = build({ role: 'company_admin_tech' });
-
-    expect(user.isGroupAdmin).toBe(true);
-    expect(user.isGroupAdminTech).toBe(true);
-    expect(user.isAdmin).toBe(false);
-  });
-
-  it('a company admin is not a tech admin', () => {
-    expect(build({ role: 'company_admin' }).isGroupAdminTech).toBe(false);
-  });
-
-  it.each(['reviewer', 'writer'])('a %s administers nothing', (role) => {
-    const user = build({ role });
-
-    expect(user.isGroupAdmin).toBe(false);
-    expect(user.isGroupAdminTech).toBe(false);
-  });
-
-  it('a regular user is neither a company admin nor an admin', () => {
-    const user = build({ role: 'regular_user' });
-
-    expect(user.isGroupAdmin).toBe(false);
-    expect(user.isAdmin).toBe(false);
-  });
-
-  it('a user without a role is neither a company admin nor an admin', () => {
-    const user = build({});
-
-    expect(user.isGroupAdmin).toBe(false);
-    expect(user.isAdmin).toBe(false);
+    expect(json.role).toBe(role);
+    expect(json).not.toHaveProperty('isAdmin');
+    expect(json).not.toHaveProperty('isGroupAdmin');
+    expect(json).not.toHaveProperty('isGroupAdminTech');
   });
 
   it('refuses a role the product does not define', () => {
@@ -90,22 +67,6 @@ describe('User roles', () => {
       expect(errors).toBeUndefined();
     });
 
-    it('a super admin is an admin', () => {
-      expect(build({ role: 'super_admin' }).isAdmin).toBe(true);
-    });
-
-    it('a super admin is not a company admin', () => {
-      expect(build({ role: 'super_admin' }).isGroupAdmin).toBe(false);
-    });
-
-    it('serialises its admin status for the session and the UI', () => {
-      const json = build({ role: 'super_admin' }).toJSON();
-
-      expect(json.role).toBe('super_admin');
-      expect(json.isAdmin).toBe(true);
-      expect(json.isGroupAdmin).toBe(false);
-    });
-
     it('is an ordinary account otherwise: invited, then confirmed', () => {
       expect(build({ role: 'super_admin' }).status).toBe('to-be-initialized');
       expect(build({ role: 'super_admin', token: 'invite' }).status).toBe(
@@ -120,7 +81,7 @@ describe('User roles', () => {
       const user = build({ role: 'super_admin', isDeactivated: true });
 
       expect(user.status).toBe('deactivated');
-      expect(user.isAdmin).toBe(true);
+      expect(user.role).toBe('super_admin');
     });
   });
 });

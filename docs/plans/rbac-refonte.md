@@ -2,6 +2,18 @@
 
 Document de conception pour l'ajout de nouveaux rôles au système de rôles et permissions de LePatron.email. Rédigé à partir de la vision produit d'Olivier Fredon et d'un audit du code existant.
 
+**Révision du 2026-10-15, après la revue de #1279 : un rôle est une liste de capacités.** Ce qui suit remplace, là où ils divergent, les passages plus anciens de ce document (notamment 3.3 « pas d'enforcement serveur » et la garde `GUARD_NOT_REVIEWER`). La décision est dans l'[ADR 0004](../adr/0004-reviewer-writer-tech-admin-roles.md), qui étend l'ADR 0002.
+
+- Les rôles et leurs capacités sont définis une seule fois, dans `packages/shared/access/roles.js`, lu par le serveur, l'UI et l'éditeur. Un droit absent est un refus ; un rôle inconnu n'a rien.
+- Le serveur demande une capacité (`permissions.can`, `GUARD_CAN`) sur **chaque** route qui écrit. `tests/server/account/route-access.test.js` échoue sur une route d'écriture sans capacité ni exemption motivée. `GUARD_NOT_REVIEWER` et `tech-admin-policy.js` n'existent plus.
+- Le serveur tient désormais aussi le `writer` sur ce qu'une route sait distinguer : créer un email, supprimer un email ou un dossier, ajouter un bloc à la bibliothèque. Seules la structure et le style **à l'intérieur d'une sauvegarde** restent tenus par l'éditeur (#1103).
+- Supprimer un dossier supprime ses emails : capacité `folder.delete`, refusée au `writer` et au `reviewer`.
+- La sauvegarde faite à l'ouverture d'un email sans aperçu n'est lancée que pour qui peut enregistrer, une fois ses droits chargés : l'aperçu stocké est le HTML que les exports envoient, un `reviewer` ne l'écrit pas. Le listing reste sans aperçu tant qu'aucun auteur n'a ouvert l'email (revient sur la décision du 2026-10-06).
+- Personne n'attribue un rôle ni ne gère un compte qui a plus de capacités que soi (`rights-policy.js`) : un `company_admin` ne crée, ne modifie (email compris), ne réinitialise, ne désactive ni ne réactive un `company_admin_tech`.
+- Le tracking de la company n'est plus modifiable par un `company_admin` via `PUT /groups/:groupId`.
+- À rejouer avec le QC : ignorer un résultat devient une capacité (`quality.ignore` par exemple), à ajouter à la carte et à demander sur `PATCH /:mailingId/quality-ignores`.
+- **Le 2026-10-16, plus aucun test de rôle hors de `account/permissions.js`.** Le serveur demande `permissions.can` pour un droit et `permissions.canAccessGroup` pour la company d'une ressource, et `permissions.js` lit tout du rôle. L'UI et l'éditeur demandent une capacité : les ACL de pages nomment la capacité requise (`ACL_PLATFORM_MANAGE`, `ACL_GROUP_MANAGE`, `ACL_GROUP_MANAGE_TECH`, `ACL_OWN_GROUP_MANAGE`), et `IS_ADMIN`, `IS_GROUP_ADMIN`, `SESSION_ACL` et `isAdminOfCurrentGroup` n'existent plus. Les passages ci-dessous qui citent `ACL_ADMIN`, `ACL_GROUP_ADMIN`, `IS_GROUP_ADMIN_TECH` ou `getAuthorizations()` décrivent le code d'avant.
+
 **Mise à jour du 2026-10-15 : la branche ne porte plus que le RBAC.** Les chantiers rapatriés des PR ouvertes (contrôle qualité v2, liens de partage, génération de texte IA, refonte de la galerie) ont été retirés pour que ce travail soit distinct et autonome. Les passages ci-dessous qui décrivent leur rapatriement restent le journal des décisions produit. Ce qui touchait ces chantiers n'est plus dans le code, et sera à rejouer quand leurs PR seront dans `develop` (les commits d'origine sont conservés dans la branche locale `backup/roles-permissions-pre-clean`) :
 
 - `canIgnoreQuality` est calculé dans `ext/badsender-current-user.js`, mais le panneau QC ne le lit pas encore (`4dcced21`), et `PATCH /:mailingId/quality-ignores` n'a pas encore son `GUARD_NOT_REVIEWER` (`08b4e64a`).
@@ -356,32 +368,26 @@ Le rôle vit sur `User.role`, un champ scalaire — aucune structure supplément
 
 ### 3.6 Matrice rôles × permissions (cible, scope réduit et affiné)
 
-Légende : **Full** = CRUD complet · **Own** = restreint à sa company · **Assigned** = restreint aux workspaces assignés · **R** = lecture seule · **C** = commenter seulement · **—** = aucun accès · **UI:** = restriction non garantie côté serveur (section 3.3).
+**Réécrite le 2026-10-15 d'après le code** : la carte des capacités (`packages/shared/access/roles.js`) fait foi, et `tests/shared/access/roles.test.js` l'écrit en entier, rôle par rôle. Ce tableau la résume par domaine.
 
-| Domaine                                                   | regular_user | writer   | reviewer | company_admin_tech | company_admin                          |
-| --------------------------------------------------------- | ------------ | -------- | -------- | ------------------ | -------------------------------------- |
-| Company (réglages généraux)                               | —            | —        | —        | —                  | Own (déjà restreint par `pick()`)      |
-| Users & rôles (créer/assigner un rôle)                    | —            | —        | —        | —                  | Own, sauf `super_admin`                |
-| Workspaces (CRUD + membres)                               | —            | —        | —        | —                  | Own                                    |
-| Workspaces (accès)                                        | Assigned     | Assigned | Assigned | Assigned           | Own                                    |
-| Mailing — créer                                           | Full         | UI: —    | UI: —    | Full               | Own                                    |
-| Mailing — renommer / déplacer / dupliquer                 | Full         | UI: Full | UI: —    | Full               | Own                                    |
-| Mailing — supprimer                                       | Full         | UI: —    | UI: —    | Full               | Own                                    |
-| Mailing — dossiers (créer/renommer/déplacer/supprimer)    | Full         | Full     | UI: —    | Full               | Own                                    |
-| Mailing — envoyer un test                                 | Full         | Full     | Full     | Full               | Own                                    |
-| Intégrations / AI features / feed mappings                | —            | —        | —        | Own (nouveau)      | Own _(inchangé, écart documenté)_      |
-| Exports / profils ESP                                     | —            | —        | —        | —                  | — (inchangé, super-admin only)         |
-| Builder — structure                                       | Full         | UI: —    | UI: —    | Full               | Full                                   |
-| Builder — contenu                                         | Full         | UI: Full | UI: —    | Full               | Full                                   |
-| Builder — style                                           | Full         | UI: —    | UI: —    | Full               | Full                                   |
-| Commentaire — créer/répondre/résoudre                     | Full (siens) | Full     | Full     | Full               | Full (aussi autrui, comme aujourd'hui) |
-| Commentaire — décision d'approbation (3.4)                | —            | —        | Full     | —                  | Full                                   |
-| QC — consulter / relancer / commenter / test / ressources | Full         | Full     | Full     | Full               | Own                                    |
-| QC — ignorer un résultat                                  | Full         | UI: —    | UI: —    | Full               | Own                                    |
-| Lien de partage — lister / créer                          | Full         | Full     | Full     | Full               | Own                                    |
-| Lien de partage — révoquer                                | Siens        | Siens    | Siens    | Own (tous)         | Own (tous)                             |
-| IA texte (sujet, préheader) — configurer                  | —            | —        | —        | Own                | Own                                    |
-| IA texte (sujet, préheader) — utiliser                    | Full         | Full     | UI: —    | Full               | Own                                    |
+Légende : **Full** = accordé · **Own** = dans sa company · **Assigned** = dans les workspaces assignés · **—** = refusé par le serveur · **Éditeur : —** = refusé par l'éditeur seulement (#1103).
+
+| Domaine                                                   | regular_user | writer      | reviewer    | company_admin_tech | company_admin |
+| --------------------------------------------------------- | ------------ | ----------- | ----------- | ------------------ | ------------- |
+| Company (réglages généraux), users, workspaces            | —            | —           | —           | Own                | Own           |
+| Rôles attribuables                                        | —            | —           | —           | tous sauf super    | sauf tech     |
+| Workspaces (accès)                                        | Assigned     | Assigned    | Assigned    | Own                | Own           |
+| Mailing — créer depuis un template                        | Full         | —           | —           | Own                | Own           |
+| Mailing — renommer / déplacer / copier / dupliquer / tags | Full         | Full        | —           | Own                | Own           |
+| Mailing — supprimer                                       | Full         | —           | —           | Own                | Own           |
+| Mailing — enregistrer, paramètres de l'email, traduire    | Full         | Full        | —           | Own                | Own           |
+| Dossiers — créer / renommer / déplacer                    | Full         | Full        | —           | Own                | Own           |
+| Dossiers — supprimer (avec leurs emails)                  | Full         | —           | —           | Own                | Own           |
+| Builder — structure, style, CSS de l'email                | Full         | Éditeur : — | Éditeur : — | Full               | Full          |
+| Bibliothèque de blocs — ajouter                           | Full         | —           | —           | Full               | Full          |
+| Commenter, approuver, envoyer un test, exporter, galerie  | Full         | Full        | Full        | Full               | Full          |
+| Intégrations, AI features, feed mappings, tracking        | —            | —           | —           | Own                | —             |
+| Exports / profils ESP                                     | —            | —           | —           | —                  | —             |
 
 Lignes QC, liens de partage et IA texte ajoutées le 2026-10-06 (décisions produit, à confirmer par tests fonctionnels et review) : aujourd'hui aucune n'est soumise aux rôles côté serveur, et les routes `share-links` sont toutes en `GUARD_USER`. « Siens » = liens dont `_user` est l'utilisateur ; un lien créé par un `super_admin` n'a pas de `_user` (`share-link.service.js`) et ne peut donc être révoqué que par `company_admin`/`company_admin_tech`/`super_admin`. **Enforcement décidé le 2026-10-06 : serveur + interface** pour la révocation (contrairement au reste de 3.3, le serveur sait déjà qui a créé le lien) : `share-link.service.js` calcule `canRevoke` par lien dans la liste (`company_admin`, `company_admin_tech`, `super_admin` : tous ; les autres : leurs propres liens), l'éditeur masque « Turn off » sinon, et `revokeLink` ajoute `_user` au filtre du `findOneAndUpdate` pour les non-administrateurs — un lien d'autrui répond 404, sans fenêtre de course.
 

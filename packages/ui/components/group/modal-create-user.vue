@@ -6,7 +6,7 @@ import BsModalConfirm from '~/components/modal-confirm';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import { roleItems } from '~/helpers/constants/roles';
-import { IS_ADMIN, IS_GROUP_ADMIN_TECH, USER } from '~/store/user';
+import { USER, USER_CAPABILITIES } from '~/store/user';
 
 export default {
   name: 'BsModalCreateUser',
@@ -44,14 +44,9 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdminTech: IS_GROUP_ADMIN_TECH,
-    }),
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
     roles() {
-      return roleItems(this, {
-        includeTechAdmin: this.isAdmin || this.isGroupAdminTech,
-      });
+      return roleItems(this, { grantableWith: this.capabilities });
     },
     emailErrors() {
       const errors = [];

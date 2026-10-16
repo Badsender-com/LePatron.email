@@ -1,4 +1,5 @@
 import { templates } from '~/helpers/api-routes';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
@@ -28,7 +29,7 @@ export const mutations = {
 // server lists anyone else's own group's (ADR 0002, amended).
 export function moduleTemplatesParams(rootGetters) {
   const selected = rootGetters['user/SELECTED_GROUP'];
-  return rootGetters['user/IS_ADMIN'] && selected
+  return rootGetters['user/CAN'](CAPABILITIES.PLATFORM_MANAGE) && selected
     ? { groupId: selected.id }
     : {};
 }

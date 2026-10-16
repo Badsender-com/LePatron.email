@@ -26,7 +26,7 @@ Le rôle est global à la company. Il ne varie jamais selon le workspace.
 | `regular_user`        | Utilisateur     | Accès complet au builder, sur les workspaces qui lui sont assignés                           |
 | `writer`              | Rédacteur       | Édite le contenu. Ni structure, ni style. Ne crée ni ne supprime un email                    |
 | `reviewer`            | Relecteur       | Lit, commente, teste et approuve. Ne modifie rien                                            |
-| `company_admin_tech`  | Admin technique | Réglages techniques : intégrations, IA, tracking, flux. Ni utilisateurs, ni workspaces       |
+| `company_admin_tech`  | Admin technique | Un admin company, plus les réglages techniques : intégrations, IA, tracking, flux            |
 | `company_admin`       | Admin company   | Utilisateurs, rôles, workspaces, couleurs, réglages généraux. Plus d'accès aux réglages tech |
 | `super_admin`         | Super admin     | Tout, sur toutes les companies. Plusieurs comptes possibles, gérés dans un écran dédié       |
 
@@ -119,6 +119,8 @@ Principe de design : un verrouillage affiche un message qui explique pourquoi. I
 
 ### 4.3 Contrôle qualité
 
+Les sections 4.3 et 4.4 décrivent le contrôle qualité v2 et les liens de partage, qui ne sont pas encore sur `develop` : elles s'appliqueront quand ces PR y seront.
+
 Panneau « tester l'email avant envoi » : résultats, relance, envoi de test, ressources.
 
 - Tous les rôles voient les résultats, relancent, envoient un test et transforment un résultat en commentaire.
@@ -134,13 +136,13 @@ Aperçu public en lecture seule de la dernière version enregistrée, avec expir
 ### 4.5 Génération de texte par IA (sujet, préheader)
 
 - Utilisable dans l'éditeur par tous les rôles sauf `reviewer`.
-- Configurable par `company_admin` et `company_admin_tech` (voir 8.3).
+- Configurable par `company_admin_tech` seul : les AI features sont un réglage technique (voir 8.3).
 
 ## 5. Écrans d'administration
 
 ### 5.1 Sélecteur de rôle
 
-Une liste unique, dans l'ordre : Utilisateur, Rédacteur, Relecteur, Admin technique, Admin company. `super_admin` n'y figure pas : il se pose depuis l'écran des super admins. Le sélecteur ne le propose que si la personne l'a déjà.
+Une liste unique, dans l'ordre : Utilisateur, Rédacteur, Relecteur, Admin technique, Admin company. Elle ne propose que les rôles que la personne peut attribuer : un admin company n'y voit pas Admin technique. `super_admin` n'y figure pas : il se pose depuis l'écran des super admins. Le sélecteur ne le propose que si la personne l'a déjà.
 
 ### 5.2 Écran « Super admins »
 

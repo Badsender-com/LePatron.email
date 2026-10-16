@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapMutations, mapState } from 'vuex';
+import { mapMutations, mapState } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import {
   getCrmIntelligenceStatus,
@@ -7,7 +7,7 @@ import {
   getCrmIntelligenceEmbedUrl,
 } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
-import { IS_ADMIN, IS_BOOTSTRAP_ACCOUNT, USER } from '~/store/user';
+import { IS_BOOTSTRAP_ACCOUNT, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
@@ -121,9 +121,6 @@ export default {
     },
     ...mapState(USER, {
       userInfo: 'info',
-    }),
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
     }),
   },
   watch: {

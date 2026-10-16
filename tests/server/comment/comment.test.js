@@ -305,6 +305,52 @@ describe('Comment Service', () => {
     });
   });
 
+  // The request users as passport hands them over: a super admin reaches every
+  // company's mailings, anyone else its own company's.
+  describe('reaching the mailing, for each kind of user', () => {
+    const {
+      ALICE,
+      DAVE,
+      FRANK,
+      CLIENT_GROUP,
+      USERS,
+      actorFrom,
+    } = require('../../helpers/super-admin-fixtures.js');
+    const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
+
+    beforeEach(() => {
+      Comments.find = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
+      });
+    });
+
+    it.each([
+      ['a super admin', actor(ALICE)],
+      ['a member of the mailing company', actor(FRANK)],
+    ])('lets %s read the comments', async (_label, user) => {
+      const mailingId = mockObjectId();
+      mockMailingAccess(mailingId, new mongoose.Types.ObjectId(CLIENT_GROUP));
+
+      await expect(
+        commentService.getByMailing({ mailingId: mailingId.toString(), user })
+      ).resolves.toEqual([]);
+    });
+
+    it('refuses a member of another company', async () => {
+      const mailingId = mockObjectId();
+      mockMailingAccess(mailingId, new mongoose.Types.ObjectId(CLIENT_GROUP));
+
+      await expect(
+        commentService.getByMailing({
+          mailingId: mailingId.toString(),
+          user: actor(DAVE),
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
+    });
+  });
+
   describe('getByMailing', () => {
     it('should return all comments for a mailing', async () => {
       const mailingId = mockObjectId();
@@ -608,7 +654,6 @@ describe('Comment Service', () => {
         user: {
           _id: adminId,
           role: 'company_admin',
-          isGroupAdmin: true,
           group: { id: groupId.toString() },
         },
       });
@@ -633,7 +678,6 @@ describe('Comment Service', () => {
           user: {
             _id: mockObjectId(),
             role: 'company_admin',
-            isGroupAdmin: true,
             group: { id: mockObjectId().toString() },
           },
         })

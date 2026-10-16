@@ -8,11 +8,9 @@ const router = express.Router();
 const {
   GUARD_ADMIN,
   GUARD_GROUP_ADMIN,
-  GUARD_GROUP_ADMIN_OR_TECH,
   guard,
   GUARD_USER,
 } = require('../account/auth.guard.js');
-const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -39,7 +37,7 @@ router.get('/:groupId', guard(), GUARD_CAN_ACCESS_GROUP, groups.read);
 
 router.put(
   '/:groupId',
-  guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]),
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP,
   groups.update
 );
@@ -101,13 +99,13 @@ router.get(
 );
 router.post(
   '/:groupId/personalized-variables',
-  GUARD_GROUP_ADMIN_OR_TECH,
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP,
   groups.createOrUpdatePersonalizedVariables
 );
 router.delete(
   '/:groupId/personalized-variables/:variableId',
-  GUARD_GROUP_ADMIN_OR_TECH,
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP,
   groups.deletePersonalizedVariable
 );

@@ -11,6 +11,7 @@
 
 const fr = require('../../../public/lang/badsender-fr.js');
 const en = require('../../../public/lang/badsender-en.js');
+const { userOfRole } = require('../helpers/current-user.js');
 const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsender-widget-block-builder.js');
 const {
   TEMPLATE,
@@ -72,9 +73,9 @@ describe('composing a block from the canvas', () => {
 });
 
 describe('composing a block without structure rights', () => {
-  it.each(['writer', 'reviewer'])('is refused to a %s', () => {
+  it.each(['writer', 'reviewer'])('is refused to a %s', (role) => {
     const vm = createViewModel({ blockBuilderEnabled: true });
-    vm.currentUser = () => ({ canEditStructure: false, canEditContent: true });
+    vm.currentUser = userOfRole(role);
     const block = composedBlock();
 
     expect(vm.canComposeBlock(block)).toBe(false);

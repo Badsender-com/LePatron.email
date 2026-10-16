@@ -10,6 +10,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [AI-POLICIES.md](./AI_POLICIES.md)                           | PR structure, quality standards, anti-patterns          | AI agents                |
 | [UX-GUIDELINES.md](./agents/ux-guidelines.md)                | Design system, component reuse, Vuetify patterns        | AI agents, UI developers |
 | [CLAUDE.md](./CLAUDE.md)                                     | Claude Code commands and quick reference                | Claude Code users        |
+| [agents/rights-review.md](./agents/rights-review.md)         | Reviewing a diff's impact on every role                 | AI agents, reviewers     |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)                         | How to contribute to the project                        | Contributors             |
 | [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                            | Template developers      |
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |

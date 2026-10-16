@@ -18,14 +18,12 @@
 const ko = require('knockout');
 
 const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsender-widget-block-builder.js');
+const { userOfRole } = require('../helpers/current-user.js');
 
 // The jQuery UI button binding is not what is under test.
 ko.bindingHandlers.button = { init() {} };
 
-function renderPanel(
-  metadata,
-  currentUser = () => ({ canEditStructure: true })
-) {
+function renderPanel(metadata, currentUser = userOfRole('regular_user')) {
   const plugin = widgetBlockBuilder();
   const vm = {
     metadata,
@@ -62,7 +60,7 @@ describe('block builder widget, by role', () => {
   // must not appear in their place.
   it.each([
     ['not loaded yet', () => null],
-    ['without structure rights', () => ({ canEditStructure: false })],
+    ['without structure rights', userOfRole('writer')],
   ])('offers nothing to a user %s', (_label, currentUser) => {
     const { vm, toggle, button, message } = renderPanel(
       { blockBuilderEnabled: true },
@@ -140,7 +138,7 @@ describe('block builder widget', () => {
     const vm = {
       metadata: { blockBuilderEnabled: true },
       t: (key) => key,
-      currentUser: () => ({ canEditStructure: true }),
+      currentUser: userOfRole('regular_user'),
       builderHtml: ko.observable('<p>composed</p>'),
     };
     plugin.viewModel(vm);

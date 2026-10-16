@@ -152,6 +152,120 @@ describe('permissions', () => {
     });
   });
 
+  describe('reaching a group', () => {
+    const mongoose = require('mongoose');
+    const ofClientGroup = (role, _id) =>
+      actorFrom({ _id, name: role, role, _company: CLIENT_GROUP });
+    const ROLE_MEMBERS = [
+      ['a company admin', ofClientGroup('company_admin', ERIN)],
+      [
+        'a tech admin',
+        ofClientGroup('company_admin_tech', '507f1f77bcf86cd799439111'),
+      ],
+      ['a regular user', member],
+      ['a writer', ofClientGroup('writer', '507f1f77bcf86cd799439112')],
+      ['a reviewer', ofClientGroup('reviewer', '507f1f77bcf86cd799439113')],
+    ];
+
+    it.each([
+      ['a super admin', superAdmin],
+      [
+        'a super admin without a group of its own',
+        { ...superAdmin, group: undefined },
+      ],
+      ['the bootstrap account', bootstrap],
+    ])('lets %s reach every group, even a missing one', (_label, user) => {
+      expect(permissions.canAccessGroup(user, CLIENT_GROUP)).toBe(true);
+      expect(permissions.canAccessGroup(user, PLATFORM_GROUP)).toBe(true);
+      expect(permissions.canAccessGroup(user, undefined)).toBe(true);
+    });
+
+    it.each(ROLE_MEMBERS)(
+      'lets %s reach its own group only',
+      (_label, user) => {
+        expect(permissions.canAccessGroup(user, CLIENT_GROUP)).toBe(true);
+        expect(permissions.canAccessGroup(user, PLATFORM_GROUP)).toBe(false);
+      }
+    );
+
+    it.each([
+      ['an ObjectId', new mongoose.Types.ObjectId(CLIENT_GROUP)],
+      [
+        'a populated group',
+        { _id: new mongoose.Types.ObjectId(CLIENT_GROUP), name: 'A client' },
+      ],
+      ["the session's JSON", { id: CLIENT_GROUP, name: 'A client' }],
+    ])('reads the group from %s', (_label, group) => {
+      expect(permissions.canAccessGroup(member, group)).toBe(true);
+      expect(permissions.canAccessGroup(outsider, group)).toBe(false);
+    });
+
+    // One source for every check: the role. A record without the schema's
+    // virtuals is read the same as a request user.
+    it('reads every right from the role of a plain record', () => {
+      const superAdminRecord = { role: 'super_admin', _company: CLIENT_GROUP };
+      const companyAdminRecord = {
+        role: 'company_admin',
+        _company: CLIENT_GROUP,
+      };
+
+      expect(permissions.canAccessGroup(superAdminRecord, PLATFORM_GROUP)).toBe(
+        true
+      );
+      expect(permissions.canManageGroup(superAdminRecord, PLATFORM_GROUP)).toBe(
+        true
+      );
+      expect(permissions.canManageGroup(companyAdminRecord, CLIENT_GROUP)).toBe(
+        true
+      );
+      expect(
+        permissions.canManageGroup(companyAdminRecord, PLATFORM_GROUP)
+      ).toBe(false);
+    });
+
+    it('trusts no flag a user object carries without its role', () => {
+      const flagsOnly = { _company: 'x' };
+
+      expect(permissions.canAccessGroup(flagsOnly, PLATFORM_GROUP)).toBe(false);
+      expect(permissions.canManageGroup(flagsOnly, 'x')).toBe(false);
+    });
+
+    it("reads the user's group from a plain record too", () => {
+      const record = {
+        _id: FRANK,
+        role: 'regular_user',
+        _company: CLIENT_GROUP,
+      };
+
+      expect(permissions.canAccessGroup(record, CLIENT_GROUP)).toBe(true);
+      expect(permissions.canAccessGroup(record, PLATFORM_GROUP)).toBe(false);
+    });
+
+    it.each([
+      ['no group', undefined],
+      ['a null group', null],
+      ['a list of groups', [CLIENT_GROUP]],
+      ['a number', 1],
+    ])('lets nobody but a super admin reach %s', (_label, group) => {
+      expect(permissions.canAccessGroup(member, group)).toBe(false);
+      expect(permissions.canAccessGroup(companyAdmin, group)).toBe(false);
+    });
+
+    it('lets no one in without a user', () => {
+      expect(permissions.canAccessGroup(undefined, CLIENT_GROUP)).toBe(false);
+      expect(permissions.canAccessGroup(null, CLIENT_GROUP)).toBe(false);
+    });
+
+    it('lets no one reach a group without a group of its own', () => {
+      expect(
+        permissions.canAccessGroup(
+          { ...member, group: undefined },
+          CLIENT_GROUP
+        )
+      ).toBe(false);
+    });
+  });
+
   it("never reads a super admin's rights from its own group", () => {
     // A super admin belongs to the platform group (ADR 0002); its rights in a
     // client group must not depend on it.
@@ -159,5 +273,36 @@ describe('permissions', () => {
 
     expect(permissions.canManageGroup(withoutGroup, CLIENT_GROUP)).toBe(true);
     expect(permissions.canWriteWorkspace(withoutGroup, WORKSPACE)).toBe(true);
+  });
+});
+
+// What a role may do anywhere, read from its capabilities
+// (packages/shared/access/roles.js); the scope is checked apart.
+describe('capabilities', () => {
+  const {
+    CAPABILITIES,
+    ALL_CAPABILITIES,
+  } = require('../../../packages/shared/access/roles.js');
+
+  it('gives a super admin and the bootstrap account every capability', () => {
+    expect(permissions.capabilitiesOf(superAdmin)).toEqual(ALL_CAPABILITIES);
+    expect(permissions.capabilitiesOf(bootstrap)).toEqual(ALL_CAPABILITIES);
+  });
+
+  it("gives anyone else their role's", () => {
+    expect(permissions.can(member, CAPABILITIES.MAILING_DELETE)).toBe(true);
+    expect(permissions.can(member, CAPABILITIES.GROUP_MANAGE)).toBe(false);
+    expect(
+      permissions.can({ role: 'reviewer' }, CAPABILITIES.MAILING_EDIT_CONTENT)
+    ).toBe(false);
+  });
+
+  it('gives nothing without a user', () => {
+    expect(permissions.capabilitiesOf(undefined)).toEqual([]);
+    expect(permissions.can(null, CAPABILITIES.MAILING_COMMENT)).toBe(false);
+  });
+
+  it('throws on a misspelt capability, even for a super admin', () => {
+    expect(() => permissions.can(superAdmin, 'mailing.remove')).toThrow();
   });
 });

@@ -79,7 +79,6 @@ describe('the workspace tree of a super admin', () => {
     const superAdmin = {
       id: 'alice',
       role: 'super_admin',
-      isAdmin: true,
       group: { id: PLATFORM_GROUP },
       selectedGroup: { id: CLIENT_GROUP },
     };
@@ -112,7 +111,6 @@ describe('the workspace tree of a company admin or a regular user', () => {
     const companyAdmin = {
       id: 'carol',
       role: 'company_admin',
-      isGroupAdmin: true,
       group: { id: PLATFORM_GROUP },
       selectedGroup: { id: CLIENT_GROUP },
     };

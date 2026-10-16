@@ -16,6 +16,9 @@ const createError = require('http-errors');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
+const permissions = require('./permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
+const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
 
@@ -29,21 +32,29 @@ const {
 // so that every refusal costs the same time as a wrong password.
 const UNKNOWN_USER_HASH = bcrypt.hashSync('unknown-user', 10);
 
+// The bootstrap account: no document, no role. Its rights come from its
+// identity (account/bootstrap-account.js, account/permissions.js).
 const adminUser = Object.freeze({
-  isAdmin: true,
   id: config.admin.id,
   email: config.emailOptions.from,
   name: 'admin',
 });
 
+// The levels a route can ask for by role, as the capability each one holds.
+const CAPABILITY_OF_LEVEL = {
+  [Roles.GROUP_ADMIN]: CAPABILITIES.GROUP_MANAGE,
+  [Roles.GROUP_ADMIN_TECH]: CAPABILITIES.GROUP_MANAGE_TECH,
+  [Roles.SUPER_ADMIN]: CAPABILITIES.PLATFORM_MANAGE,
+};
+
 module.exports = {
   adminUser,
   guard,
+  GUARD_CAN,
   GUARD_USER: guard([Roles.REGULAR_USER]),
   GUARD_USER_REDIRECT: guard([Roles.REGULAR_USER], true),
   GUARD_GROUP_ADMIN: guard([Roles.GROUP_ADMIN]),
   GUARD_GROUP_ADMIN_TECH: guard([Roles.GROUP_ADMIN_TECH]),
-  GUARD_GROUP_ADMIN_OR_TECH: guard([Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH]),
   GUARD_ADMIN: guard([Roles.SUPER_ADMIN]),
   GUARD_ADMIN_REDIRECT: guard([Roles.SUPER_ADMIN], true),
 };
@@ -52,30 +63,32 @@ module.exports = {
 // GUARD MIDDLEWARE
 /// ///
 
+// Each guard says what it requires in `access`, read by the test that walks
+// every route which writes (tests/server/account/route-access.test.js): a
+// capability, or a signed-in user only, which is not enough to write.
+
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
 function guard(roles = [Roles.REGULAR_USER], redirect) {
-  return (req, res, next) => {
+  const anySignedInUser = roles.includes(Roles.REGULAR_USER);
+  const capabilities = roles
+    .map((role) => CAPABILITY_OF_LEVEL[role])
+    .filter(Boolean);
+
+  const middleware = (req, res, next) => {
     const { user } = req;
-
-    const isUserRoute = roles.includes(Roles.REGULAR_USER);
-    const isGroupUserRoute = roles.includes(Roles.GROUP_ADMIN);
-    const isGroupAdminTechRoute = roles.includes(Roles.GROUP_ADMIN_TECH);
-    const isAdminRoute = roles.includes(Roles.SUPER_ADMIN);
-
-    if (
-      (isAdminRoute && user?.isAdmin) ||
-      (isGroupUserRoute && (user?.isGroupAdmin || user?.isAdmin)) ||
-      (isGroupAdminTechRoute && (user?.isGroupAdminTech || user?.isAdmin)) ||
-      (isUserRoute && !!user)
-    ) {
-      return next();
-    }
+    const allowed =
+      !!user &&
+      (anySignedInUser ||
+        capabilities.some((capability) => permissions.can(user, capability)));
+    if (allowed) return next();
 
     redirect
       ? res.redirect('/account/login')
       : next(new createError.Unauthorized());
   };
+  middleware.access = anySignedInUser ? { signedIn: true } : { capabilities };
+  return middleware;
 }
 
 /**
@@ -156,7 +169,7 @@ passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
   if (id === config.admin.id) {
-    return done(null, { ...adminUser });
+    return done(null, permissions.withCapabilities({ ...adminUser }));
   }
 
   try {
@@ -173,7 +186,7 @@ passport.deserializeUser(async (id, done) => {
       return done(null, false);
     }
 
-    done(null, user.toJSON());
+    done(null, permissions.withCapabilities(user.toJSON()));
   } catch (err) {
     logger.error('[Passport] Error deserializing user:', err);
     done(null, false, err);

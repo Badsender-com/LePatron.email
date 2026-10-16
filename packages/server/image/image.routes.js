@@ -5,7 +5,8 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_USER } = require('../account/auth.guard.js');
+const { GUARD_USER, GUARD_CAN } = require('../account/auth.guard.js');
+const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const images = require('./image.controller.js');
 
 router.get(
@@ -27,10 +28,14 @@ router.get(
 );
 router.all('/gallery*', GUARD_USER);
 router.get('/gallery/:mongoId', images.list);
-router.post('/gallery/:mongoId', images.create);
-router.post('/gallery/:mongoId/from-url', images.createFromUrl);
+router.post('/gallery/:mongoId', GUARD_CAN(C.GALLERY_MANAGE), images.create);
+router.post(
+  '/gallery/:mongoId/from-url',
+  GUARD_CAN(C.GALLERY_MANAGE),
+  images.createFromUrl
+);
 router.get('/:imageName', images.read);
-router.delete('/:imageName', GUARD_USER, images.destroy);
+router.delete('/:imageName', GUARD_CAN(C.GALLERY_MANAGE), images.destroy);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

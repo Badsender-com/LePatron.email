@@ -10,8 +10,8 @@ import {
 } from '~/helpers/api-routes';
 import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { USER, ROLE } from '~/store/user';
-import { REVIEWER, WRITER } from '~/helpers/roles.js';
+import { USER, CAN } from '~/store/user';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { CloudDownload, Download, FolderInput, Trash2 } from 'lucide-vue';
 
 export default {
@@ -39,14 +39,13 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, { role: ROLE }),
-    // Same rules as the row actions in mailings-table.vue: reviewer organises
-    // nothing, writer does not delete.
+    ...mapGetters(USER, { can: CAN }),
+    // Same rules as the row actions in mailings-table.vue, and as the server.
     canOrganise() {
-      return this.role !== REVIEWER;
+      return this.can(CAPABILITIES.MAILING_ORGANIZE);
     },
     canDelete() {
-      return this.role !== REVIEWER && this.role !== WRITER;
+      return this.can(CAPABILITIES.MAILING_DELETE);
     },
     selectionLength() {
       return this.mailingsSelection.length;

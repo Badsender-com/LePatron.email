@@ -97,12 +97,12 @@
           </div>
           <div class="addblockbutton custom">
             <div class="buttons-container">
-              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+              <div data-bind="if: $root.managesCurrentGroup()">
                 <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
                   <span class="lucide lucide-trash-2"></span>
                 </a>
               </div>
-              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+              <div data-bind="if: $root.managesCurrentGroup()">
                 <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
                   <span class="lucide lucide-pencil"></span>
                 </a>
@@ -113,10 +113,10 @@
         </div>
       </div>
     </div>
-    <!-- ko if: !$root.currentUser()?.canEditStructure -->
-    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+    <!-- ko if: !$root.userCan('mailing.edit-structure') -->
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.isReadOnly() }">
       <span class="lucide lucide-info" aria-hidden="true"></span>
-      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-structure')">You don't have permission to edit this mailing's structure</span>
+      <span data-bind="text: $root.t($root.lockMessageKey('structure'))">You don't have permission to edit this mailing's structure</span>
     </div>
     <!-- /ko -->
   </div>
@@ -159,10 +159,10 @@
     <div id="tracking-params">
       <tracking-params-plugin />
     </div>
-    <!-- ko if: !$root.currentUser()?.canEditContent -->
-    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+    <!-- ko if: !$root.userCan('mailing.edit-content') -->
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.isReadOnly() }">
       <span class="lucide lucide-info" aria-hidden="true"></span>
-      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-content')">You don't have permission to edit this mailing's content</span>
+      <span data-bind="text: $root.t($root.lockMessageKey('content'))">You don't have permission to edit this mailing's content</span>
     </div>
     <!-- /ko -->
   </div>
@@ -183,10 +183,10 @@
       <!-- ko block: content --><!-- /ko -->
     </div>
     <!-- /ko -->
-    <!-- ko if: !$root.currentUser()?.canEditStyle -->
-    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.currentUser()?.isReadOnly }">
+    <!-- ko if: !$root.userCan('mailing.edit-style') -->
+    <div class="toolbox-readonly-overlay" data-bind="css: { 'toolbox-readonly-overlay--all': $root.isReadOnly() }">
       <span class="lucide lucide-info" aria-hidden="true"></span>
-      <span data-bind="text: $root.currentUser()?.isReadOnly ? $root.t('toolbox-readonly-all') : $root.t('toolbox-readonly-style')">You don't have permission to edit this mailing's style</span>
+      <span data-bind="text: $root.t($root.lockMessageKey('style'))">You don't have permission to edit this mailing's style</span>
     </div>
     <!-- /ko -->
 
@@ -377,10 +377,10 @@
         <!-- ko if: resolved -->
         <span class="comment-badge comment-badge-resolved"><span class="lucide lucide-check"></span> <span data-bind="text: $root.t('comments-resolved-badge')">Resolved</span></span>
         <!-- /ko -->
-        <!-- ko if: decision === 'approved' -->
+        <!-- ko if: $data.decision === 'approved' -->
         <span class="comment-badge comment-badge-decision comment-badge-approved"><span class="lucide lucide-check-check"></span> <span data-bind="text: $root.getDecisionLabel('approved')">Approved</span></span>
         <!-- /ko -->
-        <!-- ko if: decision === 'changes_requested' -->
+        <!-- ko if: $data.decision === 'changes_requested' -->
         <span class="comment-badge comment-badge-decision comment-badge-changes-requested"><span class="lucide lucide-x"></span> <span data-bind="text: $root.getDecisionLabel('changes_requested')">Changes requested</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'important' -->

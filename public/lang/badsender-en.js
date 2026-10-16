@@ -299,6 +299,9 @@ module.exports = {
     "You don't have permission to edit this mailing's content",
   'toolbox-readonly-style':
     "You don't have permission to edit this mailing's style",
+  'toolbox-rights-loading': 'Loading your permissions…',
+  'toolbox-rights-unavailable':
+    'Your permissions could not be loaded. Reload the page to edit this email.',
   'save-message-success-metadata-error':
     'The email was saved, but the email settings could not be: __reason__',
   // email metadata section of the Content tab
