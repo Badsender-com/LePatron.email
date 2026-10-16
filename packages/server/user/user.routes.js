@@ -4,8 +4,12 @@ const express = require('express');
 const createError = require('http-errors');
 const router = express.Router();
 
-const { GUARD_ADMIN, GUARD_USER, guard } = require('../account/auth.guard.js');
-const Roles = require('../account/roles.js');
+const {
+  GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
+  GUARD_USER,
+  guard,
+} = require('../account/auth.guard.js');
 const users = require('./user.controller.js');
 
 /// ///
@@ -22,7 +26,7 @@ router.put(
 router.get('/current-user', guard(), users.getCurrentUser);
 
 // Place endpoints protected by admin role below, else above
-router.all('*', guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]));
+router.all('*', GUARD_GROUP_ADMIN);
 
 router.get('', GUARD_ADMIN, users.list);
 router.get('/:userId', users.read);

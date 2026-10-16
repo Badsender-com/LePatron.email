@@ -3,12 +3,13 @@
 const { BadRequest } = require('http-errors');
 const SPACE_TYPE = require('../constant/space-type');
 const ERROR_CODES = require('../constant/error-codes.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 module.exports = {
   isObjectIdString,
   trimString,
   normalizeString,
-  isFromGroup,
   addGroupFilter,
   addMailQueryParamFilter,
   validatePaginationJSON,
@@ -33,19 +34,10 @@ function trimString(string) {
   return string.trim();
 }
 
-// TODO: check where it's used
-function isFromGroup(user, groupId) {
-  if (!user) return false;
-  if (user.isAdmin) return true;
-  // creations from admin doesn't gave a groupId
-  if (!groupId) return false;
-  return String(user._company) === String(groupId);
-}
-
 // users can access only same group content
 // admin everything
 function addGroupFilter(user, filter) {
-  if (user.isAdmin) return filter;
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) return filter;
   filter._company = user.group.id;
   return filter;
 }

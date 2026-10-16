@@ -11,6 +11,8 @@ const {
 
 const { TaxonomyItems, Mailings } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { TaxonomyLimits } = require('../constant/taxonomy-type.js');
 const {
   isObjectId,
@@ -50,11 +52,14 @@ function resolveCompanyId(user, requestedGroupId) {
 
   const ownGroupId = user.group?.id;
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     // Naming another company is refused rather than silently redirected to the
     // caller's own: a request that asks for something it may not have should not
     // quietly succeed on something else.
-    if (requestedGroupId && String(requestedGroupId) !== String(ownGroupId)) {
+    if (
+      requestedGroupId &&
+      !permissions.canAccessGroup(user, String(requestedGroupId))
+    ) {
       throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
     }
     if (!ownGroupId) {
@@ -238,7 +243,7 @@ async function findScopedItem({ user, itemId }) {
 
   // A super admin edits across companies, but everyone else is bounded here and
   // not only by the route guard.
-  if (!user?.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     query._company = resolveCompanyId(user);
   }
 

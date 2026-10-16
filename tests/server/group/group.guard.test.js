@@ -45,3 +45,53 @@ describe('GUARD_CAN_ACCESS_GROUP', () => {
     expect(err.status).toBe(401);
   });
 });
+
+// The request users as passport hands them over, on the group a request names
+// in its path, its body or its query.
+describe('the group guards, for each kind of user', () => {
+  const guards = require('../../../packages/server/group/group.guard');
+  const {
+    ALICE,
+    DAVE,
+    FRANK,
+    CLIENT_GROUP,
+    USERS,
+    actorFrom,
+    bootstrap,
+  } = require('../../helpers/super-admin-fixtures.js');
+  const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
+
+  const run = (guard, req) =>
+    new Promise((resolve) => guard(req, {}, (err) => resolve(err)));
+
+  describe.each([
+    ['GUARD_CAN_ACCESS_GROUP', 'params'],
+    ['GUARD_CAN_ACCESS_GROUP_FROM_BODY', 'body'],
+    ['GUARD_CAN_ACCESS_GROUP_FROM_QUERY', 'query'],
+  ])('%s', (name, source) => {
+    it.each([
+      ['a super admin', actor(ALICE)],
+      ['the bootstrap account', bootstrap],
+      ['a member of the group', actor(FRANK)],
+    ])('lets %s through', async (_label, user) => {
+      const err = await run(guards[name], {
+        user,
+        [source]: { groupId: CLIENT_GROUP },
+      });
+      expect(err).toBeUndefined();
+    });
+
+    it('refuses a member of another group', async () => {
+      const err = await run(guards[name], {
+        user: actor(DAVE),
+        [source]: { groupId: CLIENT_GROUP },
+      });
+      expect(err.status).toBe(401);
+    });
+
+    it('refuses a member when the request names no group', async () => {
+      const err = await run(guards[name], { user: actor(FRANK) });
+      expect(err.status).toBe(401);
+    });
+  });
+});

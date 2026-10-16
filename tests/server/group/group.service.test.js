@@ -75,3 +75,36 @@ describe('groupService.findFullById — L2 escape hatch for callers that need fu
     });
   });
 });
+
+describe('groupService.checkIfUserIsAuthorizedToAccessGroup', () => {
+  const {
+    ALICE,
+    DAVE,
+    FRANK,
+    CLIENT_GROUP,
+    USERS,
+    actorFrom,
+  } = require('../../helpers/super-admin-fixtures.js');
+  const ERROR_CODES = require('../../../packages/server/constant/error-codes');
+  const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
+  const check = (user) =>
+    groupService.checkIfUserIsAuthorizedToAccessGroup({
+      user,
+      groupId: CLIENT_GROUP,
+    });
+
+  it('lets a super admin reach any group', async () => {
+    await expect(check(actor(ALICE))).resolves.toBeUndefined();
+  });
+
+  it('lets a member reach its own group', async () => {
+    await expect(check(actor(FRANK))).resolves.toBeUndefined();
+  });
+
+  it('refuses a member of another group', async () => {
+    await expect(check(actor(DAVE))).rejects.toMatchObject({
+      status: 401,
+      message: ERROR_CODES.FORBIDDEN_PROFILE_ACCESS,
+    });
+  });
+});

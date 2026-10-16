@@ -37,8 +37,8 @@ async function sendTestMail({
   let adresses = rcpt.split(';');
 
   if (!!emailsGroupId && typeof emailsGroupId !== 'undefined') {
-    const emailGroups = await emailsGroupService.getEmailsGroup({
-      userGroupId: user.group?.id,
+    const emailGroups = await emailsGroupService.getEmailsGroupOfGroup({
+      groupId: user.group?.id,
       emailsGroupId,
     });
 

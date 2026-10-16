@@ -1,7 +1,11 @@
 'use strict';
 
 const express = require('express');
-const { guard, GUARD_CAN } = require('../account/auth.guard.js');
+const {
+  guard,
+  GUARD_CAN,
+  GUARD_GROUP_ADMIN,
+} = require('../account/auth.guard.js');
 const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const {
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
@@ -12,7 +16,6 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const personalizedBlocksController = require('./personalized-block-controller.js');
-const Roles = require('../account/roles.js');
 
 // Get list of personalized blocks
 router.get(
@@ -33,7 +36,7 @@ router.post(
 // Update a personalized block by ID
 router.put(
   '/:id',
-  guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   personalizedBlocksController.updatePersonalizedBlock
 );
@@ -41,7 +44,7 @@ router.put(
 // Delete a personalized block by ID
 router.delete(
   '/:id',
-  guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
   personalizedBlocksController.deletePersonalizedBlock
 );

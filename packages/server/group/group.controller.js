@@ -268,7 +268,7 @@ async function deleteGroup(req, res) {
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new NotFound();
   }
   // Deleting the group would delete its super admins with it (ADR 0002).
@@ -464,7 +464,7 @@ async function readColorScheme(req, res) {
   } = req;
   if (!groupId) throw new NotFound();
 
-  if (!user.isAdmin && user.group.id?.toString() !== groupId) {
+  if (!permissions.canAccessGroup(user, groupId)) {
     throw new NotFound();
   }
 
@@ -550,7 +550,9 @@ async function update(req, res) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
   }
 
-  if (user.isGroupAdmin) {
+  // Anyone but a super admin: the route lets a company admin of the group
+  // through, and no one else.
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
       'colorScheme',

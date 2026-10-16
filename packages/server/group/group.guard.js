@@ -1,61 +1,19 @@
+'use strict';
+
 const createError = require('http-errors');
+const permissions = require('../account/permissions.js');
 
-const guardCanAccessGroup = () => {
+// The group a request names, in its path, its body or its query: a super admin
+// reaches every group, anyone else its own (account/permissions.js).
+const guardCanAccessGroupFrom = (source) => {
   return (req, res, next) => {
     const { user } = req;
     if (!user) {
       return next(new createError.Unauthorized());
     }
 
-    // We bypass the check if the user is a super admin
-    if (user.isAdmin) {
-      return next();
-    }
-    const { groupId } = req.params;
-    const { group } = user;
-    if (group.id === groupId) {
-      return next();
-    }
-    next(new createError.Unauthorized());
-  };
-};
-
-const guardCanAccessGroupFromBody = () => {
-  return (req, res, next) => {
-    const { user } = req;
-    if (!user) {
-      return next(new createError.Unauthorized());
-    }
-
-    // We bypass the check if the user is a super admin
-    if (user.isAdmin) {
-      return next();
-    }
-    const { groupId } = req.body; // Get groupId from the request body
-    const { group } = user;
-
-    if (group.id === groupId) {
-      return next();
-    }
-    next(new createError.Unauthorized());
-  };
-};
-
-const guardCanAccessGroupFromQuery = () => {
-  return (req, res, next) => {
-    const { user } = req;
-    if (!user) {
-      return next(new createError.Unauthorized());
-    }
-
-    // We bypass the check if the user is a super admin
-    if (user.isAdmin) {
-      return next();
-    }
-    const { groupId } = req.query; // Get groupId from the request query
-    const { group } = user;
-
-    if (group.id === groupId) {
+    const { groupId } = req[source] || {};
+    if (permissions.canAccessGroup(user, groupId)) {
       return next();
     }
     next(new createError.Unauthorized());
@@ -63,7 +21,7 @@ const guardCanAccessGroupFromQuery = () => {
 };
 
 module.exports = {
-  GUARD_CAN_ACCESS_GROUP: guardCanAccessGroup(),
-  GUARD_CAN_ACCESS_GROUP_FROM_BODY: guardCanAccessGroupFromBody(),
-  GUARD_CAN_ACCESS_GROUP_FROM_QUERY: guardCanAccessGroupFromQuery(),
+  GUARD_CAN_ACCESS_GROUP: guardCanAccessGroupFrom('params'),
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY: guardCanAccessGroupFrom('body'),
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY: guardCanAccessGroupFrom('query'),
 };

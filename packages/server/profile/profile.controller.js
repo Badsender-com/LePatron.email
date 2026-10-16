@@ -3,6 +3,8 @@ const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
 const mailingService = require('../mailing/mailing.service');
 const groupService = require('../group/group.service');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const MODE_TYPE = require('../constant/mode-type');
 const { NotFound, BadRequest } = require('http-errors');
 
@@ -493,7 +495,7 @@ async function readProfileForAdmin(req, res) {
   const { user, params } = req;
   const { profileId } = params;
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
   await profileService.checkIfUserIsAuthorizedToAccessProfile({

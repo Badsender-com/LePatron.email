@@ -4,6 +4,8 @@ const { Groups, Users } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
+const permissions = require('./permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 // The selected group (ADR 0002, amended): the group a super admin works in,
 // shared by the modules and the settings. A super admin stores it on its
@@ -52,7 +54,7 @@ async function resolveSelectedGroup(user, session) {
     return findGroupSummary(session && session.selectedGroupId);
   }
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     return user.group
       ? summaryOf({ ...user.group, _id: user.group.id || user.group._id })
       : null;
@@ -106,7 +108,12 @@ async function attachSelectedGroup(req, res, next) {
  */
 async function selectGroup(req, groupId) {
   const selectedGroup = await findGroupSummary(groupId);
-  if (!selectedGroup || !req.user || !req.user.isAdmin) return selectedGroup;
+  if (
+    !selectedGroup ||
+    !permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)
+  ) {
+    return selectedGroup;
+  }
   if (isBootstrapAccount(req.user)) {
     req.session.selectedGroupId = selectedGroup.id;
   } else {

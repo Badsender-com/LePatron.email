@@ -13,11 +13,13 @@ const {
 } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
+const permissions = require('../account/permissions.js');
 
 module.exports = {
   listEmailsGroups,
   createEmailsGroup,
   getEmailsGroup,
+  getEmailsGroupOfGroup,
   deleteEmailsGroup,
   editEmailsGroup,
 };
@@ -44,7 +46,7 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
 
   // Only super admins may target a group different from their own.
   // Without this check, any group_admin could create an emails-group in another tenant.
-  if (!user.isAdmin && groupId && groupId !== user.group?.id) {
+  if (groupId && !permissions.canAccessGroup(user, groupId)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
   }
 
@@ -66,15 +68,30 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
   });
 }
 
-async function getEmailsGroup({ emailsGroupId, userGroupId, isAdmin }) {
+async function getEmailsGroup({ emailsGroupId, user }) {
   logger.log('emailsGroupService:getEmailsGroup');
   await checkIfEmailGroupExist(emailsGroupId);
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  // Admin users can access any emails group
-  // Regular users can only access their own group's emails groups
-  if (!isAdmin && emailsGroup._company?.toString() !== userGroupId) {
+  if (!permissions.canAccessGroup(user, emailsGroup._company)) {
+    throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
+  }
+
+  return emailsGroup;
+}
+
+/**
+ * An emails group of one given group only, whoever asks: the test send reads
+ * the list among the sender's own group's.
+ */
+async function getEmailsGroupOfGroup({ emailsGroupId, groupId }) {
+  logger.log('emailsGroupService:getEmailsGroupOfGroup');
+  await checkIfEmailGroupExist(emailsGroupId);
+
+  const emailsGroup = await EmailsGroups.findById(emailsGroupId);
+
+  if (!groupId || emailsGroup._company?.toString() !== String(groupId)) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -93,9 +110,7 @@ async function editEmailsGroup({ emailsGroupId, name, emails, user }) {
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  // Admin users can edit any emails group
-  // Regular users can only edit their own group's emails groups
-  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
+  if (!permissions.canAccessGroup(user, emailsGroup._company)) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -112,9 +127,7 @@ async function deleteEmailsGroup({ emailsGroupId, user }) {
   logger.log('emailsGroupService:deleteEmailsGroup');
   const emailsGroup = await findOne(emailsGroupId);
 
-  // Admin users can delete any emails group
-  // Regular users can only delete their own group's emails groups
-  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
+  if (!permissions.canAccessGroup(user, emailsGroup._company)) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
