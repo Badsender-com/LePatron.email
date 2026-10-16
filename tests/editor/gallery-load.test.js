@@ -105,3 +105,48 @@ describe('loading the gallery list', () => {
     );
   });
 });
+
+// What a caller outside the panel needs, the pencil on an image of the email
+// first: the list, whether or not the gallery was ever opened in this editor.
+describe('waiting for a loaded gallery', () => {
+  it('answers the list at once when it is already loaded', async () => {
+    ajaxResolving({ files: [{ name: 'a.png' }] });
+    viewModel.loadMailingGallery();
+    const calls = jest.fn();
+    $.ajax = calls;
+
+    await expect(viewModel.loadedGallery('mailing')).resolves.toEqual([
+      { name: 'a.png' },
+    ]);
+    expect(calls).not.toHaveBeenCalled();
+  });
+
+  it('loads a gallery never opened, then answers its files', async () => {
+    ajaxResolving({ files: [{ name: 'a.png' }, { name: 'b.png' }] });
+
+    const files = await viewModel.loadedGallery('template');
+
+    expect(ajaxArgs.url).toBe(URL.template);
+    expect(files.map((file) => file.name)).toEqual(['b.png', 'a.png']);
+    expect(viewModel.templateGalleryStatus()).toBe(2);
+  });
+
+  it('waits for a load already under way rather than starting another', async () => {
+    const calls = jest.fn();
+    $.ajax = calls;
+    viewModel.mailingGalleryStatus('loading');
+
+    const pending = viewModel.loadedGallery('mailing');
+    viewModel.mailingGallery([{ name: 'a.png' }]);
+    viewModel.mailingGalleryStatus(1);
+
+    await expect(pending).resolves.toEqual([{ name: 'a.png' }]);
+    expect(calls).not.toHaveBeenCalled();
+  });
+
+  it('answers null when the load fails', async () => {
+    ajaxFailing();
+
+    await expect(viewModel.loadedGallery('mailing')).resolves.toBeNull();
+  });
+});

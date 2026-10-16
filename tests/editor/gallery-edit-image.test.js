@@ -43,10 +43,18 @@ const MARKUP = `
 let viewModel;
 let added;
 
-function makeViewModel(mailing = [], template = []) {
+// `loaded: false` is an editor where neither gallery was opened yet: the
+// observables are empty until something asks for them to be loaded.
+function makeViewModel(mailing = [], template = [], { loaded = true } = {}) {
+  const lists = { mailing, template };
+  const shown = loaded ? { ...lists } : { mailing: [], template: [] };
   return {
-    mailingGallery: () => mailing,
-    templateGallery: () => template,
+    mailingGallery: () => shown.mailing,
+    templateGallery: () => shown.template,
+    loadedGallery: jest.fn((type) => {
+      shown[type] = lists[type];
+      return Promise.resolve(shown[type]);
+    }),
     currentUser: userOfRole('regular_user'),
     notifier: { success: jest.fn(), error: jest.fn() },
     t: (key) => key,
@@ -244,9 +252,52 @@ describe('editGalleryImage — naming the copy', () => {
     expect(added[0].data.files[0].name).toBe('photo (2).jpg');
   });
 
-  it('falls back to the stored name when the gallery knows nothing of it', async () => {
+  // The gallery loads the first time it is opened, and the pencil is most
+  // often used before that.
+  it('names the copy after the label when the gallery was never opened', async () => {
+    viewModel = makeViewModel(
+      [
+        { name: PNG, label: 'mon visuel.png' },
+        { name: 'x-2.png', label: 'mon visuel (2).png' },
+      ],
+      [],
+      { loaded: false }
+    );
+    editImagePlugin(viewModel);
+
     await viewModel.editImage(() => PNG, panel('mailing'));
 
+    expect(added[0].data.files[0].name).toBe('mon visuel (3).png');
+    expect(viewModel.loadedGallery).not.toHaveBeenCalledWith('template');
+  });
+
+  // an image dragged in from the template's gallery
+  it('finds the label in the template gallery too', async () => {
+    viewModel = makeViewModel([], [{ name: PNG, label: 'bandeau.png' }], {
+      loaded: false,
+    });
+    editImagePlugin(viewModel);
+
+    await viewModel.editImage(() => PNG, panel('mailing'));
+
+    expect(added[0].data.files[0].name).toBe('bandeau (2).png');
+  });
+
+  it('falls back to the stored name when no gallery knows the image', async () => {
+    await viewModel.editImage(() => PNG, panel('mailing'));
+
+    expect(added[0].data.files[0].name).toBe(
+      '507f1f77bcf86cd799439011-aaa (2).png'
+    );
+  });
+
+  // the load already said it failed; the editor still opens
+  it('still opens when a gallery cannot be loaded', async () => {
+    viewModel.loadedGallery = jest.fn(() => Promise.resolve(null));
+
+    const opened = await viewModel.editImage(() => PNG, panel('mailing'));
+
+    expect(opened).toBe(true);
     expect(added[0].data.files[0].name).toBe(
       '507f1f77bcf86cd799439011-aaa (2).png'
     );

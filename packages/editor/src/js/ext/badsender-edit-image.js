@@ -37,6 +37,8 @@ const FETCH_TIMEOUT_MS = 15000;
 // makes the pencil appear on an image block (tmpl/img-wysiwyg.tmpl.html). An
 // image block can only ever upload to the mailing gallery.
 const BLOCK_GALLERY_TYPE = 'mailing';
+// where the pencil looks for the label of the image it edits, in this order
+const GALLERY_TYPES = ['mailing', 'template'];
 
 function editImagePlugin(viewModel) {
   /**
@@ -48,12 +50,18 @@ function editImagePlugin(viewModel) {
    */
   viewModel.editImage = function editImage(src, domElement) {
     const storedName = storedNameOf(typeof src === 'function' ? src() : src);
-    return openEditorOn(viewModel, {
-      input: findUploadInput(domElement),
-      storedName,
-      type: BLOCK_GALLERY_TYPE,
-      sourceLabel: labelInGallery(viewModel, BLOCK_GALLERY_TYPE, storedName),
-    });
+    const input = findUploadInput(domElement);
+    if (!mayOpenEditorOn(viewModel, storedName, input)) {
+      return Promise.resolve(false);
+    }
+    return labelOfStoredImage(viewModel, storedName).then((sourceLabel) =>
+      handOver(viewModel, {
+        input,
+        storedName,
+        type: BLOCK_GALLERY_TYPE,
+        sourceLabel,
+      })
+    );
   };
 
   /**
@@ -71,8 +79,12 @@ function editImagePlugin(viewModel) {
     type,
     panelElement
   ) {
-    return openEditorOn(viewModel, {
-      input: findUploadInput(panelElement),
+    const input = findUploadInput(panelElement);
+    if (!mayOpenEditorOn(viewModel, file.name, input)) {
+      return Promise.resolve(false);
+    }
+    return handOver(viewModel, {
+      input,
       storedName: file.name,
       type,
       sourceLabel: file.label || file.name,
@@ -80,14 +92,16 @@ function editImagePlugin(viewModel) {
   };
 }
 
-function openEditorOn(viewModel, { input, storedName, type, sourceLabel }) {
+// Every reason not to open the editor, each one reported: a click that does
+// nothing at all is the failure nobody can describe.
+function mayOpenEditorOn(viewModel, storedName, input) {
   // Saving uploads a copy to the gallery, which the server refuses without
   // gallery.manage. The thumbnail and the pencil are not drawn without it;
   // refusing here as well means a new way in cannot open an editor whose
   // save can only fail.
   if (!userCan(viewModel, CAPABILITIES.GALLERY_MANAGE)) {
     viewModel.notifier.error(viewModel.t('gallery-edit-image-forbidden'));
-    return Promise.resolve(false);
+    return false;
   }
 
   // GIF and SVG never reach the editor: it flattens what it opens. The
@@ -97,17 +111,19 @@ function openEditorOn(viewModel, { input, storedName, type, sourceLabel }) {
   // silent no-op: the editor would seem not to open and nothing would appear.
   if (!isEditableImage({ name: storedName })) {
     viewModel.notifier.error(viewModel.t('gallery-edit-image-unsupported'));
-    return Promise.resolve(false);
+    return false;
   }
 
+  // the panel is open but its upload zone is not in the DOM
   if (!input || !input.length) {
-    // Nothing to hand the file to — the panel is open but its upload zone is
-    // not in the DOM. Report it rather than failing silently on a click.
     console.warn('[gallery] no upload input to open the image editor with');
     viewModel.notifier.error(viewModel.t('gallery-edit-image-fail'));
-    return Promise.resolve(false);
+    return false;
   }
+  return true;
+}
 
+function handOver(viewModel, { input, storedName, type, sourceLabel }) {
   // Through `labelForUpload` first, so the copy carries the extension of the
   // file it is a copy of. A label is free text — an image renamed to
   // "clepsidre" has no extension at all — and the upload the copy travels on
@@ -186,14 +202,28 @@ function labelsIn(viewModel, type) {
   return galleryOf(viewModel, type).map((file) => file.label || file.name);
 }
 
-// The block pencil only knows the technical name. Naming the copy after
-// `507f…-a1b2.png` would be a regression now that the gallery shows labels, so
-// the label of the image being edited is looked up where it is kept.
-function labelInGallery(viewModel, type, storedName) {
-  const found = galleryOf(viewModel, type).find(
-    (file) => file.name === storedName
+// The pencil knows only the stored name, and a copy named after it would read
+// `507f…-a1b2 (2).png` in a gallery that shows labels. The label is kept in
+// the gallery the image came from — the email's, or the template's for an
+// image dragged from there — and a gallery is loaded only once its pane has
+// been opened, which the pencil does not wait for. The stored name is unique:
+// the first gallery holding it is the one.
+function labelOfStoredImage(viewModel, storedName) {
+  return GALLERY_TYPES.reduce(
+    (search, type) =>
+      search.then((found) => found || fileIn(viewModel, type, storedName)),
+    Promise.resolve(null)
+  ).then((found) => (found && found.label) || storedName);
+}
+
+function fileIn(viewModel, type, storedName) {
+  const loaded =
+    typeof viewModel.loadedGallery === 'function'
+      ? viewModel.loadedGallery(type)
+      : Promise.resolve(galleryOf(viewModel, type));
+  return loaded.then((files) =>
+    (files || []).find((file) => file.name === storedName)
   );
-  return (found && found.label) || storedName;
 }
 
 module.exports = editImagePlugin;

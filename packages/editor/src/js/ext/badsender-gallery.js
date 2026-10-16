@@ -30,8 +30,10 @@ function galleryLoader(opts) {
           .done(function (data) {
             for (var i = 0; i < data.files.length; i++)
               data.files[i] = viewModel.remoteFileProcessor(data.files[i]);
-            status(data.files.length);
+            // the list before the status: whoever waits on the status
+            // (`loadedGallery`) reads the list as soon as it changes
             gallery(data.files.reverse());
+            status(data.files.length);
           })
           .fail(function () {
             // back to `false`, so the "Load gallery" button returns and the
@@ -68,8 +70,31 @@ function galleryLoader(opts) {
       };
     }
 
-    viewModel.loadMailingGallery = loadGallery('mailing');
-    viewModel.loadTemplateGallery = loadGallery('template');
+    var loaders = {
+      mailing: loadGallery('mailing'),
+      template: loadGallery('template'),
+    };
+    viewModel.loadMailingGallery = loaders.mailing;
+    viewModel.loadTemplateGallery = loaders.template;
+
+    // The list of a gallery once it is loaded: at once when it is, after the
+    // load under way, or after starting one. A gallery loads the first time
+    // its pane opens, and some callers (the pencil on an image of the email)
+    // need it before that. `null` when the load fails, which the loader has
+    // already reported.
+    viewModel.loadedGallery = function (type) {
+      var gallery = viewModel[type + 'Gallery'];
+      var status = viewModel[type + 'GalleryStatus'];
+      if (typeof status() === 'number') return Promise.resolve(gallery());
+      return new Promise(function (resolve) {
+        var settled = status.subscribe(function (value) {
+          if (value === 'loading') return;
+          settled.dispose();
+          resolve(typeof value === 'number' ? gallery() : null);
+        });
+        if (status() === false) loaders[type]();
+      });
+    };
     viewModel.loadMailingImage = loadImage('mailing');
     viewModel.loadTemplateImage = loadImage('template');
 
