@@ -46,7 +46,8 @@ describe('imageService.renameLabel', () => {
     expect(Galleries.findOneAndUpdate).toHaveBeenCalledWith(
       { creationOrWireframeId: MONGO_ID, 'files.name': IMAGE_NAME },
       { $set: { 'files.$.label': 'nouveau.jpg' } },
-      { new: true }
+      // only the renamed image comes back, not the whole gallery
+      { new: true, projection: { files: { $elemMatch: { name: IMAGE_NAME } } } }
     );
     // no read-modify-save: a concurrent upload can't be overwritten
     expect(Galleries.findOne).not.toHaveBeenCalled();

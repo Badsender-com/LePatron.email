@@ -52,11 +52,15 @@ async function assertGalleryOwnership(user, creationOrWireframeId) {
 
 // Like every other write here, a single atomic update: the positional operator
 // renames the matched file in place, so a concurrent upload can't be lost.
+// Only the renamed file is sent back: the whole gallery, thousands of images
+// for some, made a rename five times slower for one line of response. The
+// positional projection would be shorter, but MongoDB refuses it alongside
+// `new: true`.
 async function renameLabel(mongoId, imageName, newLabel) {
   const gallery = await Galleries.findOneAndUpdate(
     { creationOrWireframeId: mongoId, 'files.name': imageName },
     { $set: { 'files.$.label': newLabel } },
-    { new: true }
+    { new: true, projection: { files: { $elemMatch: { name: imageName } } } }
   );
   if (gallery) return gallery;
 
