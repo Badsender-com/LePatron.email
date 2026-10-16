@@ -26,12 +26,41 @@ const {
 
 const sameId = (a, b) => a != null && b != null && String(a) === String(b);
 
+const isObjectId = (value) =>
+  value._bsontype === 'ObjectID' || value._bsontype === 'ObjectId';
+
+/**
+ * The id of a group or of any document, whatever shape it comes in: a string,
+ * an ObjectId, a populated document, or the session's JSON (`{ id }`).
+ * Anything else (an array, a number, a plain object) is no id.
+ *
+ * @param {*} value
+ * @returns {string|null}
+ */
+function idOf(value) {
+  if (value == null) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value !== 'object' || Array.isArray(value)) return null;
+  if (isObjectId(value)) return value.toHexString();
+  if (value._id != null && value._id !== value) return idOf(value._id);
+  if (typeof value.id === 'string') return value.id;
+  // Another ObjectId implementation: its own `toString` gives the id.
+  if (value.toString !== Object.prototype.toString) return String(value);
+  return null;
+}
+
 function hasEveryRight(user) {
   return !!user && (user.isAdmin === true || isBootstrapAccount(user));
 }
 
+// `group` is an alias of `_company` (user.schema.js): the session's JSON
+// carries both, a plain record only the latter.
+function groupIdOfUser(user) {
+  return user ? idOf(user.group) || idOf(user._company) : null;
+}
+
 function belongsTo(user, groupId) {
-  return sameId(user && user.group && user.group.id, groupId);
+  return sameId(groupIdOfUser(user), idOf(groupId));
 }
 
 function isCompanyAdminOf(user, groupId) {
@@ -116,6 +145,20 @@ function canManageUser(actor, target) {
   return canGrantRole(actor, role);
 }
 
+/**
+ * Whether the request may reach what a group holds: a super admin and the
+ * bootstrap account reach every group, anyone else its own. What the user
+ * may do there is asked apart (`can`, `canManageGroup`).
+ *
+ * @param {Object} user the request user
+ * @param {string|Object} groupId the group, as an id, an ObjectId or a
+ *   populated document; none is reached by nobody but a super admin
+ * @returns {boolean}
+ */
+function canAccessGroup(user, groupId) {
+  return hasEveryRight(user) || belongsTo(user, groupId);
+}
+
 function canManageGroup(user, groupId) {
   return hasEveryRight(user) || isCompanyAdminOf(user, groupId);
 }
@@ -153,6 +196,7 @@ module.exports = {
   withCapabilities,
   canGrantRole,
   canManageUser,
+  canAccessGroup,
   canManageGroup,
   canModerateComments,
   canReadWorkspace,
