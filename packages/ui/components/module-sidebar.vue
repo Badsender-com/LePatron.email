@@ -1,7 +1,8 @@
 <script>
 import { mapGetters } from 'vuex';
-import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
+import { USER, CAN, IS_CONNECTED } from '~/store/user.js';
 import BsSidebarItem from '~/components/sidebar-item.vue';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 
 export default {
   name: 'BsModuleSidebar',
@@ -9,14 +10,19 @@ export default {
   computed: {
     ...mapGetters(USER, {
       isConnected: IS_CONNECTED,
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
+      can: CAN,
     }),
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
+    canManageGroup() {
+      return this.can(CAPABILITIES.GROUP_MANAGE);
+    },
     emailBuilderRoute() {
       return '/mailings';
     },
     settingsRoute() {
-      if (this.isAdmin) {
+      if (this.canManagePlatform) {
         return '/groups';
       }
       const groupId = this.$store.state.user?.info?.group?.id;
@@ -66,7 +72,7 @@ export default {
     <div class="sidebar-spacer" />
 
     <!-- SETTINGS (admin only) -->
-    <template v-if="isAdmin || isGroupAdmin">
+    <template v-if="canManageGroup">
       <div class="sidebar-divider" />
       <div class="sidebar-section">
         <bs-sidebar-item

@@ -41,10 +41,16 @@ jest.mock(
   () => ({ listInvocations: jest.fn(), getInvocation: jest.fn() })
 );
 
-// Stub the auth guard so we can flip req.user.isAdmin from the test.
+// Stub the auth guard, on the real rule, so the test picks the user.
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {
-    if (req.user && req.user.isAdmin) return next();
+    // The real rule: the platform capability, read from the role or the
+    // bootstrap account's identity.
+    const permissions = require('../../../../packages/server/account/permissions.js');
+    const {
+      CAPABILITIES,
+    } = require('../../../../packages/shared/access/roles.js');
+    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
     return res.status(401).json({ message: 'Unauthorized' });
   },
 }));
@@ -65,7 +71,9 @@ function makeApp({ asAdmin = true } = {}) {
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => {
-    req.user = asAdmin ? { isAdmin: true, id: 'admin' } : { id: 'someone' };
+    req.user = asAdmin
+      ? { id: 'admin', role: 'super_admin' }
+      : { id: 'someone', role: 'regular_user' };
     next();
   });
   app.use('/api/ai-skills', skillsRouter);

@@ -17,13 +17,13 @@ const template = { name: 'Newsletter', group: CLIENT_GROUP };
 
 const superAdmin = {
   id: 'alice',
-  isAdmin: true,
+  role: 'super_admin',
   group: { id: PLATFORM_GROUP },
 };
 const member = { id: 'frank', group: { id: CLIENT_GROUP } };
 const companyAdminOfAnotherGroup = {
   id: 'carol',
-  isGroupAdmin: true,
+  role: 'company_admin',
   group: { id: PLATFORM_GROUP },
 };
 

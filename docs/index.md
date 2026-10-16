@@ -10,6 +10,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [AI-POLICIES.md](./AI_POLICIES.md)                           | PR structure, quality standards, anti-patterns          | AI agents                |
 | [UX-GUIDELINES.md](./agents/ux-guidelines.md)                | Design system, component reuse, Vuetify patterns        | AI agents, UI developers |
 | [CLAUDE.md](./CLAUDE.md)                                     | Claude Code commands and quick reference                | Claude Code users        |
+| [agents/rights-review.md](./agents/rights-review.md)         | Reviewing a diff's impact on every role                 | AI agents, reviewers     |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)                         | How to contribute to the project                        | Contributors             |
 | [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                            | Template developers      |
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |
@@ -107,6 +108,15 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 - **README.md** - Testing strategy
 - **{feature}-testing-checklist.md** - Manual QA checklists
 - **integration/** - Integration test docs
+
+### Design & Conception Plans
+
+#### /docs/plans/
+
+Pre-implementation design docs for larger features — audit findings, target model, phased increments. Written before code, updated as decisions are made.
+
+- **[rbac-refonte.md](./plans/rbac-refonte.md)** - Add new roles (company_admin_tech, reviewer, writer). The non-logged-in commenting viewer (#1104), team management (#1100), audit log (#1102) and granular permissions (#1103) are split into separate issues; persisted super_admin is handled and shipped by Héloïse (ADR 0002, #1153) and takes precedence
+- Other entries: editor-modals-modernization.md, quality-control-analysis.md, content-feed-rss.md, etc.
 
 ### Hidden Configuration
 

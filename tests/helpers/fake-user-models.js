@@ -14,15 +14,12 @@
  * by `user.schema.test.js`), `findByIdAndUpdate` hands back the updated
  * record, and fields are stored as given.
  *
- * Documents carry the virtuals and methods the controllers rely on. They
- * assume ADR 0002, not today's schema: `isAdmin` and `isGroupAdmin` derive
- * from `role` (the schema suite is what pins the flip of the virtual);
- * `status` follows the schema's virtual without its SAML branch; `activate`,
+ * Documents carry the virtuals and methods the controllers rely on, as the
+ * schema declares them: no admin flag, the rights are read from `role`
+ * (account/permissions.js); `status` follows the schema's virtual without its
+ * SAML branch; `activate`,
  * `deactivate`, `resetPassword` and `save` write back to the store.
  */
-
-const ROLE_SUPER_ADMIN = 'super_admin';
-const ROLE_COMPANY_ADMIN = 'company_admin';
 
 function matchesValue(actual, expected) {
   if (expected && typeof expected === 'object' && !Array.isArray(expected)) {
@@ -93,7 +90,7 @@ function query(list, shape) {
 const first = (toDocument) => (records) => toDocument(records[0]);
 const every = (toDocument) => (records) => records.map(toDocument);
 
-const VIRTUALS = ['isAdmin', 'isGroupAdmin', 'group', 'status'];
+const VIRTUALS = ['group', 'status'];
 // What an update may write, as `UserSchema` declares it.
 const STORED_FIELDS = [
   'name',
@@ -128,12 +125,6 @@ function createStore() {
     const doc = {
       ...record,
       id: String(record._id),
-      get isAdmin() {
-        return this.role === ROLE_SUPER_ADMIN;
-      },
-      get isGroupAdmin() {
-        return this.role === ROLE_COMPANY_ADMIN;
-      },
       get group() {
         return groupOf(this);
       },

@@ -24,6 +24,13 @@ const COMMENT_SEVERITIES = Object.freeze({
   BLOCKING: 'blocking',
 });
 
+// Review decision enum — reviewer's concrete "validate" mechanism (see
+// docs/plans/rbac-refonte.md section 3.4). null = a normal comment.
+const COMMENT_DECISIONS = Object.freeze({
+  APPROVED: 'approved',
+  CHANGES_REQUESTED: 'changes_requested',
+});
+
 const BlockSnapshotSchema = new Schema(
   {
     index: { type: Number },
@@ -78,6 +85,13 @@ const CommentSchema = new Schema(
       type: String,
       enum: Object.values(COMMENT_SEVERITIES),
       default: COMMENT_SEVERITIES.INFO,
+    },
+    decision: {
+      type: String,
+      // Mongoose's enum validator rejects `null` unless it's explicitly
+      // listed — required here since this field defaults to null.
+      enum: [...Object.values(COMMENT_DECISIONS), null],
+      default: null,
     },
 
     // Author
@@ -153,6 +167,25 @@ CommentSchema.statics.countUnresolvedByMailing = async function (mailingId) {
   });
 };
 
+// Static: ids (as strings) of the mailings whose latest root comment is an
+// approval. A comment posted after the approval, whatever it says, lifts it: a
+// plain comment already is an implicit request for changes (plan section 3.4).
+CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
+  const latestByMailing = await this.aggregate([
+    {
+      $match: {
+        _mailing: { $in: mailingIds },
+        _parentComment: null,
+        isDeleted: false,
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    { $group: { _id: '$_mailing', decision: { $first: '$decision' } } },
+    { $match: { decision: COMMENT_DECISIONS.APPROVED } },
+  ]);
+  return latestByMailing.map((item) => item._id.toString());
+};
+
 // Static: Get comment counts grouped by block with severity info
 CommentSchema.statics.getBlockCommentCounts = async function (mailingId) {
   return this.aggregate([
@@ -196,4 +229,5 @@ module.exports = {
   CommentSchema,
   COMMENT_CATEGORIES,
   COMMENT_SEVERITIES,
+  COMMENT_DECISIONS,
 };

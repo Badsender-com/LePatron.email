@@ -28,7 +28,7 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiSuccess {String} lang selected langue of the user
  * @apiSuccess {Boolean} isReinitialized wether the password has been reinitialized or not
  * @apiSuccess {Boolean} isDeactivated wether this account has been deactivated or not
- * @apiSuccess {Boolean} isAdmin wether this account has admin status
+ * @apiSuccess {String} role one of the product's roles (packages/shared/access/roles.js)
  * @apiSuccess {String} status on string of `deactivated` | `confirmed` | `password-mail-sent` | `to-be-initialized`
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
@@ -44,7 +44,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.SUPER_ADMIN, Roles.GROUP_ADMIN, Roles.REGULAR_USER],
+      enum: Object.values(Roles),
       required: false,
     },
     externalUsername: {
@@ -161,18 +161,6 @@ UserSchema.virtual('isReinitialized').get(function () {
   if (this.password) return false;
   if (this.token) return true;
   return false;
-});
-
-// Platform-wide rights (ADR 0002). The bootstrap account carries the same
-// flag from outside the database; see account/bootstrap-account.js for the
-// checks that must tell the two apart.
-UserSchema.virtual('isAdmin').get(function () {
-  return this.role === Roles.SUPER_ADMIN;
-});
-
-UserSchema.virtual('isGroupAdmin').get(function () {
-  const user = this;
-  return user.role === Roles.GROUP_ADMIN;
 });
 
 UserSchema.methods.activate = function activate() {

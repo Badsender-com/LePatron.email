@@ -1,5 +1,8 @@
 'use strict';
 
+const permissions = require('../../../packages/server/account/permissions.js');
+const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
+
 // Acceptance tests of epic #1153, the role itself: who can give and take the
 // super admin role, and to whom. Role changes already go through the user
 // controller, so the guardrails are specified there, with the authenticated
@@ -98,7 +101,7 @@ describe('granting and revoking the super admin role (#1155)', () => {
       expect(status).toBe(200);
       expect(body.role).toBe('super_admin');
       expect(body.group.id).toBe(PLATFORM_GROUP);
-      expect(body.isAdmin).toBe(true);
+      expect(permissions.can(body, CAPABILITIES.PLATFORM_MANAGE)).toBe(true);
     });
 
     it('accepts the platform group when the screen names it', async () => {
@@ -229,7 +232,7 @@ describe('granting and revoking the super admin role (#1155)', () => {
       expect(status).toBe(200);
       const bob = await read(BOB);
       expect(bob.role).toBe('regular_user');
-      expect(bob.isAdmin).toBe(false);
+      expect(permissions.can(bob, CAPABILITIES.PLATFORM_MANAGE)).toBe(false);
       expect(bob.group.id).toBe(PLATFORM_GROUP);
     });
 

@@ -7,7 +7,7 @@ import {
   getUserPersistedLocalStorageKey,
   setUserPersistedLocalStorageKey,
 } from '~/helpers/api-routes.js';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -15,7 +15,8 @@ import {
   FETCH_FOLDER_OR_WORKSPACE,
   FETCH_FOLDER_CHILDREN,
 } from '~/store/folder';
-import { USER } from '~/store/user';
+import { USER, CAN } from '~/store/user';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { canCreateFolder } from '~/utils/workspaces';
 import { findNodeById, findNodesByIds, findPathToNode } from '~/utils/tree';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -81,9 +82,14 @@ export default {
       'treeviewWorkspaces',
       'locationNotFound',
     ]),
+    ...mapGetters(USER, { can: CAN }),
     ...mapState(USER, {
       userInfo: 'info',
     }),
+    // Whoever manages the platform works in a group it selects.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     selectedItem() {
       return { id: this.currentLocation };
     },
@@ -98,7 +104,7 @@ export default {
     // reopens a node of the previous one (ADR 0002, amended).
     selectedNodeStorageKey() {
       const userId = this.userInfo?.id || 'anonymous';
-      const groupId = this.userInfo?.isAdmin ? this.selectedGroupId : null;
+      const groupId = this.canManagePlatform ? this.selectedGroupId : null;
       return groupId
         ? `${SELECTED_NODE_STORAGE_KEY}_${userId}_${groupId}`
         : `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
@@ -288,7 +294,7 @@ export default {
     // group: a folder of another group would select that group again
     // (ADR 0002, amended).
     async restoreFolder(folderId) {
-      if (this.userInfo?.isAdmin) {
+      if (this.canManagePlatform) {
         try {
           const folder = await this.$axios.$get(getFolder(folderId));
           if (String(folder._company) !== String(this.selectedGroupId)) {
@@ -484,7 +490,11 @@ export default {
       });
     },
     hasRightToCreateFolder(item) {
-      return item.hasAccess && canCreateFolder(item?.id, item);
+      return (
+        this.can(CAPABILITIES.FOLDER_MANAGE) &&
+        item.hasAccess &&
+        canCreateFolder(item?.id, item)
+      );
     },
     openNewFolderModal(event, item) {
       event.stopPropagation();
@@ -553,7 +563,11 @@ export default {
       }
     },
     checkIfAuthorizedFolderMenu(item) {
-      return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+      return (
+        this.can(CAPABILITIES.FOLDER_MANAGE) &&
+        item.hasAccess &&
+        item?.type === SPACE_TYPE.FOLDER
+      );
     },
     checkIfAuthorizedWorkspaceMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
@@ -803,13 +817,16 @@ export default {
         onClick: () => this.displayMoveModal(item),
       });
 
-      actions.push({
-        key: 'delete',
-        icon: Trash2,
-        text: 'global.delete',
-        variant: 'danger',
-        onClick: () => this.displayDeleteModal(item),
-      });
+      // Deleting a folder deletes the emails it holds.
+      if (this.can(CAPABILITIES.FOLDER_DELETE)) {
+        actions.push({
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
 
       return actions;
     },

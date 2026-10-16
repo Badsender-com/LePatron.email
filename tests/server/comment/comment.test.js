@@ -13,8 +13,10 @@ const {
 const commentService = require('../../../packages/server/comment/comment.service.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
+  CommentSchema,
   COMMENT_CATEGORIES,
   COMMENT_SEVERITIES,
+  COMMENT_DECISIONS,
 } = require('../../../packages/server/comment/comment.schema.js');
 
 describe('Comment Service', () => {
@@ -95,6 +97,45 @@ describe('Comment Service', () => {
         })
       );
       expect(result._author.name).toBe('Test User');
+    });
+
+    describe('decision', () => {
+      const createWith = async (fields) => {
+        const mailingId = mockObjectId();
+        const groupId = mockObjectId();
+        const commentId = mockObjectId();
+
+        mockMailingAccess(mailingId, groupId);
+
+        Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
+        Comments.findById = jest.fn().mockReturnValue({
+          populate: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockResolvedValue({ _id: commentId }),
+        });
+
+        await commentService.createComment({
+          mailingId: mailingId.toString(),
+          user: createTestUser(mockObjectId(), groupId),
+          text: 'Test comment',
+          ...fields,
+        });
+      };
+
+      it('should create a comment carrying an approval decision', async () => {
+        await createWith({ decision: COMMENT_DECISIONS.APPROVED });
+
+        expect(Comments.create).toHaveBeenCalledWith(
+          expect.objectContaining({ decision: COMMENT_DECISIONS.APPROVED })
+        );
+      });
+
+      it('should default decision to null when not provided', async () => {
+        await createWith({});
+
+        expect(Comments.create).toHaveBeenCalledWith(
+          expect.objectContaining({ decision: null })
+        );
+      });
     });
 
     it('should throw NotFound if mailing does not exist', async () => {
@@ -261,6 +302,52 @@ describe('Comment Service', () => {
           _parentComment: parentCommentId.toString(),
         })
       );
+    });
+  });
+
+  // The request users as passport hands them over: a super admin reaches every
+  // company's mailings, anyone else its own company's.
+  describe('reaching the mailing, for each kind of user', () => {
+    const {
+      ALICE,
+      DAVE,
+      FRANK,
+      CLIENT_GROUP,
+      USERS,
+      actorFrom,
+    } = require('../../helpers/super-admin-fixtures.js');
+    const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
+
+    beforeEach(() => {
+      Comments.find = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
+      });
+    });
+
+    it.each([
+      ['a super admin', actor(ALICE)],
+      ['a member of the mailing company', actor(FRANK)],
+    ])('lets %s read the comments', async (_label, user) => {
+      const mailingId = mockObjectId();
+      mockMailingAccess(mailingId, new mongoose.Types.ObjectId(CLIENT_GROUP));
+
+      await expect(
+        commentService.getByMailing({ mailingId: mailingId.toString(), user })
+      ).resolves.toEqual([]);
+    });
+
+    it('refuses a member of another company', async () => {
+      const mailingId = mockObjectId();
+      mockMailingAccess(mailingId, new mongoose.Types.ObjectId(CLIENT_GROUP));
+
+      await expect(
+        commentService.getByMailing({
+          mailingId: mailingId.toString(),
+          user: actor(DAVE),
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
     });
   });
 
@@ -567,7 +654,6 @@ describe('Comment Service', () => {
         user: {
           _id: adminId,
           role: 'company_admin',
-          isGroupAdmin: true,
           group: { id: groupId.toString() },
         },
       });
@@ -592,7 +678,6 @@ describe('Comment Service', () => {
           user: {
             _id: mockObjectId(),
             role: 'company_admin',
-            isGroupAdmin: true,
             group: { id: mockObjectId().toString() },
           },
         })
@@ -923,6 +1008,54 @@ describe('Comment Service', () => {
         IMPORTANT: 'important',
         BLOCKING: 'blocking',
       });
+    });
+  });
+
+  describe('COMMENT_DECISIONS', () => {
+    it('should have expected decisions', () => {
+      expect(COMMENT_DECISIONS).toEqual({
+        APPROVED: 'approved',
+        CHANGES_REQUESTED: 'changes_requested',
+      });
+    });
+  });
+
+  describe('CommentSchema decision field (real Mongoose validation)', () => {
+    // Regression test: a `default: null` enum field is rejected by Mongoose's
+    // own enum validator unless `null` is explicitly listed among the allowed
+    // values — Comments.create({}) mocked in the tests above doesn't run real
+    // validation, so this bug slipped past every other test in this file.
+    const TestComment =
+      mongoose.models.__TestCommentDecision ||
+      mongoose.model('__TestCommentDecision', CommentSchema);
+
+    const requiredFields = () => ({
+      _mailing: new mongoose.Types.ObjectId(),
+      _company: new mongoose.Types.ObjectId(),
+      text: 'hello',
+      _author: new mongoose.Types.ObjectId(),
+      authorName: 'Test User',
+    });
+
+    it('accepts the default null decision (plain comment)', () => {
+      const err = new TestComment(requiredFields()).validateSync();
+      expect(err?.errors?.decision).toBeUndefined();
+    });
+
+    it('accepts a valid decision value', () => {
+      const err = new TestComment({
+        ...requiredFields(),
+        decision: COMMENT_DECISIONS.APPROVED,
+      }).validateSync();
+      expect(err?.errors?.decision).toBeUndefined();
+    });
+
+    it('rejects an invalid decision value', () => {
+      const err = new TestComment({
+        ...requiredFields(),
+        decision: 'not-a-real-decision',
+      }).validateSync();
+      expect(err?.errors?.decision).toBeDefined();
     });
   });
 });

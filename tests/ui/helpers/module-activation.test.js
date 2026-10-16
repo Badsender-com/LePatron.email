@@ -1,4 +1,8 @@
 import { isModuleLocked, isFlagEnabled } from '~/helpers/module-activation.js';
+import {
+  CAPABILITIES,
+  roleCan,
+} from '../../../packages/shared/access/roles.js';
 
 // A super admin sees a module of its selected group the way a company admin of
 // that group does (ADR 0002, amended): locked when the group does not have it.
@@ -16,8 +20,11 @@ const CRM_INTELLIGENCE = {
 };
 const FREE_MODULE = { id: 'design-system', enabledFlag: null };
 
-const superAdmin = { isAdmin: true, role: 'super_admin' };
-const companyAdmin = { isGroupAdmin: true, role: 'company_admin' };
+const userOfRole = (role) => ({
+  canManagePlatform: roleCan(role, CAPABILITIES.PLATFORM_MANAGE),
+});
+const superAdmin = userOfRole('super_admin');
+const companyAdmin = userOfRole('company_admin');
 
 const withCrm = { enableEmailBuilder: true, enableCrmIntelligence: true };
 const withoutCrm = { enableEmailBuilder: true, enableCrmIntelligence: false };

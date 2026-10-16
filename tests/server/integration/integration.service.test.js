@@ -566,7 +566,7 @@ describe('IntegrationService', () => {
         _id: mockIntegrationId,
         _company: mockGroupId,
       };
-      const adminUser = { isAdmin: true };
+      const adminUser = { role: 'super_admin' };
 
       Integrations.findById.mockResolvedValue(mockIntegration);
 
@@ -586,7 +586,6 @@ describe('IntegrationService', () => {
         _company: new Types.ObjectId(mockGroupId),
       };
       const groupUser = {
-        isAdmin: false,
         group: { id: mockGroupId },
       };
 
@@ -609,7 +608,6 @@ describe('IntegrationService', () => {
         _company: new Types.ObjectId(differentGroupId),
       };
       const groupUser = {
-        isAdmin: false,
         group: { id: mockGroupId },
       };
 
@@ -621,6 +619,49 @@ describe('IntegrationService', () => {
           integrationId: mockIntegrationId,
         })
       ).rejects.toThrow('FORBIDDEN_INTEGRATION_ACCESS');
+    });
+  });
+});
+
+// The request users as passport hands them over: a super admin reaches every
+// company's integrations, anyone else its own company's.
+describe('IntegrationService.checkIfUserIsAuthorizedToAccessIntegration', () => {
+  const {
+    ALICE,
+    DAVE,
+    FRANK,
+    CLIENT_GROUP,
+    USERS,
+    actorFrom,
+  } = require('../../helpers/super-admin-fixtures.js');
+  const actor = (id) => actorFrom(USERS.find((u) => u._id === id));
+  const integrationId = new Types.ObjectId().toString();
+  const integration = {
+    _id: integrationId,
+    _company: new Types.ObjectId(CLIENT_GROUP),
+  };
+  const check = (user) =>
+    integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+      user,
+      integrationId,
+    });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Integrations.findById.mockResolvedValue(integration);
+  });
+
+  it.each([
+    ['a super admin', actor(ALICE)],
+    ['a member of its company', actor(FRANK)],
+  ])('lets %s reach it', async (_label, user) => {
+    await expect(check(user)).resolves.toBe(integration);
+  });
+
+  it('refuses a member of another company', async () => {
+    await expect(check(actor(DAVE))).rejects.toMatchObject({
+      status: 401,
+      message: 'FORBIDDEN_INTEGRATION_ACCESS',
     });
   });
 });

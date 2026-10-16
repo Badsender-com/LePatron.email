@@ -34,7 +34,13 @@ jest.mock(
 );
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {
-    if (req.user && req.user.isAdmin) return next();
+    // The real rule: the platform capability, read from the role or the
+    // bootstrap account's identity.
+    const permissions = require('../../../../packages/server/account/permissions.js');
+    const {
+      CAPABILITIES,
+    } = require('../../../../packages/shared/access/roles.js');
+    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
     return res.status(401).json({ message: 'Unauthorized' });
   },
 }));
@@ -59,11 +65,9 @@ function makeApp({ asAdmin = true, asSuperAdmin = false } = {}) {
     // document, hence no owner on what it creates. A persisted super admin
     // (ADR 0002) is an admin with a document, and owns what it creates.
     if (asSuperAdmin) {
-      req.user = { isAdmin: true, role: 'super_admin', id: SUPER_ADMIN_ID };
+      req.user = { role: 'super_admin', id: SUPER_ADMIN_ID };
     } else {
-      req.user = asAdmin
-        ? { isAdmin: true, id: config.admin.id }
-        : { id: 'someone' };
+      req.user = asAdmin ? { id: config.admin.id } : { id: 'someone' };
     }
     next();
   });

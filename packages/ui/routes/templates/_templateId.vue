@@ -1,7 +1,7 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { IS_ADMIN, SELECT_GROUP, USER } from '~/store/user';
+import { CAN, SELECT_GROUP, USER } from '~/store/user';
 import { SET_ACTIVE_MODULE } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -10,6 +10,7 @@ import * as sseHelpers from '~/helpers/server-sent-events.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTemplateForm from '~/components/template/form.vue';
 import { Trash2 } from 'lucide-vue';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 const UPDATE_AXIOS_CONFIG = Object.freeze({
   headers: { 'content-type': 'multipart/form-data' },
@@ -23,7 +24,7 @@ export default {
     LucideTrash2: Trash2,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
+  meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
@@ -63,7 +64,7 @@ export default {
     return { title: this.title };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
     title() {
       return `${this.$tc('global.template', 1)} – ${this.template.name}`;
     },
@@ -74,7 +75,7 @@ export default {
       return this.group.name || '';
     },
     showGroupBadge() {
-      return this.isAdmin && this.groupName;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.groupName;
     },
     backRoute() {
       if (this.group.id) {

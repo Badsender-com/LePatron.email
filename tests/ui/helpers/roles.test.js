@@ -1,26 +1,123 @@
-import { Roles, roleItems } from '~/helpers/constants/roles.js';
+import {
+  Roles,
+  canManageAccount,
+  roleItems,
+} from '~/helpers/constants/roles.js';
+import { capabilitiesOfRole } from '../../../packages/shared/access/roles.js';
 
-// The user forms offer the same translated roles; the super admin role only
-// where choosing another one is a guarded demotion (ADR 0002).
+// The user forms offer the roles the actor may give, by the server's rule:
+// nobody gives a role with more rights than their own. The super admin role
+// only where choosing another one is a guarded demotion (ADR 0002).
 const vm = { $t: (key) => key };
+const offered = (options) => roleItems(vm, options).map((item) => item.value);
+const as = (role) => capabilitiesOfRole(role);
 
 describe('roleItems', () => {
-  it('offers the group roles', () => {
-    expect(roleItems(vm).map((item) => item.value)).toEqual([
-      Roles.GROUP_ADMIN,
+  it('offers every group role to a tech admin', () => {
+    expect(offered({ grantableWith: as(Roles.GROUP_ADMIN_TECH) })).toEqual([
       Roles.REGULAR_USER,
+      Roles.WRITER,
+      Roles.REVIEWER,
+      Roles.GROUP_ADMIN_TECH,
+      Roles.GROUP_ADMIN,
     ]);
+  });
+
+  it('leaves the tech admin role out for a company admin', () => {
+    expect(offered({ grantableWith: as(Roles.GROUP_ADMIN) })).toEqual([
+      Roles.REGULAR_USER,
+      Roles.WRITER,
+      Roles.REVIEWER,
+      Roles.GROUP_ADMIN,
+    ]);
+  });
+
+  it("keeps the edited account's role listed, to show it", () => {
+    expect(
+      offered({
+        grantableWith: as(Roles.GROUP_ADMIN),
+        currentRole: Roles.GROUP_ADMIN_TECH,
+      })
+    ).toContain(Roles.GROUP_ADMIN_TECH);
+  });
+
+  it('offers nothing to someone who holds nothing', () => {
+    expect(offered({})).toEqual([]);
   });
 
   it('puts the super admin role first when asked', () => {
     expect(
-      roleItems(vm, { includeSuperAdmin: true }).map((item) => item.value)
-    ).toEqual([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN, Roles.REGULAR_USER]);
+      offered({
+        grantableWith: as(Roles.SUPER_ADMIN),
+        includeSuperAdmin: true,
+      })[0]
+    ).toBe(Roles.SUPER_ADMIN);
   });
 
   it('translates every label', () => {
-    expect(roleItems(vm, { includeSuperAdmin: true })[0].text).toBe(
-      'users.roles.superAdmin'
-    );
+    expect(
+      roleItems(vm, { grantableWith: as(Roles.SUPER_ADMIN) }).map(
+        (item) => item.text
+      )
+    ).toEqual([
+      'users.roles.regularUser',
+      'users.roles.writer',
+      'users.roles.reviewer',
+      'users.roles.companyAdminTech',
+      'users.roles.groupAdmin',
+    ]);
+  });
+});
+
+// The users table and the user page offer to manage only the accounts the
+// server lets the actor manage: none with more rights than their own. Every
+// actor against every account, written out.
+const {
+  SUPER_ADMIN,
+  GROUP_ADMIN_TECH,
+  GROUP_ADMIN,
+  REGULAR_USER,
+  WRITER,
+  REVIEWER,
+} = Roles;
+const EVERY_ROLE = [
+  SUPER_ADMIN,
+  GROUP_ADMIN_TECH,
+  GROUP_ADMIN,
+  REGULAR_USER,
+  WRITER,
+  REVIEWER,
+];
+const MANAGES = {
+  [SUPER_ADMIN]: EVERY_ROLE,
+  [GROUP_ADMIN_TECH]: [
+    GROUP_ADMIN_TECH,
+    GROUP_ADMIN,
+    REGULAR_USER,
+    WRITER,
+    REVIEWER,
+  ],
+  [GROUP_ADMIN]: [GROUP_ADMIN, REGULAR_USER, WRITER, REVIEWER],
+  [REGULAR_USER]: [REGULAR_USER, WRITER, REVIEWER],
+  [WRITER]: [WRITER, REVIEWER],
+  [REVIEWER]: [REVIEWER],
+};
+
+describe('canManageAccount', () => {
+  it('covers every role of the product', () => {
+    expect([...EVERY_ROLE].sort()).toEqual(Object.values(Roles).sort());
+  });
+
+  describe.each(EVERY_ROLE)('a %s', (actor) => {
+    it.each(EVERY_ROLE)('and a %s account', (role) => {
+      expect(canManageAccount(as(actor), { role })).toBe(
+        MANAGES[actor].includes(role)
+      );
+    });
+  });
+
+  it('reads an account stored without a role as a regular user', () => {
+    expect(canManageAccount(as(Roles.GROUP_ADMIN), {})).toBe(true);
+    expect(canManageAccount(as(Roles.WRITER), {})).toBe(false);
   });
 });

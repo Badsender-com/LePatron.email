@@ -366,7 +366,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   // Get unresolved comment counts for each mailing
   const Comment = mongoose.models[CommentModel];
   let commentCountsMap = {};
+  let approvedMailingIds = new Set();
   if (Comment) {
+    approvedMailingIds = new Set(await Comment.findApprovedMailingIds(ids));
     const commentCounts = await Comment.aggregate([
       {
         $match: {
@@ -397,6 +399,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     ...doc,
     hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
+    isApproved: approvedMailingIds.has(doc._id.toString()),
   }));
 
   const convertedResultMailingDocs = finalDocs.map(
@@ -584,6 +587,12 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     group,
   });
 
+  // Whether a save from the editor would be accepted where the email lives
+  // (its workspace or folder), the capability apart: the editor locks itself
+  // instead of offering a save the server refuses. Lazy require, as above.
+  const mailingService = require('./mailing.service.js');
+  const canWrite = await mailingService.userCanEditMailing(user, mailing);
+
   let redirectUrl = null;
 
   // The bootstrap account stays in the settings; a super admin goes back to
@@ -608,6 +617,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       templateId,
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
+      canWrite,
       hasTranslationFeature,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.

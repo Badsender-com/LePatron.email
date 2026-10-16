@@ -423,6 +423,7 @@ export default {
     downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
     openComments: 'Open comments',
+    openCommentsApproved: 'Approved — open comments',
     duplicateTranslate: 'Duplicate + Translate',
   },
   translation: {
@@ -505,12 +506,17 @@ export default {
       superAdmin: 'Super admin',
       groupAdmin: 'Company admin',
       regularUser: 'Regular user',
+      writer: 'Writer',
+      reviewer: 'Reviewer',
+      companyAdminTech: 'Tech admin',
       chip: {
         superAdmin: 'Super admin',
         groupAdmin: 'Admin',
       },
     },
     noUsersAvailable: 'No users available',
+    readOnlyAccount:
+      'This account has more rights than yours: you can see it, not change it.',
     sections: {
       statusSecurity: 'Status & Security',
       statusSecurityDescription:
@@ -1190,6 +1196,10 @@ export default {
     errors: {
       FORBIDDEN_SUPER_ADMIN_ROLE_CHANGE:
         'Only a super admin can grant or revoke this role.',
+      FORBIDDEN_ROLE_GRANT:
+        'You cannot give a role that has more rights than yours.',
+      FORBIDDEN_USER_MANAGEMENT:
+        'You cannot manage an account that has more rights than yours.',
       FORBIDDEN_SUPER_ADMIN_MANAGEMENT:
         'Only a super admin can manage a super admin.',
       FORBIDDEN_SUPER_ADMIN_SELF_DEMOTION:
