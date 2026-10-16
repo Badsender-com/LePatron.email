@@ -4,11 +4,14 @@ const Vue = require('vue/dist/vue.common');
 const ko = require('knockout');
 const { RecycleScroller } = require('vue-virtual-scroller');
 const Thumb = require('./components/gallery/thumb');
+const Tooltip = require('./components/gallery/tooltip');
 const createGalleryDraggable = require('./directives/gallery-draggable');
 const template = require('./components/gallery/panel.template.js');
 const {
   filterGalleryFiles,
 } = require('../../../../shared/gallery/filter.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
+const { userCan } = require('../ext/user-can.js');
 
 // Fixed cell size for the virtualised grid. The gallery sidebar has a fixed
 // usable width (~364px), so 3 columns of 118px fit with margin to spare.
@@ -35,7 +38,7 @@ function createGalleryPanel(vm) {
   const remembered = {};
 
   return {
-    components: { Thumb, RecycleScroller },
+    components: { Thumb, Tooltip, RecycleScroller },
     directives: { galleryDraggable: createGalleryDraggable(vm) },
   props: {
     // 'mailing' or 'template' — one instance per gallery pane
@@ -51,6 +54,14 @@ function createGalleryPanel(vm) {
     search: '',
     format: '',
     sortBy: 'date_desc',
+    // the single tooltip this panel owns, and what it currently describes
+    hoveredFile: null,
+    hoveredAnchor: null,
+    panelBounds: null,
+    // whether the user may rename, re-upload and delete (gallery.manage);
+    // mirrored from the Knockout side like `images`, because Vue cannot
+    // observe `vm.currentUser`, and it is null until the user has loaded
+    canManage: false,
     // copied per instance: a module-level array put straight into data() is
     // observed once by Vue and then shared by both panels (mailing, template)
     formats: [...FORMATS],
@@ -110,6 +121,29 @@ function createGalleryPanel(vm) {
     emptyGalleryLabel() {
       return vm.t(`gallery-${this.type}-empty`);
     },
+    // handed down to each thumbnail so the component needs no viewModel of
+    // its own; computed once rather than per cell
+    tooltipStrings() {
+      return {
+        // a translation entry whose value is a locale tag, so the date follows
+        // the editor's language rather than the browser's
+        locale: vm.t('gallery-date-locale'),
+        dimensions: vm.t('gallery-tooltip-dimensions'),
+        format: vm.t('gallery-tooltip-format'),
+        uploadedAt: vm.t('gallery-tooltip-uploaded-at'),
+      };
+    },
+    // Three of these carry a `__label__` token the thumbnail substitutes for
+    // itself: the bag is computed once for the whole panel, and the accessible
+    // name of an icon button has to name the image it acts on.
+    thumbStrings() {
+      return {
+        remove: vm.t('gallery-remove-image'),
+        editAction: vm.t('gallery-edit-action'),
+        renameAction: vm.t('gallery-rename-action'),
+        renameInput: vm.t('gallery-rename-input-label'),
+      };
+    },
     clearSearchLabel() {
       return vm.t('gallery-search-clear');
     },
@@ -137,9 +171,19 @@ function createGalleryPanel(vm) {
     search: 'resetScroll',
     format: 'resetScroll',
     sortBy: 'resetScroll',
+    // Chrome fires no mouseleave on an element removed from the DOM, so
+    // deleting the hovered image left its tooltip on screen describing a file
+    // that no longer exists.
+    visibleImages(images) {
+      if (!this.hoveredFile) return;
+      if (!images.some((file) => file.name === this.hoveredFile.name)) {
+        this.onUnhover();
+      }
+    },
   },
   created() {
     this._subscriptions = [];
+    this._hoverTimer = null;
     Object.assign(this, remembered[this.type]);
   },
   mounted() {
@@ -153,9 +197,15 @@ function createGalleryPanel(vm) {
     this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
       this.status = status;
     });
+    // The editor opens before the user is known, and the actions have to
+    // appear once it is. Read through `userCan`, never the payload.
+    this.mirror(vm.currentUser, () => {
+      this.canManage = userCan(vm, CAPABILITIES.GALLERY_MANAGE);
+    });
   },
   beforeDestroy() {
     this._subscriptions.forEach((subscription) => subscription.dispose());
+    this.cancelHover();
     const { search, format, sortBy } = this;
     remembered[this.type] = { search, format, sortBy };
   },
@@ -164,15 +214,58 @@ function createGalleryPanel(vm) {
     mirror(observable, assign) {
       if (!observable) return;
       assign(observable());
-      this._subscriptions.push(observable.subscribe(assign));
+      if (typeof observable.subscribe === 'function') {
+        this._subscriptions.push(observable.subscribe(assign));
+      }
     },
     // ISO with the previous grid: click replaces the selected email image
     onSelect(file) {
       vm.addImage(file);
     },
+    // US-10 — reopen the image editor on an image already in the gallery.
+    // The panel's own root is what the extension uses to find the upload
+    // widget of this pane rather than the other one's.
+    onEdit(file) {
+      vm.editGalleryImage(file, this.type, this.$el);
+    },
     // ISO with the previous grid: delete the image from the gallery
     onRemove(file) {
       vm.removeImage(file, this.type);
+    },
+    // The rename writes into the Knockout observable, not into this mirror:
+    // that array is what the rest of the editor reads, so the optimistic
+    // update has to land there and flow back through the subscription.
+    onRename(file, label) {
+      vm.renameImage(file, this.type, label).then((saved) => {
+        if (saved) vm.notifier.success(vm.t('gallery-rename-image-success'));
+      });
+    },
+    // the thumbnail refused the input before it ever reached the server
+    onRenameRejected(messageKey) {
+      vm.notifier.error(vm.t(messageKey));
+    },
+    // A delay, so sweeping across the grid on the way somewhere else does not
+    // flash a tooltip over every cell on the path.
+    onHover(file, element) {
+      this.cancelHover();
+      this._hoverTimer = setTimeout(() => {
+        // the scroller may have recycled this cell away during the delay
+        if (!element.isConnected) return;
+        this.hoveredFile = file;
+        this.hoveredAnchor = element.getBoundingClientRect();
+        this.panelBounds = this.$el.getBoundingClientRect();
+      }, Tooltip.OPEN_DELAY_MS);
+    },
+    // Immediate on leave: a tooltip that lingers covers what the pointer is
+    // heading for.
+    onUnhover() {
+      this.cancelHover();
+      this.hoveredFile = null;
+      this.hoveredAnchor = null;
+    },
+    cancelHover() {
+      if (this._hoverTimer) clearTimeout(this._hoverTimer);
+      this._hoverTimer = null;
     },
     formatLabel(format) {
       return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');

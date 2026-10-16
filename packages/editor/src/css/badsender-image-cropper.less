@@ -200,6 +200,22 @@
   }
 }
 
+// The two decision buttons at the end of the toolbar — cancel, and save.
+//
+// They sit next to a sibling that claims `width: 100%`, so a flex row leaves
+// them whatever is left and shrinks them to fit. That was invisible while the
+// save button read "Save"; relaunching the editor on a stored image relabels
+// it "Save as a new file" (US-10), three times longer, and it wrapped onto a
+// second line — standing visibly taller than the cancel button beside it.
+//
+// Targeted by position rather than by their `js-` classes, which are event
+// handles and not style hooks: the icon buttons of the same toolbar sit one
+// level deeper and keep shrinking as before.
+.editor-actions-main > .editor-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .editor-icon {
   width: 24px;
   height: 24px;

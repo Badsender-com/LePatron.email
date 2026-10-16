@@ -77,6 +77,7 @@ describe('gallery panel — rendering', () => {
     expect(Object.keys(components).sort()).toEqual([
       'RecycleScroller',
       'Thumb',
+      'Tooltip',
     ]);
   });
 
@@ -112,7 +113,10 @@ describe('gallery panel — rendering', () => {
     const empty = mount([]);
     await Vue.nextTick();
     expect(empty.$el.querySelector('[data-gallery-search]')).toBeNull();
-    expect(empty.$el.querySelector('[data-gallery-empty]')).not.toBeNull();
+    const emptyMessage = empty.$el.querySelector('[data-gallery-empty]');
+    expect(emptyMessage).not.toBeNull();
+    // announces itself when the grid empties out, like the no-result sibling
+    expect(emptyMessage.getAttribute('role')).toBe('status');
     empty.$destroy();
   });
 
@@ -220,6 +224,153 @@ describe('gallery panel — following the gallery status', () => {
     vm.mailingGalleryStatus(2);
     await Vue.nextTick();
     expect(count(panel).textContent).toBe('2 images');
+    panel.$destroy();
+  });
+});
+
+describe('gallery panel — the tooltip it owns', () => {
+  const Tooltip = require('../../packages/editor/src/js/vue/components/gallery/tooltip.js');
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  function cell() {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    return el;
+  }
+
+  // A delay, so sweeping across the grid on the way somewhere else does not
+  // flash a tooltip over every cell on the path.
+  it('waits before showing anything', () => {
+    const panel = mount(IMAGES);
+    panel.onHover(IMAGES[0], cell());
+
+    expect(panel.hoveredFile).toBeNull();
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS - 1);
+    expect(panel.hoveredFile).toBeNull();
+    jest.advanceTimersByTime(1);
+    expect(panel.hoveredFile).toBe(IMAGES[0]);
+
+    panel.$destroy();
+  });
+
+  it('shows nothing when the pointer leaves before the delay is up', () => {
+    const panel = mount(IMAGES);
+    panel.onHover(IMAGES[0], cell());
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS - 50);
+    panel.onUnhover();
+    jest.advanceTimersByTime(500);
+
+    expect(panel.hoveredFile).toBeNull();
+    panel.$destroy();
+  });
+
+  it('hides immediately on leave, with no delay of its own', () => {
+    const panel = mount(IMAGES);
+    panel.onHover(IMAGES[0], cell());
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+    expect(panel.hoveredFile).toBe(IMAGES[0]);
+
+    panel.onUnhover();
+    expect(panel.hoveredFile).toBeNull();
+    panel.$destroy();
+  });
+
+  // Moving across cells restarts the wait rather than queueing one tooltip per
+  // cell the pointer passed over.
+  it('describes the last cell hovered, not the first', () => {
+    const panel = mount(IMAGES);
+    panel.onHover(IMAGES[0], cell());
+    jest.advanceTimersByTime(200);
+    panel.onHover(IMAGES[1], cell());
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+
+    expect(panel.hoveredFile).toBe(IMAGES[1]);
+    panel.$destroy();
+  });
+
+  // The scroller can recycle the cell away while the delay runs; describing a
+  // detached element would place the tooltip at the origin.
+  it('gives up when the cell left the document during the wait', () => {
+    const panel = mount(IMAGES);
+    const el = cell();
+    panel.onHover(IMAGES[0], el);
+    el.remove();
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+
+    expect(panel.hoveredFile).toBeNull();
+    panel.$destroy();
+  });
+
+  it('drops a pending tooltip when the panel is torn down', () => {
+    const panel = mount(IMAGES);
+    panel.onHover(IMAGES[0], cell());
+    panel.$destroy();
+    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
+
+    expect(panel.hoveredFile).toBeNull();
+  });
+});
+
+// The actions on a thumbnail (rename, re-upload, delete) need
+// `gallery.manage` on the server. The panel reads the capability from the
+// current user, who is a Knockout observable loaded after the editor opens,
+// and re-reads it once the user arrives.
+describe('gallery panel — the right to manage', () => {
+  function observable(value) {
+    const subscribers = [];
+    const read = () => read.value;
+    read.value = value;
+    read.subscribe = (callback) => {
+      subscribers.push(callback);
+      return { dispose() {} };
+    };
+    read.set = (next) => {
+      read.value = next;
+      subscribers.forEach((callback) => callback(next));
+    };
+    return read;
+  }
+
+  function mountWithUser(currentUser) {
+    const vm = {
+      t: (key) => key,
+      addImage() {},
+      removeImage() {},
+      mailingGallery: observable(IMAGES),
+      currentUser,
+    };
+    const Panel = Vue.extend(createGalleryPanel(vm));
+    return new Panel({ propsData: { type: 'mailing' } }).$mount();
+  }
+
+  it('grants the actions to a user who holds gallery.manage', () => {
+    const panel = mountWithUser(
+      observable({ capabilities: ['gallery.manage'] })
+    );
+    expect(panel.canManage).toBe(true);
+    panel.$destroy();
+  });
+
+  it('denies them to a user who does not', () => {
+    const panel = mountWithUser(observable({ capabilities: [] }));
+    expect(panel.canManage).toBe(false);
+    panel.$destroy();
+  });
+
+  it('denies them while the user is unknown, then re-reads once loaded', () => {
+    const user = observable(null);
+    const panel = mountWithUser(user);
+    expect(panel.canManage).toBe(false);
+    user.set({ capabilities: ['gallery.manage'] });
+    expect(panel.canManage).toBe(true);
+    panel.$destroy();
+  });
+
+  it('survives an editor whose view-model carries no user', () => {
+    const panel = mountWithUser(undefined);
+    expect(panel.canManage).toBe(false);
     panel.$destroy();
   });
 });

@@ -16,6 +16,7 @@ const ko = require('knockout');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
+const { userOfRole } = require('./helpers/current-user.js');
 
 $.fn.draggable = function draggable() {
   return this;
@@ -37,6 +38,8 @@ async function mount(images = IMAGES) {
     removeImage: jest.fn(),
     mailingGallery: ko.observableArray(images.slice()),
     mailingGalleryStatus: ko.observable(images.length),
+    // a user who may manage the gallery, so the action bar is rendered
+    currentUser: userOfRole('regular_user'),
   };
   const host = document.createElement('div');
   document.body.appendChild(host);
@@ -131,36 +134,52 @@ describe('gallery grid — picking and deleting', () => {
     expect(vm.addImage).toHaveBeenCalledWith(IMAGES[1]);
   });
 
-  it('is a button reachable with Tab, named after the image', async () => {
+  // The image is the control, not the whole tile: the action buttons are its
+  // siblings, where a screen reader still reads them as buttons.
+  it('makes the image a button reachable with Tab, named after the image', async () => {
     await mount();
-    const el = thumbOf('a-1.jpg');
-    expect(el.getAttribute('role')).toBe('button');
-    expect(el.getAttribute('tabindex')).toBe('0');
-    expect(el.getAttribute('aria-label')).toBe('un.jpg');
+    const pick = thumbOf('a-1.jpg').querySelector('[data-gallery-pick]');
+    expect(pick.getAttribute('role')).toBe('button');
+    expect(pick.getAttribute('tabindex')).toBe('0');
+    expect(pick.getAttribute('aria-label')).toBe('un.jpg');
+    expect(thumbOf('a-1.jpg').getAttribute('role')).toBeNull();
   });
 
   it.each(['enter', 'space'])('picks the image with %s', async (name) => {
     await mount();
-    const event = key(thumbOf('a-1.jpg'), name);
+    const pick = thumbOf('a-1.jpg').querySelector('[data-gallery-pick]');
+    const event = key(pick, name);
+    expect(vm.addImage).toHaveBeenCalledTimes(1);
     expect(vm.addImage).toHaveBeenCalledWith(IMAGES[0]);
     // Space would otherwise scroll the grid
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it('deletes from the ✕, without also picking the image', async () => {
+  // what a screen reader does when the user activates the control
+  it('picks the image once when the control itself is clicked', async () => {
     await mount();
-    thumbOf('a-2.png').querySelector('.gallery-thumb__remove').click();
-    expect(vm.removeImage).toHaveBeenCalledWith(IMAGES[1], 'mailing');
-    expect(vm.addImage).not.toHaveBeenCalled();
+    thumbOf('a-2.png').querySelector('[data-gallery-pick]').click();
+    expect(vm.addImage).toHaveBeenCalledTimes(1);
+    expect(vm.addImage).toHaveBeenCalledWith(IMAGES[1]);
   });
 
-  // Deleting has no confirmation in this PR: it stays a pointer gesture, as
-  // in the Knockout grid, rather than one Enter away for the keyboard.
-  it('keeps the ✕ out of the tab order and of the accessibility tree', async () => {
+  it('keeps the action buttons out of the image control', async () => {
     await mount();
-    const remove = thumbOf('a-1.jpg').querySelector('.gallery-thumb__remove');
-    expect(remove.getAttribute('tabindex')).toBe('-1');
-    expect(remove.getAttribute('aria-hidden')).toBe('true');
+    const thumb = thumbOf('a-1.jpg');
+    const buttons = thumb.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThan(0);
+    buttons.forEach((button) => {
+      expect(button.closest('[role="button"]')).toBeNull();
+      expect(button.getAttribute('tabindex')).toBeNull();
+      expect(button.getAttribute('aria-hidden')).toBeNull();
+    });
+  });
+
+  it('deletes from the action bar, without also picking the image', async () => {
+    await mount();
+    thumbOf('a-2.png').querySelector('[data-gallery-remove]').click();
+    expect(vm.removeImage).toHaveBeenCalledWith(IMAGES[1], 'mailing');
+    expect(vm.addImage).not.toHaveBeenCalled();
   });
 
   it('drops the thumbnail of an image deleted on the Knockout side', async () => {
