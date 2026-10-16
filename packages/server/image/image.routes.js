@@ -34,6 +34,11 @@ router.post(
   GUARD_CAN(C.GALLERY_MANAGE),
   images.createFromUrl
 );
+router.patch(
+  '/gallery/:mongoId/:imageName/label',
+  GUARD_CAN(C.GALLERY_MANAGE),
+  images.updateLabel
+);
 router.get('/:imageName', images.read);
 router.delete('/:imageName', GUARD_CAN(C.GALLERY_MANAGE), images.destroy);
 

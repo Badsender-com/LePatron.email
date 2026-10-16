@@ -8,6 +8,11 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   list: jest.fn().mockResolvedValue([]),
 }));
+jest.mock('../../../packages/server/common/upload-identity.service.js', () => ({
+  // the shared reader: it caps what it hands the prober, which is what keeps
+  // a crafted 10MB download from blocking the event loop
+  probeImageDimensions: jest.fn().mockReturnValue(null),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   // a constructor (createGallery does `new Galleries()`) with the statics used
   const Galleries = jest.fn();
@@ -27,6 +32,7 @@ const {
   assertOutboundHostAllowed,
 } = require('../../../packages/server/utils/outbound-host.js');
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
+const uploadIdentity = require('../../../packages/server/common/upload-identity.service.js');
 const {
   Galleries,
 } = require('../../../packages/server/common/models.common.js');
@@ -92,6 +98,23 @@ describe('image.service.createFromUrl', () => {
     ).rejects.toThrow(/size/i);
   });
 
+  // The first version probed the whole downloaded buffer. `probe`'s SVG parser
+  // is quadratic in what it is given, so 10MB of crafted markup blocked the
+  // server for over an hour. Everything now goes through the capped reader.
+  it('measures the download through the shared reader, not the raw buffer', async () => {
+    mockImageResponse(Buffer.from('imagedata'));
+    Galleries.findOne.mockResolvedValue({ files: [] });
+    uploadIdentity.probeImageDimensions.mockReturnValue({
+      width: 640,
+      height: 480,
+    });
+
+    const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
+
+    expect(uploadIdentity.probeImageDimensions).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ width: 640, height: 480 });
+  });
+
   it('stores the image and appends it to the gallery', async () => {
     mockImageResponse(Buffer.from('imagedata'));
     Galleries.findOne.mockResolvedValue({ files: [] });
@@ -100,6 +123,14 @@ describe('image.service.createFromUrl', () => {
 
     expect(fileManager.writeStreamFromStream).toHaveBeenCalledTimes(1);
     expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
+    // createFromUrl now answers with the stored file, so the response and the
+    // pushed document are the same object
+    expect(result).toMatchObject({
+      label: result.name,
+      source: 'upload',
+      externalMetadata: {},
+      uploadedAt: expect.any(Date),
+    });
     expect(Galleries.updateOne).toHaveBeenCalledWith(
       { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: result.name } },
       { $push: { files: result } }
@@ -131,9 +162,73 @@ describe('image.service.addFiles', () => {
       expect(Galleries.updateOne).toHaveBeenCalledWith(
         // the name filter skips a file the gallery already lists
         { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
+        {
+          $push: {
+            files: {
+              ...file,
+              // a gallery image carries a user-facing label, its origin and
+              // room for a future DAM's metadata (US-01)
+              label: file.name,
+              source: 'upload',
+              externalMetadata: {},
+              uploadedAt: expect.any(Date),
+            },
+          },
+        }
       )
     );
+  });
+
+  // The editor pushes the upload response straight into its gallery list. When
+  // that response lacked the V1 fields, a fresh thumbnail showed its technical
+  // file name instead of its label until the next full reload.
+  it('returns the stored files, V1 fields included', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const stored = await imageService.addFiles(MONGO_ID, [
+      { name: `${MONGO_ID}-a.png`, originalName: 'logo.png' },
+    ]);
+
+    expect(stored).toEqual([
+      {
+        name: `${MONGO_ID}-a.png`,
+        originalName: 'logo.png',
+        label: 'logo.png',
+        source: 'upload',
+        externalMetadata: {},
+        uploadedAt: expect.any(Date),
+      },
+    ]);
+  });
+
+  // The uploader slugs the stored file name and lowercases it. The label is
+  // what the user reads and searches, so it keeps the name they chose.
+  it('labels an upload with the name the user gave it, not the slug', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const [stored] = await imageService.addFiles(MONGO_ID, [
+      {
+        name: `${MONGO_ID}-abc123.jpg`,
+        originalName: 'mon-image.jpg',
+        uploadedName: 'Mon Image.jpg',
+      },
+    ]);
+
+    expect(stored.label).toBe('Mon Image.jpg');
+    // the slug still keys the template assets map, untouched
+    expect(stored.originalName).toBe('mon-image.jpg');
+    // and the helper field is not stored twice
+    expect(stored).not.toHaveProperty('uploadedName');
+  });
+
+  it('falls back to the slug when no uploaded name reached the service', async () => {
+    Galleries.findOne.mockResolvedValue({ files: [], save: jest.fn() });
+
+    const [stored] = await imageService.addFiles(MONGO_ID, [
+      { name: `${MONGO_ID}-abc123.jpg`, originalName: 'mon-image.jpg' },
+    ]);
+
+    expect(stored.label).toBe('mon-image.jpg');
   });
 
   it('creates the gallery first when the creation has none yet', async () => {

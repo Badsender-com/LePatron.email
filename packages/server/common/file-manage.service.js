@@ -1,16 +1,20 @@
 'use strict';
 
 const fs = require('fs-extra');
-const path = require('path');
-const mime = require('mime-types');
 const chalk = require('chalk');
 const formidable = require('formidable');
-const probe = require('probe-image-size');
+const createError = require('http-errors');
 
 const config = require('../node.config.js');
+const logger = require('../utils/logger.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
-const slugFilename = require('../helpers/slug-filename.js');
+const {
+  resolveUploadNames,
+  probeImageDimensions,
+  readHead,
+  JPEG_SNIFF_BYTES,
+} = require('./upload-identity.service.js');
 
 const { readFile } = fs;
 // we want those methods to be as close as possible
@@ -35,7 +39,7 @@ function imageToFields(fields, file) {
   fields.assets[file.originalName] = file.name;
 }
 
-function handleTemplatesUploads(fields, files, resolve) {
+function handleTemplatesUploads(fields, files, resolve, reject) {
   // images
   // we want to store any images that have been uploaded on the current model
   if (files.images) {
@@ -50,19 +54,42 @@ function handleTemplatesUploads(fields, files, resolve) {
   if (files.markup && files.markup.name) {
     // read content from file system
     // no worry about performance: only admin will do it
-    readFile(files.markup.path).then((text) => {
-      fields.markup = text;
-      resolve(fields);
-    });
+    //
+    // A rejected read must reject the deferred, not be dropped: without the
+    // `.catch`, a markup file that cannot be read would leave `resolve` uncalled
+    // and the request hanging forever — the same failure the editor path had.
+    readFile(files.markup.path)
+      .then((text) => {
+        fields.markup = text;
+        resolve(fields);
+      })
+      .catch(reject);
   } else {
     resolve(fields);
   }
 }
 
-function handleEditorUpload(fields, files, resolve) {
-  console.log('HANDLE JQUERY FILE UPLOAD');
-  let file = files['files[]'];
-  file = formatName(file.name);
+function handleEditorUpload(fields, files, resolve, reject) {
+  logger.log('Handling jQuery file upload');
+  const rawFile = files['files[]'];
+  // `onFile` sets `uploadedName` on everything it stores, and nothing else
+  // does. Without it the bytes never reached storage — the upload was not an
+  // image, or nothing could be made of its name — and answering with a
+  // formatted name would put a gallery entry in front of a file that does
+  // not exist: a thumbnail that 404s, for good, with no sign anything went
+  // wrong. Say no instead.
+  if (!rawFile || !rawFile.uploadedName) {
+    return reject(
+      new createError.UnprocessableEntity('This file could not be stored')
+    );
+  }
+  const file = {
+    ...formatName(rawFile.name),
+    originalName: rawFile.originalName,
+    uploadedName: rawFile.uploadedName,
+    width: rawFile.width,
+    height: rawFile.height,
+  };
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
 }
@@ -71,46 +98,6 @@ const formatters = {
   editor: handleEditorUpload,
   templates: handleTemplatesUploads,
 };
-
-// How many bytes we read from an upload to recognise its format. Every image
-// header we care about fits well within this.
-const SNIFF_BYTES = 4096;
-
-// types a browser sends when it has no idea: they map to an extension, so they
-// look valid, but they say nothing about the content
-const GENERIC_UPLOAD_TYPES = ['application/octet-stream'];
-
-// `mime.extension()` answers `false` — not undefined — for a type it cannot
-// map, and interpolating that into a filename is how production ended up with
-// gallery files named `<hash>.false`. The type declared by the client is not
-// trustworthy either: it is what produced `<hash>.bin` for actual PNGs. So fall
-// back to the bytes, and give up on the upload when they are not an image.
-function resolveUploadExtension(file) {
-  const declaredExtension = mime.extension(file.type);
-  // `application/octet-stream` *does* map — to `bin` — which is the other half
-  // of the problem: it is what a browser sends when it doesn't know, and it is
-  // how PNGs ended up stored as `.bin`. Never trust it, always look.
-  if (declaredExtension && !GENERIC_UPLOAD_TYPES.includes(file.type)) {
-    return declaredExtension;
-  }
-
-  try {
-    const head = Buffer.alloc(SNIFF_BYTES);
-    const descriptor = fs.openSync(file.path, 'r');
-    const read = fs.readSync(descriptor, head, 0, SNIFF_BYTES, 0);
-    fs.closeSync(descriptor);
-    const probed = probe.sync(head.subarray(0, read));
-    const sniffedExtension = probed
-      ? mime.extension(probed.mime) || probed.type
-      : null;
-    // not an image: keep whatever the declared type mapped to, so uploads that
-    // legitimately aren't images keep working exactly as before
-    return sniffedExtension || declaredExtension || null;
-  } catch (e) {
-    console.log(chalk.red('[UPLOAD] unable to sniff'), file.path, e.message);
-    return declaredExtension || null;
-  }
-}
 
 // multipart/form-data
 function parseMultipart(req, options) {
@@ -125,32 +112,49 @@ function parseMultipart(req, options) {
   form.parse(req, onEnd);
   form.on('file', onFile);
 
+  // formidable emits `file` synchronously from the request's `data` handler,
+  // so a throw here escapes into no promise at all — it was caught by the
+  // process-wide `uncaughtException` net, which let the process live while the
+  // request hung forever. That is the exact shape the extensionless-name bug
+  // took. Every throw now rejects the deferred instead, so one bad file fails
+  // its own request rather than wedging it; `resolveUploadNames` is the
+  // hardening for the specific case, this is the backstop for the class.
   function onFile(name, file) {
+    try {
+      onFileUnsafe(name, file);
+    } catch (error) {
+      deferred.reject(error);
+    }
+  }
+
+  function onFileUnsafe(name, file) {
     console.log('upload:', name);
     // remove empty files
     if (file.size === 0) return;
     // markup will be saved in DB
     if (name === 'markup') return;
     // put all other files in the right place (S3 || local)
-    // slug every uploaded file name
-    // user may put accent and/or spaces…
-    let fileName = slugFilename(file.name);
-    // ensure that files are having the right extension
-    // (files can be uploaded with extname missing…)
-    fileName = fileName.replace(path.extname(fileName), '');
-    if (!fileName) return console.warn('unable to upload', file.name);
-    const ext = resolveUploadExtension(file);
-    if (!ext) {
-      return console.warn(
-        'unable to upload: unrecognised image format',
-        file.name,
-        file.type
-      );
+    const names = resolveUploadNames(file, options.prefix);
+    if (!names) {
+      return console.warn('unable to upload', file.name, file.type);
     }
-    // name is only made of the file hash
-    file.name = `${options.prefix}-${file.hash}.${ext}`;
-    // original name is needed for templates assets (preview/other images…)
-    file.originalName = `${fileName}.${ext}`;
+    // What the user actually named the file, before the slug flattened its
+    // spaces and its case. `originalName` below cannot carry it: it keys the
+    // template assets map, and generate-preview.controller rebuilds that key
+    // with slugFilename too, so the two must stay spelled the same way. The
+    // gallery label reads this one instead — a search for "mon image" has to
+    // find a file called "Mon Image.jpg".
+    //
+    // It doubles as the mark that this upload was accepted: handleEditorUpload
+    // refuses to describe a file that does not carry it.
+    file.uploadedName = `${file.name}`;
+    const dimensions = probeImageDimensions(readHead(file, JPEG_SNIFF_BYTES));
+    if (dimensions) {
+      file.width = dimensions.width;
+      file.height = dimensions.height;
+    }
+    file.name = names.name;
+    file.originalName = names.originalName;
     uploads.push(writeStreamFromPath(file));
   }
 
@@ -160,7 +164,12 @@ function parseMultipart(req, options) {
     // wait all TMP files to be moved in the good location (s3 or local)
     Promise.all(uploads)
       .then(() => {
-        formatters[options.formatter](fields, files, deferred.resolve);
+        formatters[options.formatter](
+          fields,
+          files,
+          deferred.resolve,
+          deferred.reject
+        );
       })
       .catch(deferred.reject);
   }
@@ -173,7 +182,6 @@ function parseMultipart(req, options) {
 /// ///
 
 module.exports = {
-  resolveUploadExtension,
   streamImage,
   streamImageFromPreviews,
   list: listImages,
