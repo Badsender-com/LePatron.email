@@ -2,6 +2,7 @@
 
 const { Schema, Types } = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
+const { mapValues } = require('lodash');
 
 const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js');
 
@@ -16,8 +17,8 @@ const formatFilenameForJqueryFileupload = require('../helpers/format-filename-fo
  * @apiSuccess {String} files.source image origin (e.g. 'upload', 'dam_bynder')
  * @apiSuccess {Object} files.externalMetadata metadata from external sources (DAM, etc.)
  * @apiSuccess {String} files.uploadedAt ISO date the image joined the gallery
- * @apiSuccess {Number} files.width original width in pixels (absent when unknown)
- * @apiSuccess {Number} files.height original height in pixels (absent when unknown)
+ * @apiSuccess {Number} files.width original width in pixels, null when unknown
+ * @apiSuccess {Number} files.height original height in pixels, null when unknown
  */
 
 // This table is used to add a visible information on the images
@@ -62,15 +63,19 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   this.isNew = true;
   this.creationOrWireframeId = newCreationId;
 
-  // update the files names & path
-  this.files = this.files.map((file) => {
-    Object.keys(file).forEach((key) => {
-      if (typeof file[key] === 'string') {
-        file[key] = file[key].replace(oldCreationId, newCreationId);
-      }
-    });
-    return file;
-  });
+  // Copy what is stored, not what the getter shows: read through it, an image
+  // from before the V1 fields would come back with its fallbacks (a label
+  // equal to its file name, a null date) written down as real values, and
+  // the migration could no longer tell it apart from a labelled one.
+  const storedFiles = this.get('files', null, { getters: false }) || [];
+  const files = storedFiles.map((file) =>
+    mapValues(file, (value) =>
+      typeof value === 'string'
+        ? value.replace(oldCreationId, newCreationId)
+        : value
+    )
+  );
+  this.set('files', files);
 
   this.markModified('files');
 

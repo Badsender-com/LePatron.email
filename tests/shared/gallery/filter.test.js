@@ -116,14 +116,14 @@ describe('filterGalleryFiles', () => {
       expect(result[0].label).toBe('Animation.gif'); // 2026-03-01
       expect(result[1].label).toBe('banniere.jpeg'); // 2026-02-01
       expect(result[2].label).toBe('logo.jpg'); // 2026-01-01
-      expect(result[3].label).toBe('icone.png'); // null → epoch → le plus ancien
+      expect(result[3].label).toBe('icone.png'); // null counts as the epoch: the oldest
     });
 
     it('date_asc puts the oldest first, a missing date counting as the epoch', () => {
       const result = filterGalleryFiles(TEST_FILES, {
         sortBy: 'date_asc',
       });
-      expect(result[0].label).toBe('icone.png'); // null → epoch → le plus ancien
+      expect(result[0].label).toBe('icone.png'); // null counts as the epoch: the oldest
       expect(result[3].label).toBe('Animation.gif'); // 2026-03-01
     });
   });

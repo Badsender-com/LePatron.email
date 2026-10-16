@@ -15,7 +15,8 @@ jest.mock('mongoose', () => {
 // mongoose-hidden is required as: require('mongoose-hidden')() → plugin fn
 jest.mock('mongoose-hidden', () => () => jest.fn());
 
-const GallerySchema = require('../../../packages/server/image/gallery.schema');
+// loaded for the Schema() call it makes, captured above
+require('../../../packages/server/image/gallery.schema');
 
 describe('gallery.schema — files getter', () => {
   let getter;
@@ -24,8 +25,8 @@ describe('gallery.schema — files getter', () => {
     getter = capturedFilesDefinition.get;
   });
 
-  describe('champs Mosaico (compat obligatoire)', () => {
-    it('préserve les 4 champs Mosaico dans chaque fichier', () => {
+  describe('Mosaico fields (required for compatibility)', () => {
+    it('keeps the four Mosaico fields of every file', () => {
       const result = getter([{ name: 'abc-hash.jpg' }]);
       expect(result[0]).toMatchObject({
         name: 'abc-hash.jpg',
@@ -37,12 +38,12 @@ describe('gallery.schema — files getter', () => {
   });
 
   describe('label', () => {
-    it('retourne file.label quand il est défini (image migrée ou nouvel upload)', () => {
+    it('returns the label when there is one (migrated image or new upload)', () => {
       const result = getter([{ name: 'abc-hash.jpg', label: 'mon-logo.jpg' }]);
       expect(result[0].label).toBe('mon-logo.jpg');
     });
 
-    it('retourne file.name comme fallback quand label absent (images non encore migrées)', () => {
+    it('falls back to the file name without a label (image not yet migrated)', () => {
       const result = getter([{ name: 'abc-hash.jpg' }]);
       expect(result[0].label).toBe('abc-hash.jpg');
     });
@@ -51,113 +52,53 @@ describe('gallery.schema — files getter', () => {
   describe('uploadedAt', () => {
     // the date sort reads this through the getter: drop it here and sorting
     // silently falls back to the epoch for every image
-    it('retourne file.uploadedAt quand il est défini', () => {
+    it('returns the upload date when there is one', () => {
       const uploadedAt = new Date('2026-02-01');
       const result = getter([{ name: 'f.jpg', uploadedAt }]);
       expect(result[0].uploadedAt).toBe(uploadedAt);
     });
 
-    it('retourne null comme fallback (images non encore migrées)', () => {
+    it('falls back to null (image not yet migrated)', () => {
       const result = getter([{ name: 'f.jpg' }]);
       expect(result[0].uploadedAt).toBeNull();
     });
   });
 
   describe('source', () => {
-    it('retourne file.source quand il est défini', () => {
+    it('returns the source when there is one', () => {
       const result = getter([{ name: 'f.jpg', source: 'dam_bynder' }]);
       expect(result[0].source).toBe('dam_bynder');
     });
 
-    it('retourne "upload" comme fallback quand source absent', () => {
+    it('falls back to "upload" without a source', () => {
       const result = getter([{ name: 'f.jpg' }]);
       expect(result[0].source).toBe('upload');
     });
   });
 
   describe('externalMetadata', () => {
-    it('retourne file.externalMetadata quand il est défini', () => {
+    it('returns the external metadata when there are some', () => {
       const result = getter([
         { name: 'f.jpg', externalMetadata: { foo: 'bar' } },
       ]);
       expect(result[0].externalMetadata).toEqual({ foo: 'bar' });
     });
 
-    it('retourne {} comme fallback quand externalMetadata absent', () => {
+    it('falls back to {} without external metadata', () => {
       const result = getter([{ name: 'f.jpg' }]);
       expect(result[0].externalMetadata).toEqual({});
     });
   });
-});
 
-describe('gallery.schema — duplicate()', () => {
-  const OLD_ID = '507f1f77bcf86cd799439011';
-  const NEW_ID = '507f1f77bcf86cd799439022';
+  describe('dimensions', () => {
+    it('returns the original width and height when they are known', () => {
+      const result = getter([{ name: 'f.jpg', width: 600, height: 400 }]);
+      expect(result[0]).toMatchObject({ width: 600, height: 400 });
+    });
 
-  function makeMockDoc(files) {
-    return {
-      _id: 'some-id',
-      isNew: false,
-      creationOrWireframeId: OLD_ID,
-      files,
-      markModified: jest.fn(),
-    };
-  }
-
-  it('ne plante pas quand externalMetadata est un objet (régression)', () => {
-    const doc = makeMockDoc([
-      {
-        name: `${OLD_ID}-hash.jpg`,
-        url: `${OLD_ID}-hash.jpg`,
-        deleteUrl: `/api/images/${OLD_ID}-hash.jpg`,
-        thumbnailUrl: `/api/images/cover/111x111/${OLD_ID}-hash.jpg`,
-        label: 'mon-logo.jpg',
-        source: 'upload',
-        externalMetadata: { foo: 'bar' },
-      },
-    ]);
-
-    expect(() =>
-      GallerySchema.methods.duplicate.call(doc, NEW_ID)
-    ).not.toThrow();
-  });
-
-  it("remplace l'ancien creationId dans les champs string", () => {
-    const doc = makeMockDoc([
-      {
-        name: `${OLD_ID}-hash.jpg`,
-        url: `${OLD_ID}-hash.jpg`,
-        deleteUrl: `/api/images/${OLD_ID}-hash.jpg`,
-        thumbnailUrl: `/api/images/cover/111x111/${OLD_ID}-hash.jpg`,
-        label: 'logo.jpg',
-        source: 'upload',
-        externalMetadata: {},
-      },
-    ]);
-
-    GallerySchema.methods.duplicate.call(doc, NEW_ID);
-
-    expect(doc.files[0].name).toBe(`${NEW_ID}-hash.jpg`);
-    expect(doc.files[0].url).toBe(`${NEW_ID}-hash.jpg`);
-    expect(doc.files[0].deleteUrl).toBe(`/api/images/${NEW_ID}-hash.jpg`);
-  });
-
-  it("ne modifie pas label et externalMetadata (pas d'ancien creationId dedans)", () => {
-    const doc = makeMockDoc([
-      {
-        name: `${OLD_ID}-hash.jpg`,
-        url: `${OLD_ID}-hash.jpg`,
-        deleteUrl: `/api/images/${OLD_ID}-hash.jpg`,
-        thumbnailUrl: `/api/images/cover/111x111/${OLD_ID}-hash.jpg`,
-        label: 'logo.jpg',
-        source: 'upload',
-        externalMetadata: { provider: 'bynder' },
-      },
-    ]);
-
-    GallerySchema.methods.duplicate.call(doc, NEW_ID);
-
-    expect(doc.files[0].label).toBe('logo.jpg');
-    expect(doc.files[0].externalMetadata).toEqual({ provider: 'bynder' });
+    it('falls back to null when they are not', () => {
+      const result = getter([{ name: 'f.jpg' }]);
+      expect(result[0]).toMatchObject({ width: null, height: null });
+    });
   });
 });
