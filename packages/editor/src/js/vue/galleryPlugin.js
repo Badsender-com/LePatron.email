@@ -28,6 +28,12 @@ const SORTS = ['date_desc', 'date_asc'];
 // Built from the Mosaico viewModel rather than declared inline, so a test can
 // drive the real component options instead of a copy of them.
 function createGalleryPanel(vm) {
+  // The last search, format and sort of each pane, kept for as long as this
+  // editor is open. Selecting another block closes the gallery and destroys
+  // its panes; reopening it to fill the next image placeholder is precisely
+  // when a search typed for the previous one is still wanted.
+  const remembered = {};
+
   return {
     components: { Thumb, RecycleScroller },
     directives: { galleryDraggable: createGalleryDraggable(vm) },
@@ -134,6 +140,7 @@ function createGalleryPanel(vm) {
   },
   created() {
     this._subscriptions = [];
+    Object.assign(this, remembered[this.type]);
   },
   mounted() {
     // The list stays Mosaico's: upload and delete keep mutating the Knockout
@@ -147,6 +154,8 @@ function createGalleryPanel(vm) {
   },
   beforeDestroy() {
     this._subscriptions.forEach((subscription) => subscription.dispose());
+    const { search, format, sortBy } = this;
+    remembered[this.type] = { search, format, sortBy };
   },
   methods: {
     // Vue cannot observe a Knockout observable: read it now, then on change.

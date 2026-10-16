@@ -55,6 +55,15 @@ function apply(vm) {
 const pane = (root, type) =>
   root.querySelector(`[data-pane="${type}"] .gallery-vue-panel`);
 
+// The panel component. It shares its element with the bare Vue root the
+// binding mounts it under, and `__vue__` names whichever rendered last.
+const panelOf = (root, type) => {
+  const instance = pane(root, type).__vue__;
+  return instance.$props && instance.$props.type
+    ? instance
+    : instance.$children[0];
+};
+
 describe('vueGalleryPanel binding', () => {
   afterEach(() => {
     document.body.innerHTML = '';
@@ -109,6 +118,35 @@ describe('vueGalleryPanel binding', () => {
     expect(pane(root, 'mailing')).toBeNull();
     expect(vm.mailingGallery.getSubscriptionsCount()).toBe(0);
     expect(vm.mailingGalleryStatus.getSubscriptionsCount()).toBe(0);
+    ko.cleanNode(root);
+  });
+
+  // The gallery closes on every block selection and its panes are rebuilt
+  // when it reopens for the next placeholder: the search must survive that.
+  it('gives each pane back its search, format and sort when the gallery reopens', async () => {
+    const vm = fakeViewModel(true);
+    const root = apply(vm);
+    const panel = () => panelOf(root, 'mailing');
+    Object.assign(panel(), { search: 'un', format: 'jpg', sortBy: 'date_asc' });
+    await Vue.nextTick();
+
+    vm.showGallery(false);
+    vm.showGallery(true);
+    await Vue.nextTick();
+    expect(panel().search).toBe('un');
+    expect(panel().format).toBe('jpg');
+    expect(panel().sortBy).toBe('date_asc');
+    expect(
+      pane(root, 'mailing').querySelector('[data-gallery-search]').value
+    ).toBe('un');
+    // each pane keeps its own
+    expect(panelOf(root, 'template').search).toBe('');
+    ko.cleanNode(root);
+  });
+
+  it('starts another editor with no search', () => {
+    const root = apply(fakeViewModel(true));
+    expect(panelOf(root, 'mailing').search).toBe('');
     ko.cleanNode(root);
   });
 });
