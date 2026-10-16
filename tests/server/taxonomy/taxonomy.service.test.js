@@ -695,7 +695,38 @@ describe('resolveCompanyId', () => {
     ).toThrow(ERROR_CODES.INVALID_GROUP_PARAM);
   });
 
-  it('refuses a super admin falling back on a company of their own', () => {
+  // A super admin works in the group it selected (ADR 0002, amended): a
+  // request that names no company reads that one, never the platform's own.
+  it('gives a super admin who names no company its selected group', () => {
+    const company = taxonomyService.resolveCompanyId({
+      role: 'super_admin',
+      group: { id: COMPANY_A },
+      selectedGroup: { id: COMPANY_B },
+    });
+
+    expect(String(company)).toBe(COMPANY_B);
+  });
+
+  it('prefers the company a super admin names to its selected group', () => {
+    const company = taxonomyService.resolveCompanyId(
+      { role: 'super_admin', selectedGroup: { id: COMPANY_B } },
+      COMPANY_A
+    );
+
+    expect(String(company)).toBe(COMPANY_A);
+  });
+
+  it('ignores the selected group of anyone else', () => {
+    const company = taxonomyService.resolveCompanyId({
+      role: 'company_admin',
+      group: { id: COMPANY_A },
+      selectedGroup: { id: COMPANY_B },
+    });
+
+    expect(String(company)).toBe(COMPANY_A);
+  });
+
+  it('refuses a super admin with no selected group rather than use its own', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
         role: 'super_admin',

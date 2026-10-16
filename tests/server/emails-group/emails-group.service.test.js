@@ -98,6 +98,20 @@ describe('emails-group.service.createEmailsGroup', () => {
     expect(EmailsGroups.create).not.toHaveBeenCalled();
   });
 
+  it("creates a super admin's list in its selected group when the request names none", async () => {
+    const user = {
+      role: 'super_admin',
+      group: { id: TENANT_A },
+      selectedGroup: { id: TENANT_B },
+    };
+
+    await emailsGroupService.createEmailsGroup({ ...baseInput, user });
+
+    expect(EmailsGroups.create).toHaveBeenCalledWith(
+      expect.objectContaining({ _company: TENANT_B })
+    );
+  });
+
   it('rejects when no user is provided', async () => {
     await expect(
       emailsGroupService.createEmailsGroup({ ...baseInput, user: null })

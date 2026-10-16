@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const logger = require('../utils/logger');
 
 const emailsGroupService = require('./emails-group.service');
+const { selectedGroupIdOf } = require('../account/request-scope.js');
 
 module.exports = {
   listEmailsGroups: asyncHandler(listEmailGroups),
@@ -25,8 +26,10 @@ module.exports = {
 async function listEmailGroups(req, res) {
   logger.log('emailsGroupController:listEmailsGroups');
   const { user } = req;
+  // The lists of the group the user works in: its own, or a super admin's
+  // selected group.
   const emailsGroups = await emailsGroupService.listEmailsGroups(
-    user?.group?.id
+    selectedGroupIdOf(user)
   );
   res.json({
     items: emailsGroups,

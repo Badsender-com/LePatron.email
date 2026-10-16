@@ -14,6 +14,7 @@ const {
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const permissions = require('../account/permissions.js');
+const { selectedGroupIdOf } = require('../account/request-scope.js');
 
 module.exports = {
   listEmailsGroups,
@@ -53,8 +54,9 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
   }
 
-  // Use explicit groupId if provided (for admin users), otherwise fallback to user's group
-  const companyId = groupId || user.group?.id;
+  // The company the request names, or else the one the user works in: its own,
+  // or a super admin's selected group (never the platform's own lists).
+  const companyId = groupId || selectedGroupIdOf(user);
 
   if (!companyId) {
     throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);

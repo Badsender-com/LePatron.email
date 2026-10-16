@@ -12,6 +12,7 @@ const {
 const { TaxonomyItems, Mailings } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const permissions = require('../account/permissions.js');
+const { selectedGroupIdOf } = require('../account/request-scope.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { TaxonomyLimits } = require('../constant/taxonomy-type.js');
 const {
@@ -38,8 +39,8 @@ module.exports = {
  * itself — so a missing guard on a future route cannot turn into a cross-company
  * read or write.
  *
- * A super admin may target any company, and must name it: they have no company of
- * their own to fall back on.
+ * A super admin may target any company: the one the request names, or else the
+ * one it has selected.
  *
  * @param {Object} user
  * @param {string} [requestedGroupId] company named by the request
@@ -73,17 +74,18 @@ function resolveCompanyId(user, requestedGroupId) {
     return Types.ObjectId(String(ownGroupId));
   }
 
-  // A super admin has no company of their own to fall back on, so they must name
-  // the one they are acting for. Falling back on `user.group` would let a request
-  // that forgot the parameter write somewhere plausible but unintended.
-  if (!requestedGroupId) {
+  // A super admin acts for the company it names, or else for the one it has
+  // selected (ADR 0002, amended), never for its own: falling back on
+  // `user.group` would read or write the platform's.
+  const groupId = requestedGroupId || selectedGroupIdOf(user);
+  if (!groupId) {
     throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
   }
-  if (!isObjectId(requestedGroupId)) {
+  if (!isObjectId(groupId)) {
     throw new BadRequest(ERROR_CODES.INVALID_GROUP_PARAM);
   }
 
-  return Types.ObjectId(String(requestedGroupId));
+  return Types.ObjectId(String(groupId));
 }
 
 /**
