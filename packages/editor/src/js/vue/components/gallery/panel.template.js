@@ -87,11 +87,18 @@ module.exports = `
         :grid-items="gridColumns"
         :item-secondary-size="cellSize"
         key-field="name"
-        v-slot="{ item, index }"
+        v-slot="{ item, index, active }"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
-             list order: the index is the only reliable handle on position -->
-        <div class="gallery-vue-cell" :data-gallery-index="index">
+             list order: the index is the only reliable handle on position.
+             A view it does not need is parked off-screen, not removed:
+             hidden, so its thumbnail leaves the tab order and the
+             accessibility tree. -->
+        <div
+          class="gallery-vue-cell"
+          :data-gallery-index="index"
+          :hidden="!active"
+        >
           <thumb
             v-gallery-draggable="item"
             :file="item"

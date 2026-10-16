@@ -30,10 +30,24 @@ module.exports = {
     },
   },
   template: `
-    <div class="gallery-thumb" @click="$emit('select', file)">
+    <div
+      class="gallery-thumb"
+      role="button"
+      tabindex="0"
+      :aria-label="label"
+      @click="$emit('select', file)"
+      @keydown.enter.prevent="$emit('select', file)"
+      @keydown.space.prevent="$emit('select', file)"
+    >
+      <!-- Pointer only, as the Knockout grid's was (display: none until
+           hovered): deleting asks for no confirmation yet, so it stays out
+           of the tab order and of the accessibility tree rather than be one
+           Enter away from the keyboard. -->
       <button
         type="button"
         class="gallery-thumb__remove"
+        tabindex="-1"
+        aria-hidden="true"
         @click.stop="$emit('remove', file)"
       >
         <span class="lucide lucide-x"></span>
