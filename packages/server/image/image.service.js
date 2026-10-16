@@ -28,7 +28,15 @@ const DUPLICATE_KEY_ERROR = 11000;
 
 // a gallery is owned by its parent mailing or template (creationOrWireframeId);
 // galleries themselves carry no _company, so authorization is delegated to the
-// parent. Throws Forbidden if the parent doesn't belong to the user's group.
+// parent. Throws Forbidden if the parent doesn't belong to the user's group,
+// and the same Forbidden when there is no such parent, so the answer says
+// nothing about what exists in another group.
+//
+// The bootstrap account is not refused here, unlike the module listings of
+// request-scope.js: the gallery lives inside the editor, which it opens and
+// saves in like a super admin, and the upload and removal of an image let it
+// through as well. Refusing only the rename would leave it a gallery where
+// every action works but one.
 async function assertGalleryOwnership(user, creationOrWireframeId) {
   const query = modelsUtils.addGroupFilter(user, {
     _id: creationOrWireframeId,

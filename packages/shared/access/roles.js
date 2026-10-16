@@ -53,7 +53,7 @@ const CAPABILITIES = Object.freeze({
   FOLDER_MANAGE: 'folder.manage',
   // Deleting a folder deletes the emails it holds.
   FOLDER_DELETE: 'folder.delete',
-  // Upload, import and remove an image of the gallery.
+  // Upload, import, rename (its label) and remove an image of the gallery.
   GALLERY_MANAGE: 'gallery.manage',
   // Save a block to the company's library.
   BLOCK_LIBRARY_ADD: 'block-library.add',

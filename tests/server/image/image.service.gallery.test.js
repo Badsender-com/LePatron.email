@@ -28,10 +28,6 @@ const MONGO_ID = '6a212f21f802c2a6f99a4184';
 // renameLabel
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// renameLabel
-// ---------------------------------------------------------------------------
-
 describe('imageService.renameLabel', () => {
   const IMAGE_NAME = `${MONGO_ID}-hash.jpg`;
 
@@ -80,7 +76,7 @@ describe('imageService.renameLabel', () => {
 // ---------------------------------------------------------------------------
 
 describe('imageService.assertGalleryOwnership', () => {
-  const user = { isAdmin: false, group: { id: 'group-1' } };
+  const user = { role: 'regular_user', group: { id: 'group-1' } };
 
   beforeEach(() => {
     jest.clearAllMocks();
