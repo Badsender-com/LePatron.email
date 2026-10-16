@@ -1,4 +1,5 @@
-import { USER, IS_ADMIN, SELECT_GROUP } from '~/store/user';
+import { USER, CAN, SELECT_GROUP } from '~/store/user';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 import { getFolder, getWorkspace } from '~/helpers/api-routes.js';
 
 // A page of a group's resource selects that group for a super admin, or the
@@ -19,7 +20,7 @@ async function groupOfRoute({ route, $axios }) {
 
 export default async function selectRouteGroup(nuxtContext) {
   const { store } = nuxtContext;
-  if (!store.getters[`${USER}/${IS_ADMIN}`]) return;
+  if (!store.getters[`${USER}/${CAN}`](CAPABILITIES.PLATFORM_MANAGE)) return;
   try {
     const groupId = await groupOfRoute(nuxtContext);
     if (groupId)

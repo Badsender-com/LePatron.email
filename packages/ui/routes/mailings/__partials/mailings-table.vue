@@ -2,7 +2,8 @@
 import { mapMutations, mapGetters, mapState } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { USER, IS_ADMIN } from '~/store/user.js';
+import { USER, CAN } from '~/store/user.js';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
@@ -44,10 +45,20 @@ import {
 } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
-// A super admin works in the modules like a company admin of its selected
-// group, plus its admin shortcuts (ADR 0002, amended): nothing is hidden.
-const TABLE_HIDDEN_COLUMNS_ADMIN = [];
-const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
+// What each row action needs, as the server asks for it: an action the user
+// cannot do is not offered. A super admin can do them all, in the modules of
+// its selected group too (ADR 0002, amended).
+const ACTION_CAPABILITIES = {
+  [ACTIONS.RENAME]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.ADD_TAGS]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.COPY_MAIL]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.MOVE_MAIL]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.DUPLICATE_TRANSLATE]: CAPABILITIES.MAILING_ORGANIZE,
+  [ACTIONS.DELETE]: CAPABILITIES.MAILING_DELETE,
+  [ACTIONS.TRANSFER]: CAPABILITIES.PLATFORM_MANAGE,
+  [ACTIONS.DOWNLOAD]: CAPABILITIES.MAILING_EXPORT,
+  [ACTIONS.DOWNLOAD_FTP]: CAPABILITIES.MAILING_EXPORT,
+};
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   ACTIONS.RENAME,
   ACTIONS.DELETE,
@@ -112,22 +123,24 @@ export default {
     modulesGroupId() {
       return this.$store.getters['user/MODULES_GROUP']?.id || null;
     },
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
+    // The author's account and the template are managed by the platform.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     ...mapState(FOLDER, [
       'pagination',
       'tags',
       'isLoadingMailingsForFilterUpdate',
     ]),
     hiddenCols() {
-      const excludedRules = this.isAdmin
-        ? TABLE_HIDDEN_COLUMNS_ADMIN
-        : TABLE_HIDDEN_COLUMNS_USER;
-      if (!this.hasAccess) {
-        return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
-      }
-      return excludedRules.filter(
-        (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
+      const refused = Object.keys(ACTION_CAPABILITIES).filter(
+        (action) => !this.can(ACTION_CAPABILITIES[action])
       );
+      if (!this.hasAccess) {
+        return [...refused, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
+      }
+      return refused;
     },
     selectedRows: {
       get() {
@@ -245,14 +258,19 @@ export default {
     buildQuickActions(item) {
       const actions = [];
 
-      // 1. Comment (with unresolved badge)
+      // 1. Comment (with unresolved badge, or the approval check)
       if (this.hasAccess) {
         actions.push({
           key: 'comment',
           icon: MessageCircle,
-          text: 'mailings.openComments',
+          text: item.isApproved
+            ? 'mailings.openCommentsApproved'
+            : 'mailings.openComments',
+          // Approved: the green check replaces the count, the details are one
+          // click away in the comments panel.
+          approved: Boolean(item.isApproved),
           badge:
-            item.unresolvedCommentsCount > 0
+            !item.isApproved && item.unresolvedCommentsCount > 0
               ? item.unresolvedCommentsCount
               : null,
           onClick: () => {
@@ -681,7 +699,7 @@ export default {
           <!-- .stop: the link alone, without the row's click opening the
                editor. -->
           <nuxt-link
-            v-if="isAdmin"
+            v-if="canManagePlatform"
             :to="`/users/${item.userId}`"
             @click.native.stop
           >
@@ -691,7 +709,7 @@ export default {
         </template>
         <template #item.templateName="{ item }">
           <nuxt-link
-            v-if="isAdmin"
+            v-if="canManagePlatform"
             :to="`/templates/${item.templateId}`"
             @click.native.stop
           >

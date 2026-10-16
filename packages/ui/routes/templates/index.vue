@@ -10,7 +10,7 @@ export default {
   components: { BsTemplatesTable, BsPageHeader },
   mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: acls.ACL_PLATFORM_MANAGE,
     sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {

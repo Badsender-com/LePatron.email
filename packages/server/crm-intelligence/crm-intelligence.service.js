@@ -9,6 +9,8 @@ const { Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 // Embed tokens are short-lived because they leak via URL bars / referer / logs.
 // 60s is enough for the iframe to fetch the dashboard; refresh-on-render covers
@@ -103,7 +105,10 @@ async function getDashboards(groupId, group) {
 async function getEmbedUrl(groupId, dashboardId, group, user) {
   // The lock is part of a super admin's view, never a refusal (ADR 0002,
   // amended).
-  if (!group.enableCrmIntelligence && !(user && user.isAdmin)) {
+  if (
+    !group.enableCrmIntelligence &&
+    !permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+  ) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 

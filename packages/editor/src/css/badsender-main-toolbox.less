@@ -98,6 +98,58 @@
     }
   }
 
+  // Read-only overlay for reviewer/writer (structure/content/style
+  // restrictions) — an additive child of the existing tab panel, never a
+  // replacement for it: jQuery UI Tabs indexes #toolblocks/#toolcontents/
+  // #toolstyles once at init, so removing/re-adding those panels themselves
+  // breaks its active-panel tracking (see git history).
+  #toolblocks,
+  #toolcontents,
+  #toolstyles {
+    position: relative;
+  }
+
+  // The overlay replaces the panel's content instead of covering it: while it
+  // is rendered, every other child of the panel is `display: none`. Pure CSS,
+  // so the DOM that jQuery UI Tabs / Knockout index is untouched, and nothing
+  // is left to scroll to, tab into or drop onto (an absolutely positioned
+  // overlay scrolled away with the panel and let the keyboard through).
+  #toolblocks,
+  #toolcontents,
+  #toolstyles {
+    &:has(> .toolbox-readonly-overlay) > :not(.toolbox-readonly-overlay) {
+      display: none;
+    }
+  }
+
+  // Fully read-only (reviewer): one message, no tabs to choose between. The
+  // tab list is only hidden, never removed, so jQuery UI Tabs keeps its index.
+  #tooltabs:has(.toolbox-readonly-overlay--all) .tooltabs__list {
+    display: none;
+  }
+
+  .toolbox-readonly-overlay {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 24px 20px;
+    padding: 12px 14px;
+    font-size: 0.9em;
+    line-height: 1.45;
+    color: #4a5a68;
+    background: #f1f5f9;
+    border: 1px solid #dbe3ea;
+    border-radius: 6px;
+    cursor: default;
+
+    .lucide {
+      flex: none;
+      margin-top: 1px;
+      font-size: 1.2em;
+      color: #6b8196;
+    }
+  }
+
   .tooltabs__top-bar {
     display: flex;
     height: @topbar-height;

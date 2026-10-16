@@ -56,7 +56,6 @@ const user = {
   id: USER_ID,
   _id: USER_ID,
   name: 'Reader',
-  isAdmin: false,
   group: { id: TENANT_A },
 };
 // The source: a workspace of the caller's company they are not a member of.

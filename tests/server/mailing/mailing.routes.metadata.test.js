@@ -9,9 +9,8 @@
 // the absence of the same guard. Read together, they state the boundary. Guards are
 // compared by identity on the actual express stack, not on source text.
 
-const {
-  GUARD_USER,
-} = require('../../../packages/server/account/auth.guard.js');
+const { GUARD_CAN } = require('../../../packages/server/account/auth.guard.js');
+const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const {
   GUARD_EMAIL_METADATA,
 } = require('../../../packages/server/mailing/email-metadata.guard.js');
@@ -27,7 +26,7 @@ describe('mailing routes — the metadata endpoint is behind the flag', () => {
 
   it('gates it with GUARD_EMAIL_METADATA', () => {
     expect(guardsOf('patch', '/:mailingId/metadata')).toEqual([
-      GUARD_USER,
+      GUARD_CAN(CAPABILITIES.MAILING_EDIT_CONTENT),
       GUARD_EMAIL_METADATA,
     ]);
   });

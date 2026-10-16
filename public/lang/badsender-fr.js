@@ -296,6 +296,21 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-decision-approve': 'Approuver',
+  'comments-decision-approve-default-text': 'Je valide cet email',
+  'comments-decision-approved': 'Approuvé',
+  'comments-decision-changes-requested': 'Changements demandés',
+  'toolbox-readonly-all':
+    "Vous n'avez pas le droit de modifier cet email. Vous pouvez le commenter et le tester.",
+  'toolbox-readonly-structure':
+    "Vous n'avez pas le droit de modifier la structure de cet email",
+  'toolbox-readonly-content':
+    "Vous n'avez pas le droit de modifier le contenu de cet email",
+  'toolbox-readonly-style':
+    "Vous n'avez pas le droit de modifier le style de cet email",
+  'toolbox-rights-loading': 'Chargement de vos droits…',
+  'toolbox-rights-unavailable':
+    "Vos droits n'ont pas pu être chargés. Rechargez la page pour modifier cet email.",
   'save-message-success-metadata-error':
     "L'email a été sauvegardé, mais les paramètres de l'email n'ont pas pu être enregistrés : __reason__",
   // email metadata section of the Content tab

@@ -9,12 +9,8 @@
  * If no modules are enabled, shows the Email Builder placeholder
  */
 import MailingsPage from '~/routes/mailings/index.vue';
-import {
-  USER,
-  IS_ADMIN,
-  IS_BOOTSTRAP_ACCOUNT,
-  MODULES_GROUP,
-} from '~/store/user';
+import { USER, CAN, IS_BOOTSTRAP_ACCOUNT, MODULES_GROUP } from '~/store/user';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 
 export default {
   ...MailingsPage,
@@ -47,7 +43,8 @@ export default {
 
     // No module enabled: a super admin opens the group's settings, anyone else
     // gets the Email Builder placeholder.
-    if (store.getters[`${USER}/${IS_ADMIN}`] && group?.id) {
+    const can = store.getters[`${USER}/${CAN}`];
+    if (can(CAPABILITIES.PLATFORM_MANAGE) && group?.id) {
       return redirect(`/groups/${group.id}/settings/general`);
     }
   },

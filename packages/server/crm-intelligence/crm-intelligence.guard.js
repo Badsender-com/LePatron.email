@@ -4,6 +4,8 @@ const createError = require('http-errors');
 const { Groups } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const { listingGroupIdOf } = require('../account/request-scope.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 /**
  * Middleware that enforces CRM Intelligence access for the user's group:
@@ -45,7 +47,11 @@ async function loadGroupAndAttach(req, next, { enforceFlag }) {
 
     // The lock is part of the view for a super admin: the screen shows it,
     // the server never refuses a super admin for a module flag.
-    if (enforceFlag && group.enableCrmIntelligence !== true && !user.isAdmin) {
+    if (
+      enforceFlag &&
+      group.enableCrmIntelligence !== true &&
+      !permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+    ) {
       return next(createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED));
     }
 

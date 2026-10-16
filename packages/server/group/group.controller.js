@@ -10,6 +10,8 @@ const {
 
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
@@ -266,7 +268,7 @@ async function deleteGroup(req, res) {
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new NotFound();
   }
   // Deleting the group would delete its super admins with it (ADR 0002).
@@ -462,7 +464,7 @@ async function readColorScheme(req, res) {
   } = req;
   if (!groupId) throw new NotFound();
 
-  if (!user.isAdmin && user.group.id?.toString() !== groupId) {
+  if (!permissions.canAccessGroup(user, groupId)) {
     throw new NotFound();
   }
 
@@ -548,14 +550,20 @@ async function update(req, res) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
   }
 
-  if (user.isGroupAdmin) {
+  // Anyone but a super admin: the route lets a company admin of the group
+  // through, and no one else.
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
       'colorScheme',
-      'trackingConfig',
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // The company's tracking belongs to its technical settings (ADR 0004):
+      // dropped for a company admin, as the other fields it cannot set.
+      ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
+        ? ['trackingConfig']
+        : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to
     // carry the id of the target.

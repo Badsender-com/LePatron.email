@@ -10,6 +10,7 @@ const {
 } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const modelsUtils = require('../utils/model.js');
+const permissions = require('../account/permissions.js');
 
 module.exports = {
   create,
@@ -152,7 +153,7 @@ async function findById(feedMappingId) {
 async function findByIdForUser({ feedMappingId, user }) {
   const feedMapping = await findById(feedMappingId);
 
-  if (!user.isAdmin && feedMapping._company.toString() !== user.group.id) {
+  if (!permissions.canAccessGroup(user, feedMapping._company)) {
     throw new NotFound(ERROR_CODES.FEED_MAPPING_NOT_FOUND);
   }
 
@@ -186,10 +187,7 @@ async function assertIntegrationInGroup({ integrationId, user }) {
   const integration = await Integrations.findById(
     mongoose.Types.ObjectId(integrationId)
   );
-  if (
-    !integration ||
-    (!user.isAdmin && integration._company.toString() !== user.group.id)
-  ) {
+  if (!integration || !permissions.canAccessGroup(user, integration._company)) {
     throw new Conflict(ERROR_CODES.FEED_MAPPING_INVALID_INTEGRATION);
   }
 }
@@ -201,10 +199,7 @@ async function assertTemplateInGroup({ templateId, user }) {
   const template = await Templates.findById(
     mongoose.Types.ObjectId(templateId)
   );
-  if (
-    !template ||
-    (!user.isAdmin && template._company.toString() !== user.group.id)
-  ) {
+  if (!template || !permissions.canAccessGroup(user, template._company)) {
     throw new Conflict(ERROR_CODES.FEED_MAPPING_INVALID_TEMPLATE);
   }
   return template;

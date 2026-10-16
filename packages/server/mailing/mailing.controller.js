@@ -358,6 +358,8 @@ async function duplicate(req, res) {
     Galleries.findOne({ creationOrWireframeId: mailingId }),
   ]);
   if (!mailing) throw new NotFound();
+  // The copy lands next to the original: writing there takes the same right.
+  await mailingService.assertUserCanEditMailing(req.user, mailing);
 
   const duplicatedMailing = mailing.duplicate(req.user);
   // Be sure that all images are duplicated before saving the duplicated creation

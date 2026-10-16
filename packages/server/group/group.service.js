@@ -15,6 +15,7 @@ const {
   AIPlaygroundScenarios,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
+const permissions = require('../account/permissions.js');
 
 const mongoose = require('mongoose');
 const workspaceService = require('../workspace/workspace.service.js');
@@ -34,10 +35,8 @@ module.exports = {
 };
 
 async function checkIfUserIsAuthorizedToAccessGroup({ user, groupId }) {
-  if (!!user && !user.isAdmin) {
-    if (user?.group.id !== groupId) {
-      throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
-    }
+  if (!!user && !permissions.canAccessGroup(user, groupId)) {
+    throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
   }
 }
 

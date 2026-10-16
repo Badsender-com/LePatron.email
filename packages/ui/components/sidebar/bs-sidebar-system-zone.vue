@@ -24,13 +24,8 @@
 import { Settings, HelpCircle, LogOut } from 'lucide-vue';
 import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import {
-  GROUP,
-  IS_ADMIN,
-  IS_GROUP_ADMIN,
-  SELECTED_GROUP,
-  USER,
-} from '~/store/user';
+import { CAN, GROUP, SELECTED_GROUP, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 const ICON_MAP = {
   Settings,
@@ -55,13 +50,12 @@ export default {
     ...mapGetters(USER, {
       userGroup: GROUP,
       selectedGroup: SELECTED_GROUP,
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
+      can: CAN,
     }),
 
     systemItems() {
-      // Filter items based on user role
-      const canAccessSettings = this.isAdmin || this.isGroupAdmin;
+      // The settings are for whoever manages a company, or the platform.
+      const canAccessSettings = this.can(CAPABILITIES.GROUP_MANAGE);
 
       return SYSTEM_ITEMS.filter((item) => {
         // Settings is only for admins and group admins

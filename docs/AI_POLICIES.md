@@ -40,8 +40,9 @@ Before creating a PR, verify:
 - [ ] No unrelated documentation changes included
 - [ ] Branch name follows convention (e.g., `feat/comments`, not `mvp-comments`)
 - [ ] CI is passing (no failing tests)
-- [ ] Linting passes (`yarn code:lint`)
+- [ ] Linting passes on the touched files
 - [ ] Files respect 300-line limit
+- [ ] « Droits touchés » filled: the table of [rights-review.md](./agents/rights-review.md) for every role, or « aucun » with the reason
 - [ ] New feature: the PR maps to one ticket of the epic, and PR 1 holds the ADR and the skipped tests
 
 ## Testing and CI
@@ -61,9 +62,9 @@ Before creating a PR, verify:
 ### Before Pushing
 
 ```bash
-yarn code:lint        # Check for errors
-yarn code:fix         # Auto-fix and format
-yarn test             # Run all tests
+npx eslint <touched files>             # Check for errors
+npx prettier --write <touched files>   # Format (yarn code:fix rewrites the whole repo)
+yarn test-ci                           # Run all tests (yarn test is --watch)
 ```
 
 ### CI Failures
@@ -207,8 +208,9 @@ Agent should perform self-review checking:
 - [ ] No code duplication
 - [ ] Constants extracted
 - [ ] Unused code removed
-- [ ] yarn code:lint passes
-- [ ] Tests pass
+- [ ] Lint passes on the touched files
+- [ ] Tests pass (`yarn test-ci`)
+- [ ] Rights touched: reviewed for every role ([rights-review.md](./agents/rights-review.md))
 - [ ] UX guidelines followed (if UI changes)
 
 ### Responding to Review Feedback
