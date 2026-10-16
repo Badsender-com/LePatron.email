@@ -23,11 +23,27 @@ module.exports = {
   'gallery-mailing-empty': 'The email gallery is empty',
   'gallery-template': 'TEMPLATE SHARED',
   'gallery-template-loading': 'Loading template gallery…',
-  'gallery-template-empty': 'Email gallery is empty',
+  'gallery-template-empty': 'The template gallery is empty',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
     'An error has occured while removing the image :(',
+  'gallery-search-placeholder': 'Search an image…',
+  'gallery-search-clear': 'Clear search',
+  'gallery-search-no-result': 'No image matches this search',
+  'gallery-filter-group': 'Filter by format',
+  'gallery-filter-all': 'All',
+  'gallery-filter-jpg': 'JPG',
+  'gallery-filter-png': 'PNG',
+  'gallery-filter-gif': 'GIF',
+  'gallery-filter-no-result': 'No image of this format in the gallery',
+  'gallery-sort-group': 'Sort images',
+  'gallery-sort-newest': 'Date \u2193',
+  'gallery-sort-newest-title': 'Newest first',
+  'gallery-sort-oldest': 'Date \u2191',
+  'gallery-sort-oldest-title': 'Oldest first',
+  'gallery-image-count-one': '__count__ image',
+  'gallery-image-count': '__count__ images',
 
   // bgimage widget
   'widget-bgimage-button': 'Pick an image',

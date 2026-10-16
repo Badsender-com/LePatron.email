@@ -281,6 +281,18 @@ function mosaicoEditor(debug = false) {
       })
     )
     .transform(aliasify)
+    // Every plugin of the editor loads the full Vue build, vue/dist/vue.common
+    // (templates are inline strings, compiled in the browser). A dependency
+    // doing `require('vue')` gets the runtime-only build instead (the `main`
+    // of the vue package), which bundled a second copy of Vue for
+    // vue-virtual-scroller alone. Global, because the aliases in package.json
+    // only apply to this package's own files, never to node_modules. A
+    // `replacements` regexp rather than an alias: an alias also rewrites
+    // `vue/<path>`, which would break every `require('vue/dist/vue.common')`.
+    .transform(aliasify, {
+      global: true,
+      replacements: { '^vue$': 'vue/dist/vue.common' },
+    })
     .transform(shim, { global: true })
     .transform(
       envify(
@@ -387,6 +399,7 @@ ${templates.join('\n')}
         'packages/editor/src/tmpl/*.html',
         // replace some original templates by custome ones
         'packages/editor/src/tmpl-badsender/*.html',
+        // the gallery grid is a Vue panel now (vue/galleryPlugin.js)
         '!packages/editor/src/tmpl/gallery-images.tmpl.html',
         '!packages/editor/src/tmpl/toolbox.tmpl.html',
       ])

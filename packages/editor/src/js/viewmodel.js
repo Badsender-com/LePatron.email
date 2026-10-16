@@ -441,7 +441,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     );
   };
 
-  // gallery-images.tmpl.html
+  // a click on a gallery thumbnail (vue/galleryPlugin.js)
   viewModel.addImage = function (img) {
     var selectedImg = $('#main-wysiwyg-area .selectable-img.selecteditem');
     if (

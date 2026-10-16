@@ -23,6 +23,8 @@ const customizedBlockPlugin = require('./vue/customizedBlockPlugin');
 const personalizedBlocksPlugin = require('./vue/personalizedBlocksPlugin.js');
 const trackingParamsPlugin = require('./vue/trackingParamsPlugin');
 const emailMetadataPlugin = require('./vue/emailMetadataPlugin');
+// registers the `vueGalleryPanel` Knockout binding of the gallery panes
+require('./vue/galleryPlugin');
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
