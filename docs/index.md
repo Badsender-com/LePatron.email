@@ -118,6 +118,14 @@ Pre-implementation design docs for larger features — audit findings, target mo
 - **[rbac-refonte.md](./plans/rbac-refonte.md)** - Add new roles (company_admin_tech, reviewer, writer). The non-logged-in commenting viewer (#1104), team management (#1100), audit log (#1102) and granular permissions (#1103) are split into separate issues; persisted super_admin is handled and shipped by Héloïse (ADR 0002, #1153) and takes precedence
 - Other entries: editor-modals-modernization.md, quality-control-analysis.md, content-feed-rss.md, etc.
 
+#### /docs/gallery-redesign/
+
+Framing of the image gallery redesign (epic #843), in French. ADRs 0005 and 0006 and the code take precedence over it.
+
+- **[README.md](./gallery-redesign/README.md)** - Product context, V1 scope, deferred decisions, where the code lives
+- **[USER_STORIES.md](./gallery-redesign/USER_STORIES.md)** - The original stories, US-00 to US-12, annotated where the build differs
+- **[MOSAICO_COMPAT.md](./gallery-redesign/MOSAICO_COMPAT.md)** - What Mosaico reads from the gallery routes, to keep compatible
+
 ### Hidden Configuration
 
 #### /.claude/
