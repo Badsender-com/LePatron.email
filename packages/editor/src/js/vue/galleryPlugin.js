@@ -200,24 +200,31 @@ function createGalleryPanel(vm) {
   };
 }
 
-module.exports = {
-  init(vm) {
-    const GalleryPanel = createGalleryPanel(vm);
+// One panel definition per Mosaico viewModel, built when the first pane of
+// that editor mounts.
+const panels = new WeakMap();
+function panelFor(vm) {
+  if (!panels.has(vm)) panels.set(vm, createGalleryPanel(vm));
+  return panels.get(vm);
+}
 
-    ko.bindingHandlers.vueGalleryPanel = {
-      init(element, valueAccessor) {
-        const type = ko.unwrap(valueAccessor());
-        const mountPoint = document.createElement('div');
-        element.appendChild(mountPoint);
-        const instance = new Vue({
-          render: (h) => h(GalleryPanel, { props: { type } }),
-        }).$mount(mountPoint);
-        ko.utils.domNodeDisposal.addDisposeCallback(element, () => {
-          instance.$destroy();
-        });
-        return { controlsDescendantBindings: true };
-      },
-    };
+// Registered when the module loads, like the bindings of ko-bindings.js, so it
+// exists before Mosaico applies its bindings, whether or not the gallery is
+// open at that point. The viewModel is the root of the binding context.
+ko.bindingHandlers.vueGalleryPanel = {
+  init(element, valueAccessor, allBindings, data, bindingContext) {
+    const type = ko.unwrap(valueAccessor());
+    const GalleryPanel = panelFor(bindingContext.$root);
+    const mountPoint = document.createElement('div');
+    element.appendChild(mountPoint);
+    const instance = new Vue({
+      render: (h) => h(GalleryPanel, { props: { type } }),
+    }).$mount(mountPoint);
+    ko.utils.domNodeDisposal.addDisposeCallback(element, () => {
+      instance.$destroy();
+    });
+    return { controlsDescendantBindings: true };
   },
-  createGalleryPanel,
 };
+
+module.exports = { createGalleryPanel };
