@@ -13,6 +13,7 @@
 
 const $ = require('jquery');
 const editImagePlugin = require('../../packages/editor/src/js/ext/badsender-edit-image.js');
+const { userOfRole } = require('./helpers/current-user.js');
 
 const PNG = '507f1f77bcf86cd799439011-aaa.png';
 const JPG = '507f1f77bcf86cd799439011-bbb.jpg';
@@ -46,6 +47,7 @@ function makeViewModel(mailing = [], template = []) {
   return {
     mailingGallery: () => mailing,
     templateGallery: () => template,
+    currentUser: userOfRole('regular_user'),
     notifier: { success: jest.fn(), error: jest.fn() },
     t: (key) => key,
   };
@@ -325,6 +327,40 @@ describe('editGalleryImage — when it cannot', () => {
     expect(viewModel.notifier.error).toHaveBeenCalledWith(
       'gallery-edit-image-fail'
     );
+  });
+});
+
+// Saving in the editor uploads a copy to the gallery, which the server
+// refuses without gallery.manage. Guarded here rather than only where the
+// buttons are drawn, so a new way in cannot skip it.
+describe('editImage and editGalleryImage — the right to manage the gallery', () => {
+  const withoutRight = [
+    ['an unknown user', () => null],
+    ['a user without gallery.manage', () => ({ role: 'x', capabilities: [] })],
+  ];
+
+  it.each(withoutRight)('refuses %s from the email pencil', async (_, user) => {
+    viewModel.currentUser = user;
+    const opened = await viewModel.editImage(() => PNG, panel('mailing'));
+
+    expect(opened).toBe(false);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(added).toHaveLength(0);
+    expect(viewModel.notifier.error).toHaveBeenCalledWith(
+      'gallery-edit-image-forbidden'
+    );
+  });
+
+  it.each(withoutRight)('refuses %s from a thumbnail', async (_, user) => {
+    viewModel.currentUser = user;
+    const opened = await viewModel.editGalleryImage(
+      { name: PNG, label: 'photo.png' },
+      'mailing',
+      panel('mailing')
+    );
+
+    expect(opened).toBe(false);
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
 

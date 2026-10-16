@@ -60,6 +60,8 @@ module.exports = {
   'gallery-edit-action': 'Edit __label__',
   'gallery-edit-image-unsupported':
     'GIF and SVG images cannot be edited in the editor',
+  'gallery-edit-image-forbidden':
+    'You are not allowed to edit the images of the gallery',
   'gallery-edit-image-fail': 'This image could not be opened in the editor',
   'gallery-rename-input-label': 'New image label',
   // the locale tag the tooltip formats its date with

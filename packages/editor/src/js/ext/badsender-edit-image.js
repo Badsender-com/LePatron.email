@@ -8,6 +8,8 @@ const {
   nextCopyLabel,
 } = require('../../../../shared/gallery/label.js');
 const { isEditableImage } = require('../../../../shared/gallery/filter.js');
+const { CAPABILITIES } = require('../../../../shared/access/roles.js');
+const { userCan } = require('./user-can.js');
 
 // Same budget as the rename and delete calls.
 const FETCH_TIMEOUT_MS = 15000;
@@ -79,6 +81,15 @@ function editImagePlugin(viewModel) {
 }
 
 function openEditorOn(viewModel, { input, storedName, type, sourceLabel }) {
+  // Saving uploads a copy to the gallery, which the server refuses without
+  // gallery.manage. The thumbnail and the pencil are not drawn without it;
+  // refusing here as well means a new way in cannot open an editor whose
+  // save can only fail.
+  if (!userCan(viewModel, CAPABILITIES.GALLERY_MANAGE)) {
+    viewModel.notifier.error(viewModel.t('gallery-edit-image-forbidden'));
+    return Promise.resolve(false);
+  }
+
   // GIF and SVG never reach the editor: it flattens what it opens. The
   // thumbnail already hides its edit button for them, but the pencil on an
   // image block has no such guard — without this, editing a GIF there would
