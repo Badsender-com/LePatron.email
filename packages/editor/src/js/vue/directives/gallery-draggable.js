@@ -15,6 +15,13 @@ const DRAGKEY = 'ko_dragItem';
 // The email's scrolling area, the one a drop target may lie outside of.
 const DROP_CONTAINER = '#main-wysiwyg-area';
 
+// Cells being dragged, each with the image the scroller has since moved into
+// it, if any. An upload that lands mid-drag shifts the list, and the scroller
+// may then recycle the dragged cell onto another image; the placeholder reads
+// the payload on drop, which comes before `stop`, so the payload must not
+// follow the cell until the drag is over.
+const pendingWhileDragging = new WeakMap();
+
 // Vue directive factory that reproduces the knockout-sortable `draggable`
 // contract on a Vue-rendered thumbnail, so gallery images can still be dropped
 // onto email image placeholders without any Knockout binding on the element.
@@ -54,21 +61,34 @@ module.exports = function createGalleryDraggable(vm) {
           cursorAt: { top: 24, left: 24 },
           appendTo: '#page',
           connectToSortable: '.ko_container',
+          start() {
+            pendingWhileDragging.set(el, null);
+          },
+          stop() {
+            const pending = pendingWhileDragging.get(el);
+            pendingWhileDragging.delete(el);
+            if (pending) ko.utils.domData.set(el, DRAGKEY, pending);
+          },
         },
       });
       $(el).draggable(options);
     },
-    // Recycled node: point the payload to the now-current file
+    // Recycled node: point the payload to the now-current file, once any
+    // drag of the previous one is over
     update(el, binding) {
-      if (binding.value !== binding.oldValue) {
-        ko.utils.domData.set(el, DRAGKEY, binding.value);
+      if (binding.value === binding.oldValue) return;
+      if (pendingWhileDragging.has(el)) {
+        pendingWhileDragging.set(el, binding.value);
+        return;
       }
+      ko.utils.domData.set(el, DRAGKEY, binding.value);
     },
     unbind(el) {
       if ($(el).data('ui-draggable')) {
         $(el).draggable('destroy');
       }
       ko.utils.domData.set(el, DRAGKEY, null);
+      pendingWhileDragging.delete(el);
     },
   };
 };
