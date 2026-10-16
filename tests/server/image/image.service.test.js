@@ -265,6 +265,32 @@ describe('image.service.findOrCreateGallery', () => {
     );
   });
 
+  // A gallery created after the V1 migration has run is never migrated: the
+  // images it finds in storage must be born with the V1 fields.
+  it('seeds a new gallery from the storage listing, in the V1 shape', async () => {
+    Galleries.findOne.mockResolvedValue(null);
+    fileManager.list.mockResolvedValueOnce([
+      { name: `${MONGO_ID}-a.png`, url: `/img/${MONGO_ID}-a.png` },
+    ]);
+    Galleries.mockImplementation((doc) => ({
+      save: jest.fn().mockResolvedValue(doc),
+    }));
+
+    const gallery = await imageService.findOrCreateGallery(MONGO_ID);
+
+    expect(fileManager.list).toHaveBeenCalledWith(MONGO_ID);
+    expect(gallery.files).toEqual([
+      {
+        name: `${MONGO_ID}-a.png`,
+        url: `/img/${MONGO_ID}-a.png`,
+        label: `${MONGO_ID}-a.png`,
+        source: 'upload',
+        externalMetadata: {},
+        uploadedAt: expect.any(Date),
+      },
+    ]);
+  });
+
   it('lets any other creation error through', async () => {
     Galleries.findOne.mockResolvedValue(null);
     Galleries.mockImplementation(() => ({

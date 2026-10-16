@@ -82,12 +82,14 @@ async function destroy(mongoId, imageName) {
   return gallery;
 }
 
+// Seeded from the storage listing, in the V1 shape: a gallery created after
+// the V1 migration has run will never be migrated. The storage gives no
+// upload date, so the images date from the gallery, as the migration does it.
 function createGallery(mongoId) {
-  // create the gallery in DB
   return fileManager.list(mongoId).then((files) => {
     return new Galleries({
       creationOrWireframeId: mongoId,
-      files,
+      files: files.map(toGalleryFile),
     }).save();
   });
 }
