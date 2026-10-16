@@ -76,21 +76,6 @@ const POPULATE_AUTHOR = {
 };
 
 /**
- * Extract user's company ID from various formats
- * Handles populated objects, raw ObjectIds, and aliased fields
- */
-function getUserCompanyId(user) {
-  return (
-    user._company?._id ||
-    user._company?.id ||
-    user._company ||
-    user.group?._id ||
-    user.group?.id ||
-    user.group
-  );
-}
-
-/**
  * Verify user has access to a mailing
  * @param {string} mailingId - The mailing ID
  * @param {Object} user - The user object
@@ -147,7 +132,7 @@ async function createComment({
   }
 
   // Validate mentions belong to the mailing's company
-  const userCompanyId = getUserCompanyId(user);
+  const userCompanyId = permissions.groupIdOf(user);
   const mentionCompanyId = mailing._wireframe?._company || userCompanyId;
   await validateMentions(mentions, mentionCompanyId);
 
@@ -271,7 +256,7 @@ async function updateComment({ commentId, user, updates }) {
   if (updates.mentions !== undefined) {
     const companyId = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
       ? comment._company
-      : getUserCompanyId(user);
+      : permissions.groupIdOf(user);
     await validateMentions(updates.mentions, companyId);
     updateData.mentions = updates.mentions;
   }

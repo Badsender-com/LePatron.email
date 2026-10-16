@@ -67,7 +67,11 @@ beforeEach(() => {
 });
 
 describe('PUT /groups/:groupId — emailMetadata, company admin', () => {
-  const groupAdmin = { isGroupAdmin: true, isAdmin: false };
+  const groupAdmin = {
+    role: 'company_admin',
+    isGroupAdmin: true,
+    isAdmin: false,
+  };
 
   it('lets emailMetadata through the whitelist', async () => {
     const { payload } = await update({
@@ -151,8 +155,14 @@ describe('PUT /groups/:groupId — the URL names the group being updated', () =>
   // The route guard only ever checked `req.params.groupId`, so that is the only
   // id allowed to reach the update.
   it.each([
-    ['company admin', { isGroupAdmin: true, isAdmin: false }],
-    ['super admin', { isGroupAdmin: false, isAdmin: true }],
+    [
+      'company admin',
+      { role: 'company_admin', isGroupAdmin: true, isAdmin: false },
+    ],
+    [
+      'super admin',
+      { isGroupAdmin: false, role: 'super_admin', isAdmin: true },
+    ],
   ])('ignores an id supplied in the body (%s)', async (_label, user) => {
     const { payload } = await update({
       user,
@@ -170,7 +180,7 @@ describe('PUT /groups/:groupId — the URL names the group being updated', () =>
 describe('PUT /groups/:groupId — emailMetadata, super admin', () => {
   it('goes through without the whitelist, still sanitized', async () => {
     const { payload } = await update({
-      user: { isGroupAdmin: false, isAdmin: true },
+      user: { isGroupAdmin: false, role: 'super_admin', isAdmin: true },
       body: {
         enableEmailBuilder: false,
         emailMetadata: { enabled: true, requiredFields: ['  subject  '] },
@@ -186,7 +196,11 @@ describe('PUT /groups/:groupId — emailMetadata, super admin', () => {
 });
 
 describe('PUT /groups/:groupId — partial emailMetadata payloads', () => {
-  const groupAdmin = { isGroupAdmin: true, isAdmin: false };
+  const groupAdmin = {
+    role: 'company_admin',
+    isGroupAdmin: true,
+    isAdmin: false,
+  };
 
   function withStored(emailMetadata) {
     Groups.findById.mockReturnValue({

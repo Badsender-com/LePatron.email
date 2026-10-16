@@ -67,7 +67,10 @@ describe('userCanEditMailing', () => {
 
   it('answers yes to a super admin without asking', async () => {
     await expect(
-      mailingService.userCanEditMailing({ isAdmin: true }, inWorkspace)
+      mailingService.userCanEditMailing(
+        { role: 'super_admin', isAdmin: true },
+        inWorkspace
+      )
     ).resolves.toBe(true);
     expect(workspaceService.hasAccess).not.toHaveBeenCalled();
   });

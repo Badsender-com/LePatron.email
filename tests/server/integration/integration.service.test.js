@@ -566,7 +566,7 @@ describe('IntegrationService', () => {
         _id: mockIntegrationId,
         _company: mockGroupId,
       };
-      const adminUser = { isAdmin: true };
+      const adminUser = { role: 'super_admin', isAdmin: true };
 
       Integrations.findById.mockResolvedValue(mockIntegration);
 

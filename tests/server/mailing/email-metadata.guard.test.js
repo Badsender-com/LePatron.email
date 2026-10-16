@@ -51,7 +51,9 @@ describe('GUARD_EMAIL_METADATA', () => {
   });
 
   it('lets a super-admin through without checking the flag', async () => {
-    const err = await runGuard({ user: { isAdmin: true } });
+    const err = await runGuard({
+      user: { role: 'super_admin', isAdmin: true },
+    });
     expect(err).toBeUndefined();
     expect(Groups.findById).not.toHaveBeenCalled();
   });

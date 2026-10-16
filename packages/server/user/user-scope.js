@@ -10,30 +10,16 @@ const permissions = require('../account/permissions.js');
  * a company admin reaches the accounts of their own group.
  */
 
-/**
- * The company of a user, whatever shape it comes in: the session's JSON
- * (`group` and `_company` serialised without `_id`), a Mongoose document
- * (populated or not), or a plain record.
- */
-function companyIdOf(user) {
-  const company = user.group || user._company;
-  if (!company) return undefined;
-  if (typeof company === 'string') return company;
-  if (company._id) return String(company._id);
-  if (typeof company.id === 'string') return company.id;
-  return String(company);
-}
-
 function assertActorReaches(actor, target) {
-  if (!permissions.canAccessGroup(actor, companyIdOf(target))) {
+  if (!permissions.canAccessGroup(actor, permissions.groupIdOf(target))) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_USER_ACCESS);
   }
 }
 
 function assertActorCreatesIn(actor, groupId) {
-  if (!permissions.canAccessGroup(actor, groupId && String(groupId))) {
+  if (!permissions.canAccessGroup(actor, groupId)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_USER_ACCESS);
   }
 }
 
-module.exports = { assertActorReaches, assertActorCreatesIn, companyIdOf };
+module.exports = { assertActorReaches, assertActorCreatesIn };

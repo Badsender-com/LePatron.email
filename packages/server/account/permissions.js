@@ -3,6 +3,7 @@
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 const {
   ROLES,
+  CAPABILITIES,
   ALL_CAPABILITIES,
   assertCapability,
   capabilitiesOfRole,
@@ -26,13 +27,15 @@ const {
 
 const sameId = (a, b) => a != null && b != null && String(a) === String(b);
 
-const isObjectId = (value) =>
-  value._bsontype === 'ObjectID' || value._bsontype === 'ObjectId';
+// A real ObjectId: a method no JSON body can carry, unlike `_bsontype`.
+const isObjectId = (value) => typeof value.toHexString === 'function';
 
 /**
- * The id of a group or of any document, whatever shape it comes in: a string,
- * an ObjectId, a populated document, or the session's JSON (`{ id }`).
- * Anything else (an array, a number, a plain object) is no id.
+ * The id of a group or of any document, whatever shape the server holds it
+ * in: a string, an ObjectId, a populated document, or the session's JSON
+ * (`{ id }`). Anything else (an array, a number, a plain object) is no id.
+ * A request's own input is checked to be a string before it gets here
+ * (group.guard.js).
  *
  * @param {*} value
  * @returns {string|null}
@@ -44,27 +47,53 @@ function idOf(value) {
   if (isObjectId(value)) return value.toHexString();
   if (value._id != null && value._id !== value) return idOf(value._id);
   if (typeof value.id === 'string') return value.id;
-  // Another ObjectId implementation: its own `toString` gives the id.
-  if (value.toString !== Object.prototype.toString) return String(value);
   return null;
 }
 
-function hasEveryRight(user) {
-  return !!user && (user.isAdmin === true || isBootstrapAccount(user));
+// Accounts created before roles existed carry none, and have always been
+// regular users.
+const roleOf = (user) => (user.role == null ? ROLES.REGULAR_USER : user.role);
+
+/**
+ * Everything the user may do, wherever it does it; the scope of a request is
+ * checked apart. Read from the role alone, or the bootstrap account, which
+ * has every capability. Sent to the UI and the editor with the current user,
+ * so they show what the server will accept.
+ *
+ * @param {Object} user the request user
+ * @returns {string[]}
+ */
+function capabilitiesOf(user) {
+  if (!user) return [];
+  if (isBootstrapAccount(user)) return ALL_CAPABILITIES;
+  return capabilitiesOfRole(roleOf(user));
 }
 
-// `group` is an alias of `_company` (user.schema.js): the session's JSON
-// carries both, a plain record only the latter.
-function groupIdOfUser(user) {
+const holds = (user, capability) => capabilitiesOf(user).includes(capability);
+
+// A super admin and the bootstrap account: every right in every group.
+function hasEveryRight(user) {
+  return holds(user, CAPABILITIES.PLATFORM_MANAGE);
+}
+
+/**
+ * The id of the user's company, whatever shape the user comes in: `group` is
+ * an alias of `_company` (user.schema.js), the session's JSON carries both, a
+ * plain record only the latter.
+ *
+ * @param {Object} user
+ * @returns {string|null}
+ */
+function groupIdOf(user) {
   return user ? idOf(user.group) || idOf(user._company) : null;
 }
 
 function belongsTo(user, groupId) {
-  return sameId(groupIdOfUser(user), idOf(groupId));
+  return sameId(groupIdOf(user), idOf(groupId));
 }
 
 function isCompanyAdminOf(user, groupId) {
-  return !!user && user.isGroupAdmin === true && belongsTo(user, groupId);
+  return holds(user, CAPABILITIES.GROUP_MANAGE) && belongsTo(user, groupId);
 }
 
 function groupOfWorkspace(workspace) {
@@ -76,23 +105,6 @@ function isWorkspaceMember(user, workspace) {
   return (workspace._users || []).some((member) =>
     sameId(member && member._id ? member._id : member, user.id)
   );
-}
-
-/**
- * Everything the user may do, wherever it does it; the scope of a request is
- * checked apart. Sent to the UI and the editor with the current user, so they
- * show what the server will accept.
- *
- * @param {Object} user the request user
- * @returns {string[]}
- */
-function capabilitiesOf(user) {
-  if (!user) return [];
-  if (hasEveryRight(user)) return ALL_CAPABILITIES;
-  // Accounts created before roles existed carry none, and have always been
-  // regular users.
-  const role = user.role == null ? ROLES.REGULAR_USER : user.role;
-  return capabilitiesOfRole(role);
 }
 
 /**
@@ -141,8 +153,7 @@ function canGrantRole(actor, role) {
  * @returns {boolean}
  */
 function canManageUser(actor, target) {
-  const role = target.role == null ? ROLES.REGULAR_USER : target.role;
-  return canGrantRole(actor, role);
+  return canGrantRole(actor, roleOf(target));
 }
 
 /**
@@ -197,6 +208,7 @@ module.exports = {
   canGrantRole,
   canManageUser,
   canAccessGroup,
+  groupIdOf,
   canManageGroup,
   canModerateComments,
   canReadWorkspace,

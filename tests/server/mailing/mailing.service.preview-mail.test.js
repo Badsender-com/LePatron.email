@@ -189,7 +189,7 @@ describe('mailingService.previewMail', () => {
 
   it('lets a super admin read any preview', async () => {
     const doc = mockPreview();
-    const admin = { isAdmin: true };
+    const admin = { role: 'super_admin', isAdmin: true };
 
     await expect(mailingService.previewMail(doc._id, admin)).resolves.toBe(
       'clean:<p>preview</p>'

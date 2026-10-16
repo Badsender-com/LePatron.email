@@ -5,11 +5,13 @@
 // their password, would give themselves the integrations.
 
 const rightsPolicy = require('../../../packages/server/user/rights-policy.js');
+const config = require('../../../packages/server/node.config.js');
 
 const superAdmin = { isAdmin: true, role: 'super_admin' };
 const techAdmin = { role: 'company_admin_tech' };
 const companyAdmin = { role: 'company_admin' };
-const bootstrap = { isAdmin: true };
+// The account of the deployment configuration: known by its id, no role.
+const bootstrap = { id: config.admin.id, isAdmin: true };
 
 const refuses = (fn, code) => {
   let error;

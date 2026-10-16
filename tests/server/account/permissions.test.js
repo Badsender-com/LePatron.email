@@ -200,6 +200,36 @@ describe('permissions', () => {
       expect(permissions.canAccessGroup(outsider, group)).toBe(false);
     });
 
+    // One source for every check: the role. A record without the schema's
+    // virtuals is read the same as a request user.
+    it('reads every right from the role of a plain record', () => {
+      const superAdminRecord = { role: 'super_admin', _company: CLIENT_GROUP };
+      const companyAdminRecord = {
+        role: 'company_admin',
+        _company: CLIENT_GROUP,
+      };
+
+      expect(permissions.canAccessGroup(superAdminRecord, PLATFORM_GROUP)).toBe(
+        true
+      );
+      expect(permissions.canManageGroup(superAdminRecord, PLATFORM_GROUP)).toBe(
+        true
+      );
+      expect(permissions.canManageGroup(companyAdminRecord, CLIENT_GROUP)).toBe(
+        true
+      );
+      expect(
+        permissions.canManageGroup(companyAdminRecord, PLATFORM_GROUP)
+      ).toBe(false);
+    });
+
+    it('trusts no flag a user object carries without its role', () => {
+      const flagsOnly = { isAdmin: true, isGroupAdmin: true, _company: 'x' };
+
+      expect(permissions.canAccessGroup(flagsOnly, PLATFORM_GROUP)).toBe(false);
+      expect(permissions.canManageGroup(flagsOnly, 'x')).toBe(false);
+    });
+
     it("reads the user's group from a plain record too", () => {
       const record = {
         _id: FRANK,

@@ -42,7 +42,7 @@ describe('feed-mapping.service authorization', () => {
   const feedMappingId = new Types.ObjectId().toString();
 
   const regularUser = { isAdmin: false, group: { id: groupId } };
-  const adminUser = { isAdmin: true, group: undefined };
+  const adminUser = { role: 'super_admin', isAdmin: true, group: undefined };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -178,7 +178,7 @@ describe('feed-mapping.service authorization', () => {
     it('rejects deleting a mapping owned by another group', async () => {
       FeedMappings.findById.mockResolvedValue({
         _id: feedMappingId,
-        _company: { toString: () => otherGroupId },
+        _company: new Types.ObjectId(otherGroupId),
       });
 
       await expect(
@@ -193,7 +193,7 @@ describe('feed-mapping.service authorization', () => {
     it('lets a group owner delete its own mapping', async () => {
       FeedMappings.findById.mockResolvedValue({
         _id: feedMappingId,
-        _company: { toString: () => groupId },
+        _company: new Types.ObjectId(groupId),
       });
       FeedMappings.deleteOne.mockResolvedValue({ deletedCount: 1 });
 

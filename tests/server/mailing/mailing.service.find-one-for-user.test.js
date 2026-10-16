@@ -69,7 +69,10 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
     const doc = { _id: MAILING_ID, _company: 'some-other-group' };
     Mailings.findOne.mockResolvedValue(doc);
 
-    await mailingService.findOneForUser(MAILING_ID, { isAdmin: true });
+    await mailingService.findOneForUser(MAILING_ID, {
+      role: 'super_admin',
+      isAdmin: true,
+    });
 
     const filter = Mailings.findOne.mock.calls[0][0];
     expect(filter._company).toBeUndefined();

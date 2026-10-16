@@ -37,7 +37,11 @@ describe('emails-group.service.createEmailsGroup', () => {
   });
 
   it('lets a super-admin create an emails-group in any tenant', async () => {
-    const user = { isAdmin: true, group: { id: TENANT_A } };
+    const user = {
+      role: 'super_admin',
+      isAdmin: true,
+      group: { id: TENANT_A },
+    };
 
     await emailsGroupService.createEmailsGroup({
       ...baseInput,
@@ -99,6 +103,25 @@ describe('emails-group.service.createEmailsGroup', () => {
     await expect(
       emailsGroupService.createEmailsGroup({ ...baseInput, user: null })
     ).rejects.toMatchObject({ status: 401 });
+  });
+
+  it.each([
+    ['an object carrying the own id', { _id: TENANT_A }],
+    ['an object with an id field', { id: TENANT_A }],
+    ['a list', [TENANT_A]],
+  ])('refuses a group id given as %s, for every user', async (_l, groupId) => {
+    for (const user of [
+      { role: 'company_admin', group: { id: TENANT_A } },
+      { role: 'super_admin', isAdmin: true },
+    ]) {
+      await expect(
+        emailsGroupService.createEmailsGroup({ ...baseInput, user, groupId })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.INVALID_OBJECT_ID,
+      });
+    }
+    expect(EmailsGroups.create).not.toHaveBeenCalled();
   });
 });
 

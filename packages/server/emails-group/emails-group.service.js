@@ -44,6 +44,9 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
     throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
   }
 
+  if (groupId !== undefined && typeof groupId !== 'string') {
+    throw new BadRequest(ERROR_CODES.INVALID_OBJECT_ID);
+  }
   // Only super admins may target a group different from their own.
   // Without this check, any group_admin could create an emails-group in another tenant.
   if (groupId && !permissions.canAccessGroup(user, groupId)) {
@@ -68,17 +71,22 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
   });
 }
 
-async function getEmailsGroup({ emailsGroupId, user }) {
-  logger.log('emailsGroupService:getEmailsGroup');
+// The emails group, if `reaches` its company; one answer, not found, for a
+// missing list and for another company's.
+async function findEmailsGroupIn(emailsGroupId, reaches) {
   await checkIfEmailGroupExist(emailsGroupId);
-
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
-
-  if (!permissions.canAccessGroup(user, emailsGroup._company)) {
+  if (!reaches(emailsGroup._company)) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
-
   return emailsGroup;
+}
+
+async function getEmailsGroup({ emailsGroupId, user }) {
+  logger.log('emailsGroupService:getEmailsGroup');
+  return findEmailsGroupIn(emailsGroupId, (company) =>
+    permissions.canAccessGroup(user, company)
+  );
 }
 
 /**
@@ -87,15 +95,10 @@ async function getEmailsGroup({ emailsGroupId, user }) {
  */
 async function getEmailsGroupOfGroup({ emailsGroupId, groupId }) {
   logger.log('emailsGroupService:getEmailsGroupOfGroup');
-  await checkIfEmailGroupExist(emailsGroupId);
-
-  const emailsGroup = await EmailsGroups.findById(emailsGroupId);
-
-  if (!groupId || emailsGroup._company?.toString() !== String(groupId)) {
-    throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
-  }
-
-  return emailsGroup;
+  return findEmailsGroupIn(
+    emailsGroupId,
+    (company) => !!groupId && company?.toString() === String(groupId)
+  );
 }
 
 async function editEmailsGroup({ emailsGroupId, name, emails, user }) {
@@ -106,13 +109,9 @@ async function editEmailsGroup({ emailsGroupId, name, emails, user }) {
     throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
   }
 
-  await checkIfEmailGroupExist(emailsGroupId);
-
-  const emailsGroup = await EmailsGroups.findById(emailsGroupId);
-
-  if (!permissions.canAccessGroup(user, emailsGroup._company)) {
-    throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
-  }
+  await findEmailsGroupIn(emailsGroupId, (company) =>
+    permissions.canAccessGroup(user, company)
+  );
 
   return EmailsGroups.updateOne(
     { _id: Types.ObjectId(emailsGroupId) },

@@ -167,7 +167,8 @@ UserSchema.virtual('isReinitialized').get(function () {
 // Platform-wide rights (ADR 0002). The bootstrap account carries the same
 // flag from outside the database; see account/bootstrap-account.js for the
 // checks that must tell the two apart.
-// These three flags are for the clients: server code asks account/permissions.js.
+// Kept in the user's JSON for compatibility: no code decides a right with
+// them. The server asks account/permissions.js, the clients the capabilities.
 UserSchema.virtual('isAdmin').get(function () {
   return roleCan(this.role, CAPABILITIES.PLATFORM_MANAGE);
 });

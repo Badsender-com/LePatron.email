@@ -22,7 +22,7 @@ describe('GUARD_CAN_ACCESS_GROUP', () => {
 
   it('lets a super-admin through regardless of groupId', async () => {
     const err = await runGuard({
-      user: { isAdmin: true },
+      user: { role: 'super_admin', isAdmin: true },
       params: { groupId: TENANT_B },
     });
     expect(err).toBeUndefined();
@@ -93,5 +93,38 @@ describe('the group guards, for each kind of user', () => {
       const err = await run(guards[name], { user: actor(FRANK) });
       expect(err.status).toBe(401);
     });
+  });
+});
+
+// A group is named by its id. An object in a body or a query string
+// (`groupId[_id]=…`) is refused before the controller reads it, for every
+// user, rather than read as the id it carries.
+describe('the group guards, on a group id that is not a string', () => {
+  const guards = require('../../../packages/server/group/group.guard');
+  const member = { role: 'company_admin', group: { id: TENANT_A } };
+  const superAdmin = { role: 'super_admin', isAdmin: true };
+
+  const run = (guard, req) =>
+    new Promise((resolve) => guard(req, {}, (err) => resolve(err)));
+
+  it.each([
+    ['an object carrying the own id', { _id: TENANT_A }],
+    ['an object with an id field', { id: TENANT_A }],
+    ['a fake ObjectId', { _bsontype: 'ObjectId' }],
+    ['an object with its own toString', { toString: 'x' }],
+    ['a list', [TENANT_A]],
+  ])('refuses %s with a 400', async (_label, groupId) => {
+    for (const user of [member, superAdmin]) {
+      const fromBody = await run(guards.GUARD_CAN_ACCESS_GROUP_FROM_BODY, {
+        user,
+        body: { groupId },
+      });
+      const fromQuery = await run(guards.GUARD_CAN_ACCESS_GROUP_FROM_QUERY, {
+        user,
+        query: { groupId },
+      });
+      expect(fromBody.status).toBe(400);
+      expect(fromQuery.status).toBe(400);
+    }
   });
 });

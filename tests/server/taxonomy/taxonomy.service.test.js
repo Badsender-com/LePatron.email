@@ -38,9 +38,19 @@ const COMPANY_B = '507f1f77bcf86cd799439b01';
 const ITEM_A = '507f1f77bcf86cd799439101';
 const ITEM_B = '507f1f77bcf86cd799439102';
 
-const userA = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY_A } };
-const userB = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY_B } };
-const superAdmin = { isAdmin: true };
+const userA = {
+  isAdmin: false,
+  role: 'company_admin',
+  isGroupAdmin: true,
+  group: { id: COMPANY_A },
+};
+const userB = {
+  isAdmin: false,
+  role: 'company_admin',
+  isGroupAdmin: true,
+  group: { id: COMPANY_B },
+};
+const superAdmin = { role: 'super_admin', isAdmin: true };
 
 // Seed: one item per company, both labelled "Infolettre" on purpose — the same
 // label on two companies is legitimate and must stay so.
@@ -693,6 +703,7 @@ describe('resolveCompanyId', () => {
   it('refuses a super admin falling back on a company of their own', () => {
     expect(() =>
       taxonomyService.resolveCompanyId({
+        role: 'super_admin',
         isAdmin: true,
         group: { id: COMPANY_A },
       })

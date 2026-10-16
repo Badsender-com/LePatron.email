@@ -30,9 +30,17 @@ const COMPANY_B = '507f1f77bcf86cd799439002';
 
 const member = { id: 'u1', group: { id: COMPANY_A } };
 const colleague = { id: 'u3', group: { id: COMPANY_A } };
-const companyAdminOfA = { ...colleague, isGroupAdmin: true };
+const companyAdminOfA = {
+  ...colleague,
+  role: 'company_admin',
+  isGroupAdmin: true,
+};
 const outsider = { id: 'u2', group: { id: COMPANY_B } };
-const companyAdminOfB = { ...outsider, isGroupAdmin: true };
+const companyAdminOfB = {
+  ...outsider,
+  role: 'company_admin',
+  isGroupAdmin: true,
+};
 
 beforeEach(() => {
   Workspaces.exists.mockResolvedValue(true);
