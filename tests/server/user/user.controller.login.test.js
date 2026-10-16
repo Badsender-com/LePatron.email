@@ -30,13 +30,16 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const passport = require('passport');
 const { Users } = require('../../../packages/server/common/models.common.js');
 const controller = require('../../../packages/server/user/user.controller.js');
+const config = require('../../../packages/server/node.config.js');
 const {
+  ROLES,
+  ALL_CAPABILITIES,
   capabilitiesOfRole,
 } = require('../../../packages/shared/access/roles.js');
 
-function signIn(storedUser) {
+function signIn(storedUser, authenticated = { _id: 'u1', id: 'u1' }) {
   passport.authenticate.mockImplementation((_strategy, callback) => () =>
-    callback(null, { _id: 'u1', id: 'u1' }, null)
+    callback(null, authenticated, null)
   );
   Users.findOneForApi.mockResolvedValue({ toJSON: () => storedUser });
   return new Promise((resolve, reject) => {
@@ -48,11 +51,24 @@ function signIn(storedUser) {
   });
 }
 
-describe('POST /account/login', () => {
-  it("answers with the user's capabilities", async () => {
-    const payload = await signIn({ id: 'u1', role: 'writer' });
+beforeEach(() => jest.clearAllMocks());
 
-    expect(payload.capabilities).toEqual(capabilitiesOfRole('writer'));
-    expect(payload.role).toBe('writer');
+describe('POST /account/login', () => {
+  it.each(Object.values(ROLES))(
+    "answers a %s with the role's capabilities",
+    async (role) => {
+      const payload = await signIn({ id: 'u1', role });
+
+      expect(payload.capabilities).toEqual(capabilitiesOfRole(role));
+      expect(payload.role).toBe(role);
+    }
+  );
+
+  it('answers the bootstrap account, which has no document, with every capability', async () => {
+    const bootstrap = { id: config.admin.id, isAdmin: true };
+    const payload = await signIn(null, bootstrap);
+
+    expect(Users.findOneForApi).not.toHaveBeenCalled();
+    expect(payload.capabilities).toEqual(ALL_CAPABILITIES);
   });
 });

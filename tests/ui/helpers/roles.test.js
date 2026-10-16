@@ -69,16 +69,51 @@ describe('roleItems', () => {
   });
 });
 
-// The user table offers to manage only the accounts the server lets the
-// actor manage: none with more rights than their own.
+// The users table and the user page offer to manage only the accounts the
+// server lets the actor manage: none with more rights than their own. Every
+// actor against every account, written out.
+const {
+  SUPER_ADMIN,
+  GROUP_ADMIN_TECH,
+  GROUP_ADMIN,
+  REGULAR_USER,
+  WRITER,
+  REVIEWER,
+} = Roles;
+const EVERY_ROLE = [
+  SUPER_ADMIN,
+  GROUP_ADMIN_TECH,
+  GROUP_ADMIN,
+  REGULAR_USER,
+  WRITER,
+  REVIEWER,
+];
+const MANAGES = {
+  [SUPER_ADMIN]: EVERY_ROLE,
+  [GROUP_ADMIN_TECH]: [
+    GROUP_ADMIN_TECH,
+    GROUP_ADMIN,
+    REGULAR_USER,
+    WRITER,
+    REVIEWER,
+  ],
+  [GROUP_ADMIN]: [GROUP_ADMIN, REGULAR_USER, WRITER, REVIEWER],
+  [REGULAR_USER]: [REGULAR_USER, WRITER, REVIEWER],
+  [WRITER]: [WRITER, REVIEWER],
+  [REVIEWER]: [REVIEWER],
+};
+
 describe('canManageAccount', () => {
-  it.each([
-    [Roles.GROUP_ADMIN, Roles.WRITER, true],
-    [Roles.GROUP_ADMIN, Roles.GROUP_ADMIN, true],
-    [Roles.GROUP_ADMIN, Roles.GROUP_ADMIN_TECH, false],
-    [Roles.GROUP_ADMIN_TECH, Roles.GROUP_ADMIN_TECH, true],
-  ])('a %s manages a %s: %s', (actor, role, expected) => {
-    expect(canManageAccount(as(actor), { role })).toBe(expected);
+  it('covers every role of the product', () => {
+    expect([...EVERY_ROLE].sort()).toEqual(Object.values(Roles).sort());
+  });
+
+  describe.each(EVERY_ROLE)('a %s', (actor) => {
+    it.each(EVERY_ROLE)('and a %s account', (role) => {
+      expect(canManageAccount(as(actor), { role })).toBe(
+        MANAGES[actor].includes(role)
+      );
+    });
   });
 
   it('reads an account stored without a role as a regular user', () => {

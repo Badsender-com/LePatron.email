@@ -11,7 +11,7 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import { Roles, roleItems } from '~/helpers/constants/roles';
+import { Roles, roleItems, canManageAccount } from '~/helpers/constants/roles';
 import { USER, USER_CAPABILITIES } from '~/store/user';
 import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
@@ -61,6 +61,7 @@ export default {
       return {
         group: groupResponse,
         user: userResponse,
+        savedRole: userResponse.role,
         workspaces: workspacesResponse.items,
       };
     } catch (error) {
@@ -72,6 +73,7 @@ export default {
     return {
       group: {},
       user: {},
+      savedRole: null,
       workspaces: [],
       savingWorkspaces: new Set(),
       mailings: [],
@@ -101,6 +103,12 @@ export default {
   },
   computed: {
     ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
+    // The server's rule, on the role the account has, not the one the form is
+    // being edited to: nobody edits, resets or deactivates an account with
+    // more rights than their own. Such an account's page stays readable.
+    canManage() {
+      return canManageAccount(this.capabilities, { role: this.savedRole });
+    },
     roles() {
       return roleItems(this, {
         grantableWith: this.capabilities,
@@ -272,6 +280,7 @@ export default {
       try {
         const { $axios, $route } = this;
         await $axios.$put(apiRoutes.usersItem($route.params), this.user);
+        this.savedRole = this.user.role;
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
@@ -328,6 +337,9 @@ export default {
         <!-- User form -->
         <v-card flat tile :loading="loading" :disabled="loading">
           <v-card-text>
+            <v-alert v-if="!canManage" type="info" text dense class="mb-4">
+              {{ $t('users.readOnlyAccount') }}
+            </v-alert>
             <!-- Section: Informations -->
             <bs-form-section>
               <template #icon>
@@ -340,6 +352,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.email"
+                    :disabled="!canManage"
                     :label="$t('users.email')"
                     type="email"
                     required
@@ -350,6 +363,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.name"
+                    :disabled="!canManage"
                     :label="$t('forms.user.name')"
                     required
                     :error-messages="nameErrors"
@@ -359,6 +373,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.externalUsername"
+                    :disabled="!canManage"
                     :label="
                       $t('forms.user.externalUsername') +
                       $t('forms.user.optional')
@@ -368,6 +383,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-select
                     v-model="user.lang"
+                    :disabled="!canManage"
                     :label="$t('users.lang')"
                     :items="$options.supportedLanguages"
                   />
@@ -375,6 +391,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-select
                     v-model="user.role"
+                    :disabled="!canManage"
                     :label="$t('users.role')"
                     :items="roles"
                   />
@@ -418,7 +435,7 @@ export default {
               </div>
 
               <!-- Action buttons -->
-              <div class="status-actions">
+              <div v-if="canManage" class="status-actions">
                 <!-- Activate (when deactivated) -->
                 <v-btn
                   v-if="isDeactivated"
@@ -478,8 +495,8 @@ export default {
               </div>
             </bs-form-section>
           </v-card-text>
-          <v-divider />
-          <v-card-actions>
+          <v-divider v-if="canManage" />
+          <v-card-actions v-if="canManage">
             <v-spacer />
             <v-btn
               color="accent"

@@ -72,6 +72,7 @@ module.exports = {
   findOne,
   findOneForUser,
   assertUserCanEditMailing,
+  userCanEditMailing,
   buildMailingCopy,
   renameMailing,
   deleteMailing,
@@ -276,6 +277,25 @@ async function assertUserCanEditMailing(user, mailing) {
 
   if (!hasAccess) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+/**
+ * The same rule as `assertUserCanEditMailing`, as an answer: the editor shows
+ * what a save would get, so a member who may read the workspace but not write
+ * in it gets a read-only editor rather than a refused save.
+ *
+ * @param {Object} user
+ * @param {Object} mailing a Mailings document
+ * @returns {Promise<boolean>}
+ */
+async function userCanEditMailing(user, mailing) {
+  try {
+    await assertUserCanEditMailing(user, mailing);
+    return true;
+  } catch (error) {
+    if (error.status === 403 || error.status === 404) return false;
+    throw error;
   }
 }
 

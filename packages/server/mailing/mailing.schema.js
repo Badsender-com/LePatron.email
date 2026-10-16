@@ -587,6 +587,12 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     group,
   });
 
+  // Whether a save from the editor would be accepted where the email lives
+  // (its workspace or folder), the capability apart: the editor locks itself
+  // instead of offering a save the server refuses. Lazy require, as above.
+  const mailingService = require('./mailing.service.js');
+  const canWrite = await mailingService.userCanEditMailing(user, mailing);
+
   let redirectUrl = null;
 
   // The bootstrap account stays in the settings; a super admin goes back to
@@ -611,6 +617,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       templateId,
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
+      canWrite,
       hasTranslationFeature,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.

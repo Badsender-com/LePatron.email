@@ -14,10 +14,12 @@
     <!-- /ko -->
     <!-- Duplicate block -->
     <div title="Duplicate block" class="tool clone" data-bind="attr: { title: $root.t('Duplicate block') }, click: $root.duplicateBlock.bind($element, $index, $parent)"><span class="lucide lucide-fw lucide-copy"></span></div>
-    <!-- Save block to library: the capability the server asks for -->
+    <!-- /ko -->
+    <!-- Save block to library: its own capability, the one the server asks for, outside the structure tools -->
     <!-- ko if: $root.userCan('block-library.add') -->
     <div title="Save block to library" class="tool save" data-bind="attr: { title: $root.t('Save block to library') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-bookmark-plus"></span></div>
     <!-- /ko -->
+    <!-- ko if: $root.userCan('mailing.edit-structure') -->
     <!-- Compose block — the composed block's builder, one click away instead of
          in the Content tab. Hidden when the template no longer enables the
          builder, as the panel's own button is. -->

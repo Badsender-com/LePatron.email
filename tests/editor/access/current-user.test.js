@@ -14,13 +14,14 @@ global.ko = ko;
 
 const currentUserPlugin = require('../../../packages/editor/src/js/ext/badsender-current-user.js');
 const {
+  ROLES,
   capabilitiesOfRole,
 } = require('../../../packages/shared/access/roles.js');
 
 const GROUP_ID = 'g1';
 
-function load(response) {
-  const vm = { showComments: jest.fn() };
+function load(response, metadata = {}) {
+  const vm = { showComments: jest.fn(), save: { execute: jest.fn() } };
   let settle;
   axios.get.mockReturnValue(
     new Promise((resolve, reject) => {
@@ -30,7 +31,9 @@ function load(response) {
           : reject(new Error('Network Error'));
     })
   );
-  currentUserPlugin({ metadata: { groupId: GROUP_ID } }).viewModel(vm);
+  currentUserPlugin({ metadata: { groupId: GROUP_ID, ...metadata } }).viewModel(
+    vm
+  );
   return {
     vm,
     arrive: async () => {
@@ -130,5 +133,66 @@ describe('whenCurrentUser', () => {
     await arrive();
 
     expect(callback).not.toHaveBeenCalled();
+  });
+});
+
+// A member who may read the workspace but not write in it: the server says so
+// in the email's metadata, and the editor offers no save it would refuse.
+describe('an email the user may not write where it lives', () => {
+  it('locks every edit, not the comments', async () => {
+    const { vm, arrive } = load(userOf('regular_user'), { canWrite: false });
+    await arrive();
+
+    expect(vm.userCan('mailing.edit-content')).toBe(false);
+    expect(vm.userCan('mailing.edit-structure')).toBe(false);
+    expect(vm.userCan('mailing.organize')).toBe(false);
+    expect(vm.userCan('mailing.comment')).toBe(true);
+    expect(vm.canSave()).toBe(false);
+    expect(vm.isReadOnly()).toBe(true);
+  });
+});
+
+// An email without a preview is saved on its first opening, by whoever may
+// save it, once their rights are known.
+describe('saveOnOpen', () => {
+  const SAVES = {
+    super_admin: true,
+    company_admin_tech: true,
+    company_admin: true,
+    regular_user: true,
+    writer: true,
+    reviewer: false,
+  };
+
+  it('covers every role of the product', () => {
+    expect(Object.keys(SAVES).sort()).toEqual(
+      Object.values(ROLES).slice().sort()
+    );
+  });
+
+  it.each(Object.entries(SAVES))('for a %s, saves: %s', async (role, saves) => {
+    const { vm, arrive } = load(userOf(role));
+    vm.saveOnOpen({ hasHtmlPreview: false });
+
+    expect(vm.save.execute).not.toHaveBeenCalled();
+    await arrive();
+
+    expect(vm.save.execute).toHaveBeenCalledTimes(saves ? 1 : 0);
+  });
+
+  it('does not save an email that has a preview', async () => {
+    const { vm, arrive } = load(userOf('regular_user'));
+    vm.saveOnOpen({ hasHtmlPreview: true });
+    await arrive();
+
+    expect(vm.save.execute).not.toHaveBeenCalled();
+  });
+
+  it('does not save where the user may not write', async () => {
+    const { vm, arrive } = load(userOf('regular_user'), { canWrite: false });
+    vm.saveOnOpen({ hasHtmlPreview: false });
+    await arrive();
+
+    expect(vm.save.execute).not.toHaveBeenCalled();
   });
 });

@@ -14,6 +14,11 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
 }));
+// Whether the user may write where the email lives: the edit rule of the
+// mailing service, stubbed here and tested with the service.
+jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
+  userCanEditMailing: jest.fn().mockResolvedValue(true),
+}));
 // The policy itself lives in mailing-metadata.service.js, which findOneForMosaico
 // delegates to; it reads the taxonomy through models.common like the rest of that
 // service, so that is what these tests stub.
@@ -148,6 +153,26 @@ describe('findOneForMosaico — company opted out', () => {
     expect(result.metadata.id).toEqual(MAILING);
     expect(result.metadata.url.update).toBe(`/api/mailings/${MAILING}/mosaico`);
     expect(result.data).toEqual({ preheaderText: 'dans data' });
+  });
+});
+
+// The editor locks itself where a save would be refused: it reads `canWrite`,
+// the mailing service's answer for the email's workspace or folder.
+describe('findOneForMosaico — canWrite', () => {
+  const mailingService = require('../../../packages/server/mailing/mailing.service.js');
+
+  it.each([true, false])('sends the edit rule answer: %s', async (answer) => {
+    mailingService.userCanEditMailing.mockResolvedValueOnce(answer);
+    const user = { isAdmin: false };
+    const context = makeContext({ companyFlag: undefined });
+
+    const result = await findOneForMosaico.call(context.model, user, {});
+
+    expect(result.metadata.canWrite).toBe(answer);
+    expect(mailingService.userCanEditMailing).toHaveBeenLastCalledWith(
+      user,
+      expect.objectContaining({ _id: MAILING })
+    );
   });
 });
 

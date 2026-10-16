@@ -636,18 +636,10 @@ var templateCompiler = function (
     model: viewModel,
     init: function () {
       pluginsCall(plugins, 'init', [viewModel], true);
-      // An email without a preview is saved on its first opening, which
-      // stores its content and its rendering, by whoever may save it: once
-      // the user's rights are known (badsender-current-user.js).
-      if (
-        !metadata.hasHtmlPreview &&
-        viewModel.save &&
-        viewModel.save.execute &&
-        typeof viewModel.whenCurrentUser === 'function'
-      ) {
-        viewModel.whenCurrentUser(function () {
-          if (viewModel.canSave()) viewModel.save.execute();
-        });
+      // An email without a preview is saved on its first opening, by whoever
+      // may save it (badsender-current-user.js).
+      if (typeof viewModel.saveOnOpen === 'function') {
+        viewModel.saveOnOpen(metadata);
       }
     },
     dispose: function () {

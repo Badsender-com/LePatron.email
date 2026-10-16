@@ -13,11 +13,16 @@ module.exports = (opts) => {
     // locks everything: it says so instead of claiming a refusal.
     viewModel.currentUserFailed = ko.observable(false);
 
+    // Whether the server accepts a save where this email lives (its workspace
+    // or folder): writing the email needs it on top of the capability
+    // (user-can.js).
+    viewModel.canWriteMailing = opts.metadata.canWrite !== false;
     // What the user may do, as the server sent it with the current user.
     viewModel.userCan = function (capability) {
       return userCan(viewModel, capability);
     };
-    // A reviewer changes nothing, so the toolbar's Save has nothing to write.
+    // A reviewer, or a member who may only read the workspace, changes
+    // nothing: the toolbar's Save has nothing to write.
     viewModel.canSave = function () {
       return userCan(viewModel, CAPABILITIES.MAILING_EDIT_CONTENT);
     };
@@ -52,6 +57,20 @@ module.exports = (opts) => {
       });
     };
 
+    // An email without a preview is saved on its first opening, which stores
+    // its content and its rendering (the HTML the exports send), by whoever
+    // may save it, once their rights are known. Called by template-loader.js
+    // when the editor starts with the email's metadata, `save` being
+    // Mosaico's command.
+    viewModel.saveOnOpen = function (metadata) {
+      if (!metadata || metadata.hasHtmlPreview) return;
+      viewModel.whenCurrentUser(function () {
+        if (viewModel.canSave() && viewModel.save && viewModel.save.execute) {
+          viewModel.save.execute();
+        }
+      });
+    };
+
     // API call to get the current user
     axios
       .get('/api/users/current-user')
@@ -64,10 +83,9 @@ module.exports = (opts) => {
           restOfCurrentUser.isAdmin === true ||
           (isGroupAdmin && !!group && group.id === currentGroupId);
 
-        // The capabilities are consumed only as additive read-only overlays
-        // (toolbox.tmpl.html, block-wysiwyg.tmpl.html) — never to hide/remove
-        // existing elements, which broke the vendored tab-switching mechanism,
-        // see git history.
+        // The toolbox's tabs are locked by overlays (toolbox.tmpl.html), never
+        // removed: removing them broke the vendored tab-switching mechanism,
+        // see git history. Single buttons may be hidden (`ko if: userCan`).
         viewModel.currentUser({
           ...restOfCurrentUser,
           isAdminOfCurrentGroup,
