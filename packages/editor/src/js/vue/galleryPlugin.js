@@ -143,10 +143,12 @@ function createGalleryPanel(vm) {
     Object.assign(this, remembered[this.type]);
   },
   mounted() {
-    // The list stays Mosaico's: upload and delete keep mutating the Knockout
-    // observableArray. A copy, so Vue does not take over that array.
+    // The list stays Mosaico's: upload, delete and rename replace entries of
+    // the Knockout observableArray, never edit one in place. A frozen copy,
+    // so Vue neither takes over that array nor walks every file to make it
+    // reactive: 31 ms at first opening for 5,000 images, none frozen.
     this.mirror(vm[this.type + 'Gallery'], (array) => {
-      this.images = array.slice();
+      this.images = Object.freeze(array.slice());
     });
     this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
       this.status = status;

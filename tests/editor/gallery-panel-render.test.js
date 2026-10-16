@@ -187,6 +187,16 @@ describe('gallery panel — following the gallery status', () => {
     panel.$destroy();
   });
 
+  // The file objects are Mosaico's. Vue observing them would add a getter
+  // and a setter to every property of every image, 31 ms for 5,000 of them.
+  it('leaves Mosaico’s file objects alone', () => {
+    const files = IMAGES.map((file) => ({ ...file }));
+    const panel = mountVm(fakeViewModel(files));
+    expect(panel.images).toEqual(files);
+    expect(files.every((file) => !('__ob__' in file))).toBe(true);
+    panel.$destroy();
+  });
+
   it('stops listening to Knockout once destroyed', () => {
     const vm = fakeViewModel(IMAGES.slice());
     const panel = mountVm(vm);
