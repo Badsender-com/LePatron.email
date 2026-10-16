@@ -7,13 +7,13 @@
  * images existantes qui n'ont pas encore uploadedAt défini.
  *
  * Usage :
- *   node packages/server/scripts/migrate-gallery-v1.js [--dry-run]
+ *   node scripts/migrate-gallery-v1.js [--dry-run]
  */
 
 const mongoose = require('mongoose');
 
-const config = require('../node.config.js');
-const { Galleries } = require('../common/models.common.js');
+const config = require('../packages/server/node.config.js');
+const { Galleries } = require('../packages/server/common/models.common.js');
 
 const isDryRun = process.argv.includes('--dry-run');
 

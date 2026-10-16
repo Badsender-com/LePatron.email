@@ -3,7 +3,7 @@
 const {
   needsDimensions,
   buildBackfilledFiles,
-} = require('../../../packages/server/scripts/backfill-gallery-dimensions.js');
+} = require('../../scripts/backfill-gallery-dimensions.js');
 
 const sized = (name, width, height) => ({ name, label: name, width, height });
 const unsized = (name) => ({ name, label: name });
