@@ -144,15 +144,14 @@ const migration = {
   query: { files: { $elemMatch: { uploadedAt: NOT_MIGRATED } } },
   projection: { creationOrWireframeId: 1, createdAt: 1, files: 1 },
   processGallery: migrateGallery,
-  describeCounts: (counts) =>
-    `${counts.migrated} migrated, ${counts.upToDate} already up to date`,
+  describeCounts: (counts, { dryRun }) =>
+    `${counts.migrated} ${dryRun ? 'to migrate' : 'migrated'}, ` +
+    `${counts.upToDate} already up to date`,
   summarize: (totals, { dryRun }) => [
-    `Images ${dryRun ? 'to migrate ' : 'migrated   '}  : ${
-      totals.migrated || 0
-    }`,
-    `Already up to date  : ${totals.upToDate || 0}`,
-    `Changed meanwhile   : ${totals.changedMeanwhile || 0}`,
-    `Without a name      : ${totals.invalid || 0}`,
+    [dryRun ? 'Images to migrate' : 'Images migrated', totals.migrated],
+    ['Already up to date', totals.upToDate],
+    ['Changed meanwhile', totals.changedMeanwhile],
+    ['Without a name', totals.invalid],
   ],
 };
 
