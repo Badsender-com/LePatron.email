@@ -16,77 +16,143 @@
 require('dotenv').config();
 const { runGalleryScript } = require('./gallery/run-gallery-script.js');
 
+// `null` in a query matches a missing field as well as a null one: what the
+// first version of this script wrote when a gallery had no createdAt.
+const NOT_MIGRATED = null;
+const UNSET = { $in: [null, ''] };
+
 // ---------------------------------------------------------------------------
 // Pure logic, testable without a database
 // ---------------------------------------------------------------------------
 
-function buildMigratedFiles(files, galleryCreatedAt) {
-  let migrated = 0;
-  let skipped = 0;
-
-  const updatedFiles = files.map((file) => {
-    if (file.uploadedAt) {
-      skipped++;
-      return file;
-    }
-    migrated++;
-    return {
-      ...file,
-      label: file.label || file.name,
-      source: file.source || 'upload',
-      externalMetadata: file.externalMetadata || {},
-      uploadedAt: galleryCreatedAt,
-    };
-  });
-
-  return { updatedFiles, migrated, skipped };
+// The images have no upload date of their own; the gallery's is the closest.
+// A document inserted by hand may lack createdAt, but its ObjectId still
+// carries the second it was created. Never null: a null uploadedAt is "not
+// migrated", and the image would be migrated again on every run.
+function migrationDate(gallery) {
+  if (gallery.createdAt instanceof Date) return gallery.createdAt;
+  if (gallery._id && typeof gallery._id.getTimestamp === 'function') {
+    return gallery._id.getTimestamp();
+  }
+  throw new Error('no createdAt and no ObjectId to date its images from');
 }
+
+/**
+ * @param {Array<object>} files as stored
+ * @returns {{pending: Map<string, number>, upToDate: number, invalid: number}}
+ *   the names still to migrate, with how many entries carry each (legacy
+ *   galleries can list the same name twice)
+ */
+function planGalleryMigration(files) {
+  const pending = new Map();
+  let upToDate = 0;
+  let invalid = 0;
+  for (const file of files) {
+    if (file.uploadedAt) {
+      upToDate += 1;
+    } else if (typeof file.name !== 'string' || file.name === '') {
+      // a name goes into a query: anything but a string could be an operator
+      invalid += 1;
+    } else {
+      pending.set(file.name, (pending.get(file.name) || 0) + 1);
+    }
+  }
+  return { pending, upToDate, invalid };
+}
+
+/**
+ * The update for every entry named `name` that is still not migrated.
+ *
+ * The precondition lives in the write, not only in the read: between the two,
+ * a user can rename the image (its label) or the app can migrate it, and the
+ * update must then leave what they wrote. `arrayFilters` rather than `$`, which
+ * would only reach the first of two entries with the same name.
+ */
+function buildMigrationUpdate(galleryId, name, uploadedAt) {
+  const pending = (id) => ({
+    [`${id}.name`]: name,
+    [`${id}.uploadedAt`]: NOT_MIGRATED,
+  });
+  return {
+    filter: {
+      _id: galleryId,
+      files: { $elemMatch: { name, uploadedAt: NOT_MIGRATED } },
+    },
+    update: {
+      $set: {
+        'files.$[file].uploadedAt': uploadedAt,
+        'files.$[unlabelled].label': name,
+        'files.$[unsourced].source': 'upload',
+        'files.$[bare].externalMetadata': {},
+      },
+    },
+    options: {
+      arrayFilters: [
+        pending('file'),
+        { ...pending('unlabelled'), 'unlabelled.label': UNSET },
+        { ...pending('unsourced'), 'unsourced.source': UNSET },
+        { ...pending('bare'), 'bare.externalMetadata': null },
+      ],
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// One gallery
+// ---------------------------------------------------------------------------
 
 // The gallery is read raw (no Mongoose document, so no schema getter): the
 // getter projects each file onto a fixed set of keys, and writing that
 // projection back is how a first version erased `originalName`.
-async function migrateGallery(gallery, { dryRun, collection }) {
-  const files = gallery.files || [];
-  const { updatedFiles, migrated, skipped } = buildMigratedFiles(
-    files,
-    gallery.createdAt
+async function migrateGallery(gallery, { dryRun, collection, log }) {
+  const { pending, upToDate, invalid } = planGalleryMigration(
+    gallery.files || []
   );
+  const counts = { migrated: 0, upToDate, invalid, changedMeanwhile: 0 };
+  if (invalid > 0) log(`${invalid} image(s) without a usable name, left as is`);
+  if (pending.size === 0) return counts;
 
-  if (!dryRun && migrated > 0) {
-    // One positional update per file rather than a rewrite of the whole
-    // array: a rewrite also loses any upload that lands mid-run.
-    const toWrite = updatedFiles.filter(
-      (file, index) => !files[index].uploadedAt
+  const uploadedAt = migrationDate(gallery);
+  for (const [name, entries] of pending) {
+    if (dryRun) {
+      counts.migrated += entries;
+      continue;
+    }
+    const { filter, update, options } = buildMigrationUpdate(
+      gallery._id,
+      name,
+      uploadedAt
     );
-    for (const file of toWrite) {
-      // eslint-disable-next-line no-await-in-loop
-      await collection.updateOne(
-        { _id: gallery._id, 'files.name': file.name },
-        {
-          $set: {
-            'files.$.label': file.label,
-            'files.$.source': file.source,
-            'files.$.externalMetadata': file.externalMetadata,
-            'files.$.uploadedAt': file.uploadedAt,
-          },
-        }
-      );
+    // eslint-disable-next-line no-await-in-loop
+    const { modifiedCount } = await collection.updateOne(
+      filter,
+      update,
+      options
+    );
+    if (modifiedCount > 0) {
+      counts.migrated += entries;
+    } else {
+      counts.changedMeanwhile += entries;
+      log(`${JSON.stringify(name)} removed or migrated meanwhile, left as is`);
     }
   }
-
-  return { migrated, skipped };
+  return counts;
 }
 
 const migration = {
   title: 'Gallery V1 migration',
-  query: { files: { $elemMatch: { uploadedAt: null } } },
+  query: { files: { $elemMatch: { uploadedAt: NOT_MIGRATED } } },
   projection: { creationOrWireframeId: 1, createdAt: 1, files: 1 },
   processGallery: migrateGallery,
-  describeCounts: ({ migrated, skipped }) =>
-    `${migrated} migrated, ${skipped} already up to date`,
+  describeCounts: (counts) =>
+    `${counts.migrated} migrated, ${counts.upToDate} already up to date`,
   summarize: (totals, { dryRun }) => [
-    `Images ${dryRun ? 'to migrate' : 'migrated'}    : ${totals.migrated || 0}`,
-    `Already up to date  : ${totals.skipped || 0}`,
+    `Images ${dryRun ? 'to migrate ' : 'migrated   '}  : ${
+      totals.migrated || 0
+    }`,
+    `Already up to date  : ${totals.upToDate || 0}`,
+    `Changed meanwhile   : ${totals.changedMeanwhile || 0}`,
+    `Without a name      : ${totals.invalid || 0}`,
   ],
 };
 
@@ -102,4 +168,10 @@ if (require.main === module) {
   );
 }
 
-module.exports = { buildMigratedFiles, migrateGallery, migration };
+module.exports = {
+  migrationDate,
+  planGalleryMigration,
+  buildMigrationUpdate,
+  migrateGallery,
+  migration,
+};

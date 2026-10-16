@@ -1,258 +1,206 @@
 'use strict';
 
-jest.mock('../../packages/server/common/models.common.js', () => ({
-  Galleries: { updateOne: jest.fn().mockResolvedValue({}) },
-}));
+const { Types } = require('mongoose');
 
-const { Galleries } = require('../../packages/server/common/models.common.js');
 const {
-  buildMigratedFiles,
+  migrationDate,
+  planGalleryMigration,
+  buildMigrationUpdate,
   migrateGallery,
+  migration,
 } = require('../../scripts/migrate-gallery-v1');
 
 const MONGO_ID = '507f1f77bcf86cd799439011';
+const GALLERY_ID = new Types.ObjectId('5f0c1f77bcf86cd799439022');
 const GALLERY_CREATED_AT = new Date('2025-06-01T10:00:00.000Z');
-
-// ---------------------------------------------------------------------------
-// buildMigratedFiles — fonction pure
-// ---------------------------------------------------------------------------
-
-describe('buildMigratedFiles', () => {
-  describe('idempotence', () => {
-    it('skippe une image dont uploadedAt est déjà défini', () => {
-      const existingDate = new Date('2026-01-01');
-      const files = [
-        { name: `${MONGO_ID}-hash.jpg`, uploadedAt: existingDate },
-      ];
-
-      const { migrated, skipped, updatedFiles } = buildMigratedFiles(
-        files,
-        GALLERY_CREATED_AT
-      );
-
-      expect(migrated).toBe(0);
-      expect(skipped).toBe(1);
-      expect(updatedFiles[0].uploadedAt).toEqual(existingDate);
-    });
-
-    it('migre une image sans uploadedAt', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg` }];
-
-      const { migrated, skipped } = buildMigratedFiles(
-        files,
-        GALLERY_CREATED_AT
-      );
-
-      expect(migrated).toBe(1);
-      expect(skipped).toBe(0);
-    });
-  });
-
-  describe('uploadedAt', () => {
-    it('initialise uploadedAt à gallery.createdAt', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg` }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].uploadedAt).toEqual(GALLERY_CREATED_AT);
-    });
-  });
-
-  describe('label', () => {
-    it('initialise label au nom technique si absent', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg` }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].label).toBe(`${MONGO_ID}-hash.jpg`);
-    });
-
-    it("préserve le label existant (même si c'est le hash technique)", () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg`, label: 'mon-logo.jpg' }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].label).toBe('mon-logo.jpg');
-    });
-  });
-
-  describe('source et externalMetadata', () => {
-    it('initialise source à "upload" si absent', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg` }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].source).toBe('upload');
-    });
-
-    it('préserve source si déjà défini', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg`, source: 'dam_bynder' }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].source).toBe('dam_bynder');
-    });
-
-    it('initialise externalMetadata à {} si absent', () => {
-      const files = [{ name: `${MONGO_ID}-hash.jpg` }];
-
-      const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);
-
-      expect(updatedFiles[0].externalMetadata).toEqual({});
-    });
-  });
-
-  describe('galerie mixte', () => {
-    it('migre uniquement les images sans uploadedAt', () => {
-      const files = [
-        { name: `${MONGO_ID}-aaa.jpg`, uploadedAt: new Date('2026-01-01') },
-        { name: `${MONGO_ID}-bbb.jpg` },
-        { name: `${MONGO_ID}-ccc.png` },
-      ];
-
-      const { migrated, skipped, updatedFiles } = buildMigratedFiles(
-        files,
-        GALLERY_CREATED_AT
-      );
-
-      expect(migrated).toBe(2);
-      expect(skipped).toBe(1);
-      expect(updatedFiles[0].uploadedAt).toEqual(new Date('2026-01-01'));
-      expect(updatedFiles[1].uploadedAt).toEqual(GALLERY_CREATED_AT);
-      expect(updatedFiles[2].uploadedAt).toEqual(GALLERY_CREATED_AT);
-    });
-
-    it('galerie vide → rien à faire', () => {
-      const { updatedFiles, migrated, skipped } = buildMigratedFiles(
-        [],
-        GALLERY_CREATED_AT
-      );
-
-      expect(updatedFiles).toHaveLength(0);
-      expect(migrated).toBe(0);
-      expect(skipped).toBe(0);
-    });
-
-    it('toutes les images déjà migrées → 0 écriture', () => {
-      const files = [
-        { name: `${MONGO_ID}-aaa.jpg`, uploadedAt: new Date('2026-01-01') },
-        { name: `${MONGO_ID}-bbb.jpg`, uploadedAt: new Date('2026-02-01') },
-      ];
-
-      const { migrated, skipped } = buildMigratedFiles(
-        files,
-        GALLERY_CREATED_AT
-      );
-
-      expect(migrated).toBe(0);
-      expect(skipped).toBe(2);
-    });
-  });
+const file = (suffix, fields = {}) => ({
+  name: `${MONGO_ID}-${suffix}.jpg`,
+  ...fields,
 });
 
-// ---------------------------------------------------------------------------
-// migrateGallery — avec mock de galerie Mongoose
-// ---------------------------------------------------------------------------
+describe('migrate-gallery-v1', () => {
+  describe('planGalleryMigration', () => {
+    it('plans an image without uploadedAt, skips one that has it', () => {
+      const plan = planGalleryMigration([
+        file('done', { uploadedAt: new Date('2026-01-01') }),
+        file('todo'),
+      ]);
 
-describe('migrateGallery', () => {
-  // A mongoose document, not a plain object: reading `gallery.files` runs the
-  // schema getter, which PROJECTS each file onto a fixed set of keys. The
-  // first version of this script read through that projection and saved it
-  // back, which silently erased every stored field outside it.
-  // The raw document, as the runner reads it from the collection.
-  function makeMockGallery(stored) {
-    return {
-      _id: 'gallery-id',
-      creationOrWireframeId: MONGO_ID,
-      files: stored,
-      createdAt: GALLERY_CREATED_AT,
-      save: jest.fn(),
-      markModified: jest.fn(),
-    };
-  }
-  const run = (gallery, dryRun) =>
-    migrateGallery(gallery, { dryRun, collection: Galleries });
-
-  beforeEach(() => Galleries.updateOne.mockClear());
-
-  it('fills the V1 fields of an image that has none', async () => {
-    const gallery = makeMockGallery([{ name: `${MONGO_ID}-hash.jpg` }]);
-
-    const { migrated } = await run(gallery, false);
-
-    expect(migrated).toBe(1);
-    expect(Galleries.updateOne).toHaveBeenCalledTimes(1);
-    const [filter, update] = Galleries.updateOne.mock.calls[0];
-    expect(filter).toEqual({
-      _id: 'gallery-id',
-      'files.name': `${MONGO_ID}-hash.jpg`,
+      expect([...plan.pending]).toEqual([[`${MONGO_ID}-todo.jpg`, 1]]);
+      expect(plan.upToDate).toBe(1);
     });
-    expect(Object.keys(update.$set).sort()).toEqual([
-      'files.$.externalMetadata',
-      'files.$.label',
-      'files.$.source',
-      'files.$.uploadedAt',
-    ]);
+
+    // What the first version wrote when a gallery had no createdAt.
+    it('treats a null uploadedAt as not migrated', () => {
+      const plan = planGalleryMigration([file('a', { uploadedAt: null })]);
+      expect(plan.pending.size).toBe(1);
+    });
+
+    // Legacy saves could push the same name twice; one update covers both.
+    it('plans a duplicated name once, counting its entries', () => {
+      const plan = planGalleryMigration([file('dup'), file('dup')]);
+      expect([...plan.pending]).toEqual([[`${MONGO_ID}-dup.jpg`, 2]]);
+    });
+
+    // A stored name goes into a query: an object there would be an operator.
+    it('leaves out a name that is not a string', () => {
+      const plan = planGalleryMigration([{ name: { $gt: '' } }, { name: '' }]);
+      expect(plan.pending.size).toBe(0);
+      expect(plan.invalid).toBe(2);
+    });
+
+    it('has nothing to do on an empty gallery', () => {
+      expect(planGalleryMigration([])).toEqual({
+        pending: new Map(),
+        upToDate: 0,
+        invalid: 0,
+      });
+    });
   });
 
-  // The defect this rewrite exists for. A field the schema getter does not
-  // list used to be destroyed on every gallery the script touched — silently,
-  // in a one-shot script meant to run on production.
-  it('reads what is stored, not what the schema projects', async () => {
-    const gallery = makeMockGallery([
-      {
-        name: `${MONGO_ID}-hash.jpg`,
-        originalName: 'mon-image.jpg',
-        somethingAnIntegrationAdded: 'keep me',
-      },
-    ]);
+  describe('migrationDate', () => {
+    it('dates the images from the gallery creation', () => {
+      expect(migrationDate({ createdAt: GALLERY_CREATED_AT })).toBe(
+        GALLERY_CREATED_AT
+      );
+    });
 
-    await run(gallery, false);
+    // A null uploadedAt would make the image "not migrated" forever.
+    it('falls back on the ObjectId timestamp, never on null', () => {
+      expect(migrationDate({ _id: GALLERY_ID })).toEqual(
+        GALLERY_ID.getTimestamp()
+      );
+    });
 
-    // it never rewrites the array, so nothing outside the two touched fields
-    // can be lost
-    expect(gallery.save).not.toHaveBeenCalled();
-    expect(gallery.markModified).not.toHaveBeenCalled();
-    const [, update] = Galleries.updateOne.mock.calls[0];
-    expect(Object.keys(update.$set)).not.toContain('files');
+    it('refuses a gallery it cannot date', () => {
+      expect(() => migrationDate({ _id: 'hand-written' })).toThrow();
+    });
   });
 
-  // One update per file it actually changed. Touching the already-migrated
-  // ones would rewrite them with their own values, for nothing.
-  it('only writes the images it migrated, in a mixed gallery', async () => {
-    const gallery = makeMockGallery([
-      { name: `${MONGO_ID}-aaa.jpg`, uploadedAt: new Date('2026-01-01') },
-      { name: `${MONGO_ID}-bbb.jpg` },
-    ]);
-
-    const { migrated, skipped } = await run(gallery, false);
-
-    expect(migrated).toBe(1);
-    expect(skipped).toBe(1);
-    expect(Galleries.updateOne).toHaveBeenCalledTimes(1);
-    expect(Galleries.updateOne.mock.calls[0][0]['files.name']).toBe(
-      `${MONGO_ID}-bbb.jpg`
+  describe('buildMigrationUpdate', () => {
+    const name = `${MONGO_ID}-a.jpg`;
+    const { filter, update, options } = buildMigrationUpdate(
+      GALLERY_ID,
+      name,
+      GALLERY_CREATED_AT
     );
+
+    // The precondition is part of the write: an image migrated or removed
+    // between the read and the update is not matched.
+    it('only matches a gallery where the image is still not migrated', () => {
+      expect(filter).toEqual({
+        _id: GALLERY_ID,
+        files: { $elemMatch: { name, uploadedAt: null } },
+      });
+    });
+
+    it('sets the four V1 fields, on every entry of that name', () => {
+      expect(update.$set).toEqual({
+        'files.$[file].uploadedAt': GALLERY_CREATED_AT,
+        'files.$[unlabelled].label': name,
+        'files.$[unsourced].source': 'upload',
+        'files.$[bare].externalMetadata': {},
+      });
+      expect(JSON.stringify(update)).not.toContain('files.$.');
+    });
+
+    // A user renaming the image while the script runs keeps the label typed.
+    it('never overwrites a label, a source or metadata already there', () => {
+      const [, unlabelled, unsourced, bare] = options.arrayFilters;
+      expect(unlabelled).toMatchObject({
+        'unlabelled.name': name,
+        'unlabelled.uploadedAt': null,
+        'unlabelled.label': { $in: [null, ''] },
+      });
+      expect(unsourced['unsourced.source']).toEqual({ $in: [null, ''] });
+      expect(bare['bare.externalMetadata']).toBeNull();
+    });
   });
 
-  it('writes nothing in dry-run', async () => {
-    const gallery = makeMockGallery([{ name: `${MONGO_ID}-hash.jpg` }]);
+  describe('migrateGallery', () => {
+    const collection = { updateOne: jest.fn() };
+    const log = jest.fn();
+    const run = (files, dryRun = false, extra = {}) =>
+      migrateGallery(
+        {
+          _id: GALLERY_ID,
+          creationOrWireframeId: MONGO_ID,
+          createdAt: GALLERY_CREATED_AT,
+          files,
+          ...extra,
+        },
+        { dryRun, collection, log }
+      );
 
-    await run(gallery, true);
+    beforeEach(() => {
+      collection.updateOne.mockReset();
+      collection.updateOne.mockResolvedValue({
+        matchedCount: 1,
+        modifiedCount: 1,
+      });
+      log.mockClear();
+    });
 
-    expect(Galleries.updateOne).not.toHaveBeenCalled();
-    expect(gallery.save).not.toHaveBeenCalled();
+    it('writes one update per name still to migrate, and counts it', async () => {
+      const counts = await run([
+        file('done', { uploadedAt: new Date('2026-01-01') }),
+        file('todo'),
+      ]);
+
+      expect(counts).toMatchObject({ migrated: 1, upToDate: 1 });
+      expect(collection.updateOne).toHaveBeenCalledTimes(1);
+      expect(collection.updateOne.mock.calls[0][0].files.$elemMatch.name).toBe(
+        `${MONGO_ID}-todo.jpg`
+      );
+    });
+
+    // The count is what was written, not what was meant.
+    it('counts an image changed meanwhile apart, and names it', async () => {
+      collection.updateOne.mockResolvedValue({
+        matchedCount: 0,
+        modifiedCount: 0,
+      });
+
+      const counts = await run([file('gone')]);
+
+      expect(counts).toMatchObject({ migrated: 0, changedMeanwhile: 1 });
+      expect(log.mock.calls[0][0]).toContain(`${MONGO_ID}-gone.jpg`);
+    });
+
+    it('counts both entries of a duplicated name with one write', async () => {
+      const counts = await run([file('dup'), file('dup')]);
+
+      expect(collection.updateOne).toHaveBeenCalledTimes(1);
+      expect(counts.migrated).toBe(2);
+    });
+
+    it('writes nothing in dry-run, and says what it would do', async () => {
+      const counts = await run([file('a'), file('b')], true);
+
+      expect(collection.updateOne).not.toHaveBeenCalled();
+      expect(counts.migrated).toBe(2);
+    });
+
+    it('writes nothing when every image is already migrated', async () => {
+      const counts = await run([file('a', { uploadedAt: new Date() })]);
+
+      expect(collection.updateOne).not.toHaveBeenCalled();
+      expect(counts).toMatchObject({ migrated: 0, upToDate: 1 });
+    });
+
+    it('fails the gallery rather than write a null date', async () => {
+      await expect(
+        run([file('a')], false, { _id: 'hand-written', createdAt: undefined })
+      ).rejects.toThrow(/createdAt/);
+      expect(collection.updateOne).not.toHaveBeenCalled();
+    });
   });
 
-  it('writes nothing when every image is already migrated', async () => {
-    const gallery = makeMockGallery([
-      { name: `${MONGO_ID}-hash.jpg`, uploadedAt: new Date() },
-    ]);
-
-    const { migrated, skipped } = await run(gallery, false);
-
-    expect(migrated).toBe(0);
-    expect(skipped).toBe(1);
-    expect(Galleries.updateOne).not.toHaveBeenCalled();
+  // The runner reads only what the query matches: it must match exactly the
+  // galleries planGalleryMigration has work for.
+  it('selects the galleries holding an image without uploadedAt', () => {
+    expect(migration.query).toEqual({
+      files: { $elemMatch: { uploadedAt: null } },
+    });
   });
 });
