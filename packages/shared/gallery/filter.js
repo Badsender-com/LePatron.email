@@ -102,6 +102,5 @@ module.exports = {
   filterGalleryFiles,
   fileExt,
   isEditableImage,
-  NON_EDITABLE_FORMATS,
   SORT_BY_VALUES,
 };

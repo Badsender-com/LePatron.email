@@ -18,7 +18,10 @@ const imageService = require('./image.service');
 const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-const { SORT_BY_VALUES } = require('../../shared/gallery/filter.js');
+const {
+  SORT_BY_VALUES,
+  filterGalleryFiles,
+} = require('../../shared/gallery/filter.js');
 const {
   sanitizeLabel,
   MAX_LABEL_LENGTH,
@@ -506,7 +509,7 @@ async function list(req, res, next) {
   }
 
   const gallery = await imageService.findOrCreateGallery(mongoId);
-  const files = imageService.filterGalleryFiles(gallery.files, {
+  const files = filterGalleryFiles(gallery.files, {
     search,
     format,
     sortBy,
@@ -583,12 +586,10 @@ async function create(req, res) {
   const uploads = await fileManager.parseMultipart(req, multipartOptions);
   const files = await imageService.addFiles(mongoId, uploads.files);
 
-  // send only the new uploads
-  // front-application will iterate over them to update the gallery previews
-  // — answer with what was stored, label included: the editor pushes this very
-  // object into its gallery list, and a response without the V1 fields made the
-  // fresh thumbnail show its technical file name until the next full reload
-  res.json({ ...uploads, files });
+  // Only the new uploads, as stored, label included: the editor pushes these
+  // very objects into its gallery list, and a response without the V1 fields
+  // showed the fresh thumbnail's technical file name until the next reload.
+  res.json({ files });
 }
 
 /**

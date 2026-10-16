@@ -19,7 +19,6 @@ const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 const modelsUtils = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-const { filterGalleryFiles } = require('../../shared/gallery/filter.js');
 const { labelForUpload } = require('../../shared/gallery/label.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
@@ -218,9 +217,7 @@ module.exports = {
   createGallery,
   findOrCreateGallery,
   addFiles,
-  toGalleryFile,
   createFromUrl,
-  filterGalleryFiles,
   renameLabel,
   assertGalleryOwnership,
 };
