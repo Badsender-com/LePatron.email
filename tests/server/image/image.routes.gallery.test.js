@@ -117,7 +117,7 @@ describe('PATCH /gallery/:mongoId/:imageName/label — what it accepts', () => {
   const rename = (label) => request(app()).patch(LABEL_URL).send({ label });
 
   it('stores the cleaned label and answers with the renamed image', async () => {
-    const res = await rename('  Mon‮ image  ');
+    const res = await rename('  Mon\u202E image  ');
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ name: IMAGE_NAME, label: 'Mon image' });
