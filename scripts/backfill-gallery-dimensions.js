@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 'use strict';
 
 /**
@@ -9,10 +10,11 @@
  * crop. So each stored file is read back and probed.
  *
  * Usage:
- *   node scripts/backfill-gallery-dimensions.js [--dry-run]
+ *   node scripts/backfill-gallery-dimensions.js [--dry-run] [--concurrency=N]
  *
- * Reads only the head of each file, not the whole image. Idempotent: a file
+ * Reads only the head of each file, not the whole image. Rerunnable: a file
  * that already has dimensions is skipped, so an interrupted run resumes.
+ * See scripts/gallery/README.md before running it on production.
  *
  * Writes one field pair at a time, through a positional update that touches
  * nothing else in the document. Reading `gallery.files` and saving it back
@@ -27,14 +29,10 @@
 
 const path = require('path');
 
-const mongoose = require('mongoose');
-
-const config = require('../packages/server/node.config.js');
-const { Galleries } = require('../packages/server/common/models.common.js');
+require('dotenv').config();
 const fileManager = require('../packages/server/common/file-manage.service.js');
 const uploadIdentity = require('../packages/server/common/upload-identity.service.js');
-
-const isDryRun = process.argv.includes('--dry-run');
+const { runGalleryScript } = require('./gallery/run-gallery-script.js');
 
 // Pull enough for the shared reader to reach a JPEG's SOF0 behind a maximal
 // EXIF segment. It caps what it hands the prober itself, so reading more here
@@ -145,120 +143,70 @@ function readDimensions(imageName) {
   });
 }
 
-async function backfillGallery(gallery, dryRun) {
-  // `.get(..., { getters: false })` reads what is stored, not what the schema
-  // projects — the projection is missing fields this script must not erase.
-  const files = gallery.get('files', null, { getters: false }) || [];
+// The gallery is read raw (no Mongoose document, so no schema getter): the
+// projection is missing fields this script must not erase. Each pair is
+// written as soon as it is read, so an interruption loses at most one read.
+async function backfillGallery(gallery, { dryRun, collection }) {
+  const files = gallery.files || [];
   const pending = files.filter(needsDimensions);
   const sizes = new Map();
 
-  // Sequential on purpose: a gallery can hold hundreds of files, and the point
-  // is not to be fast but to not hammer the storage backend.
+  // Sequential within a gallery: the runner bounds how many galleries run at
+  // once, so the storage never sees more reads than that.
   for (const file of pending) {
     // eslint-disable-next-line no-await-in-loop
     const size = await readDimensions(file.name);
-    if (size) sizes.set(file.name, size);
-  }
-
-  if (!dryRun) {
-    for (const [name, size] of sizes) {
-      // eslint-disable-next-line no-await-in-loop
-      await Galleries.updateOne(
-        {
-          creationOrWireframeId: gallery.creationOrWireframeId,
-          'files.name': name,
-        },
-        { $set: { 'files.$.width': size.width, 'files.$.height': size.height } }
-      );
-    }
-  }
-
-  return buildBackfilledFiles(files, sizes);
-}
-
-// ---------------------------------------------------------------------------
-// Runner
-// ---------------------------------------------------------------------------
-
-async function run() {
-  const dbUri = process.env.MONGODB_URI || config.database;
-  mongoose.set('useFindAndModify', false);
-  mongoose.set('useCreateIndex', true);
-  await mongoose.connect(dbUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  console.log(`Connected to: ${dbUri}`);
-
-  if (isDryRun) {
-    console.log('[DRY-RUN] Simulation — nothing is written.\n');
-  }
-
-  const totalGalleries = await Galleries.countDocuments();
-  console.log('Gallery dimensions backfill');
-  console.log(`Galleries: ${totalGalleries}\n`);
-
-  let galleryCount = 0;
-  let totalFilled = 0;
-  let totalSkipped = 0;
-  let totalUnreadable = 0;
-  let totalErrors = 0;
-
-  const cursor = Galleries.find({}).cursor();
-
-  for (
-    let gallery = await cursor.next();
-    gallery !== null;
-    gallery = await cursor.next()
-  ) {
-    galleryCount++;
-    const galleryId = String(gallery.creationOrWireframeId);
-
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const { filled, skipped, unreadable } = await backfillGallery(
-        gallery,
-        isDryRun
-      );
-      totalFilled += filled;
-      totalSkipped += skipped;
-      totalUnreadable += unreadable;
-
-      console.log(
-        `[${galleryCount}/${totalGalleries}] ${galleryId} — ` +
-          `${filled} filled, ${skipped} already known, ${unreadable} unreadable`
-      );
-    } catch (error) {
-      totalErrors++;
-      console.error(
-        `[${galleryCount}/${totalGalleries}] ${galleryId} — ERROR: ${error.message}`
-      );
-    }
-  }
-
-  console.log('\n--- Result ---');
-  console.log(`Galleries processed : ${galleryCount}/${totalGalleries}`);
-  console.log(`Dimensions filled   : ${totalFilled}`);
-  console.log(`Already known       : ${totalSkipped}`);
-  console.log(`Unreadable          : ${totalUnreadable}`);
-  if (totalErrors > 0) console.error(`Errors              : ${totalErrors}`);
-  if (totalUnreadable > 0) {
-    console.log(
-      '\nUnreadable files are listed in the gallery but missing from storage, ' +
-        'or are not images. Their tooltip shows no dimensions; nothing else breaks.'
+    if (!size) continue;
+    sizes.set(file.name, size);
+    if (dryRun) continue;
+    // eslint-disable-next-line no-await-in-loop
+    await collection.updateOne(
+      { _id: gallery._id, 'files.name': file.name },
+      { $set: { 'files.$.width': size.width, 'files.$.height': size.height } }
     );
   }
-  if (isDryRun) console.log('\n[DRY-RUN] Nothing was written.');
 
-  await mongoose.disconnect();
+  const { filled, skipped, unreadable } = buildBackfilledFiles(files, sizes);
+  return { filled, skipped, unreadable };
 }
+
+const backfill = {
+  title: 'Gallery dimensions backfill',
+  query: {
+    files: {
+      $elemMatch: {
+        $or: [{ width: { $in: [null, 0] } }, { height: { $in: [null, 0] } }],
+      },
+    },
+  },
+  projection: { creationOrWireframeId: 1, files: 1 },
+  processGallery: backfillGallery,
+  describeCounts: ({ filled, skipped, unreadable }) =>
+    `${filled} filled, ${skipped} already known, ${unreadable} unreadable`,
+  summarize: (totals, { dryRun }) => [
+    `Dimensions ${dryRun ? 'to fill' : 'filled'}   : ${totals.filled || 0}`,
+    `Already known       : ${totals.skipped || 0}`,
+    `Unreadable          : ${totals.unreadable || 0}`,
+  ],
+};
 
 // only run when executed directly, not when required by a test
 if (require.main === module) {
-  run().catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+  runGalleryScript(backfill).then(
+    (code) => {
+      process.exitCode = code;
+    },
+    (error) => {
+      console.error(`Fatal error: ${error.message}`);
+      process.exitCode = 1;
+    }
+  );
 }
 
-module.exports = { needsDimensions, buildBackfilledFiles, readDimensions };
+module.exports = {
+  needsDimensions,
+  buildBackfilledFiles,
+  readDimensions,
+  backfillGallery,
+  backfill,
+};

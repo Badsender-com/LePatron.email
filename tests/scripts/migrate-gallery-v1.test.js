@@ -159,44 +159,32 @@ describe('migrateGallery', () => {
   // schema getter, which PROJECTS each file onto a fixed set of keys. The
   // first version of this script read through that projection and saved it
   // back, which silently erased every stored field outside it.
+  // The raw document, as the runner reads it from the collection.
   function makeMockGallery(stored) {
-    const projected = stored.map((file) => ({
-      name: file.name,
-      url: file.name,
-      deleteUrl: `/api/images/${file.name}`,
-      thumbnailUrl: `/api/images/cover/111x111/${file.name}`,
-      label: file.label || file.name,
-      source: file.source || 'upload',
-      externalMetadata: file.externalMetadata || {},
-      uploadedAt: file.uploadedAt || null,
-    }));
     return {
+      _id: 'gallery-id',
       creationOrWireframeId: MONGO_ID,
-      // what a reader going through the getter would see
-      files: projected,
-      // what is actually stored
-      get: (path, type, options) =>
-        path === 'files' && options && options.getters === false
-          ? stored
-          : projected,
+      files: stored,
       createdAt: GALLERY_CREATED_AT,
+      save: jest.fn(),
       markModified: jest.fn(),
-      save: jest.fn().mockResolvedValue({}),
     };
   }
+  const run = (gallery, dryRun) =>
+    migrateGallery(gallery, { dryRun, collection: Galleries });
 
   beforeEach(() => Galleries.updateOne.mockClear());
 
   it('fills the V1 fields of an image that has none', async () => {
     const gallery = makeMockGallery([{ name: `${MONGO_ID}-hash.jpg` }]);
 
-    const { migrated } = await migrateGallery(gallery, false);
+    const { migrated } = await run(gallery, false);
 
     expect(migrated).toBe(1);
     expect(Galleries.updateOne).toHaveBeenCalledTimes(1);
     const [filter, update] = Galleries.updateOne.mock.calls[0];
     expect(filter).toEqual({
-      creationOrWireframeId: MONGO_ID,
+      _id: 'gallery-id',
       'files.name': `${MONGO_ID}-hash.jpg`,
     });
     expect(Object.keys(update.$set).sort()).toEqual([
@@ -219,7 +207,7 @@ describe('migrateGallery', () => {
       },
     ]);
 
-    await migrateGallery(gallery, false);
+    await run(gallery, false);
 
     // it never rewrites the array, so nothing outside the two touched fields
     // can be lost
@@ -237,7 +225,7 @@ describe('migrateGallery', () => {
       { name: `${MONGO_ID}-bbb.jpg` },
     ]);
 
-    const { migrated, skipped } = await migrateGallery(gallery, false);
+    const { migrated, skipped } = await run(gallery, false);
 
     expect(migrated).toBe(1);
     expect(skipped).toBe(1);
@@ -250,7 +238,7 @@ describe('migrateGallery', () => {
   it('writes nothing in dry-run', async () => {
     const gallery = makeMockGallery([{ name: `${MONGO_ID}-hash.jpg` }]);
 
-    await migrateGallery(gallery, true);
+    await run(gallery, true);
 
     expect(Galleries.updateOne).not.toHaveBeenCalled();
     expect(gallery.save).not.toHaveBeenCalled();
@@ -261,7 +249,7 @@ describe('migrateGallery', () => {
       { name: `${MONGO_ID}-hash.jpg`, uploadedAt: new Date() },
     ]);
 
-    const { migrated, skipped } = await migrateGallery(gallery, false);
+    const { migrated, skipped } = await run(gallery, false);
 
     expect(migrated).toBe(0);
     expect(skipped).toBe(1);
