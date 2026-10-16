@@ -213,17 +213,19 @@ const backfill = {
   processGallery: backfillGallery,
   describeEnvironment: () => [describeStorage()],
   preflight: (context) => checkStorage(context),
-  describeCounts: (counts) =>
-    `${counts.filled} filled, ${counts.known} already known, ` +
+  describeCounts: (counts, { dryRun }) =>
+    `${counts.filled} ${dryRun ? 'to fill' : 'filled'}, ` +
+    `${counts.known} already known, ` +
     `${sum(counts, [...TRANSIENT, ...PERMANENT])} unreadable`,
   summarize: (totals, { dryRun }) => [
-    `Dimensions ${dryRun ? 'to fill' : 'filled '}   : ${totals.filled || 0}`,
-    `Already known       : ${totals.known || 0}`,
-    `Changed meanwhile   : ${totals.changedMeanwhile || 0}`,
-    'Unreadable, permanent (missing / not an image / bad name): ' +
-      PERMANENT.map((status) => totals[status] || 0).join(' / '),
-    'Unreadable, transient (timeout / storage error): ' +
-      TRANSIENT.map((status) => totals[status] || 0).join(' / '),
+    [dryRun ? 'Dimensions to fill' : 'Dimensions filled', totals.filled],
+    ['Already known', totals.known],
+    ['Changed meanwhile', totals.changedMeanwhile],
+    ['Missing from storage', totals[READ_STATUS.MISSING]],
+    ['Not an image', totals[READ_STATUS.NOT_AN_IMAGE]],
+    ['Unusable name', totals[READ_STATUS.INVALID_NAME]],
+    ['Read timed out', totals[READ_STATUS.TIMEOUT]],
+    ['Storage error', totals[READ_STATUS.ERROR]],
   ],
   assess: assessBackfill,
 };

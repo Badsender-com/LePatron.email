@@ -25,6 +25,7 @@ const PAGE_SIZE = 100;
 const DEFAULT_CONCURRENCY = 4;
 const MAX_CONCURRENCY = 32;
 const EXIT_FAILURE = 1;
+const SUMMARY_LABEL_WIDTH = 21;
 
 function parseArgs(argv) {
   const dryRun = argv.includes('--dry-run');
@@ -148,7 +149,7 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
         log,
       });
       addCounts(run.totals, counts);
-      log(script.describeCounts(counts));
+      log(script.describeCounts(counts, { dryRun }));
     } catch (error) {
       run.failedGalleries.push(id);
       console.error(`${prefix} ERROR ${redact(error.message)}`);
@@ -168,8 +169,9 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
  * @param {object} script.query which galleries still need work
  * @param {object} script.projection
  * @param {Function} script.processGallery (gallery, context) => counts
- * @param {Function} script.describeCounts counts => one line
- * @param {Function} script.summarize (totals, { dryRun }) => lines
+ * @param {Function} script.describeCounts (counts, { dryRun }) => one line
+ * @param {Function} script.summarize (totals, { dryRun }) => [label, count]
+ *   pairs
  * @param {Function} [script.describeEnvironment] () => lines
  * @param {Function} [script.preflight] ({ collection }) => counts; throws to
  *   stop before anything is processed
@@ -201,8 +203,13 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
 function report(run) {
   const { script, dryRun, totals, failedGalleries } = run;
   console.log('\n--- Result ---');
-  console.log(`Galleries processed : ${run.processed}/${run.toProcess}`);
-  for (const line of script.summarize(totals, { dryRun })) console.log(line);
+  const rows = [
+    ['Galleries processed', `${run.processed}/${run.toProcess}`],
+    ...script.summarize(totals, { dryRun }),
+  ];
+  for (const [label, value] of rows) {
+    console.log(`${label.padEnd(SUMMARY_LABEL_WIDTH)}: ${value || 0}`);
+  }
 
   const failures = [];
   if (failedGalleries.length > 0) {
@@ -214,7 +221,10 @@ function report(run) {
   }
   if (run.stopping) failures.push('Interrupted: rerun to resume.');
   if (run.fatal) {
-    failures.push(`Stopped by: ${redact(run.fatal.message)}. Rerun to resume.`);
+    failures.push(
+      `Stopped by: ${redact(run.fatal.message)}`,
+      'Rerun once the cause is fixed: the run resumes where it stopped.'
+    );
   }
   if (script.assess) failures.push(...script.assess(totals, { dryRun }));
 

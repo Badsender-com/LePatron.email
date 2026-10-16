@@ -53,7 +53,7 @@ function script(overrides) {
     projection: { files: 1 },
     processGallery: jest.fn().mockResolvedValue({ done: 1 }),
     describeCounts: ({ done }) => `${done} done`,
-    summarize: (totals) => [`Done: ${totals.done || 0}`],
+    summarize: (totals) => [['Done', totals.done]],
     ...overrides,
   };
 }
@@ -145,7 +145,7 @@ describe('run-gallery-script', () => {
     expect(counting.processGallery).toHaveBeenCalledTimes(250);
     // 100 + 100 + 50, then the empty page that ends the run
     expect(Galleries.collection.find).toHaveBeenCalledTimes(4);
-    expect(output()).toContain('Done: 250');
+    expect(output()).toMatch(/Done +: 250/);
   });
 
   it('passes the dry-run flag and the raw collection to the script', async () => {
@@ -178,7 +178,7 @@ describe('run-gallery-script', () => {
     expect(code).toBe(1);
     expect(flaky.processGallery).toHaveBeenCalledTimes(3);
     expect(output()).toMatch(/1 gallery\(ies\) failed[\s\S]*creation-2/);
-    expect(output()).toContain('Done: 2');
+    expect(output()).toMatch(/Done +: 2\b/);
   });
 
   it('prints a summary and disconnects when the database fails mid-run', async () => {
