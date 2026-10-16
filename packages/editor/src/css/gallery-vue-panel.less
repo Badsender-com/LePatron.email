@@ -1,0 +1,197 @@
+// Vue gallery panel — panel chrome: search box, filter chips, counter, grid
+// container. The thumbnail itself lives in gallery-vue-thumb.less.
+
+@import 'gallery-vue-tokens.less';
+
+// The host lives inside the flex-column tab panes (.ui-tabs-panel);
+// the grid fills the space below the upload zone and scrolls on its own.
+.gallery-vue-host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gallery-vue-panel {
+  // The RecycleScroller owns the scroll, so the panel itself must not scroll.
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  font-family: inherit;
+  color: @gallery-text;
+  background: @gallery-surface;
+}
+
+// Search box — styles follow the final mockup (magnifier left, cyan focus ring)
+// Vertical padding is symmetric on purpose: the icon and the clear button are
+// centred on this box with translateY(-50%), which only lands on the input's
+// own centre while the two paddings match.
+.gallery-vue-search {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 8px 8px 0;
+}
+
+.gallery-vue-search__icon {
+  position: absolute;
+  left: 17px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  // 4.20:1 on the input background — a meaningful icon needs 3:1 (WCAG 1.4.11)
+  color: @gallery-text-faint;
+  pointer-events: none;
+}
+
+.gallery-vue-search__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 30px 6px 30px;
+  border: 1px solid @gallery-border;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: @gallery-text;
+  background: @gallery-surface-alt;
+
+  // The cyan ring is brand decoration: at 2.60:1 against white it cannot be
+  // the focus indicator on its own (WCAG 1.4.11 asks 3:1). The navy outline
+  // carries that job.
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: 1px;
+  }
+
+  &:focus {
+    border-color: @gallery-cyan;
+    background: @gallery-surface;
+    box-shadow: 0 0 0 3px @gallery-cyan-soft;
+  }
+
+  // the native clear cross would sit on top of ours
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+}
+
+.gallery-vue-search__clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  color: @gallery-text-faint;
+
+  &:hover {
+    color: @gallery-navy;
+  }
+
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: 1px;
+  }
+
+  .lucide {
+    font-size: 12px;
+  }
+}
+
+// Filter chips — two exclusive groups (format, then sort), as in the mockup
+.gallery-vue-filters {
+  flex: 0 0 auto;
+  // 8px below the search box, as in the mockup's .toolbar
+  padding: 8px 8px 4px;
+}
+
+.gallery-vue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  & + & {
+    margin-top: 4px;
+  }
+}
+
+.gallery-vue-chip {
+  padding: 3px 9px;
+  border: 1px solid @gallery-border;
+  border-radius: 12px;
+  background: @gallery-surface;
+  // 5.87:1 on white — the chips are 11px, so the text needs real contrast
+  color: @gallery-text-muted;
+  font-size: 11px;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+
+  &:hover {
+    border-color: @gallery-border-strong;
+    color: @gallery-text;
+  }
+
+  // same reasoning as the search input: the cyan ring is decoration, the navy
+  // outline is the indicator that actually meets 3:1
+  &:focus-visible {
+    outline: 2px solid @gallery-navy;
+    outline-offset: 1px;
+    border-color: @gallery-cyan;
+    box-shadow: 0 0 0 3px @gallery-cyan-soft;
+  }
+}
+
+.gallery-vue-chip--active {
+  background: @gallery-navy;
+  border-color: @gallery-navy;
+  color: @gallery-surface;
+
+  &:hover {
+    border-color: @gallery-navy;
+    color: @gallery-surface;
+  }
+}
+
+.gallery-vue-panel__empty {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 12px;
+  // 5.87:1 — this is the one message a user must read to understand an empty
+  // grid, so it cannot be the least legible text in the panel
+  color: @gallery-text-muted;
+}
+
+.gallery-vue-panel__count {
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: @gallery-navy;
+}
+
+// Virtualised 3-column grid: only the visible rows are rendered
+.gallery-vue-scroller {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: 16px;
+}
+
+// Wrapper inside each virtual cell: the padding creates the inter-cell gap
+.gallery-vue-cell {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+}
