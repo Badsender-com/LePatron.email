@@ -189,7 +189,15 @@ function findUploadInput(element) {
 function storedNameOf(source) {
   const value = String(source || '');
   const path = value.split('?')[0];
-  return decodeURIComponent(path.slice(path.lastIndexOf('/') + 1));
+  const segment = path.slice(path.lastIndexOf('/') + 1);
+  // A `%` not followed by two hex digits (`remise-100%.png`, typed by hand in
+  // a template) makes `decodeURIComponent` throw, inside a click handler and
+  // before any message could be shown. Such a name was never encoded.
+  try {
+    return decodeURIComponent(segment);
+  } catch (error) {
+    return segment;
+  }
 }
 
 function galleryOf(viewModel, type) {

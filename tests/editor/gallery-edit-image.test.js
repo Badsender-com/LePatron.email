@@ -457,6 +457,12 @@ describe('storedNameOf', () => {
     expect(storedNameOf('/api/images/mon%20image.png')).toBe('mon image.png');
   });
 
+  // `decodeURIComponent` throws on a `%` not followed by two hex digits, and
+  // that would escape the click handler before any message is shown.
+  it('keeps a name with a stray % as it is rather than throwing', () => {
+    expect(storedNameOf('/api/images/remise-100%.png')).toBe('remise-100%.png');
+  });
+
   it('answers an empty string rather than throwing on nothing', () => {
     expect(storedNameOf(null)).toBe('');
     expect(storedNameOf(undefined)).toBe('');
