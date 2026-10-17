@@ -31,9 +31,15 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
 }));
 jest.mock('../../../packages/server/account/auth.guard', () => ({
-  GUARD_USER: function GUARD_USER(req, res, next) {
-    if (req.user) return next();
-    return res.status(401).json({ message: 'Unauthorized' });
+  // The capability guard has its own tests: here it only has to be on the
+  // route, with the right capability.
+  GUARD_CAN: (capability) => {
+    const guard = function capabilityGuard(req, res, next) {
+      if (req.user) return next();
+      return res.status(401).json({ message: 'Unauthorized' });
+    };
+    guard.access = { capabilities: [capability] };
+    return guard;
   },
 }));
 // The AI rate limit has its own tests: here it only has to be on the route.
@@ -206,15 +212,12 @@ describe('text generation: POST /api/text-generation/subject', () => {
       expect(invoke).not.toHaveBeenCalled();
     });
 
-    it('is guarded by the user guard, then the AI rate limit', () => {
-      const {
-        GUARD_USER,
-      } = require('../../../packages/server/account/auth.guard');
+    it('needs the capability to edit content, then the AI rate limit', () => {
       const guards = routeInspector(textGenerationRouter).guardsOf(
         'post',
         '/subject'
       );
-      expect(guards[0]).toBe(GUARD_USER);
+      expect(guards[0].access.capabilities).toEqual(['mailing.edit-content']);
       expect(guards.map((guard) => guard.name)).toContain(
         'aiRateLimitMiddleware'
       );
@@ -676,15 +679,12 @@ describe('text generation: POST /api/text-generation/preheader', () => {
     avoid: ['Jusqu’à dimanche'],
   };
 
-  it('is guarded by the user guard, then the AI rate limit', () => {
-    const {
-      GUARD_USER,
-    } = require('../../../packages/server/account/auth.guard');
+  it('needs the capability to edit content, then the AI rate limit', () => {
     const guards = routeInspector(textGenerationRouter).guardsOf(
       'post',
       '/preheader'
     );
-    expect(guards[0]).toBe(GUARD_USER);
+    expect(guards[0].access.capabilities).toEqual(['mailing.edit-content']);
     expect(guards.map((guard) => guard.name)).toContain(
       'aiRateLimitMiddleware'
     );
