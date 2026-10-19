@@ -513,26 +513,24 @@ async function list(req, res) {
  */
 
 // the technical file name never changes: only the label the user reads
-async function updateLabel(req, res, next) {
+async function updateLabel(req, res) {
   const { mongoId, imageName } = req.params;
   const { label } = req.body;
 
   if (typeof label === 'string' && label.length > MAX_LABEL_LENGTH) {
-    return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
+    throw new createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG);
   }
   // the same cleanup an upload goes through, so one path cannot store a label
   // the other would refuse
   const cleanLabel = sanitizeLabel(label);
   if (!cleanLabel) {
-    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
+    throw new createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED);
   }
 
   // the imageName is technically prefixed by its gallery's mongoId: enforce the
   // match so a caller can't target an image outside the gallery in the URL
   if (!imageName.startsWith(`${mongoId}-`)) {
-    return next(
-      createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
-    );
+    throw new createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME);
   }
 
   // renaming writes in the gallery's parent: the same scope as editing it
