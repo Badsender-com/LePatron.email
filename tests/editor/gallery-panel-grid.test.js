@@ -9,19 +9,15 @@
 // buffer and it renders its first rows (detached, it renders none, which is
 // why gallery-panel-render.test.js only sees the container).
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
-require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
-const $ = require('jquery');
 const ko = require('knockout');
 const {
-  createGalleryPanel,
-} = require('../../packages/editor/src/js/vue/galleryPlugin.js');
-const { userOfRole } = require('./helpers/current-user.js');
-
-$.fn.draggable = function draggable() {
-  return this;
-};
+  mountGrid,
+  thumbsOf,
+  thumbOf: thumbIn,
+  unmountGrid,
+} = require('./helpers/gallery-grid.js');
 
 const IMAGES = [
   { name: 'a-1.jpg', label: 'un.jpg', thumbnailUrl: '/t/a-1.jpg' },
@@ -33,31 +29,11 @@ let vm;
 let panel;
 
 async function mount(images = IMAGES) {
-  vm = {
-    t: (key, params) => (params ? `${key}:${params.count}` : key),
-    addImage: jest.fn(),
-    removeImage: jest.fn(),
-    mailingGallery: ko.observableArray(images.slice()),
-    mailingGalleryStatus: ko.observable(images.length),
-    // a user who may manage the gallery, so the action bar is rendered
-    currentUser: userOfRole('regular_user'),
-  };
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-  const Panel = Vue.extend(createGalleryPanel(vm));
-  panel = new Panel({ propsData: { type: 'mailing' } }).$mount(host);
-  await Vue.nextTick();
-  await Vue.nextTick();
+  ({ vm, panel } = await mountGrid(images));
 }
 
-// The scroller parks the views it no longer needs off-screen instead of
-// removing them; the panel hides their cell.
-const thumbs = () =>
-  Array.from(panel.$el.querySelectorAll('.gallery-thumb')).filter(
-    (el) => !el.closest('.gallery-vue-cell').hidden
-  );
-const thumbOf = (name) =>
-  thumbs().find((el) => ko.utils.domData.get(el, 'ko_dragItem').name === name);
+const thumbs = () => thumbsOf(panel);
+const thumbOf = (name) => thumbIn(panel, name);
 
 function key(el, name) {
   const event = new KeyboardEvent('keydown', {
@@ -70,10 +46,7 @@ function key(el, name) {
   return event;
 }
 
-afterEach(() => {
-  panel.$destroy();
-  document.body.innerHTML = '';
-});
+afterEach(() => unmountGrid(panel));
 
 describe('gallery grid — thumbnails', () => {
   it('renders one thumbnail per image', async () => {

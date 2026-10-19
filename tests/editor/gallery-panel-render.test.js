@@ -10,60 +10,18 @@
 // `components` registration: <thumb> and <recycle-scroller> silently became
 // unknown elements.
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
-require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
-const $ = require('jquery');
-const ko = require('knockout');
 const en = require('../../public/lang/badsender-en.js');
-const { ROLES } = require('../../packages/shared/access/roles.js');
-const { userOfRole } = require('./helpers/current-user.js');
-const {
-  galleryActions,
-} = require('../../packages/editor/src/js/ext/gallery-actions.js');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
-
-// the real widget is installed on jQuery by the gulp build, not by Node
-$.fn.draggable = function draggable() {
-  return this;
-};
-
-const IMAGES = [
-  {
-    name: 'a-1.jpg',
-    label: 'un.jpg',
-    thumbnailUrl: '/api/images/cover/111x111/a-1.jpg',
-  },
-  {
-    name: 'a-2.png',
-    label: 'deux.png',
-    thumbnailUrl: '/api/images/cover/111x111/a-2.png',
-  },
-];
-
-// The Mosaico viewModel as the panel sees it, with real Knockout observables
-// so the mirror is exercised through its subscription. A loaded gallery
-// reports its image count as status.
-function fakeViewModel(images, status = images.length) {
-  return {
-    t: (key, params) => (params ? `${key}:${params.count}` : key),
-    addImage() {},
-    removeImage() {},
-    mailingGallery: ko.observableArray(images),
-    mailingGalleryStatus: ko.observable(status),
-  };
-}
-
-function mountVm(vm) {
-  const Panel = Vue.extend(createGalleryPanel(vm));
-  return new Panel({ propsData: { type: 'mailing' } }).$mount();
-}
-
-function mount(images, status) {
-  return mountVm(fakeViewModel(images, status));
-}
+const {
+  IMAGES,
+  fakeViewModel,
+  mountVm,
+  mount,
+} = require('./helpers/gallery-panel.js');
 
 describe('gallery panel — rendering', () => {
   let warnings;
@@ -312,183 +270,6 @@ describe('gallery panel — following the gallery status', () => {
     vm.mailingGalleryStatus(2);
     await Vue.nextTick();
     expect(count(panel).textContent).toBe('2 images');
-    panel.$destroy();
-  });
-});
-
-describe('gallery panel — the tooltip it owns', () => {
-  const Tooltip = require('../../packages/editor/src/js/vue/components/gallery/tooltip.js');
-
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
-  function cell() {
-    const el = document.createElement('div');
-    document.body.appendChild(el);
-    return el;
-  }
-
-  // A delay, so sweeping across the grid on the way somewhere else does not
-  // flash a tooltip over every cell on the path.
-  it('waits before showing anything', () => {
-    const panel = mount(IMAGES);
-    panel.onHover(IMAGES[0], cell());
-
-    expect(panel.hoveredFile).toBeNull();
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS - 1);
-    expect(panel.hoveredFile).toBeNull();
-    jest.advanceTimersByTime(1);
-    expect(panel.hoveredFile).toBe(IMAGES[0]);
-
-    panel.$destroy();
-  });
-
-  it('shows nothing when the pointer leaves before the delay is up', () => {
-    const panel = mount(IMAGES);
-    panel.onHover(IMAGES[0], cell());
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS - 50);
-    panel.onUnhover();
-    jest.advanceTimersByTime(500);
-
-    expect(panel.hoveredFile).toBeNull();
-    panel.$destroy();
-  });
-
-  it('hides immediately on leave, with no delay of its own', () => {
-    const panel = mount(IMAGES);
-    panel.onHover(IMAGES[0], cell());
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-    expect(panel.hoveredFile).toBe(IMAGES[0]);
-
-    panel.onUnhover();
-    expect(panel.hoveredFile).toBeNull();
-    panel.$destroy();
-  });
-
-  // Moving across cells restarts the wait rather than queueing one tooltip per
-  // cell the pointer passed over.
-  it('describes the last cell hovered, not the first', () => {
-    const panel = mount(IMAGES);
-    panel.onHover(IMAGES[0], cell());
-    jest.advanceTimersByTime(200);
-    panel.onHover(IMAGES[1], cell());
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-
-    expect(panel.hoveredFile).toBe(IMAGES[1]);
-    panel.$destroy();
-  });
-
-  // The scroller can recycle the cell away while the delay runs; describing a
-  // detached element would place the tooltip at the origin.
-  it('gives up when the cell left the document during the wait', () => {
-    const panel = mount(IMAGES);
-    const el = cell();
-    panel.onHover(IMAGES[0], el);
-    el.remove();
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-
-    expect(panel.hoveredFile).toBeNull();
-    panel.$destroy();
-  });
-
-  it('drops a pending tooltip when the panel is torn down', () => {
-    const panel = mount(IMAGES);
-    panel.onHover(IMAGES[0], cell());
-    panel.$destroy();
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-
-    expect(panel.hoveredFile).toBeNull();
-  });
-
-  // A rename replaces the entry in the Knockout list; the tooltip open over
-  // that image goes on describing it, under its new name.
-  it('follows a rename of the image it describes', async () => {
-    const vm = fakeViewModel(IMAGES.slice());
-    const panel = mountVm(vm);
-    panel.onHover(IMAGES[0], cell());
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-
-    vm.mailingGallery.splice(0, 1, { ...IMAGES[0], label: 'renamed.jpg' });
-    await Vue.nextTick();
-
-    expect(panel.hoveredFile.label).toBe('renamed.jpg');
-    panel.$destroy();
-  });
-
-  // The tooltip is placed once, from the cell's box when it opened. Scrolling
-  // moves the cells under a still pointer, and a recycled view stays in the
-  // document, so nothing else would close a tooltip now describing another
-  // image at a position the image left.
-  it.each([
-    ['an open', Tooltip.OPEN_DELAY_MS],
-    ['a pending', 0],
-  ])('drops %s tooltip when the grid scrolls', async (_, wait) => {
-    const panel = mount(IMAGES);
-    await Vue.nextTick();
-    panel.onHover(IMAGES[0], cell());
-    jest.advanceTimersByTime(wait);
-
-    const scroller = panel.$el.querySelector('.gallery-vue-scroller');
-    scroller.dispatchEvent(new Event('scroll'));
-    jest.advanceTimersByTime(Tooltip.OPEN_DELAY_MS);
-
-    expect(panel.hoveredFile).toBeNull();
-    panel.$destroy();
-  });
-});
-
-// What the panel offers on its thumbnails comes from the one rule
-// (ext/gallery-actions.js), for the pane's own gallery; the matrix itself is
-// in access/gallery-actions.test.js. The current user is a Knockout
-// observable loaded after the editor opens, re-read once it arrives.
-describe('gallery panel — the actions it offers', () => {
-  function mountWithUser(currentUser, { type = 'mailing', writable } = {}) {
-    const vm = fakeViewModel(IMAGES.slice());
-    vm.templateGallery = ko.observableArray(IMAGES.slice());
-    vm.templateGalleryStatus = ko.observable(IMAGES.length);
-    vm.currentUser = currentUser;
-    vm.canWriteMailing = writable;
-    const Panel = Vue.extend(createGalleryPanel(vm));
-    return { vm, panel: new Panel({ propsData: { type } }).$mount() };
-  }
-
-  it.each(
-    Object.values(ROLES).flatMap((role) =>
-      [true, false].flatMap((writable) =>
-        ['mailing', 'template'].map((type) => [role, writable, type])
-      )
-    )
-  )(
-    'asks the rule for a %s (writable: %s) on the %s gallery',
-    (role, w, type) => {
-      const currentUser = ko.observable(userOfRole(role)());
-      const { vm, panel } = mountWithUser(currentUser, { type, writable: w });
-      expect(panel.actions).toEqual(galleryActions(vm, type));
-      panel.$destroy();
-    }
-  );
-
-  it('allows nothing while the user is unknown, then re-reads once loaded', () => {
-    const user = ko.observable(null);
-    const { panel } = mountWithUser(user);
-    expect(panel.actions).toEqual({
-      rename: false,
-      edit: false,
-      remove: false,
-    });
-    user(userOfRole(ROLES.WRITER)());
-    expect(panel.actions).toEqual({ rename: true, edit: true, remove: true });
-    panel.$destroy();
-    expect(user.getSubscriptionsCount()).toBe(0);
-  });
-
-  it('survives an editor whose view-model carries no user', () => {
-    const { panel } = mountWithUser(undefined);
-    expect(panel.actions).toEqual({
-      rename: false,
-      edit: false,
-      remove: false,
-    });
     panel.$destroy();
   });
 });

@@ -12,28 +12,9 @@
 const Vue = require('vue/dist/vue.common');
 const Thumb = require('../../packages/editor/src/js/vue/components/gallery/thumb.js');
 
-const STRINGS = {
-  remove: 'Supprimer __label__',
-  editAction: 'Modifier __label__',
-  renameAction: 'Renommer __label__',
-  renameInput: 'rename-input',
-};
+const { STRINGS, ALL, NONE, FILE, mountThumb } = require('./helpers/thumb.js');
 
-const ALL = { rename: true, edit: true, remove: true };
-const NONE = { rename: false, edit: false, remove: false };
-
-const FILE = {
-  name: '6a2135b7f802c2a6f99a4242-abc.png',
-  label: 'mon image.png',
-  thumbnailUrl: '/api/images/cover/111x111/6a2135b7f802c2a6f99a4242-abc.png',
-};
-
-function mount(file = FILE) {
-  const Component = Vue.extend(Thumb);
-  return new Component({
-    propsData: { file, strings: STRINGS, actions: ALL },
-  }).$mount();
-}
+const mount = (file) => mountThumb(file);
 
 const edit = (vm) => vm.$el.querySelector('[data-gallery-edit]');
 const rename = (vm) => vm.$el.querySelector('[data-gallery-rename]');
