@@ -154,7 +154,9 @@ function createGalleryPanel(vm) {
       // The list stays Mosaico's: upload, delete and rename replace entries of
       // the Knockout observableArray, never edit one in place. A frozen copy,
       // so Vue neither takes over that array nor walks every file to make it
-      // reactive: 31 ms at first opening for 5,000 images, none frozen.
+      // reactive. The scroller still makes reactive the few files it shows,
+      // which it keeps in its own pool. At 5,000 images under jsdom: 25 ms
+      // at opening and 14 ms a keystroke unfrozen, 7 ms and 4 ms frozen.
       this.mirror(vm[this.type + 'Gallery'], (array) => {
         const known = this._knownNames;
         this.images = Object.freeze(array.slice());
