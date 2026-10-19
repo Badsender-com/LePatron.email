@@ -5,6 +5,9 @@ const ko = require('knockout');
 const { RecycleScroller } = require('vue-virtual-scroller');
 const Thumb = require('./components/gallery/thumb');
 const Tooltip = require('./components/gallery/tooltip');
+const {
+  createPanelTooltip,
+} = require('./components/gallery/panel-tooltip.js');
 const createGalleryDraggable = require('./directives/gallery-draggable');
 const template = require('./components/gallery/panel.template.js');
 const { filterGalleryFiles } = require('../../../../shared/gallery/filter.js');
@@ -37,6 +40,7 @@ function createGalleryPanel(vm) {
 
   return {
     components: { Thumb, Tooltip, RecycleScroller },
+    mixins: [createPanelTooltip(vm)],
     directives: { galleryDraggable: createGalleryDraggable(vm) },
     props: {
       // 'mailing' or 'template' — one instance per gallery pane
@@ -52,10 +56,6 @@ function createGalleryPanel(vm) {
       search: '',
       format: '',
       sortBy: 'date_desc',
-      // the single tooltip this panel owns, and what it currently describes
-      hoveredFile: null,
-      hoveredAnchor: null,
-      panelBounds: null,
       // whether the user may rename, re-upload and delete (gallery.manage);
       // mirrored from the Knockout side like `images`, because Vue cannot
       // observe `vm.currentUser`, and it is null until the user has loaded
@@ -119,18 +119,6 @@ function createGalleryPanel(vm) {
       emptyGalleryLabel() {
         return vm.t(`gallery-${this.type}-empty`);
       },
-      // handed down to each thumbnail so the component needs no viewModel of
-      // its own; computed once rather than per cell
-      tooltipStrings() {
-        return {
-          // a translation entry whose value is a locale tag, so the date follows
-          // the editor's language rather than the browser's
-          locale: vm.t('gallery-date-locale'),
-          dimensions: vm.t('gallery-tooltip-dimensions'),
-          format: vm.t('gallery-tooltip-format'),
-          uploadedAt: vm.t('gallery-tooltip-uploaded-at'),
-        };
-      },
       // Three of these carry a `__label__` token the thumbnail substitutes for
       // itself: the bag is computed once for the whole panel, and the accessible
       // name of an icon button has to name the image it acts on.
@@ -169,21 +157,9 @@ function createGalleryPanel(vm) {
       search: 'resetScroll',
       format: 'resetScroll',
       sortBy: 'resetScroll',
-      // Chrome fires no mouseleave on an element removed from the DOM, so
-      // deleting the hovered image left its tooltip on screen describing a file
-      // that no longer exists. A rename replaces the entry rather than editing
-      // it, so the tooltip takes the new one.
-      visibleImages(images) {
-        if (!this.hoveredFile) return;
-        const { name } = this.hoveredFile;
-        const current = images.find((file) => file.name === name);
-        if (current) this.hoveredFile = current;
-        else this.onUnhover();
-      },
     },
     created() {
       this._subscriptions = [];
-      this._hoverTimer = null;
       const { knownNames = null, ...criteria } = remembered[this.type] || {};
       // The names of the gallery as last seen loaded, null until it is: an
       // image missing from them is new, uploaded here or while this pane was
@@ -219,7 +195,6 @@ function createGalleryPanel(vm) {
     },
     beforeDestroy() {
       this._subscriptions.forEach((subscription) => subscription.dispose());
-      this.cancelHover();
       const { search, format, sortBy, _knownNames: knownNames } = this;
       remembered[this.type] = { search, format, sortBy, knownNames };
     },
@@ -268,31 +243,6 @@ function createGalleryPanel(vm) {
       // the thumbnail refused the input before it ever reached the server
       onRenameRejected(messageKey) {
         vm.notifier.error(vm.t(messageKey));
-      },
-      // A delay, so sweeping across the grid on the way somewhere else does not
-      // flash a tooltip over every cell on the path.
-      onHover(file, element) {
-        this.cancelHover();
-        this._hoverTimer = setTimeout(() => {
-          // the scroller may have recycled this cell away during the delay
-          if (!element.isConnected) return;
-          this.hoveredFile = file;
-          this.hoveredAnchor = element.getBoundingClientRect();
-          this.panelBounds = this.$el.getBoundingClientRect();
-        }, Tooltip.OPEN_DELAY_MS);
-      },
-      // Immediate on leave: a tooltip that lingers covers what the pointer is
-      // heading for. Also on scroll: the tooltip is placed once, from the cell's
-      // box, and a scroll slides another image under a pointer that has not
-      // moved, so no mouseleave comes.
-      onUnhover() {
-        this.cancelHover();
-        this.hoveredFile = null;
-        this.hoveredAnchor = null;
-      },
-      cancelHover() {
-        if (this._hoverTimer) clearTimeout(this._hoverTimer);
-        this._hoverTimer = null;
       },
       formatLabel(format) {
         return vm.t(format ? `gallery-filter-${format}` : 'gallery-filter-all');
