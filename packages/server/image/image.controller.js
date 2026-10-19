@@ -552,8 +552,8 @@ async function updateLabel(req, res, next) {
     );
   }
 
-  // ensure the requester's group owns the gallery's parent before mutating it
-  await imageService.assertGalleryOwnership(req.user, mongoId);
+  // renaming writes in the gallery's parent: the same scope as editing it
+  await imageService.assertCanEditGallery(req.user, mongoId);
 
   const gallery = await imageService.renameLabel(
     mongoId,

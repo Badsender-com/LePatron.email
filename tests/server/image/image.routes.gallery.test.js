@@ -20,8 +20,10 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   OAuthClients: {},
   OAuthTokens: {},
 }));
+// the email's write scope has its own test (image.routes.gallery-rights)
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
   findOneForUser: jest.fn(),
+  userCanEditMailing: jest.fn().mockResolvedValue(true),
 }));
 
 const express = require('express');

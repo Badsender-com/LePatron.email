@@ -17,6 +17,9 @@ const uploadIdentity = require('../common/upload-identity.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 const modelsUtils = require('../utils/model.js');
+const mailingService = require('../mailing/mailing.service.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const { labelForUpload } = require('../../shared/gallery/label.js');
@@ -25,26 +28,27 @@ const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
 
-// a gallery is owned by its parent mailing or template (creationOrWireframeId);
-// galleries themselves carry no _company, so authorization is delegated to the
-// parent. Throws Forbidden if the parent doesn't belong to the user's group,
-// and the same Forbidden when there is no such parent, so the answer says
-// nothing about what exists in another group.
+// A gallery carries no company of its own: it belongs to the mailing or the
+// template whose id it bears (creationOrWireframeId), and writing in it is
+// writing in that parent. The gallery of an email follows the email's write
+// scope, the same check as saving the email (its workspace, or the workspace
+// of its folder). The gallery of a template follows the rule for editing a
+// template (PUT /templates/:id): platform.manage.
 //
-// The bootstrap account is not refused here, unlike the module listings of
-// request-scope.js: the gallery lives inside the editor, which it opens and
-// saves in like a super admin, and the upload and removal of an image let it
-// through as well. Refusing only the rename would leave it a gallery where
-// every action works but one.
-async function assertGalleryOwnership(user, creationOrWireframeId) {
+// Every refusal is the same Forbidden, a missing parent included, so the
+// answer says nothing about what exists in another group or workspace.
+async function assertCanEditGallery(user, creationOrWireframeId) {
   const query = modelsUtils.addGroupFilter(user, {
     _id: creationOrWireframeId,
   });
   const [mailing, template] = await Promise.all([
-    Mailings.findOne(query, '_id'),
+    Mailings.findOne(query, '_id _workspace _parentFolder'),
     Templates.findOne(query, '_id'),
   ]);
-  if (!mailing && !template) {
+  const allowed = mailing
+    ? await mailingService.userCanEditMailing(user, mailing)
+    : !!template && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
+  if (!allowed) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
   }
 }
@@ -248,5 +252,5 @@ module.exports = {
   storeInGallery,
   createFromUrl,
   renameLabel,
-  assertGalleryOwnership,
+  assertCanEditGallery,
 };
