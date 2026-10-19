@@ -214,6 +214,21 @@ describe('gallery grid — scroll', () => {
   });
 });
 
+describe('gallery grid — hover', () => {
+  // The scroller tracks the hovered view to set a `hover` class nothing
+  // styles; each write re-renders its whole pool, and with it the drag
+  // directive of every cell.
+  it('does not re-render the grid when the pointer enters a cell', async () => {
+    await mount();
+    const scroller = panel.$refs.scroller;
+    const view = panel.$el.querySelector('.vue-recycle-scroller__item-view');
+    view.dispatchEvent(new MouseEvent('mouseenter'));
+    await Vue.nextTick();
+    expect(scroller.hoverKey).toBeNull();
+    expect(view.classList.contains('hover')).toBe(false);
+  });
+});
+
 describe('gallery grid — what Vue observes', () => {
   // The files are Mosaico's. The panel mirrors a frozen copy of the list, so
   // Vue does not walk all of them: at 5,000 images, 25 ms at opening and

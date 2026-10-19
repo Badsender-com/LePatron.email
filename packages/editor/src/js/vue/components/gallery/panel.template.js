@@ -87,6 +87,7 @@ module.exports = `
         :grid-items="gridColumns"
         :item-secondary-size="cellSize"
         key-field="name"
+        :skip-hover="true"
         v-slot="{ item, index, active }"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
