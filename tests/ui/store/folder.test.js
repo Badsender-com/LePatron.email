@@ -2,6 +2,7 @@ import {
   actions,
   FETCH_FOLDER_OR_WORKSPACE,
   FETCH_MAILINGS,
+  FETCH_MAILINGS_TAGS,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   IS_LOADING_WORKSPACE_OR_FOLDER,
@@ -78,7 +79,8 @@ describe('folder store, FETCH_MAILINGS', () => {
 // Searching every accessible workspace (epic #1144, ADR 0007): in the "all"
 // search scope, the listing asks the search route, with the filters and the
 // pagination of the listing and no location, whatever location the route
-// still names.
+// still names. The page size is kept between scopes, so "All" (-1), which the
+// search refuses, is sent as its largest page.
 // Turned on by #1314 (search every accessible workspace)
 describe.skip('folder store, FETCH_MAILINGS in the "all" search scope', () => {
   const found = {
@@ -91,55 +93,72 @@ describe.skip('folder store, FETCH_MAILINGS in the "all" search scope', () => {
     },
   };
 
-  function searchContext() {
+  async function fetch(query, { itemsPerPage = 25 } = {}) {
     const ctx = context(null);
     ctx.rootState.folder.pagination = {
       page: 1,
-      itemsPerPage: 25,
+      itemsPerPage,
       sortBy: ['updatedAt'],
       sortDesc: [true],
     };
     ctx.rootState.folder.filters = { name: 'spring', tags: ['promo'] };
-    return ctx;
+    const $axios = { $get: jest.fn().mockResolvedValue(found) };
+
+    await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
+      query,
+      $t: jest.fn(),
+    });
+
+    return { ctx, $axios };
   }
+
+  const searched = (itemsPerPage) => [
+    '/mailings/search',
+    {
+      params: {
+        pagination: JSON.stringify({
+          page: 1,
+          itemsPerPage,
+          sortBy: ['updatedAt'],
+          sortDesc: [true],
+        }),
+        filters: JSON.stringify({ name: 'spring', tags: ['promo'] }),
+      },
+    },
+  ];
 
   it.each([
     ['with no location', { scope: 'all' }],
     ['from a workspace', { scope: 'all', wid: 'workspace-1' }],
     ['from a folder', { scope: 'all', fid: 'folder-1' }],
-  ])(
-    'asks the search route %s, without naming a location',
-    async (_, query) => {
-      const ctx = searchContext();
-      const $axios = { $get: jest.fn().mockResolvedValue(found) };
+  ])('asks the search route alone %s, naming no location', async (_, query) => {
+    const { $axios } = await fetch(query);
 
-      await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
-        query,
-        $t: jest.fn(),
-      });
+    expect($axios.$get).toHaveBeenCalledTimes(1);
+    expect($axios.$get).toHaveBeenCalledWith(...searched(25));
+  });
 
-      expect($axios.$get).toHaveBeenCalledWith('/mailings/search', {
-        params: {
-          pagination: JSON.stringify({
-            page: 1,
-            itemsPerPage: 25,
-            sortBy: ['updatedAt'],
-            sortDesc: [true],
-          }),
-          filters: JSON.stringify({ name: 'spring', tags: ['promo'] }),
-        },
-      });
-    }
-  );
+  it.each([
+    [50, 50],
+    [100, 100],
+    [-1, 100],
+    [250, 100],
+  ])('asks a page size of %p as %p', async (kept, sent) => {
+    const { $axios } = await fetch({ scope: 'all' }, { itemsPerPage: kept });
+
+    expect($axios.$get).toHaveBeenCalledWith(...searched(sent));
+  });
+
+  it("asks for the group's tags, naming no location", async () => {
+    const { ctx } = await fetch({ scope: 'all', wid: 'workspace-1' });
+
+    expect(ctx.dispatch).toHaveBeenCalledWith(FETCH_MAILINGS_TAGS, {
+      queryMailing: {},
+    });
+  });
 
   it('shows the emails the search found', async () => {
-    const ctx = searchContext();
-    const $axios = { $get: jest.fn().mockResolvedValue(found) };
-
-    await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
-      query: { scope: 'all' },
-      $t: jest.fn(),
-    });
+    const { ctx } = await fetch({ scope: 'all' });
 
     expect(committed(ctx, SET_MAILINGS)).toEqual([
       [{ id: 'mailing-1', name: 'Spring sale' }],
@@ -147,14 +166,9 @@ describe.skip('folder store, FETCH_MAILINGS in the "all" search scope', () => {
   });
 
   it('keeps listing the current location outside the "all" scope', async () => {
-    const ctx = searchContext();
-    const $axios = { $get: jest.fn().mockResolvedValue(found) };
+    const { $axios } = await fetch({ wid: 'workspace-1' });
 
-    await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
-      query: { wid: 'workspace-1' },
-      $t: jest.fn(),
-    });
-
+    expect($axios.$get).toHaveBeenCalledTimes(1);
     expect($axios.$get).toHaveBeenCalledWith(
       '/mailings',
       expect.objectContaining({

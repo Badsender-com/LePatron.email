@@ -15,9 +15,11 @@ A result is read, not acted on. Each row carries its location and whether the us
 - **A `scope=all` parameter on `GET /api/mailings`**: rejected. Every check of that route assumes one location; a third case in its validation, its access check and its query is one more place where a mistake returns another workspace's emails.
 - **Querying the whole group for the users who read all of it**: rejected. It is not faster (the cost is the match on the name, the same either way), it adds a second path whose condition can be wrong, and it returns the emails a failed workspace deletion left behind.
 - **Fetching the group's emails and filtering them in the server**: rejected. Memory grows with the group, not with the page, and the pagination counts emails the user cannot see.
+- **A minimum search length (three characters), as first suggested**: not taken. Without a text, the scope lists the most recently updated emails, a query the indexes serve and the page bounds; the name is matched from the first character, after the listing's debounce, as in the current folder.
 - **Actions on the results, with rights computed row by row**: rejected. Each action's rule is written for the current location; finding the email is the need, and the location gives back every action.
 
 ## Consequences
 
 - The name is still matched by an unanchored, case-insensitive pattern, which no index serves: the cost grows with the number of emails in the accessible workspaces. It is measured on a local database before release; a text index is a separate change.
 - The folder listing still shows only the emails directly in its location; this scope does not change it.
+- A location is read from the folder's parent before its workspace: a subfolder from older data may still carry a workspace, and a moved email keeps `null` in the field it left.

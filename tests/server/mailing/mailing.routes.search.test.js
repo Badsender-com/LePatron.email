@@ -3,7 +3,7 @@
 // Searching every accessible workspace is a read (epic #1144, ADR 0007): it
 // sits behind the listing's guards, a signed-in user and the Email Builder
 // module, and declares no capability (ADR 0004). Which emails come back is
-// the service's business (mailing-search.service.test.js), the bootstrap
+// the service's business (mailing-search.service.scope.test.js), the bootstrap
 // account's refusal included. Guards are compared by identity on the actual
 // express stack, not on source text.
 

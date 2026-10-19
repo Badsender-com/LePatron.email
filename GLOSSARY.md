@@ -91,18 +91,18 @@ _Avoid_: Version, revision, edited image
 ### Email listing
 
 **Workspace**:
-A place of a group where its emails are designed, open to the users it lists as members. It holds emails and folders.
+A place of a group where its emails are designed, whose members it lists. It holds emails and folders.
 _UI_: Espace de travail
 
 **Folder**:
-A place inside a workspace that holds emails. A folder may hold subfolders, which hold none.
+A place inside a workspace that holds emails. A folder may hold subfolders, which hold emails but no folders.
 _UI_: Dossier
 _Avoid_: Directory
 
 **Location**:
-The workspace or folder an email sits in, read as its path: workspace, folder, subfolder. An email has exactly one.
+The workspace or folder an email sits in, shown from the workspace down: workspace, folder, subfolder. An email has exactly one.
 _UI_: Emplacement
-_Avoid_: Parent, path
+_Avoid_: Parent, path (for the place itself)
 
 **Accessible workspace**:
 A workspace whose emails a user may read: one they are a member of, every workspace of their group for a company admin or when the group opens all workspaces to its users, and every workspace of the selected group for a super admin.

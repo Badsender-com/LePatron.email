@@ -1,9 +1,11 @@
 'use strict';
 
-// Searching every accessible workspace (epic #1144, ADR 0007): the filters and the sort of the folder listing work the same in this scope, and every result is paginated, 100 emails a page at most.
+// Searching every accessible workspace (epic #1144, ADR 0007): the filters
+// and the sort of the folder listing work the same in this scope, and every
+// result is paginated, 100 emails a page at most, without "All".
 //
-// The models are in-memory fakes that answer a filter as MongoDB would
-// (tests/helpers/fake-listing-models.js); the data set is in
+// The models are in-memory fakes that answer a query as Mongoose and MongoDB
+// would (tests/helpers/fake-listing-models.js); the data set is in
 // mailing-search.fixtures.js.
 
 const { createListingStore } = require('../../helpers/fake-listing-models.js');
@@ -95,17 +97,24 @@ describe.skip('searching every accessible workspace, its filters and pages', () 
       expect(names(result)).toEqual(['Spring archive']);
     });
 
-    it('lists the most recently updated emails first when no sort is asked', async () => {
-      const result = await search(companyAdmin, { pagination: {} });
+    it.each([
+      ['no sort', {}],
+      ['an empty sort', { sortBy: [], sortDesc: [] }],
+    ])(
+      'lists the most recently updated emails first when %s is asked',
+      async (_, pagination) => {
+        const result = await search(companyAdmin, { pagination });
 
-      expect(names(result)).toEqual([
-        'Weekly news',
-        'Spring sale',
-        'Spring teaser',
-        'Spring promo',
-        'Spring archive',
-      ]);
-    });
+        expect(names(result)).toEqual([
+          'Weekly news',
+          'Spring sale',
+          'Spring teaser',
+          'Spring promo',
+          'Spring old',
+          'Spring archive',
+        ]);
+      }
+    );
   });
 
   describe('pages', () => {
@@ -145,12 +154,13 @@ describe.skip('searching every accessible workspace, its filters and pages', () 
       expect(result.items.docs[0].name).toBe('News 101');
     });
 
+    // INVALID_PAGE_SIZE is a code #1314 adds to the error codes.
     it('refuses "All": every email in one page', async () => {
       await expect(
         search(frank, {
           pagination: { ...BY_NAME, page: 1, itemsPerPage: -1 },
         })
-      ).rejects.toMatchObject({ status: 400 });
+      ).rejects.toMatchObject({ status: 400, message: 'INVALID_PAGE_SIZE' });
     });
   });
 });
