@@ -136,7 +136,10 @@ describe('imageService.addFiles', () => {
       source: 'upload',
       externalMetadata: {},
     });
+    // the names that only served to build the label are not stored: no
+    // reader of the gallery uses them
     expect(stored).not.toHaveProperty('uploadedName');
+    expect(stored).not.toHaveProperty('originalName');
   });
 
   it('falls back to the slug when no uploaded name reached the service', async () => {

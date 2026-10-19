@@ -124,12 +124,13 @@ async function findOrCreateGallery(mongoId, options) {
 // US-01. Build them in one place, so a stored document and the response that
 // announces it can never describe the same image differently.
 function toGalleryFile(file) {
-  // `uploadedName` only exists to seed the label; it would be a second, stale
-  // copy of it in the document, so it does not get stored.
-  const { uploadedName, ...stored } = file;
+  // `uploadedName` and `originalName` only serve to seed the label (the slug
+  // keys the template assets map, not the gallery): stored, they would be
+  // stale copies of it that no reader of the gallery uses.
+  const { uploadedName, originalName, ...stored } = file;
   return {
     ...stored,
-    label: labelForUpload(file.name, uploadedName || file.originalName),
+    label: labelForUpload(file.name, uploadedName || originalName),
     source: 'upload',
     externalMetadata: {},
     uploadedAt: new Date(),
