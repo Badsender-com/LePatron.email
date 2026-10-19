@@ -7,15 +7,72 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const createError = require('http-errors');
 
-const { Galleries } = require('../common/models.common.js');
+const {
+  Galleries,
+  Mailings,
+  Templates,
+} = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
+const uploadIdentity = require('../common/upload-identity.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const modelsUtils = require('../utils/model.js');
+const mailingService = require('../mailing/mailing.service.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
+const { labelForUpload } = require('../../shared/gallery/label.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
+
+// A gallery carries no company of its own: it belongs to the mailing or the
+// template whose id it bears (creationOrWireframeId), and writing in it is
+// writing in that parent. The gallery of an email follows the email's write
+// scope, the same check as saving the email (its workspace, or the workspace
+// of its folder). The gallery of a template follows the rule for editing a
+// template (PUT /templates/:id): platform.manage.
+//
+// Every refusal is the same Forbidden, a missing parent included, so the
+// answer says nothing about what exists in another group or workspace.
+async function assertCanEditGallery(user, creationOrWireframeId) {
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: creationOrWireframeId,
+  });
+  const [mailing, template] = await Promise.all([
+    Mailings.findOne(query, '_id _workspace _parentFolder'),
+    Templates.findOne(query, '_id'),
+  ]);
+  const allowed = mailing
+    ? await mailingService.userCanEditMailing(user, mailing)
+    : !!template && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
+  if (!allowed) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
+  }
+}
+
+// Like every other write here, a single atomic update: the positional operator
+// renames the matched file in place, so a concurrent upload can't be lost.
+// Only the renamed file is sent back: the whole gallery, thousands of images
+// for some, made a rename five times slower for one line of response. The
+// positional projection would be shorter, but MongoDB refuses it alongside
+// `new: true`.
+async function renameLabel(mongoId, imageName, newLabel) {
+  const gallery = await Galleries.findOneAndUpdate(
+    { creationOrWireframeId: mongoId, 'files.name': imageName },
+    { $set: { 'files.$.label': newLabel } },
+    { new: true, projection: { files: { $elemMatch: { name: imageName } } } }
+  );
+  if (gallery) return gallery;
+
+  // nothing matched: tell "no such gallery" apart from "no such image in it"
+  const exists = await Galleries.exists({ creationOrWireframeId: mongoId });
+  throw new createError.NotFound(
+    exists ? ERROR_CODES.GALLERY_IMAGE_NOT_FOUND : ERROR_CODES.GALLERY_NOT_FOUND
+  );
+}
 
 // Every write below is a single atomic update. Reading the gallery, changing
 // its `files` and saving it back lost images: two uploads validated one after
@@ -32,12 +89,19 @@ async function destroy(mongoId, imageName) {
   return gallery;
 }
 
-function createGallery(mongoId) {
-  // create the gallery in DB
+// Seeded from the storage listing, in the V1 shape. The listing gives no upload
+// date, and the gallery's own would be wrong for any image added after it, so
+// a seeded image carries none: the gallery backfill script reads the real one
+// from the stored file. `except` names files being added right now: they are
+// pushed with what their upload knows (label, dimensions, date), which a seed
+// from the listing would lose.
+function createGallery(mongoId, { except = [] } = {}) {
   return fileManager.list(mongoId).then((files) => {
     return new Galleries({
       creationOrWireframeId: mongoId,
-      files,
+      files: files
+        .filter((file) => !except.includes(file.name))
+        .map((file) => toGalleryFile(file, { uploadedAt: null })),
     }).save();
   });
 }
@@ -46,29 +110,88 @@ function createGallery(mongoId) {
 // requests can need it at once (the first uploads of a creation, or an upload
 // while the gallery panel opens): the unique index lets one create it, and the
 // others read the one it created.
-async function findOrCreateGallery(mongoId) {
+async function findOrCreateGallery(mongoId, options) {
   const gallery = await Galleries.findOne({ creationOrWireframeId: mongoId });
   if (gallery) return gallery;
   try {
-    return await createGallery(mongoId);
+    return await createGallery(mongoId, options);
   } catch (error) {
     if (error.code !== DUPLICATE_KEY_ERROR) throw error;
     return Galleries.findOne({ creationOrWireframeId: mongoId });
   }
 }
 
-// Append the files the gallery doesn't list yet. The name filter makes the
-// "already there?" check part of the same atomic update as the push.
-async function addFiles(mongoId, files) {
-  await findOrCreateGallery(mongoId);
-  await Promise.all(
-    files.map((file) =>
-      Galleries.updateOne(
-        { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
-      )
-    )
+// A gallery image carries more than the uploader returns: the V1 fields of
+// US-01. Build them in one place, so a stored document and the response that
+// announces it can never describe the same image differently.
+function toGalleryFile(file, { uploadedAt = new Date() } = {}) {
+  // `uploadedName` and `originalName` only serve to seed the label (the slug
+  // keys the template assets map, not the gallery): stored, they would be
+  // stale copies of it that no reader of the gallery uses.
+  const { uploadedName, originalName, ...stored } = file;
+  return {
+    ...stored,
+    label: labelForUpload(file.name, uploadedName || originalName),
+    source: 'upload',
+    externalMetadata: {},
+    ...(uploadedAt && { uploadedAt }),
+  };
+}
+
+// One image as the gallery holds it, through the same getter as the list.
+async function readGalleryFile(mongoId, name) {
+  const gallery = await Galleries.findOne(
+    { creationOrWireframeId: mongoId },
+    { files: { $elemMatch: { name } } }
   );
+  const [file] = gallery ? gallery.files : [];
+  if (!file) {
+    throw new createError.NotFound(ERROR_CODES.GALLERY_IMAGE_NOT_FOUND);
+  }
+  return file;
+}
+
+// Append the files the gallery doesn't list yet. The name filter makes the
+// "already there?" check part of the same atomic update as the push. Answers
+// with each file as the gallery holds it, read back: when the push was
+// skipped (the same bytes uploaded again), that is the entry already there,
+// not what this upload would have stored.
+async function addFiles(mongoId, files) {
+  await findOrCreateGallery(mongoId, { except: files.map((f) => f.name) });
+  return Promise.all(
+    files.map(async (file) => {
+      await Galleries.updateOne(
+        { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
+        { $push: { files: toGalleryFile(file) } }
+      );
+      return readGalleryFile(mongoId, file.name);
+    })
+  );
+}
+
+// Store new images and list them. The gallery is created BEFORE the bytes
+// reach the storage: a gallery is seeded from the storage listing, and a
+// listing taken after another request has written its file would seed that
+// file under its technical name, without dimensions, and skip its own push.
+async function storeInGallery(mongoId, writeFiles) {
+  await findOrCreateGallery(mongoId);
+  const files = await writeFiles();
+  return addFiles(mongoId, files);
+}
+
+// The file name a URL ends with, decoded: what an imported image is labelled
+// with, so a search finds it as it finds an upload. labelForUpload cleans it
+// and gives it the stored extension, as it does for an uploaded name.
+// Never throws: the bytes are already stored when it runs.
+function fileNameOfUrl(imageUrl) {
+  let segment = '';
+  try {
+    segment = new URL(imageUrl).pathname.split('/').pop();
+    return decodeURIComponent(segment);
+  } catch (e) {
+    // not valid percent-encoding: a label as written beats no label
+    return segment;
+  }
 }
 
 /**
@@ -115,17 +238,29 @@ async function createFromUrl(mongoId, imageUrl) {
   const hash = crypto.createHash('md5').update(buffer).digest('hex');
   const fileName = `${mongoId}-${hash}.${ext}`;
 
-  const source = new PassThrough();
-  source.end(buffer);
-  await fileManager.writeStreamFromStream(source, fileName);
+  const [storedFile] = await storeInGallery(mongoId, async () => {
+    const source = new PassThrough();
+    source.end(buffer);
+    await fileManager.writeStreamFromStream(source, fileName);
 
-  const uploadedFile = formatName(fileName);
-
-  await addFiles(mongoId, [uploadedFile]);
+    const uploadedFile = {
+      ...formatName(fileName),
+      uploadedName: fileNameOfUrl(imageUrl),
+    };
+    // The gallery tooltip shows the original dimensions, and this path never
+    // goes through the upload parser that captures them. Through the shared
+    // reader, which hands the prober only a bounded prefix of the buffer.
+    const dimensions = uploadIdentity.probeImageDimensions(buffer);
+    if (dimensions) {
+      uploadedFile.width = dimensions.width;
+      uploadedFile.height = dimensions.height;
+    }
+    return [uploadedFile];
+  });
 
   logger.log('Downloaded feed image into gallery', mongoId, fileName);
 
-  return uploadedFile;
+  return storedFile;
 }
 
 module.exports = {
@@ -133,5 +268,8 @@ module.exports = {
   createGallery,
   findOrCreateGallery,
   addFiles,
+  storeInGallery,
   createFromUrl,
+  renameLabel,
+  assertCanEditGallery,
 };

@@ -45,22 +45,6 @@
     mask-size: contain;
   }
 
-  // Scoped to #toolimages: the 3-column gallery layout. Without this scope
-  // the rule was bleeding into the block list and overriding its margin.
-  #toolimages .draggable-item {
-    margin-left: @gallery-gutter;
-    margin-right: @gallery-gutter;
-    // // http://stackoverflow.com/questions/28200574/make-math-happen-inside-css-calc-with-less#answer-28210969
-    width: calc(33% ~'-' (@gallery-gutter*2));
-  }
-  #toolimages .draggable-item:nth-child(3) ~ .draggable-item {
-    margin-top: @gallery-gutter;
-  }
-  .draggable.image {
-    width: 111px;
-    height: 111px;
-  }
-
   ////////
   // TOPBAR
   ////////

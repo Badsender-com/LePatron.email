@@ -57,3 +57,33 @@ _Avoid_: Env admin, hardcoded admin, legacy admin
 **Capability**:
 One thing a role allows, anywhere it applies, such as deleting an email or managing a group's technical settings. A role is its list of capabilities; what it does not list, it cannot do.
 _Avoid_: Permission, right (for this list; "rights" stays fine in prose)
+
+### Image gallery
+
+**Gallery**:
+The images the editor offers for the image blocks of an email. Removing an image takes it out of the gallery, not out of storage, so the emails that use it keep it.
+_UI_: Galerie
+_Avoid_: Media library, image bank
+
+**Mailing gallery**:
+The gallery of one email: the images uploaded while designing it.
+_UI_: Spécifique à l'email
+_Avoid_: Email images, local gallery
+
+**Template gallery**:
+The gallery of one template, shared by every email made from it.
+_UI_: Commun au template
+_Avoid_: Shared gallery, common gallery
+
+**Stored name**:
+The name a gallery image is stored and addressed under, derived from its content. It never changes, and every email that uses the image points at it.
+_Avoid_: File name, image id, hash
+
+**Label**:
+The name of a gallery image as users read, search and rename it. An upload starts with the name of the file the user sent; renaming changes the label, never the stored name.
+_UI_: Libellé
+_Avoid_: Title, file name, original name
+
+**Numbered copy**:
+The new gallery image that editing an image produces, labelled after it with the next free number of its series (`photo (2).png`). The original is never replaced.
+_Avoid_: Version, revision, edited image
