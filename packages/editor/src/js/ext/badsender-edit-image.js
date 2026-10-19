@@ -9,6 +9,7 @@ const {
 } = require('../../../../shared/gallery/label.js');
 const { isEditableImage } = require('../../../../shared/gallery/filter.js');
 const { mayDo } = require('./gallery-actions.js');
+const { readStoredImage } = require('../vue/utils/apis');
 const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 // Reopening the image editor on an image that is already stored — from a
@@ -180,7 +181,7 @@ function handOver(viewModel, { input, storedName, type, sourceLabel }) {
 
   // Same origin: the stored file is served by this application, whatever the
   // gallery list happens to carry as a display URL.
-  return fetch(`/api/images/${encodeURIComponent(storedName)}`, {
+  return fetch(readStoredImage(storedName), {
     credentials: 'same-origin',
     signal: controller.signal,
   })

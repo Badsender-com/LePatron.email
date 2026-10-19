@@ -62,6 +62,11 @@ function renameGalleryImageLabel(mongoId, imageName) {
   )}/label`;
 }
 
+// a stored image's own bytes, served by this application
+function readStoredImage(imageName) {
+  return `${prefixApi}/images/${encodeURIComponent(imageName)}`;
+}
+
 module.exports = {
   getEspIds,
   getProfileDetail,
@@ -78,4 +83,5 @@ module.exports = {
   getFeedItems,
   uploadGalleryImageFromUrl,
   renameGalleryImageLabel,
+  readStoredImage,
 };
