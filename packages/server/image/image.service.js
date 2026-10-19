@@ -229,8 +229,7 @@ async function createFromUrl(mongoId, imageUrl) {
     const uploadedFile = formatName(fileName);
     // The gallery tooltip shows the original dimensions, and this path never
     // goes through the upload parser that captures them. Through the shared
-    // reader, which caps how much of the buffer it hands to the prober —
-    // measuring the whole 10MB download let one crafted file block the server.
+    // reader, which hands the prober only a bounded prefix of the buffer.
     const dimensions = uploadIdentity.probeImageDimensions(buffer);
     if (dimensions) {
       uploadedFile.width = dimensions.width;

@@ -28,12 +28,9 @@ const SNIFF_BYTES = 4096;
 // EXIF thumbnail of tens of kilobytes. So JPEG, and only JPEG, gets a wider
 // window.
 //
-// Only JPEG, because `probe`'s SVG parser is quadratic in the buffer handed to
-// it: it stringifies the whole thing and backtracks a `[^>]+` over it. Handing
-// it 10MB of `<svg x<svg x…` blocks the event loop for over an hour — one
-// request, whole server. Measured here: 128KB already costs 1.2s, and every
-// doubling costs four times as much. Capping at SNIFF_BYTES keeps that path
-// under a millisecond.
+// Only JPEG, because the prober is only ever handed a bounded prefix: its cost
+// grows with the buffer it is given, and an upload or a download is as large
+// as its sender makes it.
 const JPEG_SNIFF_BYTES = 128 * 1024;
 
 const isJpeg = (buffer) =>
@@ -103,8 +100,8 @@ function sniffImage(file) {
  * The original dimensions of an image, read from its header.
  *
  * The one place that does this, for every caller: an upload, a feed download,
- * the backfill script. Each used to carry its own budget, which is how one of
- * them ended up handing `probe` a whole 10MB buffer.
+ * the backfill script. Each used to carry its own budget; here, the bound on
+ * what the prober reads is the same for all of them.
  *
  * Never throws: a header it cannot read is a tooltip line that is not shown,
  * not a failed upload.
@@ -188,5 +185,6 @@ module.exports = {
   resolveUploadNames,
   probeImageDimensions,
   readHead,
+  SNIFF_BYTES,
   JPEG_SNIFF_BYTES,
 };

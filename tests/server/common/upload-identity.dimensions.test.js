@@ -1,7 +1,10 @@
 'use strict';
 
+const probe = require('probe-image-size');
 const {
   probeImageDimensions,
+  SNIFF_BYTES,
+  JPEG_SNIFF_BYTES,
 } = require('../../../packages/server/common/upload-identity.service.js');
 
 // A JPEG keeps its dimensions in SOF0, which sits after APP1 — and a camera
@@ -126,30 +129,30 @@ describe('probeImageDimensions — what it refuses', () => {
 });
 
 describe('probeImageDimensions — the window it hands the prober', () => {
-  // `probe`'s SVG parser stringifies the buffer it is given and backtracks a
-  // `[^>]+` over it, so its cost is quadratic in that buffer. Measuring a
-  // whole 10MB download let one crafted file block the event loop for over an
-  // hour. Only a real JPEG gets the wider window; everything else is capped.
-  it('does not stall on a buffer crafted to make the SVG parser backtrack', () => {
-    const bomb = Buffer.from(`<${'<svg x'.repeat((10 * 1024 * 1024) / 6)}`);
+  // The prober is only ever handed a bounded prefix, whatever the size of
+  // the buffer: a wider one for a real JPEG, the narrow one for anything else.
+  const TEN_MB = 10 * 1024 * 1024;
+  let sync;
+  beforeEach(() => {
+    sync = jest.spyOn(probe, 'sync');
+  });
+  afterEach(() => sync.mockRestore());
 
-    const startedAt = Date.now();
-    const result = probeImageDimensions(bomb);
-    const elapsed = Date.now() - startedAt;
+  const largestWindow = () =>
+    Math.max(...sync.mock.calls.map(([buffer]) => buffer.length));
 
-    expect(result).toBeNull();
-    // the uncapped version took over an hour on this payload
-    expect(elapsed).toBeLessThan(500);
+  it('hands the prober the narrow window of a large buffer that is not a JPEG', () => {
+    const large = Buffer.concat([Buffer.from('<svg'), Buffer.alloc(TEN_MB)]);
+
+    probeImageDimensions(large);
+
+    expect(largestWindow()).toBeLessThanOrEqual(SNIFF_BYTES);
   });
 
-  it('stays fast on a large buffer that merely starts with a chevron', () => {
-    const benign = Buffer.concat([
-      Buffer.from('<!DOCTYPE html>'),
-      Buffer.alloc(10 * 1024 * 1024, 0x20),
-    ]);
+  // its dimensions sit past the narrow window, so the wide one is used
+  it('hands the prober no more than the JPEG window of a large JPEG', () => {
+    probeImageDimensions(Buffer.concat([jpeg(65533), Buffer.alloc(TEN_MB)]));
 
-    const startedAt = Date.now();
-    expect(probeImageDimensions(benign)).toBeNull();
-    expect(Date.now() - startedAt).toBeLessThan(500);
+    expect(largestWindow()).toBe(JPEG_SNIFF_BYTES);
   });
 });

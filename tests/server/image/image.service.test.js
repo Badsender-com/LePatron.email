@@ -9,8 +9,7 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   list: jest.fn().mockResolvedValue([]),
 }));
 jest.mock('../../../packages/server/common/upload-identity.service.js', () => ({
-  // the shared reader: it caps what it hands the prober, which is what keeps
-  // a crafted 10MB download from blocking the event loop
+  // the shared reader, which bounds what it hands the prober
   probeImageDimensions: jest.fn().mockReturnValue(null),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
@@ -105,9 +104,8 @@ describe('image.service.createFromUrl', () => {
     ).rejects.toThrow(/size/i);
   });
 
-  // The first version probed the whole downloaded buffer. `probe`'s SVG parser
-  // is quadratic in what it is given, so 10MB of crafted markup blocked the
-  // server for over an hour. Everything now goes through the capped reader.
+  // The download is measured through the shared reader, never handed whole to
+  // the prober: the reader is what bounds the prefix the prober sees.
   it('measures the download through the shared reader, not the raw buffer', async () => {
     mockImageResponse(Buffer.from('imagedata'));
     uploadIdentity.probeImageDimensions.mockReturnValue({
