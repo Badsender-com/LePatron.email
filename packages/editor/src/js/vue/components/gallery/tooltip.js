@@ -1,6 +1,6 @@
 'use strict';
 
-// Metadata tooltip for a gallery thumbnail (US-09). Bare Vue + inline
+// Metadata tooltip for a gallery thumbnail. Bare Vue + inline
 // template, no Vuetify (see AGENTS.md).
 //
 // ONE instance, owned by the panel, not one per cell. Two reasons, and both
@@ -15,13 +15,10 @@
 // The panel tells it which file to describe and where the cell is; it places
 // itself relative to the panel.
 //
-// ACCEPTED LIMITATION — this tooltip is mouse-only. It opens on `mouseenter`
-// and nothing else: there is no keyboard path to it (the thumbnail is not
-// focusable) and no touch path. The dimensions and the upload date are
-// therefore unavailable to a keyboard or touch user. `pointer-events: none`
-// also makes it physically unreachable, so its text cannot be selected.
-// Knowingly deferred for V1 by the product owner; making the grid focusable
-// is the prerequisite and belongs to its own ticket.
+// Mouse only: it opens on `mouseenter`, not on focus nor on touch, so the
+// dimensions and the upload date are out of reach of a keyboard or touch
+// user. Deferred for V1 by the product owner; the thumbnail's image is now
+// focusable, which is what opening it on focus would hang on.
 
 // Enough hover to mean "tell me more", short enough not to feel stuck.
 const OPEN_DELAY_MS = 500;
@@ -54,8 +51,8 @@ module.exports = {
       const match = /\.([a-z0-9]+)$/i.exec((this.file && this.file.name) || '');
       return match ? match[1].toUpperCase() : '';
     },
-    // Null for anything uploaded before US-09 whose bytes could not be read
-    // back. The line is dropped rather than showing "0 × 0".
+    // Null for an image stored before dimensions were recorded, whose bytes
+    // could not be read back. The line is dropped rather than showing "0 × 0".
     dimensions() {
       if (!this.file || !this.file.width || !this.file.height) return null;
       return `${this.file.width} × ${this.file.height} px`;

@@ -1,11 +1,10 @@
 'use strict';
 
-// Gallery thumbnail (US-05, US-08, US-11). Bare Vue + inline template, no
-// Vuetify (see AGENTS.md).
+// Gallery thumbnail. Bare Vue + inline template, no Vuetify (see AGENTS.md).
 // Emits:
 //   - `select` (file): click to use the image (KO $root.addImage)
-//   - `edit` (file): reopen the Konva editor on this image (US-10)
-//   - `remove` (file): delete the image (KO $root.removeImage) — ISO with old grid
+//   - `edit` (file): reopen the Konva editor on this image
+//   - `remove` (file): delete the image (KO $root.removeImage)
 //   - `rename` (file, label): a new label was committed (KO $root.renameImage)
 //   - `hover` (file, element) / `unhover`: the panel owns the single metadata
 //     tooltip, because one rendered in here would be clipped by this element's
@@ -188,16 +187,12 @@ module.exports = {
         >
           <img :src="file.thumbnailUrl" :alt="label" />
         </div>
-        <!-- Actions on hover (US-08), inside the image area only: the label
-             band below stays reachable, which is what a rename double-click
-             needs (ADR-0005).
-
-             The overlay keeps \`pointer-events: none\` even while visible, and
-             only the small action bar takes the pointer back. The mockup gave
-             the whole overlay \`pointer-events: auto\` on hover, which would
-             have covered the image area — and jQuery UI's draggable excludes
-             buttons from its handle, so that version made the thumbnail
-             undraggable exactly while the user could see it. -->
+        <!-- Actions on hover, inside the image area only: the label band
+             below stays reachable, which is what a rename double-click needs
+             (ADR-0005). The overlay keeps \`pointer-events: none\` even while
+             visible and only the small bar takes the pointer back: a lid over
+             the image would have made the thumbnail undraggable while shown,
+             since jQuery UI's draggable excludes buttons from its handle. -->
         <div class="gallery-thumb__overlay" data-gallery-overlay>
           <div v-if="canManage" class="gallery-thumb__actions">
             <button

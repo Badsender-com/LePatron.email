@@ -910,7 +910,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // viewModel.linkDialog = function() {}: implement this method using "this" to find the input element $(this).val is a writableObservable.
 
   // `editImage` is implemented as a view-model extension instead, in
-  // ext/badsender-edit-image.js: the gallery thumbnail (US-10) and this
+  // ext/badsender-edit-image.js: the gallery thumbnail and this
   // pencil open the same editor on an already-stored image, and one
   // implementation of that is enough.
 

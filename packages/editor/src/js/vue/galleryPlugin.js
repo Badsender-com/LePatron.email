@@ -218,17 +218,17 @@ function createGalleryPanel(vm) {
         this.search = '';
         this.format = '';
       },
-      // ISO with the previous grid: click replaces the selected email image
+      // a click replaces the image of the selected placeholder
       onSelect(file) {
         vm.addImage(file);
       },
-      // US-10 — reopen the image editor on an image already in the gallery.
-      // The panel's own root is what the extension uses to find the upload
+      // Reopen the image editor on an image already in the gallery. The
+      // panel's own root is what the extension uses to find the upload
       // widget of this pane rather than the other one's.
       onEdit(file) {
         vm.editGalleryImage(file, this.type, this.$el);
       },
-      // ISO with the previous grid: delete the image from the gallery
+      // asks for confirmation first (badsender-remove-gallery-image.js)
       onRemove(file) {
         vm.removeImage(file, this.type);
       },

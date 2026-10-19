@@ -12,7 +12,7 @@
 @gif-badge: #e8a93a;
 
 // Two bands: the image, then an opaque label strip (ADR-0005). The hover
-// overlay of US-08 lives inside the image area, so it cannot cover the label —
+// overlay of actions lives inside the image area, so it cannot cover the label —
 // which is what a rename has to double-click.
 .gallery-thumb {
   position: relative;
@@ -146,15 +146,13 @@
   color: @gallery-text;
 }
 
-// Actions on hover (US-08) — edit, rename, delete, in the image area only.
+// Actions on hover — edit, rename, delete, in the image area only.
 //
 // The scrim is decorative: it darkens the bottom of the image so a white
-// action bar stays legible over a light photo. It must NEVER take the pointer,
-// hence `pointer-events: none` here with no hover override — only the bar
-// itself takes it back below. The mockup flipped the whole overlay to
-// `pointer-events: auto` on hover, which would have put a transparent lid over
-// the image area; jQuery UI's draggable excludes buttons from its handle, so
-// that version made the thumbnail undraggable exactly while it was visible.
+// action bar stays legible over a light photo. It never takes the pointer,
+// only the bar does (below): a transparent lid over the image would make the
+// thumbnail undraggable while shown, since jQuery UI's draggable excludes
+// buttons from its handle.
 .gallery-thumb__overlay {
   position: absolute;
   top: 0;

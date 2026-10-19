@@ -13,7 +13,7 @@ const { userCan } = require('./user-can.js');
 const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 // Reopening the image editor on an image that is already stored — from a
-// gallery thumbnail (US-10) and from the pencil on an image block, which has
+// gallery thumbnail and from the pencil on an image block, which has
 // always done the same thing.
 //
 // Neither path talks to Konva. Both hand the stored bytes back to the upload
@@ -63,7 +63,7 @@ function editImagePlugin(viewModel) {
   };
 
   /**
-   * US-10 — the same thing, from a gallery thumbnail.
+   * The same thing, from a gallery thumbnail.
    *
    * @param {object} file the gallery file, as the panel mirrors it
    * @param {string} type 'mailing' or 'template'
