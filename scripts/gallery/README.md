@@ -23,7 +23,7 @@ Les autres champs V1 (`label`, `source`, `externalMetadata`) n'ont pas besoin d'
 
 Le script ne lit que les galeries qui ont encore une image sans dimensions ou sans date, et chaque écriture porte sa précondition. Une relance ne refait rien de ce qui est fait, une run interrompue (Ctrl-C, `kill`, coupure réseau) reprend où elle s'est arrêtée, deux runs simultanées ne se gênent pas, et l'application peut servir pendant ce temps.
 
-Depuis #1293, une galerie créée à l'ouverture d'une création (à partir du listing du stockage) naît au format V1, sans dimensions : il est sûr, et utile, de relancer le script tant que de telles galeries peuvent apparaître. Sur une base à jour, une relance coûte une requête.
+Depuis #1293, une galerie créée à l'ouverture d'une création (à partir du listing du stockage) naît au format V1, sans dimensions ni date : il est sûr, et utile, de relancer le script tant que de telles galeries peuvent apparaître. Sur une base à jour, une relance coûte une requête.
 
 **Ctrl-C** : chaque galerie en cours finit le fichier qu'elle lit, puis le résumé s'affiche (exit 1, `Interrupted`). Un **second Ctrl-C** sort immédiatement (exit 130), sans résumé : rien n'est perdu, la relance reprend.
 
