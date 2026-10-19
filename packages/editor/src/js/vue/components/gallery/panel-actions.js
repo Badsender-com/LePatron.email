@@ -14,9 +14,10 @@ module.exports = {
     },
     // Reopen the image editor on an image already in the gallery. The
     // panel's own root is what the extension uses to find the upload
-    // widget of this pane rather than the other one's.
-    onEdit(file) {
-      this.viewModel.editGalleryImage(file, this.type, this.$el);
+    // widget of this pane rather than the other one's; the button clicked is
+    // marked busy while the editor opens.
+    onEdit(file, trigger) {
+      this.viewModel.editGalleryImage(file, this.type, this.$el, trigger);
     },
     // asks for confirmation first (badsender-remove-gallery-image.js)
     onRemove(file) {

@@ -190,3 +190,97 @@ describe('storedNameOf', () => {
     expect(storedNameOf(undefined)).toBe('');
   });
 });
+
+// Opening waits for up to two gallery loads and the read of the stored file,
+// and each opening ends in an editor that takes over a single global state.
+// A second click during the wait used to open a second editor over the first.
+describe('editImage and editGalleryImage — one opening at a time', () => {
+  const FILE = { name: PNG, label: 'photo.png' };
+  let release;
+
+  beforeEach(() => {
+    global.fetch = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve({
+              ok: true,
+              status: 200,
+              blob: () =>
+                Promise.resolve(new Blob(['x'], { type: 'image/png' })),
+            });
+        })
+    );
+  });
+
+  it('ignores a second click while the first is opening', async () => {
+    const first = viewModel.editGalleryImage(FILE, 'mailing', panel('mailing'));
+    const second = await viewModel.editGalleryImage(
+      FILE,
+      'mailing',
+      panel('mailing')
+    );
+    release();
+
+    expect(second).toBe(false);
+    expect(await first).toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(added).toHaveLength(1);
+  });
+
+  it('shares the wait between the pencil and the thumbnails', async () => {
+    const pencil = document.querySelector('[data-pencil="template"]');
+    const first = viewModel.editImage(() => PNG, pencil);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const second = await viewModel.editGalleryImage(
+      FILE,
+      'template',
+      panel('template')
+    );
+    release();
+    await first;
+
+    expect(second).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens again once the first opening is over, even a failed one', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
+    await viewModel.editGalleryImage(FILE, 'mailing', panel('mailing'));
+    respondWith(new Blob(['x'], { type: 'image/png' }));
+
+    const opened = await viewModel.editGalleryImage(
+      FILE,
+      'mailing',
+      panel('mailing')
+    );
+
+    expect(opened).toBe(true);
+  });
+
+  // nothing on screen said the click was taken, which is why it was repeated
+  it('marks the clicked control busy while it waits', async () => {
+    const pencil = document.querySelector('[data-pencil="template"]');
+    const opening = viewModel.editImage(() => PNG, pencil);
+    expect(pencil.getAttribute('aria-busy')).toBe('true');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    release();
+    await opening;
+    expect(pencil.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('marks the thumbnail’s button busy too', async () => {
+    const button = document.createElement('button');
+    panel('mailing').appendChild(button);
+    const opening = viewModel.editGalleryImage(
+      FILE,
+      'mailing',
+      panel('mailing'),
+      button
+    );
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    release();
+    await opening;
+    expect(button.hasAttribute('aria-busy')).toBe(false);
+  });
+});

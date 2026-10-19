@@ -262,6 +262,36 @@
   }
 }
 
+// A control whose click was taken and is still being acted on: opening the
+// image editor waits for the gallery lists and the stored file
+// (badsender-edit-image.js), and nothing on screen used to say so, so the
+// click was repeated. The glyph breathes; without motion, it dims. Also used
+// by the pencil on an image of the email (badsender-editor.less).
+@keyframes gallery-busy {
+  to {
+    opacity: 0.35;
+  }
+}
+
+.gallery-busy() {
+  cursor: progress;
+
+  .lucide {
+    animation: gallery-busy 0.6s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lucide {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
+}
+
+.gallery-thumb__action[aria-busy='true'] {
+  .gallery-busy();
+}
+
 // Only the destructive one is coloured, and only on hover: colour carries
 // meaning here rather than decorating three identical buttons
 // (docs/UX_GUIDELINES.md, "Action Icon Color Rules").

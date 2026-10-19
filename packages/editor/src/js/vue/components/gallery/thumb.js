@@ -228,7 +228,7 @@ module.exports = {
               data-gallery-edit
               :title="editTitle"
               :aria-label="editTitle"
-              @click.stop="$emit('edit', file)"
+              @click.stop="$emit('edit', file, $event.currentTarget)"
             >
               <span class="lucide lucide-pencil"></span>
             </button>

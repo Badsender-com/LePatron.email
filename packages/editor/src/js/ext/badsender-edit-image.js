@@ -37,7 +37,13 @@ const BLOCK_GALLERY_TYPE = 'mailing';
 // where the pencil looks for the label of the image it edits, in this order
 const GALLERY_TYPES = ['mailing', 'template'];
 
+// The editor's canvas (bindings/image-editor.js): present while an editor is
+// open, whose modal a second one would stack on.
+const EDITOR_CANVAS_ID = 'konva-editor';
+
 function editImagePlugin(viewModel) {
+  const opening = createOpeningLock();
+
   /**
    * The pencil on an image already placed in the email.
    *
@@ -46,19 +52,21 @@ function editImagePlugin(viewModel) {
    * @returns {Promise<boolean>} whether the editor opened
    */
   viewModel.editImage = function editImage(src, domElement) {
-    const storedName = storedNameOf(typeof src === 'function' ? src() : src);
-    const input = findUploadInput(domElement);
-    if (!mayOpenEditorOn(viewModel, BLOCK_GALLERY_TYPE, storedName, input)) {
-      return Promise.resolve(false);
-    }
-    return labelOfStoredImage(viewModel, storedName).then((sourceLabel) =>
-      handOver(viewModel, {
-        input,
-        storedName,
-        type: BLOCK_GALLERY_TYPE,
-        sourceLabel,
-      })
-    );
+    return opening.run(domElement, () => {
+      const storedName = storedNameOf(typeof src === 'function' ? src() : src);
+      const input = findUploadInput(domElement);
+      if (!mayOpenEditorOn(viewModel, BLOCK_GALLERY_TYPE, storedName, input)) {
+        return false;
+      }
+      return labelOfStoredImage(viewModel, storedName).then((sourceLabel) =>
+        handOver(viewModel, {
+          input,
+          storedName,
+          type: BLOCK_GALLERY_TYPE,
+          sourceLabel,
+        })
+      );
+    });
   };
 
   /**
@@ -69,24 +77,55 @@ function editImagePlugin(viewModel) {
    * @param {HTMLElement} panelElement the Vue panel's root, to find its
    *   upload input: the two panes each have one, and only the element the
    *   click came from tells them apart
+   * @param {HTMLElement} [trigger] the button clicked, marked busy meanwhile
    * @returns {Promise<boolean>} whether the editor opened
    */
   viewModel.editGalleryImage = function editGalleryImage(
     file,
     type,
-    panelElement
+    panelElement,
+    trigger
   ) {
-    const input = findUploadInput(panelElement);
-    if (!mayOpenEditorOn(viewModel, type, file.name, input)) {
-      return Promise.resolve(false);
-    }
-    return handOver(viewModel, {
-      input,
-      storedName: file.name,
-      type,
-      sourceLabel: file.label || file.name,
+    return opening.run(trigger, () => {
+      const input = findUploadInput(panelElement);
+      if (!mayOpenEditorOn(viewModel, type, file.name, input)) return false;
+      return handOver(viewModel, {
+        input,
+        storedName: file.name,
+        type,
+        sourceLabel: file.label || file.name,
+      });
     });
   };
+}
+
+// Opening waits for up to two gallery loads and the read of the stored file,
+// and ends in an editor that takes over a single global state: a second
+// click during the wait opened a second editor over the first, whose save
+// then acted on the other's state. One opening at a time, for the pencil and
+// the thumbnails alike, and the clicked control says it is working on it,
+// which is what the second click was asking.
+function createOpeningLock() {
+  let busy = false;
+  return {
+    run(trigger, open) {
+      if (busy || document.getElementById(EDITOR_CANVAS_ID)) {
+        return Promise.resolve(false);
+      }
+      busy = true;
+      markBusy(trigger, true);
+      return new Promise((resolve) => resolve(open())).finally(() => {
+        busy = false;
+        markBusy(trigger, false);
+      });
+    },
+  };
+}
+
+function markBusy(element, busy) {
+  if (!element || typeof element.setAttribute !== 'function') return;
+  if (busy) element.setAttribute('aria-busy', 'true');
+  else element.removeAttribute('aria-busy');
 }
 
 // Every reason not to open the editor, each one reported: a click that does

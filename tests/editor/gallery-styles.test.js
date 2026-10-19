@@ -89,6 +89,25 @@ describe('gallery styles — the thumbnail’s action bar', () => {
   });
 });
 
+describe('gallery styles — a button that is working', () => {
+  const busy = ".gallery-thumb__action[aria-busy='true']";
+
+  it('says the click was taken while the image editor opens', () => {
+    expect(valuesOf(busy, 'cursor')).toEqual(['progress']);
+    expect(valuesOf(`${busy} .lucide`, 'animation')).toHaveLength(2);
+  });
+
+  it('keeps still for whoever asked for less motion', () => {
+    const still = [];
+    root.walkRules((rule) => {
+      if (!rule.selectors.includes(`${busy} .lucide`)) return;
+      if (rule.parent.type !== 'atrule') return;
+      rule.walkDecls('animation', (decl) => still.push(decl.value));
+    });
+    expect(still).toEqual(['none']);
+  });
+});
+
 describe('gallery styles — brand colours', () => {
   // The editor injects the brand as --v-primary-base / --v-accent-base
   // (mosaico-editor.pug), and the tabs right above the panel read them.
