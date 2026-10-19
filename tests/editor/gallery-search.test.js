@@ -24,11 +24,14 @@ const options = createGalleryPanel(fakeViewModel);
 
 // Bind the component's own computed getters to a plain object standing in for a
 // Vue instance. Vue resolves `this` the same way, so the getters under test are
-// exactly the ones that ship.
+// exactly the ones that ship. `viewModel` is what the panel's beforeCreate
+// takes from its options.
 // `status` is Mosaico's gallery status: a loaded gallery reports its count.
 function panel(images, search = '', format = '', sortBy = 'date_desc') {
   const status = images.length;
-  const vm = { ...options.data(), images, search, format, sortBy, status };
+  const { viewModel } = options;
+  const criteria = { images, search, format, sortBy, status };
+  const vm = { ...options.data(), viewModel, ...criteria };
   Object.keys(options.computed).forEach((key) => {
     Object.defineProperty(vm, key, {
       get: options.computed[key],

@@ -16,7 +16,9 @@ const ROOT = path.join(__dirname, '../../packages/editor/src/js');
 // Read the keys off the sources themselves, so one added there is checked
 // without being listed here.
 const SOURCES = [
-  'vue/galleryPlugin.js',
+  'vue/components/gallery/panel.js',
+  'vue/components/gallery/panel-tooltip.js',
+  'vue/components/gallery/panel-actions.js',
   'ext/badsender-remove-gallery-image.js',
   'ext/badsender-rename-gallery-image.js',
   'ext/badsender-edit-image.js',
@@ -25,7 +27,7 @@ const SOURCES = [
 const literalKeys = SOURCES.flatMap((file) => {
   const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
   return Array.from(
-    source.matchAll(/(?:vm|viewModel)\.t\(\s*'(gallery-[^']+)'/g),
+    source.matchAll(/(?:vm|viewModel|this)\.t\(\s*'(gallery-[^']+)'/g),
     (match) => match[1]
   );
 });
