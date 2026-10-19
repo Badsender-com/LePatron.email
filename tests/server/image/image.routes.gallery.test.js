@@ -181,70 +181,27 @@ describe('PATCH /gallery/:mongoId/:imageName/label — what it accepts', () => {
   });
 });
 
-describe('GET /gallery/:mongoId — what it accepts', () => {
+describe('GET /gallery/:mongoId — what it answers', () => {
   const FILES = [
-    {
-      name: `${GALLERY_ID}-a.png`,
-      label: 'Logo.png',
-      uploadedAt: '2026-01-01',
-    },
-    {
-      name: `${GALLERY_ID}-b.jpg`,
-      label: 'Bannière.jpg',
-      uploadedAt: '2026-03-01',
-    },
+    { name: `${GALLERY_ID}-a.png`, label: 'Logo.png' },
+    { name: `${GALLERY_ID}-b.jpg`, label: 'Bannière.jpg' },
   ];
-  const list = (query) => request(app()).get(URL).query(query);
 
   beforeEach(() => {
     Galleries.findOne.mockResolvedValue({ files: FILES });
   });
 
-  it('answers every image with no criteria', async () => {
-    const res = await list({});
+  // the editor searches, filters and sorts the gallery itself
+  it.each([
+    ['no query', {}],
+    ['a query it does not read', { search: 'logo', sortBy: 'name' }],
+  ])('answers every image with %s', async (_case, query) => {
+    const res = await request(app()).get(URL).query(query);
 
     expect(res.status).toBe(200);
     expect(res.body.files.map((f) => f.label)).toEqual([
       'Logo.png',
       'Bannière.jpg',
     ]);
-  });
-
-  it('applies search, format and sort', async () => {
-    const res = await list({
-      search: 'banniere',
-      format: 'jpeg',
-      sortBy: 'date_desc',
-    });
-
-    expect(res.body.files.map((f) => f.label)).toEqual(['Bannière.jpg']);
-  });
-
-  it.each([
-    ['an unknown sort', { sortBy: 'name' }],
-    ['a sort given twice', 'sortBy=date_desc&sortBy=date_asc'],
-  ])('refuses %s', async (_case, query) => {
-    const res = await list(query);
-
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe(ERROR_CODES.INVALID_SORT_PARAM);
-  });
-
-  it('refuses a search longer than any label', async () => {
-    const res = await list({ search: 'a'.repeat(MAX_LABEL_LENGTH + 1) });
-
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe(ERROR_CODES.SEARCH_TOO_LONG);
-  });
-
-  it.each([
-    ['a search given as a list', 'search=a&search=b'],
-    ['a search given as an object', 'search[$ne]=x'],
-    ['a format given as a list', 'format=png&format=jpg'],
-  ])('ignores %s rather than failing', async (_case, query) => {
-    const res = await list(query);
-
-    expect(res.status).toBe(200);
-    expect(res.body.files).toHaveLength(2);
   });
 });

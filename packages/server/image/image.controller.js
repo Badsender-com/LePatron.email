@@ -19,10 +19,6 @@ const mailingService = require('../mailing/mailing.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 const {
-  SORT_BY_VALUES,
-  filterGalleryFiles,
-} = require('../../shared/gallery/filter.js');
-const {
   sanitizeLabel,
   MAX_LABEL_LENGTH,
 } = require('../../shared/gallery/label.js');
@@ -495,26 +491,13 @@ function read(req, res, next) {
 // Those functions are accessible only from the editor
 // wireframes assets (preview & template fixed assets)…
 // …are handled separately in wireframes.js#update
-async function list(req, res, next) {
+async function list(req, res) {
   const { mongoId } = req.params;
-  const { search, format, sortBy } = req.query;
 
-  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
-    return next(createError.BadRequest(ERROR_CODES.INVALID_SORT_PARAM));
-  }
-  // filtering folds every label against the needle on every request; no label
-  // can exceed MAX_LABEL_LENGTH, so a longer needle could only match nothing
-  if (typeof search === 'string' && search.length > MAX_LABEL_LENGTH) {
-    return next(createError.BadRequest(ERROR_CODES.SEARCH_TOO_LONG));
-  }
-
+  // The whole gallery: the editor searches, filters and sorts it itself,
+  // with packages/shared/gallery/filter.js.
   const gallery = await imageService.findOrCreateGallery(mongoId);
-  const files = filterGalleryFiles(gallery.files, {
-    search,
-    format,
-    sortBy,
-  });
-  res.json({ files });
+  res.json({ files: gallery.files });
 }
 
 /**

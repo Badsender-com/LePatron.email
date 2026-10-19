@@ -2,14 +2,13 @@
 
 // Search, format filter and date sort for a gallery's files.
 //
-// Shared because both ends filter the same list. The server exposes it on
-// GET /images/gallery/:mongoId (US-02); the editor applies it in the browser,
-// where the whole gallery already sits in a Knockout observable loaded in one
-// request — so searching costs no round-trip, and the grid keeps mirroring the
-// one list Mosaico itself mutates on upload and delete.
+// The editor applies it in the browser, where the whole gallery already sits
+// in a Knockout observable loaded in one request (GET /images/gallery/:mongoId
+// answers every image) — so searching costs no round-trip, and the grid keeps
+// mirroring the one list Mosaico itself mutates on upload and delete.
 //
-// Keeping a single definition is the point: "jpeg counts as jpg" and
-// case-insensitive matching must not drift between the two callers.
+// In packages/shared next to the label rules, so that what the gallery
+// matches, and how it names images, is defined in one place.
 //
 // Pure, no Node builtins — the editor bundles this through browserify.
 

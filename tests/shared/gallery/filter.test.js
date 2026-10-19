@@ -193,8 +193,8 @@ describe('filterGalleryFiles', () => {
   });
 });
 
-// Cases the editor's search box brings in (US-06): the server never trimmed,
-// and a query format was compared raw against an already-normalised extension.
+// Cases the editor's search box brings in (US-06): a needle that was never
+// trimmed, and a format compared raw against an already-normalised extension.
 describe('filterGalleryFiles — cases the editor search box brings in', () => {
   it('ignores whitespace around the needle', () => {
     const result = filterGalleryFiles(TEST_FILES, { search: '  logo  ' });
