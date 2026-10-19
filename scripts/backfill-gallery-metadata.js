@@ -234,7 +234,11 @@ const backfill = {
   assess: assessBackfill,
 };
 
-if (require.main === module) runFromCommandLine(backfill);
+if (require.main === module) {
+  runFromCommandLine(backfill).catch(() => {
+    // runFromCommandLine already reports any failure and sets the exit code.
+  });
+}
 
 module.exports = {
   backfillGallery,
