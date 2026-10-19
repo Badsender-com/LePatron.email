@@ -583,12 +583,15 @@ async function create(req, res) {
     prefix: mongoId,
     formatter: 'editor',
   };
-  const uploads = await fileManager.parseMultipart(req, multipartOptions);
-  const files = await imageService.addFiles(mongoId, uploads.files);
+  const files = await imageService.storeInGallery(mongoId, async () => {
+    const uploads = await fileManager.parseMultipart(req, multipartOptions);
+    return uploads.files;
+  });
 
-  // Only the new uploads, as stored, label included: the editor pushes these
-  // very objects into its gallery list, and a response without the V1 fields
-  // showed the fresh thumbnail's technical file name until the next reload.
+  // Only the new uploads, as the gallery holds them, label included: the
+  // editor pushes these very objects into its gallery list, and a response
+  // without the V1 fields showed the fresh thumbnail's technical file name
+  // until the next reload.
   res.json({ files });
 }
 

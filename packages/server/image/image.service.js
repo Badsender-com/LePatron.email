@@ -88,11 +88,15 @@ async function destroy(mongoId, imageName) {
 // Seeded from the storage listing, in the V1 shape: a gallery created after
 // the V1 migration has run will never be migrated. The storage gives no
 // upload date, so the images date from the gallery, as the migration does it.
-function createGallery(mongoId) {
+// `except` names files being added right now: they are pushed with what their
+// upload knows (label, dimensions), which a seed from the listing would lose.
+function createGallery(mongoId, { except = [] } = {}) {
   return fileManager.list(mongoId).then((files) => {
     return new Galleries({
       creationOrWireframeId: mongoId,
-      files: files.map(toGalleryFile),
+      files: files
+        .filter((file) => !except.includes(file.name))
+        .map(toGalleryFile),
     }).save();
   });
 }
@@ -101,11 +105,11 @@ function createGallery(mongoId) {
 // requests can need it at once (the first uploads of a creation, or an upload
 // while the gallery panel opens): the unique index lets one create it, and the
 // others read the one it created.
-async function findOrCreateGallery(mongoId) {
+async function findOrCreateGallery(mongoId, options) {
   const gallery = await Galleries.findOne({ creationOrWireframeId: mongoId });
   if (gallery) return gallery;
   try {
-    return await createGallery(mongoId);
+    return await createGallery(mongoId, options);
   } catch (error) {
     if (error.code !== DUPLICATE_KEY_ERROR) throw error;
     return Galleries.findOne({ creationOrWireframeId: mongoId });
@@ -128,22 +132,45 @@ function toGalleryFile(file) {
   };
 }
 
-// Append the files the gallery doesn't list yet. The name filter makes the
-// "already there?" check part of the same atomic update as the push. Returns
-// what was stored, so the caller can answer with it rather than with the
-// thinner object the upload parser produced.
-async function addFiles(mongoId, files) {
-  await findOrCreateGallery(mongoId);
-  const galleryFiles = files.map(toGalleryFile);
-  await Promise.all(
-    galleryFiles.map((file) =>
-      Galleries.updateOne(
-        { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
-      )
-    )
+// One image as the gallery holds it, through the same getter as the list.
+async function readGalleryFile(mongoId, name) {
+  const gallery = await Galleries.findOne(
+    { creationOrWireframeId: mongoId },
+    { files: { $elemMatch: { name } } }
   );
-  return galleryFiles;
+  const [file] = gallery ? gallery.files : [];
+  if (!file) {
+    throw new createError.NotFound(ERROR_CODES.GALLERY_IMAGE_NOT_FOUND);
+  }
+  return file;
+}
+
+// Append the files the gallery doesn't list yet. The name filter makes the
+// "already there?" check part of the same atomic update as the push. Answers
+// with each file as the gallery holds it, read back: when the push was
+// skipped (the same bytes uploaded again), that is the entry already there,
+// not what this upload would have stored.
+async function addFiles(mongoId, files) {
+  await findOrCreateGallery(mongoId, { except: files.map((f) => f.name) });
+  return Promise.all(
+    files.map(async (file) => {
+      await Galleries.updateOne(
+        { creationOrWireframeId: mongoId, 'files.name': { $ne: file.name } },
+        { $push: { files: toGalleryFile(file) } }
+      );
+      return readGalleryFile(mongoId, file.name);
+    })
+  );
+}
+
+// Store new images and list them. The gallery is created BEFORE the bytes
+// reach the storage: a gallery is seeded from the storage listing, and a
+// listing taken after another request has written its file would seed that
+// file under its technical name, without dimensions, and skip its own push.
+async function storeInGallery(mongoId, writeFiles) {
+  await findOrCreateGallery(mongoId);
+  const files = await writeFiles();
+  return addFiles(mongoId, files);
 }
 
 /**
@@ -190,22 +217,23 @@ async function createFromUrl(mongoId, imageUrl) {
   const hash = crypto.createHash('md5').update(buffer).digest('hex');
   const fileName = `${mongoId}-${hash}.${ext}`;
 
-  const source = new PassThrough();
-  source.end(buffer);
-  await fileManager.writeStreamFromStream(source, fileName);
+  const [storedFile] = await storeInGallery(mongoId, async () => {
+    const source = new PassThrough();
+    source.end(buffer);
+    await fileManager.writeStreamFromStream(source, fileName);
 
-  const uploadedFile = formatName(fileName);
-  // The gallery tooltip shows the original dimensions, and this path never
-  // goes through the upload parser that captures them. Through the shared
-  // reader, which caps how much of the buffer it hands to the prober —
-  // measuring the whole 10MB download let one crafted file block the server.
-  const dimensions = uploadIdentity.probeImageDimensions(buffer);
-  if (dimensions) {
-    uploadedFile.width = dimensions.width;
-    uploadedFile.height = dimensions.height;
-  }
-
-  const [storedFile] = await addFiles(mongoId, [uploadedFile]);
+    const uploadedFile = formatName(fileName);
+    // The gallery tooltip shows the original dimensions, and this path never
+    // goes through the upload parser that captures them. Through the shared
+    // reader, which caps how much of the buffer it hands to the prober —
+    // measuring the whole 10MB download let one crafted file block the server.
+    const dimensions = uploadIdentity.probeImageDimensions(buffer);
+    if (dimensions) {
+      uploadedFile.width = dimensions.width;
+      uploadedFile.height = dimensions.height;
+    }
+    return [uploadedFile];
+  });
 
   logger.log('Downloaded feed image into gallery', mongoId, fileName);
 
@@ -217,6 +245,7 @@ module.exports = {
   createGallery,
   findOrCreateGallery,
   addFiles,
+  storeInGallery,
   createFromUrl,
   renameLabel,
   assertGalleryOwnership,
