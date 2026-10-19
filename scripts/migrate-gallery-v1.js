@@ -10,7 +10,11 @@
  * See scripts/gallery/README.md before running it on production.
  *
  * Usage:
- *   node scripts/migrate-gallery-v1.js [--dry-run] [--concurrency=N]
+ *   node scripts/migrate-gallery-v1.js --dry-run [--concurrency=N]
+ *   node scripts/migrate-gallery-v1.js --database=<name> [--concurrency=N]
+ *
+ * A run that writes names its database, as the dry-run prints it: the run
+ * refuses to start on any other.
  */
 
 require('dotenv').config();

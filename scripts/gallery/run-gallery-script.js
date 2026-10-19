@@ -27,11 +27,14 @@ const MAX_CONCURRENCY = 32;
 const EXIT_FAILURE = 1;
 const SUMMARY_LABEL_WIDTH = 21;
 
-function parseArgs(argv) {
-  const dryRun = argv.includes('--dry-run');
-  const flag = argv.find((arg) => arg.startsWith('--concurrency='));
-  if (!flag) return { dryRun, concurrency: DEFAULT_CONCURRENCY };
-  const concurrency = Number(flag.slice('--concurrency='.length));
+function flagValue(argv, name) {
+  const flag = argv.find((arg) => arg.startsWith(name));
+  return flag === undefined ? null : flag.slice(name.length);
+}
+
+function parseConcurrency(value) {
+  if (value === null) return DEFAULT_CONCURRENCY;
+  const concurrency = Number(value);
   if (
     !Number.isInteger(concurrency) ||
     concurrency < 1 ||
@@ -41,7 +44,32 @@ function parseArgs(argv) {
       `--concurrency takes an integer from 1 to ${MAX_CONCURRENCY}`
     );
   }
-  return { dryRun, concurrency };
+  return concurrency;
+}
+
+// A run that writes names its database: the configuration falls back on a
+// default (production on an application instance, a local base elsewhere), and
+// an override that did not apply would otherwise go unnoticed.
+function parseArgs(argv) {
+  const dryRun = argv.includes('--dry-run');
+  const database = flagValue(argv, '--database=') || null;
+  if (!dryRun && !database) {
+    throw new Error(
+      'A run without --dry-run writes: name its database with ' +
+        '--database=<name>, as the dry-run prints it.'
+    );
+  }
+  const concurrency = parseConcurrency(flagValue(argv, '--concurrency='));
+  return { dryRun, concurrency, database };
+}
+
+function confirmDatabase(connected, database) {
+  if (database && database !== connected) {
+    throw new Error(
+      `--database=${database} does not match the database this run is ` +
+        `connected to, "${connected}". Nothing was written.`
+    );
+  }
 }
 
 // The hosts of a connection string, never its credentials: the URI carries the
@@ -101,7 +129,15 @@ async function eachWithConcurrency(items, concurrency, worker, isStopping) {
 function printHeader(script, dryRun) {
   console.log(script.title);
   if (dryRun) console.log('[DRY-RUN] Nothing is written.');
-  console.log(`Database: ${databaseHosts(config.database)}`);
+  console.log(`Connecting to ${databaseHosts(config.database)}…`);
+}
+
+// The name is not a secret, and it is what tells a copy from production when
+// both live on the same hosts.
+function printTarget(script, databaseName) {
+  console.log(
+    `Database: "${databaseName}" on ${databaseHosts(config.database)}`
+  );
   const environment = script.describeEnvironment
     ? script.describeEnvironment()
     : [];
@@ -179,7 +215,7 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
  * @returns {Promise<number>} the exit code
  */
 async function runGalleryScript(script, { argv = process.argv } = {}) {
-  const { dryRun, concurrency } = parseArgs(argv);
+  const { dryRun, concurrency, database } = parseArgs(argv);
   await config.setup;
   printHeader(script, dryRun);
 
@@ -190,6 +226,8 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+    printTarget(script, mongoose.connection.name);
+    confirmDatabase(mongoose.connection.name, database);
     await processAll(script, { dryRun, concurrency, run, signal });
   } catch (error) {
     run.fatal = error;

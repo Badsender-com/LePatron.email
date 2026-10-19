@@ -3,6 +3,7 @@
 jest.mock('mongoose', () => ({
   connect: jest.fn().mockResolvedValue(undefined),
   disconnect: jest.fn().mockResolvedValue(undefined),
+  connection: { name: 'app' },
 }));
 jest.mock('../../packages/server/common/models.common.js', () => ({
   Galleries: { collection: {} },
@@ -19,6 +20,9 @@ const {
   eachWithConcurrency,
   DEFAULT_CONCURRENCY,
 } = require('../../scripts/gallery/run-gallery-script.js');
+
+// A real run names the database it writes to; the mocked connection is "app".
+const CONFIRMED = ['--database=app'];
 
 const URI_WITH_CREDENTIALS =
   'mongodb://operator:s3cr3t-password@db.example.test:27017/app';
@@ -92,13 +96,21 @@ describe('run-gallery-script', () => {
       expect(parseArgs(['node', 'x', '--dry-run'])).toEqual({
         dryRun: true,
         concurrency: DEFAULT_CONCURRENCY,
+        database: null,
       });
     });
 
     it('takes a concurrency, and refuses one out of range', () => {
-      expect(parseArgs(['--concurrency=8']).concurrency).toBe(8);
-      expect(() => parseArgs(['--concurrency=0'])).toThrow();
-      expect(() => parseArgs(['--concurrency=many'])).toThrow();
+      expect(parseArgs(['--concurrency=8', ...CONFIRMED]).concurrency).toBe(8);
+      expect(() => parseArgs(['--concurrency=0', ...CONFIRMED])).toThrow();
+      expect(() => parseArgs(['--concurrency=many', ...CONFIRMED])).toThrow();
+    });
+
+    // A run that writes must say where, before anything connects.
+    it('refuses a real run that does not name its database', () => {
+      expect(() => parseArgs([])).toThrow(/--database=<name>/);
+      expect(() => parseArgs(['--database='])).toThrow(/--database=<name>/);
+      expect(parseArgs(CONFIRMED).database).toBe('app');
     });
   });
 
@@ -128,10 +140,45 @@ describe('run-gallery-script', () => {
           .mockRejectedValue(new Error(`write to ${URI_WITH_CREDENTIALS}`)),
       });
 
-      await runGalleryScript(failing, { argv: [] });
+      await runGalleryScript(failing, { argv: CONFIRMED });
 
       expect(output()).toContain('db.example.test:27017');
       expect(output()).not.toContain('s3cr3t-password');
+    });
+  });
+
+  describe('names the database, and writes only to the one confirmed', () => {
+    it('prints the name of the database it is connected to', async () => {
+      Galleries.collection = fakeCollection(galleries(1));
+
+      await runGalleryScript(script(), { argv: ['--dry-run'] });
+
+      expect(output()).toContain('Database: "app" on db.example.test:27017');
+    });
+
+    // The override of the database did not apply: the run reached another one.
+    it('refuses to write to a database other than the one confirmed', async () => {
+      Galleries.collection = fakeCollection(galleries(2));
+      const writing = script({ preflight: jest.fn() });
+
+      const code = await runGalleryScript(writing, {
+        argv: ['--database=app-copy'],
+      });
+
+      expect(code).toBe(1);
+      expect(writing.preflight).not.toHaveBeenCalled();
+      expect(writing.processGallery).not.toHaveBeenCalled();
+      expect(output()).toMatch(/--database=app-copy.*"app"/);
+    });
+
+    it('runs a dry-run without confirmation', async () => {
+      Galleries.collection = fakeCollection(galleries(1));
+      const dry = script();
+
+      const code = await runGalleryScript(dry, { argv: ['--dry-run'] });
+
+      expect(code).toBe(0);
+      expect(dry.processGallery).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -139,7 +186,7 @@ describe('run-gallery-script', () => {
     Galleries.collection = fakeCollection(galleries(250));
     const counting = script();
 
-    const code = await runGalleryScript(counting, { argv: [] });
+    const code = await runGalleryScript(counting, { argv: CONFIRMED });
 
     expect(code).toBe(0);
     expect(counting.processGallery).toHaveBeenCalledTimes(250);
@@ -173,7 +220,7 @@ describe('run-gallery-script', () => {
       }),
     });
 
-    const code = await runGalleryScript(flaky, { argv: [] });
+    const code = await runGalleryScript(flaky, { argv: CONFIRMED });
 
     expect(code).toBe(1);
     expect(flaky.processGallery).toHaveBeenCalledTimes(3);
@@ -187,7 +234,7 @@ describe('run-gallery-script', () => {
       new Error('server selection timed out')
     );
 
-    const code = await runGalleryScript(script(), { argv: [] });
+    const code = await runGalleryScript(script(), { argv: CONFIRMED });
 
     expect(code).toBe(1);
     expect(mongoose.disconnect).toHaveBeenCalledTimes(1);
@@ -198,7 +245,7 @@ describe('run-gallery-script', () => {
     Galleries.collection = fakeCollection(galleries(1));
     const doubtful = script({ assess: () => ['nothing could be read'] });
 
-    const code = await runGalleryScript(doubtful, { argv: [] });
+    const code = await runGalleryScript(doubtful, { argv: CONFIRMED });
 
     expect(code).toBe(1);
     expect(output()).toContain('nothing could be read');
@@ -210,7 +257,7 @@ describe('run-gallery-script', () => {
       preflight: jest.fn().mockRejectedValue(new Error('wrong storage')),
     });
 
-    const code = await runGalleryScript(checked, { argv: [] });
+    const code = await runGalleryScript(checked, { argv: CONFIRMED });
 
     expect(code).toBe(1);
     expect(checked.processGallery).not.toHaveBeenCalled();

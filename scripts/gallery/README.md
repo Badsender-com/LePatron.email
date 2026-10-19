@@ -32,27 +32,34 @@ Les scripts lisent la configuration de l'application (`packages/server/node.conf
 
 Le plus sûr est de lancer les scripts **sur une instance de l'application** (Clever Cloud : `clever ssh`), où ces variables sont déjà celles de l'appli. Sans les variables de stockage, le backfill lirait le disque local et trouverait tous les fichiers « absents » ; il le détecte et s'arrête (voir plus bas), mais autant ne pas en arriver là.
 
-Au démarrage, chaque script affiche ce qu'il va toucher : les hôtes de la base (jamais la chaîne de connexion, qui porte le mot de passe) et, pour le backfill, le stockage (`S3, bucket "…" at <hôte>` ou `local directory …`). **Vérifier ces lignes avant de laisser tourner.**
+Au démarrage, chaque script affiche ce qu'il va toucher : le nom de la base et ses hôtes (`Database: "<nom>" on <hôtes>`, jamais la chaîne de connexion, qui porte le mot de passe) et, pour le backfill, le stockage (`S3, bucket "…" at <hôte>` ou `local directory …`).
+
+Si la variable de base ne s'applique pas (posée sans `export`, faute de frappe), la configuration retombe sur sa valeur par défaut : la base de production sur une instance de l'application, `localhost:27017/lepatron` ailleurs. C'est pourquoi **une run qui écrit doit nommer sa base** (`--database=<nom>`, voir plus bas) : si ce n'est pas celle à laquelle le script s'est connecté, il refuse avant toute écriture.
 
 ## Options
 
-- `--dry-run` : lit tout, compte tout, n'écrit rien. Le backfill lit quand même les fichiers (c'est ce qu'il mesure).
+- `--dry-run` : lit tout, compte tout, n'écrit rien. Le backfill lit quand même les fichiers (c'est ce qu'il mesure). Affiche le nom de la base.
+- `--database=<nom>` : **obligatoire sans `--dry-run`**. Le nom de la base que le dry-run a affiché (`Database: "<nom>"`). Absent, le script refuse de démarrer ; différent de la base réellement connectée, il refuse avant toute écriture (exit 1). Avec `--dry-run`, il est vérifié s'il est donné.
 - `--concurrency=N` : nombre de galeries traitées en même temps (1 à 32, 4 par défaut). Le backfill fait au plus N lectures de stockage simultanées. Sur S3 la durée est proportionnelle à la latence : 8 divise le temps par environ 7 par rapport à 1.
 
 ## Procédure en production
 
-1. **Sur une copie** : restaurer un dump de production dans une base à part, faire pointer `lepatron_database` dessus (le backfill peut lire le bucket de production, il n'y écrit jamais).
+1. **Sur une copie** : restaurer un dump de production dans une base à part, au nom distinct (par ex. `<base>-copie`), faire pointer `lepatron_database` dessus avec `export` (le backfill peut lire le bucket de production, il n'y écrit jamais).
    ```bash
    node scripts/migrate-gallery-v1.js --dry-run
    node scripts/backfill-gallery-dimensions.js --dry-run
    ```
-   Lire les en-têtes et le résumé (ci-dessous). Puis les lancer sans `--dry-run` sur la copie, et les relancer : la seconde migration doit annoncer `Galleries to process: 0`.
+   Vérifier que `Database: "<nom>"` est bien celui de la copie, puis lire le résumé (ci-dessous). Lancer ensuite sans `--dry-run` en nommant la copie, et relancer : la seconde migration doit annoncer `Galleries to process: 0`.
+   ```bash
+   node scripts/migrate-gallery-v1.js --database=<nom de la copie>
+   node scripts/backfill-gallery-dimensions.js --database=<nom de la copie> --concurrency=8
+   ```
 2. **En production**, depuis une instance de l'application :
    ```bash
    node scripts/migrate-gallery-v1.js --dry-run
-   node scripts/migrate-gallery-v1.js
+   node scripts/migrate-gallery-v1.js --database=<nom affiché par le dry-run>
    node scripts/backfill-gallery-dimensions.js --dry-run
-   node scripts/backfill-gallery-dimensions.js --concurrency=8
+   node scripts/backfill-gallery-dimensions.js --database=<nom affiché par le dry-run> --concurrency=8
    ```
    Pas besoin de fenêtre de maintenance : les écritures sont atomiques et ne touchent que les champs migrés.
 3. **Lire le code de sortie** (`echo $?`). 0 : terminé. 1 : le bloc `FAILED` en fin de sortie dit pourquoi ; corriger la cause et relancer, la run reprend où elle s'est arrêtée.
