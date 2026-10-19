@@ -128,7 +128,7 @@ describe('image.service.createFromUrl', () => {
     expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
     // createFromUrl answers with the image as the gallery holds it
     expect(result).toMatchObject({
-      label: result.name,
+      label: 'photo.png',
       source: 'upload',
       externalMetadata: {},
       uploadedAt: expect.any(Date),

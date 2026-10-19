@@ -178,6 +178,21 @@ async function storeInGallery(mongoId, writeFiles) {
   return addFiles(mongoId, files);
 }
 
+// The file name a URL ends with, decoded: what an imported image is labelled
+// with, so a search finds it as it finds an upload. labelForUpload cleans it
+// and gives it the stored extension, as it does for an uploaded name.
+// Never throws: the bytes are already stored when it runs.
+function fileNameOfUrl(imageUrl) {
+  let segment = '';
+  try {
+    segment = new URL(imageUrl).pathname.split('/').pop();
+    return decodeURIComponent(segment);
+  } catch (e) {
+    // not valid percent-encoding: a label as written beats no label
+    return segment;
+  }
+}
+
 /**
  * Download an external image and store it through the same pipeline as a
  * normal gallery upload (naming convention, storage backend, Gallery
@@ -227,7 +242,10 @@ async function createFromUrl(mongoId, imageUrl) {
     source.end(buffer);
     await fileManager.writeStreamFromStream(source, fileName);
 
-    const uploadedFile = formatName(fileName);
+    const uploadedFile = {
+      ...formatName(fileName),
+      uploadedName: fileNameOfUrl(imageUrl),
+    };
     // The gallery tooltip shows the original dimensions, and this path never
     // goes through the upload parser that captures them. Through the shared
     // reader, which hands the prober only a bounded prefix of the buffer.

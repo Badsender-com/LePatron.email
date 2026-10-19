@@ -245,13 +245,16 @@ describe('imageService.createFromUrl into a new gallery', () => {
     Buffer.alloc(64),
   ]);
 
-  it('stores what it answers: label and dimensions', async () => {
-    const id = newCreationId();
+  beforeEach(() =>
     fetch.mockResolvedValue({
       ok: true,
       headers: { get: () => 'image/png' },
       buffer: () => Promise.resolve(png),
-    });
+    })
+  );
+
+  it('stores what it answers: label and dimensions', async () => {
+    const id = newCreationId();
 
     const answered = await imageService.createFromUrl(
       id,
@@ -261,5 +264,32 @@ describe('imageService.createFromUrl into a new gallery', () => {
     const [stored] = await readGallery(id);
     expect(stored).toMatchObject({ width: 16, height: 9 });
     expect(answered).toEqual(stored);
+  });
+
+  // A search matches the label: the technical name would never be found.
+  it.each([
+    [
+      'https://cdn.example.com/visuels/Mon%20Visuel.png?w=600',
+      'Mon Visuel.png',
+    ],
+    // the resolved type names the extension, as for an upload
+    ['https://cdn.example.com/photo.jpg', 'photo.png'],
+    // cleaned like an uploaded name: no control or bidi characters
+    ['https://cdn.example.com/a/%E2%80%AEgnp.exe', 'gnp.png'],
+    // undecodable: kept as written rather than failing the import
+    ['https://cdn.example.com/100%25%zz.png', '100%25%zz.png'],
+  ])('labels %s with its file name: %s', async (url, label) => {
+    const answered = await imageService.createFromUrl(newCreationId(), url);
+
+    expect(answered.label).toBe(label);
+  });
+
+  it('falls back to the stored name when the URL names no file', async () => {
+    const answered = await imageService.createFromUrl(
+      newCreationId(),
+      'https://cdn.example.com/'
+    );
+
+    expect(answered.label).toBe(answered.name);
   });
 });
