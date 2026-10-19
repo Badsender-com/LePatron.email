@@ -52,6 +52,20 @@ describe('gallery styles — the thumbnail’s ✕', () => {
     expect(valuesOf(hovered, 'opacity')).toEqual(['1']);
     expect(valuesOf(hovered, 'pointer-events')).toEqual(['auto']);
   });
+
+  // A tap leaves :hover stuck on a touch screen: the ✕ would then show, and a
+  // second tap delete the image unconfirmed. It only appears for a real hover.
+  it('is revealed only on a device that hovers', () => {
+    const media = [];
+    root.walkRules((rule) => {
+      if (
+        rule.selectors.includes('.gallery-thumb:hover .gallery-thumb__remove')
+      ) {
+        media.push(rule.parent.type === 'atrule' ? rule.parent.params : null);
+      }
+    });
+    expect(media).toEqual(['(hover: hover)']);
+  });
 });
 
 describe('gallery styles — brand colours', () => {

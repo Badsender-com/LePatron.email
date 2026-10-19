@@ -131,9 +131,14 @@
   }
 }
 
-.gallery-thumb:hover .gallery-thumb__remove {
-  opacity: 1;
-  pointer-events: auto;
+// Only where a pointer really hovers. On a touch screen a tap leaves :hover
+// stuck on the thumbnail it inserted, and a second tap in the corner would
+// then delete the image with no confirmation to stop it.
+@media (hover: hover) {
+  .gallery-thumb:hover .gallery-thumb__remove {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 // Compact drag proxy (appended to #page while dragging a thumbnail).
