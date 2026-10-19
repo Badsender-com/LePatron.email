@@ -21,6 +21,13 @@ const mongoose = require('mongoose');
 const config = require('../../packages/server/node.config.js');
 const modelNames = require('../../packages/server/constant/model.names.js');
 const GallerySchema = require('../../packages/server/image/gallery.schema.js');
+const {
+  parseArgs,
+  confirmDatabase,
+  databaseHosts,
+  redact,
+  listenForStop,
+} = require('./command-line.js');
 
 // The gallery model alone, not models.common.js: loading every model of the
 // application also loads the mail service, which opens an SMTP connection to
@@ -30,71 +37,8 @@ const Galleries =
   mongoose.model(modelNames.GalleryModel, GallerySchema);
 
 const PAGE_SIZE = 100;
-const DEFAULT_CONCURRENCY = 4;
-const MAX_CONCURRENCY = 32;
 const EXIT_FAILURE = 1;
 const SUMMARY_LABEL_WIDTH = 21;
-
-function flagValue(argv, name) {
-  const flag = argv.find((arg) => arg.startsWith(name));
-  return flag === undefined ? null : flag.slice(name.length);
-}
-
-function parseConcurrency(value) {
-  if (value === null) return DEFAULT_CONCURRENCY;
-  const concurrency = Number(value);
-  if (
-    !Number.isInteger(concurrency) ||
-    concurrency < 1 ||
-    concurrency > MAX_CONCURRENCY
-  ) {
-    throw new Error(
-      `--concurrency takes an integer from 1 to ${MAX_CONCURRENCY}`
-    );
-  }
-  return concurrency;
-}
-
-// A run that writes names its database: the configuration falls back on a
-// default (production on an application instance, a local base elsewhere), and
-// an override that did not apply would otherwise go unnoticed.
-function parseArgs(argv) {
-  const dryRun = argv.includes('--dry-run');
-  const database = flagValue(argv, '--database=') || null;
-  if (!dryRun && !database) {
-    throw new Error(
-      'A run without --dry-run writes: name its database with ' +
-        '--database=<name>, as the dry-run prints it.'
-    );
-  }
-  const concurrency = parseConcurrency(flagValue(argv, '--concurrency='));
-  return { dryRun, concurrency, database };
-}
-
-function confirmDatabase(connected, database) {
-  if (database && database !== connected) {
-    throw new Error(
-      `--database=${database} does not match the database this run is ` +
-        `connected to, "${connected}". Nothing was written.`
-    );
-  }
-}
-
-// The hosts of a connection string, never its credentials: the URI carries the
-// database password, and this output ends up in terminals and job logs.
-// Parsed by hand because `new URL` rejects a replica set's host list.
-function databaseHosts(uri) {
-  const match = /^mongodb(?:\+srv)?:\/\/(?:[^@/]*@)?([^/?]+)/.exec(uri || '');
-  return match ? match[1] : 'an unparsable connection string';
-}
-
-// Driver errors can quote the connection string back.
-function redact(message) {
-  return String(message)
-    .split(config.database)
-    .join('<database URI>')
-    .replace(/\/\/[^@/\s]+@/g, '//<credentials>@');
-}
 
 function addCounts(totals, counts) {
   for (const [key, value] of Object.entries(counts || {})) {
@@ -150,39 +94,6 @@ function printTarget(script, databaseName) {
     ? script.describeEnvironment()
     : [];
   for (const line of environment) console.log(line);
-}
-
-const EXIT_INTERRUPTED = 130;
-
-// Ctrl-C (or the platform stopping the job) lets the galleries in progress
-// finish their current file, then prints the summary: a resumable run should
-// say where it stopped. A second one exits at once, the run being resumable.
-// A script can stop the run too, with its reason (`stopFor`).
-function listenForStop() {
-  const signal = { stopping: false, reason: null, interrupts: 0 };
-  signal.stopFor = (reason) => {
-    if (!signal.stopping) console.log(`\nStopping: ${reason}`);
-    signal.stopping = true;
-    signal.reason = signal.reason || reason;
-  };
-  const interrupt = () => {
-    signal.interrupts += 1;
-    if (signal.interrupts > 1) {
-      console.error('Second interrupt: exiting now. Rerun to resume.');
-      process.exit(EXIT_INTERRUPTED);
-    }
-    if (!signal.stopping) {
-      console.log('\nStopping after the galleries in progress…');
-    }
-    signal.stopping = true;
-  };
-  process.on('SIGINT', interrupt);
-  process.on('SIGTERM', interrupt);
-  signal.release = () => {
-    process.removeListener('SIGINT', interrupt);
-    process.removeListener('SIGTERM', interrupt);
-  };
-  return signal;
 }
 
 async function processAll(script, { dryRun, concurrency, run, signal }) {
@@ -331,11 +242,6 @@ function report(run) {
 module.exports = {
   runGalleryScript,
   runFromCommandLine,
-  parseArgs,
-  databaseHosts,
-  redact,
   addCounts,
   eachWithConcurrency,
-  DEFAULT_CONCURRENCY,
-  MAX_CONCURRENCY,
 };

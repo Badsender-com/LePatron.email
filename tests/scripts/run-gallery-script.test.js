@@ -17,12 +17,14 @@ const config = require('../../packages/server/node.config.js');
 const {
   runGalleryScript,
   runFromCommandLine,
+  eachWithConcurrency,
+} = require('../../scripts/gallery/run-gallery-script.js');
+const {
   parseArgs,
   databaseHosts,
   redact,
-  eachWithConcurrency,
   DEFAULT_CONCURRENCY,
-} = require('../../scripts/gallery/run-gallery-script.js');
+} = require('../../scripts/gallery/command-line.js');
 
 const Galleries = mongoose.model();
 
