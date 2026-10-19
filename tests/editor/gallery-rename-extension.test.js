@@ -300,9 +300,9 @@ describe('renameImage — two renames of the same image', () => {
   });
 
   // And when the newest one is the one that fails, the revert goes back to
-  // what was there before the whole burst — not to the intermediate value our
-  // own first request optimistically wrote.
-  it('reverts to the label from before the burst, not to its own guess', async () => {
+  // the last label the server accepted: here the first rename of the burst,
+  // not the label from before it, which the server no longer holds.
+  it('reverts to the last label the server accepted', async () => {
     const first = deferred();
     const second = deferred();
     $.ajax
@@ -318,8 +318,32 @@ describe('renameImage — two renames of the same image', () => {
     second.settle.reject(jqXHR(500));
     await p2;
 
-    expect(vm.mailingGallery()[0].label).toBe('avant.png');
+    expect(vm.mailingGallery()[0].label).toBe('B.png');
     expect(vm.notifier.error).toHaveBeenCalledWith('gallery-rename-image-fail');
+  });
+});
+
+describe('renameImage — a burst where every rename fails', () => {
+  it('reverts to the label from before the burst, not to its own guess', async () => {
+    let rejectFirst;
+    let rejectSecond;
+    $.ajax
+      .mockImplementationOnce(
+        () => new Promise((resolve, reject) => (rejectFirst = reject))
+      )
+      .mockImplementationOnce(
+        () => new Promise((resolve, reject) => (rejectSecond = reject))
+      );
+    const vm = viewModel();
+
+    const p1 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'B.png');
+    const p2 = vm.renameImage(vm.mailingGallery()[0], 'mailing', 'C.png');
+    rejectFirst(jqXHR(500));
+    await p1;
+    rejectSecond(jqXHR(500));
+    await p2;
+
+    expect(vm.mailingGallery()[0].label).toBe('avant.png');
   });
 });
 

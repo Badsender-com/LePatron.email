@@ -62,8 +62,8 @@ function renameGalleryImage(viewModel) {
     const earlier = inFlight.get(name);
     inFlight.set(name, {
       sequence,
-      // revert to what was there before the FIRST rename of this burst, not to
-      // the optimistic value an earlier one of our own put in
+      // revert to what the server last held — before the FIRST rename of this
+      // burst, unless an earlier one lands — never to an optimistic value
       baseline: earlier ? earlier.baseline : previous,
     });
 
@@ -92,7 +92,18 @@ function renameGalleryImage(viewModel) {
       data: JSON.stringify({ label: label }),
     })
       .then(function onAccepted(stored) {
-        if (!claimSettlement()) return false;
+        if (!claimSettlement()) {
+          // A newer rename owns the grid, but this label is now the server's:
+          // if the newer one fails, this is what it must revert to.
+          const newer = inFlight.get(name);
+          if (newer) {
+            newer.baseline =
+              stored && stored.name
+                ? stored
+                : Object.assign({}, newer.baseline, { label: label });
+          }
+          return false;
+        }
         // The server answers with the file as it stored it. Take that rather
         // than our own guess: it carries any normalisation we did not do.
         // Deleted from the list meanwhile, there is nothing left to label and
