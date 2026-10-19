@@ -158,6 +158,20 @@ describe('gallery styles — a thumbnail whose image is loading', () => {
   });
 });
 
+describe('gallery styles — the search field', () => {
+  // The icon and the clear button sit at `top: 50%` of the search box: any
+  // vertical padding on it moves that 50% off the input's centre.
+  it('has no padding around the input the icons are centred on', () => {
+    expect(valuesOf('.gallery-vue-search', 'padding')).toEqual([]);
+    expect(valuesOf('.gallery-vue-search__icon', 'top')).toEqual(['50%']);
+    expect(valuesOf('.gallery-vue-search__clear', 'top')).toEqual(['50%']);
+  });
+
+  it('lays the icon out without a text line to lift it', () => {
+    expect(valuesOf('.gallery-vue-search__icon', 'display')).toEqual(['flex']);
+  });
+});
+
 describe('gallery styles — brand colours', () => {
   // The editor injects the brand as --v-primary-base / --v-accent-base
   // (mosaico-editor.pug), and the tabs right above the panel read them.

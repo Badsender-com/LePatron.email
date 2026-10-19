@@ -31,17 +31,21 @@
 // Vertical padding is symmetric on purpose: the icon and the clear button are
 // centred on this box with translateY(-50%), which only lands on the input's
 // own centre while the two paddings match.
+// The box is exactly the input's, so `top: 50%` centres the icon and the clear
+// button on the field: with a top padding here, 50% fell 4px above it.
 .gallery-vue-search {
   position: relative;
   flex: 0 0 auto;
-  padding: 8px 8px 0;
+  margin: 8px 8px 0;
 }
 
 .gallery-vue-search__icon {
   position: absolute;
-  left: 17px;
+  left: 9px;
   top: 50%;
   transform: translateY(-50%);
+  // a flex box has no line box: the glyph is not lifted onto a text baseline
+  display: flex;
   font-size: 13px;
   // 4.20:1 on the input background — a meaningful icon needs 3:1 (WCAG 1.4.11)
   color: @gallery-text-faint;
@@ -83,7 +87,7 @@
 
 .gallery-vue-search__clear {
   position: absolute;
-  right: 10px;
+  right: 2px;
   top: 50%;
   transform: translateY(-50%);
   // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
