@@ -154,6 +154,12 @@ module.exports = {
       if (event.isComposing || event.keyCode === 229) return;
       this.commitEdit();
     },
+    // A rename starts with a double-click on the label, whose first click
+    // must not insert the image (ADR 0005). Without the right to rename there
+    // is no double-click to protect, and the band inserts like the rest.
+    onLabelClick(event) {
+      if (this.canManage) event.stopPropagation();
+    },
     // Blur commits, so clicking the delete button would first save a rename on
     // an image that is about to disappear. Drop the edit before that click
     // lands — mousedown runs before the input loses focus.
@@ -248,7 +254,7 @@ module.exports = {
         v-else
         class="gallery-thumb__label"
         data-gallery-label
-        @click.stop
+        @click="onLabelClick"
         @dblclick.stop="startEdit"
       >{{ label }}</div>
     </div>

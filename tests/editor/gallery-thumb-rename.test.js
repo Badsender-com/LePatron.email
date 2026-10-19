@@ -234,6 +234,22 @@ describe('thumbnail rename — collisions with the other actions', () => {
     vm.$destroy();
   });
 
+  // The stop exists for the rename double-click only. Without the right to
+  // rename, the band is part of the tile, and a click on it inserts.
+  it('inserts the image from the label for a user who cannot rename', () => {
+    const Component = Vue.extend(Thumb);
+    const vm = new Component({
+      propsData: { file: FILE, strings: STRINGS, canManage: false },
+    }).$mount();
+    const selected = [];
+    vm.$on('select', () => selected.push(1));
+
+    label(vm).dispatchEvent(new Event('click', { bubbles: true }));
+
+    expect(selected).toHaveLength(1);
+    vm.$destroy();
+  });
+
   // Blur commits, so clicking the delete button used to save a rename on an
   // image that was about to be removed.
   it('drops an open edit when the delete button is pressed', async () => {
