@@ -116,16 +116,19 @@ describe('backfill-gallery-dimensions', () => {
       expect(collection.updateOne).not.toHaveBeenCalled();
     });
 
-    // The operator must be able to check, or clean up, each one.
+    // The operator must be able to look each one up.
     it('sorts what it could not read by reason, and names each file', async () => {
       const read = reads({
         'slow.png': { status: READ_STATUS.TIMEOUT },
         'denied.png': { status: READ_STATUS.ERROR, code: 'AccessDenied' },
         'doc.pdf': { status: READ_STATUS.NOT_AN_IMAGE },
+        'big.jpg': { status: READ_STATUS.UNMEASURED },
       });
 
       const counts = await run(
-        ['gone.png', 'slow.png', 'denied.png', 'doc.pdf'].map(unsized),
+        ['gone.png', 'slow.png', 'denied.png', 'doc.pdf', 'big.jpg'].map(
+          unsized
+        ),
         read
       );
 
@@ -134,6 +137,7 @@ describe('backfill-gallery-dimensions', () => {
         [READ_STATUS.TIMEOUT]: 1,
         [READ_STATUS.ERROR]: 1,
         [READ_STATUS.NOT_AN_IMAGE]: 1,
+        [READ_STATUS.UNMEASURED]: 1,
         filled: 0,
       });
       const logged = log.mock.calls.map(([line]) => line).join('\n');
@@ -168,6 +172,18 @@ describe('backfill-gallery-dimensions', () => {
     // A rerun after a good run only meets the files that really are gone.
     it('accepts it once the storage was checked against a known file', () => {
       expect(assessBackfill({ missing: 4, storageVerified: 1 })).toEqual([]);
+    });
+
+    // A JPEG whose size could not be found is still an image: shown apart,
+    // and no rerun will find it either.
+    it('reports an unmeasured JPEG apart, without failing the run', () => {
+      const totals = { filled: 3, [READ_STATUS.UNMEASURED]: 2 };
+
+      expect(assessBackfill(totals)).toEqual([]);
+      expect(backfill.summarize(totals, { dryRun: false })).toContainEqual([
+        'Size not found',
+        2,
+      ]);
     });
 
     it('asks for a rerun after a timeout or a storage error', () => {

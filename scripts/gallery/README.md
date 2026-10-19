@@ -68,13 +68,15 @@ Changed meanwhile    : 0
 Without a name       : 0
 ```
 
-| Ligne                                   | Sens                                                                                                  | Action                                      |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `Images migrated` / `Dimensions filled` | écritures effectives (`modifiedCount`), pas intentions                                                |                                             |
-| `Changed meanwhile`                     | image supprimée, migrée ou mesurée par l'appli entre la lecture et l'écriture ; laissée telle quelle  | aucune                                      |
-| `Without a name` / `Unusable name`      | entrée sans nom exploitable (pas une chaîne, ou un chemin) ; jamais passée à une requête ni au disque | à examiner à la main                        |
-| `Missing from storage`, `Not an image`  | définitif ; chaque fichier est nommé dans le flux (`missing: "<nom>"`) avec sa galerie                | nettoyage éventuel ; une relance les relira |
-| `Read timed out`, `Storage error`       | transitoire ; l'erreur de stockage porte son code (`error (AccessDenied)`)                            | exit 1 : relancer                           |
+| Ligne                                   | Sens                                                                                                                                          | Action                                            |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `Images migrated` / `Dimensions filled` | écritures effectives (`modifiedCount`), pas intentions                                                                                        |                                                   |
+| `Changed meanwhile`                     | image supprimée, migrée ou mesurée par l'appli entre la lecture et l'écriture ; laissée telle quelle                                          | aucune                                            |
+| `Without a name` / `Unusable name`      | entrée sans nom exploitable (pas une chaîne, ou un chemin) ; jamais passée à une requête ni au disque                                         | à examiner à la main                              |
+| `Missing from storage`                  | le fichier n'est pas dans le stockage ; chaque fichier est nommé dans le flux (`missing: "<nom>"`) avec sa galerie                            | vérifier à la main ; une relance les relira       |
+| `Not an image`                          | aucun en-tête d'image reconnu (un PDF, un fichier tronqué)                                                                                    | examiner à la main ; une relance les relira       |
+| `Size not found`                        | un JPEG dont la taille n'a pas été trouvée dans ses 4 premiers Mo (métadonnées énormes, fichier abîmé) : c'est une image, sans doute utilisée | aucune ; le survol n'affichera pas ses dimensions |
+| `Read timed out`, `Storage error`       | transitoire ; l'erreur de stockage porte son code (`error (AccessDenied)`)                                                                    | exit 1 : relancer                                 |
 
 Une galerie en erreur n'arrête pas les autres ; les ids des galeries en erreur sont listés dans le bloc `FAILED`, et le code de sortie vaut 1.
 
@@ -82,7 +84,8 @@ Une galerie en erreur n'arrête pas les autres ; les ids des galeries en erreur 
 
 - **Contrôle du stockage au démarrage** : avant tout, il relit jusqu'à 3 fichiers déjà mesurés. Si aucun n'est lisible, ce n'est pas le stockage de l'application : il s'arrête avant d'avoir rien lu ni écrit (exit 1).
 - **Run qui n'a rien pu lire** : sur une base où rien n'est encore mesuré (pas de contrôle possible), une run où aucun fichier n'a pu être lu finit en exit 1 au lieu de conclure.
-- **Lecture de l'en-tête seulement** (128 Ko au plus), délai de 20 s par fichier.
+- **Lecture de l'en-tête seulement** : 128 Ko, et jusqu'à 4 Mo pour un JPEG dont les métadonnées (EXIF, XMP, profil ICC) repoussent la taille plus loin. Délai de 20 s par fichier.
+- **Rien n'est supprimé**, ni par le script ni sur la foi de son résumé : un fichier sans dimensions reste affiché dans la galerie et dans les emails qui l'utilisent.
 - **Noms** : un nom stocké qui n'est pas un simple nom de fichier (`../`, `/`, octet nul, pas une chaîne) n'est jamais passé au stockage.
 
 ## Pourquoi ces écritures

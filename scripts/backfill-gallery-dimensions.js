@@ -36,10 +36,12 @@ const LACKS_DIMENSIONS = [
 
 // Read again on a rerun, and worth one: the storage was slow or failing.
 const TRANSIENT = [READ_STATUS.TIMEOUT, READ_STATUS.ERROR];
-// Not fixed by a rerun: the file is gone, or is not an image.
+// Not fixed by a rerun: the file is gone, has no size this script can find,
+// or carries a name it will not hand the storage.
 const PERMANENT = [
   READ_STATUS.MISSING,
   READ_STATUS.NOT_AN_IMAGE,
+  READ_STATUS.UNMEASURED,
   READ_STATUS.INVALID_NAME,
 ];
 
@@ -223,6 +225,7 @@ const backfill = {
     ['Changed meanwhile', totals.changedMeanwhile],
     ['Missing from storage', totals[READ_STATUS.MISSING]],
     ['Not an image', totals[READ_STATUS.NOT_AN_IMAGE]],
+    ['Size not found', totals[READ_STATUS.UNMEASURED]],
     ['Unusable name', totals[READ_STATUS.INVALID_NAME]],
     ['Read timed out', totals[READ_STATUS.TIMEOUT]],
     ['Storage error', totals[READ_STATUS.ERROR]],

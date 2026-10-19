@@ -4,10 +4,11 @@
  * Reads the dimensions of a stored gallery file, from the head of the file
  * only, and says why when it cannot: a file missing from the storage is not
  * the same news as a storage that timed out, and the operator acts on each
- * differently (clean up, or rerun).
+ * differently (look into it, or rerun).
  */
 
 const path = require('path');
+const probe = require('probe-image-size');
 
 const config = require('../../packages/server/node.config.js');
 const fileManager = require('../../packages/server/common/file-manage.service.js');
@@ -21,11 +22,23 @@ const {
 // not mistaken for a stalled one.
 const READ_TIMEOUT_MS = 20000;
 
+// The size of a JPEG sits in its frame header, after every metadata segment
+// (EXIF, XMP, ICC profile, Photoshop). The shared reader stops at 128KB, which
+// is right for an upload; a stored JPEG whose metadata runs past it is read on,
+// up to this bound. Only a JPEG: its parser walks the segments by their
+// lengths, and a JPEG cannot reach the SVG parser, quadratic in what it reads.
+const JPEG_MAX_BYTES = 4 * 1024 * 1024;
+
+const isJpeg = (head) =>
+  head.length > 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+
 const READ_STATUS = Object.freeze({
   OK: 'ok',
   INVALID_NAME: 'invalid-name',
   MISSING: 'missing',
   NOT_AN_IMAGE: 'not-an-image',
+  // a JPEG whose size could not be found: still an image, maybe in use
+  UNMEASURED: 'unmeasured',
   TIMEOUT: 'timeout',
   ERROR: 'error',
 });
@@ -72,25 +85,49 @@ function readDimensions(name, options = {}) {
     streamImage = fileManager.streamImage,
     timeoutMs = READ_TIMEOUT_MS,
     maxBytes = JPEG_SNIFF_BYTES,
+    maxJpegBytes = JPEG_MAX_BYTES,
   } = options;
   return new Promise((resolve) => {
-    streamHead(name, { streamImage, timeoutMs, maxBytes }, resolve);
+    streamHead(
+      name,
+      { streamImage, timeoutMs, maxBytes, maxJpegBytes },
+      resolve
+    );
   });
 }
 
-function measure(head) {
+function measureLongJpeg(head) {
+  if (head.length <= JPEG_SNIFF_BYTES || !isJpeg(head)) return null;
+  try {
+    const probed = probe.sync(head);
+    return probed && probed.width && probed.height ? probed : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * What the head read so far says about the file.
+ * @returns {object|null} a read result, or null to read on
+ */
+function measure(head, { complete, maxJpegBytes }) {
   // the shared reader caps what it hands the prober and rounds the result
-  const size = probeImageDimensions(head);
-  return size
-    ? { status: READ_STATUS.OK, width: size.width, height: size.height }
-    : { status: READ_STATUS.NOT_AN_IMAGE };
+  const size = probeImageDimensions(head) || measureLongJpeg(head);
+  if (size) {
+    return { status: READ_STATUS.OK, width: size.width, height: size.height };
+  }
+  if (!isJpeg(head)) return { status: READ_STATUS.NOT_AN_IMAGE };
+  if (!complete && head.length < maxJpegBytes) return null;
+  return { status: READ_STATUS.UNMEASURED };
 }
 
 // Reads the head of a stored file and hands `settle` one result, exactly once:
 // the measure, or why there is none.
-function streamHead(name, { streamImage, timeoutMs, maxBytes }, settle) {
+function streamHead(name, options, settle) {
+  const { streamImage, timeoutMs, maxJpegBytes } = options;
   const chunks = [];
   let total = 0;
+  let limit = options.maxBytes;
   let settled = false;
   let stream = null;
   const done = (result) => {
@@ -99,7 +136,8 @@ function streamHead(name, { streamImage, timeoutMs, maxBytes }, settle) {
     clearTimeout(timer);
     settle(result);
   };
-  const finish = () => done(measure(Buffer.concat(chunks)));
+  const verdict = (complete) =>
+    measure(Buffer.concat(chunks), { complete, maxJpegBytes });
   const timer = setTimeout(() => {
     done({ status: READ_STATUS.TIMEOUT });
     if (stream) stream.destroy();
@@ -116,14 +154,18 @@ function streamHead(name, { streamImage, timeoutMs, maxBytes }, settle) {
     if (settled) return;
     chunks.push(chunk);
     total += chunk.length;
-    if (total >= maxBytes) {
-      // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
-      // emits `error`, and that would otherwise win the race.
-      finish();
-      stream.destroy();
+    if (total < limit) return;
+    const result = verdict(false);
+    if (!result) {
+      limit = maxJpegBytes;
+      return;
     }
+    // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
+    // emits `error`, and that would otherwise win the race.
+    done(result);
+    stream.destroy();
   });
-  stream.on('end', finish);
+  stream.on('end', () => done(verdict(true)));
 }
 
 // The configured endpoint may or may not carry a scheme; keep the host only.
@@ -152,4 +194,5 @@ module.exports = {
   classifyError,
   READ_STATUS,
   READ_TIMEOUT_MS,
+  JPEG_MAX_BYTES,
 };

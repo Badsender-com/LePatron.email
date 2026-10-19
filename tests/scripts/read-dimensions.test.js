@@ -25,6 +25,44 @@ function pngHead(width, height) {
   ]);
 }
 
+// A real 40×30 JPEG, as sharp encodes a flat grey image.
+const JPEG_40X30 = Buffer.from(
+  '/9j/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdASFxOQERX' +
+    'RTc4UG1RV19iZ2hnPk1xeXBkeFxlZ2P/2wBDARESEhgVGC8aGi9jQjhCY2NjY2Nj' +
+    'Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2P/wAAR' +
+    'CAAeACgDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAAAP/EABQQAQAAAAAA' +
+    'AAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAA' +
+    'AAAAAAAAAP/aAAwDAQACEQMRAD8AAAAAAAAAAAAA/9k=',
+  'base64'
+);
+
+// The same JPEG with `appBytes` of APP2 metadata (an ICC profile, say) between
+// its start marker and the frame header that carries its size.
+function jpegWithMetadata(appBytes) {
+  const segments = [];
+  for (let left = appBytes; left > 0; left -= 65533) {
+    const payload = Math.min(left, 65533);
+    const segment = Buffer.alloc(payload + 4, 0x20);
+    segment.writeUInt16BE(0xffe2, 0);
+    segment.writeUInt16BE(payload + 2, 2);
+    segments.push(segment);
+  }
+  return Buffer.concat([
+    JPEG_40X30.subarray(0, 2),
+    ...segments,
+    JPEG_40X30.subarray(2),
+  ]);
+}
+
+// Cut in 64KB chunks, the way S3 streams it.
+function chunked(buffer, size = 64 * 1024) {
+  const chunks = [];
+  for (let i = 0; i < buffer.length; i += size) {
+    chunks.push(buffer.subarray(i, i + size));
+  }
+  return chunks;
+}
+
 // A storage stream that serves `chunks`, or fails with `error`, or stalls.
 function storage({ chunks = [], error = null, stall = false } = {}) {
   const streams = [];
@@ -132,6 +170,44 @@ describe('read-dimensions', () => {
       const result = await readDimensions('a.pdf', { streamImage });
 
       expect(result.status).toBe(READ_STATUS.NOT_AN_IMAGE);
+    });
+
+    // The size of a JPEG sits after all its metadata segments: past the usual
+    // window, it is still an image in use, never "not an image".
+    it('measures a JPEG whose metadata runs past the usual window', async () => {
+      const read = (jpeg) =>
+        readDimensions('a.jpg', {
+          streamImage: storage({ chunks: chunked(jpeg) }).streamImage,
+        });
+      const measured = { status: READ_STATUS.OK, width: 40, height: 30 };
+
+      await expect(read(JPEG_40X30)).resolves.toEqual(measured);
+      await expect(read(jpegWithMetadata(240 * 1024))).resolves.toEqual(
+        measured
+      );
+    });
+
+    it('calls a JPEG it cannot measure unmeasured, not "not an image"', async () => {
+      const jpeg = jpegWithMetadata(240 * 1024);
+      const truncated = jpeg.subarray(0, 200 * 1024);
+      const { streamImage } = storage({ chunks: chunked(truncated) });
+
+      await expect(readDimensions('a.jpg', { streamImage })).resolves.toEqual({
+        status: READ_STATUS.UNMEASURED,
+      });
+    });
+
+    it('stops reading a JPEG at its bound', async () => {
+      const jpeg = jpegWithMetadata(240 * 1024);
+      const { streamImage, streams } = storage({ chunks: chunked(jpeg) });
+
+      const result = await readDimensions('a.jpg', {
+        streamImage,
+        maxJpegBytes: 128 * 1024,
+      });
+
+      expect(result).toEqual({ status: READ_STATUS.UNMEASURED });
+      expect(streams[0].destroy).toHaveBeenCalled();
     });
 
     it('survives a backend that throws instead of streaming', async () => {
