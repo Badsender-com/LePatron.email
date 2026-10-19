@@ -264,6 +264,79 @@ describe('run-gallery-script', () => {
     expect(output()).toContain('wrong storage');
   });
 
+  describe('stopping', () => {
+    it('lets the script see an interrupt, and stops taking galleries', async () => {
+      Galleries.collection = fakeCollection(galleries(3));
+      const seen = [];
+      const interrupted = script({
+        processGallery: jest.fn(async (gallery, { isStopping }) => {
+          if (gallery._id === 1) process.emit('SIGINT');
+          seen.push(isStopping());
+          return { done: 1 };
+        }),
+      });
+
+      const code = await runGalleryScript(interrupted, {
+        argv: [...CONFIRMED, '--concurrency=1'],
+      });
+
+      expect(code).toBe(1);
+      expect(seen).toEqual([true]);
+      expect(output()).toContain('Interrupted: rerun to resume.');
+    });
+
+    // The galleries in progress can take long on a storage that stalls.
+    it('exits at once on a second interrupt', async () => {
+      Galleries.collection = fakeCollection(galleries(1));
+      const exit = jest.spyOn(process, 'exit').mockImplementation(() => {});
+      const twice = script({
+        processGallery: jest.fn(async () => {
+          process.emit('SIGINT');
+          process.emit('SIGINT');
+          return { done: 1 };
+        }),
+      });
+
+      await runGalleryScript(twice, { argv: CONFIRMED });
+
+      expect(exit).toHaveBeenCalledWith(130);
+      expect(exit).toHaveBeenCalledTimes(1);
+    });
+
+    it('lets the script stop the run, and says why', async () => {
+      Galleries.collection = fakeCollection(galleries(3));
+      const breaking = script({
+        processGallery: jest.fn(async (gallery, { stop }) => {
+          stop('the storage looks down');
+          return { done: 1 };
+        }),
+      });
+
+      const code = await runGalleryScript(breaking, {
+        argv: [...CONFIRMED, '--concurrency=1'],
+      });
+
+      expect(code).toBe(1);
+      expect(breaking.processGallery).toHaveBeenCalledTimes(1);
+      expect(output()).toContain('Stopped: the storage looks down');
+    });
+
+    it('keeps one state for the whole run', async () => {
+      Galleries.collection = fakeCollection(galleries(2));
+      const states = [];
+      const stateful = script({
+        processGallery: jest.fn(async (gallery, { state }) => {
+          states.push(state);
+          return { done: 1 };
+        }),
+      });
+
+      await runGalleryScript(stateful, { argv: CONFIRMED });
+
+      expect(states[0]).toBe(states[1]);
+    });
+  });
+
   describe('eachWithConcurrency', () => {
     it('never runs more workers at once than asked', async () => {
       let running = 0;

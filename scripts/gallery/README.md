@@ -13,6 +13,8 @@ Ils partagent le même runner (`run-gallery-script.js`) : mêmes options, même 
 
 Les deux scripts ne lisent que les galeries qui ont encore du travail, et chaque écriture porte sa précondition. Une relance ne refait rien de ce qui est fait, une run interrompue (Ctrl-C, `kill`, coupure réseau) reprend où elle s'est arrêtée, et deux runs simultanées ne se gênent pas.
 
+**Ctrl-C** : chaque galerie en cours finit le fichier qu'elle lit, puis le résumé s'affiche (exit 1, `Interrupted`). Un **second Ctrl-C** sort immédiatement (exit 130), sans résumé : rien n'est perdu, la relance reprend.
+
 Une galerie est créée à la première ouverture d'une création, à partir du listing du stockage. Tant que ce chemin peut produire des images sans champs V1 ou sans dimensions (les créations antérieures à la collection `galleries`), il est sûr, et utile, de relancer les deux scripts : sur une base à jour, la migration coûte une requête.
 
 `label` vaut le nom technique du fichier quand rien d'autre n'est connu, et `uploadedAt` la date de création de la galerie (à défaut celle de son `_id`) : c'est une approximation, pas la vraie date d'upload.
@@ -91,6 +93,7 @@ Une galerie en erreur n'arrête pas les autres ; les ids des galeries en erreur 
 
 - **Contrôle du stockage au démarrage** : avant tout, il relit jusqu'à 3 fichiers déjà mesurés. Si aucun n'est lisible, ce n'est pas le stockage de l'application : il s'arrête avant d'avoir rien lu ni écrit (exit 1).
 - **Run qui n'a rien pu lire** : sur une base où rien n'est encore mesuré (pas de contrôle possible), une run où aucun fichier n'a pu être lu finit en exit 1 au lieu de conclure.
+- **Stockage qui tombe en cours de run** : après 10 lectures de suite en échec (délai dépassé ou erreur), la run s'arrête d'elle-même, affiche le résumé et sort en exit 1 (`Stopped: … the storage looks down`). Relancer une fois le stockage revenu.
 - **Lecture de l'en-tête seulement** : 128 Ko, et jusqu'à 4 Mo pour un JPEG dont les métadonnées (EXIF, XMP, profil ICC) repoussent la taille plus loin. Délai de 20 s par fichier.
 - **Rien n'est supprimé**, ni par le script ni sur la foi de son résumé : un fichier sans dimensions reste affiché dans la galerie et dans les emails qui l'utilisent.
 - **Noms** : un nom stocké qui n'est pas un simple nom de fichier (`../`, `/`, octet nul, pas une chaîne) n'est jamais passé au stockage.

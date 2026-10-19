@@ -49,6 +49,11 @@ const PERMANENT = [
   READ_STATUS.INVALID_NAME,
 ];
 
+// A storage that stalls costs a timeout (20s) per file: past this many failed
+// reads in a row, across the run, it is down, and walking the rest of the
+// collection at that pace would prove nothing.
+const MAX_FAILED_READS_IN_A_ROW = 10;
+
 // ---------------------------------------------------------------------------
 // Pure logic, testable without a database or a storage backend
 // ---------------------------------------------------------------------------
@@ -104,6 +109,18 @@ function buildDimensionsUpdate(galleryId, name, { width, height }) {
 // One gallery
 // ---------------------------------------------------------------------------
 
+function watchStorage(status, { state, stop }) {
+  state.failedReadsInARow = TRANSIENT.includes(status)
+    ? (state.failedReadsInARow || 0) + 1
+    : 0;
+  if (state.failedReadsInARow === MAX_FAILED_READS_IN_A_ROW) {
+    stop(
+      `${MAX_FAILED_READS_IN_A_ROW} storage reads in a row timed out or ` +
+        'failed: the storage looks down.'
+    );
+  }
+}
+
 // The gallery is read raw (no Mongoose document, so no schema getter): the
 // projection is missing fields this script must not erase. Each pair is
 // written as soon as it is read, so an interruption loses at most one read.
@@ -111,13 +128,16 @@ function buildDimensionsUpdate(galleryId, name, { width, height }) {
 // once, so the storage never sees more reads than that.
 async function backfillGallery(gallery, context) {
   const { dryRun, collection, log, read = readDimensions } = context;
+  const { isStopping = () => false, stop = () => {}, state = {} } = context;
   const { pending, known } = planGalleryBackfill(gallery.files || []);
   const counts = { filled: 0, known, changedMeanwhile: 0 };
   for (const status of [...TRANSIENT, ...PERMANENT]) counts[status] = 0;
 
   for (const [name, entries] of pending) {
+    if (isStopping()) break;
     // eslint-disable-next-line no-await-in-loop
     const result = await read(name);
+    watchStorage(result.status, { state, stop });
     const shownName = JSON.stringify(name) || String(name);
     if (result.status !== READ_STATUS.OK) {
       counts[result.status] += entries;
@@ -257,4 +277,5 @@ module.exports = {
   assessBackfill,
   checkStorage,
   backfill,
+  MAX_FAILED_READS_IN_A_ROW,
 };

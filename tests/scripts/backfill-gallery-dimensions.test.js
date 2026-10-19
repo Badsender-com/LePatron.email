@@ -8,6 +8,7 @@ const {
   assessBackfill,
   checkStorage,
   backfill,
+  MAX_FAILED_READS_IN_A_ROW,
 } = require('../../scripts/backfill-gallery-dimensions.js');
 const { READ_STATUS } = require('../../scripts/gallery/read-dimensions.js');
 
@@ -77,11 +78,22 @@ describe('backfill-gallery-dimensions', () => {
     const log = jest.fn();
     const reads = (byName) =>
       jest.fn(async (name) => byName[name] || { status: READ_STATUS.MISSING });
-    const run = (files, read, dryRun = false) =>
+    const run = (files, read, dryRun = false, extra = {}) =>
       backfillGallery(
         { _id: GALLERY_ID, files },
-        { dryRun, collection, log, read }
+        { dryRun, collection, log, read, ...extra }
       );
+    const names = (count) =>
+      Array.from({ length: count }, (_, i) => unsized(`${i}.png`));
+    // what the runner hands every gallery of one run
+    const runContext = () => {
+      const context = { state: {}, stopped: null };
+      context.stop = jest.fn((reason) => {
+        context.stopped = reason;
+      });
+      context.isStopping = () => context.stopped !== null;
+      return context;
+    };
 
     beforeEach(() => {
       collection.updateOne.mockReset();
@@ -144,6 +156,46 @@ describe('backfill-gallery-dimensions', () => {
       expect(logged).toContain('missing: "gone.png"');
       expect(logged).toContain('error (AccessDenied): "denied.png"');
       expect(collection.updateOne).not.toHaveBeenCalled();
+    });
+
+    // An interrupt must not wait for every file left in the gallery.
+    it('reads no further file once the run is stopping', async () => {
+      const context = runContext();
+      const read = jest.fn(async () => {
+        context.stop('interrupted');
+        return { status: READ_STATUS.MISSING };
+      });
+
+      await run(names(5), read, false, context);
+
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+
+    // A storage that stalls costs a timeout per file: stop instead of walking
+    // the whole collection at that pace.
+    it('stops the run after a streak of failed reads', async () => {
+      const context = runContext();
+      const read = jest.fn(async () => ({ status: READ_STATUS.TIMEOUT }));
+
+      await run(names(MAX_FAILED_READS_IN_A_ROW + 5), read, false, context);
+
+      expect(read).toHaveBeenCalledTimes(MAX_FAILED_READS_IN_A_ROW);
+      expect(context.stop).toHaveBeenCalledTimes(1);
+      expect(context.stopped).toMatch(/storage/);
+    });
+
+    it('counts the streak across galleries, and resets it on an answer', async () => {
+      const context = runContext();
+      const failing = jest.fn(async () => ({ status: READ_STATUS.ERROR }));
+      const answering = reads({});
+
+      await run(names(MAX_FAILED_READS_IN_A_ROW - 1), failing, false, context);
+      await run(names(1), answering, false, context);
+      await run(names(MAX_FAILED_READS_IN_A_ROW - 1), failing, false, context);
+      expect(context.stop).not.toHaveBeenCalled();
+
+      await run(names(1), failing, false, context);
+      expect(context.stop).toHaveBeenCalledTimes(1);
     });
 
     it('counts a file changed meanwhile apart from a write', async () => {

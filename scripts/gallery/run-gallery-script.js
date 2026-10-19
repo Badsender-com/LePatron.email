@@ -144,21 +144,35 @@ function printTarget(script, databaseName) {
   for (const line of environment) console.log(line);
 }
 
+const EXIT_INTERRUPTED = 130;
+
 // Ctrl-C (or the platform stopping the job) lets the galleries in progress
-// finish, then prints the summary: a resumable run should say where it stopped.
+// finish their current file, then prints the summary: a resumable run should
+// say where it stopped. A second one exits at once, the run being resumable.
+// A script can stop the run too, with its reason (`stopFor`).
 function listenForStop() {
-  const signal = { stopping: false };
-  const stop = () => {
+  const signal = { stopping: false, reason: null, interrupts: 0 };
+  signal.stopFor = (reason) => {
+    if (!signal.stopping) console.log(`\nStopping: ${reason}`);
+    signal.stopping = true;
+    signal.reason = signal.reason || reason;
+  };
+  const interrupt = () => {
+    signal.interrupts += 1;
+    if (signal.interrupts > 1) {
+      console.error('Second interrupt: exiting now. Rerun to resume.');
+      process.exit(EXIT_INTERRUPTED);
+    }
     if (!signal.stopping) {
       console.log('\nStopping after the galleries in progress…');
     }
     signal.stopping = true;
   };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
+  process.on('SIGINT', interrupt);
+  process.on('SIGTERM', interrupt);
   signal.release = () => {
-    process.removeListener('SIGINT', stop);
-    process.removeListener('SIGTERM', stop);
+    process.removeListener('SIGINT', interrupt);
+    process.removeListener('SIGTERM', interrupt);
   };
   return signal;
 }
@@ -173,6 +187,10 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
     `Galleries to process: ${run.toProcess} (concurrency ${concurrency})\n`
   );
 
+  const isStopping = () => signal.stopping;
+  // what every gallery of the run shares: a script keeps its own counters in
+  // `state`, and stops the run with `stop(reason)`
+  const shared = { isStopping, stop: signal.stopFor, state: {} };
   const processOne = async (gallery) => {
     run.processed += 1;
     const id = String(gallery.creationOrWireframeId);
@@ -180,6 +198,7 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
     const log = (message) => console.log(`${prefix} ${message}`);
     try {
       const counts = await script.processGallery(gallery, {
+        ...shared,
         dryRun,
         collection,
         log,
@@ -192,7 +211,6 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
     }
   };
 
-  const isStopping = () => signal.stopping;
   for await (const page of pages(collection, script.query, script.projection)) {
     if (isStopping()) break;
     await eachWithConcurrency(page, concurrency, processOne, isStopping);
@@ -204,7 +222,8 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
  * @param {string} script.title
  * @param {object} script.query which galleries still need work
  * @param {object} script.projection
- * @param {Function} script.processGallery (gallery, context) => counts
+ * @param {Function} script.processGallery (gallery, context) => counts;
+ *   context: dryRun, collection, log, isStopping, stop(reason), state
  * @param {Function} script.describeCounts (counts, { dryRun }) => one line
  * @param {Function} script.summarize (totals, { dryRun }) => [label, count]
  *   pairs
@@ -235,7 +254,13 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
     signal.release();
     await mongoose.disconnect();
   }
-  return report({ ...run, script, dryRun, stopping: signal.stopping });
+  return report({
+    ...run,
+    script,
+    dryRun,
+    stopping: signal.stopping,
+    stopReason: signal.reason,
+  });
 }
 
 function report(run) {
@@ -257,7 +282,14 @@ function report(run) {
       ...failedGalleries.map((id) => `  ${id}`)
     );
   }
-  if (run.stopping) failures.push('Interrupted: rerun to resume.');
+  if (run.stopReason) {
+    failures.push(
+      `Stopped: ${run.stopReason}`,
+      'Rerun once the cause is fixed: the run resumes where it stopped.'
+    );
+  } else if (run.stopping) {
+    failures.push('Interrupted: rerun to resume.');
+  }
   if (run.fatal) {
     failures.push(
       `Stopped by: ${redact(run.fatal.message)}`,
