@@ -1441,6 +1441,11 @@ body {
     background-color: rgba(240, 78, 35, 0.1);
     color: @tool-delete-color;
   }
+
+  // the pencil while the image editor opens (gallery-vue-thumb.less)
+  .tool[aria-busy='true'] {
+    .gallery-busy();
+  }
 }
 
 // =============================================================================

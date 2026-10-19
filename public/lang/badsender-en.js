@@ -24,12 +24,21 @@ module.exports = {
   'gallery-template': 'TEMPLATE SHARED',
   'gallery-template-loading': 'Loading template gallery…',
   'gallery-template-empty': 'The template gallery is empty',
+  'gallery-remove-image': 'Delete __label__',
+  'gallery-remove-image-confirm':
+    'Remove "__label__" from the gallery?\n\n' +
+    'It disappears from the list. Emails already using it are left untouched.',
+  'gallery-request-unconfirmed':
+    'The server did not answer in time: the change may or may not have been made. The gallery is reloading to show where it stands.',
+  'gallery-remove-image-forbidden':
+    'You are not allowed to delete the images of this gallery',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
     'An error has occured while removing the image :(',
   'gallery-search-placeholder': 'Search an image…',
   'gallery-search-clear': 'Clear search',
+  'gallery-list-label': 'Gallery images',
   'gallery-search-no-result': 'No image matches this search',
   'gallery-filter-group': 'Filter by format',
   'gallery-filter-all': 'All',
@@ -42,8 +51,32 @@ module.exports = {
   'gallery-sort-newest-title': 'Newest first',
   'gallery-sort-oldest': 'Date \u2191',
   'gallery-sort-oldest-title': 'Oldest first',
+  'gallery-rename-image-success': 'The label was saved',
+  'gallery-rename-image-empty': 'The label cannot be empty',
+  'gallery-rename-image-invalid': 'The server refused this label',
+  'gallery-rename-image-forbidden': 'You are not allowed to rename this image',
+  'gallery-rename-image-gone':
+    'This image is no longer in the gallery, the label was not saved',
+  'gallery-rename-image-unsupported':
+    'This image cannot be renamed: its name does not follow the gallery convention',
+  'gallery-rename-image-fail':
+    'The label could not be saved, the previous one was restored',
+  'gallery-rename-action': 'Rename __label__',
+  'gallery-edit-action': 'Edit __label__',
+  'gallery-edit-image-unsupported':
+    'GIF and SVG images cannot be edited in the editor',
+  'gallery-edit-image-forbidden':
+    'You are not allowed to edit the images of the gallery',
+  'gallery-edit-image-fail': 'This image could not be opened in the editor',
+  'gallery-rename-input-label': 'New image label',
+  // the locale tag the tooltip formats its date with
+  'gallery-date-locale': 'en-GB',
+  'gallery-tooltip-dimensions': 'Dimensions',
+  'gallery-tooltip-format': 'Format',
+  'gallery-tooltip-uploaded-at': 'Added on',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
+  'gallery-image-unavailable': 'Image unavailable',
 
   // bgimage widget
   'widget-bgimage-button': 'Pick an image',
@@ -108,6 +141,10 @@ module.exports = {
   'editor-text-font': 'Font',
   cancel: 'Cancel',
   upload: 'Save',
+  // Reopening the editor on a stored image can only ever add one: the
+  // stored name is the md5 of the content, so the original is never
+  // overwritten. The button says so rather than leaving it unsaid.
+  'upload-as-new-file': 'Save as a new file',
 
   // Profile form esp
   'sender-name': 'Sender name',

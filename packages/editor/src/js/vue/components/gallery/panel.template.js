@@ -76,6 +76,7 @@ module.exports = `
       <p
         v-else-if="isEmptyGallery"
         class="gallery-vue-panel__empty"
+        role="status"
         data-gallery-empty
       >{{ emptyGalleryLabel }}</p>
       <recycle-scroller
@@ -88,25 +89,59 @@ module.exports = `
         :item-secondary-size="cellSize"
         key-field="name"
         :skip-hover="true"
+        :emit-update="true"
+        role="list"
+        :aria-label="listLabel"
+        :tabindex="currentRendered ? null : 0"
         v-slot="{ item, index, active }"
+        @scroll.native.passive="onUnhover"
+        @update="onRendered"
+        @keydown.native="onGridKeydown"
+        @focusin.native="onGridFocusin"
+        @focus.native="onGridFocus"
+        @mousedown.native="onGridPointer"
+        @mouseup.native="onGridPointer"
       >
         <!-- the scroller recycles its views, so DOM order is pool order, not
-             list order: the index is the only reliable handle on position.
+             list order: the index is the only reliable handle on position,
+             for the keyboard (panel-keyboard.js) as for a screen reader
+             (aria-posinset). A list rather than a grid: the scroller lays
+             its cells out with no row element, which a grid requires.
              A view it does not need is parked off-screen, not removed:
              hidden, so its thumbnail leaves the tab order and the
-             accessibility tree. -->
+             accessibility tree. After a jump of the scrollbar it also
+             leaves the old views in place until the next scroll: one of
+             them is the tab stop only while the current image is in the
+             range it renders. -->
         <div
           class="gallery-vue-cell"
+          role="listitem"
+          :aria-posinset="index + 1"
+          :aria-setsize="count"
           :data-gallery-index="index"
           :hidden="!active"
         >
           <thumb
             v-gallery-draggable="item"
             :file="item"
+            :strings="thumbStrings"
+            :actions="actions"
+            :current="active && currentRendered && index === currentIndex"
             @select="onSelect"
+            @edit="onEdit"
             @remove="onRemove"
+            @rename="onRename"
+            @reject="onRenameRejected"
+            @hover="onHover"
+            @unhover="onUnhover"
           />
         </div>
       </recycle-scroller>
+      <tooltip
+        :file="hoveredFile"
+        :anchor="hoveredAnchor"
+        :bounds="panelBounds"
+        :strings="tooltipStrings"
+      />
     </div>
 `;

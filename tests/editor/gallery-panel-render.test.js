@@ -10,55 +10,18 @@
 // `components` registration: <thumb> and <recycle-scroller> silently became
 // unknown elements.
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
-require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
-const $ = require('jquery');
-const ko = require('knockout');
 const en = require('../../public/lang/badsender-en.js');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
-
-// the real widget is installed on jQuery by the gulp build, not by Node
-$.fn.draggable = function draggable() {
-  return this;
-};
-
-const IMAGES = [
-  {
-    name: 'a-1.jpg',
-    label: 'un.jpg',
-    thumbnailUrl: '/api/images/cover/111x111/a-1.jpg',
-  },
-  {
-    name: 'a-2.png',
-    label: 'deux.png',
-    thumbnailUrl: '/api/images/cover/111x111/a-2.png',
-  },
-];
-
-// The Mosaico viewModel as the panel sees it, with real Knockout observables
-// so the mirror is exercised through its subscription. A loaded gallery
-// reports its image count as status.
-function fakeViewModel(images, status = images.length) {
-  return {
-    t: (key, params) => (params ? `${key}:${params.count}` : key),
-    addImage() {},
-    removeImage() {},
-    mailingGallery: ko.observableArray(images),
-    mailingGalleryStatus: ko.observable(status),
-  };
-}
-
-function mountVm(vm) {
-  const Panel = Vue.extend(createGalleryPanel(vm));
-  return new Panel({ propsData: { type: 'mailing' } }).$mount();
-}
-
-function mount(images, status) {
-  return mountVm(fakeViewModel(images, status));
-}
+const {
+  IMAGES,
+  fakeViewModel,
+  mountVm,
+  mount,
+} = require('./helpers/gallery-panel.js');
 
 describe('gallery panel — rendering', () => {
   let warnings;
@@ -78,6 +41,7 @@ describe('gallery panel — rendering', () => {
     expect(Object.keys(components).sort()).toEqual([
       'RecycleScroller',
       'Thumb',
+      'Tooltip',
     ]);
   });
 
@@ -113,7 +77,10 @@ describe('gallery panel — rendering', () => {
     const empty = mount([]);
     await Vue.nextTick();
     expect(empty.$el.querySelector('[data-gallery-search]')).toBeNull();
-    expect(empty.$el.querySelector('[data-gallery-empty]')).not.toBeNull();
+    const emptyMessage = empty.$el.querySelector('[data-gallery-empty]');
+    expect(emptyMessage).not.toBeNull();
+    // announces itself when the grid empties out, like the no-result sibling
+    expect(emptyMessage.getAttribute('role')).toBe('status');
     empty.$destroy();
   });
 

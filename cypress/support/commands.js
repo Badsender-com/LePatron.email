@@ -4,10 +4,17 @@ Cypress.Commands.add('login', (username, password) => {
   const baseUrl = Cypress.env('BASE_URL') || 'http://localhost:3000';
 
   cy.visit(`${baseUrl}/account/login`);
-  cy.get('input[name=username]').type(user);
-  cy.get('button[type=submit]').click();
-  cy.get('input[name=password]').type(pass);
-  cy.get('button[type=submit]').click();
+  // The session cookie is preserved between tests (see support/index.js), so
+  // this runs again on an already authenticated browser — where the login page
+  // redirects away and its fields never appear. Signing in twice is not an
+  // error; assuming a signed-out browser is.
+  cy.get('body').then(($body) => {
+    if ($body.find('input[name=username]').length === 0) return;
+    cy.get('input[name=username]').type(user);
+    cy.get('button[type=submit]').click();
+    cy.get('input[name=password]').type(pass);
+    cy.get('button[type=submit]').click();
+  });
   cy.url().should('not.include', '/login');
 });
 

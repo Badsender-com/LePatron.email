@@ -9,7 +9,6 @@
 const gulp = require('gulp');
 const path = require('path');
 const $ = require('gulp-load-plugins')();
-const lazypipe = require('lazypipe');
 const del = require('del');
 const args = require('yargs').argv;
 const _ = require('lodash');
@@ -18,6 +17,7 @@ const log = require('fancy-log');
 const colors = require('ansi-colors');
 const Vinyl = require('vinyl');
 const mergeStream = require('merge-stream');
+const { pipeline } = require('stream');
 const {
   CODEMIRROR_LIBS,
   CODEMIRROR_MIN_BUNDLE,
@@ -31,7 +31,8 @@ const SERVER_DIR = 'packages/server';
 const BUILD_DIR = 'public/dist';
 const BUILD_DIR_LIB = `${BUILD_DIR}/lib`;
 
-function onError(err) {
+function reportError(err) {
+  if (!err) return;
   beeper();
   if (err.annotated) {
     log(err.annotated);
@@ -40,7 +41,21 @@ function onError(err) {
   } else {
     log(err);
   }
-  return this.emit('end');
+}
+
+// gulp only hears of the errors of the stream a task returns, and `pipe`
+// forwards none: a broken bundle or stylesheet used to end with a success,
+// and no file. `pipeline` hands the first error of any of its streams to
+// the task, which fails the build with a non-zero exit. A watch only reports
+// it and keeps watching: the next save is the fix.
+function runPipeline(done, ...streams) {
+  pipeline(...streams, (err) => {
+    if (err && isWatch) {
+      reportError(err);
+      return done();
+    }
+    return done(err);
+  });
 }
 
 log(
@@ -69,33 +84,38 @@ bump.description = 'Bump versions on package.json. Used only in release script';
 const autoprefixer = require('autoprefixer');
 const csswring = require('csswring');
 
-const cssDev = lazypipe()
-  .pipe($.postcss, [
+// Lists of streams rather than lazypipes: a lazypipe is an old-style stream
+// that never emits 'finish', and `pipeline` would wait on it forever.
+const cssDev = () => [
+  $.postcss([
     autoprefixer({ overrideBrowserslist: ['ie 10', 'last 2 versions'] }),
-  ])
-  .pipe($.beautify.css, { indent_size: 2 })
-  .pipe($.sourcemaps.write);
-const cssProd = lazypipe()
-  .pipe($.purgeSourcemaps)
-  .pipe($.postcss, [csswring({ removeAllComments: true })])
-  .pipe($.rename, { suffix: '.min' });
+  ]),
+  $.beautify.css({ indent_size: 2 }),
+  $.sourcemaps.write(),
+];
+const cssProd = () => [
+  $.purgeSourcemaps(),
+  $.postcss([csswring({ removeAllComments: true })]),
+  $.rename({ suffix: '.min' }),
+];
 
 function cleanCss(cb) {
   if (isDev) return cb();
   return del([BUILD_DIR + '/*.css', BUILD_DIR + '/*.css.map'], cb);
 }
 
-function cssEditor() {
-  return gulp
-    .src('packages/editor/src/css/badsender-editor.less')
-    .pipe($.plumber(onError))
-    .pipe($.sourcemaps.init())
-    .pipe($.less())
-    .pipe(cssDev())
-    .pipe($.rename('badsender-editor.css'))
-    .pipe(gulp.dest(BUILD_DIR))
-    .pipe(cssProd())
-    .pipe(gulp.dest(BUILD_DIR));
+function cssEditor(done) {
+  runPipeline(
+    done,
+    gulp.src('packages/editor/src/css/badsender-editor.less'),
+    $.sourcemaps.init(),
+    $.less(),
+    ...cssDev(),
+    $.rename('badsender-editor.css'),
+    gulp.dest(BUILD_DIR),
+    ...cssProd(),
+    gulp.dest(BUILD_DIR)
+  );
 }
 cssEditor.description = 'build CSS for mosaico editor';
 exports['css:mosaico'] = cssEditor;
@@ -245,21 +265,23 @@ const watchify = require('watchify');
 const badsenderEditorLibs = ['lodash.find', 'lodash.debounce', 'cropperjs'];
 const basedir = path.join(__dirname, '/packages/editor/src/js');
 
-function mosaicoBadsenderLib() {
-  return browserify({
+function mosaicoBadsenderLib(done) {
+  const b = browserify({
     basedir,
     noParse: badsenderEditorLibs,
     debug: true,
-  })
-    .require(badsenderEditorLibs)
-    .bundle()
-    .pipe(source('badsender-editor-libraries.js'))
-    .pipe(gulp.dest(BUILD_DIR_LIB))
-    .pipe(vinylBuffer())
-    .pipe($.stripDebug())
-    .pipe($.uglify())
-    .pipe($.rename({ suffix: '.min' }))
-    .pipe(gulp.dest(BUILD_DIR_LIB));
+  }).require(badsenderEditorLibs);
+  runPipeline(
+    done,
+    b.bundle(),
+    source('badsender-editor-libraries.js'),
+    gulp.dest(BUILD_DIR_LIB),
+    vinylBuffer(),
+    $.stripDebug(),
+    $.uglify(),
+    $.rename({ suffix: '.min' }),
+    gulp.dest(BUILD_DIR_LIB)
+  );
 }
 
 function mosaicoEditor(debug = false) {
@@ -294,16 +316,23 @@ function mosaicoEditor(debug = false) {
       replacements: { '^vue$': 'vue/dist/vue.common' },
     })
     .transform(shim, { global: true })
+    // Global, so `process.env.NODE_ENV` is also replaced in node_modules:
+    // `vue/dist/vue.common` picks its development or production build on it,
+    // and left unreplaced the minified bundle shipped both, running the
+    // development one (warnings, devtools hook) in production. The option
+    // belongs to browserify's `transform`, not to envify's own settings.
+    //
+    // The minified bundle is the one the server serves outside development
+    // (mosaico-editor.pug), and the deployment runs `gulp build` without
+    // `--prod`: so it is production whatever the flag says.
     .transform(
-      envify(
-        {
-          _: 'purge',
-          NODE_ENV: env,
-          BADSENDER: true,
-          MOSAICO: false,
-        },
-        { global: true }
-      )
+      envify({
+        _: 'purge',
+        NODE_ENV: debug ? 'development' : 'production',
+        BADSENDER: true,
+        MOSAICO: false,
+      }),
+      { global: true }
     );
   // use uglifyify instead of gulp.uglify
   // • when RELEASING ONLY purge wasn't done properly by envify
@@ -317,36 +346,39 @@ function mosaicoEditor(debug = false) {
   return b;
 }
 
-function bundleShareDev(b) {
-  return b
-    .bundle()
-    .on('error', onError)
-    .pipe(source('badsender-editor.js'))
-    .pipe(vinylBuffer())
-    .pipe(gulp.dest(BUILD_DIR));
+function bundleShareDev(b, done) {
+  runPipeline(
+    done,
+    b.bundle(),
+    source('badsender-editor.js'),
+    vinylBuffer(),
+    gulp.dest(BUILD_DIR)
+  );
 }
 
-function jsMosaicoDev() {
+function jsMosaicoDev(done) {
   let b = mosaicoEditor(true);
   if (isWatch) {
     b = watchify(b);
+    // a rebuild runs outside any gulp task: nothing to fail but the report
     b.on('update', function () {
       console.log(`bundle ${colors.magenta('editor')} app`);
-      bundleShareDev(b);
+      bundleShareDev(b, reportError);
     });
   }
-  return bundleShareDev(b);
+  bundleShareDev(b, done);
 }
 
-function jsMosaicoProd() {
-  return mosaicoEditor()
-    .bundle()
-    .on('error', onError)
-    .pipe(source('badsender-editor.min.js'))
-    .pipe(vinylBuffer())
-    .pipe($.stripDebug())
-    .pipe($.uglify())
-    .pipe(gulp.dest(BUILD_DIR));
+function jsMosaicoProd(done) {
+  runPipeline(
+    done,
+    mosaicoEditor().bundle(),
+    source('badsender-editor.min.js'),
+    vinylBuffer(),
+    $.stripDebug(),
+    $.uglify(),
+    gulp.dest(BUILD_DIR)
+  );
 }
 const jsEditor = gulp.series(
   templates,

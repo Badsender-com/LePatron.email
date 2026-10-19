@@ -16,6 +16,7 @@ const DEFAULT_PRIMARY = '#093040';
 const DEFAULT_ACCENT = '#00acdc';
 
 let root;
+let compiled;
 
 beforeAll(async () => {
   // style_variables.less first, as badsender-editor.less imports it
@@ -27,6 +28,7 @@ beforeAll(async () => {
     ].join('\n'),
     { paths: [CSS_DIR] }
   );
+  compiled = css;
   root = postcss.parse(css);
 });
 
@@ -40,31 +42,119 @@ function valuesOf(selector, prop) {
   return values;
 }
 
-describe('gallery styles — the thumbnail’s ✕', () => {
-  // Faded out, it still took clicks: on a touch screen, with no hover to
-  // reveal it, a tap in the corner deleted the image without a word.
-  it('takes no click until the thumbnail is hovered', () => {
-    expect(valuesOf('.gallery-thumb__remove', 'opacity')).toEqual(['0']);
-    expect(valuesOf('.gallery-thumb__remove', 'pointer-events')).toEqual([
+// the last compound of a selector, the element its rule styles
+function subjectOf(selector) {
+  return selector.split(/\s*[\s>+~]\s*/).pop();
+}
+
+// the selectors of the rules that set `prop` to `value` on `target`
+function selectorsSetting(target, prop, value) {
+  const selectors = [];
+  root.walkRules((rule) => {
+    rule.walkDecls(prop, (decl) => {
+      if (decl.value !== value) return;
+      rule.selectors
+        .filter((selector) => subjectOf(selector).startsWith(target))
+        .forEach((selector) => selectors.push(selector));
+    });
+  });
+  return selectors;
+}
+
+describe('gallery styles — the thumbnail’s action bar', () => {
+  // The bar sits at the bottom of the image. Faded out, it must not take the
+  // tap meant to insert the image: on a touch screen nothing is hovered.
+  it('takes no click until it is revealed', () => {
+    expect(valuesOf('.gallery-thumb__actions', 'pointer-events')).toEqual([
       'none',
     ]);
-    const hovered = '.gallery-thumb:hover .gallery-thumb__remove';
-    expect(valuesOf(hovered, 'opacity')).toEqual(['1']);
-    expect(valuesOf(hovered, 'pointer-events')).toEqual(['auto']);
+    const clickable = selectorsSetting(
+      '.gallery-thumb__actions',
+      'pointer-events',
+      'auto'
+    ).map((selector) => selector.replace(/ \.gallery-thumb__actions$/, ''));
+    const shown = selectorsSetting('.gallery-thumb__overlay', 'opacity', '1');
+    expect(clickable.length).toBeGreaterThan(0);
+    expect(clickable.sort()).toEqual(shown.sort());
   });
 
-  // A tap leaves :hover stuck on a touch screen: the ✕ would then show, and a
-  // second tap delete the image unconfirmed. It only appears for a real hover.
-  it('is revealed only on a device that hovers', () => {
-    const media = [];
+  // The gallery stays open after an image is inserted, and a click leaves
+  // the focus on the image. Revealed on any focus in the thumbnail, the bar
+  // stayed up and clickable there while the pointer was over another one,
+  // and followed the cell when the scroller recycled it. The bar's own
+  // buttons take no focus from a click (gallery-thumb-actions.test.js).
+  it('is revealed by a keyboard focus, not by a click', () => {
+    const shown = selectorsSetting('.gallery-thumb__overlay', 'opacity', '1');
+    expect(shown.sort()).toEqual(
+      [
+        '.gallery-thumb:hover .gallery-thumb__overlay',
+        '.gallery-thumb__img:focus-visible + .gallery-thumb__overlay',
+        '.gallery-thumb__overlay:focus-within',
+      ].sort()
+    );
+  });
+
+  // The scrim darkens the image under the bar: were it to take the pointer, it
+  // would be a transparent lid that stops the thumbnail from being dragged.
+  it('never lets the scrim take the pointer', () => {
+    expect(valuesOf('.gallery-thumb__overlay', 'pointer-events')).toEqual([
+      'none',
+    ]);
+    expect(
+      selectorsSetting('.gallery-thumb__overlay', 'pointer-events', 'auto')
+    ).toEqual([]);
+  });
+
+  // The old ✕ deleted with no confirmation; the bar's trash asks first, so a
+  // tap that lands on it on a touch screen (where :hover sticks) is harmless.
+  it('replaces the ✕ of the grid', () => {
+    expect(valuesOf('.gallery-thumb__remove', 'opacity')).toEqual([]);
+  });
+});
+
+describe('gallery styles — a button that is working', () => {
+  const busy = ".gallery-thumb__action[aria-busy='true']";
+
+  it('says the click was taken while the image editor opens', () => {
+    expect(valuesOf(busy, 'cursor')).toEqual(['progress']);
+    expect(valuesOf(`${busy} .lucide`, 'animation')).toHaveLength(2);
+  });
+
+  it('keeps still for whoever asked for less motion', () => {
+    const still = [];
     root.walkRules((rule) => {
-      if (
-        rule.selectors.includes('.gallery-thumb:hover .gallery-thumb__remove')
-      ) {
-        media.push(rule.parent.type === 'atrule' ? rule.parent.params : null);
-      }
+      if (!rule.selectors.includes(`${busy} .lucide`)) return;
+      if (rule.parent.type !== 'atrule') return;
+      rule.walkDecls('animation', (decl) => still.push(decl.value));
     });
-    expect(media).toEqual(['(hover: hover)']);
+    expect(still).toEqual(['none']);
+  });
+});
+
+describe('gallery styles — a thumbnail whose image is loading', () => {
+  const loading = '.gallery-thumb__img--loading::after';
+
+  // Hundreds of cells can be loading at once: an animation the compositor
+  // runs alone, never one that repaints or lays out the grid.
+  it('animates the opacity alone', () => {
+    const [animation] = valuesOf(loading, 'animation');
+    const name = animation.split(' ')[0];
+    const animated = new Set();
+    root.walkAtRules('keyframes', (rule) => {
+      if (rule.params !== name) return;
+      rule.walkDecls((decl) => animated.add(decl.prop));
+    });
+    expect([...animated]).toEqual(['opacity']);
+  });
+
+  it('keeps still for whoever asked for less motion', () => {
+    const still = [];
+    root.walkRules((rule) => {
+      if (!rule.selectors.includes(loading)) return;
+      if (rule.parent.type !== 'atrule') return;
+      rule.walkDecls('animation', (decl) => still.push(decl.value));
+    });
+    expect(still).toEqual(['none']);
   });
 });
 
@@ -93,5 +183,26 @@ describe('gallery styles — brand colours', () => {
     expect(valuesOf('.gallery-vue-chip--active', 'background')).toEqual([
       `var(--v-primary-base, ${DEFAULT_PRIMARY})`,
     ]);
+  });
+});
+
+describe('gallery styles — the build', () => {
+  // gulpfile.js (cssDev, cssProd) runs the stylesheet through these, with
+  // these options. On a rule it cannot parse (a `:has()` in `@supports`)
+  // autoprefixer throws, the build writes no stylesheet at all, and still
+  // reports success.
+  it('goes through the build’s autoprefixer and minifier', async () => {
+    const autoprefixer = require('autoprefixer');
+    const csswring = require('csswring');
+    const buildPostcss = require(require.resolve('postcss', {
+      paths: [path.dirname(require.resolve('autoprefixer'))],
+    }));
+    const prefixed = await buildPostcss([
+      autoprefixer({ overrideBrowserslist: ['ie 10', 'last 2 versions'] }),
+    ]).process(compiled, { from: undefined });
+    const minified = await buildPostcss([
+      csswring({ removeAllComments: true }),
+    ]).process(prefixed.css, { from: undefined });
+    expect(minified.css).toContain('.gallery-thumb__overlay');
   });
 });
