@@ -147,3 +147,59 @@ describe('parseMultipart — a template upload', () => {
     expect(res.body.markup).toBe('<html></html>');
   });
 });
+
+describe('parseMultipart — what it reads of an upload', () => {
+  const SNIFF_BYTES = 4096;
+  const JPEG_SNIFF_BYTES = 128 * 1024;
+
+  // A JPEG whose SOF0, and so its dimensions, sits after a large APP1.
+  function jpegWithLargeApp1(width, height) {
+    const appSize = 65533;
+    return Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xe1, appSize >> 8, appSize & 0xff]),
+      Buffer.alloc(appSize - 2),
+      Buffer.from([0xff, 0xc0, 0, 0x11, 8, height >> 8, height & 0xff]),
+      Buffer.from([width >> 8, width & 0xff, 3, 1, 0x22, 0, 2, 0x11, 1, 3]),
+      Buffer.from([0x11, 1]),
+      Buffer.alloc(64 * 1024),
+    ]);
+  }
+
+  // [position, length] of each read of the upload's bytes
+  let reads;
+  beforeEach(() => {
+    reads = [];
+    const readSync = fsExtra.readSync;
+    jest
+      .spyOn(fsExtra, 'readSync')
+      .mockImplementation((fd, buffer, offset, length, position) => {
+        reads.push([position, length]);
+        return readSync(fd, buffer, offset, length, position);
+      });
+  });
+  afterEach(() => fsExtra.readSync.mockRestore());
+
+  it.each([
+    ['the type it declares', 'image/png'],
+    ['a generic type', 'application/octet-stream'],
+  ])('reads the head of a PNG once, with %s', async (_case, type) => {
+    const res = await upload(PNG, 'image.png', type);
+
+    expect(res.body.files[0]).toMatchObject({ width: 8, height: 8 });
+    expect(reads).toEqual([[0, SNIFF_BYTES]]);
+  });
+
+  it('reads on past the head only for a JPEG, and never a byte twice', async () => {
+    const res = await upload(
+      jpegWithLargeApp1(800, 600),
+      'photo.jpg',
+      'image/jpeg'
+    );
+
+    expect(res.body.files[0]).toMatchObject({ width: 800, height: 600 });
+    expect(reads).toEqual([
+      [0, SNIFF_BYTES],
+      [SNIFF_BYTES, JPEG_SNIFF_BYTES - SNIFF_BYTES],
+    ]);
+  });
+});

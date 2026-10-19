@@ -11,9 +11,9 @@ const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const {
   resolveUploadNames,
-  probeImageDimensions,
+  measureUpload,
   readHead,
-  JPEG_SNIFF_BYTES,
+  SNIFF_BYTES,
 } = require('./upload-identity.service.js');
 
 const { readFile } = fs;
@@ -133,7 +133,9 @@ function parseMultipart(req, options) {
     // markup will be saved in DB
     if (name === 'markup') return;
     // put all other files in the right place (S3 || local)
-    const names = resolveUploadNames(file, options.prefix);
+    // one read of the upload's head answers both what it is and its size
+    const head = readHead(file, SNIFF_BYTES);
+    const names = resolveUploadNames(file, options.prefix, head);
     if (!names) {
       logger.warn('[UPLOAD] unable to name the upload', file.name, file.type);
       return;
@@ -148,7 +150,7 @@ function parseMultipart(req, options) {
     // It doubles as the mark that this upload was accepted: handleEditorUpload
     // refuses to describe a file that does not carry it.
     file.uploadedName = `${file.name}`;
-    const dimensions = probeImageDimensions(readHead(file, JPEG_SNIFF_BYTES));
+    const dimensions = measureUpload(file, head);
     if (dimensions) {
       file.width = dimensions.width;
       file.height = dimensions.height;

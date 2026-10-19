@@ -53,7 +53,10 @@ const EXTENSION = /\.[0-9a-z]+$/i;
 // gallery files named `<hash>.false`. The type declared by the client is not
 // trustworthy either: it is what produced `<hash>.bin` for actual PNGs. So fall
 // back to the bytes, and give up on the upload when they are not an image.
-function resolveUploadExtension(file) {
+//
+// `head` is the start of the upload when the caller has already read it;
+// without it, it is read here.
+function resolveUploadExtension(file, head) {
   const declaredExtension = mime.extension(file.type);
   // `application/octet-stream` *does* map — to `bin` — which is the other half
   // of the problem: it is what a browser sends when it doesn't know, and it is
@@ -62,7 +65,7 @@ function resolveUploadExtension(file) {
     return declaredExtension;
   }
 
-  const probed = sniffImage(file);
+  const probed = sniffHead(file, head || readHead(file, SNIFF_BYTES));
   const sniffedExtension = probed
     ? mime.extension(probed.mime) || probed.type
     : null;
@@ -71,13 +74,14 @@ function resolveUploadExtension(file) {
   return sniffedExtension || declaredExtension || null;
 }
 
-// Reads the start of an upload from disk. Returns an empty buffer rather than
-// throwing: a file we cannot read is one we cannot describe, not a crash.
-function readHead(file, bytes) {
+// Reads up to `bytes` of an upload from disk, from `position` on (its start
+// by default). Returns an empty buffer rather than throwing: a file we cannot
+// read is one we cannot describe, not a crash.
+function readHead(file, bytes, position = 0) {
   try {
     const head = Buffer.alloc(bytes);
     const descriptor = fs.openSync(file.path, 'r');
-    const read = fs.readSync(descriptor, head, 0, bytes, 0);
+    const read = fs.readSync(descriptor, head, 0, bytes, position);
     fs.closeSync(descriptor);
     return head.subarray(0, read);
   } catch (e) {
@@ -87,9 +91,9 @@ function readHead(file, bytes) {
 }
 
 // What `probe` makes of an upload's head — the format half of the question.
-function sniffImage(file) {
+function sniffHead(file, head) {
   try {
-    return probe.sync(readHead(file, SNIFF_BYTES));
+    return probe.sync(head);
   } catch (e) {
     logger.log('[UPLOAD] unable to sniff', file.path, e.message);
     return null;
@@ -123,6 +127,26 @@ function probeImageDimensions(buffer) {
   }
 }
 
+/**
+ * The dimensions of an upload, from the head its caller has already read.
+ *
+ * A JPEG can keep them past the head, after a large APP1: only then is the
+ * file read on, from where the head stopped and up to the JPEG window, so no
+ * byte is read twice and anything else is read once, SNIFF_BYTES at most.
+ *
+ * @param {object} file a formidable upload, already written to tmp
+ * @param {Buffer} head its first SNIFF_BYTES, or all of it when shorter
+ * @returns {{width: number, height: number}|null}
+ */
+function measureUpload(file, head) {
+  const dimensions = probeImageDimensions(head);
+  if (dimensions || !isJpeg(head) || head.length < SNIFF_BYTES) {
+    return dimensions;
+  }
+  const rest = readHead(file, JPEG_SNIFF_BYTES - head.length, head.length);
+  return probeImageDimensions(Buffer.concat([head, rest]));
+}
+
 // `probe` reports SVG sizes as floats, and in whatever unit the document
 // declared — `21 × 29.693548387096772` centimetres would otherwise be printed
 // as pixels with sixteen decimals.
@@ -154,11 +178,12 @@ function readDimensions(window) {
  *
  * @param {object} file a formidable upload, already written to tmp
  * @param {string} prefix the mailing or template id the file belongs to
+ * @param {Buffer} [head] the start of the upload, when already read
  * @returns {{name: string, originalName: string}|null} null when the upload
  *   cannot be stored at all — not an image, or nothing left of its name
  */
-function resolveUploadNames(file, prefix) {
-  const ext = resolveUploadExtension(file);
+function resolveUploadNames(file, prefix, head) {
+  const ext = resolveUploadExtension(file, head);
   if (!ext) return null;
 
   const claimed = EXTENSION.test(file.name) ? file.name : `${file.name}.${ext}`;
@@ -184,6 +209,7 @@ module.exports = {
   resolveUploadExtension,
   resolveUploadNames,
   probeImageDimensions,
+  measureUpload,
   readHead,
   SNIFF_BYTES,
   JPEG_SNIFF_BYTES,
