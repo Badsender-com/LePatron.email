@@ -273,6 +273,20 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
   });
 }
 
+// The entry point of both scripts: what fails before the run starts (the
+// options, the configuration) is printed redacted too, and fails the process.
+function runFromCommandLine(script, options) {
+  return runGalleryScript(script, options).then(
+    (code) => {
+      process.exitCode = code;
+    },
+    (error) => {
+      console.error(`Fatal error: ${redact(error.message)}`);
+      process.exitCode = EXIT_FAILURE;
+    }
+  );
+}
+
 function report(run) {
   const { script, dryRun, totals, failedGalleries } = run;
   console.log('\n--- Result ---');
@@ -316,6 +330,7 @@ function report(run) {
 
 module.exports = {
   runGalleryScript,
+  runFromCommandLine,
   parseArgs,
   databaseHosts,
   redact,

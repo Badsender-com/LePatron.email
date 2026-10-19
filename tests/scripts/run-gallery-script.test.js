@@ -16,6 +16,7 @@ const mongoose = require('mongoose');
 const config = require('../../packages/server/node.config.js');
 const {
   runGalleryScript,
+  runFromCommandLine,
   parseArgs,
   databaseHosts,
   redact,
@@ -147,6 +148,26 @@ describe('run-gallery-script', () => {
       await runGalleryScript(failing, { argv: CONFIRMED });
 
       expect(output()).toContain('db.example.test:27017');
+      expect(output()).not.toContain('s3cr3t-password');
+    });
+
+    // What fails before the run starts reaches the entry point's own line.
+    it('keeps them out of the fatal error line too', async () => {
+      const { setup } = config;
+      config.setup = Promise.reject(
+        new Error(`cannot open ${URI_WITH_CREDENTIALS}`)
+      );
+      const exitCode = process.exitCode;
+
+      try {
+        await runFromCommandLine(script(), { argv: CONFIRMED });
+        expect(process.exitCode).toBe(1);
+      } finally {
+        config.setup = setup;
+        process.exitCode = exitCode;
+      }
+
+      expect(output()).toContain('Fatal error: cannot open <database URI>');
       expect(output()).not.toContain('s3cr3t-password');
     });
   });

@@ -18,7 +18,7 @@
  */
 
 require('dotenv').config();
-const { runGalleryScript } = require('./gallery/run-gallery-script.js');
+const { runFromCommandLine } = require('./gallery/run-gallery-script.js');
 
 // `null` in a query matches a missing field as well as a null one: what the
 // first version of this script wrote when a gallery had no createdAt.
@@ -159,17 +159,7 @@ const migration = {
   ],
 };
 
-if (require.main === module) {
-  runGalleryScript(migration).then(
-    (code) => {
-      process.exitCode = code;
-    },
-    (error) => {
-      console.error(`Fatal error: ${error.message}`);
-      process.exitCode = 1;
-    }
-  );
-}
+if (require.main === module) runFromCommandLine(migration);
 
 module.exports = {
   migrationDate,

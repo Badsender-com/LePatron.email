@@ -24,7 +24,7 @@
  */
 
 require('dotenv').config();
-const { runGalleryScript } = require('./gallery/run-gallery-script.js');
+const { runFromCommandLine } = require('./gallery/run-gallery-script.js');
 const {
   readDimensions,
   describeStorage,
@@ -257,17 +257,7 @@ const backfill = {
   assess: assessBackfill,
 };
 
-if (require.main === module) {
-  runGalleryScript(backfill).then(
-    (code) => {
-      process.exitCode = code;
-    },
-    (error) => {
-      console.error(`Fatal error: ${error.message}`);
-      process.exitCode = 1;
-    }
-  );
-}
+if (require.main === module) runFromCommandLine(backfill);
 
 module.exports = {
   needsDimensions,
