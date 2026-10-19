@@ -75,6 +75,95 @@ describe('folder store, FETCH_MAILINGS', () => {
   });
 });
 
+// Searching every accessible workspace (epic #1144, ADR 0007): in the "all"
+// search scope, the listing asks the search route, with the filters and the
+// pagination of the listing and no location, whatever location the route
+// still names.
+// Turned on by #1314 (search every accessible workspace)
+describe.skip('folder store, FETCH_MAILINGS in the "all" search scope', () => {
+  const found = {
+    items: {
+      docs: [{ id: 'mailing-1', name: 'Spring sale' }],
+      totalDocs: 1,
+      limit: 25,
+      page: 1,
+      totalPages: 1,
+    },
+  };
+
+  function searchContext() {
+    const ctx = context(null);
+    ctx.rootState.folder.pagination = {
+      page: 1,
+      itemsPerPage: 25,
+      sortBy: ['updatedAt'],
+      sortDesc: [true],
+    };
+    ctx.rootState.folder.filters = { name: 'spring', tags: ['promo'] };
+    return ctx;
+  }
+
+  it.each([
+    ['with no location', { scope: 'all' }],
+    ['from a workspace', { scope: 'all', wid: 'workspace-1' }],
+    ['from a folder', { scope: 'all', fid: 'folder-1' }],
+  ])(
+    'asks the search route %s, without naming a location',
+    async (_, query) => {
+      const ctx = searchContext();
+      const $axios = { $get: jest.fn().mockResolvedValue(found) };
+
+      await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
+        query,
+        $t: jest.fn(),
+      });
+
+      expect($axios.$get).toHaveBeenCalledWith('/mailings/search', {
+        params: {
+          pagination: JSON.stringify({
+            page: 1,
+            itemsPerPage: 25,
+            sortBy: ['updatedAt'],
+            sortDesc: [true],
+          }),
+          filters: JSON.stringify({ name: 'spring', tags: ['promo'] }),
+        },
+      });
+    }
+  );
+
+  it('shows the emails the search found', async () => {
+    const ctx = searchContext();
+    const $axios = { $get: jest.fn().mockResolvedValue(found) };
+
+    await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
+      query: { scope: 'all' },
+      $t: jest.fn(),
+    });
+
+    expect(committed(ctx, SET_MAILINGS)).toEqual([
+      [{ id: 'mailing-1', name: 'Spring sale' }],
+    ]);
+  });
+
+  it('keeps listing the current location outside the "all" scope', async () => {
+    const ctx = searchContext();
+    const $axios = { $get: jest.fn().mockResolvedValue(found) };
+
+    await actions[FETCH_MAILINGS].call({ $axios }, ctx, {
+      query: { wid: 'workspace-1' },
+      $t: jest.fn(),
+    });
+
+    expect($axios.$get).toHaveBeenCalledWith(
+      '/mailings',
+      expect.objectContaining({
+        params: expect.objectContaining({ workspaceId: 'workspace-1' }),
+      })
+    );
+  });
+});
+
 describe('folder store, loading flags', () => {
   // What a detached vue-i18n `$t` did: it reads `this.$i18n` on undefined.
   const throwing = () => Promise.reject(new TypeError("reading '$i18n'"));

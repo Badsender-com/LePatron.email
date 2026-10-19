@@ -87,3 +87,28 @@ _Avoid_: Title, file name, original name
 **Numbered copy**:
 The new gallery image that editing an image produces, labelled after it with the next free number of its series (`photo (2).png`). The original is never replaced.
 _Avoid_: Version, revision, edited image
+
+### Email listing
+
+**Workspace**:
+A place of a group where its emails are designed, open to the users it lists as members. It holds emails and folders.
+_UI_: Espace de travail
+
+**Folder**:
+A place inside a workspace that holds emails. A folder may hold subfolders, which hold none.
+_UI_: Dossier
+_Avoid_: Directory
+
+**Location**:
+The workspace or folder an email sits in, read as its path: workspace, folder, subfolder. An email has exactly one.
+_UI_: Emplacement
+_Avoid_: Parent, path
+
+**Accessible workspace**:
+A workspace whose emails a user may read: one they are a member of, every workspace of their group for a company admin or when the group opens all workspaces to its users, and every workspace of the selected group for a super admin.
+_Avoid_: Allowed workspace, my workspace
+
+**Search scope**:
+What the email search looks through: the emails sitting directly in the current location, or every email of the user's accessible workspaces, in any folder.
+_UI_: Dossier courant, Tous mes espaces de travail
+_Avoid_: Search mode, global search (in UI text)
