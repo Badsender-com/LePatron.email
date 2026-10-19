@@ -155,6 +155,21 @@ module.exports = {
     onEnter(event) {
       if (event.isComposing || event.keyCode === 229) return;
       this.commitEdit();
+      this.refocus();
+    },
+    onEscape() {
+      this.cancelEdit();
+      this.refocus();
+    },
+    // The field leaves the DOM with the focus in it, which would then fall to
+    // the page's body and send a keyboard user back to the top of the editor.
+    // Only after Enter and Escape: a blur commits too, and the focus is then
+    // wherever the user just put it.
+    refocus() {
+      this.$nextTick(() => {
+        const target = this.$refs.renameButton || this.$refs.pick;
+        if (target) target.focus();
+      });
     },
     // A rename starts with a double-click on the label, whose first click
     // must not insert the image (ADR 0005). Without the right to rename there
@@ -181,6 +196,7 @@ module.exports = {
         <div
           class="gallery-thumb__img"
           :class="{ 'gallery-thumb__img--solid': isSolid }"
+          ref="pick"
           role="button"
           tabindex="0"
           :aria-label="label"
@@ -210,6 +226,7 @@ module.exports = {
               <span class="lucide lucide-pencil"></span>
             </button>
             <button
+              ref="renameButton"
               type="button"
               class="gallery-thumb__action"
               data-gallery-rename
@@ -245,7 +262,7 @@ module.exports = {
         @click.stop
         @dblclick.stop
         @keydown.enter="onEnter"
-        @keydown.esc="cancelEdit"
+        @keydown.esc="onEscape"
         @blur="commitEdit"
       />
       <div

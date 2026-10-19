@@ -362,3 +362,70 @@ describe('thumbnail rename — recycling', () => {
     vm.$destroy();
   });
 });
+
+describe('thumbnail rename — where the focus goes', () => {
+  let vm;
+
+  // attached: focus only exists in a document
+  beforeEach(() => {
+    vm = mount();
+    document.body.appendChild(vm.$el);
+  });
+
+  afterEach(() => {
+    vm.$destroy();
+    document.body.innerHTML = '';
+  });
+
+  const renameButton = () => vm.$el.querySelector('[data-gallery-rename]');
+  const press = (key, keyCode) =>
+    input(vm).dispatchEvent(
+      new KeyboardEvent('keydown', { key, keyCode, bubbles: true })
+    );
+
+  // The field leaves the DOM with the focus in it, which then fell to the
+  // page's body: a keyboard user started over from the top of the editor.
+  it('goes back to the rename button once Enter has committed', async () => {
+    renameButton().click();
+    await Vue.nextTick();
+    input(vm).value = 'nouveau.png';
+    input(vm).dispatchEvent(new Event('input'));
+    press('Enter', 13);
+    await Vue.nextTick();
+
+    expect(document.activeElement).toBe(renameButton());
+  });
+
+  it('goes back to the rename button once Escape has cancelled', async () => {
+    renameButton().click();
+    await Vue.nextTick();
+    press('Escape', 27);
+    await Vue.nextTick();
+
+    expect(document.activeElement).toBe(renameButton());
+  });
+
+  it('goes to the rename button as well after a double-click rename', async () => {
+    label(vm).dispatchEvent(new Event('dblclick'));
+    await Vue.nextTick();
+    press('Escape', 27);
+    await Vue.nextTick();
+
+    expect(document.activeElement).toBe(renameButton());
+  });
+
+  // Leaving the field for somewhere else commits too, and the focus is
+  // where the user put it.
+  it('stays where the user took it when the field loses the focus', async () => {
+    const elsewhere = document.createElement('input');
+    document.body.appendChild(elsewhere);
+    renameButton().click();
+    await Vue.nextTick();
+
+    elsewhere.focus();
+    await Vue.nextTick();
+
+    expect(input(vm)).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+  });
+});
