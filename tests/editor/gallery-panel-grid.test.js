@@ -1,0 +1,244 @@
+/**
+ * @jest-environment jsdom
+ */
+'use strict';
+
+// The rendered grid: thumbnails, what clicking and the keyboard do on them,
+// the drag directive on each, and the scroll reset. Mounted inside the
+// document, where jsdom's zero-size layout still leaves the scroller its
+// buffer and it renders its first rows (detached, it renders none, which is
+// why gallery-panel-render.test.js only sees the container).
+jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
+
+const Vue = require('vue/dist/vue.common');
+const ko = require('knockout');
+const {
+  mountGrid,
+  thumbsOf,
+  thumbOf: thumbIn,
+  unmountGrid,
+} = require('./helpers/gallery-grid.js');
+
+const IMAGES = [
+  { name: 'a-1.jpg', label: 'un.jpg', thumbnailUrl: '/t/a-1.jpg' },
+  { name: 'a-2.png', label: 'deux.png', thumbnailUrl: '/t/a-2.png' },
+  { name: 'a-3.gif', thumbnailUrl: '/t/a-3.gif' },
+];
+
+let vm;
+let panel;
+
+async function mount(images = IMAGES) {
+  ({ vm, panel } = await mountGrid(images));
+}
+
+const thumbs = () => thumbsOf(panel);
+const thumbOf = (name) => thumbIn(panel, name);
+
+function key(el, name) {
+  const event = new KeyboardEvent('keydown', {
+    key: name === 'enter' ? 'Enter' : ' ',
+    keyCode: name === 'enter' ? 13 : 32,
+    bubbles: true,
+    cancelable: true,
+  });
+  el.dispatchEvent(event);
+  return event;
+}
+
+afterEach(() => unmountGrid(panel));
+
+describe('gallery grid — thumbnails', () => {
+  it('renders one thumbnail per image', async () => {
+    await mount();
+    expect(thumbs()).toHaveLength(3);
+  });
+
+  it('shows the label, and the file name for an image that has none', async () => {
+    await mount();
+    expect(thumbOf('a-1.jpg').textContent).toContain('un.jpg');
+    expect(thumbOf('a-3.gif').textContent).toContain('a-3.gif');
+    expect(thumbOf('a-1.jpg').querySelector('img').getAttribute('alt')).toBe(
+      'un.jpg'
+    );
+  });
+
+  it('marks GIFs, and gives JPGs a solid background instead of the checkerboard', async () => {
+    await mount();
+    expect(thumbOf('a-3.gif').querySelector('.gallery-thumb__badge')).not.toBe(
+      null
+    );
+    expect(thumbOf('a-1.jpg').querySelector('.gallery-thumb__badge')).toBe(
+      null
+    );
+    const solid = (name) =>
+      thumbOf(name)
+        .querySelector('.gallery-thumb__img')
+        .classList.contains('gallery-thumb__img--solid');
+    expect(solid('a-1.jpg')).toBe(true);
+    expect(solid('a-2.png')).toBe(false);
+  });
+
+  // A label is user input. It is interpolated, never parsed as markup.
+  it('renders a label as text', async () => {
+    await mount([
+      {
+        name: 'x.png',
+        label: '<img src=x onerror="window.pwned=1">',
+        thumbnailUrl: '/t/x.png',
+      },
+    ]);
+    const label = thumbOf('x.png').querySelector('.gallery-thumb__label');
+    expect(label.textContent).toBe('<img src=x onerror="window.pwned=1">');
+    expect(label.querySelector('img')).toBeNull();
+  });
+
+  it('carries the drag payload the email placeholders read', async () => {
+    await mount();
+    const el = thumbOf('a-2.png');
+    expect(el.classList.contains('image')).toBe(true);
+    expect(ko.utils.domData.get(el, 'ko_dragItem')).toEqual(IMAGES[1]);
+  });
+});
+
+describe('gallery grid — picking and deleting', () => {
+  it('puts the clicked image in the selected placeholder', async () => {
+    await mount();
+    thumbOf('a-2.png').click();
+    expect(vm.addImage).toHaveBeenCalledWith(IMAGES[1]);
+  });
+
+  // The image is the control, not the whole tile: the action buttons are its
+  // siblings, where a screen reader still reads them as buttons.
+  it('makes the image a button reachable with Tab, named after the image', async () => {
+    await mount();
+    const pick = thumbOf('a-1.jpg').querySelector('[data-gallery-pick]');
+    expect(pick.getAttribute('role')).toBe('button');
+    expect(pick.getAttribute('tabindex')).toBe('0');
+    expect(pick.getAttribute('aria-label')).toBe('un.jpg');
+    expect(thumbOf('a-1.jpg').getAttribute('role')).toBeNull();
+  });
+
+  it.each(['enter', 'space'])('picks the image with %s', async (name) => {
+    await mount();
+    const pick = thumbOf('a-1.jpg').querySelector('[data-gallery-pick]');
+    const event = key(pick, name);
+    expect(vm.addImage).toHaveBeenCalledTimes(1);
+    expect(vm.addImage).toHaveBeenCalledWith(IMAGES[0]);
+    // Space would otherwise scroll the grid
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  // what a screen reader does when the user activates the control
+  it('picks the image once when the control itself is clicked', async () => {
+    await mount();
+    thumbOf('a-2.png').querySelector('[data-gallery-pick]').click();
+    expect(vm.addImage).toHaveBeenCalledTimes(1);
+    expect(vm.addImage).toHaveBeenCalledWith(IMAGES[1]);
+  });
+
+  it('keeps the action buttons out of the image control', async () => {
+    await mount();
+    const thumb = thumbOf('a-1.jpg');
+    const buttons = thumb.querySelectorAll('button');
+    expect(buttons.length).toBeGreaterThan(0);
+    buttons.forEach((button) => {
+      expect(button.closest('[role="button"]')).toBeNull();
+      expect(button.getAttribute('tabindex')).toBeNull();
+      expect(button.getAttribute('aria-hidden')).toBeNull();
+    });
+  });
+
+  it('deletes from the action bar, without also picking the image', async () => {
+    await mount();
+    thumbOf('a-2.png').querySelector('[data-gallery-remove]').click();
+    expect(vm.removeImage).toHaveBeenCalledWith(IMAGES[1], 'mailing');
+    expect(vm.addImage).not.toHaveBeenCalled();
+  });
+
+  it('drops the thumbnail of an image deleted on the Knockout side', async () => {
+    await mount();
+    vm.mailingGallery.remove((file) => file.name === 'a-2.png');
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(thumbs()).toHaveLength(2);
+    expect(thumbOf('a-2.png')).toBeUndefined();
+  });
+
+  // A parked view is only moved to -9999px: still focusable, still read out,
+  // unless its cell is hidden.
+  it('takes the parked cell out of the tab order', async () => {
+    await mount();
+    vm.mailingGallery.remove((file) => file.name === 'a-2.png');
+    await Vue.nextTick();
+    await Vue.nextTick();
+    const cells = panel.$el.querySelectorAll('.gallery-vue-cell');
+    expect(cells).toHaveLength(3);
+    const parked = Array.from(cells).filter((cell) => cell.hidden);
+    expect(parked).toHaveLength(1);
+    expect(
+      parked[0].closest('.vue-recycle-scroller__item-view').style.transform
+    ).toContain('-9999');
+  });
+});
+
+describe('gallery grid — scroll', () => {
+  it.each([
+    ['search', 'un'],
+    ['format', 'png'],
+    ['sortBy', 'date_asc'],
+  ])('goes back to the top when the %s changes', async (criterion, value) => {
+    await mount();
+    const spy = jest.spyOn(panel.$refs.scroller, 'scrollToPosition');
+    panel[criterion] = value;
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(spy).toHaveBeenCalledWith(0);
+  });
+
+  it('stays where it is when an upload lands', async () => {
+    await mount();
+    const spy = jest.spyOn(panel.$refs.scroller, 'scrollToPosition');
+    vm.mailingGallery.unshift({ name: 'a-4.png', thumbnailUrl: '/t/a-4.png' });
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('gallery grid — hover', () => {
+  // The scroller tracks the hovered view to set a `hover` class nothing
+  // styles; each write re-renders its whole pool, and with it the drag
+  // directive of every cell.
+  it('does not re-render the grid when the pointer enters a cell', async () => {
+    await mount();
+    const scroller = panel.$refs.scroller;
+    const view = panel.$el.querySelector('.vue-recycle-scroller__item-view');
+    view.dispatchEvent(new MouseEvent('mouseenter'));
+    await Vue.nextTick();
+    expect(scroller.hoverKey).toBeNull();
+    expect(view.classList.contains('hover')).toBe(false);
+  });
+});
+
+describe('gallery grid — what Vue observes', () => {
+  // The files are Mosaico's. The panel mirrors a frozen copy of the list, so
+  // Vue does not walk all of them: at 5,000 images, 25 ms at opening and
+  // 14 ms a keystroke when it did, 7 ms and 4 ms frozen. The scroller still
+  // keeps each file it shows in its reactive pool, which makes those, and
+  // only those, reactive.
+  it('observes the files on screen, never the whole gallery', async () => {
+    const files = Array.from({ length: 300 }, (_, i) => ({
+      name: `f-${i}.png`,
+      thumbnailUrl: `/t/${i}.png`,
+    }));
+    await mount(files);
+    const views = panel.$el.querySelectorAll(
+      '.vue-recycle-scroller__item-view'
+    );
+    const observed = files.filter((file) => '__ob__' in file);
+    expect(Object.isFrozen(panel.images)).toBe(true);
+    expect(observed.length).toBeGreaterThan(0);
+    expect(observed.length).toBeLessThanOrEqual(views.length);
+  });
+});

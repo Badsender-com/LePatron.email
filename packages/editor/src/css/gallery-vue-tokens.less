@@ -1,0 +1,45 @@
+// Vue gallery panel — shared design tokens (US-04+)
+//
+// Aliased from the design-system tokens (style_variables.less), in scope
+// because the gallery stylesheets are imported from badsender-editor.less.
+// Kept in their own file so the panel and the thumbnail can each import them
+// without depending on the order badsender-editor.less imports them in.
+//
+// The greys below are NOT in style_variables.less, which carries the brand
+// (white-label) colours only. They are named here rather than spelled out at
+// each use, so the next change happens in one place — and each carries the
+// WCAG ratio it was picked for, because a grey that drifts a shade lighter
+// stops being legible without anything flagging it.
+
+// The brand, read at runtime: the editor injects it as --v-primary-base and
+// --v-accent-base (mosaico-editor.pug), which the tabs above the panel read
+// too. The design-system colour is only the fallback.
+@gallery-primary: var(--v-primary-base, @bs-primary-color);
+@gallery-accent: var(--v-accent-base, @bs-accent-color);
+
+// LESS cannot fade or tint a CSS variable, so the translucent shades (the
+// focus halo, the shadows, the badge) keep the default brand, as the app's
+// --accent-tint-* tokens do (packages/ui design-tokens.scss).
+@gallery-primary-fixed: @bs-primary-color;
+@gallery-accent-soft: tint(@bs-accent-color, 90%);
+
+@gallery-surface: #fff;
+// mockup --lp-panel-alt: the input sits a shade below the panel
+@gallery-surface-alt: #f9fafb;
+@gallery-grey: #f5f5f5;
+
+// mockup --lp-border / --lp-border-strong
+@gallery-border: #e4e7eb;
+@gallery-border-strong: #cfd4da;
+
+// The destructive action, from the design system rather than from the mockup:
+// the mockup's #d84a3a is 3.93:1 on white, below the 4.5:1 a 12px glyph needs.
+// 5.89:1 on white, 5.65:1 on the soft tint it sits on when hovered.
+@gallery-danger: @local-error-color;
+@gallery-danger-soft: tint(@local-error-color, 92%);
+
+@gallery-text: #333;
+// 5.87:1 on white — body copy and chip labels, down to 11px
+@gallery-text-muted: #5b6670;
+// 4.39:1 on white, 4.20:1 on @gallery-surface-alt — meaningful icons need 3:1
+@gallery-text-faint: #6f7a82;

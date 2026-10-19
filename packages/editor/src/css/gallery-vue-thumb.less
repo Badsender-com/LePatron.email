@@ -1,0 +1,402 @@
+// Vue gallery panel — the thumbnail: image area, checkerboard, label, badges,
+// action bar and the drag proxy. The panel chrome around it lives in
+// gallery-vue-panel.less.
+
+@import 'gallery-vue-tokens.less';
+
+// the squares of the transparency checkerboard
+@checker: #e8eaed;
+// the GIF badge: a warning amber, deliberately outside the brand palette so it
+// reads as a format marker rather than as a themed element; its text too, so
+// a light brand cannot wash it out (6.1:1)
+@gif-badge: #e8a93a;
+
+// Two bands: the image, then an opaque label strip (ADR-0005). The hover
+// overlay of actions lives inside the image area, so it cannot cover the label —
+// which is what a rename has to double-click.
+.gallery-thumb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border: 1px solid @gallery-border;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: @gallery-grey;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+
+  &:hover {
+    border-color: @gallery-accent;
+    box-shadow: 0 2px 8px fade(@gallery-primary-fixed, 12%);
+    transform: translateY(-1px);
+  }
+
+  // the accent border is decoration, the image control's primary ring below is
+  // the focus indicator
+  &:focus-within {
+    border-color: @gallery-accent;
+  }
+}
+
+// The image area takes whatever the label band leaves. `min-height: 0`
+// because a flex item defaults to min-content, which would push the band out
+// of the box. It holds the image control and, over it, the action overlay.
+.gallery-thumb__media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+// The "insert" control, reached with Tab and picked with Enter or Space. The
+// checkerboard is the background; the image covers it entirely when opaque,
+// and shows it through genuine transparency.
+.gallery-thumb__img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: @gallery-surface;
+  background-image: linear-gradient(45deg, @checker 25%, transparent 25%),
+    linear-gradient(-45deg, @checker 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, @checker 75%),
+    linear-gradient(-45deg, transparent 75%, @checker 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // Same indicator as the chips, the primary outline meets 3:1. Drawn inside:
+  // the thumbnail's `overflow: hidden` clips anything outside it.
+  &:focus-visible {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -2px;
+  }
+}
+
+// JPG is always opaque: skip the checkerboard entirely
+.gallery-thumb__img--solid {
+  background-image: none;
+}
+
+// An image on its way: a plain veil over the area, breathing, so an empty
+// cell reads as "coming" rather than as an empty image. The veil, not the
+// image, carries the animation, and only on `opacity`, which the compositor
+// runs without repainting the grid of cells loading at once. It covers the
+// image until it is complete, so a half-decoded one never shows. Without
+// motion it stays still, half-faded; `aria-busy` says the rest
+// (thumb.template.js).
+@keyframes gallery-thumb-loading {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.45;
+  }
+}
+
+.gallery-thumb__img--loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: @gallery-border;
+  animation: gallery-thumb-loading 0.9s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-thumb__img--loading::after {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+// An image that cannot be read: no checkerboard, which would pass for a
+// transparent image, and a word with the icon, in the label band's metrics.
+// Muted text on the alternate surface, 5.6:1.
+.gallery-thumb__img--failed {
+  background-image: none;
+  background-color: @gallery-surface-alt;
+}
+
+.gallery-thumb__unavailable {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: @gallery-text-muted;
+
+  .lucide {
+    font-size: 18px;
+  }
+}
+
+// Its own band under the image, opaque so legibility never depends on what the
+// image happens to show. Height in pixels, not a percentage: a percentage
+// resolves against a flex height that is not known yet, and the band collapses.
+.gallery-thumb__label {
+  flex: 0 0 26px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 6px;
+  // cursor deliberately left to inherit the thumbnail's `pointer`: image and
+  // label are one object to drag onto the email, and the band should not
+  // advertise itself as a separate kind of target
+  font-size: 10.5px;
+  color: @gallery-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: @gallery-surface;
+  border-top: 1px solid @gallery-border;
+}
+
+// The input replaces the band in place, same metrics, so committing or
+// cancelling does not make the grid jump. `display: block` rather than the
+// band's flex: `align-items` cannot reach an input's value, which lives in
+// shadow DOM, and the inherited ellipsis means nothing on a focused field.
+.gallery-thumb__label--editing {
+  display: block;
+  line-height: 24px;
+  border-top: 1px solid @gallery-accent;
+  border-radius: 0;
+  cursor: text;
+
+  // The accent border (cyan by default, 2.60:1 against white) is decoration,
+  // not an indicator (WCAG 1.4.11 asks 3:1). The primary outline carries that
+  // job, as it does on the search box and the chips.
+  &:focus {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -2px;
+  }
+}
+
+.gallery-thumb__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  background: fade(@gallery-primary-fixed, 85%);
+  color: @gallery-surface;
+}
+
+.gallery-thumb__badge--gif {
+  background: @gif-badge;
+  color: @gallery-text;
+}
+
+// Actions on hover — edit, rename, delete, in the image area only.
+//
+// The scrim is decorative: it darkens the bottom of the image so a white
+// action bar stays legible over a light photo. It never takes the pointer,
+// only the bar does (below): a transparent lid over the image would make the
+// thumbnail undraggable while shown, since jQuery UI's draggable excludes
+// buttons from its handle.
+.gallery-thumb__overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 4px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 55%,
+    fade(@gallery-primary-fixed, 75%) 100%
+  );
+  transition: opacity 0.12s ease-out;
+}
+
+// Discreet on arrival: the bar rises by its own padding rather than appearing
+// in place. `prefers-reduced-motion` keeps the fade, which carries the
+// information, and drops the travel, which does not.
+.gallery-thumb__actions {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: fade(@gallery-surface, 96%);
+  box-shadow: 0 1px 4px fade(@gallery-primary-fixed, 30%);
+  // No target while the overlay is hidden. The bar sits at the bottom-centre
+  // of the image area, so on a touch screen — where there is no hover and the
+  // overlay never fades in — the first tap there would otherwise hit an
+  // invisible button (the trash, worst of all) instead of selecting the image.
+  // It is handed the pointer back only when the overlay is actually shown.
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: transform 0.12s ease-out;
+}
+
+// Shown on hover, and on a keyboard focus so the buttons can be reached
+// from a keyboard — a control that is focusable but invisible is worse than
+// one that is neither. Not on any focus: the gallery stays open after an
+// image is inserted, and the click leaves the focus on the image. The bar
+// then stayed up and clickable on that thumbnail while the pointer was over
+// another one, and followed the cell the scroller recycled. The image control
+// is followed by the overlay, hence `+`; the bar's buttons take no focus from
+// a click (thumb.js), so a focus inside the bar is a keyboard one. (`:has()`
+// would say it directly, but the build's autoprefixer cannot parse it in an
+// `@supports` fallback, and drops the whole stylesheet without failing.)
+//
+// One rule per way in: a browser that does not know `:focus-visible` drops
+// the whole rule it appears in, and would take the hover down with it.
+.gallery-thumb-revealed() {
+  opacity: 1;
+
+  .gallery-thumb__actions {
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+.gallery-thumb:hover .gallery-thumb__overlay {
+  .gallery-thumb-revealed();
+}
+
+.gallery-thumb__img:focus-visible + .gallery-thumb__overlay {
+  .gallery-thumb-revealed();
+}
+
+.gallery-thumb__overlay:focus-within {
+  .gallery-thumb-revealed();
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-thumb__actions {
+    transform: none;
+    transition: none;
+  }
+
+  // the card's hover lift is decoration — the border and shadow already signal
+  // hover; drop the travel but keep the colour change
+  .gallery-thumb {
+    transition: border-color 0.12s, box-shadow 0.12s;
+
+    &:hover {
+      transform: none;
+    }
+  }
+
+  .gallery-thumb__overlay {
+    transition: none;
+  }
+}
+
+.gallery-thumb__action {
+  // 24px is the pointer-target floor of WCAG 2.5.8; the glyph stays at 12px
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+  // 5.87:1 on the bar — an icon carrying the whole meaning of a button is held
+  // to text contrast, not to the 3:1 of a decorative glyph
+  color: @gallery-text-muted;
+
+  .lucide {
+    font-size: 12px;
+  }
+
+  &:hover {
+    background: @gallery-accent-soft;
+    color: @gallery-primary;
+  }
+
+  // Same primary ring as the search box and the chips. `outline-offset: -1px`
+  // keeps it inside the bar, which is 28px tall and would otherwise clip it.
+  &:focus-visible {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -1px;
+  }
+}
+
+// A control whose click was taken and is still being acted on: opening the
+// image editor waits for the gallery lists and the stored file
+// (badsender-edit-image.js), and nothing on screen used to say so, so the
+// click was repeated. The glyph breathes; without motion, it dims. Also used
+// by the pencil on an image of the email (badsender-editor.less).
+@keyframes gallery-busy {
+  to {
+    opacity: 0.35;
+  }
+}
+
+.gallery-busy() {
+  cursor: progress;
+
+  .lucide {
+    animation: gallery-busy 0.6s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lucide {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
+}
+
+.gallery-thumb__action[aria-busy='true'] {
+  .gallery-busy();
+}
+
+// Only the destructive one is coloured, and only on hover: colour carries
+// meaning here rather than decorating three identical buttons
+// (docs/UX_GUIDELINES.md, "Action Icon Color Rules").
+.gallery-thumb__action--danger:hover {
+  background: @gallery-danger-soft;
+  color: @gallery-danger;
+}
+
+// Compact drag proxy (appended to #page while dragging a thumbnail).
+// Centered on the cursor via `cursorAt` so the drop hit-point tracks the mouse.
+.gallery-drag-helper {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  border: 2px solid @gallery-accent;
+  background-color: @gallery-surface;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 2px 8px fade(@gallery-primary-fixed, 30%);
+  pointer-events: none;
+  z-index: 9999;
+}

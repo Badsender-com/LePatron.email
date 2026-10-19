@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { userCan } = require('./user-can.js');
+const { galleryActions } = require('./gallery-actions.js');
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 
 module.exports = (opts) => {
@@ -20,6 +21,11 @@ module.exports = (opts) => {
     // What the user may do, as the server sent it with the current user.
     viewModel.userCan = function (capability) {
       return userCan(viewModel, capability);
+    };
+    // What the user may do to the images of the 'mailing' or 'template'
+    // gallery, for the templates (gallery-actions.js).
+    viewModel.galleryActions = function (type) {
+      return galleryActions(viewModel, type);
     };
     // A reviewer, or a member who may only read the workspace, changes
     // nothing: the toolbar's Save has nothing to write.
