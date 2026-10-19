@@ -9,6 +9,7 @@
 // buffer and it renders its first rows (detached, it renders none, which is
 // why gallery-panel-render.test.js only sees the container).
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
+require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
 const $ = require('jquery');

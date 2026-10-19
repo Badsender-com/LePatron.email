@@ -10,6 +10,7 @@
 // `components` registration: <thumb> and <recycle-scroller> silently became
 // unknown elements.
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
+require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
 const $ = require('jquery');

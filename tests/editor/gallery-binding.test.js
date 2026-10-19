@@ -7,6 +7,7 @@
 // pane of toolbox.tmpl.html. Driven through ko.applyBindings on real markup,
 // as Mosaico does, rather than by calling the handler by hand.
 jest.mock('jquery-ui/ui/widgets/draggable', () => ({}), { virtual: true });
+require('./helpers/intersection-observer');
 
 const Vue = require('vue/dist/vue.common');
 const $ = require('jquery');
