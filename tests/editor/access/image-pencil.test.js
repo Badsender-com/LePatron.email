@@ -6,13 +6,16 @@
 
 // The pencil on an image of the email reopens the image editor, and saving
 // there uploads a copy to the gallery, which the server accepts only with
-// `gallery.manage`. Rendered from the template the editor ships, for each
-// role: the pencil is offered exactly to the roles the server lets save.
+// `gallery.manage`, in an editor that may write the email. Rendered from the
+// template the editor ships, for each role: the pencil is offered exactly to
+// the roles the server lets save.
 
 const fs = require('fs');
 const path = require('path');
 const ko = require('knockout');
-const { userCan } = require('../../../packages/editor/src/js/ext/user-can.js');
+const {
+  galleryActions,
+} = require('../../../packages/editor/src/js/ext/gallery-actions.js');
 const {
   ROLES,
   CAPABILITIES,
@@ -34,12 +37,12 @@ const MIDTOOLS = /<div class="midtools"[\s\S]*?\n {2}<\/div>/
   .exec(TEMPLATE)[0]
   .replace(' data-bind="tooltips: {}"', '');
 
-function pencilShown(currentUser) {
-  const vm = { currentUser };
+function pencilShown(currentUser, canWriteMailing = true) {
+  const vm = { currentUser, canWriteMailing };
   const root = {
     _src: ko.observable('a.png'),
     t: (key) => key,
-    userCan: (capability) => userCan(vm, capability),
+    galleryActions: (type) => galleryActions(vm, type),
     editImage: () => {},
   };
   const host = document.createElement('div');
@@ -59,6 +62,15 @@ describe('the pencil on an image of the email', () => {
       roleCan(role, CAPABILITIES.GALLERY_MANAGE)
     );
   });
+
+  // its copy is saved in the email's gallery, which a read-only editor does
+  // not write
+  it.each(Object.values(ROLES))(
+    'is not offered to a %s in a read-only editor',
+    (role) => {
+      expect(pencilShown(userOfRole(role), false)).toBe(false);
+    }
+  );
 
   it('is not offered before the user is known', () => {
     expect(pencilShown(() => null)).toBe(false);

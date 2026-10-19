@@ -16,12 +16,11 @@ const Vue = require('vue/dist/vue.common');
 const $ = require('jquery');
 const ko = require('knockout');
 const en = require('../../public/lang/badsender-en.js');
-const {
-  ROLES,
-  CAPABILITIES,
-  roleCan,
-} = require('../../packages/shared/access/roles.js');
+const { ROLES } = require('../../packages/shared/access/roles.js');
 const { userOfRole } = require('./helpers/current-user.js');
+const {
+  galleryActions,
+} = require('../../packages/editor/src/js/ext/gallery-actions.js');
 const {
   createGalleryPanel,
 } = require('../../packages/editor/src/js/vue/galleryPlugin.js');
@@ -438,45 +437,58 @@ describe('gallery panel — the tooltip it owns', () => {
   });
 });
 
-// The actions on a thumbnail (rename, re-upload, delete) need
-// `gallery.manage` on the server. The panel reads the capability from the
-// current user, a Knockout observable loaded after the editor opens, and
-// re-reads it once the user arrives. Every role, so a matrix that takes the
-// gallery from one of them breaks here.
-describe('gallery panel — the right to manage', () => {
-  function mountWithUser(currentUser) {
+// What the panel offers on its thumbnails comes from the one rule
+// (ext/gallery-actions.js), for the pane's own gallery; the matrix itself is
+// in access/gallery-actions.test.js. The current user is a Knockout
+// observable loaded after the editor opens, re-read once it arrives.
+describe('gallery panel — the actions it offers', () => {
+  function mountWithUser(currentUser, { type = 'mailing', writable } = {}) {
     const vm = fakeViewModel(IMAGES.slice());
+    vm.templateGallery = ko.observableArray(IMAGES.slice());
+    vm.templateGalleryStatus = ko.observable(IMAGES.length);
     vm.currentUser = currentUser;
-    return { vm, panel: mountVm(vm) };
+    vm.canWriteMailing = writable;
+    const Panel = Vue.extend(createGalleryPanel(vm));
+    return { vm, panel: new Panel({ propsData: { type } }).$mount() };
   }
 
-  it.each(Object.values(ROLES))('follows gallery.manage for a %s', (role) => {
-    const { panel } = mountWithUser(ko.observable(userOfRole(role)()));
-    expect(panel.canManage).toBe(roleCan(role, CAPABILITIES.GALLERY_MANAGE));
-    panel.$destroy();
-  });
+  it.each(
+    Object.values(ROLES).flatMap((role) =>
+      [true, false].flatMap((writable) =>
+        ['mailing', 'template'].map((type) => [role, writable, type])
+      )
+    )
+  )(
+    'asks the rule for a %s (writable: %s) on the %s gallery',
+    (role, w, type) => {
+      const currentUser = ko.observable(userOfRole(role)());
+      const { vm, panel } = mountWithUser(currentUser, { type, writable: w });
+      expect(panel.actions).toEqual(galleryActions(vm, type));
+      panel.$destroy();
+    }
+  );
 
-  it('denies them to a user without gallery.manage', () => {
-    const { panel } = mountWithUser(
-      ko.observable({ role: 'x', capabilities: [] })
-    );
-    expect(panel.canManage).toBe(false);
-    panel.$destroy();
-  });
-
-  it('denies them while the user is unknown, then re-reads once loaded', () => {
+  it('allows nothing while the user is unknown, then re-reads once loaded', () => {
     const user = ko.observable(null);
     const { panel } = mountWithUser(user);
-    expect(panel.canManage).toBe(false);
+    expect(panel.actions).toEqual({
+      rename: false,
+      edit: false,
+      remove: false,
+    });
     user(userOfRole(ROLES.WRITER)());
-    expect(panel.canManage).toBe(true);
+    expect(panel.actions).toEqual({ rename: true, edit: true, remove: true });
     panel.$destroy();
     expect(user.getSubscriptionsCount()).toBe(0);
   });
 
   it('survives an editor whose view-model carries no user', () => {
     const { panel } = mountWithUser(undefined);
-    expect(panel.canManage).toBe(false);
+    expect(panel.actions).toEqual({
+      rename: false,
+      edit: false,
+      remove: false,
+    });
     panel.$destroy();
   });
 });

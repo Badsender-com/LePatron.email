@@ -16,6 +16,7 @@ const renameGalleryImage = require('../../packages/editor/src/js/ext/badsender-r
 const {
   GALLERY_REQUEST_TIMEOUT_MS,
 } = require('../../packages/editor/src/js/ext/gallery-request.js');
+const { userOfRole } = require('./helpers/current-user.js');
 
 const MONGO_ID = '6a2135b7f802c2a6f99a4242';
 const FILE = { name: `${MONGO_ID}-abc.png`, label: 'avant.png', url: 'x' };
@@ -24,6 +25,8 @@ const OTHER = { name: `${MONGO_ID}-def.png`, label: 'autre.png' };
 function viewModel(files = [FILE, OTHER]) {
   const vm = {
     mailingGallery: ko.observableArray(files.map((f) => ({ ...f }))),
+    // who may rename (access/gallery-actions.test.js covers the others)
+    currentUser: userOfRole('regular_user'),
     notifier: { error: jest.fn(), success: jest.fn() },
     t: (key) => key,
   };
@@ -401,6 +404,8 @@ describe('renameImage — no answer in time', () => {
     $.ajax.mockImplementation(timeout);
     const vm = viewModel();
     vm.templateGallery = vm.mailingGallery;
+    // the template's labels are the platform's to rename
+    vm.currentUser = userOfRole('super_admin');
     vm.loadMailingGallery = jest.fn();
     vm.loadTemplateGallery = jest.fn();
 

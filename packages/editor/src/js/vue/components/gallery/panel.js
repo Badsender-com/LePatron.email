@@ -9,8 +9,10 @@ const template = require('./panel.template.js');
 const {
   filterGalleryFiles,
 } = require('../../../../../../shared/gallery/filter.js');
-const { CAPABILITIES } = require('../../../../../../shared/access/roles.js');
-const { userCan } = require('../../../ext/user-can.js');
+const {
+  galleryActions,
+  NO_GALLERY_ACTIONS,
+} = require('../../../ext/gallery-actions.js');
 
 // Fixed cell size for the virtualised grid. The gallery sidebar has a fixed
 // usable width (~364px), so 3 columns of 118px fit with margin to spare.
@@ -55,10 +57,10 @@ module.exports = {
     search: '',
     format: '',
     sortBy: 'date_desc',
-    // whether the user may rename, re-upload and delete (gallery.manage);
+    // what the user may do to this pane's images (ext/gallery-actions.js);
     // mirrored from the Knockout side like `images`, because Vue cannot
-    // observe the viewModel's `currentUser`, and it is null until the user has loaded
-    canManage: false,
+    // observe the viewModel's `currentUser`, which is null until it has loaded
+    actions: NO_GALLERY_ACTIONS,
     // copied per instance: a module-level array put straight into data() is
     // observed once by Vue and then shared by both panels (mailing, template)
     formats: [...FORMATS],
@@ -192,9 +194,9 @@ module.exports = {
       if (known) this.reveal(array.filter((file) => !known.has(file.name)));
     });
     // The editor opens before the user is known, and the actions have to
-    // appear once it is. Read through `userCan`, never the payload.
+    // appear once it is. Read through the one rule, never the payload.
     this.mirror(this.viewModel.currentUser, () => {
-      this.canManage = userCan(this.viewModel, CAPABILITIES.GALLERY_MANAGE);
+      this.actions = galleryActions(this.viewModel, this.type);
     });
   },
   beforeDestroy() {

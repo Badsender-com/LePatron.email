@@ -8,8 +8,7 @@ const {
   nextCopyLabel,
 } = require('../../../../shared/gallery/label.js');
 const { isEditableImage } = require('../../../../shared/gallery/filter.js');
-const { CAPABILITIES } = require('../../../../shared/access/roles.js');
-const { userCan } = require('./user-can.js');
+const { mayDo } = require('./gallery-actions.js');
 const { GALLERY_REQUEST_TIMEOUT_MS } = require('./gallery-request.js');
 
 // Reopening the image editor on an image that is already stored — from a
@@ -49,7 +48,7 @@ function editImagePlugin(viewModel) {
   viewModel.editImage = function editImage(src, domElement) {
     const storedName = storedNameOf(typeof src === 'function' ? src() : src);
     const input = findUploadInput(domElement);
-    if (!mayOpenEditorOn(viewModel, storedName, input)) {
+    if (!mayOpenEditorOn(viewModel, BLOCK_GALLERY_TYPE, storedName, input)) {
       return Promise.resolve(false);
     }
     return labelOfStoredImage(viewModel, storedName).then((sourceLabel) =>
@@ -78,7 +77,7 @@ function editImagePlugin(viewModel) {
     panelElement
   ) {
     const input = findUploadInput(panelElement);
-    if (!mayOpenEditorOn(viewModel, file.name, input)) {
+    if (!mayOpenEditorOn(viewModel, type, file.name, input)) {
       return Promise.resolve(false);
     }
     return handOver(viewModel, {
@@ -92,13 +91,11 @@ function editImagePlugin(viewModel) {
 
 // Every reason not to open the editor, each one reported: a click that does
 // nothing at all is the failure nobody can describe.
-function mayOpenEditorOn(viewModel, storedName, input) {
-  // Saving uploads a copy to the gallery, which the server refuses without
-  // gallery.manage. The thumbnail and the pencil are not drawn without it;
-  // refusing here as well means a new way in cannot open an editor whose
-  // save can only fail.
-  if (!userCan(viewModel, CAPABILITIES.GALLERY_MANAGE)) {
-    viewModel.notifier.error(viewModel.t('gallery-edit-image-forbidden'));
+function mayOpenEditorOn(viewModel, type, storedName, input) {
+  // Saving uploads a copy to the gallery (gallery-actions.js). The thumbnail
+  // and the pencil are not drawn without the right; refusing here as well
+  // means a new way in cannot open an editor whose save can only fail.
+  if (!mayDo(viewModel, type, 'edit', 'gallery-edit-image-forbidden')) {
     return false;
   }
 

@@ -18,6 +18,7 @@ const {
 // the real strings, so a key that exists nowhere fails here rather than
 // reaching a user as its own name
 const FR = require('../../public/lang/badsender-fr.js');
+const { userOfRole } = require('./helpers/current-user.js');
 
 const FILE = {
   name: '507f1f77bcf86cd799439011-aaa.png',
@@ -32,6 +33,8 @@ function makeViewModel(files) {
   return {
     mailingGallery: ko.observableArray(files),
     mailingGalleryStatus: ko.observable(files.length),
+    // who may delete (access/gallery-actions.test.js covers the others)
+    currentUser: userOfRole('regular_user'),
     notifier: { success: jest.fn(), error: jest.fn() },
     // mosaico's own `tt`, reproduced faithfully — the `String.replace(regex,
     // value)` form, not `split().join()`. It has to be the real form: `replace`

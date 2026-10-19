@@ -14,6 +14,7 @@ const {
   replaceByName,
   removeByName,
 } = require('./gallery-list.js');
+const { mayDo } = require('./gallery-actions.js');
 
 // A gallery file is stored as `<mongoId>-<hash>.<ext>`: the prefix is the id of
 // the mailing or template the gallery belongs to, which is what the route needs.
@@ -54,6 +55,12 @@ function renameGalleryImage(viewModel) {
 
     // nothing to do — not a failure, and nothing to say
     if (!label || label === (file.label || name)) return Promise.resolve(false);
+
+    // the rename button is not drawn without the right; this keeps any other
+    // way in from sending what the server would refuse
+    if (!mayDo(viewModel, type, 'rename', 'gallery-rename-image-forbidden')) {
+      return Promise.resolve(false);
+    }
 
     // these two are failures, and used to be silent: the user watched their new
     // name disappear with no explanation and no way to get the text back

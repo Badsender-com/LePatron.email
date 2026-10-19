@@ -46,11 +46,14 @@ module.exports = {
     // the panel hands its copy down, so the thumbnail needs no access to the
     // Mosaico viewModel of its own
     strings: { type: Object, required: true },
-    // Whether the user holds `gallery.manage`, read by the panel from the
-    // current user. The server refuses a rename, a re-upload and a delete
-    // without it; a button that can only fail is not shown (AGENTS.md,
-    // "Rights"). Denied until told otherwise, like `userCan` itself.
-    canManage: { type: Boolean, default: false },
+    // What the user may do to this gallery's images, `{ rename, edit,
+    // remove }`, decided by ext/gallery-actions.js and handed down by the
+    // panel. A button that can only fail is not shown (AGENTS.md, "Rights").
+    // Denied until told otherwise, like `userCan` itself.
+    actions: {
+      type: Object,
+      default: () => ({ rename: false, edit: false, remove: false }),
+    },
   },
   data: () => ({
     editing: false,
@@ -83,7 +86,11 @@ module.exports = {
     // the one place a `title` does not reliably show, so the explanation
     // would have been invisible anyway. The GIF badge already says why.
     canEdit() {
-      return isEditableImage(this.file);
+      return this.actions.edit && isEditableImage(this.file);
+    },
+    hasActions() {
+      const { rename, edit, remove } = this.actions;
+      return rename || edit || remove;
     },
     editTitle() {
       return this.withLabel(this.strings.editAction);
@@ -120,7 +127,7 @@ module.exports = {
     startEdit() {
       // the label's double-click is the second way in, and has to be refused
       // on the same terms as the rename button
-      if (this.editing || !this.canManage) return;
+      if (this.editing || !this.actions.rename) return;
       this.draft = this.label;
       this.editing = true;
       this.$nextTick(() => {
@@ -175,7 +182,7 @@ module.exports = {
     // must not insert the image (ADR 0005). Without the right to rename there
     // is no double-click to protect, and the band inserts like the rest.
     onLabelClick(event) {
-      if (this.canManage) event.stopPropagation();
+      if (this.actions.rename) event.stopPropagation();
     },
     // Blur commits, so clicking the delete button would first save a rename on
     // an image that is about to disappear. Drop the edit before that click
@@ -213,7 +220,7 @@ module.exports = {
              the image would have made the thumbnail undraggable while shown,
              since jQuery UI's draggable excludes buttons from its handle. -->
         <div class="gallery-thumb__overlay" data-gallery-overlay>
-          <div v-if="canManage" class="gallery-thumb__actions">
+          <div v-if="hasActions" class="gallery-thumb__actions">
             <button
               v-if="canEdit"
               type="button"
@@ -226,6 +233,7 @@ module.exports = {
               <span class="lucide lucide-pencil"></span>
             </button>
             <button
+              v-if="actions.rename"
               ref="renameButton"
               type="button"
               class="gallery-thumb__action"
@@ -237,6 +245,7 @@ module.exports = {
               <span class="lucide lucide-tag"></span>
             </button>
             <button
+              v-if="actions.remove"
               type="button"
               class="gallery-thumb__action gallery-thumb__action--danger"
               data-gallery-remove

@@ -19,6 +19,9 @@ const STRINGS = {
   renameInput: 'rename-input',
 };
 
+const ALL = { rename: true, edit: true, remove: true };
+const NONE = { rename: false, edit: false, remove: false };
+
 const FILE = {
   name: '6a2135b7f802c2a6f99a4242-abc.png',
   label: 'mon image.png',
@@ -28,7 +31,7 @@ const FILE = {
 function mount(file = FILE) {
   const Component = Vue.extend(Thumb);
   return new Component({
-    propsData: { file, strings: STRINGS, canManage: true },
+    propsData: { file, strings: STRINGS, actions: ALL },
   }).$mount();
 }
 
@@ -292,7 +295,7 @@ describe('thumbnail rename — collisions with the other actions', () => {
   it('inserts the image from the label for a user who cannot rename', () => {
     const Component = Vue.extend(Thumb);
     const vm = new Component({
-      propsData: { file: FILE, strings: STRINGS, canManage: false },
+      propsData: { file: FILE, strings: STRINGS, actions: NONE },
     }).$mount();
     const selected = [];
     vm.$on('select', () => selected.push(1));
