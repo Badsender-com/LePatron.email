@@ -89,18 +89,19 @@ async function destroy(mongoId, imageName) {
   return gallery;
 }
 
-// Seeded from the storage listing, in the V1 shape: a gallery created after
-// the V1 migration has run will never be migrated. The storage gives no
-// upload date, so the images date from the gallery, as the migration does it.
-// `except` names files being added right now: they are pushed with what their
-// upload knows (label, dimensions), which a seed from the listing would lose.
+// Seeded from the storage listing, in the V1 shape. The listing gives no upload
+// date, and the gallery's own would be wrong for any image added after it, so
+// a seeded image carries none: the gallery backfill script reads the real one
+// from the stored file. `except` names files being added right now: they are
+// pushed with what their upload knows (label, dimensions, date), which a seed
+// from the listing would lose.
 function createGallery(mongoId, { except = [] } = {}) {
   return fileManager.list(mongoId).then((files) => {
     return new Galleries({
       creationOrWireframeId: mongoId,
       files: files
         .filter((file) => !except.includes(file.name))
-        .map(toGalleryFile),
+        .map((file) => toGalleryFile(file, { uploadedAt: null })),
     }).save();
   });
 }
@@ -123,7 +124,7 @@ async function findOrCreateGallery(mongoId, options) {
 // A gallery image carries more than the uploader returns: the V1 fields of
 // US-01. Build them in one place, so a stored document and the response that
 // announces it can never describe the same image differently.
-function toGalleryFile(file) {
+function toGalleryFile(file, { uploadedAt = new Date() } = {}) {
   // `uploadedName` and `originalName` only serve to seed the label (the slug
   // keys the template assets map, not the gallery): stored, they would be
   // stale copies of it that no reader of the gallery uses.
@@ -133,7 +134,7 @@ function toGalleryFile(file) {
     label: labelForUpload(file.name, uploadedName || originalName),
     source: 'upload',
     externalMetadata: {},
-    uploadedAt: new Date(),
+    ...(uploadedAt && { uploadedAt }),
   };
 }
 

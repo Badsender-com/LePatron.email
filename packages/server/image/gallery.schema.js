@@ -13,7 +13,7 @@ const formatFilenameForJqueryFileupload = require('../helpers/format-filename-fo
  * @apiSuccess {String} files.url used by mosaico editor
  * @apiSuccess {String} files.deleteUrl used by mosaico editor
  * @apiSuccess {String} files.thumbnailUrl used by mosaico editor
- * @apiSuccess {String} files.label human-readable label (falls back to file.name for non-migrated images)
+ * @apiSuccess {String} files.label human-readable label (falls back to file.name for an image stored before labels existed)
  * @apiSuccess {String} files.source image origin (e.g. 'upload', 'dam_bynder')
  * @apiSuccess {Object} files.externalMetadata metadata from external sources (DAM, etc.)
  * @apiSuccess {String} files.uploadedAt ISO date the image joined the gallery
@@ -66,7 +66,7 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   // Copy what is stored, not what the getter shows: read through it, an image
   // from before the V1 fields would come back with its fallbacks (a label
   // equal to its file name, a null date) written down as real values, and
-  // the migration could no longer tell it apart from a labelled one.
+  // nothing could tell it apart from a labelled, dated one any more.
   const storedFiles = this.get('files', null, { getters: false }) || [];
   const files = storedFiles.map((file) =>
     mapValues(file, (value) =>

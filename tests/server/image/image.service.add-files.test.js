@@ -207,9 +207,10 @@ describe('imageService.findOrCreateGallery', () => {
     expect(second).toBeTruthy();
   });
 
-  // A gallery created after the V1 migration has run is never migrated: the
-  // images it finds in storage must be born with the V1 fields.
-  it('seeds a new gallery from the storage listing, in the V1 shape', async () => {
+  // Images found in storage are born with the V1 fields, but no upload date:
+  // the gallery's own would be wrong for any of them added after it, and the
+  // backfill script reads the real one from the stored file.
+  it('seeds a new gallery from the storage listing, in the V1 shape, undated', async () => {
     const id = newCreationId();
     const name = storedName(id);
     mockStorage.write(name);
@@ -222,7 +223,6 @@ describe('imageService.findOrCreateGallery', () => {
         label: name,
         source: 'upload',
         externalMetadata: {},
-        uploadedAt: expect.any(String),
       },
     ]);
   });
