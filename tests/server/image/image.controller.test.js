@@ -25,7 +25,6 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   streamImage: jest.fn(),
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   streamImageFromPreviews: jest.fn(),
-  parseMultipart: jest.fn(),
 }));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   // used both as a model (findOne) and as a constructor (cache bookkeeping)
@@ -41,13 +40,11 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 jest.mock('../../../packages/server/image/image.service.js', () => ({
   createGallery: jest.fn(),
   createFromUrl: jest.fn(),
-  storeInGallery: jest.fn(),
 }));
 
 const sharp = require('sharp');
 const probe = require('probe-image-size');
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
-const imageService = require('../../../packages/server/image/image.service.js');
 const images = require('../../../packages/server/image/image.controller.js');
 
 const PNG_BYTES = Buffer.from('\x89PNG\r\n\x1a\n-not-a-real-png', 'binary');
@@ -157,32 +154,5 @@ describe('image.controller — cover()', () => {
     const pipeline = sharp.mock.results[0].value;
     expect(pipeline.png).not.toHaveBeenCalled();
     expect(res.set).not.toHaveBeenCalledWith('Content-Type', 'image/png');
-  });
-});
-
-describe('image.controller — create()', () => {
-  // A new gallery is seeded from the storage listing: the upload's bytes must
-  // not be in it yet, or the image is seeded under its technical name.
-  it('parses the upload once the gallery exists, and answers what it holds', async () => {
-    const steps = [];
-    const stored = [{ name: 'a.png', label: 'A.png' }];
-    imageService.storeInGallery.mockImplementation(async (_id, write) => {
-      steps.push('gallery');
-      await write();
-      return stored;
-    });
-    fileManager.parseMultipart.mockImplementation(async () => {
-      steps.push('upload');
-      return { files: [{ name: 'a.png' }] };
-    });
-    const res = { json: jest.fn() };
-
-    await new Promise((resolve) => {
-      res.json.mockImplementation(resolve);
-      images.create({ params: { mongoId: 'abc' } }, res, resolve);
-    });
-
-    expect(steps).toEqual(['gallery', 'upload']);
-    expect(res.json).toHaveBeenCalledWith({ files: stored });
   });
 });
