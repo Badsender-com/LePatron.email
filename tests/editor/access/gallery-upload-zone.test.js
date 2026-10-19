@@ -5,10 +5,10 @@
 'use strict';
 
 // The upload zone above each gallery: a button and a file drop. In an editor
-// that may not write the email, nothing writes in the email's gallery, so its
-// zone goes, on the same rule as the thumbnails' actions
-// (ext/gallery-actions.js). Rendered from the template the editor ships, for
-// each role. The template's gallery keeps its zone as it was.
+// that may not write the email, nothing is uploaded, to the email's gallery
+// or to the template's, so both zones go, on the same rule as the
+// thumbnails' actions (ext/gallery-actions.js). Rendered from the template
+// the editor ships, for each role.
 
 const fs = require('fs');
 const path = require('path');
@@ -71,27 +71,26 @@ const BOTH_EDITORS = Object.values(ROLES).flatMap((role) => [
   [role, 'a read-only editor', false],
 ]);
 
-describe('the upload zone of the email gallery', () => {
-  it.each(BOTH_EDITORS)('for a %s in %s', (role, _, writable) => {
-    expect(zoneShown('mailing', userOfRole(role), writable)).toBe(
+const GALLERIES = [
+  ['email', 'mailing'],
+  ['template', 'template'],
+];
+
+describe.each(GALLERIES)('the upload zone of the %s gallery', (_, type) => {
+  it.each(BOTH_EDITORS)('for a %s in %s', (role, __, writable) => {
+    expect(zoneShown(type, userOfRole(role), writable)).toBe(
       writable && roleCan(role, CAPABILITIES.GALLERY_MANAGE)
     );
   });
 
   it('is not offered before the user is known', () => {
-    expect(zoneShown('mailing', () => null)).toBe(false);
+    expect(zoneShown(type, () => null)).toBe(false);
   });
 
   // the matrix grants it to every role today; the next one may not
   it('is not offered to a user without gallery.manage', () => {
-    expect(zoneShown('mailing', () => ({ role: 'x', capabilities: [] }))).toBe(
+    expect(zoneShown(type, () => ({ role: 'x', capabilities: [] }))).toBe(
       false
     );
-  });
-});
-
-describe('the upload zone of the template gallery', () => {
-  it.each(BOTH_EDITORS)('stays as it was for a %s in %s', (role, _, w) => {
-    expect(zoneShown('template', userOfRole(role), w)).toBe(true);
   });
 });

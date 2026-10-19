@@ -23,7 +23,10 @@ const NONE = Object.freeze({
  *   workspace or folder), the template's needs `platform.manage`, since
  *   templates are edited by the platform alone.
  * - In an editor that may not write the email, nothing writes in its
- *   gallery.
+ *   gallery, and nothing is uploaded to the template's: no zone to drop a
+ *   file on, and no editing either, whose copy is uploaded through that
+ *   zone's input (badsender-edit-image.js). Renaming and deleting a
+ *   template image keep their own rule, which says nothing of the email.
  *
  * Denied while the user is unknown, like `userCan`. Reads the current user
  * observable, so a binding calling this re-evaluates once the user arrives.
@@ -40,10 +43,11 @@ function galleryActions(vm, type) {
   }
   if (type === 'template') {
     const ownsTemplates = userCan(vm, CAPABILITIES.PLATFORM_MANAGE);
+    const uploads = manages && vm.canWriteMailing !== false;
     return {
-      upload: manages,
+      upload: uploads,
       rename: manages && ownsTemplates,
-      edit: manages,
+      edit: uploads,
       remove: manages,
     };
   }

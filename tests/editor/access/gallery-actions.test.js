@@ -36,6 +36,9 @@ const FILE = {
 
 // What the decisions above give, written from them rather than read off the
 // code under test.
+//
+// A read-only editor uploads nothing, in either gallery: no zone to drop a
+// file on, and no editing, whose copy travels through that zone.
 function allowed(role, writable, type) {
   const manages = roleCan(role, CAPABILITIES.GALLERY_MANAGE);
   if (type === 'mailing' && !writable) {
@@ -44,9 +47,9 @@ function allowed(role, writable, type) {
   const parentScope =
     type === 'mailing' || roleCan(role, CAPABILITIES.PLATFORM_MANAGE);
   return {
-    upload: manages,
+    upload: manages && writable,
     rename: manages && parentScope,
-    edit: manages,
+    edit: manages && writable,
     remove: manages,
   };
 }
