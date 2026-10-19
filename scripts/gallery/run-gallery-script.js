@@ -19,7 +19,15 @@
 const mongoose = require('mongoose');
 
 const config = require('../../packages/server/node.config.js');
-const { Galleries } = require('../../packages/server/common/models.common.js');
+const modelNames = require('../../packages/server/constant/model.names.js');
+const GallerySchema = require('../../packages/server/image/gallery.schema.js');
+
+// The gallery model alone, not models.common.js: loading every model of the
+// application also loads the mail service, which opens an SMTP connection to
+// check it, and registers indexes this script has no business building.
+const Galleries =
+  mongoose.models[modelNames.GalleryModel] ||
+  mongoose.model(modelNames.GalleryModel, GallerySchema);
 
 const PAGE_SIZE = 100;
 const DEFAULT_CONCURRENCY = 4;
@@ -244,6 +252,8 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
     await mongoose.connect(config.database, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      // a dry-run writes nothing, indexes included
+      autoIndex: false,
     });
     printTarget(script, mongoose.connection.name);
     confirmDatabase(mongoose.connection.name, database);

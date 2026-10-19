@@ -1,17 +1,19 @@
 'use strict';
 
-jest.mock('mongoose', () => ({
-  connect: jest.fn().mockResolvedValue(undefined),
-  disconnect: jest.fn().mockResolvedValue(undefined),
-  connection: { name: 'app' },
-}));
-jest.mock('../../packages/server/common/models.common.js', () => ({
-  Galleries: { collection: {} },
-}));
+jest.mock('mongoose', () => {
+  const galleries = { collection: {} };
+  return {
+    connect: jest.fn().mockResolvedValue(undefined),
+    disconnect: jest.fn().mockResolvedValue(undefined),
+    connection: { name: 'app' },
+    models: {},
+    model: jest.fn(() => galleries),
+  };
+});
+jest.mock('../../packages/server/image/gallery.schema.js', () => ({}));
 
 const mongoose = require('mongoose');
 const config = require('../../packages/server/node.config.js');
-const { Galleries } = require('../../packages/server/common/models.common.js');
 const {
   runGalleryScript,
   parseArgs,
@@ -20,6 +22,8 @@ const {
   eachWithConcurrency,
   DEFAULT_CONCURRENCY,
 } = require('../../scripts/gallery/run-gallery-script.js');
+
+const Galleries = mongoose.model();
 
 // A real run names the database it writes to; the mocked connection is "app".
 const CONFIRMED = ['--database=app'];
@@ -180,6 +184,19 @@ describe('run-gallery-script', () => {
       expect(code).toBe(0);
       expect(dry.processGallery).toHaveBeenCalledTimes(1);
     });
+  });
+
+  // A dry-run writes nothing, indexes included: on a copy restored without
+  // them, Mongoose would otherwise build every index of the model.
+  it('connects without building indexes', async () => {
+    Galleries.collection = fakeCollection(galleries(1));
+
+    await runGalleryScript(script(), { argv: ['--dry-run'] });
+
+    expect(mongoose.connect).toHaveBeenCalledWith(
+      config.database,
+      expect.objectContaining({ autoIndex: false })
+    );
   });
 
   it('pages through the galleries by _id, and processes each once', async () => {
