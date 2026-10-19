@@ -97,10 +97,55 @@ describe('thumbnail rename — committing', () => {
     const el = input(vm);
     el.value = 'par la touche entree.png';
     el.dispatchEvent(new Event('input'));
-    el.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', keyCode: 13 }));
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13 })
+    );
     await Vue.nextTick();
 
     expect(emitted).toEqual(['par la touche entree.png']);
+    expect(input(vm)).toBeNull();
+    vm.$destroy();
+  });
+
+  // A button acts on the press of Enter, and the field it opens takes the
+  // focus before the key is released: that release lands on the field. Read
+  // on keyup, it committed the unchanged label and closed the field in the
+  // very keystroke that opened it.
+  it('stays open when the Enter that opened it is released', async () => {
+    const vm = mount();
+    document.body.appendChild(vm.$el);
+    const button = vm.$el.querySelector('[data-gallery-rename]');
+    button.focus();
+
+    // what a browser does for Enter on a button: keydown, click, keyup
+    const enter = { key: 'Enter', keyCode: 13, bubbles: true };
+    button.dispatchEvent(new KeyboardEvent('keydown', enter));
+    button.click();
+    await Vue.nextTick();
+    expect(document.activeElement).toBe(input(vm));
+    document.activeElement.dispatchEvent(new KeyboardEvent('keyup', enter));
+    await Vue.nextTick();
+
+    expect(input(vm)).not.toBeNull();
+    expect(vm.editing).toBe(true);
+    vm.$destroy();
+    vm.$el.remove();
+  });
+
+  it('drops the change when Escape is pressed in the field', async () => {
+    const vm = mount();
+    const emitted = [];
+    vm.$on('rename', () => emitted.push(1));
+    vm.startEdit();
+    await Vue.nextTick();
+    vm.draft = 'jamais enregistré.png';
+
+    input(vm).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27 })
+    );
+    await Vue.nextTick();
+
+    expect(emitted).toHaveLength(0);
     expect(input(vm)).toBeNull();
     vm.$destroy();
   });
@@ -158,11 +203,19 @@ describe('thumbnail rename — committing', () => {
     await Vue.nextTick();
     vm.draft = 'composition.png';
 
-    vm.onEnter({ isComposing: true, keyCode: 13 });
+    // The flags describe the keydown of the key that picks a candidate; by
+    // its keyup the composition is over, so the guard has to sit on keydown.
+    const press = (init) =>
+      input(vm).dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', ...init })
+      );
+    press({ isComposing: true, keyCode: 13 });
+    press({ keyCode: 229 });
+    await Vue.nextTick();
     expect(emitted).toHaveLength(0);
     expect(vm.editing).toBe(true);
 
-    vm.onEnter({ isComposing: false, keyCode: 13 });
+    press({ keyCode: 13 });
     expect(emitted).toEqual(['composition.png']);
     vm.$destroy();
   });

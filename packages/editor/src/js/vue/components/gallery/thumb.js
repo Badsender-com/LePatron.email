@@ -147,7 +147,10 @@ module.exports = {
       }
       this.$emit('rename', this.file, next);
     },
-    // Enter also confirms a candidate in an IME. Committing then would save a
+    // On keydown, not keyup: Enter on the rename button opens this field on
+    // the press, and the release of that same key lands here. Enter also
+    // confirms a candidate in an IME, which only the keydown says (by its
+    // keyup the composition is over); committing then would save a
     // half-composed word and close the editor mid-sentence.
     onEnter(event) {
       if (event.isComposing || event.keyCode === 229) return;
@@ -241,8 +244,8 @@ module.exports = {
         :aria-label="strings.renameInput"
         @click.stop
         @dblclick.stop
-        @keyup.enter="onEnter"
-        @keyup.esc="cancelEdit"
+        @keydown.enter="onEnter"
+        @keydown.esc="cancelEdit"
         @blur="commitEdit"
       />
       <div
