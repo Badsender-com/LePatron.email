@@ -93,6 +93,22 @@ describe('deleting a gallery image', () => {
     expect(window.confirm.mock.calls[0][0]).toContain('mon image.png');
   });
 
+  // A label is free text, and `String.replace` with a string reads `$&`,
+  // `` $` `` and `$'` in it as patterns: the dialog would name something else
+  // than the image about to go.
+  it.each(['prix $& remise.png', "avant $' après.png", 'a $` b.png'])(
+    'names %s exactly as it is labelled',
+    (label) => {
+      window.confirm = jest.fn().mockReturnValue(false);
+
+      viewModel.removeImage({ ...FILE, label }, 'mailing');
+
+      expect(window.confirm.mock.calls[0][0]).toContain(
+        `«\u00a0${label}\u00a0»`
+      );
+    }
+  );
+
   it('falls back to the stored name when the image has no label', () => {
     window.confirm = jest.fn().mockReturnValue(false);
 

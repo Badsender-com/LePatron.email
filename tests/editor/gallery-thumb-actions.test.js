@@ -73,6 +73,15 @@ describe('thumbnail actions — what the overlay holds', () => {
     vm.$destroy();
   });
 
+  // `String.replace` with a string reads `$&` and its kin as patterns
+  it('names an image whose label holds a replacement pattern as it is', () => {
+    const vm = mount({ ...FILE, label: "a $& b $' c.png" });
+    expect(remove(vm).getAttribute('aria-label')).toBe(
+      "Supprimer a $& b $' c.png"
+    );
+    vm.$destroy();
+  });
+
   it('shows the same text on hover as it gives to assistive technology', () => {
     const vm = mount();
     [edit(vm), rename(vm), remove(vm)].forEach((button) => {

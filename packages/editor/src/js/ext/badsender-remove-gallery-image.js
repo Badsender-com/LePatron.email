@@ -7,6 +7,7 @@ const {
   timedOut,
   reloadAfterTimeout,
 } = require('./gallery-request.js');
+const { fillLabel } = require('../vue/utils/fill-label.js');
 
 function removeGalleryImage(viewModel) {
   viewModel.removeImage = function (data, type) {
@@ -23,11 +24,8 @@ function removeGalleryImage(viewModel) {
     // deletion only removes the image from the gallery list, the stored file
     // stays where it is so emails already built with it keep working.
     var label = data.label || data.name;
-    if (
-      !window.confirm(viewModel.t('gallery-remove-image-confirm', { label }))
-    ) {
-      return;
-    }
+    var question = fillLabel(viewModel.t('gallery-remove-image-confirm'), label);
+    if (!window.confirm(question)) return;
 
     $.ajax({
       url: deleteUrl,

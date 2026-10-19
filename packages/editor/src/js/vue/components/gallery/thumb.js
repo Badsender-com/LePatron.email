@@ -38,6 +38,7 @@ const {
   sanitizeLabel,
   MAX_LABEL_LENGTH,
 } = require('../../../../../../shared/gallery/label.js');
+const { fillLabel } = require('../../utils/fill-label.js');
 
 module.exports = {
   name: 'Thumb',
@@ -115,7 +116,7 @@ module.exports = {
     // thumbnail apart from "delete" on the next, both in a screen reader's
     // list of buttons and for voice control.
     withLabel(template) {
-      return String(template || '').replace('__label__', this.label);
+      return fillLabel(template, this.label);
     },
     startEdit() {
       // the label's double-click is the second way in, and has to be refused
