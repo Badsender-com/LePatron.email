@@ -17,7 +17,7 @@
  *
  * Usage:
  *   node scripts/backfill-gallery-dimensions.js --dry-run [--concurrency=N]
- *   node scripts/backfill-gallery-dimensions.js --database=<name> [--concurrency=N]
+ *   node scripts/backfill-gallery-dimensions.js --confirm-database=<name> [--concurrency=N]
  *
  * A run that writes names its database, as the dry-run prints it: the run
  * refuses to start on any other.

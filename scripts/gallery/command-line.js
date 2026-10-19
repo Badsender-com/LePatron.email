@@ -33,14 +33,16 @@ function parseConcurrency(value) {
 
 // A run that writes names its database: the configuration falls back on a
 // default (production on an application instance, a local base elsewhere), and
-// an override that did not apply would otherwise go unnoticed.
+// an override that did not apply would otherwise go unnoticed. Not
+// `--database`: the configuration reads the command line too (rc), and would
+// take the name for its connection string.
 function parseArgs(argv) {
   const dryRun = argv.includes('--dry-run');
-  const database = flagValue(argv, '--database=') || null;
+  const database = flagValue(argv, '--confirm-database=') || null;
   if (!dryRun && !database) {
     throw new Error(
       'A run without --dry-run writes: name its database with ' +
-        '--database=<name>, as the dry-run prints it.'
+        '--confirm-database=<name>, as the dry-run prints it.'
     );
   }
   const concurrency = parseConcurrency(flagValue(argv, '--concurrency='));
@@ -50,7 +52,7 @@ function parseArgs(argv) {
 function confirmDatabase(connected, database) {
   if (database && database !== connected) {
     throw new Error(
-      `--database=${database} does not match the database this run is ` +
+      `--confirm-database=${database} does not match the database this run is ` +
         `connected to, "${connected}". Nothing was written.`
     );
   }

@@ -29,7 +29,7 @@ const {
 const Galleries = mongoose.model();
 
 // A real run names the database it writes to; the mocked connection is "app".
-const CONFIRMED = ['--database=app'];
+const CONFIRMED = ['--confirm-database=app'];
 
 const URI_WITH_CREDENTIALS =
   'mongodb://operator:s3cr3t-password@db.example.test:27017/app';
@@ -115,9 +115,26 @@ describe('run-gallery-script', () => {
 
     // A run that writes must say where, before anything connects.
     it('refuses a real run that does not name its database', () => {
-      expect(() => parseArgs([])).toThrow(/--database=<name>/);
-      expect(() => parseArgs(['--database='])).toThrow(/--database=<name>/);
+      expect(() => parseArgs([])).toThrow(/--confirm-database=<name>/);
+      expect(() => parseArgs(['--confirm-database='])).toThrow(
+        /--confirm-database=<name>/
+      );
       expect(parseArgs(CONFIRMED).database).toBe('app');
+    });
+
+    // The configuration reads the command line too (rc): a flag named after
+    // one of its keys would replace the connection string with a bare name.
+    it('takes a confirmation the configuration does not read', () => {
+      const { argv } = process;
+      process.argv = ['node', 'script', ...CONFIRMED];
+      try {
+        jest.isolateModules(() => {
+          const fresh = require('../../packages/server/node.config.js');
+          expect(fresh.database).not.toBe('app');
+        });
+      } finally {
+        process.argv = argv;
+      }
     });
   });
 
@@ -189,13 +206,13 @@ describe('run-gallery-script', () => {
       const writing = script({ preflight: jest.fn() });
 
       const code = await runGalleryScript(writing, {
-        argv: ['--database=app-copy'],
+        argv: ['--confirm-database=app-copy'],
       });
 
       expect(code).toBe(1);
       expect(writing.preflight).not.toHaveBeenCalled();
       expect(writing.processGallery).not.toHaveBeenCalled();
-      expect(output()).toMatch(/--database=app-copy.*"app"/);
+      expect(output()).toMatch(/--confirm-database=app-copy.*"app"/);
     });
 
     it('runs a dry-run without confirmation', async () => {
