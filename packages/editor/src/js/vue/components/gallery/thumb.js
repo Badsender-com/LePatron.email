@@ -187,6 +187,10 @@ module.exports = {
     // Blur commits, so clicking the delete button would first save a rename on
     // an image that is about to disappear. Drop the edit before that click
     // lands — mousedown runs before the input loses focus.
+    //
+    // The bar's three buttons take no focus from a click (`.prevent` on their
+    // mousedown): a focus inside the bar is then a keyboard one, which is
+    // what keeps the bar shown (gallery-vue-thumb.less). A click still clicks.
     onRemoveDown() {
       this.editing = false;
     },
@@ -228,6 +232,7 @@ module.exports = {
               data-gallery-edit
               :title="editTitle"
               :aria-label="editTitle"
+              @mousedown.prevent
               @click.stop="$emit('edit', file, $event.currentTarget)"
             >
               <span class="lucide lucide-pencil"></span>
@@ -240,6 +245,7 @@ module.exports = {
               data-gallery-rename
               :title="renameTitle"
               :aria-label="renameTitle"
+              @mousedown.prevent
               @click.stop="startEdit"
             >
               <span class="lucide lucide-tag"></span>
@@ -251,7 +257,7 @@ module.exports = {
               data-gallery-remove
               :title="removeTitle"
               :aria-label="removeTitle"
-              @mousedown="onRemoveDown"
+              @mousedown.prevent="onRemoveDown"
               @click.stop="$emit('remove', file)"
             >
               <span class="lucide lucide-trash-2"></span>

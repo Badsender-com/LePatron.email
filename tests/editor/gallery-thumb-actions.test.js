@@ -131,6 +131,22 @@ describe('thumbnail actions — where the overlay sits', () => {
     expect(vm.$el.querySelector('.gallery-thumb__remove')).toBeNull();
     vm.$destroy();
   });
+
+  // A focus inside the bar keeps it shown (gallery-vue-thumb.less). Taken
+  // from a click, it kept the bar up on that thumbnail while the pointer was
+  // over another one; so only the keyboard puts it there.
+  it('lets no click put the focus in the bar', () => {
+    const vm = mount();
+    [edit(vm), rename(vm), remove(vm)].forEach((button) => {
+      const press = new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+      });
+      button.dispatchEvent(press);
+      expect(press.defaultPrevented).toBe(true);
+    });
+    vm.$destroy();
+  });
 });
 
 describe('thumbnail actions — what each one does', () => {

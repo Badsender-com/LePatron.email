@@ -16,6 +16,7 @@ const DEFAULT_PRIMARY = '#093040';
 const DEFAULT_ACCENT = '#00acdc';
 
 let root;
+let compiled;
 
 beforeAll(async () => {
   // style_variables.less first, as badsender-editor.less imports it
@@ -27,6 +28,7 @@ beforeAll(async () => {
     ].join('\n'),
     { paths: [CSS_DIR] }
   );
+  compiled = css;
   root = postcss.parse(css);
 });
 
@@ -40,6 +42,11 @@ function valuesOf(selector, prop) {
   return values;
 }
 
+// the last compound of a selector, the element its rule styles
+function subjectOf(selector) {
+  return selector.split(/\s*[\s>+~]\s*/).pop();
+}
+
 // the selectors of the rules that set `prop` to `value` on `target`
 function selectorsSetting(target, prop, value) {
   const selectors = [];
@@ -47,7 +54,7 @@ function selectorsSetting(target, prop, value) {
     rule.walkDecls(prop, (decl) => {
       if (decl.value !== value) return;
       rule.selectors
-        .filter((selector) => selector.endsWith(target))
+        .filter((selector) => subjectOf(selector).startsWith(target))
         .forEach((selector) => selectors.push(selector));
     });
   });
@@ -65,10 +72,26 @@ describe('gallery styles — the thumbnail’s action bar', () => {
       '.gallery-thumb__actions',
       'pointer-events',
       'auto'
-    ).map((selector) => selector.replace('__actions', '__overlay'));
+    ).map((selector) => selector.replace(/ \.gallery-thumb__actions$/, ''));
     const shown = selectorsSetting('.gallery-thumb__overlay', 'opacity', '1');
     expect(clickable.length).toBeGreaterThan(0);
     expect(clickable.sort()).toEqual(shown.sort());
+  });
+
+  // The gallery stays open after an image is inserted, and a click leaves
+  // the focus on the image. Revealed on any focus in the thumbnail, the bar
+  // stayed up and clickable there while the pointer was over another one,
+  // and followed the cell when the scroller recycled it. The bar's own
+  // buttons take no focus from a click (gallery-thumb-actions.test.js).
+  it('is revealed by a keyboard focus, not by a click', () => {
+    const shown = selectorsSetting('.gallery-thumb__overlay', 'opacity', '1');
+    expect(shown.sort()).toEqual(
+      [
+        '.gallery-thumb:hover .gallery-thumb__overlay',
+        '.gallery-thumb__img:focus-visible + .gallery-thumb__overlay',
+        '.gallery-thumb__overlay:focus-within',
+      ].sort()
+    );
   });
 
   // The scrim darkens the image under the bar: were it to take the pointer, it
@@ -133,5 +156,26 @@ describe('gallery styles — brand colours', () => {
     expect(valuesOf('.gallery-vue-chip--active', 'background')).toEqual([
       `var(--v-primary-base, ${DEFAULT_PRIMARY})`,
     ]);
+  });
+});
+
+describe('gallery styles — the build', () => {
+  // gulpfile.js (cssDev, cssProd) runs the stylesheet through these, with
+  // these options. On a rule it cannot parse (a `:has()` in `@supports`)
+  // autoprefixer throws, the build writes no stylesheet at all, and still
+  // reports success.
+  it('goes through the build’s autoprefixer and minifier', async () => {
+    const autoprefixer = require('autoprefixer');
+    const csswring = require('csswring');
+    const buildPostcss = require(require.resolve('postcss', {
+      paths: [path.dirname(require.resolve('autoprefixer'))],
+    }));
+    const prefixed = await buildPostcss([
+      autoprefixer({ overrideBrowserslist: ['ie 10', 'last 2 versions'] }),
+    ]).process(compiled, { from: undefined });
+    const minified = await buildPostcss([
+      csswring({ removeAllComments: true }),
+    ]).process(prefixed.css, { from: undefined });
+    expect(minified.css).toContain('.gallery-thumb__overlay');
   });
 });

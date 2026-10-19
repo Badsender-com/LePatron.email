@@ -1,5 +1,11 @@
 'use strict';
 
+// A click takes no focus to the bar's buttons (thumb.js): a focused trash
+// button was reached from the keyboard.
+function isTrash(element) {
+  return Boolean(element && element.matches('[data-gallery-remove]'));
+}
+
 /**
  * What the panel does when a thumbnail asks: insert, edit, rename, delete.
  * Each one goes through the Mosaico viewModel, whose extensions own the
@@ -33,15 +39,17 @@ module.exports = {
     // hidden by the scroller, or recycled onto another image. The focus would
     // fall to the page's body, sending a keyboard user back to the top of
     // the editor. It goes to the image now in that place, or the one before,
-    // or the search field when none is left to show. Only when it was still
-    // on the trash: a focus the user put elsewhere meanwhile is theirs.
+    // or the search field when none is left to show. Only when it was lost
+    // or is still on the trash: a focus put elsewhere meanwhile is the
+    // user's.
     focusAfterRemoval(index, trigger) {
       // the panel's own update, then the scroller's views
       this.$nextTick(() =>
         this.$nextTick(() => {
           const active = document.activeElement;
           const lost = !active || active === document.body;
-          if (!lost && active !== trigger) return;
+          const stuckOnTrash = active === trigger && isTrash(trigger);
+          if (!lost && !stuckOnTrash) return;
           const target =
             this.pickAt(Math.min(index, this.visibleImages.length - 1)) ||
             this.$refs.searchInput;

@@ -195,17 +195,38 @@
   transition: transform 0.12s ease-out;
 }
 
-// Shown on hover, and on focus so the buttons can be reached from a keyboard —
-// a control that is focusable but invisible is worse than one that is neither.
-.gallery-thumb:hover .gallery-thumb__overlay,
-.gallery-thumb:focus-within .gallery-thumb__overlay {
+// Shown on hover, and on a keyboard focus so the buttons can be reached
+// from a keyboard — a control that is focusable but invisible is worse than
+// one that is neither. Not on any focus: the gallery stays open after an
+// image is inserted, and the click leaves the focus on the image. The bar
+// then stayed up and clickable on that thumbnail while the pointer was over
+// another one, and followed the cell the scroller recycled. The image control
+// is followed by the overlay, hence `+`; the bar's buttons take no focus from
+// a click (thumb.js), so a focus inside the bar is a keyboard one. (`:has()`
+// would say it directly, but the build's autoprefixer cannot parse it in an
+// `@supports` fallback, and drops the whole stylesheet without failing.)
+//
+// One rule per way in: a browser that does not know `:focus-visible` drops
+// the whole rule it appears in, and would take the hover down with it.
+.gallery-thumb-revealed() {
   opacity: 1;
+
+  .gallery-thumb__actions {
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 }
 
-.gallery-thumb:hover .gallery-thumb__actions,
-.gallery-thumb:focus-within .gallery-thumb__actions {
-  pointer-events: auto;
-  transform: translateY(0);
+.gallery-thumb:hover .gallery-thumb__overlay {
+  .gallery-thumb-revealed();
+}
+
+.gallery-thumb__img:focus-visible + .gallery-thumb__overlay {
+  .gallery-thumb-revealed();
+}
+
+.gallery-thumb__overlay:focus-within {
+  .gallery-thumb-revealed();
 }
 
 @media (prefers-reduced-motion: reduce) {
