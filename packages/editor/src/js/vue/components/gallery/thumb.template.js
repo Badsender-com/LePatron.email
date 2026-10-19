@@ -13,18 +13,37 @@ module.exports = `
     >
       <span v-if="isGif" class="gallery-thumb__badge gallery-thumb__badge--gif">GIF</span>
       <div class="gallery-thumb__media">
+        <!-- \`aria-busy\` while the image loads; the control keeps its name
+             throughout. A broken image is hidden rather than left to the
+             browser's own glyph, and the words say why the cell is empty. -->
         <div
           class="gallery-thumb__img"
-          :class="{ 'gallery-thumb__img--solid': isSolid }"
+          :class="{
+            'gallery-thumb__img--solid': isSolid,
+            'gallery-thumb__img--loading': imageLoading,
+            'gallery-thumb__img--failed': imageFailed,
+          }"
           ref="pick"
           role="button"
           :tabindex="current ? 0 : -1"
           :aria-label="label"
+          :aria-busy="imageLoading ? 'true' : null"
           data-gallery-pick
           @keydown.enter.prevent="$emit('select', file)"
           @keydown.space.prevent="$emit('select', file)"
         >
-          <img :src="file.thumbnailUrl" :alt="label" />
+          <img
+            v-show="!imageFailed"
+            ref="img"
+            :src="file.thumbnailUrl"
+            :alt="label"
+            @load="onImageLoad"
+            @error="onImageError"
+          />
+          <span v-if="imageFailed" class="gallery-thumb__unavailable" data-gallery-unavailable>
+            <span class="lucide lucide-image-off" aria-hidden="true"></span>
+            <span>{{ strings.imageUnavailable }}</span>
+          </span>
         </div>
         <!-- Actions on hover, inside the image area only: the label band
              below stays reachable, which is what a rename double-click needs

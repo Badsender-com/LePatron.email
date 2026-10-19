@@ -130,6 +130,7 @@ module.exports = {
         editAction: this.t('gallery-edit-action'),
         renameAction: this.t('gallery-rename-action'),
         renameInput: this.t('gallery-rename-input-label'),
+        imageUnavailable: this.t('gallery-image-unavailable'),
       };
     },
     clearSearchLabel() {

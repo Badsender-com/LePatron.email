@@ -79,6 +79,7 @@ module.exports = {
   'gallery-tooltip-uploaded-at': 'Ajoutée le',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
+  'gallery-image-unavailable': 'Image indisponible',
 
   // bgimage widget
   'widget-bgimage-button': 'Choisir image',

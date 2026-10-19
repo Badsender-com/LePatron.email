@@ -131,6 +131,33 @@ describe('gallery styles — a button that is working', () => {
   });
 });
 
+describe('gallery styles — a thumbnail whose image is loading', () => {
+  const loading = '.gallery-thumb__img--loading::after';
+
+  // Hundreds of cells can be loading at once: an animation the compositor
+  // runs alone, never one that repaints or lays out the grid.
+  it('animates the opacity alone', () => {
+    const [animation] = valuesOf(loading, 'animation');
+    const name = animation.split(' ')[0];
+    const animated = new Set();
+    root.walkAtRules('keyframes', (rule) => {
+      if (rule.params !== name) return;
+      rule.walkDecls((decl) => animated.add(decl.prop));
+    });
+    expect([...animated]).toEqual(['opacity']);
+  });
+
+  it('keeps still for whoever asked for less motion', () => {
+    const still = [];
+    root.walkRules((rule) => {
+      if (!rule.selectors.includes(loading)) return;
+      if (rule.parent.type !== 'atrule') return;
+      rule.walkDecls('animation', (decl) => still.push(decl.value));
+    });
+    expect(still).toEqual(['none']);
+  });
+});
+
 describe('gallery styles — brand colours', () => {
   // The editor injects the brand as --v-primary-base / --v-accent-base
   // (mosaico-editor.pug), and the tabs right above the panel read them.

@@ -64,6 +64,9 @@ module.exports = {
   data: () => ({
     editing: false,
     draft: '',
+    // 'loading' until the <img> says otherwise, then 'loaded' or 'failed'.
+    // Of the image now in the cell, never of the cell: see `file.name` below.
+    image: 'loading',
   }),
   computed: {
     label() {
@@ -110,6 +113,12 @@ module.exports = {
     maxLength() {
       return MAX_LABEL_LENGTH;
     },
+    imageLoading() {
+      return this.image === 'loading';
+    },
+    imageFailed() {
+      return this.image === 'failed';
+    },
   },
   watch: {
     // The scroller recycles a view onto another image. An edit left open would
@@ -118,11 +127,38 @@ module.exports = {
     // Watches the name, not the object: the gallery replaces entries in place
     // — a rename, a delete elsewhere in the list — and watching identity
     // closed the editor and threw away the draft every time that happened.
+    //
+    // The image starts over too: the <img> is the same element, its `src`
+    // another. The patch that sets it runs after this watcher, so the cache
+    // is looked up once it has.
     'file.name': function onRecycled() {
       this.editing = false;
+      this.image = 'loading';
+      this.$nextTick(this.takeCachedImage);
     },
   },
+  // An image the browser already holds is complete as soon as its `src` is
+  // set, before anything is painted: shown at once rather than after a flash
+  // of the loading state. Its `load` still arrives, and changes nothing.
+  mounted() {
+    this.takeCachedImage();
+  },
   methods: {
+    takeCachedImage() {
+      const img = this.$refs.img;
+      if (img && img.complete && img.naturalWidth > 0) this.image = 'loaded';
+    },
+    // Through the element's own listeners, the only kind a cell has: no
+    // timer, nothing on the document. An event is taken only once the
+    // request it reports is over: one left over from the image the cell
+    // held before arrives while the new one is still in flight, and would
+    // otherwise show the new image as loaded, or broken, ahead of time.
+    onImageLoad(event) {
+      if (event.target.complete) this.image = 'loaded';
+    },
+    onImageError(event) {
+      if (event.target.complete) this.image = 'failed';
+    },
     // The three overlay buttons are icons with no text, side by side on every
     // cell. Naming the image in each one is what tells "delete" on this
     // thumbnail apart from "delete" on the next, both in a screen reader's
