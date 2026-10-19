@@ -138,24 +138,36 @@ function createGalleryPanel(vm) {
     },
     created() {
       this._subscriptions = [];
-      Object.assign(this, remembered[this.type]);
+      const { knownNames = null, ...criteria } = remembered[this.type] || {};
+      // The names of the gallery as last seen loaded, null until it is: an
+      // image missing from them is new, uploaded here or while this pane was
+      // closed (on an image of the email).
+      this._knownNames = knownNames;
+      Object.assign(this, criteria);
     },
     mounted() {
+      // Status first: whether the list belongs to a loaded gallery is what
+      // tells an upload from the first load of the whole list.
+      this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
+        this.status = status;
+      });
       // The list stays Mosaico's: upload, delete and rename replace entries of
       // the Knockout observableArray, never edit one in place. A frozen copy,
       // so Vue neither takes over that array nor walks every file to make it
       // reactive: 31 ms at first opening for 5,000 images, none frozen.
       this.mirror(vm[this.type + 'Gallery'], (array) => {
+        const known = this._knownNames;
         this.images = Object.freeze(array.slice());
-      });
-      this.mirror(vm[this.type + 'GalleryStatus'], (status) => {
-        this.status = status;
+        this._knownNames = this.isLoaded
+          ? new Set(array.map((file) => file.name))
+          : null;
+        if (known) this.reveal(array.filter((file) => !known.has(file.name)));
       });
     },
     beforeDestroy() {
       this._subscriptions.forEach((subscription) => subscription.dispose());
-      const { search, format, sortBy } = this;
-      remembered[this.type] = { search, format, sortBy };
+      const { search, format, sortBy, _knownNames: knownNames } = this;
+      remembered[this.type] = { search, format, sortBy, knownNames };
     },
     methods: {
       // Vue cannot observe a Knockout observable: read it now, then on change.
@@ -163,6 +175,17 @@ function createGalleryPanel(vm) {
         if (!observable) return;
         assign(observable());
         this._subscriptions.push(observable.subscribe(assign));
+      },
+      // The search and format outlive the block they were typed for, so an
+      // image uploaded under them could be hidden at once: no thumbnail, an
+      // unchanged count, an upload that reads as failed. A filter that would
+      // hide a new image is cleared, the sort kept: it hides nothing.
+      reveal(arrivals) {
+        const { search, format } = this;
+        const shown = filterGalleryFiles(arrivals, { search, format });
+        if (shown.length === arrivals.length) return;
+        this.search = '';
+        this.format = '';
       },
       // ISO with the previous grid: click replaces the selected email image
       onSelect(file) {

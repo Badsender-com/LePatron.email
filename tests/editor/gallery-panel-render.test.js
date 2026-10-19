@@ -188,6 +188,98 @@ describe('gallery panel — following the gallery status', () => {
     panel.$destroy();
   });
 
+  // A search or a format survives from one block to the next: an image
+  // uploaded under it must not vanish as if the upload had failed.
+  describe('an upload under an active filter', () => {
+    const names = (panel) => panel.visibleImages.map((file) => file.name);
+
+    // what loadImage does in badsender-gallery.js
+    function upload(vm, file) {
+      vm.mailingGallery.unshift(file);
+      vm.mailingGalleryStatus(vm.mailingGallery().length);
+      return Vue.nextTick();
+    }
+
+    it('clears a search that would hide the new image', async () => {
+      const vm = fakeViewModel(IMAGES.slice());
+      const panel = mountVm(vm);
+      panel.search = 'un';
+      await upload(vm, { name: 'a-3.gif', label: 'bandeau.gif' });
+      expect(panel.search).toBe('');
+      expect(names(panel)).toContain('a-3.gif');
+      panel.$destroy();
+    });
+
+    it('clears a format that would hide the new image, and keeps the sort', async () => {
+      const vm = fakeViewModel(IMAGES.slice());
+      const panel = mountVm(vm);
+      panel.format = 'jpg';
+      panel.sortBy = 'date_asc';
+      await upload(vm, { name: 'a-3.png', label: 'bandeau.png' });
+      expect(panel.format).toBe('');
+      expect(panel.sortBy).toBe('date_asc');
+      expect(names(panel)).toContain('a-3.png');
+      panel.$destroy();
+    });
+
+    // an image uploaded on the email's placeholder while the gallery is
+    // closed lands in the list the reopened pane restores its search over
+    it('clears it when the image arrived while the pane was closed', async () => {
+      const vm = fakeViewModel(IMAGES.slice());
+      // one definition per editor, as the binding builds it: it is what
+      // remembers the search from one opening to the next
+      const Panel = Vue.extend(createGalleryPanel(vm));
+      const open = () => new Panel({ propsData: { type: 'mailing' } }).$mount();
+      const closed = open();
+      closed.search = 'un';
+      closed.$destroy();
+      vm.mailingGallery.unshift({ name: 'a-3.gif', label: 'bandeau.gif' });
+      vm.mailingGalleryStatus(3);
+      const panel = open();
+      await Vue.nextTick();
+      expect(panel.search).toBe('');
+      expect(names(panel)).toContain('a-3.gif');
+      panel.$destroy();
+    });
+
+    it('keeps a filter the new image matches', async () => {
+      const vm = fakeViewModel(IMAGES.slice());
+      const panel = mountVm(vm);
+      panel.search = 'deux';
+      panel.format = 'png';
+      await upload(vm, { name: 'a-3.png', label: 'deux bis.png' });
+      expect(panel.search).toBe('deux');
+      expect(panel.format).toBe('png');
+      expect(names(panel)).toEqual(['a-3.png', 'a-2.png']);
+      panel.$destroy();
+    });
+
+    // A pane reopened with its last search, on a gallery not loaded yet:
+    // every image arrives at once, and none of them is an upload.
+    it('keeps the filter when the whole gallery loads', async () => {
+      const vm = fakeViewModel([], 'loading');
+      const panel = mountVm(vm);
+      panel.search = 'un';
+      vm.mailingGalleryStatus(IMAGES.length);
+      vm.mailingGallery(IMAGES.slice());
+      await Vue.nextTick();
+      expect(panel.search).toBe('un');
+      expect(names(panel)).toEqual(['a-1.jpg']);
+      panel.$destroy();
+    });
+
+    // a rename replaces the entry under the same name: nothing arrived
+    it('keeps the filter when an image is replaced under its own name', async () => {
+      const vm = fakeViewModel(IMAGES.slice());
+      const panel = mountVm(vm);
+      panel.search = 'un';
+      vm.mailingGallery.splice(1, 1, { ...IMAGES[1], label: 'autre.png' });
+      await Vue.nextTick();
+      expect(panel.search).toBe('un');
+      panel.$destroy();
+    });
+  });
+
   // The file objects are Mosaico's. Vue observing them would add a getter
   // and a setter to every property of every image, 31 ms for 5,000 of them.
   it('leaves Mosaico’s file objects alone', () => {
