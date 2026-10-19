@@ -7,6 +7,7 @@ const {
   timedOut,
   reloadAfterTimeout,
 } = require('./gallery-request.js');
+const { removeByName } = require('./gallery-list.js');
 const { fillLabel } = require('../vue/utils/fill-label.js');
 
 function removeGalleryImage(viewModel) {
@@ -36,14 +37,12 @@ function removeGalleryImage(viewModel) {
       timeout: GALLERY_REQUEST_TIMEOUT_MS,
       success() {
         viewModel.notifier.success(viewModel.t('gallery-remove-image-success'));
-        const gallery = viewModel[type + 'Gallery'];
-        const status = viewModel[type + 'GalleryStatus'];
-        // Just this one, not the whole array swapped for the server's copy:
-        // that changed the identity of every file, which cancelled any rename
-        // in flight and closed every open inline editor in the grid.
-        const index = gallery().findIndex((file) => file.name === data.name);
-        if (index !== -1) gallery.splice(index, 1);
-        status(gallery().length);
+        // just this one, not the whole list reloaded (gallery-list.js)
+        removeByName(
+          viewModel[type + 'Gallery'],
+          data.name,
+          viewModel[type + 'GalleryStatus']
+        );
       },
       error(jqXHR, textStatus) {
         console.error('gallery delete failed', jqXHR && jqXHR.status);

@@ -9,6 +9,11 @@ const {
   timedOut,
   reloadAfterTimeout,
 } = require('./gallery-request.js');
+const {
+  indexByName,
+  replaceByName,
+  removeByName,
+} = require('./gallery-list.js');
 
 // A gallery file is stored as `<mongoId>-<hash>.<ext>`: the prefix is the id of
 // the mailing or template the gallery belongs to, which is what the route needs.
@@ -52,7 +57,8 @@ function renameGalleryImage(viewModel) {
 
     // these two are failures, and used to be silent: the user watched their new
     // name disappear with no explanation and no way to get the text back
-    if (!match) return Promise.resolve(fail('gallery-rename-image-unsupported'));
+    if (!match)
+      return Promise.resolve(fail('gallery-rename-image-unsupported'));
 
     const index = indexByName(gallery, name);
     if (index === -1) return Promise.resolve(fail('gallery-rename-image-gone'));
@@ -130,28 +136,6 @@ function renameGalleryImage(viewModel) {
         return fail(messageForStatus(jqXHR));
       });
   };
-}
-
-// Put `entry` where the file called `name` currently sits. By name rather than
-// by a remembered index: an upload unshifts, a delete replaces the whole array,
-// and either can land while a request is in flight.
-function replaceByName(gallery, name, entry) {
-  const index = indexByName(gallery, name);
-  if (index === -1) return false;
-  gallery.splice(index, 1, entry);
-  return true;
-}
-
-function removeByName(gallery, name, status) {
-  const index = indexByName(gallery, name);
-  if (index === -1) return;
-  gallery.splice(index, 1);
-  // the count the panel shows once the gallery is loaded
-  if (status) status(gallery().length);
-}
-
-function indexByName(gallery, name) {
-  return gallery().findIndex((f) => f.name === name);
 }
 
 // The server distinguishes its refusals; collapsing them into one message left
