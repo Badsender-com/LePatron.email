@@ -20,6 +20,8 @@
 // user. Deferred for V1 by the product owner; the thumbnail's image is now
 // focusable, which is what opening it on focus would hang on.
 
+const { fileExt } = require('../../../../../../shared/gallery/filter.js');
+
 // Enough hover to mean "tell me more", short enough not to feel stuck.
 const OPEN_DELAY_MS = 500;
 
@@ -47,9 +49,10 @@ module.exports = {
     label() {
       return this.file ? this.file.label || this.file.name : '';
     },
+    // the reader the filter chips and the thumbnail use, so a .jpeg reads
+    // JPG here as it does on the chip that selected it
     format() {
-      const match = /\.([a-z0-9]+)$/i.exec((this.file && this.file.name) || '');
-      return match ? match[1].toUpperCase() : '';
+      return this.file ? fileExt(this.file).toUpperCase() : '';
     },
     // Null for an image stored before dimensions were recorded, whose bytes
     // could not be read back. The line is dropped rather than showing "0 × 0".

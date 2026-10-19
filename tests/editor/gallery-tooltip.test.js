@@ -103,6 +103,15 @@ describe('gallery tooltip — what it shows', () => {
     vm.$destroy();
   });
 
+  // The filter chip that selected a .jpeg says JPG, and so does the
+  // thumbnail: the tooltip reads the format the same way (fileExt).
+  it('names a .jpeg the way the filter chip does', () => {
+    const vm = mount({ file: { ...FILE, name: 'abc.jpeg' } });
+    expect(text(vm)).toContain('JPG');
+    expect(text(vm)).not.toContain('JPEG');
+    vm.$destroy();
+  });
+
   // The browser's locale is not the editor's: a French interface was printing
   // "8 October 2026".
   it('formats the date in the editor language, not the browser one', () => {
