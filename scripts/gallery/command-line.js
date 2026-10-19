@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The terminal side of the gallery scripts: the options, what may be printed
+ * The terminal side of the gallery maintenance script: the options, what may be printed
  * about the database, and the stop signals.
  */
 

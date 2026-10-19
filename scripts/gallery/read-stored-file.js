@@ -1,17 +1,17 @@
 'use strict';
 
 /**
- * Reads the dimensions of a stored gallery file, from the head of the file
- * only, and says why when it cannot: a file missing from the storage is not
- * the same news as a storage that timed out, and the operator acts on each
- * differently (look into it, or rerun).
+ * Reads what a stored gallery file says about itself: its dimensions, from the
+ * head of the file only, and the date the storage holds for it. Says why when
+ * it cannot: a file missing from the storage is not the same news as a storage
+ * that timed out, and the operator acts on each differently (look into it, or
+ * rerun).
  */
 
 const path = require('path');
 const probe = require('probe-image-size');
 
-const config = require('../../packages/server/node.config.js');
-const fileManager = require('../../packages/server/common/file-manage.service.js');
+const { openStoredFile } = require('./storage.js');
 const {
   probeImageDimensions,
   JPEG_SNIFF_BYTES,
@@ -43,6 +43,13 @@ const READ_STATUS = Object.freeze({
   ERROR: 'error',
 });
 
+// The file was read: its storage date, if any, is worth keeping.
+const FOUND = [
+  READ_STATUS.OK,
+  READ_STATUS.NOT_AN_IMAGE,
+  READ_STATUS.UNMEASURED,
+];
+
 // ENOENT: local disk. NoSuchKey / NotFound and a 404: S3.
 const MISSING_CODES = new Set(['ENOENT', 'NoSuchKey', 'NotFound']);
 
@@ -73,27 +80,37 @@ function classifyError(error) {
 
 /**
  * @param {string} name a gallery file name
- * @param {object} [options] injectable for tests
- * @returns {Promise<{status: string, width?: number, height?: number, code?: string}>}
- *   never rejects
+ * @param {object} [options]
+ * @param {boolean} [options.needSize] false: the date only, no measure
+ * @param {Function} [options.open] name => { stream, storedAt }, for tests
+ * @returns {Promise<{status: string, width?: number, height?: number,
+ *   storedAt?: Date, code?: string}>} never rejects
  */
-function readDimensions(name, options = {}) {
+function readStoredFile(name, options = {}) {
   if (!isSafeName(name)) {
     return Promise.resolve({ status: READ_STATUS.INVALID_NAME });
   }
   const {
-    streamImage = fileManager.streamImage,
+    open = openStoredFile,
+    needSize = true,
     timeoutMs = READ_TIMEOUT_MS,
     maxBytes = JPEG_SNIFF_BYTES,
     maxJpegBytes = JPEG_MAX_BYTES,
   } = options;
-  return new Promise((resolve) => {
-    streamHead(
-      name,
-      { streamImage, timeoutMs, maxBytes, maxJpegBytes },
-      resolve
-    );
-  });
+  let storedAt = Promise.resolve(null);
+  const streamImage = (fileName) => {
+    const opened = open(fileName);
+    storedAt = opened.storedAt;
+    return opened.stream;
+  };
+  const settings = { streamImage, needSize, timeoutMs, maxBytes, maxJpegBytes };
+  return new Promise((resolve) => streamHead(name, settings, resolve)).then(
+    async (result) => {
+      if (!FOUND.includes(result.status)) return result;
+      const date = await storedAt;
+      return date ? { ...result, storedAt: date } : result;
+    }
+  );
 }
 
 function measureLongJpeg(head) {
@@ -122,12 +139,13 @@ function measure(head, { complete, maxJpegBytes }) {
 }
 
 // Reads the head of a stored file and hands `settle` one result, exactly once:
-// the measure, or why there is none.
+// the measure, or why there is none. Without `needSize`, the first bytes are
+// enough: they prove the file is there.
 function streamHead(name, options, settle) {
-  const { streamImage, timeoutMs, maxJpegBytes } = options;
+  const { streamImage, needSize, timeoutMs, maxJpegBytes } = options;
   const chunks = [];
   let total = 0;
-  let limit = options.maxBytes;
+  let limit = needSize ? options.maxBytes : 1;
   let settled = false;
   let stream = null;
   const done = (result) => {
@@ -137,7 +155,9 @@ function streamHead(name, options, settle) {
     settle(result);
   };
   const verdict = (complete) =>
-    measure(Buffer.concat(chunks), { complete, maxJpegBytes });
+    needSize
+      ? measure(Buffer.concat(chunks), { complete, maxJpegBytes })
+      : { status: READ_STATUS.OK };
   const timer = setTimeout(() => {
     done({ status: READ_STATUS.TIMEOUT });
     if (stream) stream.destroy();
@@ -168,31 +188,12 @@ function streamHead(name, options, settle) {
   stream.on('end', () => done(verdict(true)));
 }
 
-// The configured endpoint may or may not carry a scheme; keep the host only.
-function endpointHost(endpoint) {
-  const host = String(endpoint || '')
-    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
-    .replace(/^[^@/]*@/, '')
-    .split('/')[0];
-  return host || 'the default endpoint';
-}
-
-// What the operator needs to tell a misconfigured run from a real one.
-function describeStorage() {
-  if (config.isAws) {
-    const { bucketName, endpoint } = config.storage.aws || {};
-    return `Storage: S3, bucket "${bucketName}" at ${endpointHost(endpoint)}`;
-  }
-  return `Storage: local directory ${config.images.uploadDir}`;
-}
-
 module.exports = {
-  readDimensions,
-  describeStorage,
-  endpointHost,
+  readStoredFile,
   isSafeName,
   classifyError,
   READ_STATUS,
+  FOUND,
   READ_TIMEOUT_MS,
   JPEG_MAX_BYTES,
 };

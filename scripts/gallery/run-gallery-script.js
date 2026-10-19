@@ -1,12 +1,13 @@
 'use strict';
 
 /**
- * The runner shared by the gallery maintenance scripts.
+ * The plumbing of a gallery maintenance script (today, the metadata backfill).
  *
- * A script says which galleries still need work (`query`) and what to do with
- * one of them (`processGallery`); the runner owns everything else, the same
- * way for both: connection, paging, bounded concurrency, the summary and the
- * exit code.
+ * The script says which galleries still need work (`query`) and what to do
+ * with one of them (`processGallery`); the runner owns everything else:
+ * connection and its confirmation, paging, bounded concurrency, stopping, the
+ * summary and the exit code. Kept apart from the script so that the script's
+ * own logic is tested without a database, and this one without a storage.
  *
  * Paging by `_id` rather than a server cursor: a cursor left without a
  * `getMore` for ten minutes is killed by the server, and a script that probes
@@ -195,7 +196,7 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
   });
 }
 
-// The entry point of both scripts: what fails before the run starts (the
+// The script's entry point: what fails before the run starts (the
 // options, the configuration) is printed redacted too, and fails the process.
 function runFromCommandLine(script, options) {
   return runGalleryScript(script, options).then(

@@ -3,12 +3,13 @@
 const { PassThrough } = require('stream');
 
 const {
-  readDimensions,
+  readStoredFile,
   isSafeName,
   classifyError,
-  endpointHost,
   READ_STATUS,
-} = require('../../scripts/gallery/read-dimensions.js');
+} = require('../../scripts/gallery/read-stored-file.js');
+
+const STORED_AT = new Date('2021-03-04T05:06:07Z');
 
 // The head of a PNG: signature, then the IHDR chunk carrying the size.
 function pngHead(width, height) {
@@ -63,10 +64,16 @@ function chunked(buffer, size = 64 * 1024) {
   return chunks;
 }
 
-// A storage stream that serves `chunks`, or fails with `error`, or stalls.
-function storage({ chunks = [], error = null, stall = false } = {}) {
+// A stored file that serves `chunks` and its storage date, or fails with
+// `error`, or stalls.
+function storage({
+  chunks = [],
+  error = null,
+  stall = false,
+  storedAt = STORED_AT,
+} = {}) {
   const streams = [];
-  const streamImage = jest.fn(() => {
+  const open = jest.fn(() => {
     const stream = new PassThrough();
     stream.destroy = jest.fn(() => {
       // S3's abort emits an error after the fact
@@ -85,33 +92,54 @@ function storage({ chunks = [], error = null, stall = false } = {}) {
       chunks.forEach((chunk) => stream.write(chunk));
       stream.end();
     });
-    return stream;
+    return { stream, storedAt: Promise.resolve(error ? null : storedAt) };
   });
-  return { streamImage, streams };
+  return { open, streams };
 }
 
-describe('read-dimensions', () => {
-  describe('readDimensions', () => {
+describe('read-stored-file', () => {
+  describe('readStoredFile', () => {
     it('measures an image from the head of the file', async () => {
-      const { streamImage } = storage({ chunks: [pngHead(640, 480)] });
+      const { open } = storage({ chunks: [pngHead(640, 480)] });
 
-      await expect(readDimensions('a.png', { streamImage })).resolves.toEqual({
+      await expect(readStoredFile('a.png', { open })).resolves.toEqual({
         status: READ_STATUS.OK,
         width: 640,
         height: 480,
+        storedAt: STORED_AT,
       });
+    });
+
+    // The date is the storage's own: S3's Last-Modified, the file's mtime.
+    it('reads only the storage date when the size is not needed', async () => {
+      const { open, streams } = storage({
+        chunks: [Buffer.from('%PDF-1.4'), Buffer.alloc(64)],
+      });
+
+      const result = await readStoredFile('a.png', { open, needSize: false });
+
+      expect(result).toEqual({ status: READ_STATUS.OK, storedAt: STORED_AT });
+      expect(streams[0].destroy).toHaveBeenCalled();
+    });
+
+    it('invents no date when the storage gives none', async () => {
+      const { open } = storage({ chunks: [pngHead(1, 2)], storedAt: null });
+
+      const result = await readStoredFile('a.png', { open });
+
+      expect(result).toEqual({ status: READ_STATUS.OK, width: 1, height: 2 });
     });
 
     // Settle before destroying: the abort's error must not win the race and
     // turn every measured file into an unreadable one.
     it('stops reading once it has enough, and keeps the measure', async () => {
       const head = pngHead(10, 20);
-      const { streamImage, streams } = storage({
+      const { open, streams } = storage({
         chunks: [head, Buffer.alloc(64)],
       });
 
-      const result = await readDimensions('a.png', {
-        streamImage,
+      const result = await readStoredFile('a.png', {
+        open,
         maxBytes: head.length,
       });
 
@@ -121,9 +149,9 @@ describe('read-dimensions', () => {
 
     it('tells a file missing from the disk', async () => {
       const error = Object.assign(new Error('nope'), { code: 'ENOENT' });
-      const { streamImage } = storage({ error });
+      const { open } = storage({ error });
 
-      await expect(readDimensions('a.png', { streamImage })).resolves.toEqual({
+      await expect(readStoredFile('a.png', { open })).resolves.toEqual({
         status: READ_STATUS.MISSING,
       });
     });
@@ -133,9 +161,9 @@ describe('read-dimensions', () => {
         code: 'NoSuchKey',
         statusCode: 404,
       });
-      const { streamImage } = storage({ error });
+      const { open } = storage({ error });
 
-      const result = await readDimensions('a.png', { streamImage });
+      const result = await readStoredFile('a.png', { open });
 
       expect(result.status).toBe(READ_STATUS.MISSING);
     });
@@ -144,19 +172,19 @@ describe('read-dimensions', () => {
       const error = Object.assign(new Error('secret detail'), {
         code: 'AccessDenied',
       });
-      const { streamImage } = storage({ error });
+      const { open } = storage({ error });
 
-      await expect(readDimensions('a.png', { streamImage })).resolves.toEqual({
+      await expect(readStoredFile('a.png', { open })).resolves.toEqual({
         status: READ_STATUS.ERROR,
         code: 'AccessDenied',
       });
     });
 
     it('gives up on a stalled read, and aborts it', async () => {
-      const { streamImage, streams } = storage({ stall: true });
+      const { open, streams } = storage({ stall: true });
 
-      const result = await readDimensions('a.png', {
-        streamImage,
+      const result = await readStoredFile('a.png', {
+        open,
         timeoutMs: 5,
       });
 
@@ -165,9 +193,9 @@ describe('read-dimensions', () => {
     });
 
     it('tells a file that is not an image', async () => {
-      const { streamImage } = storage({ chunks: [Buffer.from('%PDF-1.4')] });
+      const { open } = storage({ chunks: [Buffer.from('%PDF-1.4')] });
 
-      const result = await readDimensions('a.pdf', { streamImage });
+      const result = await readStoredFile('a.pdf', { open });
 
       expect(result.status).toBe(READ_STATUS.NOT_AN_IMAGE);
     });
@@ -176,10 +204,15 @@ describe('read-dimensions', () => {
     // window, it is still an image in use, never "not an image".
     it('measures a JPEG whose metadata runs past the usual window', async () => {
       const read = (jpeg) =>
-        readDimensions('a.jpg', {
-          streamImage: storage({ chunks: chunked(jpeg) }).streamImage,
+        readStoredFile('a.jpg', {
+          open: storage({ chunks: chunked(jpeg) }).open,
         });
-      const measured = { status: READ_STATUS.OK, width: 40, height: 30 };
+      const measured = {
+        status: READ_STATUS.OK,
+        width: 40,
+        height: 30,
+        storedAt: STORED_AT,
+      };
 
       await expect(read(JPEG_40X30)).resolves.toEqual(measured);
       await expect(read(jpegWithMetadata(240 * 1024))).resolves.toEqual(
@@ -190,46 +223,47 @@ describe('read-dimensions', () => {
     it('calls a JPEG it cannot measure unmeasured, not "not an image"', async () => {
       const jpeg = jpegWithMetadata(240 * 1024);
       const truncated = jpeg.subarray(0, 200 * 1024);
-      const { streamImage } = storage({ chunks: chunked(truncated) });
+      const { open } = storage({ chunks: chunked(truncated) });
 
-      await expect(readDimensions('a.jpg', { streamImage })).resolves.toEqual({
+      await expect(readStoredFile('a.jpg', { open })).resolves.toEqual({
         status: READ_STATUS.UNMEASURED,
+        storedAt: STORED_AT,
       });
     });
 
     it('stops reading a JPEG at its bound', async () => {
       const jpeg = jpegWithMetadata(240 * 1024);
-      const { streamImage, streams } = storage({ chunks: chunked(jpeg) });
+      const { open, streams } = storage({ chunks: chunked(jpeg) });
 
-      const result = await readDimensions('a.jpg', {
-        streamImage,
+      const result = await readStoredFile('a.jpg', {
+        open,
         maxJpegBytes: 128 * 1024,
       });
 
-      expect(result).toEqual({ status: READ_STATUS.UNMEASURED });
+      expect(result).toMatchObject({ status: READ_STATUS.UNMEASURED });
       expect(streams[0].destroy).toHaveBeenCalled();
     });
 
     it('survives a backend that throws instead of streaming', async () => {
-      const streamImage = () => {
+      const open = () => {
         throw Object.assign(new Error('x'), { code: 'ENOENT' });
       };
 
-      const result = await readDimensions('a.png', { streamImage });
+      const result = await readStoredFile('a.png', { open });
 
       expect(result.status).toBe(READ_STATUS.MISSING);
     });
 
     // A stored name is joined to the upload directory by the local backend.
     it('never hands the storage a name that leaves the upload directory', async () => {
-      const { streamImage } = storage();
+      const { open } = storage();
 
       for (const name of ['../secret.png', '..', 'a/b.png', '', null, {}]) {
         // eslint-disable-next-line no-await-in-loop
-        const result = await readDimensions(name, { streamImage });
+        const result = await readStoredFile(name, { open });
         expect(result.status).toBe(READ_STATUS.INVALID_NAME);
       }
-      expect(streamImage).not.toHaveBeenCalled();
+      expect(open).not.toHaveBeenCalled();
     });
   });
 
@@ -255,18 +289,6 @@ describe('read-dimensions', () => {
         status: READ_STATUS.ERROR,
         code: 'TypeError',
       });
-    });
-  });
-
-  describe('endpointHost', () => {
-    it('keeps the host of an endpoint, with or without a scheme', () => {
-      expect(endpointHost('https://s3.example.test/path')).toBe(
-        's3.example.test'
-      );
-      expect(endpointHost('s3.example.test')).toBe('s3.example.test');
-      expect(endpointHost('https://key:secret@s3.example.test')).toBe(
-        's3.example.test'
-      );
     });
   });
 });
