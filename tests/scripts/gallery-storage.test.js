@@ -99,7 +99,12 @@ describe('gallery storage', () => {
       fs.utimesSync(file, mtime, mtime);
 
       const { stream, storedAt } = openFromDisk(directory)('a.png');
+      // The file opens asynchronously: wait for the stream to close before
+      // afterEach removes the directory, or its late ENOENT lands on the next
+      // test.
+      const closed = new Promise((resolve) => stream.on('close', resolve));
       stream.destroy();
+      await closed;
 
       await expect(storedAt).resolves.toEqual(mtime);
     });
