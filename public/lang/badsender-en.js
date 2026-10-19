@@ -38,6 +38,7 @@ module.exports = {
     'An error has occured while removing the image :(',
   'gallery-search-placeholder': 'Search an image…',
   'gallery-search-clear': 'Clear search',
+  'gallery-list-label': 'Gallery images',
   'gallery-search-no-result': 'No image matches this search',
   'gallery-filter-group': 'Filter by format',
   'gallery-filter-all': 'All',
@@ -75,6 +76,7 @@ module.exports = {
   'gallery-tooltip-uploaded-at': 'Added on',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
+  'gallery-image-unavailable': 'Image unavailable',
 
   // bgimage widget
   'widget-bgimage-button': 'Pick an image',

@@ -40,6 +40,7 @@ module.exports = {
     "Une erreur est survenue lors de la suppression de l'image :(",
   'gallery-search-placeholder': 'Rechercher une image…',
   'gallery-search-clear': 'Effacer la recherche',
+  'gallery-list-label': 'Images de la galerie',
   'gallery-search-no-result': 'Aucune image ne correspond à cette recherche',
   'gallery-filter-group': 'Filtrer par format',
   'gallery-filter-all': 'Tous',
@@ -78,6 +79,7 @@ module.exports = {
   'gallery-tooltip-uploaded-at': 'Ajoutée le',
   'gallery-image-count-one': '__count__ image',
   'gallery-image-count': '__count__ images',
+  'gallery-image-unavailable': 'Image indisponible',
 
   // bgimage widget
   'widget-bgimage-button': 'Choisir image',

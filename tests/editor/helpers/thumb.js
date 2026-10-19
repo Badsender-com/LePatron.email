@@ -11,6 +11,7 @@ const STRINGS = {
   editAction: 'Modifier __label__',
   renameAction: 'Renommer __label__',
   renameInput: 'rename-input',
+  imageUnavailable: 'Image indisponible',
 };
 
 const ALL = { rename: true, edit: true, remove: true };

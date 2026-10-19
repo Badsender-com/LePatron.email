@@ -53,12 +53,18 @@ describe('gallery panel — the actions it offers', () => {
     const user = ko.observable(null);
     const { panel } = mountWithUser(user);
     expect(panel.actions).toEqual({
+      upload: false,
       rename: false,
       edit: false,
       remove: false,
     });
     user(userOfRole(ROLES.WRITER)());
-    expect(panel.actions).toEqual({ rename: true, edit: true, remove: true });
+    expect(panel.actions).toEqual({
+      upload: true,
+      rename: true,
+      edit: true,
+      remove: true,
+    });
     panel.$destroy();
     expect(user.getSubscriptionsCount()).toBe(0);
   });
@@ -66,6 +72,7 @@ describe('gallery panel — the actions it offers', () => {
   it('survives an editor whose view-model carries no user', () => {
     const { panel } = mountWithUser(undefined);
     expect(panel.actions).toEqual({
+      upload: false,
       rename: false,
       edit: false,
       remove: false,

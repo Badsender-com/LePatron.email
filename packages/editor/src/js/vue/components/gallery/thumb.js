@@ -19,7 +19,7 @@
 // what ADR-0005 planned for it anyway.
 //
 // That same exclusion is why the overlay's action bar is kept small and the
-// overlay itself never takes the pointer: see the template below.
+// overlay itself never takes the pointer: see thumb.template.js.
 //
 // The root is not the button. Buttons nested in an element with
 // `role="button"` have their own role flattened away and are read as plain
@@ -38,6 +38,7 @@ const {
   MAX_LABEL_LENGTH,
 } = require('../../../../../../shared/gallery/label.js');
 const { fillLabel } = require('../../utils/fill-label.js');
+const template = require('./thumb.template.js');
 
 module.exports = {
   name: 'Thumb',
@@ -54,10 +55,18 @@ module.exports = {
       type: Object,
       default: () => ({ rename: false, edit: false, remove: false }),
     },
+    // Whether this thumbnail is the grid's tab stop (panel-keyboard.js): its
+    // image control and its action bar take Tab, the other thumbnails take
+    // the focus only from the arrows or a click. A thumbnail on its own is
+    // its own tab stop.
+    current: { type: Boolean, default: true },
   },
   data: () => ({
     editing: false,
     draft: '',
+    // 'loading' until the <img> says otherwise, then 'loaded' or 'failed'.
+    // Of the image now in the cell, never of the cell: see `file.name` below.
+    image: 'loading',
   }),
   computed: {
     label() {
@@ -104,6 +113,12 @@ module.exports = {
     maxLength() {
       return MAX_LABEL_LENGTH;
     },
+    imageLoading() {
+      return this.image === 'loading';
+    },
+    imageFailed() {
+      return this.image === 'failed';
+    },
   },
   watch: {
     // The scroller recycles a view onto another image. An edit left open would
@@ -112,11 +127,38 @@ module.exports = {
     // Watches the name, not the object: the gallery replaces entries in place
     // — a rename, a delete elsewhere in the list — and watching identity
     // closed the editor and threw away the draft every time that happened.
+    //
+    // The image starts over too: the <img> is the same element, its `src`
+    // another. The patch that sets it runs after this watcher, so the cache
+    // is looked up once it has.
     'file.name': function onRecycled() {
       this.editing = false;
+      this.image = 'loading';
+      this.$nextTick(this.takeCachedImage);
     },
   },
+  // An image the browser already holds is complete as soon as its `src` is
+  // set, before anything is painted: shown at once rather than after a flash
+  // of the loading state. Its `load` still arrives, and changes nothing.
+  mounted() {
+    this.takeCachedImage();
+  },
   methods: {
+    takeCachedImage() {
+      const img = this.$refs.img;
+      if (img && img.complete && img.naturalWidth > 0) this.image = 'loaded';
+    },
+    // Through the element's own listeners, the only kind a cell has: no
+    // timer, nothing on the document. An event is taken only once the
+    // request it reports is over: one left over from the image the cell
+    // held before arrives while the new one is still in flight, and would
+    // otherwise show the new image as loaded, or broken, ahead of time.
+    onImageLoad(event) {
+      if (event.target.complete) this.image = 'loaded';
+    },
+    onImageError(event) {
+      if (event.target.complete) this.image = 'failed';
+    },
     // The three overlay buttons are icons with no text, side by side on every
     // cell. Naming the image in each one is what tells "delete" on this
     // thumbnail apart from "delete" on the next, both in a screen reader's
@@ -201,98 +243,5 @@ module.exports = {
       this.editing = false;
     },
   },
-  template: `
-    <div
-      class="gallery-thumb"
-      @click="editing || $emit('select', file)"
-      @mouseenter="$emit('hover', file, $event.currentTarget)"
-      @mouseleave="$emit('unhover')"
-    >
-      <span v-if="isGif" class="gallery-thumb__badge gallery-thumb__badge--gif">GIF</span>
-      <div class="gallery-thumb__media">
-        <div
-          class="gallery-thumb__img"
-          :class="{ 'gallery-thumb__img--solid': isSolid }"
-          ref="pick"
-          role="button"
-          tabindex="0"
-          :aria-label="label"
-          data-gallery-pick
-          @keydown.enter.prevent="$emit('select', file)"
-          @keydown.space.prevent="$emit('select', file)"
-        >
-          <img :src="file.thumbnailUrl" :alt="label" />
-        </div>
-        <!-- Actions on hover, inside the image area only: the label band
-             below stays reachable, which is what a rename double-click needs
-             (ADR-0005). The overlay keeps \`pointer-events: none\` even while
-             visible and only the small bar takes the pointer back: a lid over
-             the image would have made the thumbnail undraggable while shown,
-             since jQuery UI's draggable excludes buttons from its handle. -->
-        <div class="gallery-thumb__overlay" data-gallery-overlay>
-          <div v-if="hasActions" class="gallery-thumb__actions">
-            <button
-              v-if="canEdit"
-              type="button"
-              class="gallery-thumb__action"
-              data-gallery-edit
-              :title="editTitle"
-              :aria-label="editTitle"
-              @mousedown.prevent
-              @click.stop="$emit('edit', file, $event.currentTarget)"
-            >
-              <span class="lucide lucide-pencil"></span>
-            </button>
-            <button
-              v-if="actions.rename"
-              ref="renameButton"
-              type="button"
-              class="gallery-thumb__action"
-              data-gallery-rename
-              :title="renameTitle"
-              :aria-label="renameTitle"
-              @mousedown.prevent
-              @click.stop="startEdit"
-            >
-              <span class="lucide lucide-tag"></span>
-            </button>
-            <button
-              v-if="actions.remove"
-              type="button"
-              class="gallery-thumb__action gallery-thumb__action--danger"
-              data-gallery-remove
-              :title="removeTitle"
-              :aria-label="removeTitle"
-              @mousedown.prevent="onRemoveDown"
-              @click.stop="$emit('remove', file)"
-            >
-              <span class="lucide lucide-trash-2"></span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <input
-        v-if="editing"
-        ref="input"
-        v-model="draft"
-        type="text"
-        class="gallery-thumb__label gallery-thumb__label--editing"
-        data-gallery-label-input
-        :maxlength="maxLength"
-        :aria-label="strings.renameInput"
-        @click.stop
-        @dblclick.stop
-        @keydown.enter="onEnter"
-        @keydown.esc="onEscape"
-        @blur="commitEdit"
-      />
-      <div
-        v-else
-        class="gallery-thumb__label"
-        data-gallery-label
-        @click="onLabelClick"
-        @dblclick.stop="startEdit"
-      >{{ label }}</div>
-    </div>
-  `,
+  template,
 };

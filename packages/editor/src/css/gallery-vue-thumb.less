@@ -86,6 +86,71 @@
   background-image: none;
 }
 
+// An image on its way: a plain veil over the area, breathing, so an empty
+// cell reads as "coming" rather than as an empty image. The veil, not the
+// image, carries the animation, and only on `opacity`, which the compositor
+// runs without repainting the grid of cells loading at once. It covers the
+// image until it is complete, so a half-decoded one never shows. Without
+// motion it stays still, half-faded; `aria-busy` says the rest
+// (thumb.template.js).
+@keyframes gallery-thumb-loading {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.45;
+  }
+}
+
+.gallery-thumb__img--loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: @gallery-border;
+  animation: gallery-thumb-loading 0.9s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-thumb__img--loading::after {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+// An image that cannot be read: no checkerboard, which would pass for a
+// transparent image, and a word with the icon, in the label band's metrics.
+// Muted text on the alternate surface, 5.6:1.
+.gallery-thumb__img--failed {
+  background-image: none;
+  background-color: @gallery-surface-alt;
+}
+
+.gallery-thumb__unavailable {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: @gallery-text-muted;
+
+  .lucide {
+    font-size: 18px;
+  }
+}
+
 // Its own band under the image, opaque so legibility never depends on what the
 // image happens to show. Height in pixels, not a percentage: a percentage
 // resolves against a flex height that is not known yet, and the band collapses.
