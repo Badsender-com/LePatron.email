@@ -18,7 +18,7 @@ module.exports = `
           :class="{ 'gallery-thumb__img--solid': isSolid }"
           ref="pick"
           role="button"
-          tabindex="0"
+          :tabindex="current ? 0 : -1"
           :aria-label="label"
           data-gallery-pick
           @keydown.enter.prevent="$emit('select', file)"
@@ -37,6 +37,7 @@ module.exports = `
             <button
               v-if="canEdit"
               type="button"
+              :tabindex="current ? null : -1"
               class="gallery-thumb__action"
               data-gallery-edit
               :title="editTitle"
@@ -50,6 +51,7 @@ module.exports = `
               v-if="actions.rename"
               ref="renameButton"
               type="button"
+              :tabindex="current ? null : -1"
               class="gallery-thumb__action"
               data-gallery-rename
               :title="renameTitle"
@@ -62,6 +64,7 @@ module.exports = `
             <button
               v-if="actions.remove"
               type="button"
+              :tabindex="current ? null : -1"
               class="gallery-thumb__action gallery-thumb__action--danger"
               data-gallery-remove
               :title="removeTitle"

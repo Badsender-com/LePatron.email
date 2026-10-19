@@ -5,6 +5,7 @@ const Thumb = require('./thumb');
 const Tooltip = require('./tooltip');
 const PanelTooltip = require('./panel-tooltip.js');
 const PanelActions = require('./panel-actions.js');
+const PanelKeyboard = require('./panel-keyboard.js');
 const template = require('./panel.template.js');
 const {
   filterGalleryFiles,
@@ -42,7 +43,7 @@ const SORTS = ['date_desc', 'date_asc'];
  */
 module.exports = {
   components: { Thumb, Tooltip, RecycleScroller },
-  mixins: [PanelTooltip, PanelActions],
+  mixins: [PanelTooltip, PanelActions, PanelKeyboard],
   props: {
     // 'mailing' or 'template' — one instance per gallery pane
     type: { type: String, required: true },
@@ -133,6 +134,9 @@ module.exports = {
     },
     clearSearchLabel() {
       return this.t('gallery-search-clear');
+    },
+    listLabel() {
+      return this.t('gallery-list-label');
     },
     formatGroupLabel() {
       return this.t('gallery-filter-group');

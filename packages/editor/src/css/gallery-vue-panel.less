@@ -206,6 +206,14 @@
   flex: 1 1 auto;
   min-height: 0;
   padding-bottom: 16px;
+
+  // Tab lands on the grid itself only while its current image is scrolled
+  // out of the view, for the instant it takes to bring it back
+  // (panel-keyboard.js); the ring says where the focus went meanwhile.
+  &:focus-visible {
+    outline: 2px solid @gallery-primary;
+    outline-offset: -2px;
+  }
 }
 
 // Wrapper inside each virtual cell: the padding creates the inter-cell gap

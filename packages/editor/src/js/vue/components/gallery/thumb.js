@@ -55,6 +55,11 @@ module.exports = {
       type: Object,
       default: () => ({ rename: false, edit: false, remove: false }),
     },
+    // Whether this thumbnail is the grid's tab stop (panel-keyboard.js): its
+    // image control and its action bar take Tab, the other thumbnails take
+    // the focus only from the arrows or a click. A thumbnail on its own is
+    // its own tab stop.
+    current: { type: Boolean, default: true },
   },
   data: () => ({
     editing: false,

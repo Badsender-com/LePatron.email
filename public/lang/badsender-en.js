@@ -38,6 +38,7 @@ module.exports = {
     'An error has occured while removing the image :(',
   'gallery-search-placeholder': 'Search an image…',
   'gallery-search-clear': 'Clear search',
+  'gallery-list-label': 'Gallery images',
   'gallery-search-no-result': 'No image matches this search',
   'gallery-filter-group': 'Filter by format',
   'gallery-filter-all': 'All',
