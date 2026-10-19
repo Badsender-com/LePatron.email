@@ -156,6 +156,26 @@ describe('thumbnail rename — where the focus goes', () => {
     expect(document.activeElement).toBe(renameButton());
   });
 
+  // The focus is back on the button before the browser has finished with
+  // that Enter: its keypress then landed on the button, which a keypress of
+  // Enter activates, and the field opened again (seen in Chrome). An Enter
+  // whose keydown is handled has no keypress.
+  it('does not let the committing Enter reach the rename button', async () => {
+    renameButton().click();
+    await Vue.nextTick();
+    input(vm).value = 'nouveau.png';
+    input(vm).dispatchEvent(new Event('input'));
+    const enter = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      keyCode: 13,
+      bubbles: true,
+      cancelable: true,
+    });
+    input(vm).dispatchEvent(enter);
+
+    expect(enter.defaultPrevented).toBe(true);
+  });
+
   it('goes back to the rename button once Escape has cancelled', async () => {
     renameButton().click();
     await Vue.nextTick();

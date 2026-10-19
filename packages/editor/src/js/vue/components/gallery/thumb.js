@@ -159,8 +159,14 @@ module.exports = {
     // confirms a candidate in an IME, which only the keydown says (by its
     // keyup the composition is over); committing then would save a
     // half-composed word and close the editor mid-sentence.
+    //
+    // Its default is cancelled: the focus goes back to the rename button
+    // before the browser is done with this key, and the keypress that would
+    // follow lands on the button, which Enter activates, opening the field
+    // again.
     onEnter(event) {
       if (event.isComposing || event.keyCode === 229) return;
+      event.preventDefault();
       this.commitEdit();
       this.refocus();
     },
