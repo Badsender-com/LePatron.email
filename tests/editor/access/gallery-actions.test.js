@@ -3,7 +3,7 @@
  */
 'use strict';
 
-// Who may rename, edit (save a copy) and delete the images of a gallery, for
+// Who may upload, rename, edit (save a copy) and delete the images of a gallery, for
 // every role, in an editor that may write the email and in a read-only one,
 // on the email's gallery and on the template's. The rule is decided once
 // (ext/gallery-actions.js); each extension refuses before any request what
@@ -39,11 +39,16 @@ const FILE = {
 function allowed(role, writable, type) {
   const manages = roleCan(role, CAPABILITIES.GALLERY_MANAGE);
   if (type === 'mailing' && !writable) {
-    return { rename: false, edit: false, remove: false };
+    return { upload: false, rename: false, edit: false, remove: false };
   }
   const parentScope =
     type === 'mailing' || roleCan(role, CAPABILITIES.PLATFORM_MANAGE);
-  return { rename: manages && parentScope, edit: manages, remove: manages };
+  return {
+    upload: manages,
+    rename: manages && parentScope,
+    edit: manages,
+    remove: manages,
+  };
 }
 
 const CASES = Object.values(ROLES).flatMap((role) =>
@@ -112,6 +117,7 @@ describe('gallery actions — the rule', () => {
   it('allows nothing while the user is unknown', () => {
     ['mailing', 'template'].forEach((type) => {
       expect(galleryActions(viewModelFor(null, true), type)).toEqual({
+        upload: false,
         rename: false,
         edit: false,
         remove: false,

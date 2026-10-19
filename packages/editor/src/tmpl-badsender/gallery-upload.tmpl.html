@@ -1,3 +1,8 @@
+<!-- The email's gallery takes no upload where the email may not be written,
+     on the rule of the thumbnails' actions (ext/gallery-actions.js). The
+     template's zone is not gated here: an email open read-only says nothing
+     of the template's gallery. -->
+<!-- ko if: type !== 'mailing' || $root.galleryActions('mailing').upload -->
 <div data-drop-content="Drop here" class="img-dropzone pane uploadzone" data-bind="attr: { 'data-drop-content': $root.t('Drop here') }, fudroppable: { activeClass: 'ui-state-highlight', hoverClass: 'ui-state-draghover' }">
   <div class="mo-uploadzone">
     <!-- ko if: type === 'mailing' -->
@@ -28,3 +33,4 @@
     </div>
   </div>
 </div>
+<!-- /ko -->

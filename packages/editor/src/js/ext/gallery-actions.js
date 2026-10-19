@@ -3,7 +3,12 @@
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 const { userCan } = require('./user-can.js');
 
-const NONE = Object.freeze({ rename: false, edit: false, remove: false });
+const NONE = Object.freeze({
+  upload: false,
+  rename: false,
+  edit: false,
+  remove: false,
+});
 
 /**
  * What the user may do to the images of one gallery, as the server will
@@ -11,7 +16,8 @@ const NONE = Object.freeze({ rename: false, edit: false, remove: false });
  * nothing else, and each extension refuses the others before any request,
  * so a new way in cannot open a path that can only fail.
  *
- * - Editing (which adds a copy) and deleting need `gallery.manage`.
+ * - Uploading, editing (which adds a copy) and deleting need
+ *   `gallery.manage`.
  * - Renaming a label writes in the gallery's parent, with that parent's
  *   scope: the email's gallery needs the right to write the email (its
  *   workspace or folder), the template's needs `platform.manage`, since
@@ -24,17 +30,22 @@ const NONE = Object.freeze({ rename: false, edit: false, remove: false });
  *
  * @param {Object} vm the editor view-model
  * @param {'mailing'|'template'} type which of the two galleries
- * @returns {{ rename: boolean, edit: boolean, remove: boolean }}
+ * @returns {{ upload: boolean, rename: boolean, edit: boolean, remove: boolean }}
  */
 function galleryActions(vm, type) {
   const manages = userCan(vm, CAPABILITIES.GALLERY_MANAGE);
   if (type === 'mailing') {
     if (vm.canWriteMailing === false) return NONE;
-    return { rename: manages, edit: manages, remove: manages };
+    return { upload: manages, rename: manages, edit: manages, remove: manages };
   }
   if (type === 'template') {
     const ownsTemplates = userCan(vm, CAPABILITIES.PLATFORM_MANAGE);
-    return { rename: manages && ownsTemplates, edit: manages, remove: manages };
+    return {
+      upload: manages,
+      rename: manages && ownsTemplates,
+      edit: manages,
+      remove: manages,
+    };
   }
   return NONE;
 }
@@ -46,7 +57,7 @@ function galleryActions(vm, type) {
  *
  * @param {Object} vm the editor view-model
  * @param {'mailing'|'template'} type
- * @param {'rename'|'edit'|'remove'} action
+ * @param {'upload'|'rename'|'edit'|'remove'} action
  * @param {string} refusalKey the translation shown on a refusal
  * @returns {boolean}
  */
