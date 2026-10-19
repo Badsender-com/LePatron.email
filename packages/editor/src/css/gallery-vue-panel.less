@@ -23,7 +23,7 @@
   background: @gallery-surface;
 }
 
-// Search box — styles follow the final mockup (magnifier left, cyan focus ring)
+// Search box — styles follow the final mockup (magnifier left, accent focus ring)
 // Vertical padding is symmetric on purpose: the icon and the clear button are
 // centred on this box with translateY(-50%), which only lands on the input's
 // own centre while the two paddings match.
@@ -55,18 +55,18 @@
   color: @gallery-text;
   background: @gallery-surface-alt;
 
-  // The cyan ring is brand decoration: at 2.60:1 against white it cannot be
-  // the focus indicator on its own (WCAG 1.4.11 asks 3:1). The navy outline
-  // carries that job.
+  // The accent ring is brand decoration: the default cyan, at 2.60:1 against
+  // white, cannot be the focus indicator on its own (WCAG 1.4.11 asks 3:1).
+  // The primary outline (navy by default) carries that job.
   &:focus-visible {
-    outline: 2px solid @gallery-navy;
+    outline: 2px solid @gallery-primary;
     outline-offset: 1px;
   }
 
   &:focus {
-    border-color: @gallery-cyan;
+    border-color: @gallery-accent;
     background: @gallery-surface;
-    box-shadow: 0 0 0 3px @gallery-cyan-soft;
+    box-shadow: 0 0 0 3px @gallery-accent-soft;
   }
 
   // the native clear cross would sit on top of ours
@@ -94,11 +94,11 @@
   color: @gallery-text-faint;
 
   &:hover {
-    color: @gallery-navy;
+    color: @gallery-primary;
   }
 
   &:focus-visible {
-    outline: 2px solid @gallery-navy;
+    outline: 2px solid @gallery-primary;
     outline-offset: 1px;
   }
 
@@ -142,23 +142,23 @@
     color: @gallery-text;
   }
 
-  // same reasoning as the search input: the cyan ring is decoration, the navy
-  // outline is the indicator that actually meets 3:1
+  // same reasoning as the search input: the accent ring is decoration, the
+  // primary outline is the indicator that actually meets 3:1
   &:focus-visible {
-    outline: 2px solid @gallery-navy;
+    outline: 2px solid @gallery-primary;
     outline-offset: 1px;
-    border-color: @gallery-cyan;
-    box-shadow: 0 0 0 3px @gallery-cyan-soft;
+    border-color: @gallery-accent;
+    box-shadow: 0 0 0 3px @gallery-accent-soft;
   }
 }
 
 .gallery-vue-chip--active {
-  background: @gallery-navy;
-  border-color: @gallery-navy;
+  background: @gallery-primary;
+  border-color: @gallery-primary;
   color: @gallery-surface;
 
   &:hover {
-    border-color: @gallery-navy;
+    border-color: @gallery-primary;
     color: @gallery-surface;
   }
 }
@@ -178,7 +178,7 @@
   padding: 6px 4px;
   font-size: 11px;
   font-weight: 600;
-  color: @gallery-navy;
+  color: @gallery-primary;
 }
 
 // Virtualised 3-column grid: only the visible rows are rendered

@@ -7,7 +7,8 @@
 // the squares of the transparency checkerboard
 @checker: #e8eaed;
 // the GIF badge: a warning amber, deliberately outside the brand palette so it
-// reads as a format marker rather than as a themed element
+// reads as a format marker rather than as a themed element; its text too, so
+// a light brand cannot wash it out (6.1:1)
 @gif-badge: #e8a93a;
 
 .gallery-thumb {
@@ -22,18 +23,18 @@
   transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
 
   &:hover {
-    border-color: @gallery-cyan;
-    box-shadow: 0 2px 8px fade(@gallery-navy, 12%);
+    border-color: @gallery-accent;
+    box-shadow: 0 2px 8px fade(@gallery-primary-fixed, 12%);
     transform: translateY(-1px);
   }
 
   // Reached with Tab, picked with Enter or Space. Same indicator as the chips:
-  // the navy outline meets 3:1, the cyan border is decoration. The offset
+  // the primary outline meets 3:1, the accent border is decoration. The offset
   // stays inside the cell's 4px padding, which the scroller does not clip.
   &:focus-visible {
-    outline: 2px solid @gallery-navy;
+    outline: 2px solid @gallery-primary;
     outline-offset: 2px;
-    border-color: @gallery-cyan;
+    border-color: @gallery-accent;
   }
 }
 
@@ -92,13 +93,13 @@
   border-radius: 3px;
   font-size: 9px;
   font-weight: 600;
-  background: fade(@gallery-navy, 85%);
+  background: fade(@gallery-primary-fixed, 85%);
   color: @gallery-surface;
 }
 
 .gallery-thumb__badge--gif {
   background: @gif-badge;
-  color: @gallery-navy;
+  color: @gallery-text;
 }
 
 // Delete button — ISO with the old grid, revealed on hover, pointer only.
@@ -119,7 +120,7 @@
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  background: fade(@gallery-navy, 85%);
+  background: fade(@gallery-primary-fixed, 85%);
   color: @gallery-surface;
   opacity: 0;
   pointer-events: none;
@@ -141,11 +142,11 @@
   width: 48px;
   height: 48px;
   border-radius: 4px;
-  border: 2px solid @gallery-cyan;
+  border: 2px solid @gallery-accent;
   background-color: @gallery-surface;
   background-size: cover;
   background-position: center;
-  box-shadow: 0 2px 8px fade(@gallery-navy, 30%);
+  box-shadow: 0 2px 8px fade(@gallery-primary-fixed, 30%);
   pointer-events: none;
   z-index: 9999;
 }

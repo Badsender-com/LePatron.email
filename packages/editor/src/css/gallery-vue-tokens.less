@@ -11,9 +11,17 @@
 // WCAG ratio it was picked for, because a grey that drifts a shade lighter
 // stops being legible without anything flagging it.
 
-@gallery-navy: @bs-primary-color;
-@gallery-cyan: @bs-accent-color;
-@gallery-cyan-soft: tint(@bs-accent-color, 90%);
+// The brand, read at runtime: the editor injects it as --v-primary-base and
+// --v-accent-base (mosaico-editor.pug), which the tabs above the panel read
+// too. The design-system colour is only the fallback.
+@gallery-primary: var(--v-primary-base, @bs-primary-color);
+@gallery-accent: var(--v-accent-base, @bs-accent-color);
+
+// LESS cannot fade or tint a CSS variable, so the translucent shades (the
+// focus halo, the shadows, the badge) keep the default brand, as the app's
+// --accent-tint-* tokens do (packages/ui design-tokens.scss).
+@gallery-primary-fixed: @bs-primary-color;
+@gallery-accent-soft: tint(@bs-accent-color, 90%);
 
 @gallery-surface: #fff;
 // mockup --lp-panel-alt: the input sits a shade below the panel

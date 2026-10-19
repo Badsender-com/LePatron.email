@@ -11,6 +11,9 @@ const less = require(require.resolve('less', {
 }));
 
 const CSS_DIR = path.join(__dirname, '../../packages/editor/src/css');
+// the brand colours of style_variables.less, used when no brand is injected
+const DEFAULT_PRIMARY = '#093040';
+const DEFAULT_ACCENT = '#00acdc';
 
 let root;
 
@@ -48,5 +51,33 @@ describe('gallery styles — the thumbnail’s ✕', () => {
     const hovered = '.gallery-thumb:hover .gallery-thumb__remove';
     expect(valuesOf(hovered, 'opacity')).toEqual(['1']);
     expect(valuesOf(hovered, 'pointer-events')).toEqual(['auto']);
+  });
+});
+
+describe('gallery styles — brand colours', () => {
+  // The editor injects the brand as --v-primary-base / --v-accent-base
+  // (mosaico-editor.pug), and the tabs right above the panel read them.
+  it('reads the brand at runtime, the default brand only as fallback', () => {
+    const themed = [
+      `var(--v-primary-base, ${DEFAULT_PRIMARY})`,
+      `var(--v-accent-base, ${DEFAULT_ACCENT})`,
+    ];
+    const frozen = [];
+    root.walkDecls((decl) => {
+      const rest = themed.reduce(
+        (value, fallback) => value.split(fallback).join(''),
+        decl.value.toLowerCase()
+      );
+      if (rest.includes(DEFAULT_PRIMARY) || rest.includes(DEFAULT_ACCENT)) {
+        frozen.push(`${decl.parent.selector} { ${decl.prop}: ${decl.value} }`);
+      }
+    });
+    expect(frozen).toEqual([]);
+  });
+
+  it('colours the active chip with the brand', () => {
+    expect(valuesOf('.gallery-vue-chip--active', 'background')).toEqual([
+      `var(--v-primary-base, ${DEFAULT_PRIMARY})`,
+    ]);
   });
 });
