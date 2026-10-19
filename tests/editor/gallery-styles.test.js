@@ -40,31 +40,52 @@ function valuesOf(selector, prop) {
   return values;
 }
 
-describe('gallery styles — the thumbnail’s ✕', () => {
-  // Faded out, it still took clicks: on a touch screen, with no hover to
-  // reveal it, a tap in the corner deleted the image without a word.
-  it('takes no click until the thumbnail is hovered', () => {
-    expect(valuesOf('.gallery-thumb__remove', 'opacity')).toEqual(['0']);
-    expect(valuesOf('.gallery-thumb__remove', 'pointer-events')).toEqual([
+// the selectors of the rules that set `prop` to `value` on `target`
+function selectorsSetting(target, prop, value) {
+  const selectors = [];
+  root.walkRules((rule) => {
+    rule.walkDecls(prop, (decl) => {
+      if (decl.value !== value) return;
+      rule.selectors
+        .filter((selector) => selector.endsWith(target))
+        .forEach((selector) => selectors.push(selector));
+    });
+  });
+  return selectors;
+}
+
+describe('gallery styles — the thumbnail’s action bar', () => {
+  // The bar sits at the bottom of the image. Faded out, it must not take the
+  // tap meant to insert the image: on a touch screen nothing is hovered.
+  it('takes no click until it is revealed', () => {
+    expect(valuesOf('.gallery-thumb__actions', 'pointer-events')).toEqual([
       'none',
     ]);
-    const hovered = '.gallery-thumb:hover .gallery-thumb__remove';
-    expect(valuesOf(hovered, 'opacity')).toEqual(['1']);
-    expect(valuesOf(hovered, 'pointer-events')).toEqual(['auto']);
+    const clickable = selectorsSetting(
+      '.gallery-thumb__actions',
+      'pointer-events',
+      'auto'
+    ).map((selector) => selector.replace('__actions', '__overlay'));
+    const shown = selectorsSetting('.gallery-thumb__overlay', 'opacity', '1');
+    expect(clickable.length).toBeGreaterThan(0);
+    expect(clickable.sort()).toEqual(shown.sort());
   });
 
-  // A tap leaves :hover stuck on a touch screen: the ✕ would then show, and a
-  // second tap delete the image unconfirmed. It only appears for a real hover.
-  it('is revealed only on a device that hovers', () => {
-    const media = [];
-    root.walkRules((rule) => {
-      if (
-        rule.selectors.includes('.gallery-thumb:hover .gallery-thumb__remove')
-      ) {
-        media.push(rule.parent.type === 'atrule' ? rule.parent.params : null);
-      }
-    });
-    expect(media).toEqual(['(hover: hover)']);
+  // The scrim darkens the image under the bar: were it to take the pointer, it
+  // would be a transparent lid that stops the thumbnail from being dragged.
+  it('never lets the scrim take the pointer', () => {
+    expect(valuesOf('.gallery-thumb__overlay', 'pointer-events')).toEqual([
+      'none',
+    ]);
+    expect(
+      selectorsSetting('.gallery-thumb__overlay', 'pointer-events', 'auto')
+    ).toEqual([]);
+  });
+
+  // The old ✕ deleted with no confirmation; the bar's trash asks first, so a
+  // tap that lands on it on a touch screen (where :hover sticks) is harmless.
+  it('replaces the ✕ of the grid', () => {
+    expect(valuesOf('.gallery-thumb__remove', 'opacity')).toEqual([]);
   });
 });
 
