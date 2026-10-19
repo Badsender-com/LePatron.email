@@ -152,13 +152,9 @@ async function processAll(script, { dryRun, concurrency, run, signal }) {
  * @param {Function} [script.assess] (totals, { dryRun }) => failure lines
  * @returns {Promise<number>} the exit code
  */
-async function runGalleryScript(script, { argv = process.argv } = {}) {
-  const { dryRun, concurrency, database } = parseArgs(argv);
-  await config.setup;
-  printHeader(script, dryRun);
-
-  const signal = listenForStop();
-  const run = { totals: {}, failedGalleries: [], processed: 0, toProcess: 0 };
+// Connected to the database the operator confirmed, or rejected with nothing
+// done: a refusal is not a run to resume, it has no summary.
+async function connect(script, database) {
   try {
     await mongoose.connect(config.database, {
       useNewUrlParser: true,
@@ -168,6 +164,21 @@ async function runGalleryScript(script, { argv = process.argv } = {}) {
     });
     printTarget(script, mongoose.connection.name);
     confirmDatabase(mongoose.connection.name, database);
+  } catch (error) {
+    await mongoose.disconnect();
+    throw error;
+  }
+}
+
+async function runGalleryScript(script, { argv = process.argv } = {}) {
+  const { dryRun, concurrency, database } = parseArgs(argv);
+  await config.setup;
+  printHeader(script, dryRun);
+  await connect(script, database);
+
+  const signal = listenForStop();
+  const run = { totals: {}, failedGalleries: [], processed: 0, toProcess: 0 };
+  try {
     await processAll(script, { dryRun, concurrency, run, signal });
   } catch (error) {
     run.fatal = error;

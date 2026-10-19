@@ -205,14 +205,15 @@ describe('run-gallery-script', () => {
       Galleries.collection = fakeCollection(galleries(2));
       const writing = script({ preflight: jest.fn() });
 
-      const code = await runGalleryScript(writing, {
-        argv: ['--confirm-database=app-copy'],
-      });
+      await expect(
+        runGalleryScript(writing, { argv: ['--confirm-database=app-copy'] })
+      ).rejects.toThrow(/--confirm-database=app-copy.*"app".*Nothing/);
 
-      expect(code).toBe(1);
       expect(writing.preflight).not.toHaveBeenCalled();
       expect(writing.processGallery).not.toHaveBeenCalled();
-      expect(output()).toMatch(/--confirm-database=app-copy.*"app"/);
+      expect(mongoose.disconnect).toHaveBeenCalledTimes(1);
+      // a refusal, not an interrupted run: no summary to resume from
+      expect(output()).not.toContain('--- Result ---');
     });
 
     it('runs a dry-run without confirmation', async () => {
