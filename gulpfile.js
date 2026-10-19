@@ -294,16 +294,23 @@ function mosaicoEditor(debug = false) {
       replacements: { '^vue$': 'vue/dist/vue.common' },
     })
     .transform(shim, { global: true })
+    // Global, so `process.env.NODE_ENV` is also replaced in node_modules:
+    // `vue/dist/vue.common` picks its development or production build on it,
+    // and left unreplaced the minified bundle shipped both, running the
+    // development one (warnings, devtools hook) in production. The option
+    // belongs to browserify's `transform`, not to envify's own settings.
+    //
+    // The minified bundle is the one the server serves outside development
+    // (mosaico-editor.pug), and the deployment runs `gulp build` without
+    // `--prod`: so it is production whatever the flag says.
     .transform(
-      envify(
-        {
-          _: 'purge',
-          NODE_ENV: env,
-          BADSENDER: true,
-          MOSAICO: false,
-        },
-        { global: true }
-      )
+      envify({
+        _: 'purge',
+        NODE_ENV: debug ? 'development' : 'production',
+        BADSENDER: true,
+        MOSAICO: false,
+      }),
+      { global: true }
     );
   // use uglifyify instead of gulp.uglify
   // • when RELEASING ONLY purge wasn't done properly by envify
