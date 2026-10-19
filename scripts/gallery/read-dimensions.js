@@ -64,62 +64,66 @@ function classifyError(error) {
  * @returns {Promise<{status: string, width?: number, height?: number, code?: string}>}
  *   never rejects
  */
-function readDimensions(
-  name,
-  {
-    streamImage = fileManager.streamImage,
-    timeoutMs = READ_TIMEOUT_MS,
-    maxBytes = JPEG_SNIFF_BYTES,
-  } = {}
-) {
+function readDimensions(name, options = {}) {
   if (!isSafeName(name)) {
     return Promise.resolve({ status: READ_STATUS.INVALID_NAME });
   }
+  const {
+    streamImage = fileManager.streamImage,
+    timeoutMs = READ_TIMEOUT_MS,
+    maxBytes = JPEG_SNIFF_BYTES,
+  } = options;
   return new Promise((resolve) => {
-    const chunks = [];
-    let total = 0;
-    let settled = false;
-    let stream = null;
-    const done = (result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(result);
-    };
-    const finish = () => {
-      // the shared reader caps what it hands the prober and rounds the result
-      const size = probeImageDimensions(Buffer.concat(chunks));
-      done(
-        size
-          ? { status: READ_STATUS.OK, width: size.width, height: size.height }
-          : { status: READ_STATUS.NOT_AN_IMAGE }
-      );
-    };
-    const timer = setTimeout(() => {
-      done({ status: READ_STATUS.TIMEOUT });
-      if (stream) stream.destroy();
-    }, timeoutMs);
-
-    try {
-      stream = streamImage(name);
-    } catch (error) {
-      done(classifyError(error));
-      return;
-    }
-    stream.on('error', (error) => done(classifyError(error)));
-    stream.on('data', (chunk) => {
-      if (settled) return;
-      chunks.push(chunk);
-      total += chunk.length;
-      if (total >= maxBytes) {
-        // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
-        // emits `error`, and that would otherwise win the race.
-        finish();
-        stream.destroy();
-      }
-    });
-    stream.on('end', finish);
+    streamHead(name, { streamImage, timeoutMs, maxBytes }, resolve);
   });
+}
+
+function measure(head) {
+  // the shared reader caps what it hands the prober and rounds the result
+  const size = probeImageDimensions(head);
+  return size
+    ? { status: READ_STATUS.OK, width: size.width, height: size.height }
+    : { status: READ_STATUS.NOT_AN_IMAGE };
+}
+
+// Reads the head of a stored file and hands `settle` one result, exactly once:
+// the measure, or why there is none.
+function streamHead(name, { streamImage, timeoutMs, maxBytes }, settle) {
+  const chunks = [];
+  let total = 0;
+  let settled = false;
+  let stream = null;
+  const done = (result) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    settle(result);
+  };
+  const finish = () => done(measure(Buffer.concat(chunks)));
+  const timer = setTimeout(() => {
+    done({ status: READ_STATUS.TIMEOUT });
+    if (stream) stream.destroy();
+  }, timeoutMs);
+
+  try {
+    stream = streamImage(name);
+  } catch (error) {
+    done(classifyError(error));
+    return;
+  }
+  stream.on('error', (error) => done(classifyError(error)));
+  stream.on('data', (chunk) => {
+    if (settled) return;
+    chunks.push(chunk);
+    total += chunk.length;
+    if (total >= maxBytes) {
+      // Settle BEFORE destroying: on S3 `destroy` aborts the request, which
+      // emits `error`, and that would otherwise win the race.
+      finish();
+      stream.destroy();
+    }
+  });
+  stream.on('end', finish);
 }
 
 // The configured endpoint may or may not carry a scheme; keep the host only.
