@@ -2,13 +2,18 @@
 import { mapMutations } from 'vuex';
 import isEqual from 'lodash/isEqual';
 import { groupsItem } from '~/helpers/api-routes.js';
+import { CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   statesOf,
-  statesPayload,
+  thresholdsOf,
+  thresholdErrors,
+  orderErrors,
+  settingsPayload,
   checksByCategory,
   qualitySettingsErrorKeyFor,
 } from '~/helpers/quality-settings.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import BsTextField from '~/components/form/bs-text-field.vue';
 
 // The states this page offers. A state set another way (the API) is still
 // shown on its check, so the page never hides what applies.
@@ -16,6 +21,7 @@ const OFFERED_STATES = ['off', 'on'];
 
 export default {
   name: 'BsGroupQualitySettingsTab',
+  components: { BsTextField },
   props: {
     group: { type: Object, required: true },
   },
@@ -23,6 +29,7 @@ export default {
     return {
       // Edited copy: a change must not look saved before the server confirms it.
       states: statesOf(null),
+      thresholds: thresholdsOf(null),
       loading: false,
     };
   },
@@ -33,8 +40,20 @@ export default {
     savedStates() {
       return statesOf(this.group.qualitySettings);
     },
+    savedThresholds() {
+      return thresholdsOf(this.group.qualitySettings);
+    },
     hasUnsavedChanges() {
-      return !isEqual(this.states, this.savedStates);
+      return (
+        !isEqual(this.states, this.savedStates) ||
+        !isEqual(this.normalized(this.thresholds), this.savedThresholds)
+      );
+    },
+    invalidThresholds() {
+      return thresholdErrors(this.thresholds).concat(this.misordered);
+    },
+    misordered() {
+      return orderErrors(this.thresholds);
     },
   },
   watch: {
@@ -42,6 +61,7 @@ export default {
       immediate: true,
       handler(group) {
         this.states = statesOf(group && group.qualitySettings);
+        this.thresholds = thresholdsOf(group && group.qualitySettings);
       },
     },
   },
@@ -55,6 +75,52 @@ export default {
         : OFFERED_STATES.concat(current);
     },
 
+    thresholdsFor(id) {
+      return Object.entries(CHECKS[id].thresholds).map(([name, threshold]) => ({
+        name,
+        ...threshold,
+      }));
+    },
+
+    // An emptied field means "the default": stored as null, like the server.
+    normalized(thresholds) {
+      return Object.fromEntries(
+        Object.entries(thresholds).map(([id, values]) => [
+          id,
+          Object.fromEntries(
+            Object.entries(values).map(([name, value]) => [
+              name,
+              value === '' || value === null ? null : Number(value),
+            ])
+          ),
+        ])
+      );
+    },
+
+    isInvalid(id, name) {
+      return this.invalidThresholds.includes(`${id}.${name}`);
+    },
+
+    errorFor(id, threshold) {
+      if (!this.isInvalid(id, threshold.name)) return [];
+      if (this.misordered.includes(`${id}.${threshold.name}`)) {
+        return [this.$t('qualitySettings.orderError')];
+      }
+      return [
+        this.$t('qualitySettings.thresholdError', {
+          min: threshold.min,
+          max: threshold.max,
+        }),
+      ];
+    },
+
+    onThresholdChange(id, name, value) {
+      this.thresholds = {
+        ...this.thresholds,
+        [id]: { ...this.thresholds[id], [name]: value === '' ? null : value },
+      };
+    },
+
     onStateChange(id, state) {
       if (state) this.states = { ...this.states, [id]: state };
     },
@@ -64,7 +130,12 @@ export default {
       try {
         // Partial update: only the section this page owns travels.
         await this.$axios.$put(groupsItem({ groupId: this.group.id }), {
-          qualitySettings: statesPayload(this.states, this.savedStates),
+          qualitySettings: settingsPayload(
+            this.states,
+            this.normalized(this.thresholds),
+            this.savedStates,
+            this.savedThresholds
+          ),
         });
         this.showSnackbar({
           text: this.$t('qualitySettings.snackbars.updated'),
@@ -105,34 +176,65 @@ export default {
         <div
           v-for="id in ids"
           :key="id"
-          class="quality-settings__check"
+          class="quality-settings__item"
           :data-check="id"
         >
-          <span class="quality-settings__label">
-            {{ $t(`qualitySettings.checks.${id}`) }}
-          </span>
-          <v-btn-toggle
-            :value="states[id]"
-            mandatory
-            dense
-            color="accent"
-            role="group"
-            :aria-label="`${$t('qualitySettings.stateLabel')} : ${$t(
-              `qualitySettings.checks.${id}`
-            )}`"
-            @change="onStateChange(id, $event)"
-          >
-            <v-btn
-              v-for="state in statesFor(id)"
-              :key="state"
-              :value="state"
-              :disabled="loading"
-              small
-              text
+          <div class="quality-settings__check">
+            <span class="quality-settings__label">
+              {{ $t(`qualitySettings.checks.${id}`) }}
+            </span>
+            <v-btn-toggle
+              :value="states[id]"
+              mandatory
+              dense
+              color="accent"
+              role="group"
+              :aria-label="`${$t('qualitySettings.stateLabel')} : ${$t(
+                `qualitySettings.checks.${id}`
+              )}`"
+              @change="onStateChange(id, $event)"
             >
-              {{ $t(`qualitySettings.states.${state}`) }}
-            </v-btn>
-          </v-btn-toggle>
+              <v-btn
+                v-for="state in statesFor(id)"
+                :key="state"
+                :value="state"
+                :disabled="loading"
+                small
+                text
+              >
+                {{ $t(`qualitySettings.states.${state}`) }}
+              </v-btn>
+            </v-btn-toggle>
+          </div>
+          <div
+            v-if="thresholdsFor(id).length"
+            class="quality-settings__thresholds"
+          >
+            <bs-text-field
+              v-for="threshold in thresholdsFor(id)"
+              :key="threshold.name"
+              :value="thresholds[id][threshold.name]"
+              :label="$t(`qualitySettings.thresholds.${id}.${threshold.name}`)"
+              :placeholder="String(threshold.default)"
+              :suffix="$t(`qualitySettings.units.${threshold.unit}`)"
+              :hint="
+                $t('qualitySettings.thresholdHint', {
+                  default: threshold.default,
+                  min: threshold.min,
+                  max: threshold.max,
+                })
+              "
+              :error-messages="errorFor(id, threshold)"
+              :disabled="loading || states[id] === 'off'"
+              :data-threshold="`${id}.${threshold.name}`"
+              type="number"
+              :step="threshold.unit === 'ratio' ? 0.1 : 1"
+              persistent-hint
+              dense
+              class="quality-settings__threshold"
+              @input="onThresholdChange(id, threshold.name, $event)"
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -142,7 +244,9 @@ export default {
         color="accent"
         elevation="0"
         :loading="loading"
-        :disabled="loading || !hasUnsavedChanges"
+        :disabled="
+          loading || !hasUnsavedChanges || invalidThresholds.length > 0
+        "
         @click="onSubmit"
       >
         {{ $t('global.save') }}
@@ -181,13 +285,28 @@ export default {
     margin: 0 0 0.5rem 0;
   }
 
+  &__item {
+    padding: 0.375rem 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  &__thresholds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    margin: 0.25rem 0 0.5rem 0;
+  }
+
+  &__threshold {
+    flex: 1 1 14rem;
+    max-width: 22rem;
+  }
+
   &__check {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.375rem 0;
-    border-bottom: 1px solid var(--gray-200);
   }
 
   &__label {

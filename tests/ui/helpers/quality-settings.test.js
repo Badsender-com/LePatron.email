@@ -1,6 +1,10 @@
 import {
   statesOf,
   statesPayload,
+  thresholdsOf,
+  thresholdErrors,
+  orderErrors,
+  settingsPayload,
   checksByCategory,
   qualitySettingsErrorKeyFor,
 } from '~/helpers/quality-settings.js';
@@ -47,5 +51,56 @@ describe('quality settings page helpers', () => {
     expect(qualitySettingsErrorKeyFor(new Error('Network Error'))).toBe(
       'qualitySettings.snackbars.error'
     );
+  });
+
+  it('reads the thresholds the group set, null where the default applies', () => {
+    const thresholds = thresholdsOf({
+      checks: { subject: { thresholds: { long: 30 } } },
+    });
+    expect(thresholds.subject).toEqual({ long: 30, tooLong: null });
+    expect(thresholds['small-font']).toEqual({
+      minSize: null,
+      minSizeHeaderFooter: null,
+    });
+    expect(thresholds.headings).toBeUndefined();
+  });
+
+  it('names the thresholds outside their bounds', () => {
+    const thresholds = {
+      ...thresholdsOf(undefined),
+      'small-font': { minSize: 2, minSizeHeaderFooter: 12 },
+      'html-size': { maxKb: 150 },
+    };
+    expect(thresholdErrors(thresholds)).toEqual(['small-font.minSize']);
+  });
+
+  it('names the higher level of a pair set under the lower one', () => {
+    const thresholds = {
+      ...thresholdsOf(undefined),
+      subject: { long: 70, tooLong: null },
+      'images-total-weight': { warningKb: 300, errorKb: 400 },
+    };
+    expect(orderErrors(thresholds)).toEqual(['subject.tooLong']);
+  });
+
+  it('sends only the thresholds that changed, a default one as null', () => {
+    const saved = thresholdsOf({
+      checks: { 'html-size': { thresholds: { maxKb: 150 } } },
+    });
+    const thresholds = {
+      ...saved,
+      subject: { long: 30, tooLong: 60 },
+      'html-size': { maxKb: null },
+    };
+    const { checks } = settingsPayload(
+      statesOf(undefined),
+      thresholds,
+      statesOf(undefined),
+      saved
+    );
+    expect(checks).toEqual({
+      subject: { thresholds: { long: 30, tooLong: null } },
+      'html-size': { thresholds: { maxKb: null } },
+    });
   });
 });
