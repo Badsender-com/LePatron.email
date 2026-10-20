@@ -6,28 +6,28 @@ An email builder for marketing teams: each client company designs its emails in 
 
 ### Organization
 
-**Group**:
-A client company: it owns users, workspaces, templates and ESP profiles.
-_UI_: Groupe
-_Avoid_: Company, organization, account
+**Company**:
+A client of the platform: it owns users, workspaces, templates and ESP profiles. The word appears in the super admin's views only (the list of companies, the company picker, a company's badge); a company admin never sees it. The code keeps its older name: the `Group` model, `groupId` and the `_company` field.
+_UI_: Entreprise
+_Avoid_: Group, groupe, organization, account (in prose and UI text)
 
-**Platform group**:
-The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
-_Avoid_: Badsender group, admin group
+**Platform company**:
+The company of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
+_Avoid_: Badsender company, admin group
 
 ### Roles
 
 **Regular user**:
-A member of a group who designs emails in the workspaces they are given.
+A member of a company who designs emails in the workspaces they are given.
 _UI_: Utilisateur
 
 **Company admin**:
-A member of a group who also administers that group: its users, workspaces, templates, settings and profiles.
-_UI_: Administrateur du groupe
+A member of a company who also administers that company: its users, workspaces, templates, settings and profiles.
+_UI_: Administrateur de l'entreprise
 _Avoid_: Group admin, owner
 
 **Super admin**:
-A person operating the platform, with full rights on every group. A super admin belongs to the platform group and is an ordinary account otherwise.
+A person operating the platform, with full rights on every company. A super admin belongs to the platform company and is an ordinary account otherwise.
 _UI_: Super administrateur
 _Avoid_: Admin, platform admin (in prose and UI text; the code keeps its `admin` guard and flag)
 
@@ -38,7 +38,7 @@ _Avoid_: Env admin, hardcoded admin, legacy admin
 ### Editor
 
 **Template**:
-The email model a group is given, built by the operator: its blocks, styles and defaults. Every mailing of the group starts from one.
+The email model a company is given, built by the operator: its blocks, styles and defaults. Every mailing of the company starts from one.
 _UI_: Template
 _Avoid_: Wireframe (the code keeps `_wireframe`)
 
@@ -79,16 +79,16 @@ _UI_: Ignorer
 _Avoid_: Dismiss, mute
 
 **Share link**:
-A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the email's group allows it. Revoked by hand from the email, by expiry, or when the mailing changes group. Suspended while the group has sharing turned off.
+A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can edit the email, when the email's company allows it. Revoked by hand from the email, by expiry, or when the mailing changes company. Suspended while the company has sharing turned off.
 _UI_: Lien d'aperçu
 _Avoid_: Public link, preview URL
 
 **Required tracking parameters**:
-Configured per group in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a group can set it off, on or blocking like any other.
+Configured per company in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a company can set it off, on or blocking like any other.
 _UI_: Paramètres de tracking obligatoires
 
 **Check state**:
-How a rule applies to a group or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
+How a rule applies to a company or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
 _UI_: Désactivé, Actif, Bloquant
 
 **Threshold**:
@@ -97,6 +97,16 @@ _UI_: Seuil
 _Avoid_: Limit, setting
 
 **Quality settings**:
-The state and thresholds of every rule for a group. A template overrides them one by one; whatever it does not set is inherited from its group.
-_UI_: Réglages du contrôle qualité ; Hérité du groupe, Propre au template
+The state and thresholds of every rule for a company. A template overrides them one by one; whatever it does not set is inherited from its company.
+_UI_: Réglages du contrôle qualité
 _Avoid_: QC config, quality configuration
+
+**Recommended values**:
+The state and thresholds of a rule when nothing is set: the catalogue's. They cannot be changed.
+_UI_: Valeurs recommandées ; « Recommandé : 40 »
+_Avoid_: Default (in UI text)
+
+**Exception**:
+A rule whose state or thresholds a company or a template sets differently from what applies below it. The company's exceptions are its **general settings**, for all its templates; a template's own exceptions apply over them, for that template only. The settings page lists exceptions only, and names neither a company nor a group: its readers are the company's admins.
+_UI_: Exception ; Réglages généraux ; Exception propre à ce template ; « Réglage général : … »
+_Avoid_: Override, surcharge, Hérité du groupe, Propre au template

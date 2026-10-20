@@ -465,6 +465,25 @@ describe('QualityDrawer', () => {
     );
   });
 
+  // Found in the browser test of the quality settings (13/10): a blocking
+  // finding offered "Stop ignoring", as if it had been ignored.
+  it('offers neither ignoring nor stop ignoring on a blocking finding', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [{ ...linkFinding, blocking: true }],
+      checks: [],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    const actions = Array.from(
+      el.querySelectorAll('.qc-row__actions button')
+    ).map((b) => b.textContent.trim());
+    expect(actions).not.toContain('quality-action-ignore');
+    expect(actions).not.toContain('Stop ignoring');
+  });
+
   it('closes on Escape', async () => {
     const { vm, el } = await mountDrawer({ findings: [], checks: [] });
     vm.showQuality(true);
