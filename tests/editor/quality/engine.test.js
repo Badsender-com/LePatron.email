@@ -226,6 +226,7 @@ describe('runQualityChecks', () => {
         html: '<html><body></body></html>',
         resources: { links: [], images: [] },
         ctx: null,
+        turnedOff: [],
       });
     });
 
