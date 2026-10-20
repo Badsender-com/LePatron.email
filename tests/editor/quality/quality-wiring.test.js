@@ -6,7 +6,7 @@
 
 // How the quality review is wired into the editor: the plugin that mounts the
 // drawer next to the comments panel, and the two exports that review what
-// they send (download, ESP) without ever depending on the review.
+// they send (download, ESP): a failure of the checks never blocks them.
 
 jest.mock('axios', () => ({
   get: jest.fn(() => Promise.resolve({ data: { items: [] } })),
@@ -80,16 +80,20 @@ describe('the download command', () => {
     jest.restoreAllMocks();
   });
 
-  it('reviews the very HTML the ZIP is built from, and goes on even if the review throws', () => {
-    const review = jest.fn(() => {
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('gates the very HTML the ZIP is built from, and goes on even if the checks throw', async () => {
+    const gate = jest.fn(() => {
       throw new Error('boom');
     });
-    const vm = editorWithReview(review);
+    const vm = editorWithReview(jest.fn());
+    vm.quality.gate = gate;
     serverStorage({ metadata: vm.metadata })(vm);
 
     vm.download.execute();
+    await flush();
 
-    expect(review).toHaveBeenCalledWith({
+    expect(gate).toHaveBeenCalledWith({
       html: vm.exportHTML.mock.results[0].value,
     });
     expect(ajax).toHaveBeenCalledTimes(1);
@@ -99,29 +103,40 @@ describe('the download command', () => {
     expect(vm.exportHTML).toHaveBeenCalledTimes(1);
   });
 
+  it('does not download when a blocking check has a finding', async () => {
+    const vm = editorWithReview(jest.fn());
+    vm.quality.gate = jest.fn(() =>
+      Promise.resolve({ blocked: true, findings: [{ ruleId: 'x' }] })
+    );
+    serverStorage({ metadata: vm.metadata })(vm);
+
+    vm.download.execute();
+    await flush();
+
+    expect(ajax).not.toHaveBeenCalled();
+  });
+
   it('carries no test command: sending a test lives in the drawer', () => {
     const vm = editorWithReview(jest.fn());
     serverStorage({ metadata: vm.metadata })(vm);
     expect(vm.test).toBeUndefined();
   });
 
-  it('does not wait for the checks: the review returns before they run', () => {
+  it('downloads once the checks found nothing blocking', async () => {
     const vm = editorWithReview(undefined);
     const run = jest.fn(() => ({ findings: [], checks: [] }));
-    const deferred = [];
     installQualityReview(vm, ko, {
       run,
-      defer: (fn) => deferred.push(fn),
+      defer: (fn) => fn(),
       watchContent: () => () => {},
     });
     serverStorage({ metadata: vm.metadata })(vm);
 
     vm.download.execute();
+    await flush();
 
+    expect(run).toHaveBeenCalled();
     expect(ajax).toHaveBeenCalledTimes(1);
-    expect(run).not.toHaveBeenCalled();
-    deferred.forEach((fn) => fn());
-    expect(run).toHaveBeenCalledTimes(1);
   });
 });
 
