@@ -27,26 +27,22 @@ jest.mock('../../../packages/server/mailing/mailing.service', () => ({
 jest.mock('../../../packages/server/mailing/mailing-metadata.service', () => ({
   findCanonicalEmailType: jest.fn(),
 }));
+jest.mock('../../../packages/server/common/models.common.js', () => ({
+  Templates: { findById: jest.fn() },
+}));
 jest.mock('../../../packages/server/account/auth.guard', () => ({
   GUARD_USER: function GUARD_USER(req, res, next) {
     if (req.user) return next();
     return res.status(401).json({ message: 'Unauthorized' });
   },
 }));
-// The AI rate limit has its own tests (#1165): here it only has to be on the
-// route. `virtual` because the module ships with #1165, after this file; the
-// path carries its extension so it matches the router's require exactly.
-// #1166 can drop `virtual` when it turns these tests on.
-jest.mock(
-  '../../../packages/server/ai-usage/ai-rate-limit.js',
-  () => ({
-    aiRateLimit: () =>
-      function aiRateLimitMiddleware(req, res, next) {
-        next();
-      },
-  }),
-  { virtual: true }
-);
+// The AI rate limit has its own tests: here it only has to be on the route.
+jest.mock('../../../packages/server/ai-usage/ai-rate-limit.js', () => ({
+  aiRateLimit: () =>
+    function aiRateLimitMiddleware(req, res, next) {
+      next();
+    },
+}));
 
 const express = require('express');
 const request = require('supertest');
@@ -180,7 +176,6 @@ function loadModules() {
   } = require('../../../packages/server/ai-skill/repositories/expertise.repository'));
   mailingService = require('../../../packages/server/mailing/mailing.service');
   mailingMetadataService = require('../../../packages/server/mailing/mailing-metadata.service');
-  // Required here, not at the top of the file: the module ships with #1166.
   textGenerationRouter = require('../../../packages/server/text-generation/text-generation.routes');
 
   mailingService.findOneForUser.mockResolvedValue({ id: MAILING_ID });
@@ -191,8 +186,7 @@ function loadModules() {
   findApplicable.mockResolvedValue(EXPERTISE);
 }
 
-// Turned on by #1166 (generate and apply a subject from the editor)
-describe.skip('text generation: POST /api/text-generation/subject', () => {
+describe('text generation: POST /api/text-generation/subject', () => {
   beforeEach(loadModules);
 
   const body = {
@@ -459,6 +453,130 @@ describe.skip('text generation: POST /api/text-generation/subject', () => {
     });
   });
 
+  describe('the rules, beyond the obvious', () => {
+    const keepsOnly = async (texts, expected, payload = body) => {
+      invoke.mockResolvedValue(proposals(...texts));
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(payload);
+      expect(res.body.proposals.map((p) => p.text)).toEqual(expected);
+      expect(res.body.dropped).toBe(texts.length - expected.length);
+    };
+
+    it('keeps a variable the current subject uses, though the content does not', async () => {
+      await keepsOnly(
+        ['*|FNAME|*, -30 % sur le lin'],
+        ['*|FNAME|*, -30 % sur le lin'],
+        {
+          ...body,
+          currentSubject: '*|FNAME|*, nos soldes',
+        }
+      );
+    });
+
+    it('keeps a known variable written with other spaces or case', async () => {
+      await keepsOnly(
+        ['{{ PRENOM }}, -30 % sur le lin'],
+        ['{{ PRENOM }}, -30 % sur le lin']
+      );
+    });
+
+    it.each([
+      [
+        'a variable in a form no ESP reads',
+        'Bonjour {prenom}, -30 % sur le lin',
+      ],
+      ['another invented form', 'Bonjour %prenom%, -30 % sur le lin'],
+      ['a flag first', '🇫🇷 Lin : -30 % cette semaine'],
+      ['a full-width colon reply prefix', 'RE： votre collection lin'],
+      ['a counted reply prefix', 'Re[2]: votre collection lin'],
+    ])('drops a proposal with %s', async (_label, text) => {
+      await keepsOnly(
+        [text, 'Lin : -30 % et livraison offerte'],
+        ['Lin : -30 % et livraison offerte']
+      );
+    });
+
+    it('keeps one emoji made of several code points, at the end', async () => {
+      await keepsOnly(
+        ['Lin : -30 % pour toute la famille 👨‍👩‍👧'],
+        ['Lin : -30 % pour toute la famille 👨‍👩‍👧']
+      );
+    });
+
+    it('keeps a bracketed label, which is not a variable', async () => {
+      await keepsOnly(
+        ['[IMPORTANT] Lin : -30 % jusqu’à dimanche'],
+        ['[IMPORTANT] Lin : -30 % jusqu’à dimanche']
+      );
+    });
+
+    it('drops a proposal the email settings could not save', async () => {
+      await keepsOnly(['L'.repeat(256), 'Lin : -30 %'], ['Lin : -30 %']);
+    });
+
+    it('drops a duplicate and a proposal the user already saw', async () => {
+      await keepsOnly(
+        ['Soldes : -30 % sur le lin', 'Lin : -30 %', 'Lin : -30 %'],
+        ['Lin : -30 %']
+      );
+    });
+  });
+
+  describe('the request limits', () => {
+    it.each([
+      ['more than 30 proposals to avoid', { avoid: Array(31).fill('x') }],
+      [
+        'a proposal to avoid longer than 300 characters',
+        { avoid: ['x'.repeat(301)] },
+      ],
+      ['an instruction longer than 500 characters', { brief: 'x'.repeat(501) }],
+    ])('answers 400 for %s', async (_label, extra) => {
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send({ ...body, ...extra });
+      expect(res.status).toBe(400);
+      expect(invoke).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('for a super admin, who has no group', () => {
+    const admin = { id: 'admin', isAdmin: true };
+
+    it('serves the request with the engine of the mailing company', async () => {
+      mailingService.findOneForUser.mockResolvedValue({
+        id: MAILING_ID,
+        _company: 'g-mailing',
+      });
+      invoke.mockResolvedValue(proposals('Lin : -30 %'));
+      await request(makeApp({ user: admin }))
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(invoke.mock.calls[0][0].groupId).toBe('g-mailing');
+    });
+
+    it('falls back on the company of the template for a mailing without one', async () => {
+      const {
+        Templates,
+      } = require('../../../packages/server/common/models.common.js');
+      Templates.findById.mockReturnValue({
+        select: () => ({
+          lean: () => Promise.resolve({ _company: 'g-template' }),
+        }),
+      });
+      mailingService.findOneForUser.mockResolvedValue({
+        id: MAILING_ID,
+        _wireframe: 't1',
+      });
+      invoke.mockResolvedValue(proposals('Lin : -30 %'));
+      await request(makeApp({ user: admin }))
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(Templates.findById).toHaveBeenCalledWith('t1');
+      expect(invoke.mock.calls[0][0].groupId).toBe('g-template');
+    });
+  });
+
   describe('when generation is not possible', () => {
     it.each([
       'FEATURE_INACTIVE',
@@ -484,6 +602,48 @@ describe.skip('text generation: POST /api/text-generation/subject', () => {
         .send(body);
       expect(res.status).toBe(503);
       expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+    });
+
+    it('answers 503 when the active skill refuses the input this feature builds', async () => {
+      const err = failedInvocation(400, 'VALIDATION_ERROR');
+      err.skillError = {
+        code: 'INPUT_VALIDATION',
+        message: 'content: Required',
+      };
+      invoke.mockRejectedValue(err);
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.status).toBe(503);
+      expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+    });
+
+    it.each([
+      ['credits or quota are exhausted', 'PROVIDER_QUOTA_EXCEEDED'],
+      ['the key is refused', 'PROVIDER_INVALID_CREDENTIALS'],
+      ['the integration is misconfigured', 'PROVIDER_CONFIG_ERROR'],
+    ])(
+      'answers 503 when %s: retrying will not help',
+      async (_label, failureCode) => {
+        const err = failedInvocation(502, 'PROVIDER_ERROR');
+        err.failureCode = failureCode;
+        invoke.mockRejectedValue(err);
+        const res = await request(makeApp())
+          .post('/api/text-generation/subject')
+          .send(body);
+        expect(res.status).toBe(503);
+        expect(res.body.message).toBe('TEXT_GENERATION_UNAVAILABLE');
+      }
+    );
+
+    it('still answers 502 when the provider hits a passing error', async () => {
+      const err = failedInvocation(502, 'PROVIDER_ERROR');
+      err.failureCode = 'PROVIDER_API_ERROR';
+      invoke.mockRejectedValue(err);
+      const res = await request(makeApp())
+        .post('/api/text-generation/subject')
+        .send(body);
+      expect(res.status).toBe(502);
     });
 
     it.each([

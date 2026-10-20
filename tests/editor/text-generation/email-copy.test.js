@@ -1,172 +1,177 @@
+/**
+ * @jest-environment jsdom
+ */
 'use strict';
 
 /**
  * Acceptance tests of text generation (epic #1163): the text the editor sends.
  *
  * The skill reads the email as the user sees it, block after block, each piece
- * of text with its role. Seam: a pure function over the plain content of the
- * editor (`ko.toJS(viewModel.content())`), so the test needs no editor.
+ * of text with its role. Seam: a pure function over the editor's rendering,
+ * where every editable text carries the id `ko_<block>_<n>_<field>` and the
+ * parts a template hides are simply not rendered (or rendered hidden).
  */
 
-// Turned on by #1166 (generate and apply a subject from the editor)
-describe.skip('editor: extracting the email copy', () => {
-  let extractEmailCopy;
+const {
+  extractEmailCopy,
+} = require('../../../packages/editor/src/js/ext/text-generation/email-copy');
 
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1166.
-    ({
-      extractEmailCopy,
-    } = require('../../../packages/editor/src/js/ext/text-generation/email-copy'));
-  });
+function render(html) {
+  document.body.innerHTML = `<div id="main-wysiwyg-area">${html}</div>`;
+  return document.getElementById('main-wysiwyg-area');
+}
 
-  const content = (blocks, root = {}) => ({
-    ...root,
-    mainBlocks: { blocks },
-  });
+const field = (block, name, html, tag = 'p', attrs = '') =>
+  `<${tag} id="${block}_${name}" contenteditable="true" ${attrs}>${html}</${tag}>`;
 
+describe('editor: extracting the email copy', () => {
   it('lists the text of the blocks in reading order, each with its role', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_titleBlock_1',
-          type: 'titleBlock',
-          titleText: 'Les soldes commencent',
-        },
-        {
-          id: 'ko_textBlock_2',
-          type: 'textBlock',
-          longText: '<p>Jusqu’à <strong>-50 %</strong> sur les manteaux.</p>',
-        },
-        {
-          id: 'ko_buttonBlock_3',
-          type: 'buttonBlock',
-          buttonLink: {
-            text: 'Je choisis mon manteau',
-            url: 'https://example.com/soldes',
-          },
-        },
-      ])
-    );
-    expect(copy).toEqual([
-      { role: 'title', text: 'Les soldes commencent' },
-      { role: 'text', text: 'Jusqu’à -50 % sur les manteaux.' },
-      { role: 'button', text: 'Je choisis mon manteau' },
+    const root = render(`
+      <div id="ko_coverBlock_3">
+        ${field('ko_coverBlock_3', 'badsendertitleText', 'Mesure prise', 'h2')}
+        ${field(
+          'ko_coverBlock_3',
+          'badsendertextfirstText',
+          '<p>Bon taux d’ouverture : <strong>où vous situez-vous</strong> ?</p>',
+          'div'
+        )}
+        ${field('ko_coverBlock_3', 'ctabadsenderText', 'Je lis l’article', 'a')}
+      </div>`);
+    expect(extractEmailCopy(root)).toEqual([
+      { role: 'title', text: 'Mesure prise' },
+      { role: 'text', text: 'Bon taux d’ouverture : où vous situez-vous ?' },
+      { role: 'button', text: 'Je lis l’article' },
     ]);
   });
 
-  it('keeps the order of the fields inside a block', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_sideArticleBlock_1',
-          type: 'sideArticleBlock',
-          titleText: 'Webinaire : 3 astuces',
-          longText: '<p>Mardi 15 mars à 11h.</p>',
-          buttonLink: { text: 'Je m’inscris', url: 'https://example.com' },
-        },
-      ])
-    );
-    expect(copy.map((piece) => piece.role)).toEqual([
+  it('takes the role from the field name when the tag says nothing', () => {
+    const root = render(`
+      <div id="ko_articleBlock_1">
+        ${field(
+          'ko_articleBlock_1',
+          'titleText',
+          'Webinaire : 3 astuces',
+          'div'
+        )}
+        ${field('ko_articleBlock_1', 'buttonText', 'Je m’inscris', 'span')}
+      </div>`);
+    expect(extractEmailCopy(root).map((piece) => piece.role)).toEqual([
       'title',
-      'text',
       'button',
     ]);
   });
 
-  it('leaves out what the reader does not see: a field switched off, a whole hidden part', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_sideArticleBlock_1',
-          type: 'sideArticleBlock',
-          titleVisible: false,
-          titleText: 'Titre masqué',
-          longText: '<p>Texte affiché</p>',
-          buttonVisible: false,
-          buttonLink: { text: 'Bouton masqué', url: 'https://example.com' },
-        },
-      ])
-    );
-    expect(copy).toEqual([{ role: 'text', text: 'Texte affiché' }]);
+  it('leaves out a field the rendering hides', () => {
+    const root = render(`
+      <div id="ko_coverBlock_3">
+        ${field('ko_coverBlock_3', 'badsendertitleText', 'Affiché', 'h2')}
+        <div style="display: none">
+          ${field('ko_coverBlock_3', 'badsendersubtitleText', 'Subtitle')}
+        </div>
+        ${field(
+          'ko_coverBlock_3',
+          'badsendercoverlist1Text',
+          'List text 1',
+          'p',
+          'style="visibility: hidden"'
+        )}
+        ${field('ko_coverBlock_3', 'badsendertextfirstText', 'Texte affiché')}
+      </div>`);
+    expect(extractEmailCopy(root).map((piece) => piece.text)).toEqual([
+      'Affiché',
+      'Texte affiché',
+    ]);
   });
 
-  it('leaves out image alternatives, links and styles', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_imageBlock_1',
-          type: 'imageBlock',
-          image: {
-            src: 'https://example.com/a.jpg',
-            alt: 'Un manteau rouge',
-            url: 'https://example.com',
-          },
-          backgroundColor: '#ffffff',
-          longText: '<p>Légende de l’image</p>',
-        },
-      ])
-    );
-    expect(copy).toEqual([{ role: 'text', text: 'Légende de l’image' }]);
+  it('leaves out the header and footer blocks, the frame of the email', () => {
+    const root = render(`
+      <div id="ko_headerBlock_1">${field(
+        'ko_headerBlock_1',
+        'ctabadsenderText',
+        'TRANSFÉRER',
+        'a'
+      )}</div>
+      <div id="ko_preheaderBlock_4">${field(
+        'ko_preheaderBlock_4',
+        'preheaderText',
+        'Le préheader'
+      )}</div>
+      <div id="ko_coverBlock_3">${field(
+        'ko_coverBlock_3',
+        'badsendertitleText',
+        'Mesure prise',
+        'h2'
+      )}</div>
+      <div id="ko_footerBlock_2">${field(
+        'ko_footerBlock_2',
+        'badsendertextText',
+        'Se désabonner'
+      )}</div>`);
+    expect(extractEmailCopy(root)).toEqual([
+      { role: 'title', text: 'Mesure prise' },
+    ]);
   });
 
-  it('leaves out what is outside the blocks: preheader, header and footer of the template', () => {
-    const copy = extractEmailCopy(
-      content(
-        [{ id: 'ko_textBlock_1', type: 'textBlock', longText: '<p>Corps</p>' }],
-        {
-          preheaderText: 'Le préheader',
-          preheaderBlock: { preheaderText: 'Autre préheader' },
-          footerBlock: { longText: 'Se désabonner' },
-        }
-      )
-    );
-    expect(copy).toEqual([{ role: 'text', text: 'Corps' }]);
+  it('leaves out a text left at the template sample value', () => {
+    const root = render(`
+      <div id="ko_coverBlock_3">
+        ${field('ko_coverBlock_3', 'badsendertitleText', 'Title', 'h2')}
+        ${field(
+          'ko_coverBlock_3',
+          'badsendertextfirstText',
+          'Un vrai paragraphe'
+        )}
+        ${field('ko_coverBlock_3', 'ctabadsenderText', 'CALL TO ACTION', 'a')}
+      </div>`);
+    const samples = {
+      badsendertitleText: '\n      Title\n    ',
+      badsendertextfirstText: 'Text 01',
+      ctabadsenderText: '<span>CALL TO ACTION</span>',
+    };
+    const sampleFor = (blockType, name) =>
+      blockType === 'coverBlock' ? samples[name] : undefined;
+    expect(extractEmailCopy(root, { sampleFor })).toEqual([
+      { role: 'text', text: 'Un vrai paragraphe' },
+    ]);
   });
 
-  it('turns rich text into plain text, entities decoded and spaces collapsed', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_textBlock_1',
-          type: 'textBlock',
-          longText:
-            '<p>Bonjour&nbsp;!</p>\n<p>Prix&nbsp;:   <em>12&nbsp;€</em> &amp; livraison</p>',
-        },
-      ])
-    );
-    expect(copy).toEqual([
-      { role: 'text', text: 'Bonjour ! Prix : 12 € & livraison' },
+  it('turns rich text into plain text, line breaks and paragraphs as spaces', () => {
+    const root = render(`
+      <div id="ko_textBlock_1">
+        ${field(
+          'ko_textBlock_1',
+          'longText',
+          '<p>Bonne rentrée à vous !<br>Marion</p><p>Prix&nbsp;: <em>12&nbsp;€</em> &amp; livraison</p>',
+          'div'
+        )}
+      </div>`);
+    expect(extractEmailCopy(root)).toEqual([
+      {
+        role: 'text',
+        text: 'Bonne rentrée à vous ! Marion Prix : 12 € & livraison',
+      },
     ]);
   });
 
   it('keeps personalization variables as they are written', () => {
-    const copy = extractEmailCopy(
-      content([
-        {
-          id: 'ko_textBlock_1',
-          type: 'textBlock',
-          longText: '<p>Bonjour {{prenom}}, votre code %%CODE%%</p>',
-        },
-      ])
-    );
-    expect(copy).toEqual([
+    const root = render(`
+      <div id="ko_textBlock_1">${field(
+        'ko_textBlock_1',
+        'longText',
+        'Bonjour {{prenom}}, votre code %%CODE%%'
+      )}</div>`);
+    expect(extractEmailCopy(root)).toEqual([
       { role: 'text', text: 'Bonjour {{prenom}}, votre code %%CODE%%' },
     ]);
   });
 
-  it('skips empty texts and returns an empty list for an email without blocks', () => {
-    expect(
-      extractEmailCopy(
-        content([
-          {
-            id: 'ko_textBlock_1',
-            type: 'textBlock',
-            longText: '<p>&nbsp;</p>',
-            titleText: '  ',
-          },
-        ])
-      )
-    ).toEqual([]);
-    expect(extractEmailCopy({})).toEqual([]);
+  it('skips empty texts, non-editable nodes, and returns nothing for an empty email', () => {
+    const root = render(`
+      <div id="ko_textBlock_1">
+        ${field('ko_textBlock_1', 'longText', '<p>&nbsp;</p>')}
+        <p id="ko_textBlock_1_image">Not editable</p>
+      </div>`);
+    expect(extractEmailCopy(root)).toEqual([]);
+    expect(extractEmailCopy(render(''))).toEqual([]);
   });
 });
