@@ -1,13 +1,11 @@
 <script>
-import { mapMutations } from 'vuex';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import * as apiRoutes from '~/helpers/api-routes.js';
+import mixinAiFeatureConfig from '~/helpers/mixins/mixin-ai-feature-config.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
-import BsAiFeatureSkillEngineSection from '~/components/group/BsAiFeatureSkillEngineSection.vue';
+import BsAiFeatureEngineSection from '~/components/group/BsAiFeatureEngineSection.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 // Three levels, mirroring packages/server/constant/translation-formality.js:
@@ -25,12 +23,13 @@ export default {
     BsSelect,
     BsAiModelPicker,
     BsFormSection,
-    BsAiFeatureSkillEngineSection,
+    BsAiFeatureEngineSection,
     LucideLanguages: Languages,
     LucideFileText: FileText,
     LucideBadgeCheck: BadgeCheck,
     LucideSparkles: Sparkles,
   },
+  mixins: [mixinAiFeatureConfig],
   props: {
     active: {
       type: Boolean,
@@ -45,10 +44,6 @@ export default {
   },
   data() {
     return {
-      loading: false,
-      saving: false,
-      config: null,
-      integrations: [],
       languageOptions: LANGUAGE_OPTIONS,
       // Reported by the model picker. Still needed here even though the model
       // field moved out: DeepL is the one provider with supportsFormality, and
@@ -154,53 +149,9 @@ export default {
       },
     },
   },
-  mounted() {
-    this.fetchData();
-  },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-
-    async fetchData() {
-      try {
-        this.loading = true;
-        const [configRes, integrationsRes] = await Promise.all([
-          this.$axios.$get(apiRoutes.aiFeatures(this.groupId)),
-          this.$axios.$get(apiRoutes.integrations(this.groupId, 'ai')),
-        ]);
-        this.config = configRes;
-        this.integrations = integrationsRes.items || [];
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async updateFeature(featureType, data) {
-      try {
-        this.saving = true;
-        const result = await this.$axios.$put(
-          apiRoutes.aiFeaturesItem(this.groupId, featureType),
-          data
-        );
-        this.config = result;
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        // Refresh to reset UI state
-        await this.fetchData();
-      } finally {
-        this.saving = false;
-      }
+    updateFeature(featureType, data) {
+      return this.saveFeature(featureType, data);
     },
 
     getProviderLabel,
@@ -309,14 +260,27 @@ export default {
           </v-row>
         </bs-form-section>
 
-        <!-- Section: Skills AI engine (generic engine for all skill invocations
+        <!-- Section: Text generation (subject and preheader in the editor),
+             backed by the Skills module. -->
+        <bs-ai-feature-engine-section
+          :group-id="groupId"
+          feature-type="text_generation"
+          labels="aiFeatures.textGeneration"
+        >
+          <template #icon>
+            <lucide-file-text :size="20" />
+          </template>
+        </bs-ai-feature-engine-section>
+
+        <!-- Section: Skills AI engine (the default engine of skill invocations
              + the super-admin Playground via the platform group).
-             Platform-group only for now. TODO: remove this v-if once productive
-             client features consume skills (étape 2bis / 3) — it then becomes a
-             normal feature like translation, visible to every group. -->
-        <bs-ai-feature-skill-engine-section
+             Platform-group only: client features each have their own feature
+             type, like text_generation above. -->
+        <bs-ai-feature-engine-section
           v-if="isPlatform"
           :group-id="groupId"
+          feature-type="skill"
+          labels="aiFeatures.skill"
         />
 
         <!-- Section: Coming Soon Features -->
@@ -332,21 +296,6 @@ export default {
           </template>
 
           <div class="upcoming-features">
-            <div class="upcoming-feature">
-              <lucide-file-text :size="20" class="upcoming-feature__icon" />
-              <div class="upcoming-feature__content">
-                <span class="upcoming-feature__title">
-                  {{ $t('aiFeatures.textGeneration.title') }}
-                </span>
-                <span class="upcoming-feature__description">
-                  {{ $t('aiFeatures.textGeneration.description') }}
-                </span>
-              </div>
-              <v-chip x-small outlined color="grey">
-                {{ $t('aiFeatures.comingSoon') }}
-              </v-chip>
-            </div>
-
             <div class="upcoming-feature">
               <lucide-badge-check :size="20" class="upcoming-feature__icon" />
               <div class="upcoming-feature__content">

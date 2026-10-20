@@ -39,4 +39,6 @@ module.exports = Object.freeze({
   AIPlaygroundRunModel: 'AIPlaygroundRun',
   // Taxonomy (email metadata)
   TaxonomyItemModel: 'TaxonomyItem',
+  // Rate limit of the AI features
+  AIUsageCounterModel: 'AIUsageCounter',
 });
