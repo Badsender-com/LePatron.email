@@ -35,6 +35,13 @@ _Avoid_: Admin, platform admin (in prose and UI text; the code keeps its `admin`
 The super admin account defined by the deployment configuration, outside the database. It creates the first super admin of an environment and is never listed, demoted or removed.
 _Avoid_: Env admin, hardcoded admin, legacy admin
 
+### Editor
+
+**Template**:
+The email model a group is given, built by the operator: its blocks, styles and defaults. Every mailing of the group starts from one.
+_UI_: Template
+_Avoid_: Wireframe (the code keeps `_wireframe`)
+
 ### Quality control
 
 **Quality run**:
@@ -67,7 +74,7 @@ _Avoid_: User content
 The links and images of the client's blocks that the editor sends to the server for it to measure. The server measures and answers; it never judges and never stores.
 
 **Ignore**:
-Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it.
+Hide a finding for the whole team, by fingerprint, until its content changes. Stored on the mailing, never copied with it. A finding of a blocking rule cannot be ignored.
 _UI_: Ignorer
 _Avoid_: Dismiss, mute
 
@@ -77,5 +84,19 @@ _UI_: Lien d'aperçu
 _Avoid_: Public link, preview URL
 
 **Required tracking parameters**:
-The only check that blocks a download or an ESP send today. Configured per group; becomes one blocking check among others with the quality settings.
+Configured per group in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a group can set it off, on or blocking like any other.
 _UI_: Paramètres de tracking obligatoires
+
+**Check state**:
+How a rule applies to a group or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
+_UI_: Désactivé, Actif, Bloquant
+
+**Threshold**:
+A limit a rule compares an email with, such as the length of a subject or the weight of an image. Set within bounds by the quality settings.
+_UI_: Seuil
+_Avoid_: Limit, setting
+
+**Quality settings**:
+The state and thresholds of every rule for a group. A template overrides them one by one; whatever it does not set is inherited from its group.
+_UI_: Réglages du contrôle qualité ; Hérité du groupe, Propre au template
+_Avoid_: QC config, quality configuration
