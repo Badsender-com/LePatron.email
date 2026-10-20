@@ -56,6 +56,9 @@ export function templatesItem(routeParams = {}) {
 export function templatesItemTrackingConfig(routeParams = {}) {
   return `/templates/${routeParams.templateId}/tracking-config`;
 }
+export function templatesItemQualitySettings(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/quality-settings`;
+}
 export function templatesItemPreview(routeParams = {}) {
   return `/templates/${routeParams.templateId}/preview`;
 }

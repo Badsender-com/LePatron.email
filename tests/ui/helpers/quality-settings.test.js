@@ -5,6 +5,9 @@ import {
   thresholdErrors,
   orderErrors,
   settingsPayload,
+  overridesOf,
+  overridesPayload,
+  overrideCount,
   checksByCategory,
   qualitySettingsErrorKeyFor,
 } from '~/helpers/quality-settings.js';
@@ -83,6 +86,17 @@ describe('quality settings page helpers', () => {
     expect(orderErrors(thresholds)).toEqual(['subject.tooLong']);
   });
 
+  it("checks a template's pairs against its group's values", () => {
+    const template = thresholdsOf({
+      checks: { subject: { thresholds: { long: 70 } } },
+    });
+    const group = thresholdsOf({
+      checks: { subject: { thresholds: { tooLong: 80 } } },
+    });
+    expect(orderErrors(template, group)).toEqual([]);
+    expect(orderErrors(template)).toEqual(['subject.tooLong']);
+  });
+
   it('sends only the thresholds that changed, a default one as null', () => {
     const saved = thresholdsOf({
       checks: { 'html-size': { thresholds: { maxKb: 150 } } },
@@ -102,5 +116,46 @@ describe('quality settings page helpers', () => {
       subject: { thresholds: { long: 30, tooLong: null } },
       'html-size': { thresholds: { maxKb: null } },
     });
+  });
+
+  it("reads a template's overrides, null where it follows the group", () => {
+    const { states, thresholds } = overridesOf({
+      checks: {
+        headings: { state: 'off' },
+        'small-font': { thresholds: { minSize: 11 } },
+      },
+    });
+    expect(states.headings).toBe('off');
+    expect(states.subject).toBeNull();
+    expect(thresholds['small-font']).toEqual({
+      minSize: 11,
+      minSizeHeaderFooter: null,
+    });
+  });
+
+  it('sends every setting the template follows the group on as null', () => {
+    const { states, thresholds } = overridesOf(undefined);
+    const { checks } = overridesPayload(
+      { ...states, headings: 'on' },
+      { ...thresholds, subject: { long: '30', tooLong: '' } }
+    );
+    expect(checks.headings).toEqual({ state: 'on' });
+    expect(checks['emoji-placement']).toEqual({ state: null });
+    expect(checks.subject).toEqual({
+      state: null,
+      thresholds: { long: 30, tooLong: null },
+    });
+  });
+
+  it('counts the settings a template overrides', () => {
+    expect(overrideCount(undefined)).toBe(0);
+    expect(
+      overrideCount({
+        checks: {
+          headings: { state: 'off' },
+          subject: { thresholds: { long: 30, tooLong: 50 } },
+        },
+      })
+    ).toBe(3);
   });
 });
