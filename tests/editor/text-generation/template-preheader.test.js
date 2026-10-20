@@ -11,13 +11,11 @@
 
 const ko = require('knockout');
 
-// Turned on by #1167 (generate and apply a preheader built from the picked subject)
-describe.skip('editor: the template preheader', () => {
+describe('editor: the template preheader', () => {
   let findPreheader;
   let writePreheader;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1167.
     ({
       findPreheader,
       writePreheader,

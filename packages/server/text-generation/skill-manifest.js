@@ -8,9 +8,13 @@
 module.exports = {
   featureType: 'text_generation',
   description: 'Subject and preheader proposals in the editor',
-  usedSkills: [{ skillId: 'redaction.objet' }],
+  usedSkills: [
+    { skillId: 'redaction.objet' },
+    { skillId: 'redaction.pre-header' },
+  ],
   usedExpertise: [],
   expertiseFilters: [
     { scope: ['subject'], categories: ['redaction', 'deliverability'] },
+    { scope: ['preheader'], categories: ['redaction', 'deliverability'] },
   ],
 };
