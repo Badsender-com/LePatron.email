@@ -61,6 +61,7 @@ module.exports = {
   SUSPICIOUS_WRONG_PASSWORDS: 5,
   EMAIL_CODE_TTL_MS: 10 * MINUTE,
   EMAIL_CODES_PER_STEP: 3,
+  EMAIL_CODE_BCRYPT_ROUNDS: 8,
   EMAIL_CODES_PER_HOUR: 10,
   // The step of the code, rate limited apart from the password.
   CODE_ATTEMPTS_PER_HOUR_PER_ACCOUNT: 20,
