@@ -61,7 +61,35 @@ const TEXTS = {
       reset: SIGN_IN.en,
     },
   },
+  deviceTrusted: {
+    fr: {
+      title: 'Un nouvel appareil de confiance',
+      desc:
+        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’administrateur de votre groupe.',
+      reset: SIGN_IN.fr,
+    },
+    en: {
+      title: 'A new trusted device',
+      desc:
+        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell the administrator of your group.',
+      reset: SIGN_IN.en,
+    },
+  },
 };
+
+/**
+ * The texts of the "new trusted device" email, naming the device.
+ *
+ * @param {{browser: string, os: string}} device
+ * @returns {Object}
+ */
+function deviceTrustedTexts({ browser, os }) {
+  const texts = {};
+  Object.entries(TEXTS.deviceTrusted).forEach(([lang, text]) => {
+    texts[lang] = { ...text, title: `${text.title} : ${browser}, ${os}` };
+  });
+  return texts;
+}
 
 /**
  * Sends one of the emails above. Never fails the request that sends it: an
@@ -87,4 +115,4 @@ async function sendTwoFactorEmail(user, name, texts = TEXTS[name]) {
   }
 }
 
-module.exports = { sendTwoFactorEmail, SUBJECTS, SIGN_IN };
+module.exports = { sendTwoFactorEmail, deviceTrustedTexts, SUBJECTS, SIGN_IN };

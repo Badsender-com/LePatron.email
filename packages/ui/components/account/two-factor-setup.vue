@@ -14,7 +14,13 @@ import { isStepExpired, twoFactorErrorKey } from '~/helpers/two-factor.js';
 export default {
   name: 'BsTwoFactorSetup',
   data() {
-    return { method: 'totp', setup: null, code: '', loading: false };
+    return {
+      method: 'totp',
+      setup: null,
+      code: '',
+      trustDevice: false,
+      loading: false,
+    };
   },
   mounted() {
     this.start();
@@ -46,6 +52,7 @@ export default {
       try {
         const answer = await this.$axios.$post(accountTwoFactorSetupConfirm(), {
           code: this.code,
+          trustDevice: this.trustDevice,
         });
         this.$emit('answer', answer);
       } catch (error) {
@@ -92,6 +99,12 @@ export default {
           name="code"
           prepend-icon="lock"
           required
+        />
+        <v-checkbox
+          v-model="trustDevice"
+          hide-details
+          dense
+          :label="$t('twoFactor.code.trustDevice')"
         />
       </v-form>
     </v-card-text>
