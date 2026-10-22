@@ -101,7 +101,7 @@ describe('the step of the code', () => {
 
     await expect(submitCode(req, { code: '000000' })).rejects.toMatchObject({
       status: 400,
-      message: 'two-factor.code-incorrect',
+      message: 'TWO_FACTOR_CODE_INCORRECT',
     });
   });
 
@@ -126,7 +126,7 @@ describe('the step of the code', () => {
 
     await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
       status: 401,
-      message: 'two-factor.step-expired',
+      message: 'TWO_FACTOR_STEP_EXPIRED',
     });
   });
 
@@ -149,7 +149,30 @@ describe('the step of the code', () => {
 
     await expect(submitCode(req, { code: '000000' })).rejects.toMatchObject({
       status: 401,
-      message: 'two-factor.step-expired',
+      message: 'TWO_FACTOR_STEP_EXPIRED',
+    });
+  });
+
+  it('ends the step when the password changes meanwhile', async () => {
+    const user = harness.addTotpUser({ password: 'hash-of-the-old-one' });
+    const { req } = await harness.signIn(passport, user);
+    user.password = 'hash-of-the-new-one';
+
+    await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
+      status: 401,
+      message: 'TWO_FACTOR_STEP_EXPIRED',
+    });
+  });
+
+  it('ends the step when an admin resets the setup meanwhile', async () => {
+    const user = harness.addTotpUser();
+    const { req } = await harness.signIn(passport, user);
+    user.twoFactorMethod = undefined;
+    user.twoFactor = undefined;
+
+    await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
+      status: 401,
+      message: 'TWO_FACTOR_STEP_EXPIRED',
     });
   });
 

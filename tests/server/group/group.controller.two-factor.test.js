@@ -13,6 +13,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
 }));
 jest.mock('../../../packages/server/group/group.service.js', () => ({
   updateGroup: jest.fn(),
+  findUserByGroupId: jest.fn(),
 }));
 jest.mock('../../../packages/server/profile/profile.service.js', () => ({}));
 jest.mock(
@@ -128,5 +129,42 @@ describe('PUT /groups/:groupId — requireTwoFactor', () => {
     GUARD_GROUP_ADMIN({ user: { id: 'u1', role: 'regular_user' } }, {}, next);
 
     expect(next.mock.calls[0][0]).toBeInstanceOf(createError.Unauthorized);
+  });
+});
+
+describe('GET /groups/:groupId/users — twoFactorMethod', () => {
+  const member = {
+    id: 'u1',
+    name: 'Camille',
+    twoFactorMethod: 'email',
+    toJSON() {
+      return { id: 'u1', name: 'Camille', twoFactorMethod: 'email' };
+    },
+  };
+
+  async function readUsersAs(user) {
+    groupService.findUserByGroupId.mockResolvedValue([member]);
+    const res = { json: jest.fn() };
+    await groupController.readUsers(
+      { params: { groupId: GROUP_ID }, user },
+      res
+    );
+    return res.json.mock.calls[0][0].items;
+  }
+
+  it('shows each member’s method to a company admin', async () => {
+    const [item] = await readUsersAs(companyAdmin);
+
+    expect(item.twoFactorMethod).toBe('email');
+  });
+
+  it('hides it from a member who does not manage the group', async () => {
+    const [item] = await readUsersAs({
+      id: 'u2',
+      role: 'writer',
+      group: GROUP_ID,
+    });
+
+    expect(item).toEqual({ id: 'u1', name: 'Camille' });
   });
 });

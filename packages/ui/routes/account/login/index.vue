@@ -47,6 +47,7 @@ export default {
       step: null,
       method: null,
       signedIn: null,
+      recoveryCodes: [],
     };
   },
   head() {
@@ -148,7 +149,12 @@ export default {
       const step = signInStepOf(answer);
       if (step === STEP_SIGNED_IN) return this.signIn(answer);
       if (step === STEP_VERIFY) this.method = answer.twoFactor.method;
-      if (step === STEP_RECOVERY_CODES) this.signedIn = answer;
+      if (step === STEP_RECOVERY_CODES) {
+        // Shown once: the codes never reach the store.
+        const { recoveryCodes, ...user } = answer;
+        this.recoveryCodes = recoveryCodes;
+        this.signedIn = user;
+      }
       this.step = step;
     },
     async signIn(user) {
@@ -286,7 +292,7 @@ export default {
       />
       <bs-recovery-codes
         v-if="step === 'recovery-codes'"
-        :codes="signedIn.recoveryCodes"
+        :codes="recoveryCodes"
         @continue="signIn(signedIn)"
       />
     </v-card>

@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const createError = require('http-errors');
 
 const {
@@ -15,6 +16,14 @@ const KEY = 'twoFactorPending';
 
 const expired = () => new createError.Unauthorized(ERRORS.STEP_EXPIRED);
 
+// The password the step was started with, as a digest of its hash: a
+// password changed meanwhile ends the step.
+const passwordStampOf = (user) =>
+  crypto
+    .createHash('sha256')
+    .update(String(user.password || ''))
+    .digest('hex');
+
 /**
  * @param {Object} req
  * @param {Object} user the account whose password was right
@@ -25,6 +34,7 @@ const expired = () => new createError.Unauthorized(ERRORS.STEP_EXPIRED);
 function start(req, user, step, method) {
   req.session[KEY] = {
     userId: String(user.id),
+    passwordStamp: passwordStampOf(user),
     step,
     method,
     expiresAt: Date.now() + PENDING_STEP_TTL_MS,
@@ -52,6 +62,15 @@ function read(req, step) {
     throw expired();
   }
   return pending;
+}
+
+/**
+ * @param {Object} pending
+ * @param {Object} user the account of the step, read again
+ * @returns {boolean} whether its password is still the one of the step
+ */
+function isSamePassword(pending, user) {
+  return pending.passwordStamp === passwordStampOf(user);
 }
 
 function end(req) {
@@ -87,4 +106,11 @@ async function refuseCode(req, pending, onLimit) {
   throw expired();
 }
 
-module.exports = { start, read, end, userIdOf, refuseCode };
+module.exports = {
+  start,
+  read,
+  end,
+  userIdOf,
+  isSamePassword,
+  refuseCode,
+};

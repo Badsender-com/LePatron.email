@@ -92,6 +92,17 @@ describe('resetting a member’s two-factor authentication', () => {
     expect(body.twoFactorMethod).toBeUndefined();
   });
 
+  it('erases the secret, the recovery codes and the trusted devices', async () => {
+    harness.addTotpUser();
+
+    await resetAs(companyAdmin);
+
+    expect(harness.models.Users.updateOne).toHaveBeenCalledWith(
+      { _id: 'u1' },
+      { $unset: { twoFactor: 1, twoFactorMethod: 1 } }
+    );
+  });
+
   it('ends the member’s sessions', async () => {
     const user = harness.addTotpUser();
 

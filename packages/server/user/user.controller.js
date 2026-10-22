@@ -405,9 +405,9 @@ async function setPassword(req, res) {
   }
 
   await user.setPassword(req.body.password, user.lang);
-  // The mailbox alone must not open an account that needs a second factor
-  // (ADR 0008): the member signs in with the new password. The sessions
-  // opened before it end all the same.
+  // The emailed link opens no session for an account that needs a second
+  // factor (ADR 0008): the member signs in with the new password, and the
+  // code. The sessions opened before it end all the same.
   if (await needsTwoFactor(user)) {
     await endSessions(user.id);
     return res.json({ twoFactorRequired: true });

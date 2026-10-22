@@ -33,6 +33,20 @@ const TEXTS = {
       reset: SIGN_IN.en,
     },
   },
+  setUp: {
+    fr: {
+      title: 'La double authentification est activée sur votre compte',
+      desc:
+        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’administrateur de votre groupe.',
+      reset: SIGN_IN.fr,
+    },
+    en: {
+      title: 'Two-factor authentication is on for your account',
+      desc:
+        'You will now enter a code after your password. If you did not set it up yourself, tell the administrator of your group straight away.',
+      reset: SIGN_IN.en,
+    },
+  },
   recoveryCodeUsed: {
     fr: {
       title: 'Un code de secours a servi à vous connecter',

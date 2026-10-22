@@ -1,5 +1,7 @@
 // The sign-in after the password, with two-factor authentication (ADR 0008).
 
+import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
+
 export const STEP_VERIFY = 'verify';
 export const STEP_SETUP = 'setup';
 export const STEP_RECOVERY_CODES = 'recovery-codes';
@@ -40,7 +42,9 @@ export function twoFactorErrorKey(error) {
   const status = error?.response?.status;
   if (status === 401) return 'twoFactor.code.expired';
   if (status === 429) return 'global.errors.tooManyRequests';
-  if (error?.response?.data?.message === 'two-factor.code-incorrect') {
+  if (
+    error?.response?.data?.message === ERROR_CODES.TWO_FACTOR_CODE_INCORRECT
+  ) {
     return 'twoFactor.code.incorrect';
   }
   return 'global.errors.errorOccured';
