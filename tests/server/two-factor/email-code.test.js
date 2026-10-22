@@ -63,8 +63,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1322 (verification code by email)
-describe.skip('setting up the code by email', () => {
+describe('setting up the code by email', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
@@ -97,8 +96,7 @@ describe.skip('setting up the code by email', () => {
   });
 });
 
-// Turned on by #1322 (verification code by email)
-describe.skip('signing in with the code by email', () => {
+describe('signing in with the code by email', () => {
   beforeAll(() => {
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
   });

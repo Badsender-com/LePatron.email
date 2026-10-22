@@ -12,10 +12,20 @@ export default {
       incorrect: 'Incorrect code',
       expired: 'This step expired: enter your password again.',
       trustDevice: 'Trust this device for 30 days',
+      resend: 'Send a new code',
+      sent: 'A new code was sent to you',
     },
     setup: {
       intro:
         'Your group requires two-factor authentication: after your password, you will enter a code.',
+      choose: 'How do you want to get your codes?',
+      methods: {
+        totp: 'An authenticator app on my phone',
+        email: 'A code by email',
+      },
+      start: 'Continue',
+      emailSent:
+        'A code was just sent to you by email: enter it to turn on two-factor authentication.',
       scan: 'Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then enter the code it shows.',
       qrCodeAlt: 'Setup QR code',
       manual: 'Or enter this key in the app:',

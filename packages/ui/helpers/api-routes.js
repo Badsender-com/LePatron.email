@@ -497,3 +497,5 @@ export const accountTwoFactor = () => '/account/login/two-factor';
 export const accountTwoFactorSetup = () => '/account/login/two-factor/setup';
 export const accountTwoFactorSetupConfirm = () =>
   '/account/login/two-factor/setup/confirm';
+export const accountTwoFactorEmailCode = () =>
+  '/account/login/two-factor/email-code';

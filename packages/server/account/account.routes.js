@@ -61,6 +61,11 @@ router.post(
   ...codeStep,
   twoFactor.confirmSetup
 );
+router.post(
+  '/login/two-factor/email-code',
+  ...codeStep,
+  twoFactor.sendEmailCode
+);
 router.get('/:username', perAddress({ max: 1000 }), users.getPublicProfile);
 router.delete(
   '/:email/password',

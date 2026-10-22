@@ -68,6 +68,8 @@ const EXEMPTIONS = {
     'the setup after a right password, before the session opens (ADR 0008)',
   'POST /api/account/login/two-factor/setup/confirm':
     'the setup after a right password, before the session opens (ADR 0008)',
+  'POST /api/account/login/two-factor/email-code':
+    'a code by email after a right password, before the session opens (ADR 0008)',
   'PUT /api/users/me/storage/:key': "the user's own interface preferences",
   'PUT /api/users/me/selected-group/':
     "a super admin's own selected group, refused to anyone else by its controller",
