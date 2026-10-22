@@ -386,6 +386,16 @@ export default {
       startDate: 'Date début',
       endDate: 'Date fin',
     },
+    search: {
+      scope: 'Rechercher dans',
+      currentFolder: 'Dossier courant',
+      allWorkspaces: 'Tous mes espaces de travail',
+      location: 'Emplacement',
+      noResultsInAllWorkspaces:
+        'Aucun email ne correspond dans tous vos espaces de travail',
+      noResultsInFolder: 'Aucun email ne correspond dans ce dossier',
+      clearFilters: 'Effacer les filtres',
+    },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
     deleteConfirmationMessage:
       'Vous êtes sur le point de supprimer l\'ensemble des emails sélectionnés.<br/>Cette action est irréversible.',

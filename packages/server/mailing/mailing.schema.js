@@ -333,6 +333,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       userId: '$_user',
       tags: 1,
       _workspace: 1,
+      _parentFolder: 1,
       espIds: 1,
       updatedAt: 1,
       createdAt: 1,

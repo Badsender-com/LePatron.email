@@ -81,8 +81,7 @@ describe('folder store, FETCH_MAILINGS', () => {
 // pagination of the listing and no location, whatever location the route
 // still names. The page size is kept between scopes, so "All" (-1), which the
 // search refuses, is sent as its largest page.
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('folder store, FETCH_MAILINGS in the "all" search scope', () => {
+describe('folder store, FETCH_MAILINGS in the "all" search scope', () => {
   const found = {
     items: {
       docs: [{ id: 'mailing-1', name: 'Spring sale' }],

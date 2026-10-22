@@ -20,8 +20,7 @@ const { layerFor, guardsOf } = routeInspector(router);
 
 const indexOf = (method, path) => router.stack.indexOf(layerFor(method, path));
 
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('mailing routes — the search', () => {
+describe('mailing routes — the search', () => {
   it('declares GET /search', () => {
     expect(() => layerFor('get', '/search')).not.toThrow();
   });

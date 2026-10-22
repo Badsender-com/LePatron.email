@@ -380,6 +380,15 @@ export default {
       startDate: 'Start date',
       endDate: 'End date',
     },
+    search: {
+      scope: 'Search in',
+      currentFolder: 'Current folder',
+      allWorkspaces: 'All my workspaces',
+      location: 'Location',
+      noResultsInAllWorkspaces: 'No email matches in all your workspaces',
+      noResultsInFolder: 'No email matches in this folder',
+      clearFilters: 'Clear filters',
+    },
     deleteManySuccessful: 'Emails deleted',
     deleteConfirmationMessage:
       'You are about to delete all the selected emails.<br/>This action can\'t be undone.',

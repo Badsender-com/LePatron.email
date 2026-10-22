@@ -40,8 +40,7 @@ function search(user, { filters = {}, pagination = BY_NAME } = {}) {
   return searchMailings({ user, filters, pagination });
 }
 
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('searching every accessible workspace, its filters and pages', () => {
+describe('searching every accessible workspace, its filters and pages', () => {
   beforeAll(() => {
     // Required here, not at the top of the file: the module doesn't exist
     // until #1314 ships it, and a top-level require would break the suite.

@@ -8,6 +8,8 @@ import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
+import MailingsSearchTable from '~/routes/mailings/__partials/mailings-search-table';
+import MailingsSearchScope from '~/routes/mailings/__partials/mailings-search-scope';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
@@ -27,6 +29,7 @@ import {
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
   FETCH_WORKSPACES,
+  isSearchingAll,
 } from '~/store/folder';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 import BsGroupLoading from '~/components/loadingBar';
@@ -36,6 +39,8 @@ export default {
   name: 'PageMailings',
   components: {
     MailingsTable,
+    MailingsSearchTable,
+    MailingsSearchScope,
     MailingsFilters,
     MailingsSelectionActions,
     BsMailingsModalNew,
@@ -96,6 +101,10 @@ export default {
     },
     itemsLength() {
       return this.pagination?.itemsLength;
+    },
+    // Every accessible workspace rather than the current folder (ADR 0007).
+    searchingAll() {
+      return isSearchingAll(this.$route.query);
     },
     currentPage: {
       get() {
@@ -245,11 +254,22 @@ export default {
             "
             type="table"
           >
+            <mailings-search-scope />
             <mailings-filters
+              ref="filters"
               :tags="tags"
               @on-refresh="fetchMailListingForFilterUpdate"
             />
+            <mailings-search-table
+              v-if="searchingAll"
+              :mailings="mailings"
+              :current-page="currentPage"
+              :items-length="itemsLength"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @clear-filters="$refs.filters.reset()"
+            />
             <mailings-selection-actions
+              v-if="!searchingAll"
               ref="mailingSelectionActions"
               :mailings-selection="mailingsSelection"
               :tags="tags"
@@ -260,6 +280,7 @@ export default {
               @clear-selection="resetMailingsSelection"
             />
             <mailings-table
+              v-if="!searchingAll"
               v-model="mailingsSelection"
               :mailings="mailings"
               :has-ftp-access="hasFtpAccess"
@@ -270,6 +291,7 @@ export default {
               @on-refetch="fetchMailListingForFilterUpdate"
               @update-tags="onMailTableTagsUpdate"
               @update:page="currentPage = $event"
+              @clear-filters="$refs.filters.reset()"
             />
           </v-skeleton-loader>
           <bs-group-loading slot="placeholder" />

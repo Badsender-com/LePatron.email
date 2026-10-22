@@ -33,7 +33,14 @@ export default {
     ...mapState(TEMPLATE, ['templates']),
   },
   watch: {
-    $route: 'reset',
+    // A new location starts with no filter. Switching the search scope keeps
+    // them, to look further for the same email; the workspace tree reloads
+    // the list on that route change (ADR 0007).
+    $route(to, from) {
+      if (to.query.wid !== from.query.wid || to.query.fid !== from.query.fid) {
+        this.reset();
+      }
+    },
   },
 
   methods: {

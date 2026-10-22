@@ -60,8 +60,7 @@ const rows = (result) =>
   result.items.docs.map(({ name, hasAccess }) => [name, hasAccess]);
 const openable = (list, hasAccess) => list.map((name) => [name, hasAccess]);
 
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('searching every accessible workspace, its scope', () => {
+describe('searching every accessible workspace, its scope', () => {
   beforeAll(() => {
     // Required here, not at the top of the file: the module doesn't exist
     // until #1314 ships it, and a top-level require would break the suite.

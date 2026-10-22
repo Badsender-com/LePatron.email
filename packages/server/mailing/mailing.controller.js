@@ -36,10 +36,12 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const mailingSearchService = require('./mailing-search.service.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 
 module.exports = {
   list: asyncHandler(list),
+  search: asyncHandler(search),
   listTags: asyncHandler(listTags),
   create: asyncHandler(create),
   read: asyncHandler(read),
@@ -106,6 +108,47 @@ async function list(req, res) {
     { workspaceId, parentFolderId, user, paginationJSON, filtersJSON }
   );
   res.json(responseMailingList);
+}
+
+/**
+ * @api {get} /mailings/search search every accessible workspace
+ * @apiPermission user
+ * @apiName SearchMailings
+ * @apiGroup Mailings
+ *
+ * @apiParam (Query) {String} [pagination] the listing's pagination, as JSON
+ * @apiParam (Query) {String} [filters] the listing's filters, as JSON
+ *
+ * @apiUse mailings
+ * @apiSuccess {mailings[]} items.docs each with its `location` and `hasAccess`
+ */
+
+async function search(req, res) {
+  const { user, query } = req;
+  const pagination = modelsUtils.validatePaginationJSON(
+    parsedQueryJSON(query.pagination, ERROR_CODES.BAD_FORMAT_PAGINATION)
+  );
+  const filters = modelsUtils.validateFiltersJSON(
+    parsedQueryJSON(query.filters, ERROR_CODES.BAD_FORMAT_FILTERS)
+  );
+
+  res.json(
+    await mailingSearchService.searchMailings({ user, filters, pagination })
+  );
+}
+
+// A JSON query parameter: absent is empty, malformed is a 400, not a 500.
+function parsedQueryJSON(value, errorCode) {
+  if (value === undefined || value === '') return {};
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new TypeError('not an object');
+    }
+    return parsed;
+  } catch {
+    throw new BadRequest(errorCode);
+  }
 }
 
 /**

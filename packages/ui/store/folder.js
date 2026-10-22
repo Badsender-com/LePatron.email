@@ -1,5 +1,6 @@
 import {
   mailings,
+  mailingsSearch,
   mailingsTags,
   getWorkspace,
   getFolder,
@@ -47,6 +48,30 @@ export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
   'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
 export const FETCH_FOLDER_CHILDREN = 'fetchFolderChildren';
+
+// The "all my workspaces" search scope (ADR 0007), as the `scope` query of the
+// listing's route. Its pages hold 100 emails at most, without "All".
+export const SEARCH_SCOPE_ALL = 'all';
+export const SEARCH_MAX_PAGE_SIZE = 100;
+
+export function isSearchingAll(query) {
+  return query?.scope === SEARCH_SCOPE_ALL;
+}
+
+// Whether the listing narrows its emails: a name, a template, a tag, a date.
+export function hasActiveFilters(filters = {}) {
+  return Object.values(filters).some((value) =>
+    Array.isArray(value) ? value.length > 0 : !!value
+  );
+}
+
+// The page size kept from the current folder, within what the search serves.
+function searchPagination(pagination) {
+  const { itemsPerPage } = pagination;
+  return itemsPerPage > 0 && itemsPerPage <= SEARCH_MAX_PAGE_SIZE
+    ? pagination
+    : { ...pagination, itemsPerPage: SEARCH_MAX_PAGE_SIZE };
+}
 
 export const state = () => ({
   workspace: {},
@@ -236,15 +261,26 @@ export const actions = {
     { commit, dispatch, rootState },
     { query, $t, pagination }
   ) {
-    if (!!query?.wid || !!query?.fid) {
-      const queryMailing = rootState.folder.folder?.id
-        ? { parentFolderId: query?.fid }
-        : { workspaceId: query?.wid };
+    const searching = isSearchingAll(query);
+    if (searching || !!query?.wid || !!query?.fid) {
+      // The "all" scope names no location, whatever location the route still
+      // holds to come back to (ADR 0007).
+      let queryMailing = {};
+      if (!searching) {
+        queryMailing = rootState.folder.folder?.id
+          ? { parentFolderId: query?.fid }
+          : { workspaceId: query?.wid };
+      }
       // Fetch the filter tags in parallel and don't await it: tags are served
       // by a separate endpoint and must never delay the mailing list render.
       dispatch(FETCH_MAILINGS_TAGS, { queryMailing });
+      const askedPagination = {
+        ...rootState.folder?.pagination,
+        ...(pagination || {}),
+      };
       try {
-        const mailingsResponse = await this.$axios.$get(mailings(), {
+        const route = searching ? mailingsSearch() : mailings();
+        const mailingsResponse = await this.$axios.$get(route, {
           params: {
             ...queryMailing,
             // The backend does JSON.parse(pagination)/JSON.parse(filters)
@@ -252,10 +288,9 @@ export const actions = {
             // strings. Sending raw objects makes axios serialize them as
             // bracketed query params (pagination[sortBy][0]=...), which the
             // backend can't parse — the sort/filters were silently dropped.
-            pagination: JSON.stringify({
-              ...rootState.folder?.pagination,
-              ...(pagination || {}),
-            }),
+            pagination: JSON.stringify(
+              searching ? searchPagination(askedPagination) : askedPagination
+            ),
             filters: JSON.stringify(rootState.folder?.filters || {}),
           },
         });
