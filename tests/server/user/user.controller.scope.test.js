@@ -49,6 +49,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
           Object.assign(record, update);
           return toDocument(record);
         }),
+      // Deactivating forgets the trusted devices (ADR 0008).
+      updateOne: async () => ({ modifiedCount: 1 }),
       create: async (fields) => {
         const record = { _id: `created-${users.length}`, ...fields };
         users.push(record);

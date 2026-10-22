@@ -11,6 +11,7 @@ export default {
         'Without your verification method? Enter one of your recovery codes.',
       incorrect: 'Incorrect code',
       expired: 'This step expired: enter your password again.',
+      trustDevice: 'Trust this device for 30 days',
     },
     setup: {
       intro:

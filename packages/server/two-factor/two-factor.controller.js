@@ -14,7 +14,11 @@ const rightsPolicy = require('../user/rights-policy.js');
 const pendingStep = require('./pending-step.js');
 const codes = require('./codes.js');
 const { recordSecurityEvent } = require('./security-event.service.js');
-const { sendTwoFactorEmail } = require('./two-factor.emails.js');
+const {
+  sendTwoFactorEmail,
+  deviceTrustedTexts,
+} = require('./two-factor.emails.js');
+const { trustDevice } = require('./trusted-device.js');
 const {
   METHODS,
   STEPS,
@@ -79,6 +83,20 @@ async function useTimeStep(user, timeStep) {
   return changedOne(result);
 }
 
+// Remembers the browser when the member asks, once the code is right.
+function trustDeviceIfAsked(req, res, user) {
+  return req.body.trustDevice === true ? trustDevice(user, req, res) : null;
+}
+
+async function notifyDeviceTrusted(user, device) {
+  if (!device) return;
+  await recordSecurityEvent({
+    action: SECURITY_ACTIONS.DEVICE_TRUSTED,
+    user: user.id,
+  });
+  await sendTwoFactorEmail(user, 'deviceTrusted', deviceTrustedTexts(device));
+}
+
 function refuseCode(req, pending, user) {
   return pendingStep.refuseCode(req, pending, () =>
     recordSecurityEvent({ action: SECURITY_ACTIONS.WRONG_CODES, user: user.id })
@@ -92,6 +110,7 @@ function refuseCode(req, pending, user) {
  * @apiGroup Account
  *
  * @apiParam (Body) {String} code six digits, or a recovery code
+ * @apiParam (Body) {Boolean} [trustDevice] remember this browser 30 days
  *
  * @apiUse users
  * @apiSuccess {String[]} [recoveryCodes] a new set, once one was used
@@ -125,6 +144,8 @@ async function verify(req, res) {
       await refuseCode(req, pending, user);
     }
   }
+  user.twoFactor.failedPasswords = 0;
+  const device = trustDeviceIfAsked(req, res, user);
   await user.save();
   pendingStep.end(req);
 
@@ -137,6 +158,7 @@ async function verify(req, res) {
     });
     await sendTwoFactorEmail(user, 'recoveryCodeUsed');
   }
+  await notifyDeviceTrusted(user, device);
   res.json(payload);
 }
 
@@ -177,6 +199,7 @@ async function startSetup(req, res) {
  * @apiGroup Account
  *
  * @apiParam (Body) {String} code the first code of the method
+ * @apiParam (Body) {Boolean} [trustDevice] remember this browser 30 days
  *
  * @apiUse users
  * @apiSuccess {String[]} recoveryCodes the recovery codes, shown once
@@ -206,6 +229,7 @@ async function confirmSetup(req, res) {
     trustedDevices: [],
     failedPasswords: 0,
   };
+  const device = trustDeviceIfAsked(req, res, user);
   await user.save();
   pendingStep.end(req);
   await recordSecurityEvent({
@@ -218,6 +242,7 @@ async function confirmSetup(req, res) {
 
   const payload = await completeSignIn(req, user);
   payload.recoveryCodes = recovery.codes;
+  await notifyDeviceTrusted(user, device);
   res.json(payload);
 }
 

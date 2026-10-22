@@ -54,6 +54,8 @@ module.exports = {
   TOTP_ISSUER: 'LePatron.email',
   TRUSTED_DEVICE_TTL_MS: 30 * DAY,
   TRUSTED_DEVICE_COOKIE: 'lp.trusted-device',
+  // The browsers an account remembers at most; the oldest goes first.
+  MAX_TRUSTED_DEVICES: 10,
   // Wrong passwords on an account since its last sign-in that make a sign-in
   // from a trusted device suspicious.
   SUSPICIOUS_WRONG_PASSWORDS: 5,

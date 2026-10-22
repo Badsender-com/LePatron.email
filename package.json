@@ -122,6 +122,7 @@
     "speakingurl": "14.0.1",
     "ssh2-sftp-client": "7.2.3",
     "stream-buffers": "3.0.2",
+    "ua-parser-js": "1.0.41",
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
     "vue-select": "3.13.0",

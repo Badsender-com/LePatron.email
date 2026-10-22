@@ -4,6 +4,7 @@ const { Users } = require('../common/models.common.js');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const { needsTwoFactor } = require('./two-factor.policy.js');
 const pendingStep = require('./pending-step.js');
+const { isTrustedDevice } = require('./trusted-device.js');
 const { STEPS } = require('./two-factor.constants.js');
 
 /**
@@ -27,6 +28,11 @@ async function stepAfterPassword(req, res, account) {
   if (!user.twoFactorMethod) {
     pendingStep.start(req, user, STEPS.SETUP);
     return { step: STEPS.SETUP };
+  }
+  if (isTrustedDevice(user, req)) {
+    user.twoFactor.failedPasswords = 0;
+    await user.save();
+    return null;
   }
   pendingStep.start(req, user, STEPS.VERIFY, user.twoFactorMethod);
   return { step: STEPS.VERIFY, method: user.twoFactorMethod };
