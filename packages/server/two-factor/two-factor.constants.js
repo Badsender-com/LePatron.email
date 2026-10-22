@@ -38,7 +38,10 @@ module.exports = {
   PENDING_STEP_TTL_MS: 10 * MINUTE,
   MAX_WRONG_CODES: 5,
   RECOVERY_CODE_COUNT: 10,
-  RECOVERY_CODE_BCRYPT_ROUNDS: 10,
+  // Ten recovery codes are hashed at once and compared at once: a lower cost
+  // than the password's keeps the sign-in quick, and 40 random bits stay out
+  // of reach offline.
+  RECOVERY_CODE_BCRYPT_ROUNDS: 8,
   // A code of the authenticator app is accepted one step (30 seconds)
   // either side of now: a phone's clock is rarely exact.
   TOTP_STEP_SECONDS: 30,

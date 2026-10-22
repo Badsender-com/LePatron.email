@@ -115,10 +115,12 @@ async function newRecoveryCodes() {
  * @returns {Promise<Object|null>} the stored code it matches
  */
 async function findRecoveryCode(stored, code) {
-  for (const entry of stored || []) {
-    if (await bcrypt.compare(code, entry.hash)) return entry;
-  }
-  return null;
+  const entries = stored || [];
+  const matches = await Promise.all(
+    entries.map((entry) => bcrypt.compare(code, entry.hash))
+  );
+  const index = matches.indexOf(true);
+  return index === -1 ? null : entries[index];
 }
 
 module.exports = {
