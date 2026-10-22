@@ -62,6 +62,12 @@ const EXEMPTIONS = {
   'DELETE /api/account/:email/password': 'asking for a password reset',
   'PUT /api/account/:email/password/:token':
     'setting a password from the emailed link',
+  'POST /api/account/login/two-factor':
+    'the code after a right password, before the session opens (ADR 0008)',
+  'POST /api/account/login/two-factor/setup':
+    'the setup after a right password, before the session opens (ADR 0008)',
+  'POST /api/account/login/two-factor/setup/confirm':
+    'the setup after a right password, before the session opens (ADR 0008)',
   'PUT /api/users/me/storage/:key': "the user's own interface preferences",
   'PUT /api/users/me/selected-group/':
     "a super admin's own selected group, refused to anyone else by its controller",

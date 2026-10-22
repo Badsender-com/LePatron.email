@@ -15,8 +15,7 @@ const read = (file) =>
 
 let signInStepOf;
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the step after the password', () => {
+describe('the step after the password', () => {
   beforeAll(() => {
     // Required here, not at the top: the helper ships with #1320.
     ({ signInStepOf } = require('../../../packages/ui/helpers/two-factor.js'));
@@ -43,8 +42,7 @@ describe.skip('the step after the password', () => {
   });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the login page', () => {
+describe('the login page', () => {
   const login = read('routes/account/login/index.vue');
 
   it('shows the code, the setup and the recovery codes as the step says', () => {

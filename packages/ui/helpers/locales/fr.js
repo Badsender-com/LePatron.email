@@ -1,4 +1,53 @@
 export default {
+  twoFactor: {
+    code: {
+      label: 'Code',
+      submit: 'Valider',
+      hints: {
+        totp: 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.',
+        email: 'Saisissez le code à 6 chiffres reçu par email.',
+      },
+      recoveryHint:
+        'Sans votre méthode de vérification ? Saisissez l’un de vos codes de secours.',
+      incorrect: 'Code incorrect',
+      expired: 'Étape expirée : saisissez de nouveau votre mot de passe.',
+    },
+    setup: {
+      intro:
+        'Votre groupe demande une double authentification : après votre mot de passe, vous saisirez un code.',
+      scan: 'Scannez ce QR code avec votre application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code qu’elle affiche.',
+      qrCodeAlt: 'QR code de configuration',
+      manual: 'Ou saisissez cette clé dans l’application :',
+      confirm: 'Activer',
+    },
+    recoveryCodes: {
+      intro:
+        'Chaque code de secours vous connecte une fois, sans votre méthode de vérification. Gardez-les en lieu sûr : ils ne seront plus affichés.',
+      copy: 'Copier',
+      copied: 'Codes copiés',
+      download: 'Télécharger',
+      noted: 'J’ai noté mes codes de secours',
+      continue: 'Continuer',
+    },
+    group: {
+      title: 'Double authentification',
+      description:
+        'Chaque membre du groupe saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
+      switch: 'Exiger la double authentification',
+      saml: 'Ce groupe se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
+      updated: 'Paramètre enregistré',
+    },
+    users: {
+      column: 'Double auth.',
+      methods: { totp: 'Application', email: 'Email' },
+      notSetUp: 'Non configurée',
+      reset: 'Réinitialiser la double authentification',
+      resetNotice:
+        'Ses sessions seront fermées et il la configurera de nouveau à sa prochaine connexion. Réinitialiser la double authentification de',
+      resetDone: 'Double authentification réinitialisée',
+    },
+    passwordSet: 'Mot de passe enregistré : connectez-vous pour continuer.',
+  },
   snackbars: {
     updated: 'Mis à jour',
     created: 'Créé',

@@ -153,6 +153,12 @@ const GroupSchema = Schema(
       // but NOT enforced in this phase — enforcement comes with CRM Governance.
       requiredFields: { type: [String], default: [] },
     },
+    // Every member signs in with a second factor (ADR 0008), switched by a
+    // company admin or a tech admin. Off: the members' setups are kept asleep.
+    requireTwoFactor: {
+      type: Boolean,
+      default: false,
+    },
     // Module activation settings
     enableEmailBuilder: {
       type: Boolean,

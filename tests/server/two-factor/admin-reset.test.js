@@ -68,8 +68,7 @@ beforeEach(() => {
   harness.addGroup({ requireTwoFactor: true });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('resetting a member’s two-factor authentication', () => {
+describe('resetting a member’s two-factor authentication', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');

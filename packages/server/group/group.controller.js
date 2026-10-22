@@ -11,6 +11,10 @@ const {
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const permissions = require('../account/permissions.js');
+const {
+  requirementChangeOf,
+  recordRequirementChange,
+} = require('../two-factor/group-option.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
@@ -559,6 +563,8 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // Two-factor authentication for every member (ADR 0008).
+      'requireTwoFactor',
       // The company's tracking belongs to its technical settings (ADR 0004):
       // dropped for a company admin, as the other fields it cannot set.
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
@@ -581,7 +587,13 @@ async function update(req, res) {
       )?.logRetentionDays
     : undefined;
 
+  const twoFactorChange = await requirementChangeOf(
+    req.params.groupId,
+    groupToUpdate
+  );
+
   await groupService.updateGroup(groupToUpdate);
+  await recordRequirementChange(user, req.params.groupId, twoFactorChange);
 
   // AISkillInvocation.expiresAt is stamped at write time, so a retention change
   // has to be propagated to the invocations already logged — otherwise lowering
