@@ -109,6 +109,9 @@ export function usersItemActivate(routeParams = {}) {
 export function usersItemPassword(routeParams = {}) {
   return `/users/${routeParams.userId}/password`;
 }
+export function usersItemTwoFactor(routeParams = {}) {
+  return `/users/${routeParams.userId}/two-factor`;
+}
 export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
@@ -485,3 +488,12 @@ export function deleteDashboard(dashboardId) {
 export function reorderDashboards(groupId) {
   return `/dashboards/groups/${groupId}/reorder`;
 }
+
+/// ///
+// TWO-FACTOR AUTHENTICATION (ADR 0008)
+/// ///
+
+export const accountTwoFactor = () => '/account/login/two-factor';
+export const accountTwoFactorSetup = () => '/account/login/two-factor/setup';
+export const accountTwoFactorSetupConfirm = () =>
+  '/account/login/two-factor/setup/confirm';

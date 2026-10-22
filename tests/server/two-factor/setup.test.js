@@ -45,13 +45,12 @@ beforeEach(() => {
   harness.addGroup({ requireTwoFactor: true });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('setting up the authenticator app', () => {
+describe('setting up the authenticator app', () => {
   beforeAll(() => {
     // Required here, not at the top: these modules ship with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
-    const { generateSync } = require('otplib');
-    codeOf = (secret) => generateSync({ secret });
+    const { authenticator } = require('otplib');
+    codeOf = (secret) => authenticator.generate(secret);
   });
 
   it('gives a secret, its otpauth link and its QR code', async () => {
@@ -135,6 +134,21 @@ describe.skip('setting up the authenticator app', () => {
         user: 'u1',
         method: 'totp',
       })
+    );
+  });
+
+  it('emails the member once it is set up', async () => {
+    const mail = require('../../../packages/server/mailing/mail.service.js');
+    const { req } = await harness.signIn(passport, harness.addUser());
+    const { body: setup } = await step(twoFactor.startSetup, req, {
+      method: 'totp',
+    });
+    mail.send.mockClear();
+
+    await step(twoFactor.confirmSetup, req, { code: codeOf(setup.secret) });
+
+    expect(mail.send).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'camille@client.test' })
     );
   });
 

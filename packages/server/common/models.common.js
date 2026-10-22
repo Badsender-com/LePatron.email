@@ -35,6 +35,7 @@ const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
+const SecurityEventSchema = require('../two-factor/security-event.schema.js');
 
 /// ///
 // EXPORTS
@@ -112,6 +113,10 @@ const TaxonomyItems = mongoose.model(
   modelNames.TaxonomyItemModel,
   TaxonomyItemSchema
 );
+const SecurityEvents = mongoose.model(
+  modelNames.SecurityEventModel,
+  SecurityEventSchema
+);
 
 module.exports = {
   mongoose,
@@ -145,4 +150,5 @@ module.exports = {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,
+  SecurityEvents,
 };

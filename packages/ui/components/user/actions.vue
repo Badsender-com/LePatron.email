@@ -48,6 +48,28 @@ export default {
     resendPassword(_user) {
       this.$refs.resendPasswordDialog.open();
     },
+    resetTwoFactor(_user) {
+      this.$refs.resetTwoFactorDialog.open();
+    },
+    async resetTwoFactorOfUser() {
+      const userId = this.user.id;
+      if (!userId) return;
+      try {
+        this.localLoading = true;
+        const user = await this.$axios.$delete(
+          apiRoutes.usersItemTwoFactor({ userId })
+        );
+        this.showSnackbar({
+          text: this.$t('twoFactor.users.resetDone'),
+          color: 'success',
+        });
+        this.$emit('update', user);
+      } catch (error) {
+        this.notifyError(error);
+      } finally {
+        this.localLoading = false;
+      }
+    },
     async activateUser() {
       const { $axios } = this;
       const userId = this.user.id;
@@ -156,6 +178,16 @@ export default {
       :action-label="$t('users.actions.resend')"
       @confirm="sendPasswordMail"
       >{{ $t('users.passwordNotice.resend') }}
+      <b>{{ user.name | capitalizeEach }}</b
+      >?</bs-modal-confirm
+    >
+
+    <bs-modal-confirm
+      ref="resetTwoFactorDialog"
+      :title="$t('twoFactor.users.reset')"
+      :action-label="$t('users.actions.reset')"
+      @confirm="resetTwoFactorOfUser"
+      >{{ $t('twoFactor.users.resetNotice') }}
       <b>{{ user.name | capitalizeEach }}</b
       >?</bs-modal-confirm
     >

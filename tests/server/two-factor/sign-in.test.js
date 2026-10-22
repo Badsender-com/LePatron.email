@@ -58,8 +58,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the step of the code', () => {
+describe('the step of the code', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
@@ -102,7 +101,7 @@ describe.skip('the step of the code', () => {
 
     await expect(submitCode(req, { code: '000000' })).rejects.toMatchObject({
       status: 400,
-      message: 'two-factor.code-incorrect',
+      message: 'TWO_FACTOR_CODE_INCORRECT',
     });
   });
 
@@ -127,7 +126,7 @@ describe.skip('the step of the code', () => {
 
     await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
       status: 401,
-      message: 'two-factor.step-expired',
+      message: 'TWO_FACTOR_STEP_EXPIRED',
     });
   });
 
@@ -150,7 +149,30 @@ describe.skip('the step of the code', () => {
 
     await expect(submitCode(req, { code: '000000' })).rejects.toMatchObject({
       status: 401,
-      message: 'two-factor.step-expired',
+      message: 'TWO_FACTOR_STEP_EXPIRED',
+    });
+  });
+
+  it('ends the step when the password changes meanwhile', async () => {
+    const user = harness.addTotpUser({ password: 'hash-of-the-old-one' });
+    const { req } = await harness.signIn(passport, user);
+    user.password = 'hash-of-the-new-one';
+
+    await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
+      status: 401,
+      message: 'TWO_FACTOR_STEP_EXPIRED',
+    });
+  });
+
+  it('ends the step when an admin resets the setup meanwhile', async () => {
+    const user = harness.addTotpUser();
+    const { req } = await harness.signIn(passport, user);
+    user.twoFactorMethod = undefined;
+    user.twoFactor = undefined;
+
+    await expect(submitCode(req, { code: RFC_CODE })).rejects.toMatchObject({
+      status: 401,
+      message: 'TWO_FACTOR_STEP_EXPIRED',
     });
   });
 
@@ -163,8 +185,7 @@ describe.skip('the step of the code', () => {
   });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('who is asked the code', () => {
+describe('who is asked the code', () => {
   it('asks a member of a requiring group without a setup to set it up', async () => {
     const user = harness.addUser();
 
@@ -217,8 +238,7 @@ describe.skip('who is asked the code', () => {
   });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('recovery codes', () => {
+describe('recovery codes', () => {
   beforeAll(() => {
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
   });
