@@ -78,6 +78,11 @@ describe('GET /mailings/search, its query parameters', () => {
     ['malformed pagination', { pagination: '{page:' }, 'BAD_FORMAT_PAGINATION'],
     ['malformed filters', { filters: 'spring' }, 'BAD_FORMAT_FILTERS'],
     ['filters that are not an object', { filters: '[]' }, 'BAD_FORMAT_FILTERS'],
+    [
+      'a name that is not a string',
+      { filters: '{"name":5}' },
+      'BAD_FORMAT_FILTERS',
+    ],
   ])('answers %s with a 400', async (_, query, code) => {
     expect(await search(query)).toEqual({
       status: 400,

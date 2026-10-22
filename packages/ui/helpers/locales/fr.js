@@ -392,7 +392,7 @@ export default {
       allWorkspaces: 'Tous mes espaces de travail',
       location: 'Emplacement',
       noResultsInAllWorkspaces:
-        'Aucun email ne correspond dans tous vos espaces de travail',
+        'Aucun email ne correspond dans vos espaces de travail',
       noResultsInFolder: 'Aucun email ne correspond dans ce dossier',
       clearFilters: 'Effacer les filtres',
     },

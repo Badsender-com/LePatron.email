@@ -125,7 +125,8 @@ describe('searching every accessible workspace, its filters and pages', () => {
       )
     );
 
-    beforeEach(() => seed(mockStore, { mailings: many }));
+    // Stored newest first: the order of the store never decides a page.
+    beforeEach(() => seed(mockStore, { mailings: [...many].reverse() }));
 
     it('holds 25 emails when no page size is asked', async () => {
       const result = await search(frank, { pagination: {} });
@@ -151,6 +152,22 @@ describe('searching every accessible workspace, its filters and pages', () => {
 
       expect(result.items.docs).toHaveLength(30);
       expect(result.items.docs[0].name).toBe('News 101');
+    });
+
+    // Every email of the page has the same author: the order must still hold
+    // from one page to the next, no email twice, none skipped.
+    it('keeps the order across pages when the sorted column ties', async () => {
+      const byAuthor = { sortBy: ['userName'], sortDesc: [false] };
+      const first = await search(frank, {
+        pagination: { ...byAuthor, page: 1, itemsPerPage: 100 },
+      });
+      const second = await search(frank, {
+        pagination: { ...byAuthor, page: 2, itemsPerPage: 100 },
+      });
+      const ids = [...first.items.docs, ...second.items.docs].map((d) => d.id);
+
+      expect(new Set(ids).size).toBe(130);
+      expect(ids).toEqual([...ids].sort());
     });
 
     // INVALID_PAGE_SIZE is a code #1314 adds to the error codes.

@@ -26,4 +26,9 @@ describe('the location of a search result', () => {
       expect(locationRoute(location)).toEqual({ path: '/mailings', query });
     }
   );
+
+  it('gives a row without a location no path and no link', () => {
+    expect(locationPath(undefined)).toBe('');
+    expect(locationRoute(undefined)).toBeNull();
+  });
 });

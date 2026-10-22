@@ -92,3 +92,40 @@ describe('validateFiltersJSON', () => {
     });
   });
 });
+
+// The name reaches a pattern match, the dates a Date: a number or a word there
+// threw a 500 deep in the query (epic #1144 review), where it is a 400.
+describe('validateFiltersJSON, name and dates', () => {
+  const malformed = (filters) =>
+    expect(() => validateFiltersJSON(filters)).toThrow(
+      expect.objectContaining({
+        status: 400,
+        message: ERROR_CODES.BAD_FORMAT_FILTERS,
+      })
+    );
+
+  it('takes a name, empty or not, and dates as the pickers send them', () => {
+    const filters = {
+      name: '',
+      createdAtStart: '2026-01-01',
+      createdAtEnd: '',
+      updatedAtStart: '2026-10-01',
+      updatedAtEnd: '2026-10-22',
+    };
+    expect(validateFiltersJSON(filters)).toBe(filters);
+  });
+
+  it.each([
+    [5],
+    [['spring']],
+    [{ $regex: '.*' }],
+  ])('refuses a name that is not a string: %p', (name) => malformed({ name }));
+
+  it.each([
+    ['yesterday'],
+    [20261001],
+    [{}],
+  ])('refuses a date that is not one: %p', (date) =>
+    malformed({ updatedAtStart: date })
+  );
+});

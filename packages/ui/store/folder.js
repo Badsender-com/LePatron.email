@@ -65,6 +65,10 @@ export function hasActiveFilters(filters = {}) {
   );
 }
 
+// The list each store is fetching, so the same request is not sent twice at
+// once. Keyed by store: on the server, this module serves every request.
+const pendingMailings = new WeakMap();
+
 // The page size kept from the current folder, within what the search serves.
 function searchPagination(pagination) {
   const { itemsPerPage } = pagination;
@@ -262,41 +266,54 @@ export const actions = {
     { query, $t, pagination }
   ) {
     const searching = isSearchingAll(query);
-    if (searching || !!query?.wid || !!query?.fid) {
-      // The "all" scope names no location, whatever location the route still
-      // holds to come back to (ADR 0007).
-      let queryMailing = {};
-      if (!searching) {
-        queryMailing = rootState.folder.folder?.id
-          ? { parentFolderId: query?.fid }
-          : { workspaceId: query?.wid };
-      }
+    if (!searching && !query?.wid && !query?.fid) return;
+
+    // The "all" scope names no location, whatever location the route still
+    // holds to come back to (ADR 0007). Otherwise the route says which one,
+    // not the folder still in the store from the previous location.
+    let queryMailing = {};
+    if (!searching) {
+      queryMailing = query?.fid
+        ? { parentFolderId: query.fid }
+        : { workspaceId: query?.wid };
+    }
+    const askedPagination = {
+      ...rootState.folder?.pagination,
+      ...(pagination || {}),
+    };
+    const route = searching ? mailingsSearch() : mailings();
+    const params = {
+      ...queryMailing,
+      // The backend does JSON.parse(pagination)/JSON.parse(filters)
+      // (mailing.controller.js list()), so these must be sent as JSON
+      // strings. Sending raw objects makes axios serialize them as
+      // bracketed query params (pagination[sortBy][0]=...), which the
+      // backend can't parse — the sort/filters were silently dropped.
+      pagination: JSON.stringify(
+        searching ? searchPagination(askedPagination) : askedPagination
+      ),
+      filters: JSON.stringify(rootState.folder?.filters || {}),
+    };
+
+    // Two callers can ask for the same list at once (the page and the
+    // workspace tree, on a cold load): the second waits for the first.
+    const key = JSON.stringify([route, params]);
+    const pending = pendingMailings.get(this);
+    if (pending && pending.key === key) {
+      await pending.promise;
+      return;
+    }
+
+    const promise = (async () => {
       // Fetch the filter tags in parallel and don't await it: tags are served
       // by a separate endpoint and must never delay the mailing list render.
       dispatch(FETCH_MAILINGS_TAGS, { queryMailing });
-      const askedPagination = {
-        ...rootState.folder?.pagination,
-        ...(pagination || {}),
-      };
       try {
-        const route = searching ? mailingsSearch() : mailings();
-        const mailingsResponse = await this.$axios.$get(route, {
-          params: {
-            ...queryMailing,
-            // The backend does JSON.parse(pagination)/JSON.parse(filters)
-            // (mailing.controller.js list()), so these must be sent as JSON
-            // strings. Sending raw objects makes axios serialize them as
-            // bracketed query params (pagination[sortBy][0]=...), which the
-            // backend can't parse — the sort/filters were silently dropped.
-            pagination: JSON.stringify(
-              searching ? searchPagination(askedPagination) : askedPagination
-            ),
-            filters: JSON.stringify(rootState.folder?.filters || {}),
-          },
-        });
+        const mailingsResponse = await this.$axios.$get(route, { params });
         const { docs, ...paginationsData } = mailingsResponse?.items;
 
         commit(SET_MAILINGS, docs);
+        // The search has no "All": its page size is what the server served.
         const {
           page,
           itemsPerPage,
@@ -304,7 +321,7 @@ export const actions = {
           pageStop,
           pageCount,
           itemsLength,
-        } = parsePaginationData(paginationsData);
+        } = parsePaginationData(paginationsData, { allowAll: !searching });
         commit(SET_PAGINATION, {
           page,
           itemsPerPage,
@@ -320,6 +337,14 @@ export const actions = {
         } else {
           showError(commit, $t);
         }
+      }
+    })();
+    pendingMailings.set(this, { key, promise });
+    try {
+      await promise;
+    } finally {
+      if (pendingMailings.get(this)?.promise === promise) {
+        pendingMailings.delete(this);
       }
     }
   },

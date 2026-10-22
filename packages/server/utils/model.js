@@ -14,6 +14,7 @@ module.exports = {
   addMailQueryParamFilter,
   validatePaginationJSON,
   validateFiltersJSON,
+  parseQueryJSON,
 };
 
 // A 24-hex-digit id, as the routes receive it. Mongoose alone also accepts any
@@ -53,6 +54,29 @@ function addMailQueryParamFilter(query) {
   return params;
 }
 
+/**
+ * A JSON object sent as a query-string parameter (a listing's pagination or
+ * filters): absent is empty, malformed is the caller's mistake, a 400 rather
+ * than the 500 a bare JSON.parse throws.
+ *
+ * @param {string} [value] the raw parameter
+ * @param {string} errorCode what to answer when it is not a JSON object
+ * @returns {Object}
+ */
+function parseQueryJSON(value, errorCode) {
+  if (value === undefined || value === '') return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new BadRequest(errorCode);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new BadRequest(errorCode);
+  }
+  return parsed;
+}
+
 // Validate pagination JSON
 function validatePaginationJSON(pagination) {
   if (pagination) {
@@ -76,8 +100,13 @@ function validatePaginationJSON(pagination) {
 // surfaces as a 500 instead of a 400. Keeping this as a table rather than a chain
 // of `||` means a new filter is one line, and cannot be forgotten silently.
 const FILTER_SHAPES = {
+  name: 'string',
   templates: 'array',
   tags: 'array',
+  createdAtStart: 'date',
+  createdAtEnd: 'date',
+  updatedAtStart: 'date',
+  updatedAtEnd: 'date',
 };
 
 // A single query cannot legitimately enumerate more than this; an unbounded $in
@@ -89,6 +118,16 @@ const MAX_FILTER_ARRAY_LENGTH = 200;
 // so reporting it as a format error sends whoever reads the log looking for a
 // malformation that is not there.
 const FILTER_VALIDATORS = {
+  string: (value, key) =>
+    typeof value === 'string'
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must be a string`),
+  // A day as the date pickers send it; empty is no bound.
+  date: (value, key) =>
+    value === '' ||
+    (typeof value === 'string' && !Number.isNaN(Date.parse(value)))
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must be a date`),
   array: (value, key) => {
     if (!Array.isArray(value)) {
       return badFilters(

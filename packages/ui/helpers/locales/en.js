@@ -385,7 +385,7 @@ export default {
       currentFolder: 'Current folder',
       allWorkspaces: 'All my workspaces',
       location: 'Location',
-      noResultsInAllWorkspaces: 'No email matches in all your workspaces',
+      noResultsInAllWorkspaces: 'No email matches in any of your workspaces',
       noResultsInFolder: 'No email matches in this folder',
       clearFilters: 'Clear filters',
     },

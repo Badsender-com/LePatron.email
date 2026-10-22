@@ -14,9 +14,12 @@ export function locationPath({ workspace, folder, subfolder } = {}) {
 
 /**
  * @param {Object} location
- * @returns {Object} the route of its listing, in the current folder scope
+ * @returns {Object|null} the route of its listing, in the current folder
+ *   scope; none for a row that has no location (one of the folder listing,
+ *   shown for an instant while the scope switches)
  */
 export function locationRoute({ workspace, folder, subfolder } = {}) {
+  if (!workspace) return null;
   const place = subfolder || folder;
   return {
     path: '/mailings',

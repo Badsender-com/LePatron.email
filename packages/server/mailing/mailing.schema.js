@@ -274,9 +274,10 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
         [sortByKey] = paginationJSON.sortBy;
     }
 
-    additionalQueryParams.sort = {
-      [sortByKey]: paginationJSON.sortDesc[0] ? -1 : 1,
-    };
+    const direction = paginationJSON.sortDesc[0] ? -1 : 1;
+    // `_id` breaks the ties (same author, same template): without it,
+    // MongoDB may repeat or skip an email from one page to the next.
+    additionalQueryParams.sort = { [sortByKey]: direction, _id: direction };
   }
   if (filtersJSON) {
     if (filtersJSON.name) {

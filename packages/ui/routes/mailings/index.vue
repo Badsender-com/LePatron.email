@@ -3,7 +3,7 @@ import { mapGetters, mapState } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
-import { mailings } from '~/helpers/api-routes.js';
+import mixinMailingsTags from '~/helpers/mixins/mixin-mailings-tags';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import { Plus } from 'lucide-vue';
@@ -25,7 +25,6 @@ import { CAPABILITIES } from '../../../shared/access/roles.js';
 import {
   FOLDER,
   SET_PAGINATION,
-  SET_TAGS,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
   FETCH_WORKSPACES,
@@ -50,7 +49,12 @@ export default {
     EmailBuilderPlaceholder,
     LucidePlus: Plus,
   },
-  mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
+  mixins: [
+    mixinPageTitle,
+    mixinCreateMailing,
+    mixinCurrentLocation,
+    mixinMailingsTags,
+  ],
   meta: { acl: ACL_USER, sidebarModule: 'email-builder' },
   middleware({ store, redirect }) {
     // The bootstrap account stays in the settings; a super admin works in the
@@ -162,48 +166,6 @@ export default {
         ...additionalParams,
       });
     },
-    onTagCreate(newTag) {
-      this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
-        ...new Set([newTag, ...this.tags]),
-      ]);
-    },
-    async onMailSelectionTagsUpdate(tagsUpdates) {
-      await this.handleTagsUpdate({
-        items: this.mailingsSelection.map((mailing) => mailing.id),
-        tags: tagsUpdates,
-      });
-      this.resetMailingsSelection();
-    },
-    async onMailTableTagsUpdate(tagsInformations) {
-      const { tags, selectedMailing } = tagsInformations;
-      await this.handleTagsUpdate({
-        items: [selectedMailing.id],
-        tags,
-      });
-    },
-    async handleTagsUpdate({ items, tags }) {
-      const { $axios } = this;
-      this.loading = true;
-      try {
-        await $axios.$put(mailings(), {
-          items,
-          tags,
-        });
-        await this.fetchMailListingForFilterUpdate();
-        this.showSnackbar({
-          text: this.$t('mailings.editTagsSuccessful'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
-      }
-    },
     async handleDownloadSingleMail({ mailing, isWithFtp }) {
       this.$refs.mailingSelectionActions.handleInitSingleDownload({
         mailing,
@@ -306,9 +268,3 @@ export default {
     />
   </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

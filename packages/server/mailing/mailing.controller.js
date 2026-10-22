@@ -100,9 +100,11 @@ async function list(req, res) {
   const { user, query } = req;
   const { workspaceId, parentFolderId, pagination, filters } = query;
   const paginationJSON = modelsUtils.validatePaginationJSON(
-    JSON.parse(pagination)
+    modelsUtils.parseQueryJSON(pagination, ERROR_CODES.BAD_FORMAT_PAGINATION)
   );
-  const filtersJSON = modelsUtils.validateFiltersJSON(JSON.parse(filters));
+  const filtersJSON = modelsUtils.validateFiltersJSON(
+    modelsUtils.parseQueryJSON(filters, ERROR_CODES.BAD_FORMAT_FILTERS)
+  );
 
   const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
     { workspaceId, parentFolderId, user, paginationJSON, filtersJSON }
@@ -126,29 +128,18 @@ async function list(req, res) {
 async function search(req, res) {
   const { user, query } = req;
   const pagination = modelsUtils.validatePaginationJSON(
-    parsedQueryJSON(query.pagination, ERROR_CODES.BAD_FORMAT_PAGINATION)
+    modelsUtils.parseQueryJSON(
+      query.pagination,
+      ERROR_CODES.BAD_FORMAT_PAGINATION
+    )
   );
   const filters = modelsUtils.validateFiltersJSON(
-    parsedQueryJSON(query.filters, ERROR_CODES.BAD_FORMAT_FILTERS)
+    modelsUtils.parseQueryJSON(query.filters, ERROR_CODES.BAD_FORMAT_FILTERS)
   );
 
   res.json(
     await mailingSearchService.searchMailings({ user, filters, pagination })
   );
-}
-
-// A JSON query parameter: absent is empty, malformed is a 400, not a 500.
-function parsedQueryJSON(value, errorCode) {
-  if (value === undefined || value === '') return {};
-  try {
-    const parsed = JSON.parse(value);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new TypeError('not an object');
-    }
-    return parsed;
-  } catch {
-    throw new BadRequest(errorCode);
-  }
 }
 
 /**

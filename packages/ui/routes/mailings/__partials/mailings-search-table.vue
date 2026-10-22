@@ -120,7 +120,7 @@ export default {
       <span v-else class="mailings-search-table__name">{{ item.name }}</span>
     </template>
     <template #item.location="{ item }">
-      <nuxt-link :to="locationRoute(item.location)">
+      <nuxt-link v-if="item.location" :to="locationRoute(item.location)">
         {{ locationPath(item.location) }}
       </nuxt-link>
     </template>
