@@ -101,8 +101,8 @@ function validatePaginationJSON(pagination) {
 // of `||` means a new filter is one line, and cannot be forgotten silently.
 const FILTER_SHAPES = {
   name: 'string',
-  templates: 'array',
-  tags: 'array',
+  templates: 'ids',
+  tags: 'strings',
   createdAtStart: 'date',
   createdAtEnd: 'date',
   updatedAtStart: 'date',
@@ -112,38 +112,64 @@ const FILTER_SHAPES = {
 // A single query cannot legitimately enumerate more than this; an unbounded $in
 // is a cheap way to make the database do a lot of work.
 const MAX_FILTER_ARRAY_LENGTH = 200;
+// A name is matched as a pattern on every email in scope: longer than any
+// email name, it only costs the database.
+const MAX_FILTER_NAME_LENGTH = 200;
 
 // Each validator answers with the error to raise, or null when the value passes.
 // Shape and size are distinguished on purpose: an over-long list is well formed,
 // so reporting it as a format error sends whoever reads the log looking for a
 // malformation that is not there.
 const FILTER_VALIDATORS = {
-  string: (value, key) =>
-    typeof value === 'string'
-      ? null
-      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must be a string`),
+  string: (value, key) => {
+    if (typeof value !== 'string') {
+      return badFilters(
+        ERROR_CODES.BAD_FORMAT_FILTERS,
+        `${key} must be a string`
+      );
+    }
+    if (value.length > MAX_FILTER_NAME_LENGTH) {
+      return badFilters(
+        ERROR_CODES.FILTER_TOO_LONG,
+        `${key}: ${value.length} characters, maximum is ${MAX_FILTER_NAME_LENGTH}`
+      );
+    }
+    return null;
+  },
   // A day as the date pickers send it; empty is no bound.
   date: (value, key) =>
     value === '' ||
     (typeof value === 'string' && !Number.isNaN(Date.parse(value)))
       ? null
       : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must be a date`),
-  array: (value, key) => {
-    if (!Array.isArray(value)) {
-      return badFilters(
-        ERROR_CODES.BAD_FORMAT_FILTERS,
-        `${key} must be an array`
-      );
-    }
-    if (value.length > MAX_FILTER_ARRAY_LENGTH) {
-      return badFilters(
-        ERROR_CODES.FILTER_TOO_MANY_VALUES,
-        `${key}: ${value.length} entries, maximum is ${MAX_FILTER_ARRAY_LENGTH}`
-      );
-    }
-    return null;
-  },
+  strings: (value, key) =>
+    listError(value, key) ||
+    (value.every((item) => typeof item === 'string')
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must hold strings`)),
+  ids: (value, key) =>
+    listError(value, key) ||
+    (value.every(isObjectIdString)
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must hold ids`)),
 };
+
+// A list filter, well formed and short enough to reach a `$in`.
+function listError(value, key) {
+  if (!Array.isArray(value)) {
+    return badFilters(
+      ERROR_CODES.BAD_FORMAT_FILTERS,
+      `${key} must be an array`
+    );
+  }
+  if (value.length > MAX_FILTER_ARRAY_LENGTH) {
+    return badFilters(
+      ERROR_CODES.FILTER_TOO_MANY_VALUES,
+      `${key}: ${value.length} entries, maximum is ${MAX_FILTER_ARRAY_LENGTH}`
+    );
+  }
+  return null;
+}
 
 // Same contract as sanitizeEmailMetadata: the code is what the front switches
 // on, the human-readable reason travels in `.details` so a support ticket

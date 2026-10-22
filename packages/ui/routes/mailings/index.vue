@@ -28,8 +28,8 @@ import {
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
   FETCH_WORKSPACES,
-  isSearchingAll,
 } from '~/store/folder';
+import { isSearchingAll } from '~/utils/mailing-search';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 import BsGroupLoading from '~/components/loadingBar';
 import EmailBuilderPlaceholder from '~/routes/mailings/__partials/email-builder-placeholder';
@@ -93,8 +93,14 @@ export default {
       modulesGroup: MODULES_GROUP,
       can: CAN,
     }),
+    // An email is created in a location: the "all my workspaces" scope names
+    // none on screen, so it creates nothing (ADR 0007).
     canCreateMailing() {
-      return this.hasAccess && this.can(CAPABILITIES.MAILING_CREATE);
+      return (
+        !this.searchingAll &&
+        this.hasAccess &&
+        this.can(CAPABILITIES.MAILING_CREATE)
+      );
     },
     groupAdminUrl() {
       return `/groups/${this.modulesGroup?.id}`;

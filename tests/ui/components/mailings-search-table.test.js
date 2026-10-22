@@ -24,7 +24,17 @@ describe('mailings search table', () => {
     expect(template).toMatch(
       /<a\s+v-if="item\.hasAccess"\s+:href="`\/editor\/\$\{item\.id\}`"/
     );
-    expect(template).toMatch(/<span v-else[^>]*>\{\{ item\.name \}\}<\/span>/);
+    // Without it, the name is plain text that says why: read only.
+    expect(template).toMatch(/<span v-else[^>]*>\s*\{\{ item\.name \}\}/);
+    expect(template).toMatch(
+      /:aria-label="\$t\('mailings\.search\.readOnly'\)"/
+    );
+  });
+
+  it('opens the editor from the row only when the row may be opened', () => {
+    expect(source).toMatch(
+      /openEditor\(item\) \{\s*if \(item\.hasAccess\) \{\s*window\.location\.href = `\/editor\/\$\{item\.id\}`;/
+    );
   });
 
   it('offers no selection and no row action', () => {

@@ -38,12 +38,11 @@ export default {
           text: this.$t('mailings.editTagsSuccessful'),
           color: 'success',
         });
-      } catch (error) {
+      } catch {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
       } finally {
         this.loading = false;
       }

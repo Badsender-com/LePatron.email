@@ -1,5 +1,6 @@
 <script>
 import { FOLDER, SET_FILTERS } from '~/store/folder';
+import { activeFiltersCount, isSearchingAll } from '~/utils/mailing-search';
 import { TEMPLATE } from '~/store/template';
 import { mapState } from 'vuex';
 import debounce from 'lodash/debounce';
@@ -31,13 +32,21 @@ export default {
   computed: {
     ...mapState(FOLDER, ['filters']),
     ...mapState(TEMPLATE, ['templates']),
+    // Shown on the collapsed panel: filters carry over a change of search
+    // scope, and a narrowed list must say why (ADR 0007).
+    activeCount() {
+      return activeFiltersCount(this.filters);
+    },
   },
   watch: {
-    // A new location starts with no filter. Switching the search scope keeps
-    // them, to look further for the same email; the workspace tree reloads
-    // the list on that route change (ADR 0007).
+    // A new location starts with no filter. The search keeps them: switching
+    // the scope looks further for the same email, and leaving a result for
+    // its location finds it there (ADR 0007). The workspace tree reloads the
+    // list on those route changes.
     $route(to, from) {
-      if (to.query.wid !== from.query.wid || to.query.fid !== from.query.fid) {
+      const moved =
+        to.query.wid !== from.query.wid || to.query.fid !== from.query.fid;
+      if (moved && !isSearchingAll(from.query)) {
         this.reset();
       }
     },
@@ -79,6 +88,19 @@ export default {
         <div class="d-flex align-center">
           <lucide-filter :size="18" class="mr-2" />
           {{ $t(`mailings.filters.title`) }}
+          <v-chip
+            v-if="activeCount"
+            x-small
+            color="accent"
+            text-color="white"
+            class="ml-2"
+          >
+            {{
+              $tc('mailings.search.activeFilters', activeCount, {
+                n: activeCount,
+              })
+            }}
+          </v-chip>
         </div>
         <template #actions>
           <v-icon>$expand</v-icon>

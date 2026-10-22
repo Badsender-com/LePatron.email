@@ -1,5 +1,5 @@
 <script>
-import { SEARCH_SCOPE_ALL, isSearchingAll } from '~/store/folder';
+import { SEARCH_SCOPE_ALL, isSearchingAll } from '~/utils/mailing-search';
 
 const CURRENT_FOLDER = 'folder';
 
@@ -35,21 +35,37 @@ export default {
 
 <template>
   <div class="mailings-search-scope">
-    <span class="mailings-search-scope__label">
+    <span id="mailings-search-scope-label" class="mailings-search-scope__label">
       {{ $t('mailings.search.scope') }}
     </span>
+    <!-- Vuetify's toggle says nothing to a screen reader: a radio group says
+         which scope is on. -->
     <v-btn-toggle
       :value="scope"
       mandatory
       dense
       color="accent"
+      role="radiogroup"
+      aria-labelledby="mailings-search-scope-label"
       class="mailings-search-scope__toggle"
       @change="changeScope"
     >
-      <v-btn :value="$options.CURRENT_FOLDER" small text>
+      <v-btn
+        :value="$options.CURRENT_FOLDER"
+        role="radio"
+        :aria-checked="String(scope === $options.CURRENT_FOLDER)"
+        small
+        text
+      >
         {{ $t('mailings.search.currentFolder') }}
       </v-btn>
-      <v-btn :value="$options.SEARCH_SCOPE_ALL" small text>
+      <v-btn
+        :value="$options.SEARCH_SCOPE_ALL"
+        role="radio"
+        :aria-checked="String(scope === $options.SEARCH_SCOPE_ALL)"
+        small
+        text
+      >
         {{ $t('mailings.search.allWorkspaces') }}
       </v-btn>
     </v-btn-toggle>
@@ -67,7 +83,7 @@ export default {
   &__label {
     font-size: 13px;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.54); // --gray-700
+    color: var(--gray-600);
   }
 
   &__toggle ::v-deep .v-btn {

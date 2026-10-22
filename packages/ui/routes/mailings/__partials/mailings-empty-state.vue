@@ -1,14 +1,19 @@
 <script>
 import { mapState } from 'vuex';
-import { Mail } from 'lucide-vue';
-import { FOLDER, hasActiveFilters } from '~/store/folder';
+import { Mail, RotateCcw, Search } from 'lucide-vue';
+import { FOLDER } from '~/store/folder';
+import { SEARCH_SCOPE_ALL, hasActiveFilters } from '~/utils/mailing-search';
 
-// What the email listing says when it shows nothing: with filters, that
-// nothing matches in the search scope, and a way to clear them (ADR 0007);
-// without, that the location holds no email.
+// What the email listing says when it shows nothing (ADR 0007). With filters:
+// that nothing matches in the search scope, a way to reset them and, from a
+// location, to look in every workspace. Without: that there is no email.
 export default {
   name: 'MailingsEmptyState',
-  components: { LucideMail: Mail },
+  components: {
+    LucideMail: Mail,
+    LucideRotateCcw: RotateCcw,
+    LucideSearch: Search,
+  },
   props: {
     allWorkspaces: { type: Boolean, default: false },
   },
@@ -19,11 +24,20 @@ export default {
     },
     message() {
       if (this.allWorkspaces) {
-        return this.$t('mailings.search.noResultsInAllWorkspaces');
+        return this.filtered
+          ? this.$t('mailings.search.noMatchInAllWorkspaces')
+          : this.$t('mailings.search.noMailingInAllWorkspaces');
       }
       return this.filtered
-        ? this.$t('mailings.search.noResultsInFolder')
+        ? this.$t('mailings.search.noMatchInLocation')
         : this.$t('mailings.noMailingsAvailable');
+    },
+  },
+  methods: {
+    searchAllWorkspaces() {
+      this.$router.push({
+        query: { ...this.$route.query, scope: SEARCH_SCOPE_ALL },
+      });
     },
   },
 };
@@ -31,17 +45,28 @@ export default {
 
 <template>
   <div class="mailings-empty-state">
-    <lucide-mail :size="48" class="mailings-empty-state__icon" />
+    <lucide-mail
+      :size="48"
+      class="mailings-empty-state__icon"
+      aria-hidden="true"
+    />
     <p class="mailings-empty-state__text">{{ message }}</p>
-    <v-btn
-      v-if="filtered"
-      text
-      small
-      color="primary"
-      @click="$emit('clear-filters')"
-    >
-      {{ $t('mailings.search.clearFilters') }}
-    </v-btn>
+    <div v-if="filtered" class="mailings-empty-state__actions">
+      <v-btn
+        v-if="!allWorkspaces"
+        text
+        small
+        color="accent"
+        @click="searchAllWorkspaces"
+      >
+        <lucide-search :size="16" class="mr-1" aria-hidden="true" />
+        {{ $t('mailings.search.searchAllWorkspaces') }}
+      </v-btn>
+      <v-btn text small @click="$emit('clear-filters')">
+        <lucide-rotate-ccw :size="16" class="mr-1" aria-hidden="true" />
+        {{ $t('mailings.search.resetFilters') }}
+      </v-btn>
+    </div>
   </div>
 </template>
 
@@ -56,15 +81,27 @@ export default {
   text-align: center;
 
   &__icon {
-    color: rgba(0, 0, 0, 0.26); // --gray-500
+    color: var(--gray-500);
     margin-bottom: 12px;
   }
 
   &__text {
-    margin: 0 0 4px 0;
+    margin: 0 0 8px 0;
     font-size: 14px;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.87); // --gray-900
+    color: var(--gray-900);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+
+    ::v-deep .v-btn {
+      text-transform: none;
+      letter-spacing: normal;
+    }
   }
 }
 </style>

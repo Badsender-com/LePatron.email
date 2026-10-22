@@ -229,9 +229,13 @@ MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
 // direction suffices since Mongo can read an index in reverse.
 MailingSchema.index({ _company: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, createdAt: -1 });
-MailingSchema.index({ _company: 1, name: 1 });
-MailingSchema.index({ _company: 1, wireframe: 1 });
-MailingSchema.index({ _company: 1, author: 1 });
+// The columns that tie (a name, a template, an author) end in `_id`: the
+// listings sort them with `_id` as a tie-break (findForApiWithPagination), and
+// an index that stops before it cannot serve that sort, so MongoDB would read
+// and sort every email instead of the first page.
+MailingSchema.index({ _company: 1, name: 1, _id: 1 });
+MailingSchema.index({ _company: 1, wireframe: 1, _id: 1 });
+MailingSchema.index({ _company: 1, author: 1, _id: 1 });
 // Editorial metadata filters on the mailing listing, same reasoning as above:
 // the `_company` prefix is what keeps the query from scanning a global index.
 MailingSchema.index({ _company: 1, _emailType: 1 });
@@ -243,10 +247,13 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, MAILING_LIST_PROJECTION);
 };
 
+// The sort keys whose values tie often (see the indexes above).
+const TIED_SORT_KEYS = ['name', 'author', 'wireframe'];
+
 MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
   query = {}
 ) {
-  const { paginationJSON, filtersJSON, ...restQuery } = query;
+  const { paginationJSON, filtersJSON, maxTimeMS, ...restQuery } = query;
   const additionalQueryParams = {};
 
   if (paginationJSON && paginationJSON.page && paginationJSON.itemsPerPage) {
@@ -275,9 +282,12 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     }
 
     const direction = paginationJSON.sortDesc[0] ? -1 : 1;
-    // `_id` breaks the ties (same author, same template): without it,
-    // MongoDB may repeat or skip an email from one page to the next.
-    additionalQueryParams.sort = { [sortByKey]: direction, _id: direction };
+    // A name, a template or an author ties often: `_id` breaks the ties, or
+    // MongoDB may repeat or skip an email from one page to the next. Dates
+    // hardly ever tie, and their indexes serve the sort as it is.
+    additionalQueryParams.sort = TIED_SORT_KEYS.includes(sortByKey)
+      ? { [sortByKey]: direction, _id: direction }
+      : { [sortByKey]: direction };
   }
   if (filtersJSON) {
     if (filtersJSON.name) {
@@ -341,6 +351,12 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     },
     lean: true,
     ...additionalQueryParams,
+    // A time limit, on the page and on its count, when the caller sets one.
+    ...(maxTimeMS && {
+      options: { maxTimeMS },
+      useCustomCountFn: () =>
+        this.countDocuments(restQuery).maxTimeMS(maxTimeMS).exec(),
+    }),
   });
 
   const { docs, ...restPaginationProperties } = result;

@@ -391,10 +391,15 @@ export default {
       currentFolder: 'Dossier courant',
       allWorkspaces: 'Tous mes espaces de travail',
       location: 'Emplacement',
-      noResultsInAllWorkspaces:
-        'Aucun email ne correspond dans vos espaces de travail',
-      noResultsInFolder: 'Aucun email ne correspond dans ce dossier',
-      clearFilters: 'Effacer les filtres',
+      noMatchInAllWorkspaces:
+        'Aucun email ne correspond à votre recherche dans vos espaces de travail',
+      noMailingInAllWorkspaces: 'Aucun email dans vos espaces de travail',
+      noMatchInLocation:
+        'Aucun email ne correspond à votre recherche dans cet emplacement',
+      searchAllWorkspaces: 'Chercher dans tous mes espaces de travail',
+      resetFilters: 'Réinitialiser les filtres',
+      readOnly: 'Lecture seule : ouvrez son emplacement',
+      activeFilters: '{n} filtre actif | {n} filtres actifs',
     },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
     deleteConfirmationMessage:

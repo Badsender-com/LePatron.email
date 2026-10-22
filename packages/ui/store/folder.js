@@ -10,6 +10,8 @@ import {
   workspacesByGroup,
 } from '~/helpers/api-routes';
 import { parsePaginationData } from '~/utils/parsePagination';
+import { isSearchingAll, searchPagination } from '~/utils/mailing-search';
+import { sharedWhilePending } from '~/utils/shared-while-pending';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import { mapChildFolderToTreeviewNode } from '~/utils/folders';
@@ -48,34 +50,6 @@ export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
   'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
 export const FETCH_FOLDER_CHILDREN = 'fetchFolderChildren';
-
-// The "all my workspaces" search scope (ADR 0007), as the `scope` query of the
-// listing's route. Its pages hold 100 emails at most, without "All".
-export const SEARCH_SCOPE_ALL = 'all';
-export const SEARCH_MAX_PAGE_SIZE = 100;
-
-export function isSearchingAll(query) {
-  return query?.scope === SEARCH_SCOPE_ALL;
-}
-
-// Whether the listing narrows its emails: a name, a template, a tag, a date.
-export function hasActiveFilters(filters = {}) {
-  return Object.values(filters).some((value) =>
-    Array.isArray(value) ? value.length > 0 : !!value
-  );
-}
-
-// The list each store is fetching, so the same request is not sent twice at
-// once. Keyed by store: on the server, this module serves every request.
-const pendingMailings = new WeakMap();
-
-// The page size kept from the current folder, within what the search serves.
-function searchPagination(pagination) {
-  const { itemsPerPage } = pagination;
-  return itemsPerPage > 0 && itemsPerPage <= SEARCH_MAX_PAGE_SIZE
-    ? pagination
-    : { ...pagination, itemsPerPage: SEARCH_MAX_PAGE_SIZE };
-}
 
 export const state = () => ({
   workspace: {},
@@ -263,7 +237,7 @@ export const actions = {
   },
   async [FETCH_MAILINGS](
     { commit, dispatch, rootState },
-    { query, $t, pagination }
+    { query, $t, pagination, dedupe = false }
   ) {
     const searching = isSearchingAll(query);
     if (!searching && !query?.wid && !query?.fid) return;
@@ -295,16 +269,7 @@ export const actions = {
       filters: JSON.stringify(rootState.folder?.filters || {}),
     };
 
-    // Two callers can ask for the same list at once (the page and the
-    // workspace tree, on a cold load): the second waits for the first.
-    const key = JSON.stringify([route, params]);
-    const pending = pendingMailings.get(this);
-    if (pending && pending.key === key) {
-      await pending.promise;
-      return;
-    }
-
-    const promise = (async () => {
+    const load = async () => {
       // Fetch the filter tags in parallel and don't await it: tags are served
       // by a separate endpoint and must never delay the mailing list render.
       dispatch(FETCH_MAILINGS_TAGS, { queryMailing });
@@ -338,14 +303,14 @@ export const actions = {
           showError(commit, $t);
         }
       }
-    })();
-    pendingMailings.set(this, { key, promise });
-    try {
-      await promise;
-    } finally {
-      if (pendingMailings.get(this)?.promise === promise) {
-        pendingMailings.delete(this);
-      }
+    };
+    // A location's load joins the same one already on its way (the page and
+    // the tree, on a cold load). Any other fetch (a filter, a page, a refresh
+    // after a change) goes out: it may follow a write the other has not seen.
+    if (dedupe) {
+      await sharedWhilePending(this, JSON.stringify([route, params]), load);
+    } else {
+      await load();
     }
   },
   async [FETCH_MAILINGS_TAGS]({ commit }, { queryMailing }) {
@@ -378,7 +343,7 @@ export const actions = {
   ) {
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     try {
-      await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+      await dispatch(FETCH_MAILINGS, { query, $t, pagination, dedupe: true });
     } finally {
       commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
     }

@@ -17,6 +17,14 @@ const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const MAX = 200;
 const listOf = (length) => Array.from({ length }, (_, i) => `tag-${i}`);
+const TEMPLATE_ID = '507f1f77bcf86cd799439f01';
+// Templates are ids: a list of them, each a valid one.
+const idsOf = (length) =>
+  Array.from(
+    { length },
+    (_, i) => `507f1f77bcf86cd7994${String(i).padStart(5, '0')}`
+  );
+const LISTS = { tags: listOf, templates: idsOf };
 
 describe('validateFiltersJSON', () => {
   it.each([[undefined], [null]])('lets %p through untouched', (filters) => {
@@ -24,7 +32,7 @@ describe('validateFiltersJSON', () => {
   });
 
   it('returns the filters unchanged when they pass', () => {
-    const filters = { tags: ['a', 'b'], templates: ['t'] };
+    const filters = { tags: ['a', 'b'], templates: [TEMPLATE_ID] };
     expect(validateFiltersJSON(filters)).toBe(filters);
   });
 
@@ -58,7 +66,9 @@ describe('validateFiltersJSON', () => {
 
   describe('size', () => {
     it.each([['tags'], ['templates']])('accepts %s at the cap', (key) => {
-      expect(() => validateFiltersJSON({ [key]: listOf(MAX) })).not.toThrow();
+      expect(() =>
+        validateFiltersJSON({ [key]: LISTS[key](MAX) })
+      ).not.toThrow();
     });
 
     it.each([['tags'], ['templates']])('refuses %s one over the cap', (key) => {
@@ -83,7 +93,10 @@ describe('validateFiltersJSON', () => {
 
     it('checks every declared filter, not just the first', () => {
       expect(() =>
-        validateFiltersJSON({ templates: ['ok'], tags: listOf(MAX + 1) })
+        validateFiltersJSON({
+          templates: [TEMPLATE_ID],
+          tags: listOf(MAX + 1),
+        })
       ).toThrow(
         expect.objectContaining({
           message: ERROR_CODES.FILTER_TOO_MANY_VALUES,
@@ -128,4 +141,26 @@ describe('validateFiltersJSON, name and dates', () => {
   ])('refuses a date that is not one: %p', (date) =>
     malformed({ updatedAtStart: date })
   );
+});
+
+// The values inside the lists reach a `$in` cast against the schema: an
+// object there was a cast error, a 500 (epic #1144 review).
+describe('validateFiltersJSON, what the lists hold', () => {
+  const refused = (filters, message = ERROR_CODES.BAD_FORMAT_FILTERS) =>
+    expect(() => validateFiltersJSON(filters)).toThrow(
+      expect.objectContaining({ status: 400, message })
+    );
+
+  it('refuses a tag that is not a string', () =>
+    refused({ tags: ['promo', { $gt: '' }] }));
+
+  it('refuses a template that is not an id', () =>
+    refused({ templates: ['news'] }));
+
+  it('refuses a name longer than any email name, as too long', () =>
+    refused({ name: 'a'.repeat(201) }, ERROR_CODES.FILTER_TOO_LONG));
+
+  it('takes a name of 200 characters', () => {
+    expect(() => validateFiltersJSON({ name: 'a'.repeat(200) })).not.toThrow();
+  });
 });

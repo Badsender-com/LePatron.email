@@ -175,15 +175,35 @@ describe('folder store, FETCH_MAILINGS, what it asks and keeps', () => {
     expect(committed(ctx, SET_PAGINATION)[0].itemsPerPage).toBe(-1);
   });
 
-  it('sends one request when the same list is asked twice at once', async () => {
+  it("sends one request for a location's load asked twice at once", async () => {
     const ctx = ctxWith(null);
     const $axios = { $get: jest.fn().mockResolvedValue(page(0, 25)) };
     const store = { $axios };
     const ask = () =>
-      actions[FETCH_MAILINGS].call(store, ctx, { query: { scope: 'all' } });
+      actions[FETCH_MAILINGS].call(store, ctx, {
+        query: { scope: 'all' },
+        dedupe: true,
+      });
 
     await Promise.all([ask(), ask()]);
     await ask();
+
+    expect($axios.$get).toHaveBeenCalledTimes(2);
+  });
+
+  // A refresh after a change must not get the answer of a request sent
+  // before it.
+  it('sends every other fetch, even when the same one is on its way', async () => {
+    const ctx = ctxWith(null);
+    const $axios = { $get: jest.fn().mockResolvedValue(page(0, 25)) };
+    const store = { $axios };
+    const ask = (dedupe) =>
+      actions[FETCH_MAILINGS].call(store, ctx, {
+        query: { scope: 'all' },
+        dedupe,
+      });
+
+    await Promise.all([ask(true), ask(false)]);
 
     expect($axios.$get).toHaveBeenCalledTimes(2);
   });

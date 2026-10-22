@@ -5,36 +5,15 @@
 // caller's mistake, a 400, where the folder listing's bare JSON.parse answers
 // a 500.
 
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Mailings: {},
-  Templates: {},
-  Galleries: {},
-  Users: {},
-}));
 jest.mock('../../../packages/server/mailing/mailing-search.service.js', () => ({
   searchMailings: jest.fn(async () => ({ meta: {}, items: { docs: [] } })),
-}));
-jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({}));
-jest.mock(
-  '../../../packages/server/mailing/send-test-mail.controller.js',
-  () => ({})
-);
-jest.mock(
-  '../../../packages/server/mailing/download-zip.controller.js',
-  () => ({})
-);
-jest.mock('../../../packages/server/common/file-manage.service.js', () => ({}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
 }));
 
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const {
   searchMailings,
 } = require('../../../packages/server/mailing/mailing-search.service.js');
-const controller = require('../../../packages/server/mailing/mailing.controller.js');
+const controller = require('../../../packages/server/mailing/mailing-search.controller.js');
 
 const user = { id: 'u1', group: { id: 'company-a' } };
 
@@ -81,6 +60,11 @@ describe('GET /mailings/search, its query parameters', () => {
     [
       'a name that is not a string',
       { filters: '{"name":5}' },
+      'BAD_FORMAT_FILTERS',
+    ],
+    [
+      'a template that is not an id',
+      { filters: '{"templates":[{"$gt":""}]}' },
       'BAD_FORMAT_FILTERS',
     ],
   ])('answers %s with a 400', async (_, query, code) => {

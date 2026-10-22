@@ -35,20 +35,15 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
-let searchMailings;
+const {
+  searchMailings,
+} = require('../../../packages/server/mailing/mailing-search.service');
+
 function search(user, { filters = {}, pagination = BY_NAME } = {}) {
   return searchMailings({ user, filters, pagination });
 }
 
 describe('searching every accessible workspace, its filters and pages', () => {
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module doesn't exist
-    // until #1314 ships it, and a top-level require would break the suite.
-    ({
-      searchMailings,
-    } = require('../../../packages/server/mailing/mailing-search.service'));
-  });
-
   beforeEach(() => seed(mockStore));
 
   describe('the listing filters and sort', () => {
@@ -168,6 +163,33 @@ describe('searching every accessible workspace, its filters and pages', () => {
 
       expect(new Set(ids).size).toBe(130);
       expect(ids).toEqual([...ids].sort());
+    });
+
+    it.each([0, -2, 1.5, 10001])('refuses page %p', async (page) => {
+      await expect(
+        search(frank, { pagination: { ...BY_NAME, page, itemsPerPage: 25 } })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'BAD_FORMAT_PAGINATION',
+      });
+    });
+
+    it('answers a 503 when the search runs out of its time', async () => {
+      const {
+        Mailings,
+      } = require('../../../packages/server/common/models.common.js');
+      const outOfTime = Object.assign(new Error('operation exceeded time'), {
+        code: 50,
+      });
+      const paginate = jest
+        .spyOn(Mailings, 'paginate')
+        .mockRejectedValueOnce(outOfTime);
+
+      await expect(search(frank)).rejects.toMatchObject({
+        status: 503,
+        message: 'SEARCH_TIMEOUT',
+      });
+      paginate.mockRestore();
     });
 
     // INVALID_PAGE_SIZE is a code #1314 adds to the error codes.

@@ -1,6 +1,6 @@
 'use strict';
 
-const { BadRequest } = require('http-errors');
+const { BadRequest, ServiceUnavailable } = require('http-errors');
 const mongoose = require('mongoose');
 
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -21,6 +21,12 @@ const { listingGroupIdOf } = require('../account/request-scope.js');
 
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
+// Far beyond the largest group: a deeper page is a mistake, not a need.
+const MAX_PAGE = 10000;
+// What one search may cost the database, on its page and on its count.
+const MAX_TIME_MS = 5000;
+// MongoDB's code when a query runs out of its time.
+const MAX_TIME_EXPIRED = 50;
 // The columns of the listing that sort; anything else falls back to the most
 // recently updated first.
 const SORTABLE = ['name', 'userName', 'templateName', 'createdAt', 'updatedAt'];
@@ -44,7 +50,7 @@ async function searchMailings({ user, filters = {}, pagination = {} }) {
   const workspaces = await accessibleWorkspaces(user, groupId);
   const folders = await foldersOf(workspaces);
 
-  const items = await Mailings.findForApiWithPagination({
+  const items = await findPage({
     _company: mongoose.Types.ObjectId(groupId),
     $or: [
       { _parentFolder: { $in: folders.map((folder) => folder._id) } },
@@ -57,6 +63,7 @@ async function searchMailings({ user, filters = {}, pagination = {} }) {
     ],
     paginationJSON: page,
     filtersJSON: filters,
+    maxTimeMS: MAX_TIME_MS,
   });
 
   const locate = locator(workspaces, folders);
@@ -76,6 +83,17 @@ async function searchMailings({ user, filters = {}, pagination = {} }) {
   };
 }
 
+async function findPage(query) {
+  try {
+    return await Mailings.findForApiWithPagination(query);
+  } catch (error) {
+    if (error && error.code === MAX_TIME_EXPIRED) {
+      throw new ServiceUnavailable(ERROR_CODES.SEARCH_TIMEOUT);
+    }
+    throw error;
+  }
+}
+
 // The page the database serves: 25 emails unless asked, 100 at most, "All"
 // refused, and the most recently updated first unless a column is sorted.
 function pageOf({ page, itemsPerPage, sortBy, sortDesc }) {
@@ -84,12 +102,20 @@ function pageOf({ page, itemsPerPage, sortBy, sortDesc }) {
   if (!Number.isInteger(size) || size < 1) {
     throw new BadRequest(ERROR_CODES.INVALID_PAGE_SIZE);
   }
+  const pageNumber = page === undefined ? 1 : Number(page);
+  if (
+    !Number.isInteger(pageNumber) ||
+    pageNumber < 1 ||
+    pageNumber > MAX_PAGE
+  ) {
+    throw new BadRequest(ERROR_CODES.BAD_FORMAT_PAGINATION);
+  }
   const sorted =
     Array.isArray(sortBy) &&
     Array.isArray(sortDesc) &&
     SORTABLE.includes(sortBy[0]);
   return {
-    page: Math.max(1, Number.parseInt(page, 10) || 1),
+    page: pageNumber,
     itemsPerPage: Math.min(size, MAX_PAGE_SIZE),
     ...(sorted
       ? { sortBy: [sortBy[0]], sortDesc: [!!sortDesc[0]] }
@@ -98,12 +124,12 @@ function pageOf({ page, itemsPerPage, sortBy, sortDesc }) {
 }
 
 async function accessibleWorkspaces(user, groupId) {
-  const group = await Groups.findById(groupId)
-    .select('userHasAccessToAllWorkspaces')
-    .lean();
-  const workspaces = await Workspaces.find({ _company: groupId })
-    .select('name _company _users')
-    .lean();
+  const [group, workspaces] = await Promise.all([
+    Groups.findById(groupId).select('userHasAccessToAllWorkspaces').lean(),
+    Workspaces.find({ _company: groupId })
+      .select('name _company _users')
+      .lean(),
+  ]);
   return workspaces.filter((workspace) =>
     permissions.canReadWorkspace(user, workspace, group)
   );
