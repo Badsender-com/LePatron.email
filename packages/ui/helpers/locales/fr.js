@@ -11,6 +11,7 @@ export default {
         'Sans votre méthode de vérification ? Saisissez l’un de vos codes de secours.',
       incorrect: 'Code incorrect',
       expired: 'Étape expirée : saisissez de nouveau votre mot de passe.',
+      trustDevice: 'Faire confiance à cet appareil pendant 30 jours',
     },
     setup: {
       intro:

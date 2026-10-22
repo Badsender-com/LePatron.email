@@ -13,7 +13,7 @@ export default {
     method: { type: String, default: 'totp' },
   },
   data() {
-    return { code: '', loading: false };
+    return { code: '', trustDevice: false, loading: false };
   },
   computed: {
     hint() {
@@ -28,6 +28,7 @@ export default {
       try {
         const answer = await this.$axios.$post(accountTwoFactor(), {
           code: this.code,
+          trustDevice: this.trustDevice,
         });
         this.$emit('answer', answer);
       } catch (error) {
@@ -58,6 +59,12 @@ export default {
           name="code"
           prepend-icon="lock"
           required
+        />
+        <v-checkbox
+          v-model="trustDevice"
+          hide-details
+          dense
+          :label="$t('twoFactor.code.trustDevice')"
         />
       </v-form>
       <p class="text-caption text--secondary mb-0">

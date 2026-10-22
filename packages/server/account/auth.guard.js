@@ -122,6 +122,7 @@ passport.use(
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
       if (!(await passwordMatches(user, password))) {
+        if (user) await countWrongPassword(user);
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:
@@ -146,6 +147,17 @@ passport.use(
     }
   })
 );
+
+// Five since the last sign-in make a sign-in from a trusted device
+// suspicious (ADR 0008). Not counting it does not change the answer.
+function countWrongPassword(user) {
+  return Users.updateOne(
+    { _id: user.id },
+    { $inc: { 'twoFactor.failedPasswords': 1 } }
+  ).catch((error) =>
+    logger.error(`[account] wrong password not counted for ${user.id}`, error)
+  );
+}
 
 // Asynchronous: a sign-in attempt, refused or not, never blocks the process.
 async function passwordMatches(user, password) {

@@ -172,9 +172,9 @@ describe('reading the account of a session', () => {
   });
 });
 
-// Turned on by #1321 (trusted devices): five wrong passwords since the last
-// sign-in make a sign-in from a trusted device suspicious (ADR 0008).
-describe.skip('counting the wrong passwords', () => {
+// Five wrong passwords since the last sign-in make a sign-in from a trusted
+// device suspicious (ADR 0008).
+describe('counting the wrong passwords', () => {
   it('counts a wrong password on the account', async () => {
     Users.findOne.mockResolvedValue(account());
 
