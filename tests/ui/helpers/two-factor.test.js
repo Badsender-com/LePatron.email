@@ -85,3 +85,45 @@ describe.skip('choosing the verification method', () => {
     expect(code).toMatch(/sendEmailCode/);
   });
 });
+
+describe('the 401 of the step of the code', () => {
+  let onError;
+  let redirected;
+
+  beforeAll(() => {
+    const plugin = require('../../../packages/ui/plugins/axios-error-handler.js')
+      .default;
+    plugin({ $axios: { onError: (handler) => (onError = handler) } });
+  });
+
+  beforeEach(() => {
+    redirected = false;
+    const location = {};
+    Object.defineProperty(location, 'href', {
+      get: () => '',
+      set: () => {
+        redirected = true;
+      },
+    });
+    global.window = { location };
+  });
+
+  afterEach(() => {
+    delete global.window;
+  });
+
+  it('leaves the login page to say the step ended, without a reload', () => {
+    onError({
+      response: { status: 401 },
+      config: { url: '/account/login/two-factor' },
+    });
+
+    expect(redirected).toBe(false);
+  });
+
+  it('still sends a signed-out request elsewhere to the login page', () => {
+    onError({ response: { status: 401 }, config: { url: '/mailings' } });
+
+    expect(redirected).toBe(true);
+  });
+});

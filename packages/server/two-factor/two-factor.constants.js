@@ -1,5 +1,7 @@
 'use strict';
 
+const ERROR_CODES = require('../constant/error-codes.js');
+
 // Two-factor authentication (ADR 0008). Every limit is here, named.
 
 const MINUTE = 60 * 1000;
@@ -20,12 +22,13 @@ const SECURITY_ACTIONS = Object.freeze({
   WRONG_CODES: 'two-factor.wrong-codes',
 });
 
-// The messages of the refusals, read by the login page.
+// The codes of the refusals, read by the login page.
 const ERRORS = Object.freeze({
-  STEP_EXPIRED: 'two-factor.step-expired',
-  CODE_INCORRECT: 'two-factor.code-incorrect',
-  METHOD_UNKNOWN: 'two-factor.method-unknown',
-  ALREADY_SET_UP: 'two-factor.already-set-up',
+  STEP_EXPIRED: ERROR_CODES.TWO_FACTOR_STEP_EXPIRED,
+  CODE_INCORRECT: ERROR_CODES.TWO_FACTOR_CODE_INCORRECT,
+  METHOD_UNKNOWN: ERROR_CODES.TWO_FACTOR_METHOD_UNKNOWN,
+  ALREADY_SET_UP: ERROR_CODES.TWO_FACTOR_ALREADY_SET_UP,
+  TOO_MANY_CODES: ERROR_CODES.TWO_FACTOR_TOO_MANY_CODES,
 });
 
 module.exports = {

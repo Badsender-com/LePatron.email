@@ -137,6 +137,21 @@ describe('setting up the authenticator app', () => {
     );
   });
 
+  it('emails the member once it is set up', async () => {
+    const mail = require('../../../packages/server/mailing/mail.service.js');
+    const { req } = await harness.signIn(passport, harness.addUser());
+    const { body: setup } = await step(twoFactor.startSetup, req, {
+      method: 'totp',
+    });
+    mail.send.mockClear();
+
+    await step(twoFactor.confirmSetup, req, { code: codeOf(setup.secret) });
+
+    expect(mail.send).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'camille@client.test' })
+    );
+  });
+
   it('refuses a method the product does not offer', async () => {
     const { req } = await harness.signIn(passport, harness.addUser());
 

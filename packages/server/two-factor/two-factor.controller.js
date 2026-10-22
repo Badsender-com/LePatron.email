@@ -4,6 +4,7 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 
 const logger = require('../utils/logger.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { Users } = require('../common/models.common.js');
 const { encrypt, decrypt } = require('../utils/crypto.js');
 const { completeSignIn, endSessions } = require('../account/sign-in.js');
@@ -31,14 +32,51 @@ module.exports = {
   adminReset: asyncHandler(adminReset),
 };
 
-// The account of the pending step, with what checks its codes.
+// The account of the pending step, with what checks its codes. The step
+// ends when the account changed under it: deactivated, its password changed,
+// or its setup reset while the member was typing the code.
 async function pendingUser(req, pending) {
   const user = await Users.findById(pending.userId).select('+twoFactor');
-  if (!user || user.isDeactivated) {
+  const stillValid =
+    user &&
+    !user.isDeactivated &&
+    pendingStep.isSamePassword(pending, user) &&
+    (pending.step !== STEPS.VERIFY || (user.twoFactorMethod && user.twoFactor));
+  if (!stillValid) {
     pendingStep.end(req);
     throw new createError.Unauthorized(ERRORS.STEP_EXPIRED);
   }
   return user;
+}
+
+// Mongoose 5 answers `nModified`, later versions `modifiedCount`.
+const changedOne = (result) =>
+  (typeof result.nModified === 'number'
+    ? result.nModified
+    : result.modifiedCount) > 0;
+
+// Single use, even when two requests race: the account changes only if the
+// recovery code is still there, or the TOTP code later than the last one.
+async function useRecoveryCode(user, match, stored) {
+  const result = await Users.updateOne(
+    { _id: user._id, 'twoFactor.recoveryCodes.hash': match.hash },
+    { $set: { 'twoFactor.recoveryCodes': stored } }
+  );
+  return changedOne(result);
+}
+
+async function useTimeStep(user, timeStep) {
+  const result = await Users.updateOne(
+    {
+      _id: user._id,
+      $or: [
+        { 'twoFactor.lastTimeStep': { $exists: false } },
+        { 'twoFactor.lastTimeStep': { $lt: timeStep } },
+      ],
+    },
+    { $set: { 'twoFactor.lastTimeStep': timeStep } }
+  );
+  return changedOne(result);
 }
 
 function refuseCode(req, pending, user) {
@@ -67,23 +105,25 @@ async function verify(req, res) {
   let newRecoveryCodes;
   if (recoveryCode) {
     const match = await codes.findRecoveryCode(
-      user.twoFactor && user.twoFactor.recoveryCodes,
+      user.twoFactor.recoveryCodes,
       recoveryCode
     );
-    if (!match) await refuseCode(req, pending, user);
     // A new set replaces them all, shown once: the used one is gone with it.
-    const fresh = await codes.newRecoveryCodes();
-    user.twoFactor.recoveryCodes = fresh.stored;
+    const fresh = match && (await codes.newRecoveryCodes());
+    if (!fresh || !(await useRecoveryCode(user, match, fresh.stored))) {
+      await refuseCode(req, pending, user);
+    }
     newRecoveryCodes = fresh.codes;
   } else {
-    const secret = user.twoFactor && user.twoFactor.secret;
+    const { secret, lastTimeStep } = user.twoFactor;
     const timeStep = codes.checkTotpCode(
       secret && decrypt(secret),
       code,
-      user.twoFactor.lastTimeStep
+      lastTimeStep
     );
-    if (timeStep === null) await refuseCode(req, pending, user);
-    user.twoFactor.lastTimeStep = timeStep;
+    if (timeStep === null || !(await useTimeStep(user, timeStep))) {
+      await refuseCode(req, pending, user);
+    }
   }
   await user.save();
   pendingStep.end(req);
@@ -174,6 +214,8 @@ async function confirmSetup(req, res) {
     method,
   });
 
+  await sendTwoFactorEmail(user, 'setUp');
+
   const payload = await completeSignIn(req, user);
   payload.recoveryCodes = recovery.codes;
   res.json(payload);
@@ -194,16 +236,19 @@ async function confirmSetup(req, res) {
 async function adminReset(req, res) {
   const { userId } = req.params;
   const user = await Users.findById(userId);
-  if (!user) throw new createError.NotFound();
+  if (!user) throw new createError.NotFound(ERROR_CODES.USER_NOT_FOUND);
   // As the admin password reset: nobody resets an account whose
   // capabilities are not all their own (ADR 0004).
   userScope.assertActorReaches(req.user, user);
   superAdminPolicy.assertCanManage(req.user, user);
   rightsPolicy.assertCanManage(req.user, user);
 
-  user.twoFactorMethod = undefined;
-  user.twoFactor = undefined;
-  await user.save();
+  // Explicitly: the account was read without its `twoFactor`, so unsetting
+  // it on the document would write nothing.
+  await Users.updateOne(
+    { _id: user._id },
+    { $unset: { twoFactor: 1, twoFactorMethod: 1 } }
+  );
   await endSessions(user.id);
   superAdminPolicy.logAction(req.user, 'reset-two-factor', user);
   logger.info(`[two-factor] reset for ${user.id}`);

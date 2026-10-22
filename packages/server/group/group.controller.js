@@ -300,6 +300,15 @@ async function readUsers(req, res) {
   } = req;
 
   const users = await groupService.findUserByGroupId(groupId);
+  // Who uses which verification method is for the admins (ADR 0008).
+  if (!permissions.can(req.user, CAPABILITIES.GROUP_MANAGE)) {
+    const items = users.map((user) => {
+      const visible = user.toJSON();
+      delete visible.twoFactorMethod;
+      return visible;
+    });
+    return res.json({ items });
+  }
   res.json({ items: users });
 }
 
