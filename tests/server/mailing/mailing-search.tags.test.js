@@ -58,8 +58,7 @@ const bootstrapAccount = { id: config.admin.id, name: 'admin' };
 const tagsWithoutLocation = (user) =>
   mailingService.listTagsForWorkspaceOrFolder({ user });
 
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('the tags of the "all" search scope', () => {
+describe('the tags of the "all" search scope', () => {
   it("answers the tags of the user's group", async () => {
     expect(await tagsWithoutLocation(regularUser)).toEqual({
       tags: ['promo', 'weekly'],

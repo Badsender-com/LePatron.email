@@ -52,7 +52,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
   error: jest.fn(),
 }));
 
-let searchMailings;
+const {
+  searchMailings,
+} = require('../../../packages/server/mailing/mailing-search.service');
+
 function search(user, { filters = {}, pagination = BY_NAME } = {}) {
   return searchMailings({ user, filters, pagination });
 }
@@ -60,16 +63,7 @@ const rows = (result) =>
   result.items.docs.map(({ name, hasAccess }) => [name, hasAccess]);
 const openable = (list, hasAccess) => list.map((name) => [name, hasAccess]);
 
-// Turned on by #1314 (search every accessible workspace)
-describe.skip('searching every accessible workspace, its scope', () => {
-  beforeAll(() => {
-    // Required here, not at the top of the file: the module doesn't exist
-    // until #1314 ships it, and a top-level require would break the suite.
-    ({
-      searchMailings,
-    } = require('../../../packages/server/mailing/mailing-search.service'));
-  });
-
+describe('searching every accessible workspace, its scope', () => {
   beforeEach(() => seed(mockStore));
 
   describe('which emails come back, for every role', () => {

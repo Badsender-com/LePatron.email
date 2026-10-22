@@ -22,4 +22,6 @@ A result is read, not acted on. Each row carries its location and whether the us
 
 - The name is still matched by an unanchored, case-insensitive pattern, which no index serves: the cost grows with the number of emails in the accessible workspaces. It is measured on a local database before release; a text index is a separate change.
 - The folder listing still shows only the emails directly in its location; this scope does not change it.
+- A sort on a column that ties (name, template, author) takes `_id` as a tie-break, in the folder listing too, so no email repeats or goes missing from one page to the next; the indexes of those columns end in `_id`, or the sort could no longer use them. Dates do not tie and keep their indexes as they are.
+- A search runs for 5 seconds at most, on its page and on its count, and answers a 503 past that; a name longer than 200 characters is refused.
 - A location is read from the folder's parent before its workspace: a subfolder from older data may still carry a workspace, and a moved email keeps `null` in the field it left.

@@ -130,6 +130,9 @@ export function mailings() {
 export function mailingsTags() {
   return '/mailings/tags';
 }
+export function mailingsSearch() {
+  return '/mailings/search';
+}
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;
 }
