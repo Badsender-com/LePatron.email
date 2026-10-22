@@ -26,6 +26,7 @@ import {
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import MailingsTagsMenu from './mailings-tags-menu';
+import MailingsEmptyState from './mailings-empty-state.vue';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 import { escapeHtml } from '~/helpers/escape-html';
@@ -34,7 +35,6 @@ import {
   TextCursor,
   Copy,
   Trash2,
-  Mail,
   Tag,
   Maximize2,
   Eye,
@@ -94,7 +94,7 @@ export default {
     MailingsPreviewModal,
     BsMailingModalDuplicateTranslate,
     BsMailingModalTranslationWarning,
-    LucideMail: Mail,
+    MailingsEmptyState,
     // Lucide icons for BsRowActions are imported at top but passed as strings
     // They're resolved dynamically by BsRowActions component
   },
@@ -736,12 +736,7 @@ export default {
         </template>
 
         <template #no-data>
-          <div class="empty-state">
-            <lucide-mail :size="48" class="empty-state__icon" />
-            <p class="empty-state__text">
-              {{ $t('mailings.noMailingsAvailable') }}
-            </p>
-          </div>
+          <mailings-empty-state @clear-filters="$emit('clear-filters')" />
         </template>
       </v-data-table>
 
@@ -980,27 +975,5 @@ export default {
   font-weight: 500;
   color: rgba(0, 0, 0, 0.54); // --gray-700
   background: #fff;
-}
-
-/* -------- Empty state (BsDataTable spec) ------------------------------- */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  text-align: center;
-
-  &__icon {
-    color: rgba(0, 0, 0, 0.26); // --gray-500
-    margin-bottom: 12px;
-  }
-
-  &__text {
-    margin: 0 0 4px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.87); // --gray-900
-  }
 }
 </style>

@@ -14,6 +14,7 @@ const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
 const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
+const mailingSearch = require('./mailing-search.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const translation = require('../translation/translation.controller.js');
@@ -23,6 +24,9 @@ const translation = require('../translation/translation.controller.js');
 router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('', GUARD_USER, mailings.list);
+// Searching every accessible workspace is a read: no capability (ADR 0007).
+// Declared before the '/:mailingId' routes, like '/tags' below.
+router.get('/search', GUARD_USER, mailingSearch.search);
 // Must be declared before the '/:mailingId' routes below, otherwise "tags"
 // would be captured as a mailingId.
 router.get('/tags', GUARD_USER, mailings.listTags);

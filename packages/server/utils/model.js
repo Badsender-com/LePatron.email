@@ -14,6 +14,7 @@ module.exports = {
   addMailQueryParamFilter,
   validatePaginationJSON,
   validateFiltersJSON,
+  parseQueryJSON,
 };
 
 // A 24-hex-digit id, as the routes receive it. Mongoose alone also accepts any
@@ -53,6 +54,29 @@ function addMailQueryParamFilter(query) {
   return params;
 }
 
+/**
+ * A JSON object sent as a query-string parameter (a listing's pagination or
+ * filters): absent is empty, malformed is the caller's mistake, a 400 rather
+ * than the 500 a bare JSON.parse throws.
+ *
+ * @param {string} [value] the raw parameter
+ * @param {string} errorCode what to answer when it is not a JSON object
+ * @returns {Object}
+ */
+function parseQueryJSON(value, errorCode) {
+  if (value === undefined || value === '') return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new BadRequest(errorCode);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new BadRequest(errorCode);
+  }
+  return parsed;
+}
+
 // Validate pagination JSON
 function validatePaginationJSON(pagination) {
   if (pagination) {
@@ -76,35 +100,76 @@ function validatePaginationJSON(pagination) {
 // surfaces as a 500 instead of a 400. Keeping this as a table rather than a chain
 // of `||` means a new filter is one line, and cannot be forgotten silently.
 const FILTER_SHAPES = {
-  templates: 'array',
-  tags: 'array',
+  name: 'string',
+  templates: 'ids',
+  tags: 'strings',
+  createdAtStart: 'date',
+  createdAtEnd: 'date',
+  updatedAtStart: 'date',
+  updatedAtEnd: 'date',
 };
 
 // A single query cannot legitimately enumerate more than this; an unbounded $in
 // is a cheap way to make the database do a lot of work.
 const MAX_FILTER_ARRAY_LENGTH = 200;
+// A name is matched as a pattern on every email in scope: longer than any
+// email name, it only costs the database.
+const MAX_FILTER_NAME_LENGTH = 200;
 
 // Each validator answers with the error to raise, or null when the value passes.
 // Shape and size are distinguished on purpose: an over-long list is well formed,
 // so reporting it as a format error sends whoever reads the log looking for a
 // malformation that is not there.
 const FILTER_VALIDATORS = {
-  array: (value, key) => {
-    if (!Array.isArray(value)) {
+  string: (value, key) => {
+    if (typeof value !== 'string') {
       return badFilters(
         ERROR_CODES.BAD_FORMAT_FILTERS,
-        `${key} must be an array`
+        `${key} must be a string`
       );
     }
-    if (value.length > MAX_FILTER_ARRAY_LENGTH) {
+    if (value.length > MAX_FILTER_NAME_LENGTH) {
       return badFilters(
-        ERROR_CODES.FILTER_TOO_MANY_VALUES,
-        `${key}: ${value.length} entries, maximum is ${MAX_FILTER_ARRAY_LENGTH}`
+        ERROR_CODES.FILTER_TOO_LONG,
+        `${key}: ${value.length} characters, maximum is ${MAX_FILTER_NAME_LENGTH}`
       );
     }
     return null;
   },
+  // A day as the date pickers send it; empty is no bound.
+  date: (value, key) =>
+    value === '' ||
+    (typeof value === 'string' && !Number.isNaN(Date.parse(value)))
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must be a date`),
+  strings: (value, key) =>
+    listError(value, key) ||
+    (value.every((item) => typeof item === 'string')
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must hold strings`)),
+  ids: (value, key) =>
+    listError(value, key) ||
+    (value.every(isObjectIdString)
+      ? null
+      : badFilters(ERROR_CODES.BAD_FORMAT_FILTERS, `${key} must hold ids`)),
 };
+
+// A list filter, well formed and short enough to reach a `$in`.
+function listError(value, key) {
+  if (!Array.isArray(value)) {
+    return badFilters(
+      ERROR_CODES.BAD_FORMAT_FILTERS,
+      `${key} must be an array`
+    );
+  }
+  if (value.length > MAX_FILTER_ARRAY_LENGTH) {
+    return badFilters(
+      ERROR_CODES.FILTER_TOO_MANY_VALUES,
+      `${key}: ${value.length} entries, maximum is ${MAX_FILTER_ARRAY_LENGTH}`
+    );
+  }
+  return null;
+}
 
 // Same contract as sanitizeEmailMetadata: the code is what the front switches
 // on, the human-readable reason travels in `.details` so a support ticket
