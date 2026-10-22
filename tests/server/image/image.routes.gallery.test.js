@@ -27,7 +27,7 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   Galleries,

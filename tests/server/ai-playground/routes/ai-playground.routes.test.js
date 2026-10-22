@@ -46,7 +46,7 @@ jest.mock('../../../../packages/server/account/auth.guard', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../../helpers/local-request.js');
 
 const scenarioService = require('../../../../packages/server/ai-playground/services/scenario.service');
 const playgroundRunner = require('../../../../packages/server/ai-playground/services/playground-runner.service');
