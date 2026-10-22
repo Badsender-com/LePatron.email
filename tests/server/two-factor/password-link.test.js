@@ -53,8 +53,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the password link of a member who needs two-factor authentication', () => {
+describe('the password link of a member who needs two-factor authentication', () => {
   it('sets the password but opens no session', async () => {
     harness.addGroup({ requireTwoFactor: true });
     harness.addTotpUser({ token: 'emailed-token' });

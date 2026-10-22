@@ -58,8 +58,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the step of the code', () => {
+describe('the step of the code', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
@@ -163,8 +162,7 @@ describe.skip('the step of the code', () => {
   });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('who is asked the code', () => {
+describe('who is asked the code', () => {
   it('asks a member of a requiring group without a setup to set it up', async () => {
     const user = harness.addUser();
 
@@ -217,8 +215,7 @@ describe.skip('who is asked the code', () => {
   });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('recovery codes', () => {
+describe('recovery codes', () => {
   beforeAll(() => {
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
   });

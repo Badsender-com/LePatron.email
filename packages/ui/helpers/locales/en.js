@@ -1,4 +1,53 @@
 export default {
+  twoFactor: {
+    code: {
+      label: 'Code',
+      submit: 'Verify',
+      hints: {
+        totp: 'Enter the 6-digit code shown by your authenticator app.',
+        email: 'Enter the 6-digit code sent to you by email.',
+      },
+      recoveryHint:
+        'Without your verification method? Enter one of your recovery codes.',
+      incorrect: 'Incorrect code',
+      expired: 'This step expired: enter your password again.',
+    },
+    setup: {
+      intro:
+        'Your group requires two-factor authentication: after your password, you will enter a code.',
+      scan: 'Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then enter the code it shows.',
+      qrCodeAlt: 'Setup QR code',
+      manual: 'Or enter this key in the app:',
+      confirm: 'Turn on',
+    },
+    recoveryCodes: {
+      intro:
+        'Each recovery code signs you in once, without your verification method. Keep them somewhere safe: they will not be shown again.',
+      copy: 'Copy',
+      copied: 'Codes copied',
+      download: 'Download',
+      noted: 'I have saved my recovery codes',
+      continue: 'Continue',
+    },
+    group: {
+      title: 'Two-factor authentication',
+      description:
+        'Every member of the group enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
+      switch: 'Require two-factor authentication',
+      saml: 'This group signs in with SSO: two-factor authentication belongs to its identity provider.',
+      updated: 'Setting saved',
+    },
+    users: {
+      column: 'Two-factor',
+      methods: { totp: 'App', email: 'Email' },
+      notSetUp: 'Not set up',
+      reset: 'Reset two-factor authentication',
+      resetNotice:
+        'Their sessions will end and they will set it up again at their next sign-in. Reset the two-factor authentication of',
+      resetDone: 'Two-factor authentication reset',
+    },
+    passwordSet: 'Password saved: sign in to continue.',
+  },
   snackbars: {
     updated: 'Updated',
     created: 'Created',

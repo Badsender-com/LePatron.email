@@ -75,8 +75,7 @@ beforeEach(() => {
   storedGroup({ requireTwoFactor: false });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('PUT /groups/:groupId — requireTwoFactor', () => {
+describe('PUT /groups/:groupId — requireTwoFactor', () => {
   it('lets a company admin require two-factor authentication', async () => {
     const payload = await update(companyAdmin, { requireTwoFactor: true });
 
