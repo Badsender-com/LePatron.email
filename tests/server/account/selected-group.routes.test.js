@@ -31,7 +31,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const express = require('express');
 const mongoose = require('mongoose');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const GroupSchema = require('../../../packages/server/group/group.schema.js');
 
