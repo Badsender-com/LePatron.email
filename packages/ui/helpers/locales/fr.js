@@ -386,6 +386,21 @@ export default {
       startDate: 'Date début',
       endDate: 'Date fin',
     },
+    search: {
+      scope: 'Rechercher dans',
+      currentFolder: 'Dossier courant',
+      allWorkspaces: 'Tous mes espaces de travail',
+      location: 'Emplacement',
+      noMatchInAllWorkspaces:
+        'Aucun email ne correspond à votre recherche dans vos espaces de travail',
+      noMailingInAllWorkspaces: 'Aucun email dans vos espaces de travail',
+      noMatchInLocation:
+        'Aucun email ne correspond à votre recherche dans cet emplacement',
+      searchAllWorkspaces: 'Chercher dans tous mes espaces de travail',
+      resetFilters: 'Réinitialiser les filtres',
+      readOnly: 'Lecture seule : ouvrez son emplacement',
+      activeFilters: '{n} filtre actif | {n} filtres actifs',
+    },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
     deleteConfirmationMessage:
       'Vous êtes sur le point de supprimer l\'ensemble des emails sélectionnés.<br/>Cette action est irréversible.',

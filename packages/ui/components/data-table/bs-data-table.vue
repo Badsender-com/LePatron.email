@@ -1,6 +1,7 @@
 <script>
 import {
   TABLE_FOOTER_PROPS,
+  TABLE_ITEMS_PER_PAGE_OPTIONS,
   TABLE_PAGINATION_THRESHOLD,
 } from '~/helpers/constants/table-config.js';
 
@@ -22,11 +23,17 @@ export default {
     mustSort: { type: Boolean, default: false },
     sortBy: { type: [String, Array], default: undefined },
     sortDesc: { type: [Boolean, Array], default: undefined },
+    // The page sizes offered, "All" (-1) included unless left out.
+    itemsPerPageOptions: {
+      type: Array,
+      default: () => TABLE_ITEMS_PER_PAGE_OPTIONS,
+    },
   },
   computed: {
     footerProps() {
       return {
         ...TABLE_FOOTER_PROPS,
+        'items-per-page-options': this.itemsPerPageOptions,
         'items-per-page-all-text': this.$t('global.all'),
       };
     },

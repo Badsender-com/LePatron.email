@@ -98,9 +98,11 @@ async function list(req, res) {
   const { user, query } = req;
   const { workspaceId, parentFolderId, pagination, filters } = query;
   const paginationJSON = modelsUtils.validatePaginationJSON(
-    JSON.parse(pagination)
+    modelsUtils.parseQueryJSON(pagination, ERROR_CODES.BAD_FORMAT_PAGINATION)
   );
-  const filtersJSON = modelsUtils.validateFiltersJSON(JSON.parse(filters));
+  const filtersJSON = modelsUtils.validateFiltersJSON(
+    modelsUtils.parseQueryJSON(filters, ERROR_CODES.BAD_FORMAT_FILTERS)
+  );
 
   const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
     { workspaceId, parentFolderId, user, paginationJSON, filtersJSON }
