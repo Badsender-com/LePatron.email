@@ -17,6 +17,26 @@ const promisify = (run) =>
   );
 
 /**
+ * A new session, with a new id, for the account about to sign in: the
+ * session a browser held before signing in, and what it carried (the step
+ * of the code), is never the signed-in one.
+ *
+ * @param {Object} req
+ * @returns {Promise<void>}
+ */
+function renewSession(req) {
+  return promisify((done) => req.session.regenerate(done));
+}
+
+/**
+ * The same, as a middleware, before passport opens a session itself (the
+ * SAML callback).
+ */
+function renewSessionFirst(req, res, next) {
+  renewSession(req).then(() => next(), next);
+}
+
+/**
  * Opens the session of `user` and answers the account as every later
  * request does: with its capabilities and its selected group (ADR 0002,
  * amended), so the screens the sign-in opens show what the user may do
@@ -30,6 +50,7 @@ const promisify = (run) =>
 async function completeSignIn(req, user) {
   // A choice kept in the session belongs to the previous sign-in.
   forgetSessionSelection(req);
+  await renewSession(req);
   await promisify((done) => req.logIn(user, done));
   await updateSessionTracking(req, user);
 
@@ -62,4 +83,9 @@ async function endSessions(userId) {
   );
 }
 
-module.exports = { completeSignIn, endSessions };
+module.exports = {
+  completeSignIn,
+  endSessions,
+  renewSession,
+  renewSessionFirst,
+};
