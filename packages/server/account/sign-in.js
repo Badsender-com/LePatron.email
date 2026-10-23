@@ -6,10 +6,7 @@ const { Users } = require('../common/models.common.js');
 const permissions = require('./permissions.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 const { updateSessionTracking } = require('./session-tracking.helper.js');
-const {
-  resolveSelectedGroup,
-  forgetSessionSelection,
-} = require('./selected-group.js');
+const { resolveSelectedGroup } = require('./selected-group.js');
 
 const promisify = (run) =>
   new Promise((resolve, reject) =>
@@ -29,14 +26,6 @@ function renewSession(req) {
 }
 
 /**
- * The same, as a middleware, before passport opens a session itself (the
- * SAML callback).
- */
-function renewSessionFirst(req, res, next) {
-  renewSession(req).then(() => next(), next);
-}
-
-/**
  * Opens the session of `user` and answers the account as every later
  * request does: with its capabilities and its selected group (ADR 0002,
  * amended), so the screens the sign-in opens show what the user may do
@@ -48,8 +37,8 @@ function renewSessionFirst(req, res, next) {
  * @returns {Promise<Object>} the answer
  */
 async function completeSignIn(req, user) {
-  // A choice kept in the session belongs to the previous sign-in.
-  forgetSessionSelection(req);
+  // The new session carries nothing of the previous one, the group a
+  // super admin chose in it included.
   await renewSession(req);
   await promisify((done) => req.logIn(user, done));
   await updateSessionTracking(req, user);
@@ -87,5 +76,4 @@ module.exports = {
   completeSignIn,
   endSessions,
   renewSession,
-  renewSessionFirst,
 };
