@@ -73,6 +73,12 @@ const ProfileSchema = Schema(
   }
 );
 
-ProfileSchema.plugin(encryptionPlugin, ['secretKey', 'accessToken']);
+// The API key was stored in clear until it joined the encrypted fields: a
+// value in clear is read as it is until scripts/reencrypt-secrets.js
+// encrypts it.
+ProfileSchema.plugin(encryptionPlugin, {
+  fields: ['secretKey', 'accessToken', 'apiKey'],
+  readsClear: ['apiKey'],
+});
 
 module.exports = ProfileSchema;

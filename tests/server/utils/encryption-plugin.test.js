@@ -83,3 +83,36 @@ describe('a secret copied from another record', () => {
     expect(doc.ftpPassword).toBeUndefined();
   });
 });
+
+describe('a secret that was stored in clear before it was encrypted', () => {
+  it('reads the value in clear as it is, until the script encrypts it', () => {
+    const doc = {
+      _id: 'p1',
+      apiKey: 'an-actito-api-key-of-more-than-32-characters',
+    };
+
+    decryptFields(doc, ['apiKey'], 'Profile', ['apiKey']);
+
+    expect(doc.apiKey).toBe('an-actito-api-key-of-more-than-32-characters');
+  });
+
+  it('decrypts it once encrypted', () => {
+    const doc = {
+      _id: 'p1',
+      apiKey: encrypt('an-actito-api-key', 'Profile:p1:apiKey'),
+    };
+
+    decryptFields(doc, ['apiKey'], 'Profile', ['apiKey']);
+
+    expect(doc.apiKey).toBe('an-actito-api-key');
+  });
+
+  it('encrypts the ESP API key of a profile, among its secrets', () => {
+    const ProfileSchema = require('../../../packages/server/profile/profile.schema.js');
+
+    expect(ProfileSchema.encryptedFields).toEqual(
+      expect.arrayContaining(['apiKey', 'secretKey', 'accessToken'])
+    );
+    expect(ProfileSchema.encryptedFieldsReadClear).toEqual(['apiKey']);
+  });
+});
