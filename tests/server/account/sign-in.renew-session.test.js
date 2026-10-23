@@ -33,8 +33,8 @@ const passport = require('passport');
 const users = require('../../../packages/server/user/user.controller.js');
 const twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
 const {
-  renewSessionFirst,
-} = require('../../../packages/server/account/sign-in.js');
+  updateSessionTracking,
+} = require('../../../packages/server/account/session-tracking.helper.js');
 
 beforeEach(() => {
   harness.reset();
@@ -91,16 +91,34 @@ describe('a sign-in opens a new session', () => {
     expect(req.session).not.toBe(before);
   });
 
-  it('before passport opens one itself, on the SSO callback', async () => {
-    const before = {};
-    const req = harness.makeRequest({ session: before });
-    const next = jest.fn();
+  it('keeps the account in the new session, and tracks the new id', async () => {
+    harness.addGroup({ requireTwoFactor: false });
+    let trackedId;
+    updateSessionTracking.mockImplementation(async (req) => {
+      trackedId = req.sessionID;
+    });
 
-    await new Promise((resolve) =>
-      renewSessionFirst(req, {}, (error) => resolve(next(error)))
+    const { req } = await harness.signIn(passport, harness.addUser());
+
+    expect(req.session.passport).toEqual({ user: 'u1' });
+    expect(trackedId).toBe(req.sessionID);
+    expect(trackedId).not.toBe('new-session');
+  });
+});
+
+describe('the step of the code', () => {
+  it('lives in a session issued with the answer to the password', async () => {
+    harness.addGroup({ requireTwoFactor: true });
+    const before = {};
+
+    const { req, answer } = await harness.signIn(
+      passport,
+      harness.addTotpUser(),
+      { session: before }
     );
 
-    expect(next).toHaveBeenCalledWith(undefined);
+    expect(answer.body.twoFactor.step).toBe('verify');
     expect(req.session).not.toBe(before);
+    expect(before.twoFactorPending).toBeUndefined();
   });
 });

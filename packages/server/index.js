@@ -50,7 +50,6 @@ const sessionValidationMiddleware = require('./account/session-validation.middle
 const {
   updateSessionTracking,
 } = require('./account/session-tracking.helper.js');
-const { renewSessionFirst } = require('./account/sign-in.js');
 const aiFeatureRouter = require('./ai-feature/ai-feature.routes');
 const {
   skillsRouter: aiSkillsRouter,
@@ -270,12 +269,14 @@ if (cluster.isMaster) {
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
-      if (!req.body.SAMLResponse && !req.query.email) {
+      // This route starts a sign-in, for an email: a response or a request
+      // of the identity provider comes back on the POST callback only.
+      if (req.query.SAMLResponse || req.query.SAMLRequest || !req.query.email) {
         return res.redirect('/');
       }
       next();
     },
-    passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+    passport.authenticate('saml', { failureRedirect: '/' }),
     (err, req, res, _next) => {
       console.log({ err });
       if (err) {
@@ -288,8 +289,7 @@ if (cluster.isMaster) {
   app.post(
     '/SAML-login/callback',
     bodyParser.urlencoded({ extended: false }),
-    renewSessionFirst,
-    passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+    passport.authenticate('saml', { failureRedirect: '/' }),
     async function (req, res) {
       // Update session tracking after SAML login
       await updateSessionTracking(req, req.user);
