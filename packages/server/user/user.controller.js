@@ -94,7 +94,7 @@ async function list(req, res) {
     .populate({
       path: '_company',
       select:
-        'id name entryPoint issuer enableCrmIntelligence enableEmailBuilder emailMetadata',
+        'id name entryPoint issuer idpCert enableCrmIntelligence enableEmailBuilder emailMetadata',
     })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
