@@ -5,6 +5,9 @@
 // is encrypted, and bound to its model, its document and its field.
 
 process.env.ENCRYPTION_KEY = 'a-test-encryption-key-32-bytes!!';
+// The rollout's last step: the application writes GCM. Before it, see
+// encryption-plugin.rollback.test.js.
+process.env.ENCRYPTION_WRITE_GCM = 'true';
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),

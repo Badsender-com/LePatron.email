@@ -41,6 +41,16 @@ const encrypt = (text, context) => {
     .toString('hex')}${encrypted.toString('hex')}`;
 };
 
+// The former format, written until ENCRYPTION_WRITE_GCM is on: the previous
+// version of the application reads nothing else.
+const encryptLegacy = (text) => {
+  if (!text) return;
+  const iv = crypto.randomBytes(LEGACY_IV_LENGTH);
+  const cipher = crypto.createCipheriv(LEGACY, encryptionKey, iv);
+  const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+  return iv.toString('hex') + encrypted.toString('hex');
+};
+
 const isEncrypted = (value) =>
   typeof value === 'string' && value.startsWith(GCM_PREFIX);
 
@@ -97,6 +107,7 @@ const getMd5FromBlob = async (blob) => {
 
 module.exports = {
   encrypt,
+  encryptLegacy,
   decrypt,
   isEncrypted,
   isLegacyEncrypted,

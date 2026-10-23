@@ -1,5 +1,6 @@
+const config = require('../node.config.js');
 const logger = require('./logger.js');
-const { encrypt, decrypt, isEncrypted } = require('./crypto');
+const { encrypt, encryptLegacy, decrypt, isEncrypted } = require('./crypto');
 
 /**
  * What a stored secret is bound to: its model, its document and its field.
@@ -44,6 +45,15 @@ function decryptFields(doc, fields, modelName) {
   });
 }
 
+/**
+ * The value stored for a secret. In GCM, bound to its record, once
+ * ENCRYPTION_WRITE_GCM is on; in the former format until then, so that the
+ * previous version of the application still reads every value written and
+ * can be rolled back to.
+ */
+const storedValueOf = (value, context) =>
+  config.encryptionWriteGcm ? encrypt(value, context) : encryptLegacy(value);
+
 // Where an update writes values: at its top level and under `$set`, both at
 // once (Mongoose adds a `$set` of its own, for `updatedAt`).
 function writtenPartsOf(query) {
@@ -59,7 +69,7 @@ function encryptionPlugin(schema, encryptedFields = []) {
     encryptedFields.forEach((field) => {
       // A value saved twice in the same document is encrypted once.
       if (this[field] && !isEncrypted(this[field])) {
-        this[field] = encrypt(
+        this[field] = storedValueOf(
           this[field],
           contextOf(this.constructor.modelName, this._id, field)
         );
@@ -86,7 +96,7 @@ function encryptionPlugin(schema, encryptedFields = []) {
       );
     }
     writes.forEach(({ part, field }) => {
-      part[field] = encrypt(
+      part[field] = storedValueOf(
         part[field],
         contextOf(this.model.modelName, id, field)
       );

@@ -10,9 +10,18 @@
  * touched, so a rerun is a no-op. The collections are read raw, without the
  * models: their encryption plugin would decrypt on read.
  *
+ * Every value rewritten is first copied, as it was, into a backup
+ * collection named by the run; `--restore=<backup>` puts them back (only
+ * where the value is still the one the run wrote). The backup holds the
+ * secrets as they were stored: drop it once the rollout is done.
+ *
+ * Writes need ENCRYPTION_WRITE_GCM=true, as on the application: it then
+ * writes what this script writes.
+ *
  * Usage:
  *   node scripts/reencrypt-secrets.js --dry-run
  *   node scripts/reencrypt-secrets.js --confirm-database=<name>
+ *   node scripts/reencrypt-secrets.js --restore=<backup> --confirm-database=<name>
  */
 
 const mongoose = require('mongoose');
@@ -95,7 +104,9 @@ function planReencryption(doc, { model, fields, bound = true }) {
   return { set: Object.keys(set).length > 0 ? set : null, unreadable };
 }
 
-async function run({ dryRun, database }) {
+const BACKUP_PREFIX = 'reencrypt_backup_';
+
+async function connect(database) {
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -105,10 +116,27 @@ async function run({ dryRun, database }) {
     `Connected to ${databaseHosts(config.database)}/${db.databaseName}`
   );
   confirmDatabase(db.databaseName, database);
+  return db;
+}
+
+async function run({ dryRun, database }) {
+  if (!dryRun && !config.encryptionWriteGcm) {
+    throw new Error(
+      'Set ENCRYPTION_WRITE_GCM=true on the application first, and here: it ' +
+        'then writes what this script writes. Nothing was written.'
+    );
+  }
+  const db = await connect(database);
+  const backupName = `${BACKUP_PREFIX}${new Date()
+    .toISOString()
+    .replace(/\D/g, '')
+    .slice(0, 14)}`;
+  const backup = db.collection(backupName);
 
   for (const target of TARGETS) {
     const { model, fields } = target;
-    const collection = db.collection(mongoose.pluralize()(model));
+    const collectionName = mongoose.pluralize()(model);
+    const collection = db.collection(collectionName);
     const query = {
       $or: fields.map((field) => ({ [field]: { $type: 'string' } })),
     };
@@ -132,15 +160,30 @@ async function run({ dryRun, database }) {
           rewritten += 1;
           continue;
         }
+        const previous = valueAt(doc, field);
+        // Backed up before it is written over.
+        // eslint-disable-next-line no-await-in-loop
+        const { insertedId } = await backup.insertOne({
+          collection: collectionName,
+          docId: doc._id,
+          field,
+          previous,
+          written: value,
+        });
         // Only if the value is still the one read: one saved meanwhile by
-        // the application is already in GCM, and stays.
+        // the application stays.
         // eslint-disable-next-line no-await-in-loop
         const { modifiedCount } = await collection.updateOne(
-          { _id: doc._id, [field]: valueAt(doc, field) },
+          { _id: doc._id, [field]: previous },
           { $set: { [field]: value } }
         );
-        if (modifiedCount > 0) rewritten += 1;
-        else changedMeanwhile += 1;
+        if (modifiedCount > 0) {
+          rewritten += 1;
+        } else {
+          changedMeanwhile += 1;
+          // eslint-disable-next-line no-await-in-loop
+          await backup.deleteOne({ _id: insertedId });
+        }
       }
     }
     console.log(
@@ -149,17 +192,59 @@ async function run({ dryRun, database }) {
       }, ${unreadable} document(s) left as is, ${changedMeanwhile} changed meanwhile`
     );
   }
+  if (!dryRun) {
+    console.log(
+      `Backup: ${backupName}. To undo: --restore=${backupName}. Once the ` +
+        `rollout is done: db.${backupName}.drop()`
+    );
+  }
+}
+
+/**
+ * Puts back the values a run backed up, where the value is still the one
+ * the run wrote: a secret saved since is kept.
+ */
+async function restore({ database, backupName }) {
+  if (!backupName.startsWith(BACKUP_PREFIX)) {
+    throw new Error(`--restore takes a ${BACKUP_PREFIX}… collection`);
+  }
+  const db = await connect(database);
+  let restored = 0;
+  let changedSince = 0;
+  // eslint-disable-next-line no-await-in-loop
+  for await (const entry of db.collection(backupName).find({})) {
+    // eslint-disable-next-line no-await-in-loop
+    const { modifiedCount } = await db
+      .collection(entry.collection)
+      .updateOne(
+        { _id: entry.docId, [entry.field]: entry.written },
+        { $set: { [entry.field]: entry.previous } }
+      );
+    if (modifiedCount > 0) restored += 1;
+    else changedSince += 1;
+  }
+  console.log(
+    `${restored} field(s) restored, ${changedSince} changed since the run, kept`
+  );
 }
 
 if (require.main === module) {
+  const argv = process.argv.slice(2);
+  const restoreFlag = argv.find((arg) => arg.startsWith('--restore='));
   let options;
   try {
-    options = parseArgs(process.argv.slice(2));
+    options = parseArgs(argv);
   } catch (error) {
     console.error(error.message);
     process.exit(1);
   }
-  run(options)
+  const job = restoreFlag
+    ? restore({
+        database: options.database,
+        backupName: restoreFlag.slice('--restore='.length),
+      })
+    : run(options);
+  job
     .then(() => mongoose.disconnect())
     .catch((error) => {
       console.error(redact(error.message));
@@ -168,4 +253,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { planReencryption, TARGETS };
+module.exports = { planReencryption, TARGETS, run, restore };

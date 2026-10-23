@@ -68,6 +68,10 @@ const config = rc('lepatron', {
   // Values in the former AES-256-CTR format are read until this is turned
   // off, once scripts/reencrypt-secrets.js left none (utils/crypto.js).
   encryptionLegacyReads: process.env.ENCRYPTION_LEGACY_READS !== 'false',
+  // Off until the rollout says so (utils/encryption-plugin.js): the secrets
+  // are written as before, which the previous version of the application
+  // reads, so it can still be rolled back to.
+  encryptionWriteGcm: process.env.ENCRYPTION_WRITE_GCM === 'true',
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
 });
