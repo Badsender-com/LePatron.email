@@ -20,6 +20,9 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const config = require('../packages/server/node.config.js');
 const modelNames = require('../packages/server/constant/model.names.js');
+const ProfileSchema = require('../packages/server/profile/profile.schema.js');
+const GroupSchema = require('../packages/server/group/group.schema.js');
+const IntegrationSchema = require('../packages/server/integration/integration.schema.js');
 const {
   encrypt,
   decrypt,
@@ -33,11 +36,14 @@ const {
 } = require('./gallery/command-line.js');
 
 // The encrypted fields, as the schemas declare them to the plugin, and the
-// two-factor secrets (ADR 0008), which are encrypted by hand.
+// two-factor secrets (#1324), which are encrypted by hand.
 const TARGETS = [
-  { model: modelNames.ProfileModel, fields: ['secretKey', 'accessToken'] },
-  { model: modelNames.GroupModel, fields: ['ftpPassword', 'ftpSshKey'] },
-  { model: modelNames.IntegrationModel, fields: ['apiKey'] },
+  { model: modelNames.ProfileModel, fields: ProfileSchema.encryptedFields },
+  { model: modelNames.GroupModel, fields: GroupSchema.encryptedFields },
+  {
+    model: modelNames.IntegrationModel,
+    fields: IntegrationSchema.encryptedFields,
+  },
   { model: modelNames.UserModel, fields: ['twoFactor.secret'] },
 ];
 
@@ -45,9 +51,20 @@ const valueAt = (doc, dotted) =>
   dotted.split('.').reduce((node, key) => (node ? node[key] : undefined), doc);
 
 // AES-256-CTR does not tell a wrong key: it decrypts to noise. The secrets
-// are text (keys, passwords, SSH keys), so noise is refused rather than
-// written again for good, as it would be under another ENCRYPTION_KEY.
-const READABLE = /^[\x20-\x7e\t\r\n]*$/;
+// are text (keys, passwords, SSH keys), so what is not valid UTF-8 or holds
+// control characters is refused rather than written again for good, as it
+// would be under another ENCRYPTION_KEY.
+// eslint-disable-next-line no-control-regex -- control characters are the point
+const NOT_TEXT = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFD]/;
+
+function readLegacy(value) {
+  try {
+    const secret = decrypt(value);
+    return NOT_TEXT.test(secret) ? null : secret;
+  } catch (error) {
+    return null;
+  }
+}
 
 /**
  * Pure planning step: what one raw document needs.
@@ -63,9 +80,9 @@ function planReencryption(doc, fields) {
   fields.forEach((field) => {
     const value = valueAt(doc, field);
     if (!isLegacyEncrypted(value) || value.length <= 32) return;
-    const secret = decrypt(value);
-    if (READABLE.test(secret)) set[field] = encrypt(secret);
-    else unreadable.push(field);
+    const secret = readLegacy(value);
+    if (secret === null) unreadable.push(field);
+    else set[field] = encrypt(secret);
   });
   return { set: Object.keys(set).length > 0 ? set : null, unreadable };
 }
@@ -86,10 +103,12 @@ async function run({ dryRun, database }) {
     const query = {
       $or: fields.map((field) => ({ [field]: { $type: 'string' } })),
     };
+    const projection = Object.fromEntries(fields.map((field) => [field, 1]));
     let rewritten = 0;
     let unreadable = 0;
+    let changedMeanwhile = 0;
     // eslint-disable-next-line no-await-in-loop
-    for await (const doc of collection.find(query)) {
+    for await (const doc of collection.find(query, { projection })) {
       const plan = planReencryption(doc, fields);
       if (plan.unreadable.length > 0) {
         unreadable += 1;
@@ -99,16 +118,26 @@ async function run({ dryRun, database }) {
           )} left as is, not text once decrypted (another key?)`
         );
       }
-      const { set } = plan;
-      if (!set) continue;
-      rewritten += 1;
-      // eslint-disable-next-line no-await-in-loop
-      if (!dryRun) await collection.updateOne({ _id: doc._id }, { $set: set });
+      for (const [field, value] of Object.entries(plan.set || {})) {
+        if (dryRun) {
+          rewritten += 1;
+          continue;
+        }
+        // Only if the value is still the one read: one saved meanwhile by
+        // the application is already in GCM, and stays.
+        // eslint-disable-next-line no-await-in-loop
+        const { modifiedCount } = await collection.updateOne(
+          { _id: doc._id, [field]: valueAt(doc, field) },
+          { $set: { [field]: value } }
+        );
+        if (modifiedCount > 0) rewritten += 1;
+        else changedMeanwhile += 1;
+      }
     }
     console.log(
-      `${model}: ${rewritten} ${
+      `${model}: ${rewritten} field(s) ${
         dryRun ? 'to rewrite' : 'rewritten'
-      }, ${unreadable} left as is`
+      }, ${unreadable} document(s) left as is, ${changedMeanwhile} changed meanwhile`
     );
   }
 }

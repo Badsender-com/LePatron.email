@@ -65,6 +65,9 @@ const config = rc('lepatron', {
   adobeDefaultImsUrl: process.env.NUXT_ENV_ADOBE_DEFAULT_IMS_URL,
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
   encryptionKey: process.env.ENCRYPTION_KEY,
+  // Values in the former AES-256-CTR format are read until this is turned
+  // off, once scripts/reencrypt-secrets.js left none (utils/crypto.js).
+  encryptionLegacyReads: process.env.ENCRYPTION_LEGACY_READS !== 'false',
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
 });

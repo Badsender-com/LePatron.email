@@ -53,6 +53,24 @@ describe('encrypting a stored secret', () => {
     expect(decrypt(stored)).toBe('an FTP password');
   });
 
+  it('refuses a value shortened to a weaker tag', () => {
+    const stored = encrypt('an ESP secret key');
+    const shortened = stored.slice(0, 'gcm:'.length + 24 + 8);
+
+    expect(() => decrypt(shortened)).toThrow();
+  });
+
+  it('refuses the former format once its reads are off', () => {
+    const stored = legacyEncrypt('an FTP password');
+    jest.isolateModules(() => {
+      process.env.ENCRYPTION_LEGACY_READS = 'false';
+      const strict = require('../../../packages/server/utils/crypto.js');
+      delete process.env.ENCRYPTION_LEGACY_READS;
+
+      expect(() => strict.decrypt(stored)).toThrow(/legacy reads are off/);
+    });
+  });
+
   it('encrypts nothing for an empty value', () => {
     expect(encrypt('')).toBeUndefined();
   });
@@ -86,6 +104,39 @@ describe('rewriting the former format', () => {
 
   it('leaves a field that is absent', () => {
     expect(planReencryption({}, ['ftpPassword', 'ftpSshKey']).set).toBeNull();
+  });
+
+  it('rewrites a secret with accents, which is text', () => {
+    const { set } = planReencryption(
+      { ftpPassword: legacyEncrypt('été-2026') },
+      ['ftpPassword']
+    );
+
+    expect(decrypt(set.ftpPassword)).toBe('été-2026');
+  });
+
+  it('leaves a value that is not even hex, rather than stop the run', () => {
+    const plan = planReencryption(
+      { ftpSshKey: '-----BEGIN OPENSSH PRIVATE KEY----- written in clear' },
+      ['ftpSshKey']
+    );
+
+    expect(plan).toEqual({ set: null, unreadable: ['ftpSshKey'] });
+  });
+
+  it('covers every field the schemas encrypt', () => {
+    const { TARGETS } = require('../../../scripts/reencrypt-secrets.js');
+    const fields = TARGETS.flatMap(({ fields: list }) => list);
+
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        'secretKey',
+        'accessToken',
+        'ftpPassword',
+        'ftpSshKey',
+        'apiKey',
+      ])
+    );
   });
 
   it('leaves a value written under another key, rather than rewrite noise', () => {
