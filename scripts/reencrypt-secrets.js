@@ -28,6 +28,7 @@ const {
   decrypt,
   isLegacyEncrypted,
 } = require('../packages/server/utils/crypto.js');
+const { contextOf } = require('../packages/server/utils/encryption-plugin.js');
 const {
   parseArgs,
   confirmDatabase,
@@ -44,7 +45,8 @@ const TARGETS = [
     model: modelNames.IntegrationModel,
     fields: IntegrationSchema.encryptedFields,
   },
-  { model: modelNames.UserModel, fields: ['twoFactor.secret'] },
+  // Encrypted by hand, without a context, until #1324 binds them.
+  { model: modelNames.UserModel, fields: ['twoFactor.secret'], bound: false },
 ];
 
 const valueAt = (doc, dotted) =>
@@ -70,11 +72,12 @@ function readLegacy(value) {
  * Pure planning step: what one raw document needs.
  *
  * @param {Object} doc a raw document
- * @param {string[]} fields its encrypted fields, dotted
+ * @param {Object} target its model, its encrypted fields (dotted), and
+ *   whether their values are bound to the document (`bound`, by default)
  * @returns {{set: Object|null, unreadable: string[]}} the `$set` to apply,
  *   and the fields left as they are because they do not decrypt to text
  */
-function planReencryption(doc, fields) {
+function planReencryption(doc, { model, fields, bound = true }) {
   const set = {};
   const unreadable = [];
   fields.forEach((field) => {
@@ -82,7 +85,12 @@ function planReencryption(doc, fields) {
     if (!isLegacyEncrypted(value) || value.length <= 32) return;
     const secret = readLegacy(value);
     if (secret === null) unreadable.push(field);
-    else set[field] = encrypt(secret);
+    else {
+      set[field] = encrypt(
+        secret,
+        bound ? contextOf(model, doc._id, field) : undefined
+      );
+    }
   });
   return { set: Object.keys(set).length > 0 ? set : null, unreadable };
 }
@@ -98,7 +106,8 @@ async function run({ dryRun, database }) {
   );
   confirmDatabase(db.databaseName, database);
 
-  for (const { model, fields } of TARGETS) {
+  for (const target of TARGETS) {
+    const { model, fields } = target;
     const collection = db.collection(mongoose.pluralize()(model));
     const query = {
       $or: fields.map((field) => ({ [field]: { $type: 'string' } })),
@@ -109,7 +118,7 @@ async function run({ dryRun, database }) {
     let changedMeanwhile = 0;
     // eslint-disable-next-line no-await-in-loop
     for await (const doc of collection.find(query, { projection })) {
-      const plan = planReencryption(doc, fields);
+      const plan = planReencryption(doc, target);
       if (plan.unreadable.length > 0) {
         unreadable += 1;
         console.log(

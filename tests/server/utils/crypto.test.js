@@ -76,49 +76,86 @@ describe('encrypting a stored secret', () => {
   });
 });
 
-describe('rewriting the former format', () => {
-  const { planReencryption } = require('../../../scripts/reencrypt-secrets.js');
+describe('binding a value to its record', () => {
+  it('reads it back with the context it was written with', () => {
+    const stored = encrypt('an ESP secret key', 'Profile:p1:secretKey');
 
-  it('rewrites a value in the former format, to the same secret', () => {
-    const { set } = planReencryption({ apiKey: legacyEncrypt('a key') }, [
-      'apiKey',
-    ]);
-
-    expect(set.apiKey).toMatch(/^gcm:/);
-    expect(decrypt(set.apiKey)).toBe('a key');
+    expect(decrypt(stored, 'Profile:p1:secretKey')).toBe('an ESP secret key');
   });
 
-  it('reads nested fields', () => {
-    const doc = { twoFactor: { secret: legacyEncrypt('JBSWY3DPEHPK3PXP') } };
+  it('refuses it copied into another record', () => {
+    const stored = encrypt('an ESP secret key', 'Profile:p1:secretKey');
 
-    const { set } = planReencryption(doc, ['twoFactor.secret']);
+    expect(() => decrypt(stored, 'Profile:p2:secretKey')).toThrow();
+  });
+
+  it('refuses it copied into another field', () => {
+    const stored = encrypt('an FTP password', 'Company:g1:ftpPassword');
+
+    expect(() => decrypt(stored, 'Company:g1:ftpSshKey')).toThrow();
+  });
+});
+
+describe('rewriting the former format', () => {
+  const { planReencryption } = require('../../../scripts/reencrypt-secrets.js');
+  const INTEGRATION = { model: 'Integration', fields: ['apiKey'] };
+  const COMPANY = { model: 'Company', fields: ['ftpPassword', 'ftpSshKey'] };
+
+  it('rewrites a value in the former format, bound to its record, to the same secret', () => {
+    const { set } = planReencryption(
+      { _id: 'i1', apiKey: legacyEncrypt('a key') },
+      INTEGRATION
+    );
+
+    expect(set.apiKey).toMatch(/^gcm:/);
+    expect(decrypt(set.apiKey, 'Integration:i1:apiKey')).toBe('a key');
+    expect(() => decrypt(set.apiKey, 'Integration:i2:apiKey')).toThrow();
+  });
+
+  it('reads nested fields, unbound where the code reads them unbound', () => {
+    const doc = {
+      _id: 'u1',
+      twoFactor: { secret: legacyEncrypt('JBSWY3DPEHPK3PXP') },
+    };
+
+    const { set } = planReencryption(doc, {
+      model: 'User',
+      fields: ['twoFactor.secret'],
+      bound: false,
+    });
 
     expect(decrypt(set['twoFactor.secret'])).toBe('JBSWY3DPEHPK3PXP');
   });
 
   it('leaves a value already rewritten, so a rerun writes nothing', () => {
     expect(
-      planReencryption({ apiKey: encrypt('a key') }, ['apiKey']).set
+      planReencryption(
+        { _id: 'i1', apiKey: encrypt('a key', 'Integration:i1:apiKey') },
+        INTEGRATION
+      ).set
     ).toBeNull();
   });
 
   it('leaves a field that is absent', () => {
-    expect(planReencryption({}, ['ftpPassword', 'ftpSshKey']).set).toBeNull();
+    expect(planReencryption({ _id: 'g1' }, COMPANY).set).toBeNull();
   });
 
   it('rewrites a secret with accents, which is text', () => {
     const { set } = planReencryption(
-      { ftpPassword: legacyEncrypt('été-2026') },
-      ['ftpPassword']
+      { _id: 'g1', ftpPassword: legacyEncrypt('été-2026') },
+      COMPANY
     );
 
-    expect(decrypt(set.ftpPassword)).toBe('été-2026');
+    expect(decrypt(set.ftpPassword, 'Company:g1:ftpPassword')).toBe('été-2026');
   });
 
   it('leaves a value that is not even hex, rather than stop the run', () => {
     const plan = planReencryption(
-      { ftpSshKey: '-----BEGIN OPENSSH PRIVATE KEY----- written in clear' },
-      ['ftpSshKey']
+      {
+        _id: 'g1',
+        ftpSshKey: '-----BEGIN OPENSSH PRIVATE KEY----- written in clear',
+      },
+      COMPANY
     );
 
     expect(plan).toEqual({ set: null, unreadable: ['ftpSshKey'] });
@@ -153,7 +190,7 @@ describe('rewriting the former format', () => {
         cipher.final(),
       ]).toString('hex');
 
-    const plan = planReencryption({ apiKey: stored }, ['apiKey']);
+    const plan = planReencryption({ _id: 'i1', apiKey: stored }, INTEGRATION);
 
     expect(plan.set).toBeNull();
     expect(plan.unreadable).toEqual(['apiKey']);

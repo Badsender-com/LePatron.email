@@ -14,6 +14,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const logger = require('../../../packages/server/utils/logger.js');
 const { encrypt } = require('../../../packages/server/utils/crypto.js');
+
+// As the plugin writes it: bound to its model, its document and its field.
+const stored = (value, id, field) => encrypt(value, `Company:${id}:${field}`);
 const {
   decryptFields,
 } = require('../../../packages/server/utils/encryption-plugin.js');
@@ -25,7 +28,10 @@ function altered(value) {
 
 describe('decrypting the documents a query reads', () => {
   it('decrypts every encrypted field', () => {
-    const doc = { _id: 'g1', ftpPassword: encrypt('a password') };
+    const doc = {
+      _id: 'g1',
+      ftpPassword: stored('a password', 'g1', 'ftpPassword'),
+    };
 
     decryptFields(doc, ['ftpPassword'], 'Company');
 
@@ -33,8 +39,12 @@ describe('decrypting the documents a query reads', () => {
   });
 
   it('leaves out a field that does not decrypt, and logs which, never its value', () => {
-    const stored = altered(encrypt('a password'));
-    const doc = { _id: 'g1', ftpPassword: stored, ftpSshKey: encrypt('a key') };
+    const value = altered(stored('a password', 'g1', 'ftpPassword'));
+    const doc = {
+      _id: 'g1',
+      ftpPassword: value,
+      ftpSshKey: stored('a key', 'g1', 'ftpSshKey'),
+    };
 
     decryptFields(doc, ['ftpPassword', 'ftpSshKey'], 'Company');
 
@@ -42,13 +52,13 @@ describe('decrypting the documents a query reads', () => {
     expect(doc.ftpSshKey).toBe('a key');
     const logged = JSON.stringify(logger.error.mock.calls);
     expect(logged).toContain('Company g1 ftpPassword');
-    expect(logged).not.toContain(stored);
+    expect(logged).not.toContain(value);
   });
 
   it('does not write the field back when the document is saved', () => {
     const doc = {
       _id: 'g1',
-      ftpPassword: altered(encrypt('a password')),
+      ftpPassword: altered(stored('a password', 'g1', 'ftpPassword')),
       set: jest.fn(function set(field, value) {
         this[field] = value;
       }),
@@ -58,5 +68,18 @@ describe('decrypting the documents a query reads', () => {
     decryptFields(doc, ['ftpPassword'], 'Company');
 
     expect(doc.unmarkModified).toHaveBeenCalledWith('ftpPassword');
+  });
+});
+
+describe('a secret copied from another record', () => {
+  it('is left out, like an altered one', () => {
+    const doc = {
+      _id: 'g2',
+      ftpPassword: stored('the password of g1', 'g1', 'ftpPassword'),
+    };
+
+    decryptFields(doc, ['ftpPassword'], 'Company');
+
+    expect(doc.ftpPassword).toBeUndefined();
   });
 });

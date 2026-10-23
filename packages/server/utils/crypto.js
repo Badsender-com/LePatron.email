@@ -3,8 +3,10 @@ const config = require('../node.config');
 
 // Secrets stored in the database (ESP keys, integration keys, FTP access)
 // are encrypted with AES-256-GCM, which also detects a value that was
-// altered: decrypting one throws. They carry the `gcm:` prefix. A value is
-// not bound to its document: one copied from another record still reads.
+// altered: decrypting one throws. They carry the `gcm:` prefix. A value
+// encrypted with a context (the model, the document's id and the field, as
+// the encryption plugin gives it) reads with that context only: one copied
+// into another record or field throws too.
 //
 // Values written before, in AES-256-CTR, are still read while
 // `encryptionLegacyReads` is on, and written again in GCM on their next save
@@ -22,10 +24,17 @@ const LEGACY_IV_LENGTH = 16;
 const encryptionKey = config.encryptionKey;
 const MIN_GCM_HEX = (GCM_IV_LENGTH + GCM_TAG_LENGTH) * 2;
 
-const encrypt = (text) => {
+/**
+ * @param {string} text
+ * @param {string} [context] what the value is bound to: decrypting it takes
+ *   the same one
+ * @returns {string|undefined}
+ */
+const encrypt = (text, context) => {
   if (!text) return;
   const iv = crypto.randomBytes(GCM_IV_LENGTH);
   const cipher = crypto.createCipheriv(GCM, encryptionKey, iv);
+  if (context) cipher.setAAD(Buffer.from(context));
   const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
   return `${GCM_PREFIX}${iv.toString('hex')}${cipher
     .getAuthTag()
@@ -38,7 +47,7 @@ const isEncrypted = (value) =>
 const isLegacyEncrypted = (value) =>
   typeof value === 'string' && !value.startsWith(GCM_PREFIX);
 
-function decryptGcm(value) {
+function decryptGcm(value, context) {
   const hex = value.slice(GCM_PREFIX.length);
   // A shortened value would carry a shorter tag, which Node accepts.
   if (hex.length < MIN_GCM_HEX) throw new Error('encrypted value too short');
@@ -49,6 +58,7 @@ function decryptGcm(value) {
   const decipher = crypto.createDecipheriv(GCM, encryptionKey, iv, {
     authTagLength: GCM_TAG_LENGTH,
   });
+  if (context) decipher.setAAD(Buffer.from(context));
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(content), decipher.final()]).toString();
 }
@@ -60,8 +70,14 @@ function decryptLegacy(hash) {
   return Buffer.concat([decipher.update(content), decipher.final()]).toString();
 }
 
-function decrypt(value) {
-  if (!isLegacyEncrypted(value)) return decryptGcm(value);
+/**
+ * @param {string} value
+ * @param {string} [context] the one it was encrypted with (a value in the
+ *   former format has none)
+ * @returns {string}
+ */
+function decrypt(value, context) {
+  if (!isLegacyEncrypted(value)) return decryptGcm(value, context);
   if (!config.encryptionLegacyReads) {
     throw new Error('value in the former format, legacy reads are off');
   }
