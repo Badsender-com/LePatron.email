@@ -15,8 +15,6 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
     Users: store.Users,
     Groups: store.Groups,
     Mailings: store.Mailings,
-    OAuthClients: {},
-    OAuthTokens: {},
     __store: store,
   };
 });

@@ -7,8 +7,6 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Users: { findOne: jest.fn(), findOneForApi: jest.fn() },
   Groups: {},
-  OAuthClients: {},
-  OAuthTokens: {},
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
