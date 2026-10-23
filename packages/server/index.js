@@ -18,6 +18,7 @@ const terminate = require('./utils/terminate.js');
 const cluster = require('cluster');
 
 const config = require('./node.config.js');
+const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
@@ -65,6 +66,8 @@ const cpuCount = require('os').cpus().length;
 const workers = process.env.WORKERS <= cpuCount ? process.env.WORKERS : 1;
 
 if (cluster.isMaster) {
+  // Before any worker: a worker that fails on start is forked again.
+  assertNoDevDefaults(config, process.env.NODE_ENV);
   // A WORKERS above the CPU count falls back to a single worker, not to the
   // CPU count, and used to do so silently. Left as is: each worker gets its
   // own heap limit, so capping instead would multiply the memory an instance
