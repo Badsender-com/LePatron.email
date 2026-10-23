@@ -26,6 +26,7 @@ const userScope = require('./user-scope.js');
 const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { isSamlConfigured } = require('../account/saml-config.js');
+const { signsInWithSso } = require('../account/sso-member.js');
 const {
   MAILING_LIST_PROJECTION,
 } = require('../constant/mailing-list-projection.js');
@@ -361,6 +362,11 @@ async function forgotPassword(req, res) {
   // The answer says nothing about the account, in its body or in its timing:
   // the email does, when there is one, and is sent once the answer is out.
   res.json({});
+  // A member of a group with SSO has no password to reset.
+  if (user && (await signsInWithSso(user))) {
+    logger.info(`[account] no password reset for ${user.id}: SSO group`);
+    return;
+  }
   if (user) {
     user
       .resetPassword('user', user.lang)
@@ -401,6 +407,11 @@ async function setPassword(req, res) {
     isDeactivated: { $ne: true },
   });
   if (!user) throw new createError.BadRequest('invalid or expired token');
+  // A member of a group with SSO signs in through its identity provider: a
+  // link left from before the SSO opens nothing.
+  if (await signsInWithSso(user)) {
+    throw new createError.BadRequest('invalid or expired token');
+  }
 
   const isValidPassword = req.body.password === req.body.passwordConfirm;
   if (!isValidPassword) {

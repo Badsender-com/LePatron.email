@@ -21,6 +21,7 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
+const { signsInWithSso } = require('./sso-member.js');
 
 const {
   Users,
@@ -122,6 +123,11 @@ passport.use(
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
       if (!(await passwordMatches(user, password))) {
+        return done(null, false, { message: 'password.error.incorrect' });
+      }
+      // A member of a group with SSO signs in through its identity provider
+      // only, whatever password the account holds.
+      if (await signsInWithSso(user)) {
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:

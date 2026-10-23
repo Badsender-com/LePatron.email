@@ -6,6 +6,7 @@ const rc = require('rc');
 const _ = require('lodash');
 require('dotenv').config();
 const { mkdirp } = require('fs-extra');
+const { DEFAULTS } = require('./config/production-secrets.js');
 
 const localEmail = Object.freeze({
   host: '0.0.0.0',
@@ -21,7 +22,9 @@ const config = rc('lepatron', {
     API_PREFIX: '/api',
   },
   database: 'mongodb://localhost:27017/lepatron',
-  sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
+  // Development values: outside development, the server refuses to start on
+  // them (config/production-secrets.js).
+  sessionSecret: DEFAULTS.sessionSecret,
   emailTransport: {
     ...localEmail,
   },
@@ -57,7 +60,7 @@ const config = rc('lepatron', {
   admin: {
     id: '576b90a441ceadc005124896',
     username: 'admin',
-    password: 'admin',
+    password: DEFAULTS['admin.password'],
   },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
   dscUrl: process.env.DSC_ESP_URL,
