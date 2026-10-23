@@ -67,7 +67,6 @@
     "express": "4.17.1",
     "express-async-handler": "1.1.4",
     "express-favicon": "2.0.1",
-    "express-oauth-server": "2.0.0",
     "express-session": "1.17.1",
     "fast-xml-parser": "4.5.6",
     "font-awesome": "4.7.0",
