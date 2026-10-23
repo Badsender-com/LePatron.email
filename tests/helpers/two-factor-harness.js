@@ -194,14 +194,26 @@ function makeRequest({
       return !!this.user;
     },
   };
+  // As passport: the account goes into the session the request holds now.
   const logIn = jest.fn((account, options, done) => {
     const callback = typeof options === 'function' ? options : done;
     req.user = account;
+    req.session.passport = { user: account.id };
     callback();
   });
   req.logIn = logIn;
   req.login = logIn;
-  if (!session.save) session.save = (done) => done && done();
+  // express-session's: a new session object, with a new id, on the request.
+  const renewable = (target) => {
+    if (!target.save) target.save = (done) => done && done();
+    target.regenerate = (done) => {
+      req.session = renewable({});
+      req.sessionID = `${req.sessionID}-renewed`;
+      done();
+    };
+    return target;
+  };
+  renewable(session);
   return req;
 }
 

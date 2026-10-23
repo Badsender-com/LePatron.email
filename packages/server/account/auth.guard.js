@@ -21,6 +21,7 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
+const { renewSession } = require('./sign-in.js');
 
 const {
   Users,
@@ -289,6 +290,9 @@ passport.use(
         if (!user) {
           return done(null, false, { message: 'password.error.nouser' });
         }
+        // A new session for the account, once the response is valid: a
+        // refused one leaves the browser's session as it was.
+        await renewSession(req);
         done(null, user);
       } catch (error) {
         done(error);
