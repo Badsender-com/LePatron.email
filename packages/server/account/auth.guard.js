@@ -122,12 +122,14 @@ passport.use(
 
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
-      if (!(await passwordMatches(user, password))) {
-        return done(null, false, { message: 'password.error.incorrect' });
-      }
       // A member of a group with SSO signs in through its identity provider
-      // only, whatever password the account holds.
-      if (await signsInWithSso(user)) {
+      // only, whatever password the account holds. Read alongside the
+      // password, so a right one answers no later than a wrong one.
+      const [matches, sso] = await Promise.all([
+        passwordMatches(user, password),
+        user ? signsInWithSso(user) : false,
+      ]);
+      if (!matches || sso) {
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:

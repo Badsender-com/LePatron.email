@@ -1,12 +1,16 @@
 'use strict';
 
-// The development defaults of node.config.js are public: outside development
-// the server refuses to start on them.
+// The development defaults of node.config.js are public: anywhere but in
+// development and the tests, the server refuses to start on them.
 
 const {
-  assertProductionSecrets,
+  assertNoDevDefaults,
   DEFAULTS,
-} = require('../../../packages/server/config/production-secrets.js');
+} = require('../../../packages/server/config/dev-defaults.js');
+
+// What the check reads: the configuration, and NODE_ENV as the process got it.
+const assertProductionSecrets = (config) =>
+  assertNoDevDefaults(config, config.NODE_ENV);
 
 const configured = (overrides = {}) => ({
   isDev: false,
@@ -50,6 +54,21 @@ describe('starting outside development', () => {
         })
       )
     ).toThrow();
+  });
+});
+
+describe('starting without NODE_ENV', () => {
+  it('refuses the defaults: an unset environment is not a developer machine', () => {
+    expect(() =>
+      assertNoDevDefaults(
+        {
+          isDev: true,
+          sessionSecret: DEFAULTS.sessionSecret,
+          admin: { password: 'admin' },
+        },
+        undefined
+      )
+    ).toThrow(/NODE_ENV=development/);
   });
 });
 

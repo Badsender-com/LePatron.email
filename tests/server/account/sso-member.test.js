@@ -6,7 +6,7 @@
 // LePatron too.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Users: { findOne: jest.fn(), findOneForApi: jest.fn() },
+  Users: { findOne: jest.fn(), findOneForApi: jest.fn(), findById: jest.fn() },
   Groups: { findOne: jest.fn() },
   Mailings: {},
   OAuthClients: {},
@@ -79,6 +79,14 @@ beforeEach(() => jest.clearAllMocks());
 describe('a member of a group with SSO', () => {
   beforeEach(() => Groups.findOne.mockResolvedValue({ _id: GROUP_ID, ...SSO }));
 
+  it('reads the SSO of the group whether the password is right or wrong', async () => {
+    Users.findOne.mockResolvedValue(account());
+
+    await signIn('wrong-password');
+
+    expect(Groups.findOne).toHaveBeenCalled();
+  });
+
   it('cannot sign in with a password, even the right one', async () => {
     Users.findOne.mockResolvedValue(account());
 
@@ -113,6 +121,29 @@ describe('a member of a group with SSO', () => {
 
     expect(result.status).toBe(400);
     expect(member.setPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe('an admin resetting the password of a member of a group with SSO', () => {
+  it('is refused: there is no password to send', async () => {
+    Groups.findOne.mockResolvedValue({ _id: GROUP_ID, ...SSO });
+    const member = account();
+    Users.findById.mockResolvedValue(member);
+    const admin = { id: 'a1', role: 'company_admin', group: { id: GROUP_ID } };
+
+    const result = await new Promise((resolve) =>
+      controller.adminResetPassword(
+        { params: { userId: 'u1' }, user: admin },
+        { json: (body) => resolve({ status: 200, body }) },
+        (err) => resolve({ status: err.status, error: err.message })
+      )
+    );
+
+    expect(result).toEqual({
+      status: 400,
+      error: 'SSO_MEMBER_HAS_NO_PASSWORD',
+    });
+    expect(member.resetPassword).not.toHaveBeenCalled();
   });
 });
 

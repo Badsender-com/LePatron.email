@@ -337,6 +337,10 @@ async function adminResetPassword(req, res) {
   userScope.assertActorReaches(req.user, user);
   superAdminPolicy.assertCanManage(req.user, user);
   rightsPolicy.assertCanManage(req.user, user);
+  // Signs in through its group's identity provider: no password to send.
+  if (await signsInWithSso(user)) {
+    throw new createError.BadRequest(ERROR_CODES.SSO_MEMBER_HAS_NO_PASSWORD);
+  }
 
   await user.resetPassword('admin', user.lang);
   superAdminPolicy.logAction(req.user, 'reset-password', user);
@@ -362,24 +366,29 @@ async function forgotPassword(req, res) {
   // The answer says nothing about the account, in its body or in its timing:
   // the email does, when there is one, and is sent once the answer is out.
   res.json({});
-  // A member of a group with SSO has no password to reset.
-  if (user && (await signsInWithSso(user))) {
-    logger.info(`[account] no password reset for ${user.id}: SSO group`);
+  if (!user) return;
+  // A member of a group with SSO has no password to reset. The answer is
+  // out: an error here is logged, never sent.
+  try {
+    if (await signsInWithSso(user)) {
+      logger.info(`[account] no password reset for ${user.id}: SSO group`);
+      return;
+    }
+  } catch (error) {
+    logger.error(`[account] password reset not sent to ${user.id}`, error);
     return;
   }
-  if (user) {
-    user
-      .resetPassword('user', user.lang)
-      .then(() =>
-        logger.info(`[account] password reset email sent to ${user.id}`)
+  user
+    .resetPassword('user', user.lang)
+    .then(() =>
+      logger.info(`[account] password reset email sent to ${user.id}`)
+    )
+    .catch((error) =>
+      logger.error(
+        `[account] password reset email failed for ${user.id}`,
+        error
       )
-      .catch((error) =>
-        logger.error(
-          `[account] password reset email failed for ${user.id}`,
-          error
-        )
-      );
-  }
+    );
 }
 
 /**

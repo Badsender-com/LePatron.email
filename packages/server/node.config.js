@@ -6,7 +6,7 @@ const rc = require('rc');
 const _ = require('lodash');
 require('dotenv').config();
 const { mkdirp } = require('fs-extra');
-const { DEFAULTS } = require('./config/production-secrets.js');
+const { DEFAULTS } = require('./config/dev-defaults.js');
 
 const localEmail = Object.freeze({
   host: '0.0.0.0',
@@ -23,7 +23,7 @@ const config = rc('lepatron', {
   },
   database: 'mongodb://localhost:27017/lepatron',
   // Development values: outside development, the server refuses to start on
-  // them (config/production-secrets.js).
+  // them (config/dev-defaults.js).
   sessionSecret: DEFAULTS.sessionSecret,
   emailTransport: {
     ...localEmail,
