@@ -54,6 +54,14 @@ describe('before ENCRYPTION_WRITE_GCM is on', () => {
     expect(previousVersionDecrypts(profile.secretKey)).toBe('s');
   });
 
+  it('keeps the API key in clear, as the previous version stored and reads it', async () => {
+    const profile = new Profiles({ name: 'ESP', apiKey: 'an-api-key' });
+
+    await runPreHooks('save', profile);
+
+    expect(profile.apiKey).toBe('an-api-key');
+  });
+
   it('updates a secret in the former format too', async () => {
     const query = Profiles.updateOne(
       { _id: new mongoose.Types.ObjectId() },
