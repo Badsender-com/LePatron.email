@@ -44,8 +44,6 @@ jobs:
     needs: [build, unit-tests]
     if: "github.event_name == 'push' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
     timeout-minutes: 40
-    env:
-      NODE_VERSION: 18.18.0
     steps:
       - uses: actions/checkout@v3
         with:

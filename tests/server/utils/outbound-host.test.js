@@ -116,7 +116,7 @@ describe('outbound-host SSRF guard', () => {
       jest.restoreAllMocks();
     });
 
-    it('hands back a validated address (Node 18 asks for one)', async () => {
+    it('hands back a validated address when asked for one (autoSelectFamily off)', async () => {
       resolvesTo([{ address: '93.184.216.34', family: 4 }]);
 
       const { err, address, family } = await lookup({ family: 0 });

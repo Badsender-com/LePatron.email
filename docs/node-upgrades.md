@@ -6,13 +6,18 @@ The Node version lives in two places that must agree: `.nvmrc` (read by nvm and 
 
 Node 18 has been out of support since April 2025, and the authorization server of the MCP epic (#1290) is `oidc-provider`, an ESM-only package. A CommonJS app can only `require()` it from Node 22.12, where `require(esm)` is on by default. Node 24 was picked over 22 because 22 leaves support in April 2027, 24 in April 2028.
 
-No dependency had to change. On both Node 22.20 and 24.18:
+No dependency had to change. On Node 22.20, 24.18 and 24.22.1, the pinned version:
 
 - `yarn install --frozen-lockfile` passes without `--ignore-engines` (CI no longer passes it)
 - `yarn test-ci` passes, every suite
 - the editor bundle (`gulp build --prod`) is produced, byte-identical between the two versions
 - `nuxt build`, `apidoc` and the VuePress build pass
 - the production server boots, serves the login page and the editor bundle
+
+What changes at runtime, with no code change:
+
+- **Outbound HTTP keeps its sockets alive.** Since Node 19, `http.globalAgent` is created with `keepAlive: true` (idle sockets dropped after 5 s). Every call made without an explicit agent, the ESP connectors through `config/axios.js` and the `node-fetch` call sites, now reuses connections where Node 18 opened one per request. Fewer TLS handshakes; the one failure mode is a peer closing an idle socket just as the next request goes out, which shows as an intermittent `ECONNRESET` or `socket hang up` on an ESP push. Only `globalAgent` changed its default: the HTTP integration providers build their own agents (`integration-providers/provider-http.js`), which stay at `keepAlive: false`.
+- **Agents ask the lookup for every address** (`autoSelectFamily`, on by default since Node 20). `utils/outbound-host.js` already served both forms.
 
 What stays:
 
