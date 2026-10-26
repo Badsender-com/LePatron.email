@@ -17,6 +17,16 @@ const mail = require('../mailing/mail.service.js');
 const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
+const { isSamlConfigured } = require('../account/saml-config.js');
+
+// The group comes populated with its SSO certificate, read by `status`
+// alone: an account's answer never carries it.
+function withoutIdpCertificate(doc, ret) {
+  ['_company', 'group'].forEach((key) => {
+    if (ret[key] && typeof ret[key] === 'object') delete ret[key].idpCert;
+  });
+  return ret;
+}
 
 /**
  * @apiDefine users
@@ -109,7 +119,7 @@ const UserSchema = Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON: { virtuals: true, transform: withoutIdpCertificate },
     toObject: { virtuals: true },
   }
 );
@@ -141,13 +151,12 @@ function encodePassword(password) {
   return bcrypt.hashSync(password, 10);
 }
 
+// The group's SSO, as the sign-in reads it: entry point, issuer and
+// certificate, or the account signs in with a password.
 UserSchema.virtual('status').get(function () {
   const status = this.isDeactivated
     ? 'deactivated'
-    : this._company.issuer &&
-      this._company.issuer.length > 0 &&
-      this._company.entryPoint &&
-      this._company.entryPoint.length > 0
+    : isSamlConfigured(this._company)
     ? 'saml-authentication'
     : this.password
     ? 'confirmed'
@@ -245,7 +254,7 @@ UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: '_company',
     select:
-      'id name issuer entryPoint enableCrmIntelligence enableEmailBuilder emailMetadata',
+      'id name issuer entryPoint idpCert enableCrmIntelligence enableEmailBuilder emailMetadata',
   });
   return mailing;
 };

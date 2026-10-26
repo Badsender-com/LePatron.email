@@ -226,6 +226,8 @@ module.exports = {
 
   // USER
   USER_NOT_FOUND: 'USER_NOT_FOUND',
+  // A member of a group with SSO has no password in LePatron.
+  SSO_MEMBER_HAS_NO_PASSWORD: 'SSO_MEMBER_HAS_NO_PASSWORD',
   FORBIDDEN_USER_ACCESS: 'FORBIDDEN_USER_ACCESS',
   INVALID_ROLE_PARAM: 'INVALID_ROLE_PARAM',
   // Super admin guardrails (ADR 0002)
