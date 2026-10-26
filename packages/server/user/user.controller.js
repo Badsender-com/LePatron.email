@@ -9,11 +9,14 @@ const logger = require('../utils/logger.js');
 const {
   updateSessionTracking,
 } = require('../account/session-tracking.helper.js');
-const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const {
-  resolveSelectedGroup,
-  forgetSessionSelection,
-} = require('../account/selected-group.js');
+  completeSignIn,
+  endSessions,
+  renewSession,
+} = require('../account/sign-in.js');
+const { stepAfterPassword } = require('../two-factor/sign-in-step.js');
+const { needsTwoFactor } = require('../two-factor/two-factor.policy.js');
+const { forgetTrustedDevices } = require('../two-factor/trusted-device.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -21,7 +24,6 @@ const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('./super-admin-policy.js');
 const rightsPolicy = require('./rights-policy.js');
-const permissions = require('../account/permissions.js');
 const userScope = require('./user-scope.js');
 const { normalizeString } = require('../utils/model.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -312,6 +314,7 @@ async function deactivate(req, res) {
   rightsPolicy.assertCanManage(req.user, user);
 
   await user.deactivate();
+  await forgetTrustedDevices(user.id);
   superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -408,6 +411,15 @@ async function setPassword(req, res) {
   }
 
   await user.setPassword(req.body.password, user.lang);
+  await forgetTrustedDevices(user.id);
+  // The emailed link opens no session for an account that needs a second
+  // factor (ADR 0008): the member signs in with the new password, and the
+  // code. The sessions opened before it end all the same.
+  if (await needsTwoFactor(user)) {
+    await endSessions(user.id);
+    return res.json({ twoFactorRequired: true });
+  }
+  await renewSession(req);
   await new Promise((resolve, reject) => {
     req.login(user, (err) => {
       if (err) return reject(err);
@@ -449,58 +461,22 @@ async function getPublicProfile(req, res) {
 }
 
 async function login(req, res, next) {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      return next(new createError.InternalServerError(err));
+  passport.authenticate('local', async (err, user, info) => {
+    try {
+      if (err) throw new createError.InternalServerError(err);
+      if (info && info.message) throw new createError.BadRequest(info.message);
+      if (!user) throw new createError.BadRequest('User not found');
+
+      // A right password opens no session while a second factor is needed
+      // (ADR 0008): the answer names the step that comes next.
+      const twoFactor = await stepAfterPassword(req, res, user);
+      if (twoFactor) return res.json({ twoFactor });
+
+      res.json(await completeSignIn(req, user));
+    } catch (error) {
+      if (!error.status) logger.error('[Login] Login failed:', error);
+      next(error.status ? error : new createError.InternalServerError(error));
     }
-
-    if (info && info.message) {
-      return next(new createError.BadRequest(info.message));
-    }
-
-    if (!user) {
-      return next(new createError.BadRequest('User not found'));
-    }
-
-    // A choice kept in the session belongs to the previous sign-in.
-    forgetSessionSelection(req);
-
-    req.logIn(user, async (err) => {
-      if (err) {
-        logger.error('[Login] Login failed:', err);
-        return next(new createError.InternalServerError(err));
-      }
-
-      // Update session tracking
-      await updateSessionTracking(req, user);
-
-      // The bootstrap account has no document: it is returned as is. Any
-      // stored user, super admin included, is reloaded with its populated
-      // group (module flags).
-      let completeUser = user;
-      if (!isBootstrapAccount(user)) {
-        completeUser = await Users.findOneForApi({ _id: user._id });
-      }
-
-      // The selected group comes with the account, so the screens show it
-      // without waiting for the next request (ADR 0002, amended).
-      // With its capabilities, as on every later request: the screens the
-      // sign-in opens show what the user may do without a reload.
-      const payload = permissions.withCapabilities(
-        completeUser.toJSON ? completeUser.toJSON() : { ...completeUser }
-      );
-      payload.selectedGroup = await resolveSelectedGroup(payload, req.session);
-
-      // Force session save before sending response
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          logger.error('[Login] Session save failed:', saveErr);
-          return next(new createError.InternalServerError(saveErr));
-        }
-
-        return res.json(payload);
-      });
-    });
   })(req, res);
 }
 

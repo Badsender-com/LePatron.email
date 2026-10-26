@@ -5,7 +5,11 @@
 // current password keeps working until the emailed link is used.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Users: { findOne: jest.fn(), findOneForApi: jest.fn() },
+  Users: {
+    findOne: jest.fn(),
+    findOneForApi: jest.fn(),
+    updateOne: jest.fn().mockResolvedValue({}),
+  },
   Groups: {},
   OAuthClients: {},
   OAuthTokens: {},
@@ -165,5 +169,28 @@ describe('reading the account of a session', () => {
     expect(Users.findOneForApi.mock.calls[0][0]).toMatchObject({
       isDeactivated: { $ne: true },
     });
+  });
+});
+
+// Five wrong passwords since the last sign-in make a sign-in from a trusted
+// device suspicious (ADR 0008).
+describe('counting the wrong passwords', () => {
+  it('counts a wrong password on the account', async () => {
+    Users.findOne.mockResolvedValue(account());
+
+    await signIn('someone@client.test', 'wrong-password');
+
+    expect(Users.updateOne).toHaveBeenCalledWith(
+      { _id: 'u1' },
+      { $inc: { 'twoFactor.failedPasswords': 1 } }
+    );
+  });
+
+  it('counts nothing for an unknown email', async () => {
+    Users.findOne.mockResolvedValue(null);
+
+    await signIn('nobody@client.test', 'wrong-password');
+
+    expect(Users.updateOne).not.toHaveBeenCalled();
   });
 });

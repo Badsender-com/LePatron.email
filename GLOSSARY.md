@@ -58,6 +58,45 @@ _Avoid_: Env admin, hardcoded admin, legacy admin
 One thing a role allows, anywhere it applies, such as deleting an email or managing a group's technical settings. A role is its list of capabilities; what it does not list, it cannot do.
 _Avoid_: Permission, right (for this list; "rights" stays fine in prose)
 
+### Sign-in
+
+**Two-factor authentication**:
+A second proof asked after the password, a code only the account's owner can get. A group requires it of all its members or of none; a super admin always has it.
+_UI_: Double authentification
+_Avoid_: 2FA, MFA (in UI text), two-step verification
+
+**Verification method**:
+How a member gets their verification codes: an authenticator app or an email. Each member has one, chosen when they set up two-factor authentication.
+_UI_: Application d'authentification, Code par email
+
+**Verification code**:
+The short code a verification method gives, valid a few minutes.
+_UI_: Code de vérification
+_Avoid_: OTP, token, PIN
+
+**Recovery code**:
+One of the codes given once at setup, each standing in for a verification code a single time, for a member without their verification method at hand.
+_UI_: Code de secours
+_Avoid_: Backup code
+
+**Trusted device**:
+A browser a member chose to remember after a verification: for thirty days, signing in from it asks the password only, unless the sign-in is suspicious.
+_UI_: Appareil de confiance
+_Avoid_: Remembered device, known device
+
+**Suspicious sign-in**:
+A sign-in from a trusted device that asks the verification code all the same, because something about it does not match the device remembered.
+_Avoid_: Risky login, unusual activity
+
+**Two-factor reset**:
+An admin erasing a member's two-factor setup, trusted devices included, so that the member sets it up again at their next sign-in.
+_UI_: Réinitialiser la double authentification
+_Avoid_: Disable two-factor, remove two-factor
+
+**Security event**:
+A record, kept a year, of an action on an account's two-factor authentication: who did it, to whom, when.
+_Avoid_: Audit log, activity log
+
 ### Image gallery
 
 **Gallery**:

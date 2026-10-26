@@ -21,6 +21,7 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
+const { renewSession } = require('./sign-in.js');
 
 const {
   Users,
@@ -122,6 +123,9 @@ passport.use(
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
       if (!(await passwordMatches(user, password))) {
+        // Not awaited: an existing account must not answer later than an
+        // unknown email.
+        if (user) countWrongPassword(user);
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:
@@ -146,6 +150,17 @@ passport.use(
     }
   })
 );
+
+// Five since the last sign-in make a sign-in from a trusted device
+// suspicious (ADR 0008). Never fails: not counting one changes no answer.
+function countWrongPassword(user) {
+  return Users.updateOne(
+    { _id: user.id },
+    { $inc: { 'twoFactor.failedPasswords': 1 } }
+  ).catch((error) =>
+    logger.error(`[account] wrong password not counted for ${user.id}`, error)
+  );
+}
 
 // Asynchronous: a sign-in attempt, refused or not, never blocks the process.
 async function passwordMatches(user, password) {
@@ -275,6 +290,9 @@ passport.use(
         if (!user) {
           return done(null, false, { message: 'password.error.nouser' });
         }
+        // A new session for the account, once the response is valid: a
+        // refused one leaves the browser's session as it was.
+        await renewSession(req);
         done(null, user);
       } catch (error) {
         done(error);
