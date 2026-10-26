@@ -10,6 +10,9 @@ const {
   ESP_PAYLOADS,
   ESP_CRITICAL_PAYLOADS,
 } = require('../../fixtures/esp-payloads.js');
+const {
+  restoreFreemarkerDirectives,
+} = require('../../../packages/editor/src/js/ext/freemarker-directives.js');
 
 // The regexes of the export cascade that used to mangle pasted markup, copied
 // verbatim from viewmodel.js exportHTML. The marker has to survive all of them
@@ -30,6 +33,7 @@ const CASCADE = [
   // ESP tag restore — greedy and single-line, the source of the bugs
   (s) => s.replace(/&lt;%.*%&gt;/g, (m) => m),
   (s) => s.replace(/&lt;#list.*&lt;\/#list&gt;/g, (m) => m),
+  restoreFreemarkerDirectives,
   // void tag self-closing
   (s) =>
     s.replace(
