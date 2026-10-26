@@ -9,7 +9,11 @@ const logger = require('../utils/logger.js');
 const {
   updateSessionTracking,
 } = require('../account/session-tracking.helper.js');
-const { completeSignIn, endSessions } = require('../account/sign-in.js');
+const {
+  completeSignIn,
+  endSessions,
+  renewSession,
+} = require('../account/sign-in.js');
 const { stepAfterPassword } = require('../two-factor/sign-in-step.js');
 const { needsTwoFactor } = require('../two-factor/two-factor.policy.js');
 const { forgetTrustedDevices } = require('../two-factor/trusted-device.js');
@@ -415,6 +419,7 @@ async function setPassword(req, res) {
     await endSessions(user.id);
     return res.json({ twoFactorRequired: true });
   }
+  await renewSession(req);
   await new Promise((resolve, reject) => {
     req.login(user, (err) => {
       if (err) return reject(err);

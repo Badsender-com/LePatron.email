@@ -49,7 +49,7 @@ function signIn(storedUser, authenticated = { _id: 'u1', id: 'u1' }) {
   Users.findOneForApi.mockResolvedValue({ toJSON: () => storedUser });
   return new Promise((resolve, reject) => {
     const req = {
-      session: { save: (done) => done() },
+      session: { save: (done) => done(), regenerate: (done) => done() },
       logIn: (_user, done) => done(),
     };
     controller.login(req, { json: resolve }, reject);
