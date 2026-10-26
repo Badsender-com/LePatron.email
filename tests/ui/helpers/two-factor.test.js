@@ -70,8 +70,7 @@ describe('the login page', () => {
   });
 });
 
-// Turned on by #1322 (verification code by email)
-describe.skip('choosing the verification method', () => {
+describe('choosing the verification method', () => {
   it('offers the authenticator app and the code by email', () => {
     const setup = read('components/account/two-factor-setup.vue');
 
@@ -82,7 +81,9 @@ describe.skip('choosing the verification method', () => {
   it('lets a member using email ask for a new code', () => {
     const code = read('components/account/two-factor-code.vue');
 
-    expect(code).toMatch(/sendEmailCode/);
+    expect(code).toMatch(
+      /<bs-send-email-code[\s\S]*?v-if="method === 'email'"/
+    );
   });
 });
 

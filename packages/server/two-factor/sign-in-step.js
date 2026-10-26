@@ -5,7 +5,10 @@ const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const { needsTwoFactor } = require('./two-factor.policy.js');
 const pendingStep = require('./pending-step.js');
 const { isTrustedDevice } = require('./trusted-device.js');
-const { STEPS } = require('./two-factor.constants.js');
+const { sendEmailCode } = require('./email-code.js');
+const { renewSession } = require('../account/sign-in.js');
+const logger = require('../utils/logger.js');
+const { STEPS, METHODS } = require('./two-factor.constants.js');
 
 /**
  * What comes after a right password (ADR 0008): nothing, and the session
@@ -25,8 +28,15 @@ async function stepAfterPassword(req, res, account) {
   const user = await Users.findById(account.id).select('+twoFactor');
   if (!user || !(await needsTwoFactor(user))) return null;
 
+  // The step lives in a session issued with this answer, never in the one
+  // the browser came with.
+  const startStep = async (step, method) => {
+    await renewSession(req);
+    return pendingStep.start(req, user, step, method);
+  };
+
   if (!user.twoFactorMethod) {
-    pendingStep.start(req, user, STEPS.SETUP);
+    await startStep(STEPS.SETUP);
     return { step: STEPS.SETUP };
   }
   if (isTrustedDevice(user, req)) {
@@ -34,7 +44,14 @@ async function stepAfterPassword(req, res, account) {
     await user.save();
     return null;
   }
-  pendingStep.start(req, user, STEPS.VERIFY, user.twoFactorMethod);
+  const pending = await startStep(STEPS.VERIFY, user.twoFactorMethod);
+  // The first code by email leaves with the answer. Past the budget, the
+  // member asks for one again later; the step is asked all the same.
+  if (user.twoFactorMethod === METHODS.EMAIL) {
+    await sendEmailCode(pending, user).catch((error) =>
+      logger.warn(`[two-factor] no code sent to ${user.id}: ${error.message}`)
+    );
+  }
   return { step: STEPS.VERIFY, method: user.twoFactorMethod };
 }
 

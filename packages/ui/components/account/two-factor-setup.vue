@@ -7,12 +7,14 @@ import {
   accountTwoFactorSetupConfirm,
 } from '~/helpers/api-routes.js';
 import { isStepExpired, twoFactorErrorKey } from '~/helpers/two-factor.js';
+import BsSendEmailCode from '~/components/account/send-email-code.vue';
 
 // The setup of two-factor authentication, at the sign-in that follows the
 // group requiring it (ADR 0008). Nothing is kept until a first code proves
 // the method gives the right ones.
 export default {
   name: 'BsTwoFactorSetup',
+  components: { BsSendEmailCode },
   data() {
     return {
       method: 'totp',
@@ -21,9 +23,6 @@ export default {
       trustDevice: false,
       loading: false,
     };
-  },
-  mounted() {
-    this.start();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -70,6 +69,17 @@ export default {
   <div class="bs-two-factor-setup">
     <v-card-text>
       <p class="text-body-2">{{ $t('twoFactor.setup.intro') }}</p>
+      <v-radio-group
+        v-if="!setup"
+        v-model="method"
+        :label="$t('twoFactor.setup.choose')"
+      >
+        <v-radio value="totp" :label="$t('twoFactor.setup.methods.totp')" />
+        <v-radio value="email" :label="$t('twoFactor.setup.methods.email')" />
+      </v-radio-group>
+      <p v-if="setup && setup.method === 'email'" class="text-body-2">
+        {{ $t('twoFactor.setup.emailSent') }}
+      </p>
       <template v-if="setup && setup.method === 'totp'">
         <p class="text-body-2">{{ $t('twoFactor.setup.scan') }}</p>
         <div class="text-center">
@@ -109,10 +119,23 @@ export default {
       </v-form>
     </v-card-text>
     <v-card-actions>
+      <bs-send-email-code
+        v-if="setup && setup.method === 'email'"
+        @expired="$emit('expired')"
+      />
       <v-spacer />
       <v-btn
+        v-if="!setup"
         :loading="loading"
-        :disabled="!setup"
+        elevation="0"
+        color="accent"
+        @click="start"
+      >
+        {{ $t('twoFactor.setup.start') }}
+      </v-btn>
+      <v-btn
+        v-else
+        :loading="loading"
         elevation="0"
         color="accent"
         form="two-factor-setup-form"
