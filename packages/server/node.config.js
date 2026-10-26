@@ -68,6 +68,10 @@ const config = rc('lepatron', {
   adobeDefaultImsUrl: process.env.NUXT_ENV_ADOBE_DEFAULT_IMS_URL,
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
   encryptionKey: process.env.ENCRYPTION_KEY,
+  // Emergency lever, unset in normal operation: the secrets are written in
+  // the former format, which the previous version of the application reads
+  // (with scripts/reencrypt-secrets.js --downgrade, utils/crypto.js).
+  encryptionWriteLegacy: process.env.ENCRYPTION_WRITE_LEGACY === 'true',
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
 });
