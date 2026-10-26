@@ -293,7 +293,7 @@
     "test:e2e-ci": "cypress run"
   },
   "engines": {
-    "node": "18.18.0",
+    "node": "24.22.1",
     "yarn": "<2"
   },
   "husky": {

@@ -29,11 +29,11 @@
 // it still refuses a slot whose context it does not know; and every existing
 // test of the engine keeps testing the thing that actually runs.
 //
-// Maizzle itself is not used. Its version 6 needs Node ^20.19 (through Vite 8)
-// and this project is pinned to 18.18.0, in package.json and in both CI
-// workflows. Rendering the SFC directly costs five dependencies instead of a
-// Vite toolchain, runs on the project's Node, and keeps the authoring format
-// identical — which was the point.
+// Maizzle itself is not used. Its version 6 needs Node ^20.19 (through Vite 8),
+// and the project still ran Node 18 when this compiler was written. Rendering
+// the SFC directly costs five dependencies instead of a Vite toolchain, runs on
+// the project's Node, and keeps the authoring format identical — which was the
+// point.
 
 // Vue picks its build from NODE_ENV when it is first required, and only the
 // development build reports the warnings the compiler refuses a component on.
