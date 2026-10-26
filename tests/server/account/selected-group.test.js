@@ -28,7 +28,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   __store: store,

@@ -56,7 +56,7 @@ jest.mock('../../../../packages/server/account/auth.guard', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../../helpers/local-request.js');
 
 const skillService = require('../../../../packages/server/ai-skill/services/skill.service');
 const invocationLog = require('../../../../packages/server/ai-skill/services/invocation-log.service');
