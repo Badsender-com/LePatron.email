@@ -65,8 +65,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1321 (trusted devices)
-describe.skip('trusting a device', () => {
+describe('trusting a device', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
@@ -118,8 +117,7 @@ describe.skip('trusting a device', () => {
   });
 });
 
-// Turned on by #1321 (trusted devices)
-describe.skip('signing in from a trusted device', () => {
+describe('signing in from a trusted device', () => {
   beforeAll(() => {
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
   });
@@ -200,14 +198,16 @@ describe.skip('signing in from a trusted device', () => {
     const user = harness.addTotpUser();
     const cookie = await trustThisBrowser(user);
     user.twoFactor.failedPasswords = 5;
+    // The next 30 seconds, and their code: the first one was used.
+    now = harness.RFC_NEXT_TIME;
     const { req } = await signInAgain(user, cookie);
-    await harness
-      .call(
-        twoFactor.verify,
-        harness.makeRequest({ session: req.session, body: { code: RFC_CODE } })
-      )
-      .catch(() => {});
-    now += 30 * 1000;
+    await harness.call(
+      twoFactor.verify,
+      harness.makeRequest({
+        session: req.session,
+        body: { code: harness.RFC_NEXT_CODE },
+      })
+    );
 
     const again = await signInAgain(user, cookie);
 

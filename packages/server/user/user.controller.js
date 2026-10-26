@@ -9,9 +9,14 @@ const logger = require('../utils/logger.js');
 const {
   updateSessionTracking,
 } = require('../account/session-tracking.helper.js');
-const { completeSignIn, endSessions } = require('../account/sign-in.js');
+const {
+  completeSignIn,
+  endSessions,
+  renewSession,
+} = require('../account/sign-in.js');
 const { stepAfterPassword } = require('../two-factor/sign-in-step.js');
 const { needsTwoFactor } = require('../two-factor/two-factor.policy.js');
+const { forgetTrustedDevices } = require('../two-factor/trusted-device.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -309,6 +314,7 @@ async function deactivate(req, res) {
   rightsPolicy.assertCanManage(req.user, user);
 
   await user.deactivate();
+  await forgetTrustedDevices(user.id);
   superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -405,6 +411,7 @@ async function setPassword(req, res) {
   }
 
   await user.setPassword(req.body.password, user.lang);
+  await forgetTrustedDevices(user.id);
   // The emailed link opens no session for an account that needs a second
   // factor (ADR 0008): the member signs in with the new password, and the
   // code. The sessions opened before it end all the same.
@@ -412,6 +419,7 @@ async function setPassword(req, res) {
     await endSessions(user.id);
     return res.json({ twoFactorRequired: true });
   }
+  await renewSession(req);
   await new Promise((resolve, reject) => {
     req.login(user, (err) => {
       if (err) return reject(err);

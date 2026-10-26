@@ -4,16 +4,18 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { accountTwoFactor } from '~/helpers/api-routes.js';
 import { isStepExpired, twoFactorErrorKey } from '~/helpers/two-factor.js';
+import BsSendEmailCode from '~/components/account/send-email-code.vue';
 
 // The step of the code, after a right password (ADR 0008): six digits from
 // the member's verification method, or one of their recovery codes.
 export default {
   name: 'BsTwoFactorCode',
+  components: { BsSendEmailCode },
   props: {
     method: { type: String, default: 'totp' },
   },
   data() {
-    return { code: '', loading: false };
+    return { code: '', trustDevice: false, loading: false };
   },
   computed: {
     hint() {
@@ -28,6 +30,7 @@ export default {
       try {
         const answer = await this.$axios.$post(accountTwoFactor(), {
           code: this.code,
+          trustDevice: this.trustDevice,
         });
         this.$emit('answer', answer);
       } catch (error) {
@@ -59,12 +62,22 @@ export default {
           prepend-icon="lock"
           required
         />
+        <v-checkbox
+          v-model="trustDevice"
+          hide-details
+          dense
+          :label="$t('twoFactor.code.trustDevice')"
+        />
       </v-form>
       <p class="text-caption text--secondary mb-0">
         {{ $t('twoFactor.code.recoveryHint') }}
       </p>
     </v-card-text>
     <v-card-actions>
+      <bs-send-email-code
+        v-if="method === 'email'"
+        @expired="$emit('expired')"
+      />
       <v-spacer />
       <v-btn
         :loading="loading"

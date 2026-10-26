@@ -6,15 +6,24 @@ const { Users } = require('../common/models.common.js');
 const permissions = require('./permissions.js');
 const { isBootstrapAccount } = require('./bootstrap-account.js');
 const { updateSessionTracking } = require('./session-tracking.helper.js');
-const {
-  resolveSelectedGroup,
-  forgetSessionSelection,
-} = require('./selected-group.js');
+const { resolveSelectedGroup } = require('./selected-group.js');
 
 const promisify = (run) =>
   new Promise((resolve, reject) =>
     run((error) => (error ? reject(error) : resolve()))
   );
+
+/**
+ * A new session, with a new id, for the account about to sign in: the
+ * session a browser held before signing in, and what it carried (the step
+ * of the code), is never the signed-in one.
+ *
+ * @param {Object} req
+ * @returns {Promise<void>}
+ */
+function renewSession(req) {
+  return promisify((done) => req.session.regenerate(done));
+}
 
 /**
  * Opens the session of `user` and answers the account as every later
@@ -28,8 +37,9 @@ const promisify = (run) =>
  * @returns {Promise<Object>} the answer
  */
 async function completeSignIn(req, user) {
-  // A choice kept in the session belongs to the previous sign-in.
-  forgetSessionSelection(req);
+  // The new session carries nothing of the previous one, the group a
+  // super admin chose in it included.
+  await renewSession(req);
   await promisify((done) => req.logIn(user, done));
   await updateSessionTracking(req, user);
 
@@ -62,4 +72,8 @@ async function endSessions(userId) {
   );
 }
 
-module.exports = { completeSignIn, endSessions };
+module.exports = {
+  completeSignIn,
+  endSessions,
+  renewSession,
+};

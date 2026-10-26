@@ -16,7 +16,12 @@ const rightsPolicy = require('../user/rights-policy.js');
 const pendingStep = require('./pending-step.js');
 const codes = require('./codes.js');
 const { recordSecurityEvent } = require('./security-event.service.js');
-const { sendTwoFactorEmail } = require('./two-factor.emails.js');
+const {
+  sendTwoFactorEmail,
+  deviceTrustedTexts,
+} = require('./two-factor.emails.js');
+const { trustDevice } = require('./trusted-device.js');
+const { sendEmailCode, checkEmailCode } = require('./email-code.js');
 const {
   METHODS,
   STEPS,
@@ -25,12 +30,13 @@ const {
 } = require('./two-factor.constants.js');
 
 // The methods a member may set up.
-const SETUP_METHODS = [METHODS.TOTP];
+const SETUP_METHODS = [METHODS.TOTP, METHODS.EMAIL];
 
 module.exports = {
   verify: asyncHandler(verify),
   startSetup: asyncHandler(startSetup),
   confirmSetup: asyncHandler(confirmSetup),
+  sendEmailCode: asyncHandler(resendEmailCode),
   adminReset: asyncHandler(adminReset),
 };
 
@@ -98,6 +104,35 @@ async function useTimeStep(user, timeStep) {
   return changedOne(result);
 }
 
+// Remembers the browser when the member asks, once the code is right.
+function trustDeviceIfAsked(req, res, user) {
+  return req.body.trustDevice === true ? trustDevice(user, req, res) : null;
+}
+
+async function notifyDeviceTrusted(user, device) {
+  if (!device) return;
+  await recordSecurityEvent({
+    action: SECURITY_ACTIONS.DEVICE_TRUSTED,
+    user: user.id,
+  });
+  await sendTwoFactorEmail(user, 'deviceTrusted', deviceTrustedTexts(device));
+}
+
+// The time step of a right TOTP code, `true` for a right emailed code, null
+// for a wrong one.
+async function checkCode(
+  method,
+  pending,
+  { secret, userId },
+  code,
+  lastTimeStep
+) {
+  if (method === METHODS.EMAIL) {
+    return (await checkEmailCode(pending, code)) ? true : null;
+  }
+  return codes.checkTotpCode(readSecret(secret, userId), code, lastTimeStep);
+}
+
 function refuseCode(req, pending, user) {
   return pendingStep.refuseCode(req, pending, () =>
     recordSecurityEvent({ action: SECURITY_ACTIONS.WRONG_CODES, user: user.id })
@@ -111,6 +146,7 @@ function refuseCode(req, pending, user) {
  * @apiGroup Account
  *
  * @apiParam (Body) {String} code six digits, or a recovery code
+ * @apiParam (Body) {Boolean} [trustDevice] remember this browser 30 days
  *
  * @apiUse users
  * @apiSuccess {String[]} [recoveryCodes] a new set, once one was used
@@ -135,15 +171,22 @@ async function verify(req, res) {
     newRecoveryCodes = fresh.codes;
   } else {
     const { secret, lastTimeStep } = user.twoFactor;
-    const timeStep = codes.checkTotpCode(
-      readSecret(secret, user.id),
+    const checked = await checkCode(
+      user.twoFactorMethod,
+      pending,
+      { secret, userId: user.id },
       code,
       lastTimeStep
     );
-    if (timeStep === null || !(await useTimeStep(user, timeStep))) {
-      await refuseCode(req, pending, user);
-    }
+    // A TOTP code is used once in the account; an emailed one ends with the
+    // step.
+    const used = Number.isInteger(checked)
+      ? await useTimeStep(user, checked)
+      : checked === true;
+    if (!used) await refuseCode(req, pending, user);
   }
+  user.twoFactor.failedPasswords = 0;
+  const device = trustDeviceIfAsked(req, res, user);
   await user.save();
   pendingStep.end(req);
 
@@ -156,6 +199,7 @@ async function verify(req, res) {
     });
     await sendTwoFactorEmail(user, 'recoveryCodeUsed');
   }
+  await notifyDeviceTrusted(user, device);
   res.json(payload);
 }
 
@@ -165,7 +209,7 @@ async function verify(req, res) {
  * @apiName StartTwoFactorSetup
  * @apiGroup Account
  *
- * @apiParam (Body) {String} method `totp`
+ * @apiParam (Body) {String} method `totp` or `email` (a code is sent)
  *
  * @apiSuccess {String} method
  * @apiSuccess {String} secret the TOTP secret, to type in the app by hand
@@ -184,6 +228,11 @@ async function startSetup(req, res) {
   }
   const user = await pendingUser(req, pending);
 
+  if (method === METHODS.EMAIL) {
+    pending.setup = { method };
+    await sendEmailCode(pending, user);
+    return res.json({ method });
+  }
   const { secret, uri, qrCode } = await codes.newTotpSecret(user.email);
   pending.setup = {
     method,
@@ -199,6 +248,7 @@ async function startSetup(req, res) {
  * @apiGroup Account
  *
  * @apiParam (Body) {String} code the first code of the method
+ * @apiParam (Body) {Boolean} [trustDevice] remember this browser 30 days
  *
  * @apiUse users
  * @apiSuccess {String[]} recoveryCodes the recovery codes, shown once
@@ -213,21 +263,24 @@ async function confirmSetup(req, res) {
   }
 
   const { method, secret } = pending.setup;
-  const timeStep = await codes.checkTotpCode(
-    readSecret(secret, user.id),
+  const checked = await checkCode(
+    method,
+    pending,
+    { secret, userId: user.id },
     codes.normalizeCode(req.body.code)
   );
-  if (timeStep === null) await refuseCode(req, pending, user);
+  if (checked === null) await refuseCode(req, pending, user);
 
   const recovery = await codes.newRecoveryCodes();
   user.twoFactorMethod = method;
   user.twoFactor = {
     secret,
-    lastTimeStep: timeStep,
+    lastTimeStep: Number.isInteger(checked) ? checked : undefined,
     recoveryCodes: recovery.stored,
     trustedDevices: [],
     failedPasswords: 0,
   };
+  const device = trustDeviceIfAsked(req, res, user);
   await user.save();
   pendingStep.end(req);
   await recordSecurityEvent({
@@ -240,7 +293,30 @@ async function confirmSetup(req, res) {
 
   const payload = await completeSignIn(req, user);
   payload.recoveryCodes = recovery.codes;
+  await notifyDeviceTrusted(user, device);
   res.json(payload);
+}
+
+/**
+ * @api {post} /account/login/two-factor/email-code a new code by email
+ * @apiPermission public, after a right password, for the code by email
+ * @apiName SendTwoFactorEmailCode
+ * @apiDescription The new code replaces the previous one; at most three per
+ *   sign-in and ten an hour per account.
+ * @apiGroup Account
+ */
+async function resendEmailCode(req, res) {
+  const pending = pendingStep.read(req);
+  const method =
+    pending.step === STEPS.SETUP
+      ? pending.setup && pending.setup.method
+      : pending.method;
+  if (method !== METHODS.EMAIL) {
+    throw new createError.BadRequest(ERRORS.METHOD_UNKNOWN);
+  }
+  const user = await pendingUser(req, pending);
+  await sendEmailCode(pending, user);
+  res.json({});
 }
 
 /**
