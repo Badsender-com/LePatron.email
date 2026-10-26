@@ -59,6 +59,21 @@ describe('processMosaicoHtmlRender', () => {
     expect(out).toContain('href="c&d"');
     expect(out).toContain('/* href="&amp;" */');
   });
+
+  // What the editor's export puts back (ext/freemarker-directives.js) has to
+  // reach the sending platform as written. Only the text around is encoded.
+  it('leaves a FreeMarker directive and its variables as written', () => {
+    /* eslint-disable no-template-curly-in-string -- FreeMarker variables, not JS templates */
+    const body =
+      '<p><#if (datas.OFFER != "GIFT" && n > 2)>café ${x}<#else>${ y }</#if></p>';
+
+    const out = processMosaicoHtmlRender(doc('', body));
+
+    expect(out).toContain(
+      '<p><#if (datas.OFFER != "GIFT" && n > 2)>caf&#233; ${x}<#else>${ y }</#if></p>'
+    );
+    /* eslint-enable no-template-curly-in-string */
+  });
 });
 
 describe('processMosaicoHtmlRender — stylesheets', () => {

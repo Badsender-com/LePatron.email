@@ -30,6 +30,9 @@ const {
 } = require('../../../shared/head-css/inject-head-css.js');
 const { addHeadCssToViewModel } = require('./ext/head-css/view-model.js');
 const {
+  restoreFreemarkerDirectives,
+} = require('./ext/freemarker-directives.js');
+const {
   addCanvasEntryToViewModel,
 } = require('./ext/synthetic-blocks/canvas-entry.js');
 
@@ -794,6 +797,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
       return decoded;
     });
+
+    content = restoreFreemarkerDirectives(content);
 
     // We already replace style and http-equiv and we don't need this.
     // content = content.replace(/ replaced([^= ]*=)/gm, ' $1');
