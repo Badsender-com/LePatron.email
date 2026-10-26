@@ -19,6 +19,7 @@ const cluster = require('cluster');
 
 const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
+const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
@@ -107,9 +108,11 @@ if (cluster.isMaster) {
       saveUninitialized: false,
       store: store,
       rolling: true, // Reset cookie expiry on each request (idle timeout)
-      cookie: {
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
-      },
+      // The platform's proxy ends TLS: its X-Forwarded-Proto tells the
+      // session the request was HTTPS, so the secure cookie is set. For the
+      // session only, not `trust proxy`: req.ip stays as rate-limit.js reads it.
+      proxy: true,
+      cookie: sessionCookieOptions(config),
     })
   );
 
@@ -160,13 +163,8 @@ if (cluster.isMaster) {
   );
 
   // FORCE HTTPS
-  if (!config.isDev) {
-    app.use((req, res, next) => {
-      if (req.header('x-forwarded-proto') !== 'https')
-        res.redirect(`https://${req.header('host')}${req.url}`);
-      else next();
-    });
-  }
+  const httpsOnly = forceHttps(config);
+  if (httpsOnly) app.use(httpsOnly);
 
   // ----- TEMPLATES
 
