@@ -33,6 +33,16 @@ const runPreHooks = (name, context) =>
   );
 
 describe('writing a secret', () => {
+  it('encrypts the API key of a new profile too', async () => {
+    const profile = new Profiles({ name: 'ESP', apiKey: 'an-api-key' });
+
+    await runPreHooks('save', profile);
+
+    expect(decrypt(profile.apiKey, `Profile:${profile._id}:apiKey`)).toBe(
+      'an-api-key'
+    );
+  });
+
   it('encrypts it on save, bound to its document', async () => {
     const profile = new Profiles({ name: 'ESP', apiKey: 'k', secretKey: 's' });
 

@@ -48,14 +48,19 @@ const {
 // The encrypted fields, as the schemas declare them to the plugin, and the
 // two-factor secrets (#1324), which are encrypted by hand.
 const TARGETS = [
-  { model: modelNames.ProfileModel, fields: ProfileSchema.encryptedFields },
+  {
+    model: modelNames.ProfileModel,
+    fields: ProfileSchema.encryptedFields,
+    readsClear: ProfileSchema.encryptedFieldsReadClear,
+  },
   { model: modelNames.GroupModel, fields: GroupSchema.encryptedFields },
   {
     model: modelNames.IntegrationModel,
     fields: IntegrationSchema.encryptedFields,
   },
-  // Encrypted by hand, without a context, until #1324 binds them.
-  { model: modelNames.UserModel, fields: ['twoFactor.secret'], bound: false },
+  // Encrypted by the two-factor code itself, bound to its account like the
+  // others.
+  { model: modelNames.UserModel, fields: ['twoFactor.secret'] },
 ];
 
 const valueAt = (doc, dotted) =>
@@ -81,24 +86,33 @@ function readLegacy(value) {
  * Pure planning step: what one raw document needs.
  *
  * @param {Object} doc a raw document
- * @param {Object} target its model, its encrypted fields (dotted), and
- *   whether their values are bound to the document (`bound`, by default)
+ * @param {Object} target its model, its encrypted fields (dotted), whether
+ *   their values are bound to the document (`bound`, by default), and the
+ *   fields that may still hold a secret in clear (`readsClear`): such a value
+ *   is encrypted as it is
  * @returns {{set: Object|null, unreadable: string[]}} the `$set` to apply,
  *   and the fields left as they are because they do not decrypt to text
  */
-function planReencryption(doc, { model, fields, bound = true }) {
+function planReencryption(
+  doc,
+  { model, fields, bound = true, readsClear = [] }
+) {
   const set = {};
   const unreadable = [];
   fields.forEach((field) => {
     const value = valueAt(doc, field);
+    const context = bound ? contextOf(model, doc._id, field) : undefined;
+    if (readsClear.includes(field)) {
+      if (isLegacyEncrypted(value) && value !== '') {
+        set[field] = encrypt(value, context);
+      }
+      return;
+    }
     if (!isLegacyEncrypted(value) || value.length <= 32) return;
     const secret = readLegacy(value);
     if (secret === null) unreadable.push(field);
     else {
-      set[field] = encrypt(
-        secret,
-        bound ? contextOf(model, doc._id, field) : undefined
-      );
+      set[field] = encrypt(secret, context);
     }
   });
   return { set: Object.keys(set).length > 0 ? set : null, unreadable };

@@ -165,6 +165,35 @@ describe('rewriting the former format', () => {
     );
   });
 
+  it('encrypts a secret stored in clear, short or long, bound, to the same secret', () => {
+    const PROFILE = {
+      model: 'Profile',
+      fields: ['apiKey'],
+      readsClear: ['apiKey'],
+    };
+    ['k3y', 'an-actito-api-key-of-more-than-32-characters'].forEach((key) => {
+      const { set } = planReencryption({ _id: 'p1', apiKey: key }, PROFILE);
+
+      expect(set.apiKey).toMatch(/^gcm:/);
+      expect(decrypt(set.apiKey, 'Profile:p1:apiKey')).toBe(key);
+    });
+  });
+
+  it('leaves a secret of a clear field once it is encrypted', () => {
+    const PROFILE = {
+      model: 'Profile',
+      fields: ['apiKey'],
+      readsClear: ['apiKey'],
+    };
+
+    expect(
+      planReencryption(
+        { _id: 'p1', apiKey: encrypt('a key', 'Profile:p1:apiKey') },
+        PROFILE
+      ).set
+    ).toBeNull();
+  });
+
   it('leaves a value written under another key, rather than rewrite noise', () => {
     const iv = nodeCrypto.randomBytes(16);
     const cipher = nodeCrypto.createCipheriv(
