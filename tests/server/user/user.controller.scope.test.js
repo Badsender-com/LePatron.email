@@ -62,7 +62,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
       find: () => chain(() => []),
       countDocuments: async () => 0,
     },
-    Groups: {},
+    // No group has SSO here (account/sso-member.js).
+    Groups: { findOne: async () => null },
   };
 });
 jest.mock('../../../packages/server/group/group.service.js', () => ({

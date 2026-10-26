@@ -1,17 +1,9 @@
 'use strict';
 
-// https://github.com/jaredhanson/oauth2orize
-// https://github.com/awais786327/oauth2orize-examples
-// https://github.com/solderjs/example-oauth2orize-consumer
-
 const crypto = require('crypto');
 const passport = require('passport');
 const bcrypt = require('bcryptjs');
 const LocalStrategy = require('passport-local').Strategy;
-const BasicStrategy = require('passport-http').BasicStrategy;
-const ClientPasswordStrategy = require('passport-oauth2-client-password')
-  .Strategy;
-const BearerStrategy = require('passport-http-bearer').Strategy;
 const createError = require('http-errors');
 
 const config = require('../node.config.js');
@@ -22,12 +14,9 @@ const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
 const { normalizeString } = require('../utils/model.js');
 const { renewSession } = require('./sign-in.js');
+const { signsInWithSso } = require('./sso-member.js');
 
-const {
-  Users,
-  OAuthClients,
-  OAuthTokens,
-} = require('../common/models.common.js');
+const { Users } = require('../common/models.common.js');
 
 // Compared against when the email is unknown or the account has no password,
 // so that every refusal costs the same time as a wrong password.
@@ -122,10 +111,20 @@ passport.use(
 
       // Same message and same cost whether the email is unknown, the account
       // has no password or the password is wrong.
-      if (!(await passwordMatches(user, password))) {
+      // A member of a group with SSO signs in through its identity provider
+      // only, whatever password the account holds. Read alongside the
+      // password, so a right one answers no later than a wrong one.
+      const [matches, sso] = await Promise.all([
+        passwordMatches(user, password),
+        user ? signsInWithSso(user) : false,
+      ]);
+      if (!matches) {
         // Not awaited: an existing account must not answer later than an
         // unknown email.
         if (user) countWrongPassword(user);
+        return done(null, false, { message: 'password.error.incorrect' });
+      }
+      if (sso) {
         return done(null, false, { message: 'password.error.incorrect' });
       }
       // Signing in with the password closes a reset the person asked for:
@@ -207,64 +206,6 @@ passport.deserializeUser(async (id, done) => {
     done(null, false, err);
   }
 });
-
-/**
- * BasicStrategy & ClientPasswordStrategy
- *
- * These strategies are used to authenticate registered OAuth clients. They are
- * employed to protect the `token` endpoint, which consumers use to obtain
- * access tokens. The OAuth 2.0 specification suggests that clients use the
- * HTTP Basic scheme to authenticate. Use of the client password strategy
- * allows clients to send the same credentials in the request body (as opposed
- * to the `Authorization` header). While this approach is not recommended by
- * the specification, in practice it is quite common.
- */
-async function verifyClient(clientId, clientSecret, done) {
-  try {
-    const client = await OAuthClients.findByClientId(clientId);
-    if (!client) return done(null, false);
-    if (client.clientSecret !== clientSecret) return done(null, false);
-    return done(null, client);
-  } catch (error) {
-    done(error);
-  }
-}
-
-passport.use(new BasicStrategy(verifyClient));
-
-passport.use(new ClientPasswordStrategy(verifyClient));
-
-/**
- * BearerStrategy
- *
- * This strategy is used to authenticate either users or clients based on an access token
- * (aka a bearer token). If a user, they must have previously authorized a client
- * application, which is issued an access token to make requests on behalf of
- * the authorizing user.
- */
-passport.use(
-  new BearerStrategy(async (accessToken, done) => {
-    try {
-      const token = await OAuthTokens.findById(accessToken);
-      if (!token) return done(null, false);
-      // The request came from a client only since userId is null,
-      // therefore the client is passed back instead of a user.
-      const queryToRun = token.userId
-        ? Users.findById(token.userId)
-        : OAuthClients.findByClientId(token.clientId);
-      const result = await queryToRun;
-      if (!result) return done(null, false);
-      // To keep this example simple, restricted scopes are not implemented,
-      // and this is just for illustrative purposes.
-
-      // FIXME: declare user somewhere and remove linter ignore comment
-      // eslint-disable-next-line no-undef
-      done(null, user, { scope: '*' });
-    } catch (error) {
-      done(error);
-    }
-  })
-);
 
 const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
 const {

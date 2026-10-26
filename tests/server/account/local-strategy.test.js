@@ -11,8 +11,6 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
     updateOne: jest.fn().mockResolvedValue({}),
   },
   Groups: {},
-  OAuthClients: {},
-  OAuthTokens: {},
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),

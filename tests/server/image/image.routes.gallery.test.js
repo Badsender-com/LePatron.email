@@ -17,8 +17,6 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Mailings: { findOne: jest.fn() },
   Templates: { findOne: jest.fn() },
   Users: {},
-  OAuthClients: {},
-  OAuthTokens: {},
 }));
 // the email's write scope has its own test (image.routes.gallery-rights)
 jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
@@ -27,7 +25,7 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   Galleries,

@@ -15,10 +15,6 @@ module.exports = Object.freeze({
   PersonalizedBlocksModel: 'PersonalizedBlocks',
   WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
-  // OAuth
-  OAuthTokens: 'OAuthTokens',
-  OAuthClients: 'OAuthClients',
-  OAuthCodes: 'OAuthCodes',
   // Tags
   TagModel: 'Tag',
   // Comments
