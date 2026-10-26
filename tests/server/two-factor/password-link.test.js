@@ -53,8 +53,7 @@ beforeEach(() => {
 
 afterEach(() => jest.restoreAllMocks());
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('the password link of a member who needs two-factor authentication', () => {
+describe('the password link of a member who needs two-factor authentication', () => {
   it('sets the password but opens no session', async () => {
     harness.addGroup({ requireTwoFactor: true });
     harness.addTotpUser({ token: 'emailed-token' });
@@ -92,8 +91,7 @@ describe.skip('the password link of a member who needs two-factor authentication
   });
 });
 
-// Turned on by #1321 (trusted devices)
-describe.skip('the password link and the trusted devices', () => {
+describe('the password link and the trusted devices', () => {
   it('forgets the trusted devices of the account', async () => {
     harness.addGroup({ requireTwoFactor: true });
     const twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');

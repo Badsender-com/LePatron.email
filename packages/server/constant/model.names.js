@@ -39,4 +39,6 @@ module.exports = Object.freeze({
   AIPlaygroundRunModel: 'AIPlaygroundRun',
   // Taxonomy (email metadata)
   TaxonomyItemModel: 'TaxonomyItem',
+  // Two-factor authentication (ADR 0008)
+  SecurityEventModel: 'SecurityEvent',
 });

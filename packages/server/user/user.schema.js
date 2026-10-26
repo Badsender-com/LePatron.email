@@ -1,11 +1,7 @@
 'use strict';
 
-const { assign } = require('lodash');
-const fs = require('fs');
-const path = require('path');
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
-const tmpl = require('blueimp-tmpl');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const randToken = require('rand-token');
@@ -14,9 +10,16 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const config = require('../node.config.js');
 const mail = require('../mailing/mail.service.js');
+const {
+  renderEmail,
+  siteOrigin,
+  PASSWORD_TEXTS,
+} = require('../email-templates/email-template.js');
 const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
+const TwoFactorSchema = require('../two-factor/two-factor.schema.js');
+const { METHODS } = require('../two-factor/two-factor.constants.js');
 
 /**
  * @apiDefine users
@@ -92,6 +95,11 @@ const UserSchema = Schema(
       select: false,
     },
     lastActivity: { type: Date, default: Date.now },
+    // Two-factor authentication (ADR 0008): the verification method the
+    // member set up, none before the setup or after a reset. What checks it
+    // is never sent, nor read unless asked for.
+    twoFactorMethod: { type: String, enum: Object.values(METHODS) },
+    twoFactor: { type: TwoFactorSchema, select: false },
     // The group a super admin works in (ADR 0002, amended): resolved on every
     // request by account/selected-group.js, fallbacks included.
     _selectedGroup: { type: ObjectId, ref: GroupModel },
@@ -125,16 +133,9 @@ UserSchema.plugin(mongooseHidden, {
     activeSessionId: true,
     sessionMetadata: true,
     lastActivity: true,
+    twoFactor: true,
   },
 });
-
-// The links in the emails use the scheme the site is served with: https
-// everywhere but in development, as the FORCE HTTPS middleware of index.js
-// decides (`forcessl` arrives as a string from the environment, "false"
-// included, so it cannot tell).
-function siteOrigin() {
-  return `http${config.isDev ? '' : 's'}://${config.host}`;
-}
 
 function encodePassword(password) {
   if (typeof password === 'undefined') return;
@@ -202,12 +203,10 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
     text: `here is the link to enter your new password ${resetUrl}`,
-    html: tmpReset(
-      getTemplateData('reset-password', lang, {
-        type: type,
-        url: resetUrl,
-      })
-    ),
+    html: renderEmail(PASSWORD_TEXTS['reset-password'], lang, {
+      type: type,
+      url: resetUrl,
+    }),
   });
 
   return updatedUser;
@@ -226,12 +225,10 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
     text: `your password has been successfully been reinitialized. connect at ${loginUrl}`,
-    html: tmpReset(
-      getTemplateData('reset-success', lang, {
-        type: 'admin',
-        url: loginUrl,
-      })
-    ),
+    html: renderEmail(PASSWORD_TEXTS['reset-success'], lang, {
+      type: 'admin',
+      url: loginUrl,
+    }),
   });
   return updatedUser;
 };
@@ -249,84 +246,6 @@ UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   });
   return mailing;
 };
-
-/// ///
-// DEFINING mailing templates
-/// ///
-
-tmpl.load = function (id) {
-  const filename = path.join(__dirname, `../email-templates/${id}.html`);
-  return fs.readFileSync(filename, 'utf8');
-};
-
-// put in cache
-const tmpReset = tmpl('reset-password');
-
-function getTemplateData(templateName, lang, additionalDatas) {
-  const i18n = {
-    common: {
-      fr: {
-        baseline: "L'EMAILING SUR MESURE",
-        footerBaseline1: 'Pour des emails sur mesure',
-        footerBaseline2: 'et modulables',
-        rgpd1:
-          'Conformément au règlement européen pour la protection des données personnelles (RGPD) et, en France, à la loi "informatique et libertés", vous bénéficiez notamment d\'un droit d\'accès, de rectification et de suppression des données personnelles vous concernant. Pour en savoir davantage sur tous vos droits et les conditions dans lesquelles Badsender traite vos données personnelles, nous vous invitons à prendre connaissance de',
-        rgpd2:
-          "Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l'adresse suivante&nbsp;:",
-        rgpdUrl: 'notre Politique de confidentialité',
-        zeroCarbon:
-          "N'oubliez pas de détruire ce message une fois que vous l'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ",
-        zeroCarbonLink: 'en suivant ce lien',
-        legals: 'Badsender SASU - SIRET 81310812300015',
-      },
-      en: {
-        baseline: 'TAILOR-MADE EMAILING',
-        footerBaseline1: 'For tailor-made emails',
-        footerBaseline2: 'and scalable',
-        rgpd1:
-          'In accordance with the European regulation for the protection of personal data (GDPR) and, in France, with the law "informatique et liberté", you have the right to access, rectify and delete your personal data. To learn more about all your rights and the conditions under which Badsender processes your personal data, we invite you to read',
-        rgpd2:
-          'To exercise your rights or if you have any questions, please contact us at the following address:',
-        rgpdUrl: 'our Privacy Policy',
-        zeroCarbon:
-          "Don't forget to delete this message once you've viewed it. All our best practices for a green emailing are available ",
-        zeroCarbonLink: 'by following this link',
-        legals: 'Badsender SASU - SIRET 81310812300015',
-      },
-    },
-    'reset-password': {
-      fr: {
-        title: "Bienvenue sur l'email builder de Badsender",
-        desc:
-          "Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l'url suivante dans votre navigateur:",
-        reset: 'INITIALISER MON MOT DE PASSE',
-      },
-      en: {
-        title: "Welcome to the Badsender's email builder",
-        desc:
-          'Click the button below to reset your password, or copy the following URL into your browser:',
-        reset: 'RESET MY PASSWORD',
-      },
-    },
-    'reset-success': {
-      fr: {
-        title: 'Votre mot de passe a bien été réinitialisé',
-        desc:
-          "Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l'url suivante dans votre navigateur:",
-        reset: 'SE CONNECTER',
-      },
-      en: {
-        title: 'Your password has been successfully updated',
-        desc:
-          'Click the button below to login, or copy the following URL into your browser:',
-        reset: 'LOGIN',
-      },
-    },
-  };
-
-  const traductions = assign({}, i18n.common[lang], i18n[templateName][lang]);
-  return assign({}, { t: traductions }, additionalDatas);
-}
 
 /// ///
 // EXPORTS

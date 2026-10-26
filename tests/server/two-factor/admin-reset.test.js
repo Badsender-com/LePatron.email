@@ -68,8 +68,7 @@ beforeEach(() => {
   harness.addGroup({ requireTwoFactor: true });
 });
 
-// Turned on by #1320 (two-factor authentication with an authenticator app)
-describe.skip('resetting a member’s two-factor authentication', () => {
+describe('resetting a member’s two-factor authentication', () => {
   beforeAll(() => {
     // Required here, not at the top: the module ships with #1320.
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
@@ -91,6 +90,17 @@ describe.skip('resetting a member’s two-factor authentication', () => {
 
     expect(body.id).toBe('u1');
     expect(body.twoFactorMethod).toBeUndefined();
+  });
+
+  it('erases the secret, the recovery codes and the trusted devices', async () => {
+    harness.addTotpUser();
+
+    await resetAs(companyAdmin);
+
+    expect(harness.models.Users.updateOne).toHaveBeenCalledWith(
+      { _id: 'u1' },
+      { $unset: { twoFactor: 1, twoFactorMethod: 1 } }
+    );
   });
 
   it('ends the member’s sessions', async () => {
