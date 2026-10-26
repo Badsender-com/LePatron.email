@@ -27,8 +27,6 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: {},
   Tags: {},
   Users: {},
-  OAuthClients: {},
-  OAuthTokens: {},
 }));
 
 const express = require('express');
