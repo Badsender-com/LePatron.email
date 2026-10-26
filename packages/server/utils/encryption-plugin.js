@@ -1,3 +1,4 @@
+const config = require('../node.config.js');
 const logger = require('./logger.js');
 const { encryptForStorage, decrypt, isEncrypted } = require('./crypto');
 
@@ -22,10 +23,14 @@ const contextOf = (modelName, id, field) => `${modelName}:${id}:${field}`;
  * @param {Object} doc a document, hydrated or lean
  * @param {string[]} fields
  * @param {string} modelName the model that read it
+ * @param {string[]} [readsClear] fields stored in clear until
+ *   scripts/reencrypt-secrets.js encrypts them: a value without the GCM
+ *   prefix is the secret itself, read as it is
  */
-function decryptFields(doc, fields, modelName) {
+function decryptFields(doc, fields, modelName, readsClear = []) {
   if (!doc) return;
   fields.forEach((field) => {
+    if (readsClear.includes(field) && !isEncrypted(doc[field])) return;
     if (!(doc[field]?.length > 32)) return;
     try {
       doc[field] = decrypt(doc[field], contextOf(modelName, doc._id, field));
@@ -51,14 +56,31 @@ function writtenPartsOf(query) {
   return [update, update.$set].filter(Boolean);
 }
 
-function encryptionPlugin(schema, encryptedFields = []) {
+/**
+ * @param {Object} schema
+ * @param {string[]|Object} options the encrypted fields, or
+ *   `{ fields, readsClear }`: `readsClear` names the encrypted fields that
+ *   may still hold a value in clear, written before they were encrypted.
+ *   One argument: `schema.plugin` hands a plugin a single options value.
+ */
+function encryptionPlugin(schema, options = []) {
+  const { fields: encryptedFields = [], readsClear = [] } = Array.isArray(
+    options
+  )
+    ? { fields: options }
+    : options;
   // Read by scripts/reencrypt-secrets.js, which must cover every field.
   schema.encryptedFields = encryptedFields;
+  schema.encryptedFieldsReadClear = readsClear;
+  // With the emergency lever ENCRYPTION_WRITE_LEGACY, a field the previous
+  // version stored in clear stays in clear: that version reads it as it is.
+  const writtenEncrypted = (field) =>
+    !config.encryptionWriteLegacy || !readsClear.includes(field);
 
   schema.pre('save', function (next) {
     encryptedFields.forEach((field) => {
       // A value saved twice in the same document is encrypted once.
-      if (this[field] && !isEncrypted(this[field])) {
+      if (this[field] && !isEncrypted(this[field]) && writtenEncrypted(field)) {
         this[field] = encryptForStorage(
           this[field],
           contextOf(this.constructor.modelName, this._id, field)
@@ -72,7 +94,7 @@ function encryptionPlugin(schema, encryptedFields = []) {
     const writes = [];
     writtenPartsOf(this).forEach((part) => {
       encryptedFields.forEach((field) => {
-        if (part[field] && !isEncrypted(part[field]))
+        if (part[field] && !isEncrypted(part[field]) && writtenEncrypted(field))
           writes.push({ part, field });
       });
     });
@@ -98,7 +120,9 @@ function encryptionPlugin(schema, encryptedFields = []) {
   schema.post(['findOne', 'find'], function (result) {
     const modelName = (this.model && this.model.modelName) || 'document';
     const docs = Array.isArray(result) ? result : [result];
-    docs.forEach((doc) => decryptFields(doc, encryptedFields, modelName));
+    docs.forEach((doc) =>
+      decryptFields(doc, encryptedFields, modelName, readsClear)
+    );
   });
 }
 
