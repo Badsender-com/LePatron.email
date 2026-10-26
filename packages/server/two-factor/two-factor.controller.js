@@ -6,7 +6,9 @@ const asyncHandler = require('express-async-handler');
 const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Users } = require('../common/models.common.js');
-const { encrypt, decrypt } = require('../utils/crypto.js');
+const { encryptForStorage, decrypt } = require('../utils/crypto.js');
+const { contextOf } = require('../utils/encryption-plugin.js');
+const { UserModel } = require('../constant/model.names.js');
 const { completeSignIn, endSessions } = require('../account/sign-in.js');
 const userScope = require('../user/user-scope.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
@@ -31,6 +33,23 @@ module.exports = {
   confirmSetup: asyncHandler(confirmSetup),
   adminReset: asyncHandler(adminReset),
 };
+
+// The TOTP secret is bound to its account, as every stored secret
+// (utils/crypto.js): one copied onto another account does not read.
+const secretContextOf = (userId) =>
+  contextOf(UserModel, userId, 'twoFactor.secret');
+
+// A secret that does not read (altered, copied from another account) gives
+// no code: the member signs in with a recovery code, or an admin resets it.
+function readSecret(secret, userId) {
+  if (!secret) return null;
+  try {
+    return decrypt(secret, secretContextOf(userId));
+  } catch (error) {
+    logger.error(`[two-factor] the secret of ${userId} does not decrypt`);
+    return null;
+  }
+}
 
 // The account of the pending step, with what checks its codes. The step
 // ends when the account changed under it: deactivated, its password changed,
@@ -117,7 +136,7 @@ async function verify(req, res) {
   } else {
     const { secret, lastTimeStep } = user.twoFactor;
     const timeStep = codes.checkTotpCode(
-      secret && decrypt(secret),
+      readSecret(secret, user.id),
       code,
       lastTimeStep
     );
@@ -166,7 +185,10 @@ async function startSetup(req, res) {
   const user = await pendingUser(req, pending);
 
   const { secret, uri, qrCode } = await codes.newTotpSecret(user.email);
-  pending.setup = { method, secret: encrypt(secret) };
+  pending.setup = {
+    method,
+    secret: encryptForStorage(secret, secretContextOf(user.id)),
+  };
   res.json({ method, secret, uri, qrCode });
 }
 
@@ -192,7 +214,7 @@ async function confirmSetup(req, res) {
 
   const { method, secret } = pending.setup;
   const timeStep = await codes.checkTotpCode(
-    decrypt(secret),
+    readSecret(secret, user.id),
     codes.normalizeCode(req.body.code)
   );
   if (timeStep === null) await refuseCode(req, pending, user);

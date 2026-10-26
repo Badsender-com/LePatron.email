@@ -179,3 +179,26 @@ describe('setting up the authenticator app', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 });
+
+describe('the secret of the authenticator app', () => {
+  beforeAll(() => {
+    twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
+  });
+
+  it('is bound to its account: copied onto another one, its codes are refused', async () => {
+    const owner = harness.addTotpUser();
+    const other = harness.addTotpUser({
+      _id: 'u2',
+      id: 'u2',
+      email: 'dominique@client.test',
+    });
+    other.twoFactor.secret = owner.twoFactor.secret;
+    jest.spyOn(Date, 'now').mockImplementation(() => harness.RFC_TIME);
+    const { req } = await harness.signIn(passport, other);
+
+    await expect(
+      step(twoFactor.verify, req, { code: harness.RFC_CODE })
+    ).rejects.toMatchObject({ status: 400 });
+    jest.restoreAllMocks();
+  });
+});

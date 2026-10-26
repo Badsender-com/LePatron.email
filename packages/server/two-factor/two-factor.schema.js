@@ -7,8 +7,9 @@ const { Schema } = require('mongoose');
 // code is checked. The method itself is the visible `twoFactorMethod`.
 const TwoFactorSchema = Schema(
   {
-    // The TOTP secret, encrypted with the application's key: the server
-    // recomputes the expected code from it, so it cannot be hashed.
+    // The TOTP secret, encrypted with the application's key and bound to the
+    // account (utils/crypto.js): the server recomputes the expected code from
+    // it, so it cannot be hashed.
     secret: { type: String },
     // The time step of the last TOTP code accepted: a code is never
     // accepted twice.

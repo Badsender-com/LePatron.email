@@ -158,7 +158,10 @@ function addTotpUser(overrides = {}) {
   return addUser({
     twoFactorMethod: 'totp',
     twoFactor: {
-      secret: encrypt(RFC_SECRET),
+      secret: encrypt(
+        RFC_SECRET,
+        `User:${overrides.id || 'u1'}:twoFactor.secret`
+      ),
       recoveryCodes: RECOVERY_CODES.map((code) => ({
         hash: bcrypt.hashSync(code, 4),
       })),

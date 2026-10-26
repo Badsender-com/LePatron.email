@@ -58,8 +58,9 @@ const TARGETS = [
     model: modelNames.IntegrationModel,
     fields: IntegrationSchema.encryptedFields,
   },
-  // Encrypted by hand, without a context, until #1324 binds them.
-  { model: modelNames.UserModel, fields: ['twoFactor.secret'], bound: false },
+  // Encrypted by the two-factor code itself, bound to its account like the
+  // others.
+  { model: modelNames.UserModel, fields: ['twoFactor.secret'] },
 ];
 
 const valueAt = (doc, dotted) =>
