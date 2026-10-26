@@ -8,11 +8,12 @@ const config = require('../node.config');
 // the encryption plugin gives it) reads with that context only: one copied
 // into another record or field throws too.
 //
-// Values written before, in AES-256-CTR, are still read while
-// `encryptionLegacyReads` is on, and written again in GCM on their next save
-// (scripts/reencrypt-secrets.js does it at once). CTR detects nothing, and a
-// GCM value can be turned into a CTR one, so integrity holds once those
-// reads are off (ENCRYPTION_LEGACY_READS=false), after the script.
+// Values in the former format, AES-256-CTR, are still read: those written
+// before, rewritten in GCM by scripts/reencrypt-secrets.js, and those written
+// while ENCRYPTION_WRITE_LEGACY is on, the emergency lever that lets the
+// previous version of the application run again. CTR detects nothing, so
+// someone who can write in the database can still put a value there; such a
+// person can do far worse anyway.
 const GCM = 'aes-256-gcm';
 const GCM_PREFIX = 'gcm:';
 const GCM_IV_LENGTH = 12;
@@ -41,8 +42,8 @@ const encrypt = (text, context) => {
     .toString('hex')}${encrypted.toString('hex')}`;
 };
 
-// The former format, written until ENCRYPTION_WRITE_GCM is on: the previous
-// version of the application reads nothing else.
+// The former format, the only one the previous version of the application
+// reads.
 const encryptLegacy = (text) => {
   if (!text) return;
   const iv = crypto.randomBytes(LEGACY_IV_LENGTH);
@@ -87,12 +88,21 @@ function decryptLegacy(hash) {
  * @returns {string}
  */
 function decrypt(value, context) {
-  if (!isLegacyEncrypted(value)) return decryptGcm(value, context);
-  if (!config.encryptionLegacyReads) {
-    throw new Error('value in the former format, legacy reads are off');
-  }
-  return decryptLegacy(value);
+  return isLegacyEncrypted(value)
+    ? decryptLegacy(value)
+    : decryptGcm(value, context);
 }
+
+/**
+ * The value to store for a secret: GCM, bound to `context`; the former
+ * format while the emergency lever ENCRYPTION_WRITE_LEGACY is on.
+ *
+ * @param {string} value
+ * @param {string} context
+ * @returns {string|undefined}
+ */
+const encryptForStorage = (value, context) =>
+  config.encryptionWriteLegacy ? encryptLegacy(value) : encrypt(value, context);
 
 const getMd5FromBlob = async (blob) => {
   return new Promise((resolve, reject) => {
@@ -108,6 +118,7 @@ const getMd5FromBlob = async (blob) => {
 module.exports = {
   encrypt,
   encryptLegacy,
+  encryptForStorage,
   decrypt,
   isEncrypted,
   isLegacyEncrypted,

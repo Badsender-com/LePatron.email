@@ -60,17 +60,6 @@ describe('encrypting a stored secret', () => {
     expect(() => decrypt(shortened)).toThrow();
   });
 
-  it('refuses the former format once its reads are off', () => {
-    const stored = legacyEncrypt('an FTP password');
-    jest.isolateModules(() => {
-      process.env.ENCRYPTION_LEGACY_READS = 'false';
-      const strict = require('../../../packages/server/utils/crypto.js');
-      delete process.env.ENCRYPTION_LEGACY_READS;
-
-      expect(() => strict.decrypt(stored)).toThrow(/legacy reads are off/);
-    });
-  });
-
   it('encrypts nothing for an empty value', () => {
     expect(encrypt('')).toBeUndefined();
   });
@@ -194,5 +183,65 @@ describe('rewriting the former format', () => {
 
     expect(plan.set).toBeNull();
     expect(plan.unreadable).toEqual(['apiKey']);
+  });
+});
+
+describe('going back to the former format (--downgrade)', () => {
+  const { planDowngrade } = require('../../../scripts/reencrypt-secrets.js');
+  const COMPANY = { model: 'Company', fields: ['ftpPassword', 'ftpSshKey'] };
+
+  // How the previous version of the application decrypts.
+  function previousVersionDecrypts(hash) {
+    const iv = Buffer.from(hash.substring(0, 32), 'hex');
+    const content = Buffer.from(hash.substring(32), 'hex');
+    const decipher = nodeCrypto.createDecipheriv('aes-256-ctr', KEY, iv);
+    return Buffer.concat([
+      decipher.update(content),
+      decipher.final(),
+    ]).toString();
+  }
+
+  it('writes a value the previous version reads, to the same secret', () => {
+    const doc = {
+      _id: 'g1',
+      ftpPassword: encrypt('an FTP password', 'Company:g1:ftpPassword'),
+    };
+
+    const { set } = planDowngrade(doc, COMPANY);
+
+    expect(set.ftpPassword).not.toMatch(/^gcm:/);
+    expect(previousVersionDecrypts(set.ftpPassword)).toBe('an FTP password');
+  });
+
+  it('gives back in clear a field the previous version stored in clear', () => {
+    const doc = {
+      _id: 'p1',
+      apiKey: encrypt('an API key', 'Profile:p1:apiKey'),
+    };
+
+    const { set } = planDowngrade(doc, {
+      model: 'Profile',
+      fields: ['apiKey'],
+      readsClear: ['apiKey'],
+    });
+
+    expect(set.apiKey).toBe('an API key');
+  });
+
+  it('leaves a value already in the former format', () => {
+    expect(
+      planDowngrade(
+        { _id: 'g1', ftpPassword: legacyEncrypt('a password') },
+        COMPANY
+      ).set
+    ).toBeNull();
+  });
+
+  it('reports a value that does not read, rather than write anything for it', () => {
+    const copied = encrypt('the password of g2', 'Company:g2:ftpPassword');
+
+    const plan = planDowngrade({ _id: 'g1', ftpPassword: copied }, COMPANY);
+
+    expect(plan).toEqual({ set: null, unreadable: ['ftpPassword'] });
   });
 });

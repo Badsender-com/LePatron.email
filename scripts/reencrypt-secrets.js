@@ -2,26 +2,24 @@
 'use strict';
 
 /**
- * Migration: write again in AES-256-GCM the secrets stored in AES-256-CTR
- * (packages/server/utils/crypto.js).
+ * Migration: the secrets the database keeps, from AES-256-CTR to AES-256-GCM
+ * bound to their record (packages/server/utils/crypto.js), and back.
  *
- * The application reads both and writes GCM on the next save; this rewrites
- * at once the values nobody saves. Only values without the `gcm:` prefix are
- * touched, so a rerun is a no-op. The collections are read raw, without the
- * models: their encryption plugin would decrypt on read.
+ * It reads every value first. If a single one does not read (another
+ * ENCRYPTION_KEY, a value altered), it says which and writes nothing.
+ * Otherwise it rewrites them all, each only if it still holds the value read,
+ * so a secret the application saves meanwhile is kept. A rerun writes
+ * nothing. The collections are read raw: their encryption plugin would
+ * decrypt on read.
  *
- * Every value rewritten is first copied, as it was, into a backup
- * collection named by the run; `--restore=<backup>` puts them back (only
- * where the value is still the one the run wrote). The backup holds the
- * secrets as they were stored: drop it once the rollout is done.
- *
- * Writes need ENCRYPTION_WRITE_GCM=true, as on the application: it then
- * writes what this script writes.
+ * --downgrade writes them all back in the former format, which the previous
+ * version of the application reads: with ENCRYPTION_WRITE_LEGACY=true on the
+ * application, it runs on the former format until a fix, or the previous
+ * version can be deployed again.
  *
  * Usage:
- *   node scripts/reencrypt-secrets.js --dry-run
- *   node scripts/reencrypt-secrets.js --confirm-database=<name>
- *   node scripts/reencrypt-secrets.js --restore=<backup> --confirm-database=<name>
+ *   node scripts/reencrypt-secrets.js --dry-run [--downgrade]
+ *   node scripts/reencrypt-secrets.js --confirm-database=<name> [--downgrade]
  */
 
 const mongoose = require('mongoose');
@@ -34,7 +32,9 @@ const GroupSchema = require('../packages/server/group/group.schema.js');
 const IntegrationSchema = require('../packages/server/integration/integration.schema.js');
 const {
   encrypt,
+  encryptLegacy,
   decrypt,
+  isEncrypted,
   isLegacyEncrypted,
 } = require('../packages/server/utils/crypto.js');
 const { contextOf } = require('../packages/server/utils/encryption-plugin.js');
@@ -104,7 +104,34 @@ function planReencryption(doc, { model, fields, bound = true }) {
   return { set: Object.keys(set).length > 0 ? set : null, unreadable };
 }
 
-const BACKUP_PREFIX = 'reencrypt_backup_';
+/**
+ * Pure planning step of --downgrade: the former format for each value in
+ * GCM, the secret itself for a field the previous version stored in clear.
+ *
+ * @param {Object} doc a raw document
+ * @param {Object} target as for planReencryption
+ * @returns {{set: Object|null, unreadable: string[]}}
+ */
+function planDowngrade(doc, { model, fields, bound = true, readsClear = [] }) {
+  const set = {};
+  const unreadable = [];
+  fields.forEach((field) => {
+    const value = valueAt(doc, field);
+    if (!isEncrypted(value)) return;
+    let secret;
+    try {
+      secret = decrypt(
+        value,
+        bound ? contextOf(model, doc._id, field) : undefined
+      );
+    } catch (error) {
+      unreadable.push(field);
+      return;
+    }
+    set[field] = readsClear.includes(field) ? secret : encryptLegacy(secret);
+  });
+  return { set: Object.keys(set).length > 0 ? set : null, unreadable };
+}
 
 async function connect(database) {
   await mongoose.connect(config.database, {
@@ -119,132 +146,91 @@ async function connect(database) {
   return db;
 }
 
-async function run({ dryRun, database }) {
-  if (!dryRun && !config.encryptionWriteGcm) {
-    throw new Error(
-      'Set ENCRYPTION_WRITE_GCM=true on the application first, and here: it ' +
-        'then writes what this script writes. Nothing was written.'
-    );
-  }
-  const db = await connect(database);
-  const backupName = `${BACKUP_PREFIX}${new Date()
-    .toISOString()
-    .replace(/\D/g, '')
-    .slice(0, 14)}`;
-  const backup = db.collection(backupName);
-
+// Every value read and planned, before anything is written.
+async function planAll(db, plan) {
+  const plans = [];
+  let unreadable = 0;
   for (const target of TARGETS) {
-    const { model, fields } = target;
-    const collectionName = mongoose.pluralize()(model);
-    const collection = db.collection(collectionName);
+    const collectionName = mongoose.pluralize()(target.model);
     const query = {
-      $or: fields.map((field) => ({ [field]: { $type: 'string' } })),
+      $or: target.fields.map((field) => ({ [field]: { $type: 'string' } })),
     };
-    const projection = Object.fromEntries(fields.map((field) => [field, 1]));
-    let rewritten = 0;
-    let unreadable = 0;
-    let changedMeanwhile = 0;
+    const projection = Object.fromEntries(
+      target.fields.map((field) => [field, 1])
+    );
+    let fields = 0;
     // eslint-disable-next-line no-await-in-loop
-    for await (const doc of collection.find(query, { projection })) {
-      const plan = planReencryption(doc, target);
-      if (plan.unreadable.length > 0) {
+    for await (const doc of db
+      .collection(collectionName)
+      .find(query, { projection })) {
+      const { set, unreadable: refused } = plan(doc, target);
+      refused.forEach((field) => {
         unreadable += 1;
-        console.log(
-          `${model} ${doc._id}: ${plan.unreadable.join(
-            ', '
-          )} left as is, not text once decrypted (another key?)`
-        );
-      }
-      for (const [field, value] of Object.entries(plan.set || {})) {
-        if (dryRun) {
-          rewritten += 1;
-          continue;
-        }
-        const previous = valueAt(doc, field);
-        // Backed up before it is written over.
-        // eslint-disable-next-line no-await-in-loop
-        const { insertedId } = await backup.insertOne({
-          collection: collectionName,
-          docId: doc._id,
-          field,
-          previous,
-          written: value,
-        });
-        // Only if the value is still the one read: one saved meanwhile by
-        // the application stays.
-        // eslint-disable-next-line no-await-in-loop
-        const { modifiedCount } = await collection.updateOne(
-          { _id: doc._id, [field]: previous },
-          { $set: { [field]: value } }
-        );
-        if (modifiedCount > 0) {
-          rewritten += 1;
-        } else {
-          changedMeanwhile += 1;
-          // eslint-disable-next-line no-await-in-loop
-          await backup.deleteOne({ _id: insertedId });
-        }
+        console.log(`${target.model} ${doc._id} ${field}: does not read`);
+      });
+      if (set) {
+        fields += Object.keys(set).length;
+        plans.push({ collectionName, doc, set });
       }
     }
-    console.log(
-      `${model}: ${rewritten} field(s) ${
-        dryRun ? 'to rewrite' : 'rewritten'
-      }, ${unreadable} document(s) left as is, ${changedMeanwhile} changed meanwhile`
-    );
+    console.log(`${target.model}: ${fields} field(s) to rewrite`);
   }
-  if (!dryRun) {
-    console.log(
-      `Backup: ${backupName}. To undo: --restore=${backupName}. Once the ` +
-        `rollout is done: db.${backupName}.drop()`
-    );
-  }
+  return { plans, unreadable };
 }
 
-/**
- * Puts back the values a run backed up, where the value is still the one
- * the run wrote: a secret saved since is kept.
- */
-async function restore({ database, backupName }) {
-  if (!backupName.startsWith(BACKUP_PREFIX)) {
-    throw new Error(`--restore takes a ${BACKUP_PREFIX}… collection`);
+async function run({ dryRun, database, downgrade }) {
+  if (!downgrade && config.encryptionWriteLegacy) {
+    throw new Error(
+      'ENCRYPTION_WRITE_LEGACY is on: the application writes the former ' +
+        'format. Turn it off first. Nothing was written.'
+    );
   }
   const db = await connect(database);
-  let restored = 0;
-  let changedSince = 0;
-  // eslint-disable-next-line no-await-in-loop
-  for await (const entry of db.collection(backupName).find({})) {
-    // eslint-disable-next-line no-await-in-loop
-    const { modifiedCount } = await db
-      .collection(entry.collection)
-      .updateOne(
-        { _id: entry.docId, [entry.field]: entry.written },
-        { $set: { [entry.field]: entry.previous } }
-      );
-    if (modifiedCount > 0) restored += 1;
-    else changedSince += 1;
+  const { plans, unreadable } = await planAll(
+    db,
+    downgrade ? planDowngrade : planReencryption
+  );
+  if (unreadable > 0) {
+    throw new Error(
+      `${unreadable} value(s) do not read (listed above): nothing was written.`
+    );
+  }
+  if (dryRun) return;
+
+  let rewritten = 0;
+  let changedMeanwhile = 0;
+  for (const { collectionName, doc, set } of plans) {
+    for (const [field, value] of Object.entries(set)) {
+      // Only if the value is still the one read: one saved meanwhile by the
+      // application is kept.
+      // eslint-disable-next-line no-await-in-loop
+      const { modifiedCount } = await db
+        .collection(collectionName)
+        .updateOne(
+          { _id: doc._id, [field]: valueAt(doc, field) },
+          { $set: { [field]: value } }
+        );
+      if (modifiedCount > 0) rewritten += 1;
+      else changedMeanwhile += 1;
+    }
   }
   console.log(
-    `${restored} field(s) restored, ${changedSince} changed since the run, kept`
+    `${rewritten} field(s) rewritten${
+      downgrade ? ' in the former format' : ''
+    }, ${changedMeanwhile} saved meanwhile by the application, kept`
   );
 }
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
-  const restoreFlag = argv.find((arg) => arg.startsWith('--restore='));
   let options;
   try {
-    options = parseArgs(argv);
+    options = { ...parseArgs(argv), downgrade: argv.includes('--downgrade') };
   } catch (error) {
     console.error(error.message);
     process.exit(1);
   }
-  const job = restoreFlag
-    ? restore({
-        database: options.database,
-        backupName: restoreFlag.slice('--restore='.length),
-      })
-    : run(options);
-  job
+  run(options)
     .then(() => mongoose.disconnect())
     .catch((error) => {
       console.error(redact(error.message));
@@ -253,4 +239,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { planReencryption, TARGETS, run, restore };
+module.exports = { planReencryption, planDowngrade, TARGETS, run };

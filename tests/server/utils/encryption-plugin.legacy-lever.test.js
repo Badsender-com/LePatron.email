@@ -1,11 +1,12 @@
 'use strict';
 
-// Until ENCRYPTION_WRITE_GCM is on, the application writes its secrets as
-// the previous version did (AES-256-CTR), so that version still reads every
-// value written and can be rolled back to.
+// The emergency lever: with ENCRYPTION_WRITE_LEGACY on (after the script's
+// --downgrade), the application writes its secrets as the previous version
+// did (AES-256-CTR), so it runs on the former format until a fix, and the
+// previous version can be deployed again.
 
 process.env.ENCRYPTION_KEY = 'a-test-encryption-key-32-bytes!!';
-delete process.env.ENCRYPTION_WRITE_GCM;
+process.env.ENCRYPTION_WRITE_LEGACY = 'true';
 
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -44,7 +45,7 @@ const runPreHooks = (name, context) =>
     )
   );
 
-describe('before ENCRYPTION_WRITE_GCM is on', () => {
+describe('with ENCRYPTION_WRITE_LEGACY on', () => {
   it('saves a secret in the former format, which the previous version reads', async () => {
     const profile = new Profiles({ name: 'ESP', apiKey: 'k', secretKey: 's' });
 
@@ -68,12 +69,12 @@ describe('before ENCRYPTION_WRITE_GCM is on', () => {
   });
 });
 
-describe('the migration script, before ENCRYPTION_WRITE_GCM is on', () => {
-  it('refuses to write', async () => {
+describe('the migration script, with ENCRYPTION_WRITE_LEGACY on', () => {
+  it('refuses to convert to GCM, which the application would not write', async () => {
     const script = require('../../../scripts/reencrypt-secrets.js');
 
     await expect(
       script.run({ dryRun: false, database: 'lepatron' })
-    ).rejects.toThrow(/ENCRYPTION_WRITE_GCM=true/);
+    ).rejects.toThrow(/ENCRYPTION_WRITE_LEGACY is on/);
   });
 });
