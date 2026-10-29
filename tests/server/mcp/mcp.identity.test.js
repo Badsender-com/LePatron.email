@@ -157,7 +157,13 @@ describe('identity and MCP access', () => {
       extra: { userId: f.FRANK, groupId: f.CLIENT_GROUP },
     });
 
-    expect(group).toEqual({ _id: f.CLIENT_GROUP, enableMcp: true });
+    expect(group).toEqual({
+      _id: f.CLIENT_GROUP,
+      enableMcp: true,
+      allowRetex: false,
+      logRetentionDays: 30,
+      userHasAccessToAllWorkspaces: false,
+    });
   });
 
   // What fails in the server is logged; the assistant is told nothing of it.

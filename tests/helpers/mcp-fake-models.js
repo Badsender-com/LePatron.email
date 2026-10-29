@@ -32,6 +32,7 @@ const MODELS = {
   comments: 'Comments',
   expertises: 'Expertises',
   skills: 'LePatronSkills',
+  feedbacks: 'McpFeedbacks',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.

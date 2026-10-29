@@ -14,8 +14,7 @@ const f = require('../../helpers/mcp-fixtures');
 const SUMMARY =
   'The user asked for Black Friday subject lines; two of three were too long.';
 
-// Turned on by #1302 (feedback and retex)
-describe.skip('feedback and retex', () => {
+describe('feedback and retex', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 

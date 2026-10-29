@@ -128,6 +128,7 @@ function registerExpertiseResources(server) {
 
 module.exports = {
   registerExpertiseResources,
+  readableExpertise,
   consumedExpertises,
   asMarkdown,
   uriOf,

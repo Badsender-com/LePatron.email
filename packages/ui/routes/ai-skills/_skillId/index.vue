@@ -3,6 +3,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
+import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
@@ -20,6 +21,7 @@ export default {
   name: 'PageAiSkillDetail',
   components: {
     BsAiDetailHeader,
+    BsAiFeedbackTab,
     BsAiActivateModal,
     BsAiArchiveModal,
     BsAiSkillVersionsPanel,
@@ -241,6 +243,9 @@ export default {
       <v-tab href="#logs">
         {{ $t('aiSkills.logs.tabLabel') }}
       </v-tab>
+      <v-tab href="#feedback">
+        {{ $t('aiSkills.feedback.tab') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -275,6 +280,13 @@ export default {
           <bs-ai-skill-logs-panel
             v-if="tab === 'logs'"
             :skill-id="skill.skillId"
+          />
+        </v-tab-item>
+        <v-tab-item value="feedback">
+          <bs-ai-feedback-tab
+            v-if="tab === 'feedback'"
+            kind="skill"
+            :reference-id="skill.skillId"
           />
         </v-tab-item>
       </v-tabs-items>

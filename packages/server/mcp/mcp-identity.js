@@ -15,8 +15,11 @@ const READ_SCOPE = 'mcp:read';
 
 // What the request user may carry: never a password or a token.
 const USER_FIELDS = '_id name email lang role _company isDeactivated';
-// What the handlers read of the company: never its secrets.
-const GROUP_FIELDS = '_id enableMcp isPlatform';
+// What the handlers read of the company: never its secrets. Whether it
+// allows retex, and how long its logs are kept, for a feedback; whether its
+// users read every workspace, for the rights on its mailings.
+const GROUP_FIELDS =
+  '_id enableMcp isPlatform allowRetex logRetentionDays userHasAccessToAllWorkspaces';
 
 const NO_ACCOUNT = 'This account can no longer use LePatron.';
 const NO_COMPANY = 'This connection is not bound to a company of this account.';
@@ -95,7 +98,7 @@ function toRequestUser(record, groupId) {
  * @param {Object} [authInfo] the validated access token: its `scopes`, and
  *   `extra.userId` and `extra.groupId`
  * @returns {Promise<{ user: Object, group: Object }>} the request user and
- *   the company the call reads, with `enableMcp` and `isPlatform` only
+ *   the company the call reads, with the fields of `GROUP_FIELDS` only
  * @throws {ProtocolError} when any of it no longer holds
  */
 async function resolveIdentity(authInfo) {
