@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // The expertises a connected application reads (ADR 0012): the active version
@@ -11,8 +14,7 @@ const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 const SUBJECT_LINES = uriOf('redaction.subject-line');
 const SPAM_WORDS = uriOf('deliverability.spam-words');
 
-// Turned on by #1299 (the endpoint, MCP access and the expertises)
-describe.skip('expertises', () => {
+describe('expertises', () => {
   let client;
 
   beforeEach(async () => {
