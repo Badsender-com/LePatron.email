@@ -16,10 +16,15 @@ On Node 22.20, 24.18 and 24.22.1, the pinned version:
 - `nuxt build`, `apidoc` and the VuePress build pass
 - the server boots in development (Nuxt dev build) and in production, serves the login page and the editor bundle
 
+What the upgrade changed in our code:
+
+- **Outbound HTTP keeps Node 18's one socket per request** (`utils/outbound-keep-alive.js`, called first in `server/index.js`). Since Node 19, `http.globalAgent` and `https.globalAgent` keep idle sockets for 5 s. Every call made without its own agent uses them: the ESP connectors (axios in `config/axios.js`, `node-fetch`, `request`, superagent inside the Brevo SDK) and the image fetch, none of which retry. A peer that closes an idle socket sooner, without announcing it in a `Keep-Alive` header (a proxy or load balancer does that), races the next request: measured against such a server with 15 ms of latency, 74 `ECONNRESET` out of 200 sequential calls on Node 24, none on Node 18 nor with the fix. The integration providers (`integration-providers/provider-http.js`) build their own agents and are unaffected.
+- **`utils/terminate.js` no longer hands an error to `process.exit`.** A second SIGTERM or SIGINT finds the server closed, `server.close` calls back with `ERR_SERVER_NOT_RUNNING`, and since Node 20 `process.exit` throws on a non-number ([DEP0164](https://nodejs.org/api/deprecations.html#DEP0164)). It also passes its code, which it never did.
+
 What changes at runtime, with no code change:
 
-- **Outbound HTTP keeps its sockets alive.** Since Node 19, `http.globalAgent` is created with `keepAlive: true` (idle sockets dropped after 5 s). Every call made without an explicit agent, the ESP connectors through `config/axios.js` and the `node-fetch` call sites, now reuses connections where Node 18 opened one per request. Fewer TLS handshakes; the one failure mode is a peer closing an idle socket just as the next request goes out, which shows as an intermittent `ECONNRESET` or `socket hang up` on an ESP push. Only `globalAgent` changed its default: the HTTP integration providers build their own agents (`integration-providers/provider-http.js`), which stay at `keepAlive: false`.
 - **Agents ask the lookup for every address** (`autoSelectFamily`, on by default since Node 20). `utils/outbound-host.js` already served both forms.
+- **TLS refuses weak peers.** Node 24 runs OpenSSL 3.5 at its default security level 2 since 24.5.0 (Node 22 kept level 1): a TLS peer with an RSA, DSA or DH key under 2048 bits, an ECC key under 224 bits or a SHA-1 handshake signature is refused. TLS connections only: SAML signatures are checked with plain `crypto` calls, and SFTP goes through ssh2, so neither is concerned. The public endpoints we call (Brevo, Actito, Adobe, DeepL, the AI providers, S3 and Cellar) pass. What remains is hosts we do not control: images imported from a customer's URL, `SMTP_HOST`, `DSC_ESP_URL`, a customer's own Actito or Adobe instance, Mongo if its URI uses TLS. If one fails, set `ciphers: 'DEFAULT@SECLEVEL=1'` on that one connection, never globally.
 
 What stays:
 
@@ -28,8 +33,9 @@ What stays:
 
 What the local run cannot cover, and the staging smoke test does:
 
-- Node 24 ships OpenSSL 3.5. A TLS peer with an old certificate or key (an ESP endpoint, an SMTP or SFTP server, a SAML IdP) is where a refusal would show.
+- The TLS hosts listed above, which only a real deployment reaches.
 - Chrome for puppeteer (template previews) and the sharp binary are installed by the Clever Cloud build, not by CI.
+- `node -p process.versions.openssl` on Clever Cloud should print 3.5.x: the official Node binary. A distribution build may set another security level.
 
 After changing the version, deploy once without the Clever Cloud build cache so native modules and Chrome are installed for the new Node.
 

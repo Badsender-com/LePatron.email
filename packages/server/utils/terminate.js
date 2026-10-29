@@ -9,8 +9,10 @@ const terminate = (server, options = { codedump: false, timeout: 500 }) => {
     if (err && err instanceof Error) {
       console.log(err.message, err.stack);
     }
-    server.close(exit);
-    setTimeout(exit, options.timeout).unref();
+    // close calls back with an error when the server is closed already (a
+    // second signal); process.exit refuses an error since Node 20.
+    server.close(() => exit(code));
+    setTimeout(() => exit(code), options.timeout).unref();
   };
 };
 
