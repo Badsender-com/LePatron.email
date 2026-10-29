@@ -5,7 +5,7 @@
 - Epic: #1290
 - Supersedes the approach of issue #955 (standalone server, API key per group)
 
-LePatron exposes an MCP server so that the AI assistants its users already work with (Claude, ChatGPT, Microsoft Copilot) can read LePatron on their behalf: the Badsender expertises and skills, and the user's own mailings. It is offered to the platform group and to client groups alike, through MCP access: off unless a super admin, or the group's tech admin as part of its AI features, turns it on for a group (`group.manage-tech`, ADR 0004). The first version only reads; writing waits for the server to enforce what a writer may touch (#1103, ADR 0004).
+LePatron exposes an MCP server so that the AI assistants its users already work with (Claude, ChatGPT, Microsoft Copilot) can read LePatron on their behalf: the Badsender expertises and skills, and the user's own mailings. It is sold as a subscription, to the platform group and to client groups alike, and switched on per group by MCP access: off unless a super admin, or the group's tech admin as part of its AI features, turns it on for a group (`group.manage-tech`, ADR 0004). The first version only reads; writing waits for the server to enforce what a writer may touch (#1103, ADR 0004).
 
 **It runs inside the Express app**, mounted on `/mcp`, not as a standalone service sharing the database. Every tool goes through the same services and access checks as the REST API (workspace and folder membership, `userHasAccessToAllWorkspaces`, the roles of ADR 0004), so no access rule is written twice.
 
