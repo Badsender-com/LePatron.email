@@ -254,7 +254,7 @@
     "jsonwebtoken": "9.0.2",
     "xml-crypto": "2.1.6",
     "xmldom": "npm:@xmldom/xmldom@0.7.13",
-    "sib-api-v3-sdk/superagent": "5.3.1"
+    "sib-api-v3-sdk/superagent": "10.3.0"
   },
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",

@@ -6,7 +6,8 @@
 // The redirect cases guard the SDK's HTTP client. sib-api-v3-sdk 8.2.0 ships
 // superagent 3.7.0, whose redirect code reads OutgoingMessage#_headers; Node 24
 // removed it, so any redirect threw inside superagent's response handler and
-// the call never settled. package.json resolves the SDK's superagent to 5.3.1.
+// the call never settled. package.json resolves the SDK's superagent to 10.3.0,
+// the copy supertest already uses.
 
 const http = require('http');
 const SibApiV3Sdk = require('sib-api-v3-sdk');
@@ -15,6 +16,7 @@ const mailingService = require('../../../packages/server/mailing/mailing.service
 const logger = require('../../../packages/server/utils/logger.js');
 const SendinBlueProvider = require('../../../packages/server/esp/sendinblue/sendinBlueProvider.js');
 const ESP_CONTENT_TYPE = require('../../../packages/server/constant/content-esp-type.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const API_KEY = 'xkeysib-test';
 const CAMPAIGN = {
@@ -24,9 +26,14 @@ const CAMPAIGN = {
   sender: { name: 'Client', email: 'news@client.test' },
 };
 
-// Paths under /moved answer a redirect to the same path without the prefix,
-// as an API changing host would.
+// Paths under these prefixes answer a redirect to the same path without the
+// prefix, as an API changing host would: /moved with 301 on a read and 308 on
+// a write, /permanent with 301 whatever the method.
 const MOVED = '/moved';
+const PERMANENT = '/permanent';
+
+// failNext value that drops the connection instead of answering.
+const DROP = 'drop';
 
 function brevoStandIn() {
   const requests = [];
@@ -35,6 +42,10 @@ function brevoStandIn() {
     let body = '';
     req.on('data', (chunk) => (body += chunk));
     req.on('end', () => {
+      if (req.url.startsWith(PERMANENT)) {
+        res.writeHead(301, { location: req.url.slice(PERMANENT.length) });
+        return res.end();
+      }
       if (req.url.startsWith(MOVED)) {
         const status = req.method === 'GET' ? 301 : 308;
         res.writeHead(status, { location: req.url.slice(MOVED.length) });
@@ -47,6 +58,10 @@ function brevoStandIn() {
         body: body ? JSON.parse(body) : undefined,
       });
       const route = `${req.method} ${req.url}`;
+      if (failNext[route] === DROP) {
+        delete failNext[route];
+        return req.socket.destroy();
+      }
       if (failNext[route]) {
         res.writeHead(400, { 'content-type': 'application/json' });
         res.end(JSON.stringify(failNext[route]));
@@ -60,6 +75,8 @@ function brevoStandIn() {
       switch (route) {
         case 'GET /account':
           return json(200, { email: 'owner@client.test' });
+        case 'GET /emailCampaigns':
+          return json(200, { campaigns: [], count: 0 });
         case 'GET /emailCampaigns/12':
         case 'GET /smtp/templates/34':
           return json(200, CAMPAIGN);
@@ -229,6 +246,17 @@ describe('the Brevo provider over HTTP', () => {
     );
   });
 
+  it('rejects with the network error when the connection drops', async () => {
+    stand.failNext['POST /emailCampaigns'] = DROP;
+
+    const error = await provider
+      .createCampaignMail(pushArgs(ESP_CONTENT_TYPE.MAIL))
+      .catch((e) => e);
+
+    expect(error.code).toBe('ECONNRESET');
+    expect(logger.error).toHaveBeenCalledWith(error.message);
+  });
+
   // Short timeouts: a call that never settles is the failure.
   describe('when the API answers a redirect', () => {
     beforeEach(() => {
@@ -266,6 +294,23 @@ describe('the Brevo provider over HTTP', () => {
         method: 'PUT',
         path: '/smtp/templates/34',
         body: { isActive: true },
+      });
+    }, 2000);
+
+    // A 301 turns a write into a GET without its body (superagent, like most
+    // HTTP clients, on Node 18 as on 24): the create gets no id back and must
+    // fail, not report a campaign.
+    it('fails a create behind a 301 instead of reporting a campaign', async () => {
+      client.basePath = `${origin}${PERMANENT}`;
+
+      const error = await provider
+        .createCampaignMail(pushArgs(ESP_CONTENT_TYPE.MAIL))
+        .catch((e) => e);
+
+      expect(error.message).toBe(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+      expect(stand.requests[0]).toMatchObject({
+        method: 'GET',
+        path: '/emailCampaigns',
       });
     }, 2000);
   });

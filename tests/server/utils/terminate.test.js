@@ -27,9 +27,9 @@ describe('terminate', () => {
     expect(exit).toHaveBeenCalledWith(0);
   });
 
-  // A second signal finds the server closed already: close calls back with
-  // ERR_SERVER_NOT_RUNNING, which process.exit refuses since Node 20.
-  it('exits with its code when the server was already closed', () => {
+  // close calls back with ERR_SERVER_NOT_RUNNING on a server that is not
+  // listening; process.exit refuses an error since Node 20.
+  it('exits with its code when the server was not listening', () => {
     const notRunning = new Error('Server is not running.');
     const server = { close: (callback) => callback(notRunning) };
 
