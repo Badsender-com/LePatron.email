@@ -8,6 +8,7 @@ import { aiSkillSchemaDescriptor } from '~/helpers/ai-skill-routes.js';
 import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
 import mixinVersionDrafts from '~/helpers/mixins/mixin-version-drafts.js';
+import BsAiSkillTaskVersionFields from '~/components/ai-skill/bs-ai-skill-task-version-fields.vue';
 import { Plus, CheckCircle2, Check, Copy, Trash2 } from 'lucide-vue';
 
 // How long a copied chip keeps its confirmation mark.
@@ -20,6 +21,8 @@ const EDITABLE_FIELDS = Object.freeze([
   'systemPrompt',
   'skillBody',
   'inputTemplate',
+  'procedure',
+  'consumedExpertiseIds',
   'changelog',
   'releaseNotes',
 ]);
@@ -30,6 +33,7 @@ export default {
     BsTextarea,
     BsSelect,
     BsTimestamp,
+    BsAiSkillTaskVersionFields,
     LucidePlus: Plus,
     LucideCheck: Check,
     LucideCheckCircle2: CheckCircle2,
@@ -76,6 +80,10 @@ export default {
     },
     editableVersionFields() {
       return EDITABLE_FIELDS;
+    },
+    // A task skill has a procedure instead of a template and schemas.
+    isTask() {
+      return this.skill.nature === 'task';
     },
     inputSchemas() {
       return this.schemas.filter((s) => /Input$/.test(s));
@@ -267,95 +275,108 @@ export default {
             </div>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
-            <div class="schema-row">
-              <bs-select
-                v-model="draftFor(v).inputSchemaId"
-                :items="inputSchemas"
-                :label="$t('aiSkills.skill.inputSchemaId')"
-                :readonly="v.status !== 'DRAFT'"
-                :disabled="v.status !== 'DRAFT'"
-              />
-              <bs-select
-                v-model="draftFor(v).outputSchemaId"
-                :items="outputSchemas"
-                :label="$t('aiSkills.skill.outputSchemaId')"
-                :readonly="v.status !== 'DRAFT'"
-                :disabled="v.status !== 'DRAFT'"
-              />
-            </div>
-            <p class="text-caption text--secondary schema-help">
-              {{ $t('aiSkills.version.schemasHelp') }}
-            </p>
-            <bs-textarea
-              v-model="draftFor(v).systemPrompt"
-              :label="$t('aiSkills.version.systemPrompt')"
-              :rows="3"
+            <bs-ai-skill-task-version-fields
+              v-if="isTask"
+              :procedure="draftFor(v).procedure"
+              :consumed-expertise-ids="draftFor(v).consumedExpertiseIds"
               :readonly="v.status !== 'DRAFT'"
-              monospace
+              class="mb-3"
+              @update:procedure="draftFor(v).procedure = $event"
+              @update:consumedExpertiseIds="
+                draftFor(v).consumedExpertiseIds = $event
+              "
             />
-            <bs-textarea
-              v-model="draftFor(v).skillBody"
-              :label="$t('aiSkills.version.skillBody')"
-              :rows="5"
-              :readonly="v.status !== 'DRAFT'"
-              monospace
-            />
-            <p class="text-caption text--secondary output-format-note">
-              {{ $t('aiSkills.version.outputFormatNote') }}
-            </p>
-            <bs-textarea
-              v-model="draftFor(v).inputTemplate"
-              :label="$t('aiSkills.version.inputTemplate')"
-              :rows="3"
-              :readonly="v.status !== 'DRAFT'"
-              monospace
-            />
-            <div v-if="placeholdersFor(v)" class="placeholder-help mb-3">
-              <span class="text-caption text--secondary">
-                {{ $t('aiSkills.version.placeholdersHelp') }}
-              </span>
-              <div class="mt-1">
-                <v-chip
-                  v-for="p in placeholdersFor(v)"
-                  :key="p.token"
-                  x-small
-                  label
-                  outlined
-                  class="mr-1 mb-1 placeholder-chip"
-                  :title="$t('aiSkills.version.placeholderCopyHint')"
-                  @click="copyPlaceholder(p.token)"
-                >
-                  <code>{{ p.token }}</code>
-                  <span v-if="p.required" class="placeholder-required ml-1">
-                    *
-                  </span>
-                  <lucide-check
-                    v-if="copiedToken === p.token"
-                    :size="12"
-                    class="ml-1 placeholder-copied"
-                  />
-                </v-chip>
+            <template v-else>
+              <div class="schema-row">
+                <bs-select
+                  v-model="draftFor(v).inputSchemaId"
+                  :items="inputSchemas"
+                  :label="$t('aiSkills.skill.inputSchemaId')"
+                  :readonly="v.status !== 'DRAFT'"
+                  :disabled="v.status !== 'DRAFT'"
+                />
+                <bs-select
+                  v-model="draftFor(v).outputSchemaId"
+                  :items="outputSchemas"
+                  :label="$t('aiSkills.skill.outputSchemaId')"
+                  :readonly="v.status !== 'DRAFT'"
+                  :disabled="v.status !== 'DRAFT'"
+                />
               </div>
-              <span
-                v-if="copyFailed"
-                class="text-caption placeholder-copy-failed"
-              >
-                {{ $t('aiSkills.version.placeholderCopyFailed') }}
-              </span>
-              <span class="text-caption text--disabled">
-                {{ $t('aiSkills.version.placeholdersRequiredHint') }}
-              </span>
-              <p class="text-caption text--secondary mt-1 mb-0">
-                {{ $t('aiSkills.version.placeholdersInvocationNote') }}
-                <template v-if="hasExpertiseFor(v)">
-                  {{
-                    $t('aiSkills.version.placeholdersExpertiseNote', {
-                      token: expertiseToken,
-                    })
-                  }}
-                </template>
+              <p class="text-caption text--secondary schema-help">
+                {{ $t('aiSkills.version.schemasHelp') }}
               </p>
-            </div>
+              <bs-textarea
+                v-model="draftFor(v).systemPrompt"
+                :label="$t('aiSkills.version.systemPrompt')"
+                :rows="3"
+                :readonly="v.status !== 'DRAFT'"
+                monospace
+              />
+              <bs-textarea
+                v-model="draftFor(v).skillBody"
+                :label="$t('aiSkills.version.skillBody')"
+                :rows="5"
+                :readonly="v.status !== 'DRAFT'"
+                monospace
+              />
+              <p class="text-caption text--secondary output-format-note">
+                {{ $t('aiSkills.version.outputFormatNote') }}
+              </p>
+              <bs-textarea
+                v-model="draftFor(v).inputTemplate"
+                :label="$t('aiSkills.version.inputTemplate')"
+                :rows="3"
+                :readonly="v.status !== 'DRAFT'"
+                monospace
+              />
+              <div v-if="placeholdersFor(v)" class="placeholder-help mb-3">
+                <span class="text-caption text--secondary">
+                  {{ $t('aiSkills.version.placeholdersHelp') }}
+                </span>
+                <div class="mt-1">
+                  <v-chip
+                    v-for="p in placeholdersFor(v)"
+                    :key="p.token"
+                    x-small
+                    label
+                    outlined
+                    class="mr-1 mb-1 placeholder-chip"
+                    :title="$t('aiSkills.version.placeholderCopyHint')"
+                    @click="copyPlaceholder(p.token)"
+                  >
+                    <code>{{ p.token }}</code>
+                    <span v-if="p.required" class="placeholder-required ml-1">
+                      *
+                    </span>
+                    <lucide-check
+                      v-if="copiedToken === p.token"
+                      :size="12"
+                      class="ml-1 placeholder-copied"
+                    />
+                  </v-chip>
+                </div>
+                <span
+                  v-if="copyFailed"
+                  class="text-caption placeholder-copy-failed"
+                >
+                  {{ $t('aiSkills.version.placeholderCopyFailed') }}
+                </span>
+                <span class="text-caption text--disabled">
+                  {{ $t('aiSkills.version.placeholdersRequiredHint') }}
+                </span>
+                <p class="text-caption text--secondary mt-1 mb-0">
+                  {{ $t('aiSkills.version.placeholdersInvocationNote') }}
+                  <template v-if="hasExpertiseFor(v)">
+                    {{
+                      $t('aiSkills.version.placeholdersExpertiseNote', {
+                        token: expertiseToken,
+                      })
+                    }}
+                  </template>
+                </p>
+              </div>
+            </template>
             <bs-textarea
               v-if="v.status === 'DRAFT'"
               v-model="draftFor(v).changelog"

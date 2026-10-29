@@ -3,7 +3,10 @@
 const createError = require('http-errors');
 const { LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const {
+  SkillStatuses,
+  SkillNatures,
+} = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const {
@@ -17,6 +20,8 @@ const LIST_PROJECTION = {
   category: 1,
   status: 1,
   audience: 1,
+  nature: 1,
+  servedToAssistants: 1,
   activeVersion: 1,
   owner: 1,
   createdAt: 1,
@@ -93,7 +98,14 @@ async function createSkill(data, userId) {
 
 // Schemas are NOT here anymore — they live on the version and are edited via
 // updateVersion (DRAFT only), like the prompts.
-const PATCHABLE_FIELDS = ['title', 'description', 'category', 'audience'];
+const PATCHABLE_FIELDS = [
+  'title',
+  'description',
+  'category',
+  'audience',
+  'nature',
+  'servedToAssistants',
+];
 
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
@@ -128,13 +140,22 @@ const VERSION_CONTENT_FIELDS = [
   { name: 'outputSchemaId', default: () => '' },
   { name: 'modelHints', default: () => ({}), deep: true },
   { name: 'testCases', default: () => [], deep: true },
+  { name: 'procedure', default: () => '' },
+  { name: 'consumedExpertiseIds', default: () => [], deep: true },
 ];
 
 /**
  * Publication gate specific to skills. Expertises have no equivalent, which is
  * exactly why it is injected rather than living in the shared lifecycle.
  */
-function assertSkillPublishable(version) {
+function assertSkillPublishable(version, skill) {
+  // A task skill has no template nor schema: its procedure is what it serves.
+  if (skill && skill.nature === SkillNatures.TASK) {
+    if (!String(version.procedure || '').trim()) {
+      throw createError(400, ERROR_CODES.SKILL_PROCEDURE_REQUIRED_TO_PUBLISH);
+    }
+    return;
+  }
   // Schemas are required to publish (they may be empty on a DRAFT).
   if (!version.inputSchemaId || !version.outputSchemaId) {
     throw createError(400, ERROR_CODES.SKILL_SCHEMAS_REQUIRED_TO_PUBLISH);

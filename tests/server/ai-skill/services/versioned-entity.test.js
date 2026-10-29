@@ -374,7 +374,7 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       await expect(
         service.activateVersion('an-id', { major: 1, minor: 0 }, notes, USER_ID)
       ).rejects.toThrow('refused by the gate');
-      expect(gate).toHaveBeenCalledWith(doc.versions[0]);
+      expect(gate).toHaveBeenCalledWith(doc.versions[0], doc);
       expect(doc.versions[0].status).toBe('DRAFT');
       expect(doc.save).not.toHaveBeenCalled();
     });

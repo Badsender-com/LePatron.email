@@ -77,6 +77,16 @@ function asMarkdown({ doc, version }) {
     .trim();
 }
 
+// The active version of an expertise the group may read, or null.
+async function readableExpertise(expertiseId, group) {
+  return published(
+    await Expertises.findOne({
+      expertiseId: String(expertiseId),
+      ...audienceFilter(group),
+    }).lean()
+  );
+}
+
 function registerExpertiseResources(server) {
   server.registerResource(
     'expertises',
@@ -96,12 +106,7 @@ function registerExpertiseResources(server) {
     },
     async (uri, { expertiseId }, ctx) => {
       const { group } = await resolveIdentity(ctx.http?.authInfo);
-      const found = published(
-        await Expertises.findOne({
-          expertiseId: String(expertiseId),
-          ...audienceFilter(group),
-        }).lean()
-      );
+      const found = await readableExpertise(expertiseId, group);
       if (!found) throw new ResourceNotFoundError(uri.href);
       return {
         contents: [
@@ -180,4 +185,7 @@ function registerFindApplicableExpertises(server) {
 module.exports = {
   registerExpertiseResources,
   registerFindApplicableExpertises,
+  readableExpertise,
+  asMarkdown,
+  uriOf,
 };

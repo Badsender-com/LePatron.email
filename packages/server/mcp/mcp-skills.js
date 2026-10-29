@@ -4,81 +4,63 @@ const {
   ProtocolError,
   ProtocolErrorCode,
 } = require('@modelcontextprotocol/server');
-const { LePatronSkills } = require('../common/models.common.js');
-const {
-  findActiveVersion,
-} = require('../ai-skill/services/version-helpers.js');
-const { SkillStatuses } = require('../ai-skill/constant/skill-constants.js');
-const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
 const {
   buildPrompt,
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { resolveIdentity } = require('./mcp-identity.js');
-const { audienceFilter } = require('./mcp-audience.js');
+const {
+  isTask,
+  servedSkills,
+  servedSkill,
+  argumentsOf,
+} = require('./mcp-skill-catalog.js');
+const expertises = require('./mcp-expertises.js');
 
-// The active version of an active skill: what an assistant runs (ADR 0012).
-function published(doc) {
-  if (!doc || doc.status !== SkillStatuses.ACTIVE) return null;
-  const version = findActiveVersion(doc);
-  if (!version || version.status !== SkillStatuses.ACTIVE) return null;
-  return { doc, version };
-}
-
-// The fields of the skill's input schema, but the expertise, which the
-// assistant reads as resources rather than types (describe-schema.js).
-function argumentsOf(version) {
-  const described = describeSchema(version.inputSchemaId);
-  return (described ? described.fields : []).map((field) => ({
-    name: field.name,
-    required: field.required,
-  }));
-}
-
-function asPrompt({ doc, version }) {
+function asPrompt(found) {
   return {
-    name: doc.skillId,
-    title: doc.title,
-    description: doc.description || undefined,
-    arguments: argumentsOf(version),
+    name: found.doc.skillId,
+    title: found.doc.title,
+    description: found.doc.description || undefined,
+    arguments: argumentsOf(found),
   };
 }
 
-function notFound(name) {
-  return new ProtocolError(
-    ProtocolErrorCode.InvalidParams,
-    `Prompt not found: ${name}`
+const text = (content) => ({
+  role: 'user',
+  content: { type: 'text', text: content },
+});
+
+// A task skill: its procedure, then the active version of each expertise it
+// consumes, in its order, embedded so it runs the Badsender way (ADR 0013).
+// One the group may not read, or no longer published, is left out.
+async function taskMessages({ doc, version }, group) {
+  const consumed = await Promise.all(
+    (version.consumedExpertiseIds || []).map((id) =>
+      expertises.readableExpertise(id, group)
+    )
   );
+  return [
+    text(`# ${doc.title}\n\n${version.procedure}`),
+    ...consumed.filter(Boolean).map((found) => ({
+      role: 'user',
+      content: {
+        type: 'resource',
+        resource: {
+          uri: expertises.uriOf(found.doc.expertiseId),
+          mimeType: 'text/markdown',
+          text: expertises.asMarkdown(found),
+        },
+      },
+    })),
+  ];
 }
 
-async function listPrompts(ctx) {
-  const { group } = await resolveIdentity(ctx.http?.authInfo);
-  const docs = await LePatronSkills.find({
-    status: SkillStatuses.ACTIVE,
-    ...audienceFilter(group),
-  }).lean();
-  const prompts = docs
-    .map(published)
-    .filter(Boolean)
-    .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId))
-    .map(asPrompt);
-  return { prompts };
-}
-
-// The skill's instructions and its filled template, as the skill invocation
-// builds them (prompt-builder.service.js), with the user's input fenced. An
-// MCP prompt has no system role: the instructions come first, as the user's.
-async function getPrompt(request, ctx) {
-  const { group } = await resolveIdentity(ctx.http?.authInfo);
-  const { name, arguments: input = {} } = request.params;
-  const found = published(
-    await LePatronSkills.findOne({
-      skillId: String(name),
-      ...audienceFilter(group),
-    }).lean()
-  );
-  if (!found) throw notFound(name);
-
-  const missing = argumentsOf(found.version).filter(
+// A feature skill: the instructions and the filled template the skill
+// invocation builds (prompt-builder.service.js), the user's input fenced, and
+// never its JSON output contract, which only LePatron reads. An MCP prompt has
+// no system role: the instructions come first, as the user's.
+function featureMessages(found, input) {
+  const missing = argumentsOf(found).filter(
     (argument) => argument.required && !input[argument.name]
   );
   if (missing.length) {
@@ -87,14 +69,30 @@ async function getPrompt(request, ctx) {
       `Missing required argument: ${missing.map((a) => a.name).join(', ')}`
     );
   }
-
   const { messages } = buildPrompt({ version: found.version, input });
+  return messages.map((message) => text(message.content));
+}
+
+async function listPrompts(ctx) {
+  const { group } = await resolveIdentity(ctx.http?.authInfo);
+  return { prompts: (await servedSkills(group)).map(asPrompt) };
+}
+
+async function getPrompt(request, ctx) {
+  const { group } = await resolveIdentity(ctx.http?.authInfo);
+  const { name, arguments: input = {} } = request.params;
+  const found = await servedSkill(name, group);
+  if (!found) {
+    throw new ProtocolError(
+      ProtocolErrorCode.InvalidParams,
+      `Prompt not found: ${name}`
+    );
+  }
   return {
     description: found.doc.description || undefined,
-    messages: messages.map((message) => ({
-      role: 'user',
-      content: { type: 'text', text: message.content },
-    })),
+    messages: isTask(found.doc)
+      ? await taskMessages(found, group)
+      : featureMessages(found, input),
   };
 }
 
