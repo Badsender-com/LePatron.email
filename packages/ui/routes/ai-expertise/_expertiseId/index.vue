@@ -5,6 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
@@ -16,6 +17,7 @@ export default {
   name: 'PageAiExpertiseDetail',
   components: {
     BsAiDetailHeader,
+    BsAiFeedbackTab,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
@@ -295,6 +297,9 @@ export default {
       <v-tab href="#sections">
         {{ $t('aiSkills.expertise.sectionsTab') }}
       </v-tab>
+      <v-tab href="#feedback">
+        {{ $t('aiSkills.feedback.tab') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -343,6 +348,13 @@ export default {
               {{ $t('aiSkills.expertise.noSections') }}
             </p>
           </v-card>
+        </v-tab-item>
+        <v-tab-item value="feedback">
+          <bs-ai-feedback-tab
+            v-if="tab === 'feedback'"
+            kind="expertise"
+            :reference-id="exp.expertiseId"
+          />
         </v-tab-item>
       </v-tabs-items>
     </v-container>

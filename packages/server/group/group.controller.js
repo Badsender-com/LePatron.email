@@ -572,6 +572,8 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // Whether the group's session summaries may reach Badsender (ADR 0012).
+      'allowRetex',
       // The company's tracking belongs to its technical settings (ADR 0004),
       // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.

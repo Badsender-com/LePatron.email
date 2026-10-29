@@ -33,6 +33,7 @@ const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playgroun
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
 const SecurityEventSchema = require('../two-factor/security-event.schema.js');
+const McpFeedbackSchema = require('../mcp/mcp-feedback.schema.js');
 
 /// ///
 // EXPORTS
@@ -108,6 +109,10 @@ const SecurityEvents = mongoose.model(
   modelNames.SecurityEventModel,
   SecurityEventSchema
 );
+const McpFeedbacks = mongoose.model(
+  modelNames.McpFeedbackModel,
+  McpFeedbackSchema
+);
 
 module.exports = {
   mongoose,
@@ -139,4 +144,5 @@ module.exports = {
   AIPlaygroundRuns,
   TaxonomyItems,
   SecurityEvents,
+  McpFeedbacks,
 };
