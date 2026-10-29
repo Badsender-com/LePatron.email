@@ -76,6 +76,27 @@ describe.skip('mailing content', () => {
     });
   });
 
+  describe('as a resource', () => {
+    it('reads the mailing a list links to, as text', async () => {
+      const client = await harness.connectAs(f.FRANK);
+
+      const { contents } = await client.readResource({
+        uri: `lepatron://mailings/${f.M_NEWSLETTER}`,
+      });
+
+      expect(contents[0].mimeType).toBe('text/plain');
+      expect(contents[0].text).toContain('Black Friday is coming');
+    });
+
+    it('does not read a mailing the user cannot reach', async () => {
+      const client = await harness.connectAs(f.FRANK);
+
+      await expect(
+        client.readResource({ uri: `lepatron://mailings/${f.M_PROMO}` })
+      ).rejects.toThrow(/not found/i);
+    });
+  });
+
   describe('mailing status', () => {
     let client;
     beforeEach(async () => {

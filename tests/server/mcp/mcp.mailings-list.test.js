@@ -110,6 +110,29 @@ describe.skip('mailings list and status', () => {
     });
   });
 
+  describe('links', () => {
+    it('links each mailing of the page as a resource', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const result = await client.callTool({
+        name: 'list_mailings',
+        arguments: { name: 'Black Friday' },
+      });
+
+      const links = result.content.filter(
+        (part) => part.type === 'resource_link'
+      );
+      expect(links.map((link) => link.uri).sort()).toEqual(
+        [
+          `lepatron://mailings/${f.M_ARCHIVED}`,
+          `lepatron://mailings/${f.M_NEWSLETTER}`,
+        ].sort()
+      );
+      expect(links.find((l) => l.uri.endsWith(f.M_NEWSLETTER))).toMatchObject({
+        name: 'Black Friday 2025',
+      });
+    });
+  });
+
   describe('filters and pages', () => {
     it('filters by name, whatever the case', async () => {
       expect(ids(await list(f.FRANK, { name: 'BLACK FRIDAY' }))).toEqual(

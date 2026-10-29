@@ -25,10 +25,12 @@ describe.skip('expertises', () => {
     it('lists the active expertises, and only them', async () => {
       const { resources } = await client.listResources();
 
-      expect(resources.map((resource) => resource.uri).sort()).toEqual([
-        SPAM_WORDS,
-        SUBJECT_LINES,
-      ]);
+      // Other resources live beside them (the preview app of #1342).
+      const expertises = resources
+        .map((resource) => resource.uri)
+        .filter((uri) => uri.startsWith('lepatron://expertises/'));
+
+      expect(expertises.sort()).toEqual([SPAM_WORDS, SUBJECT_LINES]);
     });
 
     it('names each one and says when its active version was last updated', async () => {
