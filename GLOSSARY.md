@@ -6,10 +6,10 @@ An email builder for marketing teams: each client company designs its emails in 
 
 ### Organization
 
-**Group**:
-A client company: it owns users, workspaces, templates and ESP profiles.
-_UI_: Groupe
-_Avoid_: Company, organization, account
+**Company**:
+A client company: it owns users, workspaces, templates and ESP profiles. Users never understood "group"; the code keeps `Group` and `_company`.
+_UI_: Entreprise
+_Avoid_: Group, organization, account
 
 **Platform group**:
 The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
@@ -151,3 +151,54 @@ _Avoid_: Allowed workspace, my workspace
 What the email search looks through: the emails sitting directly in the current location, or every email of the user's accessible workspaces, in any folder.
 _UI_: Dossier courant, Tous mes espaces de travail
 _Avoid_: Search mode, global search (in UI text)
+
+### Taxonomy
+
+**Dimension**:
+An axis a company declines its emails by: what an email brings, the markets it is sent to, the brand speaking, the audience it addresses. Its name is what a template reads, and it never changes.
+_UI_: Dimension
+_Avoid_: Axis, criterion, variant, taxonomy type
+
+**Standard dimension**:
+A dimension every company has, defined by the Badsender classification doctrine: the email type and the email trigger. A company can neither remove nor rename one.
+_UI_: Standard
+
+**Company dimension**:
+A dimension a company declares for itself: market, language, brand, audience, or any other way it declines its emails.
+_UI_: Propre à l'entreprise
+_Avoid_: Custom dimension, group dimension
+
+**Value**:
+One of the possibilities of a dimension: Canada, French, Newsletter. An email carries at most one value per dimension.
+_UI_: Valeur
+_Avoid_: Item, entry, option, tag
+
+**Email type**:
+The standard dimension that says what an email brings to the person receiving it. Each company names its own values, and maps each onto one of the doctrine's six types.
+_UI_: Typologie
+_Avoid_: Category, campaign type
+
+**Email trigger**:
+The standard dimension that says whether someone decided this particular send: one shot or automated. Its two values are the doctrine's, and no company adds, renames or removes one.
+_UI_: Déclenchement
+_Avoid_: Send mode, scenario
+
+**Identifier**:
+The stable name of a value, which a template compares against, unlike its freely edited label.
+_UI_: Identifiant
+_Avoid_: Slug, code, key, canonical type
+
+**Availability**:
+The values of the parent dimension under which a value is offered: French is offered under Canada, Switzerland and Belgium, and nowhere else. A value with no availability is offered under all of them.
+_UI_: Disponibilité
+_Avoid_: Parent, hierarchy, dependency
+
+**Design token**:
+A named value that a value carries and a template reads under that name: a brand's main colour as a role, not as `#ffd845`.
+_UI_: Token
+_Avoid_: Variable, theme colour, palette entry
+
+**Precedence**:
+Which dimension wins when the values chosen for one email carry the same design token. Unrelated to the order dimensions are listed in.
+_UI_: Priorité
+_Avoid_: Order, weight
