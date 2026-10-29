@@ -172,7 +172,7 @@ _UI_: Application connectée
 _Avoid_: Integration (the AI provider settings of a group), connector, client
 
 **MCP access**:
-The subscription that lets the users of a group connect applications. Off unless a super admin turns it on.
+The setting that lets the users of a group connect applications. Off unless a super admin or the group's tech admin turns it on.
 _UI_: Accès MCP
 
 **Feedback**:

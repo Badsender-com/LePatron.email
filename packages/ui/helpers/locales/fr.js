@@ -398,11 +398,6 @@ export default {
         toggleMovedHint:
           'L\'activation du module se fait depuis l\'onglet Général',
       },
-      mcp: {
-        name: 'Accès MCP',
-        description:
-          'Les utilisateurs connectent leur assistant IA (Claude, ChatGPT, Copilot) à LePatron, avec leurs droits',
-      },
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',
@@ -1070,6 +1065,13 @@ export default {
     },
     cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
+  },
+  mcpAccess: {
+    title: 'Accès MCP',
+    description:
+      'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
+    switch: 'Autoriser la connexion des assistants IA',
+    updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
