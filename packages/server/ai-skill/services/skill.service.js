@@ -6,6 +6,7 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillStatuses,
   SkillNatures,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
@@ -65,6 +66,10 @@ async function createSkill(data, userId) {
     title: data.title,
     description: data.description || '',
     category: data.category,
+    // Explicit rather than left to the schema: a new skill is a feature skill
+    // unless said otherwise, and reaches the platform group only (ADR 0013).
+    nature: data.nature || SkillNatures.FEATURE,
+    audience: data.audience || Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },

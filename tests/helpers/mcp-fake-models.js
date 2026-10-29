@@ -8,7 +8,9 @@
  * back what the MCP server answers, whatever query it builds.
  *
  * - A `.lean()` query answers copies of the stored fields; otherwise a
- *   document also has `id` and `toObject()` / `toJSON()`.
+ *   document also has `id`, `toObject()` / `toJSON()`, and `save()`, which
+ *   writes it back, as the back office's services do.
+ * - `create(record)` stores a copy, with an `_id` when it has none.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - Each collection the seed names is a model; the others are empty.
@@ -32,15 +34,34 @@ const MODELS = {
 /* global structuredClone */
 const copy = (record) => structuredClone(record);
 
-function toDocument(record) {
+// The fields of a document, without what the fakes add to it.
+function fieldsOf(doc) {
+  const { id: _addedId, ...fields } = doc;
+  return copy(fields);
+}
+
+function toDocument(record, records) {
   const doc = { ...copy(record), id: String(record._id) };
-  Object.defineProperty(doc, 'toObject', { value: () => copy(record) });
+  Object.defineProperty(doc, 'toObject', { value: () => fieldsOf(doc) });
   Object.defineProperty(doc, 'toJSON', { value: () => ({ ...doc }) });
+  Object.defineProperty(doc, 'save', {
+    value: async () => {
+      const index = records.findIndex(
+        (candidate) => String(candidate._id) === String(doc._id)
+      );
+      records.splice(index, 1, fieldsOf(doc));
+      return doc;
+    },
+  });
   return doc;
 }
 
+let nextId = 0;
+const newId = () =>
+  (0x6000000000 + (nextId += 1)).toString(16).padStart(24, '0');
+
 // Mongoose queries are thenables with a fluent API.
-function query(list, shape) {
+function query(list, shape, records) {
   let sortSpec;
   let selectSpec;
   let limit;
@@ -52,7 +73,11 @@ function query(list, shape) {
     const shaped = page.map((record) =>
       selectSpec ? projected(record, selectSpec) : record
     );
-    return shape(shaped.map(lean ? copy : toDocument));
+    return shape(
+      shaped.map((record) =>
+        lean ? copy(record) : toDocument(record, records)
+      )
+    );
   };
   const chain = {
     sort(spec) {
@@ -90,16 +115,25 @@ function model(records) {
     records.filter((record) => matches(record, filter));
   return {
     find: (filter = {}, projection) => {
-      const q = query(matching(filter), (docs) => docs);
+      const q = query(matching(filter), (docs) => docs, records);
       return projection ? q.select(projection) : q;
     },
     findOne: (filter = {}, projection) => {
-      const q = query(matching(filter), (docs) => docs[0] || null);
+      const q = query(matching(filter), (docs) => docs[0] || null, records);
       return projection ? q.select(projection) : q;
     },
     findById: (id, projection) => {
-      const q = query(matching({ _id: id }), (docs) => docs[0] || null);
+      const q = query(
+        matching({ _id: id }),
+        (docs) => docs[0] || null,
+        records
+      );
       return projection ? q.select(projection) : q;
+    },
+    create: async (record) => {
+      const stored = { _id: newId(), ...copy(record) };
+      records.push(stored);
+      return toDocument(stored, records);
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
     distinct: (field, filter = {}) =>
