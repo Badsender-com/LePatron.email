@@ -83,6 +83,8 @@ export default {
           description: this.skill.description,
           category: this.skill.category,
           audience: this.skill.audience,
+          nature: this.skill.nature,
+          servedToAssistants: this.skill.servedToAssistants,
         };
         this.skill = await this.$axios.$patch(
           api.aiSkill(this.skill.skillId),
@@ -153,6 +155,8 @@ export default {
           inputSchemaId: version.inputSchemaId,
           outputSchemaId: version.outputSchemaId,
           modelHints: version.modelHints,
+          procedure: version.procedure,
+          consumedExpertiseIds: version.consumedExpertiseIds,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
         };

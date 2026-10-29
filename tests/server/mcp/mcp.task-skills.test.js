@@ -63,8 +63,7 @@ const markedWithoutSchema = {
   ],
 };
 
-// Turned on by #1345 (task skills)
-describe.skip('task skills', () => {
+describe('task skills', () => {
   let client;
 
   beforeEach(async () => {

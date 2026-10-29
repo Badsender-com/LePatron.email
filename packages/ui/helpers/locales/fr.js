@@ -1425,6 +1425,16 @@ export default {
     },
   },
   aiSkills: {
+    nature: 'Nature',
+    natureHint:
+      'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit.',
+    natures: {
+      feature: 'Skill de fonctionnalité',
+      task: 'Skill de tâche',
+    },
+    servedToAssistants: 'Proposé aux assistants IA',
+    servedToAssistantsHint:
+      'Servi via MCP aux assistants connectés, sans son contrat de sortie. À laisser décoché pour un Skill dont l\'entrée est construite par l\'éditeur.',
     audience: 'Audience',
     audienceHint:
       'Qui la lit en dehors du back-office, via les assistants IA connectés. Une nouvelle fiche reste à l\'équipe Badsender tant qu\'elle n\'est pas éprouvée.',
@@ -1461,6 +1471,8 @@ export default {
       other: 'Autre',
     },
     errors: {
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'La procédure d\'un Skill de tâche doit être rédigée avant de publier cette version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
@@ -1580,6 +1592,11 @@ export default {
       detailResolvedConfig: 'Configuration résolue',
     },
     version: {
+      procedure: 'Procédure',
+      procedureHint: 'Ce que l\'assistant fait, étape par étape, en Markdown.',
+      consumedExpertises: 'Expertises consommées',
+      consumedExpertisesHint:
+        'Dans l\'ordre où l\'assistant les lit. Leur version active est jointe au Skill.',
       systemPrompt: 'System prompt',
       skillBody: 'Corps de la skill',
       inputTemplate: 'Modèle d\'entrée (utilise les placeholders {input.*})',

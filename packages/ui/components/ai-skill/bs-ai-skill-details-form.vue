@@ -29,6 +29,16 @@ export default {
     audience() {
       return this.value.audience || 'subscribers';
     },
+    // A skill stored before natures existed is a feature skill.
+    nature() {
+      return this.value.nature || 'feature';
+    },
+    natureOptions() {
+      return ['feature', 'task'].map((value) => ({
+        value,
+        text: this.$t(`aiSkills.natures.${value}`),
+      }));
+    },
   },
   methods: {
     update(patch) {
@@ -68,6 +78,26 @@ export default {
       :hint="$t('aiSkills.audienceHint')"
       persistent-hint
       @input="update({ audience: $event })"
+    />
+    <bs-select
+      :value="nature"
+      :items="natureOptions"
+      item-text="text"
+      item-value="value"
+      :label="$t('aiSkills.nature')"
+      :hint="$t('aiSkills.natureHint')"
+      persistent-hint
+      @input="update({ nature: $event })"
+    />
+    <v-checkbox
+      v-if="nature === 'feature'"
+      :input-value="value.servedToAssistants === true"
+      :label="$t('aiSkills.servedToAssistants')"
+      :hint="$t('aiSkills.servedToAssistantsHint')"
+      persistent-hint
+      dense
+      class="mt-2"
+      @change="update({ servedToAssistants: $event === true })"
     />
 
     <div class="d-flex justify-end mt-3">

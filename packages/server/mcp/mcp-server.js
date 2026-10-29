@@ -6,6 +6,10 @@ const {
   registerFindApplicableExpertises,
 } = require('./mcp-expertises.js');
 const { registerSkillPrompts } = require('./mcp-skills.js');
+const {
+  registerSkillResources,
+  registerFindSkills,
+} = require('./mcp-skill-resources.js');
 
 const { version } = require('../../../package.json');
 
@@ -30,6 +34,8 @@ function createMcpServer() {
   registerExpertiseResources(server);
   registerFindApplicableExpertises(server);
   registerSkillPrompts(server);
+  registerSkillResources(server);
+  registerFindSkills(server);
   return server;
 }
 

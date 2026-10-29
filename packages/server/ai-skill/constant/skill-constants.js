@@ -20,6 +20,16 @@ const SkillStatuses = Object.freeze({
 
 const SkillStatusValues = Object.values(SkillStatuses);
 
+// What a skill is (ADR 0013): a feature skill is a function a LePatron feature
+// calls (template, schemas, output contract); a task skill is a procedure
+// written for an assistant, with the expertises it consumes, in order.
+const SkillNatures = Object.freeze({
+  FEATURE: 'feature',
+  TASK: 'task',
+});
+
+const SkillNatureValues = Object.values(SkillNatures);
+
 // Who may read a skill or an expertise outside the back office (ADR 0013): the
 // platform group, where the Badsender team proves a first draft, or every group
 // subscribed to MCP access. A new one starts with the platform group.
@@ -63,6 +73,8 @@ module.exports = {
   SkillCategoryValues,
   Audiences,
   AudienceValues,
+  SkillNatures,
+  SkillNatureValues,
   SkillStatuses,
   SkillStatusValues,
   InvocationStatuses,
