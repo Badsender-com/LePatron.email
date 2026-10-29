@@ -1,11 +1,11 @@
 'use strict';
 
-// The three ways a client makes itself known (ADR 0008): a Client ID Metadata
+// The three ways a client makes itself known (ADR 0012): a Client ID Metadata
 // Document (Claude, ChatGPT), open Dynamic Client Registration with a secret
 // (Microsoft 365 Copilot does not take public clients), and a client a super
 // admin registers by hand (Copilot Studio in manual mode).
 
-const request = require('supertest');
+const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
 

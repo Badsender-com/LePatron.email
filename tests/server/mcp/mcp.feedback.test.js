@@ -1,6 +1,6 @@
 'use strict';
 
-// Feedback and retex (ADR 0008, GLOSSARY.md). A feedback is a thumbs up or down
+// Feedback and retex (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down
 // and a comment. Its retex, a session summary the assistant writes, is kept only
 // when the group allows retex and the user agrees to it for that feedback; the
 // tool says what it kept, since the user cannot see LePatron's side.

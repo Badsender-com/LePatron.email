@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Harness of the MCP acceptance tests (epic #1290, ADR 0008): the MCP server
+ * Harness of the MCP acceptance tests (epic #1290, ADR 0012): the MCP server
  * driven by an in-memory MCP client, the way a connected application sees it.
  *
  * The contract the skipped suites of #1297 are written against. #1299 writes

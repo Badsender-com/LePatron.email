@@ -1,10 +1,10 @@
 'use strict';
 
-// What a connected application discovers before it connects (ADR 0008): the
+// What a connected application discovers before it connects (ADR 0012): the
 // MCP endpoint names its authorization server (RFC 9728), which describes
 // itself (RFC 8414) with the three ways a client may register.
 
-const request = require('supertest');
+const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 
 const { BASE, ISSUER, MCP_RESOURCE } = oauth;

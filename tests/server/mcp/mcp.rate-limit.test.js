@@ -1,6 +1,6 @@
 'use strict';
 
-// The rate limit of a connected application (ADR 0008): about 60 calls a
+// The rate limit of a connected application (ADR 0012): about 60 calls a
 // minute per token, answered beyond that with a message the user understands.
 // What the call log keeps (metadata only) and its retention are pinned by the
 // tests of #1303 itself: no MCP client can see the log.
