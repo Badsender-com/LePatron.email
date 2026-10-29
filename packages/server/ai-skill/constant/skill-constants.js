@@ -20,6 +20,16 @@ const SkillStatuses = Object.freeze({
 
 const SkillStatusValues = Object.values(SkillStatuses);
 
+// Who may read a skill or an expertise outside the back office (ADR 0013): the
+// platform group, where the Badsender team proves a first draft, or every group
+// subscribed to MCP access. A new one starts with the platform group.
+const Audiences = Object.freeze({
+  PLATFORM: 'platform',
+  SUBSCRIBERS: 'subscribers',
+});
+
+const AudienceValues = Object.values(Audiences);
+
 const InvocationStatuses = Object.freeze({
   SUCCESS: 'SUCCESS',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
@@ -51,6 +61,8 @@ const DefaultLogRetentionDays = 30;
 
 module.exports = {
   SkillCategoryValues,
+  Audiences,
+  AudienceValues,
   SkillStatuses,
   SkillStatusValues,
   InvocationStatuses,

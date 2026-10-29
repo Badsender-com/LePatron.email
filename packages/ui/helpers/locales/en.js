@@ -1411,6 +1411,13 @@ export default {
     },
   },
   aiSkills: {
+    audience: 'Audience',
+    audienceHint:
+      'Who reads it outside the back office, through connected AI assistants. A new one stays with the Badsender team until it is proven.',
+    audiences: {
+      platform: 'Badsender team (platform group)',
+      subscribers: 'Every group subscribed to MCP access',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

@@ -16,6 +16,7 @@ const LIST_PROJECTION = {
   description: 1,
   category: 1,
   status: 1,
+  audience: 1,
   activeVersion: 1,
   owner: 1,
   createdAt: 1,
@@ -92,7 +93,7 @@ async function createSkill(data, userId) {
 
 // Schemas are NOT here anymore — they live on the version and are edited via
 // updateVersion (DRAFT only), like the prompts.
-const PATCHABLE_FIELDS = ['title', 'description', 'category'];
+const PATCHABLE_FIELDS = ['title', 'description', 'category', 'audience'];
 
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);

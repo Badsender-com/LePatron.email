@@ -92,6 +92,7 @@ export default {
             isTransversal: this.exp.isTransversal,
             appliesToEmailTypes: this.exp.appliesToEmailTypes,
             appliesToLanguages: this.exp.appliesToLanguages,
+            audience: this.exp.audience,
           }
         );
         this.showSnackbar({

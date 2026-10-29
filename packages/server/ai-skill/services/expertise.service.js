@@ -20,6 +20,7 @@ const LIST_PROJECTION = {
   appliesToEmailTypes: 1,
   appliesToLanguages: 1,
   status: 1,
+  audience: 1,
   activeVersion: 1,
   owner: 1,
   createdAt: 1,
@@ -122,6 +123,7 @@ const PATCHABLE_FIELDS = [
   'isTransversal',
   'appliesToEmailTypes',
   'appliesToLanguages',
+  'audience',
 ];
 
 async function updateExpertise(expertiseId, patch) {
