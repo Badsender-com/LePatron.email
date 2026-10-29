@@ -574,6 +574,8 @@ async function update(req, res) {
       'emailMetadata',
       // Two-factor authentication for every member (ADR 0008).
       'requireTwoFactor',
+      // Whether the group's session summaries may reach Badsender (ADR 0012).
+      'allowRetex',
       // The company's tracking belongs to its technical settings (ADR 0004):
       // dropped for a company admin, as the other fields it cannot set.
       // MCP access too: a tech admin connects the company's AI assistants

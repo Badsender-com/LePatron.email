@@ -789,6 +789,13 @@ export default {
     cdnEndpointHint: 'Base URL of your CDN (without protocol)',
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
+  retex: {
+    title: 'Retex from AI assistants',
+    description:
+      'When a user sends feedback from their AI assistant, they may attach a summary of the session to help Badsender improve its expertises and skills. The summary is kept only if the company allows it here, and the user agrees to it for that feedback.',
+    switch: 'Allow retex',
+    updated: 'Retex updated',
+  },
   mcpAccess: {
     title: 'MCP access',
     description:
@@ -1406,6 +1413,16 @@ export default {
     },
   },
   aiSkills: {
+    feedback: {
+      tab: 'Feedback',
+      caption:
+        'Feedback sent from connected AI assistants, with the version read and, when the group and the user agreed, the session retex.',
+      empty: 'No feedback yet.',
+      up: 'Positive feedback',
+      down: 'Negative feedback',
+      noComment: 'No comment',
+      retex: 'Retex',
+    },
     nature: 'Nature',
     natureHint:
       'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows.',

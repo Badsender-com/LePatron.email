@@ -91,3 +91,15 @@ describe('PUT /groups/:groupId — MCP access', () => {
     expect(payload.name).toBe('Renamed');
   });
 });
+
+describe('PUT /groups/:groupId — retex', () => {
+  it.each([
+    ['a company admin', companyAdmin],
+    ['a tech admin', techAdmin],
+    ['a super admin', superAdmin],
+  ])('lets %s allow the retex of the group', async (_case, user) => {
+    const payload = await update(user, { allowRetex: true });
+
+    expect(payload.allowRetex).toBe(true);
+  });
+});
