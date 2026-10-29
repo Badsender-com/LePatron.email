@@ -1,6 +1,6 @@
 'use strict';
 
-// The skills a connected application runs (ADR 0008): each active skill is a
+// The skills a connected application runs (ADR 0012): each active skill is a
 // prompt, its arguments drawn from the skill's input schema, so the assistant
 // runs it the platform's way with its own model.
 

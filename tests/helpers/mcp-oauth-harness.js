@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Harness of the OAuth acceptance tests (epic #1290, ADR 0008): LePatron's
+ * Harness of the OAuth acceptance tests (epic #1290, ADR 0012): LePatron's
  * authorization server and its MCP endpoint, driven over HTTP the way a
  * connected application and its user's browser drive them.
  *
@@ -22,7 +22,7 @@
  */
 
 const crypto = require('crypto');
-const request = require('supertest');
+const request = require('./local-request');
 
 const BASE = 'http://lepatron.test';
 const MCP_RESOURCE = `${BASE}/mcp`;

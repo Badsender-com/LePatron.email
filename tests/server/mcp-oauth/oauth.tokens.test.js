@@ -1,10 +1,10 @@
 'use strict';
 
-// Tokens (ADR 0008): a code and its PKCE verifier buy a short-lived access
+// Tokens (ADR 0012): a code and its PKCE verifier buy a short-lived access
 // token for the MCP endpoint and a refresh token that rotates. The MCP endpoint
 // takes only the tokens issued for it.
 
-const request = require('supertest');
+const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
 

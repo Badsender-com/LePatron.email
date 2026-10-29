@@ -1,10 +1,10 @@
 'use strict';
 
-// Connecting an application (ADR 0008): the user logs in to LePatron as usual,
+// Connecting an application (ADR 0012): the user logs in to LePatron as usual,
 // sees which application asks for what, binds the connection to one group (a
 // super admin picks it), and the application gets a code.
 
-const request = require('supertest');
+const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
 

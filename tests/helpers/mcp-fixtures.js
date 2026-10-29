@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Shared fixtures of the MCP acceptance tests (epic #1290, ADR 0008).
+ * Shared fixtures of the MCP acceptance tests (epic #1290, ADR 0012).
  *
  * A client group with every role of ADR 0004, two of its workspaces (one the
  * regular user, the writer and the reviewer are members of, one they are not),

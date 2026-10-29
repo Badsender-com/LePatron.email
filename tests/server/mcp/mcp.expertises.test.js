@@ -1,6 +1,6 @@
 'use strict';
 
-// The expertises a connected application reads (ADR 0008): the active version
+// The expertises a connected application reads (ADR 0012): the active version
 // of each active expertise, as a resource, with its version and update date.
 // Drafts and archives never leave LePatron.
 

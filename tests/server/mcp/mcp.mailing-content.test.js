@@ -1,6 +1,6 @@
 'use strict';
 
-// Reading one mailing through MCP (ADR 0008): its facts and its derived status,
+// Reading one mailing through MCP (ADR 0012): its facts and its derived status,
 // its text by default and its sanitised HTML on request, with the rights the
 // user has in the app.
 
