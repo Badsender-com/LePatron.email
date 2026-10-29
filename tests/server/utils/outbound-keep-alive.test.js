@@ -64,4 +64,17 @@ describe('outbound calls without their own agent', () => {
     expect(https.globalAgent.keepAlive).toBe(false);
     expect(https.globalAgent).toBeInstanceOf(https.Agent);
   });
+
+  // https.request reads the global agent at call time: a request made after
+  // the swap must use the new agent, not one Node kept a reference to.
+  it('give the new agent to an HTTPS request made afterwards', () => {
+    disableOutboundKeepAlive();
+
+    const req = https.request({ host: '127.0.0.1', port: 1 });
+    req.on('error', () => {});
+    req.destroy();
+
+    expect(req.agent).toBe(https.globalAgent);
+    expect(req.agent.keepAlive).toBe(false);
+  });
 });

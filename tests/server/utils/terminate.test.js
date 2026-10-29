@@ -39,6 +39,16 @@ describe('terminate', () => {
     expect(exit).not.toHaveBeenCalledWith(notRunning);
   });
 
+  it('aborts instead, for a core dump, when asked to', () => {
+    const abort = jest.spyOn(process, 'abort').mockImplementation(() => {});
+    const server = { close: (callback) => callback() };
+
+    terminate(server, { coredump: true, timeout: 500 })(1, 'uncaught')();
+
+    expect(abort).toHaveBeenCalled();
+    expect(exit).not.toHaveBeenCalled();
+  });
+
   it('exits with its code after the timeout when the server does not close', () => {
     const server = { close: () => {} };
 
