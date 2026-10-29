@@ -10,9 +10,11 @@
  * must be active and in the group, and the group must have MCP access.
  *
  * Usage:
- *   node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
+ *   node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>] [--write]
  *
  * `--group` is the group a super admin works in; anyone else reads their own.
+ * `--write` adds the skills:write scope (ADR 0014): the drafting tools are then
+ * offered, and still refused to whoever may not manage the platform.
  * The database is the one of `.env` (DATABASE_URL), read from the current
  * directory. stdout carries the protocol: every log goes to stderr.
  */
@@ -37,6 +39,7 @@ const config = require(server('node.config.js'));
 const { Users } = require(server('common', 'models.common.js'));
 const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
 const { READ_SCOPE } = require(server('mcp', 'mcp-identity.js'));
+const { WRITE_SCOPE } = require(server('mcp', 'mcp-authoring.js'));
 
 function argument(name) {
   const index = process.argv.indexOf(`--${name}`);
@@ -65,7 +68,9 @@ async function main() {
   const authInfo = {
     token: 'local-development',
     clientId: 'mcp-dev-stdio',
-    scopes: [READ_SCOPE],
+    scopes: process.argv.includes('--write')
+      ? [READ_SCOPE, WRITE_SCOPE]
+      : [READ_SCOPE],
     extra: {
       userId: String(user._id),
       groupId: argument('group') || String(user._company),
@@ -73,7 +78,7 @@ async function main() {
   };
 
   const transport = new StdioServerTransport(process.stdin, protocolOut);
-  await createMcpServer().connect(transport);
+  await createMcpServer({ authInfo }).connect(transport);
   const handle = transport.onmessage;
   transport.onmessage = (message, extra) =>
     handle(message, { ...extra, authInfo });
