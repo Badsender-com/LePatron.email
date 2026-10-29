@@ -11,12 +11,12 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
-const GMAIL_CODES = 'deliverability.gmail-codes';
+const DRAFT_SHEET = 'design.draft-guidelines';
 const PROVING = {
   _id: '507f1f77bcf86cd799439805',
-  expertiseId: GMAIL_CODES,
-  title: 'Gmail SMTP codes',
-  category: 'deliverability',
+  expertiseId: DRAFT_SHEET,
+  title: 'Draft guidelines',
+  category: 'design',
   scope: ['subject'],
   isTransversal: false,
   appliesToEmailTypes: [],
@@ -29,7 +29,7 @@ const PROVING = {
       versionMajor: 1,
       versionMinor: 0,
       status: 'ACTIVE',
-      body: '## 421-4.7.28\n\nRate limited: slow down.',
+      body: '## Spacing\n\nA rule still being proven.',
       examplesGood: [],
       examplesBad: [],
       updatedAt: f.daysFrom(-1),
@@ -39,8 +39,8 @@ const PROVING = {
 const PROVING_SKILL = {
   ...f.SKILLS[0],
   _id: '507f1f77bcf86cd799439905',
-  skillId: 'deliverability.warmup-plan',
-  title: 'Build a warmup plan',
+  skillId: 'qc.checklist-review',
+  title: 'Review an email against a checklist',
   audience: 'platform',
 };
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
@@ -68,12 +68,12 @@ describe.skip('audience', () => {
     });
 
     it('lists no expertise meant for the platform group', async () => {
-      expect(await expertiseUris(client)).not.toContain(uriOf(GMAIL_CODES));
+      expect(await expertiseUris(client)).not.toContain(uriOf(DRAFT_SHEET));
     });
 
     it('reads no expertise meant for the platform group', async () => {
       await expect(
-        client.readResource({ uri: uriOf(GMAIL_CODES) })
+        client.readResource({ uri: uriOf(DRAFT_SHEET) })
       ).rejects.toThrow(/not found/i);
     });
 
@@ -81,12 +81,12 @@ describe.skip('audience', () => {
       const answer = harness.answerOf(
         await client.callTool({
           name: 'find_applicable_expertises',
-          arguments: { scope: ['subject'], categories: ['deliverability'] },
+          arguments: { scope: ['subject'], categories: ['design'] },
         })
       );
 
       expect(answer.expertises.map((e) => e.expertiseId)).not.toContain(
-        GMAIL_CODES
+        DRAFT_SHEET
       );
     });
 
@@ -95,7 +95,7 @@ describe.skip('audience', () => {
       await expect(
         client.getPrompt({
           name: PROVING_SKILL.skillId,
-          arguments: { prompt: 'Warm up a new domain' },
+          arguments: { prompt: 'Review this email' },
         })
       ).rejects.toThrow(/not found/i);
     });
@@ -114,11 +114,11 @@ describe.skip('audience', () => {
         group: f.PLATFORM_GROUP,
       });
 
-      expect(await expertiseUris(client)).toContain(uriOf(GMAIL_CODES));
+      expect(await expertiseUris(client)).toContain(uriOf(DRAFT_SHEET));
       const { contents } = await client.readResource({
-        uri: uriOf(GMAIL_CODES),
+        uri: uriOf(DRAFT_SHEET),
       });
-      expect(contents[0].text).toContain('Rate limited: slow down.');
+      expect(contents[0].text).toContain('A rule still being proven.');
       expect(await promptNames(client)).toContain(PROVING_SKILL.skillId);
     });
 
@@ -128,7 +128,7 @@ describe.skip('audience', () => {
         group: f.CLIENT_GROUP,
       });
 
-      expect(await expertiseUris(client)).not.toContain(uriOf(GMAIL_CODES));
+      expect(await expertiseUris(client)).not.toContain(uriOf(DRAFT_SHEET));
     });
   });
 
@@ -137,6 +137,6 @@ describe.skip('audience', () => {
 
     harness.update('expertises', PROVING._id, { audience: 'subscribers' });
 
-    expect(await expertiseUris(client)).toContain(uriOf(GMAIL_CODES));
+    expect(await expertiseUris(client)).toContain(uriOf(DRAFT_SHEET));
   });
 });
