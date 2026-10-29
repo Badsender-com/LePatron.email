@@ -164,6 +164,27 @@ A mailing from which a campaign or a template was created in at least one ESP pr
 _UI_: Poussé vers l'ESP
 _Avoid_: Sent, exported (a ZIP download is also called an export)
 
+### Skills and expertises
+
+**Expertise**:
+A piece of Badsender's email know-how, written in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
+_UI_: Expertise
+_Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
+
+**Feature skill**:
+A skill a LePatron feature calls as a function: its input fills a template, its output follows a contract LePatron checks.
+_UI_: Skill de fonctionnalité
+
+**Task skill**:
+A skill written as a procedure for an assistant, with the expertises it consumes in order, and no template or contract.
+_UI_: Skill de tâche
+_Avoid_: Workflow, playbook, recipe
+
+**Audience**:
+Who may read a skill or an expertise outside the back office: the platform group, or every subscribed group. A new one starts with the platform group.
+_UI_: Audience
+_Avoid_: Visibility, exposure, scope (an expertise's scope is the part of an email it covers)
+
 ### AI assistants
 
 **Connected application**:

@@ -90,6 +90,8 @@ const SKILLS = [
   {
     _id: '507f1f77bcf86cd799439901',
     skillId: 'redaction.subject-ideas',
+    // A feature skill served to assistants (ADR 0013).
+    servedToAssistants: true,
     title: 'Subject line ideas',
     description: 'Three subject lines for an email',
     category: 'redaction',
