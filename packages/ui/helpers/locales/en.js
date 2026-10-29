@@ -1406,6 +1406,16 @@ export default {
     },
   },
   aiSkills: {
+    nature: 'Nature',
+    natureHint:
+      'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows.',
+    natures: {
+      feature: 'Feature skill',
+      task: 'Task skill',
+    },
+    servedToAssistants: 'Offered to AI assistants',
+    servedToAssistantsHint:
+      'Served through MCP to connected assistants, without its output contract. Leave unchecked for a skill whose input the editor builds.',
     audience: 'Audience',
     audienceHint:
       'Who reads it outside the back office, through connected AI assistants. A new one stays with the Badsender team until it is proven.',
@@ -1442,6 +1452,8 @@ export default {
       other: 'Other',
     },
     errors: {
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'A task skill\'s procedure must be written before publishing this version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
@@ -1561,6 +1573,11 @@ export default {
       detailResolvedConfig: 'Resolved config',
     },
     version: {
+      procedure: 'Procedure',
+      procedureHint: 'What the assistant does, step by step, in Markdown.',
+      consumedExpertises: 'Expertises consumed',
+      consumedExpertisesHint:
+        'In the order the assistant reads them. Their active version is attached to the skill.',
       systemPrompt: 'System prompt',
       skillBody: 'Skill body',
       inputTemplate: 'Input template (uses {input.*} placeholders)',
