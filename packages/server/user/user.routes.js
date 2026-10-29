@@ -8,8 +8,10 @@ const {
   GUARD_ADMIN,
   GUARD_GROUP_ADMIN,
   GUARD_USER,
+  GUARD_CAN,
   guard,
 } = require('../account/auth.guard.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const users = require('./user.controller.js');
 const twoFactor = require('../two-factor/two-factor.controller.js');
 
@@ -37,7 +39,13 @@ router.delete('/:userId', users.deactivate);
 
 router.put('/:userId/activate', users.activate);
 router.delete('/:userId/password', users.adminResetPassword);
-router.delete('/:userId/two-factor', twoFactor.adminReset);
+// The only way past a member's second factor: a tech admin's or a super
+// admin's, as the option that requires it (ADR 0008).
+router.delete(
+  '/:userId/two-factor',
+  GUARD_CAN(CAPABILITIES.GROUP_MANAGE_TECH),
+  twoFactor.adminReset
+);
 router.get('/:userId/mailings', users.readMailings);
 
 // catch anything and forward to error handler

@@ -6,6 +6,7 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
 import { roleItems } from '~/helpers/constants/roles';
 import { USER, USER_CAPABILITIES } from '~/store/user';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsUserForm',
@@ -42,6 +43,15 @@ export default {
         currentRole: this.user.role,
         includeSuperAdmin: this.includeSuperAdmin,
       });
+    },
+    // Changing the address of an account that has set up two-factor
+    // authentication is a tech admin's (ADR 0008): the server refuses it to
+    // a company admin.
+    emailLocked() {
+      return (
+        Boolean(this.user.twoFactorMethod) &&
+        !this.capabilities.includes(CAPABILITIES.GROUP_MANAGE_TECH)
+      );
     },
     localModel: {
       get() {
@@ -93,6 +103,8 @@ export default {
             name="email"
             type="email"
             required
+            :disabled="emailLocked"
+            :hint="emailLocked ? $t('twoFactor.users.emailLocked') : ''"
             :error-messages="emailErrors"
             @input="$v.user.email.$touch()"
             @blur="$v.user.email.$touch()"

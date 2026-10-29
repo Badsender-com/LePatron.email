@@ -4,7 +4,11 @@ import {
   rowActionKeys,
   roleRank,
 } from '~/helpers/user-row-actions.js';
-import { capabilitiesOfRole } from '../../../packages/shared/access/roles.js';
+import {
+  CAPABILITIES,
+  capabilitiesOfRole,
+  roleCan,
+} from '../../../packages/shared/access/roles.js';
 
 // A row of the users table offers to manage an account only where the server
 // accepts it; the page of the account stays reachable.
@@ -44,6 +48,34 @@ describe('rowActionKeys', () => {
     expect(
       rowActionKeys({ role: Roles.WRITER, status }, as(Roles.GROUP_ADMIN))
     ).toEqual(expected);
+  });
+
+  // A two-factor reset is a tech admin's or a super admin's (ADR 0008).
+  it.each(Object.values(Roles))(
+    'offers a %s to reset a set-up two-factor only with the technical settings',
+    (actor) => {
+      const account = { ...confirmed(Roles.WRITER), twoFactorMethod: 'totp' };
+
+      expect(
+        rowActionKeys(account, as(actor)).includes('two-factor-reset')
+      ).toBe(roleCan(actor, CAPABILITIES.GROUP_MANAGE_TECH));
+    }
+  );
+
+  it('offers a company admin the rest of the account', () => {
+    const account = { ...confirmed(Roles.WRITER), twoFactorMethod: 'totp' };
+
+    expect(rowActionKeys(account, as(Roles.GROUP_ADMIN))).toEqual([
+      'deactivate',
+      'mail-action',
+      'edit',
+    ]);
+  });
+
+  it('offers no reset of an account without a setup', () => {
+    expect(
+      rowActionKeys(confirmed(Roles.WRITER), as(Roles.GROUP_ADMIN_TECH))
+    ).not.toContain('two-factor-reset');
   });
 
   it('offers only the page to someone who holds nothing', () => {

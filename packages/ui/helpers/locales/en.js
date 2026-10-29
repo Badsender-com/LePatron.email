@@ -47,6 +47,9 @@ export default {
       switch: 'Require two-factor authentication',
       saml: 'This group signs in with SSO: two-factor authentication belongs to its identity provider.',
       updated: 'Setting saved',
+      required: 'Required of every member.',
+      notRequired: 'Not required.',
+      managedByTech: 'Only a technical administrator can change this setting.',
     },
     users: {
       column: 'Two-factor',
@@ -56,6 +59,8 @@ export default {
       resetNotice:
         'Their sessions will end and they will set it up again at their next sign-in. Reset the two-factor authentication of',
       resetDone: 'Two-factor authentication reset',
+      emailLocked:
+        'Two-factor authentication is set up: only a technical administrator can change the address.',
     },
     passwordSet: 'Password saved: sign in to continue.',
   },

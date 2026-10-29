@@ -23,13 +23,29 @@ const TEXTS = {
     fr: {
       title: 'Votre double authentification a été réinitialisée',
       desc:
-        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’administrateur de votre groupe.',
+        'Vous la configurerez de nouveau à votre prochaine connexion. Si vous n’attendiez pas ce changement, prévenez l’administrateur technique de votre société.',
       reset: SIGN_IN.fr,
     },
     en: {
       title: 'Your two-factor authentication was reset',
       desc:
-        'You will set it up again at your next sign-in. If you did not expect this change, tell the administrator of your group.',
+        'You will set it up again at your next sign-in. If you did not expect this change, tell your company’s technical administrator.',
+      reset: SIGN_IN.en,
+    },
+  },
+  // Sent to the previous address of a member whose emailed method was reset
+  // by the change of their address.
+  emailChanged: {
+    fr: {
+      title: 'L’adresse de votre compte a changé',
+      desc:
+        'Votre compte utilise désormais une autre adresse email, et votre double authentification a été réinitialisée. Si vous n’attendiez pas ce changement, prévenez tout de suite l’administrateur technique de votre société.',
+      reset: SIGN_IN.fr,
+    },
+    en: {
+      title: 'The address of your account changed',
+      desc:
+        'Your account now uses another email address, and your two-factor authentication was reset. If you did not expect this change, tell your company’s technical administrator straight away.',
       reset: SIGN_IN.en,
     },
   },
@@ -37,13 +53,13 @@ const TEXTS = {
     fr: {
       title: 'La double authentification est activée sur votre compte',
       desc:
-        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’administrateur de votre groupe.',
+        'Vous saisirez désormais un code après votre mot de passe. Si vous ne l’avez pas configurée vous-même, prévenez tout de suite l’administrateur technique de votre société.',
       reset: SIGN_IN.fr,
     },
     en: {
       title: 'Two-factor authentication is on for your account',
       desc:
-        'You will now enter a code after your password. If you did not set it up yourself, tell the administrator of your group straight away.',
+        'You will now enter a code after your password. If you did not set it up yourself, tell your company’s technical administrator straight away.',
       reset: SIGN_IN.en,
     },
   },
@@ -51,13 +67,13 @@ const TEXTS = {
     fr: {
       title: 'Un code de secours a servi à vous connecter',
       desc:
-        'Une nouvelle série de codes de secours vous a été donnée, et les précédents ne fonctionnent plus. Si vous n’êtes pas à l’origine de cette connexion, prévenez l’administrateur de votre groupe.',
+        'Une nouvelle série de codes de secours vous a été donnée, et les précédents ne fonctionnent plus. Si vous n’êtes pas à l’origine de cette connexion, prévenez l’administrateur technique de votre société.',
       reset: SIGN_IN.fr,
     },
     en: {
       title: 'A recovery code was used to sign you in',
       desc:
-        'You were given a new set of recovery codes, and the previous ones no longer work. If you did not sign in, tell the administrator of your group.',
+        'You were given a new set of recovery codes, and the previous ones no longer work. If you did not sign in, tell your company’s technical administrator.',
       reset: SIGN_IN.en,
     },
   },
@@ -65,13 +81,13 @@ const TEXTS = {
     fr: {
       title: 'Un nouvel appareil de confiance',
       desc:
-        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’administrateur de votre groupe.',
+        'Cet appareil ne vous demandera plus de code pendant 30 jours. Si vous ne l’avez pas mémorisé vous-même, prévenez l’administrateur technique de votre société.',
       reset: SIGN_IN.fr,
     },
     en: {
       title: 'A new trusted device',
       desc:
-        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell the administrator of your group.',
+        'This device will not ask you for a code for 30 days. If you did not trust it yourself, tell your company’s technical administrator.',
       reset: SIGN_IN.en,
     },
   },

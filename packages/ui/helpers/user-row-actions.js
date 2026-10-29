@@ -1,4 +1,5 @@
 import { getStatusActions } from '~/helpers/user-status.js';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 import { Roles, canManageAccount } from '~/helpers/constants/roles';
 
 // One pastel chip per role (light background, darker text of the same hue):
@@ -62,8 +63,13 @@ export function rowActionKeys(account, capabilities) {
     if (getStatusActions(account.status).activate) keys.push('activate');
     else if (account.status !== 'to-be-initialized') keys.push('deactivate');
     if (mailActionOf(account.status)) keys.push('mail-action');
-    // Only a setup can be reset (ADR 0008).
-    if (account.twoFactorMethod) keys.push('two-factor-reset');
+    // Only a setup can be reset, by a tech admin or a super admin (ADR 0008).
+    if (
+      account.twoFactorMethod &&
+      capabilities.includes(CAPABILITIES.GROUP_MANAGE_TECH)
+    ) {
+      keys.push('two-factor-reset');
+    }
   }
   keys.push('edit');
   return keys;

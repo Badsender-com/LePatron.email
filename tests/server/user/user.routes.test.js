@@ -22,8 +22,14 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const router = require('../../../packages/server/user/user.routes.js');
 const {
   GUARD_ADMIN,
+  GUARD_CAN,
   adminUser,
 } = require('../../../packages/server/account/auth.guard.js');
+const {
+  CAPABILITIES,
+  ROLES,
+  roleCan,
+} = require('../../../packages/shared/access/roles.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 
 const { guardsOf } = routeInspector(router);
@@ -31,6 +37,40 @@ const { guardsOf } = routeInspector(router);
 describe('user routes', () => {
   it('keeps the user listing behind the admin guard', () => {
     expect(guardsOf('get', '')).toEqual([GUARD_ADMIN]);
+  });
+
+  // A two-factor reset is the only way past a member's second factor: a tech
+  // admin's or a super admin's, not a company admin's (ADR 0008).
+  describe('the two-factor reset', () => {
+    const guard = GUARD_CAN(CAPABILITIES.GROUP_MANAGE_TECH);
+
+    function run(user) {
+      let err;
+      guard({ user }, {}, (e) => {
+        err = e;
+      });
+      return err;
+    }
+
+    it('needs the technical settings of the group', () => {
+      expect(guardsOf('delete', '/:userId/two-factor')).toEqual([guard]);
+    });
+
+    it.each(Object.values(ROLES))('decides for a %s', (role) => {
+      if (roleCan(role, CAPABILITIES.GROUP_MANAGE_TECH)) {
+        expect(run({ role })).toBeUndefined();
+      } else {
+        expect(run({ role }).status).toBe(403);
+      }
+    });
+
+    it('rejects a company admin', () => {
+      expect(run({ role: 'company_admin' }).status).toBe(403);
+    });
+
+    it('lets the bootstrap account through', () => {
+      expect(run({ ...adminUser })).toBeUndefined();
+    });
   });
 
   describe('the shared guard of the user management routes', () => {

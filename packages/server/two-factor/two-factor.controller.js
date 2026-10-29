@@ -9,7 +9,7 @@ const { Users } = require('../common/models.common.js');
 const { encryptForStorage, decrypt } = require('../utils/crypto.js');
 const { contextOf } = require('../utils/encryption-plugin.js');
 const { UserModel } = require('../constant/model.names.js');
-const { completeSignIn, endSessions } = require('../account/sign-in.js');
+const { completeSignIn } = require('../account/sign-in.js');
 const userScope = require('../user/user-scope.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const rightsPolicy = require('../user/rights-policy.js');
@@ -21,6 +21,7 @@ const {
   deviceTrustedTexts,
 } = require('./two-factor.emails.js');
 const { trustDevice } = require('./trusted-device.js');
+const { eraseSetup } = require('./reset.js');
 const { sendEmailCode, checkEmailCode } = require('./email-code.js');
 const {
   METHODS,
@@ -321,7 +322,7 @@ async function resendEmailCode(req, res) {
 
 /**
  * @api {del} /users/:userId/two-factor two-factor reset
- * @apiPermission company admin of the account's group, or super admin
+ * @apiPermission tech admin of the account's group, or super admin
  * @apiName ResetTwoFactor
  * @apiDescription Erases the account's setup and trusted devices and ends its
  *   sessions; the member sets it up again at their next sign-in.
@@ -341,20 +342,9 @@ async function adminReset(req, res) {
   superAdminPolicy.assertCanManage(req.user, user);
   rightsPolicy.assertCanManage(req.user, user);
 
-  // Explicitly: the account was read without its `twoFactor`, so unsetting
-  // it on the document would write nothing.
-  await Users.updateOne(
-    { _id: user._id },
-    { $unset: { twoFactor: 1, twoFactorMethod: 1 } }
-  );
-  await endSessions(user.id);
+  await eraseSetup(req.user, user);
   superAdminPolicy.logAction(req.user, 'reset-two-factor', user);
   logger.info(`[two-factor] reset for ${user.id}`);
-  await recordSecurityEvent({
-    action: SECURITY_ACTIONS.RESET,
-    user: user.id,
-    actor: req.user.id,
-  });
   await sendTwoFactorEmail(user, 'reset');
 
   res.json(await Users.findOneForApi({ _id: userId }));
