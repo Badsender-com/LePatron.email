@@ -135,7 +135,7 @@
     "autoprefixer": "9.6.4",
     "autoprefixer-core": "6.0.1",
     "babel-eslint": "10.1.0",
-    "babel-loader": "8.2.2",
+    "babel-loader": "8.4.1",
     "babelify": "10.0.0",
     "beeper": "2.0.0",
     "blueimp-canvas-to-blob": "3.16.0",

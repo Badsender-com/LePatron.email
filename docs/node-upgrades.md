@@ -6,13 +6,15 @@ The Node version lives in two places that must agree: `.nvmrc` (read by nvm and 
 
 Node 18 has been out of support since April 2025, and the authorization server of the MCP epic (#1290) is `oidc-provider`, an ESM-only package. A CommonJS app can only `require()` it from Node 22.12, where `require(esm)` is on by default. Node 24 was picked over 22 because 22 leaves support in April 2027, 24 in April 2028.
 
-No dependency had to change. On Node 22.20, 24.18 and 24.22.1, the pinned version:
+One devDependency changed: **`babel-loader` 8.2.2 → 8.4.1**. Nuxt resolves its loaders from the project root first, so it picked the root 8.2.2 over its own 8.4.1. In dev mode Nuxt turns on babel's cache, and 8.2.2 names the cache files with an md4 hash, which OpenSSL 3 refuses: every page answered 500 `digital envelope routines::unsupported`. This was already broken on Node 18 with an empty cache; an existing cache did not help, the hash is computed before the cache is read. 8.4.1 hashes with sha256. A production build never hit it, babel's cache is off there.
+
+On Node 22.20, 24.18 and 24.22.1, the pinned version:
 
 - `yarn install --frozen-lockfile` passes without `--ignore-engines` (CI no longer passes it)
 - `yarn test-ci` passes, every suite
 - the editor bundle (`gulp build --prod`) is produced, byte-identical between the two versions
 - `nuxt build`, `apidoc` and the VuePress build pass
-- the production server boots, serves the login page and the editor bundle
+- the server boots in development (Nuxt dev build) and in production, serves the login page and the editor bundle
 
 What changes at runtime, with no code change:
 
@@ -21,7 +23,7 @@ What changes at runtime, with no code change:
 
 What stays:
 
-- **VuePress still needs `NODE_OPTIONS=--openssl-legacy-provider`.** Its webpack 4 hashes with md4, which OpenSSL 3 refuses (`ERR_OSSL_EVP_UNSUPPORTED`). Nuxt does not need it.
+- **VuePress still needs `NODE_OPTIONS=--openssl-legacy-provider`.** Its webpack 4 hashes with md4, which OpenSSL 3 refuses (`ERR_OSSL_EVP_UNSUPPORTED`). Nuxt does not need it, in dev or in production.
 - **Deprecation warnings from dependencies**, none from our code: `url.parse()` (DEP0169, Nuxt), `fs.Stats` constructor (DEP0180, gulp), invalid argument to `fs.existsSync` (DEP0187, Node 24 only).
 
 What the local run cannot cover, and the staging smoke test does:
