@@ -2,7 +2,7 @@
 
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
@@ -82,6 +82,9 @@ async function createExpertise(data, userId) {
     isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
+    // Explicit rather than left to the schema: a new expertise reaches the
+    // platform group only, until it is opened (ADR 0013).
+    audience: data.audience || Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
