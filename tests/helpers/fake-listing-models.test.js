@@ -86,6 +86,12 @@ describe('fake listing models, filters as MongoDB reads them', () => {
     expect(matches({ tags: ['a', 'b'] }, { tags: ['b', 'a'] })).toBe(false);
   });
 
+  it('matches $size on the length of an array, and never on a missing field', () => {
+    expect(matches({ tags: [] }, { tags: { $size: 0 } })).toBe(true);
+    expect(matches({ tags: ['a'] }, { tags: { $size: 0 } })).toBe(false);
+    expect(matches({}, { tags: { $size: 0 } })).toBe(false);
+  });
+
   it.each([
     ['an unknown operator', { $text: { $search: 'spring' } }],
     ['an unknown field operator', { name: { $elemMatch: {} } }],

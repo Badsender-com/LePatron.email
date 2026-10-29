@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // The email itself in the conversation (ADR 0012, MCP Apps): `get_mailing`
