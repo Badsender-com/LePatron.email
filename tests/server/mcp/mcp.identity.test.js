@@ -1,6 +1,6 @@
 'use strict';
 
-// Who may read through MCP (ADR 0008): every role of a group that has MCP
+// Who may read through MCP (ADR 0012): every role of a group that has MCP
 // access, with the rights the user has in the app, checked again on every call
 // so a change takes effect without waiting for the token to expire.
 

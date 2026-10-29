@@ -1,10 +1,10 @@
 'use strict';
 
-// Connected applications (GLOSSARY.md, ADR 0008): a user sees the applications
+// Connected applications (GLOSSARY.md, ADR 0012): a user sees the applications
 // they connected and revokes them; a company admin revokes all of the group's.
 // A revoked application is stopped at its next call, refresh included.
 
-const request = require('supertest');
+const request = require('../../helpers/local-request');
 const oauth = require('../../helpers/mcp-oauth-harness');
 const f = require('../../helpers/mcp-fixtures');
 

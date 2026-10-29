@@ -1,7 +1,7 @@
 'use strict';
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
-// company knowledge (ADR 0008): results carry an id, a title and a URL, and
+// company knowledge (ADR 0012): results carry an id, a title and a URL, and
 // `fetch` reads one back. They cover the mailings the user can reach (name,
 // subject, tags, email type) and the active expertises (title, sections).
 
