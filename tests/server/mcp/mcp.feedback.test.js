@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Feedback and retex (ADR 0012, GLOSSARY.md). A feedback is a thumbs up or down

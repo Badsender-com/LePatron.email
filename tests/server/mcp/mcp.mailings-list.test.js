@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Listing mailings through MCP (ADR 0012): the search across accessible

@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and

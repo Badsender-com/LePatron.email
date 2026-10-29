@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Reading one mailing through MCP (ADR 0012): its facts and its derived status,
