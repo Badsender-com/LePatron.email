@@ -575,8 +575,10 @@ async function update(req, res) {
       // The company's tracking belongs to its technical settings (ADR 0004),
       // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.
+      // MCP access too: a tech admin connects the company's AI assistants
+      // to LePatron, as it sets up its AI features (ADR 0012).
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
-        ? ['trackingConfig', 'requireTwoFactor']
+        ? ['trackingConfig', 'requireTwoFactor', 'enableMcp']
         : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to

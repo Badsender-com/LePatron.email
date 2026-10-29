@@ -1,8 +1,8 @@
 'use strict';
 
-// MCP access is a subscription (ADR 0012): a super admin turns it on for a
-// group, and the group update keeps it out of a company admin's or a tech
-// admin's reach, as it keeps every field they may not set.
+// MCP access (ADR 0012): a super admin turns it on for any group, a tech admin
+// for its own, as it sets up the group's AI features. The group update keeps
+// it out of a company admin's reach, as every field it may not set.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
@@ -73,11 +73,19 @@ describe('PUT /groups/:groupId — MCP access', () => {
     expect(payload.enableMcp).toBe(true);
   });
 
-  it.each([
-    ['a company admin', companyAdmin],
-    ['a tech admin', techAdmin],
-  ])('keeps it out of the reach of %s', async (_case, user) => {
-    const payload = await update(user, { name: 'Renamed', enableMcp: true });
+  it('lets a tech admin turn it on, and off', async () => {
+    expect((await update(techAdmin, { enableMcp: true })).enableMcp).toBe(true);
+    jest.clearAllMocks();
+    expect((await update(techAdmin, { enableMcp: false })).enableMcp).toBe(
+      false
+    );
+  });
+
+  it('keeps it out of the reach of a company admin', async () => {
+    const payload = await update(companyAdmin, {
+      name: 'Renamed',
+      enableMcp: true,
+    });
 
     expect(payload).not.toHaveProperty('enableMcp');
     expect(payload.name).toBe('Renamed');

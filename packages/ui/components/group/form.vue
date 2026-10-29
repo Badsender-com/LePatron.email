@@ -15,7 +15,6 @@ import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
   LineChart,
-  Bot,
   ArrowRight,
   AlertTriangle,
   Building2,
@@ -35,7 +34,6 @@ export default {
     BsFormSection,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
-    LucideBot: Bot,
     LucideArrowRight: ArrowRight,
     LucideAlertTriangle: AlertTriangle,
     LucideBuilding2: Building2,
@@ -270,29 +268,6 @@ export default {
             </div>
             <v-switch
               v-model="localModel.enableCrmIntelligence"
-              hide-details
-              :disabled="disabled"
-              class="module-card__switch"
-            />
-          </div>
-
-          <!-- MCP access: AI assistants connected to LePatron (ADR 0012) -->
-          <div class="module-card">
-            <div class="module-card__content">
-              <div class="module-card__icon">
-                <lucide-bot :size="28" color="#00acdc" />
-              </div>
-              <div class="module-card__info">
-                <div class="module-card__name">
-                  {{ $t('groups.modules.mcp.name') }}
-                </div>
-                <div class="module-card__description">
-                  {{ $t('groups.modules.mcp.description') }}
-                </div>
-              </div>
-            </div>
-            <v-switch
-              v-model="localModel.enableMcp"
               hide-details
               :disabled="disabled"
               class="module-card__switch"
