@@ -12,8 +12,7 @@ const f = require('../../helpers/mcp-fixtures');
 
 const SUBJECT_IDEAS = 'redaction.subject-ideas';
 
-// Turned on by #1300 (skills as prompts)
-describe.skip('skills', () => {
+describe('skills', () => {
   let client;
 
   beforeEach(async () => {

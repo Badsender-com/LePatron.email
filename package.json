@@ -292,6 +292,7 @@
     "check-skills": "node scripts/check-skill-usage.js --dry",
     "check-models": "node scripts/check-model-conformance.js --dry",
     "flag-platform-group": "node scripts/flag-platform-group.js",
+    "mcp:dev-stdio": "node scripts/mcp-dev-stdio.js",
     "test:e2e": "cypress",
     "test:e2e-ci": "cypress run"
   },
