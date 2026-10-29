@@ -8,6 +8,8 @@ const {
   SkillCategoryValues,
   SkillStatuses,
   SkillStatusValues,
+  Audiences,
+  AudienceValues,
   SkillIdRegex,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
@@ -94,6 +96,11 @@ const LePatronSkillSchema = new Schema(
       type: String,
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
+    },
+    audience: {
+      type: String,
+      enum: AudienceValues,
+      default: Audiences.PLATFORM,
     },
     activeVersion: {
       type: ActiveVersionSchema,

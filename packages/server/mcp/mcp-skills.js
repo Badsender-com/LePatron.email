@@ -14,6 +14,7 @@ const {
   buildPrompt,
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { resolveIdentity } = require('./mcp-identity.js');
+const { audienceFilter } = require('./mcp-audience.js');
 
 // The active version of an active skill: what an assistant runs (ADR 0012).
 function published(doc) {
@@ -50,9 +51,10 @@ function notFound(name) {
 }
 
 async function listPrompts(ctx) {
-  await resolveIdentity(ctx.http?.authInfo);
+  const { group } = await resolveIdentity(ctx.http?.authInfo);
   const docs = await LePatronSkills.find({
     status: SkillStatuses.ACTIVE,
+    ...audienceFilter(group),
   }).lean();
   const prompts = docs
     .map(published)
@@ -66,10 +68,13 @@ async function listPrompts(ctx) {
 // builds them (prompt-builder.service.js), with the user's input fenced. An
 // MCP prompt has no system role: the instructions come first, as the user's.
 async function getPrompt(request, ctx) {
-  await resolveIdentity(ctx.http?.authInfo);
+  const { group } = await resolveIdentity(ctx.http?.authInfo);
   const { name, arguments: input = {} } = request.params;
   const found = published(
-    await LePatronSkills.findOne({ skillId: String(name) }).lean()
+    await LePatronSkills.findOne({
+      skillId: String(name),
+      ...audienceFilter(group),
+    }).lean()
   );
   if (!found) throw notFound(name);
 

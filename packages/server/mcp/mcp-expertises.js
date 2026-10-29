@@ -17,6 +17,7 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity } = require('./mcp-identity.js');
+const { audienceFilter } = require('./mcp-audience.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
@@ -32,8 +33,11 @@ function published(doc) {
   return { doc, version };
 }
 
-async function publishedExpertises() {
-  const docs = await Expertises.find({ status: SkillStatuses.ACTIVE }).lean();
+async function publishedExpertises(group) {
+  const docs = await Expertises.find({
+    status: SkillStatuses.ACTIVE,
+    ...audienceFilter(group),
+  }).lean();
   return docs
     .map(published)
     .filter(Boolean)
@@ -78,8 +82,10 @@ function registerExpertiseResources(server) {
     'expertises',
     new ResourceTemplate(URI_TEMPLATE, {
       list: async (ctx) => {
-        await resolveIdentity(ctx.http?.authInfo);
-        return { resources: (await publishedExpertises()).map(asResource) };
+        const { group } = await resolveIdentity(ctx.http?.authInfo);
+        return {
+          resources: (await publishedExpertises(group)).map(asResource),
+        };
       },
     }),
     {
@@ -89,9 +95,12 @@ function registerExpertiseResources(server) {
       mimeType: 'text/markdown',
     },
     async (uri, { expertiseId }, ctx) => {
-      await resolveIdentity(ctx.http?.authInfo);
+      const { group } = await resolveIdentity(ctx.http?.authInfo);
       const found = published(
-        await Expertises.findOne({ expertiseId: String(expertiseId) }).lean()
+        await Expertises.findOne({
+          expertiseId: String(expertiseId),
+          ...audienceFilter(group),
+        }).lean()
       );
       if (!found) throw new ResourceNotFoundError(uri.href);
       return {
@@ -127,7 +136,7 @@ function registerFindApplicableExpertises(server) {
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async ({ scope, categories, emailType, language }, ctx) => {
-      await resolveIdentity(ctx.http?.authInfo);
+      const { group } = await resolveIdentity(ctx.http?.authInfo);
       const scopes = [].concat(scope || []).filter(Boolean);
       if (!scopes.length || !categories || !categories.length) {
         return {
@@ -147,12 +156,19 @@ function registerFindApplicableExpertises(server) {
         emailType,
         language,
       });
-      const expertises = found.map((expertise) => ({
-        expertiseId: expertise.expertiseId,
-        title: expertise.title,
-        version: versionOf(expertise),
-        uri: uriOf(expertise.expertiseId),
-      }));
+      // The lookup is the features' own, which knows no audience: what the
+      // group may not read is dropped from what it found.
+      const readable = new Set(
+        (await publishedExpertises(group)).map(({ doc }) => doc.expertiseId)
+      );
+      const expertises = found
+        .filter((expertise) => readable.has(expertise.expertiseId))
+        .map((expertise) => ({
+          expertiseId: expertise.expertiseId,
+          title: expertise.title,
+          version: versionOf(expertise),
+          uri: uriOf(expertise.expertiseId),
+        }));
       return {
         content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
         structuredContent: { expertises },

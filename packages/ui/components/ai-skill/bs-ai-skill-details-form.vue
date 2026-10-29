@@ -5,7 +5,10 @@
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryOptions,
+  audienceOptions,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiSkillDetailsForm',
@@ -17,6 +20,14 @@ export default {
   computed: {
     categoryOptions() {
       return skillCategoryOptions(this);
+    },
+    audienceOptions() {
+      return audienceOptions(this);
+    },
+    // One stored before audiences existed has none, and the MCP server opens
+    // it to every subscribed group (ADR 0013): show what it applies.
+    audience() {
+      return this.value.audience || 'subscribers';
     },
   },
   methods: {
@@ -47,6 +58,16 @@ export default {
       item-value="value"
       :label="$t('aiSkills.filters.category')"
       @input="update({ category: $event })"
+    />
+    <bs-select
+      :value="audience"
+      :items="audienceOptions"
+      item-text="text"
+      item-value="value"
+      :label="$t('aiSkills.audience')"
+      :hint="$t('aiSkills.audienceHint')"
+      persistent-hint
+      @input="update({ audience: $event })"
     />
 
     <div class="d-flex justify-end mt-3">
