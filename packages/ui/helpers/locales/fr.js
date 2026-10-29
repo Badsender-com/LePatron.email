@@ -1425,6 +1425,13 @@ export default {
     },
   },
   aiSkills: {
+    audience: 'Audience',
+    audienceHint:
+      'Qui la lit en dehors du back-office, via les assistants IA connectés. Une nouvelle fiche reste à l\'équipe Badsender tant qu\'elle n\'est pas éprouvée.',
+    audiences: {
+      platform: 'Équipe Badsender (groupe plateforme)',
+      subscribers: 'Tous les groupes abonnés à l\'accès MCP',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

@@ -8,7 +8,10 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/bs-ai-language-picker.vue';
 import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
-import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryOptions,
+  audienceOptions,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiExpertiseDetailsForm',
@@ -29,6 +32,14 @@ export default {
   computed: {
     categoryOptions() {
       return skillCategoryOptions(this);
+    },
+    audienceOptions() {
+      return audienceOptions(this);
+    },
+    // One stored before audiences existed has none, and the MCP server opens
+    // it to every subscribed group (ADR 0013): show what it applies.
+    audience() {
+      return this.value.audience || 'subscribers';
     },
     emailTypeItems() {
       return emailTypeItems(this.emailTypeFacets);
@@ -86,6 +97,16 @@ export default {
       :hint="$t('aiSkills.expertise.categoryHelp')"
       persistent-hint
       @input="update({ category: $event })"
+    />
+    <bs-select
+      :value="audience"
+      :items="audienceOptions"
+      item-text="text"
+      item-value="value"
+      :label="$t('aiSkills.audience')"
+      :hint="$t('aiSkills.audienceHint')"
+      persistent-hint
+      @input="update({ audience: $event })"
     />
     <v-checkbox
       :input-value="value.isTransversal"

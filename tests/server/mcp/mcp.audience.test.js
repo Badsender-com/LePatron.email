@@ -45,8 +45,7 @@ const PROVING_SKILL = {
 };
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
-// Turned on by #1344 (the audience of skills and expertises)
-describe.skip('audience', () => {
+describe('audience', () => {
   beforeEach(() =>
     harness.seed({
       ...f.SEED,

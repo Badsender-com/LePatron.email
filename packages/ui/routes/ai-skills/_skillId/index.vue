@@ -82,6 +82,7 @@ export default {
           title: this.skill.title,
           description: this.skill.description,
           category: this.skill.category,
+          audience: this.skill.audience,
         };
         this.skill = await this.$axios.$patch(
           api.aiSkill(this.skill.skillId),
