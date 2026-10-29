@@ -1,9 +1,10 @@
 'use strict';
 
 // A two-factor reset by an admin (epic #1318, ADR 0008): the only way past a
-// member's two-factor authentication, so it follows the rule of ADR 0004
-// (nobody resets an account whose capabilities are not all their own), ends
-// the member's sessions and tells them.
+// member's two-factor authentication, so it is a tech admin's or a super
+// admin's, follows the rule of ADR 0004 (nobody resets an account whose
+// capabilities are not all their own), ends the member's sessions and tells
+// them.
 
 const harness = require('../../helpers/two-factor-harness.js');
 
@@ -51,7 +52,7 @@ const superAdmin = {
   role: 'super_admin',
   group: { id: OTHER_GROUP_ID },
 };
-const otherGroupAdmin = { ...companyAdmin, id: 'a4', group: OTHER_GROUP_ID };
+const otherGroupAdmin = { ...techAdmin, id: 'a4', group: OTHER_GROUP_ID };
 
 let twoFactor;
 
@@ -74,10 +75,10 @@ describe('resetting a member’s two-factor authentication', () => {
     twoFactor = require('../../../packages/server/two-factor/two-factor.controller.js');
   });
 
-  it('lets a company admin reset a member of their group, who sets it up again', async () => {
+  it('lets a tech admin reset a member of their group, who sets it up again', async () => {
     const user = harness.addTotpUser();
 
-    await resetAs(companyAdmin);
+    await resetAs(techAdmin);
 
     const { answer } = await harness.signIn(passport, user);
     expect(answer.body).toEqual({ twoFactor: { step: 'setup' } });
@@ -86,7 +87,7 @@ describe('resetting a member’s two-factor authentication', () => {
   it('answers the member as the users table reads it, without a method', async () => {
     harness.addTotpUser();
 
-    const { body } = await resetAs(companyAdmin);
+    const { body } = await resetAs(techAdmin);
 
     expect(body.id).toBe('u1');
     expect(body.twoFactorMethod).toBeUndefined();
@@ -95,7 +96,7 @@ describe('resetting a member’s two-factor authentication', () => {
   it('erases the secret, the recovery codes and the trusted devices', async () => {
     harness.addTotpUser();
 
-    await resetAs(companyAdmin);
+    await resetAs(techAdmin);
 
     expect(harness.models.Users.updateOne).toHaveBeenCalledWith(
       { _id: 'u1' },
@@ -106,7 +107,7 @@ describe('resetting a member’s two-factor authentication', () => {
   it('ends the member’s sessions', async () => {
     const user = harness.addTotpUser();
 
-    await resetAs(companyAdmin);
+    await resetAs(techAdmin);
 
     expect(user.activeSessionId).not.toBe('previous-session');
   });
@@ -114,7 +115,7 @@ describe('resetting a member’s two-factor authentication', () => {
   it('emails the member, without saying who reset it', async () => {
     harness.addTotpUser();
 
-    await resetAs(companyAdmin);
+    await resetAs(techAdmin);
 
     expect(mail.send).toHaveBeenCalledWith(
       expect.objectContaining({ to: 'camille@client.test' })
@@ -127,21 +128,15 @@ describe('resetting a member’s two-factor authentication', () => {
   it('records the reset, with who did it', async () => {
     harness.addTotpUser();
 
-    await resetAs(companyAdmin);
+    await resetAs(techAdmin);
 
     expect(SecurityEvents.create).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'two-factor.reset',
-        actor: 'a1',
+        actor: 'a2',
         user: 'u1',
       })
     );
-  });
-
-  it('refuses a company admin resetting a tech admin', async () => {
-    harness.addTotpUser({ role: 'company_admin_tech' });
-
-    await expect(resetAs(companyAdmin)).rejects.toMatchObject({ status: 403 });
   });
 
   it('lets a tech admin reset a tech admin of their group', async () => {
@@ -152,10 +147,10 @@ describe('resetting a member’s two-factor authentication', () => {
     expect(body.id).toBe('u1');
   });
 
-  it('refuses a company admin resetting a super admin', async () => {
+  it('refuses a tech admin resetting a super admin', async () => {
     harness.addTotpUser({ role: 'super_admin' });
 
-    await expect(resetAs(companyAdmin)).rejects.toMatchObject({ status: 403 });
+    await expect(resetAs(techAdmin)).rejects.toMatchObject({ status: 403 });
   });
 
   it('lets a super admin reset a member of any group', async () => {
@@ -175,7 +170,7 @@ describe('resetting a member’s two-factor authentication', () => {
   });
 
   it('answers 404 for an unknown account', async () => {
-    await expect(resetAs(companyAdmin, 'nobody')).rejects.toMatchObject({
+    await expect(resetAs(techAdmin, 'nobody')).rejects.toMatchObject({
       status: 404,
     });
   });

@@ -46,6 +46,23 @@ describe('rowActionKeys', () => {
     ).toEqual(expected);
   });
 
+  // A two-factor reset is a tech admin's or a super admin's (ADR 0008).
+  it.each([
+    [
+      Roles.GROUP_ADMIN_TECH,
+      ['deactivate', 'mail-action', 'two-factor-reset', 'edit'],
+    ],
+    [
+      Roles.SUPER_ADMIN,
+      ['deactivate', 'mail-action', 'two-factor-reset', 'edit'],
+    ],
+    [Roles.GROUP_ADMIN, ['deactivate', 'mail-action', 'edit']],
+  ])('offers a %s to reset a set-up two-factor: %j', (actor, expected) => {
+    const account = { ...confirmed(Roles.WRITER), twoFactorMethod: 'totp' };
+
+    expect(rowActionKeys(account, as(actor))).toEqual(expected);
+  });
+
   it('offers only the page to someone who holds nothing', () => {
     expect(rowActionKeys(confirmed(Roles.REVIEWER), [])).toEqual(['edit']);
   });

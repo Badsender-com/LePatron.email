@@ -572,12 +572,11 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
-      // Two-factor authentication for every member (ADR 0008).
-      'requireTwoFactor',
-      // The company's tracking belongs to its technical settings (ADR 0004):
+      // The company's tracking belongs to its technical settings (ADR 0004),
+      // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.
       ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
-        ? ['trackingConfig']
+        ? ['trackingConfig', 'requireTwoFactor']
         : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to

@@ -321,7 +321,7 @@ async function resendEmailCode(req, res) {
 
 /**
  * @api {del} /users/:userId/two-factor two-factor reset
- * @apiPermission company admin of the account's group, or super admin
+ * @apiPermission tech admin of the account's group, or super admin
  * @apiName ResetTwoFactor
  * @apiDescription Erases the account's setup and trusted devices and ends its
  *   sessions; the member sets it up again at their next sign-in.

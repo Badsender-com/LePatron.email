@@ -1,8 +1,8 @@
 'use strict';
 
 // A group requires two-factor authentication of all its members, or of none
-// (epic #1318, ADR 0008): a company admin or a tech admin switches it, from a
-// group update that otherwise keeps only a few fields from them.
+// (epic #1318, ADR 0008): a tech admin or a super admin switches it, from a
+// group update that otherwise keeps only a few fields from a tech admin.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
@@ -54,6 +54,7 @@ const {
 const GROUP_ID = '507f1f77bcf86cd799439001';
 const companyAdmin = { id: 'a1', role: 'company_admin', group: GROUP_ID };
 const techAdmin = { id: 'a2', role: 'company_admin_tech', group: GROUP_ID };
+const superAdmin = { id: 'a3', role: 'super_admin' };
 
 function storedGroup(fields) {
   const group = { id: GROUP_ID, name: 'Client group', ...fields };
@@ -77,31 +78,51 @@ beforeEach(() => {
 });
 
 describe('PUT /groups/:groupId — requireTwoFactor', () => {
-  it('lets a company admin require two-factor authentication', async () => {
-    const payload = await update(companyAdmin, { requireTwoFactor: true });
-
-    expect(payload.requireTwoFactor).toBe(true);
-  });
-
-  it('lets a tech admin require it', async () => {
+  it('lets a tech admin require two-factor authentication', async () => {
     const payload = await update(techAdmin, { requireTwoFactor: true });
 
     expect(payload.requireTwoFactor).toBe(true);
   });
 
+  it('lets a super admin require it', async () => {
+    const payload = await update(superAdmin, { requireTwoFactor: true });
+
+    expect(payload.requireTwoFactor).toBe(true);
+  });
+
+  it('drops it from a company admin, and records nothing', async () => {
+    const payload = await update(companyAdmin, {
+      requireTwoFactor: true,
+      name: 'Renamed',
+    });
+
+    expect(payload).not.toHaveProperty('requireTwoFactor');
+    expect(payload.name).toBe('Renamed');
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it('drops a company admin switching it off', async () => {
+    storedGroup({ requireTwoFactor: true });
+
+    const payload = await update(companyAdmin, { requireTwoFactor: false });
+
+    expect(payload).not.toHaveProperty('requireTwoFactor');
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
   it('keeps a boolean, whatever the request carries', async () => {
-    const payload = await update(companyAdmin, { requireTwoFactor: 'yes' });
+    const payload = await update(techAdmin, { requireTwoFactor: 'yes' });
 
     expect(payload.requireTwoFactor).toBe(false);
   });
 
   it('records the option switched on, by whom', async () => {
-    await update(companyAdmin, { requireTwoFactor: true });
+    await update(techAdmin, { requireTwoFactor: true });
 
     expect(SecurityEvents.create).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'two-factor.required',
-        actor: 'a1',
+        actor: 'a2',
         group: GROUP_ID,
       })
     );
@@ -110,7 +131,7 @@ describe('PUT /groups/:groupId — requireTwoFactor', () => {
   it('records the option switched off', async () => {
     storedGroup({ requireTwoFactor: true });
 
-    await update(companyAdmin, { requireTwoFactor: false });
+    await update(techAdmin, { requireTwoFactor: false });
 
     expect(SecurityEvents.create).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'two-factor.not-required' })
@@ -118,7 +139,7 @@ describe('PUT /groups/:groupId — requireTwoFactor', () => {
   });
 
   it('records nothing when the option does not change', async () => {
-    await update(companyAdmin, { requireTwoFactor: false, name: 'Renamed' });
+    await update(techAdmin, { requireTwoFactor: false, name: 'Renamed' });
 
     expect(SecurityEvents.create).not.toHaveBeenCalled();
   });
