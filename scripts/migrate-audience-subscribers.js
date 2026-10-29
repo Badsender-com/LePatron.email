@@ -65,10 +65,14 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+  // Exits once done: something the models load keeps the event loop alive,
+  // and a deploy step must not hang (the other migrations wait forever).
+  main()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }
 
 module.exports = { WITHOUT_AUDIENCE };
