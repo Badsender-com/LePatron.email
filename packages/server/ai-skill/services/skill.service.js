@@ -75,6 +75,9 @@ async function createSkill(data, userId) {
     title: data.title,
     description: data.description || '',
     category: data.category,
+    // Explicit rather than left to the schema: a new skill reaches the
+    // platform company only, until it is opened (ADR 0013).
+    audience: data.audience || Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },

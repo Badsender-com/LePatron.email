@@ -10,6 +10,7 @@ const {
   registerSkillResources,
   registerFindSkills,
 } = require('./mcp-skill-resources.js');
+const { registerAuthoringTools, WRITE_SCOPE } = require('./mcp-authoring.js');
 
 const { version } = require('../../../package.json');
 
@@ -25,11 +26,14 @@ const INSTRUCTIONS = [
  * calls from the validated token the transport hands it (`withIdentity`).
  * What answers anyone reads nothing: `initialize`, `ping`, and the listings
  * the SDK answers itself from what is registered (`tools/list`,
- * `resources/templates/list`), the same for every caller.
+ * `resources/templates/list`), the same for every token with the same scopes:
+ * the token's scopes say which tools it offers.
  *
+ * @param {Object} [options]
+ * @param {Object} [options.authInfo] the validated access token
  * @returns {McpServer}
  */
-function createMcpServer() {
+function createMcpServer({ authInfo } = {}) {
   const server = new McpServer(
     { name: 'lepatron', title: 'LePatron', version },
     { instructions: INSTRUCTIONS }
@@ -39,6 +43,11 @@ function createMcpServer() {
   registerSkillPrompts(server);
   registerSkillResources(server);
   registerFindSkills(server);
+  // Only for a token that may draft skills and expertises (ADR 0014): the
+  // others never see the writing tools.
+  if ((authInfo?.scopes || []).includes(WRITE_SCOPE)) {
+    registerAuthoringTools(server);
+  }
   return server;
 }
 

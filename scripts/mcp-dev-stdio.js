@@ -13,10 +13,12 @@
  * the company must have MCP access.
  *
  * Usage:
- *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
+ *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>] [--write]
  *
  * `--group` is the company a super admin works in; anyone else reads their
- * own. The database is the one the configuration reads (node.config.js, through
+ * own. `--write` adds the skills:write scope (ADR 0014): the drafting tools
+ * are then offered, and still refused to whoever may not manage the platform.
+ * The database is the one the configuration reads (node.config.js, through
  * `rc`): `lepatron_database`, from the environment, `.env` in the current
  * directory or a `.lepatronrc`, a local `lepatron` database by default. It is
  * never printed: its URI may carry credentials. stdout carries the protocol:
@@ -100,7 +102,7 @@ async function main(protocolOut) {
   const email = argument('email');
   if (!email) {
     throw new Error(
-      'Usage: NODE_ENV=development node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>]'
+      'Usage: NODE_ENV=development node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>] [--write]'
     );
   }
 
@@ -111,6 +113,7 @@ async function main(protocolOut) {
   const { Users } = require(server('common', 'models.common.js'));
   const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
   const { READ_SCOPE } = require(server('mcp', 'mcp-identity.js'));
+  const { WRITE_SCOPE } = require(server('mcp', 'mcp-authoring.js'));
 
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
@@ -123,7 +126,9 @@ async function main(protocolOut) {
   const authInfo = {
     token: 'local-development',
     clientId: 'mcp-dev-stdio',
-    scopes: [READ_SCOPE],
+    scopes: process.argv.includes('--write')
+      ? [READ_SCOPE, WRITE_SCOPE]
+      : [READ_SCOPE],
     extra: {
       userId: String(user._id),
       groupId: argument('group') || String(user._company),
@@ -131,7 +136,7 @@ async function main(protocolOut) {
   };
 
   const transport = new StdioServerTransport(process.stdin, protocolOut);
-  await createMcpServer().connect(transport);
+  await createMcpServer({ authInfo }).connect(transport);
   const handle = transport.onmessage;
   transport.onmessage = (message, extra) =>
     handle(message, { ...extra, authInfo });

@@ -10,6 +10,7 @@
  * - A `.lean()` query answers copies of the stored fields; otherwise a
  *   document also has `id`, `toObject()` / `toJSON()`, and `save()`, which
  *   stores its fields back, unless it was read with a projection.
+ * - `create(record)` stores a copy, with an `_id` when it has none.
  * - `updateMany` takes a `$set` only.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
@@ -37,25 +38,34 @@ const MODELS = {
 /* global structuredClone */
 const copy = (record) => structuredClone(record);
 
+// The fields of a document, without what the fakes add to it.
+function fieldsOf(doc) {
+  const { id: _addedId, ...fields } = doc;
+  return copy(fields);
+}
+
 // `stored` is the record itself, which `save` writes back to; none for a
 // document read with a projection, which has only some of its fields.
 function toDocument(record, stored) {
   const doc = { ...copy(record), id: String(record._id) };
-  Object.defineProperty(doc, 'toObject', { value: () => copy(record) });
+  Object.defineProperty(doc, 'toObject', { value: () => fieldsOf(doc) });
   Object.defineProperty(doc, 'toJSON', { value: () => ({ ...doc }) });
   Object.defineProperty(doc, 'save', {
     value: async () => {
       if (!stored) {
         throw new Error('fake MCP models: save of a projected document');
       }
-      const { id: _id, ...fields } = doc;
       Object.keys(stored).forEach((key) => delete stored[key]);
-      Object.assign(stored, copy(fields));
+      Object.assign(stored, fieldsOf(doc));
       return doc;
     },
   });
   return doc;
 }
+
+let nextId = 0;
+const newId = () =>
+  (0x6000000000 + (nextId += 1)).toString(16).padStart(24, '0');
 
 // Mongoose queries are thenables with a fluent API.
 function query(list, shape) {
@@ -123,6 +133,11 @@ function model(records) {
     findById: (id, projection) => {
       const q = query(matching({ _id: id }), (docs) => docs[0] || null);
       return projection ? q.select(projection) : q;
+    },
+    create: async (record) => {
+      const stored = { _id: newId(), ...copy(record) };
+      records.push(stored);
+      return toDocument(stored, stored);
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
     // A record without the field gives no value.

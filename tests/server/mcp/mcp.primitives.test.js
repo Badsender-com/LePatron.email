@@ -13,6 +13,8 @@ const f = require('../../helpers/mcp-fixtures');
 
 const NO_ACCOUNT = /can no longer use LePatron/;
 const NO_MCP_ACCESS = /no MCP access/;
+// Every scope a token may carry, so the tools a scope adds are walked too.
+const EVERY_SCOPE = ['mcp:read', 'skills:write'];
 
 // Arguments a tool's input schema accepts, so that a call reaches the handler
 // instead of stopping at the validation of its arguments.
@@ -41,7 +43,7 @@ function sampleOf(schema) {
 // a line here. `tools/list` and `resources/templates/list` are left out: the
 // SDK answers them from what is registered, the same to every caller.
 async function everyRequest() {
-  const reader = await harness.connectAs(f.FRANK);
+  const reader = await harness.connectAs(f.FRANK, { scopes: EVERY_SCOPE });
   const [
     { tools },
     { prompts },
@@ -92,9 +94,19 @@ describe('every primitive', () => {
   afterEach(() => harness.disconnect());
 
   it.each([
-    ['a company without MCP access', f.NINA, {}, NO_MCP_ACCESS],
-    ['a deactivated account', f.DEAN, {}, NO_ACCOUNT],
-    ['a token without the read scope', f.FRANK, { scopes: [] }, /mcp:read/],
+    [
+      'a company without MCP access',
+      f.NINA,
+      { scopes: EVERY_SCOPE },
+      NO_MCP_ACCESS,
+    ],
+    ['a deactivated account', f.DEAN, { scopes: EVERY_SCOPE }, NO_ACCOUNT],
+    [
+      'a token without the read scope',
+      f.FRANK,
+      { scopes: ['skills:write'] },
+      /mcp:read/,
+    ],
   ])('refuses %s', async (_case, userId, options, refusal) => {
     const requests = await everyRequest();
     const client = await harness.connectAs(userId, options);

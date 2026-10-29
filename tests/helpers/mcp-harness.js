@@ -72,7 +72,9 @@ async function connectAs(userId, options = {}) {
   const {
     createMcpServer,
   } = require('../../packages/server/mcp/mcp-server.js');
-  const server = createMcpServer();
+  // Built per connection, as the HTTP endpoint builds one per request once
+  // the token is checked: what it offers depends on the token's scopes.
+  const server = createMcpServer({ authInfo });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   // What the HTTP transport does once the bearer token is validated: every
   // message reaches the server with the token's identity.
