@@ -5,6 +5,7 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
+import BsGroupMcpAccessOption from '~/components/group/mcp-access-option.vue';
 import { CAN, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
@@ -13,6 +14,7 @@ export default {
   components: {
     BsPageHeader,
     BsGroupAiFeaturesTab,
+    BsGroupMcpAccessOption,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -58,6 +60,12 @@ export default {
         <bs-group-ai-features-tab
           :active="true"
           :is-platform="!!group.isPlatform"
+        />
+        <bs-group-mcp-access-option
+          v-if="group.id"
+          class="mt-6"
+          :group="group"
+          @update="group.enableMcp = $event.enableMcp"
         />
       </div>
     </v-container>

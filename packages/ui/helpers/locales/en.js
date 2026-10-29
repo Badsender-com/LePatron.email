@@ -789,6 +789,13 @@ export default {
     cdnEndpointHint: 'Base URL of your CDN (without protocol)',
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
+  mcpAccess: {
+    title: 'MCP access',
+    description:
+      'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
+    switch: 'Allow AI assistants to connect',
+    updated: 'MCP access updated',
+  },
   crmIntelligence: {
     title: 'CRM Intelligence',
     subtitle: 'Analytics dashboards',

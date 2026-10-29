@@ -8,7 +8,8 @@
  * - **Filters**: equality (an array field matches one of its elements, or the
  *   same array), `$in`, `$nin`, `$ne`, `$exists` (a stored `null` exists),
  *   `$gt`, `$gte`, `$lt`, `$lte`, `$regex` (a string with `$options`, or a
- *   RegExp with its own flags), a bare RegExp, `$or`, `$and`, `$nor`. Any other
+ *   RegExp with its own flags), a bare RegExp, `$size` (an array of that
+ *   length), `$or`, `$and`, `$nor`. Any other
  *   operator, a dotted path or an embedded document throws.
  * - **Sort and projection**: objects or strings, as Mongoose takes them.
  */
@@ -85,6 +86,8 @@ function matchesCondition(actual, condition) {
         return operand ? actual !== undefined : actual === undefined;
       case '$regex':
         return testsString(actual, regexOf(operand, condition.$options));
+      case '$size':
+        return Array.isArray(actual) && actual.length === operand;
       case '$options':
         if (!('$regex' in condition)) {
           throw new Error('fake models: $options without $regex');
