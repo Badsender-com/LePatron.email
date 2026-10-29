@@ -47,6 +47,9 @@ export default {
       switch: 'Exiger la double authentification',
       saml: 'Ce groupe se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
       updated: 'Paramètre enregistré',
+      required: 'Exigée pour tous les membres.',
+      notRequired: 'Non exigée.',
+      managedByTech: 'Seul un administrateur technique peut modifier ce paramètre.',
     },
     users: {
       column: 'Double auth.',
@@ -56,6 +59,8 @@ export default {
       resetNotice:
         'Ses sessions seront fermées et il la configurera de nouveau à sa prochaine connexion. Réinitialiser la double authentification de',
       resetDone: 'Double authentification réinitialisée',
+      emailLocked:
+        'Double authentification configurée : seul un administrateur technique peut changer l’adresse.',
     },
     passwordSet: 'Mot de passe enregistré : connectez-vous pour continuer.',
   },

@@ -2,7 +2,7 @@
 
 // A group requires two-factor authentication of all its members, or of none
 // (epic #1318, ADR 0008): a tech admin or a super admin switches it, from a
-// group update that otherwise keeps only a few fields from a tech admin.
+// group update that keeps only a few fields from anyone but a super admin.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
@@ -48,6 +48,11 @@ const {
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 const {
+  ROLES,
+  CAPABILITIES,
+  roleCan,
+} = require('../../../packages/shared/access/roles.js');
+const {
   GUARD_GROUP_ADMIN,
 } = require('../../../packages/server/account/auth.guard.js');
 
@@ -78,6 +83,21 @@ beforeEach(() => {
 });
 
 describe('PUT /groups/:groupId — requireTwoFactor', () => {
+  // The route lets only a group admin or a super admin in; the field is
+  // decided for every role all the same.
+  it.each(Object.values(ROLES))('decides the field for a %s', async (role) => {
+    const payload = await update(
+      { id: 'r1', role, group: GROUP_ID },
+      { requireTwoFactor: true }
+    );
+
+    if (roleCan(role, CAPABILITIES.GROUP_MANAGE_TECH)) {
+      expect(payload.requireTwoFactor).toBe(true);
+    } else {
+      expect(payload).not.toHaveProperty('requireTwoFactor');
+    }
+  });
+
   it('lets a tech admin require two-factor authentication', async () => {
     const payload = await update(techAdmin, { requireTwoFactor: true });
 

@@ -89,7 +89,7 @@ A sign-in from a trusted device that asks the verification code all the same, be
 _Avoid_: Risky login, unusual activity
 
 **Two-factor reset**:
-An admin erasing a member's two-factor setup, trusted devices included, so that the member sets it up again at their next sign-in.
+A tech admin or a super admin erasing a member's two-factor setup, trusted devices included, so that the member sets it up again at their next sign-in. Changing the address of a member whose method is the code by email does it too.
 _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 

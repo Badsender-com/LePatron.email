@@ -17,6 +17,10 @@ const {
 const { stepAfterPassword } = require('../two-factor/sign-in-step.js');
 const { needsTwoFactor } = require('../two-factor/two-factor.policy.js');
 const { forgetTrustedDevices } = require('../two-factor/trusted-device.js');
+const {
+  emailChangeResets,
+  resetAfterEmailChange,
+} = require('../two-factor/reset.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -251,12 +255,18 @@ async function update(req, res) {
   await superAdminPolicy.assertCanUpdate(req.user, target, userParams.role);
   rightsPolicy.assertCanManage(req.user, target);
   rightsPolicy.assertCanSetRole(req.user, target, userParams.role);
+  const resetsTwoFactor = emailChangeResets(req.user, target, userParams);
 
   const previousRole = target.role;
   const updatedUser = await userService.updateUser(
     { userId, ...userParams },
     target
   );
+  // After the write, so an address refused (taken, invalid) resets nothing.
+  if (resetsTwoFactor) {
+    await resetAfterEmailChange(req.user, target);
+    updatedUser.twoFactorMethod = undefined;
+  }
   superAdminPolicy.logAction(
     req.user,
     'update',

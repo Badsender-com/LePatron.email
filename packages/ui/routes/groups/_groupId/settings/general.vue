@@ -1,5 +1,4 @@
 <script>
-import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 import * as acls from '~/helpers/pages-acls.js';
 import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
@@ -24,13 +23,6 @@ export default {
   },
   head() {
     return { title: this.settingsTitle };
-  },
-  computed: {
-    // Two-factor authentication for every member is a technical setting
-    // (ADR 0008): a company admin does not see it.
-    canManageTech() {
-      return this.can(CAPABILITIES.GROUP_MANAGE_TECH);
-    },
   },
 };
 </script>
@@ -61,7 +53,7 @@ export default {
         @submit="updateGroup"
       />
       <bs-group-two-factor-option
-        v-if="group.id && canManageTech"
+        v-if="group.id"
         class="mt-6"
         :group="group"
         @update="group.requireTwoFactor = $event.requireTwoFactor"

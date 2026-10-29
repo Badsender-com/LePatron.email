@@ -43,13 +43,13 @@ const TEXTS = {
   fr: {
     title: 'Votre code de vérification : {code}',
     desc:
-      'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur de votre groupe : quelqu’un connaît votre mot de passe.',
+      'Il est valable 10 minutes. Si vous n’êtes pas en train de vous connecter, ignorez cet email et prévenez l’administrateur technique de votre société : quelqu’un connaît votre mot de passe.',
     reset: 'SE CONNECTER',
   },
   en: {
     title: 'Your verification code: {code}',
     desc:
-      'It is valid for 10 minutes. If you are not signing in, ignore this email and tell the administrator of your group: someone knows your password.',
+      'It is valid for 10 minutes. If you are not signing in, ignore this email and tell your company’s technical administrator: someone knows your password.',
     reset: 'SIGN IN',
   },
 };

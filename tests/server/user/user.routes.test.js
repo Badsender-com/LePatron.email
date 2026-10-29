@@ -25,7 +25,11 @@ const {
   GUARD_CAN,
   adminUser,
 } = require('../../../packages/server/account/auth.guard.js');
-const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
+const {
+  CAPABILITIES,
+  ROLES,
+  roleCan,
+} = require('../../../packages/shared/access/roles.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 
 const { guardsOf } = routeInspector(router);
@@ -52,16 +56,21 @@ describe('user routes', () => {
       expect(guardsOf('delete', '/:userId/two-factor')).toEqual([guard]);
     });
 
+    it.each(Object.values(ROLES))('decides for a %s', (role) => {
+      if (roleCan(role, CAPABILITIES.GROUP_MANAGE_TECH)) {
+        expect(run({ role })).toBeUndefined();
+      } else {
+        expect(run({ role }).status).toBe(403);
+      }
+    });
+
     it('rejects a company admin', () => {
       expect(run({ role: 'company_admin' }).status).toBe(403);
     });
 
-    it.each(['company_admin_tech', 'super_admin'])(
-      'lets a %s through',
-      (role) => {
-        expect(run({ role })).toBeUndefined();
-      }
-    );
+    it('lets the bootstrap account through', () => {
+      expect(run({ ...adminUser })).toBeUndefined();
+    });
   });
 
   describe('the shared guard of the user management routes', () => {
