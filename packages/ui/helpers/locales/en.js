@@ -393,6 +393,11 @@ export default {
         configHint: 'Advanced configuration in dedicated tab',
         toggleMovedHint: 'Module activation is in the General tab',
       },
+      mcp: {
+        name: 'MCP access',
+        description:
+          'Users connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron, with their own rights',
+      },
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',

@@ -28,6 +28,7 @@ export default {
         downloadMailingWithFtpImages: false,
         enableEmailBuilder: true,
         enableCrmIntelligence: false,
+        enableMcp: false,
         userHasAccessToAllWorkspaces: false,
       },
     };
@@ -76,6 +77,7 @@ export default {
         downloadMailingWithFtpImages: false,
         enableEmailBuilder: true,
         enableCrmIntelligence: false,
+        enableMcp: false,
         userHasAccessToAllWorkspaces: false,
       };
       this.$v.$reset();

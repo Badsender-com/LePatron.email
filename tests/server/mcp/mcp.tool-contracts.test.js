@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // What every tool tells a client about itself (ADR 0012): an output schema,
@@ -11,8 +14,7 @@ const f = require('../../helpers/mcp-fixtures');
 
 const WRITING_TOOLS = ['submit_feedback'];
 
-// Turned on by #1299 (the endpoint, MCP access and the expertises)
-describe.skip('tool contracts', () => {
+describe('tool contracts', () => {
   let tools;
 
   beforeEach(async () => {

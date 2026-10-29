@@ -398,6 +398,11 @@ export default {
         toggleMovedHint:
           'L\'activation du module se fait depuis l\'onglet Général',
       },
+      mcp: {
+        name: 'Accès MCP',
+        description:
+          'Les utilisateurs connectent leur assistant IA (Claude, ChatGPT, Copilot) à LePatron, avec leurs droits',
+      },
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',

@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Who may read through MCP (ADR 0012): every role of a group that has MCP
@@ -10,8 +13,7 @@ const f = require('../../helpers/mcp-fixtures');
 const uris = ({ resources }) => resources.map((resource) => resource.uri);
 const SUBJECT_LINES = 'lepatron://expertises/redaction.subject-line';
 
-// Turned on by #1299 (the endpoint, MCP access and the expertises)
-describe.skip('identity and MCP access', () => {
+describe('identity and MCP access', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 
