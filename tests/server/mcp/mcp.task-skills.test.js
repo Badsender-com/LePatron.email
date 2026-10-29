@@ -13,15 +13,14 @@ const {
   buildOutputContract,
 } = require('../../../packages/server/ai-skill/schemas/output-contract.js');
 
-const POSTMASTER = 'deliverability.read-postmaster-export';
+const REPORT = 'qc.read-sending-report';
 const TASK_SKILL = {
   _id: '507f1f77bcf86cd799439911',
-  skillId: POSTMASTER,
+  skillId: REPORT,
   nature: 'task',
-  title: 'Read a Google Postmaster Tools export',
-  description:
-    'Reads a Postmaster Tools export and states dated findings per domain.',
-  category: 'deliverability',
+  title: 'Read a sending report',
+  description: 'Reads a report the user provides and lists what stands out.',
+  category: 'qc',
   status: 'ACTIVE',
   activeVersion: { major: 1, minor: 0 },
   versions: [
@@ -30,7 +29,7 @@ const TASK_SKILL = {
       versionMinor: 0,
       status: 'ACTIVE',
       procedure:
-        '## Steps\n\n1. Describe the export before reading it.\n2. Never average daily rates.',
+        '## Steps\n\n1. Describe the report before reading it.\n2. Never guess a missing value.',
       consumedExpertiseIds: [
         'deliverability.spam-words',
         'redaction.subject-line',
@@ -83,17 +82,17 @@ describe.skip('task skills', () => {
 
   describe('a task skill', () => {
     it('is a prompt with no required argument', async () => {
-      const prompt = await promptNamed(POSTMASTER);
+      const prompt = await promptNamed(REPORT);
 
-      expect(prompt.title).toBe('Read a Google Postmaster Tools export');
+      expect(prompt.title).toBe('Read a sending report');
       expect((prompt.arguments || []).filter((a) => a.required)).toEqual([]);
     });
 
     it('gives its procedure, then the expertises it consumes, in its order', async () => {
-      const { messages } = await client.getPrompt({ name: POSTMASTER });
+      const { messages } = await client.getPrompt({ name: REPORT });
       const [procedure, ...expertises] = messages.map((m) => m.content);
 
-      expect(procedure.text).toContain('Never average daily rates.');
+      expect(procedure.text).toContain('Never guess a missing value.');
       expect(expertises.map((content) => content.resource.uri)).toEqual([
         'lepatron://expertises/deliverability.spam-words',
         'lepatron://expertises/redaction.subject-line',
@@ -105,12 +104,12 @@ describe.skip('task skills', () => {
 
     it('is a resource an assistant reads', async () => {
       const { contents } = await client.readResource({
-        uri: `lepatron://skills/${POSTMASTER}`,
+        uri: `lepatron://skills/${REPORT}`,
       });
 
       expect(contents[0].mimeType).toBe('text/markdown');
       expect(contents[0].text).toContain(
-        'Describe the export before reading it.'
+        'Describe the report before reading it.'
       );
       expect(contents[0].text).toContain(
         'lepatron://expertises/deliverability.spam-words'
@@ -118,16 +117,16 @@ describe.skip('task skills', () => {
     });
 
     it('is found by intent, from its title or its description', async () => {
-      const byTitle = await findSkills('postmaster');
-      const byDescription = await findSkills('dated findings per domain');
+      const byTitle = await findSkills('sending report');
+      const byDescription = await findSkills('what stands out');
 
       expect(byTitle.skills).toEqual([
         expect.objectContaining({
-          skillId: POSTMASTER,
-          uri: `lepatron://skills/${POSTMASTER}`,
+          skillId: REPORT,
+          uri: `lepatron://skills/${REPORT}`,
         }),
       ]);
-      expect(byDescription.skills.map((s) => s.skillId)).toEqual([POSTMASTER]);
+      expect(byDescription.skills.map((s) => s.skillId)).toEqual([REPORT]);
     });
   });
 
