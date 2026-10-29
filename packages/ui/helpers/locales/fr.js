@@ -1066,6 +1066,13 @@ export default {
     cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
+  retex: {
+    title: 'Retour d\'expérience des assistants IA',
+    description:
+      'Quand un utilisateur envoie un avis depuis son assistant IA, il peut y joindre un résumé de la session pour aider Badsender à améliorer ses expertises et skills. Ce résumé n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte pour cet avis.',
+    switch: 'Autoriser le retour d\'expérience',
+    updated: 'Retour d\'expérience mis à jour',
+  },
   mcpAccess: {
     title: 'Accès MCP',
     description:
@@ -1425,6 +1432,16 @@ export default {
     },
   },
   aiSkills: {
+    feedback: {
+      tab: 'Avis',
+      caption:
+        'Les avis envoyés depuis les assistants IA connectés, avec la version lue et, quand le groupe et l\'utilisateur l\'ont accepté, le retour d\'expérience de la session.',
+      empty: 'Aucun avis pour l\'instant.',
+      up: 'Avis positif',
+      down: 'Avis négatif',
+      noComment: 'Sans commentaire',
+      retex: 'Retour d\'expérience',
+    },
     nature: 'Nature',
     natureHint:
       'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit.',

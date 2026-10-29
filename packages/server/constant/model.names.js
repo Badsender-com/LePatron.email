@@ -37,4 +37,5 @@ module.exports = Object.freeze({
   TaxonomyItemModel: 'TaxonomyItem',
   // Two-factor authentication (ADR 0008)
   SecurityEventModel: 'SecurityEvent',
+  McpFeedbackModel: 'McpFeedback',
 });

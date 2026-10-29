@@ -175,6 +175,13 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // Retex (ADR 0012): whether a session summary sent with a feedback may be
+    // kept for Badsender. Off unless the company admin allows it; each user is
+    // still asked for each feedback.
+    allowRetex: {
+      type: Boolean,
+      default: false,
+    },
     // Platform group: an internal Badsender-owned group that holds the AI
     // engine used by the super-admin AI Playground (R&D / benchmark), instead
     // of borrowing a client group's integration. Excluded from client-facing

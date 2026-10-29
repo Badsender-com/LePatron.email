@@ -11,6 +11,7 @@ const {
   registerFindSkills,
 } = require('./mcp-skill-resources.js');
 const { registerAuthoringTools, WRITE_SCOPE } = require('./mcp-authoring.js');
+const { registerSubmitFeedback } = require('./mcp-feedback.js');
 
 const { version } = require('../../../package.json');
 
@@ -40,6 +41,7 @@ function createMcpServer({ authInfo } = {}) {
   registerSkillPrompts(server);
   registerSkillResources(server);
   registerFindSkills(server);
+  registerSubmitFeedback(server);
   // Only for a token that may draft skills and expertises (ADR 0014): the
   // others never see the writing tools.
   if ((authInfo?.scopes || []).includes(WRITE_SCOPE)) {
