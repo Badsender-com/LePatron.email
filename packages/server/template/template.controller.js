@@ -249,14 +249,10 @@ async function updateQualitySettings(req, res) {
   const { user } = req;
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
-  // Like the template's tracking settings: a company admin only touches the
-  // templates of their own group, a super admin any template.
-  if (!user.isAdmin) {
-    const templateCompanyId = template._company && template._company.toString();
-    const userCompanyId = user.group && user.group.id;
-    if (!templateCompanyId || templateCompanyId !== userCompanyId) {
-      throw new createError.Forbidden();
-    }
+  // A company admin only touches the templates of their own company, a super
+  // admin any template.
+  if (!permissions.canManageGroup(user, template._company)) {
+    throw new createError.Forbidden();
   }
   // What the template does not set follows its group: thresholds that go
   // together are checked against the group's values.

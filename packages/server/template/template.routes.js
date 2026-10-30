@@ -8,6 +8,7 @@ const router = express.Router();
 const {
   GUARD_USER,
   GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
   GUARD_GROUP_ADMIN_TECH,
 } = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
@@ -46,8 +47,8 @@ router.put(
   GUARD_GROUP_ADMIN_TECH,
   templates.updateTrackingConfig
 );
-// Same rule as the tracking config: a company admin may override the quality
-// settings of their own group's templates (checked in the controller).
+// A company admin may override the quality settings of their own company's
+// templates (checked in the controller).
 router.put(
   '/:templateId/quality-settings',
   GUARD_GROUP_ADMIN,

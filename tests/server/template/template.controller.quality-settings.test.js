@@ -1,9 +1,8 @@
 'use strict';
 
 // PUT /templates/:templateId/quality-settings: a template overrides its group's
-// quality settings one by one (epic #1193, ADR 0009). Like the template's
-// tracking settings, a company admin may only touch the templates of their own
-// group, a super admin any template.
+// quality settings one by one (epic #1193, ADR 0009). A company admin may only
+// touch the templates of their own company, a super admin any template.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Templates: { findById: jest.fn() },
@@ -35,7 +34,7 @@ const TEMPLATE_ID = '507f1f77bcf86cd799439201';
 function templateDoc(qualitySettings) {
   return {
     _id: TEMPLATE_ID,
-    _company: { toString: () => GROUP_ID },
+    _company: GROUP_ID,
     qualitySettings,
     markModified: jest.fn(),
     save: jest.fn().mockResolvedValue(undefined),
@@ -50,8 +49,7 @@ function groupWith(qualitySettings) {
 }
 
 const groupAdminOf = (groupId) => ({
-  isAdmin: false,
-  isGroupAdmin: true,
+  role: 'company_admin',
   group: { id: groupId },
 });
 
@@ -122,7 +120,7 @@ describe('PUT /templates/:templateId/quality-settings', () => {
 
   it('lets a super admin override any template', async () => {
     const { template } = await put({
-      user: { isAdmin: true },
+      user: { role: 'super_admin' },
       body: { checks: { headings: { state: 'off' } } },
     });
     expect(template.qualitySettings.checks.headings).toEqual({ state: 'off' });
