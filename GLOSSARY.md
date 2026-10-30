@@ -190,10 +190,10 @@ _UI_: Ignorer
 _Avoid_: Dismiss, mute
 
 **Share link**:
-A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can send a test of the email (a reviewer included), when the email's group allows it. Revoked by hand from the email, by expiry, or when the mailing changes group. Suspended while the group has sharing turned off.
+A public URL that shows the last saved version of an email to someone without an account, for 1, 7 or 30 days. Created from the "Send a test" tab of the quality panel by anyone who can send a test of the email (a reviewer included), when the email's company allows it. Revoked by hand from the email, by expiry, or when the mailing changes company. Suspended while the company has sharing turned off.
 _UI_: Lien d'aperçu
 _Avoid_: Public link, preview URL
 
 **Required tracking parameters**:
-The only check that blocks a download or an ESP send today. Configured per group; becomes one blocking check among others with the quality settings.
+The only check that blocks a download or an ESP send today. Configured per company; becomes one blocking check among others with the quality settings.
 _UI_: Paramètres de tracking obligatoires
