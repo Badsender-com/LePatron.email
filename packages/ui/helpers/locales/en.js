@@ -17,7 +17,7 @@ export default {
     },
     setup: {
       intro:
-        'Your group requires two-factor authentication: after your password, you will enter a code.',
+        'Your company requires two-factor authentication: after your password, you will enter a code.',
       choose: 'How do you want to get your codes?',
       methods: {
         totp: 'An authenticator app on my phone',
@@ -43,9 +43,9 @@ export default {
     group: {
       title: 'Two-factor authentication',
       description:
-        'Every member of the group enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
+        'Every member of the company enters a code after their password. Those who have not set it up yet will do so at their next sign-in.',
       switch: 'Require two-factor authentication',
-      saml: 'This group signs in with SSO: two-factor authentication belongs to its identity provider.',
+      saml: 'This company signs in with SSO: two-factor authentication belongs to its identity provider.',
       updated: 'Setting saved',
       required: 'Required of every member.',
       notRequired: 'Not required.',
@@ -101,8 +101,8 @@ export default {
       INVALID_SSH_KEY_FORMAT:
         'Invalid SSH key format. Accepted formats: PEM or OpenSSH.',
       INCOMPLETE_SSH_KEY: 'Incomplete SSH key: missing end marker.',
-      FTP_MISSING_SSH_KEY: 'No SSH key configured for this group.',
-      FTP_NOT_ENABLED: 'FTP is not enabled for this group.',
+      FTP_MISSING_SSH_KEY: 'No SSH key configured for this company.',
+      FTP_NOT_ENABLED: 'FTP is not enabled for this company.',
       FTP_CONNECTION_AUTH_FAILED:
         'Authentication failed. Check your credentials (password or SSH key).',
       FTP_CONNECTION_HOST_NOT_FOUND: 'Host not found.',
@@ -171,10 +171,10 @@ export default {
     editTeam: 'Edit workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to emails',
-    backToGroups: 'Back to groups',
-    group: 'Group | Groups',
+    backToGroups: 'Back to companies',
+    group: 'Company | Companies',
     workspaces: 'Workspaces',
-    newGroup: 'Add a group',
+    newGroup: 'Add a company',
     newCompany: 'Add a company',
     companyName: 'Company name',
     workspace: 'Workspace',
@@ -264,7 +264,7 @@ export default {
       },
       color: {
         label: 'Custom color',
-        description: 'Define the colors available in the email editor for this group.',
+        description: 'Define the colors available in the email editor for this company.',
       },
       defaultWorkspace: {
         label: 'Default workspace\'s name',
@@ -379,10 +379,10 @@ export default {
     },
     platform: {
       badge: 'Platform',
-      setAction: 'Set as platform group',
+      setAction: 'Set as platform company',
       unsetAction: 'Remove platform role',
-      setDone: '"{name}" is now the platform group',
-      unsetDone: '"{name}" is no longer the platform group',
+      setDone: '"{name}" is now the platform company',
+      unsetDone: '"{name}" is no longer the platform company',
     },
     modules: {
       title: 'Enabled modules',
@@ -512,8 +512,8 @@ export default {
     newName: 'New email name',
     translate: 'Translate',
     duplicateNotice: 'The email <strong>{name}</strong> will be duplicated and automatically translated.',
-    noActiveIntegration: 'No active AI integration. Configure an integration in the group settings.',
-    noLanguagesConfigured: 'No languages configured. Configure available languages in the group settings.',
+    noActiveIntegration: 'No active AI integration. Configure an integration in the company settings.',
+    noLanguagesConfigured: 'No languages configured. Configure available languages in the company settings.',
     success: 'Email duplicated and translated successfully',
     successTitle: 'Translation complete',
     successMessage: 'Your email has been duplicated and translated successfully.',
@@ -621,7 +621,7 @@ export default {
     members: 'Users',
     membersDescription:
       'Select the users who will have access to this workspace.',
-    userIsGroupAdmin: 'The user is a group admin',
+    userIsGroupAdmin: 'The user is a company admin',
     noUsersAvailable: 'No users available',
     sections: {
       info: 'Information',
@@ -851,7 +851,7 @@ export default {
     },
     admin: {
       title: 'CRM Intelligence',
-      description: 'Manage dashboard integrations for this group.',
+      description: 'Manage dashboard integrations for this company.',
       enabled: 'Enable CRM Intelligence',
       metabaseConfigHint: 'Configure Metabase connections in the Integrations tab.',
       goToIntegrations: 'Go to Integrations',
@@ -996,7 +996,7 @@ export default {
     // instead of showing the raw code.
     errors: {
       INTEGRATION_NAME_ALREADY_EXIST:
-        'An integration of this group already has this name. Pick another one.',
+        'An integration of this company already has this name. Pick another one.',
       INTEGRATION_NOT_FOUND:
         'This integration no longer exists: it may have been deleted. Reload the page.',
       FORBIDDEN_INTEGRATION_ACCESS: 'You do not have access to this integration.',
@@ -1254,16 +1254,16 @@ export default {
     pageTitle: 'Super admins',
     add: 'Add a super admin',
     addDescription:
-      'The account is created in the platform group. Then send it the password email from its row, as for any new account.',
+      'The account is created in the platform company. Then send it the password email from its row, as for any new account.',
     promote: 'Promote a member',
     promoteAction: 'Promote',
     promoteDescription:
-      'Pick a member of the platform group: they become a super admin and keep their account. Like every super admin, they will have every right on every group, and work in Email Builder and CRM Intelligence on the group they select.',
+      'Pick a member of the platform company: they become a super admin and keep their account. Like every super admin, they will have every right on every company, and work in Email Builder and CRM Intelligence on the company they select.',
     promoted: 'Super admin promoted',
     member: 'Member',
-    noMember: 'No member of the platform group to promote.',
+    noMember: 'No member of the platform company to promote.',
     noPlatformGroup:
-      'No platform group is set up on this environment: no super admin can be created.',
+      'No platform company is set up on this environment: no super admin can be created.',
     demote: {
       title: 'Revoke the super admin role',
       action: 'Revoke the role',
@@ -1285,11 +1285,11 @@ export default {
       FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
         'You cannot deactivate your own account.',
       SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
-        'A super admin must belong to the platform group.',
+        'A super admin must belong to the platform company.',
       PLATFORM_GROUP_NOT_FOUND:
-        'No platform group is set up on this environment.',
+        'No platform company is set up on this environment.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'This group hosts active super admins. To move it, set another group as the platform group with the configuration administrator: they will follow it. To unset it, that account must first deactivate or demote them.',
+        'This company hosts active super admins. To move it, set another company as the platform company with the configuration administrator: they will follow it. To unset it, that account must first deactivate or demote them.',
       INVALID_ROLE_PARAM: 'This role does not exist.',
     },
   },
@@ -1304,8 +1304,8 @@ export default {
     companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
     switchCompany: 'Pick a company…',
-    selectedGroup: 'Selected group: {name}',
-    selectionFailed: 'This group could not be selected. Try again.',
+    selectedGroup: 'Selected company: {name}',
+    selectionFailed: 'This company could not be selected. Try again.',
     colors: 'Colors',
   },
   aiFeatures: {
@@ -1420,7 +1420,7 @@ export default {
       status: 'Status',
       skillId: 'Skill ID',
       feature: 'Feature',
-      groupId: 'Group ID',
+      groupId: 'Company ID',
       includeNonProductive: 'Include tests (playground, poc.*)',
     },
     categories: {
@@ -1541,7 +1541,7 @@ export default {
       feature: 'Feature',
       latency: 'Latency',
       tokens: 'Tokens',
-      group: 'Group',
+      group: 'Company',
       providerModel: 'Provider / Model',
       noInvocations: 'No invocation visible',
       noInvocationsHint: 'Test invocations are hidden by default — enable "Include tests" to show them.',

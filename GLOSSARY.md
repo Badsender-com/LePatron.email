@@ -6,47 +6,48 @@ An email builder for marketing teams: each client company designs its emails in 
 
 ### Organization
 
-**Group**:
-A client company: it owns users, workspaces, templates and ESP profiles.
-_UI_: Groupe
-_Avoid_: Company, organization, account
+**Company**:
+A client company: it owns users, workspaces, templates and ESP profiles. Users never understood "group"; the code keeps `Group` and `_company`.
+_UI_: Entreprise
+_Avoid_: Group, organization, account
 
-**Platform group**:
-The group of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
-_Avoid_: Badsender group, admin group
+**Platform company**:
+The company of the operator running the platform. It is the home of the super admins and of the AI playground. An environment has at most one, flagged by a super admin when the platform is set up.
+_UI_: Entreprise plateforme
+_Avoid_: Platform group, Badsender company, admin company
 
-**Selected group**:
-The group a super admin is working in, chosen in the group selector and shared by the modules and the settings. Every other user's selected group is their own group.
-_UI_: Groupe
-_Avoid_: Current company, active group, working group
+**Selected company**:
+The company a super admin is working in, chosen in the company selector and shared by the modules and the settings. Every other user's selected company is their own company.
+_UI_: Entreprise sélectionnée
+_Avoid_: Selected group, current company, active company
 
 ### Roles
 
 **Regular user**:
-A member of a group who designs emails in the workspaces they are given.
+A member of a company who designs emails in the workspaces they are given.
 _UI_: Utilisateur
 
 **Writer**:
-A member of a group who edits the content of emails and declines them into variants, without touching their structure or style, creating or deleting one.
+A member of a company who edits the content of emails and declines them into variants, without touching their structure or style, creating or deleting one.
 _UI_: Rédacteur
 
 **Reviewer**:
-A member of a group who reads, comments, approves, tests and exports emails, and changes none.
+A member of a company who reads, comments, approves, tests and exports emails, and changes none.
 _UI_: Relecteur
 _Avoid_: Validator, viewer
 
 **Company admin**:
-A member of a group who also administers that group: its users, workspaces and settings, apart from its technical settings.
-_UI_: Administrateur du groupe
+A member of a company who also administers that company: its users, workspaces and settings, apart from its technical settings.
+_UI_: Administrateur de l'entreprise
 _Avoid_: Group admin, owner
 
 **Tech admin**:
-A company admin who also administers the group's technical settings: integrations, AI features, content feeds and tracking.
+A company admin who also administers the company's technical settings: integrations, AI features, content feeds and tracking.
 _UI_: Admin technique
 _Avoid_: Technical admin, integrator
 
 **Super admin**:
-A person operating the platform, with full rights on every group. A super admin belongs to the platform group and is an ordinary account otherwise.
+A person operating the platform, with full rights on every company. A super admin belongs to the platform company and is an ordinary account otherwise.
 _UI_: Super administrateur
 _Avoid_: Admin, platform admin (in prose and UI text; the code keeps its `admin` guard and flag)
 
@@ -55,13 +56,13 @@ The super admin account defined by the deployment configuration, outside the dat
 _Avoid_: Env admin, hardcoded admin, legacy admin
 
 **Capability**:
-One thing a role allows, anywhere it applies, such as deleting an email or managing a group's technical settings. A role is its list of capabilities; what it does not list, it cannot do.
+One thing a role allows, anywhere it applies, such as deleting an email or managing a company's technical settings. A role is its list of capabilities; what it does not list, it cannot do.
 _Avoid_: Permission, right (for this list; "rights" stays fine in prose)
 
 ### Sign-in
 
 **Two-factor authentication**:
-A second proof asked after the password, a code only the account's owner can get. A group requires it of all its members or of none; a super admin always has it.
+A second proof asked after the password, a code only the account's owner can get. A company requires it of all its members or of none; a super admin always has it.
 _UI_: Double authentification
 _Avoid_: 2FA, MFA (in UI text), two-step verification
 
@@ -130,7 +131,7 @@ _Avoid_: Version, revision, edited image
 ### Email listing
 
 **Workspace**:
-A place of a group where its emails are designed, whose members it lists. It holds emails and folders.
+A place of a company where its emails are designed, whose members it lists. It holds emails and folders.
 _UI_: Espace de travail
 
 **Folder**:
@@ -144,7 +145,7 @@ _UI_: Emplacement
 _Avoid_: Parent, path (for the place itself)
 
 **Accessible workspace**:
-A workspace whose emails a user may read: one they are a member of, every workspace of their group for a company admin or when the group opens all workspaces to its users, and every workspace of the selected group for a super admin.
+A workspace whose emails a user may read: one they are a member of, every workspace of their company for a company admin or when the company opens all workspaces to its users, and every workspace of the selected company for a super admin.
 _Avoid_: Allowed workspace, my workspace
 
 **Search scope**:
