@@ -92,20 +92,25 @@ export function thresholdErrors(thresholds) {
 
 /**
  * The higher threshold of each pair set below its lower one, as
- * `checkId.name` keys (defaults fill what is not set).
+ * `checkId.name` keys. What is not set follows `inherited` (a template's
+ * group), then the default.
  * @param {Object} thresholds as thresholdsOf returns them
+ * @param {Object} [inherited] the same shape, for what is not set
  * @returns {string[]}
  */
-export function orderErrors(thresholds) {
+export function orderErrors(thresholds, inherited = {}) {
+  const isSet = (value) =>
+    value !== null && value !== '' && value !== undefined;
   return Object.entries(thresholds).flatMap(([id, values]) =>
     (CHECKS[id].ordered || [])
       .filter(([low, high]) => {
-        const value = (name) =>
-          values[name] === null ||
-          values[name] === '' ||
-          values[name] === undefined
-            ? CHECKS[id].thresholds[name].default
-            : Number(values[name]);
+        const value = (name) => {
+          if (isSet(values[name])) return Number(values[name]);
+          const fallback = inherited[id] && inherited[id][name];
+          return isSet(fallback)
+            ? Number(fallback)
+            : CHECKS[id].thresholds[name].default;
+        };
         return value(low) > value(high);
       })
       .map(([, high]) => `${id}.${high}`)
@@ -144,6 +149,62 @@ export function settingsPayload(
     };
   });
   return { checks };
+}
+
+/**
+ * What a template overrides: a state or threshold it does not set is `null`,
+ * meaning "inherited from the group".
+ * @param {Object} [settings] the template's `qualitySettings`
+ * @returns {{ states: Object<string, string|null>, thresholds: Object }}
+ */
+export function overridesOf(settings) {
+  const stored = storedChecks(settings);
+  return {
+    states: Object.fromEntries(
+      Object.keys(CHECKS).map((id) => [
+        id,
+        (stored[id] && stored[id].state) || null,
+      ])
+    ),
+    thresholds: thresholdsOf(settings),
+  };
+}
+
+/**
+ * The payload that saves a template's overrides: whatever is `null` or empty
+ * goes as `null`, so the template follows its group again.
+ * @returns {{ checks: Object }}
+ */
+export function overridesPayload(states, thresholds = {}) {
+  const checks = Object.fromEntries(
+    Object.entries(states).map(([id, state]) => [id, { state: state || null }])
+  );
+  Object.entries(thresholds).forEach(([id, values]) => {
+    checks[id].thresholds = Object.fromEntries(
+      Object.entries(values).map(([name, value]) => [
+        name,
+        value === '' || value === null || value === undefined
+          ? null
+          : Number(value),
+      ])
+    );
+  });
+  return { checks };
+}
+
+/**
+ * How many settings a template overrides, for its summary line.
+ * @param {Object} [settings] the template's `qualitySettings`
+ * @returns {number}
+ */
+export function overrideCount(settings) {
+  return Object.values(storedChecks(settings)).reduce(
+    (count, check) =>
+      count +
+      (check && check.state ? 1 : 0) +
+      Object.keys((check && check.thresholds) || {}).length,
+    0
+  );
 }
 
 /**
