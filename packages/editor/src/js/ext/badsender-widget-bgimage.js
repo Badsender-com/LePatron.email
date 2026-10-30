@@ -2,6 +2,7 @@
 
 const ko = require('knockout');
 const console = require('console');
+const { TRANSPARENT_GIF, isImageUnset } = require('./quality/ownership');
 
 // we need to declare which paramaters are supported
 // so in @supports -ko-blockdefs we can write:
@@ -16,8 +17,17 @@ const console = require('console');
 const defaultParameters = Object.freeze({
   // size: `100x100`,
 });
-const transparentGif = `data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==`;
-const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
+// The template's own value for this background of the block: the placeholder
+// it ships for the client to replace, which counts as no image (the same rule
+// as the quality check, see quality/ownership.js).
+function templateBackground(vm, block, prop) {
+  const type = ko.unwrap(block.type);
+  const def = (ko.unwrap(vm.blockDefs) || []).find(
+    (blockDef) => ko.unwrap(ko.unwrap(blockDef).type) === type
+  );
+  const options = def && ko.unwrap(ko.unwrap(def).bgOptions);
+  return options ? ko.unwrap(options[prop]) : undefined;
+}
 
 const isValidSize = (size) => /(\d+)x(\d+)/.test(size.trim());
 
@@ -61,8 +71,10 @@ module.exports = (opts) => {
         }
 
         const newBgImage = currentBlock?.bgOptions()[prop]();
-        const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif && newBgImage !== pngEmpty;
-        return hasImage;
+        return !isImageUnset(
+          newBgImage,
+          templateBackground(vm, currentBlock, prop)
+        );
       }
     };
     vm.setBgImage = (imageName, img, event) => {
@@ -73,7 +85,7 @@ module.exports = (opts) => {
       vm.closeDialogGallery();
     };
     vm.resetBgimage = (propAccessor, parameters, blockProperties, event) => {
-      blockProperties[propAccessor](transparentGif);
+      blockProperties[propAccessor](TRANSPARENT_GIF);
     };
     vm.openDialogGallery = (
       propAccessor,
@@ -99,7 +111,7 @@ module.exports = (opts) => {
   }
 
   return {
-    transparentGif,
+    transparentGif: TRANSPARENT_GIF,
     widget,
     viewModel,
   };

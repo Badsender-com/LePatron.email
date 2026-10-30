@@ -210,67 +210,11 @@
       cursor: not-allowed;
     }
 
-    // ==========================================================================
-    // SIMPLE SELECT - Native HTML select styled for design system
-    // ==========================================================================
+    // Native select (SimpleSelect): shared with the quality drawer
     .simple-select {
-      position: relative;
       margin-bottom: 16px;
-
-      &__input {
-        width: 100%;
-        height: 40px;
-        padding: 0 36px 0 12px; // Right padding for arrow
-        font-size: 0.875rem;
-        font-family: inherit;
-        color: rgba(0, 0, 0, 0.87);
-        background-color: #ffffff;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        outline: none;
-        cursor: pointer;
-        appearance: none; // Remove native arrow
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        transition: border-color 0.2s ease;
-
-        &:hover {
-          border-color: rgba(0, 0, 0, 0.4);
-        }
-
-        &:focus {
-          border-color: var(--v-accent-base, #00acdc);
-          border-width: 2px;
-          padding: 0 35px 0 11px; // Adjust for thicker border
-        }
-
-        // Placeholder style (disabled first option)
-        &:invalid,
-        &:required:invalid {
-          color: rgba(0, 0, 0, 0.38);
-        }
-
-        option {
-          color: rgba(0, 0, 0, 0.87);
-        }
-
-        option[value=""][disabled] {
-          color: rgba(0, 0, 0, 0.38);
-        }
-      }
-
-      &__arrow {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: rgba(0, 0, 0, 0.54);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
     }
+    @import (multiple) 'badsender-simple-select.less';
 
     // Legacy vue-select support (if still used elsewhere)
     .vue-select,

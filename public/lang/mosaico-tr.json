@@ -87,7 +87,5 @@
   "Unexpected error listing files": "Dosya yüklemede bilinmeyen hata listesi!",
   "__current__ of __total__": "__current__ ile ilgili __total__",
   "Select from gallery": "Galeriden seç",
-  "Error message": "Tespit edilen hatalar:",
-  "Missing link label:": "Eksik bağlantı:",
-  "Picture with no link": "Bağlantısız resim"
+  "Error message": "Tespit edilen hatalar:"
 }

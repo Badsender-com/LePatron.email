@@ -37,4 +37,8 @@ module.exports = Object.freeze({
   TaxonomyItemModel: 'TaxonomyItem',
   // Two-factor authentication (ADR 0008)
   SecurityEventModel: 'SecurityEvent',
+  // Public preview links (quality drawer)
+  ShareLinkModel: 'ShareLink',
+  // Daily budgets of the paid quality lookups
+  QualityBudgetModel: 'QualityBudget',
 });

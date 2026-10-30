@@ -11,7 +11,10 @@ const request = require('../../helpers/local-request.js');
 const {
   requireJsonBody,
 } = require('../../../packages/server/utils/require-json-body.js');
-const { GUARD_CAN } = require('../../../packages/server/account/auth.guard.js');
+const {
+  GUARD_CAN,
+  GUARD_USER,
+} = require('../../../packages/server/account/auth.guard.js');
 const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const { routeInspector } = require('../../helpers/express-router.js');
 const router = require('../../../packages/server/mailing/mailing.routes.js');
@@ -62,14 +65,21 @@ describe('the mailing routes that act on what the request carries', () => {
   const { guardsOf } = routeInspector(router);
 
   it.each([
-    ['/:mailingId/mosaico/download-zip', CAPABILITIES.MAILING_EXPORT],
-    ['/:mailingId/mosaico/send-test-mail', CAPABILITIES.MAILING_SEND_TEST],
-    ['/download-multiple-zip', CAPABILITIES.MAILING_EXPORT],
-  ])('%s requires a JSON body', (path, capability) => {
-    expect(guardsOf('post', path)).toEqual([
-      GUARD_CAN(capability),
-      requireJsonBody,
-    ]);
+    [
+      '/:mailingId/mosaico/download-zip',
+      GUARD_CAN(CAPABILITIES.MAILING_EXPORT),
+    ],
+    [
+      '/:mailingId/mosaico/send-test-mail',
+      GUARD_CAN(CAPABILITIES.MAILING_SEND_TEST),
+    ],
+    ['/download-multiple-zip', GUARD_CAN(CAPABILITIES.MAILING_EXPORT)],
+    // It spends the user's runs and has the server fetch the addresses sent.
+    ['/:mailingId/quality/resources', GUARD_USER],
+    // It creates a public link to the email.
+    ['/:mailingId/share-links', GUARD_CAN(CAPABILITIES.MAILING_SEND_TEST)],
+  ])('%s requires a JSON body', (path, guard) => {
+    expect(guardsOf('post', path)).toEqual([guard, requireJsonBody]);
   });
 });
 

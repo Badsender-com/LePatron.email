@@ -22,6 +22,8 @@ const EDITOR_ONLY_METADATA_KEYS = [
   'emailMetadata',
   'emailMetadataConfig',
   'headCss',
+  // Patched through /quality-ignores, one finding at a time.
+  'qualityIgnores',
 ];
 
 module.exports = { EDITOR_ONLY_METADATA_KEYS };

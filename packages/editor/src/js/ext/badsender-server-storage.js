@@ -11,8 +11,6 @@ const {
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
 const {
-  getErrorsForControlQuality,
-  displayErrors,
   checkRequiredTrackingParams,
   displayTrackingError,
 } = require('../ext/badsender-control-quality');
@@ -175,17 +173,6 @@ function loader(opts) {
     };
 
     /// ///
-    // EMAIL
-    /// ///
-    const testCmd = {
-      name: 'Test', // l10n happens in the template
-      enabled: ko.observable(true),
-    };
-    testCmd.execute = function () {
-      viewModel.openTestModal(true);
-    };
-
-    /// ///
     // ZIP
     /// ///
 
@@ -213,17 +200,13 @@ function loader(opts) {
       }
 
       // ====================================
-      // Check for missing input values
-      const errors = getErrorsForControlQuality(viewModel);
-      if (errors && errors.length > 0) {
-        displayErrors(errors, viewModel);
-        // Scroll to top so the user can see warnings if there is any
-        document.getElementById('main-wysiwyg-area').scrollTo({
-          behavior: 'smooth',
-          top: 0,
-        })
-      } else {
-        $('.error-message').remove();
+      // Quality review of the same export the ZIP is built from: the drawer
+      // opens when there is something to see, the download goes on anyway.
+      const html = viewModel.exportHTML();
+      try {
+        if (viewModel.quality) viewModel.quality.review({ html });
+      } catch (err) {
+        console.error('Quality review failed', err);
       }
 
       downloadCmd.enabled(false);
@@ -235,7 +218,7 @@ function loader(opts) {
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-          html: viewModel.exportHTML(),
+          html,
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
@@ -265,7 +248,7 @@ function loader(opts) {
     };
 
     viewModel.save = saveCmd;
-    viewModel.test = testCmd;
+    // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
   };
 }
