@@ -7,6 +7,7 @@ const { createCounts } = require('./quality-counts');
 const remoteApi = require('./quality-remote');
 const { watchContent } = require('./content-watch');
 const { checkStateOf } = require('./settings');
+const { displayBlockingFindings } = require('../badsender-control-quality');
 
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 
@@ -97,7 +98,10 @@ function installQualityReview(viewModel, ko, deps = {}) {
   // The review of an export that could not open the drawer said so once.
   let notifiedRun = 0;
 
-  const isIgnored = (finding) => ignores.has(finding.fingerprint);
+  // A finding of a blocking check cannot be ignored: an ignore stored before
+  // the check became blocking no longer hides it (ADR 0009).
+  const isIgnored = (finding) =>
+    !finding.blocking && ignores.has(finding.fingerprint);
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));
   const counts = createCounts(ko, { active, checks });
   const { issueCount } = counts;
@@ -253,7 +257,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
       viewModel.showQuality(true);
     },
 
-    ignore: (finding) => ignores.set(finding, true),
+    ignore: (finding) =>
+      finding.blocking ? Promise.resolve() : ignores.set(finding, true),
     unignore: (finding) => ignores.set(finding, false),
 
     run() {
@@ -274,6 +279,34 @@ function installQualityReview(viewModel, ko, deps = {}) {
         remoteStatus('idle');
       }
       settle();
+    },
+
+    /**
+     * Decides whether an export may leave: runs the checks on the HTML about
+     * to leave, opens the drawer when there is something to see, and, when a
+     * finding of a blocking check remains, lists them in a modal. The export
+     * is stopped by the caller on `blocked`. A failure of the checks never
+     * blocks.
+     * @param {Object} [options] - `html`: the HTML already exported
+     * @returns {Promise<{ blocked: boolean, findings: Array }>}
+     */
+    gate(options) {
+      const id = ++runId;
+      runVersion = contentVersion;
+      let local;
+      try {
+        local = runAll(id, options, {});
+      } catch (err) {
+        console.error('Quality review failed', err);
+        settle();
+        return Promise.resolve({ blocked: false, findings: [] });
+      }
+      surface(id);
+      // The verdict is this run's own: never what a later run left in the
+      // drawer. A blocking finding cannot be ignored.
+      const findings = local.findings.filter((finding) => finding.blocking);
+      if (findings.length) displayBlockingFindings(findings, viewModel);
+      return Promise.resolve({ blocked: findings.length > 0, findings });
     },
 
     /**
