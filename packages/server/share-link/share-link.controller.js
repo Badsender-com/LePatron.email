@@ -18,7 +18,8 @@ module.exports = {
   revoke: asyncHandler(revoke),
 };
 
-// Sharing an email outside the company takes the right to edit it.
+// Sharing a preview is a test of the email, so its route asks the right to
+// send one (a reviewer has it); here, being a member of where the email lives.
 async function editableMailing(req) {
   const mailing = await mailingService.findOneForUser(
     req.params.mailingId,

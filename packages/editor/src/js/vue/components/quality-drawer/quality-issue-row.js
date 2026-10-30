@@ -14,6 +14,8 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
     canComment: { type: Boolean, default: false },
     // Whether the choice can be stored on the email (quality-ignores.js).
     canIgnore: { type: Boolean, default: false },
+    // Shown but greyed out: the user's role may not ignore.
+    ignoreLocked: { type: Boolean, default: false },
     t: { type: Function, required: true },
   },
   computed: {
@@ -66,11 +68,11 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
             <span class="lucide lucide-message-circle" aria-hidden="true"></span>
             {{ t('Add comment') }}
           </button>
-          <button v-if="!ignored && canIgnore" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('ignore')">
+          <button v-if="!ignored && canIgnore" type="button" class="qc-button qc-button--ghost qc-button--sm" :disabled="ignoreLocked" :title="ignoreLocked ? t('quality-ignore-locked') : null" @click="$emit('ignore')">
             <span class="lucide lucide-ban" aria-hidden="true"></span>
             {{ t('quality-action-ignore') }}
           </button>
-          <button v-if="ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('unignore')">
+          <button v-if="ignored" type="button" class="qc-button qc-button--ghost qc-button--sm" :disabled="ignoreLocked" :title="ignoreLocked ? t('quality-ignore-locked') : null" @click="$emit('unignore')">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>
             {{ t('Stop ignoring') }}
           </button>
