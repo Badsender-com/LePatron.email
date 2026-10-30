@@ -131,3 +131,32 @@
   text-transform: uppercase;
   color: var(--gray-600);
 }
+
+#toolai .ai-panel {
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+
+    // A heading for screen readers' navigation, styled as a section label.
+    h3 {
+      margin: 0;
+    }
+
+    .lucide {
+      margin-left: 4px;
+    }
+  }
+
+  &__accept-block {
+    align-self: flex-start;
+  }
+}
