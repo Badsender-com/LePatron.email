@@ -26,4 +26,13 @@ router.post(
   textGeneration.generatePreheader
 );
 
+// Spelling corrections of the fields of one block (ADR 0011): accepted, they
+// are written into the email, as a proposal is.
+router.post(
+  '/corrections',
+  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  aiRateLimit(),
+  textGeneration.correctText
+);
+
 module.exports = router;

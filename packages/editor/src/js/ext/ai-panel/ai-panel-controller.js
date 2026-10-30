@@ -17,6 +17,8 @@ const { EMAIL, targetOfBlock } = require('./targets');
  *   api: Object,          the text generation routes
  *   isOpen: Function,     the AI panel's flag of the right panel
  *   selection: Function,  the canvas selection (viewModel.selectedBlock)
+ *   fieldSelection?: Function, the field selection (viewModel.selectedItem)
+ *   editedField?: Function, the block field being edited, or null
  *   definitions?: Array,  the action definitions, all of them by default
  * }} params
  */
@@ -26,6 +28,8 @@ function createAiPanel({
   api,
   isOpen,
   selection,
+  fieldSelection = null,
+  editedField = () => null,
   definitions = ACTIONS,
 }) {
   // What the list is about: the canvas selection, or the whole email.
@@ -59,10 +63,18 @@ function createAiPanel({
     );
   }
 
+  // What the canvas selection targets: the field being edited, or else the
+  // selected block, or the whole email. Read when the selection changes and
+  // kept: the focus later moves to the panel, the selection does not.
+  const selected = () => editedField() || targetOfBlock(selection());
+  let selectedTarget = selected();
+
   // The panel follows the selection while it lists, never in the middle of an
   // action, applied or not: its proposals are not lost to a click elsewhere.
-  function follow(block) {
-    const followed = targetOfBlock(block);
+  function follow() {
+    const block = selection();
+    selectedTarget = selected();
+    const followed = selectedTarget;
     if (session()) {
       const offers =
         block && offer(followed, editor.context()).actions.length > 0;
@@ -73,7 +85,7 @@ function createAiPanel({
     if (isOpen()) refresh();
   }
 
-  function showList(listed = targetOfBlock(selection())) {
+  function showList(listed = selectedTarget) {
     session(null);
     selectionChanged(null);
     target(listed);
@@ -117,7 +129,15 @@ function createAiPanel({
       if (open) refresh();
     }),
     selection.subscribe(follow),
+    ...(fieldSelection ? [fieldSelection.subscribe(follow)] : []),
   ];
+  // The action under way follows the editor's undo: a correction taken back.
+  const stopHistory = editor.onHistory
+    ? editor.onHistory(() => {
+        const current = session();
+        if (current && current.refresh) current.refresh();
+      })
+    : () => {};
 
   return {
     target,
@@ -133,6 +153,7 @@ function createAiPanel({
     offerNow,
     dispose() {
       subscriptions.forEach((subscription) => subscription.dispose());
+      stopHistory();
     },
   };
 }

@@ -5,11 +5,13 @@ const { definitionOf } = require('../../../ext/ai-panel/actions');
 const { placeFieldIcons } = require('../../../ext/ai-panel/field-icons');
 const { FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
 const { AiProposalsSteps } = require('./ai-proposals-steps');
+const { AiCorrectionsSteps } = require('./ai-corrections-steps');
 const template = require('./ai-panel.template');
 
 // The component that renders the steps of each family of AI actions.
 const STEPS_BY_FAMILY = {
   proposals: 'AiProposalsSteps',
+  corrections: 'AiCorrectionsSteps',
 };
 
 // What the controller holds, mirrored here so Vue renders it.
@@ -30,7 +32,7 @@ const MIRRORED = [
  * (ext/right-panel.js); it also places the AI icons on the fields.
  */
 const AiPanel = Vue.component('AiPanel', {
-  components: { AiProposalsSteps },
+  components: { AiProposalsSteps, AiCorrectionsSteps },
   props: {
     vm: { type: Object, required: true },
     panel: { type: Object, required: true },
@@ -97,8 +99,12 @@ const AiPanel = Vue.component('AiPanel', {
     openAction(id, target) {
       this.panel.openAction(id, target);
     },
+    // Emptied first: the same message twice is said twice.
     announce(message) {
-      this.liveMessage = message;
+      this.liveMessage = '';
+      this.$nextTick(() => {
+        this.liveMessage = message;
+      });
     },
     // The subject and preheader fields re-render (Vue, Knockout): the icons are
     // placed again on every change of the toolbox, never twice; the email is

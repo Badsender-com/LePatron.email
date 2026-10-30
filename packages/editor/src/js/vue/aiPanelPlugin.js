@@ -5,10 +5,19 @@ const { AiPanel } = require('./components/ai-panel/ai-panel');
 const { installRightPanel } = require('../ext/right-panel');
 const { createEditorAccess } = require('../ext/ai-panel/editor-access');
 const { createAiPanel } = require('../ext/ai-panel/ai-panel-controller');
-const { generateSubjects, generatePreheaders } = require('./utils/apis');
+const { fieldTargetOf } = require('../ext/ai-panel/field-target');
+const {
+  generateSubjects,
+  generatePreheaders,
+  correctText,
+} = require('./utils/apis');
 
-// The text generation routes the "proposals" actions call, by route name.
-const ROUTES = { subject: generateSubjects, preheader: generatePreheaders };
+// The text generation routes the AI actions call, by route name.
+const ROUTES = {
+  subject: generateSubjects,
+  preheader: generatePreheaders,
+  corrections: correctText,
+};
 
 const api = {
   generate: (route, body) =>
@@ -29,12 +38,21 @@ module.exports = {
     if (!vm.metadata.hasTextGenerationFeature) return;
     if (!document.getElementById('ai-panel')) return;
 
+    const editor = createEditorAccess(vm);
     panel = createAiPanel({
       ko,
-      editor: createEditorAccess(vm),
+      editor,
       api,
       isOpen: vm.showAi,
       selection: vm.selectedBlock,
+      // A click in a text selects it: the field being edited is the element
+      // that has the focus, matched against its block's text fields.
+      fieldSelection: vm.selectedItem,
+      editedField: () =>
+        fieldTargetOf(document.activeElement, {
+          pathsOf: (blockId) =>
+            editor.textFieldsOf(blockId).map((field) => field.path),
+        }),
     });
 
     Vue.component('AiPanelPlugin', {
