@@ -21,8 +21,8 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
-const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
-const { pickSeedLang } = require('../taxonomy/default-email-types.js');
+const taxonomyDefaultsService = require('../taxonomy/services/taxonomy-defaults.service.js');
+const { pickSeedLang } = require('../taxonomy/services/default-email-types.js');
 const logger = require('../utils/logger.js');
 const {
   MAILING_LIST_PROJECTION,

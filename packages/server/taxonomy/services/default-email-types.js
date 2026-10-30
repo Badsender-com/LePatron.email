@@ -1,6 +1,8 @@
 'use strict';
 
-const { EmailTypeCanonical } = require('../constant/email-type-canonical.js');
+const {
+  EmailTypeCanonical,
+} = require('../../constant/email-type-canonical.js');
 
 /**
  * The six Badsender email types, seeded into every company's taxonomy.
