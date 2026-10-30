@@ -200,8 +200,9 @@ const BLOCKED_HOST_ERROR_CODE = 'EBLOCKEDHOST';
  * Node calls it for hostnames only — a literal IP never reaches it, which is
  * why `assertOutboundHostAllowed` still runs before each request.
  *
- * Same signature as `dns.lookup`: Node 18 asks for one address, newer versions
- * (autoSelectFamily) ask for `all`.
+ * Same signature as `dns.lookup`: Node's agents ask for `all` (autoSelectFamily,
+ * on by default since Node 20); the single-address form is kept for a caller
+ * that disables it.
  */
 function guardedLookup(hostname, options, callback) {
   const cb = typeof options === 'function' ? options : callback;

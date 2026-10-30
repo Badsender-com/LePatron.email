@@ -5,7 +5,7 @@ lang: en-US
 
 ## Dev prerequisite
 
-- [NodeJS 14.16](https://nodejs.org/en/)
+- [NodeJS](https://nodejs.org/en/), the version in `.nvmrc` (`nvm use`)
 - [Yarn v1.13.0](https://yarnpkg.com/en/)
 - [MongoDB >= v3.4.18](https://www.mongodb.com/)
   - if installed locally `mongod` to start
