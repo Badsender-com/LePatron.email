@@ -17,6 +17,9 @@ jest.mock(
   '../../../packages/server/mailing/mailing-metadata.service.js',
   () => ({ buildEditorMetadata: jest.fn().mockResolvedValue(null) })
 );
+jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
+  userCanEditMailing: jest.fn().mockResolvedValue(true),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Mailings: {},
   Groups: { findById: jest.fn() },
