@@ -14,6 +14,8 @@
  * - `update(collection, id, changes)` changes a stored record between two
  *   calls, the way the app would (a role changed, an account deactivated, MCP
  *   access turned off).
+ * - `stored(collection)` answers what a collection holds, for what no MCP
+ *   client can read (the call log).
  * - `advanceClock(ms)` moves the server's clock forward, for what is counted
  *   per minute (the rate limit).
  * - `disconnect()` closes every client opened since the last `seed`.
@@ -43,8 +45,20 @@ const { Client, InMemoryTransport } = require('@modelcontextprotocol/client');
 
 let clients = [];
 
+// Required where used: the guard reads the models, which must be the
+// stand-ins.
+const callGuard = () => require('../../packages/server/mcp/mcp-call-guard.js');
+
+// Every test starts at the real time, with no call counted.
 function seed(records) {
   store.seed(records);
+  const guard = callGuard();
+  guard.forgetCounts();
+  guard.clock.now = Date.now;
+}
+
+function stored(collection) {
+  return store.stored(collection);
 }
 
 function update(collection, id, changes) {
@@ -89,8 +103,10 @@ async function connectAs(userId, options = {}) {
   return client;
 }
 
-function advanceClock() {
-  throw new Error('The clock of the MCP harness is written by #1303');
+function advanceClock(ms) {
+  const { clock } = callGuard();
+  const previous = clock.now;
+  clock.now = () => previous() + ms;
 }
 
 async function disconnect() {
@@ -113,6 +129,7 @@ module.exports = {
   seed,
   connectAs,
   update,
+  stored,
   advanceClock,
   disconnect,
   answerOf,
