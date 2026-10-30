@@ -180,8 +180,7 @@ describe('a blocking check', () => {
   });
 });
 
-// Turned on by #1201 (blocking checks before an ESP send, and server checks that block)
-describe.skip('a blocking check run by the server', () => {
+describe('a blocking check run by the server', () => {
   const link = textBlock('<a href="https://brand.test/gone">Our offer</a>');
 
   function review(answer) {
@@ -228,6 +227,36 @@ describe.skip('a blocking check run by the server', () => {
   it('never blocks when the server cannot be reached', async () => {
     const vm = review(() => Promise.reject(new Error('Network Error')));
     expect((await vm.quality.gate({ html: link.html })).blocked).toBe(false);
+  });
+
+  // Code review of #1193: a run started while the gate waits (the drawer's
+  // "Run again") used to drop the server's answer, and the export left.
+  it('keeps its verdict when another run starts while it waits', async () => {
+    let answer;
+    const vm = review(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        })
+    );
+    const verdict = vm.quality.gate({ html: link.html });
+    expect(vm.quality.waitsForServer()).toBe(true);
+    vm.quality.cancel();
+    // The request leaves on the next tick, behind any earlier one.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    answer({
+      links: {
+        'https://brand.test/gone': { state: 'broken', httpStatus: 404 },
+      },
+      images: {},
+    });
+    expect((await verdict).blocked).toBe(true);
+  });
+
+  it('does not wait when the email has nothing to ask the server', async () => {
+    const vm = review(jest.fn());
+    vm.quality.gate({ html: textBlock('<p>Hi</p>').html });
+    expect(vm.quality.waitsForServer()).toBe(false);
   });
 });
 
