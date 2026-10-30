@@ -77,7 +77,7 @@ describe('the mailing routes that act on what the request carries', () => {
     // It spends the user's runs and has the server fetch the addresses sent.
     ['/:mailingId/quality/resources', GUARD_USER],
     // It creates a public link to the email.
-    ['/:mailingId/share-links', GUARD_CAN(CAPABILITIES.MAILING_EDIT_CONTENT)],
+    ['/:mailingId/share-links', GUARD_CAN(CAPABILITIES.MAILING_SEND_TEST)],
   ])('%s requires a JSON body', (path, guard) => {
     expect(guardsOf('post', path)).toEqual([guard, requireJsonBody]);
   });

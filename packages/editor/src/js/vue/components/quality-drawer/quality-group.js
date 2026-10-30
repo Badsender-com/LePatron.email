@@ -18,6 +18,7 @@ const QualityGroup = Vue.component('QualityGroup', {
     ignored: { type: Boolean, default: false },
     canComment: { type: Boolean, default: false },
     canIgnore: { type: Boolean, default: false },
+    ignoreLocked: { type: Boolean, default: false },
     t: { type: Function, required: true },
   },
   computed: {
@@ -55,6 +56,7 @@ const QualityGroup = Vue.component('QualityGroup', {
           :ignored="ignored"
           :can-comment="canComment"
           :can-ignore="canIgnore"
+          :ignore-locked="ignoreLocked"
           :expanded="expandedId === item.id"
           @toggle="$emit('toggle', item)"
           @locate="$emit('locate', item)"

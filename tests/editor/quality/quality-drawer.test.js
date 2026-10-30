@@ -19,6 +19,7 @@ const {
   installQualityReview,
 } = require('../../../packages/editor/src/js/ext/quality/quality-review.js');
 const { fakeViewModel } = require('./fake-view-model');
+const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
@@ -46,8 +47,18 @@ const sizeCheck = {
 const apps = [];
 let changeContent = () => {};
 
-async function mountDrawer(result, { ignoreUrl = '/api/m1/ignores' } = {}) {
+// `user` as the editor loads it: null until known. `canEdit` stands for the
+// right to edit the content (ext/user-can.js), which ignoring takes.
+async function mountDrawer(
+  result,
+  { ignoreUrl = '/api/m1/ignores', user = { id: 'u1' }, canEdit = true } = {}
+) {
   const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
+  vm.currentUser = ko.observable(user);
+  vm.userCan = (capability) =>
+    !!vm.currentUser() &&
+    canEdit &&
+    capability === CAPABILITIES.MAILING_EDIT_CONTENT;
   vm.selectBlock = jest.fn();
   vm.notifier = { warning: jest.fn(), error: jest.fn() };
   vm.metadata.url = { qualityIgnores: ignoreUrl };
@@ -371,6 +382,42 @@ describe('QualityDrawer', () => {
     expect(vm.quality.ignored()).toEqual([]);
     expect(el.querySelector('.qc-group--ignored')).toBeNull();
     expect(el.querySelector('.qc-undo')).toBeNull();
+  });
+
+  it('greys out Ignore for a role that may not edit the email', async () => {
+    const { vm, el } = await mountDrawer(
+      { findings: [linkFinding], checks: [] },
+      { canEdit: false }
+    );
+    vm.quality.run();
+    await Vue.nextTick();
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+
+    const ignore = buttonNamed(el, 'quality-action-ignore');
+    expect(ignore.disabled).toBe(true);
+    expect(ignore.getAttribute('title')).toBe('quality-ignore-locked');
+    ignore.click();
+    await Vue.nextTick();
+    expect(vm.quality.ignored()).toEqual([]);
+  });
+
+  it('keeps Ignore locked until the user is known', async () => {
+    const { vm, el } = await mountDrawer(
+      { findings: [linkFinding], checks: [] },
+      { user: null }
+    );
+    vm.quality.run();
+    await Vue.nextTick();
+    el.querySelector('.qc-row__head').click();
+    await Vue.nextTick();
+    expect(buttonNamed(el, 'quality-action-ignore').disabled).toBe(true);
+
+    vm.currentUser({ id: 'u1' });
+    await Vue.nextTick();
+    const ignore = buttonNamed(el, 'quality-action-ignore');
+    expect(ignore.disabled).toBe(false);
+    expect(ignore.hasAttribute('title')).toBe(false);
   });
 
   it('drops the undo bar once the finding is released by hand', async () => {
