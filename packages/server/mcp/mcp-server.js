@@ -12,6 +12,7 @@ const {
 } = require('./mcp-skill-resources.js');
 const { registerAuthoringTools, WRITE_SCOPE } = require('./mcp-authoring.js');
 const { registerSubmitFeedback } = require('./mcp-feedback.js');
+const { guardCalls } = require('./mcp-call-guard.js');
 
 const { version } = require('../../../package.json');
 
@@ -28,7 +29,8 @@ const INSTRUCTIONS = [
  * What answers anyone reads nothing: `initialize`, `ping`, and the listings
  * the SDK answers itself from what is registered (`tools/list`,
  * `resources/templates/list`), the same for every token with the same scopes:
- * the token's scopes say which tools it offers.
+ * the token's scopes say which tools it offers. What it is asked is rate
+ * limited and logged (mcp-call-guard.js).
  *
  * @param {Object} [options]
  * @param {Object} [options.authInfo] the validated access token
@@ -39,6 +41,8 @@ function createMcpServer({ authInfo } = {}) {
     { name: 'lepatron', title: 'LePatron', version },
     { instructions: INSTRUCTIONS }
   );
+  // Before anything is registered: every handler is rate limited and logged.
+  guardCalls(server);
   registerExpertiseResources(server);
   registerFindApplicableExpertises(server);
   registerSkillPrompts(server);

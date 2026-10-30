@@ -38,4 +38,5 @@ module.exports = Object.freeze({
   // Two-factor authentication (ADR 0008)
   SecurityEventModel: 'SecurityEvent',
   McpFeedbackModel: 'McpFeedback',
+  McpCallLogModel: 'McpCallLog',
 });

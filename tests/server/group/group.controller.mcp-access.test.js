@@ -28,6 +28,9 @@ const {
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
 const SecurityEventSchema = require('../../../packages/server/security-event/security-event.schema.js');
+const {
+  restampMcpRetention,
+} = require('../../../packages/server/mcp/mcp-retention.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -218,5 +221,16 @@ describe('PUT /groups/:groupId — retex', () => {
     const payload = await update(user, { allowRetex: true });
 
     expect(payload.allowRetex).toBe(true);
+  });
+});
+
+describe('PUT /groups/:groupId — log retention', () => {
+  it('reaches the MCP call logs and feedbacks already kept', async () => {
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(restampMcpRetention).toHaveBeenCalledWith({
+      groupId: GROUP_ID,
+      retentionDays: 7,
+    });
   });
 });
