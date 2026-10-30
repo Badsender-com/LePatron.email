@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const { ShareLinks, Groups, Templates } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const GROUP_STATUS = require('../group/status.js');
 const logger = require('../utils/logger.js');
 const { encrypt, decrypt } = require('../utils/crypto.js');
@@ -176,7 +177,8 @@ async function createShareLink({ mailing, user, expiresInDays }) {
     tokenEncrypted: sealToken(token),
     _mailing: mailing._id,
     _company: companyId,
-    _user: user.isAdmin ? undefined : user.id,
+    // The bootstrap account has no document to point at (ADR 0002).
+    _user: isBootstrapAccount(user) ? undefined : user.id,
     lang: user.lang === 'en' ? 'en' : 'fr',
     expiresAt: new Date(Date.now() + expiresInDays * DAY_MS),
   });

@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const { getBlockDefault } = require('./ownership');
 const { parseDeclarations } = require('./inline-style');
-const { SYNTHETIC_BLOCKS } = require('../html-code-block/block-types');
+const { SYNTHETIC_BLOCKS } = require('../synthetic-blocks/block-types');
 
 // What the client formatted by hand in the rich texts of a block: the inline
 // styles TinyMCE writes (font size, colour, alignment, line height…) and the

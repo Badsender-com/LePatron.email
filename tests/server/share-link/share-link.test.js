@@ -259,7 +259,7 @@ describe('more on links', () => {
     expect(query.expiresAt.$gt).toBeInstanceOf(Date);
   });
 
-  it('stores no author for the admin, and says none', async () => {
+  it('stores no author for the bootstrap account, and says none', async () => {
     ShareLinks.countDocuments.mockResolvedValue(0);
     ShareLinks.create.mockImplementation(async (doc) => ({
       _id: LINK_ID,
@@ -267,7 +267,12 @@ describe('more on links', () => {
     }));
     const { res } = await call(controller.create, {
       params: { mailingId: MAILING_ID },
-      user: { id: 'admin', name: 'admin', isAdmin: true, lang: 'en' },
+      user: {
+        id: config.admin.id,
+        name: 'admin',
+        role: 'super_admin',
+        lang: 'en',
+      },
     });
     expect(ShareLinks.create.mock.calls[0][0]).toMatchObject({
       _user: undefined,

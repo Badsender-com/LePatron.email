@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 const { clientMarkup } = require('../html-code');
-const { SANITIZE_CONFIG } = require('../../html-code-block/neutralize-html');
+const { SANITIZE_CONFIG } = require('../../synthetic-blocks/neutralize-html');
 
 // What no email client runs and every filter distrusts: scripts, embedded
 // pages, forms, plug-ins, stylesheets, event handlers and script URLs. The

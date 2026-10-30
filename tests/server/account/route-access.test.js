@@ -73,6 +73,8 @@ const EXEMPTIONS = {
   'PUT /api/users/me/storage/:key': "the user's own interface preferences",
   'PUT /api/users/me/selected-group/':
     "a super admin's own selected group, refused to anyone else by its controller",
+  'POST /api/mailings/:mailingId/quality/resources':
+    'measures the links and images of an email the user can open, and writes nothing',
 };
 
 // The routes the roles below the company admin reach, and what each needs:
@@ -93,6 +95,9 @@ const ROLE_ROUTES = {
   'POST /api/mailings/:mailingId/mosaico/download-zip': C.MAILING_EXPORT,
   'POST /api/mailings/download-multiple-zip': C.MAILING_EXPORT,
   'POST /api/profiles/:mailingId/send-campaign-mail': C.MAILING_EXPORT,
+  'PATCH /api/mailings/:mailingId/quality-ignores': C.MAILING_EDIT_CONTENT,
+  'POST /api/mailings/:mailingId/share-links': C.MAILING_EDIT_CONTENT,
+  'DELETE /api/mailings/:mailingId/share-links/:linkId': C.MAILING_EDIT_CONTENT,
   'POST /api/folders': C.FOLDER_MANAGE,
   'PATCH /api/folders/:folderId': C.FOLDER_MANAGE,
   'POST /api/folders/:folderId/move': C.FOLDER_MANAGE,

@@ -1,6 +1,6 @@
 'use strict';
 
-const { HTML_CODE_BLOCK } = require('../html-code-block/block-types');
+const { HTML_CODE_BLOCK } = require('../synthetic-blocks/block-types');
 
 // Read from the synthetic block descriptor, the one table the editor and the
 // server share (packages/shared/synthetic-blocks.js).
