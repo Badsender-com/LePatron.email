@@ -10,7 +10,7 @@
 
 const mongoose = require('mongoose');
 
-const TaxonomyItemSchema = require('../../../packages/server/taxonomy/taxonomy.schema.js');
+const TaxonomyItemSchema = require('../../../packages/server/taxonomy/models/taxonomy.schema.js');
 
 const COMPANY = mongoose.Types.ObjectId('507f1f77bcf86cd799439a01');
 

@@ -2,18 +2,18 @@
 
 const { Conflict } = require('http-errors');
 
-const { TaxonomyItems } = require('../common/models.common.js');
-const ERROR_CODES = require('../constant/error-codes.js');
+const { TaxonomyItems } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   TaxonomyLimits,
   TaxonomyTypes,
-} = require('../constant/taxonomy-type.js');
+} = require('../../constant/taxonomy-type.js');
 const {
   buildDefaultEmailTypes,
   planMissingDefaultEmailTypes,
 } = require('./default-email-types.js');
 const { resolveCompanyId } = require('./taxonomy.service.js');
-const logger = require('../utils/logger.js');
+const logger = require('../../utils/logger.js');
 
 /**
  * The Badsender default email types, written into a company's taxonomy: the

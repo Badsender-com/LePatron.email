@@ -57,6 +57,7 @@ const { DEFAULT_EMAIL_TYPES } = require(path.resolve(
   'packages',
   'server',
   'taxonomy',
+  'services',
   'default-email-types.js'
 ));
 const taxonomyDefaultsService = require(path.resolve(
@@ -65,6 +66,7 @@ const taxonomyDefaultsService = require(path.resolve(
   'packages',
   'server',
   'taxonomy',
+  'services',
   'taxonomy-defaults.service.js'
 ));
 

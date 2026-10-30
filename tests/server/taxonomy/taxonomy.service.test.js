@@ -29,7 +29,7 @@ const {
   TaxonomyItems,
   Mailings,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyService = require('../../../packages/server/taxonomy/taxonomy.service.js');
+const taxonomyService = require('../../../packages/server/taxonomy/services/taxonomy.service.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const COMPANY_A = '507f1f77bcf86cd799439a01';

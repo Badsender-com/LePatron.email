@@ -9,18 +9,18 @@ const {
   InternalServerError,
 } = require('http-errors');
 
-const { TaxonomyItems, Mailings } = require('../common/models.common.js');
-const ERROR_CODES = require('../constant/error-codes.js');
-const permissions = require('../account/permissions.js');
-const { selectedGroupIdOf } = require('../account/request-scope.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
-const { TaxonomyLimits } = require('../constant/taxonomy-type.js');
+const { TaxonomyItems, Mailings } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const permissions = require('../../account/permissions.js');
+const { selectedGroupIdOf } = require('../../account/request-scope.js');
+const { CAPABILITIES } = require('../../../shared/access/roles.js');
+const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
 const {
   isObjectId,
   validateType,
   validatePayload,
 } = require('./taxonomy.validation.js');
-const logger = require('../utils/logger.js');
+const logger = require('../../utils/logger.js');
 
 module.exports = {
   listTaxonomyItems,
