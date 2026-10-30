@@ -52,7 +52,7 @@ const HELPERS = '../../../packages/ui/helpers/taxonomy-builder.js';
 
 // Turned on by #1353 (dimensions are records; the email type and the trigger as
 // standard dimensions)
-describe.skip('taxonomy screen: standard dimensions', () => {
+describe('taxonomy screen: standard dimensions', () => {
   let sortDimensions;
   let dimensionActions;
 
@@ -212,5 +212,32 @@ describe.skip('taxonomy screen: precedence', () => {
     expect(resolutionOrder([BRAND, { ...MARKET, isActive: false }])).toEqual([
       'brand',
     ]);
+  });
+});
+
+describe('taxonomy screen: the wording of a dimension', () => {
+  let buildDimensionPayload;
+
+  beforeAll(() => {
+    ({ buildDimensionPayload } = require(HELPERS));
+  });
+
+  it('sends the trimmed label and the description, never the name', () => {
+    expect(
+      buildDimensionPayload({
+        name: 'emailType',
+        label: '  Famille de message ',
+        description: 'Ce que le message apporte.',
+      })
+    ).toEqual({
+      label: 'Famille de message',
+      description: 'Ce que le message apporte.',
+    });
+  });
+
+  it('clears an emptied description with null', () => {
+    expect(
+      buildDimensionPayload({ label: 'Typologie', description: '' })
+    ).toEqual({ label: 'Typologie', description: null });
   });
 });

@@ -26,7 +26,7 @@ const { routeInspector } = require('../../helpers/express-router.js');
 
 // Turned on by #1353 (dimensions are records; the email type and the trigger as
 // standard dimensions)
-describe.skip('dimension routes', () => {
+describe('dimension routes', () => {
   let layerFor;
   let guardsOf;
 

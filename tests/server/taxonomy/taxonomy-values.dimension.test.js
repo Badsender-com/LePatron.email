@@ -54,7 +54,7 @@ const addValue = (type, payload, user = adminA) =>
 
 // Turned on by #1353 (dimensions are records; the email type and the trigger as
 // standard dimensions)
-describe.skip('a value belongs to a dimension', () => {
+describe('a value belongs to a dimension', () => {
   beforeAll(loadServices);
 
   it('still creates an email type value', async () => {
