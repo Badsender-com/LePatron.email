@@ -66,6 +66,7 @@ async function logInvocation(params) {
     _company: params.groupId,
     _user: params.userId || null,
     invocationSource: params.invocationSource || null,
+    expertiseConsumed: params.expertiseConsumed || [],
     variantPath: params.variantPath || [],
     provider: params.resolvedConfig ? params.resolvedConfig.provider : null,
     model: params.resolvedConfig ? params.resolvedConfig.model : null,
@@ -114,14 +115,17 @@ async function logFailure(params) {
   // in an HTTP body. The full detail is persisted in AISkillInvocation.error,
   // which the Invocations tab already displays, so `invocationId` is the handle
   // to it.
-  const isCallerInputError =
-    params.error && params.error.code === 'INPUT_VALIDATION';
+  const isCallerInputError = params.error?.code === 'INPUT_VALIDATION';
   const err = createError(
     params.status === InvocationStatuses.VALIDATION_ERROR ? 400 : 502,
     isCallerInputError ? params.error.message : 'Skill invocation failed'
   );
   err.invocationId = invocationId;
   err.invocationStatus = params.status;
+  // The provider's own verdict (PROVIDER_QUOTA_EXCEEDED, …), for a caller that
+  // must tell "retry later" from "an administrator has to act". A code, never
+  // the provider's message.
+  if (params.error?.code) err.failureCode = params.error.code;
   if (isCallerInputError) err.skillError = params.error;
   // Transient decoration for UI consumption (inline field errors). Never
   // persisted: logInvocation builds its doc from explicit picks and `error`

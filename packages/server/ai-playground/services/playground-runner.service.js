@@ -121,6 +121,11 @@ async function executeScenario({
         groupId: effectiveGroupId,
         userId,
         invocationSource: PlaygroundInvocationSource,
+        expertiseConsumed: resolvedExpertise.map((e) => ({
+          expertiseId: e.expertiseId,
+          versionMajor: e.versionMajor,
+          versionMinor: e.versionMinor,
+        })),
         variantPath: scenario.variantPath || [],
         // Always pass the resolved version: in pinned mode this is what makes
         // the pinned version actually RUN (not just be displayed on the run).

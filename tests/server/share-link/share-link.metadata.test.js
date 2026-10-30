@@ -12,6 +12,10 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
+  getEditorFeatureFlags: jest.fn().mockResolvedValue({
+    hasTranslationFeature: false,
+    hasTextGenerationFeature: false,
+  }),
 }));
 jest.mock(
   '../../../packages/server/mailing/mailing-metadata.service.js',

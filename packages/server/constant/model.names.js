@@ -41,4 +41,6 @@ module.exports = Object.freeze({
   ShareLinkModel: 'ShareLink',
   // Daily budgets of the paid quality lookups
   QualityBudgetModel: 'QualityBudget',
+  // Rate limit of the AI features
+  AIUsageCounterModel: 'AIUsageCounter',
 });
