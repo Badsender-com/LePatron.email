@@ -37,8 +37,8 @@ const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
-const superAdmin = { isAdmin: true, isGroupAdmin: false };
-const groupAdmin = { isAdmin: false, isGroupAdmin: true };
+const superAdmin = { role: 'super_admin' };
+const groupAdmin = { role: 'company_admin' };
 
 function storedSharing(enableShareLinks) {
   Groups.findById.mockReturnValue({
