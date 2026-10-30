@@ -2,11 +2,11 @@
 
 const { BadRequest } = require('http-errors');
 
-const ERROR_CODES = require('../constant/error-codes.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   TaxonomyTypeValues,
   TaxonomyLimits,
-} = require('../constant/taxonomy-type.js');
+} = require('../../constant/taxonomy-type.js');
 
 // `ObjectId.isValid` returns true for ANY 12-character string, reinterpreting its
 // bytes as an id: 'companyAdmin' becomes a perfectly valid ObjectId pointing at a

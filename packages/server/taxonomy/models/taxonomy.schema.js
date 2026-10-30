@@ -3,7 +3,7 @@
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 
-const { trimString } = require('../utils/model');
+const { trimString } = require('../../utils/model');
 
 // `trimString` does `String(value).trim()`, so clearing an optional field by
 // assigning `undefined` stored the literal string "undefined" — which then showed
@@ -11,11 +11,11 @@ const { trimString } = require('../utils/model');
 // of changing the shared helper, which every other schema relies on.
 const trimOptionalString = (value) =>
   value === undefined || value === null ? value : trimString(value);
-const { GroupModel } = require('../constant/model.names.js');
+const { GroupModel } = require('../../constant/model.names.js');
 const {
   TaxonomyTypeValues,
   TaxonomyLimits,
-} = require('../constant/taxonomy-type.js');
+} = require('../../constant/taxonomy-type.js');
 
 /**
  * @apiDefine taxonomyItem

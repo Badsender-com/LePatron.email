@@ -34,7 +34,7 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   findWorkspaces: jest.fn(),
 }));
 jest.mock(
-  '../../../packages/server/taxonomy/taxonomy-defaults.service.js',
+  '../../../packages/server/taxonomy/services/taxonomy-defaults.service.js',
   () => ({ seedDefaultEmailTypes: jest.fn() })
 );
 jest.mock('../../../packages/server/utils/logger.js', () => ({
@@ -48,7 +48,7 @@ const groupService = require('../../../packages/server/group/group.service.js');
 const {
   SecurityEvents,
 } = require('../../../packages/server/common/models.common.js');
-const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxonomy-defaults.service.js');
+const taxonomyDefaultsService = require('../../../packages/server/taxonomy/services/taxonomy-defaults.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';

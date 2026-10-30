@@ -3,10 +3,10 @@
 const asyncHandler = require('express-async-handler');
 const { omit } = require('lodash');
 
-const taxonomyService = require('./taxonomy.service.js');
-const taxonomyDefaultsService = require('./taxonomy-defaults.service.js');
-const { pickSeedLang } = require('./default-email-types.js');
-const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
+const taxonomyService = require('../services/taxonomy.service.js');
+const taxonomyDefaultsService = require('../services/taxonomy-defaults.service.js');
+const { pickSeedLang } = require('../services/default-email-types.js');
+const { TaxonomyTypes } = require('../../constant/taxonomy-type.js');
 
 module.exports = {
   listTaxonomyItems: asyncHandler(listTaxonomyItems),
