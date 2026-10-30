@@ -512,14 +512,8 @@ describe('QualityDrawer', () => {
     );
   });
 
-  it('closes on Escape', async () => {
-    const { vm, el } = await mountDrawer({ findings: [], checks: [] });
-    vm.showQuality(true);
-    el.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
-    );
-    expect(vm.showQuality()).toBe(false);
-  });
+  // Escape and focus are the right panel's, for every panel alike: see
+  // tests/editor/right-panel-binding.test.js.
 
   it('lets go of its subscriptions when destroyed', async () => {
     const { vm, app } = await mountDrawer({ findings: [], checks: [] });

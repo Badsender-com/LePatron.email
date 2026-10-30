@@ -6,6 +6,7 @@ const { createIgnores } = require('./quality-ignores');
 const { createCounts } = require('./quality-counts');
 const remoteApi = require('./quality-remote');
 const { watchContent } = require('./content-watch');
+const { installRightPanel } = require('../right-panel.js');
 
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 
@@ -212,7 +213,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     });
   }
 
-  viewModel.showQuality = ko.observable(false);
+  // One of the right panels: opening it closes the comments or the AI panel
+  // (ADR 0010).
+  viewModel.showQuality = installRightPanel(viewModel, ko).flag('quality');
   // The drawer's tab: the checks, or sending a test.
   const tab = ko.observable('checks');
 
