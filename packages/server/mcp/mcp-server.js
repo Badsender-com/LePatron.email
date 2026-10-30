@@ -12,6 +12,7 @@ const {
 } = require('./mcp-skill-resources.js');
 const { registerAuthoringTools, WRITE_SCOPE } = require('./mcp-authoring.js');
 const { registerSubmitFeedback } = require('./mcp-feedback.js');
+const { guardCalls } = require('./mcp-call-guard.js');
 
 const { version } = require('../../../package.json');
 
@@ -25,7 +26,7 @@ const INSTRUCTIONS = [
  * A fresh MCP server (ADR 0012): it keeps no state, so the HTTP endpoint
  * builds one per request, and each handler resolves who calls from the
  * validated token the transport hands it. The token's scopes say which tools
- * it offers.
+ * it offers. What it is asked is rate limited and logged (mcp-call-guard.js).
  *
  * @param {Object} [options]
  * @param {Object} [options.authInfo] the validated access token
@@ -36,6 +37,8 @@ function createMcpServer({ authInfo } = {}) {
     { name: 'lepatron', title: 'LePatron', version },
     { instructions: INSTRUCTIONS }
   );
+  // Before anything is registered: every handler is rate limited and logged.
+  guardCalls(server);
   registerExpertiseResources(server);
   registerFindApplicableExpertises(server);
   registerSkillPrompts(server);

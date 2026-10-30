@@ -29,6 +29,7 @@ const MODELS = {
   expertises: 'Expertises',
   skills: 'LePatronSkills',
   feedbacks: 'McpFeedbacks',
+  callLogs: 'McpCallLogs',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.
@@ -164,6 +165,11 @@ function createMcpStore() {
           ...(records[collection] || []).map(copy)
         );
       });
+    },
+
+    // What a collection holds, as copies: for what no MCP client can read.
+    stored(collection) {
+      return collections[collection].map(copy);
     },
 
     update(collection, id, changes) {
