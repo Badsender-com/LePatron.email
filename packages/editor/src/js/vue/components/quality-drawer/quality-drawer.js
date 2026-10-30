@@ -4,6 +4,7 @@ const {
   clearHighlight,
 } = require('./quality-checks-panel');
 const { SendTestPanel } = require('./send-test-panel');
+const { CAPABILITIES } = require('../../../../../../shared/access/roles.js');
 
 // Frozen: the template reads it, and Vue would otherwise make it reactive.
 const TABS = Object.freeze([
@@ -34,6 +35,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     checks: [],
     ranAt: null,
     errorCount: 0,
+    // Ignoring is shared by everyone who edits the email, so it takes the
+    // same right: a reviewer sees the button, greyed out.
+    ignoreLocked: true,
   }),
   computed: {
     currentTab() {
@@ -78,6 +82,16 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       bind(q.ranAt, (value) => (this.ranAt = value)),
       bind(q.errorCount, (value) => (this.errorCount = value)),
     ];
+    // The editor opens before the user is known: locked until they are.
+    if (this.vm.currentUser) {
+      this.subscriptions.push(
+        bind(this.vm.currentUser, () => {
+          this.ignoreLocked = !this.vm.userCan(
+            CAPABILITIES.MAILING_EDIT_CONTENT
+          );
+        })
+      );
+    }
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
@@ -163,6 +177,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :ignored-findings="ignoredFindings"
         :checks="checks"
         :ran-at="ranAt"
+        :ignore-locked="ignoreLocked"
         @send-test="goTo('send')"
       ></quality-checks-panel>
       <send-test-panel

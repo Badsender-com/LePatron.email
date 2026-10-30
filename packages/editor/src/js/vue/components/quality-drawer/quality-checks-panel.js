@@ -39,6 +39,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     ignoredFindings: { type: Array, default: () => [] },
     checks: { type: Array, default: () => [] },
     ranAt: { type: Date, default: null },
+    // The user's role may not ignore (quality-drawer.js).
+    ignoreLocked: { type: Boolean, default: false },
   },
   data: () => ({
     expandedId: null,
@@ -222,6 +224,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
             :expanded-id="expandedId"
             :can-comment="canComment"
             :can-ignore="canIgnore"
+            :ignore-locked="ignoreLocked"
             :t="t"
             @toggle-open="toggleGroup(group.severity)"
             @toggle="toggle"
@@ -241,6 +244,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
             :expanded-id="expandedId"
             :can-comment="canComment"
             ignored
+            :ignore-locked="ignoreLocked"
             :t="t"
             @toggle-open="showIgnored = !showIgnored"
             @toggle="toggle"
