@@ -12,7 +12,8 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsQualityExceptionsEditor from '~/components/quality/quality-exceptions-editor.vue';
 import BsQualityReferenceTable from '~/components/quality/quality-reference-table.vue';
 import BsQualityTemplatesTable from '~/components/quality/quality-templates-table.vue';
-import { IS_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../../../shared/access/roles.js';
 
 const TABS = ['general', 'templates'];
 
@@ -33,7 +34,7 @@ export default {
   },
   mixins: [mixinSettingsTitle, mixinUnsavedChanges],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   async asyncData(nuxtContext) {
     const [groupData, templates] = await Promise.all([
@@ -63,12 +64,12 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
     level() {
       return GENERAL;
     },
     showGroupBadge() {
-      return this.isAdmin && this.group.name;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
   watch: {
