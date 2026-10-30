@@ -6,8 +6,10 @@
 // express stack, as mailing.routes.metadata.test.js does.
 
 const {
+  GUARD_CAN,
   GUARD_USER,
 } = require('../../../packages/server/account/auth.guard.js');
+const { CAPABILITIES } = require('../../../packages/shared/access/roles.js');
 const {
   requireJsonBody,
 } = require('../../../packages/server/utils/require-json-body.js');
@@ -18,9 +20,13 @@ const { guardsOf } = routeInspector(router);
 
 describe('mailing routes — the quality endpoints take JSON only', () => {
   it.each([
-    ['patch', '/:mailingId/quality-ignores'],
-    ['post', '/:mailingId/quality/resources'],
-  ])('%s %s requires a JSON body', (method, path) => {
-    expect(guardsOf(method, path)).toEqual([GUARD_USER, requireJsonBody]);
+    [
+      'patch',
+      '/:mailingId/quality-ignores',
+      GUARD_CAN(CAPABILITIES.MAILING_EDIT_CONTENT),
+    ],
+    ['post', '/:mailingId/quality/resources', GUARD_USER],
+  ])('%s %s requires a JSON body', (method, path, guard) => {
+    expect(guardsOf(method, path)).toEqual([guard, requireJsonBody]);
   });
 });
