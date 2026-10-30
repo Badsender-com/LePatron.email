@@ -33,6 +33,13 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   createWorkspace: jest.fn(),
   findWorkspaces: jest.fn(),
 }));
+jest.mock(
+  '../../../packages/server/ai-skill/services/invocation-log.service.js',
+  () => ({ restampRetention: jest.fn() })
+);
+jest.mock('../../../packages/server/mcp/mcp-retention.js', () => ({
+  restampMcpRetention: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
@@ -43,6 +50,9 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
 const { Groups } = require('../../../packages/server/common/models.common.js');
+const {
+  restampMcpRetention,
+} = require('../../../packages/server/mcp/mcp-retention.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
 const superAdmin = { id: 's1', role: 'super_admin', group: 'platform' };
@@ -101,5 +111,16 @@ describe('PUT /groups/:groupId — retex', () => {
     const payload = await update(user, { allowRetex: true });
 
     expect(payload.allowRetex).toBe(true);
+  });
+});
+
+describe('PUT /groups/:groupId — log retention', () => {
+  it('reaches the MCP call logs and feedbacks already kept', async () => {
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(restampMcpRetention).toHaveBeenCalledWith({
+      groupId: GROUP_ID,
+      retentionDays: 7,
+    });
   });
 });

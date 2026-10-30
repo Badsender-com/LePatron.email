@@ -6,9 +6,9 @@ const { resolveIdentity } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill, versionOf } = require('./mcp-skill-catalog.js');
 const { readableMailing } = require('./mcp-mailings.js');
-
-const MS_PER_DAY = 24 * 3600 * 1000;
-const DEFAULT_RETENTION_DAYS = 30;
+const {
+  computeExpiresAt,
+} = require('../ai-skill/services/invocation-logger.service.js');
 
 // What a reference points at, read as the user may read it, with the version
 // it was given on; null when the user may not read it.
@@ -55,7 +55,6 @@ async function submitFeedback(args, ctx) {
   let retex = 'none';
   if (summary) retex = allowed ? 'kept' : 'dropped';
 
-  const days = identity.group.logRetentionDays || DEFAULT_RETENTION_DAYS;
   await McpFeedbacks.create({
     _company: identity.group._id,
     _user: identity.user._id,
@@ -64,7 +63,7 @@ async function submitFeedback(args, ctx) {
     comment: args.comment || '',
     references,
     retex: retex === 'kept' ? summary : null,
-    expiresAt: new Date(Date.now() + days * MS_PER_DAY),
+    expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
   });
 
   const answer = { recorded: true, retex };
