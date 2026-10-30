@@ -49,6 +49,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
           Object.assign(record, update);
           return toDocument(record);
         }),
+      // Deactivating forgets the trusted devices (ADR 0008).
+      updateOne: async () => ({ modifiedCount: 1 }),
       create: async (fields) => {
         const record = { _id: `created-${users.length}`, ...fields };
         users.push(record);
@@ -60,7 +62,8 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
       find: () => chain(() => []),
       countDocuments: async () => 0,
     },
-    Groups: {},
+    // No group has SSO here (account/sso-member.js).
+    Groups: { findOne: async () => null },
   };
 });
 jest.mock('../../../packages/server/group/group.service.js', () => ({

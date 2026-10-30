@@ -1,11 +1,17 @@
-export const parsePaginationData = (paginationsData) => {
-  const isGettingAllData =
-    parseInt(paginationsData.totalDocs || 0) ===
-    parseInt(paginationsData.limit || 0);
-
+// The server answers no "All" flag: a page that holds every email is read as
+// "All" (-1), unless the listing offers none (`allowAll: false`).
+export const parsePaginationData = (
+  paginationsData,
+  { allowAll = true } = {}
+) => {
   if (!paginationsData) {
     return;
   }
+  const isGettingAllData =
+    allowAll &&
+    parseInt(paginationsData.totalDocs || 0) ===
+      parseInt(paginationsData.limit || 0);
+
   const page = parseInt(paginationsData.page || 1);
   const itemsPerPage = !isGettingAllData
     ? parseInt(paginationsData.limit || 5)

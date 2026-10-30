@@ -16,7 +16,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 const fsExtra = require('fs-extra');
 
 const config = require('../../../packages/server/node.config.js');

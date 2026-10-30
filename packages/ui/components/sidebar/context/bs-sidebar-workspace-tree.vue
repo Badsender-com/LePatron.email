@@ -14,6 +14,7 @@ import {
   FETCH_WORKSPACES,
   FETCH_FOLDER_OR_WORKSPACE,
   FETCH_FOLDER_CHILDREN,
+  FETCH_MAILINGS_FOR_FILTER_UPDATE,
 } from '~/store/folder';
 import { USER, CAN } from '~/store/user';
 import { CAPABILITIES } from '../../../../shared/access/roles.js';
@@ -266,7 +267,9 @@ export default {
           // drop the stale selection and fall back to the first workspace.
           const node = findNodeById(nodeId, this.treeviewWorkspaces);
           if (node) {
-            this.safeNavigate('replace', { query: { wid: nodeId } });
+            this.safeNavigate('replace', {
+              query: this.withScope({ wid: nodeId }),
+            });
           } else {
             this.clearSelection();
             this.selectFirstWorkspace();
@@ -308,7 +311,9 @@ export default {
           return;
         }
       }
-      this.safeNavigate('replace', { query: { fid: folderId } });
+      this.safeNavigate('replace', {
+        query: this.withScope({ fid: folderId }),
+      });
     },
     saveSelectedNode(nodeId, nodeType) {
       try {
@@ -397,12 +402,32 @@ export default {
 
       this.saveSelectedNode(firstWorkspace.id, firstWorkspace.type);
       if (this.$route.query.wid !== firstWorkspace.id) {
-        this.safeNavigate('replace', { query: { wid: firstWorkspace.id } });
+        this.safeNavigate('replace', {
+          query: this.withScope({ wid: firstWorkspace.id }),
+        });
       }
     },
     // On every route change, load the active location then reveal its branch so
     // the selected folder stays visible without collapsing the rest of the tree.
-    async onRouteChange() {
+    // A location restored for the user keeps the search scope of the route
+    // (ADR 0007); a location the user picks in the tree leaves it.
+    withScope(query) {
+      const { scope } = this.$route.query;
+      return scope ? { ...query, scope } : query;
+    },
+    async onRouteChange(to, from) {
+      // Switching the search scope keeps the location: only the list
+      // reloads, from its first page (ADR 0007).
+      if (
+        from &&
+        to.path === from.path &&
+        to.query.wid === from.query.wid &&
+        to.query.fid === from.query.fid &&
+        to.query.scope !== from.query.scope
+      ) {
+        await this.reloadMailings();
+        return;
+      }
       await this.getFolderAndWorkspaceData();
       if (this.isInitializing) return;
       // The active folder may be a sub-folder whose parent's children aren't
@@ -539,6 +564,14 @@ export default {
           page: 1,
         }),
       ]);
+    },
+    async reloadMailings() {
+      const { dispatch, commit } = this.$store;
+      commit(`${FOLDER}/${SET_PAGINATION}`, { page: 1 });
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_FILTER_UPDATE}`, {
+        query: this.$route.query,
+        $t: (...args) => this.$t(...args),
+      });
     },
     async fetchWorkspacesData() {
       await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);

@@ -1,5 +1,6 @@
 import {
   mailings,
+  mailingsSearch,
   mailingsTags,
   getWorkspace,
   getFolder,
@@ -9,6 +10,8 @@ import {
   workspacesByGroup,
 } from '~/helpers/api-routes';
 import { parsePaginationData } from '~/utils/parsePagination';
+import { isSearchingAll, searchPagination } from '~/utils/mailing-search';
+import { sharedWhilePending } from '~/utils/shared-while-pending';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import { mapChildFolderToTreeviewNode } from '~/utils/folders';
@@ -234,34 +237,48 @@ export const actions = {
   },
   async [FETCH_MAILINGS](
     { commit, dispatch, rootState },
-    { query, $t, pagination }
+    { query, $t, pagination, dedupe = false }
   ) {
-    if (!!query?.wid || !!query?.fid) {
-      const queryMailing = rootState.folder.folder?.id
-        ? { parentFolderId: query?.fid }
+    const searching = isSearchingAll(query);
+    if (!searching && !query?.wid && !query?.fid) return;
+
+    // The "all" scope names no location, whatever location the route still
+    // holds to come back to (ADR 0007). Otherwise the route says which one,
+    // not the folder still in the store from the previous location.
+    let queryMailing = {};
+    if (!searching) {
+      queryMailing = query?.fid
+        ? { parentFolderId: query.fid }
         : { workspaceId: query?.wid };
+    }
+    const askedPagination = {
+      ...rootState.folder?.pagination,
+      ...(pagination || {}),
+    };
+    const route = searching ? mailingsSearch() : mailings();
+    const params = {
+      ...queryMailing,
+      // The backend does JSON.parse(pagination)/JSON.parse(filters)
+      // (mailing.controller.js list()), so these must be sent as JSON
+      // strings. Sending raw objects makes axios serialize them as
+      // bracketed query params (pagination[sortBy][0]=...), which the
+      // backend can't parse — the sort/filters were silently dropped.
+      pagination: JSON.stringify(
+        searching ? searchPagination(askedPagination) : askedPagination
+      ),
+      filters: JSON.stringify(rootState.folder?.filters || {}),
+    };
+
+    const load = async () => {
       // Fetch the filter tags in parallel and don't await it: tags are served
       // by a separate endpoint and must never delay the mailing list render.
       dispatch(FETCH_MAILINGS_TAGS, { queryMailing });
       try {
-        const mailingsResponse = await this.$axios.$get(mailings(), {
-          params: {
-            ...queryMailing,
-            // The backend does JSON.parse(pagination)/JSON.parse(filters)
-            // (mailing.controller.js list()), so these must be sent as JSON
-            // strings. Sending raw objects makes axios serialize them as
-            // bracketed query params (pagination[sortBy][0]=...), which the
-            // backend can't parse — the sort/filters were silently dropped.
-            pagination: JSON.stringify({
-              ...rootState.folder?.pagination,
-              ...(pagination || {}),
-            }),
-            filters: JSON.stringify(rootState.folder?.filters || {}),
-          },
-        });
+        const mailingsResponse = await this.$axios.$get(route, { params });
         const { docs, ...paginationsData } = mailingsResponse?.items;
 
         commit(SET_MAILINGS, docs);
+        // The search has no "All": its page size is what the server served.
         const {
           page,
           itemsPerPage,
@@ -269,7 +286,7 @@ export const actions = {
           pageStop,
           pageCount,
           itemsLength,
-        } = parsePaginationData(paginationsData);
+        } = parsePaginationData(paginationsData, { allowAll: !searching });
         commit(SET_PAGINATION, {
           page,
           itemsPerPage,
@@ -286,6 +303,14 @@ export const actions = {
           showError(commit, $t);
         }
       }
+    };
+    // A location's load joins the same one already on its way (the page and
+    // the tree, on a cold load). Any other fetch (a filter, a page, a refresh
+    // after a change) goes out: it may follow a write the other has not seen.
+    if (dedupe) {
+      await sharedWhilePending(this, JSON.stringify([route, params]), load);
+    } else {
+      await load();
     }
   },
   async [FETCH_MAILINGS_TAGS]({ commit }, { queryMailing }) {
@@ -318,7 +343,7 @@ export const actions = {
   ) {
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     try {
-      await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+      await dispatch(FETCH_MAILINGS, { query, $t, pagination, dedupe: true });
     } finally {
       commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
     }

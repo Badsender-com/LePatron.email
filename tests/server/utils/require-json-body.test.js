@@ -6,7 +6,7 @@
 // pages; a plain form posted from elsewhere is turned away.
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   requireJsonBody,

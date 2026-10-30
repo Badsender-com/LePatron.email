@@ -13,9 +13,6 @@ const ProfileSchema = require('../profile/profile.schema.js');
 const GroupSchema = require('../group/group.schema.js');
 const CacheImageSchema = require('../image/image-cache.schema.js');
 const GallerySchema = require('../image/gallery.schema.js');
-const OAuthClientsSchema = require('../account/oauth-clients.schema.js');
-const OAuthTokensSchema = require('../account/oauth-tokens.schema.js');
-const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
 const EmailsGroupSchema = require('../emails-group/emails-group.schema');
 const PersonalizedVariableSchema = require('../personalized-variables/personalized-variables.schema.js');
 const FolderSchema = require('../folder/folder.schema');
@@ -35,6 +32,7 @@ const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
+const SecurityEventSchema = require('../two-factor/security-event.schema.js');
 
 /// ///
 // EXPORTS
@@ -65,12 +63,6 @@ const CacheImages = mongoose.model(
   CacheImageSchema
 );
 const Galleries = mongoose.model(modelNames.GalleryModel, GallerySchema);
-const OAuthTokens = mongoose.model(modelNames.OAuthTokens, OAuthTokensSchema);
-const OAuthClients = mongoose.model(
-  modelNames.OAuthClients,
-  OAuthClientsSchema
-);
-const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
 const Tags = mongoose.model(modelNames.TagModel, TagSchema);
 const Comments = mongoose.model(modelNames.CommentModel, CommentSchema);
@@ -112,6 +104,10 @@ const TaxonomyItems = mongoose.model(
   modelNames.TaxonomyItemModel,
   TaxonomyItemSchema
 );
+const SecurityEvents = mongoose.model(
+  modelNames.SecurityEventModel,
+  SecurityEventSchema
+);
 
 module.exports = {
   mongoose,
@@ -129,9 +125,6 @@ module.exports = {
   Groups,
   CacheImages,
   Galleries,
-  OAuthTokens,
-  OAuthClients,
-  OAuthCodes,
   Tags,
   Comments,
   Integrations,
@@ -145,4 +138,5 @@ module.exports = {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,
+  SecurityEvents,
 };

@@ -15,10 +15,6 @@ module.exports = Object.freeze({
   PersonalizedBlocksModel: 'PersonalizedBlocks',
   WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
-  // OAuth
-  OAuthTokens: 'OAuthTokens',
-  OAuthClients: 'OAuthClients',
-  OAuthCodes: 'OAuthCodes',
   // Tags
   TagModel: 'Tag',
   // Comments
@@ -39,4 +35,6 @@ module.exports = Object.freeze({
   AIPlaygroundRunModel: 'AIPlaygroundRun',
   // Taxonomy (email metadata)
   TaxonomyItemModel: 'TaxonomyItem',
+  // Two-factor authentication (ADR 0008)
+  SecurityEventModel: 'SecurityEvent',
 });

@@ -31,7 +31,7 @@ jest.mock('../../../packages/server/account/auth.guard.js', () => {
 });
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const VALID_GROUP = '507f1f77bcf86cd799439b01';
 

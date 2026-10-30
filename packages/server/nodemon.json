@@ -8,5 +8,8 @@
     "packages/editor/src",
     "build",
     "res"
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "development"
+  }
 }

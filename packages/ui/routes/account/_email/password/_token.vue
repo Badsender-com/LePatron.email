@@ -70,10 +70,19 @@ export default {
       const { $axios, $route, $router } = this;
       this.loading = true;
       try {
-        await $axios.$put(
+        const answer = await $axios.$put(
           apiRoutes.accountSetPassword($route.params),
           this.form
         );
+        // The link opens no session for a member who needs a second factor
+        // (ADR 0008): they sign in with the new password.
+        if (answer && answer.twoFactorRequired) {
+          this.showSnackbar({
+            text: this.$t('twoFactor.passwordSet'),
+            color: 'success',
+          });
+          return $router.push('/account/login');
+        }
         $router.push('/');
       } catch (error) {
         this.showSnackbar({

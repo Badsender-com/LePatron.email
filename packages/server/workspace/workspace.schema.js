@@ -54,6 +54,10 @@ const WorkspaceSchema = Schema(
   }
 );
 
+// Every listing of workspaces reads them by group: the tree, and the search
+// across them (ADR 0007).
+WorkspaceSchema.index({ _company: 1 });
+
 WorkspaceSchema.virtual('folders', {
   ref: FolderModel,
   localField: '_id',

@@ -6,6 +6,7 @@ import {
 import { mapState } from 'vuex';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { FOLDER } from '~/store/folder';
+import { isSearchingAll } from '~/utils/mailing-search';
 import BsBreadcrumb from '~/components/layout/bs-breadcrumb.vue';
 
 export default {
@@ -34,8 +35,12 @@ export default {
         this.workspaceOrFolderItem ?? this.selectedLocation
       );
     },
-    // Convert to BsBreadcrumb format: { text, to }
+    // Convert to BsBreadcrumb format: { text, to }. The "all my workspaces"
+    // scope lists no location: it names itself (ADR 0007).
     breadcrumbItems() {
+      if (isSearchingAll(this.$route.query)) {
+        return [{ text: this.$t('mailings.search.allWorkspaces'), to: null }];
+      }
       return this.breadcrumbsData.map((item, index) => {
         const isLast = index === this.breadcrumbsData.length - 1;
         return {

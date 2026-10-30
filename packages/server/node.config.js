@@ -6,6 +6,7 @@ const rc = require('rc');
 const _ = require('lodash');
 require('dotenv').config();
 const { mkdirp } = require('fs-extra');
+const { DEFAULTS } = require('./config/dev-defaults.js');
 
 const localEmail = Object.freeze({
   host: '0.0.0.0',
@@ -21,7 +22,9 @@ const config = rc('lepatron', {
     API_PREFIX: '/api',
   },
   database: 'mongodb://localhost:27017/lepatron',
-  sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
+  // Development values: outside development, the server refuses to start on
+  // them (config/dev-defaults.js).
+  sessionSecret: DEFAULTS.sessionSecret,
   emailTransport: {
     ...localEmail,
   },
@@ -57,7 +60,7 @@ const config = rc('lepatron', {
   admin: {
     id: '576b90a441ceadc005124896',
     username: 'admin',
-    password: 'admin',
+    password: DEFAULTS['admin.password'],
   },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
   dscUrl: process.env.DSC_ESP_URL,
@@ -65,6 +68,10 @@ const config = rc('lepatron', {
   adobeDefaultImsUrl: process.env.NUXT_ENV_ADOBE_DEFAULT_IMS_URL,
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
   encryptionKey: process.env.ENCRYPTION_KEY,
+  // Emergency lever, unset in normal operation: the secrets are written in
+  // the former format, which the previous version of the application reads
+  // (with scripts/reencrypt-secrets.js --downgrade, utils/crypto.js).
+  encryptionWriteLegacy: process.env.ENCRYPTION_WRITE_LEGACY === 'true',
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
 });

@@ -44,10 +44,10 @@ A LONG, numbered list of user stories. Each user story should be in the format o
 1. As a <role>, I want <feature>, so that <benefit>
 
 <user-story-example>
-1. As a group admin, I want to restrict a template to some workspaces, so that each team only sees the templates it is allowed to use
+1. As a company admin, I want to restrict a template to some workspaces, so that each team only sees the templates it is allowed to use
 </user-story-example>
 
-Use the product's real roles (super admin, group admin, regular user…). This list should be extensive and cover all aspects of the feature.
+Use the product's real roles (super admin, company admin, regular user…). This list should be extensive and cover all aspects of the feature.
 
 ## Implementation Decisions
 
