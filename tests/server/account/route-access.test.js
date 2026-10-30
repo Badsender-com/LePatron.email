@@ -43,6 +43,7 @@ const ROUTERS = {
   '/api/integrations': load('integration/integration.routes.js'),
   '/api/feed-mappings': load('feed-mapping/feed-mapping.routes.js'),
   '/api/taxonomy-items': load('taxonomy/taxonomy.routes.js'),
+  '/api/taxonomy-dimensions': load('taxonomy/dimension.routes.js'),
   '/api/ai-features': load('ai-feature/ai-feature.routes'),
   '/api/ai-skills': skillsRouter,
   '/api/ai-expertise': expertiseRouter,

@@ -1133,10 +1133,40 @@ export default {
   taxonomy: {
     active: 'Active',
     inactive: 'Inactive',
-    title: 'Email types',
-    sidebarLabel: 'Email types',
+    title: 'Taxonomy',
+    sidebarLabel: 'Taxonomy',
     description:
+      'The dimensions you decline your emails by. The email type and the trigger are shared by every company: you choose their words, not whether they exist.',
+    emailTypeHint:
       'Your email types, in your own words. The definition you give is what matters: it is the reference for your team, and the context for the AI. The six Badsender types are your starting point: rename them, narrow them, deactivate the ones you do not use.',
+    dimensions: {
+      standard: 'Standard',
+      emailType: 'Email type',
+      loadError: 'Your taxonomy dimensions could not be loaded',
+      updated: 'Dimension updated',
+      trigger: {
+        readOnly:
+          'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',
+        adhoc: {
+          label: 'Ad hoc',
+          description:
+            'Someone decided this particular send, this once. A newsletter written and scheduled every week is still ad hoc.',
+        },
+        automated: {
+          label: 'Automated',
+          description:
+            'A rule decides the send, every time. If nobody touches anything, the email will still go out in six months.',
+        },
+      },
+      form: {
+        editTitle: 'Edit the dimension',
+        name: 'Name read by templates',
+        nameHint:
+          'Set on creation: templates read this name, and changing it would break them.',
+        descriptionHint:
+          'What this dimension decides about an email, for you. This text is context for the AI.',
+      },
+    },
     table: {
       label: 'Label',
       description: 'Definition',

@@ -405,6 +405,20 @@ export function taxonomyDefaultEmailTypesRestore() {
   return '/taxonomy-items/default-email-types';
 }
 
+// The company in the query, as its guard reads it. `lang` is the language the
+// email type and the trigger are seeded in, the first time a company lists them.
+export function taxonomyDimensions(groupId, { lang } = {}) {
+  const params = new URLSearchParams({ groupId });
+  if (lang) {
+    params.set('lang', lang);
+  }
+  return `/taxonomy-dimensions?${params.toString()}`;
+}
+
+export function taxonomyDimensionsItem(dimensionId) {
+  return `/taxonomy-dimensions/${dimensionId}`;
+}
+
 /// ///
 // AI FEATURES
 /// ///
