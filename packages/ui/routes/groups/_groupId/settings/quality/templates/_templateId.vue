@@ -48,7 +48,7 @@ export default {
   },
   mixins: [mixinSettingsTitle, mixinUnsavedChanges, mixinQualityTexts],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   async asyncData(nuxtContext) {
     const [groupData, templates] = await Promise.all([
