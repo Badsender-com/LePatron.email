@@ -936,10 +936,40 @@ export default {
   taxonomy: {
     active: 'Actif',
     inactive: 'Inactif',
-    title: 'Typologies d\'email',
-    sidebarLabel: 'Typologies',
+    title: 'Taxonomie',
+    sidebarLabel: 'Taxonomie',
     description:
+      'Les dimensions selon lesquelles vous déclinez vos emails. La typologie et le déclenchement sont communs à toutes les entreprises : vous choisissez leurs mots, pas leur existence.',
+    emailTypeHint:
       'Vos typologies d\'email, dans vos mots. La définition que vous en donnez est ce qui compte : elle sert de référence à vos équipes, et de contexte à l\'IA. Les six typologies Badsender vous servent de socle : renommez-les, précisez-les, désactivez celles qui ne vous servent pas.',
+    dimensions: {
+      standard: 'Standard',
+      emailType: 'Typologie',
+      loadError: 'Impossible de charger les dimensions de votre taxonomie',
+      updated: 'Dimension mise à jour',
+      trigger: {
+        readOnly:
+          'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',
+        adhoc: {
+          label: 'Ponctuel',
+          description:
+            'Quelqu\'un a décidé de cet envoi-là, cette fois-ci. Une infolettre écrite et programmée chaque semaine reste ponctuelle.',
+        },
+        automated: {
+          label: 'Automatisé',
+          description:
+            'Une règle décide de l\'envoi, à chaque fois. Si personne ne touche à rien, l\'email partira encore dans six mois.',
+        },
+      },
+      form: {
+        editTitle: 'Modifier la dimension',
+        name: 'Nom lu par les templates',
+        nameHint:
+          'Fixé à la création : les templates lisent ce nom, le changer les casserait.',
+        descriptionHint:
+          'Ce que cette dimension décide pour un email, chez vous. Ce texte sert de contexte à l\'IA.',
+      },
+    },
     table: {
       label: 'Libellé',
       description: 'Définition',

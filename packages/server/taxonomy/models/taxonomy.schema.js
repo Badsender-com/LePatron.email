@@ -13,14 +13,16 @@ const trimOptionalString = (value) =>
   value === undefined || value === null ? value : trimString(value);
 const { GroupModel } = require('../../constant/model.names.js');
 const {
-  TaxonomyTypeValues,
+  StandardDimensions,
+  DIMENSION_NAME_PATTERN,
   TaxonomyLimits,
 } = require('../../constant/taxonomy-type.js');
 
 /**
  * @apiDefine taxonomyItem
  * @apiSuccess {String} id
- * @apiSuccess {String} type the taxonomy this item belongs to (eg. `emailType`)
+ * @apiSuccess {String} type the name of the dimension this value belongs to (eg.
+ *   `emailType`)
  * @apiSuccess {String} label the label shown to users, freely editable
  * @apiSuccess {String} description the company's own definition of this item
  * @apiSuccess {String} canonicalType optional mapping onto the AI skills vocabulary
@@ -37,10 +39,18 @@ const TaxonomyItemSchema = Schema(
       required: [true, 'company is required'],
       alias: 'group',
     },
+    // The name of the dimension this value belongs to (ADR-0015): `emailType` or
+    // one the company declared. The service checks it against the company's
+    // dimensions; the schema only refuses what can never be one.
     type: {
       type: String,
-      enum: TaxonomyTypeValues,
       required: [true, 'type is required'],
+      match: [DIMENSION_NAME_PATTERN, 'type must be a dimension name'],
+      // The trigger's two values are the doctrine's, never taxonomy items.
+      validate: {
+        validator: (type) => type !== StandardDimensions.TRIGGER,
+        message: 'the trigger takes no taxonomy item',
+      },
     },
     // Each company uses its own words: "Infolettre", "Newsletter", "Black Friday".
     label: {

@@ -38,7 +38,7 @@ const byName = (dimensions, name) =>
 
 // Turned on by #1353 (dimensions are records; the email type and the trigger as
 // standard dimensions)
-describe.skip('standard dimensions', () => {
+describe('standard dimensions', () => {
   let dimensionService;
 
   beforeAll(() => {
