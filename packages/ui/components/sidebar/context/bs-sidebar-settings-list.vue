@@ -302,12 +302,22 @@ export default {
       }
 
       if (canAccessGroupAdmin) {
-        emailBuilderItems.push({
-          id: 'variables',
-          label: this.$t('global.variables'),
-          icon: 'mdi-code-braces',
-          route: `${this.settingsBasePath}/variables`,
-        });
+        emailBuilderItems.push(
+          {
+            id: 'variables',
+            label: this.$t('global.variables'),
+            icon: 'mdi-code-braces',
+            route: `${this.settingsBasePath}/variables`,
+          },
+          // A company admin sets the quality control of their own company
+          // (ADR 0009).
+          {
+            id: 'quality',
+            label: this.$t('qualitySettings.sidebarLabel'),
+            icon: 'mdi-shield-check-outline',
+            route: `${this.settingsBasePath}/quality`,
+          }
+        );
       }
 
       if (canAccessGroupAdminTech) {
@@ -317,12 +327,6 @@ export default {
             label: this.$t('trackingConfig.sidebarLabel'),
             icon: 'mdi-link-variant',
             route: `${this.settingsBasePath}/tracking`,
-          },
-          {
-            id: 'quality',
-            label: this.$t('qualitySettings.sidebarLabel'),
-            icon: 'mdi-shield-check-outline',
-            route: `${this.settingsBasePath}/quality`,
           },
           {
             id: 'feed-mappings',

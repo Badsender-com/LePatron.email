@@ -13,6 +13,11 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn().mockResolvedValue(null),
 }));
+// Whether the user may write where the email lives: the edit rule of the
+// mailing service, stubbed here and tested with the service.
+jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
+  userCanEditMailing: jest.fn().mockResolvedValue(true),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
   Mailings: {},
@@ -63,7 +68,7 @@ function callWith({ groupSettings, templateSettings }) {
     Comment: null,
   };
   return MailingSchema.statics.findOneForMosaico
-    .call(model, { isAdmin: false }, {})
+    .call(model, {}, {})
     .then((result) => ({ result, populateTemplate }));
 }
 
