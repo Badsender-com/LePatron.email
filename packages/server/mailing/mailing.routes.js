@@ -82,18 +82,18 @@ router.post(
 );
 router.get(
   '/:mailingId/share-links',
-  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  GUARD_CAN(C.MAILING_SEND_TEST),
   shareLinks.list
 );
 router.post(
   '/:mailingId/share-links',
-  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  GUARD_CAN(C.MAILING_SEND_TEST),
   requireJsonBody,
   shareLinks.create
 );
 router.delete(
   '/:mailingId/share-links/:linkId',
-  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  GUARD_CAN(C.MAILING_SEND_TEST),
   shareLinks.revoke
 );
 router.put(
