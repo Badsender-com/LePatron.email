@@ -183,7 +183,7 @@ describe('listTaxonomyItems — company scope', () => {
     expect(TaxonomyItems.find.mock.calls[1][0].isActive).toBe(true);
   });
 
-  it.each([[undefined], [''], ['language'], ['../emailType'], [{}]])(
+  it.each([[undefined], [''], ['trigger'], ['../emailType'], [{}]])(
     'refuses the taxonomy type %p',
     async (type) => {
       await expect(
