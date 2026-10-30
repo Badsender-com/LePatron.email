@@ -9,10 +9,10 @@
  * server accepts is always one the editor knows. The admin page keeps a copy,
  * pinned by a sync test.
  *
- * Each check has a default state and, when it has some, thresholds with their
- * default, bounds and unit. The defaults are the quality control as it was
- * before groups could set it: every check on, the required tracking
- * parameters blocking.
+ * Each check has its category (as the editor's rule declares it), a default
+ * state and, when it has some, thresholds with their default, bounds and unit.
+ * The defaults are the quality control as it was before groups could set it:
+ * every check on, the required tracking parameters blocking.
  */
 
 const CHECK_STATES = Object.freeze(['off', 'on', 'blocking']);
@@ -20,73 +20,84 @@ const CHECK_STATES = Object.freeze(['off', 'on', 'blocking']);
 const t = (value, min, max, unit) =>
   Object.freeze({ default: value, min, max, unit });
 
-const on = (thresholds = {}) =>
-  Object.freeze({ defaultState: 'on', thresholds: Object.freeze(thresholds) });
+const check = (category, thresholds = {}, defaultState = 'on') =>
+  Object.freeze({
+    category,
+    defaultState,
+    thresholds: Object.freeze(thresholds),
+  });
 
 const CHECKS = Object.freeze({
   // Copy
-  subject: on({
+  subject: check('copy', {
     long: t(40, 10, 200, 'characters'),
     tooLong: t(60, 10, 255, 'characters'),
   }),
-  preheader: on({
+  preheader: check('copy', {
     long: t(100, 20, 300, 'characters'),
     tooLong: t(140, 20, 500, 'characters'),
   }),
-  'merge-tags': on(),
-  'empty-blocks': on(),
-  'uppercase-text': on({ maxWords: t(5, 2, 30, 'words') }),
+  'merge-tags': check('copy'),
+  'empty-blocks': check('copy'),
   // Accessibility
-  'hidden-text': on(),
-  'small-font': on({
+  'uppercase-text': check('accessibility', {
+    maxWords: t(5, 2, 30, 'words'),
+  }),
+  'hidden-text': check('accessibility'),
+  'small-font': check('accessibility', {
     minSize: t(14, 6, 24, 'px'),
     minSizeHeaderFooter: t(12, 6, 24, 'px'),
   }),
-  'color-contrast': on(),
-  'text-layout': on({
+  'color-contrast': check('accessibility'),
+  'text-layout': check('accessibility', {
     minLineHeight: t(1, 0.5, 2, 'ratio'),
     centredMaxChars: t(200, 20, 5000, 'characters'),
   }),
-  'indistinct-links': on(),
-  headings: on(),
-  'alt-redundant': on(),
-  'emoji-placement': on(),
-  'unnamed-image-links': on(),
-  'image-only-email': on({ minTextLength: t(100, 0, 5000, 'characters') }),
+  'indistinct-links': check('accessibility'),
+  headings: check('accessibility'),
+  'alt-redundant': check('accessibility'),
+  'emoji-placement': check('accessibility'),
+  'unnamed-image-links': check('accessibility'),
+  'alt-text-quality': check('accessibility', {
+    maxLength: t(150, 20, 1000, 'characters'),
+  }),
   // Content
-  'tracking-params': Object.freeze({
-    defaultState: 'blocking',
-    thresholds: Object.freeze({}),
+  'tracking-params': check('content', {}, 'blocking'),
+  'unfilled-links': check('content'),
+  'malformed-links': check('content'),
+  'displayed-urls': check('content'),
+  'suspicious-links': check('content'),
+  'images-without-link': check('content'),
+  'unreplaced-images': check('content'),
+  'background-images': check('content'),
+  'image-only-email': check('content', {
+    minTextLength: t(100, 0, 5000, 'characters'),
   }),
-  'unfilled-links': on(),
-  'malformed-links': on(),
-  'displayed-urls': on(),
-  'suspicious-links': on(),
-  'images-without-link': on(),
-  'unreplaced-images': on(),
-  'background-images': on(),
-  'insecure-urls': on(),
+  'broken-links': check('content'),
+  'dangerous-links': check('content'),
+  'domain-blocklists': check('content'),
   // Technical
-  'alt-text-quality': on({ maxLength: t(150, 20, 1000, 'characters') }),
-  'unsupported-image-formats': on(),
-  'forbidden-code': on(),
-  'malformed-html': on(),
-  'unsupported-code': on(),
-  'loose-code': on(),
-  'html-size': on({ maxKb: t(100, 10, 2048, 'KB') }),
-  // Checked by the server
-  'broken-links': on(),
-  'dangerous-links': on(),
-  'domain-blocklists': on(),
-  'image-weight': on({
-    maxKb: t(500, 10, 10240, 'KB'),
-    maxGifKb: t(1024, 10, 10240, 'KB'),
+  'insecure-urls': check('technical'),
+  'unsupported-image-formats': check('technical'),
+  'forbidden-code': check('technical'),
+  'malformed-html': check('technical'),
+  'unsupported-code': check('technical'),
+  'loose-code': check('technical'),
+  'html-size': check('technical', { maxKb: t(100, 10, 2048, 'KB') }),
+  // Performance, checked by the server
+  'image-weight': check('performance', {
+    // The server measures 10 MB at most: a ceiling of 10,240 KB would
+    // never be exceeded.
+    maxKb: t(500, 10, 10239, 'KB'),
+    maxGifKb: t(1024, 10, 10239, 'KB'),
   }),
-  'images-total-weight': on({
+  'images-total-weight': check('performance', {
     warningKb: t(500, 10, 20480, 'KB'),
     errorKb: t(1024, 10, 20480, 'KB'),
   }),
-  'oversized-images': on({ maxRatio: t(2, 1, 10, 'ratio') }),
+  'oversized-images': check('performance', {
+    maxRatio: t(2, 1, 10, 'ratio'),
+  }),
 });
 
 const defaultThresholds = (checkId) =>

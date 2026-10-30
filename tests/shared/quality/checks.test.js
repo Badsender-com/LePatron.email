@@ -32,6 +32,15 @@ describe('the shared check catalogue', () => {
     expect(Object.keys(CHECKS).sort()).toEqual(ruleIds.sort());
   });
 
+  it('gives each check the category its rule declares', () => {
+    DEFAULT_RULES.concat(REMOTE_RULES).forEach((rule) => {
+      expect([rule.id, CHECKS[rule.id].category]).toEqual([
+        rule.id,
+        rule.category,
+      ]);
+    });
+  });
+
   it("keeps today's behavior by default: every check on, tracking blocking", () => {
     Object.entries(CHECKS).forEach(([id, check]) => {
       expect(check.defaultState).toBe(

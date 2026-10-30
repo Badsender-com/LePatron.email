@@ -6,6 +6,7 @@ const { createIgnores } = require('./quality-ignores');
 const { createCounts } = require('./quality-counts');
 const remoteApi = require('./quality-remote');
 const { watchContent } = require('./content-watch');
+const { checkStateOf } = require('./settings');
 
 const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 
@@ -46,6 +47,17 @@ function installQualityReview(viewModel, ko, deps = {}) {
   const watch = deps.watchContent || watchContent;
   const metadata = viewModel.metadata || {};
   const resourcesUrl = metadata.url && metadata.url.qualityResources;
+  // The mailing's quality settings (ADR 0009): a check turned off is neither
+  // run, nor listed, nor counted; the drawer only says how many are off.
+  const settings = { config: { quality: metadata.qualitySettings || null } };
+  const isOn = (rule) => checkStateOf(settings, rule.id) !== 'off';
+  const localRules = DEFAULT_RULES.filter(isOn);
+  const remoteRules = listedRemoteRules.filter(isOn);
+  const turnedOffCount =
+    DEFAULT_RULES.length +
+    listedRemoteRules.length -
+    localRules.length -
+    remoteRules.length;
   const t = (key, params) => (viewModel.t ? viewModel.t(key, params) : key);
   const notify = (level, message) => {
     if (viewModel.notifier && viewModel.notifier[level]) {
@@ -149,7 +161,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     // The answer to the previous run would be dropped: aborted rather than
     // waited for, it frees the server's turn for this one.
     if (cancelRemote) cancelRemote.cancel();
-    if (!resourcesUrl || !hasResources(local.resources)) {
+    // Nothing to ask the server when every check it serves is off.
+    const remoteOn = REMOTE_RULES.some(isOn);
+    if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
       remoteStatus('idle');
       return Promise.resolve();
     }
@@ -182,9 +196,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
         console.error('Quality checks on the server failed', err);
         // Listed as checks that could not run, never as passed. A blocklist
         // may not even be configured: it is left out.
-        checks(
-          local.checks.concat(listedRemoteRules.map(remoteCheck('error')))
-        );
+        checks(local.checks.concat(remoteRules.map(remoteCheck('error'))));
         remoteError(remoteApi.isTooFrequent(err) ? 'too-frequent' : 'failed');
         remoteStatus('error');
       });
@@ -227,8 +239,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     remoteStatus,
     remoteError,
     // Blocklists are left out: they only run where they are configured.
-    ruleCount:
-      DEFAULT_RULES.length + (resourcesUrl ? listedRemoteRules.length : 0),
+    ruleCount: localRules.length + (resourcesUrl ? remoteRules.length : 0),
+    // How many checks the quality settings turned off, for the drawer to say.
+    turnedOffCount: ko.pureComputed(() => turnedOffCount),
     // The findings still to deal with, and those the team chose to ignore.
     activeFindings: active,
     ignoredFindings: ko.pureComputed(() => findings().filter(isIgnored)),
@@ -255,9 +268,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
         // Not run, and said so: they never count as passed.
         if (lastLocal) {
           checks(
-            lastLocal.checks.concat(
-              listedRemoteRules.map(remoteCheck('cancelled'))
-            )
+            lastLocal.checks.concat(remoteRules.map(remoteCheck('cancelled')))
           );
         }
         remoteStatus('idle');

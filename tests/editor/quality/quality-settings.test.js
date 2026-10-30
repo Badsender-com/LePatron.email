@@ -35,8 +35,7 @@ const textBlock = (longText) => ({
   html: exportOf({ b1: longText }),
 });
 
-// Turned on by #1197 (turn a check off for a group)
-describe.skip('a check that is off', () => {
+describe('a check that is off', () => {
   it('is neither run nor listed, and is reported as turned off', () => {
     const vm = withSettings(textBlock('<p>Sale 🔥🔥 today</p>'), {
       'emoji-placement': { state: 'off', thresholds: {} },
