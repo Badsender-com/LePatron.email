@@ -15,11 +15,19 @@ describe('check-skill-usage script', () => {
     expect(Array.isArray(translation.manifest.usedSkills)).toBe(true);
   });
 
-  it('scanInvocations does not pick up the service file itself (excluded)', () => {
+  it('scanInvocations finds the production callers, never the service file itself', () => {
     const map = scanInvocations();
-    // No real production caller exists yet → empty map. This test mostly
-    // guards against accidentally regressing the exclusion (which would
-    // produce false-positive undeclared invocations on every run).
-    expect(map.size).toBe(0);
+    // Text generation is the first production caller (epic #1163). The
+    // exclusion still matters: the service's own `invoke` would otherwise read
+    // as an undeclared invocation on every run.
+    expect(map.get('redaction.objet')).toEqual([
+      expect.stringMatching(
+        /text-generation[\\/]text-generation\.service\.js$/
+      ),
+    ]);
+    const files = [...map.values()].flat();
+    expect(files.some((file) => /ai-skill[\\/]services/.test(file))).toBe(
+      false
+    );
   });
 });
