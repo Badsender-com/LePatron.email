@@ -9,7 +9,12 @@ const { watchContent } = require('./content-watch');
 const { checkStateOf } = require('./settings');
 const { displayBlockingFindings } = require('../badsender-control-quality');
 
-const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
+const {
+  runQualityChecks,
+  DEFAULT_RULES,
+  REMOTE_RULES,
+  SERVER_ANSWER_RULES,
+} = engine;
 
 // The state of the last quality review, shared by the drawer, the toolbar
 // button and the commands that export the email (download, ESP send).
@@ -19,6 +24,30 @@ const { runQualityChecks, DEFAULT_RULES, REMOTE_RULES } = engine;
 //     come after the others: 'idle' | 'running' | 'done' | 'error'
 //   remoteError: why the server's checks did not run: 'too-frequent' | 'failed'
 // Findings the team ignored are kept apart (quality-ignores.js).
+
+// A check listed by both runs (a local rule with a second look at the
+// server's answer) is listed once: failed if either run found something.
+const STATUS_RANK = { passed: 0, error: 1, failed: 2 };
+function mergeChecks(local, remote) {
+  const byId = new Map(local.map((check) => [check.ruleId, check]));
+  const added = [];
+  remote.forEach((check) => {
+    const listed = byId.get(check.ruleId);
+    if (!listed) {
+      added.push(check);
+      return;
+    }
+    byId.set(check.ruleId, {
+      ...listed,
+      status:
+        STATUS_RANK[check.status] > STATUS_RANK[listed.status]
+          ? check.status
+          : listed.status,
+      count: (listed.count || 0) + (check.count || 0),
+    });
+  });
+  return local.map((check) => byId.get(check.ruleId)).concat(added);
+}
 
 // The server's checks that are always listed; a blocklist is only where the
 // platform subscribed to one.
@@ -153,10 +182,14 @@ function installQualityReview(viewModel, ko, deps = {}) {
   function remoteResults(local, remote) {
     if (local.ctx && typeof runRules === 'function') {
       local.ctx.remote = remote;
-      return runRules(local.ctx, REMOTE_RULES);
+      return runRules(local.ctx, SERVER_ANSWER_RULES);
     }
     // An engine that hands no context back: the export is read again.
-    return run(viewModel, { html: local.html, rules: REMOTE_RULES, remote });
+    return run(viewModel, {
+      html: local.html,
+      rules: SERVER_ANSWER_RULES,
+      remote,
+    });
   }
 
   // The server's checks, on the export the local ones just read. Their
@@ -170,7 +203,9 @@ function installQualityReview(viewModel, ko, deps = {}) {
     // gate waits on.
     if (cancelRemote) cancelRemote.cancel();
     // Nothing to ask the server when every check it serves is off.
-    const remoteOn = REMOTE_RULES.some(isOn);
+    // Asked as soon as a check reads its answer: a server check, or a local
+    // one with a second look (the format of an image without an extension).
+    const remoteOn = SERVER_ANSWER_RULES.some(isOn);
     if (!resourcesUrl || !remoteOn || !hasResources(local.resources)) {
       if (id === runId) remoteStatus('idle');
       return Promise.resolve([]);
@@ -196,7 +231,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
         const result = remoteResults(local, remote);
         if (id !== runId) return result.findings;
         findings(local.findings.concat(result.findings));
-        checks(local.checks.concat(result.checks));
+        checks(mergeChecks(local.checks, result.checks));
         remoteStatus('done');
         if (!silent) surface(id);
         return result.findings;

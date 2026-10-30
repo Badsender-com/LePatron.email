@@ -2,6 +2,7 @@ import {
   CHECKS,
   CHECK_STATES,
   CHECK_CATEGORIES,
+  SERVER_CHECKS,
 } from '~/helpers/constants/quality-checks.js';
 import en from '~/helpers/locales/en.js';
 import fr from '~/helpers/locales/fr.js';
@@ -23,6 +24,10 @@ describe('the settings page copy of the check catalogue', () => {
     expect(JSON.parse(JSON.stringify(CHECKS))).toEqual(
       JSON.parse(JSON.stringify(SHARED.CHECKS))
     );
+  });
+
+  it('has the same checks run by the server', () => {
+    expect(SERVER_CHECKS).toEqual([...SHARED.SERVER_CHECKS]);
   });
 
   it('lists every category its checks belong to', () => {

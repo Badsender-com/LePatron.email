@@ -220,3 +220,96 @@ describe('the review, with the server', () => {
     expect(vm.quality.remoteStatus()).toBe('idle');
   });
 });
+
+const KB = 1024;
+
+// From the QC review in Notion (13/10): an address without an extension (a
+// CDN's /img/12345) said nothing of its format. The server reads the image it
+// weighs, and its type now judges the format, never blocking: a CDN may send
+// a reader's client another format than the one the server got.
+describe('the format of an image whose address names none', () => {
+  const src = 'https://cdn.test/img/12345';
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  function review(type, state = 'on') {
+    const vm = vmWith(`<img src="${src}" width="600">`);
+    vm.metadata.url = { qualityResources: '/x' };
+    vm.metadata.qualitySettings = {
+      checks: { 'unsupported-image-formats': { state, thresholds: {} } },
+    };
+    const answer = remoteOf({
+      images: {
+        [src]: { state: 'ok', bytes: 20 * KB, width: 600, height: 300, type },
+      },
+    });
+    installQualityReview(vm, ko, {
+      defer: (fn) => fn(),
+      checkResources: () => Promise.resolve(answer),
+    });
+    return vm;
+  }
+
+  const formatsOf = (vm) => ({
+    findings: vm.quality
+      .findings()
+      .filter((f) => f.ruleId === 'unsupported-image-formats'),
+    checks: vm.quality
+      .checks()
+      .filter((c) => c.ruleId === 'unsupported-image-formats'),
+  });
+
+  it('is judged by the type the server read', async () => {
+    const vm = review('webp');
+    vm.quality.run();
+    await flush();
+    const { findings, checks } = formatsOf(vm);
+    expect(findings.map((f) => f.params.format)).toEqual(['WEBP']);
+    // Still one check in the drawer, failed.
+    expect(checks.map((c) => c.status)).toEqual(['failed']);
+  });
+
+  it('passes a format every client shows', async () => {
+    const vm = review('png');
+    vm.quality.run();
+    await flush();
+    const { findings, checks } = formatsOf(vm);
+    expect(findings).toEqual([]);
+    expect(checks.map((c) => c.status)).toEqual(['passed']);
+  });
+
+  it('never blocks the export', async () => {
+    const vm = review('webp', 'blocking');
+    vm.quality.run();
+    await flush();
+    expect(formatsOf(vm).findings.map((f) => f.blocking)).toEqual([false]);
+  });
+
+  it('neither makes the export wait nor blocks it', async () => {
+    const vm = review('webp', 'blocking');
+    const verdict = vm.quality.gate({ html: vm.exportHTML() });
+    expect(vm.quality.waitsForServer()).toBe(false);
+    expect((await verdict).blocked).toBe(false);
+  });
+
+  it('asks the server even when every server check is off', async () => {
+    const vm = vmWith(`<img src="${src}" width="600">`);
+    vm.metadata.url = { qualityResources: '/x' };
+    vm.metadata.qualitySettings = {
+      checks: Object.fromEntries(
+        REMOTE_RULES.map((rule) => [rule.id, { state: 'off', thresholds: {} }])
+      ),
+    };
+    const checkResources = jest.fn(() =>
+      Promise.resolve(
+        remoteOf({ images: { [src]: { state: 'ok', bytes: 1, type: 'webp' } } })
+      )
+    );
+    installQualityReview(vm, ko, { defer: (fn) => fn(), checkResources });
+    vm.quality.run();
+    await flush();
+    expect(checkResources).toHaveBeenCalled();
+    expect(formatsOf(vm).findings.map((f) => f.params.format)).toEqual([
+      'WEBP',
+    ]);
+  });
+});
