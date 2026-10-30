@@ -8,7 +8,7 @@ const {
   createSanitizedPreviewCache,
 } = require('../utils/sanitized-preview-cache.js');
 const logger = require('../utils/logger.js');
-const { clientIp } = require('../utils/client-ip.js');
+const { clientIp } = require('../utils/rate-limit.js');
 const shareLinkService = require('./share-link.service.js');
 const { createShareViewLimiter } = require('./share-view-limiter.js');
 const PAGES = require('./share-page.locales.js');
