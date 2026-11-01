@@ -183,6 +183,15 @@ const MailingSchema = Schema(
       ],
       default: undefined,
     },
+    // The values of the company dimensions (ADR-0014): at most one per dimension,
+    // every one optional. The email type above keeps its own field. Validated on
+    // write by mailing-company-dimensions.service.js.
+    _taxonomyItems: [
+      {
+        type: ObjectId,
+        ref: TaxonomyItemModel,
+      },
+    ],
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -282,6 +291,8 @@ MailingSchema.index({ _company: 1, author: 1, _id: 1 });
 // Editorial metadata filters on the mailing listing, same reasoning as above:
 // the `_company` prefix is what keeps the query from scanning a global index.
 MailingSchema.index({ _company: 1, _emailType: 1 });
+// Read when a value is deleted, to count the emails still carrying it.
+MailingSchema.index({ _company: 1, _taxonomyItems: 1 });
 MailingSchema.index({ _company: 1, plannedSendDate: -1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });

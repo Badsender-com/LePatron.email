@@ -144,6 +144,7 @@ describe('PATCH /mailings/:mailingId/metadata — response', () => {
       subject: 'Soldes',
       plannedSendDate: mailing.plannedSendDate,
       emailTypeId: mailing._emailType,
+      taxonomyItemIds: [],
       updatedAt: mailing.updatedAt,
     });
   });

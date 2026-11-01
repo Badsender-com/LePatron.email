@@ -28,6 +28,13 @@ jest.mock('../../../packages/server/mailing/mailing.service.js', () => ({
 // service, so that is what these tests stub.
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   TaxonomyItems: { find: jest.fn(), findOne: jest.fn() },
+  // No company dimension: what the editor receives of them is covered by
+  // mailing-metadata.editor-dimensions.test.js.
+  TaxonomyDimensions: {
+    find: () => ({
+      select: () => ({ sort: () => ({ lean: async () => [] }) }),
+    }),
+  },
   Mailings: {},
   // Whether the company shares previews (share-link.service.js): it does.
   Groups: { findById: () => ({ lean: () => Promise.resolve({}) }) },
@@ -357,6 +364,7 @@ describe('findOneForMosaico — company opted in', () => {
       'emailTypeId',
       'plannedSendDate',
       'subject',
+      'taxonomyItemIds',
       'trigger',
     ]);
   });

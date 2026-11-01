@@ -9,6 +9,11 @@ const {
   selectedDescription,
 } = require('../utils/email-metadata-options');
 const {
+  dimensionSelects,
+  selectionsFromIds,
+  idsFromSelections,
+} = require('../utils/dimension-selects');
+const {
   createEmailMetadataStore,
 } = require('../utils/email-metadata-store');
 const template = require('./components/email-metadata/email-metadata.template');
@@ -26,7 +31,7 @@ let activeStore = null;
 
 /**
  * The email settings of the Content tab: subject, planned send date, typology,
- * trigger.
+ * trigger, and one select per company dimension.
  *
  * A group of fields, not a panel. The first implementation followed the comments
  * panel — a slidebar opened from the top bar — and that was the wrong precedent:
@@ -78,6 +83,19 @@ module.exports = {
     // user has had a chance to type anything.
     store.reset(initialForm);
 
+    const dimensions = config.dimensions || [];
+    // Every dimension gets its key up front: Vue 2 does not see a key added
+    // later, and the select of a dimension the email has no value for would not
+    // react.
+    const initialSelections = dimensions.reduce(
+      (selections, dimension) => ({ ...selections, [dimension.name]: '' }),
+      {}
+    );
+    Object.assign(
+      initialSelections,
+      selectionsFromIds(dimensions, initialForm.taxonomyItemIds)
+    );
+
     Vue.component('EmailMetadataPlugin', {
       data: () => ({
         subject: initialForm.subject,
@@ -86,6 +104,8 @@ module.exports = {
         trigger: initialForm.trigger,
         emailTypes: config.emailTypes || [],
         triggers: config.triggers || [],
+        dimensions,
+        selections: initialSelections,
         subjectHardLimit: SUBJECT_HARD_LIMIT,
       }),
 
@@ -133,17 +153,30 @@ module.exports = {
           }
           return null;
         },
+        dimensionChoices() {
+          return dimensionSelects({
+            dimensions: this.dimensions,
+            selections: this.selections,
+          });
+        },
         triggerHintId() {
           return this.triggerDescription ? 'email-metadata-trigger-hint' : null;
         },
         // Watched rather than pushed field by field: one watcher, and the store
-        // receives a complete snapshot every time instead of four partial ones.
+        // receives a complete snapshot every time instead of partial ones.
         formState() {
           return {
             subject: this.subject,
             plannedSendDate: this.plannedSendDate,
             emailTypeId: this.emailTypeId,
             trigger: this.trigger,
+            // The values of dimensions no longer on screen are taken from the
+            // state the section opened with: nothing here can change them.
+            taxonomyItemIds: idsFromSelections(
+              this.dimensions,
+              initialForm.taxonomyItemIds,
+              this.selections
+            ),
           };
         },
       },

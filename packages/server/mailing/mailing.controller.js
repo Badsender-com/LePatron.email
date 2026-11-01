@@ -39,6 +39,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const mailingMetadataService = require('./mailing-metadata.service.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 const shareLinkService = require('../share-link/share-link.service.js');
 
@@ -774,12 +775,13 @@ async function transferToUser(req, res) {
 
   const [user, mailing] = await Promise.all([
     Users.findById(userId, { name: 1, _company: 1 }),
-    // `_company` and `_emailType` are needed to tell whether the transfer moves
-    // the mailing to another company, see below.
+    // `_company`, `_emailType` and `_taxonomyItems` are needed to tell whether
+    // the transfer moves the mailing to another company, see below.
     Mailings.findById(mailingId, {
       name: 1,
       _company: 1,
       _emailType: 1,
+      _taxonomyItems: 1,
     }).populate('_wireframe', {
       _company: 1,
     }),
@@ -790,16 +792,15 @@ async function transferToUser(req, res) {
     String(user._company) === String(mailing._wireframe._company);
   if (!isMailingFromSameGroupThanUser) throw new BadRequest();
 
-  // A typology belongs to one company. If the transfer moves the mailing, the
-  // stored reference would point outside its own company — drop it rather than
-  // carry a reference the metadata endpoint could no longer resolve.
+  // A typology and a dimension value belong to one company. If the transfer
+  // moves the mailing, drop them, see clearCompanyScopedMetadata.
   const changesCompany = String(mailing._company) !== String(user._company);
 
   mailing.userId = user._id;
   mailing.userName = user.name;
   mailing.group = user._company;
   if (changesCompany) {
-    mailing._emailType = undefined;
+    mailingMetadataService.clearCompanyScopedMetadata(mailing);
   }
   // The public preview links were made for the previous owner and company:
   // none survives the transfer. Revoked first: should that fail, the email

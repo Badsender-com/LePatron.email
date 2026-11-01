@@ -43,7 +43,7 @@ const AUDIENCE = {
 const labels = (select) => select.options.map((option) => option.label);
 
 // Turned on by #1355 (choose the values of company dimensions on an email)
-describe.skip('selects of company dimensions', () => {
+describe('selects of company dimensions', () => {
   let dimensionSelects;
 
   beforeAll(() => {
@@ -90,6 +90,51 @@ describe.skip('selects of company dimensions', () => {
     expect(labels(carrying)).toEqual(['Clients VIP', 'Anciens clients']);
     expect(carrying.value).toBe('old');
     expect(labels(other)).toEqual(['Clients VIP']);
+  });
+});
+
+describe('the values an email carries, between the selects and the save', () => {
+  let selectionsFromIds;
+  let idsFromSelections;
+
+  beforeAll(() => {
+    ({
+      selectionsFromIds,
+      idsFromSelections,
+    } = require('../../packages/editor/src/js/utils/dimension-selects.js'));
+  });
+
+  it('reads the ids the email carries as one value per dimension', () => {
+    expect(selectionsFromIds([AUDIENCE, MARKET], ['be', 'old'])).toEqual({
+      audience: 'old',
+      market: 'be',
+    });
+  });
+
+  it('saves the values chosen, one per dimension', () => {
+    expect(
+      idsFromSelections([AUDIENCE, MARKET], ['be'], {
+        audience: 'vip',
+        market: 'ca',
+      })
+    ).toEqual(['vip', 'ca']);
+  });
+
+  it('drops a value cleared in its select', () => {
+    expect(
+      idsFromSelections([AUDIENCE, MARKET], ['vip', 'be'], {
+        audience: '',
+        market: 'be',
+      })
+    ).toEqual(['be']);
+  });
+
+  it('sends back the value of a dimension no longer on screen', () => {
+    // `language` was deactivated: the server no longer sends it, and the email
+    // keeps its French.
+    expect(
+      idsFromSelections([AUDIENCE], ['fr', 'vip'], { audience: 'old' })
+    ).toEqual(['fr', 'old']);
   });
 });
 
