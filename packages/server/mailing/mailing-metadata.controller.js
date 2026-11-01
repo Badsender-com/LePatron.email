@@ -59,6 +59,7 @@ async function updateMetadata(req, res) {
     plannedSendDate: mailing.plannedSendDate,
     emailTypeId: mailing._emailType,
     trigger: mailing.trigger,
+    taxonomyItemIds: mailing._taxonomyItems || [],
     updatedAt: mailing.updatedAt,
   });
 }

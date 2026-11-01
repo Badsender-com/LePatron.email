@@ -67,7 +67,7 @@ const newMailing = (overrides = {}) => ({
 const companyA = { _id: COMPANY_A, emailMetadata: { enabled: true } };
 
 // Turned on by #1355 (choose the values of company dimensions on an email)
-describe.skip('what the editor receives of the company dimensions, and what follows an email', () => {
+describe('what the editor receives of the company dimensions, and what follows an email', () => {
   let vip;
   let prospects;
   let brandA;
