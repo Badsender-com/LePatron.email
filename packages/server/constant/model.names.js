@@ -39,4 +39,5 @@ module.exports = Object.freeze({
   SecurityEventModel: 'SecurityEvent',
   McpFeedbackModel: 'McpFeedback',
   McpCallLogModel: 'McpCallLog',
+  McpClientModel: 'McpClient',
 });
