@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Tokens (ADR 0012): a code and its PKCE verifier buy a short-lived access
@@ -10,8 +13,7 @@ const f = require('../../helpers/mcp-fixtures');
 
 const { CIMD_CLIENT, MCP_RESOURCE } = oauth;
 
-// Turned on by #1306 (OAuth connection end to end)
-describe.skip('token and refresh', () => {
+describe('token and refresh', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();
@@ -23,7 +25,7 @@ describe.skip('token and refresh', () => {
     const { verifier, challenge } = oauth.pkce();
     const uid = await oauth.startConsent(agent, CIMD_CLIENT, challenge);
     const consent = await agent
-      .post(`/api/oauth/interactions/${uid}/consent`)
+      .post(`/oauth/consent/${uid}/consent`)
       .send({ groupId: f.CLIENT_GROUP });
     const back = await oauth.followToClient(agent, consent.body.redirectTo);
     return { code: back.searchParams.get('code'), verifier };
@@ -84,7 +86,8 @@ describe.skip('token and refresh', () => {
     const response = await oauth.callMcp(app, body.access_token);
 
     expect(response.status).toBe(200);
-    expect(JSON.stringify(response.body)).toContain(
+    // As JSON or as a server-sent event, as the transport chooses.
+    expect(response.text).toContain(
       'lepatron://expertises/redaction.subject-line'
     );
   });
@@ -140,5 +143,41 @@ describe.skip('token and refresh', () => {
 
       expect(response.status).toBe(403);
     });
+  });
+});
+
+describe('audience', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+
+  // A token of LePatron's authorization server, valid in every way but the
+  // resource it was issued for.
+  const tokenFor = async (aud) => {
+    const client = await app.provider.Client.find(CIMD_CLIENT.client_id);
+    const token = new app.provider.AccessToken({
+      accountId: `${f.FRANK}.${f.CLIENT_GROUP}`,
+      client,
+      grantId: 'a-grant',
+      scope: 'mcp:read',
+      aud,
+    });
+    return token.save();
+  };
+
+  it('opens the MCP endpoint to a token issued for it', async () => {
+    const response = await oauth.callMcp(app, await tokenFor(MCP_RESOURCE));
+
+    expect(response.status).toBe(200);
+  });
+
+  it('refuses a token issued for another resource', async () => {
+    const response = await oauth.callMcp(
+      app,
+      await tokenFor('https://elsewhere.example.test/api')
+    );
+
+    expect(response.status).toBe(401);
   });
 });

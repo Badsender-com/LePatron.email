@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // The three ways a client makes itself known (ADR 0012): a Client ID Metadata
@@ -13,8 +16,7 @@ const { CIMD_CLIENT } = oauth;
 const COPILOT_REDIRECT =
   'https://teams.microsoft.com/api/platform/v1.0/oAuthRedirect';
 
-// Turned on by #1306 (OAuth connection end to end)
-describe.skip('CIMD registration', () => {
+describe('CIMD registration', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();

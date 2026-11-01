@@ -1078,6 +1078,29 @@ export default {
     switch: 'Autoriser le retour d\'expérience',
     updated: 'Retour d\'expérience mis à jour',
   },
+  oauthConsent: {
+    title: 'Connecter {client} à LePatron',
+    intro: '{client} demande à se connecter à votre compte LePatron.',
+    redirectHost: 'Après accord, vous serez renvoyé vers {host}.',
+    canDo: 'Il pourra :',
+    scopes: {
+      read:
+        'lire les expertises, les skills et les mailings auxquels vous avez accès, avec vos droits',
+      write:
+        'proposer des brouillons de skills et d\'expertises, que seule une personne peut publier',
+    },
+    group: 'Entreprise',
+    groupHint:
+      'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
+    allow: 'Autoriser',
+    deny: 'Refuser',
+    expired:
+      'Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur. Relancez la connexion depuis votre assistant.',
+    accountCannotConnect:
+      'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
+    noAccess:
+      'Votre entreprise n\'a pas l\'accès MCP : demandez à son administrateur de l\'activer.',
+  },
   mcpAccess: {
     title: 'Accès MCP',
     description:
