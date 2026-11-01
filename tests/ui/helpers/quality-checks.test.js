@@ -3,6 +3,7 @@ import {
   CHECK_STATES,
   CHECK_CATEGORIES,
   SERVER_CHECKS,
+  TECH_CHECKS,
 } from '~/helpers/constants/quality-checks.js';
 import en from '~/helpers/locales/en.js';
 import fr from '~/helpers/locales/fr.js';
@@ -21,6 +22,10 @@ describe('the settings pages check catalogue', () => {
 
   it('reads the checks run by the server from the shared catalogue', () => {
     expect(SERVER_CHECKS).toBe(SHARED.SERVER_CHECKS);
+  });
+
+  it('has the same checks reserved to the technical settings', () => {
+    expect(TECH_CHECKS).toBe(SHARED.TECH_CHECKS);
   });
 
   it('lists every category its checks belong to', () => {
