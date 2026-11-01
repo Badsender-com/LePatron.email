@@ -801,6 +801,29 @@ export default {
     switch: 'Allow session summaries',
     updated: 'Session summaries updated',
   },
+  oauthConsent: {
+    title: 'Connect {client} to LePatron',
+    intro: '{client} asks to connect to your LePatron account.',
+    redirectHost: 'Once allowed, you will be sent back to {host}.',
+    canDo: 'It will be able to:',
+    scopes: {
+      read:
+        'read the expertises, skills and mailings you have access to, with your rights',
+      write:
+        'propose drafts of skills and expertises, which only a person can publish',
+    },
+    group: 'Company',
+    groupHint:
+      'The assistant will only see this company. To read another one, connect it again.',
+    allow: 'Allow',
+    deny: 'Deny',
+    expired:
+      'This connection request has expired, or was started in another browser. Start the connection again from your assistant.',
+    accountCannotConnect:
+      'This account cannot connect an assistant: log in with your user account.',
+    noAccess:
+      'Your company has no MCP access: ask its administrator to turn it on.',
+  },
   mcpAccess: {
     title: 'MCP access',
     description:
