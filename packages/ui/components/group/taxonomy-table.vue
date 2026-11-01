@@ -18,8 +18,14 @@ export default {
     // The empty slot has to tell the two apart: "you have none" and "we could
     // not read them" lead to opposite actions.
     loadError: { type: Boolean, default: false },
+    // The email type maps a value onto the doctrine's six types; any other
+    // dimension shows the value's own identifier.
+    isEmailType: { type: Boolean, default: true },
   },
   computed: {
+    wording() {
+      return this.isEmailType ? 'taxonomy' : 'taxonomy.values';
+    },
     headers() {
       const headers = [
         { text: this.$t('taxonomy.table.label'), value: 'label' },
@@ -42,7 +48,9 @@ export default {
 
       headers.push(
         {
-          text: this.$t('taxonomy.table.canonicalType'),
+          text: this.isEmailType
+            ? this.$t('taxonomy.table.canonicalType')
+            : this.$t('taxonomy.values.form.identifier'),
           value: 'canonicalType',
         },
         { text: this.$t('taxonomy.table.order'), value: 'order' },
@@ -93,7 +101,10 @@ export default {
     </template>
 
     <template #item.canonicalType="{ item }">
-      <v-chip v-if="item.canonicalType" small outlined color="accent">
+      <code v-if="item.canonicalType && !isEmailType">
+        {{ item.canonicalType }}
+      </code>
+      <v-chip v-else-if="item.canonicalType" small outlined color="accent">
         {{ canonicalTypeLabel(item) }}
       </v-chip>
       <span v-else class="taxonomy-table__empty-cell">—</span>
@@ -147,7 +158,7 @@ export default {
       <div v-if="loadError" class="text-center pa-6">
         <lucide-alert-triangle :size="48" class="error--text" />
         <p class="text-body-1 grey--text text--darken-2 mt-4 mb-1">
-          {{ $t('taxonomy.loadError.title') }}
+          {{ $t(`${wording}.loadError.title`) }}
         </p>
         <p class="text-body-2 grey--text text--darken-1">
           {{ $t('taxonomy.loadError.description') }}
@@ -159,19 +170,24 @@ export default {
       <div v-else class="text-center pa-6">
         <lucide-tags :size="48" class="grey--text text--lighten-1" />
         <p class="text-body-1 grey--text mt-4 mb-1">
-          {{ $t('taxonomy.empty.title') }}
+          {{ $t(`${wording}.empty.title`) }}
         </p>
         <p class="text-body-2 grey--text text--darken-1">
-          {{ $t('taxonomy.empty.description') }}
+          {{ $t(`${wording}.empty.description`) }}
         </p>
         <div class="d-flex justify-center flex-wrap" style="gap: 0.5rem">
           <v-btn color="accent" elevation="0" @click="$emit('create')">
-            {{ $t('taxonomy.empty.action') }}
+            {{ $t(`${wording}.empty.action`) }}
           </v-btn>
           <!-- The likeliest reason this screen is empty: a company created
                before the defaults were seeded. Offering the rebuild here, where
                the user actually is, rather than only in the page header. -->
-          <v-btn color="accent" outlined @click="$emit('restore-defaults')">
+          <v-btn
+            v-if="isEmailType"
+            color="accent"
+            outlined
+            @click="$emit('restore-defaults')"
+          >
             {{ $t('taxonomy.defaults.action') }}
           </v-btn>
         </div>

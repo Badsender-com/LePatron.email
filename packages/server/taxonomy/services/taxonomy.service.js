@@ -4,8 +4,15 @@ const { NotFound, Conflict, InternalServerError } = require('http-errors');
 
 const { TaxonomyItems, Mailings } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
-const { isObjectId, validatePayload } = require('./taxonomy.validation.js');
+const {
+  TaxonomyLimits,
+  StandardDimensions,
+} = require('../../constant/taxonomy-type.js');
+const {
+  isObjectId,
+  validatePayload,
+  limitReached,
+} = require('./taxonomy.validation.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
 const { assertValueType } = require('./dimension.service.js');
 const logger = require('../../utils/logger.js');
@@ -56,6 +63,11 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
     type: taxonomyType,
     label: fields.label,
   });
+  await assertIdentifierIsFree({
+    companyId,
+    type: taxonomyType,
+    identifier: fields.canonicalType,
+  });
 
   // Unlike the label, the cap has no index to fall back on, so concurrent
   // creations can land a handful of items past it. Accepted rather than solved
@@ -68,7 +80,7 @@ async function createTaxonomyItem({ user, groupId, type, payload = {} }) {
   });
 
   if (existingCount >= TaxonomyLimits.ITEMS_PER_COMPANY) {
-    throw new Conflict(ERROR_CODES.TAXONOMY_LIMIT_REACHED);
+    throw limitReached(TaxonomyLimits.ITEMS_PER_COMPANY);
   }
 
   try {
@@ -103,6 +115,17 @@ async function updateTaxonomyItem({ user, itemId, payload = {} }) {
       exceptId: item._id,
     });
   }
+  if (
+    fields.canonicalType !== undefined &&
+    fields.canonicalType !== item.canonicalType
+  ) {
+    await assertIdentifierIsFree({
+      companyId: item._company,
+      type: item.type,
+      identifier: fields.canonicalType,
+      exceptId: item._id,
+    });
+  }
 
   Object.assign(item, fields);
 
@@ -133,10 +156,14 @@ async function deleteTaxonomyItem({ user, itemId }) {
   // Scoped by company as well as by item: it serves the
   // `{_company, _emailType}` index, and an email can only ever reference a
   // typology of its own company — `transferToUser` clears `_emailType` when a
-  // transfer moves the mailing (mailing.controller.js).
+  // transfer moves the mailing (mailing.controller.js). The email type has its
+  // own field on the email; every other dimension's value sits in the one list
+  // (ADR-0014).
   const usageCount = await Mailings.countDocuments({
     _company: item._company,
-    _emailType: item._id,
+    ...(item.type === StandardDimensions.EMAIL_TYPE
+      ? { _emailType: item._id }
+      : { _taxonomyItems: item._id }),
   });
 
   // The count and the delete are two statements: an email assigned this typology
@@ -206,5 +233,31 @@ async function assertLabelIsFree({ companyId, type, label, exceptId }) {
 
   if (await TaxonomyItems.exists(query)) {
     throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_LABEL_ALREADY_EXISTS);
+  }
+}
+
+/**
+ * One identifier per value within a dimension: a template compares against it,
+ * and two values answering to the same one could not be told apart. Values with
+ * no identifier are as many as needed.
+ *
+ * The email type is left out: there the field maps a value onto one of the
+ * doctrine's six types, and several values map onto the same one.
+ */
+async function assertIdentifierIsFree({
+  companyId,
+  type,
+  identifier,
+  exceptId,
+}) {
+  if (!identifier || type === StandardDimensions.EMAIL_TYPE) return;
+
+  const query = { _company: companyId, type, canonicalType: identifier };
+  if (exceptId) {
+    query._id = { $ne: exceptId };
+  }
+
+  if (await TaxonomyItems.exists(query)) {
+    throw new Conflict(ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS);
   }
 }

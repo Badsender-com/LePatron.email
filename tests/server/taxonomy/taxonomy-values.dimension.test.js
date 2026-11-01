@@ -99,7 +99,7 @@ describe('a value belongs to a dimension', () => {
 });
 
 // Turned on by #1354 (declare a company dimension and its values)
-describe.skip('values of a company dimension', () => {
+describe('values of a company dimension', () => {
   beforeAll(loadServices);
 
   beforeEach(async () => {

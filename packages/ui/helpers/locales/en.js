@@ -1144,6 +1144,20 @@ export default {
       emailType: 'Email type',
       loadError: 'Your taxonomy dimensions could not be loaded',
       updated: 'Dimension updated',
+      created: 'Dimension created',
+      deleted: 'Dimension deleted',
+      deactivated: 'Dimension deactivated',
+      reactivated: 'Dimension reactivated',
+      inactive: 'Deactivated',
+      inactiveHint:
+        'It is no longer offered on emails and takes no new value. Emails already carrying one of its values keep it.',
+      deactivate: 'Deactivate',
+      reactivate: 'Reactivate',
+      declare: 'Add a dimension',
+      full: 'Limit of {limit} dimensions reached, standard ones included.',
+      deleteConfirmTitle: 'Delete this dimension?',
+      deleteConfirmMessage:
+        'The dimension “{label}” will be deleted, and its name can be used again.',
       trigger: {
         readOnly:
           'Its two values are the Badsender doctrine\'s: they are neither renamed nor added to.',
@@ -1159,12 +1173,53 @@ export default {
         },
       },
       form: {
+        createTitle: 'New dimension',
         editTitle: 'Edit the dimension',
         name: 'Name read by templates',
+        namePlaceholder: 'audience',
+        nameCreateHint:
+          'Final once created: templates will read this name. Unaccented letters, digits and _, not starting with a digit.',
+        nameInvalid:
+          'Unaccented letters, digits and _ only, not starting with a digit.',
         nameHint:
           'Set on creation: templates read this name, and changing it would break them.',
         descriptionHint:
           'What this dimension decides about an email, for you. This text is context for the AI.',
+      },
+    },
+    values: {
+      deleteConfirmTitle: 'Delete this value?',
+      deleteConfirmMessage: 'The value “{label}” will be deleted.',
+      deleteConfirmHint:
+        'If emails use it, the deletion will be refused: deactivate it instead.',
+      loadError: {
+        title: 'The values of this dimension could not be loaded',
+      },
+      empty: {
+        action: 'Add a value',
+        title: 'No value yet',
+        description:
+          'Add the values your team will choose from on an email.',
+      },
+      form: {
+        createTitle: 'New value',
+        editTitle: 'Edit the value',
+        labelPlaceholder: 'Loyal customers',
+        labelHint: 'The name your team actually uses.',
+        descriptionPlaceholder:
+          'More than three orders a year, subscribed to the newsletter.',
+        descriptionHint:
+          'What this value covers for you. This text is what guides the AI.',
+        identifier: 'Identifier',
+        identifierHint:
+          'What templates compare against. Proposed from the label, unique within the dimension.',
+        isActiveHint:
+          'A deactivated value disappears from the select lists, but the emails using it keep it.',
+      },
+      snackbars: {
+        created: 'Value created',
+        updated: 'Value updated',
+        deleted: 'Value deleted',
       },
     },
     table: {
@@ -1224,10 +1279,17 @@ export default {
         'Create the email types your team needs: the label and the definition are yours.',
     },
     errors: {
-      limitReached: 'You have reached the maximum number of email types for this company.',
-      labelAlreadyExists: 'An email type already uses this label.',
+      limitReached:
+        'Limit reached: {limit} at most. Delete some before adding more.',
+      labelAlreadyExists: 'This label is already taken in this dimension.',
+      identifierAlreadyExists:
+        'This identifier is already taken in this dimension.',
+      dimensionNameAlreadyExists:
+        'A dimension already has this name, perhaps a deactivated one.',
+      dimensionHasValues:
+        'This dimension has {count} value: deactivate it instead of deleting it. | This dimension has {count} values: deactivate it instead of deleting it.',
       inUse:
-        'This email type is used by {count} email: deactivate it instead of deleting it. | This email type is used by {count} emails: deactivate it instead of deleting it.',
+        'Used by {count} email: deactivate it instead of deleting it. | Used by {count} emails: deactivate it instead of deleting it.',
     },
     defaults: {
       action: 'Default email types',

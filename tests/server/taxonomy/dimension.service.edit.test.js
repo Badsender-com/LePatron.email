@@ -38,7 +38,7 @@ const byName = (dimensions, name) =>
   dimensions.find((dimension) => dimension.name === name);
 
 // Turned on by #1354 (declare a company dimension and its values)
-describe.skip('editing, deactivating and deleting a dimension', () => {
+describe('editing, deactivating and deleting a dimension', () => {
   let dimensionService;
   let audience;
 
