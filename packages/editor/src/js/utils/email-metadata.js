@@ -67,7 +67,7 @@ function fromDateInputValue(value) {
 }
 
 /**
- * The four fields the PATCH owns, described once.
+ * The fields the PATCH owns, described once.
  *
  * "Has this changed" and "what do we send for it" were two separate lists before,
  * and they have to agree: a field counted as changed but not serialised is an edit
@@ -94,7 +94,17 @@ const METADATA_FIELDS = [
     key: 'trigger',
     toPayload: (form) => (form.trigger ? form.trigger : null),
   },
+  // The values of the company dimensions, as one list (ADR-0014). Sent whole:
+  // the server replaces the list, it does not merge it.
+  {
+    key: 'taxonomyItemIds',
+    toPayload: (form) => (form.taxonomyItemIds || []).map(String),
+    // A list in another order is the same list.
+    same: (a, b) => sortedIds(a) === sortedIds(b),
+  },
 ];
+
+const sortedIds = (ids) => (ids || []).map(String).sort().join(',');
 
 const sameValue = (a, b) =>
   String(a == null ? '' : a) === String(b == null ? '' : b);
@@ -103,12 +113,13 @@ const sameValue = (a, b) =>
 function changedFields(form, initial) {
   const before = initial || {};
   return METADATA_FIELDS.filter(
-    (field) => !sameValue(form[field.key], before[field.key])
+    (field) => !(field.same || sameValue)(form[field.key], before[field.key])
   );
 }
 
 /**
- * The PATCH payload for subject, planned send date, typology and trigger.
+ * The PATCH payload for subject, planned send date, typology, trigger and the
+ * company dimension values.
  *
  * `null` clears a field, and the server reads it that way. A field ABSENT from the
  * body is left alone — `validateMetadataPayload` guards every field with
@@ -123,7 +134,8 @@ function changedFields(form, initial) {
  *     pointing at a deleted taxonomy item answers EMAIL_TYPE_NOT_FOUND, and the
  *     subject they just typed goes down with it.
  *
- * @param {Object} form { subject, plannedSendDate, emailTypeId, trigger }
+ * @param {Object} form { subject, plannedSendDate, emailTypeId, trigger,
+ *   taxonomyItemIds }
  * @param {Object} [initial] the state the section opened with. Omitted, every
  *   field is sent — which is only correct when there is nothing to compare against.
  * @returns {Object}
@@ -141,7 +153,7 @@ function buildMetadataPayload(form, initial) {
  * The form state the section opens with, from what the server exposed.
  *
  * @param {Object} [emailMetadata] metadata.emailMetadata
- * @returns {{subject: string, plannedSendDate: string, emailTypeId: string, trigger: string}}
+ * @returns {{subject: string, plannedSendDate: string, emailTypeId: string, trigger: string, taxonomyItemIds: string[]}}
  */
 function toFormState(emailMetadata) {
   const values = emailMetadata || {};
@@ -151,6 +163,7 @@ function toFormState(emailMetadata) {
     plannedSendDate: toDateInputValue(values.plannedSendDate),
     emailTypeId: values.emailTypeId ? String(values.emailTypeId) : '',
     trigger: values.trigger ? String(values.trigger) : '',
+    taxonomyItemIds: (values.taxonomyItemIds || []).map(String),
   };
 }
 
@@ -192,6 +205,8 @@ function errorKeyFor(error) {
       return 'email-metadata-error-disabled';
     case 'EMAIL_TYPE_NOT_FOUND':
       return 'email-metadata-error-typology';
+    case 'TAXONOMY_ITEM_NOT_FOUND':
+      return 'email-metadata-error-dimension-value';
     case 'EMAIL_TYPE_COMPANY_MISSING':
       return 'email-metadata-error-no-company';
     case 'INVALID_EMAIL_METADATA':

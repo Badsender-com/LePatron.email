@@ -384,9 +384,13 @@ module.exports = {
   'email-metadata-error-disabled':
     'Les métadonnées ne sont pas activées pour cette entreprise',
   'email-metadata-error-typology': "Cette typologie n'est plus disponible",
+  'email-metadata-error-dimension-value':
+    "Une valeur choisie n'est plus disponible",
   'email-metadata-typology-missing': 'Typologie désactivée',
   'email-metadata-trigger': 'Déclenchement',
   'email-metadata-trigger-none': 'Aucun',
+  // The empty choice of a company dimension select, whatever its name.
+  'email-metadata-dimension-none': 'Aucune valeur',
   'email-metadata-trigger-adhoc': 'Ad hoc',
   'email-metadata-trigger-automated': 'Automatisé',
   // Affichées sous le champ pour la valeur sélectionnée, et en infobulle sur les

@@ -371,9 +371,13 @@ module.exports = {
   'email-metadata-error': 'Could not save the metadata',
   'email-metadata-error-disabled': 'Metadata is not enabled for this company',
   'email-metadata-error-typology': 'This email type is no longer available',
+  'email-metadata-error-dimension-value':
+    'A chosen value is no longer available',
   'email-metadata-typology-missing': 'Deactivated email type',
   'email-metadata-trigger': 'Trigger',
   'email-metadata-trigger-none': 'None',
+  // The empty choice of a company dimension select, whatever its name.
+  'email-metadata-dimension-none': 'No value',
   'email-metadata-trigger-adhoc': 'One Shot',
   'email-metadata-trigger-automated': 'Automated',
   // Shown under the field for the selected value, and as a tooltip on the options.

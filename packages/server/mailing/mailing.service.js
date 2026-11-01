@@ -312,8 +312,9 @@ async function userCanEditMailing(user, mailing) {
 // and the source location (real fields plus their aliases/virtuals, since the
 // copy is built from a plain object). `plannedSendDate` is here because it
 // belongs to one campaign — a copy silently carrying yesterday's send date is a
-// planning bug nobody would look for. `subject` and `_emailType` are absent on
-// purpose: they describe the email and follow the copy.
+// planning bug nobody would look for. `subject`, `_emailType` and
+// `_taxonomyItems` are absent on purpose: they describe the email and follow the
+// copy.
 const MAILING_COPY_OMITTED_FIELDS = Object.freeze([
   '_id',
   'id',

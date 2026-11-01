@@ -67,7 +67,7 @@ const newMailing = (overrides = {}) => ({
 });
 
 // Turned on by #1355 (choose the values of company dimensions on an email)
-describe.skip('an email carries company dimensions', () => {
+describe('an email carries company dimensions', () => {
   let vip;
   let prospects;
   let brandA;
