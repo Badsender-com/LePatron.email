@@ -35,7 +35,7 @@ const DIMENSION_SERVICE =
 beforeEach(() => resetTaxonomyModels(models));
 
 // Turned on by #1354 (declare a company dimension and its values)
-describe.skip('declaring a company dimension', () => {
+describe('declaring a company dimension', () => {
   let dimensionService;
 
   beforeAll(() => {
