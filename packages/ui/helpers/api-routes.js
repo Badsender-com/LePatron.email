@@ -499,3 +499,15 @@ export const accountTwoFactorSetupConfirm = () =>
   '/account/login/two-factor/setup/confirm';
 export const accountTwoFactorEmailCode = () =>
   '/account/login/two-factor/email-code';
+
+/// ///
+// CONNECTED APPLICATIONS (ADR 0012)
+/// ///
+
+// Not under /api: under the consent page's path, where the authorization
+// server's cookie is sent. Absolute, so axios does not prefix them.
+const consentRoute = (uid, action) =>
+  `${window.location.origin}/oauth/consent/${uid}/${action}`;
+export const oauthInteraction = (uid) => consentRoute(uid, 'details');
+export const oauthInteractionConsent = (uid) => consentRoute(uid, 'consent');
+export const oauthInteractionDeny = (uid) => consentRoute(uid, 'deny');

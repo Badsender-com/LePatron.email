@@ -1,4 +1,5 @@
 import * as pageAcl from '~/helpers/pages-acls.js';
+import { isReturnPath } from '../../shared/access/return-path.js';
 import { USER, IS_CONNECTED, CAN, IS_BOOTSTRAP_ACCOUNT } from '~/store/user';
 
 function flattenMeta(acc, meta) {
@@ -22,5 +23,10 @@ export default async function authMiddleware(nuxtContext) {
 
   if (pageAcl.isPageGranted(meta.acl, { isConnected, can })) return;
 
+  // The consent page of a connected application is where the login sends
+  // the user back (ADR 0012).
+  if (!isConnected && isReturnPath(route.path)) {
+    return redirect('/account/login', { next: route.path });
+  }
   return redirect('/account/login');
 }

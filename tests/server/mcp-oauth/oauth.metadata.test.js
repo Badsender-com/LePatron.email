@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // What a connected application discovers before it connects (ADR 0012): the
@@ -10,8 +13,7 @@ const oauth = require('../../helpers/mcp-oauth-harness');
 const { BASE, ISSUER, MCP_RESOURCE } = oauth;
 const RESOURCE_METADATA = `${BASE}/.well-known/oauth-protected-resource/mcp`;
 
-// Turned on by #1306 (OAuth connection end to end)
-describe.skip('metadata', () => {
+describe('metadata', () => {
   let app;
   beforeAll(() => {
     app = oauth.createApp();
@@ -76,5 +78,22 @@ describe.skip('metadata', () => {
 
     expect(body.response_types_supported).not.toContain('token');
     expect(body.code_challenge_methods_supported).not.toContain('plain');
+  });
+});
+
+// The endpoints anyone may call are limited per address, against floods.
+describe('flood protection', () => {
+  it('stops registering clients from one address past 100 an hour', async () => {
+    const app = oauth.createApp();
+    const register = () =>
+      request(app).post('/oauth/reg').send({ client_name: 'A flood' });
+    for (let i = 0; i < 100; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await register();
+    }
+
+    const response = await register();
+
+    expect(response.status).toBe(429);
   });
 });

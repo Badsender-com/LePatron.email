@@ -98,6 +98,11 @@ module.exports = {
     // A dependency of the MCP client with no `main`, only `exports`.
     '^pkce-challenge$':
       '<rootDir>/node_modules/pkce-challenge/dist/index.node.cjs',
+    // Packages Jest 27 cannot load (ESM only, or ESM dependencies): Node 24
+    // requires them natively, see the comment of each.
+    '^oidc-provider$': '<rootDir>/tests/helpers/native-oidc-provider.js',
+    '^@modelcontextprotocol/node$':
+      '<rootDir>/tests/helpers/native-mcp-node.js',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
