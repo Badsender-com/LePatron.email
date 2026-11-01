@@ -6,6 +6,8 @@ const { McpClients } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 
+// The prefix of the ids given here, which `/mcp` checks are still listed.
+const CLIENT_ID_PREFIX = 'lepatron-';
 const AUTH_METHODS = ['client_secret_post', 'client_secret_basic'];
 const MAX_NAME = 100;
 const MAX_REDIRECT_URIS = 10;
@@ -67,8 +69,7 @@ const listed = (client) => ({
  * that cannot register themselves (Copilot Studio in manual mode). The
  * secret is answered once, at creation: the authorization server keeps it
  * with the clients that registered, and the list never shows it. Deleting a
- * client stops it at the token endpoint; the access tokens it holds expire
- * within the hour.
+ * client stops it at once, its access tokens included (see mcp-http.js).
  *
  * @param {import('oidc-provider').default} provider
  * @returns {express.Router}
@@ -99,7 +100,7 @@ function createClientsRouter(provider) {
     try {
       const { fields, error } = clientFieldsOf(req.body);
       if (error) return refuse(res, 400, error);
-      const clientId = `lepatron-${crypto.randomUUID()}`;
+      const clientId = `${CLIENT_ID_PREFIX}${crypto.randomUUID()}`;
       const clientSecret = crypto.randomBytes(48).toString('base64url');
       const metadata = {
         client_id: clientId,
@@ -117,12 +118,14 @@ function createClientsRouter(provider) {
       } catch (invalid) {
         return refuse(res, 400, invalid.error_description || invalid.message);
       }
-      await adapter.upsert(clientId, metadata);
+      // Listed first: a client the authorization server keeps is never one
+      // the back office cannot delete.
       const client = await McpClients.create({
         clientId,
         ...fields,
         _createdBy: req.user.id,
       });
+      await adapter.upsert(clientId, metadata);
       return res.status(201).json({ ...listed(client), clientSecret });
     } catch (err) {
       return next(err);
@@ -132,9 +135,12 @@ function createClientsRouter(provider) {
   router.delete('/:clientId', async (req, res, next) => {
     try {
       const { clientId } = req.params;
-      const { deletedCount } = await McpClients.deleteOne({ clientId });
-      if (!deletedCount) return refuse(res, 404, 'No such client.');
+      if (!(await McpClients.findOne({ clientId }).lean())) {
+        return refuse(res, 404, 'No such client.');
+      }
+      // Stopped first, unlisted after: a failure leaves it listed.
       await adapter.destroy(clientId);
+      await McpClients.deleteOne({ clientId });
       return res.status(204).end();
     } catch (err) {
       return next(err);
@@ -144,4 +150,16 @@ function createClientsRouter(provider) {
   return router;
 }
 
-module.exports = { createClientsRouter };
+/**
+ * Whether the client of an access token may still call: a client registered
+ * here must still be listed, so deleting it cuts its tokens at once.
+ *
+ * @param {string} clientId
+ * @returns {Promise<boolean>}
+ */
+async function isClientAllowed(clientId) {
+  if (!String(clientId).startsWith(CLIENT_ID_PREFIX)) return true;
+  return !!(await McpClients.findOne({ clientId }).lean());
+}
+
+module.exports = { createClientsRouter, isClientAllowed };

@@ -54,7 +54,11 @@ describe('authorization and consent', () => {
 
     expect(status).toBe(200);
     expect(body).toEqual({
-      client: { name: 'An assistant' },
+      client: {
+        name: 'An assistant',
+        registration: 'metadataDocument',
+        host: 'assistant.example.test',
+      },
       redirectHost: 'assistant.example.test',
       scopes: ['mcp:read'],
       groups: [{ id: f.CLIENT_GROUP, name: 'A client' }],

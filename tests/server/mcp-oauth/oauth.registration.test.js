@@ -328,3 +328,92 @@ describe('registering a client by hand', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('what the consent page says of a client', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+
+  const detailsFor = async (client) => {
+    const agent = oauth.signIn(app, f.FRANK);
+    const uid = await oauth.startConsent(agent, client, oauth.pkce().challenge);
+    return (await agent.get(`/oauth/consent/${uid}/details`)).body;
+  };
+
+  it('says a client that registered itself is only what it claims', async () => {
+    const { body: client } = await request(app)
+      .post('/oauth/reg')
+      .send({
+        client_name: 'Copilot Studio',
+        redirect_uris: [COPILOT_REDIRECT],
+        token_endpoint_auth_method: 'none',
+      });
+
+    expect((await detailsFor(client)).client).toEqual({
+      name: 'Copilot Studio',
+      registration: 'dynamic',
+    });
+    expect(client.registration_access_token).toBeUndefined();
+  });
+
+  it('says a super admin registered a client', async () => {
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post('/api/mcp-clients')
+      .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
+
+    const details = await detailsFor({
+      client_id: body.clientId,
+      redirect_uris: [COPILOT_REDIRECT],
+    });
+
+    expect(details.client).toEqual({
+      name: 'Copilot Studio',
+      registration: 'preRegistered',
+    });
+  });
+
+  it('shows a redirect URI with no host whole', async () => {
+    const { body: client } = await request(app)
+      .post('/oauth/reg')
+      .send({
+        client_name: 'A desktop app',
+        application_type: 'native',
+        redirect_uris: ['com.example.app:/callback'],
+        token_endpoint_auth_method: 'none',
+      });
+
+    expect((await detailsFor(client)).redirectHost).toBe(
+      'com.example.app:/callback'
+    );
+  });
+});
+
+describe('deleting a client registered by hand', () => {
+  it('cuts the access tokens it holds at once', async () => {
+    const app = oauth.createApp();
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post('/api/mcp-clients')
+      .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
+    const { access_token: accessToken } = await oauth.connect(app, f.FRANK, {
+      client: { client_id: body.clientId, redirect_uris: [COPILOT_REDIRECT] },
+      group: f.CLIENT_GROUP,
+      secret: body.clientSecret,
+    });
+    const before = await oauth.callMcp(app, accessToken, 'initialize', {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'copilot', version: '1' },
+    });
+
+    await oauth
+      .signIn(app, f.ALICE)
+      .delete(`/api/mcp-clients/${body.clientId}`);
+    const after = await oauth.callMcp(app, accessToken);
+
+    expect(before.status).toBe(200);
+    expect(after.status).toBe(401);
+  });
+});
