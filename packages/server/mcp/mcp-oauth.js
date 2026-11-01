@@ -2,6 +2,8 @@
 
 // ESM only: Node 24 lets the app require it (ADR 0012).
 const { default: Provider, errors } = require('oidc-provider');
+const { McpClients } = require('../common/models.common.js');
+const logger = require('../utils/logger.js');
 const { SCOPES } = require('./mcp-identity.js');
 
 // Short-lived access tokens, rotating refresh tokens (ADR 0012).
@@ -13,7 +15,16 @@ const TTL = {
   Session: 24 * 3600,
   Grant: 90 * 24 * 3600,
   RefreshToken: 30 * 24 * 3600,
+  // A client that registered (DCR) and connected nobody since.
+  Registration: 24 * 3600,
 };
+
+// A client proves itself with its secret, or, public, with PKCE alone.
+const CLIENT_AUTH_METHODS = [
+  'none',
+  'client_secret_post',
+  'client_secret_basic',
+];
 
 // The account of a token is a user in the group the connection is bound to,
 // so the group survives every refresh.
@@ -21,6 +32,23 @@ const accountIdOf = (userId, groupId) => `${userId}.${groupId}`;
 function identityOf(accountId) {
   const [userId, groupId] = String(accountId).split('.');
   return { userId, groupId };
+}
+
+/**
+ * Keeps a client that registered (DCR) for as long as its last connection may
+ * be refreshed: open registration would otherwise keep every client forever.
+ * A client a super admin registered stays until deleted; a client known by
+ * its metadata document is not stored.
+ *
+ * @param {import('oidc-provider').default} provider
+ * @param {string} clientId
+ * @param {number} [seconds]
+ */
+async function keepRegisteredClient(provider, clientId, seconds = TTL.Grant) {
+  const { adapter } = provider.Client;
+  const stored = await adapter.find(clientId);
+  if (!stored || (await McpClients.findOne({ clientId }).lean())) return;
+  await adapter.upsert(clientId, stored, seconds);
 }
 
 /**
@@ -56,6 +84,7 @@ function createAuthorizationServer({
     scopes: SCOPES,
     claims: { openid: ['sub'] },
     responseTypes: ['code'],
+    clientAuthMethods: CLIENT_AUTH_METHODS,
     pkce: { required: () => true },
     clientDefaults: {
       grant_types: ['authorization_code', 'refresh_token'],
@@ -120,11 +149,19 @@ function createAuthorizationServer({
       authorization_response_iss_parameter_supported: true,
     },
   });
+  provider.on('registration_create.success', (ctx, client) =>
+    keepRegisteredClient(
+      provider,
+      client.clientId,
+      TTL.Registration
+    ).catch((error) => logger.error('[mcp-oauth] registration', error.message))
+  );
   return provider;
 }
 
 module.exports = {
   createAuthorizationServer,
+  keepRegisteredClient,
   accountIdOf,
   identityOf,
   SCOPES,

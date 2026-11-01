@@ -511,3 +511,12 @@ const consentRoute = (uid, action) =>
 export const oauthInteraction = (uid) => consentRoute(uid, 'details');
 export const oauthInteractionConsent = (uid) => consentRoute(uid, 'consent');
 export const oauthInteractionDeny = (uid) => consentRoute(uid, 'deny');
+
+/// ///
+// MCP CLIENTS
+/// ///
+
+// The clients a super admin registers by hand (ADR 0012).
+export const mcpClients = () => '/mcp-clients';
+export const mcpClientsItem = ({ clientId }) =>
+  `/mcp-clients/${encodeURIComponent(clientId)}`;

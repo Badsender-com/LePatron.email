@@ -5,7 +5,7 @@ const { Users, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE, WRITE_SCOPE } = require('./mcp-identity.js');
-const { accountIdOf } = require('./mcp-oauth.js');
+const { accountIdOf, keepRegisteredClient } = require('./mcp-oauth.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
 
@@ -148,6 +148,7 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
+      await keepRegisteredClient(provider, interaction.params.client_id);
       return await finish(req, res, {
         login: { accountId },
         consent: { grantId },

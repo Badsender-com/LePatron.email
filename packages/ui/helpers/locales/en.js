@@ -835,6 +835,55 @@ export default {
     noAccess:
       'Your company has no MCP access: ask its administrator to turn it on.',
   },
+  mcpClients: {
+    pageTitle: 'MCP clients',
+    description:
+      'Assistants that cannot register themselves, such as Copilot Studio in manual mode, are given a client ID and a secret here. Claude, ChatGPT and Microsoft 365 Copilot do not need one.',
+    add: 'Add a client',
+    addDescription:
+      'Copy the redirect URL the assistant shows on its set-up screen.',
+    name: 'Name',
+    nameHint: 'Shown to the user on the consent screen.',
+    redirectUris: 'Redirect URLs',
+    redirectUrisHint: 'One per line, over HTTPS.',
+    authMethod: 'Secret sent',
+    authMethodHint:
+      'Where the assistant sends the secret to LePatron. If unsure, keep “In the request body”.',
+    authMethods: {
+      client_secret_post: 'In the request body',
+      client_secret_basic: 'In the header (Basic)',
+    },
+    empty: 'No client registered.',
+    loadError: 'The MCP clients could not be loaded.',
+    createdTitle: 'Client “{name}” created',
+    secretOnce:
+      'Copy the secret now: it will never be shown again. If it is lost, delete the client and create another one.',
+    secretSaved: 'I copied the secret',
+    copy: 'Copy',
+    copied: 'Copied',
+    deleteTitle: 'Delete this client?',
+    deleteConfirm:
+      'The assistant “{name}” will no longer be able to connect or renew its connections. Those under way stop within the hour.',
+    deleted: 'Client deleted',
+    serverTitle: 'Server settings',
+    serverDescription:
+      'The values the assistant asks for to connect to LePatron.',
+    settings: {
+      clientId: 'Client ID',
+      clientSecret: 'Client secret',
+      mcpUrl: 'MCP server URL',
+      authorizationUrl: 'Authorization URL',
+      tokenUrl: 'Token URL',
+      refreshUrl: 'Refresh URL',
+      scope: 'Scope',
+    },
+    errors: {
+      nameTooLong: 'The name is at most 100 characters long.',
+      redirectUrisRequired: 'At least one redirect URL is required.',
+      redirectUrisInvalid:
+        'Up to 10 URLs, over HTTPS (HTTP only to localhost), without a # fragment.',
+    },
+  },
   mcpAccess: {
     title: 'MCP access',
     description:
