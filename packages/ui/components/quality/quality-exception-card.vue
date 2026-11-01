@@ -180,6 +180,7 @@ export default {
         :applied="applied"
         :changes-nothing="changesNothing"
         :group-id="groupId"
+        :locked="locked"
       />
       <div v-if="showThresholds" class="qx-card__thresholds">
         <bs-quality-threshold-field
