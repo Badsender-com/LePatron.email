@@ -7,8 +7,13 @@ const { TaxonomyItems } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const { EmailTriggerValues } = require('../constant/email-trigger.js');
+const {
+  validateTaxonomyItemIds,
+} = require('./mailing-company-dimensions.service.js');
+// Read path of the same feature, in its own file for length; exported from
+// here so the endpoint and what the editor receives keep one entry point.
+const { buildEditorMetadata } = require('./mailing-editor-metadata.service.js');
 const modelsUtils = require('../utils/model.js');
-const logger = require('../utils/logger.js');
 
 // A subject ends up in an email header; a client has no reason to store more.
 const MAX_SUBJECT_LENGTH = 255;
@@ -27,6 +32,7 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   'plannedSendDate',
   'emailTypeId',
   'trigger',
+  'taxonomyItemIds',
 ]);
 
 // The field is a day, not an instant: it has no time, and what is stored must
@@ -40,6 +46,7 @@ module.exports = {
   applyMetadataToMailing,
   normalizePlannedSendDate,
   buildEditorMetadata,
+  clearCompanyScopedMetadata,
   MAX_SUBJECT_LENGTH,
   ALLOWED_METADATA_KEYS,
 };
@@ -63,9 +70,14 @@ const invalid = () =>
  * @param {Object} payload raw body
  * @param {Object} options
  * @param {string|ObjectId|null} options.companyId company the mailing belongs to
+ * @param {Array} [options.currentItemIds] the company dimension values the
+ *   mailing carries, kept even once deactivated
  * @returns {Promise<Object>} the validated subset, ready to assign
  */
-async function validateMetadataPayload(payload = {}, { companyId } = {}) {
+async function validateMetadataPayload(
+  payload = {},
+  { companyId, currentItemIds } = {}
+) {
   assertNoUnknownKey(payload);
 
   const validated = {};
@@ -116,6 +128,15 @@ async function validateMetadataPayload(payload = {}, { companyId } = {}) {
     } else {
       validated.trigger = payload.trigger;
     }
+  }
+
+  // Read as `taxonomyItemIds`, stored as `_taxonomyItems`, for the reason given
+  // for the email type.
+  if (isDefined(payload.taxonomyItemIds)) {
+    validated._taxonomyItems = await validateTaxonomyItemIds(
+      payload.taxonomyItemIds,
+      { companyId, currentIds: currentItemIds }
+    );
   }
 
   return validated;
@@ -227,7 +248,10 @@ async function validateEmailType(rawId, { companyId }) {
  */
 async function applyMetadataToMailing(mailing, payload = {}) {
   const companyId = mailing._company ? String(mailing._company) : null;
-  const validated = await validateMetadataPayload(payload, { companyId });
+  const validated = await validateMetadataPayload(payload, {
+    companyId,
+    currentItemIds: mailing._taxonomyItems,
+  });
 
   // `validated` holds exactly the keys the payload carried, so a field added to
   // the validation applies here without a second list to keep in sync.
@@ -237,109 +261,14 @@ async function applyMetadataToMailing(mailing, payload = {}) {
 }
 
 /**
- * What the editor needs to render the email-settings section: the VALUES it edits,
- * and the CONFIG it renders from (the company's active typologies, and which
- * fields the company wants mandatory).
+ * Drop what belongs to the mailing's company, before it moves to another one:
+ * the email type and the company dimension values would point outside their own
+ * company, where the metadata endpoint could no longer resolve them. The trigger
+ * is the doctrine's, not the company's, and follows the email.
  *
- * Lives here rather than in `findOneForMosaico` because none of it is a schema
- * concern: which company a typology list is scoped to, and what to do when the
- * mailing and its template disagree, are decisions of the same feature that owns
- * the write path — and they have to stay consistent with it.
- *
- * Returns `null` when nothing should be exposed. The editor decides the section
- * exists from the PRESENCE of `emailMetadataConfig`, so an opted-out company
- * cannot even see that the feature is there.
- *
- * Scoped on the MAILING's company, not the template's. `findOneForMosaico` reads
- * the template's company for the download options — deliberate, since a mailing
- * created by a super admin has no company of its own — but reusing it here would
- * read the flag and the typology list of whichever company owns the template. The
- * write path validates against `mailing._company`: reading somewhere else than we
- * write means offering typologies the save will refuse, and showing one company's
- * vocabulary inside another company's editor.
- *
- * The preheader is deliberately NOT here: it lives in the template's own `data`,
- * which the editor already receives and holds live. A copy in the metadata would
- * be a second value competing with the one that reaches the sent email.
- *
- * @param {Object} options
- * @param {Object} options.mailing the mailing, with `_company` populated
- * @param {Object} options.group the TEMPLATE's company, already loaded
- * @returns {Promise<{emailMetadata: Object, emailMetadataConfig: Object}|null>}
+ * @param {Object} mailing a Mailings document
  */
-async function buildEditorMetadata({ mailing, group }) {
-  const mailingId = mailing._id;
-  const mailingCompanyId =
-    (mailing._company && (mailing._company._id || mailing._company.id)) || null;
-  const templateCompanyId = group._id;
-
-  // A mailing whose company differs from its template's is an inconsistent state,
-  // not a supported one. Rather than pick a side, expose nothing and say so:
-  // whichever company we chose would be wrong for the other.
-  if (
-    mailingCompanyId &&
-    String(mailingCompanyId) !== String(templateCompanyId)
-  ) {
-    logger.warn(
-      `[buildEditorMetadata] mailing ${mailingId} belongs to company ${mailingCompanyId} but its template belongs to ${templateCompanyId}; email metadata not exposed`
-    );
-    return null;
-  }
-
-  // Past that guard the two companies are the same one, so `group` — already
-  // loaded — IS the mailing's company. No second read.
-  const metadataCompany = group;
-  if (
-    !metadataCompany ||
-    !metadataCompany.emailMetadata ||
-    metadataCompany.emailMetadata.enabled !== true
-  ) {
-    return null;
-  }
-
-  // A mailing with no company of its own cannot have a typology saved on it: the
-  // PATCH refuses it with EMAIL_TYPE_COMPANY_MISSING, having no company to check
-  // it against (see validateEmailType above). Offering the template company's
-  // typologies here would be a select whose every option fails on save. The
-  // subject and the date stay editable.
-  const emailTypes = mailingCompanyId
-    ? await TaxonomyItems.find({
-        _company: mailingCompanyId,
-        type: TaxonomyTypes.EMAIL_TYPE,
-        isActive: true,
-      })
-        // `description` is the company's own definition of the typology, seeded
-        // with the Badsender one. It travels to the editor so the picker can say
-        // what a typology means to someone choosing between six of them, rather
-        // than only naming them.
-        .select({ label: 1, canonicalType: 1, order: 1, description: 1 })
-        .sort({ order: 1, label: 1 })
-        .lean()
-    : [];
-
-  return {
-    emailMetadata: {
-      subject: mailing.subject,
-      plannedSendDate: mailing.plannedSendDate,
-      emailTypeId: mailing._emailType,
-      trigger: mailing.trigger,
-    },
-    emailMetadataConfig: {
-      enabled: true,
-      requiredFields: metadataCompany.emailMetadata.requiredFields || [],
-      // Active items only: a deactivated typology must not be offered, but an
-      // email already pointing at one keeps its reference.
-      emailTypes: emailTypes.map((item) => ({
-        id: item._id,
-        label: item.label,
-        canonicalType: item.canonicalType,
-        description: item.description,
-      })),
-      // The two values the trigger select offers. Sent rather than hard-coded in
-      // the editor so the doctrine's vocabulary has one source; the editor
-      // translates them from its own locale files.
-      triggers: [...EmailTriggerValues],
-      url: { update: `/api/mailings/${mailingId}/metadata` },
-    },
-  };
+function clearCompanyScopedMetadata(mailing) {
+  mailing._emailType = undefined;
+  mailing._taxonomyItems = undefined;
 }
