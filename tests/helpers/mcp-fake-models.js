@@ -30,6 +30,7 @@ const MODELS = {
   skills: 'LePatronSkills',
   feedbacks: 'McpFeedbacks',
   callLogs: 'McpCallLogs',
+  clients: 'McpClients',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.
@@ -136,6 +137,11 @@ function model(records) {
       const stored = { _id: newId(), ...copy(record) };
       records.push(stored);
       return toDocument(stored, records);
+    },
+    deleteOne: async (filter = {}) => {
+      const index = records.findIndex((record) => matches(record, filter));
+      if (index !== -1) records.splice(index, 1);
+      return { deletedCount: index === -1 ? 0 : 1 };
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
     distinct: (field, filter = {}) =>

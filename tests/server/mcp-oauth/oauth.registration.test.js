@@ -63,8 +63,7 @@ describe('CIMD registration', () => {
   });
 });
 
-// Turned on by #1307 (ChatGPT and Microsoft clients)
-describe.skip('DCR registration', () => {
+describe('DCR registration', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();
@@ -130,8 +129,7 @@ describe.skip('DCR registration', () => {
   });
 });
 
-// Turned on by #1307 (ChatGPT and Microsoft clients)
-describe.skip('pre-registered clients', () => {
+describe('pre-registered clients', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();
@@ -212,5 +210,121 @@ describe.skip('pre-registered clients', () => {
       });
 
     expect(refreshed.body.error).toBe('invalid_client');
+  });
+});
+
+// Open registration would otherwise keep every client that ever registered.
+describe('how long a client is kept', () => {
+  const DAY = 24 * 3600;
+  let app;
+  let upsert;
+  beforeEach(() => {
+    app = oauth.createApp();
+    upsert = jest.spyOn(app.provider.Client.adapter, 'upsert');
+  });
+
+  const register = () =>
+    request(app)
+      .post('/oauth/reg')
+      .send({
+        client_name: 'A copilot',
+        redirect_uris: [COPILOT_REDIRECT],
+        token_endpoint_auth_method: 'client_secret_post',
+      });
+  const keptFor = (clientId) =>
+    upsert.mock.calls
+      .filter(([id]) => id === clientId)
+      .map(([, , seconds]) => seconds);
+
+  it('keeps a client that registered for a day', async () => {
+    const { body: client } = await register();
+
+    expect(keptFor(client.client_id)).toEqual([undefined, DAY]);
+  });
+
+  it('keeps it as long as a grant once it connects someone', async () => {
+    const { body: client } = await register();
+
+    await oauth.connect(app, f.FRANK, {
+      client,
+      group: f.CLIENT_GROUP,
+      secret: client.client_secret,
+    });
+
+    expect(keptFor(client.client_id)).toEqual([undefined, DAY, 90 * DAY]);
+  });
+
+  it('keeps a client a super admin registered until it is deleted', async () => {
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post('/api/mcp-clients')
+      .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
+
+    await oauth.connect(app, f.FRANK, {
+      client: { client_id: body.clientId, redirect_uris: [COPILOT_REDIRECT] },
+      group: f.CLIENT_GROUP,
+      secret: body.clientSecret,
+    });
+
+    expect(keptFor(body.clientId)).toEqual([undefined]);
+  });
+});
+
+describe('registering a client by hand', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+
+  const create = (fields) =>
+    oauth
+      .signIn(app, f.ALICE)
+      .post('/api/mcp-clients')
+      .send({
+        name: 'Copilot Studio',
+        redirectUris: [COPILOT_REDIRECT],
+        ...fields,
+      });
+
+  it.each([
+    ['no name', { name: ' ' }],
+    ['no redirect URI', { redirectUris: [] }],
+    [
+      'a redirect URI in plain HTTP',
+      { redirectUris: ['http://copilot.example.test/cb'] },
+    ],
+    ['a redirect URI that is not a URL', { redirectUris: ['callback'] }],
+    ['an unknown authentication method', { tokenEndpointAuthMethod: 'none' }],
+  ])('refuses %s', async (_case, fields) => {
+    const response = await create(fields);
+
+    expect(response.status).toBe(400);
+    expect(
+      (await oauth.signIn(app, f.ALICE).get('/api/mcp-clients')).body.items
+    ).toEqual([]);
+  });
+
+  it('takes a loopback redirect URI and the basic authentication method', async () => {
+    const response = await create({
+      redirectUris: ['http://localhost:33418/callback'],
+      tokenEndpointAuthMethod: 'client_secret_basic',
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.tokenEndpointAuthMethod).toBe('client_secret_basic');
+  });
+
+  it('asks who is there', async () => {
+    const response = await request(app).get('/api/mcp-clients');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('answers a client it does not know', async () => {
+    const response = await oauth
+      .signIn(app, f.ALICE)
+      .delete('/api/mcp-clients/lepatron-unknown');
+
+    expect(response.status).toBe(404);
   });
 });
