@@ -1,8 +1,8 @@
 <script>
 import cloneDeep from 'lodash/cloneDeep';
 import omit from 'lodash/omit';
-import { mapMutations } from 'vuex';
-import { CHECKS } from '~/helpers/constants/quality-checks.js';
+import { mapGetters, mapMutations } from 'vuex';
+import { CHECKS, TECH_CHECKS } from '~/helpers/constants/quality-checks.js';
 import {
   GENERAL,
   exceptionsOf,
@@ -15,6 +15,8 @@ import {
 import { qualitySettingsErrorKeyFor } from '~/helpers/quality-settings.js';
 import mixinQualityTexts from '~/helpers/mixins/mixin-quality-texts.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsQualityExceptionCard from '~/components/quality/quality-exception-card.vue';
 import BsQualityExceptionDialog from '~/components/quality/quality-exception-dialog.vue';
 import BsQualitySaveBar from '~/components/quality/quality-save-bar.vue';
@@ -48,6 +50,12 @@ export default {
     return { drafts: {}, lastEdited: {}, dialog: false, loading: false };
   },
   computed: {
+    ...mapGetters(USER, { can: CAN }),
+    // The checks of the company's technical settings, shown but not set by
+    // a company admin: the server refuses their changes.
+    lockedIds() {
+      return this.can(CAPABILITIES.GROUP_MANAGE_TECH) ? [] : TECH_CHECKS;
+    },
     isGeneral() {
       return this.level === GENERAL;
     },
@@ -94,7 +102,9 @@ export default {
         : this.$tc('qualitySettings.template.own', this.ids.length);
     },
     candidates() {
-      return CATALOGUE_ORDER.filter((id) => !this.drafts[id]).map((id) => ({
+      return CATALOGUE_ORDER.filter(
+        (id) => !this.drafts[id] && !this.lockedIds.includes(id)
+      ).map((id) => ({
         id,
         applies: this.baseText(id, true),
       }));
@@ -231,6 +241,7 @@ export default {
           :errors="errors[id]"
           :group-id="groupId"
           :disabled="loading"
+          :locked="lockedIds.includes(id)"
           @state="setState(id, $event)"
           @threshold="(name, value) => setThreshold(id, name, value)"
           @remove="remove(id)"

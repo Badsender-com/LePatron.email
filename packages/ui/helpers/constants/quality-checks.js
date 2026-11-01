@@ -9,6 +9,7 @@ export {
   CHECKS,
   CHECK_STATES,
   SERVER_CHECKS,
+  TECH_CHECKS,
 } from '../../../shared/quality/checks.js';
 
 // In the order the pages list them: by category, as the editor's drawer does.
