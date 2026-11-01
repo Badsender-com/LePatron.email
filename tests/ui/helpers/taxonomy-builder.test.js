@@ -87,7 +87,7 @@ describe('taxonomy screen: standard dimensions', () => {
 });
 
 // Turned on by #1354 (declare a company dimension and its values)
-describe.skip('taxonomy screen: company dimensions', () => {
+describe('taxonomy screen: company dimensions', () => {
   let sortDimensions;
   let dimensionActions;
   let isValidDimensionName;
@@ -233,6 +233,18 @@ describe('taxonomy screen: the wording of a dimension', () => {
       label: 'Famille de message',
       description: 'Ce que le message apporte.',
     });
+  });
+
+  it('sends the trimmed name once, when the dimension is declared', () => {
+    const { buildNewDimensionPayload } = require(HELPERS);
+
+    expect(
+      buildNewDimensionPayload({
+        name: ' audience ',
+        label: 'Cible',
+        description: '',
+      })
+    ).toEqual({ name: 'audience', label: 'Cible', description: null });
   });
 
   it('clears an emptied description with null', () => {

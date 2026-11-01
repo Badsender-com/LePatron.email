@@ -1,6 +1,6 @@
 'use strict';
 
-const { BadRequest } = require('http-errors');
+const { BadRequest, Conflict } = require('http-errors');
 
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { TaxonomyLimits } = require('../../constant/taxonomy-type.js');
@@ -36,8 +36,22 @@ module.exports = {
   isObjectId,
   validatePayload,
   validateDimensionPayload,
+  limitReached,
   EDITABLE_FIELDS,
 };
+
+/**
+ * The refusal past a cap, carrying the cap: the screen names it rather than
+ * answering a bare "limit reached".
+ *
+ * @param {number} limit
+ * @returns {Error} a 409
+ */
+function limitReached(limit) {
+  const error = new Conflict(ERROR_CODES.TAXONOMY_LIMIT_REACHED);
+  error.details = { limit };
+  return error;
+}
 
 const invalid = () => new BadRequest(ERROR_CODES.INVALID_TAXONOMY_ITEM);
 

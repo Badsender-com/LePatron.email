@@ -5,7 +5,11 @@ import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import { TAXONOMY_LIMITS } from '~/helpers/taxonomy.js';
-import { buildDimensionPayload } from '~/helpers/taxonomy-builder.js';
+import {
+  buildDimensionPayload,
+  buildNewDimensionPayload,
+  isValidDimensionName,
+} from '~/helpers/taxonomy-builder.js';
 
 export default {
   name: 'BsTaxonomyDimensionFormDialog',
@@ -22,15 +26,33 @@ export default {
     return {
       form: { name: '', label: '', description: '' },
       editingId: null,
+      // A name another dimension already holds: the server alone knows.
+      serverNameError: null,
     };
   },
-  validations: {
-    form: {
-      label: { required, maxLength: maxLength(TAXONOMY_LIMITS.LABEL) },
-      description: { maxLength: maxLength(TAXONOMY_LIMITS.DESCRIPTION) },
-    },
+  // A function, so the name is only checked on a creation: an existing name
+  // is shown, never sent.
+  validations() {
+    return {
+      form: {
+        name: this.isEditing ? {} : { validName: isValidDimensionName },
+        label: { required, maxLength: maxLength(TAXONOMY_LIMITS.LABEL) },
+        description: { maxLength: maxLength(TAXONOMY_LIMITS.DESCRIPTION) },
+      },
+    };
   },
   computed: {
+    isEditing() {
+      return this.editingId !== null;
+    },
+    nameErrors() {
+      const errors = [];
+      if (this.serverNameError) errors.push(this.serverNameError);
+      if (this.$v.form.name.$dirty && !this.$v.form.name.validName) {
+        errors.push(this.$t('taxonomy.dimensions.form.nameInvalid'));
+      }
+      return errors;
+    },
     labelErrors() {
       const errors = [];
       if (!this.$v.form.label.$dirty) return errors;
@@ -59,17 +81,32 @@ export default {
   },
   methods: {
     /**
-     * @param {Object} dimension the dimension whose wording to edit
+     * @param {Object|null} dimension the dimension whose wording to edit, or
+     *   null to declare one
      */
-    open(dimension) {
-      this.editingId = dimension.id;
+    open(dimension = null) {
+      this.editingId = dimension ? dimension.id : null;
+      this.serverNameError = null;
       this.form = {
-        name: dimension.name,
-        label: dimension.label || '',
-        description: dimension.description || '',
+        name: dimension ? dimension.name : '',
+        label: dimension ? dimension.label || '' : '',
+        description: dimension ? dimension.description || '' : '',
       };
       this.$v.$reset();
       this.$refs.modal.open();
+    },
+
+    /**
+     * Attach a server-side refusal to its field, when this form has it.
+     *
+     * @param {string} field
+     * @param {string} message already translated
+     * @returns {boolean}
+     */
+    setFieldError(field, message) {
+      if (field !== 'name' || this.isEditing) return false;
+      this.serverNameError = message;
+      return true;
     },
 
     close() {
@@ -77,12 +114,15 @@ export default {
     },
 
     onSubmit() {
+      this.serverNameError = null;
       this.$v.$touch();
       if (this.$v.$invalid) return;
 
       this.$emit('save', {
         id: this.editingId,
-        payload: buildDimensionPayload(this.form),
+        payload: this.isEditing
+          ? buildDimensionPayload(this.form)
+          : buildNewDimensionPayload(this.form),
       });
     },
   },
@@ -92,20 +132,40 @@ export default {
 <template>
   <bs-modal-form
     ref="modal"
-    :title="$t('taxonomy.dimensions.form.editTitle')"
-    :submit-label="$t('global.save')"
+    :title="
+      isEditing
+        ? $t('taxonomy.dimensions.form.editTitle')
+        : $t('taxonomy.dimensions.form.createTitle')
+    "
+    :submit-label="isEditing ? $t('global.save') : $t('global.create')"
     :loading="loading"
     width="600"
     persistent
     @submit="onSubmit"
   >
-    <!-- Shown, never editable: templates read this name (ADR-0015). -->
+    <!-- Written once, then shown and never editable: templates read this
+         name (ADR-0015). -->
     <bs-text-field
+      v-if="isEditing"
       :value="form.name"
       :label="$t('taxonomy.dimensions.form.name')"
       :hint="$t('taxonomy.dimensions.form.nameHint')"
       persistent-hint
       disabled
+    />
+    <bs-text-field
+      v-else
+      v-model="form.name"
+      :label="$t('taxonomy.dimensions.form.name')"
+      :placeholder="$t('taxonomy.dimensions.form.namePlaceholder')"
+      :hint="$t('taxonomy.dimensions.form.nameCreateHint')"
+      :error-messages="nameErrors"
+      :disabled="loading"
+      persistent-hint
+      required
+      autofocus
+      @input="serverNameError = null"
+      @blur="$v.form.name.$touch()"
     />
 
     <bs-text-field
@@ -114,7 +174,7 @@ export default {
       :error-messages="labelErrors"
       :disabled="loading"
       required
-      autofocus
+      :autofocus="isEditing"
       @blur="$v.form.label.$touch()"
     />
 

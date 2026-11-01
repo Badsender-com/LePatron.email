@@ -14,6 +14,7 @@ import {
   taxonomyItemsItem,
   taxonomyDimensions,
   taxonomyDimensionsItem,
+  taxonomyDimensionsCreate,
 } from '../../../packages/ui/helpers/api-routes.js';
 
 const GROUP_ID = '507f1f77bcf86cd799439a01';
@@ -108,6 +109,10 @@ describe('taxonomy dimensions', () => {
     expect(taxonomyDimensions(GROUP_ID, { lang: 'en' })).toBe(
       `/taxonomy-dimensions?groupId=${GROUP_ID}&lang=en`
     );
+  });
+
+  it('declares a dimension on the bare collection, the company in the body', () => {
+    expect(taxonomyDimensionsCreate()).toBe('/taxonomy-dimensions');
   });
 
   it('addresses one dimension by its id', () => {

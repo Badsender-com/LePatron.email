@@ -40,7 +40,8 @@ const TaxonomyLimits = Object.freeze({
   DESCRIPTION: 2000,
   CANONICAL_TYPE: 60,
   // A company describing its own editorial vocabulary needs tens of entries, not
-  // thousands. Bounds both the unpaginated read and the storage.
+  // thousands. Bounds both the unpaginated read and the storage. Counted per
+  // dimension: a full dimension leaves the others open.
   ITEMS_PER_COMPANY: 200,
   // Same reasoning for the dimensions: a company declines its emails by a
   // handful of axes, not a hundred.

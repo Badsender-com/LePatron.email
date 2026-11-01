@@ -10,12 +10,14 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   StandardDimensions,
   DIMENSION_NAME_PATTERN,
+  TaxonomyLimits,
 } = require('../../constant/taxonomy-type.js');
 const { buildStandardDimensions } = require('./default-dimensions.js');
 const { resolveCompanyId, scopedById } = require('./company-scope.js');
 const {
   isObjectId,
   validateDimensionPayload,
+  limitReached,
 } = require('./taxonomy.validation.js');
 const logger = require('../../utils/logger.js');
 
@@ -69,6 +71,17 @@ async function createDimension({ user, groupId, payload = {} }) {
   // Seeded first, so a company declaring `trigger` before ever listing its
   // dimensions meets the standard one rather than shadowing it.
   await seedStandardDimensions({ companyId, lang: user?.lang });
+
+  // The standard dimensions count, deactivated ones too: both still hold a
+  // name and a place on the screen. Not atomic with the insert, like the cap
+  // on values: a race lands one dimension past it, which bounds the screen
+  // just as well.
+  const dimensionCount = await TaxonomyDimensions.countDocuments({
+    _company: companyId,
+  });
+  if (dimensionCount >= TaxonomyLimits.DIMENSIONS_PER_COMPANY) {
+    throw limitReached(TaxonomyLimits.DIMENSIONS_PER_COMPANY);
+  }
 
   try {
     return await TaxonomyDimensions.create({

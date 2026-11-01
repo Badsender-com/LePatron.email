@@ -89,3 +89,54 @@ export function buildDimensionPayload(form) {
     description: form.description ? form.description : null,
   };
 }
+
+/**
+ * The bounds of a company's taxonomy, mirroring `TaxonomyLimits` in
+ * packages/server/constant/taxonomy-type.js. Shown before the server refuses.
+ */
+export const DIMENSIONS_PER_COMPANY = 20;
+
+// Mirrors `DIMENSION_NAME_PATTERN` server-side: a name a template reads as a
+// property, `_root_.audience`.
+const DIMENSION_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/**
+ * Whether a template could read this name as a property. Checked in the form
+ * so the admin learns it before saving, not from a 400.
+ *
+ * @param {*} name
+ * @returns {boolean}
+ */
+export function isValidDimensionName(name) {
+  return typeof name === 'string' && DIMENSION_NAME_PATTERN.test(name);
+}
+
+/**
+ * The identifier proposed for a value, from its label: lower case, accents
+ * dropped, words joined by hyphens. Only a proposal: the admin may change it.
+ *
+ * @param {string} label
+ * @returns {string} empty when the label holds no letter or digit
+ */
+export function proposeIdentifier(label) {
+  return String(label || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * The payload declaring a dimension. The name travels this once, and never
+ * again: it is write-once (ADR-0015).
+ *
+ * @param {Object} form
+ * @returns {{name: string, label: string, description: (string|null)}}
+ */
+export function buildNewDimensionPayload(form) {
+  return {
+    name: String(form.name || '').trim(),
+    ...buildDimensionPayload(form),
+  };
+}

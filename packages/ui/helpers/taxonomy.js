@@ -87,10 +87,38 @@ export function taxonomyErrorFor(error) {
       };
     }
 
+    case ERROR_CODES.TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS:
+      return {
+        key: 'taxonomy.errors.identifierAlreadyExists',
+        params: {},
+        count: null,
+        field: 'canonicalType',
+      };
+
+    case ERROR_CODES.DIMENSION_NAME_ALREADY_EXISTS:
+      return {
+        key: 'taxonomy.errors.dimensionNameAlreadyExists',
+        params: {},
+        count: null,
+        field: 'name',
+      };
+
+    case ERROR_CODES.DIMENSION_HAS_VALUES: {
+      const count = data.details?.valueCount || 0;
+      return {
+        key: 'taxonomy.errors.dimensionHasValues',
+        params: { count },
+        count,
+        field: null,
+      };
+    }
+
+    // The same message for the dimensions of a company and the values of a
+    // dimension: the screen the admin is on says which one is full.
     case ERROR_CODES.TAXONOMY_LIMIT_REACHED:
       return {
         key: 'taxonomy.errors.limitReached',
-        params: {},
+        params: { limit: data.details?.limit },
         count: null,
         field: null,
       };

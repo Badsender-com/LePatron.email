@@ -56,6 +56,41 @@ describe('taxonomyErrorFor', () => {
     );
   });
 
+  it('names the limit that was reached', () => {
+    expect(
+      taxonomyErrorFor(axiosError('TAXONOMY_LIMIT_REACHED', { limit: 20 }))
+        .params
+    ).toEqual({ limit: 20 });
+  });
+
+  it('sends a taken identifier to the identifier field', () => {
+    const result = taxonomyErrorFor(
+      axiosError('TAXONOMY_ITEM_IDENTIFIER_ALREADY_EXISTS')
+    );
+
+    expect(result.key).toBe('taxonomy.errors.identifierAlreadyExists');
+    expect(result.field).toBe('canonicalType');
+  });
+
+  it('sends a taken dimension name to the name field', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_NAME_ALREADY_EXISTS')
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionNameAlreadyExists');
+    expect(result.field).toBe('name');
+  });
+
+  it('carries the value count of a dimension that cannot be deleted', () => {
+    const result = taxonomyErrorFor(
+      axiosError('DIMENSION_HAS_VALUES', { valueCount: 3 })
+    );
+
+    expect(result.key).toBe('taxonomy.errors.dimensionHasValues');
+    expect(result.count).toBe(3);
+    expect(result.params).toEqual({ count: 3 });
+  });
+
   // The taxonomy is no longer gated by `emailMetadata.enabled`, so this code
   // cannot come back from a taxonomy call — it falls through to the generic
   // message like any other unexpected one.
