@@ -1,7 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const { NotFound } = require('http-errors');
+const { Forbidden, NotFound } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -43,6 +43,7 @@ const {
 } = require('../utils/sanitize-email-metadata.js');
 const {
   sanitizeQualitySettings,
+  keepsTechChecks,
 } = require('../utils/sanitize-quality-settings.js');
 
 module.exports = {
@@ -576,6 +577,15 @@ async function update(req, res) {
       groupToUpdate.qualitySettings,
       storedSettings
     );
+    // The required tracking parameters are set with the company's tracking,
+    // a tech admin's: refused rather than dropped, the rest of the payload
+    // being saved.
+    if (
+      !permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH) &&
+      !keepsTechChecks(storedSettings, groupToUpdate.qualitySettings)
+    ) {
+      throw new Forbidden();
+    }
   }
 
   // Only reachable by a super admin: the pick below drops it for a company admin.

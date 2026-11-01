@@ -139,6 +139,68 @@ describe('PUT /groups/:groupId — check states', () => {
   });
 });
 
+// The required tracking parameters belong to the company's tracking, which
+// only a tech admin sets (ADR 0004): so does the state of their check.
+describe('PUT /groups/:groupId — the required tracking parameters', () => {
+  const techAdmin = { role: 'company_admin_tech', group: { id: GROUP_ID } };
+
+  it("refuses a company admin who changes the check's state", async () => {
+    const error = await rejection(
+      update({
+        body: {
+          qualitySettings: { checks: { 'tracking-params': { state: 'on' } } },
+        },
+      })
+    );
+    expect(error.status).toBe(403);
+    expect(groupService.updateGroup).not.toHaveBeenCalled();
+  });
+
+  it('refuses a company admin who brings it back to its default', async () => {
+    const error = await rejection(
+      update({
+        stored: {
+          qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+        },
+        body: {
+          qualitySettings: { checks: { 'tracking-params': { state: null } } },
+        },
+      })
+    );
+    expect(error.status).toBe(403);
+  });
+
+  it('lets a company admin set the other checks, the state a tech admin set kept', async () => {
+    const payload = await update({
+      stored: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+      },
+      body: {
+        qualitySettings: { checks: { headings: { state: 'off' } } },
+      },
+    });
+    expect(payload.qualitySettings.checks).toEqual({
+      'tracking-params': { state: 'off' },
+      headings: { state: 'off' },
+    });
+  });
+
+  it.each([
+    ['a tech admin', techAdmin],
+    ['a super admin', superAdmin],
+  ])("lets %s change the check's state", async (_, user) => {
+    const payload = await update({
+      user,
+      body: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'on' } } },
+      },
+    });
+    expect(payload.qualitySettings.checks['tracking-params']).toEqual({
+      state: 'on',
+    });
+  });
+});
+
 describe('PUT /groups/:groupId — thresholds', () => {
   it('stores a threshold within its bounds', async () => {
     const payload = await update({

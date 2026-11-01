@@ -40,6 +40,8 @@ export default {
     errors: { type: Object, default: () => ({}) },
     groupId: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
+    // A check of the technical settings, which this user cannot set.
+    locked: { type: Boolean, default: false },
   },
   computed: {
     states() {
@@ -118,6 +120,9 @@ export default {
           </v-chip>
         </div>
         <p v-if="baseText" class="qx-card__base">{{ baseText }}</p>
+        <p v-if="locked" class="qx-card__base">
+          {{ $t('qualitySettings.card.techOnly') }}
+        </p>
       </div>
       <div class="qx-card__controls">
         <v-btn-toggle
@@ -135,7 +140,7 @@ export default {
             v-for="state in states"
             :key="state"
             :value="state"
-            :disabled="disabled"
+            :disabled="disabled || locked"
             :aria-pressed="applied.state === state ? 'true' : 'false'"
             small
             text
@@ -149,7 +154,7 @@ export default {
             {{ stateName(state) }}
           </v-btn>
         </v-btn-toggle>
-        <v-tooltip bottom>
+        <v-tooltip v-if="!locked" bottom>
           <template #activator="{ on, attrs }">
             <v-btn
               icon

@@ -948,6 +948,7 @@ export default {
       unsaved: 'Non enregistrée',
       new: 'Nouvelle, non enregistrée',
       unsavedValue: 'Valeur non enregistrée',
+      techOnly: 'Réservé aux admins techniques, qui règlent le tracking.',
       removeGeneral: 'Retirer l\'exception (revenir aux valeurs recommandées)',
       removeTemplate: 'Retirer l\'exception (revenir aux réglages généraux)',
       unchangedGeneral: 'Ce contrôle a encore ses valeurs recommandées. Changez son état ou un seuil ; sinon il sera retiré de la liste à l\'enregistrement.',

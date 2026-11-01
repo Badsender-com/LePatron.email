@@ -1,9 +1,14 @@
 'use strict';
 
 const { UnprocessableEntity } = require('http-errors');
+const { isEqual } = require('lodash');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const { CHECKS, CHECK_STATES } = require('../../shared/quality/checks.js');
+const {
+  CHECKS,
+  CHECK_STATES,
+  TECH_CHECKS,
+} = require('../../shared/quality/checks.js');
 
 /**
  * Validates a `qualitySettings` payload of a group or a template, and merges it
@@ -128,4 +133,20 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
   return merged;
 }
 
-module.exports = { sanitizeQualitySettings };
+/**
+ * Whether merged settings leave the checks of the company's technical settings
+ * (TECH_CHECKS) as they were stored: all a user who cannot set those may send
+ * about them.
+ *
+ * @param {Object} [stored] the settings stored on the group or template
+ * @param {{ checks: Object }} next the settings sanitizeQualitySettings merged
+ * @returns {boolean}
+ */
+function keepsTechChecks(stored, next) {
+  const checksOf = (settings) => (settings && settings.checks) || {};
+  return TECH_CHECKS.every((id) =>
+    isEqual(checksOf(stored)[id], checksOf(next)[id])
+  );
+}
+
+module.exports = { sanitizeQualitySettings, keepsTechChecks };

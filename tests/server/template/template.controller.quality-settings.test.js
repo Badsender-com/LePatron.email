@@ -145,6 +145,28 @@ describe('PUT /templates/:templateId/quality-settings', () => {
     expect(template.qualitySettings).toEqual({ checks: {} });
   });
 
+  // The company's tracking is a tech admin's (ADR 0004), and so is the state
+  // of the check of its required parameters, on a template too.
+  it("refuses a company admin who overrides the tracking check's state", async () => {
+    const error = await rejection(
+      put({
+        user: groupAdminOf(GROUP_ID),
+        body: { checks: { 'tracking-params': { state: 'off' } } },
+      })
+    );
+    expect(error.status).toBe(403);
+  });
+
+  it("lets a tech admin override the tracking check's state", async () => {
+    const { template } = await put({
+      user: { role: 'company_admin_tech', group: { id: GROUP_ID } },
+      body: { checks: { 'tracking-params': { state: 'off' } } },
+    });
+    expect(template.qualitySettings.checks['tracking-params']).toEqual({
+      state: 'off',
+    });
+  });
+
   it('refuses an invalid setting with a 422', async () => {
     const error = await rejection(
       put({

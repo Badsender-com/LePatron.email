@@ -154,10 +154,17 @@ const SERVER_CHECKS = Object.freeze([
   'oversized-images',
 ]);
 
+// The checks that belong to the company's technical settings: only a user who
+// sets those (a tech admin, a super admin) sets their state and thresholds,
+// in the general settings and on a template. The required tracking parameters
+// are set with the company's tracking (ADR 0004).
+const TECH_CHECKS = Object.freeze(['tracking-params']);
+
 module.exports = {
   CHECK_STATES,
   CHECKS,
   SERVER_CHECKS,
+  TECH_CHECKS,
   defaultThresholds,
   defaultQualitySettings,
 };

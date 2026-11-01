@@ -1145,6 +1145,7 @@ export default {
       unsaved: 'Not saved',
       new: 'New, not saved',
       unsavedValue: 'Value not saved',
+      techOnly: 'Reserved for tech admins, who set the tracking.',
       removeGeneral: 'Remove the exception (back to the recommended values)',
       removeTemplate: 'Remove the exception (back to the general settings)',
       unchangedGeneral: 'This check still has its recommended values. Change its state or a threshold; otherwise it leaves the list when you save.',
