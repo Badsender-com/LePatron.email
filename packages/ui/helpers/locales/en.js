@@ -815,6 +815,11 @@ export default {
     closeHint: 'You can close this window and start the connection again from your assistant.',
     redirectHost: 'Once allowed, you will be sent back to {host}.',
     canDo: 'This application will be able to:',
+ registration: {
+      dynamic:
+        'This application registered itself: LePatron cannot vouch for its name. Only go on if you just started the connection from it.',
+      metadataDocument: 'Its identity is published by {host}.',
+    },
     scopes: {
       read:
         'read the expertises, skills and mailings you have access to, with your rights',

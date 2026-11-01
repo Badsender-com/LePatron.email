@@ -15,9 +15,9 @@ const TTL = {
   Session: 24 * 3600,
   Grant: 90 * 24 * 3600,
   RefreshToken: 30 * 24 * 3600,
-  // A client that registered (DCR) and connected nobody since.
-  Registration: 24 * 3600,
 };
+// A client that registered (DCR) and connected nobody since.
+const REGISTRATION_TTL = 24 * 3600;
 
 // A client proves itself with its secret, or, public, with PKCE alone.
 const CLIENT_AUTH_METHODS = [
@@ -100,7 +100,9 @@ function createAuthorizationServer({
     features: {
       devInteractions: { enabled: false },
       clientIdMetadataDocument: { enabled: true, ack: 'draft-02' },
-      registration: { enabled: true },
+      // No registration access token: clients do not manage their
+      // registration, and each token would be kept forever.
+      registration: { enabled: true, issueRegistrationAccessToken: false },
       revocation: { enabled: true },
       resourceIndicators: {
         enabled: true,
@@ -153,7 +155,7 @@ function createAuthorizationServer({
     keepRegisteredClient(
       provider,
       client.clientId,
-      TTL.Registration
+      REGISTRATION_TTL
     ).catch((error) => logger.error('[mcp-oauth] registration', error.message))
   );
   return provider;

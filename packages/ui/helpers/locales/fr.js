@@ -1092,6 +1092,11 @@ export default {
     closeHint: 'Vous pouvez fermer cette fenêtre et relancer la connexion depuis votre assistant.',
     redirectHost: 'Après accord, vous serez renvoyé vers {host}.',
     canDo: 'Cette application pourra :',
+    registration: {
+      dynamic:
+        'Cette application s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
+      metadataDocument: 'Son identité est publiée par {host}.',
+    },
     scopes: {
       read:
         'lire les expertises, les skills et les mailings auxquels vous avez accès, avec vos droits',

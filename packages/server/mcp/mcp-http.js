@@ -11,7 +11,7 @@ const { createMcpServer } = require('./mcp-server.js');
 const { resolveIdentity, READ_SCOPE } = require('./mcp-identity.js');
 const { createAuthorizationServer, identityOf } = require('./mcp-oauth.js');
 const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
-const { createClientsRouter } = require('./mcp-clients.js');
+const { createClientsRouter, isClientAllowed } = require('./mcp-clients.js');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -39,6 +39,7 @@ async function authInfoOf(provider, header, resource) {
   if (kind !== 'Bearer' || !value) return null;
   const token = await provider.AccessToken.find(value);
   if (!token || token.isExpired || token.aud !== resource) return null;
+  if (!(await isClientAllowed(token.clientId))) return null;
   return {
     token: value,
     clientId: token.clientId,

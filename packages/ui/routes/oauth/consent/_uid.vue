@@ -51,6 +51,19 @@ export default {
       );
       return group ? group.name : '';
     },
+    // Its name is only what it claims, unless a super admin registered it.
+    registrationNote() {
+      const client = this.interaction?.client;
+      if (client?.registration === 'dynamic') {
+        return this.$t('oauthConsent.registration.dynamic');
+      }
+      if (client?.registration === 'metadataDocument') {
+        return this.$t('oauthConsent.registration.metadataDocument', {
+          host: client.host,
+        });
+      }
+      return '';
+    },
     scopeLabels() {
       return (this.interaction?.scopes || [])
         .filter((scope) => SCOPE_LABELS[scope])
@@ -152,6 +165,15 @@ export default {
               })
             }}
           </p>
+          <v-alert
+            v-if="registrationNote"
+            type="info"
+            text
+            dense
+            class="text-caption"
+          >
+            {{ registrationNote }}
+          </v-alert>
           <p class="mb-1">
             {{ $t('oauthConsent.canDo') }}
           </p>
