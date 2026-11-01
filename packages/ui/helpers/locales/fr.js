@@ -947,6 +947,20 @@ export default {
       emailType: 'Typologie',
       loadError: 'Impossible de charger les dimensions de votre taxonomie',
       updated: 'Dimension mise à jour',
+      created: 'Dimension créée',
+      deleted: 'Dimension supprimée',
+      deactivated: 'Dimension désactivée',
+      reactivated: 'Dimension réactivée',
+      inactive: 'Désactivée',
+      inactiveHint:
+        'Elle n\'est plus proposée sur les emails et ne reçoit plus de nouvelle valeur. Les emails qui portent déjà une de ses valeurs la conservent.',
+      deactivate: 'Désactiver',
+      reactivate: 'Réactiver',
+      declare: 'Ajouter une dimension',
+      full: 'Limite de {limit} dimensions atteinte, standard comprises.',
+      deleteConfirmTitle: 'Supprimer cette dimension ?',
+      deleteConfirmMessage:
+        'La dimension « {label} » sera supprimée, et son nom pourra être repris.',
       trigger: {
         readOnly:
           'Ses deux valeurs sont celles de la doctrine Badsender : elles ne se renomment pas et ne se complètent pas.',
@@ -962,12 +976,53 @@ export default {
         },
       },
       form: {
+        createTitle: 'Nouvelle dimension',
         editTitle: 'Modifier la dimension',
         name: 'Nom lu par les templates',
+        namePlaceholder: 'audience',
+        nameCreateHint:
+          'Définitif une fois créé : les templates liront ce nom. Lettres sans accent, chiffres et _, sans commencer par un chiffre.',
+        nameInvalid:
+          'Lettres sans accent, chiffres et _ seulement, sans commencer par un chiffre.',
         nameHint:
           'Fixé à la création : les templates lisent ce nom, le changer les casserait.',
         descriptionHint:
           'Ce que cette dimension décide pour un email, chez vous. Ce texte sert de contexte à l\'IA.',
+      },
+    },
+    values: {
+      deleteConfirmTitle: 'Supprimer cette valeur ?',
+      deleteConfirmMessage: 'La valeur « {label} » sera supprimée.',
+      deleteConfirmHint:
+        'Si des emails l\'utilisent, la suppression sera refusée : désactivez-la plutôt.',
+      loadError: {
+        title: 'Impossible de charger les valeurs de cette dimension',
+      },
+      empty: {
+        action: 'Ajouter une valeur',
+        title: 'Aucune valeur pour le moment',
+        description:
+          'Ajoutez les valeurs entre lesquelles vos équipes choisiront sur un email.',
+      },
+      form: {
+        createTitle: 'Nouvelle valeur',
+        editTitle: 'Modifier la valeur',
+        labelPlaceholder: 'Clients fidèles',
+        labelHint: 'Le nom que vos équipes utilisent réellement.',
+        descriptionPlaceholder:
+          'Plus de trois commandes dans l\'année, abonnés à l\'infolettre.',
+        descriptionHint:
+          'Ce que cette valeur recouvre chez vous. C\'est ce texte qui guidera l\'IA.',
+        identifier: 'Identifiant',
+        identifierHint:
+          'Ce que les templates comparent. Proposé depuis le libellé, unique dans la dimension.',
+        isActiveHint:
+          'Une valeur désactivée disparaît des listes de choix, mais les emails qui l\'utilisent la conservent.',
+      },
+      snackbars: {
+        created: 'Valeur créée',
+        updated: 'Valeur mise à jour',
+        deleted: 'Valeur supprimée',
       },
     },
     table: {
@@ -1027,10 +1082,17 @@ export default {
         'Créez les typologies dont vos équipes ont besoin : leur libellé et leur définition sont les vôtres.',
     },
     errors: {
-      limitReached: 'Vous avez atteint le nombre maximum de typologies pour cette entreprise.',
-      labelAlreadyExists: 'Une typologie porte déjà ce libellé.',
+      limitReached:
+        'Limite atteinte : {limit} au maximum. Supprimez-en avant d\'en ajouter d\'autres.',
+      labelAlreadyExists: 'Ce libellé est déjà pris dans cette dimension.',
+      identifierAlreadyExists:
+        'Cet identifiant est déjà pris dans cette dimension.',
+      dimensionNameAlreadyExists:
+        'Une dimension porte déjà ce nom, peut-être désactivée.',
+      dimensionHasValues:
+        'Cette dimension a {count} valeur : désactivez-la plutôt que de la supprimer. | Cette dimension a {count} valeurs : désactivez-la plutôt que de la supprimer.',
       inUse:
-        'Cette typologie est utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Cette typologie est utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
+        'Utilisée par {count} email : désactivez-la plutôt que de la supprimer. | Utilisée par {count} emails : désactivez-la plutôt que de la supprimer.',
     },
     defaults: {
       action: 'Typologies par défaut',
