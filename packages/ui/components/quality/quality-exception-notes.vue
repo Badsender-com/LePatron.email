@@ -21,6 +21,9 @@ export default {
     applied: { type: Object, required: true },
     changesNothing: { type: Boolean, default: false },
     groupId: { type: String, default: '' },
+    // A check of the technical settings this user cannot set: no link to
+    // settings they cannot open.
+    locked: { type: Boolean, default: false },
   },
   computed: {
     isGeneral() {
@@ -83,7 +86,7 @@ export default {
     <p v-if="note" class="qx-notes__note">
       {{ note }}
       <nuxt-link
-        v-if="checkId === 'tracking-params'"
+        v-if="checkId === 'tracking-params' && !locked"
         :to="trackingRoute"
         v-text="$t('qualitySettings.notes.trackingLink')"
       />
