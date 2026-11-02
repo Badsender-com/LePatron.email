@@ -119,15 +119,19 @@ describe('PUT /api/groups/:groupId with quality settings — rights', () => {
       }
       expect(answers).toEqual([own, other]);
 
-      const written = groupService.updateGroup.mock.calls.map(
-        ([payload]) => payload
-      );
-      expect(written.map(({ id }) => id)).toEqual(
+      // The settings are written check by check, beside the group's fields.
+      const written = groupService.updateGroup.mock.calls;
+      expect(written.map(([{ id }]) => id)).toEqual(
         [OWN_GROUP, OTHER_GROUP].filter((_id, i) => answers[i] === 200)
       );
-      written.forEach((payload) =>
-        expect(payload.qualitySettings).toEqual(QUALITY_SETTINGS)
-      );
+      written.forEach(([payload, operators]) => {
+        expect(payload).not.toHaveProperty('qualitySettings');
+        expect(operators).toEqual({
+          $set: {
+            'qualitySettings.checks.emoji-placement': { state: 'off' },
+          },
+        });
+      });
     }
   );
 });

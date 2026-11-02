@@ -93,6 +93,40 @@ const TEMPLATES = {
   },
 };
 
+// The templates as stored for a test: the writes apply to them, field by
+// field, as `updateOne` with `$set` and `$unset` on dotted paths would.
+let templates;
+function storedTemplates() {
+  return Object.fromEntries(
+    Object.entries(TEMPLATES).map(([id, doc]) => [
+      id,
+      {
+        ...doc,
+        qualitySettings: JSON.parse(JSON.stringify(doc.qualitySettings)),
+      },
+    ])
+  );
+}
+function applyWrites(doc, { $set = {}, $unset = {} }) {
+  const at = (path) => {
+    const keys = path.split('.');
+    const last = keys.pop();
+    const parent = keys.reduce((node, key) => {
+      if (!node[key]) node[key] = {};
+      return node[key];
+    }, doc);
+    return [parent, last];
+  };
+  Object.entries($set).forEach(([path, value]) => {
+    const [parent, key] = at(path);
+    parent[key] = value;
+  });
+  Object.keys($unset).forEach((path) => {
+    const [parent, key] = at(path);
+    delete parent[key];
+  });
+}
+
 // `findById(id).select('a b').lean()`, keeping only the selected fields; what
 // each read selected is kept in `selections`.
 const selections = [];
@@ -155,8 +189,12 @@ const put = (user, templateId, body = BODY) =>
 beforeEach(() => {
   jest.clearAllMocks();
   selections.length = 0;
-  Templates.findById.mockImplementation((id) => projected(TEMPLATES, id));
-  Templates.updateOne.mockResolvedValue({ acknowledged: true });
+  templates = storedTemplates();
+  Templates.findById.mockImplementation((id) => projected(templates, id));
+  Templates.updateOne.mockImplementation(async (filter, update) => {
+    applyWrites(templates[String(filter._id)], update);
+    return { acknowledged: true };
+  });
   Groups.findById.mockImplementation((id) => projected(GROUPS, id));
 });
 
@@ -201,15 +239,14 @@ describe('PUT /api/templates/:templateId/quality-settings — rights', () => {
 });
 
 describe('PUT /api/templates/:templateId/quality-settings — payload', () => {
-  it('reads only what the check and the write need, never the markup', async () => {
+  it('reads only what the check, the write and the answer need, never the markup', async () => {
     await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE);
 
-    const templateReads = selections.filter(([store]) => store === TEMPLATES);
-    expect(templateReads).toHaveLength(1);
-    expect(templateReads[0][1].split(' ').sort()).toEqual([
-      '_company',
-      'qualitySettings',
-    ]);
+    // Before the write, then the settings alone once written.
+    const templateReads = selections.filter(([store]) => store === templates);
+    expect(
+      templateReads.map(([, fields]) => fields.split(' ').sort())
+    ).toEqual([['_company', 'qualitySettings'], ['qualitySettings']]);
   });
 
   it("answers with the template's quality settings only", async () => {
@@ -231,19 +268,14 @@ describe('PUT /api/templates/:templateId/quality-settings — payload', () => {
     expect(res.text.length).toBeLessThan(1024);
   });
 
-  it('writes the merged settings, and nothing else, on that template', async () => {
+  it('writes only the checks that change, and nothing else, on that template', async () => {
     await put(userWith(ROLES.GROUP_ADMIN), OWN_TEMPLATE, LONG_SUBJECT);
 
     expect(Templates.updateOne).toHaveBeenCalledWith(
       { _id: OWN_TEMPLATE },
       {
         $set: {
-          qualitySettings: {
-            checks: {
-              headings: { state: 'off' },
-              subject: { thresholds: { long: 70 } },
-            },
-          },
+          'qualitySettings.checks.subject': { thresholds: { long: 70 } },
         },
       }
     );

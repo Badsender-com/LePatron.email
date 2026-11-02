@@ -23,6 +23,7 @@ const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 const {
   sanitizeQualitySettings,
   keepsTechChecks,
+  qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
 const {
   resolveQualitySettings,
@@ -285,11 +286,22 @@ async function updateQualitySettings(req, res) {
   ) {
     throw new createError.Forbidden();
   }
-  await Templates.updateOne(
-    { _id: template._id },
-    { $set: { qualitySettings } }
+  // Check by check, so a save made meanwhile to another check stays.
+  const update = qualitySettingsUpdate(
+    template.qualitySettings,
+    qualitySettings
   );
-  res.json({ qualitySettings });
+  if (Object.keys(update).length) {
+    await Templates.updateOne({ _id: template._id }, update);
+  }
+  // What is stored now, a save made meanwhile to another check included:
+  // the settings only, never the template's markup.
+  const saved = await Templates.findById(template._id)
+    .select('qualitySettings')
+    .lean();
+  res.json({
+    qualitySettings: (saved && saved.qualitySettings) || { checks: {} },
+  });
 }
 
 /**
