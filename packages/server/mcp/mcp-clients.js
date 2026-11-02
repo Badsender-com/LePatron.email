@@ -5,6 +5,7 @@ const express = require('express');
 const { McpClients } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
+const { revokeConnections } = require('./mcp-connections.js');
 
 // The prefix of the ids given here, which `/mcp` checks are still listed.
 const CLIENT_ID_PREFIX = 'lepatron-';
@@ -140,6 +141,7 @@ function createClientsRouter(provider) {
       }
       // Stopped first, unlisted after: a failure leaves it listed.
       await adapter.destroy(clientId);
+      await revokeConnections(provider, { clientId });
       await McpClients.deleteOne({ clientId });
       return res.status(204).end();
     } catch (err) {

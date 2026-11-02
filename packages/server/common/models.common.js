@@ -36,6 +36,7 @@ const SecurityEventSchema = require('../two-factor/security-event.schema.js');
 const McpFeedbackSchema = require('../mcp/mcp-feedback.schema.js');
 const McpCallLogSchema = require('../mcp/mcp-call-log.schema.js');
 const McpClientSchema = require('../mcp/mcp-client.schema.js');
+const McpConnectionSchema = require('../mcp/mcp-connection.schema.js');
 
 /// ///
 // EXPORTS
@@ -120,6 +121,10 @@ const McpCallLogs = mongoose.model(
   McpCallLogSchema
 );
 const McpClients = mongoose.model(modelNames.McpClientModel, McpClientSchema);
+const McpConnections = mongoose.model(
+  modelNames.McpConnectionModel,
+  McpConnectionSchema
+);
 
 module.exports = {
   mongoose,
@@ -154,4 +159,5 @@ module.exports = {
   McpFeedbacks,
   McpCallLogs,
   McpClients,
+  McpConnections,
 };

@@ -415,5 +415,9 @@ describe('deleting a client registered by hand', () => {
 
     expect(before.status).toBe(200);
     expect(after.status).toBe(401);
+    expect(
+      (await oauth.signIn(app, f.FRANK).get('/api/connected-applications')).body
+        .items
+    ).toEqual([]);
   });
 });

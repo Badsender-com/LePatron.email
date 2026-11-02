@@ -865,7 +865,7 @@ export default {
     copied: 'Copied',
     deleteTitle: 'Delete this client?',
     deleteConfirm:
-      'The assistant “{name}” will no longer be able to connect or renew its connections. Those under way stop within the hour.',
+      'The assistant “{name}” will no longer be able to connect or renew its connections. Those under way stop at once.',
     deleted: 'Client deleted',
     serverTitle: 'Server settings',
     serverDescription:
@@ -885,6 +885,33 @@ export default {
       redirectUrisInvalid:
         'Up to 10 URLs, over HTTPS (HTTP only to localhost), without a # fragment.',
     },
+  },
+  connectedApplications: {
+    pageTitle: 'Connected applications',
+    description:
+      'The AI assistants you connected to LePatron. Each reads LePatron with your rights, in the company chosen when connecting. Revoke the ones you no longer use.',
+    name: 'Application',
+    group: 'Company',
+    connectedAt: 'Connected on',
+    lastUsedAt: 'Last used',
+    neverUsed: 'Never used',
+    empty: 'No connected application.',
+    loadError: 'Your connected applications could not be loaded.',
+    revoke: 'Revoke',
+    revokeOne: 'Revoke {name}',
+    revokeTitle: 'Revoke this application?',
+    revokeConfirm:
+      '“{name}” will lose its access to LePatron for the company {group} at once. To use it again, connect it again.',
+    revoked: 'Application revoked',
+    groupDescription:
+      'The AI assistants the company\'s users connected to LePatron. Each user can revoke their own; you can revoke them all at once, for instance if an access leaked.',
+    groupCount:
+      'No connected application | 1 connected application | {count} connected applications',
+    groupRevoke: 'Revoke all',
+    groupRevokeTitle: 'Revoke every connected application?',
+    groupRevokeConfirm:
+      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again.',
+    groupRevoked: 'Connected applications revoked',
   },
   mcpAccess: {
     title: 'MCP access',
@@ -1069,6 +1096,7 @@ export default {
     },
     system: {
       settings: 'Settings',
+      connectedApplications: 'Connected applications',
       help: 'Help',
       logout: 'Sign out',
     },

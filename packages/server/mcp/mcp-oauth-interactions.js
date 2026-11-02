@@ -7,7 +7,8 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE } = require('./mcp-identity.js');
 const { WRITE_SCOPE } = require('./mcp-authoring.js');
 const logger = require('../utils/logger.js');
-const { accountIdOf, keepRegisteredClient } = require('./mcp-oauth.js');
+const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
+const { recordConnection } = require('./mcp-connections.js');
 
 const NO_ACCESS = 'This group has no MCP access to LePatron.';
 
@@ -175,6 +176,15 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
+      const client = await provider.Client.find(interaction.params.client_id);
+      await recordConnection({
+        grantId,
+        clientId: interaction.params.client_id,
+        clientName: client?.clientName || interaction.params.client_id,
+        userId: consenter.user.id,
+        groupId,
+        ttl: TTL.Grant,
+      });
       // Never in the way of the consent: the client only lives on.
       await keepRegisteredClient(
         provider,
