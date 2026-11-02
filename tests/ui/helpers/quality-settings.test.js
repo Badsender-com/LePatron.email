@@ -24,4 +24,11 @@ describe('quality settings page helpers', () => {
       'qualitySettings.snackbars.error'
     );
   });
+
+  it('says why a refused save was refused', () => {
+    const refused = { response: { status: 403, data: {} } };
+    expect(qualitySettingsErrorKeyFor(refused)).toBe(
+      'qualitySettings.snackbars.forbidden'
+    );
+  });
 });
