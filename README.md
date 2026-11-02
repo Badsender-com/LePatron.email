@@ -40,7 +40,7 @@ To get a local copy up and running follow these simple steps.
 You will need the following tools to be able to run the project locally:
 
 - [Node](https://nodejs.org)
-- [Yarn](https://yarnpkg.com/)
+- Corepack, shipped with Node: run `corepack enable` once, it provides the Yarn version pinned in `package.json`
 - [Docker](https://www.docker.com/get-started) 💡 Make sure you can run `docker-compose` in you terminal
 
 ### Installation
