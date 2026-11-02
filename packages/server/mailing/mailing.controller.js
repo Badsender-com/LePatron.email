@@ -36,6 +36,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const { listingGroupIdOf } = require('../account/request-scope.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -357,6 +358,8 @@ async function duplicate(req, res) {
     Galleries.findOne({ creationOrWireframeId: mailingId }),
   ]);
   if (!mailing) throw new NotFound();
+  // The copy lands next to the original: writing there takes the same right.
+  await mailingService.assertUserCanEditMailing(req.user, mailing);
 
   const duplicatedMailing = mailing.duplicate(req.user);
   // Be sure that all images are duplicated before saving the duplicated creation
@@ -566,7 +569,9 @@ async function updateMosaico(req, res) {
 
 async function bulkUpdate(req, res) {
   const { items, tags: tagsChanges = {} } = req.body;
-  const { id: companyId } = req.user._company;
+  // The mailings of the list on screen: the selected group's for a super
+  // admin, the user's own group's for anyone else (ADR 0002, amended).
+  const companyId = listingGroupIdOf(req.user);
   const hadId = Array.isArray(items) && items.length;
   const hasTagsChanges =
     Array.isArray(tagsChanges.added) && Array.isArray(tagsChanges.removed);
@@ -598,9 +603,10 @@ async function bulkUpdate(req, res) {
     );
   }
 
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
+  const mailingQuery = {
     _id: { $in: items.map(mongoose.Types.ObjectId) },
-  });
+    _company: mongoose.Types.ObjectId(companyId),
+  };
 
   // Ensure mailings belong to the same group
   const userMailings = await Mailings.find(mailingQuery).select({
@@ -638,7 +644,7 @@ async function bulkUpdate(req, res) {
 
   const [mailings, tags] = await Promise.all([
     Mailings.findForApi(mailingQuery),
-    Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {})),
+    Mailings.findTags({ _company: mongoose.Types.ObjectId(companyId) }),
   ]);
 
   res.json({
@@ -664,9 +670,11 @@ async function bulkDestroy(req, res) {
   const { items } = req.body;
   if (!Array.isArray(items) || !items.length) throw new UnprocessableEntity();
 
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
+  const companyId = listingGroupIdOf(req.user);
+  const mailingQuery = {
     _id: { $in: items.map(mongoose.Types.ObjectId) },
-  });
+    _company: mongoose.Types.ObjectId(companyId),
+  };
   // ensure the mailings are from the same group
   const userMailings = await Mailings.find(mailingQuery)
     .select({ _id: 1 })
@@ -683,9 +691,9 @@ async function bulkDestroy(req, res) {
       creationOrWireframeId: { $in: safeMailingsIdList },
     }),
   ]);
-  const tags = await Mailings.findTags(
-    modelsUtils.addStrictGroupFilter(req.user, {})
-  );
+  const tags = await Mailings.findTags({
+    _company: mongoose.Types.ObjectId(companyId),
+  });
 
   res.json({
     meta: { tags },
@@ -708,28 +716,34 @@ async function deleteMailing(req, res) {
   const { user } = req;
   const { workspaceId, parentFolderId } = req.body;
 
-  // Find the email before deleting it
-  const mailing = await Mailings.findById(mailingId);
+  // Find the email before deleting it, within the user's company: a mailing
+  // of another company answers like one that does not exist.
+  const mailing = await Mailings.findOne(
+    modelsUtils.addGroupFilter(user, { _id: mailingId })
+  );
 
   // If mailing doesn't exist, nothing to delete
   if (!mailing) {
     return res.send();
   }
 
-  const tagLabels = mailing.tags || [];
+  // Nothing is touched, its tags included, before every check has passed:
+  // the right to edit the mailing, then the service's checks on the location.
+  await mailingService.assertUserCanEditMailing(user, mailing);
 
-  // Decrement the tag count if the tag is used
-  if (tagLabels.length > 0) {
-    await Mailings.removeTagsFromEmail(mailingId, tagLabels);
-  }
-
-  // Delete the email
-  await mailingService.deleteMailing({
+  const deletion = await mailingService.deleteMailing({
     mailingId,
     workspaceId,
     parentFolderId,
     user,
   });
+
+  // Once the email is gone, its tags count one use less; a concurrent
+  // deletion that removed nothing releases nothing.
+  const tagLabels = mailing.tags || [];
+  if (tagLabels.length > 0 && deletion?.deletedCount !== 0) {
+    await Mailings.releaseTags(mailing._company, tagLabels);
+  }
 
   res.send();
 }

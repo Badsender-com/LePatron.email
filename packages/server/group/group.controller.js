@@ -9,6 +9,9 @@ const {
 } = require('../workspace/workspace.service.js');
 
 const groupService = require('../group/group.service.js');
+const superAdminPolicy = require('../user/super-admin-policy.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
@@ -106,19 +109,38 @@ async function setPlatform(req, res) {
   }
 
   if (!isPlatform) {
+    // The flag cannot leave a group with active super admins (ADR 0002).
+    await superAdminPolicy.assertFlagCanLeave(group);
+    await Groups.updateOne({ _id: group._id }, { $set: { isPlatform: false } });
     group.isPlatform = false;
-    await group.save();
     return res.json(group.toJSON());
   }
 
-  // Move the flag: clear any other platform group first so the partial unique
-  // index never trips, then mark this one.
-  await Groups.updateMany(
-    { isPlatform: true, _id: { $ne: group._id } },
-    { $set: { isPlatform: false } }
-  );
+  // Move the flag: the current platform group gives it up first, so the
+  // partial unique index never trips, then this one takes it. Moved by the
+  // bootstrap account, the flag takes the super admins along (ADR 0002).
+  const current = await Groups.findOne({
+    isPlatform: true,
+    _id: { $ne: group._id },
+  });
+  if (current) {
+    await superAdminPolicy.assertFlagCanLeave(current, {
+      actor: req.user,
+      destination: group,
+    });
+    // Only the flag changes: no validation of the rest of the document.
+    await Groups.updateOne(
+      { _id: current._id },
+      { $set: { isPlatform: false } }
+    );
+  }
   group.isPlatform = true;
   await group.save();
+  // Every super admin of the group, deactivated ones included, follows the
+  // flag, so that a reactivation still finds them in the platform group.
+  if (current) {
+    await superAdminPolicy.moveSuperAdmins(req.user, current, group);
+  }
   res.json(group.toJSON());
 }
 
@@ -246,9 +268,11 @@ async function deleteGroup(req, res) {
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
 
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     throw new NotFound();
   }
+  // Deleting the group would delete its super admins with it (ADR 0002).
+  await superAdminPolicy.assertFlagCanLeave(group);
   await groupService.deleteGroup(groupId);
 
   res.json(group);
@@ -440,7 +464,7 @@ async function readColorScheme(req, res) {
   } = req;
   if (!groupId) throw new NotFound();
 
-  if (!user.isAdmin && user.group.id?.toString() !== groupId) {
+  if (!permissions.canAccessGroup(user, groupId)) {
     throw new NotFound();
   }
 
@@ -479,6 +503,8 @@ async function update(req, res) {
 
   // Process credentials (handle masking and deletion)
   const processedBody = groupFtpService.processCredentialsForUpdate(req.body);
+  // The platform flag has its own endpoint and its own guardrail (ADR 0002).
+  delete processedBody.isPlatform;
 
   // Validate SSH key format if provided and not masked
   if (processedBody.ftpSshKey) {
@@ -524,14 +550,20 @@ async function update(req, res) {
     groupToUpdate.idpCert = normalizeIdpCert(groupToUpdate.idpCert);
   }
 
-  if (user.isGroupAdmin) {
+  // Anyone but a super admin: the route lets a company admin of the group
+  // through, and no one else.
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     groupToUpdate = pick(groupToUpdate, [
       'name',
       'colorScheme',
-      'trackingConfig',
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // The company's tracking belongs to its technical settings (ADR 0004):
+      // dropped for a company admin, as the other fields it cannot set.
+      ...(permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH)
+        ? ['trackingConfig']
+        : []),
     ]);
     // Reinstated after the pick, from the URL, so the whitelist never has to
     // carry the id of the target.

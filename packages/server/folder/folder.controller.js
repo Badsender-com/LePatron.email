@@ -131,7 +131,12 @@ async function getFolder(req, res) {
   const workspace = await folderService.getWorkspaceForFolder(folderId);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
-  res.json(folder);
+  // The folder's group, from its workspace: opening a folder of another group
+  // selects that group for a super admin (ADR 0002, amended).
+  res.json({
+    ...(folder.toJSON ? folder.toJSON() : folder),
+    _company: String(workspace.group || workspace._company),
+  });
 }
 
 /**

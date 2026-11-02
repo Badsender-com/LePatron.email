@@ -1,3 +1,8 @@
+<!-- No gallery takes an upload where the email may not be written, nor
+     from a user who may not manage the gallery: the rule of the thumbnails'
+     actions (ext/gallery-actions.js), for the email's gallery and the
+     template's alike. -->
+<!-- ko if: $root.galleryActions(type).upload -->
 <div data-drop-content="Drop here" class="img-dropzone pane uploadzone" data-bind="attr: { 'data-drop-content': $root.t('Drop here') }, fudroppable: { activeClass: 'ui-state-highlight', hoverClass: 'ui-state-draghover' }">
   <div class="mo-uploadzone">
     <!-- ko if: type === 'mailing' -->
@@ -28,3 +33,4 @@
     </div>
   </div>
 </div>
+<!-- /ko -->

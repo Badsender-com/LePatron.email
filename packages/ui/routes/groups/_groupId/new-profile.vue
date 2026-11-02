@@ -1,13 +1,14 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { IS_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
 import { getProfiles } from '~/helpers/api-routes';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import ProfileForm from '~/components/profiles/profile-form';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 
 export default {
   name: 'PageNewProfile',
@@ -17,7 +18,7 @@ export default {
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: acls.ACL_PLATFORM_MANAGE,
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -42,12 +43,12 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
     groupId() {
       return this.$route.params.groupId;
     },
     showGroupBadge() {
-      return this.isAdmin && this.group.name;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
   methods: {

@@ -9,6 +9,8 @@
 const fs = require('fs');
 const path = require('path');
 const ko = require('knockout');
+const { userOfRole } = require('../helpers/current-user.js');
+const { userCan } = require('../../../packages/editor/src/js/ext/user-can.js');
 
 const widgetBlockBuilder = require('../../../packages/editor/src/js/ext/badsender-widget-block-builder.js');
 const {
@@ -56,6 +58,9 @@ function createViewModel(metadata) {
   const vm = {
     metadata,
     t: (key) => key,
+    // an unrestricted role: these tests are about the tools, not the RBAC
+    currentUser: userOfRole('regular_user'),
+    userCan: (capability) => userCan(vm, capability),
     selectedTool: ko.observable(0),
     selectedBlock: ko.observable(null),
     selectBlock: jest.fn((block) => vm.selectedBlock(block)),

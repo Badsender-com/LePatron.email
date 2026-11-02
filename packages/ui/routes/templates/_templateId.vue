@@ -1,8 +1,8 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { IS_ADMIN, USER } from '~/store/user';
-import { SET_ACTIVE_MODULE, SET_LAST_GROUP_ID } from '~/store/sidebar';
+import { CAN, SELECT_GROUP, USER } from '~/store/user';
+import { SET_ACTIVE_MODULE } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -10,6 +10,7 @@ import * as sseHelpers from '~/helpers/server-sent-events.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTemplateForm from '~/components/template/form.vue';
 import { Trash2 } from 'lucide-vue';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 const UPDATE_AXIOS_CONFIG = Object.freeze({
   headers: { 'content-type': 'multipart/form-data' },
@@ -23,7 +24,7 @@ export default {
     LucideTrash2: Trash2,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN },
+  meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
@@ -63,7 +64,7 @@ export default {
     return { title: this.title };
   },
   computed: {
-    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapGetters(USER, { can: CAN }),
     title() {
       return `${this.$tc('global.template', 1)} – ${this.template.name}`;
     },
@@ -74,7 +75,7 @@ export default {
       return this.group.name || '';
     },
     showGroupBadge() {
-      return this.isAdmin && this.groupName;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.groupName;
     },
     backRoute() {
       if (this.group.id) {
@@ -84,11 +85,13 @@ export default {
     },
   },
   mounted() {
-    // Sidebar lives outside this page; tell it which group context applies
-    // and force the SETTINGS module so navigation stays coherent on /templates/:id.
+    // Sidebar lives outside this page: force the SETTINGS module, and make
+    // the resource's group the selected group (ADR 0002, amended).
     this.$store.commit(`sidebar/${SET_ACTIVE_MODULE}`, 'settings');
     if (this.group?.id) {
-      this.$store.commit(`sidebar/${SET_LAST_GROUP_ID}`, this.group.id);
+      this.$store
+        .dispatch(`${USER}/${SELECT_GROUP}`, this.group.id)
+        .catch(() => {});
     }
     if (this.template.id) {
       this.listenTemplateEvents();

@@ -6,7 +6,10 @@ const router = express.Router();
 
 const aiFeatures = require('./ai-feature.controller.js');
 
-const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_GROUP_ADMIN_TECH,
+} = require('../account/auth.guard.js');
 
 // List available feature types
 router.get('/types', GUARD_USER, aiFeatures.listFeatureTypes);
@@ -17,7 +20,7 @@ router.get('/groups/:groupId', GUARD_USER, aiFeatures.getConfig);
 // Update specific feature configuration
 router.put(
   '/groups/:groupId/features/:featureType',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   aiFeatures.updateFeature
 );
 

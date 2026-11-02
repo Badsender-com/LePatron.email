@@ -4,6 +4,8 @@ const asyncHandler = require('express-async-handler');
 const createHttpError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const workspaceService = require('./workspace.service');
+const { listingGroupIdOf } = require('../account/request-scope.js');
+const permissions = require('../account/permissions.js');
 
 module.exports = {
   listWorkspace: asyncHandler(listWorkspace),
@@ -51,11 +53,9 @@ async function listWorkspace(req, res, next) {
     next(new createHttpError.Unauthorized());
   }
   const user = req.user;
-  const { group } = user;
   const workspaces = await workspaceService.findWorkspacesWithRights({
-    groupId: group.id,
-    userId: user.id,
-    isGroupAdmin: user.isGroupAdmin,
+    groupId: listingGroupIdOf(user),
+    user,
   });
 
   return res.json({ items: workspaces });
@@ -79,15 +79,8 @@ async function listWorkspace(req, res, next) {
 
 async function createWorkspace(req, res) {
   try {
-    // Super admins can create workspaces for any group
-    // Group admins can only create workspaces for their own group
-    const isAdmin = req.user?.isAdmin;
-    const isGroupAdmin = req.user?.isGroupAdmin;
-    const userGroupId = req.user?.group?.id;
-    const targetGroupId = req.body.groupId;
-
-    const canCreate =
-      isAdmin || (isGroupAdmin && userGroupId && userGroupId === targetGroupId);
+    // Whoever manages the group: its company admin, or a super admin.
+    const canCreate = permissions.canManageGroup(req.user, req.body.groupId);
 
     if (canCreate) {
       const newWorkspace = await workspaceService.createWorkspace(req.body);
@@ -153,13 +146,9 @@ async function deleteWorkspace(req, res) {
       return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
-    // Super admins can delete any workspace
-    // Group admins can only delete workspaces from their group
-    const isAdmin = user?.isAdmin;
-    const userGroupId = user?.group?.id;
-    const workspaceGroupId = workspace._company?.toString();
-
-    if (!isAdmin && workspaceGroupId !== userGroupId) {
+    // A super admin reaches the workspaces of every company, anyone else
+    // those of its own company.
+    if (!permissions.canAccessGroup(user, workspace._company)) {
       return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
 
@@ -198,13 +187,9 @@ async function getWorkspace(req, res) {
       user
     );
 
-    // Super admins can access any workspace
-    // Group admins/users can only access workspaces from their group
-    const isAdmin = user?.isAdmin;
-    const userGroupId = user?.group?.id;
-    const workspaceGroupId = `${workspace._company}`;
-
-    if (!isAdmin && workspaceGroupId !== userGroupId) {
+    // A super admin reaches the workspaces of every company, anyone else
+    // those of its own company.
+    if (!permissions.canAccessGroup(user, workspace._company)) {
       return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 

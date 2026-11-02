@@ -61,7 +61,10 @@ export default {
         });
       } catch (error) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text:
+            error.response?.status === 429
+              ? this.$t('global.errors.tooManyRequests')
+              : this.$t('global.errors.errorOccured'),
           color: 'error',
         });
         console.log(error);
@@ -179,9 +182,7 @@ export default {
         fill="#FFB400"
       />
     </svg>
-    <p style="color: white; font-size: 0.875rem">
-      Email Builder by Badsender
-    </p>
+    <p style="color: white; font-size: 0.875rem">Email Builder by Badsender</p>
     <v-card class="elevation-24">
       <v-toolbar flat>
         <v-toolbar-title>{{ $t('forms.user.passwordReset') }}</v-toolbar-title>

@@ -6,18 +6,19 @@
 
 /**
  * @param {{ id?: string, enabledFlag?: string }} module A row from SIDEBAR_MODULES.
- * @param {{ isAdmin?: boolean }} user
+ * @param {{ canManagePlatform?: boolean }} user
  * @param {Object} group The user's group document (or {} if not loaded yet).
  * @returns {boolean} true when the module should be rendered as locked.
  *
  * Rules:
- * - Super admins are NEVER locked (platform-wide access).
  * - Modules without `enabledFlag` are always unlocked (free for everyone).
  * - Otherwise: locked iff the flag is explicitly falsy on the group.
+ * - A super admin sees the modules of its selected group as the group's users
+ *   do (ADR 0002, amended): the caller passes that group. The lock is part of
+ *   the view; the server never refuses a super admin for a module flag.
  */
 export function isModuleLocked(module, user, group) {
   if (!module || !module.enabledFlag) return false;
-  if (user && user.isAdmin) return false;
   return !group || !group[module.enabledFlag];
 }
 
@@ -28,11 +29,11 @@ export function isModuleLocked(module, user, group) {
  *
  * @param {string} flag Name of the boolean flag on the group document
  *   (e.g. 'enableEmailBuilder', 'enableCrmIntelligence').
- * @param {{ isAdmin?: boolean }} user
+ * @param {{ canManagePlatform?: boolean }} user
  * @param {Object} group
  */
 export function isFlagEnabled(flag, user, group) {
-  if (user && user.isAdmin) return true;
+  if (user && user.canManagePlatform) return true;
   if (!group) return false;
   // Treat an undefined flag as enabled — same forgiving semantics as
   // guardEmailBuilder.js server-side: legacy groups predating the flag

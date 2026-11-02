@@ -4,7 +4,7 @@ import * as acls from '~/helpers/pages-acls.js';
 export default {
   name: 'BsPageGroupRedirect',
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   middleware({ route, redirect }) {
     // Redirect to the new settings page structure

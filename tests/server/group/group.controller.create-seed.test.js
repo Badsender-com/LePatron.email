@@ -45,7 +45,7 @@ const taxonomyDefaultsService = require('../../../packages/server/taxonomy/taxon
 const groupController = require('../../../packages/server/group/group.controller.js');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
-const superAdmin = { isAdmin: true, id: 'admin', name: 'admin' };
+const superAdmin = { id: 'admin', name: 'admin' };
 
 async function create(body, user = superAdmin) {
   const res = { json: jest.fn() };

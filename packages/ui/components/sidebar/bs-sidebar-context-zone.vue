@@ -1,8 +1,12 @@
 <template>
   <div class="bs-sidebar-context-zone">
+    <!-- A locked module shows no content in the sidebar either: the page
+         says it is not enabled, for every role. -->
+    <template v-if="activeModuleLocked" />
+
     <!-- Email Builder context: Workspace tree (Phase 2) -->
     <bs-sidebar-workspace-tree
-      v-if="activeModule === 'email-builder'"
+      v-else-if="activeModule === 'email-builder'"
       :collapsed="collapsed"
     />
 
@@ -43,6 +47,10 @@ export default {
     activeModule: {
       type: String,
       default: null,
+    },
+    activeModuleLocked: {
+      type: Boolean,
+      default: false,
     },
     collapsed: {
       type: Boolean,

@@ -12,15 +12,9 @@ const { templateWarnings } = require('../services/template-coherence.js');
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
  *
- * The `!isAdmin` condition this replaces could never be true here: every route
- * of this module sits behind GUARD_ADMIN, which only lets through the account
- * whose `isAdmin` is truthy — and the only such account is the hardcoded
- * `adminUser` of auth.guard.js (UserSchema's `isAdmin` virtual returns false for
- * every database user). So the audit fields were persisted as null, always.
- *
- * Note the ceiling: since a single super-admin identity can reach these routes,
- * this records "the admin account", not which person acted. That is a property
- * of the project's super-admin auth, not of this function.
+ * Every route of this module sits behind GUARD_ADMIN: the actor is a super
+ * admin, either a persisted one (ADR 0002), whose id names the person, or the
+ * bootstrap account, whose configured id names "the bootstrap account".
  */
 function userIdOf(req) {
   return req.user ? req.user.id : null;

@@ -1,10 +1,5 @@
-/// ///
-// Role
-/// ///
-const Roles = {
-  GROUP_ADMIN: 'company_admin',
-  REGULAR_USER: 'regular_user',
-  SUPER_ADMIN: 'super_admin',
-};
+'use strict';
 
-module.exports = Roles;
+// The roles are defined once, with what each may do, in
+// packages/shared/access/roles.js: the UI and the editor read the same file.
+module.exports = require('../../shared/access/roles.js').ROLES;

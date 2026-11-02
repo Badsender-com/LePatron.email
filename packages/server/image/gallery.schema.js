@@ -2,6 +2,7 @@
 
 const { Schema, Types } = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
+const { mapValues } = require('lodash');
 
 const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js');
 
@@ -12,6 +13,12 @@ const formatFilenameForJqueryFileupload = require('../helpers/format-filename-fo
  * @apiSuccess {String} files.url used by mosaico editor
  * @apiSuccess {String} files.deleteUrl used by mosaico editor
  * @apiSuccess {String} files.thumbnailUrl used by mosaico editor
+ * @apiSuccess {String} files.label human-readable label (falls back to file.name for an image stored before labels existed)
+ * @apiSuccess {String} files.source image origin (e.g. 'upload', 'dam_bynder')
+ * @apiSuccess {Object} files.externalMetadata metadata from external sources (DAM, etc.)
+ * @apiSuccess {String} files.uploadedAt ISO date the image joined the gallery
+ * @apiSuccess {Number} files.width original width in pixels, null when unknown
+ * @apiSuccess {Number} files.height original height in pixels, null when unknown
  */
 
 // This table is used to add a visible information on the images
@@ -26,9 +33,17 @@ const GallerySchema = Schema(
       type: [],
       // make sure we have the right format for a gallery
       get: (files) => {
-        return files.map((file) =>
-          formatFilenameForJqueryFileupload(file.name)
-        );
+        return files.map((file) => ({
+          ...formatFilenameForJqueryFileupload(file.name),
+          label: file.label || file.name,
+          source: file.source || 'upload',
+          externalMetadata: file.externalMetadata || {},
+          uploadedAt: file.uploadedAt || null,
+          // original dimensions; null for anything uploaded before US-09, and
+          // for an upload whose bytes could not be probed
+          width: file.width || null,
+          height: file.height || null,
+        }));
       },
     },
   },
@@ -48,13 +63,19 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   this.isNew = true;
   this.creationOrWireframeId = newCreationId;
 
-  // update the files names & path
-  this.files = this.files.map((file) => {
-    Object.keys(file).forEach((key) => {
-      file[key] = file[key].replace(oldCreationId, newCreationId);
-    });
-    return file;
-  });
+  // Copy what is stored, not what the getter shows: read through it, an image
+  // from before the V1 fields would come back with its fallbacks (a label
+  // equal to its file name, a null date) written down as real values, and
+  // nothing could tell it apart from a labelled, dated one any more.
+  const storedFiles = this.get('files', null, { getters: false }) || [];
+  const files = storedFiles.map((file) =>
+    mapValues(file, (value) =>
+      typeof value === 'string'
+        ? value.replace(oldCreationId, newCreationId)
+        : value
+    )
+  );
+  this.set('files', files);
 
   this.markModified('files');
 

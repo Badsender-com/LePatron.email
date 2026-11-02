@@ -1,4 +1,5 @@
 import { templates } from '~/helpers/api-routes';
+import { CAPABILITIES } from '../../shared/access/roles.js';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
@@ -24,14 +25,25 @@ export const mutations = {
   },
 };
 
+// A super admin creates mailings from its selected group's templates; the
+// server lists anyone else's own group's (ADR 0002, amended).
+export function moduleTemplatesParams(rootGetters) {
+  const selected = rootGetters['user/SELECTED_GROUP'];
+  return rootGetters['user/CAN'](CAPABILITIES.PLATFORM_MANAGE) && selected
+    ? { groupId: selected.id }
+    : {};
+}
+
 export const actions = {
-  async [FETCH_TEMPLATES]({ commit }, { $t } = {}) {
+  async [FETCH_TEMPLATES]({ commit, rootGetters }, { $t } = {}) {
     let templatesData;
     commit(SET_TEMPLATES_LOADING, false);
     try {
       const { $axios } = this;
       try {
-        const { items } = await $axios.$get(templates());
+        const { items } = await $axios.$get(templates(), {
+          params: moduleTemplatesParams(rootGetters),
+        });
         templatesData = items;
         commit(SET_TEMPLATES, templatesData);
       } catch (error) {

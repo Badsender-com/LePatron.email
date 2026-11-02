@@ -15,10 +15,12 @@ After developing a feature:
 Before committing code:
 
 ```
-yarn code:lint         # Check for linting errors
-yarn code:fix          # Auto-fix errors and format code
-yarn test-ci           # Run all tests (yarn test is jest --watch, it never exits)
+npx eslint <files>             # Lint the files you touched
+npx prettier --write <files>   # Format them (yarn code:fix rewrites the whole repo)
+yarn test-ci                   # Run all tests (yarn test is jest --watch, it never exits)
 ```
+
+A diff that touches rights also gets [docs/agents/rights-review.md](./docs/agents/rights-review.md).
 
 ## Claude Code Skills
 

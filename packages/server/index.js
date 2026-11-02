@@ -29,6 +29,11 @@ const profileRouter = require('./profile/profile.routes');
 const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
+const selectedGroupRouter = require('./account/selected-group.routes');
+const {
+  attachSelectedGroup,
+  forgetSessionSelection,
+} = require('./account/selected-group.js');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
@@ -246,8 +251,20 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // The password link opens on a signed-out page: a session of the account
+  // left in this browser (current, or replaced since) is closed first, so the
+  // link is never lost to a redirection.
+  app.get('/account/:email/password/:token', (req, res, next) => {
+    if (req.isAuthenticated()) req.logout();
+    next();
+  });
+
   // Session validation middleware (checks for session replacement)
   app.use(sessionValidationMiddleware());
+
+  // The selected group on the request's user (ADR 0002, amended), for the
+  // routes and for the first server-rendered page.
+  app.use(attachSelectedGroup);
 
   app.get(
     '/account/SAML-login',
@@ -278,17 +295,14 @@ if (cluster.isMaster) {
     }
   );
 
-  app.post(
-    '/account/login/admin/',
-    passport.authenticate('local', {
-      successReturnToOrRedirect: '/groups',
-      failureRedirect: '/account/login/admin',
-      failureFlash: true,
-      successFlash: true,
-    })
+  // The administrator of the configuration signs in on the login page like
+  // everyone, through its rate-limited API; the old admin page is gone.
+  app.get(['/account/admin', '/account/login/admin'], (req, res) =>
+    res.redirect('/account/login')
   );
 
   app.get('/account/logout', (req, res) => {
+    forgetSessionSelection(req);
     req.logout();
     res.redirect('/account/login');
   });
@@ -306,6 +320,7 @@ if (cluster.isMaster) {
   app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
+  app.use('/api/users/me/selected-group', selectedGroupRouter);
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
   app.use('/api/emails-groups', EmailGroupRouter);

@@ -3,7 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
-import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
+import { CAN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
@@ -22,6 +22,7 @@ import {
   Shield,
   KeyRound,
 } from 'lucide-vue';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 export default {
   name: 'BsGroupForm',
@@ -55,10 +56,13 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
-    }),
+    ...mapGetters(USER, { can: CAN }),
+    // The company's name, status, modules, permissions, SAML, this form's save
+    // and the deletion are the platform's: a company admin sees the name
+    // read-only and the rest not at all.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     localModel: {
       get() {
         return this.group;
@@ -177,12 +181,12 @@ export default {
                 v-model="localModel.name"
                 :label="$t('global.companyName')"
                 required
-                :disabled="disabled || isGroupAdmin"
+                :disabled="disabled || !canManagePlatform"
                 :error-messages="requiredErrors('name')"
                 @blur="$v.group.name.$touch()"
               />
             </v-col>
-            <v-col v-if="isAdmin" cols="12" md="6">
+            <v-col v-if="canManagePlatform" cols="12" md="6">
               <bs-select
                 v-model="localModel.status"
                 :label="$t('forms.group.status.label')"
@@ -206,7 +210,7 @@ export default {
         </bs-form-section>
 
         <!-- ==================== SECTION 2: MODULES ==================== -->
-        <bs-form-section v-if="isAdmin">
+        <bs-form-section v-if="canManagePlatform">
           <template #icon>
             <lucide-boxes :size="20" />
           </template>
@@ -272,7 +276,7 @@ export default {
         </bs-form-section>
 
         <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
-        <bs-form-section v-if="isAdmin">
+        <bs-form-section v-if="canManagePlatform">
           <template #icon>
             <lucide-shield :size="20" />
           </template>
@@ -291,7 +295,7 @@ export default {
         </bs-form-section>
 
         <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
-        <bs-form-section v-if="isAdmin" last>
+        <bs-form-section v-if="canManagePlatform" last>
           <template #icon>
             <lucide-key-round :size="20" />
           </template>
@@ -348,7 +352,7 @@ export default {
         </bs-form-section>
       </v-card-text>
 
-      <template v-if="isAdmin">
+      <template v-if="canManagePlatform">
         <v-divider />
         <v-card-actions>
           <v-spacer />
@@ -366,7 +370,12 @@ export default {
     </v-card>
 
     <!-- ==================== DANGER ZONE ==================== -->
-    <v-card v-if="isAdmin && isEdit" flat tile class="danger-zone mt-6 mb-6">
+    <v-card
+      v-if="canManagePlatform && isEdit"
+      flat
+      tile
+      class="danger-zone mt-6 mb-6"
+    >
       <div class="danger-zone__content">
         <div class="danger-zone__header">
           <lucide-alert-triangle :size="20" color="#F04E23" />

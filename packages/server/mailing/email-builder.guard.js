@@ -3,6 +3,8 @@
 const createError = require('http-errors');
 const { Groups } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 /**
  * Middleware that rejects the request when the caller's group has
@@ -20,7 +22,7 @@ async function guardEmailBuilder(req, res, next) {
     }
 
     // Super admins must keep platform-wide access regardless of the per-group flag.
-    if (user.isAdmin) {
+    if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
       return next();
     }
 

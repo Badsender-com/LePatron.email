@@ -9,6 +9,7 @@
 
 @import (less) '../../../../node_modules/vue-select/dist/vue-select.css';
 @import (less) '../../../../node_modules/vue2-timepicker/dist/VueTimepicker.css';
+@import (less) '../../../../node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.css';
 @import (less) 'custom-select-style.less';
 
 .vue__time-picker-dropdown, .vue__time-picker .dropdown {
@@ -641,6 +642,8 @@ body {
 }
 
 @import 'badesender-image-gallery.less';
+@import 'gallery-vue-panel.less';
+@import 'gallery-vue-thumb.less';
 
 //----- BACKGROUND-IMAGE WIDGET
 
@@ -1437,6 +1440,11 @@ body {
   .tool.delete:hover {
     background-color: rgba(240, 78, 35, 0.1);
     color: @tool-delete-color;
+  }
+
+  // the pencil while the image editor opens (gallery-vue-thumb.less)
+  .tool[aria-busy='true'] {
+    .gallery-busy();
   }
 }
 

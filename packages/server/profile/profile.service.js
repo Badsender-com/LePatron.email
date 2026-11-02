@@ -13,6 +13,7 @@ const {
 } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
+const permissions = require('../account/permissions.js');
 const EspTypes = require('../constant/esp-type');
 
 module.exports = {
@@ -61,10 +62,8 @@ async function assertRequiredTrackingParamsFilled({
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   const profile = await findOne(profileId);
-  if (!user.isAdmin) {
-    if (user?.group.id !== profile?._company?.toString()) {
-      throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
-    }
+  if (!permissions.canAccessGroup(user, profile?._company)) {
+    throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
   }
 }
 

@@ -5,6 +5,7 @@ import BsTextField from '~/components/form/bs-text-field';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Users, Info } from 'lucide-vue';
+import { CAPABILITIES, roleCan } from '../../../shared/access/roles.js';
 
 export default {
   name: 'WorkspaceForm',
@@ -80,6 +81,11 @@ export default {
     },
   },
   methods: {
+    // A member who manages the company sees every workspace: always a member,
+    // never toggled. The list carries each account's role.
+    managesGroup(user) {
+      return roleCan(user.role, CAPABILITIES.GROUP_MANAGE);
+    },
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) {
@@ -88,8 +94,7 @@ export default {
       this.$emit('submit', this.formData);
     },
     toggleUserSelection(user) {
-      // Group admins are always selected and can't be toggled
-      if (user.isGroupAdmin) return;
+      if (this.managesGroup(user)) return;
 
       const index = this.formData.selectedUsers.findIndex(
         (u) => u.id === user.id
@@ -102,7 +107,7 @@ export default {
     },
     isUserSelected(user) {
       return (
-        user.isGroupAdmin ||
+        this.managesGroup(user) ||
         this.formData.selectedUsers.some((u) => u.id === user.id)
       );
     },
@@ -162,12 +167,12 @@ export default {
       @click:row="toggleUserSelection"
     >
       <template #item.data-table-select="{ item, isSelected, select }">
-        <v-tooltip left :disabled="!item.isGroupAdmin">
+        <v-tooltip left :disabled="!managesGroup(item)">
           <template #activator="{ on }">
             <v-simple-checkbox
-              :value="isSelected || item.isGroupAdmin"
-              :readonly="item.isGroupAdmin"
-              :disabled="item.isGroupAdmin"
+              :value="isSelected || managesGroup(item)"
+              :readonly="managesGroup(item)"
+              :disabled="managesGroup(item)"
               v-on="on"
               @input="select($event)"
             />

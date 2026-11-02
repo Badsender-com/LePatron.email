@@ -49,8 +49,9 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import { Shield, Sparkles, FlaskConical } from 'lucide-vue';
+import { GROUP, CAN, SELECTED_GROUP, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
+import { Shield, Sparkles, FlaskConical, UserCog } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
@@ -59,6 +60,7 @@ export default {
     LucideShield: Shield,
     LucideSparkles: Sparkles,
     LucideFlaskConical: FlaskConical,
+    LucideUserCog: UserCog,
   },
   props: {
     collapsed: {
@@ -68,22 +70,23 @@ export default {
   },
   computed: {
     ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_GROUP_ADMIN,
+      can: CAN,
       group: GROUP,
-    }),
-    ...mapGetters('sidebar', {
-      lastGroupId: 'lastGroupId',
+      selectedGroup: SELECTED_GROUP,
     }),
 
     groupId() {
       return (
         this.$route.params.groupId ||
-        this.lastGroupId ||
+        this.selectedGroup?.id ||
         this.group?._id ||
         this.group?.id ||
         null
       );
+    },
+
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
     },
 
     settingsBasePath() {
@@ -91,13 +94,14 @@ export default {
     },
 
     visibleCategories() {
-      const canAccessGroupAdmin = this.isGroupAdmin || this.isAdmin;
+      const canAccessGroupAdmin = this.can(CAPABILITIES.GROUP_MANAGE);
+      const canAccessGroupAdminTech = this.can(CAPABILITIES.GROUP_MANAGE_TECH);
       const hasGroupContext = !!this.settingsBasePath;
 
       const categories = [];
 
       // Super Admin category
-      if (this.isAdmin) {
+      if (this.canManagePlatform) {
         categories.push({
           category: 'superAdmin',
           label: this.$t('settingsNav.categories.superAdmin'),
@@ -110,6 +114,14 @@ export default {
               // Exact match: don't highlight when navigating into a specific group
               exact: true,
               superAdminOnly: true,
+            },
+            {
+              id: 'super-admins',
+              label: this.$t('superAdmins.pageTitle'),
+              iconComponent: 'LucideUserCog',
+              route: '/super-admins',
+              superAdminOnly: true,
+              activePatterns: ['/super-admins'],
             },
             {
               id: 'ai-playground',
@@ -149,18 +161,21 @@ export default {
       ];
 
       if (canAccessGroupAdmin) {
+        generalItems.push({
+          id: 'workspaces',
+          label: this.$tc('global.teams', 2),
+          icon: 'mdi-account-group-outline',
+          route: `${this.settingsBasePath}/workspaces`,
+          activePatterns: [
+            `${this.settingsBasePath}/workspaces`,
+            `/groups/${this.groupId}/workspace`,
+            `/groups/${this.groupId}/new-workspace`,
+          ],
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
         generalItems.push(
-          {
-            id: 'workspaces',
-            label: this.$tc('global.teams', 2),
-            icon: 'mdi-account-group-outline',
-            route: `${this.settingsBasePath}/workspaces`,
-            activePatterns: [
-              `${this.settingsBasePath}/workspaces`,
-              `/groups/${this.groupId}/workspace`,
-              `/groups/${this.groupId}/new-workspace`,
-            ],
-          },
           {
             id: 'integrations',
             label: this.$t('integrations.title'),
@@ -221,7 +236,7 @@ export default {
         });
       }
 
-      if (this.isAdmin) {
+      if (this.canManagePlatform) {
         emailBuilderItems.push(
           {
             id: 'export-options',
@@ -282,13 +297,21 @@ export default {
               `/groups/${this.groupId}/emails-groups`,
               `/groups/${this.groupId}/new-emails-group`,
             ],
-          },
-          {
-            id: 'variables',
-            label: this.$t('global.variables'),
-            icon: 'mdi-code-braces',
-            route: `${this.settingsBasePath}/variables`,
-          },
+          }
+        );
+      }
+
+      if (canAccessGroupAdmin) {
+        emailBuilderItems.push({
+          id: 'variables',
+          label: this.$t('global.variables'),
+          icon: 'mdi-code-braces',
+          route: `${this.settingsBasePath}/variables`,
+        });
+      }
+
+      if (canAccessGroupAdminTech) {
+        emailBuilderItems.push(
           {
             id: 'tracking',
             label: this.$t('trackingConfig.sidebarLabel'),
@@ -309,7 +332,7 @@ export default {
       // - Group admin: only if module enabled
       const showEmailBuilder = isFlagEnabled(
         'enableEmailBuilder',
-        { isAdmin: this.isAdmin },
+        { canManagePlatform: this.canManagePlatform },
         this.group
       );
 
@@ -322,7 +345,7 @@ export default {
       }
 
       // CRM Intelligence category - visible only for super admin
-      if (this.isAdmin) {
+      if (this.canManagePlatform) {
         categories.push({
           category: 'crmIntelligence',
           label: this.$t('settingsNav.categories.crmIntelligence'),

@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
@@ -70,7 +71,7 @@ const MailingSchema = Schema(
       // catches a write that does not go through updateMosaico.
       maxlength: HEAD_CSS_MAX_LENGTH,
     },
-    // _user can't be required: admin doesn't set a _user
+    // _user can't be required: the bootstrap account has none to set
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
     author: {
@@ -107,7 +108,7 @@ const MailingSchema = Schema(
       // • so just make an alias
       alias: 'templateName',
     },
-    // _company can't be required: admin doesn't have a _company
+    // _company can't be required: the bootstrap account has none
     _company: {
       type: ObjectId,
       ref: GroupModel,
@@ -365,7 +366,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   // Get unresolved comment counts for each mailing
   const Comment = mongoose.models[CommentModel];
   let commentCountsMap = {};
+  let approvedMailingIds = new Set();
   if (Comment) {
+    approvedMailingIds = new Set(await Comment.findApprovedMailingIds(ids));
     const commentCounts = await Comment.aggregate([
       {
         $match: {
@@ -396,6 +399,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     ...doc,
     hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
+    isApproved: approvedMailingIds.has(doc._id.toString()),
   }));
 
   const convertedResultMailingDocs = finalDocs.map(
@@ -448,25 +452,34 @@ MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
     email.tags = email.tags.filter((label) => !tagLabels.includes(label));
     await email.save();
 
-    // Decrement the usage count for the specified tags
-    await mongoose.models.Tag.updateMany(
-      { label: { $in: tagLabels }, companyId: email._company },
-      { $inc: { usageCount: -1 } }
-    );
+    await this.releaseTags(email._company, tagLabels);
+  }
+};
 
-    // Retrieve the updated tags to check their usage count
-    const updatedTags = await mongoose.models.Tag.find({
-      label: { $in: tagLabels },
-      companyId: email._company,
-    });
+// releaseTags: one use less for each tag of a company, and the tags no longer
+// used are deleted. Also called once an email is deleted, with its tags.
+MailingSchema.statics.releaseTags = async function releaseTags(
+  companyId,
+  tagLabels
+) {
+  // Decrement the usage count for the specified tags
+  await mongoose.models.Tag.updateMany(
+    { label: { $in: tagLabels }, companyId },
+    { $inc: { usageCount: -1 } }
+  );
 
-    // Delete tags with a usage count of zero
-    const tagsToRemove = updatedTags
-      .filter((tag) => tag.usageCount <= 0)
-      .map((tag) => tag._id);
-    if (tagsToRemove.length > 0) {
-      await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
-    }
+  // Retrieve the updated tags to check their usage count
+  const updatedTags = await mongoose.models.Tag.find({
+    label: { $in: tagLabels },
+    companyId,
+  });
+
+  // Delete tags with a usage count of zero
+  const tagsToRemove = updatedTags
+    .filter((tag) => tag.usageCount <= 0)
+    .map((tag) => tag._id);
+  if (tagsToRemove.length > 0) {
+    await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
   }
 };
 
@@ -574,9 +587,17 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     group,
   });
 
+  // Whether a save from the editor would be accepted where the email lives
+  // (its workspace or folder), the capability apart: the editor locks itself
+  // instead of offering a save the server refuses. Lazy require, as above.
+  const mailingService = require('./mailing.service.js');
+  const canWrite = await mailingService.userCanEditMailing(user, mailing);
+
   let redirectUrl = null;
 
-  if (user?.isAdmin) {
+  // The bootstrap account stays in the settings; a super admin goes back to
+  // the module, like a company admin (ADR 0002, amended).
+  if (isBootstrapAccount(user)) {
     redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
   } else {
     // Target the Email Builder route directly (`/mailings`), not the app root
@@ -596,6 +617,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       templateId,
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
+      canWrite,
       hasTranslationFeature,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.

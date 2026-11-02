@@ -3,6 +3,7 @@ import { mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
@@ -25,6 +26,13 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    notifyError(error) {
+      this.showSnackbar({
+        text: superAdminErrorMessage(this, error),
+        color: 'error',
+      });
+      console.error(error);
+    },
     activate(_user) {
       this.$refs.activateDialog.open();
     },
@@ -54,11 +62,7 @@ export default {
         this.$emit('update', user);
         this.$emit('activate', user);
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
+        this.notifyError(error);
       } finally {
         this.localLoading = false;
       }
@@ -77,11 +81,7 @@ export default {
         this.$emit('update', user);
         this.$emit('deactivate', user);
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
+        this.notifyError(error);
       } finally {
         this.localLoading = false;
       }
@@ -102,11 +102,7 @@ export default {
         this.$emit('update', user);
         this.$emit('sendPassword', user);
       } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
+        this.notifyError(error);
       } finally {
         this.localLoading = false;
       }

@@ -11,7 +11,7 @@ export default {
   name: 'PageAiPlaygroundNew',
   components: { BsPageHeader, BsAiPlaygroundScenarioForm },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
+  meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   data() {
     return {
       scenario: this.emptyScenario(),

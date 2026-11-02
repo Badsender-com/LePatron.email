@@ -72,7 +72,7 @@ describe('mailingService.findTags', () => {
     Mailings.findTags.mockResolvedValue(['b2b', 'promo']);
 
     const tags = await mailingService.findTags({
-      user: { isAdmin: false, group: { id: TENANT_A } },
+      user: { group: { id: TENANT_A } },
     });
 
     expect(Mailings.findTags).toHaveBeenCalledWith({ _company: TENANT_A });
@@ -87,7 +87,7 @@ describe('mailingService.findTags', () => {
     Mailings.findTags.mockResolvedValue(['x']);
 
     const tags = await mailingService.findTags({
-      user: { isAdmin: true },
+      user: { role: 'super_admin' },
       workspaceId: WORKSPACE_ID,
     });
 
@@ -100,7 +100,7 @@ describe('mailingService.findTags', () => {
     mockChain({ _workspace: { _company: TENANT_A } }, 'folder');
 
     await mailingService.findTags({
-      user: { isAdmin: true },
+      user: { role: 'super_admin' },
       parentFolderId: FOLDER_ID,
     });
 
@@ -110,7 +110,7 @@ describe('mailingService.findTags', () => {
 
   it('admin without workspaceId nor parentFolderId: returns [] (no scope inferred)', async () => {
     const tags = await mailingService.findTags({
-      user: { isAdmin: true },
+      user: { role: 'super_admin' },
     });
 
     expect(tags).toEqual([]);
@@ -122,7 +122,7 @@ describe('mailingService.findTags', () => {
     Mailings.findTags.mockResolvedValue(['B2B', 'Promo', 'Sale']);
 
     const tags = await mailingService.findTags({
-      user: { isAdmin: false, group: { id: TENANT_A } },
+      user: { group: { id: TENANT_A } },
     });
 
     expect(tags).toEqual(['B2B', 'Promo', 'Sale']);

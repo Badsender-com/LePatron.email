@@ -1,6 +1,7 @@
 import { mapGetters } from 'vuex';
 import { PAGE, SET_PAGE_TITLE } from '~/store/page.js';
-import { IS_ADMIN, USER } from '~/store/user.js';
+import { CAN, USER } from '~/store/user.js';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 /**
  * Mixin for settings pages that provides consistent title handling.
@@ -25,12 +26,14 @@ import { IS_ADMIN, USER } from '~/store/user.js';
  */
 export default {
   computed: {
-    ...mapGetters(USER, {
-      mixinIsAdmin: IS_ADMIN,
-    }),
+    ...mapGetters(USER, { mixinCan: CAN }),
+    // Whoever manages the platform works in a group it names in the title.
+    mixinCanManagePlatform() {
+      return this.mixinCan(CAPABILITIES.PLATFORM_MANAGE);
+    },
     settingsTitle() {
       const settingsLabel = this.$t('modules.settings');
-      if (this.mixinIsAdmin && this.group?.name) {
+      if (this.mixinCanManagePlatform && this.group?.name) {
         return `${settingsLabel} > ${this.group.name}`;
       }
       return settingsLabel;
@@ -47,7 +50,7 @@ export default {
         this.updateSettingsTitle();
       },
     },
-    mixinIsAdmin: {
+    mixinCanManagePlatform: {
       immediate: true,
       handler() {
         this.updateSettingsTitle();

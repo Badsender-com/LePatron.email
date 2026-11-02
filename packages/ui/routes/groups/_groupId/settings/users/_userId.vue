@@ -1,5 +1,5 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -11,6 +11,9 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import { Roles, roleItems, canManageAccount } from '~/helpers/constants/roles';
+import { USER, USER_CAPABILITIES } from '~/store/user';
+import { superAdminErrorMessage } from '~/helpers/super-admin-errors.js';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import { User, Shield, Users, Mail } from 'lucide-vue';
@@ -35,15 +38,11 @@ export default {
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
   ],
-  roles: [
-    { text: 'Group admin', value: 'company_admin' },
-    { text: 'Regular user', value: 'regular_user' },
-  ],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
+    const { $axios, params, redirect } = nuxtContext;
     try {
       const [
         groupResponse,
@@ -54,9 +53,15 @@ export default {
         $axios.$get(apiRoutes.usersItem(params)),
         $axios.$get(apiRoutes.groupsWorkspaces(params)),
       ]);
+      // A super admin is managed from the global user page, never from their
+      // group's settings (ADR 0002), whichever link led here.
+      if (userResponse.role === Roles.SUPER_ADMIN) {
+        return redirect(`/users/${userResponse.id}`);
+      }
       return {
         group: groupResponse,
         user: userResponse,
+        savedRole: userResponse.role,
         workspaces: workspacesResponse.items,
       };
     } catch (error) {
@@ -68,6 +73,7 @@ export default {
     return {
       group: {},
       user: {},
+      savedRole: null,
       workspaces: [],
       savingWorkspaces: new Set(),
       mailings: [],
@@ -96,6 +102,19 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
+    // The server's rule, on the role the account has, not the one the form is
+    // being edited to: nobody edits, resets or deactivates an account with
+    // more rights than their own. Such an account's page stays readable.
+    canManage() {
+      return canManageAccount(this.capabilities, { role: this.savedRole });
+    },
+    roles() {
+      return roleItems(this, {
+        grantableWith: this.capabilities,
+        currentRole: this.user.role,
+      });
+    },
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
     },
@@ -261,13 +280,14 @@ export default {
       try {
         const { $axios, $route } = this;
         await $axios.$put(apiRoutes.usersItem($route.params), this.user);
+        this.savedRole = this.user.role;
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
       } catch (error) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: superAdminErrorMessage(this, error),
           color: 'error',
         });
         console.error(error);
@@ -317,6 +337,9 @@ export default {
         <!-- User form -->
         <v-card flat tile :loading="loading" :disabled="loading">
           <v-card-text>
+            <v-alert v-if="!canManage" type="info" text dense class="mb-4">
+              {{ $t('users.readOnlyAccount') }}
+            </v-alert>
             <!-- Section: Informations -->
             <bs-form-section>
               <template #icon>
@@ -329,6 +352,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.email"
+                    :disabled="!canManage"
                     :label="$t('users.email')"
                     type="email"
                     required
@@ -339,6 +363,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.name"
+                    :disabled="!canManage"
                     :label="$t('forms.user.name')"
                     required
                     :error-messages="nameErrors"
@@ -348,6 +373,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-text-field
                     v-model="user.externalUsername"
+                    :disabled="!canManage"
                     :label="
                       $t('forms.user.externalUsername') +
                       $t('forms.user.optional')
@@ -357,6 +383,7 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-select
                     v-model="user.lang"
+                    :disabled="!canManage"
                     :label="$t('users.lang')"
                     :items="$options.supportedLanguages"
                   />
@@ -364,8 +391,9 @@ export default {
                 <v-col cols="12" md="6">
                   <bs-select
                     v-model="user.role"
+                    :disabled="!canManage"
                     :label="$t('users.role')"
-                    :items="$options.roles"
+                    :items="roles"
                   />
                 </v-col>
               </v-row>
@@ -407,7 +435,7 @@ export default {
               </div>
 
               <!-- Action buttons -->
-              <div class="status-actions">
+              <div v-if="canManage" class="status-actions">
                 <!-- Activate (when deactivated) -->
                 <v-btn
                   v-if="isDeactivated"
@@ -467,8 +495,8 @@ export default {
               </div>
             </bs-form-section>
           </v-card-text>
-          <v-divider />
-          <v-card-actions>
+          <v-divider v-if="canManage" />
+          <v-card-actions v-if="canManage">
             <v-spacer />
             <v-btn
               color="accent"

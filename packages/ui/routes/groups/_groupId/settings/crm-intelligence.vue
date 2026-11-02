@@ -18,7 +18,7 @@ export default {
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: acls.ACL_PLATFORM_MANAGE,
   },
   async asyncData(nuxtContext) {
     return safeFetchGroup(nuxtContext);

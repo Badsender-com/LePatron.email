@@ -133,7 +133,7 @@ Une image d'item RSS est une URL externe ; le proxy resize/cover existant ne sai
 
 - `feed-mappings-tab.vue` : table des mappings d'un groupe (template / bloc / intégration / actif), actions éditer/supprimer.
 - `feed-mapping-form-dialog.vue` : formulaire avec cascade réactive template → blocs → champs, sélecteur de colonnes, tableau de mapping par colonne, libellé CTA, toggle actif. Watchers de repopulation (édition) et handlers d'interaction utilisateur volontairement séparés pour ne pas écraser une saisie en cours.
-- `feed-mappings.vue` : route protégée par `meta.acl = [ACL_ADMIN, ACL_GROUP_ADMIN]`.
+- `feed-mappings.vue` : route protégée par `meta.acl = ACL_GROUP_MANAGE_TECH` (super admin et tech admin).
 - `provider-configs.js` : nouvelle catégorie `contentFeed`, entrée `rss` (icône Lucide `Rss` dans `integrations-tab.vue` et la sidebar de réglages groupe).
 
 ### 2.8 Éditeur (Knockout + Vue)

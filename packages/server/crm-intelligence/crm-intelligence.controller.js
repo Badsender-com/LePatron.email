@@ -12,7 +12,7 @@ const crmIntelligenceService = require('./crm-intelligence.service');
  */
 const getStatus = asyncHandler(async (req, res) => {
   const status = await crmIntelligenceService.getStatus(
-    req.user.group.id,
+    String(req.crmGroup._id),
     req.crmGroup
   );
   res.json(status);
@@ -26,7 +26,7 @@ const getStatus = asyncHandler(async (req, res) => {
  */
 const getDashboards = asyncHandler(async (req, res) => {
   const dashboards = await crmIntelligenceService.getDashboards(
-    req.user.group.id,
+    String(req.crmGroup._id),
     req.crmGroup
   );
   res.json(dashboards);
@@ -40,7 +40,7 @@ const getDashboards = asyncHandler(async (req, res) => {
  */
 const getEmbedUrl = asyncHandler(async (req, res) => {
   const result = await crmIntelligenceService.getEmbedUrl(
-    req.user.group.id,
+    String(req.crmGroup._id),
     req.params.dashboardId,
     req.crmGroup,
     req.user

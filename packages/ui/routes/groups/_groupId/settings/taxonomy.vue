@@ -5,8 +5,9 @@ import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupTaxonomyTab from '~/components/group/taxonomy-tab.vue';
-import { IS_ADMIN, USER } from '~/store/user';
+import { CAN, USER } from '~/store/user';
 import { Plus, RotateCcw } from 'lucide-vue';
+import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
   name: 'BsPageSettingsTaxonomy',
@@ -18,7 +19,7 @@ export default {
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_MANAGE,
   },
   async asyncData(nuxtContext) {
     return safeFetchGroup(nuxtContext);
@@ -32,11 +33,9 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    ...mapGetters(USER, {
-      isAdmin: IS_ADMIN,
-    }),
+    ...mapGetters(USER, { can: CAN }),
     showGroupBadge() {
-      return this.isAdmin && this.group.name;
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
 };

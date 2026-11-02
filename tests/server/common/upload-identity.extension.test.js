@@ -6,7 +6,7 @@ const path = require('path');
 
 const {
   resolveUploadExtension,
-} = require('../../../packages/server/common/file-manage.service.js');
+} = require('../../../packages/server/common/upload-identity.service.js');
 
 // 8x8 fixtures inlined as bytes: sharp's native module does not load under
 // Jest's module system, and only the file headers matter here anyway

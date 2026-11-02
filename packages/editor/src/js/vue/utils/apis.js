@@ -56,6 +56,17 @@ function uploadGalleryImageFromUrl(mailingId) {
   return `${prefixApi}/images/gallery/${mailingId}/from-url`;
 }
 
+function renameGalleryImageLabel(mongoId, imageName) {
+  return `${prefixApi}/images/gallery/${mongoId}/${encodeURIComponent(
+    imageName
+  )}/label`;
+}
+
+// a stored image's own bytes, served by this application
+function readStoredImage(imageName) {
+  return `${prefixApi}/images/${encodeURIComponent(imageName)}`;
+}
+
 module.exports = {
   getEspIds,
   getProfileDetail,
@@ -71,4 +82,6 @@ module.exports = {
   getFeedMappingsForTemplate,
   getFeedItems,
   uploadGalleryImageFromUrl,
+  renameGalleryImageLabel,
+  readStoredImage,
 };

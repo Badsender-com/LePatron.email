@@ -62,10 +62,11 @@ export default {
     };
   },
   computed: {
+    // The group of the mailings on screen: a super admin's selected group,
+    // anyone else's own group (ADR 0002, amended).
     groupId() {
-      const userState = this.$store.state.user;
-      const info = userState && userState.info;
-      return info && info.group && info.group.id;
+      const group = this.$store.getters['user/MODULES_GROUP'];
+      return group && group.id;
     },
     mailingName() {
       return this.mailing ? this.mailing.name : '';

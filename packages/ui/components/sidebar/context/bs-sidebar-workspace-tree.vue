@@ -7,7 +7,7 @@ import {
   getUserPersistedLocalStorageKey,
   setUserPersistedLocalStorageKey,
 } from '~/helpers/api-routes.js';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -15,7 +15,8 @@ import {
   FETCH_FOLDER_OR_WORKSPACE,
   FETCH_FOLDER_CHILDREN,
 } from '~/store/folder';
-import { USER } from '~/store/user';
+import { USER, CAN } from '~/store/user';
+import { CAPABILITIES } from '../../../../shared/access/roles.js';
 import { canCreateFolder } from '~/utils/workspaces';
 import { findNodeById, findNodesByIds, findPathToNode } from '~/utils/tree';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -81,23 +82,42 @@ export default {
       'treeviewWorkspaces',
       'locationNotFound',
     ]),
+    ...mapGetters(USER, { can: CAN }),
     ...mapState(USER, {
       userInfo: 'info',
     }),
+    // Whoever manages the platform works in a group it selects.
+    canManagePlatform() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
+    },
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    selectedGroupId() {
+      return this.userInfo?.selectedGroup?.id || null;
     },
     storageKey() {
       const userId = this.userInfo?.id || 'anonymous';
       return `${TREE_STATE_STORAGE_KEY}_${userId}`;
     },
+    // A super admin's node to reopen is kept per group: switching group never
+    // reopens a node of the previous one (ADR 0002, amended).
     selectedNodeStorageKey() {
       const userId = this.userInfo?.id || 'anonymous';
-      return `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
+      const groupId = this.canManagePlatform ? this.selectedGroupId : null;
+      return groupId
+        ? `${SELECTED_NODE_STORAGE_KEY}_${userId}_${groupId}`
+        : `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
     },
   },
   watch: {
     $route: ['onRouteChange', 'checkIfNotData'],
+    // The tree of a super admin is its selected group's (ADR 0002, amended).
+    selectedGroupId(groupId, previousGroupId) {
+      if (groupId && previousGroupId && groupId !== previousGroupId) {
+        this.fetchWorkspacesData();
+      }
+    },
     locationNotFound(notFound) {
       if (notFound) this.leaveUnreachableLocation();
     },
@@ -262,13 +282,33 @@ export default {
         // deleted the fetch fails harmlessly and the tree stays put. Crucially,
         // we must NOT clearSelection() here: that would wipe a valid sub-folder
         // selection just because it wasn't pre-loaded.
-        this.safeNavigate('replace', { query: { fid: nodeId } });
+        this.restoreFolder(nodeId);
       } catch (error) {
         console.error(
           '[BsSidebarWorkspaceTree] Error restoring selected node:',
           error
         );
       }
+    },
+    // A super admin reopens a saved folder only if it is in the selected
+    // group: a folder of another group would select that group again
+    // (ADR 0002, amended).
+    async restoreFolder(folderId) {
+      if (this.canManagePlatform) {
+        try {
+          const folder = await this.$axios.$get(getFolder(folderId));
+          if (String(folder._company) !== String(this.selectedGroupId)) {
+            this.clearSelection();
+            this.selectFirstWorkspace();
+            return;
+          }
+        } catch (error) {
+          this.clearSelection();
+          this.selectFirstWorkspace();
+          return;
+        }
+      }
+      this.safeNavigate('replace', { query: { fid: folderId } });
     },
     saveSelectedNode(nodeId, nodeType) {
       try {
@@ -450,7 +490,11 @@ export default {
       });
     },
     hasRightToCreateFolder(item) {
-      return item.hasAccess && canCreateFolder(item?.id, item);
+      return (
+        this.can(CAPABILITIES.FOLDER_MANAGE) &&
+        item.hasAccess &&
+        canCreateFolder(item?.id, item)
+      );
     },
     openNewFolderModal(event, item) {
       event.stopPropagation();
@@ -519,7 +563,11 @@ export default {
       }
     },
     checkIfAuthorizedFolderMenu(item) {
-      return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+      return (
+        this.can(CAPABILITIES.FOLDER_MANAGE) &&
+        item.hasAccess &&
+        item?.type === SPACE_TYPE.FOLDER
+      );
     },
     checkIfAuthorizedWorkspaceMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
@@ -769,13 +817,16 @@ export default {
         onClick: () => this.displayMoveModal(item),
       });
 
-      actions.push({
-        key: 'delete',
-        icon: Trash2,
-        text: 'global.delete',
-        variant: 'danger',
-        onClick: () => this.displayDeleteModal(item),
-      });
+      // Deleting a folder deletes the emails it holds.
+      if (this.can(CAPABILITIES.FOLDER_DELETE)) {
+        actions.push({
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
 
       return actions;
     },

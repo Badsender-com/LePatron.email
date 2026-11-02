@@ -46,7 +46,11 @@ module.exports = {
     },
   },
   router: {
-    middleware: ['maintenance-check', 'authentication-check'],
+    middleware: [
+      'maintenance-check',
+      'authentication-check',
+      'select-route-group',
+    ],
   },
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },
@@ -101,7 +105,6 @@ module.exports = {
   treeShake: true,
   env: {
     APP_VERSION: pkg.version,
-    ADMIN_USERNAME: config.admin.username,
     API_PREFIX: config.nuxt.API_PREFIX,
     HELP_URL: config.helpUrl,
     // API_BASE_URL: config.apiBaseURL,

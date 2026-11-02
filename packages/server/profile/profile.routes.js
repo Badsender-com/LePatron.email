@@ -6,7 +6,12 @@ const router = express.Router();
 
 const profiles = require('./profile.controller.js');
 
-const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_ADMIN,
+  GUARD_CAN,
+} = require('../account/auth.guard.js');
+const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 
 router.post('/', GUARD_ADMIN, profiles.createProfile);
@@ -29,7 +34,7 @@ router.post('/:profileId', GUARD_ADMIN, profiles.updateProfile);
 // routes that export or send it (see require-json-body.js).
 router.post(
   '/:mailingId/send-campaign-mail',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_EXPORT),
   requireJsonBody,
   profiles.sendCampaignMail
 );

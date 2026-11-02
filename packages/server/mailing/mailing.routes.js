@@ -5,7 +5,12 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_ADMIN,
+  GUARD_CAN,
+} = require('../account/auth.guard.js');
+const { CAPABILITIES: C } = require('../../shared/access/roles.js');
 const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
 const { GUARD_EMAIL_METADATA } = require('./email-metadata.guard.js');
 const mailings = require('./mailing.controller.js');
@@ -21,46 +26,54 @@ router.get('', GUARD_USER, mailings.list);
 // Must be declared before the '/:mailingId' routes below, otherwise "tags"
 // would be captured as a mailingId.
 router.get('/tags', GUARD_USER, mailings.listTags);
-router.post('', GUARD_USER, mailings.create);
-router.patch('/:mailingId', GUARD_USER, mailings.rename);
+router.post('', GUARD_CAN(C.MAILING_CREATE), mailings.create);
+router.patch('/:mailingId', GUARD_CAN(C.MAILING_ORGANIZE), mailings.rename);
 router.get('/:mailingId/preview', GUARD_USER, mailings.previewHtml);
 router.get('/:mailingId/esp-ids', GUARD_USER, mailings.readMailingEpsIds);
-router.delete('/:mailingId', GUARD_USER, mailings.delete);
-router.post('/copy', GUARD_USER, mailings.copy);
-router.post('/:mailingId/move', GUARD_USER, mailings.move);
-router.post('/move-many', GUARD_USER, mailings.moveMany);
+router.delete('/:mailingId', GUARD_CAN(C.MAILING_DELETE), mailings.delete);
+router.post('/copy', GUARD_CAN(C.MAILING_ORGANIZE), mailings.copy);
+router.post('/:mailingId/move', GUARD_CAN(C.MAILING_ORGANIZE), mailings.move);
+router.post('/move-many', GUARD_CAN(C.MAILING_ORGANIZE), mailings.moveMany);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_SEND_TEST),
   requireJsonBody,
   mailings.sendTestMail
 );
 router.post(
   '/:mailingId/mosaico/download-zip',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_EXPORT),
   requireJsonBody,
   mailings.downloadZip
 );
 
 router.post(
   '/download-multiple-zip',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_EXPORT),
   requireJsonBody,
   mailings.downloadMultipleZip
 );
 
 router.patch(
   '/:mailingId/metadata',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_EDIT_CONTENT),
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
 );
-router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
+router.put(
+  '/:mailingId/mosaico',
+  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  mailings.updateMosaico
+);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
-router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);
+router.post(
+  '/:mailingId/duplicate',
+  GUARD_CAN(C.MAILING_ORGANIZE),
+  mailings.duplicate
+);
 router.post(
   '/:mailingId/duplicate-translate',
-  GUARD_USER,
+  GUARD_CAN(C.MAILING_ORGANIZE),
   translation.duplicateAndTranslate
 );
 router.post(
@@ -69,7 +82,7 @@ router.post(
   mailings.transferToUser
 );
 router.get('/:mailingId', GUARD_USER, mailings.read);
-router.put('', GUARD_USER, mailings.bulkUpdate);
+router.put('', GUARD_CAN(C.MAILING_ORGANIZE), mailings.bulkUpdate);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

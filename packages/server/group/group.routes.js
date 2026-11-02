@@ -11,9 +11,20 @@ const {
   guard,
   GUARD_USER,
 } = require('../account/auth.guard.js');
-const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+const { isObjectIdString } = require('../utils/model.js');
+
+// A page reloaded without a group in hand used to call `/groups/undefined/…`,
+// which failed on the cast of the id as a server error. Every `:groupId` that
+// is not an id is refused here, before any guard or controller reads it.
+router.param('groupId', (req, res, next, groupId) => {
+  if (!isObjectIdString(groupId)) {
+    return next(createError(400, ERROR_CODES.INVALID_GROUP_PARAM));
+  }
+  return next();
+});
 
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
@@ -26,7 +37,7 @@ router.get('/:groupId', guard(), GUARD_CAN_ACCESS_GROUP, groups.read);
 
 router.put(
   '/:groupId',
-  guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]),
+  GUARD_GROUP_ADMIN,
   GUARD_CAN_ACCESS_GROUP,
   groups.update
 );

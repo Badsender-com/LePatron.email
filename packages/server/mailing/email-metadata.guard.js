@@ -3,6 +3,8 @@
 const createError = require('http-errors');
 const { Groups } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 /**
  * Middleware that rejects the request when the caller's company has
@@ -26,7 +28,7 @@ async function guardEmailMetadata(req, res, next) {
       return next(createError(401));
     }
 
-    if (user.isAdmin) {
+    if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
       return next();
     }
 

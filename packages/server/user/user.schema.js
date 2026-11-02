@@ -28,7 +28,7 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiSuccess {String} lang selected langue of the user
  * @apiSuccess {Boolean} isReinitialized wether the password has been reinitialized or not
  * @apiSuccess {Boolean} isDeactivated wether this account has been deactivated or not
- * @apiSuccess {Boolean} isAdmin wether this account has admin status
+ * @apiSuccess {String} role one of the product's roles (packages/shared/access/roles.js)
  * @apiSuccess {String} status on string of `deactivated` | `confirmed` | `password-mail-sent` | `to-be-initialized`
  * @apiSuccess {Object} group The group it belongs to
  * @apiSuccess {String} group.id
@@ -44,7 +44,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
+      enum: Object.values(Roles),
       required: false,
     },
     externalUsername: {
@@ -92,6 +92,9 @@ const UserSchema = Schema(
       select: false,
     },
     lastActivity: { type: Date, default: Date.now },
+    // The group a super admin works in (ADR 0002, amended): resolved on every
+    // request by account/selected-group.js, fallbacks included.
+    _selectedGroup: { type: ObjectId, ref: GroupModel },
     localStorage: {
       type: Map,
       of: Schema.Types.Mixed,
@@ -125,6 +128,14 @@ UserSchema.plugin(mongooseHidden, {
   },
 });
 
+// The links in the emails use the scheme the site is served with: https
+// everywhere but in development, as the FORCE HTTPS middleware of index.js
+// decides (`forcessl` arrives as a string from the environment, "false"
+// included, so it cannot tell).
+function siteOrigin() {
+  return `http${config.isDev ? '' : 's'}://${config.host}`;
+}
+
 function encodePassword(password) {
   if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
@@ -152,16 +163,6 @@ UserSchema.virtual('isReinitialized').get(function () {
   return false;
 });
 
-// for better session handling
-UserSchema.virtual('isAdmin').get(function () {
-  return false;
-});
-
-UserSchema.virtual('isGroupAdmin').get(function () {
-  const user = this;
-  return user.role === Roles.GROUP_ADMIN;
-});
-
 UserSchema.methods.activate = function activate() {
   const user = this;
   user.isDeactivated = false;
@@ -172,19 +173,31 @@ UserSchema.methods.deactivate = function deactivate() {
   const user = this;
   user.password = undefined;
   user.token = undefined;
+  user.tokenExpire = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
+// `type` is 'admin' when an administrator resets the account (the current
+// password stops working at once and the open sessions end) or 'user' when
+// the person asked for a new one (the current password and the open sessions
+// keep working until the emailed link is used, so that asking in someone's
+// name locks nobody out).
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = undefined;
+  if (type !== 'user') {
+    user.password = undefined;
+    // No session carries this id: the session validation ends them all.
+    user.activeSessionId = randToken.generate(30);
+  }
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
+  const resetUrl = `${siteOrigin()}/account/${updatedUser.email}/password/${
+    user.token
+  }`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
@@ -208,7 +221,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   lang = lang || 'en';
 
   const updatedUser = await user.save();
-  const loginUrl = `http://${config.host}/account/login`;
+  const loginUrl = `${siteOrigin()}/account/login`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
@@ -224,6 +237,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
 };
 
 UserSchema.methods.comparePassword = function comparePassword(password) {
+  if (!this.password) return false;
   return bcrypt.compareSync(password, this.password);
 };
 

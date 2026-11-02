@@ -1,7 +1,14 @@
 <script>
-import * as userStatusHelpers from '~/helpers/user-status.js';
+import { mapGetters } from 'vuex';
 import BsUserActions from '~/components/user/actions.vue';
-import { Roles } from '~/helpers/constants/roles';
+import { Roles, getRoleLabelKey } from '~/helpers/constants/roles';
+import {
+  roleChip,
+  roleRank,
+  mailActionOf,
+  rowActionKeys,
+} from '~/helpers/user-row-actions.js';
+import { USER, USER_CAPABILITIES } from '~/store/user';
 import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -14,7 +21,7 @@ export default {
     BsRowActions,
     LucideUsers: Users,
   },
-  model: { prop: 'loading', event: 'update' },
+  model: { prop: 'loading', event: 'update:loading' },
   props: {
     users: { type: Array, default: () => [] },
     hiddenCols: { type: Array, default: () => [] },
@@ -23,30 +30,59 @@ export default {
   data() {
     return {
       selectedUser: { group: {} },
-      roles: Roles,
     };
   },
   computed: {
+    ...mapGetters(USER, { capabilities: USER_CAPABILITIES }),
     tableHeaders() {
+      // Columns are styled by class, not by position: callers hide columns.
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        { text: this.$t('users.email'), align: 'left', value: 'email' },
-        { text: '', value: 'role', sortable: false, width: '80px' },
+        {
+          text: this.$t('users.email'),
+          align: 'left',
+          value: 'email',
+          cellClass: 'col-email',
+        },
+        {
+          text: this.$t('users.role'),
+          value: 'role',
+          align: 'center',
+          width: '130px',
+          sort: (a, b) => roleRank(a) - roleRank(b),
+          cellClass: 'col-role',
+        },
         {
           text: this.$tc('global.group', 1),
           align: 'left',
           value: 'group',
           sort: (a, b) => String(b.name).localeCompare(a.name),
         },
-        { text: this.$t('global.status'), value: 'status', align: 'center' },
-        { text: this.$t('users.lang'), value: 'lang', align: 'center' },
-        { text: this.$t('global.createdAt'), value: 'createdAt' },
+        {
+          text: this.$t('global.status'),
+          value: 'status',
+          align: 'center',
+          cellClass: 'col-status',
+        },
+        {
+          text: this.$t('users.lang'),
+          value: 'lang',
+          align: 'center',
+          cellClass: 'col-lang',
+        },
+        {
+          text: this.$t('global.createdAt'),
+          value: 'createdAt',
+          cellClass: 'col-created-at',
+        },
         {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
           align: 'right',
           width: '140px',
+          class: 'col-actions',
+          cellClass: 'col-actions',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
@@ -55,19 +91,18 @@ export default {
         return this.loading;
       },
       set(newLoading) {
-        this.$emit('update', newLoading);
+        this.$emit('update:loading', newLoading);
       },
     },
   },
   methods: {
+    // A super admin is managed from the super admins screen and the global
+    // user page, never from their group's settings (ADR 0002).
     userPath(user) {
       const groupId = user.group?.id || this.$route.params.groupId;
-      return groupId
+      return groupId && user.role !== Roles.SUPER_ADMIN
         ? `/groups/${groupId}/settings/users/${user.id}`
         : `/users/${user.id}`;
-    },
-    getStatusActions(status) {
-      return userStatusHelpers.getStatusActions(status);
     },
     getStatusColor(status) {
       const colors = {
@@ -91,6 +126,17 @@ export default {
     },
     isActiveStatus(status) {
       return status === 'confirmed' || status === 'saml-authentication';
+    },
+    getRoleChip(role) {
+      return roleChip(role);
+    },
+    getRoleLabel(role) {
+      if (role === Roles.SUPER_ADMIN)
+        return this.$t('users.roles.chip.superAdmin');
+      if (role === Roles.GROUP_ADMIN)
+        return this.$t('users.roles.chip.groupAdmin');
+      const labelKey = getRoleLabelKey(role);
+      return labelKey ? this.$t(labelKey) : role;
     },
     resetPassword(user) {
       this.selectedUser = user;
@@ -116,73 +162,42 @@ export default {
       this.$emit('update', user);
     },
     navigateToUser(user) {
-      const groupId = user.group?.id || this.$route.params.groupId;
-      if (groupId) {
-        this.$router.push(`/groups/${groupId}/settings/users/${user.id}`);
-      } else {
-        this.$router.push(`/users/${user.id}`);
-      }
+      this.$router.push(this.userPath(user));
     },
-    // Returns the i18n KEY, not the translated string: BsRowActions calls
-    // $t(action.text) on its side, so returning $t(...) here would translate
-    // twice and fall back to the literal string in every locale.
-    getMailActionTooltipKey(status) {
-      const actions = this.getStatusActions(status);
-      if (actions.resetPassword) return 'users.passwordTooltip.reset';
-      if (actions.sendPassword) return 'users.passwordTooltip.send';
-      if (actions.reSendPassword) return 'users.passwordTooltip.resend';
-      return '';
-    },
-    handleMailAction(user) {
-      const actions = this.getStatusActions(user.status);
-      if (actions.resetPassword) return this.resetPassword(user);
-      if (actions.sendPassword) return this.sendPassword(user);
-      if (actions.reSendPassword) return this.resendPassword(user);
-    },
-    showMailAction(status) {
-      const actions = this.getStatusActions(status);
-      return (
-        actions.resetPassword || actions.sendPassword || actions.reSendPassword
-      );
-    },
+    // `text` is an i18n KEY: BsRowActions translates it.
     buildQuickActions(item) {
-      const actions = [];
-      const statusActions = this.getStatusActions(item.status);
-
-      if (statusActions.activate) {
-        actions.push({
-          key: 'activate',
+      const mail = mailActionOf(item.status);
+      const MAIL_METHODS = {
+        resetPassword: this.resetPassword,
+        sendPassword: this.sendPassword,
+        reSendPassword: this.resendPassword,
+      };
+      const ACTIONS = {
+        activate: {
           icon: UserCheck,
           text: 'global.enable',
           onClick: () => this.activate(item),
-        });
-      } else if (item.status !== 'to-be-initialized') {
-        actions.push({
-          key: 'deactivate',
+        },
+        deactivate: {
           icon: UserX,
           text: 'global.disable',
           onClick: () => this.deactivate(item),
-        });
-      }
-
-      if (this.showMailAction(item.status)) {
-        const isReset = statusActions.resetPassword;
-        actions.push({
-          key: 'mail-action',
-          icon: isReset ? RotateCcw : Send,
-          text: this.getMailActionTooltipKey(item.status),
-          onClick: () => this.handleMailAction(item),
-        });
-      }
-
-      actions.push({
-        key: 'edit',
-        icon: Pencil,
-        text: 'global.edit',
-        onClick: () => this.navigateToUser(item),
-      });
-
-      return actions;
+        },
+        'mail-action': mail && {
+          icon: mail.action === 'resetPassword' ? RotateCcw : Send,
+          text: mail.textKey,
+          onClick: () => MAIL_METHODS[mail.action](item),
+        },
+        edit: {
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.navigateToUser(item),
+        },
+      };
+      return rowActionKeys(item, this.capabilities).map((key) => ({
+        key,
+        ...ACTIONS[key],
+      }));
     },
   },
 };
@@ -215,12 +230,12 @@ export default {
 
       <template #item.role="{ item }">
         <v-chip
-          v-if="item.role === roles.GROUP_ADMIN"
+          v-if="item.role"
           x-small
-          color="accent"
-          dark
+          :color="getRoleChip(item.role).color"
+          :text-color="getRoleChip(item.role).textColor"
         >
-          Admin
+          {{ getRoleLabel(item.role) }}
         </v-chip>
       </template>
 
@@ -287,14 +302,12 @@ export default {
 }
 
 .bs-users-table {
-  /* Email column */
-  ::v-deep .v-data-table tbody td:nth-child(2) {
+  ::v-deep .v-data-table tbody td.col-email {
     font-family: var(--font-mono);
     font-size: 12px !important;
   }
 
-  /* Role column */
-  ::v-deep .v-data-table tbody td:nth-child(3) {
+  ::v-deep .v-data-table tbody td.col-role {
     text-align: center;
 
     .v-chip {
@@ -305,8 +318,7 @@ export default {
     }
   }
 
-  /* Status column */
-  ::v-deep .v-data-table tbody td:nth-child(5) {
+  ::v-deep .v-data-table tbody td.col-status {
     text-align: center;
 
     .v-chip {
@@ -317,23 +329,20 @@ export default {
     }
   }
 
-  /* Lang column */
-  ::v-deep .v-data-table tbody td:nth-child(6) {
+  ::v-deep .v-data-table tbody td.col-lang {
     text-align: center;
     color: rgba(0, 0, 0, 0.54) !important;
     font-weight: 600 !important;
     font-size: 11px !important;
   }
 
-  /* CreatedAt column */
-  ::v-deep .v-data-table tbody td:nth-child(7) {
+  ::v-deep .v-data-table tbody td.col-created-at {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  /* Actions column */
-  ::v-deep .v-data-table tbody td:last-child,
-  ::v-deep .v-data-table thead th:last-child {
+  ::v-deep .v-data-table tbody td.col-actions,
+  ::v-deep .v-data-table thead th.col-actions {
     text-align: right !important;
     width: 140px;
     white-space: nowrap;

@@ -309,7 +309,7 @@ describe('planMissingDefaultEmailTypes', () => {
 });
 
 describe('addMissingDefaultEmailTypes', () => {
-  const user = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY } };
+  const user = { group: { id: COMPANY } };
 
   const mockExisting = (items) => {
     TaxonomyItems.find.mockReturnValue({
@@ -431,7 +431,7 @@ describe('addMissingDefaultEmailTypes', () => {
 });
 
 describe('previewMissingDefaultEmailTypes', () => {
-  const user = { isAdmin: false, isGroupAdmin: true, group: { id: COMPANY } };
+  const user = { group: { id: COMPANY } };
 
   it('answers what would be created, and writes nothing', async () => {
     TaxonomyItems.find.mockReturnValue({

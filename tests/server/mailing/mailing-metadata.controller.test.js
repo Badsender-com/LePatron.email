@@ -28,7 +28,7 @@ const mailingMetadataService = require('../../../packages/server/mailing/mailing
 const controller = require('../../../packages/server/mailing/mailing-metadata.controller.js');
 
 const MAILING_ID = '507f1f77bcf86cd799439001';
-const user = { id: 'user-1', isAdmin: false };
+const user = { id: 'user-1' };
 
 function makeMailing(overrides = {}) {
   return {

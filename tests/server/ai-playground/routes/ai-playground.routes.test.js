@@ -1,6 +1,7 @@
 'use strict';
 
 const { Types } = require('mongoose');
+const config = require('../../../../packages/server/node.config.js');
 
 jest.mock(
   '../../../../packages/server/ai-playground/services/scenario.service',
@@ -33,7 +34,13 @@ jest.mock(
 );
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {
-    if (req.user && req.user.isAdmin) return next();
+    // The real rule: the platform capability, read from the role or the
+    // bootstrap account's identity.
+    const permissions = require('../../../../packages/server/account/permissions.js');
+    const {
+      CAPABILITIES,
+    } = require('../../../../packages/shared/access/roles.js');
+    if (permissions.can(req.user, CAPABILITIES.PLATFORM_MANAGE)) return next();
     return res.status(401).json({ message: 'Unauthorized' });
   },
 }));
@@ -48,11 +55,20 @@ const runService = require('../../../../packages/server/ai-playground/services/r
 
 const router = require('../../../../packages/server/ai-playground/ai-playground.routes');
 
-function makeApp({ asAdmin = true } = {}) {
+const SUPER_ADMIN_ID = '507f1f77bcf86cd799439101';
+
+function makeApp({ asAdmin = true, asSuperAdmin = false } = {}) {
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => {
-    req.user = asAdmin ? { isAdmin: true, id: 'admin' } : { id: 'someone' };
+    // The admin stub is the bootstrap account: the one admin with no
+    // document, hence no owner on what it creates. A persisted super admin
+    // (ADR 0002) is an admin with a document, and owns what it creates.
+    if (asSuperAdmin) {
+      req.user = { role: 'super_admin', id: SUPER_ADMIN_ID };
+    } else {
+      req.user = asAdmin ? { id: config.admin.id } : { id: 'someone' };
+    }
     next();
   });
   app.use('/api/ai-playground', router);
@@ -257,6 +273,22 @@ describe('ai-playground HTTP routes', () => {
       { rating: 'positive', score: 5, comment: 'great' },
       // userIdOf() returns null for the admin pseudo-user.
       null
+    );
+  });
+
+  it('PATCH /runs/:id/feedback records a persisted super admin as the rater', async () => {
+    runService.setRunFeedback.mockResolvedValue({
+      _id: 'run-1',
+      feedback: { rating: 'positive' },
+    });
+    const res = await request(makeApp({ asSuperAdmin: true }))
+      .patch('/api/ai-playground/runs/run-1/feedback')
+      .send({ rating: 'positive' });
+    expect(res.status).toBe(200);
+    expect(runService.setRunFeedback).toHaveBeenCalledWith(
+      'run-1',
+      { rating: 'positive' },
+      SUPER_ADMIN_ID
     );
   });
 });

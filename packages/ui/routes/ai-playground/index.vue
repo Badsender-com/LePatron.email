@@ -20,7 +20,7 @@ export default {
     LucideStar: Star,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
+  meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios }) {
     try {
       const [res, facets] = await Promise.all([

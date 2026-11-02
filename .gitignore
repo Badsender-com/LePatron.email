@@ -23,6 +23,7 @@
 /TODO.md
 /packages/server/md5public.json
 /cypress/videos
+/cypress/screenshots
 
 # Logs
 logs

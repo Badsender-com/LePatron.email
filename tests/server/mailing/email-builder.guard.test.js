@@ -40,14 +40,18 @@ describe('GUARD_EMAIL_BUILDER', () => {
     expect(Groups.findById).not.toHaveBeenCalled();
   });
 
+  // Kept by ADR 0002, amended: a module disabled for the selected group is
+  // locked on the screen only; the server never refuses a super admin for it.
   it('lets a super-admin through without checking the flag', async () => {
-    const err = await runGuard({ user: { isAdmin: true } });
+    const err = await runGuard({
+      user: { role: 'super_admin' },
+    });
     expect(err).toBeUndefined();
     expect(Groups.findById).not.toHaveBeenCalled();
   });
 
   it('rejects when the user has no group attached', async () => {
-    const err = await runGuard({ user: { isAdmin: false } });
+    const err = await runGuard({ user: {} });
     expect(err).toBeDefined();
     expect(err.status).toBe(400);
     expect(err.message).toBe(ERROR_CODES.GROUP_NOT_FOUND);
@@ -56,7 +60,7 @@ describe('GUARD_EMAIL_BUILDER', () => {
   it('rejects with 404 when the group does not exist anymore', async () => {
     mockGroup(null);
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: GROUP_ID } },
+      user: { group: { id: GROUP_ID } },
     });
     expect(err).toBeDefined();
     expect(err.status).toBe(404);
@@ -65,7 +69,7 @@ describe('GUARD_EMAIL_BUILDER', () => {
   it('lets the user through when enableEmailBuilder is true', async () => {
     mockGroup({ enableEmailBuilder: true });
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: GROUP_ID } },
+      user: { group: { id: GROUP_ID } },
     });
     expect(err).toBeUndefined();
   });
@@ -73,7 +77,7 @@ describe('GUARD_EMAIL_BUILDER', () => {
   it('lets the user through when enableEmailBuilder is undefined (legacy group, default true)', async () => {
     mockGroup({});
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: GROUP_ID } },
+      user: { group: { id: GROUP_ID } },
     });
     expect(err).toBeUndefined();
   });
@@ -81,7 +85,7 @@ describe('GUARD_EMAIL_BUILDER', () => {
   it('REJECTS with 403 when enableEmailBuilder is explicitly false', async () => {
     mockGroup({ enableEmailBuilder: false });
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: GROUP_ID } },
+      user: { group: { id: GROUP_ID } },
     });
     expect(err).toBeDefined();
     expect(err.status).toBe(403);
@@ -93,7 +97,7 @@ describe('GUARD_EMAIL_BUILDER', () => {
       throw new Error('boom');
     });
     const err = await runGuard({
-      user: { isAdmin: false, group: { id: GROUP_ID } },
+      user: { group: { id: GROUP_ID } },
     });
     expect(err).toBeDefined();
     expect(err.message).toBe('boom');

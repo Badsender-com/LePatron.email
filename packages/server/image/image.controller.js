@@ -1,7 +1,6 @@
 'use strict';
 
 const sharp = require('sharp');
-const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { inspect } = require('util');
 const stream = require('stream');
@@ -15,9 +14,6 @@ const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages } = require('../common/models.common.js');
 const imageService = require('./image.service');
-const mailingService = require('../mailing/mailing.service.js');
-const ERROR_CODES = require('../constant/error-codes.js');
-const logger = require('../utils/logger.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -27,9 +23,6 @@ module.exports = {
   placeholder,
   checkImageCache,
   checkSizes,
-  list: asyncHandler(list),
-  create: asyncHandler(create),
-  createFromUrl: asyncHandler(createFromUrl),
   read,
   destroy,
 };
@@ -470,96 +463,6 @@ function read(req, res, next) {
 /// ///
 // EDITOR SPECIFIC
 /// ///
-
-/**
- * @api {get} /images/gallery/:mailingOrTemplateId gallery images list
- * @apiPermission public
- * @apiName GetGalleryImages
- * @apiGroup Images
- *
- * @apiParam {string} mailingOrTemplateId
- *
- * @apiUse galleryImages
- *
- */
-
-// Those functions are accessible only from the editor
-// wireframes assets (preview & template fixed assets)…
-// …are handled separately in wireframes.js#update
-async function list(req, res) {
-  const { mongoId } = req.params;
-
-  const gallery = await imageService.findOrCreateGallery(mongoId);
-  res.json({ files: gallery.files });
-}
-
-/**
- * @api {post} /images/gallery/:mailingOrTemplateId gallery images upload
- * @apiPermission public
- * @apiName PostGalleryImages
- * @apiGroup Images
- *
- * @apiParam {string} mailingOrTemplateId
- *
- * @apiUse galleryImages
- *
- */
-
-// upload & update gallery
-async function create(req, res) {
-  const { mongoId } = req.params;
-  const multipartOptions = {
-    prefix: mongoId,
-    formatter: 'editor',
-  };
-  const uploads = await fileManager.parseMultipart(req, multipartOptions);
-  await imageService.addFiles(mongoId, uploads.files);
-
-  // send only the new uploads
-  // front-application will iterate over them to update the gallery previews
-  res.json(uploads);
-}
-
-/**
- * @api {post} /images/gallery/:mongoId/from-url download an external image into the gallery
- * @apiPermission user
- * @apiName PostGalleryImageFromUrl
- * @apiGroup Images
- *
- * @apiParam {string} mongoId
- * @apiParam (Body) {String} url External image URL to download
- *
- * @apiUse galleryImages
- */
-async function createFromUrl(req, res) {
-  const { mongoId } = req.params;
-  const { url: imageUrl } = req.body;
-
-  if (!imageUrl) {
-    throw new createError.BadRequest('url is required');
-  }
-
-  // Authorize the target gallery before doing anything else. `mongoId` is a
-  // mailing id (the content-feed modal always passes currentMailing().id):
-  // findOneForUser validates the ObjectId format — so a crafted value can't
-  // reach the filename builder in image.service — and enforces group
-  // ownership, so a user can't write into another group's gallery. Throws
-  // NotFound on both invalid and cross-tenant ids.
-  await mailingService.findOneForUser(mongoId, req.user);
-
-  let uploadedFile;
-  try {
-    uploadedFile = await imageService.createFromUrl(mongoId, imageUrl);
-  } catch (error) {
-    // Log the real cause server-side, but return a generic message: the
-    // upstream fetch error would otherwise leak internal reachability info
-    // (SSRF oracle) — connection refused vs 404 vs timeout on a probed host.
-    logger.error('Failed to download image from url', imageUrl, error.message);
-    throw new createError.BadGateway(ERROR_CODES.IMAGE_DOWNLOAD_FAILED);
-  }
-
-  res.json({ files: [uploadedFile] });
-}
 
 // destroy an image is not a real deletion…
 // …because those images can be still used inside creations:

@@ -13,10 +13,18 @@ export default {
     actionButtonColor: { type: String, default: 'error' },
   },
   data() {
-    return { show: false };
+    return { show: false, confirmed: false };
+  },
+  watch: {
+    // Closed any way but the action (cancel button, Escape, a click outside):
+    // `cancel` lets the page undo what led to the question.
+    show(isShown) {
+      if (!isShown && !this.confirmed) this.$emit('cancel');
+    },
   },
   methods: {
     open() {
+      this.confirmed = false;
       this.show = true;
     },
     close() {
@@ -24,6 +32,7 @@ export default {
       this.$emit('close');
     },
     action() {
+      this.confirmed = true;
       this.close();
       this.$emit('confirm');
     },

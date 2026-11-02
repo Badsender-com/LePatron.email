@@ -2,6 +2,7 @@
 
 const logger = require('../utils/logger.js');
 const { Users } = require('../common/models.common.js');
+const { isBootstrapAccount } = require('./bootstrap-account.js');
 
 /**
  * Session validation middleware factory
@@ -16,8 +17,9 @@ function sessionValidationMiddleware() {
         return next();
       }
 
-      // Skip validation for admin users (admins can have multiple sessions)
-      if (req.user.isAdmin) {
+      // The bootstrap account has no recorded session and may hold several;
+      // a persisted super admin is validated like any user.
+      if (isBootstrapAccount(req.user)) {
         return next();
       }
 

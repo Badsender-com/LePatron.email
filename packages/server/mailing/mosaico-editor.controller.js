@@ -7,6 +7,9 @@ const simpleI18n = require('../helpers/server-simple-i18n.js');
 const brandColors = require('../helpers/brand-colors.js');
 const modelsUtils = require('../utils/model.js');
 const { Mailings } = require('../common/models.common.js');
+const { selectGroup } = require('../account/selected-group.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 
 module.exports = {
   exposeHelpersToPug: exposeHelpersToPug,
@@ -55,6 +58,13 @@ async function render(req, res) {
     user.lang
   );
   if (!mailingForMosaico) return res.redirect('/404');
+
+  // Opening a mailing of another group selects that group for a super admin:
+  // the resource wins, and the editor's requests then read its group
+  // (ADR 0002, amended).
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
+    await selectGroup(req, mailingForMosaico.metadata.groupId);
+  }
 
   res.render('mosaico-editor', {
     data: mailingForMosaico,

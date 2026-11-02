@@ -6,6 +6,7 @@ const {
   IMAGE_FILE_URL_REGEX,
 } = require('./export-image-urls.js');
 const mongoose = require('mongoose');
+const { isBootstrapAccount } = require('../account/bootstrap-account.js');
 const {
   NotFound,
   InternalServerError,
@@ -56,6 +57,12 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
+const {
+  resourceGroupIdOf,
+  assertSameGroup,
+} = require('../account/request-scope.js');
 const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
@@ -66,6 +73,7 @@ module.exports = {
   findOne,
   findOneForUser,
   assertUserCanEditMailing,
+  userCanEditMailing,
   buildMailingCopy,
   renameMailing,
   deleteMailing,
@@ -112,29 +120,24 @@ async function listMailingForWorkspaceOrFolder({
     group = await Groups.findById(workspace.group);
   }
 
-  if (!user.isGroupAdmin) {
-    if (
-      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
-        workspace,
-        user,
-        group
-      )
-    ) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
+  if (!permissions.canReadWorkspace(user, workspace, group)) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+  // A list names its workspace or folder: it reads that resource's group
+  // (ADR 0002, amended).
+  const groupId = resourceGroupIdOf(user, workspace.group);
 
   if (parentFolderId) {
     mailings = await findMailings({
       parentFolderId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
   } else {
     mailings = await findMailings({
       workspaceId,
-      user,
+      groupId,
       paginationJSON,
       filtersJSON,
     });
@@ -198,26 +201,13 @@ async function findMailings(query) {
 async function findTags(query) {
   const { user, workspaceId, parentFolderId } = query;
 
-  // Admins have no `_company` on their user record, so the regular
-  // `addStrictGroupFilter` path produces a corrupt query and `Tag.find`
-  // returns nothing. Derive the relevant company from the workspace or
-  // parent folder being viewed instead.
-  let companyId;
-  if (user?.isAdmin) {
-    if (workspaceId) {
-      const workspace = await Workspaces.findById(workspaceId)
-        .select('_company')
-        .lean();
-      companyId = workspace?._company;
-    } else if (parentFolderId) {
-      const folder = await Folders.findById(parentFolderId)
-        .populate({ path: '_workspace', select: '_company' })
-        .lean();
-      companyId = folder?._workspace?._company;
-    }
-  } else {
-    companyId = user?.group?.id;
-  }
+  // An admin's own company is not the one being viewed (the bootstrap
+  // account has none, a super admin's is the platform group), so filtering
+  // on it would read the wrong company and `Tag.find` would return nothing. Derive the company from the workspace
+  // or parent folder being viewed instead.
+  const companyId = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+    ? await companyOfDestination({ workspaceId, parentFolderId })
+    : user?.group?.id;
 
   if (!companyId) return [];
 
@@ -243,7 +233,7 @@ async function findOne(mailingId) {
 // tenant boundary, so callers that act on behalf of a user (duplicate, copy,
 // duplicate-translate) MUST use this instead to avoid cross-tenant reads:
 // a group admin of group A could otherwise load a mailing of group B by id.
-// Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
+// Super admins are unfiltered, matching addGroupFilter.
 async function findOneForUser(mailingId, user) {
   if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
@@ -272,7 +262,7 @@ async function findOneForUser(mailingId, user) {
  * @throws {Forbidden} when the user has access to neither
  */
 async function assertUserCanEditMailing(user, mailing) {
-  if (user.isAdmin) return;
+  if (permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) return;
 
   const { _workspace, _parentFolder } = mailing;
 
@@ -288,6 +278,25 @@ async function assertUserCanEditMailing(user, mailing) {
 
   if (!hasAccess) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+/**
+ * The same rule as `assertUserCanEditMailing`, as an answer: the editor shows
+ * what a save would get, so a member who may read the workspace but not write
+ * in it gets a read-only editor rather than a refused save.
+ *
+ * @param {Object} user
+ * @param {Object} mailing a Mailings document
+ * @returns {Promise<boolean>}
+ */
+async function userCanEditMailing(user, mailing) {
+  try {
+    await assertUserCanEditMailing(user, mailing);
+    return true;
+  } catch (error) {
+    if (error.status === 403 || error.status === 404) return false;
+    throw error;
   }
 }
 
@@ -326,6 +335,30 @@ function buildMailingCopy(source) {
   return omit(source, MAILING_COPY_OMITTED_FIELDS);
 }
 
+/**
+ * The company a workspace or a folder belongs to.
+ *
+ * @param {Object} destination
+ * @param {string} [destination.workspaceId]
+ * @param {string} [destination.parentFolderId]
+ * @returns {Promise<ObjectId|undefined>}
+ */
+async function companyOfDestination({ workspaceId, parentFolderId }) {
+  if (workspaceId) {
+    const workspace = await Workspaces.findById(workspaceId)
+      .select('_company')
+      .lean();
+    return workspace?._company;
+  }
+  if (parentFolderId) {
+    const folder = await Folders.findById(parentFolderId)
+      .populate({ path: '_workspace', select: '_company' })
+      .lean();
+    return folder?._workspace?._company;
+  }
+  return undefined;
+}
+
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
 async function createInsideWorkspaceOrFolder(mailingData) {
   const {
@@ -344,12 +377,13 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   });
 
   const template = await templateService.findOne({ templateId });
-  templateService.doesUserHaveAccess(user, template);
+  if (!template) throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  await templateService.doesUserHaveAccess(user, template);
 
   let mailParentParam = null;
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
 
     mailParentParam = { workspace: workspaceId };
   }
@@ -368,11 +402,17 @@ async function createInsideWorkspaceOrFolder(mailingData) {
     ...mailParentParam,
   };
 
-  // admin doesn't have valid user id & company
-  if (!user.isAdmin) {
+  // The bootstrap account has no document and no company to sign with. A
+  // persisted super admin signs the mailing like any user, in the company
+  // of the workspace or folder it lands in, not in their own platform group.
+  if (!isBootstrapAccount(user)) {
     mailing.userId = user.id;
     mailing.userName = user.name;
-    mailing.group = user.group.id;
+    mailing.group = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+      ? await companyOfDestination({ workspaceId, parentFolderId })
+      : user.group.id;
+    // A mailing is made from a template of the group it lands in.
+    assertSameGroup(template.group || template._company, mailing.group);
   }
 
   const newMailing = await createMailing(mailing);
@@ -1253,13 +1293,19 @@ async function copyMailing(mailingId, destination, user) {
 
   const copy = buildMailingCopy(source);
 
+  // A copy keeps its group: it goes into a workspace of that group.
   if (workspaceId) {
     const destination = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, destination);
+    assertSameGroup(mailing._company, destination.group);
 
     copy._workspace = destination;
   } else {
     await folderService.hasAccess(folderId, user);
+    const destinationWorkspace = await folderService.getWorkspaceForFolder(
+      folderId
+    );
+    assertSameGroup(mailing._company, destinationWorkspace.group);
 
     const destination = await folderService.getFolder(folderId);
     copy._parentFolder = destination;
@@ -1485,7 +1531,7 @@ async function previewMail(mailingId, user) {
   // mailing of any of its workspaces, member or not, whatever the company's
   // "access to all workspaces" setting. The preview is how a user picks a
   // mailing to copy, and a preview URL can be shared with a colleague.
-  if (!user.isAdmin) {
+  if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
     const workspace = await getOwningWorkspace(mailWithPreview);
     if (workspace) workspaceService.doesUserHaveReadAccess(user, workspace);
   }
@@ -1511,7 +1557,7 @@ async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
   }
 
   if (workspaceId) {
-    await workspaceService.hasAccess(user, workspaceId);
+    await workspaceService.assertAccess(user, workspaceId);
   }
 
   const mailing = await findOne(mailingId);
@@ -1571,6 +1617,8 @@ async function moveMailing(user, mailing, workspaceId, parentFolderId) {
 
   workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
   workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+  // A mailing moves within its group.
+  assertSameGroup(sourceWorkspace.group, destinationWorkspace.group);
 
   const moveResponse = await Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailing.id) },
@@ -1622,9 +1670,16 @@ async function moveManyMailings(user, mailingsIds, destination) {
   // moving to a folder
   if (parentFolderId) {
     await folderService.hasAccess(parentFolderId, user);
+    const destinationWorkspace = await folderService.getWorkspaceForFolder(
+      parentFolderId
+    );
 
     const mailings = await findAllIn(mailingsIds);
     await checkAccessMailingsSource(mailings, user);
+    // Mailings move within their group.
+    mailings.forEach((mailing) =>
+      assertSameGroup(mailing._company, destinationWorkspace.group)
+    );
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
@@ -1648,6 +1703,9 @@ async function moveManyMailings(user, mailingsIds, destination) {
 
     const mailings = await findAllIn(mailingsIds);
     await checkAccessMailingsSource(mailings, user);
+    mailings.forEach((mailing) =>
+      assertSameGroup(mailing._company, destination.group)
+    );
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
@@ -1671,10 +1729,12 @@ async function validateMailExist(mailingId) {
 }
 
 function applyFilters(query) {
-  const { user, workspaceId, parentFolderId, ...restQuery } = query;
+  const { groupId, workspaceId, parentFolderId, ...restQuery } = query;
 
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
-  let workspaceOrFolderFilter = { ...mailingQueryStrictGroup, ...restQuery };
+  let workspaceOrFolderFilter = {
+    _company: mongoose.Types.ObjectId(String(groupId)),
+    ...restQuery,
+  };
 
   if (workspaceId) {
     workspaceOrFolderFilter = {

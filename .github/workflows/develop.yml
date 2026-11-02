@@ -3,8 +3,11 @@ name: Build
 on:
   push:
     branches: [develop]
+  # Every pull request but those into staging (staging.yml), stacked ones
+  # included: a PR into a feature branch is tested too. Deployment stays on a
+  # push to develop.
   pull_request:
-    branches: [develop]
+    branches-ignore: [staging]
 
 jobs:
   build:

@@ -4,39 +4,57 @@
 // https://github.com/awais786327/oauth2orize-examples
 // https://github.com/solderjs/example-oauth2orize-consumer
 
+const crypto = require('crypto');
 const passport = require('passport');
+const bcrypt = require('bcryptjs');
 const LocalStrategy = require('passport-local').Strategy;
 const BasicStrategy = require('passport-http').BasicStrategy;
 const ClientPasswordStrategy = require('passport-oauth2-client-password')
   .Strategy;
 const BearerStrategy = require('passport-http-bearer').Strategy;
 const createError = require('http-errors');
-const { XMLParser } = require('fast-xml-parser');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
+const permissions = require('./permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
+const { GUARD_CAN } = require('./capability.guard.js');
 const logger = require('../utils/logger.js');
+const { normalizeString } = require('../utils/model.js');
 
 const {
   Users,
   OAuthClients,
   OAuthTokens,
-  Groups,
 } = require('../common/models.common.js');
 
+// Compared against when the email is unknown or the account has no password,
+// so that every refusal costs the same time as a wrong password.
+const UNKNOWN_USER_HASH = bcrypt.hashSync('unknown-user', 10);
+
+// The bootstrap account: no document, no role. Its rights come from its
+// identity (account/bootstrap-account.js, account/permissions.js).
 const adminUser = Object.freeze({
-  isAdmin: true,
   id: config.admin.id,
   email: config.emailOptions.from,
   name: 'admin',
 });
 
+// The levels a route can ask for by role, as the capability each one holds.
+const CAPABILITY_OF_LEVEL = {
+  [Roles.GROUP_ADMIN]: CAPABILITIES.GROUP_MANAGE,
+  [Roles.GROUP_ADMIN_TECH]: CAPABILITIES.GROUP_MANAGE_TECH,
+  [Roles.SUPER_ADMIN]: CAPABILITIES.PLATFORM_MANAGE,
+};
+
 module.exports = {
   adminUser,
   guard,
+  GUARD_CAN,
   GUARD_USER: guard([Roles.REGULAR_USER]),
   GUARD_USER_REDIRECT: guard([Roles.REGULAR_USER], true),
   GUARD_GROUP_ADMIN: guard([Roles.GROUP_ADMIN]),
+  GUARD_GROUP_ADMIN_TECH: guard([Roles.GROUP_ADMIN_TECH]),
   GUARD_ADMIN: guard([Roles.SUPER_ADMIN]),
   GUARD_ADMIN_REDIRECT: guard([Roles.SUPER_ADMIN], true),
 };
@@ -45,28 +63,32 @@ module.exports = {
 // GUARD MIDDLEWARE
 /// ///
 
+// Each guard says what it requires in `access`, read by the test that walks
+// every route which writes (tests/server/account/route-access.test.js): a
+// capability, or a signed-in user only, which is not enough to write.
+
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
 function guard(roles = [Roles.REGULAR_USER], redirect) {
-  return (req, res, next) => {
+  const anySignedInUser = roles.includes(Roles.REGULAR_USER);
+  const capabilities = roles
+    .map((role) => CAPABILITY_OF_LEVEL[role])
+    .filter(Boolean);
+
+  const middleware = (req, res, next) => {
     const { user } = req;
-
-    const isUserRoute = roles.includes(Roles.REGULAR_USER);
-    const isGroupUserRoute = roles.includes(Roles.GROUP_ADMIN);
-    const isAdminRoute = roles.includes(Roles.SUPER_ADMIN);
-
-    if (
-      (isAdminRoute && user?.isAdmin) ||
-      (isGroupUserRoute && (user?.isGroupAdmin || user?.isAdmin)) ||
-      (isUserRoute && !!user)
-    ) {
-      return next();
-    }
+    const allowed =
+      !!user &&
+      (anySignedInUser ||
+        capabilities.some((capability) => permissions.can(user, capability)));
+    if (allowed) return next();
 
     redirect
       ? res.redirect('/account/login')
       : next(new createError.Unauthorized());
   };
+  middleware.access = anySignedInUser ? { signedIn: true } : { capabilities };
+  return middleware;
 }
 
 /**
@@ -80,26 +102,42 @@ passport.use(
   new LocalStrategy(async (username, password, done) => {
     // admin
     if (username === config.admin.username) {
-      if (password === config.admin.password) {
+      // Same cost as a stored account, and a comparison that takes the same
+      // time however much of the password is right.
+      await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
+      if (isConfigAdminPassword(password)) {
         return done(null, { ...adminUser });
       }
       return done(null, false, { message: 'password.error.incorrect' });
     }
     // user
     try {
+      // A pending reset does not bar the way in: an invited account has no
+      // password yet, an admin reset cleared it, and both fail below.
       const user = await Users.findOne({
-        email: username,
+        email: normalizeString(username),
         isDeactivated: { $ne: true },
-        token: { $exists: false },
       });
 
-      if (!user) {
-        return done(null, false, { message: 'password.error.nouser' });
-      }
-
-      const isPasswordValid = user.comparePassword(password);
-      if (!isPasswordValid) {
+      // Same message and same cost whether the email is unknown, the account
+      // has no password or the password is wrong.
+      if (!(await passwordMatches(user, password))) {
         return done(null, false, { message: 'password.error.incorrect' });
+      }
+      // Signing in with the password closes a reset the person asked for:
+      // the emailed link stops working, rather than staying valid a week.
+      // Not saving it does not bar the way in.
+      if (user.token) {
+        user.token = undefined;
+        user.tokenExpire = undefined;
+        await user
+          .save()
+          .catch((error) =>
+            logger.error(
+              `[account] pending reset not closed for ${user.id}`,
+              error
+            )
+          );
       }
       return done(null, user);
     } catch (err) {
@@ -109,18 +147,38 @@ passport.use(
   })
 );
 
+// Asynchronous: a sign-in attempt, refused or not, never blocks the process.
+async function passwordMatches(user, password) {
+  if (!user || !user.password) {
+    await bcrypt.compare(String(password), UNKNOWN_USER_HASH);
+    return false;
+  }
+  return bcrypt.compare(String(password), user.password);
+}
+
+function isConfigAdminPassword(password) {
+  const digest = (value) =>
+    crypto.createHash('sha256').update(String(value)).digest();
+  return crypto.timingSafeEqual(
+    digest(password),
+    digest(config.admin.password)
+  );
+}
+
 passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
   if (id === config.admin.id) {
-    return done(null, { ...adminUser });
+    return done(null, permissions.withCapabilities({ ...adminUser }));
   }
 
   try {
+    // A pending reset keeps the session: one asked in someone's name must not
+    // sign them out. An admin reset ends the sessions through the session
+    // tracking instead (see `resetPassword` in user.schema.js).
     const user = await Users.findOneForApi({
       _id: id,
       isDeactivated: { $ne: true },
-      token: { $exists: false },
     });
 
     if (!user) {
@@ -128,7 +186,7 @@ passport.deserializeUser(async (id, done) => {
       return done(null, false);
     }
 
-    done(null, user.toJSON());
+    done(null, permissions.withCapabilities(user.toJSON()));
   } catch (err) {
     logger.error('[Passport] Error deserializing user:', err);
     done(null, false, err);
@@ -194,60 +252,33 @@ passport.use(
 );
 
 const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
-const { samlOptionsFor } = require('./saml-config.js');
+const {
+  samlOptionsForRequest,
+  accountOfResponse,
+} = require('./saml-account.js');
 
 passport.use(
   new MultiSamlStrategy(
     {
       passReqToCallback: true, // makes req available in callback
-      getSamlOptions: async (request, done) => {
-        let email = request.query.email;
-
-        if (!email) {
-          const buff = Buffer.from(request.body.SAMLResponse, 'base64');
-          const parser = new XMLParser({
-            ignoreAttributes: false,
-            trimValues: true,
-          });
-          const jsonObject = parser.parse(buff.toString());
-          email =
-            jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject'][
-              'saml2:NameID'
-            ];
-        }
-
-        const user = await Users.findOne({
-          email: email,
-          isDeactivated: { $ne: true },
-          token: { $exists: false },
-        });
-
-        if (user) {
-          const group = await Groups.findOne({
-            _id: user.group,
-          });
-          // Never options without the identity provider's certificate:
-          // passport-saml verifies a response's signature only when it has one.
-          const samlOptions = samlOptionsFor(group);
-          if (samlOptions) {
-            return done(null, samlOptions);
-          }
-          return done(new Error('Provider informations not found'), null);
-        }
-        return done(new Error('SAML provider not found'), null);
+      getSamlOptions: (request, done) => {
+        samlOptionsForRequest(request).then(
+          (samlOptions) => done(null, samlOptions),
+          (error) => done(error, null)
+        );
       },
     },
     async (req, profile, done) => {
-      const user = await Users.findOne({
-        email: profile.nameID,
-        isDeactivated: { $ne: true },
-        token: { $exists: false },
-      });
-      if (!user)
-        return done(new Error('No user found'), false, {
-          message: 'password.error.nouser',
-        });
-      done(null, user);
+      try {
+        const user = await accountOfResponse(req, profile);
+        // A refusal, not an error: the callback's failureRedirect applies.
+        if (!user) {
+          return done(null, false, { message: 'password.error.nouser' });
+        }
+        done(null, user);
+      } catch (error) {
+        done(error);
+      }
     }
   )
 );

@@ -11,6 +11,7 @@
 // be edited, rather than let the user edit it and then fail to save.
 
 const ko = require('knockout');
+const { userOfRole } = require('../helpers/current-user.js');
 
 const widgetCode = require('../../../packages/editor/src/js/ext/badsender-widget-code.js');
 
@@ -24,14 +25,17 @@ ko.bindingHandlers.button = { init() {} };
 function renderPanel(
   htmlBlockEnabled,
   headCssEditable = htmlBlockEnabled,
-  headCssReadOnly = false
+  headCssReadOnly = false,
+  currentUser = userOfRole('regular_user')
 ) {
   const plugin = widgetCode();
   const vm = {
     metadata: { htmlBlockEnabled },
     t: (key) => key,
+    currentUser,
     htmlCode: ko.observable('<p>stored</p>'),
     isHeadCssEditable: () => headCssEditable,
+    canEditHeadCss: () => headCssEditable,
     isHeadCssReadOnly: () => headCssReadOnly,
     openHeadCssEditor: jest.fn(),
     openHeadCssViewer: jest.fn(),
@@ -71,6 +75,23 @@ describe('HTML code widget', () => {
     const { button, message } = renderPanel(true);
     expect(button.style.display).not.toBe('none');
     expect(message.style.display).toBe('none');
+  });
+
+  // A writer and a reviewer edit no structure: the markup is the block. The
+  // template flag is on, so the sentence about the template must not show.
+  it('offers nothing to a user without structure rights', () => {
+    const { vm, toggle, button, message } = renderPanel(
+      true,
+      true,
+      false,
+      userOfRole('writer')
+    );
+    expect(vm.canEditHtmlBlock()).toBe(false);
+    expect(button.style.display).toBe('none');
+    expect(message.style.display).toBe('none');
+
+    vm.openHtmlCodeEditor('htmlCode', vm);
+    expect(toggle).not.toHaveBeenCalled();
   });
 
   it('says the block can no longer be edited when it does not', () => {

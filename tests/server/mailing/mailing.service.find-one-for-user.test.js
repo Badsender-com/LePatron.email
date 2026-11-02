@@ -43,7 +43,6 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
     Mailings.findOne.mockResolvedValue(doc);
 
     const result = await mailingService.findOneForUser(MAILING_ID, {
-      isAdmin: false,
       group: { id: TENANT_A },
     });
 
@@ -59,7 +58,6 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
 
     await expect(
       mailingService.findOneForUser(MAILING_ID, {
-        isAdmin: false,
         group: { id: TENANT_A },
       })
     ).rejects.toMatchObject({ message: ERROR_CODES.MAILING_NOT_FOUND });
@@ -69,7 +67,9 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
     const doc = { _id: MAILING_ID, _company: 'some-other-group' };
     Mailings.findOne.mockResolvedValue(doc);
 
-    await mailingService.findOneForUser(MAILING_ID, { isAdmin: true });
+    await mailingService.findOneForUser(MAILING_ID, {
+      role: 'super_admin',
+    });
 
     const filter = Mailings.findOne.mock.calls[0][0];
     expect(filter._company).toBeUndefined();
@@ -78,7 +78,6 @@ describe('mailingService.findOneForUser (cross-tenant IDOR guard)', () => {
   it('rejects an invalid mailing id without querying the DB', async () => {
     await expect(
       mailingService.findOneForUser('not-an-id', {
-        isAdmin: false,
         group: { id: TENANT_A },
       })
     ).rejects.toMatchObject({ message: ERROR_CODES.MAILING_NOT_FOUND });

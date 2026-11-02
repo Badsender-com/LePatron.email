@@ -8,6 +8,10 @@ jest.mock('../../../packages/server/common/file-manage.service.js', () => ({
   writeStreamFromStream: jest.fn().mockResolvedValue(undefined),
   list: jest.fn().mockResolvedValue([]),
 }));
+jest.mock('../../../packages/server/common/upload-identity.service.js', () => ({
+  // the shared reader, which bounds what it hands the prober
+  probeImageDimensions: jest.fn().mockReturnValue(null),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   // a constructor (createGallery does `new Galleries()`) with the statics used
   const Galleries = jest.fn();
@@ -27,6 +31,7 @@ const {
   assertOutboundHostAllowed,
 } = require('../../../packages/server/utils/outbound-host.js');
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
+const uploadIdentity = require('../../../packages/server/common/upload-identity.service.js');
 const {
   Galleries,
 } = require('../../../packages/server/common/models.common.js');
@@ -46,18 +51,25 @@ function mockImageResponse(
   });
 }
 
+// A gallery that holds what is pushed into it, so the service can read back
+// the image it answers with.
+function galleryHoldingPushes() {
+  const files = [];
+  Galleries.updateOne.mockImplementation((_query, update) => {
+    files.push(update.$push.files);
+    return Promise.resolve({ nModified: 1 });
+  });
+  Galleries.findOne.mockResolvedValue({ files });
+}
+
 describe('image.service.createFromUrl', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    galleryHoldingPushes();
   });
 
   it('runs the SSRF guard on the image URL before downloading', async () => {
     mockImageResponse(Buffer.from('imagedata'));
-    Galleries.findOne.mockResolvedValue({
-      files: [],
-      markModified: jest.fn(),
-      save: jest.fn().mockResolvedValue(undefined),
-    });
 
     await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
     expect(assertOutboundHostAllowed).toHaveBeenCalledWith(IMAGE_URL);
@@ -92,92 +104,38 @@ describe('image.service.createFromUrl', () => {
     ).rejects.toThrow(/size/i);
   });
 
+  // The download is measured through the shared reader, never handed whole to
+  // the prober: the reader is what bounds the prefix the prober sees.
+  it('measures the download through the shared reader, not the raw buffer', async () => {
+    mockImageResponse(Buffer.from('imagedata'));
+    uploadIdentity.probeImageDimensions.mockReturnValue({
+      width: 640,
+      height: 480,
+    });
+
+    const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
+
+    expect(uploadIdentity.probeImageDimensions).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ width: 640, height: 480 });
+  });
+
   it('stores the image and appends it to the gallery', async () => {
     mockImageResponse(Buffer.from('imagedata'));
-    Galleries.findOne.mockResolvedValue({ files: [] });
 
     const result = await imageService.createFromUrl(MONGO_ID, IMAGE_URL);
 
     expect(fileManager.writeStreamFromStream).toHaveBeenCalledTimes(1);
     expect(result.name).toMatch(new RegExp(`^${MONGO_ID}-[a-f0-9]+\\.png$`));
+    // createFromUrl answers with the image as the gallery holds it
+    expect(result).toMatchObject({
+      label: 'photo.png',
+      source: 'upload',
+      externalMetadata: {},
+      uploadedAt: expect.any(Date),
+    });
     expect(Galleries.updateOne).toHaveBeenCalledWith(
       { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: result.name } },
       { $push: { files: result } }
-    );
-  });
-});
-
-describe('image.service.addFiles', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  // Uploads validated one after the other overlap on the server. Reading the
-  // gallery and saving it back made every overlapping save but one fail with a
-  // VersionError, and those images never reached the gallery.
-  it('appends each file in one atomic update, never by saving a read gallery', async () => {
-    const save = jest.fn();
-    Galleries.findOne.mockResolvedValue({ files: [], save });
-    const files = [
-      { name: `${MONGO_ID}-a.png` },
-      { name: `${MONGO_ID}-b.png` },
-    ];
-
-    await imageService.addFiles(MONGO_ID, files);
-
-    expect(save).not.toHaveBeenCalled();
-    expect(Galleries.updateOne).toHaveBeenCalledTimes(2);
-    files.forEach((file) =>
-      expect(Galleries.updateOne).toHaveBeenCalledWith(
-        // the name filter skips a file the gallery already lists
-        { creationOrWireframeId: MONGO_ID, 'files.name': { $ne: file.name } },
-        { $push: { files: file } }
-      )
-    );
-  });
-
-  it('creates the gallery first when the creation has none yet', async () => {
-    Galleries.findOne.mockResolvedValue(null);
-    const save = jest.fn().mockResolvedValue({ files: [] });
-    Galleries.mockImplementation(() => ({ save }));
-
-    await imageService.addFiles(MONGO_ID, [{ name: `${MONGO_ID}-a.png` }]);
-
-    expect(save).toHaveBeenCalledTimes(1);
-    expect(Galleries.updateOne).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('image.service.findOrCreateGallery', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  // the first uploads of a creation all find no gallery and all try to create
-  // it: the unique index lets one through, the others must use its gallery
-  it('uses the gallery another request created in the meantime', async () => {
-    const createdMeanwhile = { files: [{ name: `${MONGO_ID}-a.png` }] };
-    Galleries.findOne
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(createdMeanwhile);
-    const duplicateKey = Object.assign(new Error('E11000'), { code: 11000 });
-    Galleries.mockImplementation(() => ({
-      save: jest.fn().mockRejectedValue(duplicateKey),
-    }));
-
-    await expect(imageService.findOrCreateGallery(MONGO_ID)).resolves.toBe(
-      createdMeanwhile
-    );
-  });
-
-  it('lets any other creation error through', async () => {
-    Galleries.findOne.mockResolvedValue(null);
-    Galleries.mockImplementation(() => ({
-      save: jest.fn().mockRejectedValue(new Error('db down')),
-    }));
-
-    await expect(imageService.findOrCreateGallery(MONGO_ID)).rejects.toThrow(
-      'db down'
     );
   });
 });

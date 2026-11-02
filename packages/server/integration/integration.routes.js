@@ -6,61 +6,72 @@ const router = express.Router();
 
 const integrations = require('./integration.controller.js');
 
-const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_GROUP_ADMIN_TECH,
+} = require('../account/auth.guard.js');
 
 // List available providers and types
 router.get('/providers', GUARD_USER, integrations.listProviders);
 
-// List integrations for a group (Group Admin can manage their own group)
+// List integrations for a group (company_admin_tech manages their own group)
 router.get(
   '/groups/:groupId',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.listIntegrations
 );
 
 // Create integration for a group
 router.post(
   '/groups/:groupId',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.createIntegration
 );
 
 // Get single integration
-router.get('/:integrationId', GUARD_GROUP_ADMIN, integrations.getIntegration);
+router.get(
+  '/:integrationId',
+  GUARD_GROUP_ADMIN_TECH,
+  integrations.getIntegration
+);
 
 // Update integration
 router.put(
   '/:integrationId',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.updateIntegration
 );
 
 // Delete integration
 router.delete(
   '/:integrationId',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.deleteIntegration
 );
 
 // Validate integration credentials
 router.post(
   '/:integrationId/validate',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.validateCredentials
 );
 
 // Get available models for an integration
-router.get('/:integrationId/models', GUARD_GROUP_ADMIN, integrations.getModels);
+router.get(
+  '/:integrationId/models',
+  GUARD_GROUP_ADMIN_TECH,
+  integrations.getModels
+);
 
 // Fetch normalized items from a data feed integration (e.g. RSS).
 // GUARD_USER on purpose: any user editing a mailing may browse feed items,
-// not just group admins (who own create/update/delete of the integration itself).
+// not just company_admin_tech (who own create/update/delete of the integration itself).
 router.get('/:integrationId/items', GUARD_USER, integrations.getFeedItems);
 
 // Get dashboard count for an integration (used before delete to show warning)
 router.get(
   '/:integrationId/dashboard-count',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN_TECH,
   integrations.getDashboardCount
 );
 

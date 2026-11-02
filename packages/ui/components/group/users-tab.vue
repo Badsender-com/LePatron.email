@@ -18,7 +18,8 @@ export default {
       const usersResponse = await $axios.$get(
         apiRoutes.groupsItemUsers(params)
       );
-      const useSaml = usersResponse.items[0].status === 'saml-authentication';
+      // Empty for a platform group holding only super admins, who are hidden.
+      const useSaml = usersResponse.items[0]?.status === 'saml-authentication';
       if (useSaml) {
         this.hiddenCols.push('actionSendPasswordMail');
       }

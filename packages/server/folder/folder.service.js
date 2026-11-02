@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folders, Groups } = require('../common/models.common.js');
+const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 const {
@@ -15,6 +15,11 @@ const {
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const workspaceService = require('../workspace/workspace.service.js');
+const permissions = require('../account/permissions.js');
+const {
+  refuseBootstrapAccount,
+  assertSameGroup,
+} = require('../account/request-scope.js');
 
 module.exports = {
   listFolders,
@@ -76,31 +81,13 @@ async function listChildren(folderId, user) {
   }));
 }
 
+// Throws unless the user may write in the folder's workspace: the permissions
+// decide (ADR 0002, amended). It throws rather than answering, so a caller
+// that ignores the answer cannot act on a folder of another group.
 async function hasAccess(folderId, user) {
+  refuseBootstrapAccount(user);
   const workspace = await getWorkspaceForFolder(folderId);
-  const group = await Groups.findById(workspace.group);
-
-  if (!user.isGroupAdmin) {
-    if (
-      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
-        workspace,
-        user,
-        group
-      )
-    ) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
-  }
-  // A group admin can reach this point for a workspace that belongs to ANOTHER
-  // group (the guard above is skipped for group admins). Previously this
-  // function returned a boolean here, and several callers ignored the return
-  // value (`await hasAccess(...)` with no check) — letting a group admin act on
-  // a folder outside their group (cross-tenant IDOR). Throw instead so every
-  // caller is protected uniformly.
-  const allowed =
-    workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
-    workspaceService.isUserWorkspaceMember(user, workspace);
-  if (!allowed) {
+  if (!permissions.canWriteWorkspace(user, workspace)) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return true;
@@ -244,6 +231,7 @@ async function move(folderId, destination, user) {
   await hasAccess(folderId, user);
 
   const folder = await getFolder(folderId);
+  const sourceWorkspace = await getWorkspaceForFolder(folderId);
 
   if (!folder.name) {
     throw new UnprocessableEntity(ERROR_CODES.FOLDER_MISSING_NAME);
@@ -252,6 +240,10 @@ async function move(folderId, destination, user) {
   // moving to another folder
   if (destinationFolderId) {
     await hasAccess(destinationFolderId, user);
+    const destinationWorkspace = await getWorkspaceForFolder(
+      destinationFolderId
+    );
+    assertSameGroup(sourceWorkspace.group, destinationWorkspace.group);
 
     // if moving to another folder, destination can't be a subfolder
     await checkIsSubfolder(destinationFolderId);
@@ -284,6 +276,7 @@ async function move(folderId, destination, user) {
   if (workspaceId) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
+    assertSameGroup(sourceWorkspace.group, workspace.group);
 
     if (await isNameTakenInDestination({ workspaceId }, folder.name)) {
       throw new Conflict(
