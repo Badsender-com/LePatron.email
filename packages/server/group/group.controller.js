@@ -1,7 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const { NotFound } = require('http-errors');
+const { Forbidden, NotFound } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -43,6 +43,8 @@ const {
 } = require('../utils/sanitize-email-metadata.js');
 const {
   sanitizeQualitySettings,
+  keepsTechChecks,
+  qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
 
 module.exports = {
@@ -567,15 +569,29 @@ async function update(req, res) {
   }
 
   // The quality settings, merged into what is stored: a page that changes one
-  // check must not reset the others.
+  // check must not reset the others. A company admin sets those of their own
+  // group (ADR 0009): they are written check by check, apart from the fields
+  // the whitelist below keeps (qualitySettingsUpdate).
+  let qualityUpdate = {};
   if ('qualitySettings' in groupToUpdate) {
     const storedSettings = (
       await Groups.findById(req.params.groupId, { qualitySettings: 1 }).lean()
     )?.qualitySettings;
-    groupToUpdate.qualitySettings = sanitizeQualitySettings(
+    const qualitySettings = sanitizeQualitySettings(
       groupToUpdate.qualitySettings,
       storedSettings
     );
+    // The required tracking parameters are set with the company's tracking,
+    // a tech admin's: the whole request is refused, rather than the change
+    // silently dropped and the rest saved.
+    if (
+      !permissions.can(user, CAPABILITIES.GROUP_MANAGE_TECH) &&
+      !keepsTechChecks(storedSettings, qualitySettings)
+    ) {
+      throw new Forbidden();
+    }
+    qualityUpdate = qualitySettingsUpdate(storedSettings, qualitySettings);
+    delete groupToUpdate.qualitySettings;
   }
 
   // Only reachable by a super admin: the pick below drops it for a company admin.
@@ -592,8 +608,6 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
-      // A company admin sets the quality control of their own group (ADR 0009).
-      'qualitySettings',
       // The company's tracking belongs to its technical settings (ADR 0004),
       // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.
@@ -622,7 +636,7 @@ async function update(req, res) {
     groupToUpdate
   );
 
-  await groupService.updateGroup(groupToUpdate);
+  await groupService.updateGroup(groupToUpdate, qualityUpdate);
   await recordRequirementChange(user, req.params.groupId, twoFactorChange);
 
   // AISkillInvocation.expiresAt is stamped at write time, so a retention change

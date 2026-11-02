@@ -1,9 +1,14 @@
 'use strict';
 
 const { UnprocessableEntity } = require('http-errors');
+const { isEqual } = require('lodash');
 
 const ERROR_CODES = require('../constant/error-codes.js');
-const { CHECKS, CHECK_STATES } = require('../../shared/quality/checks.js');
+const {
+  CHECKS,
+  CHECK_STATES,
+  TECH_CHECKS,
+} = require('../../shared/quality/checks.js');
 
 /**
  * Validates a `qualitySettings` payload of a group or a template, and merges it
@@ -128,4 +133,65 @@ function mergeThresholds(checkId, raw, stored, fail, inherited = {}) {
   return merged;
 }
 
-module.exports = { sanitizeQualitySettings };
+/**
+ * Whether merged settings leave the checks of the company's technical settings
+ * (TECH_CHECKS) as they were stored: all a user who cannot set those may send
+ * about them.
+ *
+ * @param {Object} [stored] the settings stored on the group or template
+ * @param {{ checks: Object }} next the settings sanitizeQualitySettings merged
+ * @returns {boolean}
+ */
+function keepsTechChecks(stored, next) {
+  const checksOf = (settings) => (settings && settings.checks) || {};
+  return TECH_CHECKS.every((id) =>
+    isEqual(checksOf(stored)[id], checksOf(next)[id])
+  );
+}
+
+/**
+ * The MongoDB update that takes the stored settings to the merged ones, check
+ * by check: only the checks that differ are written, so a save made meanwhile
+ * to another check stays. Without it, a company admin's save would put back
+ * the state of the required tracking parameters it read, over a tech admin's
+ * change made in between.
+ *
+ * Stored settings of another shape are replaced as a whole: there is no path
+ * to write into.
+ *
+ * @param {Object} [stored] the settings stored on the group or template
+ * @param {{ checks: Object }} next the settings sanitizeQualitySettings merged
+ * @returns {{ $set?: Object, $unset?: Object }}
+ */
+function qualitySettingsUpdate(stored, next) {
+  const isObject = (value) =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+  const writable =
+    stored === null ||
+    stored === undefined ||
+    (isObject(stored) &&
+      (stored.checks === undefined || isObject(stored.checks)));
+  if (!writable) return { $set: { qualitySettings: next } };
+
+  const before = (stored && stored.checks) || {};
+  const $set = {};
+  const $unset = {};
+  new Set(Object.keys(before).concat(Object.keys(next.checks))).forEach(
+    (id) => {
+      if (isEqual(before[id], next.checks[id])) return;
+      const path = `qualitySettings.checks.${id}`;
+      if (next.checks[id] === undefined) $unset[path] = '';
+      else $set[path] = next.checks[id];
+    }
+  );
+  return {
+    ...(Object.keys($set).length ? { $set } : {}),
+    ...(Object.keys($unset).length ? { $unset } : {}),
+  };
+}
+
+module.exports = {
+  sanitizeQualitySettings,
+  keepsTechChecks,
+  qualitySettingsUpdate,
+};

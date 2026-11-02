@@ -279,3 +279,7 @@ export const SERVER_CHECKS = [
   'images-total-weight',
   'oversized-images',
 ];
+
+// The checks that belong to the company's technical settings: a company admin
+// sees them, only a tech admin or a super admin sets them.
+export const TECH_CHECKS = ['tracking-params'];

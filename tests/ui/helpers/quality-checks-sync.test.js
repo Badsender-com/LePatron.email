@@ -3,6 +3,7 @@ import {
   CHECK_STATES,
   CHECK_CATEGORIES,
   SERVER_CHECKS,
+  TECH_CHECKS,
 } from '~/helpers/constants/quality-checks.js';
 import en from '~/helpers/locales/en.js';
 import fr from '~/helpers/locales/fr.js';
@@ -30,6 +31,10 @@ describe('the settings page copy of the check catalogue', () => {
     expect(SERVER_CHECKS).toEqual([...SHARED.SERVER_CHECKS]);
   });
 
+  it('has the same checks reserved to the technical settings', () => {
+    expect(TECH_CHECKS).toEqual([...SHARED.TECH_CHECKS]);
+  });
+
   it('lists every category its checks belong to', () => {
     const used = new Set(Object.values(CHECKS).map((check) => check.category));
     expect([...used].sort()).toEqual([...CHECK_CATEGORIES].sort());
@@ -38,14 +43,20 @@ describe('the settings page copy of the check catalogue', () => {
   it.each([
     ['en', en],
     ['fr', fr],
-  ])('names every check and category in %s', (_lang, locale) => {
-    Object.keys(CHECKS).forEach((id) => {
-      expect(typeof locale.qualitySettings.checks[id]).toBe('string');
-    });
-    CHECK_CATEGORIES.forEach((category) => {
-      expect(typeof locale.qualitySettings.categories[category]).toBe('string');
-    });
-  });
+  ])(
+    'names and describes every check, and names every category, in %s',
+    (_lang, locale) => {
+      Object.keys(CHECKS).forEach((id) => {
+        expect(typeof locale.qualitySettings.checks[id]).toBe('string');
+        expect(typeof locale.qualitySettings.descriptions[id]).toBe('string');
+      });
+      CHECK_CATEGORIES.forEach((category) => {
+        expect(typeof locale.qualitySettings.categories[category]).toBe(
+          'string'
+        );
+      });
+    }
+  );
 
   it.each([
     ['en', en],

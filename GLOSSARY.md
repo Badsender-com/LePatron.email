@@ -156,7 +156,7 @@ _Avoid_: Search mode, global search (in UI text)
 ### Editor
 
 **Template**:
-The email model a group is given, built by the operator: its blocks, styles and defaults. Every mailing of the group starts from one.
+The email model a company is given, built by the operator: its blocks, styles and defaults. Every mailing of the company starts from one.
 _UI_: Template
 _Avoid_: Wireframe (the code keeps `_wireframe`)
 
@@ -202,11 +202,11 @@ _UI_: Lien d'aperçu
 _Avoid_: Public link, preview URL
 
 **Required tracking parameters**:
-Configured per group in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a group can set it off, on or blocking like any other.
+Configured per company in its tracking settings. The rule that checks them is blocking by default; with the quality settings, a company can set it off, on or blocking like any other.
 _UI_: Paramètres de tracking obligatoires
 
 **Check state**:
-How a rule applies to a group or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
+How a rule applies to a company or a template: off, it does not run and is not listed; on, its findings warn; blocking, any of its findings stops the download and the ESP send. In the quality settings and their catalogue (`CHECKS`), the code calls a rule a "check".
 _UI_: Désactivé, Actif, Bloquant
 
 **Threshold**:
@@ -215,6 +215,16 @@ _UI_: Seuil
 _Avoid_: Limit, setting
 
 **Quality settings**:
-The state and thresholds of every rule for a group. A template overrides them one by one; whatever it does not set is inherited from its group.
-_UI_: Réglages du contrôle qualité ; Hérité du groupe, Propre au template
+The state and thresholds of every rule for a company. A template overrides them one by one; whatever it does not set is inherited from its company.
+_UI_: Réglages du contrôle qualité
 _Avoid_: QC config, quality configuration
+
+**Recommended values**:
+The state and thresholds of a rule when nothing is set: the catalogue's. They cannot be changed.
+_UI_: Valeurs recommandées ; « Recommandé : 40 »
+_Avoid_: Default (in UI text)
+
+**Exception**:
+A rule whose state or thresholds a company or a template sets differently from what applies below it. The company's exceptions are its **general settings**, for all its templates; a template's own exceptions apply over them, for that template only. The settings page lists exceptions only, and names neither a company nor a group: its readers are the company's admins.
+_UI_: Exception ; Réglages généraux ; Exception propre à ce template ; « Réglage général : … »
+_Avoid_: Override, surcharge, Hérité du groupe, Propre au template

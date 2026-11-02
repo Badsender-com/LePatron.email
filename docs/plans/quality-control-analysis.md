@@ -152,7 +152,7 @@ Chaque contrôle a un état par groupe : **Désactivé**, **Actif** ou **Bloquan
   - `viewModel.quality.gate({ html })` arrête le téléchargement et l'envoi ESP (avant l'ouverture du formulaire) et liste ce qui bloque dans une modale ;
   - un contrôle serveur bloquant fait attendre la réponse du serveur. Seul un résultat sûr bloque, un échec du serveur jamais ;
   - côté serveur, seul le tracking obligatoire est revérifié, et seulement s'il est bloquant pour le mailing (`resolveMailingTrackingContext`). Les autres blocages ne s'appliquent que dans l'éditeur.
-- **Admin** : Paramètres → Email Builder → Contrôle qualité. Les réglages du groupe viennent en haut, puis chaque template avec ses surcharges.
+- **Admin** : Paramètres → Email Builder → Contrôle qualité. La page n'affiche que les **exceptions** : l'onglet « Réglages généraux » liste celles du groupe (valables pour tous ses templates), avec un tableau repliable des contrôles et de ce qui s'applique ; l'onglet « Templates » liste les templates, et chacun ouvre une sous-page avec ses propres exceptions (`/groups/:groupId/settings/quality/templates/:templateId`). La logique est dans `packages/ui/helpers/quality-exceptions.js` : une exception de groupe égale à la valeur recommandée est retirée à l'enregistrement, celle d'un template seulement quand plus rien n'y est réglé.
 
 ### Contrôles qualité côté serveur
 

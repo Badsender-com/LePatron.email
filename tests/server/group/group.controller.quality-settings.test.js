@@ -4,7 +4,8 @@
 // group's checks (epic #1193, ADR 0009). A company admin sets their own group's
 // (the route guard keeps them to it), so the key must be on the company admin
 // whitelist; every value goes through the sanitizer, and a partial update keeps
-// what it does not mention.
+// what it does not mention. The settings are written check by check, beside
+// the group's fields: only the checks that change.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
@@ -42,6 +43,10 @@ const GROUP_ID = '507f1f77bcf86cd799439001';
 const groupAdmin = { role: 'company_admin', group: { id: GROUP_ID } };
 const superAdmin = { role: 'super_admin' };
 
+const CHECKS = 'qualitySettings.checks';
+
+// The writes of the quality settings, as the group service receives them
+// beside the group's fields.
 async function update({ user = groupAdmin, body, stored = {} }) {
   Groups.findById.mockReturnValue({
     lean: jest
@@ -53,9 +58,8 @@ async function update({ user = groupAdmin, body, stored = {} }) {
     { params: { groupId: GROUP_ID }, body, user },
     res
   );
-  return groupService.updateGroup.mock.calls[0]
-    ? groupService.updateGroup.mock.calls[0][0]
-    : null;
+  const [call] = groupService.updateGroup.mock.calls;
+  return call ? { group: call[0], ...call[1] } : null;
 }
 
 const rejection = (promise) =>
@@ -77,9 +81,10 @@ describe('PUT /groups/:groupId — check states', () => {
         qualitySettings: { checks: { 'emoji-placement': { state: 'off' } } },
       },
     });
-    expect(payload.qualitySettings).toEqual({
-      checks: { 'emoji-placement': { state: 'off' } },
+    expect(payload.$set).toEqual({
+      [`${CHECKS}.emoji-placement`]: { state: 'off' },
     });
+    expect(payload.group).not.toHaveProperty('qualitySettings');
   });
 
   it('lets a super admin make a check blocking', async () => {
@@ -91,12 +96,12 @@ describe('PUT /groups/:groupId — check states', () => {
         },
       },
     });
-    expect(payload.qualitySettings.checks['unfilled-links']).toEqual({
+    expect(payload.$set[`${CHECKS}.unfilled-links`]).toEqual({
       state: 'blocking',
     });
   });
 
-  it('keeps the settings a partial update does not mention', async () => {
+  it('writes only the checks a partial update changes', async () => {
     const payload = await update({
       stored: {
         qualitySettings: { checks: { headings: { state: 'off' } } },
@@ -105,10 +110,11 @@ describe('PUT /groups/:groupId — check states', () => {
         qualitySettings: { checks: { 'emoji-placement': { state: 'off' } } },
       },
     });
-    expect(payload.qualitySettings.checks).toEqual({
-      headings: { state: 'off' },
-      'emoji-placement': { state: 'off' },
+    // A save made meanwhile to another check stays.
+    expect(payload.$set).toEqual({
+      [`${CHECKS}.emoji-placement`]: { state: 'off' },
     });
+    expect(payload).not.toHaveProperty('$unset');
   });
 
   it('brings a check back to its default with null', async () => {
@@ -118,7 +124,29 @@ describe('PUT /groups/:groupId — check states', () => {
       },
       body: { qualitySettings: { checks: { headings: { state: null } } } },
     });
-    expect(payload.qualitySettings.checks).toEqual({});
+    expect(payload.$unset).toEqual({ [`${CHECKS}.headings`]: '' });
+    expect(payload).not.toHaveProperty('$set');
+  });
+
+  it('writes nothing for settings that change nothing', async () => {
+    const payload = await update({
+      stored: {
+        qualitySettings: { checks: { headings: { state: 'off' } } },
+      },
+      body: {
+        name: 'Company A',
+        qualitySettings: { checks: { headings: { state: 'off' } } },
+      },
+    });
+    expect(payload).not.toHaveProperty('$set');
+    expect(payload).not.toHaveProperty('$unset');
+    expect(payload.group.name).toBe('Company A');
+  });
+
+  it('writes nothing for null settings', async () => {
+    const payload = await update({ body: { qualitySettings: null } });
+    expect(payload).not.toHaveProperty('$set');
+    expect(payload).not.toHaveProperty('$unset');
   });
 
   it.each([
@@ -139,6 +167,78 @@ describe('PUT /groups/:groupId — check states', () => {
   });
 });
 
+// The required tracking parameters belong to the company's tracking, which
+// only a tech admin sets (ADR 0004): so does the state of their check.
+describe('PUT /groups/:groupId — the required tracking parameters', () => {
+  const techAdmin = { role: 'company_admin_tech', group: { id: GROUP_ID } };
+
+  it("refuses a company admin who changes the check's state", async () => {
+    const error = await rejection(
+      update({
+        body: {
+          qualitySettings: { checks: { 'tracking-params': { state: 'on' } } },
+        },
+      })
+    );
+    expect(error.status).toBe(403);
+    expect(groupService.updateGroup).not.toHaveBeenCalled();
+  });
+
+  it('refuses a company admin who brings it back to its default', async () => {
+    const error = await rejection(
+      update({
+        stored: {
+          qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+        },
+        body: {
+          qualitySettings: { checks: { 'tracking-params': { state: null } } },
+        },
+      })
+    );
+    expect(error.status).toBe(403);
+  });
+
+  it('lets a company admin set the other checks, the state a tech admin set kept', async () => {
+    const payload = await update({
+      stored: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+      },
+      body: {
+        qualitySettings: { checks: { headings: { state: 'off' } } },
+      },
+    });
+    // Not written back: a tech admin's change made meanwhile stays.
+    expect(payload.$set).toEqual({ [`${CHECKS}.headings`]: { state: 'off' } });
+  });
+
+  it('lets a company admin send back the state the check has', async () => {
+    const payload = await update({
+      stored: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+      },
+      body: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'off' } } },
+      },
+    });
+    expect(payload).not.toHaveProperty('$set');
+  });
+
+  it.each([
+    ['a tech admin', techAdmin],
+    ['a super admin', superAdmin],
+  ])("lets %s change the check's state", async (_, user) => {
+    const payload = await update({
+      user,
+      body: {
+        qualitySettings: { checks: { 'tracking-params': { state: 'on' } } },
+      },
+    });
+    expect(payload.$set[`${CHECKS}.tracking-params`]).toEqual({
+      state: 'on',
+    });
+  });
+});
+
 describe('PUT /groups/:groupId — thresholds', () => {
   it('stores a threshold within its bounds', async () => {
     const payload = await update({
@@ -146,7 +246,7 @@ describe('PUT /groups/:groupId — thresholds', () => {
         qualitySettings: { checks: { subject: { thresholds: { long: 30 } } } },
       },
     });
-    expect(payload.qualitySettings.checks.subject).toEqual({
+    expect(payload.$set[`${CHECKS}.subject`]).toEqual({
       thresholds: { long: 30 },
     });
   });
@@ -164,7 +264,7 @@ describe('PUT /groups/:groupId — thresholds', () => {
         },
       },
     });
-    expect(payload.qualitySettings.checks.subject).toEqual({ state: 'on' });
+    expect(payload.$set[`${CHECKS}.subject`]).toEqual({ state: 'on' });
   });
 
   it('checks the order against what is already stored', async () => {
