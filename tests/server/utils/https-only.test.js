@@ -67,6 +67,18 @@ describe('a deployed application', () => {
     );
   });
 
+  it.each(['//attacker.test/x', 'http://attacker.test/x', '*'])(
+    'stays on the configured host, whatever the path (%s)',
+    (url) => {
+      const res = response();
+
+      forceHttps(DEPLOYED)({ ...request('http'), url }, res, jest.fn());
+
+      const [location] = res.redirect.mock.calls[0];
+      expect(new URL(location).host).toBe('app.client.test');
+    }
+  );
+
   it('tells the browser to use HTTPS only, from an HTTPS request', () => {
     const res = response();
     const next = jest.fn();
