@@ -9,14 +9,13 @@ const {
   HSTS,
 } = require('../../../packages/server/utils/https-only.js');
 
-const DEPLOYED = { isDev: false };
+const DEPLOYED = { isDev: false, host: 'app.client.test' };
 const DEVELOPER = { isDev: true };
 
-function request(proto) {
+function request(proto, host = 'app.client.test') {
   return {
     url: '/mailings?page=2',
-    header: (name) =>
-      ({ 'x-forwarded-proto': proto, host: 'app.client.test' }[name]),
+    header: (name) => ({ 'x-forwarded-proto': proto, host }[name]),
   };
 }
 
@@ -57,6 +56,28 @@ describe('a deployed application', () => {
     );
     expect(next).not.toHaveBeenCalled();
   });
+
+  it('redirects to the configured host, whatever the Host header says', () => {
+    const res = response();
+
+    forceHttps(DEPLOYED)(request('http', 'attacker.test'), res, jest.fn());
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      'https://app.client.test/mailings?page=2'
+    );
+  });
+
+  it.each(['//attacker.test/x', 'http://attacker.test/x', '*'])(
+    'stays on the configured host, whatever the path (%s)',
+    (url) => {
+      const res = response();
+
+      forceHttps(DEPLOYED)({ ...request('http'), url }, res, jest.fn());
+
+      const [location] = res.redirect.mock.calls[0];
+      expect(new URL(location).host).toBe('app.client.test');
+    }
+  );
 
   it('tells the browser to use HTTPS only, from an HTTPS request', () => {
     const res = response();

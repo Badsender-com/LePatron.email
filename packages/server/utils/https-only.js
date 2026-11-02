@@ -28,7 +28,10 @@ function sessionCookieOptions(config) {
 
 /**
  * Sends a plain HTTP request to HTTPS, and tells the browser to use HTTPS
- * only. Behind the platform's proxy, the scheme is the forwarded one.
+ * only. Behind the platform's proxy, the scheme is the forwarded one. The
+ * redirection goes to the configured host, never to the request's `Host`
+ * header, which the client writes; a path that is not one (`*`, an absolute
+ * URL) goes to the home page.
  *
  * @param {Object} config the application's
  * @returns {Function|null} the middleware, none in development
@@ -37,7 +40,8 @@ function forceHttps(config) {
   if (config.isDev) return null;
   return (req, res, next) => {
     if (req.header('x-forwarded-proto') !== 'https') {
-      return res.redirect(`https://${req.header('host')}${req.url}`);
+      const path = req.url.startsWith('/') ? req.url : '/';
+      return res.redirect(`https://${config.host}${path}`);
     }
     res.setHeader('Strict-Transport-Security', HSTS);
     next();
