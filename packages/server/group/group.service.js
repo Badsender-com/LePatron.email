@@ -132,7 +132,10 @@ async function findUserByGroupId(groupId) {
       _company: groupId,
       role: { $ne: Roles.SUPER_ADMIN },
     })
-      .populate({ path: '_company', select: 'id name entryPoint issuer' })
+      .populate({
+        path: '_company',
+        select: 'id name entryPoint issuer idpCert',
+      })
       .sort({ email: 1 }),
   ]);
   if (!group) throw new NotFound();

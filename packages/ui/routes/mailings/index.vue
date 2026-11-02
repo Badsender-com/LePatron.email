@@ -3,11 +3,13 @@ import { mapGetters, mapState } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
-import { mailings } from '~/helpers/api-routes.js';
+import mixinMailingsTags from '~/helpers/mixins/mixin-mailings-tags';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
+import MailingsSearchTable from '~/routes/mailings/__partials/mailings-search-table';
+import MailingsSearchScope from '~/routes/mailings/__partials/mailings-search-scope';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
@@ -23,11 +25,11 @@ import { CAPABILITIES } from '../../../shared/access/roles.js';
 import {
   FOLDER,
   SET_PAGINATION,
-  SET_TAGS,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
   FETCH_WORKSPACES,
 } from '~/store/folder';
+import { isSearchingAll } from '~/utils/mailing-search';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 import BsGroupLoading from '~/components/loadingBar';
 import EmailBuilderPlaceholder from '~/routes/mailings/__partials/email-builder-placeholder';
@@ -36,6 +38,8 @@ export default {
   name: 'PageMailings',
   components: {
     MailingsTable,
+    MailingsSearchTable,
+    MailingsSearchScope,
     MailingsFilters,
     MailingsSelectionActions,
     BsMailingsModalNew,
@@ -45,7 +49,12 @@ export default {
     EmailBuilderPlaceholder,
     LucidePlus: Plus,
   },
-  mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
+  mixins: [
+    mixinPageTitle,
+    mixinCreateMailing,
+    mixinCurrentLocation,
+    mixinMailingsTags,
+  ],
   meta: { acl: ACL_USER, sidebarModule: 'email-builder' },
   middleware({ store, redirect }) {
     // The bootstrap account stays in the settings; a super admin works in the
@@ -84,8 +93,14 @@ export default {
       modulesGroup: MODULES_GROUP,
       can: CAN,
     }),
+    // An email is created in a location: the "all my workspaces" scope names
+    // none on screen, so it creates nothing (ADR 0007).
     canCreateMailing() {
-      return this.hasAccess && this.can(CAPABILITIES.MAILING_CREATE);
+      return (
+        !this.searchingAll &&
+        this.hasAccess &&
+        this.can(CAPABILITIES.MAILING_CREATE)
+      );
     },
     groupAdminUrl() {
       return `/groups/${this.modulesGroup?.id}`;
@@ -96,6 +111,10 @@ export default {
     },
     itemsLength() {
       return this.pagination?.itemsLength;
+    },
+    // Every accessible workspace rather than the current folder (ADR 0007).
+    searchingAll() {
+      return isSearchingAll(this.$route.query);
     },
     currentPage: {
       get() {
@@ -153,48 +172,6 @@ export default {
         ...additionalParams,
       });
     },
-    onTagCreate(newTag) {
-      this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
-        ...new Set([newTag, ...this.tags]),
-      ]);
-    },
-    async onMailSelectionTagsUpdate(tagsUpdates) {
-      await this.handleTagsUpdate({
-        items: this.mailingsSelection.map((mailing) => mailing.id),
-        tags: tagsUpdates,
-      });
-      this.resetMailingsSelection();
-    },
-    async onMailTableTagsUpdate(tagsInformations) {
-      const { tags, selectedMailing } = tagsInformations;
-      await this.handleTagsUpdate({
-        items: [selectedMailing.id],
-        tags,
-      });
-    },
-    async handleTagsUpdate({ items, tags }) {
-      const { $axios } = this;
-      this.loading = true;
-      try {
-        await $axios.$put(mailings(), {
-          items,
-          tags,
-        });
-        await this.fetchMailListingForFilterUpdate();
-        this.showSnackbar({
-          text: this.$t('mailings.editTagsSuccessful'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
-      }
-    },
     async handleDownloadSingleMail({ mailing, isWithFtp }) {
       this.$refs.mailingSelectionActions.handleInitSingleDownload({
         mailing,
@@ -245,11 +222,22 @@ export default {
             "
             type="table"
           >
+            <mailings-search-scope />
             <mailings-filters
+              ref="filters"
               :tags="tags"
               @on-refresh="fetchMailListingForFilterUpdate"
             />
+            <mailings-search-table
+              v-if="searchingAll"
+              :mailings="mailings"
+              :current-page="currentPage"
+              :items-length="itemsLength"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @clear-filters="$refs.filters.reset()"
+            />
             <mailings-selection-actions
+              v-if="!searchingAll"
               ref="mailingSelectionActions"
               :mailings-selection="mailingsSelection"
               :tags="tags"
@@ -260,6 +248,7 @@ export default {
               @clear-selection="resetMailingsSelection"
             />
             <mailings-table
+              v-if="!searchingAll"
               v-model="mailingsSelection"
               :mailings="mailings"
               :has-ftp-access="hasFtpAccess"
@@ -270,6 +259,7 @@ export default {
               @on-refetch="fetchMailListingForFilterUpdate"
               @update-tags="onMailTableTagsUpdate"
               @update:page="currentPage = $event"
+              @clear-filters="$refs.filters.reset()"
             />
           </v-skeleton-loader>
           <bs-group-loading slot="placeholder" />
@@ -284,9 +274,3 @@ export default {
     />
   </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

@@ -9,9 +9,18 @@ import {
   rowActionKeys,
 } from '~/helpers/user-row-actions.js';
 import { USER, USER_CAPABILITIES } from '~/store/user';
-import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
+import {
+  Users,
+  Pencil,
+  Send,
+  UserCheck,
+  UserX,
+  RotateCcw,
+  ShieldOff,
+} from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsTwoFactorBadge from '~/components/users/two-factor-badge.vue';
 
 export default {
   name: 'BsUsersTable',
@@ -19,6 +28,7 @@ export default {
     BsDataTable,
     BsUserActions,
     BsRowActions,
+    BsTwoFactorBadge,
     LucideUsers: Users,
   },
   model: { prop: 'loading', event: 'update:loading' },
@@ -63,6 +73,12 @@ export default {
           value: 'status',
           align: 'center',
           cellClass: 'col-status',
+        },
+        {
+          text: this.$t('twoFactor.users.column'),
+          value: 'twoFactorMethod',
+          align: 'center',
+          cellClass: 'col-two-factor',
         },
         {
           text: this.$t('users.lang'),
@@ -158,6 +174,10 @@ export default {
       this.selectedUser = user;
       this.$refs.userActions.deactivate();
     },
+    resetTwoFactor(user) {
+      this.selectedUser = user;
+      this.$refs.userActions.resetTwoFactor();
+    },
     updateUserFromActions(user) {
       this.$emit('update', user);
     },
@@ -187,6 +207,11 @@ export default {
           icon: mail.action === 'resetPassword' ? RotateCcw : Send,
           text: mail.textKey,
           onClick: () => MAIL_METHODS[mail.action](item),
+        },
+        'two-factor-reset': {
+          icon: ShieldOff,
+          text: 'twoFactor.users.reset',
+          onClick: () => this.resetTwoFactor(item),
         },
         edit: {
           icon: Pencil,
@@ -252,6 +277,10 @@ export default {
         >
           {{ getStatusLabel(item.status) }}
         </v-chip>
+      </template>
+
+      <template #item.twoFactorMethod="{ item }">
+        <bs-two-factor-badge :method="item.twoFactorMethod" />
       </template>
 
       <template #item.lang="{ item }">

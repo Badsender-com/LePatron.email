@@ -6,7 +6,12 @@
 
 jest.mock('passport', () => ({ authenticate: jest.fn() }));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Users: { findOneForApi: jest.fn() },
+  // No account found by id: the second factor does not apply (ADR 0008,
+  // tests/server/two-factor/), the session opens.
+  Users: {
+    findOneForApi: jest.fn(),
+    findById: jest.fn(() => ({ select: () => Promise.resolve(null) })),
+  },
   Mailings: {},
   Groups: {},
 }));
@@ -44,7 +49,7 @@ function signIn(storedUser, authenticated = { _id: 'u1', id: 'u1' }) {
   Users.findOneForApi.mockResolvedValue({ toJSON: () => storedUser });
   return new Promise((resolve, reject) => {
     const req = {
-      session: { save: (done) => done() },
+      session: { save: (done) => done(), regenerate: (done) => done() },
       logIn: (_user, done) => done(),
     };
     controller.login(req, { json: resolve }, reject);

@@ -165,7 +165,7 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
             if (data.message && data.message.includes('NO_INTEGRATION_FOR_FEATURE')) {
               errorMessage = 'La fonctionnalité de traduction n\'est pas configurée. Veuillez contacter votre administrateur.';
             } else if (data.message && data.message.includes('TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED')) {
-              errorMessage = 'Cette langue n\'est pas disponible. Vérifiez les paramètres de votre groupe.';
+              errorMessage = 'Cette langue n\'est pas disponible. Vérifiez les paramètres de votre entreprise.';
             } else if (data.message) {
               errorMessage = data.message;
             }

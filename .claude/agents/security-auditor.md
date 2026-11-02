@@ -17,7 +17,7 @@ You are a security specialist focused on identifying vulnerabilities in code.
 ## Security Checklist
 
 - [ ] **Capability**: each route that writes declares `GUARD_CAN`; no role comparison decides a right
-- [ ] **Scope (IDOR)**: the resource an id names (mailing, folder, workspace, user, image, profile) is checked to belong to the user's group or workspace, not only the user's role
+- [ ] **Scope (IDOR)**: the resource an id names (mailing, folder, workspace, user, image, profile) is checked to belong to the user's company or workspace, not only the user's role
 - [ ] **Escalation**: nobody grants a role, or edits, resets or deactivates an account, with more capabilities than their own
 - [ ] **Injection**: NoSQL (a request object passed as a query), command
 - [ ] **Auth**: authentication, session management

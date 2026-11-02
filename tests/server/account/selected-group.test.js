@@ -15,8 +15,6 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
     Users: store.Users,
     Groups: store.Groups,
     Mailings: store.Mailings,
-    OAuthClients: {},
-    OAuthTokens: {},
     __store: store,
   };
 });
@@ -28,7 +26,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 }));
 
 const express = require('express');
-const request = require('supertest');
+const request = require('../../helpers/local-request.js');
 
 const {
   __store: store,

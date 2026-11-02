@@ -5,12 +5,14 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import mixinGroupSettingsSave from '~/helpers/mixins/mixin-group-settings-save.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupForm from '~/components/group/form.vue';
+import BsGroupTwoFactorOption from '~/components/group/two-factor-option.vue';
 
 export default {
   name: 'BsPageSettingsGeneral',
   components: {
     BsPageHeader,
     BsGroupForm,
+    BsGroupTwoFactorOption,
   },
   mixins: [mixinSettingsTitle, mixinGroupSettingsSave],
   meta: {
@@ -49,6 +51,12 @@ export default {
         :disabled="loading"
         :loading="loading"
         @submit="updateGroup"
+      />
+      <bs-group-two-factor-option
+        v-if="group.id"
+        class="mt-6"
+        :group="group"
+        @update="group.requireTwoFactor = $event.requireTwoFactor"
       />
     </v-container>
   </div>

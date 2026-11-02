@@ -60,6 +60,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const {
+  listingGroupIdOf,
   resourceGroupIdOf,
   assertSameGroup,
 } = require('../account/request-scope.js');
@@ -160,6 +161,13 @@ async function listTagsForWorkspaceOrFolder({
   parentFolderId,
   user,
 }) {
+  // No location: the "all my workspaces" search scope (ADR 0007). Tags
+  // belong to the group, so it gets those of the group the listing reads.
+  if (!workspaceId && !parentFolderId) {
+    return {
+      tags: await Mailings.findTags({ _company: listingGroupIdOf(user) }),
+    };
+  }
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   const tags = await findTags({ user, workspaceId, parentFolderId });
   return { tags };

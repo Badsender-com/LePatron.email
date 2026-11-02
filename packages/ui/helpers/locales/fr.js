@@ -1,4 +1,69 @@
 export default {
+  twoFactor: {
+    code: {
+      label: 'Code',
+      submit: 'Valider',
+      hints: {
+        totp: 'Saisissez le code à 6 chiffres affiché par votre application d’authentification.',
+        email: 'Saisissez le code à 6 chiffres reçu par email.',
+      },
+      recoveryHint:
+        'Sans votre méthode de vérification ? Saisissez l’un de vos codes de secours.',
+      incorrect: 'Code incorrect',
+      expired: 'Étape expirée : saisissez de nouveau votre mot de passe.',
+      trustDevice: 'Faire confiance à cet appareil pendant 30 jours',
+      resend: 'Renvoyer un code',
+      sent: 'Un nouveau code vous a été envoyé',
+    },
+    setup: {
+      intro:
+        'Votre entreprise demande une double authentification : après votre mot de passe, vous saisirez un code.',
+      choose: 'Comment recevoir vos codes ?',
+      methods: {
+        totp: 'Une application d’authentification sur mon téléphone',
+        email: 'Un code par email',
+      },
+      start: 'Continuer',
+      emailSent:
+        'Un code vient de vous être envoyé par email : saisissez-le pour activer la double authentification.',
+      scan: 'Scannez ce QR code avec votre application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code qu’elle affiche.',
+      qrCodeAlt: 'QR code de configuration',
+      manual: 'Ou saisissez cette clé dans l’application :',
+      confirm: 'Activer',
+    },
+    recoveryCodes: {
+      intro:
+        'Chaque code de secours vous connecte une fois, sans votre méthode de vérification. Gardez-les en lieu sûr : ils ne seront plus affichés.',
+      copy: 'Copier',
+      copied: 'Codes copiés',
+      download: 'Télécharger',
+      noted: 'J’ai noté mes codes de secours',
+      continue: 'Continuer',
+    },
+    group: {
+      title: 'Double authentification',
+      description:
+        'Chaque membre de l’entreprise saisit un code après son mot de passe. Ceux qui ne l’ont pas encore configurée le feront à leur prochaine connexion.',
+      switch: 'Exiger la double authentification',
+      saml: 'Cette entreprise se connecte en SSO : la double authentification relève de son fournisseur d’identité.',
+      updated: 'Paramètre enregistré',
+      required: 'Exigée pour tous les membres.',
+      notRequired: 'Non exigée.',
+      managedByTech: 'Seul un administrateur technique peut modifier ce paramètre.',
+    },
+    users: {
+      column: 'Double auth.',
+      methods: { totp: 'Application', email: 'Email' },
+      notSetUp: 'Non configurée',
+      reset: 'Réinitialiser la double authentification',
+      resetNotice:
+        'Ses sessions seront fermées et il la configurera de nouveau à sa prochaine connexion. Réinitialiser la double authentification de',
+      resetDone: 'Double authentification réinitialisée',
+      emailLocked:
+        'Double authentification configurée : seul un administrateur technique peut changer l’adresse.',
+    },
+    passwordSet: 'Mot de passe enregistré : connectez-vous pour continuer.',
+  },
   snackbars: {
     updated: 'Mis à jour',
     created: 'Créé',
@@ -37,8 +102,8 @@ export default {
       INVALID_SSH_KEY_FORMAT:
         'Format de clé SSH invalide. Formats acceptés : PEM ou OpenSSH.',
       INCOMPLETE_SSH_KEY: 'Clé SSH incomplète : marqueur de fin manquant.',
-      FTP_MISSING_SSH_KEY: 'Aucune clé SSH configurée pour ce groupe.',
-      FTP_NOT_ENABLED: 'Le FTP n\'est pas activé pour ce groupe.',
+      FTP_MISSING_SSH_KEY: 'Aucune clé SSH configurée pour cette entreprise.',
+      FTP_NOT_ENABLED: 'Le FTP n\'est pas activé pour cette entreprise.',
       FTP_CONNECTION_AUTH_FAILED:
         'Échec de l\'authentification. Vérifiez vos identifiants (mot de passe ou clé SSH).',
       FTP_CONNECTION_HOST_NOT_FOUND: 'Hôte introuvable.',
@@ -107,10 +172,10 @@ export default {
     profile: 'ESP',
     newTag: 'Ajouter un label',
     backToMails: 'Retourner aux emails',
-    backToGroups: 'Retourner aux groupes',
-    group: 'Groupe | Groupes',
+    backToGroups: 'Retourner aux entreprises',
+    group: 'Entreprise | Entreprises',
     workspaces: 'Espaces de travail',
-    newGroup: 'Ajouter un groupe',
+    newGroup: 'Ajouter une entreprise',
     newCompany: 'Ajouter une company',
     companyName: 'Nom de la company',
     workspace: 'Workspace',
@@ -200,7 +265,7 @@ export default {
       },
       color: {
         label: 'Couleurs personnalisées',
-        description: 'Définissez les couleurs disponibles dans l\'éditeur d\'email pour ce groupe.',
+        description: 'Définissez les couleurs disponibles dans l\'éditeur d\'email pour cette entreprise.',
       },
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
@@ -318,10 +383,10 @@ export default {
     },
     platform: {
       badge: 'Plateforme',
-      setAction: 'Définir comme Group plateforme',
+      setAction: 'Définir comme entreprise plateforme',
       unsetAction: 'Retirer le rôle plateforme',
-      setDone: '« {name} » est désormais le Group plateforme',
-      unsetDone: '« {name} » n\'est plus le Group plateforme',
+      setDone: '« {name} » est désormais l\'entreprise plateforme',
+      unsetDone: '« {name} » n\'est plus l\'entreprise plateforme',
     },
     modules: {
       title: 'Modules activés',
@@ -386,6 +451,21 @@ export default {
       startDate: 'Date début',
       endDate: 'Date fin',
     },
+    search: {
+      scope: 'Rechercher dans',
+      currentFolder: 'Dossier courant',
+      allWorkspaces: 'Tous mes espaces de travail',
+      location: 'Emplacement',
+      noMatchInAllWorkspaces:
+        'Aucun email ne correspond à votre recherche dans vos espaces de travail',
+      noMailingInAllWorkspaces: 'Aucun email dans vos espaces de travail',
+      noMatchInLocation:
+        'Aucun email ne correspond à votre recherche dans cet emplacement',
+      searchAllWorkspaces: 'Chercher dans tous mes espaces de travail',
+      resetFilters: 'Réinitialiser les filtres',
+      readOnly: 'Lecture seule : ouvrez son emplacement',
+      activeFilters: '{n} filtre actif | {n} filtres actifs',
+    },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
     deleteConfirmationMessage:
       'Vous êtes sur le point de supprimer l\'ensemble des emails sélectionnés.<br/>Cette action est irréversible.',
@@ -440,8 +520,8 @@ export default {
     newName: 'Nom du nouvel email',
     translate: 'Traduire',
     duplicateNotice: 'L\'email <strong>{name}</strong> sera dupliqué et traduit automatiquement.',
-    noActiveIntegration: 'Aucune intégration IA active. Configurez une intégration dans les paramètres du groupe.',
-    noLanguagesConfigured: 'Aucune langue configurée. Configurez les langues disponibles dans les paramètres du groupe.',
+    noActiveIntegration: 'Aucune intégration IA active. Configurez une intégration dans les paramètres de l\'entreprise.',
+    noLanguagesConfigured: 'Aucune langue configurée. Configurez les langues disponibles dans les paramètres de l\'entreprise.',
     success: 'Email dupliqué et traduit avec succès',
     successTitle: 'Traduction effectuée',
     successMessage: 'Votre email a été dupliqué et traduit avec succès.',
@@ -510,7 +590,7 @@ export default {
     role: 'Rôle',
     roles: {
       superAdmin: 'Super administrateur',
-      groupAdmin: 'Administrateur du groupe',
+      groupAdmin: 'Administrateur de l\'entreprise',
       regularUser: 'Utilisateur',
       writer: 'Rédacteur',
       reviewer: 'Relecteur',
@@ -550,7 +630,7 @@ export default {
     members: 'Utilisateurs',
     membersDescription:
       'Sélectionnez les utilisateurs qui auront accès à ce workspace.',
-    userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
+    userIsGroupAdmin: 'L\'utilisateur est un administrateur de l\'entreprise',
     noUsersAvailable: 'Aucun utilisateur disponible',
     sections: {
       info: 'Informations',
@@ -718,7 +798,7 @@ export default {
     // instead of showing the raw code.
     errors: {
       INTEGRATION_NAME_ALREADY_EXIST:
-        'Une intégration porte déjà ce nom dans ce groupe. Choisissez-en un autre.',
+        'Une intégration porte déjà ce nom dans cette entreprise. Choisissez-en un autre.',
       INTEGRATION_NOT_FOUND:
         'Cette intégration n\'existe plus : elle a peut-être été supprimée. Rechargez la page.',
       FORBIDDEN_INTEGRATION_ACCESS:
@@ -1048,7 +1128,7 @@ export default {
     },
     admin: {
       title: 'CRM Intelligence',
-      description: 'Gérez les intégrations de tableaux de bord pour ce groupe.',
+      description: 'Gérez les intégrations de tableaux de bord pour cette entreprise.',
       enabled: 'Activer CRM Intelligence',
       metabaseConfigHint: 'Configurez les connexions Metabase dans l\'onglet Intégrations.',
       goToIntegrations: 'Aller aux Intégrations',
@@ -1192,16 +1272,16 @@ export default {
     pageTitle: 'Super administrateurs',
     add: 'Ajouter un super administrateur',
     addDescription:
-      'Le compte est créé dans le groupe plateforme. Envoyez-lui ensuite l\'email de mot de passe depuis sa ligne, comme pour tout nouveau compte.',
+      'Le compte est créé dans l\'entreprise plateforme. Envoyez-lui ensuite l\'email de mot de passe depuis sa ligne, comme pour tout nouveau compte.',
     promote: 'Promouvoir un membre',
     promoteAction: 'Promouvoir',
     promoteDescription:
-      'Choisissez un membre du groupe plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il aura tous les droits sur chaque groupe, et travaillera dans Email Builder et CRM Intelligence sur le groupe qu\'il sélectionne.',
+      'Choisissez un membre de l\'entreprise plateforme : il deviendra super administrateur en gardant son compte. Comme tout super administrateur, il aura tous les droits sur chaque entreprise, et travaillera dans Email Builder et CRM Intelligence sur l\'entreprise qu\'il sélectionne.',
     promoted: 'Super administrateur promu',
     member: 'Membre',
-    noMember: 'Aucun membre du groupe plateforme à promouvoir.',
+    noMember: 'Aucun membre de l\'entreprise plateforme à promouvoir.',
     noPlatformGroup:
-      'Aucun groupe plateforme n\'est configuré sur cet environnement : aucun super administrateur ne peut être créé.',
+      'Aucune entreprise plateforme n\'est configurée sur cet environnement : aucun super administrateur ne peut être créé.',
     demote: {
       title: 'Retirer le rôle de super administrateur',
       action: 'Retirer le rôle',
@@ -1224,11 +1304,11 @@ export default {
       FORBIDDEN_SUPER_ADMIN_SELF_DEACTIVATION:
         'Vous ne pouvez pas désactiver votre propre compte.',
       SUPER_ADMIN_OUTSIDE_PLATFORM_GROUP:
-        'Un super administrateur doit appartenir au groupe plateforme.',
+        'Un super administrateur doit appartenir à l\'entreprise plateforme.',
       PLATFORM_GROUP_NOT_FOUND:
-        'Aucun groupe plateforme n\'est configuré sur cet environnement.',
+        'Aucune entreprise plateforme n\'est configurée sur cet environnement.',
       PLATFORM_GROUP_HAS_SUPER_ADMINS:
-        'Ce groupe héberge des super administrateurs actifs. Pour le déplacer, activez le groupe plateforme sur un autre groupe avec le compte administrateur de la configuration : ils le suivront. Pour le retirer, ce compte doit d\'abord les désactiver ou les rétrograder.',
+        'Cette entreprise héberge des super administrateurs actifs. Pour déplacer le rôle plateforme, activez-le sur une autre entreprise avec le compte administrateur de la configuration : ils le suivront. Pour le retirer, ce compte doit d\'abord les désactiver ou les rétrograder.',
       INVALID_ROLE_PARAM: 'Ce rôle n\'existe pas.',
     },
   },
@@ -1243,8 +1323,8 @@ export default {
     companiesEmpty: 'Aucune entreprise pour le moment',
     superAdminOnly: 'Super administrateur uniquement',
     switchCompany: 'Choisir une entreprise…',
-    selectedGroup: 'Groupe sélectionné : {name}',
-    selectionFailed: 'Impossible de sélectionner ce groupe. Réessayez.',
+    selectedGroup: 'Entreprise sélectionnée : {name}',
+    selectionFailed: 'Impossible de sélectionner cette entreprise. Réessayez.',
     colors: 'Couleurs',
   },
   aiFeatures: {
@@ -1359,7 +1439,7 @@ export default {
       status: 'Statut',
       skillId: 'Identifiant skill',
       feature: 'Fonctionnalité',
-      groupId: 'Identifiant de groupe',
+      groupId: 'Identifiant de l\'entreprise',
       includeNonProductive: 'Inclure les tests (playground, poc.*)',
     },
     categories: {
@@ -1480,7 +1560,7 @@ export default {
       feature: 'Fonctionnalité',
       latency: 'Latence',
       tokens: 'Tokens',
-      group: 'Groupe',
+      group: 'Entreprise',
       providerModel: 'Provider / Modèle',
       noInvocations: 'Aucune invocation visible',
       noInvocationsHint: 'Les invocations de test sont masquées par défaut — activez « Inclure les tests » pour les afficher.',

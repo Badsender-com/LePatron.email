@@ -40,7 +40,7 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 ### Cross-reference with code
 
-When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "The code lets a group admin delete any folder, but you just said only the folder's creator can. Which is right?"
+When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "The code lets a company admin delete any folder, but you just said only the folder's creator can. Which is right?"
 
 ### Update GLOSSARY.md inline
 

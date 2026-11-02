@@ -12,6 +12,11 @@ export default function ({ $axios }) {
   $axios.onError((error) => {
     const code = parseInt(error.response && error.response.status);
 
+    // A refusal during the sign-in (the step of the code, ADR 0008) is the
+    // login page's to show: the member is not signed in yet.
+    const url = (error.config && error.config.url) || '';
+    if (url.startsWith('/account/login')) return;
+
     // Handle 401 Unauthorized errors
     if (code === 401) {
       // SSR safety check
