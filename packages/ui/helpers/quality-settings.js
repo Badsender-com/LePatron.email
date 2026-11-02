@@ -18,9 +18,15 @@ export function checksByCategory() {
   }));
 }
 
-/** The snackbar text key for a failed save. */
+/**
+ * The snackbar text key for a failed save. A refusal is a change to a check
+ * of the technical settings (TECH_CHECKS), the route already letting the
+ * user reach the page.
+ */
 export function qualitySettingsErrorKeyFor(error) {
-  const data = (error && error.response && error.response.data) || {};
+  const response = (error && error.response) || {};
+  const data = response.data || {};
+  if (response.status === 403) return 'qualitySettings.snackbars.forbidden';
   return data.message === ERROR_CODES.INVALID_QUALITY_SETTINGS
     ? 'qualitySettings.snackbars.invalid'
     : 'qualitySettings.snackbars.error';

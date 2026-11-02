@@ -22,7 +22,8 @@ export default {
     changesNothing: { type: Boolean, default: false },
     groupId: { type: String, default: '' },
     // A check of the technical settings this user cannot set: no link to
-    // settings they cannot open.
+    // settings they cannot open, and no word of a removal on save, which
+    // they cannot make.
     locked: { type: Boolean, default: false },
   },
   computed: {
@@ -71,7 +72,11 @@ export default {
 
 <template>
   <div class="qx-notes">
-    <p v-if="changesNothing" class="qx-notes__unchanged" role="status">
+    <p
+      v-if="changesNothing && !locked"
+      class="qx-notes__unchanged"
+      role="status"
+    >
       {{
         isGeneral
           ? $t('qualitySettings.card.unchangedGeneral')
