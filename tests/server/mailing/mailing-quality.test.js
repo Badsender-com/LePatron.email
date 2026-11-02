@@ -57,7 +57,7 @@ const {
 
 const MAILING_ID = '507f1f77bcf86cd799439001';
 const WORKSPACE_ID = '507f1f77bcf86cd799439301';
-const user = { id: 'user-1', isAdmin: false, group: { id: 'group-1' } };
+const user = { id: 'user-1', role: 'regular_user', group: { id: 'group-1' } };
 const FINGERPRINT = 'unfilled-links|ko_textBlock_1|-|1x2y3z|1';
 
 // The document as the projected read returns it: no content.
