@@ -22,6 +22,7 @@ const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 const {
   sanitizeQualitySettings,
   keepsTechChecks,
+  qualitySettingsUpdate,
 } = require('../utils/sanitize-quality-settings.js');
 const {
   resolveQualitySettings,
@@ -277,10 +278,15 @@ async function updateQualitySettings(req, res) {
   ) {
     throw new createError.Forbidden();
   }
-  template.qualitySettings = qualitySettings;
-  template.markModified('qualitySettings');
-  await template.save();
-  res.json(template);
+  // Check by check, so a save made meanwhile to another check stays.
+  const update = qualitySettingsUpdate(
+    template.qualitySettings,
+    qualitySettings
+  );
+  if (Object.keys(update).length) {
+    await Templates.updateOne({ _id: template._id }, update);
+  }
+  res.json(await Templates.findById(templateId));
 }
 
 /**
