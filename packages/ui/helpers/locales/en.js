@@ -1296,6 +1296,7 @@ export default {
       updated: 'Quality settings saved',
       error: 'The quality settings could not be saved',
       invalid: 'A setting is not valid: check the values and try again',
+      forbidden: 'You cannot change one of these settings: the tracking parameters check is reserved for tech admins',
     },
     descriptions: {
       subject: 'Subject missing, too long to show in full, or a fake "Re:".',

@@ -193,7 +193,7 @@ export default {
           :base-value="base.thresholds[name]"
           :base-is-recommended="isGeneral"
           :error="errors[name] || null"
-          :disabled="disabled"
+          :disabled="disabled || locked"
           @input="$emit('threshold', name, $event)"
         />
       </div>

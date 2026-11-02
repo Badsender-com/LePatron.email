@@ -1099,6 +1099,7 @@ export default {
       updated: 'Réglages du contrôle qualité enregistrés',
       error: 'Les réglages du contrôle qualité n\'ont pas pu être enregistrés',
       invalid: 'Un réglage n\'est pas valide : vérifiez les valeurs et réessayez',
+      forbidden: 'Vous ne pouvez pas modifier l\'un de ces réglages : le contrôle des paramètres de tracking est réservé aux admins techniques',
     },
     descriptions: {
       subject: 'Objet absent, trop long pour s\'afficher en entier, ou faux « Re: ».',
