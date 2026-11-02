@@ -28,7 +28,7 @@ const {
 } = require('../../helpers/taxonomy-world.js');
 
 // Turned on by #1356 (the governance context of an email, for the AI)
-describe.skip('governance context of an email', () => {
+describe('governance context of an email', () => {
   let dimensionService;
   let taxonomyService;
   let buildGovernanceContext;
@@ -235,7 +235,7 @@ describe.skip('governance context of an email', () => {
 });
 
 // Turned on by #1356 (the governance context of an email, for the AI)
-describe.skip('governance context route', () => {
+describe('governance context route', () => {
   it('serves the context of an email to a signed-in user of its company', () => {
     const { routeInspector } = require('../../helpers/express-router.js');
     const router = require('../../../packages/server/mailing/mailing.routes.js');

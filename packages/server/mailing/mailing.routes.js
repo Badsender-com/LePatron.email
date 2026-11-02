@@ -19,6 +19,7 @@ const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
 const mailingQuality = require('./mailing-quality.controller.js');
 const shareLinks = require('../share-link/share-link.controller.js');
+const governanceContext = require('./governance-context.controller.js');
 const translation = require('../translation/translation.controller.js');
 const { aiRateLimit } = require('../ai-usage/ai-rate-limit.js');
 
@@ -96,6 +97,12 @@ router.delete(
   '/:mailingId/share-links/:linkId',
   GUARD_CAN(C.MAILING_SEND_TEST),
   shareLinks.revoke
+);
+// A read, like the mosaico one: any user of the email's company.
+router.get(
+  '/:mailingId/governance-context',
+  GUARD_USER,
+  governanceContext.readGovernanceContext
 );
 router.put(
   '/:mailingId/mosaico',
