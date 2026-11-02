@@ -46,6 +46,10 @@ export const SIDEBAR_MODULES = [
   // },
 ];
 
+// The pages of the user's own account: no module is active, and the context
+// zone shows nothing.
+export const ACCOUNT_PATH_PREFIXES = ['/connected-applications'];
+
 // Zone 3: System (always available, pinned to bottom)
 export const SYSTEM_ITEMS = [
   {

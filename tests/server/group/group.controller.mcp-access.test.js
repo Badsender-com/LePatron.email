@@ -81,6 +81,18 @@ describe('PUT /groups/:groupId — MCP access', () => {
     );
   });
 
+  it("ends the group's connected applications when turned off, not on", async () => {
+    const {
+      forgetConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await update(techAdmin, { enableMcp: true });
+    expect(forgetConnections).not.toHaveBeenCalled();
+
+    await update(techAdmin, { enableMcp: false });
+    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
+  });
+
   it('keeps it out of the reach of a company admin', async () => {
     const payload = await update(companyAdmin, {
       name: 'Renamed',

@@ -35,6 +35,7 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -615,6 +616,11 @@ async function update(req, res) {
     switched.requireTwoFactor
   );
   await recordMcpAccessChange(user, req.params.groupId, switched.enableMcp);
+  // MCP turned off ends the company's connected applications: turning it
+  // back on must not revive them (ADR 0012).
+  if (switches.enableMcp === false) {
+    await forgetConnections({ _company: req.params.groupId });
+  }
 
   // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
   // logs' and feedbacks', so a retention change has to be propagated to what

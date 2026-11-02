@@ -14,6 +14,7 @@ const {
   AISkillInvocations,
   AIPlaygroundScenarios,
 } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const Roles = require('../account/roles');
 const permissions = require('../account/permissions.js');
 
@@ -181,6 +182,7 @@ async function deleteGroup(groupId) {
       { groupContext: mongoose.Types.ObjectId(groupId) },
       { $set: { groupContext: null } }
     ),
+    forgetConnections({ _company: mongoose.Types.ObjectId(groupId) }),
     Groups.deleteOne({
       _id: mongoose.Types.ObjectId(groupId),
     }),

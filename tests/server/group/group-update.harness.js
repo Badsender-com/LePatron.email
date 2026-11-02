@@ -8,6 +8,9 @@
 // Required before anything it mocks: the jest.mock calls below register on the
 // test's module registry when this file loads.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },

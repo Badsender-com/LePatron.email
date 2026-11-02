@@ -101,12 +101,12 @@ describe('connected applications', () => {
     expect((await oauth.callMcp(app, otto.access_token)).status).toBe(200);
   });
 
-  it('refuses a regular user revoking a whole group', async () => {
-    const response = await oauth
-      .signIn(app, f.FRANK)
-      .delete(`/api/groups/${f.CLIENT_GROUP}/connected-applications`);
+  it('refuses a regular user counting or revoking a whole group', async () => {
+    const agent = oauth.signIn(app, f.FRANK);
+    const path = `/api/groups/${f.CLIENT_GROUP}/connected-applications`;
 
-    expect(response.status).toBe(403);
+    expect((await agent.get(path)).status).toBe(403);
+    expect((await agent.delete(path)).status).toBe(403);
   });
 });
 
