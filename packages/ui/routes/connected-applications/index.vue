@@ -1,6 +1,6 @@
 <script>
 import { mapMutations } from 'vuex';
-import { Unplug } from 'lucide-vue';
+import { Plug, Unplug } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -15,6 +15,7 @@ export default {
   components: {
     BsPageHeader,
     BsModalConfirm,
+    LucidePlug: Plug,
     LucideUnplug: Unplug,
   },
   mixins: [mixinPageTitle],
@@ -62,12 +63,6 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    formatDate(date) {
-      return new Date(date).toLocaleString(this.$i18n.locale, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
-    },
     askRevoke(application) {
       this.toRevoke = application;
       this.$refs.revokeModal.open();
@@ -117,21 +112,34 @@ export default {
         {{ $t('connectedApplications.loadError') }}
       </v-alert>
       <v-data-table
+        v-else
         :headers="headers"
         :items="applications"
         item-key="id"
-        :no-data-text="$t('connectedApplications.empty')"
         hide-default-footer
         disable-pagination
       >
+        <template #no-data>
+          <div class="py-6 text--secondary">
+            <lucide-plug :size="24" class="mb-2" />
+            <p class="mb-0">{{ $t('connectedApplications.empty') }}</p>
+          </div>
+        </template>
+        <template #item.name="{ item }">
+          <span class="font-weight-medium">{{ item.name }}</span>
+        </template>
         <template #item.group="{ item }">
           {{ item.group.name }}
         </template>
         <template #item.connectedAt="{ item }">
-          {{ formatDate(item.connectedAt) }}
+          <span class="text--secondary">
+            {{ item.connectedAt | preciseDateTime($i18n.locale) }}
+          </span>
         </template>
         <template #item.lastUsedAt="{ item }">
-          <span v-if="item.lastUsedAt">{{ formatDate(item.lastUsedAt) }}</span>
+          <span v-if="item.lastUsedAt" class="text--secondary">
+            {{ item.lastUsedAt | preciseDateTime($i18n.locale) }}
+          </span>
           <span v-else class="text--secondary">
             {{ $t('connectedApplications.neverUsed') }}
           </span>

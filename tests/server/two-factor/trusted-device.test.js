@@ -6,6 +6,9 @@
 
 const harness = require('../../helpers/two-factor-harness.js');
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('passport', () => ({ authenticate: jest.fn() }));
 jest.mock(
   '../../../packages/server/common/models.common.js',

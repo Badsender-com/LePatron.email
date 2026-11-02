@@ -1181,13 +1181,14 @@ export default {
       '« {name} » perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Pour l\'utiliser à nouveau, il faudra la reconnecter.',
     revoked: 'Application révoquée',
     groupDescription:
-      'Les assistants IA que les utilisateurs de l\'entreprise ont connectés à LePatron. Chaque utilisateur peut révoquer les siens ; vous pouvez tous les révoquer d\'un coup, par exemple si un accès a fuité.',
+      'Les assistants IA que les utilisateurs de l\'entreprise ont connectés à LePatron. Chaque utilisateur peut révoquer les siens\u00a0; vous pouvez tous les révoquer d\'un coup, par exemple si un accès a fuité.',
     groupCount:
       'Aucune application connectée | 1 application connectée | {count} applications connectées',
     groupRevoke: 'Tout révoquer',
     groupRevokeTitle: 'Révoquer toutes les applications connectées\u00a0?',
     groupRevokeConfirm:
-      'Tous les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien.',
+      'Les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien. | L\'assistant IA connecté pour l\'entreprise {group} perd aussitôt son accès. Son utilisateur devra le reconnecter. | Les {count} assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien.',
+    groupCountError: 'Nombre d\'applications connectées indisponible.',
     groupRevoked: 'Applications connectées révoquées',
   },
   mcpAccess: {

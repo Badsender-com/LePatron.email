@@ -36,6 +36,7 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -607,6 +608,11 @@ async function update(req, res) {
 
   await groupService.updateGroup(groupToUpdate);
   await recordRequirementChange(user, req.params.groupId, twoFactorChange);
+  // MCP turned off ends the group's connected applications: turning it back
+  // on must not revive them (ADR 0012).
+  if (groupToUpdate.enableMcp === false) {
+    await forgetConnections({ _company: req.params.groupId });
+  }
 
   // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
   // logs' and feedbacks', so a retention change has to be propagated to what

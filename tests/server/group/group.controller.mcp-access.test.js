@@ -4,6 +4,9 @@
 // for its own, as it sets up the group's AI features. The group update keeps
 // it out of a company admin's reach, as every field it may not set.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn() },
   SecurityEvents: { create: jest.fn() },
@@ -89,6 +92,18 @@ describe('PUT /groups/:groupId — MCP access', () => {
     expect((await update(techAdmin, { enableMcp: false })).enableMcp).toBe(
       false
     );
+  });
+
+  it("ends the group's connected applications when turned off, not on", async () => {
+    const {
+      forgetConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await update(techAdmin, { enableMcp: true });
+    expect(forgetConnections).not.toHaveBeenCalled();
+
+    await update(techAdmin, { enableMcp: false });
+    expect(forgetConnections).toHaveBeenCalledWith({ _company: GROUP_ID });
   });
 
   it('keeps it out of the reach of a company admin', async () => {

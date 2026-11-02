@@ -5,6 +5,9 @@
 // controller, with the authenticated user as passport puts it on the request
 // and the models replaced by an in-memory store.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => {
   const users = [];
   const matches = (record, filter) =>
