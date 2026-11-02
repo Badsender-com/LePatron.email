@@ -899,7 +899,7 @@ export default {
     connectedAt: 'Connected on',
     lastUsedAt: 'Last used',
     neverUsed: 'Never used',
-    empty: 'No connected application.',
+    empty: 'No connected applications.',
     loadError: 'Your connected applications could not be loaded.',
     revoke: 'Revoke',
     revokeOne: 'Revoke {name}',
@@ -910,11 +910,12 @@ export default {
     groupDescription:
       'The AI assistants the company\'s users connected to LePatron. Each user can revoke their own; you can revoke them all at once, for instance if an access leaked.',
     groupCount:
-      'No connected application | 1 connected application | {count} connected applications',
+      'No connected applications | 1 connected application | {count} connected applications',
     groupRevoke: 'Revoke all',
     groupRevokeTitle: 'Revoke every connected application?',
     groupRevokeConfirm:
-      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again.',
+      'Every AI assistant connected for the company {group} loses its access at once. Each user will have to connect theirs again. | The AI assistant connected for the company {group} loses its access at once. Its user will have to connect it again. | The {count} AI assistants connected for the company {group} lose their access at once. Each user will have to connect theirs again.',
+    groupCountError: 'The number of connected applications is unavailable.',
     groupRevoked: 'Connected applications revoked',
   },
   mcpAccess: {

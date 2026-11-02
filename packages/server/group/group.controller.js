@@ -38,6 +38,7 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -617,6 +618,11 @@ async function update(req, res) {
   // whenever a request says it is off: the security event records the
   // change only, and a forgetting that failed can be run again.
   if (switches.allowRetex === false) await forgetRetex(req.params.groupId);
+  // MCP turned off ends the company's connected applications: turning it
+  // back on must not revive them (ADR 0012).
+  if (switches.enableMcp === false) {
+    await forgetConnections({ _company: req.params.groupId });
+  }
 
   // A log's end of retention is stamped at write time, so a retention change
   // has to reach the logs already kept: lowering it would otherwise apply to

@@ -23,6 +23,7 @@ const {
 } = require('../two-factor/reset.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
@@ -326,6 +327,8 @@ async function deactivate(req, res) {
 
   await user.deactivate();
   await forgetTrustedDevices(user.id);
+  // Reactivated, the user connects their assistants again (ADR 0012).
+  await forgetConnections({ _user: user._id });
   superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);

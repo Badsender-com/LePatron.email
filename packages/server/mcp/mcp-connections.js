@@ -3,7 +3,6 @@
 const express = require('express');
 const { McpConnections, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
-const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const logger = require('../utils/logger.js');
 
@@ -11,6 +10,11 @@ const logger = require('../utils/logger.js');
 const ISSUED_BY_GRANT = ['AccessToken', 'RefreshToken', 'AuthorizationCode'];
 
 const refuse = (res, status, message) => res.status(status).json({ message });
+
+// The last use is noted once a minute at most: `/mcp` is called often.
+const USE_NOTED_EVERY = 60 * 1000;
+const MAX_NOTED = 10000;
+const notedAt = new Map();
 
 /**
  * Records a connected application, at its consent (ADR 0012).
@@ -53,10 +57,16 @@ function recordConnection({
  */
 async function useConnection(grantId) {
   if (!grantId) return false;
+  const now = Date.now();
+  if (now - (notedAt.get(grantId) || 0) < USE_NOTED_EVERY) {
+    return (await McpConnections.countDocuments({ grantId })) > 0;
+  }
   const { matchedCount } = await McpConnections.updateOne(
     { grantId },
-    { $set: { lastUsedAt: new Date() } }
+    { $set: { lastUsedAt: new Date(now) } }
   );
+  if (notedAt.size >= MAX_NOTED) notedAt.clear();
+  if (matchedCount > 0) notedAt.set(grantId, now);
   return matchedCount > 0;
 }
 
@@ -73,17 +83,36 @@ async function revokeConnections(provider, filter) {
     .select('grantId')
     .lean();
   if (connections.length === 0) return;
-  await McpConnections.deleteMany(filter);
-  await Promise.all(
-    connections.map(({ grantId }) =>
-      Promise.all([
-        ...ISSUED_BY_GRANT.map((model) =>
-          provider[model].revokeByGrantId(grantId)
-        ),
-        provider.Grant.adapter.destroy(grantId),
-      ])
-    )
+  const grantIds = connections.map(({ grantId }) => grantId);
+  // The very connections read: one consented meanwhile stays whole.
+  await McpConnections.deleteMany({ grantId: { $in: grantIds } });
+  // Unlisted, they are already refused at `/mcp`: a grant or a token that
+  // could not be revoked only mints tokens `/mcp` refuses, until it expires.
+  const results = await Promise.allSettled(
+    grantIds.flatMap((grantId) => [
+      ...ISSUED_BY_GRANT.map((model) =>
+        provider[model].revokeByGrantId(grantId)
+      ),
+      provider.Grant.adapter.destroy(grantId),
+    ])
   );
+  results
+    .filter(({ status }) => status === 'rejected')
+    .forEach(({ reason }) =>
+      logger.error('[mcp-oauth] revoke grant', reason?.message)
+    );
+}
+
+/**
+ * Forgets connected applications where the authorization server is out of
+ * reach (a group turning MCP off, a group deleted, a user deactivated):
+ * unlisted, they are refused at `/mcp`, and turning MCP back on, or the user,
+ * revives none of them. Their grants expire on their own.
+ *
+ * @param {Object} filter which connections
+ */
+function forgetConnections(filter) {
+  return McpConnections.deleteMany(filter);
 }
 
 /**
@@ -166,11 +195,6 @@ function createConnectionsRouter(provider) {
   return router;
 }
 
-// A super admin, or an admin of this very group.
-const canManageGroup = (user, groupId) =>
-  permissions.can(user, CAPABILITIES.GROUP_MANAGE) &&
-  permissions.canAccessGroup(user, groupId);
-
 /**
  * The connected applications of a group, which its admin counts and revokes
  * at once: `/api/groups/:groupId/connected-applications`.
@@ -182,7 +206,10 @@ function createGroupConnectionsRouter(provider) {
   const router = express.Router({ mergeParams: true });
   router.use(signedIn, (req, res, next) => {
     const { groupId } = req.params;
-    if (!isObjectIdString(groupId) || !canManageGroup(req.user, groupId)) {
+    if (
+      !isObjectIdString(groupId) ||
+      !permissions.canManageGroup(req.user, groupId)
+    ) {
       return refuse(
         res,
         403,
@@ -219,6 +246,7 @@ module.exports = {
   recordConnection,
   useConnection,
   revokeConnections,
+  forgetConnections,
   forgetRevokedGrants,
   createConnectionsRouter,
   createGroupConnectionsRouter,

@@ -69,7 +69,7 @@ export default {
         @update="group.allowRetex = $event.allowRetex"
       />
       <bs-group-connected-applications-option
-        v-if="group.id && group.enableMcp"
+        v-if="group.id"
         class="mt-6"
         :group="group"
       />
