@@ -34,9 +34,18 @@ On a MacBook, Node 24.22.1, without Chrome and Cypress downloads in either case:
 | Warm cache, no `node_modules`  | 25 s      | 22 s        |
 | `node_modules` up to date      | < 1 s     | 4 s         |
 
-`yarn test-ci` and `yarn build` pass; `sharp`, `gifsicle` and `ssh2-sftp-client` load and work, and Puppeteer's install script downloads Chrome. What staging checks: a template preview (Chrome launching), and the install time on Clever Cloud, where Cypress's binary no longer downloads.
+`yarn test-ci` and `yarn build` pass; `sharp`, `gifsicle` and `ssh2-sftp-client` load and work, and Puppeteer's install script downloads Chrome. What staging checks: Chrome launching, through `POST /api/templates/:templateId/preview` (no screen calls it today), and the install time on Clever Cloud, where Cypress's binary no longer downloads.
 
 ### CI and deployment
 
 - **GitHub Actions** run `corepack enable` before `actions/setup-node`, whose Yarn cache asks Yarn for its cache folder, then `yarn install --immutable` (`--frozen-lockfile` in Yarn 1).
-- **Clever Cloud** picks Yarn 4 from `packageManager`, without `CC_NODE_BUILD_TOOL` (`yarn-berry` would say the same). It runs `yarn install` with no flag, and Yarn 4 always installs devDependencies, which `yarn build` needs: `CC_NODE_DEV_DEPENDENCIES` has no effect. Deploy once without the build cache after the switch.
+- **Clever Cloud** runs `yarn install` with no flag, and Yarn 4 always installs devDependencies, which `yarn build` needs.
+
+On each Clever Cloud application, just before the switch reaches its branch (the merge deploys it):
+
+- `CC_NODE_BUILD_TOOL` goes from `yarn`, which runs Yarn 1, to `yarn-berry`. Not before: the branch still deployed would then run on Yarn 4.
+- `CC_NODE_DEV_DEPENDENCIES` can go: it has no effect with Yarn 4.
+- Where `CC_CACHE_DEPENDENCIES` is `true`, add `YARN_ENABLE_GLOBAL_CACHE=false` and `CC_CACHE_DEPENDENCIES_EXTRA_PATHS=.yarn/cache`. Yarn 4 keeps its package cache in the home directory, which the dependency cache does not keep: with `node_modules` restored and that cache empty, Yarn 4 downloads every package again (547 MiB). With the cache in `.yarn/cache` and kept, an unchanged install takes 2 s instead of 19. The setting stays out of `.yarnrc.yml` so that each local worktree shares the global cache.
+- Where `CC_CACHE_DEPENDENCIES` is not set, every deployment installs from scratch, Yarn 1 as Yarn 4: nothing to add.
+
+The first deployment after the switch installs from scratch either way.
