@@ -1,0 +1,26 @@
+diff --git a/lib/cjs/httpUtil.js b/lib/cjs/httpUtil.js
+index baf50fc7eb07a6b4decd77492c94c52efbab9655..4fdf5c06a85662dc984260fc8fe092da136fba13 100644
+--- a/lib/cjs/httpUtil.js
++++ b/lib/cjs/httpUtil.js
+@@ -47,7 +47,7 @@ function headHttpRequest(url) {
+     });
+ }
+ exports.headHttpRequest = headHttpRequest;
+-function httpRequest(url, method, response, keepAlive = true) {
++function httpRequest(url, method, response, keepAlive = false) {
+     const options = {
+         protocol: url.protocol,
+         hostname: url.hostname,
+diff --git a/lib/esm/httpUtil.js b/lib/esm/httpUtil.js
+index 10640affe2c112fdc2e7fed11be492917ef7231e..3587867e20ec71a58c1a56c3c2219bd82a3ec0d7 100644
+--- a/lib/esm/httpUtil.js
++++ b/lib/esm/httpUtil.js
+@@ -20,7 +20,7 @@ export function headHttpRequest(url) {
+         });
+     });
+ }
+-export function httpRequest(url, method, response, keepAlive = true) {
++export function httpRequest(url, method, response, keepAlive = false) {
+     const options = {
+         protocol: url.protocol,
+         hostname: url.hostname,

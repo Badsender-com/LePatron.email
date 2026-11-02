@@ -4540,6 +4540,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@puppeteer/browsers@patch:@puppeteer/browsers@npm%3A1.9.1#~/.yarn/patches/@puppeteer-browsers-npm-1.9.1-f9743bc3b8.patch":
+  version: 1.9.1
+  resolution: "@puppeteer/browsers@patch:@puppeteer/browsers@npm%3A1.9.1#~/.yarn/patches/@puppeteer-browsers-npm-1.9.1-f9743bc3b8.patch::version=1.9.1&hash=2d467a"
+  dependencies:
+    debug: "npm:4.3.4"
+    extract-zip: "npm:2.0.1"
+    progress: "npm:2.0.3"
+    proxy-agent: "npm:6.3.1"
+    tar-fs: "npm:3.0.4"
+    unbzip2-stream: "npm:1.4.3"
+    yargs: "npm:17.7.2"
+  bin:
+    browsers: lib/cjs/main-cli.js
+  checksum: 10c0/e2a097ccf5c82928b2da5e2cbab302a85949d584699c7bfa4c664d0224a94b385dfea96eb0b80bbcee170430412ea7a9ad235c386d4a65762f051c602bfa7625
+  languageName: node
+  linkType: hard
+
 "@sindresorhus/is@npm:^0.14.0":
   version: 0.14.0
   resolution: "@sindresorhus/is@npm:0.14.0"

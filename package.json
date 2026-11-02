@@ -253,7 +253,8 @@
     "jsonwebtoken": "9.0.2",
     "xml-crypto": "2.1.6",
     "xmldom": "npm:@xmldom/xmldom@0.7.13",
-    "sib-api-v3-sdk/superagent": "10.3.0"
+    "sib-api-v3-sdk/superagent": "10.3.0",
+    "@puppeteer/browsers@npm:1.9.1": "patch:@puppeteer/browsers@npm%3A1.9.1#~/.yarn/patches/@puppeteer-browsers-npm-1.9.1-f9743bc3b8.patch"
   },
   "dependenciesMeta": {
     "gifsicle": {

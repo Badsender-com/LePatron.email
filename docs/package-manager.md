@@ -16,6 +16,12 @@ Yarn 1 is no longer maintained, and Clever Cloud cannot key its dependency cache
 
 `engines.yarn` (`<2`) is gone: `packageManager` replaces it.
 
+### Puppeteer's install waited ten minutes for nothing
+
+Puppeteer's install script downloads Chrome in about 20 s, then stays alive until Google's servers close the connection, which they do after 610 s idle: `@puppeteer/browsers` 1.9.1 asks for `Connection: keep-alive` on an agent that never releases the socket. On Clever Cloud this was most of the install (`yarn install` took 659 s, its "Building fresh packages" step about ten minutes). Measured locally: the script exits at 610 s, 23 s with the fix.
+
+The fix is a Yarn patch, `.yarn/patches/@puppeteer-browsers-npm-1.9.1-*.patch`, applied through `resolutions`: `httpRequest` no longer asks for keep-alive by default. Version 3 of `@puppeteer/browsers` no longer has this code, but it comes with a newer Puppeteer and Chrome. The patch goes when Puppeteer is upgraded.
+
 ### Lockfile
 
 Converted by Yarn, not regenerated: every package keeps the version Yarn 1 had resolved. Yarn 4 adds what its compatibility layer declares on behalf of packages that forget to (`@types/keyv` for `got`, `@babel/types` for `@babel/parser`, `node-gyp` for `fsevents`), none of which runs.
