@@ -51,6 +51,7 @@ const MODELS = {
   feedbacks: 'McpFeedbacks',
   callLogs: 'McpCallLogs',
   clients: 'McpClients',
+  connections: 'McpConnections',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.
@@ -220,6 +221,18 @@ function model(records) {
       const stored = { _id: newId(), ...copy(record) };
       records.push(stored);
       return toDocument(stored, stored);
+    },
+    // `$set` only.
+    updateOne: async (filter, { $set = {} } = {}) => {
+      const record = records.find((candidate) => matches(candidate, filter));
+      if (record) Object.assign(record, copy($set));
+      return { matchedCount: record ? 1 : 0 };
+    },
+    deleteMany: async (filter = {}) => {
+      const kept = records.filter((record) => !matches(record, filter));
+      const deletedCount = records.length - kept.length;
+      records.splice(0, Infinity, ...kept);
+      return { deletedCount };
     },
     deleteOne: async (filter = {}) => {
       const index = records.findIndex((record) => matches(record, filter));

@@ -4,6 +4,7 @@
 const { default: Provider, errors } = require('oidc-provider');
 const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const { forgetRevokedGrants } = require('./mcp-connections.js');
 const { SCOPES } = require('./mcp-identity.js');
 
 // Short-lived access tokens, rotating refresh tokens (ADR 0012).
@@ -151,6 +152,7 @@ function createAuthorizationServer({
       authorization_response_iss_parameter_supported: true,
     },
   });
+  forgetRevokedGrants(provider);
   provider.on('registration_create.success', (ctx, client) =>
     keepRegisteredClient(
       provider,
@@ -167,4 +169,5 @@ module.exports = {
   accountIdOf,
   identityOf,
   SCOPES,
+  TTL,
 };

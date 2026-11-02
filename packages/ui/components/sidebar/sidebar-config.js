@@ -55,6 +55,12 @@ export const SYSTEM_ITEMS = [
     route: '/groups',
   },
   {
+    id: 'connectedApplications',
+    icon: 'Plug',
+    labelKey: 'sidebar.system.connectedApplications',
+    route: '/connected-applications',
+  },
+  {
     id: 'help',
     icon: 'HelpCircle',
     labelKey: 'sidebar.system.help',

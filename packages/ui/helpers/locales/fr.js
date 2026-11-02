@@ -1146,7 +1146,7 @@ export default {
     copied: 'Copié',
     deleteTitle: 'Supprimer ce client ?',
     deleteConfirm:
-      'L\'assistant « {name} » ne pourra plus se connecter ni renouveler ses connexions. Celles en cours s\'arrêtent dans l\'heure.',
+      'L\'assistant « {name} » ne pourra plus se connecter ni renouveler ses connexions. Celles en cours s\'arrêtent aussitôt.',
     deleted: 'Client supprimé',
     serverTitle: 'Paramètres du serveur',
     serverDescription:
@@ -1166,6 +1166,33 @@ export default {
       redirectUrisInvalid:
         'Jusqu\'à 10 URL, en HTTPS (HTTP seulement vers localhost), sans fragment #.',
     },
+  },
+  connectedApplications: {
+    pageTitle: 'Applications connectées',
+    description:
+      'Les assistants IA que vous avez connectés à LePatron. Chacun lit LePatron avec vos droits, dans l\'entreprise choisie à la connexion. Révoquez ceux que vous n\'utilisez plus.',
+    name: 'Application',
+    group: 'Entreprise',
+    connectedAt: 'Connectée le',
+    lastUsedAt: 'Dernière utilisation',
+    neverUsed: 'Jamais utilisée',
+    empty: 'Aucune application connectée.',
+    loadError: 'Impossible de charger vos applications connectées.',
+    revoke: 'Révoquer',
+    revokeOne: 'Révoquer {name}',
+    revokeTitle: 'Révoquer cette application\u00a0?',
+    revokeConfirm:
+      '« {name} » perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Pour l\'utiliser à nouveau, il faudra la reconnecter.',
+    revoked: 'Application révoquée',
+    groupDescription:
+      'Les assistants IA que les utilisateurs de l\'entreprise ont connectés à LePatron. Chaque utilisateur peut révoquer les siens ; vous pouvez tous les révoquer d\'un coup, par exemple si un accès a fuité.',
+    groupCount:
+      'Aucune application connectée | 1 application connectée | {count} applications connectées',
+    groupRevoke: 'Tout révoquer',
+    groupRevokeTitle: 'Révoquer toutes les applications connectées\u00a0?',
+    groupRevokeConfirm:
+      'Tous les assistants IA connectés pour l\'entreprise {group} perdent aussitôt leur accès. Chaque utilisateur devra reconnecter le sien.',
+    groupRevoked: 'Applications connectées révoquées',
   },
   mcpAccess: {
     title: 'Accès MCP',
@@ -1350,6 +1377,7 @@ export default {
     },
     system: {
       settings: 'Paramètres',
+      connectedApplications: 'Applications connectées',
       help: 'Aide',
       logout: 'Se déconnecter',
     },
