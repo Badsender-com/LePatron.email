@@ -4,6 +4,7 @@
 const { default: Provider, errors } = require('oidc-provider');
 const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
+const { forgetRevokedGrants } = require('./mcp-connections.js');
 const { READ_SCOPE } = require('./mcp-identity.js');
 const { WRITE_SCOPE } = require('./mcp-authoring.js');
 
@@ -154,6 +155,7 @@ function createAuthorizationServer({
       authorization_response_iss_parameter_supported: true,
     },
   });
+  forgetRevokedGrants(provider);
   provider.on('registration_create.success', (ctx, client) =>
     keepRegisteredClient(
       provider,
@@ -170,4 +172,5 @@ module.exports = {
   accountIdOf,
   identityOf,
   SCOPES,
+  TTL,
 };

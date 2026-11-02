@@ -153,9 +153,23 @@ describe('audience', () => {
   });
 
   // A token of LePatron's authorization server, valid in every way but the
-  // resource it was issued for.
+  // resource it was issued for: its connection stands.
   const tokenFor = async (aud) => {
     const client = await app.provider.Client.find(CIMD_CLIENT.client_id);
+    // The stand-ins of the harness.
+    const {
+      McpConnections,
+    } = require('../../../packages/server/common/models.common.js');
+    await McpConnections.create({
+      grantId: 'a-grant',
+      clientId: CIMD_CLIENT.client_id,
+      clientName: CIMD_CLIENT.client_name,
+      _user: f.FRANK,
+      _company: f.CLIENT_GROUP,
+      connectedAt: new Date(),
+      lastUsedAt: null,
+      expiresAt: new Date(Date.now() + 3600 * 1000),
+    });
     const token = new app.provider.AccessToken({
       accountId: `${f.FRANK}.${f.CLIENT_GROUP}`,
       client,
