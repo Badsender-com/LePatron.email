@@ -26,4 +26,4 @@ The skills and expertises improve with use: the feedback and retex of ADR 0012 t
 
 - MCP is no longer read-only: besides the feedback of ADR 0012, it writes the drafts of the platform company's own skills and expertises, and ADR 0012's title says so.
 - The authorization server of #1306 offers the `skills:write` scope at consent, unticked, to holders of `platform.manage` only; left unticked, the connection proposes no draft.
-- A skill never published shows among a client's prompts only once it reconnects: clients load the prompts list at connection. `find_skills` finds it meanwhile.
+- The lists of prompts and resources change with the mode: turning it on or off tells the client so (`notifications/prompts/list_changed`, `notifications/resources/list_changed`), within the answer's own stream, so a client that keeps no stream open between requests reloads them too, a skill never published included.
