@@ -189,6 +189,7 @@ function registerFindApplicableExpertises(server) {
 module.exports = {
   registerExpertiseResources,
   registerFindApplicableExpertises,
+  servedExpertises,
   readableExpertise,
   asMarkdown,
   uriOf,

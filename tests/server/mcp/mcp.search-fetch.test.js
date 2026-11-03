@@ -11,8 +11,7 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
-// Turned on by #1305 (search and fetch for ChatGPT)
-describe.skip('search and fetch', () => {
+describe('search and fetch', () => {
   let client;
 
   beforeEach(async () => {
@@ -36,6 +35,32 @@ describe.skip('search and fetch', () => {
       expect(ids(await search('black friday'))).toEqual(
         [`mailing:${f.M_ARCHIVED}`, `mailing:${f.M_NEWSLETTER}`].sort()
       );
+    });
+
+    it('finds a mailing by its subject, a tag or its email type', async () => {
+      const PROMOTIONAL = '507f1f77bcf86cd799439a01';
+      harness.seed({
+        ...f.SEED,
+        taxonomyItems: [
+          {
+            _id: PROMOTIONAL,
+            _company: f.CLIENT_GROUP,
+            type: 'emailType',
+            label: 'Promotional',
+          },
+        ],
+      });
+      harness.update('mailings', f.M_APPROVED, {
+        subject: 'Welcome aboard',
+        tags: ['onboarding'],
+        _emailType: PROMOTIONAL,
+      });
+      client = await harness.connectAs(f.FRANK);
+
+      for (const query of ['aboard', 'onboarding', 'promotional']) {
+        // eslint-disable-next-line no-await-in-loop
+        expect(ids(await search(query))).toEqual([`mailing:${f.M_APPROVED}`]);
+      }
     });
 
     it('gives each result an id, a title and a link to the app', async () => {
