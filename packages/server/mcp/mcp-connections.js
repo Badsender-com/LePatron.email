@@ -17,6 +17,10 @@ const USE_NOTED_EVERY = 60 * 1000;
 const MAX_NOTED = 10000;
 const notedAt = new Map();
 
+// Mongoose 5 answers `n`, later versions `matchedCount`.
+const matchedOne = (result) =>
+  (typeof result.n === 'number' ? result.n : result.matchedCount) > 0;
+
 /**
  * Records a connected application, at its consent (ADR 0012).
  *
@@ -62,13 +66,15 @@ async function useConnection(grantId) {
   if (now - (notedAt.get(grantId) || 0) < USE_NOTED_EVERY) {
     return (await McpConnections.countDocuments({ grantId })) > 0;
   }
-  const { matchedCount } = await McpConnections.updateOne(
-    { grantId },
-    { $set: { lastUsedAt: new Date(now) } }
+  const stands = matchedOne(
+    await McpConnections.updateOne(
+      { grantId },
+      { $set: { lastUsedAt: new Date(now) } }
+    )
   );
   if (notedAt.size >= MAX_NOTED) notedAt.clear();
-  if (matchedCount > 0) notedAt.set(grantId, now);
-  return matchedCount > 0;
+  if (stands) notedAt.set(grantId, now);
+  return stands;
 }
 
 /**
