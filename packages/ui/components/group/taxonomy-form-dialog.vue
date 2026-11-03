@@ -237,7 +237,6 @@ export default {
           :label="$t('taxonomy.form.isActive')"
           :disabled="loading"
           color="accent"
-          inset
           hide-details
           class="taxonomy-form__switch"
           @change="form.isActive = Boolean($event)"
