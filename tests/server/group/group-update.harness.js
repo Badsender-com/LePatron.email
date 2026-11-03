@@ -83,9 +83,18 @@ function storedGroup(fields) {
     lean: jest.fn().mockResolvedValue(group),
     then: (resolve, reject) => Promise.resolve(group).then(resolve, reject),
   });
-  Groups.findOneAndUpdate.mockReturnValue({
-    lean: jest.fn().mockResolvedValue(group),
-  });
+  // The switches are written apart, and answer what they were.
+  Groups.findOneAndUpdate.mockImplementation((_filter, change) => ({
+    lean: jest.fn().mockImplementation(async () => {
+      const before = { ...group };
+      Object.assign(group, change.$set);
+      return before;
+    }),
+  }));
+  // The rest of the update, as saved: what the controller reads back.
+  groupService.updateGroup.mockImplementation(async (changes) =>
+    Object.assign(group, changes)
+  );
 }
 
 /**
