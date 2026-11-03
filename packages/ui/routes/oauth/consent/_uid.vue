@@ -4,6 +4,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
 
 // What each scope lets the application do, in the user's words.
+const WRITE_SCOPE = 'skills:write';
 const SCOPE_LABELS = {
   'mcp:read': 'oauthConsent.scopes.read',
   'skills:write': 'oauthConsent.scopes.write',
@@ -25,6 +26,8 @@ export default {
       isLoading: true,
       // The answer being sent, 'allow' or 'deny', for its button to spin.
       sending: null,
+      // Drafting is offered to a super admin, never assumed (ADR 0014).
+      allowWrite: false,
     };
   },
   head() {
@@ -76,9 +79,12 @@ export default {
       }
       return '';
     },
+    canWrite() {
+      return (this.interaction?.scopes || []).includes(WRITE_SCOPE);
+    },
     scopeLabels() {
       return (this.interaction?.scopes || [])
-        .filter((scope) => SCOPE_LABELS[scope])
+        .filter((scope) => scope !== WRITE_SCOPE && SCOPE_LABELS[scope])
         .map((scope) => this.$t(SCOPE_LABELS[scope]));
     },
   },
@@ -126,6 +132,7 @@ export default {
     allow() {
       return this.answer('allow', apiRoutes.oauthInteractionConsent(this.uid), {
         groupId: this.groupId,
+        allowWrite: this.canWrite && this.allowWrite,
       });
     },
     deny() {
@@ -193,11 +200,20 @@ export default {
           <p class="mb-1">
             {{ $t('oauthConsent.canDo') }}
           </p>
-          <ul class="mb-4">
+          <ul :class="canWrite ? 'mb-0' : 'mb-4'">
             <li v-for="label in scopeLabels" :key="label">
               {{ label }}
             </li>
           </ul>
+          <v-checkbox
+            v-if="canWrite"
+            v-model="allowWrite"
+            :label="$t('oauthConsent.allowWrite')"
+            :hint="$t('oauthConsent.allowWriteHint')"
+            persistent-hint
+            color="accent"
+            class="mt-2 mb-4"
+          />
           <v-select
             v-if="interaction.groups.length > 1"
             v-model="groupId"

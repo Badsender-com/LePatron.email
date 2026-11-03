@@ -35,6 +35,7 @@ LePatron exposes an MCP server so that the AI assistants its users already work 
 ## Consequences
 
 - `oidc-provider` serves Client ID Metadata Documents as an experimental feature: its version is pinned to a minor.
+- A metadata document whose redirect URIs all point to the user's own machine, and which declares no application type, is read as a native client's (RFC 8252 §7.3), so any port of the loopback address is accepted: Claude Code declares `http://localhost/callback` and listens on a port of its choosing. Codes only ever reach the user's machine, and PKCE is required of every client.
 - Clients that cannot share the embedded authorization server's registration modes are not supported until one of the three fits them.
 - Exposing the expertises in full to the client companies with MCP access is accepted: their value is in being kept up to date.
 - Left for later, for want of clients that support them, and kept possible by the stateless v2 server: the Skills extension of MCP (skills stay prompts), asking the retex consent through elicitation (it stays a tool argument), Tasks for long operations (the write tools will also answer a job to poll), and enterprise-managed authorization.

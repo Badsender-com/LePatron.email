@@ -827,6 +827,9 @@ export default {
       write:
         'propose drafts of skills and expertises, which only a person can publish',
     },
+    allowWrite: 'Also let it propose drafts of skills and expertises',
+    allowWriteHint:
+      'Super admins only. Only a person publishes a draft. Tick it only for an assistant of the Badsender team.',
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',

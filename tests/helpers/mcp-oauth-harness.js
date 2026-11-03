@@ -193,14 +193,14 @@ async function followToClient(agent, redirectTo) {
 async function connect(
   app,
   userId,
-  { client = CIMD_CLIENT, group, secret, scope } = {}
+  { client = CIMD_CLIENT, group, secret, scope, allowWrite } = {}
 ) {
   const agent = signIn(app, userId);
   const { verifier, challenge } = pkce();
   const uid = await startConsent(agent, client, challenge, scope && { scope });
   const consent = await agent
     .post(`/oauth/consent/${uid}/consent`)
-    .send({ groupId: group });
+    .send({ groupId: group, ...(allowWrite && { allowWrite }) });
   const back = await followToClient(agent, consent.body.redirectTo);
   const code = back.searchParams.get('code');
   if (!code) return { redirect: back };
