@@ -613,6 +613,7 @@ export default {
           </div>
           <v-switch
             v-model="localTemplate.htmlBlockEnabled"
+            color="accent"
             hide-details
             :disabled="disabled"
             class="option-card__switch"
@@ -643,6 +644,7 @@ export default {
           </div>
           <v-switch
             v-model="localTemplate.blockBuilderEnabled"
+            color="accent"
             hide-details
             :disabled="disabled"
             class="option-card__switch"
