@@ -17,10 +17,7 @@ const {
   SkillIdRegex,
   MaxConsumedExpertises,
 } = require('../ai-skill/constant/skill-constants.js');
-const { withIdentity } = require('./mcp-identity.js');
-
-// The scope a token needs for the writing tools to exist (ADR 0014).
-const WRITE_SCOPE = 'skills:write';
+const { withIdentity, WRITE_SCOPE } = require('./mcp-identity.js');
 
 const ENTITIES = {
   expertise: {

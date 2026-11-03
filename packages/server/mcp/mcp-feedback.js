@@ -19,10 +19,11 @@ async function resolveReference({ kind, id }, identity) {
       ? { kind, id, version: null }
       : null;
   }
+  // The version read: a draft's in drafts mode (#1385).
   const found =
     kind === 'skill'
-      ? await servedSkill(id, identity.group)
-      : await readableExpertise(id, identity.group);
+      ? await servedSkill(id, identity.group, identity.drafts)
+      : await readableExpertise(id, identity.group, identity.drafts);
   return found ? { kind, id, version: versionLabel(found.version) } : null;
 }
 

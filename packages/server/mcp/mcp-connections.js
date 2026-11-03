@@ -78,6 +78,38 @@ async function useConnection(grantId) {
 }
 
 /**
+ * Turns the drafts mode of a connection on until a date, or off (null).
+ *
+ * @param {string} [grantId]
+ * @param {Date|null} until
+ * @returns {Promise<boolean>} whether the connection was found
+ */
+async function setDraftsMode(grantId, until) {
+  // A string the server wrote in the token, checked as such before any query.
+  if (!grantId || typeof grantId !== 'string') return false;
+  return matchedOne(
+    await McpConnections.updateOne(
+      { grantId },
+      { $set: { draftsUntil: until } }
+    )
+  );
+}
+
+/**
+ * Whether a connection is in drafts mode: on, and not expired.
+ *
+ * @param {string} [grantId]
+ * @returns {Promise<boolean>}
+ */
+async function isDraftsModeOn(grantId) {
+  if (!grantId || typeof grantId !== 'string') return false;
+  const connection = await McpConnections.findOne({ grantId })
+    .select('draftsUntil')
+    .lean();
+  return !!connection?.draftsUntil && connection.draftsUntil > new Date();
+}
+
+/**
  * Revokes connected applications: unlisted first, which stops them at
  * `/mcp` at once, then their grants and every token they issued, which
  * stops their refresh.
@@ -266,6 +298,8 @@ function createGroupConnectionsRouter(provider) {
 module.exports = {
   recordConnection,
   useConnection,
+  setDraftsMode,
+  isDraftsModeOn,
   revokeConnections,
   forgetConnections,
   attachAuthorizationServer,
