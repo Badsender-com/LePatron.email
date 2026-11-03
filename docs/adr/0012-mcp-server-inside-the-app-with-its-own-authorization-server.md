@@ -17,7 +17,7 @@ LePatron exposes an MCP server so that the AI assistants its users already work 
 
 **It is built on the v2 MCP SDK**, served without state behind one route. The v2 SDK follows the 2026-07-28 protocol and still answers the clients that speak the 2025 versions, which most do today; the v1 SDK will not follow the 2026 protocol and only gets fixes for a few months more. The v2 SDK needs Node 20, which the move to Node 24 (#1337) brings.
 
-**Feedback and retex.** MCP has no feedback primitive and the server never sees the conversation, so feedback is a tool. Its retex part, a session summary written by the assistant, is kept only if the group allows retex and the user agrees to it for that feedback. Calls are logged as metadata only (who, which client, which tool, which objects, how long), never the content returned, and kept for the group's log retention.
+**Feedback and retex.** MCP has no feedback primitive and the server never sees the conversation, so feedback is a tool. Its retex part, a session summary written by the assistant, is kept only if the group allows retex and the user agrees to it for that feedback. Calls are logged as metadata only (who, which client, which tool, which objects, how long), never the content returned, and kept for the group's log retention. Calls are limited to 60 a minute per connection and 300 per group, counted in each process's memory: the limit guards against an assistant running away, it is no quota, and the app's workers each count their own. The guard and the log wrap every handler through the SDK's `_wrapHandler`, a private hook, so the SDK is pinned to an exact version and the call log suites fail if the hook goes.
 
 ## Considered Options
 
