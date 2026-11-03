@@ -1,0 +1,72 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { siteOrigin } = require('../email-templates/email-template.js');
+
+// The email itself in the conversation (ADR 0012, #1342): get_mailing points
+// the clients that render MCP Apps at this UI resource, and hands it the
+// sanitised preview in its result's `_meta`, which the assistant does not
+// read. The others keep the text answer.
+
+const PREVIEW_APP_URI = 'ui://lepatron/mailing-preview';
+const APP_MIME_TYPE = 'text/html;profile=mcp-app';
+
+const APP_HTML = fs.readFileSync(
+  path.join(__dirname, 'mailing-preview-app.html'),
+  'utf8'
+);
+
+// What get_mailing declares: the MCP Apps key, and its ChatGPT alias.
+const PREVIEW_TOOL_META = {
+  ui: { resourceUri: PREVIEW_APP_URI },
+  'openai/outputTemplate': PREVIEW_APP_URI,
+};
+
+/**
+ * The preview app, served as an MCP App. The host frames it under the CSP it
+ * declares: no connection anywhere, and images from LePatron only, where the
+ * editor uploads them; an image hosted elsewhere shows as its alternative text.
+ *
+ * @param {import('@modelcontextprotocol/server').McpServer} server
+ */
+function registerPreviewApp(server) {
+  server.registerResource(
+    'mailing-preview',
+    PREVIEW_APP_URI,
+    {
+      title: 'Mailing preview',
+      description: 'Shows a mailing read by get_mailing as the email itself.',
+      mimeType: APP_MIME_TYPE,
+    },
+    async (uri) => {
+      const origin = siteOrigin();
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: APP_MIME_TYPE,
+            text: APP_HTML,
+            _meta: {
+              ui: {
+                csp: { connectDomains: [], resourceDomains: [origin] },
+                prefersBorder: true,
+              },
+              'openai/widgetCSP': {
+                connect_domains: [],
+                resource_domains: [origin],
+              },
+              'openai/widgetPrefersBorder': true,
+            },
+          },
+        ],
+      };
+    }
+  );
+}
+
+module.exports = {
+  registerPreviewApp,
+  PREVIEW_TOOL_META,
+  PREVIEW_APP_URI,
+};

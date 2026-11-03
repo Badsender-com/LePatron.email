@@ -11,6 +11,7 @@ const { resolveIdentity } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
 const { MAILING, asItem, failure } = require('./mcp-mailings.js');
+const { PREVIEW_TOOL_META } = require('./mcp-preview-app.js');
 
 // Reading one mailing (#1304, ADR 0012): its facts and derived status, and its
 // content, read from the sanitised preview the app serves.
@@ -138,14 +139,18 @@ function registerGetMailing(server) {
         variables: z.array(z.string()),
       }),
       annotations: { readOnlyHint: true, openWorldHint: false },
+      // The clients that render MCP Apps show the email itself (#1342).
+      _meta: PREVIEW_TOOL_META,
     },
     async ({ mailingId, format }, ctx) => {
       const identity = await resolveIdentity(ctx.http?.authInfo);
-      const answer = await mailingOf(mailingId, identity, format);
-      if (!answer) return failure(MAILING_NOT_FOUND);
+      const read = await readMailing(mailingId, identity, format);
+      if (!read) return failure(MAILING_NOT_FOUND);
       return {
-        content: [{ type: 'text', text: JSON.stringify(answer) }],
-        structuredContent: answer,
+        content: [{ type: 'text', text: JSON.stringify(read.answer) }],
+        structuredContent: read.answer,
+        // For the preview app only: the assistant reads the answer above.
+        ...(read.html && { _meta: { ui: { previewHtml: read.html } } }),
       };
     }
   );
