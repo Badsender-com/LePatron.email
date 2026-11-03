@@ -94,6 +94,46 @@ describe('search and fetch', () => {
       expect(ids(await search('old rules'))).toEqual([]);
     });
 
+    it('matches whatever the case and the accents, both ways', async () => {
+      harness.update('mailings', f.M_APPROVED, {
+        name: 'Événement de rentrée',
+      });
+
+      expect(ids(await search('EVENEMENT rentree'))).toEqual([
+        `mailing:${f.M_APPROVED}`,
+      ]);
+      expect(ids(await search('Black Fridäy 2025'))).toEqual([
+        `mailing:${f.M_NEWSLETTER}`,
+      ]);
+    });
+
+    it('finds a mailing whose words sit in different fields', async () => {
+      // "black" in the name, "prices" in the subject.
+      expect(ids(await search('black prices'))).toEqual([
+        `mailing:${f.M_NEWSLETTER}`,
+      ]);
+    });
+
+    it('takes every character of a word as written', async () => {
+      harness.update('mailings', f.M_APPROVED, { name: 'Up to 50% (c++) off' });
+
+      expect(ids(await search('(c++)'))).toEqual([`mailing:${f.M_APPROVED}`]);
+      expect(ids(await search('.*'))).toEqual([]);
+    });
+
+    it('finds nothing for a query of blanks', async () => {
+      expect(await search('   ')).toEqual({ results: [] });
+    });
+
+    it('refuses a query longer than a few words could be', async () => {
+      const result = await client.callTool({
+        name: 'search',
+        arguments: { query: 'word '.repeat(100) },
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
     // No full-text search on content in this version.
     it('does not search the content of a mailing', async () => {
       expect(ids(await search('free delivery'))).toEqual([]);
@@ -111,6 +151,13 @@ describe('search and fetch', () => {
         metadata: expect.objectContaining({ status: 'pushed-to-esp' }),
       });
       expect(document.text).toContain('Black Friday is coming');
+    });
+
+    it('reads back a mailing without content, saying why', async () => {
+      const document = await fetch(`mailing:${f.M_NO_PREVIEW}`);
+
+      expect(document.title).toBe('Blank draft');
+      expect(document.text).toContain('never saved in the editor');
     });
 
     it('reads back the active version of an expertise', async () => {

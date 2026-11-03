@@ -24,6 +24,7 @@ Once the app is published, each user turns it on in their ChatGPT apps, then all
 
 ## Good to know
 
+- **Deep research:** ChatGPT searches LePatron for mailings by words of their name, subject, tags or email type (not their content), and for expertises by their title and sections, whatever the case and accents. It then reads each result, and its citations link a mailing to its editor in LePatron. An expertise has no page to open: its citation is not clickable.
 - **List of actions:** when LePatron adds tools later, the admin has to refresh the app's list of actions. On some plans, the app has to be created again.
 - **Unverified app:** a custom app is not verified by OpenAI. The workspace admin vouches for it to its users.
 
