@@ -77,6 +77,36 @@ describe('connected applications', () => {
     );
   });
 
+  // MCP turned off, a group deleted, a user deactivated or given a new
+  // password: the app's events revoke as the user does.
+  it('stops an application the app ends at its next call and its next refresh', async () => {
+    const tokens = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const {
+      forgetConnections,
+    } = require('../../../packages/server/mcp/mcp-connections.js');
+
+    await forgetConnections({ _user: f.FRANK });
+
+    expect((await listFor(f.FRANK)).body.items).toEqual([]);
+    expect((await oauth.callMcp(app, tokens.access_token)).status).toBe(401);
+    expect((await refresh(app, tokens.refresh_token)).body.error).toBe(
+      'invalid_grant'
+    );
+  });
+
+  it('replaces the connection of an application connected again', async () => {
+    const first = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
+    const second = await oauth.connect(app, f.FRANK, {
+      group: f.CLIENT_GROUP,
+    });
+
+    expect((await listFor(f.FRANK)).body.items).toHaveLength(1);
+    expect((await refresh(app, first.refresh_token)).body.error).toBe(
+      'invalid_grant'
+    );
+    expect((await oauth.callMcp(app, second.access_token)).status).toBe(200);
+  });
+
   it("does not let a user revoke another user's application", async () => {
     await oauth.connect(app, f.ERIN, { group: f.CLIENT_GROUP });
     const [application] = (await listFor(f.ERIN)).body.items;

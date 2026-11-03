@@ -103,25 +103,34 @@ async function revokeConnections(provider, filter) {
     );
 }
 
+// The authorization server the app mounted (mcp-oauth.js), for the app's own
+// events to revoke through it; none in scripts and in the tool suites.
+let authorizationServer = null;
+
 /**
- * Forgets connected applications where the authorization server is out of
- * reach (a group turning MCP off, a group deleted, a user deactivated):
- * unlisted, they are refused at `/mcp`, and turning MCP back on, or the user,
- * revives none of them. Their grants expire on their own.
+ * Ends connected applications on an event of the app (a group turning MCP
+ * off, a group deleted, a user deactivated or given a new password): revoked
+ * like a user revokes one, so neither their calls nor their refresh go on,
+ * and turning MCP back on, or the user, revives none of them. Without an
+ * authorization server, they are unlisted, which `/mcp` refuses.
  *
  * @param {Object} filter which connections
  */
 function forgetConnections(filter) {
-  return McpConnections.deleteMany(filter);
+  return authorizationServer
+    ? revokeConnections(authorizationServer, filter)
+    : McpConnections.deleteMany(filter).then(() => undefined);
 }
 
 /**
- * Forgets the connection of a grant the authorization server revoked itself
- * (a client revoking its refresh token).
+ * Binds the connections to the authorization server: the app's events revoke
+ * through it, and the connection of a grant it revoked itself (a client
+ * revoking its refresh token) goes.
  *
  * @param {import('oidc-provider').default} provider
  */
-function forgetRevokedGrants(provider) {
+function attachAuthorizationServer(provider) {
+  authorizationServer = provider;
   provider.on('grant.revoked', (ctx, grantId) =>
     McpConnections.deleteOne({ grantId }).catch((error) =>
       logger.error('[mcp-oauth] grant revoked', error.message)
@@ -247,7 +256,7 @@ module.exports = {
   useConnection,
   revokeConnections,
   forgetConnections,
-  forgetRevokedGrants,
+  attachAuthorizationServer,
   createConnectionsRouter,
   createGroupConnectionsRouter,
 };

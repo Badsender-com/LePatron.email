@@ -7,7 +7,7 @@ const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE, WRITE_SCOPE } = require('./mcp-identity.js');
 const logger = require('../utils/logger.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
-const { recordConnection } = require('./mcp-connections.js');
+const { recordConnection, revokeConnections } = require('./mcp-connections.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
 
@@ -176,6 +176,13 @@ function createInteractionsRouter(provider, resource) {
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
       const client = await provider.Client.find(interaction.params.client_id);
+      // Connecting an application again replaces its previous connection to
+      // the group: one line per application, and no older token lives on.
+      await revokeConnections(provider, {
+        _user: consenter.user.id,
+        _company: groupId,
+        clientId: interaction.params.client_id,
+      });
       await recordConnection({
         grantId,
         clientId: interaction.params.client_id,
