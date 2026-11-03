@@ -5,7 +5,7 @@ const { McpFeedbacks } = require('../common/models.common.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill, versionOf } = require('./mcp-skill-catalog.js');
-const { readableMailing } = require('./mcp-mailings.js');
+const { readableMailing } = require('./mcp-mailing-read.js');
 const {
   computeExpiresAt,
 } = require('../ai-skill/services/invocation-logger.service.js');

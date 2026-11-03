@@ -170,8 +170,8 @@ function sortedBy(spec, list) {
   });
 }
 
-// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }` or `'name -data'`. `_id` is
-// kept unless excluded.
+// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }`, `'name -data'` or
+// `'data.preheaderText'`. `_id` is kept unless excluded.
 function projected(record, projection) {
   if (!projection) return { ...record };
   const entries =
@@ -189,6 +189,19 @@ function projected(record, projection) {
   const excludesId = entries.some(([key, value]) => key === '_id' && !value);
   const copy = excludesId ? {} : { _id: record._id };
   entries.forEach(([key, value]) => {
+    if (value === 1 && key.includes('.')) {
+      // `data.preheaderText`: the path, and nothing else of its parents.
+      const path = key.split('.');
+      const found = path.reduce((node, part) => node && node[part], record);
+      if (found === undefined) return;
+      let target = copy;
+      path.slice(0, -1).forEach((part) => {
+        target[part] = target[part] || {};
+        target = target[part];
+      });
+      target[path[path.length - 1]] = found;
+      return;
+    }
     if (value === 1 && record[key] !== undefined) copy[key] = record[key];
     if (typeof value === 'string' && value.startsWith('$')) {
       copy[key] = record[value.slice(1)];

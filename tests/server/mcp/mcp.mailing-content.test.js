@@ -13,6 +13,17 @@ const {
   sanitizePreviewHtml,
 } = require('../../../packages/server/utils/preview-html-sanitizer.js');
 
+const {
+  MAX_PREVIEW_LENGTH,
+} = require('../../../packages/server/mcp/mcp-mailing-read.js');
+
+// A subfolder of FOLDER_ARCHIVE, known by its parent, as the app files it.
+const SUBFOLDER = {
+  _id: '507f1f77bcf86cd799439302',
+  name: '2024',
+  _parentFolder: '507f1f77bcf86cd799439301',
+};
+
 const getMailing = async (client, args) =>
   harness.answerOf(
     await client.callTool({ name: 'get_mailing', arguments: args })
@@ -90,7 +101,7 @@ describe('mailing content', () => {
     it('gives its preheader, the hidden text before the visible one', async () => {
       harness.update('mailings', f.M_NEWSLETTER, {
         previewHtml: `<html><body>
-          <span style="display: none !important">Up to 50% off&zwnj;&nbsp;&zwnj;&nbsp;</span>
+          <span style="display: none !important; visibility: hidden; max-height: 0px; opacity: 0">Up to 50% off&zwnj;&nbsp;&zwnj;&nbsp;</span>
           <p>Black Friday is coming</p>
           <div style="display:none">Mobile only</div>
         </body></html>`,
@@ -117,8 +128,40 @@ describe('mailing content', () => {
     it('gives the facts of a mailing never saved in the editor, without content', async () => {
       const answer = await getMailing(client, { mailingId: f.M_NO_PREVIEW });
 
-      expect(answer).toMatchObject({ id: f.M_NO_PREVIEW, name: 'Blank draft' });
-      expect(answer.text).toBeNull();
+      expect(answer).toMatchObject({
+        id: f.M_NO_PREVIEW,
+        name: 'Blank draft',
+        text: null,
+        contentMissing: 'never-saved',
+      });
+    });
+
+    it('gives no content for a preview too large to read, and says so', async () => {
+      harness.update('mailings', f.M_NEWSLETTER, {
+        previewHtml: `<p>${'x'.repeat(MAX_PREVIEW_LENGTH)}</p>`,
+      });
+
+      const answer = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+      expect(answer).toMatchObject({ text: null, contentMissing: 'too-large' });
+    });
+
+    it('gives where it sits, down to its subfolder', async () => {
+      harness.seed({
+        ...f.SEED,
+        folders: [...f.SEED.folders, SUBFOLDER],
+      });
+      harness.update('mailings', f.M_ARCHIVED, {
+        _parentFolder: SUBFOLDER._id,
+      });
+
+      const answer = await getMailing(client, { mailingId: f.M_ARCHIVED });
+
+      expect(answer).toMatchObject({
+        workspace: { id: f.WS_NEWS, name: 'Newsletters' },
+        folder: { id: f.FOLDER_ARCHIVE, name: 'Archive' },
+        subfolder: { id: SUBFOLDER._id, name: '2024' },
+      });
     });
   });
 
@@ -203,6 +246,49 @@ describe('mailing content', () => {
   });
 
   describe('rights', () => {
+    // Every role of ADR 0004, on a workspace the members read and one they
+    // do not: the rule of the listing.
+    it.each([
+      ['super admin, in the group picked at consent', 'ALICE', true, true],
+      ['company admin', 'ERIN', true, true],
+      ['tech admin', 'TESS', true, true],
+      ['regular user', 'FRANK', true, false],
+      ['writer', 'WREN', true, false],
+      ['reviewer', 'REX', true, false],
+    ])(
+      'lets a %s read as the listing does',
+      async (_case, key, ours, theirs) => {
+        const client = await harness.connectAs(f[key], {
+          group: f.CLIENT_GROUP,
+        });
+        const reads = async (mailingId) =>
+          !(await getMailing(client, { mailingId })).error;
+
+        expect(await reads(f.M_NEWSLETTER)).toBe(ours);
+        expect(await reads(f.M_PROMO)).toBe(theirs);
+      }
+    );
+
+    it('does not read a mailing filed in a folder of another group', async () => {
+      harness.seed({
+        ...f.SEED,
+        folders: [
+          ...f.SEED.folders,
+          { _id: SUBFOLDER._id, name: 'Theirs', _workspace: f.WS_OTHER },
+        ],
+      });
+      harness.update('mailings', f.M_ARCHIVED, {
+        _parentFolder: SUBFOLDER._id,
+      });
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+      });
+
+      expect(
+        (await getMailing(client, { mailingId: f.M_ARCHIVED })).error
+      ).toMatch(/not found/i);
+    });
+
     it.each([
       ['a workspace they are not a member of', f.FRANK, 'M_PROMO'],
       ['another group', f.FRANK, 'M_OTHER'],
