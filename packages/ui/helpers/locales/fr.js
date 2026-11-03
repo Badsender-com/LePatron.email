@@ -1080,9 +1080,14 @@ export default {
   },
   oauthConsent: {
     title: 'Connecter {client} à LePatron',
+    pageTitle: 'Connecter un assistant à LePatron',
+    loginHint: 'Connectez-vous pour autoriser votre assistant IA à accéder à LePatron.',
     intro: '{client} demande à se connecter à votre compte LePatron.',
+    account: 'Avec les droits du compte {email}.',
+    switchAccount: 'Utiliser un autre compte',
+    closeHint: 'Vous pouvez fermer cette fenêtre et relancer la connexion depuis votre assistant.',
     redirectHost: 'Après accord, vous serez renvoyé vers {host}.',
-    canDo: 'Il pourra :',
+    canDo: 'Cette application pourra :',
     scopes: {
       read:
         'lire les expertises, les skills et les mailings auxquels vous avez accès, avec vos droits',
@@ -1092,7 +1097,9 @@ export default {
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
+    pickGroup: 'Choisissez une entreprise',
     allow: 'Autoriser',
+    allowIn: 'Autoriser dans {group}',
     deny: 'Refuser',
     expired:
       'Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur. Relancez la connexion depuis votre assistant.',

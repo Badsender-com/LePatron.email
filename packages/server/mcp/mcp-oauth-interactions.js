@@ -22,7 +22,7 @@ async function consenterOf(req) {
   const record =
     userId &&
     (await Users.findOne({ _id: userId, isDeactivated: { $ne: true } })
-      .select('_id name role _company')
+      .select('_id name email role _company')
       .lean());
   if (!record) return null;
   const user = permissions.withCapabilities({
@@ -114,6 +114,8 @@ function createInteractionsRouter(provider, resource) {
         redirectHost: new URL(params.redirect_uri).host,
         scopes: req.granted,
         groups: req.consenter.groups,
+        // Whose rights the application gets, for the user to check.
+        account: { email: req.consenter.user.email },
       });
     } catch (err) {
       next(err);

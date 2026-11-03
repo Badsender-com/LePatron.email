@@ -107,8 +107,19 @@ function mountMcp(app, { origin, ...providerOptions }) {
     }
   );
 
+  // Nothing under /oauth is framed by another site, the consent page
+  // included: a click on Allow is the user's own, whatever cookies a browser
+  // sends to a frame.
+  app.use(ISSUER_PATH, (req, res, next) => {
+    res.set('Content-Security-Policy', "frame-ancestors 'none'");
+    res.set('X-Frame-Options', 'DENY');
+    next();
+  });
+
   // Per address. The token and registration endpoints are called by the
   // assistants' servers, which many users share: generous, against floods.
+  // The authorization endpoint fetches the metadata document a client names.
+  app.use(`${ISSUER_PATH}/auth`, limit(MINUTE, 60));
   app.use(`${ISSUER_PATH}/consent`, limit(MINUTE, 120));
   app.use(`${ISSUER_PATH}/token`, limit(MINUTE, 600));
   app.use(`${ISSUER_PATH}/reg`, limit(HOUR, 100));

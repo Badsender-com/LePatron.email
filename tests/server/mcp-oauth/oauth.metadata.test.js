@@ -28,6 +28,17 @@ describe('metadata', () => {
     );
   });
 
+  it('lets no other site frame the authorization server', async () => {
+    const response = await request(app).get(
+      '/oauth/.well-known/openid-configuration'
+    );
+
+    expect(response.headers['content-security-policy']).toBe(
+      "frame-ancestors 'none'"
+    );
+    expect(response.headers['x-frame-options']).toBe('DENY');
+  });
+
   it('describes the MCP endpoint as a protected resource', async () => {
     const response = await request(app).get(
       '/.well-known/oauth-protected-resource/mcp'

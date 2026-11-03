@@ -221,6 +221,10 @@ export default {
         </v-toolbar-title>
       </v-toolbar>
       <v-divider />
+      <!-- Sent here by an assistant asking to connect (ADR 0012). -->
+      <v-card-text v-if="returnPath" class="pb-0 text-left">
+        {{ $t('oauthConsent.loginHint') }}
+      </v-card-text>
       <div v-if="!userIsFound">
         <v-card-text>
           <v-form id="check-email-form" @submit.prevent="checkEmailForm">
