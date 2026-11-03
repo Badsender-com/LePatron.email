@@ -73,6 +73,10 @@ async function update(user, body) {
 beforeEach(() => {
   jest.clearAllMocks();
   const group = { id: GROUP_ID, name: 'Client group', enableMcp: false };
+  // The group as saved: what the controller reads back.
+  groupService.updateGroup.mockImplementation(async (changes) =>
+    Object.assign(group, changes)
+  );
   Groups.findById.mockReturnValue({
     lean: jest.fn().mockResolvedValue(group),
     then: (resolve, reject) => Promise.resolve(group).then(resolve, reject),

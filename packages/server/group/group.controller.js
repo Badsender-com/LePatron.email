@@ -608,11 +608,6 @@ async function update(req, res) {
 
   await groupService.updateGroup(groupToUpdate);
   await recordRequirementChange(user, req.params.groupId, twoFactorChange);
-  // MCP turned off ends the group's connected applications: turning it back
-  // on must not revive them (ADR 0012).
-  if (groupToUpdate.enableMcp === false) {
-    await forgetConnections({ _company: req.params.groupId });
-  }
 
   // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
   // logs' and feedbacks', so a retention change has to be propagated to what
@@ -633,6 +628,11 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
+  // MCP turned off ends the group's connected applications: turning it back
+  // on must not revive them (ADR 0012). Read as saved, whatever was sent.
+  if ('enableMcp' in groupToUpdate && updatedGroup && !updatedGroup.enableMcp) {
+    await forgetConnections({ _company: req.params.groupId });
+  }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 
