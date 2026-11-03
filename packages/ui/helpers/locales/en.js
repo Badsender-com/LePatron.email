@@ -802,6 +802,7 @@ export default {
     updated: 'Session summaries updated',
   },
   oauthConsent: {
+    claimedName: '"{client}"',
     title: 'Connect {client} to LePatron',
     pageTitle: 'Connect an assistant to LePatron',
     loginHint: 'Log in to let your AI assistant access LePatron.',
