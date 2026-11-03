@@ -8,7 +8,7 @@ Cette connexion passe par le protocole MCP (Model Context Protocol), que ces ass
 
 - **L'accès MCP doit être activé pour votre entreprise.** L'admin technique de l'entreprise (ou Badsender) l'active dans **Paramètres › Fonctionnalités IA › Accès MCP**, avec l'interrupteur « Autoriser la connexion des assistants IA ». S'il est coupé, la connexion est refusée.
 - **Connectez-vous avec votre propre compte LePatron**, celui de tous les jours.
-- **L'adresse du serveur MCP** est celle de votre LePatron suivie de `/mcp`, par exemple `https://app.lepatron.email/mcp`. Votre admin technique la retrouve, avec toutes les autres valeurs utiles, dans **Paramètres › Clients MCP › Paramètres du serveur**.
+- **L'adresse du serveur MCP** est celle de votre LePatron suivie de `/mcp`, par exemple `https://app.lepatron.email/mcp`. Votre admin technique la retrouve, avec toutes les autres valeurs utiles, dans **Paramètres › Fonctionnalités IA › Accès MCP › Gérer les clients MCP**, sous « Paramètres du serveur ».
 
 ## Choisissez votre assistant
 
@@ -38,14 +38,16 @@ L'icône en forme de prise, en bas de la barre latérale, ouvre **Applications c
 
 **Révoquer** coupe l'accès immédiatement : l'assistant est refusé dès sa requête suivante. Pour l'utiliser de nouveau, il faut le reconnecter.
 
-L'admin de l'entreprise peut aussi tout révoquer d'un coup, dans **Paramètres › Général › Applications connectées**, par exemple si un accès a fuité.
+L'admin technique de l'entreprise peut aussi tout révoquer d'un coup, dans **Paramètres › Fonctionnalités IA › Accès MCP**, par exemple si un accès a fuité.
+
+Une connexion dure 90 jours au plus : passé ce délai, l'assistant vous demande de le reconnecter. Changer de mot de passe déconnecte aussi tous vos assistants. Reconnecter un assistant déjà connecté remplace sa connexion précédente.
 
 ## Si la connexion échoue
 
-| Message                                                                          | Cause                                                                                     | Que faire                                         |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Votre entreprise n'a pas l'accès MCP                                             | l'accès MCP est coupé                                                                     | demander à l'admin technique de l'activer         |
-| Ce compte ne peut pas connecter d'assistant                                      | vous êtes connecté avec le compte d'administration de la plateforme                       | vous connecter avec votre compte utilisateur      |
-| Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée | le client MCP appartient à une autre entreprise                                           | utiliser le connecteur de votre propre entreprise |
-| Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur  | plus de 10 minutes se sont écoulées, ou la fenêtre a été ouverte dans un autre navigateur | relancer la connexion depuis l'assistant          |
-| L'assistant dit ne plus avoir accès                                              | l'application a été révoquée, l'accès MCP a été coupé, ou votre compte a été désactivé    | reconnecter l'assistant une fois l'accès rétabli  |
+| Message                                                                          | Cause                                                                                                                                                | Que faire                                         |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Votre entreprise n'a pas l'accès MCP                                             | l'accès MCP est coupé                                                                                                                                | demander à l'admin technique de l'activer         |
+| Ce compte ne peut pas connecter d'assistant                                      | vous êtes connecté avec le compte d'administration de la plateforme                                                                                  | vous connecter avec votre compte utilisateur      |
+| Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée | le client MCP appartient à une autre entreprise                                                                                                      | utiliser le connecteur de votre propre entreprise |
+| Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur  | plus de 10 minutes se sont écoulées, ou la fenêtre a été ouverte dans un autre navigateur                                                            | relancer la connexion depuis l'assistant          |
+| L'assistant dit ne plus avoir accès                                              | l'application a été révoquée, l'accès MCP a été coupé, votre mot de passe a changé, votre compte a été désactivé, ou la connexion a plus de 90 jours | reconnecter l'assistant une fois l'accès rétabli  |
