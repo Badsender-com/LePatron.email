@@ -14,17 +14,22 @@
  * - **Sort and projection**: objects or strings, as Mongoose takes them.
  */
 
+// A date, whichever realm made it: the records a test stores may be copied by
+// a `structuredClone` from outside the test's own realm.
+const isDate = (value) =>
+  Object.prototype.toString.call(value) === '[object Date]';
+
 const isPlainObject = (value) =>
   !!value &&
   typeof value === 'object' &&
   !Array.isArray(value) &&
-  !(value instanceof Date) &&
+  !isDate(value) &&
   !(value instanceof RegExp) &&
   !value._bsontype;
 
 // What a stored value compares as: a date by its time, an id by its hex.
 function comparable(value) {
-  if (value instanceof Date) return value.getTime();
+  if (isDate(value)) return value.getTime();
   if (value === undefined || value === null) return value;
   if (typeof value === 'number') return value;
   return String(value);

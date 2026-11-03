@@ -23,8 +23,7 @@ const CLIENT_MAILINGS = [
 ];
 const NEWS_MAILINGS = CLIENT_MAILINGS.filter((id) => id !== f.M_PROMO);
 
-// Turned on by #1301 (list mailings and their status)
-describe.skip('mailings list and status', () => {
+describe('mailings list and status', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 

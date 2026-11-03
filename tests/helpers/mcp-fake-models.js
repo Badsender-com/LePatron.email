@@ -14,9 +14,13 @@
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - Each collection the seed names is a model; the others are empty.
+ * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
+ *   does, and `Mailings.findForApiWithPagination` is the schema's own static
+ *   over it: the search across workspaces (ADR 0007) runs as in the app.
  */
 
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
+const MailingSchema = require('../../packages/server/mailing/mailing.schema.js');
 
 // Collection → the name `models.common.js` exports it under.
 const MODELS = {
@@ -158,6 +162,25 @@ function model(records) {
       return { deletedCount: index === -1 ? 0 : 1 };
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
+    // What mongoose-paginate-v2 answers, with the options the search passes.
+    paginate: async (filter, options = {}) => {
+      const all = sortedBy(options.sort, matching(filter)());
+      const paginated = options.pagination !== false;
+      const limit = paginated ? options.limit ?? 10 : all.length;
+      const page = paginated ? options.page ?? 1 : 1;
+      const start = (page - 1) * limit;
+      const docs = all
+        .slice(start, paginated ? start + limit : undefined)
+        .map((record) => projected(copy(record), options.projection));
+      const totalPages = limit ? Math.max(1, Math.ceil(all.length / limit)) : 1;
+      return {
+        docs: options.lean ? docs : docs.map((doc) => toDocument(doc, records)),
+        totalDocs: all.length,
+        limit,
+        page,
+        totalPages,
+      };
+    },
     distinct: (field, filter = {}) =>
       Promise.resolve([
         ...new Set(matching(filter)().flatMap((record) => record[field])),
@@ -172,6 +195,8 @@ function createMcpStore() {
     collections[collection] = [];
     models[name] = model(collections[collection]);
   });
+  models.Mailings.findForApiWithPagination =
+    MailingSchema.statics.findForApiWithPagination;
 
   return {
     models,
