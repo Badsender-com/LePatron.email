@@ -4,7 +4,10 @@ const mongoose = require('mongoose');
 const { z } = require('zod');
 const { Mailings, Workspaces, Folders } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
-const { searchMailings } = require('../mailing/mailing-search.service.js');
+const {
+  searchMailings,
+  accessibleLocations,
+} = require('../mailing/mailing-search.service.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const {
   MAILING_STATUSES,
@@ -86,6 +89,7 @@ const MAILING = z.object({
   plannedSendDate: z.string().nullable(),
   espProfileCount: z.number(),
   author: z.string().nullable(),
+  template: z.string().nullable(),
   workspace: REFERENCE,
   folder: REFERENCE.optional(),
   subfolder: REFERENCE.optional(),
@@ -114,7 +118,10 @@ function asItem(mailing, facts, now) {
     approved: facts.approved,
     plannedSendDate: isoOf(facts.plannedSendDate),
     espProfileCount,
-    author: mailing.author || null,
+    // The search answers the author's and the template's names under the
+    // listing's own names.
+    author: mailing.userName || null,
+    template: mailing.templateName || null,
     ...mailing.location,
     createdAt: isoOf(mailing.createdAt),
     updatedAt: isoOf(mailing.updatedAt),
@@ -152,6 +159,7 @@ async function listMailings(args, ctx) {
       updatedAtEnd: args.updatedBefore,
     },
     pagination: { page: args.page ?? 1, itemsPerPage: pageSize },
+    within: { workspaceIds: args.workspaceIds, folderIds: args.folderIds },
   });
   const factsFor = await factsOf(items.docs.map((mailing) => mailing._id));
   const now = new Date();
@@ -185,10 +193,12 @@ function registerListMailings(server) {
     {
       title: 'List the mailings',
       description:
-        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates. Each one comes with its status, derived from its facts: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, planned in the future), approved, or draft. LePatron never knows whether a mailing was sent. Read a mailing's content through its resource URI.",
+        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids). Each one comes with its status, derived from its facts: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, planned in the future), approved, or draft. LePatron never knows whether a mailing was sent. Read a mailing's content through its resource URI.",
       inputSchema: z.object({
         name: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        workspaceIds: z.array(z.string()).optional(),
+        folderIds: z.array(z.string()).optional(),
         createdAfter: z.string().datetime({ offset: true }).optional(),
         createdBefore: z.string().datetime({ offset: true }).optional(),
         updatedAfter: z.string().datetime({ offset: true }).optional(),
@@ -209,4 +219,34 @@ function registerListMailings(server) {
   );
 }
 
-module.exports = { readableMailing, registerListMailings, uriOf };
+const FOLDER = REFERENCE.extend({ subfolders: z.array(REFERENCE) });
+const WORKSPACE = REFERENCE.extend({ folders: z.array(FOLDER) });
+
+function registerListWorkspaces(server) {
+  server.registerTool(
+    'list_workspaces',
+    {
+      title: 'List the workspaces',
+      description:
+        'Lists the workspaces the user may read in LePatron, in the company of this connection, each with its folders and their subfolders: where mailings are filed. Give their ids to list_mailings to look in some of them only.',
+      inputSchema: z.object({}),
+      outputSchema: z.object({ workspaces: z.array(WORKSPACE) }),
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    async (_args, ctx) => {
+      const { user } = await resolveIdentity(ctx.http?.authInfo);
+      const answer = { workspaces: await accessibleLocations(user) };
+      return {
+        content: [{ type: 'text', text: JSON.stringify(answer) }],
+        structuredContent: answer,
+      };
+    }
+  );
+}
+
+module.exports = {
+  readableMailing,
+  registerListMailings,
+  registerListWorkspaces,
+  uriOf,
+};
