@@ -8,6 +8,8 @@ const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const {
   findActiveVersion,
+  openDraftOf,
+  versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
 const {
   SkillCategoryValues,
@@ -49,7 +51,6 @@ const success = (answer) => ({
   content: [{ type: 'text', text: JSON.stringify(answer) }],
   structuredContent: answer,
 });
-const label = (v) => `${v.versionMajor}.${v.versionMinor}`;
 
 // Whether who calls may write: the capability is asked again on every call,
 // whatever the token says (ADR 0014).
@@ -75,18 +76,25 @@ function diffOf(activeText, draftText) {
 }
 
 // The open draft, or a new one from the active version: a minor by default, a
-// major on request or when nothing is published yet.
+// major on request or when nothing is published yet. A major is never written
+// into an open minor, nor a draft started on an archived skill or expertise.
 async function draftOf(entity, id, major, userId) {
   const { service } = ENTITIES[entity];
   const doc = await service[entity === 'skill' ? 'getSkill' : 'getExpertise'](
     id
   );
-  const open = doc.versions
-    .filter((v) => v.status === 'DRAFT')
-    .sort(
-      (a, b) =>
-        b.versionMajor - a.versionMajor || b.versionMinor - a.versionMinor
-    )[0];
+  if (doc.status === 'ARCHIVED') {
+    throw createError(409, `"${id}" is archived: it takes no new draft.`);
+  }
+  const open = openDraftOf(doc);
+  if (open && major && open.versionMinor > 0) {
+    throw createError(
+      409,
+      `The minor draft ${label(
+        open
+      )} is open: propose this change to it, or ask a person to publish or discard it before a major version.`
+    );
+  }
   if (open) return { doc, version: open };
   const next =
     major || !findActiveVersion(doc)

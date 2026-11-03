@@ -63,6 +63,25 @@ function assertDraft(version) {
   }
 }
 
+const isAfter = (a, b) =>
+  a.versionMajor > b.versionMajor ||
+  (a.versionMajor === b.versionMajor && a.versionMinor > b.versionMinor);
+
+/**
+ * The draft being written: the latest DRAFT version, provided it is newer
+ * than the active one. A draft left behind by a later publication is not
+ * open any more: publishing archives only the previous active version.
+ *
+ * @param {Object} doc a skill or an expertise
+ * @returns {Object|null} the version
+ */
+function openDraftOf(doc) {
+  const active = findActiveVersion(doc);
+  return (doc.versions || [])
+    .filter((v) => v.status === 'DRAFT' && (!active || isAfter(v, active)))
+    .reduce((latest, v) => (!latest || isAfter(v, latest) ? v : latest), null);
+}
+
 module.exports = {
   parseVersionParam,
   versionLabel,
@@ -71,4 +90,5 @@ module.exports = {
   maxMajor,
   maxMinorFor,
   assertDraft,
+  openDraftOf,
 };

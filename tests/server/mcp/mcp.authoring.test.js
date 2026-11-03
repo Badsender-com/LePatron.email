@@ -32,6 +32,32 @@ const WITHOUT_DRAFT = {
   ),
 };
 
+// The subject lines expertise with only some of its versions, and others.
+const withVersions = (versions, extra = {}) => ({
+  ...f.SEED,
+  expertises: f.EXPERTISES.map((e) =>
+    e.expertiseId === SUBJECT_LINES
+      ? {
+          ...e,
+          ...extra,
+          versions: [
+            ...e.versions.filter((v) => v.status !== 'DRAFT'),
+            ...versions,
+          ],
+        }
+      : e
+  ),
+});
+const draft = (versionMajor, versionMinor) => ({
+  versionMajor,
+  versionMinor,
+  status: 'DRAFT',
+  body: '## Length\n\nAn old draft, left behind.',
+  examplesGood: [],
+  examplesBad: [],
+  updatedAt: f.daysFrom(-40),
+});
+
 // Turned on by #1349 (drafting skills and expertises from an assistant)
 describe('authoring', () => {
   beforeEach(() => harness.seed(f.SEED));
@@ -165,6 +191,44 @@ describe('authoring', () => {
       });
 
       expect(answer.version).toBe('3.0');
+    });
+
+    // Publishing 2.1 archived only the active 2.0, never the 1.3 left open.
+    it('never writes into a draft older than the active version', async () => {
+      harness.seed(withVersions([draft(1, 3)]));
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter',
+      });
+
+      expect(answer.version).toBe('2.2');
+    });
+
+    it('refuses a major change while a minor draft is open', async () => {
+      harness.seed(withVersions([draft(2, 2)]));
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'A new doctrine',
+        major: true,
+      });
+
+      expect(answer.error).toMatch(/minor draft 2\.2 is open/);
+    });
+
+    it('starts no draft on an archived expertise', async () => {
+      harness.seed(withVersions([], { status: 'ARCHIVED' }));
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter',
+      });
+
+      expect(answer.error).toMatch(/archived/);
     });
 
     it('requires a changelog', async () => {
