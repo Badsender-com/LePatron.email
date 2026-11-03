@@ -807,9 +807,14 @@ export default {
   },
   oauthConsent: {
     title: 'Connect {client} to LePatron',
+    pageTitle: 'Connect an assistant to LePatron',
+    loginHint: 'Log in to let your AI assistant access LePatron.',
     intro: '{client} asks to connect to your LePatron account.',
+    account: 'With the rights of the account {email}.',
+    switchAccount: 'Use another account',
+    closeHint: 'You can close this window and start the connection again from your assistant.',
     redirectHost: 'Once allowed, you will be sent back to {host}.',
-    canDo: 'It will be able to:',
+    canDo: 'This application will be able to:',
     scopes: {
       read:
         'read the expertises, skills and mailings you have access to, with your rights',
@@ -819,7 +824,9 @@ export default {
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',
+    pickGroup: 'Pick a company',
     allow: 'Allow',
+    allowIn: 'Allow in {group}',
     deny: 'Deny',
     expired:
       'This connection request has expired, or was started in another browser. Start the connection again from your assistant.',

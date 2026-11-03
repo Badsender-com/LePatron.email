@@ -23,11 +23,16 @@ export default {
       groupId: null,
       error: null,
       isLoading: true,
-      isSending: false,
+      // The answer being sent, 'allow' or 'deny', for its button to spin.
+      sending: null,
     };
   },
   head() {
-    return { title: this.$t('oauthConsent.title', { client: this.client }) };
+    return {
+      title: this.client
+        ? this.$t('oauthConsent.title', { client: this.client })
+        : this.$t('oauthConsent.pageTitle'),
+    };
   },
   computed: {
     uid() {
@@ -35,6 +40,16 @@ export default {
     },
     client() {
       return this.interaction?.client.name || '';
+    },
+    // Logging out comes back here, to consent with another account.
+    switchAccountUrl() {
+      return `/account/logout?next=${encodeURIComponent(this.$route.path)}`;
+    },
+    groupName() {
+      const group = (this.interaction?.groups || []).find(
+        (candidate) => candidate.id === this.groupId
+      );
+      return group ? group.name : '';
     },
     scopeLabels() {
       return (this.interaction?.scopes || [])
@@ -47,8 +62,9 @@ export default {
       this.interaction = await this.$axios.$get(
         apiRoutes.oauthInteraction(this.uid)
       );
-      const [first] = this.interaction.groups;
-      this.groupId = first ? first.id : null;
+      // A choice of companies is the user's to make: none is picked for them.
+      const { groups } = this.interaction;
+      this.groupId = groups.length === 1 ? groups[0].id : null;
     } catch (err) {
       this.error = this.errorOf(err);
     } finally {
@@ -67,8 +83,8 @@ export default {
       if (status === 403) return this.$t('oauthConsent.noAccess');
       return this.$t('global.errors.errorOccured');
     },
-    async answer(route, body) {
-      this.isSending = true;
+    async answer(sending, route, body) {
+      this.sending = sending;
       try {
         const { redirectTo } = await this.$axios.$post(route, body);
         // Back to the authorization server, which hands the application its
@@ -76,16 +92,16 @@ export default {
         window.location.assign(redirectTo);
       } catch (err) {
         this.error = this.errorOf(err);
-        this.isSending = false;
+        this.sending = null;
       }
     },
     allow() {
-      return this.answer(apiRoutes.oauthInteractionConsent(this.uid), {
+      return this.answer('allow', apiRoutes.oauthInteractionConsent(this.uid), {
         groupId: this.groupId,
       });
     },
     deny() {
-      return this.answer(apiRoutes.oauthInteractionDeny(this.uid));
+      return this.answer('deny', apiRoutes.oauthInteractionDeny(this.uid));
     },
   },
 };
@@ -99,20 +115,36 @@ export default {
       <v-progress-linear v-if="isLoading" indeterminate color="accent" />
       <template v-else-if="error">
         <v-card-text>
-          <v-alert type="warning" text class="mb-0">
+          <v-alert type="warning" text class="mb-2">
             {{ error }}
           </v-alert>
+          <p class="text-body-2 mb-0">{{ $t('oauthConsent.closeHint') }}</p>
         </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text color="primary" :href="switchAccountUrl">
+            {{ $t('oauthConsent.switchAccount') }}
+          </v-btn>
+        </v-card-actions>
       </template>
+
       <template v-else>
-        <v-toolbar flat>
-          <v-toolbar-title class="pl-0">
+        <v-card-title class="bs-oauth-consent__title">
+          <h1 class="text-h6">
             {{ $t('oauthConsent.title', { client }) }}
-          </v-toolbar-title>
-        </v-toolbar>
+          </h1>
+        </v-card-title>
         <v-divider />
         <v-card-text>
           <p class="mb-1">{{ $t('oauthConsent.intro', { client }) }}</p>
+          <p class="text-caption">
+            {{
+              $t('oauthConsent.account', { email: interaction.account.email })
+            }}
+            <a :href="switchAccountUrl">{{
+              $t('oauthConsent.switchAccount')
+            }}</a>
+          </p>
           <p class="text-caption">
             {{
               $t('oauthConsent.redirectHost', {
@@ -134,6 +166,7 @@ export default {
             :items="interaction.groups"
             item-text="name"
             item-value="id"
+            :placeholder="$t('oauthConsent.pickGroup')"
             :label="$t('oauthConsent.group')"
             :hint="$t('oauthConsent.groupHint')"
             persistent-hint
@@ -150,20 +183,38 @@ export default {
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn text :disabled="isSending" @click="deny">
+          <v-btn
+            text
+            color="primary"
+            :loading="sending === 'deny'"
+            :disabled="!!sending"
+            @click="deny"
+          >
             {{ $t('oauthConsent.deny') }}
           </v-btn>
           <v-btn
             color="accent"
             elevation="0"
-            :loading="isSending"
-            :disabled="!groupId"
+            :loading="sending === 'allow'"
+            :disabled="!groupId || !!sending"
             @click="allow"
           >
-            {{ $t('oauthConsent.allow') }}
+            {{
+              groupName
+                ? $t('oauthConsent.allowIn', { group: groupName })
+                : $t('oauthConsent.allow')
+            }}
           </v-btn>
         </v-card-actions>
       </template>
     </v-card>
   </div>
 </template>
+
+<style scoped>
+/* A long application name wraps rather than hides the end of it. */
+.bs-oauth-consent__title h1 {
+  word-break: break-word;
+  line-height: 1.4;
+}
+</style>

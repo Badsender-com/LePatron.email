@@ -6,6 +6,7 @@
 
 const {
   isReturnPath,
+  samlReturnPath,
 } = require('../../../packages/shared/access/return-path.js');
 
 describe('isReturnPath', () => {
@@ -22,5 +23,24 @@ describe('isReturnPath', () => {
     ['nothing', undefined],
   ])('refuses %s', (_case, path) => {
     expect(isReturnPath(path)).toBe(false);
+  });
+});
+
+// The identity provider posts its answer cross-site, where the session's lax
+// cookie does not travel: the path comes back as the RelayState.
+describe('samlReturnPath', () => {
+  const CONSENT = '/oauth/consent/abc-123';
+
+  it('takes the path the identity provider sent back', () => {
+    expect(samlReturnPath(CONSENT, undefined)).toBe(CONSENT);
+  });
+
+  it("falls back on the session's, when the provider sent none", () => {
+    expect(samlReturnPath(undefined, CONSENT)).toBe(CONSENT);
+  });
+
+  it('never sends anywhere else, whoever wrote the RelayState', () => {
+    expect(samlReturnPath('https://evil.example/', undefined)).toBeUndefined();
+    expect(samlReturnPath('//evil.example', CONSENT)).toBe(CONSENT);
   });
 });
