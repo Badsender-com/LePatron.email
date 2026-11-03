@@ -1079,6 +1079,7 @@ export default {
     updated: 'Retour d\'expérience mis à jour',
   },
   oauthConsent: {
+    claimedName: '« {client} »',
     title: 'Connecter {client} à LePatron',
     pageTitle: 'Connecter un assistant à LePatron',
     loginHint: 'Connectez-vous pour autoriser votre assistant IA à accéder à LePatron.',
