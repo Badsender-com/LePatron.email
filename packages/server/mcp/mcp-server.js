@@ -17,9 +17,11 @@ const { registerSubmitFeedback } = require('./mcp-feedback.js');
 const {
   registerListMailings,
   registerListWorkspaces,
+} = require('./mcp-mailings.js');
+const {
   registerGetMailing,
   registerMailingResources,
-} = require('./mcp-mailings.js');
+} = require('./mcp-mailing-read.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 
 const { version } = require('../../../package.json');
