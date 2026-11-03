@@ -1,11 +1,19 @@
 <script>
+import { Plug, KeyRound } from 'lucide-vue';
+
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 
 // MCP access (ADR 0012): the company's users connect their AI assistant to
 // LePatron. Set by a super admin or the company's tech admin, saved on its
 // own.
 export default {
   name: 'BsGroupMcpAccessOption',
+  components: {
+    BsFormSection,
+    LucidePlug: Plug,
+    LucideKeyRound: KeyRound,
+  },
   mixins: [
     mixinGroupSwitch({ field: 'enableMcp', updatedKey: 'mcpAccess.updated' }),
   ],
@@ -13,13 +21,16 @@ export default {
 </script>
 
 <template>
-  <section class="bs-group-mcp-access-option">
-    <h3 class="text-subtitle-1 font-weight-medium">
+  <bs-form-section class="bs-group-mcp-access-option">
+    <template #icon>
+      <lucide-plug :size="20" />
+    </template>
+    <template #title>
       {{ $t('mcpAccess.title') }}
-    </h3>
-    <p class="text-body-2 text--secondary">
+    </template>
+    <template #description>
       {{ $t('mcpAccess.description') }}
-    </p>
+    </template>
     <v-switch
       :input-value="switchValue"
       :label="$t('mcpAccess.switch')"
@@ -30,5 +41,16 @@ export default {
       class="mt-0"
       @change="save"
     />
-  </section>
+    <v-btn
+      v-if="group.enableMcp === true"
+      text
+      small
+      color="accent"
+      class="mt-4 px-0"
+      :to="`/groups/${group.id}/settings/mcp-clients`"
+    >
+      <lucide-key-round :size="16" class="mr-2" />
+      {{ $t('mcpAccess.manageClients') }}
+    </v-btn>
+  </bs-form-section>
 </template>

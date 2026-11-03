@@ -816,6 +816,7 @@ export default {
       dynamic:
         'This application registered itself: LePatron cannot vouch for its name. Only go on if you just started the connection from it.',
       metadataDocument: 'Its identity is published by {host}.',
+      preRegistered: 'Application declared by the company {company}.',
     },
     scopes: {
       read:
@@ -832,6 +833,8 @@ export default {
     deny: 'Deny',
     expired:
       'This connection request has expired, or was started in another browser. Start the connection again from your assistant.',
+    clientOfAnotherCompany:
+      'This application is reserved for the users of the company that declared it.',
     accountCannotConnect:
       'This account cannot connect an assistant: log in with your user account.',
     noAccess:
@@ -840,7 +843,9 @@ export default {
   mcpClients: {
     pageTitle: 'MCP clients',
     description:
-      'Assistants that cannot register themselves, such as Copilot Studio in manual mode, are given a client ID and a secret here. Claude, ChatGPT and Microsoft 365 Copilot do not need one.',
+      'Assistants that cannot register themselves, such as Copilot Studio in manual mode, are given a client ID and a secret here. Only the company\'s users can connect with them. Claude, ChatGPT and Microsoft 365 Copilot do not need one.',
+    mcpOff:
+      'The company\'s MCP access is off: these clients cannot connect. It is turned on in',
     add: 'Add a client',
     addDescription:
       'Copy the redirect URL the assistant shows on its set-up screen.',
@@ -919,6 +924,7 @@ export default {
     description:
       'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
     switch: 'Allow AI assistants to connect',
+    manageClients: 'Manage MCP clients',
     updated: 'MCP access updated',
   },
   crmIntelligence: {

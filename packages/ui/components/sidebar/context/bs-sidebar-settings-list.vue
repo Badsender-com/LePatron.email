@@ -125,13 +125,6 @@ export default {
               activePatterns: ['/super-admins'],
             },
             {
-              id: 'mcp-clients',
-              label: this.$t('mcpClients.pageTitle'),
-              iconComponent: 'LucideKeyRound',
-              route: '/mcp-clients',
-              superAdminOnly: true,
-            },
-            {
               id: 'ai-playground',
               label: this.$t('aiPlayground.pageTitle'),
               iconComponent: 'LucideFlaskConical',
@@ -195,6 +188,13 @@ export default {
             label: this.$t('aiFeatures.title'),
             icon: 'mdi-robot-outline',
             route: `${this.settingsBasePath}/ai-features`,
+          },
+          // Next to the MCP access, which the AI features set.
+          {
+            id: 'mcp-clients',
+            label: this.$t('mcpClients.pageTitle'),
+            iconComponent: 'LucideKeyRound',
+            route: `${this.settingsBasePath}/mcp-clients`,
           }
         );
       }
