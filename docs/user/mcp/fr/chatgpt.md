@@ -24,6 +24,7 @@ Une fois l'application publiée, chaque utilisateur l'active dans ses applicatio
 
 ## Bon à savoir
 
+- **Recherche approfondie :** ChatGPT cherche dans LePatron les mailings par mots de leur nom, objet, tags ou type d'email (pas de leur contenu), et les expertises par leur titre et leurs sections. Majuscules et accents sont ignorés. Il lit ensuite chaque résultat, et ses citations renvoient le mailing à son éditeur dans LePatron. Une expertise n'a pas de page à ouvrir : sa citation n'est pas cliquable.
 - **Liste des actions :** si LePatron ajoute des outils plus tard, l'admin doit rafraîchir la liste des actions de l'application. Sur certaines offres, il faut recréer l'application.
 - **Application non vérifiée :** une application personnalisée n'est pas vérifiée par OpenAI. C'est l'admin de l'espace de travail qui la valide pour ses utilisateurs.
 

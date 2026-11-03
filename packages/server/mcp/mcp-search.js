@@ -3,6 +3,7 @@
 const { z } = require('zod');
 const { searchMailings } = require('../mailing/mailing-search.service.js');
 const { siteOrigin } = require('../email-templates/email-template.js');
+const { containingRegExp } = require('../utils/text-search.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const expertises = require('./mcp-expertises.js');
@@ -15,13 +16,19 @@ const expertises = require('./mcp-expertises.js');
 // Enough for an assistant to pick from; it narrows its words otherwise.
 const MAX_MAILINGS = 20;
 
-const MAILING = 'mailing';
-const EXPERTISE = 'expertise';
+// A few words, as a person types them; the search tries each one in every
+// field it covers.
+const MAX_QUERY_LENGTH = 200;
+const MAX_WORDS = 10;
+
+// The kinds of result, the first part of their id.
+const MAILING_KIND = 'mailing';
+const EXPERTISE_KIND = 'expertise';
 
 const editorUrlOf = (mailingId) => `${siteOrigin()}/editor/${mailingId}`;
 
-const wordsOf = (query) =>
-  String(query).toLowerCase().split(/\s+/).filter(Boolean);
+const queryWords = (query) =>
+  String(query).split(/\s+/).filter(Boolean).slice(0, MAX_WORDS);
 
 // What an expertise is searched by: its title, its description and the
 // headings of its sections.
@@ -30,31 +37,46 @@ function describes({ doc, version }) {
     .split('\n')
     .filter((line) => /^#+\s/.test(line))
     .join(' ');
-  return `${doc.title} ${doc.description || ''} ${headings}`.toLowerCase();
+  return `${doc.title} ${doc.description || ''} ${headings}`;
 }
+
+// What a search answers when the database took too long (ADR 0007).
+const isTimeout = (error) => error && error.status === 503;
 
 async function search({ query }, ctx) {
   const { user, group, drafts } = await resolveIdentity(ctx.http?.authInfo);
-  const words = wordsOf(query);
+  const words = queryWords(query);
   if (words.length === 0) return answered({ results: [] });
-  const [{ items }, served] = await Promise.all([
-    searchMailings({
-      user,
-      pagination: { page: 1, itemsPerPage: MAX_MAILINGS },
-      within: { words },
-    }),
-    expertises.servedExpertises(group, drafts),
-  ]);
+  let found;
+  try {
+    found = await Promise.all([
+      searchMailings({
+        user,
+        pagination: { page: 1, itemsPerPage: MAX_MAILINGS },
+        within: { words },
+      }),
+      expertises.servedExpertises(group, drafts),
+    ]);
+  } catch (error) {
+    if (!isTimeout(error)) throw error;
+    return failure(
+      'The search took too long: try again with more precise words.'
+    );
+  }
+  const [{ items }, served] = found;
+  const patterns = words.map(containingRegExp);
   const results = [
     ...items.docs.map((mailing) => ({
-      id: `${MAILING}:${mailing._id}`,
+      id: `${MAILING_KIND}:${mailing._id}`,
       title: mailing.name,
       url: editorUrlOf(mailing._id),
     })),
     ...served
-      .filter((found) => words.every((word) => describes(found).includes(word)))
+      .filter((expertise) =>
+        patterns.every((pattern) => pattern.test(describes(expertise)))
+      )
       .map(({ doc }) => ({
-        id: `${EXPERTISE}:${doc.expertiseId}`,
+        id: `${EXPERTISE_KIND}:${doc.expertiseId}`,
         title: doc.title,
         url: expertises.uriOf(doc.expertiseId),
       })),
@@ -66,7 +88,7 @@ async function search({ query }, ctx) {
 // read it.
 async function documentOf(id, identity) {
   const [kind, key] = String(id).split(/:(.*)/s);
-  if (kind === MAILING && key) {
+  if (kind === MAILING_KIND && key) {
     const mailing = await mailingOf(key, identity);
     return (
       mailing && {
@@ -84,7 +106,7 @@ async function documentOf(id, identity) {
       }
     );
   }
-  if (kind === EXPERTISE && key) {
+  if (kind === EXPERTISE_KIND && key) {
     const found = await expertises.readableExpertise(
       key,
       identity.group,
@@ -110,18 +132,17 @@ async function fetchDocument({ id }, ctx) {
   const identity = await resolveIdentity(ctx.http?.authInfo);
   const document = await documentOf(id, identity);
   if (!document) {
-    return {
-      isError: true,
-      content: [
-        {
-          type: 'text',
-          text: 'Not found: no such document, or this user may not read it.',
-        },
-      ],
-    };
+    return failure(
+      'Not found: no such document, or this user may not read it.'
+    );
   }
   return answered(document);
 }
+
+const failure = (text) => ({
+  isError: true,
+  content: [{ type: 'text', text }],
+});
 
 function answered(answer) {
   return {
@@ -138,8 +159,8 @@ function registerSearchAndFetch(server) {
     {
       title: 'Search LePatron',
       description:
-        'Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the Badsender expertises, by words of their title or section headings. Every word must match. The expertises are written in French: search them with French words. Read a result with fetch.',
-      inputSchema: z.object({ query: z.string() }),
+        'Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the Badsender expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. Read a result with fetch.',
+      inputSchema: z.object({ query: z.string().max(MAX_QUERY_LENGTH) }),
       outputSchema: z.object({ results: z.array(RESULT) }),
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
