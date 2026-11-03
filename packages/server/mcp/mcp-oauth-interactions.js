@@ -130,13 +130,13 @@ function createInteractionsRouter(provider, resource) {
           );
         }
       }
-      const requested = String(interaction.params.scope || '').split(' ');
       req.interaction = interaction;
       req.clientCompany = company;
       req.consenter = consenter;
-      req.granted = consenter.scopes.filter((scope) =>
-        requested.includes(scope)
-      );
+      // What the user may grant, whatever the application asked for: the
+      // clients only know of the read scope the server advertises, and the
+      // consent offers drafting to whoever may manage the platform (ADR 0014).
+      req.granted = consenter.scopes;
       return next();
     } catch (err) {
       return next(err);
@@ -193,6 +193,12 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
+      // The token carries what was granted: the provider resumes the
+      // authorization with the parameters the interaction keeps.
+      interaction.params.scope = granted.join(' ');
+      await interaction.save(
+        Math.max(interaction.exp - Math.floor(Date.now() / 1000), 1)
+      );
       const client = await provider.Client.find(interaction.params.client_id);
       // Connecting an application again replaces its previous connection to
       // the group: one line per application, and no older token lives on.

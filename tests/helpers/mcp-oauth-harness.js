@@ -193,11 +193,11 @@ async function followToClient(agent, redirectTo) {
 async function connect(
   app,
   userId,
-  { client = CIMD_CLIENT, group, secret } = {}
+  { client = CIMD_CLIENT, group, secret, scope } = {}
 ) {
   const agent = signIn(app, userId);
   const { verifier, challenge } = pkce();
-  const uid = await startConsent(agent, client, challenge);
+  const uid = await startConsent(agent, client, challenge, scope && { scope });
   const consent = await agent
     .post(`/oauth/consent/${uid}/consent`)
     .send({ groupId: group });
