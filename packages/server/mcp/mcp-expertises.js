@@ -28,12 +28,33 @@ const READ = {
   version: ['updatedAt', 'body', 'examplesGood', 'examplesBad'],
 };
 const NAMED = { doc: ['expertiseId'], version: [] };
+// What `search` reads of each: what describes it, its sections' headings in
+// its body.
+const SEARCHED = {
+  doc: ['expertiseId', 'title', 'description'],
+  version: ['body'],
+};
 
 const byExpertiseId = (a, b) =>
   a.doc.expertiseId.localeCompare(b.doc.expertiseId);
 
 async function servedExpertises(group, drafts = false) {
   const found = await findServed(Expertises, audienceFilter(group), LISTED, {
+    drafts,
+  });
+  return found.sort(byExpertiseId);
+}
+
+/**
+ * The expertises a company is served, with what describes them, for the
+ * `search` tool (mcp-search.js).
+ *
+ * @param {Object} group
+ * @param {boolean} [drafts]
+ * @returns {Promise<Array<{ doc: Object, version: Object, draft: boolean }>>}
+ */
+async function searchableExpertises(group, drafts = false) {
+  const found = await findServed(Expertises, audienceFilter(group), SEARCHED, {
     drafts,
   });
   return found.sort(byExpertiseId);
@@ -155,6 +176,8 @@ function registerExpertiseResources(server) {
 module.exports = {
   registerExpertiseResources,
   namedExpertises,
+  searchableExpertises,
+  readableExpertise,
   consumedExpertises,
   asMarkdown,
   uriOf,
