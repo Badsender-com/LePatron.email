@@ -116,7 +116,8 @@ function authorsOf({ userIds, authorName } = {}) {
 // caller narrows it to. A folder brings its subfolders, and only the emails
 // filed in them; a workspace brings its emails and its folders.
 function scopeOf(workspaces, folders, { workspaceIds, folderIds } = {}) {
-  const named = (ids) => (ids ? new Set(ids.map(String)) : null);
+  // An empty list narrows nothing: it is a filter left blank.
+  const named = (ids) => (ids && ids.length ? new Set(ids.map(String)) : null);
   const keptWorkspaces = named(workspaceIds);
   const inWorkspaces = keptWorkspaces
     ? workspaces.filter((workspace) =>

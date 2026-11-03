@@ -1,39 +1,24 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const { Comments } = require('../common/models.common.js');
-const { COMMENT_DECISIONS } = require('../comment/comment.schema.js');
 
 // From the most advanced to the least (GLOSSARY.md, "Mailing status").
 const MAILING_STATUSES = ['pushed-to-esp', 'scheduled', 'approved', 'draft'];
 
 /**
- * The ids of the mailings whose latest root comment is an approval: a comment
- * posted after it, whatever it says, lifts it, as in the app
- * (`Comment.findApprovedMailingIds`).
+ * The ids of the mailings whose latest root comment is an approval, by the
+ * app's own rule (`Comment.findApprovedMailingIds`, which the listing reads):
+ * a comment posted after it, whatever it says, lifts it.
  *
  * @param {Array<string|Object>} mailingIds
  * @returns {Promise<Set<string>>}
  */
 async function approvedMailingIds(mailingIds) {
   if (mailingIds.length === 0) return new Set();
-  const comments = await Comments.find({
-    _mailing: { $in: mailingIds },
-    _parentComment: null,
-    isDeleted: { $ne: true },
-  })
-    .select('_mailing decision createdAt')
-    .sort({ createdAt: -1 })
-    .lean();
-  const latest = new Map();
-  comments.forEach((comment) => {
-    const id = String(comment._mailing);
-    if (!latest.has(id)) latest.set(id, comment.decision);
-  });
-  return new Set(
-    [...latest]
-      .filter(([, decision]) => decision === COMMENT_DECISIONS.APPROVED)
-      .map(([id]) => id)
-  );
+  // An aggregation casts nothing: ids as the documents hold them.
+  const ids = mailingIds.map((id) => mongoose.Types.ObjectId(String(id)));
+  return new Set((await Comments.findApprovedMailingIds(ids)).map(String));
 }
 
 /**

@@ -192,6 +192,8 @@ const COMMENTS = [M_NEWSLETTER, M_SCHEDULED, M_APPROVED].map((_mailing, i) => ({
   author: REX,
   text: 'Good to go',
   decision: 'approved',
+  // As the schema stores it: the approval rule matches `false` alone.
+  isDeleted: false,
   createdAt: daysFrom(-3),
 }));
 

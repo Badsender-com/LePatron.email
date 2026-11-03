@@ -138,6 +138,7 @@ describe.skip('mailing content', () => {
             _company: f.CLIENT_GROUP,
             author: f.ERIN,
             text: 'One more change',
+            isDeleted: false,
             createdAt: f.daysFrom(-1),
           },
         ],
