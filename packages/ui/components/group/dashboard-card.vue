@@ -26,9 +26,7 @@ export default {
   <v-card outlined class="mb-2">
     <v-card-title class="py-2">
       <span class="text-body-2 grey--text mr-3">#{{ index + 1 }}</span>
-      <v-icon left small color="primary">
-        mdi-chart-line
-      </v-icon>
+      <v-icon left small color="primary"> mdi-chart-line </v-icon>
       {{ dashboard.name }}
       <v-spacer />
       <v-tooltip bottom>
@@ -41,9 +39,7 @@ export default {
             v-on="on"
             @click="$emit('move', 'up')"
           >
-            <v-icon small>
-              mdi-arrow-up
-            </v-icon>
+            <v-icon small> mdi-arrow-up </v-icon>
           </v-btn>
         </template>
         <span>{{ $t('crmIntelligence.admin.moveUp') }}</span>
@@ -58,22 +54,16 @@ export default {
             v-on="on"
             @click="$emit('move', 'down')"
           >
-            <v-icon small>
-              mdi-arrow-down
-            </v-icon>
+            <v-icon small> mdi-arrow-down </v-icon>
           </v-btn>
         </template>
         <span>{{ $t('crmIntelligence.admin.moveDown') }}</span>
       </v-tooltip>
       <v-btn icon small class="ml-2" @click="$emit('edit')">
-        <v-icon small>
-          mdi-pencil
-        </v-icon>
+        <v-icon small> mdi-pencil </v-icon>
       </v-btn>
       <v-btn icon small color="error" @click="$emit('delete')">
-        <v-icon small>
-          mdi-delete
-        </v-icon>
+        <v-icon small> mdi-delete </v-icon>
       </v-btn>
     </v-card-title>
     <v-card-subtitle>

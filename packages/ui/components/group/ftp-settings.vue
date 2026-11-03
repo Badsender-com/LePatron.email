@@ -281,8 +281,8 @@ export default {
             ftpConnectionResult.success
               ? $t('forms.group.ftpConnectionSuccess')
               : $te(`global.errors.${ftpConnectionResult.errorCode}`)
-                ? $t(`global.errors.${ftpConnectionResult.errorCode}`)
-                : ftpConnectionResult.message
+              ? $t(`global.errors.${ftpConnectionResult.errorCode}`)
+              : ftpConnectionResult.message
           }}
         </span>
       </v-col>

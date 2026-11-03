@@ -4,7 +4,7 @@
 'use strict';
 
 // Connected applications (GLOSSARY.md, ADR 0012): a user sees the applications
-// they connected and revokes them; a company admin revokes all of the group's.
+// they connected and revokes them; the group's tech admin revokes all of its.
 // A revoked application is stopped at its next call, refresh included.
 
 const request = require('../../helpers/local-request');
@@ -118,12 +118,12 @@ describe('connected applications', () => {
     expect(response.status).toBe(404);
   });
 
-  it("lets a company admin revoke every application of the group, and only the group's", async () => {
+  it("lets the tech admin revoke every application of the group, and only the group's", async () => {
     const frank = await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
     const otto = await oauth.connect(app, f.OTTO, { group: f.OTHER_GROUP });
 
     const response = await oauth
-      .signIn(app, f.ERIN)
+      .signIn(app, f.TESS)
       .delete(`/api/groups/${f.CLIENT_GROUP}/connected-applications`);
 
     expect(response.status).toBe(204);
@@ -131,8 +131,11 @@ describe('connected applications', () => {
     expect((await oauth.callMcp(app, otto.access_token)).status).toBe(200);
   });
 
-  it('refuses a regular user counting or revoking a whole group', async () => {
-    const agent = oauth.signIn(app, f.FRANK);
+  it.each([
+    ['a regular user', 'FRANK'],
+    ['a company admin', 'ERIN'],
+  ])('refuses %s counting or revoking a whole group', async (_case, key) => {
+    const agent = oauth.signIn(app, f[key]);
     const path = `/api/groups/${f.CLIENT_GROUP}/connected-applications`;
 
     expect((await agent.get(path)).status).toBe(403);
@@ -151,11 +154,11 @@ describe("a group's connected applications", () => {
       .signIn(app, userId)
       .get(`/api/groups/${groupId}/connected-applications`);
 
-  it('counts them for the group admin', async () => {
+  it("counts them for the group's tech admin", async () => {
     await oauth.connect(app, f.FRANK, { group: f.CLIENT_GROUP });
     await oauth.connect(app, f.OTTO, { group: f.OTHER_GROUP });
 
-    const { status, body } = await countAs(f.ERIN, f.CLIENT_GROUP);
+    const { status, body } = await countAs(f.TESS, f.CLIENT_GROUP);
 
     expect(status).toBe(200);
     expect(body).toEqual({ count: 1 });
@@ -165,7 +168,7 @@ describe("a group's connected applications", () => {
     const otto = await oauth.connect(app, f.OTTO, { group: f.OTHER_GROUP });
 
     const refused = await oauth
-      .signIn(app, f.ERIN)
+      .signIn(app, f.TESS)
       .delete(`/api/groups/${f.OTHER_GROUP}/connected-applications`);
     const revoked = await oauth
       .signIn(app, f.ALICE)
@@ -177,7 +180,7 @@ describe("a group's connected applications", () => {
   });
 
   it('refuses a group named by something else than its id', async () => {
-    expect((await countAs(f.ERIN, 'not-an-id')).status).toBe(403);
+    expect((await countAs(f.TESS, 'not-an-id')).status).toBe(403);
   });
 });
 

@@ -362,9 +362,7 @@ export default {
     <div class="dashboards-table">
       <!-- Table Header -->
       <div class="dashboards-table__header">
-        <div class="dashboards-table__col dashboards-table__col--order">
-          #
-        </div>
+        <div class="dashboards-table__col dashboards-table__col--order">#</div>
         <div class="dashboards-table__col dashboards-table__col--name">
           {{ $t('global.name') }}
         </div>

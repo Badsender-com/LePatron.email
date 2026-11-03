@@ -427,6 +427,31 @@ describe('deleting a client registered by hand', () => {
   });
 });
 
+describe('a company deleted', () => {
+  // Nothing else would ever delete them, their secrets with them.
+  it('takes the clients it registered with it', async () => {
+    const app = oauth.createApp();
+    const { body } = await oauth
+      .signIn(app, f.ALICE)
+      .post(CLIENTS)
+      .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
+    const {
+      forgetCompanyClients,
+    } = require('../../../packages/server/mcp/mcp-clients.js');
+
+    await forgetCompanyClients(f.CLIENT_GROUP);
+
+    const listed = await oauth.signIn(app, f.ALICE).get(CLIENTS);
+    const token = await request(app)
+      .post('/oauth/token')
+      .type('form')
+      .auth(body.clientId, body.clientSecret)
+      .send({ grant_type: 'client_credentials' });
+    expect(listed.body.items).toEqual([]);
+    expect(token.body.error).toBe('invalid_client');
+  });
+});
+
 describe('a client registered by a company', () => {
   let app;
   let client;

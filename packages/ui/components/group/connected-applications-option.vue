@@ -6,10 +6,9 @@ import { groupConnectedApplications } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
-// The AI assistants the group's users connected (ADR 0012): the group's
+// The AI assistants the group's users connected (ADR 0012): the group's tech
 // admin revokes them all at once, say when an assistant leaks. Shown while
-// MCP is off too, as long as connections remain: turning it back on would
-// revive them.
+// MCP is off too, as long as connections remain.
 export default {
   name: 'BsGroupConnectedApplicationsOption',
   components: { BsModalConfirm, LucideUnplug: Unplug },
@@ -73,7 +72,13 @@ export default {
       {{ $t('connectedApplications.groupCountError') }}
     </p>
     <p v-else class="text-body-2">
-      <template v-if="count === null">…</template>
+      <v-progress-circular
+        v-if="count === null"
+        indeterminate
+        size="16"
+        width="2"
+        color="accent"
+      />
       <template v-else>
         {{ $tc('connectedApplications.groupCount', count, { count }) }}
       </template>
@@ -82,7 +87,7 @@ export default {
       outlined
       color="error"
       :loading="loading"
-      :disabled="count === 0"
+      :disabled="!count"
       @click="$refs.revokeModal.open()"
     >
       <lucide-unplug :size="16" class="mr-2" />

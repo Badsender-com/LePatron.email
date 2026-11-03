@@ -870,6 +870,8 @@ export default {
     secretOnce:
       'Copy the secret now: it will never be shown again. If it is lost, delete the client and create another one.',
     secretSaved: 'I copied the secret',
+    copyField: 'Copy: {field}',
+    deleteNamed: 'Delete {name}',
     copy: 'Copy',
     copied: 'Copied',
     deleteTitle: 'Delete this client?',
@@ -887,8 +889,17 @@ export default {
       tokenUrl: 'Token URL',
       refreshUrl: 'Refresh URL',
       scope: 'Scope',
+      scopeHint:
+        'Read only. Proposing drafts of skills and expertises (skills:write) is only granted to Badsender super admins, when they ask for it at connection.',
     },
     errors: {
+      invalid_name: 'Give a name of 1 to 100 characters.',
+      invalid_redirect_uris:
+        'Give 1 to 10 redirect addresses, in HTTPS or to the user\'s own machine.',
+      invalid_auth_method: 'Pick how the assistant sends the secret.',
+      invalid_client_metadata:
+        'LePatron would refuse this client when it connects: check its redirect addresses.',
+      not_found: 'This client no longer exists.',
       nameTooLong: 'The name is at most 100 characters long.',
       redirectUrisRequired: 'At least one redirect URL is required.',
       redirectUrisInvalid:
@@ -929,6 +940,10 @@ export default {
       'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
     switch: 'Allow AI assistants to connect',
     manageClients: 'Manage MCP clients',
+    off: 'Turn off access',
+    offTitle: 'Turn MCP access off?',
+    offConfirm:
+      'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
     updated: 'MCP access updated',
   },
   crmIntelligence: {

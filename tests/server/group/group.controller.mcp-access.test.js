@@ -231,12 +231,14 @@ describe('PUT /groups/:groupId — MCP access, the security event', () => {
 });
 
 describe('PUT /groups/:groupId — retex', () => {
-  // Who allows the retex (ADR 0012, #1302): the company admin, the tech admin
-  // and the super admin; no other role, which the route keeps out.
+  // Who allows the retex (ADR 0012, #1302): the tech admin and the super
+  // admin, with the MCP access on the AI features page; a company admin's
+  // request is let through the route and the field dropped, as every other
+  // role is kept out by the route.
   it.each([
     [ROLES.SUPER_ADMIN, true],
     [ROLES.GROUP_ADMIN_TECH, true],
-    [ROLES.GROUP_ADMIN, true],
+    [ROLES.GROUP_ADMIN, false],
     [ROLES.REGULAR_USER, false],
     [ROLES.WRITER, false],
     [ROLES.REVIEWER, false],
