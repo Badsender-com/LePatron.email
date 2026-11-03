@@ -84,7 +84,7 @@ function refusalOf({ scope, retryInMs }) {
   const seconds = Math.max(1, Math.ceil(retryInMs / 1000));
   return new ProtocolError(
     ProtocolErrorCode.InvalidRequest,
-    `Rate limit reached: LePatron answers ${LIMITS[scope]} calls a minute ${SCOPES[scope]}. Retry in ${seconds} seconds.`,
+    `Rate limit reached: LePatron answers about ${LIMITS[scope]} calls a minute ${SCOPES[scope]}. Retry in ${seconds} seconds.`,
     { retryAfterSeconds: seconds }
   );
 }
