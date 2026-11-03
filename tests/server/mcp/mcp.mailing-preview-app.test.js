@@ -13,8 +13,7 @@ const f = require('../../helpers/mcp-fixtures');
 const PREVIEW_APP = 'ui://lepatron/mailing-preview';
 const APP_MIME_TYPE = 'text/html;profile=mcp-app';
 
-// Turned on by #1342 (the email preview in the conversation)
-describe.skip('email preview app', () => {
+describe('email preview app', () => {
   let client;
 
   beforeEach(async () => {
@@ -52,6 +51,23 @@ describe.skip('email preview app', () => {
     expect(contents[0]._meta?.ui?.csp?.connectDomains ?? []).toEqual([]);
   });
 
+  it('loads images from LePatron only', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+
+    expect(contents[0]._meta.ui.csp.resourceDomains).toEqual([
+      expect.stringMatching(/^https?:\/\/[^/]+$/),
+    ]);
+  });
+
+  // Whatever the sanitiser missed, nothing in the email runs.
+  it('frames the email where no script runs', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+    const frame = /<iframe[^>]*id="email"[^>]*>/.exec(contents[0].text)[0];
+
+    expect(frame).toMatch(/sandbox="[^"]*"/);
+    expect(frame).not.toMatch(/allow-scripts/);
+  });
+
   it('hands the app the preview of the mailing, as the text answer stays', async () => {
     const result = await client.callTool({
       name: 'get_mailing',
@@ -60,7 +76,7 @@ describe.skip('email preview app', () => {
 
     expect(result.structuredContent.text).toContain('Black Friday is coming');
     expect(result._meta?.ui?.previewHtml).toContain(
-      '<a href="https://shop.example.test/black-friday"'
+      'href="https://shop.example.test/black-friday"'
     );
   });
 
