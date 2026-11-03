@@ -165,7 +165,6 @@ export default {
         :input-value="config.enabled"
         :label="$t('trackingConfig.enabled')"
         color="accent"
-        inset
         hide-details
         @change="onEnabledChange"
       />
@@ -174,7 +173,6 @@ export default {
         :label="$t('trackingConfig.restrictValues')"
         :disabled="!config.enabled"
         color="accent"
-        inset
         hide-details
         class="tracking-params__restrict-switch"
         @change="onRestrictValuesChange"

@@ -246,7 +246,6 @@ export default {
       :label="$t('trackingConfig.restrictValues')"
       :disabled="!localConfig.enabled"
       color="accent"
-      inset
       hide-details
       class="mt-2"
       @change="onRestrictValuesChange"

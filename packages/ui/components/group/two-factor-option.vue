@@ -74,7 +74,9 @@ export default {
         :label="$t('twoFactor.group.switch')"
         :loading="loading"
         :disabled="loading"
-        inset
+        color="accent"
+        hide-details
+        class="mt-0"
         @change="save"
       />
       <p v-else class="text-body-2">

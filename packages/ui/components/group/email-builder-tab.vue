@@ -109,7 +109,6 @@ export default {
         :label="$t('emailBuilderSettings.metadata.enabled')"
         :disabled="loading"
         color="accent"
-        inset
         hide-details
         class="settings-section__switch"
         @change="onEnabledChange"
