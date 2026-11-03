@@ -178,7 +178,7 @@ export default {
           type="number"
           :error-messages="
             $v.form.providerDashboardId.$dirty &&
-              !$v.form.providerDashboardId.required
+            !$v.form.providerDashboardId.required
               ? $t('crmIntelligence.admin.dashboardIdRequired')
               : ''
           "
@@ -190,9 +190,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="accent" elevation="0" :loading="loading" @click="save">
-          <v-icon left>
-            mdi-content-save
-          </v-icon>
+          <v-icon left> mdi-content-save </v-icon>
           {{ $t('global.save') }}
         </v-btn>
       </v-card-actions>

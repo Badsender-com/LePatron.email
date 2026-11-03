@@ -1143,6 +1143,8 @@ export default {
     secretOnce:
       'Copiez le secret maintenant : il ne sera plus jamais affiché. S\'il est perdu, supprimez le client et créez-en un autre.',
     secretSaved: 'J\'ai copié le secret',
+    copyField: 'Copier : {field}',
+    deleteNamed: 'Supprimer {name}',
     copy: 'Copier',
     copied: 'Copié',
     deleteTitle: 'Supprimer ce client ?',
@@ -1160,8 +1162,17 @@ export default {
       tokenUrl: 'URL du token',
       refreshUrl: 'URL de renouvellement',
       scope: 'Scope',
+      scopeHint:
+        'Lecture seule. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins Badsender, sur leur demande à la connexion.',
     },
     errors: {
+      invalid_name: 'Donnez un nom de 1 à 100 caractères.',
+      invalid_redirect_uris:
+        'Indiquez de 1 à 10 adresses de redirection, en HTTPS ou vers la machine de l\'utilisateur.',
+      invalid_auth_method: 'Choisissez comment l\'assistant envoie le secret.',
+      invalid_client_metadata:
+        'LePatron refuserait ce client à sa connexion : vérifiez ses adresses de redirection.',
+      not_found: 'Ce client n\'existe plus.',
       nameTooLong: 'Le nom fait au plus 100 caractères.',
       redirectUrisRequired: 'Au moins une URL de redirection est requise.',
       redirectUrisInvalid:
@@ -1202,6 +1213,10 @@ export default {
       'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
     switch: 'Autoriser la connexion des assistants IA',
     manageClients: 'Gérer les clients MCP',
+    off: 'Couper l\'accès',
+    offTitle: 'Couper l\'accès MCP ?',
+    offConfirm:
+      'Tous les assistants connectés aux comptes de {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
     updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {
