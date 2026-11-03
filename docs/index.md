@@ -16,6 +16,8 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |
 | [adr/](./adr/)                                               | Architecture Decision Records                           | AI agents, developers    |
 | [node-upgrades.md](./node-upgrades.md)                       | Node version: where it is set, past upgrades            | Developers               |
+| [user/mcp/](./user/mcp/README.md)                            | Connecting an AI assistant to LePatron (FR, EN)         | Users, support           |
+| [recettes/mcp-clients.md](./recettes/mcp-clients.md)         | MCP client matrix replayed on staging before a release  | QA, release managers     |
 | [../.claude/skills/](../.claude/skills/)                     | Agent skills, including the new feature workflow        | AI agents                |
 
 ## 📚 Documentation Structure
