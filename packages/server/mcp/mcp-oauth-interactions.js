@@ -176,7 +176,12 @@ function createInteractionsRouter(provider, resource) {
 
   router.post('/:uid/consent', async (req, res, next) => {
     try {
-      const { interaction, consenter, granted } = req;
+      const { interaction, consenter } = req;
+      // Drafting is offered, never assumed (ADR 0014): granted only when the
+      // user ticks it, whatever the application asked for.
+      const granted = req.granted.filter(
+        (scope) => scope !== WRITE_SCOPE || req.body?.allowWrite === true
+      );
       const groupId = String(req.body?.groupId || '');
       if (!consenter.groups.some((group) => group.id === groupId)) {
         return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
