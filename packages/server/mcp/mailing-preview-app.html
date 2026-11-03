@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LePatron mailing preview</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        font-family: system-ui, sans-serif;
+      }
+      iframe {
+        display: block;
+        width: 100%;
+        min-height: 120px;
+        border: 0;
+        background: #fff;
+      }
+      p {
+        margin: 16px;
+        color: #666;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="status">Loading the email…</p>
+    <!--
+      The email in a frame of its own: no `allow-scripts`, so nothing in it
+      runs, whatever the sanitiser missed. `allow-same-origin` only lets this
+      app measure it and catch its links.
+    -->
+    <iframe id="email" title="Email preview" sandbox="allow-same-origin" hidden></iframe>
+    <script>
+      (function () {
+        // The email preview of get_mailing, as an MCP App (ADR 0012, #1342):
+        // the host hands this app the tool's result, whose `_meta` carries the
+        // sanitised preview the assistant never reads.
+        var PROTOCOL_VERSION = '2026-01-26';
+        var frame = document.getElementById('email');
+        var status = document.getElementById('status');
+        var nextId = 1;
+        var pending = {};
+        var shown = false;
+
+        function send(message) {
+          window.parent.postMessage(
+            Object.assign({ jsonrpc: '2.0' }, message),
+            '*'
+          );
+        }
+        function request(method, params) {
+          var id = nextId++;
+          send({ id: id, method: method, params: params });
+          return new Promise(function (resolve) {
+            pending[id] = resolve;
+          });
+        }
+        function notify(method, params) {
+          send({ method: method, params: params });
+        }
+
+        function openLink(href) {
+          if (window.openai && window.openai.openExternal) {
+            window.openai.openExternal({ href: href });
+          } else {
+            request('ui/open-link', { url: href });
+          }
+        }
+
+        function resize() {
+          var doc = frame.contentDocument;
+          if (!doc || !doc.documentElement) return;
+          var height = doc.documentElement.scrollHeight;
+          frame.style.height = height + 'px';
+          notify('ui/notifications/size-changed', {
+            height: document.documentElement.scrollHeight,
+          });
+        }
+
+        function show(previewHtml) {
+          if (typeof previewHtml !== 'string' || shown) return;
+          shown = true;
+          frame.onload = function () {
+            var doc = frame.contentDocument;
+            // A link opens outside the conversation, through the host.
+            doc.addEventListener('click', function (event) {
+              var link = event.target.closest && event.target.closest('a[href]');
+              if (!link) return;
+              event.preventDefault();
+              if (/^https?:/i.test(link.href)) openLink(link.href);
+            });
+            Array.prototype.forEach.call(doc.images, function (image) {
+              image.addEventListener('load', resize);
+            });
+            resize();
+          };
+          frame.srcdoc = previewHtml;
+          frame.hidden = false;
+          status.hidden = true;
+        }
+
+        function showResult(result) {
+          var ui = result && result._meta && result._meta.ui;
+          if (ui && ui.previewHtml) {
+            show(ui.previewHtml);
+          } else if (!shown) {
+            status.textContent = 'No preview: this mailing was never saved in the editor, or cannot be read.';
+          }
+        }
+
+        window.addEventListener('message', function (event) {
+          if (event.source !== window.parent) return;
+          var message = event.data;
+          if (!message || message.jsonrpc !== '2.0') return;
+          // A response to this app's request; the host's requests have ids
+          // of their own.
+          if (!message.method && pending[message.id]) {
+            pending[message.id](message.result);
+            delete pending[message.id];
+            return;
+          }
+          if (message.method === 'ui/notifications/tool-result') {
+            showResult(message.params);
+          } else if (message.method === 'ui/resource-teardown') {
+            send({ id: message.id, result: {} });
+          }
+        });
+
+        // ChatGPT hands the result's `_meta` through its own bridge too.
+        function fromOpenAi() {
+          var meta = window.openai && window.openai.toolResponseMetadata;
+          if (meta) showResult({ _meta: meta });
+        }
+        window.addEventListener('openai:set_globals', fromOpenAi);
+        fromOpenAi();
+
+        request('ui/initialize', {
+          protocolVersion: PROTOCOL_VERSION,
+          appInfo: { name: 'lepatron-mailing-preview', version: '1.0.0' },
+          appCapabilities: {},
+        }).then(function () {
+          notify('ui/notifications/initialized', {});
+        });
+      })();
+    </script>
+  </body>
+</html>
