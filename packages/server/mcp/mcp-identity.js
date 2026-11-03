@@ -7,9 +7,12 @@ const {
 const { Users, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
+const { isDraftsModeOn } = require('./mcp-connections.js');
 
 // What a user consents to on the consent screen in this version (ADR 0012).
 const READ_SCOPE = 'mcp:read';
+// The scope a token needs for the writing tools to exist (ADR 0014).
+const WRITE_SCOPE = 'skills:write';
 
 // What the request user may carry: never a password or a token.
 const USER_FIELDS = '_id name email lang role _company isDeactivated';
@@ -42,8 +45,10 @@ function toRequestUser(record, groupId) {
  *
  * @param {Object} [authInfo] the validated access token: its `scopes`, and
  *   `extra.userId` and `extra.groupId`
- * @returns {Promise<{ user: Object, group: Object }>} the request user and
- *   the group the call reads
+ * @returns {Promise<{ user: Object, group: Object, drafts: boolean }>} the
+ *   request user, the group the call reads, and whether it reads the drafts
+ *   of skills and expertises: a token that may draft, held by someone who
+ *   still may, on a connection in drafts mode (#1385, ADR 0014)
  * @throws {ProtocolError} when any of it no longer holds
  */
 async function resolveIdentity(authInfo) {
@@ -69,7 +74,11 @@ async function resolveIdentity(authInfo) {
   if (!group || group.enableMcp !== true) {
     refuse('This group has no MCP access to LePatron.');
   }
-  return { user, group };
+  const drafts =
+    (authInfo.scopes || []).includes(WRITE_SCOPE) &&
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    (await isDraftsModeOn(authInfo.extra?.grantId));
+  return { user, group, drafts };
 }
 
-module.exports = { resolveIdentity, READ_SCOPE };
+module.exports = { resolveIdentity, READ_SCOPE, WRITE_SCOPE };

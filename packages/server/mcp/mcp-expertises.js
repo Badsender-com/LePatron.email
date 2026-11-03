@@ -10,14 +10,15 @@ const {
   findApplicable,
 } = require('../ai-skill/repositories/expertise.repository.js');
 const {
-  findActiveVersion,
-} = require('../ai-skill/services/version-helpers.js');
-const {
-  SkillStatuses,
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { audienceFilter } = require('./mcp-audience.js');
+const {
+  servedStatuses,
+  servedVersion,
+  draftNotice,
+} = require('./mcp-drafts.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
@@ -25,30 +26,24 @@ const versionOf = (version) =>
   `${version.versionMajor}.${version.versionMinor}`;
 
 // The active version of an active expertise: what leaves LePatron (ADR 0012).
-// Drafts and archives never do, nor an expertise without an active version.
-function published(doc) {
-  if (!doc || doc.status !== SkillStatuses.ACTIVE) return null;
-  const version = findActiveVersion(doc);
-  if (!version || version.status !== SkillStatuses.ACTIVE) return null;
-  return { doc, version };
-}
-
-async function publishedExpertises(group) {
+// Drafts and archives never do, nor an expertise without an active version,
+// but in a super admin's drafts mode, where the latest draft does (#1385).
+async function servedExpertises(group, drafts = false) {
   const docs = await Expertises.find({
-    status: SkillStatuses.ACTIVE,
+    status: servedStatuses(drafts),
     ...audienceFilter(group),
   }).lean();
   return docs
-    .map(published)
+    .map((doc) => servedVersion(doc, drafts))
     .filter(Boolean)
     .sort((a, b) => a.doc.expertiseId.localeCompare(b.doc.expertiseId));
 }
 
-function asResource({ doc, version }) {
+function asResource({ doc, version, draft }) {
   return {
     uri: uriOf(doc.expertiseId),
     name: doc.expertiseId,
-    title: doc.title,
+    title: draft ? `${doc.title} (draft ${versionOf(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
     annotations: { lastModified: new Date(version.updatedAt).toISOString() },
@@ -61,13 +56,16 @@ function bulleted(title, examples) {
 }
 
 // One Markdown document: the expertise, its version, its examples.
-function asMarkdown({ doc, version }) {
+function asMarkdown(found) {
+  const { doc, version } = found;
   const updated = new Date(version.updatedAt).toISOString().slice(0, 10);
+  const notice = draftNotice(found);
   return [
     `# ${doc.title}`,
     '',
     `Version ${versionOf(version)}, updated on ${updated}.`,
     '',
+    ...(notice ? [notice, ''] : []),
     version.body,
     '',
     ...bulleted('Good examples', version.examplesGood),
@@ -77,13 +75,14 @@ function asMarkdown({ doc, version }) {
     .trim();
 }
 
-// The active version of an expertise the group may read, or null.
-async function readableExpertise(expertiseId, group) {
-  return published(
+// The version of an expertise the group may read it at, or null.
+async function readableExpertise(expertiseId, group, drafts = false) {
+  return servedVersion(
     await Expertises.findOne({
       expertiseId: String(expertiseId),
       ...audienceFilter(group),
-    }).lean()
+    }).lean(),
+    drafts
   );
 }
 
@@ -92,9 +91,9 @@ function registerExpertiseResources(server) {
     'expertises',
     new ResourceTemplate(URI_TEMPLATE, {
       list: async (ctx) => {
-        const { group } = await resolveIdentity(ctx.http?.authInfo);
+        const { group, drafts } = await resolveIdentity(ctx.http?.authInfo);
         return {
-          resources: (await publishedExpertises(group)).map(asResource),
+          resources: (await servedExpertises(group, drafts)).map(asResource),
         };
       },
     }),
@@ -105,8 +104,8 @@ function registerExpertiseResources(server) {
       mimeType: 'text/markdown',
     },
     async (uri, { expertiseId }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
-      const found = await readableExpertise(expertiseId, group);
+      const { group, drafts } = await resolveIdentity(ctx.http?.authInfo);
+      const found = await readableExpertise(expertiseId, group, drafts);
       if (!found) throw new ResourceNotFoundError(uri.href);
       return {
         contents: [
@@ -121,6 +120,7 @@ const EXPERTISE = z.object({
   expertiseId: z.string(),
   title: z.string(),
   version: z.string(),
+  draft: z.boolean().optional(),
   uri: z.string(),
 });
 
@@ -141,7 +141,7 @@ function registerFindApplicableExpertises(server) {
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async ({ scope, categories, emailType, language }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
+      const { group, drafts } = await resolveIdentity(ctx.http?.authInfo);
       const scopes = [].concat(scope || []).filter(Boolean);
       if (!scopes.length || !categories || !categories.length) {
         return {
@@ -162,18 +162,26 @@ function registerFindApplicableExpertises(server) {
         language,
       });
       // The lookup is the features' own, which knows no audience: what the
-      // group may not read is dropped from what it found.
-      const readable = new Set(
-        (await publishedExpertises(group)).map(({ doc }) => doc.expertiseId)
+      // group may not read is dropped from what it found, and the version is
+      // the one served, a draft in drafts mode.
+      const readable = new Map(
+        (await servedExpertises(group, drafts)).map((served) => [
+          served.doc.expertiseId,
+          served,
+        ])
       );
       const expertises = found
         .filter((expertise) => readable.has(expertise.expertiseId))
-        .map((expertise) => ({
-          expertiseId: expertise.expertiseId,
-          title: expertise.title,
-          version: versionOf(expertise),
-          uri: uriOf(expertise.expertiseId),
-        }));
+        .map((expertise) => {
+          const served = readable.get(expertise.expertiseId);
+          return {
+            expertiseId: expertise.expertiseId,
+            title: expertise.title,
+            version: versionOf(served.version),
+            ...(served.draft && { draft: true }),
+            uri: uriOf(expertise.expertiseId),
+          };
+        });
       return {
         content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
         structuredContent: { expertises },

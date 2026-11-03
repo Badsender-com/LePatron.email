@@ -1,18 +1,13 @@
 'use strict';
 
 const { LePatronSkills } = require('../common/models.common.js');
-const {
-  findActiveVersion,
-} = require('../ai-skill/services/version-helpers.js');
-const {
-  SkillStatuses,
-  SkillNatures,
-} = require('../ai-skill/constant/skill-constants.js');
+const { SkillNatures } = require('../ai-skill/constant/skill-constants.js');
 const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
 const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { audienceFilter } = require('./mcp-audience.js');
+const { servedStatuses, servedVersion } = require('./mcp-drafts.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant
@@ -25,36 +20,38 @@ const versionOf = (version) =>
   `${version.versionMajor}.${version.versionMinor}`;
 
 // What reaches assistants (ADR 0013): an active skill the group may read, a
-// task skill always, a feature skill only when marked so.
-function servedFilter(group) {
+// task skill always, a feature skill only when marked so; in drafts mode, one
+// never published too (#1385).
+function servedFilter(group, drafts) {
   return {
-    status: SkillStatuses.ACTIVE,
+    status: servedStatuses(drafts),
     ...audienceFilter(group),
     $or: [{ nature: SkillNatures.TASK }, { servedToAssistants: true }],
   };
 }
 
-function published(doc) {
-  if (!doc) return null;
-  const version = findActiveVersion(doc);
-  if (!version || version.status !== SkillStatuses.ACTIVE) return null;
-  return { doc, version };
-}
-
-async function servedSkills(group) {
-  const docs = await LePatronSkills.find(servedFilter(group)).lean();
+/**
+ * The skills a group is served, at their active version, or in drafts mode at
+ * their latest draft (#1385).
+ *
+ * @param {Object} group
+ * @param {boolean} [drafts]
+ */
+async function servedSkills(group, drafts = false) {
+  const docs = await LePatronSkills.find(servedFilter(group, drafts)).lean();
   return docs
-    .map(published)
+    .map((doc) => servedVersion(doc, drafts))
     .filter(Boolean)
     .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId));
 }
 
-async function servedSkill(skillId, group) {
-  return published(
+async function servedSkill(skillId, group, drafts = false) {
+  return servedVersion(
     await LePatronSkills.findOne({
       skillId: String(skillId),
-      ...servedFilter(group),
-    }).lean()
+      ...servedFilter(group, drafts),
+    }).lean(),
+    drafts
   );
 }
 

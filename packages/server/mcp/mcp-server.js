@@ -11,6 +11,7 @@ const {
   registerFindSkills,
 } = require('./mcp-skill-resources.js');
 const { registerAuthoringTools, WRITE_SCOPE } = require('./mcp-authoring.js');
+const { registerUseDrafts } = require('./mcp-drafts.js');
 const { registerSubmitFeedback } = require('./mcp-feedback.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 
@@ -49,6 +50,8 @@ function createMcpServer({ authInfo } = {}) {
   // others never see the writing tools.
   if ((authInfo?.scopes || []).includes(WRITE_SCOPE)) {
     registerAuthoringTools(server);
+    // Trying the drafts before publishing them (#1385).
+    registerUseDrafts(server);
   }
   return server;
 }
