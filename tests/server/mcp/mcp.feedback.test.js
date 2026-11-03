@@ -41,6 +41,18 @@ describe('feedback and retex', () => {
     expect(answer.error).toMatch(/rating/i);
   });
 
+  it('refuses more references than one feedback is about', async () => {
+    const answer = await submit(f.FRANK, {
+      rating: 'up',
+      references: Array.from({ length: 21 }, () => ({
+        kind: 'skill',
+        id: 'redaction.subject-ideas',
+      })),
+    });
+
+    expect(answer.error).toBeDefined();
+  });
+
   it('refuses a reference to something the user cannot read', async () => {
     const answer = await submit(f.FRANK, {
       rating: 'up',
@@ -147,6 +159,36 @@ describe('feedback and retex', () => {
 
       expect(bySkill.body.items.map((item) => item.rating)).toEqual(['down']);
       expect(byOldVersion.body.items).toEqual([]);
+    });
+
+    // Filtered by the database, not among the latest feedbacks.
+    it('finds the feedbacks on a skill under many more recent ones', async () => {
+      const recent = Array.from({ length: 1200 }, (_, i) => ({
+        _id: (0x7000000000 + i).toString(16).padStart(24, '0'),
+        rating: 'up',
+        _company: f.CLIENT_GROUP,
+        references: [{ kind: 'expertise', id: 'deliverability.spam-words' }],
+        createdAt: new Date(Date.now() + 1000 + i),
+      }));
+      const {
+        McpFeedbacks,
+      } = require('../../../packages/server/common/models.common.js');
+      await Promise.all(
+        recent.map((feedback) => McpFeedbacks.create(feedback))
+      );
+
+      const { body } = await list({
+        kind: 'skill',
+        id: 'redaction.subject-ideas',
+      });
+
+      expect(body.items.map((item) => item.rating)).toEqual(['down']);
+    });
+
+    it('takes a filter as text, never as a query', async () => {
+      const { body } = await list({ kind: 'skill', id: { $ne: 'x' } });
+
+      expect(body.items).toEqual([]);
     });
 
     it('is open to super admins only', () => {

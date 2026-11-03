@@ -74,26 +74,33 @@ async function submitFeedback(args, ctx) {
   };
 }
 
+// What one feedback holds at most: a few things it is about, and a comment
+// and a summary a person reads.
+const MAX_REFERENCES = 20;
+const MAX_COMMENT = 4000;
+const MAX_SUMMARY = 20000;
+
 function registerSubmitFeedback(server) {
   server.registerTool(
     'submit_feedback',
     {
       title: 'Send feedback to Badsender',
       description:
-        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). A summary of the session may be attached only if the user explicitly agrees to share it with Badsender (consentToRetex); ask them first. The answer says whether the summary was kept.",
+        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The comment is always kept: write what the user says of LePatron, never the content of their conversation. A summary of the session may be attached only if the user explicitly agrees to share it with Badsender (consentToRetex); ask them first. The answer says whether the summary was kept.",
       inputSchema: z.object({
         rating: z.enum(['up', 'down']),
-        comment: z.string().optional(),
+        comment: z.string().max(MAX_COMMENT).optional(),
         references: z
           .array(
             z.object({
               kind: z.enum(['skill', 'expertise', 'mailing']),
-              id: z.string(),
+              id: z.string().max(200),
             })
           )
+          .max(MAX_REFERENCES)
           .optional(),
         consentToRetex: z.boolean().optional(),
-        sessionSummary: z.string().optional(),
+        sessionSummary: z.string().max(MAX_SUMMARY).optional(),
       }),
       outputSchema: z.object({
         recorded: z.boolean(),
