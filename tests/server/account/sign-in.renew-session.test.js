@@ -22,6 +22,10 @@ jest.mock('../../../packages/server/account/selected-group.js', () => ({
   resolveSelectedGroup: jest.fn().mockResolvedValue(null),
   forgetSessionSelection: jest.fn(),
 }));
+// The password link ends the assistants connected with the old one.
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
