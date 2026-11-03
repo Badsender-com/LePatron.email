@@ -9,6 +9,7 @@ const logger = require('../utils/logger.js');
 const permissions = require('../account/permissions.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
+const { isDraftsModeOn } = require('./mcp-connections.js');
 
 // What a user consents to on the consent screen: reading, for everyone (ADR
 // 0012), and drafting skills and expertises, offered to who may manage the
@@ -183,8 +184,11 @@ function toRequestUser(record, groupId) {
  *
  * @param {Object} [authInfo] the validated access token: its `scopes`, and
  *   `extra.userId` and `extra.groupId`
- * @returns {Promise<{ user: Object, group: Object }>} the request user and
- *   the company the call reads, with the fields of `GROUP_FIELDS` only
+ * @returns {Promise<{ user: Object, group: Object, drafts: boolean }>} the
+ *   request user, the company the call reads, with the fields of `GROUP_FIELDS`
+ *   only,, and whether it reads the drafts
+ *   of skills and expertises: a token that may draft, held by someone who
+ *   still may, on a connection in drafts mode (#1385, ADR 0014)
  * @throws {ProtocolError} when any of it no longer holds
  */
 async function resolveIdentity(authInfo) {
@@ -210,7 +214,11 @@ async function resolveIdentity(authInfo) {
 
   const group = await Groups.findById(groupId).select(GROUP_FIELDS).lean();
   if (!group || group.enableMcp !== true) refuse(NO_MCP_ACCESS);
-  return { user, group };
+  const drafts =
+    hasScope(authInfo, WRITE_SCOPE) &&
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&
+    (await isDraftsModeOn(authInfo.extra?.grantId));
+  return { user, group, drafts };
 }
 
 // Who makes a call, resolved once for it by the call guard

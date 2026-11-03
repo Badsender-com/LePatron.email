@@ -19,11 +19,12 @@ const {
   EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
 const expertises = require('./mcp-expertises.js');
+const { draftNotice } = require('./mcp-drafts.js');
 
 function asPrompt(found) {
   return {
     name: found.doc.skillId,
-    title: found.doc.title,
+    title: found.draft ? `${found.doc.title} (draft)` : found.doc.title,
     description: found.doc.description || undefined,
     arguments: argumentsOf(found),
   };
@@ -34,17 +35,23 @@ const text = (content) => ({
   content: { type: 'text', text: content },
 });
 
+// What a skill served from a draft says first (#1385).
+const noticed = (found, content) =>
+  [draftNotice(found), content].filter(Boolean).join('\n\n');
+
 // A task skill: its procedure, then the active version of each expertise it
 // consumes, in its order, embedded so it runs as the platform wrote it (ADR
 // 0013). One the company may not read, or no longer published, is left out.
-async function taskMessages({ doc, version }, group) {
+// In drafts mode, each is served at its open draft.
+async function taskMessages(found, group, drafts) {
+  const { doc, version } = found;
   const consumed = await expertises.consumedExpertises(
     version.consumedExpertiseIds,
     group,
-    { content: true }
+    { content: true, drafts }
   );
   return [
-    text(`# ${doc.title}\n\n${version.procedure}`),
+    text(`# ${doc.title}\n\n${noticed(found, version.procedure)}`),
     ...consumed.map((found) => ({
       role: 'user',
       content: {
@@ -78,19 +85,21 @@ function featureMessages(found, args) {
     version: found.version,
     input: inputOf(found, args),
   });
+  const notice = draftNotice(found);
   return [
+    ...(notice ? [text(notice)] : []),
     ...messages.map((message) => text(message.content)),
     ...(usesExpertise(found.version) ? [text(EXPERTISE_NOTICE)] : []),
   ];
 }
 
-async function listPrompts({ group }) {
-  return { prompts: (await servedSkills(group)).map(asPrompt) };
+async function listPrompts({ group, drafts }) {
+  return { prompts: (await servedSkills(group, drafts)).map(asPrompt) };
 }
 
-async function getPrompt({ group }, request) {
+async function getPrompt({ group, drafts }, request) {
   const { name, arguments: input = {} } = request.params;
-  const found = await servedSkill(name, group);
+  const found = await servedSkill(name, group, drafts);
   if (!found) {
     throw new ProtocolError(
       ProtocolErrorCode.InvalidParams,
@@ -100,7 +109,7 @@ async function getPrompt({ group }, request) {
   return {
     description: found.doc.description || undefined,
     messages: isTask(found.version)
-      ? await taskMessages(found, group)
+      ? await taskMessages(found, group, drafts)
       : featureMessages(found, input),
   };
 }

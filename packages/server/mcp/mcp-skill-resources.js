@@ -20,12 +20,15 @@ const expertises = require('./mcp-expertises.js');
 const {
   SkillNatureValues,
 } = require('../ai-skill/constant/skill-constants.js');
+const { draftNotice } = require('./mcp-drafts.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
 // chosen by the user; a resource lets the assistant pick a skill itself. It
 // lists only the consumed expertises the company may read, as the prompt does.
-function asMarkdown({ doc, version }, readableIds = []) {
+function asMarkdown(found, readableIds = []) {
+  const { doc, version } = found;
+  const notice = draftNotice(found);
   const body = isTask(version)
     ? version.procedure
     : [
@@ -41,6 +44,7 @@ function asMarkdown({ doc, version }, readableIds = []) {
     '',
     `Version ${versionLabel(version)}.`,
     '',
+    ...(notice ? [notice, ''] : []),
     body,
     ...(consumed.length
       ? ['', '## Expertises to read first, in this order', '', ...consumed]
@@ -48,11 +52,11 @@ function asMarkdown({ doc, version }, readableIds = []) {
   ].join('\n');
 }
 
-function asResource({ doc }) {
+function asResource({ doc, version, draft }) {
   return {
     uri: uriOf(doc.skillId),
     name: doc.skillId,
-    title: doc.title,
+    title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
   };
@@ -62,8 +66,8 @@ function registerSkillResources(server) {
   server.registerResource(
     'skills',
     new ResourceTemplate('lepatron://skills/{skillId}', {
-      list: withIdentity(async ({ group }) => ({
-        resources: (await servedSkills(group)).map(asResource),
+      list: withIdentity(async ({ group, drafts }) => ({
+        resources: (await servedSkills(group, drafts)).map(asResource),
       })),
     }),
     {
@@ -72,12 +76,13 @@ function registerSkillResources(server) {
         'Procedures written for an assistant, to run on what the user provides.',
       mimeType: 'text/markdown',
     },
-    withIdentity(async ({ group }, uri, { skillId }) => {
-      const found = await servedSkill(skillId, group);
+    withIdentity(async ({ group, drafts }, uri, { skillId }) => {
+      const found = await servedSkill(skillId, group, drafts);
       if (!found) throw new ResourceNotFoundError(uri.href);
       const readable = await expertises.consumedExpertises(
         found.version.consumedExpertiseIds,
-        group
+        group,
+        { drafts }
       );
       const readableIds = readable.map(({ doc }) => doc.expertiseId);
       return {
@@ -107,6 +112,7 @@ const FIND_OUTPUT = z.object({
       title: z.string(),
       description: z.string(),
       nature: z.enum(SkillNatureValues),
+      draft: z.boolean().optional(),
       uri: z.string(),
     })
   ),
@@ -131,15 +137,16 @@ function registerFindSkills(server) {
       outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    withIdentity(async ({ group }, { query }) => {
-      const skills = (await servedSkills(group))
+    withIdentity(async ({ group, drafts }, { query }) => {
+      const skills = (await servedSkills(group, drafts))
         .filter(matching(query))
         .slice(0, MAX_FOUND_SKILLS)
-        .map(({ doc, version }) => ({
+        .map(({ doc, version, draft }) => ({
           skillId: doc.skillId,
           title: doc.title,
           description: doc.description || '',
           nature: natureOf(version),
+          ...(draft && { draft: true }),
           uri: uriOf(doc.skillId),
         }));
       return {

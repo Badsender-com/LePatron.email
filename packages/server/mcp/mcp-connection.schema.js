@@ -19,6 +19,8 @@ const McpConnectionSchema = new Schema({
   _company: { type: ObjectId, ref: GroupModel, required: true, index: true },
   connectedAt: { type: Date, required: true },
   lastUsedAt: { type: Date, default: null },
+  // The drafts mode of a super admin, on until then (#1385, ADR 0014).
+  draftsUntil: { type: Date, default: null },
   expiresAt: { type: Date, required: true, expires: 0 },
 });
 

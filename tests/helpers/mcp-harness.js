@@ -10,7 +10,8 @@
  *   with the identity a validated access token carries: the user, the group
  *   the token is bound to (the user's own group unless `group` says
  *   otherwise, as for a super admin), the consented `scopes` and the
- *   `clientId` of the connected application. Resolves with the SDK client.
+ *   `clientId` of the connected application, and the `grantId` of its
+ *   connection. Resolves with the SDK client.
  * - `update(collection, id, changes)` changes a stored record between two
  *   calls, the way the app would (a role changed, an account deactivated, MCP
  *   access turned off).
@@ -88,7 +89,12 @@ async function connectAs(userId, options = {}) {
     token: `token-of-${userId}`,
     clientId,
     scopes,
-    extra: { userId, groupId: await boundGroupOf(userId, options) },
+    extra: {
+      userId,
+      groupId: await boundGroupOf(userId, options),
+      // The grant whose connection the token carries (the drafts mode).
+      ...(options.grantId && { grantId: options.grantId }),
+    },
   };
 
   // Required here: the server reads the models, which must be the stand-ins.

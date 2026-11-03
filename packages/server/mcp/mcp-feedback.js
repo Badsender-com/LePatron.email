@@ -23,16 +23,17 @@ async function stillAllowsRetex(groupId) {
 }
 
 // What each kind of reference is read with, as the user may read it, by name
-// only: the version a skill or an expertise was given on, none for a mailing,
-// whose content is never read to check a right.
+// only: the version a skill or an expertise was given on (a draft's in drafts
+// mode, #1385), none for a mailing, whose content is never read to check a
+// right.
 const READERS = {
-  skill: async (ids, { group }) =>
-    (await namedSkills(ids, group)).map(({ doc, version }) => [
+  skill: async (ids, { group, drafts }) =>
+    (await namedSkills(ids, group, drafts)).map(({ doc, version }) => [
       doc.skillId,
       versionLabel(version),
     ]),
-  expertise: async (ids, { group }) =>
-    (await namedExpertises(ids, group)).map(({ doc, version }) => [
+  expertise: async (ids, { group, drafts }) =>
+    (await namedExpertises(ids, group, drafts)).map(({ doc, version }) => [
       doc.expertiseId,
       versionLabel(version),
     ]),

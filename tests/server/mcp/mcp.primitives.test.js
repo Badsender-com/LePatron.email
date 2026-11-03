@@ -25,6 +25,8 @@ function sampleOf(schema) {
   switch (schema.type) {
     case 'string':
       return 'any';
+    case 'boolean':
+      return true;
     case 'array':
       return [sampleOf(schema.items)];
     case 'object':

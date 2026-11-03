@@ -10,7 +10,7 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity } = require('./mcp-identity.js');
-const { uriOf } = require('./mcp-expertises.js');
+const { uriOf, consumedExpertises } = require('./mcp-expertises.js');
 
 const TOOL = 'find_applicable_expertises';
 
@@ -37,6 +37,7 @@ const FIND_OUTPUT = z.object({
       expertiseId: z.string(),
       title: z.string(),
       version: z.string(),
+      draft: z.boolean().optional(),
       uri: z.string(),
     })
   ),
@@ -71,7 +72,18 @@ function noteOn(unmatched, inUse) {
 
 const filled = (value) => (value && value.trim()) || undefined;
 
-async function findExpertises({ group }, args) {
+// In drafts mode, the version each expertise found is served at: its open
+// draft when it has one (#1385).
+async function servedVersions(found, group) {
+  const served = await consumedExpertises(
+    found.map((expertise) => expertise.expertiseId),
+    group,
+    { drafts: true }
+  );
+  return new Map(served.map((item) => [item.doc.expertiseId, item]));
+}
+
+async function findExpertises({ group, drafts }, args) {
   const scopes = normalizeScopes(args.scope);
   // The features' own lookup, with the scopes in use, both within the
   // audience of the caller's company. Its diagnostic is for a scope written
@@ -88,13 +100,18 @@ async function findExpertises({ group }, args) {
     warnOnUnmatched: false,
   });
   const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
+  const served = drafts ? await servedVersions(found, group) : new Map();
   const answer = {
-    expertises: found.map((expertise) => ({
-      expertiseId: expertise.expertiseId,
-      title: expertise.title,
-      version: versionLabel(expertise),
-      uri: uriOf(expertise.expertiseId),
-    })),
+    expertises: found.map((expertise) => {
+      const tried = served.get(expertise.expertiseId);
+      return {
+        expertiseId: expertise.expertiseId,
+        title: expertise.title,
+        version: versionLabel(tried ? tried.version : expertise),
+        ...(tried?.draft && { draft: true }),
+        uri: uriOf(expertise.expertiseId),
+      };
+    }),
     scopesInUse: inUse.slice(0, MAX_LISTED_SCOPES),
     unmatchedScopes,
   };

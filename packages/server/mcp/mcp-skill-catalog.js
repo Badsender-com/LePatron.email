@@ -2,7 +2,7 @@
 
 const { LePatronSkills } = require('../common/models.common.js');
 const {
-  findPublished,
+  findServed,
 } = require('../ai-skill/repositories/published.repository.js');
 const { SkillNatures } = require('../ai-skill/constant/skill-constants.js');
 const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
@@ -40,15 +40,25 @@ const READ = {
 };
 
 // What reaches assistants (ADR 0013): a published skill the company may use,
-// a task skill always, a feature skill only when the skill is marked so.
+// a task skill always, a feature skill only when the skill is marked so; in
+// drafts mode, at its open draft, one never published too (#1385). The nature
+// is the one of the version served.
 const isServed = ({ doc, version }) =>
   isTask(version) || doc.servedToAssistants === true;
 
-async function servedSkills(group) {
-  const found = await findPublished(
+/**
+ * The skills a company is served, at their active version, or in drafts mode
+ * at their open draft (#1385).
+ *
+ * @param {Object} group
+ * @param {boolean} [drafts]
+ */
+async function servedSkills(group, drafts = false) {
+  const found = await findServed(
     LePatronSkills,
     audienceFilter(group),
-    LISTED
+    LISTED,
+    { drafts }
   );
   return found
     .filter(isServed)
@@ -58,21 +68,24 @@ async function servedSkills(group) {
 // What naming a served skill reads: whether it is served, and its version.
 const NAMED = { doc: ['skillId', 'servedToAssistants'], version: ['nature'] };
 
-// The skills among `ids` served to the company, by name and version only.
-async function namedSkills(ids, group) {
-  const found = await findPublished(
+// The skills among `ids` served to the company, by name and version only: in
+// drafts mode, at their open draft (#1385).
+async function namedSkills(ids, group, drafts = false) {
+  const found = await findServed(
     LePatronSkills,
     { skillId: { $in: ids.map(String) }, ...audienceFilter(group) },
-    NAMED
+    NAMED,
+    { drafts }
   );
   return found.filter(isServed);
 }
 
-async function servedSkill(skillId, group) {
-  const [found] = await findPublished(
+async function servedSkill(skillId, group, drafts = false) {
+  const [found] = await findServed(
     LePatronSkills,
     { skillId: String(skillId), ...audienceFilter(group) },
-    READ
+    READ,
+    { drafts }
   );
   return found && isServed(found) ? found : null;
 }
