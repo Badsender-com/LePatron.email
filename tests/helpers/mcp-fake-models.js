@@ -331,6 +331,28 @@ function createMcpStore() {
   });
   models.Mailings.findForApiWithPagination =
     MailingSchema.statics.findForApiWithPagination;
+  // The app's approval rule, an aggregation the fakes do not run, written
+  // the way it reads (comment.schema.js): the latest root comment not
+  // deleted decides, `isDeleted: false` as the schema stores it.
+  models.Comments.findApprovedMailingIds = async (mailingIds) => {
+    const wanted = new Set(mailingIds.map(String));
+    const latest = new Map();
+    sortedBy(
+      { createdAt: -1 },
+      collections.comments.filter(
+        (comment) =>
+          wanted.has(String(comment._mailing)) &&
+          !comment._parentComment &&
+          comment.isDeleted === false
+      )
+    ).forEach((comment) => {
+      const id = String(comment._mailing);
+      if (!latest.has(id)) latest.set(id, comment.decision);
+    });
+    return [...latest]
+      .filter(([, decision]) => decision === 'approved')
+      .map(([id]) => id);
+  };
 
   return {
     models,
