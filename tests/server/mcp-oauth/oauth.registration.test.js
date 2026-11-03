@@ -63,6 +63,61 @@ describe('CIMD registration', () => {
 
     expect(response.status).toBe(400);
   });
+
+  // Claude Code's document declares `http://localhost/callback` and listens
+  // on a port it picks at each login (RFC 8252, 7.3).
+  describe("a client that redirects to the user's own machine", () => {
+    const url = 'https://assistant.example.test/oauth/cli.json';
+    const authorize = (redirectUri, document = {}) => {
+      oauth.serveClientMetadata(url, {
+        client_id: url,
+        client_name: 'A command line assistant',
+        redirect_uris: [
+          'http://localhost/callback',
+          'http://127.0.0.1/callback',
+        ],
+        grant_types: ['authorization_code', 'refresh_token'],
+        token_endpoint_auth_method: 'none',
+        ...document,
+      });
+      return oauth
+        .signIn(app, f.FRANK)
+        .get('/oauth/auth')
+        .query(
+          oauth.authorizeQuery(
+            { client_id: url, redirect_uris: [redirectUri] },
+            oauth.pkce().challenge
+          )
+        );
+    };
+
+    it.each([
+      'http://localhost:57164/callback',
+      'http://127.0.0.1:41000/callback',
+    ])('lets it come back on any port: %s', async (redirectUri) => {
+      const response = await authorize(redirectUri);
+
+      expect(response.status).toBe(303);
+      expect(response.headers.location).toMatch(/\/oauth\/consent\//);
+    });
+
+    it('keeps the path it declared', async () => {
+      const response = await authorize('http://localhost:57164/elsewhere');
+
+      expect(response.status).toBe(400);
+    });
+
+    it('keeps a web client to the redirect URIs it declared', async () => {
+      const response = await authorize('http://localhost:57164/callback', {
+        redirect_uris: [
+          'http://localhost/callback',
+          'https://assistant.example.test/callback',
+        ],
+      });
+
+      expect(response.status).toBe(400);
+    });
+  });
 });
 
 describe('DCR registration', () => {
