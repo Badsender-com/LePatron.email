@@ -139,6 +139,7 @@ describe.skip('mailing content', () => {
             _author: f.ERIN,
             authorName: 'Erin',
             text: 'One more change',
+            isDeleted: false,
             createdAt: f.daysFrom(-1),
           },
         ],

@@ -189,6 +189,13 @@ describe('mailings list and status', () => {
       ]);
     });
 
+    // An assistant sends an empty list for a filter it leaves blank.
+    it('takes an empty list of workspaces or folders as no filter', async () => {
+      expect(
+        ids(await list(f.FRANK, { workspaceIds: [], folderIds: [] }))
+      ).toEqual(ids(await list(f.FRANK)));
+    });
+
     it('filters by folder, its subfolders included', async () => {
       const SUBFOLDER = '507f1f77bcf86cd799439302';
       const IN_SUBFOLDER = '507f1f77bcf86cd799439409';
