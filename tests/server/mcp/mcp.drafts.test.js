@@ -111,6 +111,18 @@ describe('drafts mode', () => {
       expect(await read(reader, SUBJECT_LINES)).toContain(PUBLISHED_SUBJECT);
     });
 
+    // The token may draft; the right is asked again at every call.
+    it('refuses the mode to a user who may not manage the platform', async () => {
+      const client = await harness.connectAs(f.ERIN, {
+        scopes: WRITE,
+        grantId: GRANT,
+      });
+
+      expect(await turnOn(client)).toEqual({
+        error: expect.stringMatching(/manage the platform/),
+      });
+    });
+
     it('says when the connection cannot keep the mode', async () => {
       const author = await asAuthor({ grantId: undefined });
 
@@ -136,6 +148,55 @@ describe('drafts mode', () => {
       expect(answer).toEqual({ drafts: true, until: expect.any(String) });
       expect(text).toContain(DRAFT_SUBJECT);
       expect(text).toMatch(/draft 3\.0/i);
+    });
+
+    // Publishing 2.1 archived only the active 2.0, never a 1.3 left open.
+    it('never serves a draft older than the active version', async () => {
+      harness.seed({
+        ...f.SEED,
+        expertises: f.EXPERTISES.map((e) =>
+          e.expertiseId === 'redaction.subject-line'
+            ? {
+                ...e,
+                versions: [
+                  ...e.versions.filter((v) => v.status !== 'DRAFT'),
+                  {
+                    versionMajor: 1,
+                    versionMinor: 3,
+                    status: 'DRAFT',
+                    body: '## Length\n\nA draft left behind.',
+                    updatedAt: f.daysFrom(-90),
+                  },
+                ],
+              }
+            : e
+        ),
+        connections: [connection(null)],
+      });
+      const author = await asAuthor();
+      await turnOn(author);
+
+      const text = await read(author, SUBJECT_LINES);
+
+      expect(text).toContain(PUBLISHED_SUBJECT);
+      expect(text).not.toContain('A draft left behind.');
+    });
+
+    it('finds an expertise never published among those that apply', async () => {
+      const author = await asAuthor();
+      await turnOn(author);
+
+      const { expertises } = await call(author, 'find_applicable_expertises', {
+        scope: 'image',
+        categories: ['design'],
+      });
+
+      expect(expertises).toEqual([
+        expect.objectContaining({
+          expertiseId: 'design.dark-mode',
+          draft: true,
+        }),
+      ]);
     });
 
     it('serves an expertise never published', async () => {

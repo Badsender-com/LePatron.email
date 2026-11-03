@@ -15,6 +15,7 @@ const { SkillStatuses } = require('../constant/skill-constants.js');
 const { normalizeScopes } = require('../services/expertise-scope.js');
 const { findActiveVersion } = require('../services/version-helpers.js');
 const { audienceFilter } = require('../services/audience.js');
+const { findServed } = require('./published.repository.js');
 
 // What a match reads: the fields `projectVersion` and the diagnostic use, and
 // the ACTIVE version alone, never the history (one version is ACTIVE at a
@@ -28,6 +29,14 @@ const APPLICABLE_FIELDS = Object.freeze({
   activeVersion: 1,
   versions: { $elemMatch: { status: SkillStatuses.ACTIVE } },
 });
+// The same, of the version an expertise is served at in a super admin's
+// drafts mode (ADR 0014, #1385).
+const SERVED_FIELDS = Object.freeze({
+  doc: ['expertiseId', 'title', 'category', 'scope', 'isTransversal'],
+  version: ['body', 'examplesGood', 'examplesBad', 'sections'],
+});
+// What a super admin trying the drafts reads besides the active expertises.
+const TRIED_STATUSES = [SkillStatuses.ACTIVE, SkillStatuses.DRAFT];
 
 /**
  * Find ACTIVE expertise modules matching an invocation context, projecting
@@ -64,12 +73,16 @@ const APPLICABLE_FIELDS = Object.freeze({
  * @param {boolean} [filters.warnOnUnmatched=true] whether a scope that matched
  *   nothing is logged: for a scope written in a feature's code, not for one an
  *   assistant sends through MCP, which answers it itself
+ * @param {boolean} [filters.drafts=false] match each expertise at the version
+ *   a super admin trying the drafts is served (ADR 0014, #1385): its open
+ *   draft when it has one, an expertise never published included; each
+ *   result then says whether it is a `draft`
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
 async function findApplicable(filters = {}) {
   const query = applicableQuery(filters);
   const audience = await audienceOf(filters.groupId, filters.everyAudience);
-  return matching(query, audience, filters.warnOnUnmatched !== false);
+  return matching(query, audience, filters);
 }
 
 /**
@@ -85,8 +98,8 @@ async function findApplicableWithScopesInUse(filters = {}) {
   const query = applicableQuery(filters);
   const audience = await audienceOf(filters.groupId, filters.everyAudience);
   const [expertises, inUse] = await Promise.all([
-    matching(query, audience, filters.warnOnUnmatched !== false),
-    scopesInUse(audience),
+    matching(query, audience, filters),
+    scopesInUse(audience, filters.drafts === true),
   ]);
   return { expertises, scopesInUse: inUse };
 }
@@ -109,8 +122,9 @@ function applicableQuery({ scope, categories, emailType, language }) {
   // Empty arrays on emailType/language documents still mean "applies to all".
   // For scope the semantics are INVERTED: empty scope no longer matches —
   // only a non-empty intersection or the isTransversal flag does.
+  // The status is the match's own (`matching`): active, or in drafts mode
+  // never published too.
   const and = [
-    { status: SkillStatuses.ACTIVE },
     { $or: [{ isTransversal: true }, { scope: { $in: scopes } }] },
     { category: { $in: categories } },
   ];
@@ -134,11 +148,32 @@ function applicableQuery({ scope, categories, emailType, language }) {
   return { scopes, and };
 }
 
-async function matching({ scopes, and }, audience, warnOnUnmatched) {
-  const docs = await Expertises.find(
+// The expertises a match finds, each flattened onto the version it is served
+// at: the active one, or in drafts mode its open draft when it has one.
+async function matched(and, audience, drafts) {
+  if (!drafts) {
+    const docs = await Expertises.find(
+      { $and: [{ status: SkillStatuses.ACTIVE }, ...and], ...audience },
+      APPLICABLE_FIELDS
+    ).lean();
+    return docs.map((doc) => ({ doc, expertise: projectActiveVersion(doc) }));
+  }
+  const served = await findServed(
+    Expertises,
     { $and: and, ...audience },
-    APPLICABLE_FIELDS
-  ).lean();
+    SERVED_FIELDS,
+    { drafts: true }
+  );
+  return served.map(({ doc, version, draft }) => ({
+    doc,
+    expertise: { ...projectVersion(doc, version), draft },
+  }));
+}
+
+async function matching({ scopes, and }, audience, filters) {
+  const found = await matched(and, audience, filters.drafts === true);
+  const docs = found.map(({ doc }) => doc);
+  const warnOnUnmatched = filters.warnOnUnmatched !== false;
 
   // Not awaited: the diagnostic does nothing for this invocation's result, and
   // it issues a `distinct` — on a feature whose scope matches no scoped
@@ -154,8 +189,8 @@ async function matching({ scopes, and }, audience, warnOnUnmatched) {
   // Deterministic order = the order expertises appear in the composed prompt:
   // transversal (general) first, then alphabetical by expertiseId. Stable so
   // features and the playground filter mode get a predictable, reviewable mix.
-  return docs
-    .map((doc) => projectActiveVersion(doc))
+  return found
+    .map(({ expertise }) => expertise)
     .filter((d) => d !== null)
     .sort((a, b) => {
       if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
@@ -163,11 +198,12 @@ async function matching({ scopes, and }, audience, warnOnUnmatched) {
     });
 }
 
-// The scopes in use within an audience.
-async function scopesInUse(audience) {
+// The scopes in use within an audience; in drafts mode, those of the
+// expertises never published too.
+async function scopesInUse(audience, drafts = false) {
   return normalizeScopes(
     await Expertises.distinct('scope', {
-      status: SkillStatuses.ACTIVE,
+      status: drafts ? { $in: TRIED_STATUSES } : SkillStatuses.ACTIVE,
       isTransversal: { $ne: true },
       ...audience,
     })

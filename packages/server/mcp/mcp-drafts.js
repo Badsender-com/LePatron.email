@@ -2,6 +2,8 @@
 
 const { z } = require('zod');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { withIdentity, failure, success } = require('./mcp-identity.js');
 const { setDraftsMode } = require('./mcp-connections.js');
 
@@ -56,8 +58,14 @@ function registerUseDrafts(server) {
       outputSchema: USE_DRAFTS_OUTPUT,
       annotations: { readOnlyHint: false, destructiveHint: false },
     },
-    withIdentity(async (_identity, { on }, ctx) => {
+    withIdentity(async ({ user }, { on }, ctx) => {
       const authInfo = ctx.http?.authInfo;
+      // The token may draft, but the right is asked again at every call.
+      if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
+        return failure(
+          'Not allowed: trying the drafts needs the right to manage the platform.'
+        );
+      }
       const until = on ? new Date(Date.now() + DRAFTS_TTL) : null;
       if (!(await setDraftsMode(authInfo?.extra?.grantId, until))) {
         return failure(
