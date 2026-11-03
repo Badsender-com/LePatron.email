@@ -9,7 +9,9 @@ const {
   Workspaces,
   Folders,
   Mailings,
+  TaxonomyItems,
 } = require('../common/models.common.js');
+const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
 const permissions = require('../account/permissions.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 
@@ -42,8 +44,9 @@ module.exports = { searchMailings, accessibleLocations, findReadableMailing };
  * @param {Object} [params.within] narrows the search, among the accessible
  *   locations only: `workspaceIds`, `folderIds` (a folder with its
  *   subfolders), `userIds` (the authors' accounts) and `authorName` (a part of
- *   the author's name, whatever the case). A location the user may not read
- *   finds nothing.
+ *   the author's name, whatever the case), `words` (each one in the name,
+ *   the subject, a tag or the email type's label, whatever the case). A
+ *   location the user may not read finds nothing.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
@@ -64,6 +67,7 @@ async function searchMailings({
   const items = await findPage({
     _company: mongoose.Types.ObjectId(groupId),
     ...authorsOf(within),
+    ...(await wordsOf(within, groupId)),
     $or: [
       { _parentFolder: { $in: scope.folders.map((folder) => folder._id) } },
       // An email in a folder is found through its folder only: a workspace
@@ -108,6 +112,40 @@ function authorsOf({ userIds, authorName } = {}) {
         $regex: String(authorName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
         $options: 'i',
       },
+    }),
+  };
+}
+
+const containing = (text) => ({
+  $regex: String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  $options: 'i',
+});
+
+// Every word somewhere in what describes an email: its name, its subject, a
+// tag or its email type's label. Never its content.
+async function wordsOf({ words } = {}, groupId) {
+  const kept = (words || []).map(String).filter(Boolean);
+  if (kept.length === 0) return {};
+  const types = await TaxonomyItems.find({
+    _company: groupId,
+    type: TaxonomyTypes.EMAIL_TYPE,
+  })
+    .select('label')
+    .lean();
+  return {
+    $and: kept.map((word) => {
+      const pattern = new RegExp(containing(word).$regex, 'i');
+      const typeIds = types
+        .filter((type) => pattern.test(type.label))
+        .map((type) => type._id);
+      return {
+        $or: [
+          { name: containing(word) },
+          { subject: containing(word) },
+          { tags: containing(word) },
+          ...(typeIds.length ? [{ _emailType: { $in: typeIds } }] : []),
+        ],
+      };
     }),
   };
 }
