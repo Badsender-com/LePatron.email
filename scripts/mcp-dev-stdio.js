@@ -39,7 +39,7 @@ const config = require(server('node.config.js'));
 const { Users } = require(server('common', 'models.common.js'));
 const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
 const { READ_SCOPE } = require(server('mcp', 'mcp-identity.js'));
-const { WRITE_SCOPE } = require(server('mcp', 'mcp-authoring.js'));
+const { WRITE_SCOPE } = require(server('mcp', 'mcp-identity.js'));
 
 function argument(name) {
   const index = process.argv.indexOf(`--${name}`);

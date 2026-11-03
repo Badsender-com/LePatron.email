@@ -5,8 +5,7 @@ const { default: Provider, errors } = require('oidc-provider');
 const { McpClients } = require('../common/models.common.js');
 const logger = require('../utils/logger.js');
 const { attachAuthorizationServer } = require('./mcp-connections.js');
-const { READ_SCOPE } = require('./mcp-identity.js');
-const { WRITE_SCOPE } = require('./mcp-authoring.js');
+const { READ_SCOPE, WRITE_SCOPE } = require('./mcp-identity.js');
 
 const SCOPES = [READ_SCOPE, WRITE_SCOPE];
 

@@ -4,7 +4,10 @@ const { z } = require('zod');
 const { SkillStatuses } = require('../ai-skill/constant/skill-constants.js');
 const {
   findActiveVersion,
+  openDraftOf,
 } = require('../ai-skill/services/version-helpers.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { setDraftsMode } = require('./mcp-connections.js');
 
@@ -13,22 +16,6 @@ const DRAFTS_TTL = 4 * 3600 * 1000;
 
 const versionOf = (version) =>
   `${version.versionMajor}.${version.versionMinor}`;
-
-// The latest draft of a skill or an expertise, by its version number.
-function latestDraft(doc) {
-  return (doc.versions || [])
-    .filter((version) => version.status === SkillStatuses.DRAFT)
-    .reduce(
-      (latest, version) =>
-        !latest ||
-        version.versionMajor > latest.versionMajor ||
-        (version.versionMajor === latest.versionMajor &&
-          version.versionMinor > latest.versionMinor)
-          ? version
-          : latest,
-      null
-    );
-}
 
 /**
  * The statuses of the skills and expertises served: the active ones, and in
@@ -44,7 +31,8 @@ function servedStatuses(drafts) {
 
 /**
  * The version of a skill or an expertise served (ADR 0012, 0014): its active
- * version, or in drafts mode its latest draft when it has one. `draft` says
+ * version, or in drafts mode its open draft when it has one, never one left
+ * behind by a later publication. `draft` says
  * which, for what is served to say it too.
  *
  * @param {Object} doc a skill or an expertise
@@ -53,7 +41,7 @@ function servedStatuses(drafts) {
  */
 function servedVersion(doc, drafts) {
   if (!doc || doc.status === SkillStatuses.ARCHIVED) return null;
-  const draft = drafts && latestDraft(doc);
+  const draft = drafts && openDraftOf(doc);
   if (draft) return { doc, version: draft, draft: true };
   if (doc.status !== SkillStatuses.ACTIVE) return null;
   const version = findActiveVersion(doc);
@@ -108,7 +96,13 @@ function registerUseDrafts(server) {
     },
     async ({ on }, ctx) => {
       const authInfo = ctx.http?.authInfo;
-      await resolveIdentity(authInfo);
+      const { user } = await resolveIdentity(authInfo);
+      // The token may draft, but the right is asked again at every call.
+      if (!permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)) {
+        return failure(
+          'Not allowed: trying the drafts needs the right to manage the platform.'
+        );
+      }
       const until = on ? new Date(Date.now() + DRAFTS_TTL) : null;
       if (!(await setDraftsMode(authInfo?.extra?.grantId, until))) {
         return failure(

@@ -40,7 +40,16 @@ const { findActiveVersion } = require('../services/version-helpers.js');
  * @param {string} [filters.language]
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
-async function findApplicable({ scope, categories, emailType, language } = {}) {
+/**
+ * The conditions an expertise meets to apply to a piece of an email, its
+ * status aside: the features ask them of the active expertises, MCP of the
+ * ones it serves.
+ *
+ * @param {Object} filters as findApplicable takes them
+ * @returns {Object[]} conditions, for a `$and`
+ * @throws {HttpError} 400 without a scope or a category
+ */
+function applicableConditions({ scope, categories, emailType, language } = {}) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
   // the match below is a strict string equality, so `cta` must meet `CTA`.
   const scopes = normalizeScopes(scope);
@@ -57,7 +66,6 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
   // For scope the semantics are INVERTED: empty scope no longer matches —
   // only a non-empty intersection or the isTransversal flag does.
   const and = [
-    { status: SkillStatuses.ACTIVE },
     { $or: [{ isTransversal: true }, { scope: { $in: scopes } }] },
     { category: { $in: categories } },
   ];
@@ -78,6 +86,15 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
       ],
     });
   }
+  return and;
+}
+
+async function findApplicable(filters = {}) {
+  const scopes = normalizeScopes(filters.scope);
+  const and = [
+    { status: SkillStatuses.ACTIVE },
+    ...applicableConditions(filters),
+  ];
 
   const docs = await Expertises.find({ $and: and }).lean();
 
@@ -184,4 +201,9 @@ function projectActiveVersion(doc) {
   return projectVersion(doc, findActiveVersion(doc));
 }
 
-module.exports = { findApplicable, projectActiveVersion, projectVersion };
+module.exports = {
+  applicableConditions,
+  findApplicable,
+  projectActiveVersion,
+  projectVersion,
+};

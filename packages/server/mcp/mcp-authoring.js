@@ -286,4 +286,4 @@ function registerAuthoringTools(server) {
   );
 }
 
-module.exports = { registerAuthoringTools, WRITE_SCOPE };
+module.exports = { registerAuthoringTools };

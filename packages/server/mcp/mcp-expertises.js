@@ -7,7 +7,7 @@ const {
 } = require('@modelcontextprotocol/server');
 const { Expertises } = require('../common/models.common.js');
 const {
-  findApplicable,
+  applicableConditions,
 } = require('../ai-skill/repositories/expertise.repository.js');
 const {
   SkillCategoryValues,
@@ -28,10 +28,12 @@ const versionOf = (version) =>
 // The active version of an active expertise: what leaves LePatron (ADR 0012).
 // Drafts and archives never do, nor an expertise without an active version,
 // but in a super admin's drafts mode, where the latest draft does (#1385).
-async function servedExpertises(group, drafts = false) {
+// `conditions` narrows them, as `applicableConditions` writes them.
+async function servedExpertises(group, drafts = false, conditions = []) {
   const docs = await Expertises.find({
     status: servedStatuses(drafts),
     ...audienceFilter(group),
+    ...(conditions.length && { $and: conditions }),
   }).lean();
   return docs
     .map((doc) => servedVersion(doc, drafts))
@@ -155,33 +157,27 @@ function registerFindApplicableExpertises(server) {
           ],
         };
       }
-      const found = await findApplicable({
-        scope: scopes,
-        categories,
-        emailType,
-        language,
-      });
-      // The lookup is the features' own, which knows no audience: what the
-      // group may not read is dropped from what it found, and the version is
-      // the one served, a draft in drafts mode.
-      const readable = new Map(
-        (await servedExpertises(group, drafts)).map((served) => [
-          served.doc.expertiseId,
-          served,
-        ])
+      // The features' own conditions, on what this group is served: the
+      // active versions, or in drafts mode the drafts, never published ones
+      // included. Transversal first, as the features compose them.
+      const served = await servedExpertises(
+        group,
+        drafts,
+        applicableConditions({ scope: scopes, categories, emailType, language })
       );
-      const expertises = found
-        .filter((expertise) => readable.has(expertise.expertiseId))
-        .map((expertise) => {
-          const served = readable.get(expertise.expertiseId);
-          return {
-            expertiseId: expertise.expertiseId,
-            title: expertise.title,
-            version: versionOf(served.version),
-            ...(served.draft && { draft: true }),
-            uri: uriOf(expertise.expertiseId),
-          };
-        });
+      const expertises = served
+        .sort(
+          (a, b) =>
+            Number(!!b.doc.isTransversal) - Number(!!a.doc.isTransversal) ||
+            a.doc.expertiseId.localeCompare(b.doc.expertiseId)
+        )
+        .map(({ doc, version, draft }) => ({
+          expertiseId: doc.expertiseId,
+          title: doc.title,
+          version: versionOf(version),
+          ...(draft && { draft: true }),
+          uri: uriOf(doc.expertiseId),
+        }));
       return {
         content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
         structuredContent: { expertises },
