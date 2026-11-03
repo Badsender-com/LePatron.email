@@ -1,6 +1,11 @@
 # Connecter un assistant IA à LePatron
 
-Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom : les expertises et les skills de Badsender, pour s'en servir quand vous lui demandez d'écrire ou de relire un email. Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne peut rien modifier dans LePatron.
+Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom :
+
+- les expertises et les skills de Badsender, pour s'en servir quand vous lui demandez d'écrire ou de relire un email ;
+- vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles.
+
+Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne peut rien modifier dans LePatron.
 
 Cette connexion passe par le protocole MCP (Model Context Protocol), que ces assistants savent tous utiliser.
 
