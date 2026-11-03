@@ -13,7 +13,8 @@ export default {
     group: { type: Object, required: true },
   },
   data() {
-    return { loading: false };
+    // A new key redraws the switch from the group when a save is refused.
+    return { loading: false, switchKey: 0 };
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -27,6 +28,7 @@ export default {
         this.$emit('update', group);
         this.showSnackbar({ text: this.$t('retex.updated'), color: 'success' });
       } catch (error) {
+        this.switchKey += 1;
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
@@ -48,6 +50,7 @@ export default {
       {{ $t('retex.description') }}
     </p>
     <v-switch
+      :key="switchKey"
       :input-value="group.allowRetex === true"
       :label="$t('retex.switch')"
       :loading="loading"

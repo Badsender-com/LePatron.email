@@ -1,6 +1,6 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
-import { Plus, Trash2 } from 'lucide-vue';
+import { Plus, Trash2, KeyRound } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -25,6 +25,7 @@ export default {
     BsMcpClientSettings,
     LucidePlus: Plus,
     LucideTrash2: Trash2,
+    LucideKeyRound: KeyRound,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -82,9 +83,6 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    formatDate(date) {
-      return date ? new Date(date).toLocaleDateString(this.$i18n.locale) : '';
-    },
     openCreateModal() {
       this.$refs.createModal.open();
     },
@@ -137,10 +135,12 @@ export default {
       }
     },
     notifyError(error) {
+      const code = error?.response?.data?.code;
       this.showSnackbar({
         text:
-          error?.response?.data?.message ||
-          this.$t('global.errors.errorOccured'),
+          code && this.$te(`mcpClients.errors.${code}`)
+            ? this.$t(`mcpClients.errors.${code}`)
+            : this.$t('global.errors.errorOccured'),
         color: 'error',
       });
       console.error(error);
@@ -197,10 +197,15 @@ export default {
         :headers="headers"
         :items="clients"
         item-key="clientId"
-        :no-data-text="$t('mcpClients.empty')"
         hide-default-footer
         disable-pagination
       >
+        <template #no-data>
+          <div class="py-6 text--secondary">
+            <lucide-key-round :size="32" class="mb-2" />
+            <p class="mb-0">{{ $t('mcpClients.empty') }}</p>
+          </div>
+        </template>
         <template #item.clientId="{ item }">
           <code class="bs-mcp-clients__id">{{ item.clientId }}</code>
         </template>
@@ -211,18 +216,25 @@ export default {
           {{ $t(`mcpClients.authMethods.${item.tokenEndpointAuthMethod}`) }}
         </template>
         <template #item.createdAt="{ item }">
-          {{ formatDate(item.createdAt) }}
+          {{ item.createdAt | preciseDateTime($i18n.locale) }}
         </template>
         <template #item.actions="{ item }">
-          <v-btn
-            icon
-            small
-            color="error"
-            :aria-label="$t('global.delete')"
-            @click="askDelete(item)"
-          >
-            <lucide-trash-2 :size="18" />
-          </v-btn>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                color="error"
+                :aria-label="$t('mcpClients.deleteNamed', { name: item.name })"
+                v-bind="attrs"
+                @click="askDelete(item)"
+                v-on="on"
+              >
+                <lucide-trash-2 :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('mcpClients.deleteNamed', { name: item.name }) }}</span>
+          </v-tooltip>
         </template>
       </v-data-table>
 
@@ -239,12 +251,8 @@ export default {
         :loading="modalLoading"
         @submit="createClient"
       />
-      <v-dialog
-        :value="showCreated"
-        width="640"
-        persistent
-        @keydown.esc="closeCreated"
-      >
+      <!-- Closed only by its button: the secret is shown this once. -->
+      <v-dialog :value="showCreated" width="640" persistent>
         <v-card v-if="created" flat tile>
           <v-card-title>
             {{ $t('mcpClients.createdTitle', { name: created.name }) }}
@@ -258,7 +266,7 @@ export default {
           <v-divider />
           <v-card-actions>
             <v-spacer />
-            <v-btn color="primary" elevation="0" @click="closeCreated">
+            <v-btn color="accent" elevation="0" @click="closeCreated">
               {{ $t('mcpClients.secretSaved') }}
             </v-btn>
           </v-card-actions>

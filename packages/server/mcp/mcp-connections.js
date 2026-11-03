@@ -3,6 +3,7 @@
 const express = require('express');
 const { McpConnections, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { isObjectIdString } = require('../utils/model.js');
 const logger = require('../utils/logger.js');
 
@@ -122,6 +123,9 @@ function forgetConnections(filter) {
     : McpConnections.deleteMany(filter).then(() => undefined);
 }
 
+// The authorization server the app mounted, or null.
+const mountedAuthorizationServer = () => authorizationServer;
+
 /**
  * Binds the connections to the authorization server: the app's events revoke
  * through it, and the connection of a grant it revoked itself (a client
@@ -205,8 +209,8 @@ function createConnectionsRouter(provider) {
 }
 
 /**
- * The connected applications of a group, which its admin counts and revokes
- * at once: `/api/groups/:groupId/connected-applications`.
+ * The connected applications of a group, which its tech admin counts and
+ * revokes at once: `/api/groups/:groupId/connected-applications`.
  *
  * @param {import('oidc-provider').default} provider
  * @returns {express.Router}
@@ -215,14 +219,16 @@ function createGroupConnectionsRouter(provider) {
   const router = express.Router({ mergeParams: true });
   router.use(signedIn, (req, res, next) => {
     const { groupId } = req.params;
+    // The group's MCP access is its tech admin's, as are its connections.
     if (
       !isObjectIdString(groupId) ||
+      !permissions.can(req.user, CAPABILITIES.GROUP_MANAGE_TECH) ||
       !permissions.canManageGroup(req.user, groupId)
     ) {
       return refuse(
         res,
         403,
-        "Only the group's admin revokes its connections."
+        "Only the group's tech admin revokes its connections."
       );
     }
     return next();
@@ -257,6 +263,7 @@ module.exports = {
   revokeConnections,
   forgetConnections,
   attachAuthorizationServer,
+  mountedAuthorizationServer,
   createConnectionsRouter,
   createGroupConnectionsRouter,
 };
