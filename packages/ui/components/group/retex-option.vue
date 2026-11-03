@@ -25,7 +25,9 @@ export default {
       :label="$t('retex.switch')"
       :loading="loading"
       :disabled="loading"
-      inset
+      color="accent"
+      hide-details
+      class="mt-0"
       @change="save"
     />
   </section>
