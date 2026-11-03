@@ -6,6 +6,16 @@ La documentation utilisateur suivie pendant la recette est dans [docs/user/mcp/]
 
 ## 0. Préparation
 
+### Clés de signature
+
+Le serveur ne démarre pas, hors développement, sans les clés qui signent les tokens MCP : sans elles, il signerait avec les clés de développement d'`oidc-provider`, qui sont publiques. Les générer une fois par environnement, et les garder secrètes :
+
+```bash
+node -e "const {generateKeyPair, exportJWK}=require('jose');generateKeyPair('RS256',{extractable:true}).then(async({privateKey})=>console.log(JSON.stringify({keys:[{...(await exportJWK(privateKey)),use:'sig',alg:'RS256',kid:'mcp-1'}]})))"
+```
+
+Puis les donner à l'application dans la variable `lepatron_mcpOauthJwks`. Les changer déconnecte tous les assistants.
+
 ### Comptes et groupes de staging
 
 | Rôle                               | Groupe            | Accès MCP du groupe |
@@ -72,17 +82,17 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 
 ## 2. Refus
 
-| Cas                                      | Comment le provoquer                                                     | Attendu                                                                                                    | OK  |
-| ---------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | --- |
-| Groupe sans accès MCP                    | connecter un assistant avec l'utilisateur du groupe C                    | consentement refusé : « Votre entreprise n'a pas l'accès MCP »                                             | [ ] |
-| Accès MCP coupé après connexion          | connecter l'utilisateur du groupe A, puis couper l'accès MCP du groupe A | l'assistant est refusé ; l'application disparaît de la liste ; réactiver l'accès ne la fait pas revenir    | [ ] |
-| Application révoquée                     | **Révoquer** depuis Applications connectées                              | refus à la requête suivante, renouvellement refusé                                                         | [ ] |
-| Révocation par l'admin                   | **Paramètres › Général › Tout révoquer** dans le groupe A                | toutes les applications du groupe A sont refusées, celles du groupe B fonctionnent                         | [ ] |
-| Utilisateur désactivé                    | désactiver l'utilisateur connecté                                        | refus ; le réactiver ne fait pas revenir ses connexions                                                    | [ ] |
-| Client d'une autre entreprise            | utiliser le client manuel du groupe A avec l'utilisateur du groupe B     | consentement refusé : « Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée » | [ ] |
-| Client manuel supprimé                   | supprimer le client dans **Paramètres › Clients MCP**                    | refus immédiat des connexions qui passaient par lui                                                        | [ ] |
-| Compte d'administration de la plateforme | consentir avec le compte admin de configuration                          | « Ce compte ne peut pas connecter d'assistant »                                                            | [ ] |
-| Consentement expiré                      | ouvrir l'écran de consentement et attendre plus de 10 minutes            | « Cette demande de connexion a expiré… »                                                                   | [ ] |
+| Cas                                      | Comment le provoquer                                                                         | Attendu                                                                                                    | OK  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --- |
+| Groupe sans accès MCP                    | connecter un assistant avec l'utilisateur du groupe C                                        | consentement refusé : « Votre entreprise n'a pas l'accès MCP »                                             | [ ] |
+| Accès MCP coupé après connexion          | connecter l'utilisateur du groupe A, puis couper l'accès MCP du groupe A                     | l'assistant est refusé ; l'application disparaît de la liste ; réactiver l'accès ne la fait pas revenir    | [ ] |
+| Application révoquée                     | **Révoquer** depuis Applications connectées                                                  | refus à la requête suivante, renouvellement refusé                                                         | [ ] |
+| Révocation par l'admin                   | **Paramètres › Fonctionnalités IA › Accès MCP › Tout révoquer**, admin technique du groupe A | toutes les applications du groupe A sont refusées, celles du groupe B fonctionnent                         | [ ] |
+| Utilisateur désactivé                    | désactiver l'utilisateur connecté                                                            | refus ; le réactiver ne fait pas revenir ses connexions                                                    | [ ] |
+| Client d'une autre entreprise            | utiliser le client manuel du groupe A avec l'utilisateur du groupe B                         | consentement refusé : « Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée » | [ ] |
+| Client manuel supprimé                   | supprimer le client depuis **Gérer les clients MCP**                                         | refus immédiat des connexions qui passaient par lui                                                        | [ ] |
+| Compte d'administration de la plateforme | consentir avec le compte admin de configuration                                              | « Ce compte ne peut pas connecter d'assistant »                                                            | [ ] |
+| Consentement expiré                      | ouvrir l'écran de consentement et attendre plus de 10 minutes                                | « Cette demande de connexion a expiré… »                                                                   | [ ] |
 
 ## 3. Droits sur les écrans
 

@@ -8,7 +8,7 @@ The connection uses MCP (Model Context Protocol), which all these assistants sup
 
 - **MCP access must be on for your company.** The company's tech admin (or Badsender) turns it on in **Settings › AI Features › MCP access**, with the "Allow AI assistants to connect" switch. When it is off, the connection is refused.
 - **Log in with your own LePatron account**, the one you use every day.
-- **The MCP server address** is your LePatron address followed by `/mcp`, for instance `https://app.lepatron.email/mcp`. Your tech admin finds it, with every other value an assistant may ask for, in **Settings › MCP clients › Server settings**.
+- **The MCP server address** is your LePatron address followed by `/mcp`, for instance `https://app.lepatron.email/mcp`. Your tech admin finds it, with every other value an assistant may ask for, in **Settings › AI features › MCP access › Manage MCP clients**, under "Server settings".
 
 ## Pick your assistant
 
@@ -38,14 +38,16 @@ The plug icon at the bottom of the sidebar opens **Connected applications**. For
 
 **Revoke** cuts its access at once: the assistant is refused at its next request. To use it again, connect it again.
 
-The company's admin can also revoke them all at once, in **Settings › General › Connected applications**, for instance if an access leaked.
+The company's tech admin can also revoke them all at once, in **Settings › AI features › MCP access**, for instance if an access leaked.
+
+A connection lasts 90 days at most: past that, the assistant asks you to connect it again. Changing your password also disconnects all your assistants. Connecting an assistant that is already connected replaces its previous connection.
 
 ## If the connection fails
 
-| Message                                                                    | Cause                                                                                   | What to do                                      |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Your company has no MCP access                                             | MCP access is off                                                                       | ask the tech admin to turn it on                |
-| This account cannot connect an assistant                                   | you are logged in with the platform's administration account                            | log in with your user account                   |
-| This application is reserved for the users of the company that declared it | the MCP client belongs to another company                                               | use your own company's connector                |
-| This connection request has expired, or was started in another browser     | more than 10 minutes went by, or the window opened in another browser                   | start the connection again from the assistant   |
-| The assistant says it lost access                                          | the application was revoked, MCP access was turned off, or your account was deactivated | connect the assistant again once access is back |
+| Message                                                                    | Cause                                                                                                                                              | What to do                                      |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Your company has no MCP access                                             | MCP access is off                                                                                                                                  | ask the tech admin to turn it on                |
+| This account cannot connect an assistant                                   | you are logged in with the platform's administration account                                                                                       | log in with your user account                   |
+| This application is reserved for the users of the company that declared it | the MCP client belongs to another company                                                                                                          | use your own company's connector                |
+| This connection request has expired, or was started in another browser     | more than 10 minutes went by, or the window opened in another browser                                                                              | start the connection again from the assistant   |
+| The assistant says it lost access                                          | the application was revoked, MCP access was turned off, your password changed, your account was deactivated, or the connection is over 90 days old | connect the assistant again once access is back |
