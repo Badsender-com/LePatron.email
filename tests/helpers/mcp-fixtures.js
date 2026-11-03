@@ -129,7 +129,8 @@ const MAILINGS = [
     {
       subject: 'Black Friday: our best prices',
       tags: ['black-friday'],
-      // The author's name, copied on the mailing as the app does.
+      // The author, and their name copied on the mailing, as the app does.
+      _user: WREN,
       author: 'Wren',
       plannedSendDate: daysFrom(-330),
       espIds: [{ profileId: '507f1f77bcf86cd799439601', campaignId: 'c-42' }],

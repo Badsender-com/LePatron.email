@@ -39,9 +39,11 @@ module.exports = { searchMailings, accessibleLocations };
  * @param {Object} params.user the request user
  * @param {Object} params.filters the listing's filters
  * @param {Object} params.pagination the listing's pagination
- * @param {Object} [params.within] narrows the search to some locations, among
- *   the accessible ones only: `workspaceIds`, and `folderIds` (a folder with
- *   its subfolders). One the user may not read finds nothing.
+ * @param {Object} [params.within] narrows the search, among the accessible
+ *   locations only: `workspaceIds`, `folderIds` (a folder with its
+ *   subfolders), `userIds` (the authors' accounts) and `authorName` (a part of
+ *   the author's name, whatever the case). A location the user may not read
+ *   finds nothing.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
@@ -61,6 +63,7 @@ async function searchMailings({
 
   const items = await findPage({
     _company: mongoose.Types.ObjectId(groupId),
+    ...authorsOf(within),
     $or: [
       { _parentFolder: { $in: scope.folders.map((folder) => folder._id) } },
       // An email in a folder is found through its folder only: a workspace
@@ -91,6 +94,21 @@ async function searchMailings({
         };
       }),
     },
+  };
+}
+
+// The authors a search keeps, by account or by a part of their name.
+function authorsOf({ userIds, authorName } = {}) {
+  return {
+    ...(userIds && {
+      _user: { $in: userIds.map((id) => mongoose.Types.ObjectId(String(id))) },
+    }),
+    ...(authorName && {
+      author: {
+        $regex: String(authorName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        $options: 'i',
+      },
+    }),
   };
 }
 

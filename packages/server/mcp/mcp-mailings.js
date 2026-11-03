@@ -164,7 +164,12 @@ async function listMailings({ user }, args) {
       updatedAtEnd: args.updatedBefore,
     },
     pagination: { page: args.page ?? 1, itemsPerPage: pageSize },
-    within: { workspaceIds: args.workspaceIds, folderIds: args.folderIds },
+    within: {
+      workspaceIds: args.workspaceIds,
+      folderIds: args.folderIds,
+      ...(args.mine && { userIds: [user.id] }),
+      authorName: args.author,
+    },
   });
   const factsFor = await factsOf(items.docs.map((mailing) => mailing._id));
   const now = new Date();
@@ -199,6 +204,8 @@ const LIST_INPUT = z.object({
   tags: z.array(z.string().max(MAX_TAG_LENGTH)).max(MAX_TAGS).optional(),
   workspaceIds: LOCATION_IDS.optional(),
   folderIds: LOCATION_IDS.optional(),
+  mine: z.boolean().optional(),
+  author: z.string().max(MAX_NAME_LENGTH).optional(),
   createdAfter: DATE.optional(),
   createdBefore: DATE.optional(),
   updatedAfter: DATE.optional(),
@@ -220,7 +227,7 @@ function registerListMailings(server) {
     {
       title: 'List the mailings',
       description:
-        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids). Each one comes with its status, derived from its facts: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, planned in the future), approved, or draft. LePatron never knows whether a mailing was sent. Read a mailing's content through its resource URI.",
+        "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids), the user's own mailings (mine) or a part of the author's name. A mailing with no folder sits at the root of its workspace. Each one comes with its status, derived from its facts: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, planned in the future), approved, or draft. LePatron never knows whether a mailing was sent. Read a mailing's content through its resource URI.",
       inputSchema: LIST_INPUT,
       outputSchema: LIST_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },

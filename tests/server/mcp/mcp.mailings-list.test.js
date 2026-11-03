@@ -217,6 +217,17 @@ describe('mailings list and status', () => {
       ]);
     });
 
+    it("filters the user's own mailings", async () => {
+      expect(ids(await list(f.WREN, { mine: true }))).toEqual([f.M_NEWSLETTER]);
+      expect(ids(await list(f.FRANK, { mine: true }))).toEqual([]);
+    });
+
+    it("filters by a part of the author's name, whatever the case", async () => {
+      expect(ids(await list(f.FRANK, { author: 'WREN' }))).toEqual([
+        f.M_NEWSLETTER,
+      ]);
+    });
+
     it('finds nothing in a workspace the user may not read', async () => {
       expect(ids(await list(f.FRANK, { workspaceIds: [f.WS_PROMO] }))).toEqual(
         []
