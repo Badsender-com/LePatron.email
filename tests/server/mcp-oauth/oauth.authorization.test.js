@@ -58,6 +58,7 @@ describe('authorization and consent', () => {
       redirectHost: 'assistant.example.test',
       scopes: ['mcp:read'],
       groups: [{ id: f.CLIENT_GROUP, name: 'A client' }],
+      account: { email: 'frank@example.test' },
     });
   });
 

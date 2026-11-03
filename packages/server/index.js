@@ -25,7 +25,10 @@ const cluster = require('cluster');
 const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
-const { isReturnPath } = require('../shared/access/return-path.js');
+const {
+  isReturnPath,
+  samlReturnPath,
+} = require('../shared/access/return-path.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
@@ -150,6 +153,9 @@ if (cluster.isMaster) {
   app.use(cookieParser());
   // fix size error while downloading a zip
   // https://stackoverflow.com/a/19965089
+  // The MCP endpoint takes tool calls, never files (ADR 0012): read before the
+  // app's own limit, which would let one call carry 50 MB of arguments.
+  app.use('/mcp', bodyParser.json({ limit: '1mb' }));
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
@@ -293,6 +299,10 @@ if (cluster.isMaster) {
       req.session.returnPath = isReturnPath(req.query.next)
         ? req.query.next
         : undefined;
+      // The identity provider posts its answer back cross-site, where the
+      // session's lax cookie does not travel: the path goes with the request,
+      // as its RelayState, which the identity provider sends back.
+      if (req.session.returnPath) req.query.RelayState = req.query.next;
       next();
     },
     passport.authenticate('saml', { failureRedirect: '/' }),
@@ -312,9 +322,12 @@ if (cluster.isMaster) {
     async function (req, res) {
       // Update session tracking after SAML login
       await updateSessionTracking(req, req.user);
-      const { returnPath } = req.session;
+      const returnPath = samlReturnPath(
+        req.body && req.body.RelayState,
+        req.session.returnPath
+      );
       delete req.session.returnPath;
-      res.redirect(isReturnPath(returnPath) ? returnPath : '/');
+      res.redirect(returnPath || '/');
     }
   );
 
@@ -327,7 +340,13 @@ if (cluster.isMaster) {
   app.get('/account/logout', (req, res) => {
     forgetSessionSelection(req);
     req.logout();
-    res.redirect('/account/login');
+    // Changing accounts on a consent page brings the user back to it.
+    const { next } = req.query;
+    res.redirect(
+      isReturnPath(next)
+        ? `/account/login?next=${encodeURIComponent(next)}`
+        : '/account/login'
+    );
   });
 
   // The MCP endpoint and LePatron's authorization server (ADR 0012), after

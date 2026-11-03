@@ -13,4 +13,12 @@ function isReturnPath(path) {
   return typeof path === 'string' && RETURN_PATH.test(path);
 }
 
-module.exports = { isReturnPath: isReturnPath };
+// Where the SAML callback sends the user: the path its identity provider sent
+// back (RelayState, the only thing a cross-site POST carries), else the one
+// the session kept, if either is a return path.
+function samlReturnPath(relayState, sessionPath) {
+  if (isReturnPath(relayState)) return relayState;
+  return isReturnPath(sessionPath) ? sessionPath : undefined;
+}
+
+module.exports = { isReturnPath: isReturnPath, samlReturnPath: samlReturnPath };
