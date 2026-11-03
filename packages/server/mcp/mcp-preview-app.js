@@ -12,6 +12,9 @@ const { withIdentity } = require('./mcp-identity.js');
 
 const PREVIEW_APP_URI = 'ui://lepatron/mailing-preview';
 const APP_MIME_TYPE = 'text/html;profile=mcp-app';
+// Where get_mailing's result carries the preview: a key of LePatron's, out of
+// the `ui` namespace the MCP Apps spec keeps for itself.
+const PREVIEW_META_KEY = 'lepatron/previewHtml';
 
 const APP_HTML = fs.readFileSync(
   path.join(__dirname, 'mailing-preview-app.html'),
@@ -68,8 +71,24 @@ function registerPreviewApp(server) {
   );
 }
 
+/**
+ * A get_mailing result, with the preview the app shows. Not when the answer
+ * holds the HTML already: the app reads it there, and it would travel twice.
+ *
+ * @param {Object} result the tool's result
+ * @param {{ answer: Object, html: string|null }} read what was read
+ * @returns {Object} the result
+ */
+function withPreview(result, { answer, html }) {
+  if (!html || answer.html) return result;
+  return { ...result, _meta: { [PREVIEW_META_KEY]: html } };
+}
+
 module.exports = {
   registerPreviewApp,
+  withPreview,
   PREVIEW_TOOL_META,
+  PREVIEW_META_KEY,
   PREVIEW_APP_URI,
+  APP_HTML,
 };

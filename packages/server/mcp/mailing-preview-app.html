@@ -81,32 +81,53 @@
           });
         }
 
+        // Where the preview travels: a key of LePatron's, in the result's
+        // `_meta`, out of the namespace the MCP Apps spec keeps for itself.
+        var PREVIEW_KEY = 'lepatron/previewHtml';
+        var bound = false;
+
         function show(previewHtml) {
           if (typeof previewHtml !== 'string' || shown) return;
           shown = true;
           frame.onload = function () {
             var doc = frame.contentDocument;
-            // A link opens outside the conversation, through the host.
-            doc.addEventListener('click', function (event) {
-              var link = event.target.closest && event.target.closest('a[href]');
-              if (!link) return;
-              event.preventDefault();
-              if (/^https?:/i.test(link.href)) openLink(link.href);
-            });
-            Array.prototype.forEach.call(doc.images, function (image) {
-              image.addEventListener('load', resize);
-            });
+            // Bound once, on the email itself: should anything ever navigate
+            // the frame away, there is nothing to bind to.
+            if (bound || !doc || doc.URL !== 'about:srcdoc') return;
+            bound = true;
+            // A link, or an image map's area, opens outside the
+            // conversation, through the host; never inside the frame.
+            doc.addEventListener(
+              'click',
+              function (event) {
+                var link =
+                  event.target.closest &&
+                  event.target.closest('a[href], area[href]');
+                if (!link) return;
+                event.preventDefault();
+                if (/^https?:/i.test(link.href)) openLink(link.href);
+              },
+              true
+            );
+            // Clickable once its links are caught: `load` waits for every
+            // image, and a link clicked before would navigate the frame.
+            frame.style.pointerEvents = 'auto';
             resize();
           };
+          frame.style.pointerEvents = 'none';
           frame.srcdoc = previewHtml;
           frame.hidden = false;
           status.hidden = true;
         }
 
         function showResult(result) {
-          var ui = result && result._meta && result._meta.ui;
-          if (ui && ui.previewHtml) {
-            show(ui.previewHtml);
+          var meta = result && result._meta;
+          var answer = result && result.structuredContent;
+          if (meta && typeof meta[PREVIEW_KEY] === 'string') {
+            show(meta[PREVIEW_KEY]);
+          } else if (answer && typeof answer.html === 'string') {
+            // Asked as HTML: the answer holds the preview itself.
+            show(answer.html);
           } else if (!shown) {
             status.textContent = 'No preview: this mailing was never saved in the editor, or cannot be read.';
           }
@@ -130,10 +151,16 @@
           }
         });
 
-        // ChatGPT hands the result's `_meta` through its own bridge too.
+        // ChatGPT hands the result through its own bridge too: its `_meta`
+        // and its structured content.
         function fromOpenAi() {
-          var meta = window.openai && window.openai.toolResponseMetadata;
-          if (meta) showResult({ _meta: meta });
+          var openai = window.openai;
+          if (openai && (openai.toolResponseMetadata || openai.toolOutput)) {
+            showResult({
+              _meta: openai.toolResponseMetadata,
+              structuredContent: openai.toolOutput,
+            });
+          }
         }
         window.addEventListener('openai:set_globals', fromOpenAi);
         fromOpenAi();
