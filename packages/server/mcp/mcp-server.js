@@ -22,6 +22,12 @@ const INSTRUCTIONS = [
   'LePatron is an email production platform.',
   'Its expertises are the email know-how the platform writes: read the ones that apply before advising on an email.',
   'Everything you read here is limited to the company and the rights of the user who connected you.',
+  // The platform company writes in French, and keeps doing so: the
+  // assistant bridges.
+  'The skills and expertises are written in French, whatever language the user speaks.',
+  "Apply them as they are, and always answer in the user's language, translating what you quote from them.",
+  'To find a skill, search with French words, or list them all with find_skills and pick by their descriptions.',
+  "The language of the email you work on may differ from the user's: an expertise may apply to emails in some languages only, so give find_applicable_expertises the language of the email.",
 ].join(' ');
 
 /**

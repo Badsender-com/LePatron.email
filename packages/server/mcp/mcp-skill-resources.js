@@ -98,12 +98,17 @@ function registerSkillResources(server) {
   );
 }
 
-// What an assistant may send, and how many skills it is answered.
+// What an assistant may send, and how many skills that match it is answered.
+// Without a query, or when none matches, the list of the skills is answered.
 const MAX_QUERY_LENGTH = 200;
 const MAX_FOUND_SKILLS = 10;
 
 const FIND_INPUT = z.object({
-  query: z.string().max(MAX_QUERY_LENGTH).regex(/\S/, 'A query is not blank'),
+  query: z
+    .string()
+    .max(MAX_QUERY_LENGTH)
+    .regex(/\S/, 'A query is not blank')
+    .optional(),
 });
 const FIND_OUTPUT = z.object({
   skills: z.array(
@@ -116,13 +121,17 @@ const FIND_OUTPUT = z.object({
       uri: z.string(),
     })
   ),
+  matched: z.boolean(),
 });
 
-// Every word of the query, in the title or the description, whatever the case.
+// Every word of the query, in the identifier, the title or the description,
+// whatever the case.
 function matching(query) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return ({ doc }) => {
-    const haystack = `${doc.title} ${doc.description || ''}`.toLowerCase();
+    const haystack = `${doc.skillId} ${doc.title} ${
+      doc.description || ''
+    }`.toLowerCase();
     return words.every((word) => haystack.includes(word));
   };
 }
@@ -132,26 +141,32 @@ function registerFindSkills(server) {
     'find_skills',
     {
       title: 'Find a skill',
-      description: `Finds the skills whose title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. Read the one that fits through its resource URI, then follow it.`,
+      description: `Finds the skills whose identifier, title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. They are written in French: search with French words. When nothing matches, or without a query, every skill is listed (matched is false then): pick by their descriptions. Read the one that fits through its resource URI, then follow it.`,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     withIdentity(async ({ group, drafts }, { query }) => {
-      const skills = (await servedSkills(group, drafts))
-        .filter(matching(query))
-        .slice(0, MAX_FOUND_SKILLS)
-        .map(({ doc, version, draft }) => ({
+      const served = await servedSkills(group, drafts);
+      // Words of another language than the skills' match nothing: the whole
+      // list is then answered, for the assistant to choose from (it is the
+      // list of the skills' prompts and resources).
+      const found = query ? served.filter(matching(query)) : [];
+      const matched = found.length > 0;
+      const skills = (matched ? found.slice(0, MAX_FOUND_SKILLS) : served).map(
+        ({ doc, version, draft }) => ({
           skillId: doc.skillId,
           title: doc.title,
           description: doc.description || '',
           nature: natureOf(version),
           ...(draft && { draft: true }),
           uri: uriOf(doc.skillId),
-        }));
+        })
+      );
+      const answer = { skills, matched };
       return {
-        content: [{ type: 'text', text: JSON.stringify({ skills }) }],
-        structuredContent: { skills },
+        content: [{ type: 'text', text: JSON.stringify(answer) }],
+        structuredContent: answer,
       };
     })
   );
