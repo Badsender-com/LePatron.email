@@ -12,6 +12,7 @@ const {
   TaxonomyItems,
 } = require('../common/models.common.js');
 const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
+const { containing, containingRegExp } = require('../utils/text-search.js');
 const permissions = require('../account/permissions.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 const { isObjectIdString } = require('../utils/model.js');
@@ -52,12 +53,12 @@ module.exports = {
  * @param {Object} params.user the request user
  * @param {Object} params.filters the listing's filters
  * @param {Object} params.pagination the listing's pagination
- * @param {Object} [params.within] narrows the search, among the accessible
- *   locations only: `workspaceIds`, `folderIds` (a folder with its
- *   subfolders), `userIds` (the authors' accounts) and `authorName` (a part of
- *   the author's name, whatever the case), `words` (each one in the name,
- *   the subject, a tag or the email type's label, whatever the case). A
- *   location the user may not read finds nothing.
+ * @param {Object} [params.within] narrows the search, never beyond what the
+ *   user may read: by location, `workspaceIds` and `folderIds` (a folder with
+ *   its subfolders; one the user may not read finds nothing); by author,
+ *   `userIds` (their accounts) or `authorName` (a part of their name); by
+ *   text, `words` (each one in the name, the subject, a tag or the email
+ *   type's label). Texts match whatever their case and accents.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
@@ -80,7 +81,7 @@ async function searchMailings({
   const items = await findPage({
     ...readable,
     ...authorsOf(within),
-    ...(await wordsOf(within, groupId)),
+    ...(await wordsFilter(within, groupId)),
     paginationJSON: page,
     filtersJSON: filters,
     maxTimeMS: MAX_TIME_MS,
@@ -196,23 +197,14 @@ function authorsOf({ userIds, authorName } = {}) {
     ...(userIds && {
       _user: { $in: userIds.map((id) => mongoose.Types.ObjectId(String(id))) },
     }),
-    ...(authorName && {
-      author: {
-        $regex: String(authorName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-        $options: 'i',
-      },
-    }),
+    ...(authorName && { author: containing(authorName) }),
   };
 }
 
-const containing = (text) => ({
-  $regex: String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-  $options: 'i',
-});
-
-// Every word somewhere in what describes an email: its name, its subject, a
-// tag or its email type's label. Never its content.
-async function wordsOf({ words } = {}, groupId) {
+// Every word somewhere in what describes an email, whatever its case and
+// accents: its name, its subject, a tag or its email type's label. Never its
+// content.
+async function wordsFilter({ words } = {}, groupId) {
   const kept = (words || []).map(String).filter(Boolean);
   if (kept.length === 0) return {};
   const types = await TaxonomyItems.find({
@@ -223,7 +215,7 @@ async function wordsOf({ words } = {}, groupId) {
     .lean();
   return {
     $and: kept.map((word) => {
-      const pattern = new RegExp(containing(word).$regex, 'i');
+      const pattern = containingRegExp(word);
       const typeIds = types
         .filter((type) => pattern.test(type.label))
         .map((type) => type._id);
