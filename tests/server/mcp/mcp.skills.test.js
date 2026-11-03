@@ -37,8 +37,8 @@ describe('skills', () => {
     });
   });
 
-  // `genericTextInput` takes a required prompt, an optional context, and the
-  // expertise the server resolves itself: the user never types that one.
+  // `genericTextInput` takes a required prompt, an optional context, and an
+  // expertise the assistant finds itself: the user never types that one.
   it('takes the arguments of its input schema, the expertise excepted', async () => {
     const { prompts } = await client.listPrompts();
 

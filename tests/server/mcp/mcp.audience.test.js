@@ -43,6 +43,25 @@ const PROVING_SKILL = {
   title: 'Review an email against a checklist',
   audience: 'platform',
 };
+// A task skill open to every group that consumes an expertise still proven.
+const CONSUMING_TASK = {
+  _id: '507f1f77bcf86cd799439906',
+  skillId: 'qc.spacing-review',
+  nature: 'task',
+  title: 'Review the spacing',
+  category: 'qc',
+  status: 'ACTIVE',
+  activeVersion: { major: 1, minor: 0 },
+  versions: [
+    {
+      versionMajor: 1,
+      versionMinor: 0,
+      status: 'ACTIVE',
+      procedure: 'Check the spacing.',
+      consumedExpertiseIds: ['redaction.subject-line', DRAFT_SHEET],
+    },
+  ],
+};
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
 describe('audience', () => {
@@ -50,7 +69,7 @@ describe('audience', () => {
     harness.seed({
       ...f.SEED,
       expertises: [...f.EXPERTISES, PROVING],
-      skills: [...f.SKILLS, PROVING_SKILL],
+      skills: [...f.SKILLS, PROVING_SKILL, CONSUMING_TASK],
     })
   );
   afterEach(() => harness.disconnect());
@@ -87,6 +106,15 @@ describe('audience', () => {
       expect(answer.expertises.map((e) => e.expertiseId)).not.toContain(
         DRAFT_SHEET
       );
+    });
+
+    it('names no expertise meant for the platform group in a skill it reads', async () => {
+      const { contents } = await client.readResource({
+        uri: 'lepatron://skills/qc.spacing-review',
+      });
+
+      expect(contents[0].text).toContain(uriOf('redaction.subject-line'));
+      expect(contents[0].text).not.toContain(DRAFT_SHEET);
     });
 
     it('offers no skill meant for the platform group', async () => {

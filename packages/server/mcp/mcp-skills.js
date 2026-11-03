@@ -13,6 +13,8 @@ const {
   servedSkills,
   servedSkill,
   argumentsOf,
+  usesExpertise,
+  EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
 const expertises = require('./mcp-expertises.js');
 
@@ -70,7 +72,10 @@ function featureMessages(found, input) {
     );
   }
   const { messages } = buildPrompt({ version: found.version, input });
-  return messages.map((message) => text(message.content));
+  return [
+    ...messages.map((message) => text(message.content)),
+    ...(usesExpertise(found.version) ? [text(EXPERTISE_NOTICE)] : []),
+  ];
 }
 
 async function listPrompts(ctx) {

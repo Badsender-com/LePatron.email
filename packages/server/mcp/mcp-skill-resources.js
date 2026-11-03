@@ -12,19 +12,26 @@ const {
   versionOf,
   servedSkills,
   servedSkill,
+  usesExpertise,
+  EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
 const expertises = require('./mcp-expertises.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
-// chosen by the user; a resource lets the assistant pick a skill itself.
-function asMarkdown({ doc, version }) {
+// chosen by the user; a resource lets the assistant pick a skill itself. It
+// lists only the consumed expertises the group may read, as the prompt does.
+function asMarkdown({ doc, version }, readableIds = []) {
   const body = isTask(doc)
     ? version.procedure
-    : [version.systemPrompt, version.skillBody].filter(Boolean).join('\n\n');
-  const consumed = (version.consumedExpertiseIds || []).map(
-    (id) => `- ${expertises.uriOf(id)}`
-  );
+    : [
+        version.systemPrompt,
+        version.skillBody,
+        usesExpertise(version) && EXPERTISE_NOTICE,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
+  const consumed = readableIds.map((id) => `- ${expertises.uriOf(id)}`);
   return [
     `# ${doc.title}`,
     '',
@@ -66,9 +73,18 @@ function registerSkillResources(server) {
       const { group } = await resolveIdentity(ctx.http?.authInfo);
       const found = await servedSkill(skillId, group);
       if (!found) throw new ResourceNotFoundError(uri.href);
+      const consumedIds = found.version.consumedExpertiseIds || [];
+      const readable = await Promise.all(
+        consumedIds.map((id) => expertises.readableExpertise(id, group))
+      );
+      const readableIds = consumedIds.filter((_id, index) => readable[index]);
       return {
         contents: [
-          { uri: uri.href, mimeType: 'text/markdown', text: asMarkdown(found) },
+          {
+            uri: uri.href,
+            mimeType: 'text/markdown',
+            text: asMarkdown(found, readableIds),
+          },
         ],
       };
     }

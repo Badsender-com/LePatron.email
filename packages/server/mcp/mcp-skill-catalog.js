@@ -14,7 +14,9 @@ const {
 } = require('../ai-skill/services/prompt-builder.service.js');
 const { audienceFilter } = require('./mcp-audience.js');
 
-// The expertise a feature skill receives is resolved by LePatron, never typed.
+// The expertise a feature skill applies is composed by the feature that calls
+// it in the app (findApplicable, with that feature's own scope). An assistant
+// has no such feature: it finds the expertises itself, never as an argument.
 const EXPERTISE_FIELD = 'expertise';
 
 const uriOf = (skillId) => `lepatron://skills/${skillId}`;
@@ -69,6 +71,29 @@ function placeholdersOf(template) {
 }
 
 /**
+ * Whether a feature skill applies expertises: its input schema takes them, or
+ * its template places them.
+ *
+ * @param {Object} version the served version
+ * @returns {boolean}
+ */
+function usesExpertise(version) {
+  const described = describeSchema(version.inputSchemaId);
+  if (described) return described.hasExpertiseField;
+  const names = new Set();
+  String(version.inputTemplate || '').replace(PLACEHOLDER_REGEX, (_m, path) => {
+    names.add(path.split('.')[0]);
+    return '';
+  });
+  return names.has(EXPERTISE_FIELD);
+}
+
+// What an assistant is told of the expertises a feature skill applies, since
+// LePatron attaches none to it here.
+const EXPERTISE_NOTICE =
+  'This skill applies Badsender expertises, which are not attached to it here. Before running it, find the ones that apply to the piece of the email you work on with find_applicable_expertises, read them, and apply them.';
+
+/**
  * The arguments of a skill's prompt. A task skill takes none: the user brings
  * what it needs into the conversation. A feature skill takes the fields of its
  * input schema when the code knows it, else the placeholders of its template,
@@ -93,4 +118,6 @@ module.exports = {
   servedSkills,
   servedSkill,
   argumentsOf,
+  usesExpertise,
+  EXPERTISE_NOTICE,
 };

@@ -151,6 +151,22 @@ describe('task skills', () => {
       ]);
     });
 
+    // The app's feature composes the expertise; an assistant has none to.
+    it('tells the assistant to find the expertises it applies', async () => {
+      const { messages } = await client.getPrompt({
+        name: 'redaction.objet',
+        arguments: { content: 'A new collection' },
+      });
+      const { contents } = await client.readResource({
+        uri: 'lepatron://skills/redaction.objet',
+      });
+
+      expect(messages.map((m) => m.content.text).join('\n')).toMatch(
+        /find_applicable_expertises/
+      );
+      expect(contents[0].text).toMatch(/find_applicable_expertises/);
+    });
+
     it('never sends its JSON output contract', async () => {
       const { messages } = await client.getPrompt({
         name: 'redaction.subject-ideas',
