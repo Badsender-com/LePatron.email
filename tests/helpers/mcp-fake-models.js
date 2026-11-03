@@ -32,11 +32,15 @@
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
  *   fake-mongo-aggregate.js reads.
  * - Each collection the seed names is a model; the others are empty.
+ * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
+ *   does, and `Mailings.findForApiWithPagination` is the schema's own static
+ *   over it: the search across workspaces (ADR 0007) runs as in the app.
  */
 
 const { isDeepStrictEqual } = require('util');
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
 const { aggregated } = require('./fake-mongo-aggregate.js');
+const MailingSchema = require('../../packages/server/mailing/mailing.schema.js');
 
 // Collection → the name `models.common.js` exports it under.
 const MODELS = {
@@ -244,6 +248,32 @@ function model(records) {
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
     // A boolean, as Mongoose 5 answers it.
     exists: (filter = {}) => Promise.resolve(matching(filter)().length > 0),
+    // What mongoose-paginate-v2 answers, with the options the search passes.
+    paginate: async (filter, options = {}) => {
+      const all = sortedBy(options.sort, matching(filter)());
+      const paginated = options.pagination !== false;
+      const limit = paginated ? options.limit ?? 10 : all.length;
+      const page = paginated ? options.page ?? 1 : 1;
+      const start = (page - 1) * limit;
+      const records = all.slice(start, paginated ? start + limit : undefined);
+      const docs = records.map((record) =>
+        projected(copy(record), options.projection)
+      );
+      const totalPages = limit ? Math.max(1, Math.ceil(all.length / limit)) : 1;
+      return {
+        // A document read with a projection has only some of its fields: it
+        // is not saved back.
+        docs: options.lean
+          ? docs
+          : docs.map((doc, index) =>
+              toDocument(doc, options.projection ? undefined : records[index])
+            ),
+        totalDocs: all.length,
+        limit,
+        page,
+        totalPages,
+      };
+    },
     // A record without the field gives no value.
     distinct: (field, filter = {}) =>
       Promise.resolve([
@@ -299,6 +329,8 @@ function createMcpStore() {
     collections[collection] = [];
     models[name] = model(collections[collection]);
   });
+  models.Mailings.findForApiWithPagination =
+    MailingSchema.statics.findForApiWithPagination;
 
   return {
     models,
