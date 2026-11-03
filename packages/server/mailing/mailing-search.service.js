@@ -37,22 +37,39 @@ const MOST_RECENT_FIRST = { sortBy: ['updatedAt'], sortDesc: [true] };
 // its id, never its content (`data`, `previewHtml`).
 const ID_ONLY = Object.freeze({ _id: 1 });
 
-module.exports = { searchMailings, findReadableMailings, findReadableMailing };
+module.exports = {
+  searchMailings,
+  accessibleLocations,
+  findReadableMailings,
+  findReadableMailing,
+};
 
 /**
  * @param {Object} params
  * @param {Object} params.user the request user
  * @param {Object} params.filters the listing's filters
  * @param {Object} params.pagination the listing's pagination
+ * @param {Object} [params.within] narrows the search to some locations, among
+ *   the accessible ones only: `workspaceIds`, and `folderIds` (a folder with
+ *   its subfolders). One the user may not read finds nothing.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
  */
-async function searchMailings({ user, filters = {}, pagination = {} }) {
+async function searchMailings({
+  user,
+  filters = {},
+  pagination = {},
+  within = {},
+}) {
   const groupId = listingGroupIdOf(user);
   const page = pageOf(pagination);
 
-  const { workspaces, folders, readable } = await readableScope(user, groupId);
+  const { workspaces, folders, readable } = await readableScope(
+    user,
+    groupId,
+    within
+  );
 
   const items = await findPage({
     ...readable,
@@ -114,26 +131,101 @@ async function findReadableMailing(user, id, projection) {
 }
 
 // What the user may read in a group, as a filter on its mailings, with the
-// workspaces and folders it lists.
-async function readableScope(user, groupId) {
+// workspaces and folders it lists; a search may narrow the filter (`within`,
+// see scopeOf), never beyond what the user may read.
+async function readableScope(user, groupId, within = {}) {
   const workspaces = await accessibleWorkspaces(user, groupId);
   const folders = await foldersOf(workspaces);
+  const scope = scopeOf(workspaces, folders, within);
   return {
     workspaces,
     folders,
     readable: {
       _company: mongoose.Types.ObjectId(groupId),
       $or: [
-        { _parentFolder: { $in: folders.map((folder) => folder._id) } },
+        { _parentFolder: { $in: scope.folders.map((folder) => folder._id) } },
         // An email in a folder is found through its folder only: a workspace
         // it may still name never lets it through.
         {
-          _workspace: { $in: workspaces.map((workspace) => workspace._id) },
+          _workspace: {
+            $in: scope.workspaces.map((workspace) => workspace._id),
+          },
           _parentFolder: null,
         },
       ],
     },
   };
+}
+
+// The locations a search looks through: every accessible one, or those the
+// caller narrows it to. A folder brings its subfolders, and only the emails
+// filed in them; a workspace brings its emails and its folders.
+function scopeOf(workspaces, folders, { workspaceIds, folderIds } = {}) {
+  const named = (ids) => (ids ? new Set(ids.map(String)) : null);
+  const keptWorkspaces = named(workspaceIds);
+  const inWorkspaces = keptWorkspaces
+    ? workspaces.filter((workspace) =>
+        keptWorkspaces.has(String(workspace._id))
+      )
+    : workspaces;
+  const workspaceIdsKept = new Set(inWorkspaces.map((w) => String(w._id)));
+  const parentOf = new Map(
+    folders.map((folder) => [String(folder._id), folder])
+  );
+  const workspaceOfFolder = (folder) =>
+    String(
+      folder._parentFolder
+        ? parentOf.get(String(folder._parentFolder))?._workspace
+        : folder._workspace
+    );
+  let kept = folders.filter((folder) =>
+    workspaceIdsKept.has(workspaceOfFolder(folder))
+  );
+  const keptFolders = named(folderIds);
+  if (keptFolders) {
+    kept = kept.filter(
+      (folder) =>
+        keptFolders.has(String(folder._id)) ||
+        keptFolders.has(String(folder._parentFolder))
+    );
+    return { workspaces: [], folders: kept };
+  }
+  return { workspaces: inWorkspaces, folders: kept };
+}
+
+/**
+ * The workspaces a user may read in the group the listing reads, each with its
+ * folders and their subfolders: where a search may look.
+ *
+ * @param {Object} user the request user
+ * @returns {Promise<Array<{ id: string, name: string, folders: Array }>>}
+ */
+async function accessibleLocations(user) {
+  const workspaces = await accessibleWorkspaces(user, listingGroupIdOf(user));
+  const folders = await foldersOf(workspaces);
+  const reference = ({ _id, name }) => ({ id: String(_id), name });
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  const childrenOf = (parentId) =>
+    folders
+      .filter((folder) => String(folder._parentFolder) === parentId)
+      .map(reference)
+      .sort(byName);
+  return workspaces
+    .map((workspace) => ({
+      ...reference(workspace),
+      folders: folders
+        .filter(
+          (folder) =>
+            !folder._parentFolder &&
+            String(folder._workspace) === String(workspace._id)
+        )
+        .map((folder) => ({
+          ...reference(folder),
+          subfolders: childrenOf(String(folder._id)),
+        }))
+        .sort(byName),
+    }))
+    .sort(byName);
 }
 
 async function findPage(query) {
