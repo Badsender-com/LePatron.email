@@ -27,6 +27,76 @@ const CLIENT_AUTH_METHODS = [
   'client_secret_basic',
 ];
 
+// A client document is read whole to be checked, up to this size: a larger
+// one is left to the provider, which refuses it.
+const DOCUMENT_LIMIT = 64 * 1024;
+const LOOPBACKS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function isLoopbackRedirect(uri) {
+  try {
+    const url = new URL(uri);
+    return url.protocol === 'http:' && LOOPBACKS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+async function textUpTo(response, limit) {
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > limit) {
+      reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+/**
+ * The client metadata document `url` answers, read as a native application's
+ * when it only redirects to the user's own machine and names no application
+ * type: Claude Code's, for one, declares `http://localhost/callback` and
+ * listens on a port it picks at each login. The provider only lets a native
+ * application's loopback redirect take any port (RFC 8252, 7.3). Any other
+ * response goes through as is.
+ *
+ * @param {string} url
+ * @param {Response} response
+ * @returns {Promise<Response>}
+ */
+async function asNativeWhenLoopback(url, response) {
+  if (response.status !== 200) return response;
+  const text = await textUpTo(response.clone(), DOCUMENT_LIMIT);
+  let document;
+  try {
+    document = JSON.parse(text);
+  } catch {
+    return response;
+  }
+  const redirects = document?.redirect_uris;
+  if (
+    document?.client_id !== url ||
+    document.application_type !== undefined ||
+    !Array.isArray(redirects) ||
+    redirects.length === 0 ||
+    !redirects.every(isLoopbackRedirect)
+  ) {
+    return response;
+  }
+  return new Response(
+    JSON.stringify({ ...document, application_type: 'native' }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  );
+}
+
 // The account of a token is a user in the group the connection is bound to,
 // so the group survives every refresh.
 const accountIdOf = (userId, groupId) => `${userId}.${groupId}`;
@@ -81,7 +151,12 @@ function createAuthorizationServer({
   const provider = new Provider(issuer, {
     ...(adapter && { adapter }),
     ...(jwks && { jwks }),
-    ...(fetch && { fetch }),
+    // Every fetch of the provider: client documents, and their keys.
+    fetch: async (url, options) =>
+      asNativeWhenLoopback(
+        String(url),
+        await (fetch || globalThis.fetch)(url, options)
+      ),
     scopes: SCOPES,
     claims: { openid: ['sub'] },
     responseTypes: ['code'],
