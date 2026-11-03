@@ -15,6 +15,8 @@ const f = require('../../helpers/mcp-fixtures');
 const { CIMD_CLIENT } = oauth;
 const COPILOT_REDIRECT =
   'https://teams.microsoft.com/api/platform/v1.0/oAuthRedirect';
+// The MCP clients of the client group, which its tech admin registers.
+const CLIENTS = `/api/groups/${f.CLIENT_GROUP}/mcp-clients`;
 
 describe('CIMD registration', () => {
   let app;
@@ -138,12 +140,12 @@ describe('pre-registered clients', () => {
   const create = (userId) =>
     oauth
       .signIn(app, userId)
-      .post('/api/mcp-clients')
+      .post(CLIENTS)
       .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
 
   it('lets a super admin register a client, and shows its secret once', async () => {
     const created = await create(f.ALICE);
-    const listed = await oauth.signIn(app, f.ALICE).get('/api/mcp-clients');
+    const listed = await oauth.signIn(app, f.ALICE).get(CLIENTS);
 
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({
@@ -161,10 +163,14 @@ describe('pre-registered clients', () => {
     );
   });
 
+  it("lets the company's tech admin register one", async () => {
+    expect((await create(f.TESS)).status).toBe(201);
+  });
+
   it.each([
-    ['company admin', f.ERIN],
-    ['tech admin', f.TESS],
-  ])('refuses a %s', async (_role, userId) => {
+    ['a company admin', f.ERIN],
+    ['a regular user', f.FRANK],
+  ])('refuses %s', async (_role, userId) => {
     expect((await create(userId)).status).toBe(403);
   });
 
@@ -196,9 +202,7 @@ describe('pre-registered clients', () => {
       secret: body.clientSecret,
     });
 
-    await oauth
-      .signIn(app, f.ALICE)
-      .delete(`/api/mcp-clients/${body.clientId}`);
+    await oauth.signIn(app, f.ALICE).delete(`${CLIENTS}/${body.clientId}`);
     const refreshed = await request(app)
       .post('/oauth/token')
       .type('form')
@@ -257,7 +261,7 @@ describe('how long a client is kept', () => {
   it('keeps a client a super admin registered until it is deleted', async () => {
     const { body } = await oauth
       .signIn(app, f.ALICE)
-      .post('/api/mcp-clients')
+      .post(CLIENTS)
       .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
 
     await oauth.connect(app, f.FRANK, {
@@ -279,7 +283,7 @@ describe('registering a client by hand', () => {
   const create = (fields) =>
     oauth
       .signIn(app, f.ALICE)
-      .post('/api/mcp-clients')
+      .post(CLIENTS)
       .send({
         name: 'Copilot Studio',
         redirectUris: [COPILOT_REDIRECT],
@@ -299,9 +303,9 @@ describe('registering a client by hand', () => {
     const response = await create(fields);
 
     expect(response.status).toBe(400);
-    expect(
-      (await oauth.signIn(app, f.ALICE).get('/api/mcp-clients')).body.items
-    ).toEqual([]);
+    expect((await oauth.signIn(app, f.ALICE).get(CLIENTS)).body.items).toEqual(
+      []
+    );
   });
 
   it('takes a loopback redirect URI and the basic authentication method', async () => {
@@ -315,7 +319,7 @@ describe('registering a client by hand', () => {
   });
 
   it('asks who is there', async () => {
-    const response = await request(app).get('/api/mcp-clients');
+    const response = await request(app).get(CLIENTS);
 
     expect(response.status).toBe(401);
   });
@@ -323,7 +327,7 @@ describe('registering a client by hand', () => {
   it('answers a client it does not know', async () => {
     const response = await oauth
       .signIn(app, f.ALICE)
-      .delete('/api/mcp-clients/lepatron-unknown');
+      .delete(`${CLIENTS}/lepatron-unknown`);
 
     expect(response.status).toBe(404);
   });
@@ -357,10 +361,10 @@ describe('what the consent page says of a client', () => {
     expect(client.registration_access_token).toBeUndefined();
   });
 
-  it('says a super admin registered a client', async () => {
+  it('says which company registered a client', async () => {
     const { body } = await oauth
       .signIn(app, f.ALICE)
-      .post('/api/mcp-clients')
+      .post(CLIENTS)
       .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
 
     const details = await detailsFor({
@@ -371,6 +375,7 @@ describe('what the consent page says of a client', () => {
     expect(details.client).toEqual({
       name: 'Copilot Studio',
       registration: 'preRegistered',
+      company: 'A client',
     });
   });
 
@@ -395,7 +400,7 @@ describe('deleting a client registered by hand', () => {
     const app = oauth.createApp();
     const { body } = await oauth
       .signIn(app, f.ALICE)
-      .post('/api/mcp-clients')
+      .post(CLIENTS)
       .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
     const { access_token: accessToken } = await oauth.connect(app, f.FRANK, {
       client: { client_id: body.clientId, redirect_uris: [COPILOT_REDIRECT] },
@@ -408,9 +413,7 @@ describe('deleting a client registered by hand', () => {
       clientInfo: { name: 'copilot', version: '1' },
     });
 
-    await oauth
-      .signIn(app, f.ALICE)
-      .delete(`/api/mcp-clients/${body.clientId}`);
+    await oauth.signIn(app, f.ALICE).delete(`${CLIENTS}/${body.clientId}`);
     const after = await oauth.callMcp(app, accessToken);
 
     expect(before.status).toBe(200);
@@ -419,5 +422,77 @@ describe('deleting a client registered by hand', () => {
       (await oauth.signIn(app, f.FRANK).get('/api/connected-applications')).body
         .items
     ).toEqual([]);
+  });
+});
+
+describe('a client registered by a company', () => {
+  let app;
+  let client;
+  beforeEach(async () => {
+    app = oauth.createApp();
+    const { body } = await oauth
+      .signIn(app, f.TESS)
+      .post(CLIENTS)
+      .send({ name: 'Copilot Studio', redirectUris: [COPILOT_REDIRECT] });
+    client = body;
+  });
+
+  const asClient = () => ({
+    client_id: client.clientId,
+    redirect_uris: [COPILOT_REDIRECT],
+  });
+  const otherClients = `/api/groups/${f.OTHER_GROUP}/mcp-clients`;
+
+  it("is listed in its company's settings, not in another's", async () => {
+    const own = await oauth.signIn(app, f.TESS).get(CLIENTS);
+    const other = await oauth.signIn(app, f.ALICE).get(otherClients);
+
+    expect(own.body.items).toEqual([
+      expect.objectContaining({ clientId: client.clientId }),
+    ]);
+    expect(other.body.items).toEqual([]);
+  });
+
+  it("refuses a tech admin another company's clients", async () => {
+    const listed = await oauth.signIn(app, f.TESS).get(otherClients);
+    const deleted = await oauth
+      .signIn(app, f.ALICE)
+      .delete(`${otherClients}/${client.clientId}`);
+
+    expect(listed.status).toBe(403);
+    expect(deleted.status).toBe(404);
+  });
+
+  it('refuses the consent of a user of another company', async () => {
+    const agent = oauth.signIn(app, f.OTTO);
+    const uid = await oauth.startConsent(
+      agent,
+      asClient(),
+      oauth.pkce().challenge
+    );
+
+    const details = await agent.get(`/oauth/consent/${uid}/details`);
+
+    expect(details.status).toBe(403);
+    expect(details.body.code).toBe('client_of_another_company');
+  });
+
+  it('offers a super admin its company alone', async () => {
+    const agent = oauth.signIn(app, f.ALICE);
+    const uid = await oauth.startConsent(
+      agent,
+      asClient(),
+      oauth.pkce().challenge
+    );
+
+    const details = await agent.get(`/oauth/consent/${uid}/details`);
+    const consent = await agent
+      .post(`/oauth/consent/${uid}/consent`)
+      .send({ groupId: f.OTHER_GROUP });
+
+    expect(details.body.groups).toEqual([
+      { id: f.CLIENT_GROUP, name: 'A client' },
+    ]);
+    expect(consent.status).toBe(403);
   });
 });

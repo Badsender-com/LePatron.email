@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { Users, Groups, McpClients } = require('../common/models.common.js');
+const { Users, Groups } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE } = require('./mcp-identity.js');
@@ -9,6 +9,7 @@ const { WRITE_SCOPE } = require('./mcp-authoring.js');
 const logger = require('../utils/logger.js');
 const { accountIdOf, keepRegisteredClient, TTL } = require('./mcp-oauth.js');
 const { recordConnection, revokeConnections } = require('./mcp-connections.js');
+const { companyOfClient } = require('./mcp-clients.js');
 
 const NO_ACCESS = 'This group has no MCP access to LePatron.';
 
@@ -52,13 +53,14 @@ async function consenterOf(req) {
 }
 
 /**
- * How the client made itself known, for the user to weigh its name: a super
- * admin registered it, a site publishes its metadata document (its host is
- * shown), or it registered itself, and its name is only what it claims.
+ * How the client made itself known, for the user to weigh its name: a
+ * company registered it (its name is shown), a site publishes its metadata
+ * document (its host is shown), or it registered itself, and its name is only
+ * what it claims.
  */
-async function registrationOf(clientId) {
-  if (await McpClients.findOne({ clientId }).lean()) {
-    return { registration: 'preRegistered' };
+function registrationOf(clientId, company) {
+  if (company) {
+    return { registration: 'preRegistered', company: company.name };
   }
   try {
     const url = new URL(clientId);
@@ -114,8 +116,24 @@ function createInteractionsRouter(provider, resource) {
           'expired'
         );
       }
+      // A client a company registered connects that company alone.
+      const company = await companyOfClient(interaction.params.client_id);
+      if (company) {
+        consenter.groups = consenter.groups.filter(
+          (group) => group.id === company.id
+        );
+        if (consenter.groups.length === 0) {
+          return refuse(
+            res,
+            403,
+            'This application belongs to another company.',
+            'client_of_another_company'
+          );
+        }
+      }
       const requested = String(interaction.params.scope || '').split(' ');
       req.interaction = interaction;
+      req.clientCompany = company;
       req.consenter = consenter;
       req.granted = consenter.scopes.filter((scope) =>
         requested.includes(scope)
@@ -134,7 +152,7 @@ function createInteractionsRouter(provider, resource) {
       res.json({
         client: {
           name: client?.clientName || params.client_id,
-          ...(await registrationOf(params.client_id)),
+          ...registrationOf(params.client_id, req.clientCompany),
         },
         // Where the answer goes, for the user to recognise the application;
         // the whole URI when it has no host (an app's own scheme).

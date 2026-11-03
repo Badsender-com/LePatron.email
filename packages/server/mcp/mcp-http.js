@@ -41,7 +41,8 @@ async function authInfoOf(provider, header, resource) {
   if (kind !== 'Bearer' || !value) return null;
   const token = await provider.AccessToken.find(value);
   if (!token || token.isExpired || token.aud !== resource) return null;
-  if (!(await isClientAllowed(token.clientId))) return null;
+  const identity = identityOf(token.accountId);
+  if (!(await isClientAllowed(token.clientId, identity.groupId))) return null;
   // Revoked by its user or the group's admin: refused at once.
   if (!(await useConnection(token.grantId))) return null;
   return {
@@ -52,7 +53,7 @@ async function authInfoOf(provider, header, resource) {
       .filter(Boolean),
     expiresAt: token.exp,
     resource: new URL(resource),
-    extra: identityOf(token.accountId),
+    extra: identity,
   };
 }
 
@@ -61,7 +62,7 @@ async function authInfoOf(provider, header, resource) {
  * (ADR 0012): the metadata a connected application discovers them by
  * (RFC 9728, RFC 8414), the authorization server under `/oauth`, the consent
  * API the consent page reads (`/oauth/consent/:uid/…`), the clients a super
- * admin registers (`/api/mcp-clients`), the connected applications a user or a
+ * company registers (`/api/groups/:groupId/mcp-clients`), the connected applications a user or a
  * group's admin revokes (`/api/connected-applications`,
  * `/api/groups/:groupId/connected-applications`), and `/mcp`, which
  * takes only the access tokens issued for it. The consent page itself,
@@ -143,8 +144,8 @@ function mountMcp(app, { origin, ...providerOptions }) {
     createInteractionsRouter(provider, resource)
   );
 
-  // The clients a super admin registers, kept by the authorization server.
-  app.use('/api/mcp-clients', createClientsRouter(provider));
+  // The clients a company registers, kept by the authorization server.
+  app.use('/api/groups/:groupId/mcp-clients', createClientsRouter(provider));
   // The applications a user connected, and a group's, which they revoke.
   app.use('/api/connected-applications', createConnectionsRouter(provider));
   app.use(

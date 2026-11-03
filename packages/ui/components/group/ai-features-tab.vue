@@ -319,6 +319,9 @@ export default {
           :group-id="groupId"
         />
 
+        <!-- The page's own sections (MCP access), before what is coming. -->
+        <slot />
+
         <!-- Section: Coming Soon Features -->
         <bs-form-section last>
           <template #icon>
