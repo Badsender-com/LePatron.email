@@ -33,10 +33,9 @@ function hasScope(authInfo, scope) {
 // What the request user may carry: never a password or a token.
 const USER_FIELDS = '_id name email lang role _company isDeactivated';
 // What the handlers read of the company: never its secrets. Whether it
-// allows retex, and how long its logs are kept, for a feedback; whether its
-// users read every workspace, for the rights on its mailings.
-const GROUP_FIELDS =
-  '_id enableMcp isPlatform allowRetex logRetentionDays userHasAccessToAllWorkspaces';
+// allows retex, and how long its logs are kept, for a feedback. The rights on
+// its mailings are the search's, which reads what it needs itself.
+const GROUP_FIELDS = '_id enableMcp isPlatform allowRetex logRetentionDays';
 
 const NO_ACCOUNT = 'This account can no longer use LePatron.';
 const NO_COMPANY = 'This connection is not bound to a company of this account.';
