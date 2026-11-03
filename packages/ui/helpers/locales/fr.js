@@ -1100,6 +1100,9 @@ export default {
       write:
         'proposer des brouillons de skills et d\'expertises, que seule une personne peut publier',
     },
+    allowWrite: 'Lui permettre aussi de proposer des brouillons de skills et d\'expertises',
+    allowWriteHint:
+      'Réservé aux super admins. Seule une personne publie un brouillon. À ne cocher que pour un assistant de l\'équipe Badsender.',
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
