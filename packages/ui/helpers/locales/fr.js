@@ -1097,6 +1097,7 @@ export default {
       dynamic:
         'Cette application s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
       metadataDocument: 'Son identité est publiée par {host}.',
+      preRegistered: 'Application déclarée par l\'entreprise {company}.',
     },
     scopes: {
       read:
@@ -1113,6 +1114,8 @@ export default {
     deny: 'Refuser',
     expired:
       'Cette demande de connexion a expiré, ou a été lancée depuis un autre navigateur. Relancez la connexion depuis votre assistant.',
+    clientOfAnotherCompany:
+      'Cette application est réservée aux utilisateurs de l\'entreprise qui l\'a déclarée.',
     accountCannotConnect:
       'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
     noAccess:
@@ -1121,7 +1124,9 @@ export default {
   mcpClients: {
     pageTitle: 'Clients MCP',
     description:
-      'Les assistants qui ne savent pas s\'enregistrer eux-mêmes, comme Copilot Studio en mode manuel, reçoivent ici un identifiant et un secret. Claude, ChatGPT et Microsoft 365 Copilot n\'en ont pas besoin.',
+      'Les assistants qui ne savent pas s\'enregistrer eux-mêmes, comme Copilot Studio en mode manuel, reçoivent ici un identifiant et un secret. Seuls les utilisateurs de l\'entreprise peuvent se connecter avec. Claude, ChatGPT et Microsoft 365 Copilot n\'en ont pas besoin.',
+    mcpOff:
+      'L\'accès MCP de l\'entreprise est coupé : ces clients ne peuvent pas se connecter. Il s\'active dans',
     add: 'Ajouter un client',
     addDescription:
       'Recopiez l\'URL de redirection que l\'assistant affiche dans son écran de configuration.',
@@ -1200,6 +1205,7 @@ export default {
     description:
       'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
     switch: 'Autoriser la connexion des assistants IA',
+    manageClients: 'Gérer les clients MCP',
     updated: 'Accès MCP mis à jour',
   },
   crmIntelligence: {

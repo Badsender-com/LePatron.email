@@ -1,17 +1,21 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { Plus, Trash2 } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import { safeFetchGroup } from '~/helpers/safe-fetch-group';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsModalCreateMcpClient from '~/components/mcp-clients/modal-create-mcp-client.vue';
 import BsMcpClientSettings from '~/components/mcp-clients/mcp-client-settings.vue';
 
 // The assistants that cannot register themselves (Copilot Studio in manual
-// mode) are given a client id and a secret here (ADR 0012).
+// mode) are given a client id and a secret here, by the company's tech admin
+// (ADR 0012): the company's users alone connect through them.
 export default {
   name: 'PageMcpClients',
   components: {
@@ -22,22 +26,26 @@ export default {
     LucidePlus: Plus,
     LucideTrash2: Trash2,
   },
-  mixins: [mixinPageTitle],
+  mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_PLATFORM_MANAGE,
-    sidebarModule: 'settings',
+    acl: acls.ACL_GROUP_MANAGE_TECH,
   },
-  async asyncData({ $axios }) {
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+    const fetched = await safeFetchGroup(nuxtContext);
     try {
-      const { items } = await $axios.$get(apiRoutes.mcpClients());
-      return { clients: items, loadError: false };
+      const { items } = await $axios.$get(
+        apiRoutes.mcpClients({ groupId: params.groupId })
+      );
+      return { ...fetched, clients: items, loadError: false };
     } catch (error) {
       console.error(error);
-      return { clients: [], loadError: true };
+      return { ...fetched, clients: [], loadError: true };
     }
   },
   data() {
     return {
+      group: {},
       clients: [],
       loadError: false,
       modalLoading: false,
@@ -48,11 +56,15 @@ export default {
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
   computed: {
-    title() {
-      return this.$t('mcpClients.pageTitle');
+    ...mapGetters(USER, { can: CAN }),
+    showGroupBadge() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
+    },
+    groupId() {
+      return this.$route.params.groupId;
     },
     headers() {
       return [
@@ -80,7 +92,7 @@ export default {
       try {
         this.modalLoading = true;
         const { clientSecret, ...client } = await this.$axios.$post(
-          apiRoutes.mcpClients(),
+          apiRoutes.mcpClients({ groupId: this.groupId }),
           fields
         );
         this.clients = [client, ...this.clients];
@@ -106,7 +118,10 @@ export default {
       const client = this.toDelete;
       try {
         await this.$axios.$delete(
-          apiRoutes.mcpClientsItem({ clientId: client.clientId })
+          apiRoutes.mcpClientsItem({
+            groupId: this.groupId,
+            clientId: client.clientId,
+          })
         );
         this.clients = this.clients.filter(
           (candidate) => candidate.clientId !== client.clientId
@@ -141,7 +156,12 @@ export default {
       @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
     >
       <template #title>
-        {{ title }}
+        {{ $t('mcpClients.pageTitle') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
       </template>
       <template #actions>
         <v-btn
@@ -159,6 +179,17 @@ export default {
       <p class="text-body-2 text--secondary">
         {{ $t('mcpClients.description') }}
       </p>
+      <v-alert
+        v-if="group.id && group.enableMcp !== true"
+        type="info"
+        outlined
+        text
+      >
+        {{ $t('mcpClients.mcpOff') }}
+        <nuxt-link :to="`/groups/${groupId}/settings/ai-features`">
+          {{ $t('aiFeatures.title') }}
+        </nuxt-link>
+      </v-alert>
       <v-alert v-if="loadError" type="error" outlined text>
         {{ $t('mcpClients.loadError') }}
       </v-alert>

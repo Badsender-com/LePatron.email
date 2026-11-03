@@ -60,13 +60,13 @@ export default {
         <bs-group-ai-features-tab
           :active="true"
           :is-platform="!!group.isPlatform"
-        />
-        <bs-group-mcp-access-option
-          v-if="group.id"
-          class="mt-6"
-          :group="group"
-          @update="group.enableMcp = $event.enableMcp"
-        />
+        >
+          <bs-group-mcp-access-option
+            v-if="group.id"
+            :group="group"
+            @update="group.enableMcp = $event.enableMcp"
+          />
+        </bs-group-ai-features-tab>
       </div>
     </v-container>
   </div>

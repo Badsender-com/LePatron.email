@@ -516,10 +516,10 @@ export const oauthInteractionDeny = (uid) => consentRoute(uid, 'deny');
 // MCP CLIENTS
 /// ///
 
-// The clients a super admin registers by hand (ADR 0012).
-export const mcpClients = () => '/mcp-clients';
-export const mcpClientsItem = ({ clientId }) =>
-  `/mcp-clients/${encodeURIComponent(clientId)}`;
+// The clients a company registers by hand (ADR 0012).
+export const mcpClients = ({ groupId }) => `/groups/${groupId}/mcp-clients`;
+export const mcpClientsItem = ({ groupId, clientId }) =>
+  `/groups/${groupId}/mcp-clients/${encodeURIComponent(clientId)}`;
 
 /// ///
 // CONNECTED APPLICATIONS
