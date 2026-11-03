@@ -795,11 +795,11 @@ export default {
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
   retex: {
-    title: 'Retex from AI assistants',
+    title: 'Session summaries from AI assistants',
     description:
       'When a user sends feedback from their AI assistant, they may attach a summary of the session to help Badsender improve its expertises and skills. The summary is kept only if the company allows it here, and the user agrees to it for that feedback.',
-    switch: 'Allow retex',
-    updated: 'Retex updated',
+    switch: 'Allow session summaries',
+    updated: 'Session summaries updated',
   },
   mcpAccess: {
     title: 'MCP access',
@@ -1421,12 +1421,12 @@ export default {
     feedback: {
       tab: 'Feedback',
       caption:
-        'Feedback sent from connected AI assistants, with the version read and, when the group and the user agreed, the session retex.',
+        'Feedback sent from connected AI assistants, with the version read and, when the group and the user agreed, the summary of the session.',
       empty: 'No feedback yet.',
       up: 'Positive feedback',
       down: 'Negative feedback',
       noComment: 'No comment',
-      retex: 'Retex',
+      retex: 'Session summary',
     },
     nature: 'Nature',
     natureHint:
