@@ -159,6 +159,22 @@ describe('drafts mode', () => {
       expect(text).toContain('Not validated yet.');
     });
 
+    it('tells the client its prompts and resources changed, so it reloads them', async () => {
+      const author = await asAuthor();
+      const changed = [];
+      author.setNotificationHandler('notifications/prompts/list_changed', () =>
+        changed.push('prompts')
+      );
+      author.setNotificationHandler(
+        'notifications/resources/list_changed',
+        () => changed.push('resources')
+      );
+
+      await turnOn(author);
+
+      expect(changed.sort()).toEqual(['prompts', 'resources']);
+    });
+
     it('serves the published versions once turned off', async () => {
       const author = await asAuthor();
       await turnOn(author);

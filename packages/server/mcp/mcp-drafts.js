@@ -46,12 +46,17 @@ const USE_DRAFTS_OUTPUT = z.object({
  * @param {import('@modelcontextprotocol/server').McpServer} server
  */
 function registerUseDrafts(server) {
+  // What the client lists changes with the mode: it is told so, and reloads.
+  server.server.registerCapabilities({
+    prompts: { listChanged: true },
+    resources: { listChanged: true },
+  });
   server.registerTool(
     'use_drafts',
     {
       title: 'Try the drafts of skills and expertises',
       description:
-        'Turns the drafts mode on or off for this connection. While on, every skill and expertise is served at its latest unpublished draft when it has one, the expertises a skill consumes included, so a draft can be tried before it is published. Each content served from a draft says so. The mode turns itself off after a few hours, and at each new connection. A skill never published shows among the prompts only after reconnecting; find it with find_skills meanwhile.',
+        'Turns the drafts mode on or off for this connection. While on, every skill and expertise is served at its latest unpublished draft when it has one, the expertises a skill consumes included, so a draft can be tried before it is published. Each content served from a draft says so. The mode turns itself off after a few hours, and at each new connection. The prompts and resources listed change with the mode: reload them when told so.',
       inputSchema: USE_DRAFTS_INPUT,
       outputSchema: USE_DRAFTS_OUTPUT,
       annotations: { readOnlyHint: false, destructiveHint: false },
@@ -64,6 +69,12 @@ function registerUseDrafts(server) {
           'This connection cannot keep the drafts mode: connect through LePatron’s authorization server.'
         );
       }
+      // In the answer's own stream, so it reaches a client that keeps none
+      // open between requests.
+      await ctx.mcpReq.notify({ method: 'notifications/prompts/list_changed' });
+      await ctx.mcpReq.notify({
+        method: 'notifications/resources/list_changed',
+      });
       const answer = { drafts: on, until: until && until.toISOString() };
       return {
         content: [{ type: 'text', text: JSON.stringify(answer) }],
