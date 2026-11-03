@@ -67,6 +67,10 @@ function matchesCondition(actual, condition, how) {
         return operand ? actual !== undefined : actual === undefined;
       case '$regex':
         return testsString(actual, regexOf(operand, condition.$options));
+      case '$elemMatch':
+        return (
+          Array.isArray(actual) && actual.some((item) => matches(item, operand))
+        );
       case '$size':
         return Array.isArray(actual) && actual.length === operand;
       case '$options':

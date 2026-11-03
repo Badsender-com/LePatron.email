@@ -74,14 +74,16 @@ async function submitFeedback(identity, args, ctx) {
   };
 }
 
-// What an assistant may send: bounded, like every input of this server.
-const MAX_COMMENT_LENGTH = 5000;
-const MAX_SUMMARY_LENGTH = 20000;
-const MAX_ID_LENGTH = 100;
+// What one feedback holds at most: a few things it is about, and a comment
+// and a summary a person reads.
+const MAX_REFERENCES = 20;
+const MAX_COMMENT = 4000;
+const MAX_SUMMARY = 20000;
+const MAX_ID_LENGTH = 200;
 
 const FEEDBACK_INPUT = z.object({
   rating: z.enum(['up', 'down']),
-  comment: z.string().max(MAX_COMMENT_LENGTH).optional(),
+  comment: z.string().max(MAX_COMMENT).optional(),
   references: z
     .array(
       z.object({
@@ -89,9 +91,10 @@ const FEEDBACK_INPUT = z.object({
         id: z.string().max(MAX_ID_LENGTH),
       })
     )
+    .max(MAX_REFERENCES)
     .optional(),
   consentToRetex: z.boolean().optional(),
-  sessionSummary: z.string().max(MAX_SUMMARY_LENGTH).optional(),
+  sessionSummary: z.string().max(MAX_SUMMARY).optional(),
 });
 const FEEDBACK_OUTPUT = z.object({
   recorded: z.boolean(),
@@ -104,7 +107,7 @@ function registerSubmitFeedback(server) {
     {
       title: 'Send feedback on LePatron',
       description:
-        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. The answer says whether the summary was kept.",
+        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The comment is always kept: write what the user says of LePatron, never the content of their conversation. A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. The answer says whether the summary was kept.",
       inputSchema: FEEDBACK_INPUT,
       outputSchema: FEEDBACK_OUTPUT,
       annotations: { readOnlyHint: false, destructiveHint: false },

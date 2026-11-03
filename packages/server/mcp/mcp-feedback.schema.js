@@ -36,6 +36,12 @@ const McpFeedbackSchema = new Schema(
 );
 
 McpFeedbackSchema.index({ createdAt: -1 });
+// The feedbacks on one skill, expertise or mailing, the latest first.
+McpFeedbackSchema.index({
+  'references.kind': 1,
+  'references.id': 1,
+  createdAt: -1,
+});
 // The group's log retention, as for the skill invocations: no scheduler.
 McpFeedbackSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 

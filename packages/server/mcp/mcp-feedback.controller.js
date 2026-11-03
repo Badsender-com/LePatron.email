@@ -5,15 +5,19 @@ const { McpFeedbacks, Groups } = require('../common/models.common.js');
 
 const LIMIT = 200;
 
-// One reference matches the filter: a kind and an id, and a version if asked.
-function refersTo({ kind, id, version }) {
-  return (feedback) =>
-    (feedback.references || []).some(
-      (reference) =>
-        reference.kind === kind &&
-        reference.id === id &&
-        (!version || reference.version === version)
-    );
+// The feedbacks one of whose references is a kind and an id, and a version
+// if asked. Strings only: a query string may carry an object.
+function referringTo({ kind, id, version }) {
+  if (!kind || !id) return {};
+  return {
+    references: {
+      $elemMatch: {
+        kind: String(kind),
+        id: String(id),
+        ...(version && { version: String(version) }),
+      },
+    },
+  };
 }
 
 /**
@@ -26,15 +30,10 @@ function refersTo({ kind, id, version }) {
  * @apiSuccess {Object[]} items the latest first, at most 200
  */
 async function list(req, res) {
-  const { kind, id, version } = req.query;
-  const feedbacks = await McpFeedbacks.find({})
+  const kept = await McpFeedbacks.find(referringTo(req.query))
     .sort({ createdAt: -1 })
-    .limit(kind && id ? LIMIT * 5 : LIMIT)
+    .limit(LIMIT)
     .lean();
-  const kept = (kind && id
-    ? feedbacks.filter(refersTo({ kind, id, version }))
-    : feedbacks
-  ).slice(0, LIMIT);
 
   const groupIds = [...new Set(kept.map((f) => String(f._company)))];
   const groups = await Groups.find(
