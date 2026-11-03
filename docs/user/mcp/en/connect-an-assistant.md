@@ -1,6 +1,11 @@
 # Connect an AI assistant to LePatron
 
-Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf: Badsender's expertises and skills, to use them when you ask it to write or review an email. It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only thing it sends LePatron is your feedback, when you ask it to. Connected by a super admin who allows it at connection, it may also propose drafts of skills and expertises, which a person reviews and publishes.
+Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf:
+
+- Badsender's expertises and skills, to use them when you ask it to write or review an email;
+- your mailings: it lists them (by workspace, folder, author, tags or dates, with their status) and reads their text, or the HTML of their preview. Personalization variables, such as `{{firstname}}`, stay as they are.
+
+It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only thing it sends LePatron is your feedback, when you ask it to. Connected by a super admin who allows it at connection, it may also propose drafts of skills and expertises, which a person reviews and publishes.
 
 The connection uses MCP (Model Context Protocol), which all these assistants support.
 

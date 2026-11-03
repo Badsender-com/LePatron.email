@@ -57,6 +57,7 @@ const {
   searchMailings,
   findReadableMailings,
   findReadableMailing,
+  locateReadableMailing,
 } = require('../../../packages/server/mailing/mailing-search.service');
 
 function search(user, { filters = {}, pagination = BY_NAME } = {}) {
@@ -232,5 +233,57 @@ describe('a mailing the user may read', () => {
     );
 
     expect(found.map((m) => m.name)).toEqual(['Weekly news']);
+  });
+});
+
+// A mailing read with where it sits, for the MCP server to read one (#1304):
+// the same rule, and nothing of it read before the rule let it through.
+describe('a mailing the user may read, and where it sits', () => {
+  beforeEach(() => seed(mockStore));
+
+  const idOf = (name) => MAILINGS.find((m) => m.name === name)._id;
+  const newsletters = { id: NEWSLETTERS, name: 'Newsletters' };
+
+  it.each([
+    ['at the root of a workspace', 'Weekly news', { workspace: newsletters }],
+    [
+      'in a subfolder',
+      'Spring teaser',
+      {
+        workspace: newsletters,
+        folder: { id: YEAR_2026, name: '2026' },
+        subfolder: { id: SPRING, name: 'Spring' },
+      },
+    ],
+  ])('says where one %s sits', async (_where, name, location) => {
+    const found = await locateReadableMailing(frank, idOf(name), 'name');
+
+    expect(found.mailing.name).toBe(name);
+    expect(found.location).toEqual(location);
+  });
+
+  it('reads what it is told, kept or left out', async () => {
+    const kept = await locateReadableMailing(
+      frank,
+      idOf('Weekly news'),
+      'name'
+    );
+    const left = await locateReadableMailing(
+      frank,
+      idOf('Weekly news'),
+      '-name'
+    );
+
+    expect(kept.mailing).not.toHaveProperty('author');
+    expect(left.mailing).not.toHaveProperty('name');
+    expect(left.mailing).toHaveProperty('author');
+  });
+
+  it.each([
+    ['a workspace the user cannot access', () => idOf('Spring promo')],
+    ['another group', () => idOf('Spring elsewhere')],
+    ['text that is no id', () => ({ $ne: null })],
+  ])('finds none in %s', async (_case, id) => {
+    expect(await locateReadableMailing(frank, id(), '-data')).toBeNull();
   });
 });

@@ -16,6 +16,8 @@ const { registerSubmitFeedback } = require('./mcp-feedback.js');
 const {
   registerListMailings,
   registerListWorkspaces,
+  registerGetMailing,
+  registerMailingResources,
 } = require('./mcp-mailings.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 const { hasScope, WRITE_SCOPE } = require('./mcp-identity.js');
@@ -63,6 +65,8 @@ function createMcpServer({ authInfo } = {}) {
   registerSubmitFeedback(server);
   registerListMailings(server);
   registerListWorkspaces(server);
+  registerGetMailing(server);
+  registerMailingResources(server);
   // Only for a token that may draft skills and expertises (ADR 0014): the
   // others never see the writing tools.
   if (hasScope(authInfo, WRITE_SCOPE)) {

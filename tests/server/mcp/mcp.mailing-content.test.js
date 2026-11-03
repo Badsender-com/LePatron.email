@@ -9,14 +9,16 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+const {
+  sanitizePreviewHtml,
+} = require('../../../packages/server/utils/preview-html-sanitizer.js');
 
 const getMailing = async (client, args) =>
   harness.answerOf(
     await client.callTool({ name: 'get_mailing', arguments: args })
   );
 
-// Turned on by #1304 (read a mailing)
-describe.skip('mailing content', () => {
+describe('mailing content', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 
@@ -66,9 +68,50 @@ describe.skip('mailing content', () => {
       });
 
       expect(answer.html).toContain(
-        '<a href="https://shop.example.test/black-friday"'
+        'href="https://shop.example.test/black-friday"'
       );
       expect(answer.text).toBeUndefined();
+    });
+
+    it('gives the HTML the app previews, sanitised', async () => {
+      const unsafe =
+        '<html><body><p>Hi</p><script>alert(1)</script></body></html>';
+      harness.update('mailings', f.M_NEWSLETTER, { previewHtml: unsafe });
+
+      const { html } = await getMailing(client, {
+        mailingId: f.M_NEWSLETTER,
+        format: 'html',
+      });
+
+      expect(html).toBe(sanitizePreviewHtml(unsafe));
+      expect(html).not.toContain('<script');
+    });
+
+    it('gives its preheader, the hidden text before the visible one', async () => {
+      harness.update('mailings', f.M_NEWSLETTER, {
+        previewHtml: `<html><body>
+          <span style="display: none !important">Up to 50% off&zwnj;&nbsp;&zwnj;&nbsp;</span>
+          <p>Black Friday is coming</p>
+          <div style="display:none">Mobile only</div>
+        </body></html>`,
+      });
+
+      const { text } = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+      expect(text.split('\n\n')).toEqual([
+        'Subject: Black Friday: our best prices',
+        'Preheader: Up to 50% off',
+        'Black Friday is coming',
+      ]);
+    });
+
+    it('marks a heading and a link the Markdown way', async () => {
+      const { text } = await getMailing(client, { mailingId: f.M_NEWSLETTER });
+
+      expect(text).toContain('# Black Friday is coming');
+      expect(text).toContain(
+        '[See the offers](https://shop.example.test/black-friday)'
+      );
     });
 
     it('gives the facts of a mailing never saved in the editor, without content', async () => {

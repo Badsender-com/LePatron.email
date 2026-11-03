@@ -42,6 +42,7 @@ module.exports = {
   accessibleLocations,
   findReadableMailings,
   findReadableMailing,
+  locateReadableMailing,
 };
 
 /**
@@ -131,6 +132,31 @@ async function findReadableMailings(user, ids, projection = ID_ONLY) {
 async function findReadableMailing(user, id, projection) {
   const [found] = await findReadableMailings(user, [id], projection);
   return found || null;
+}
+
+/**
+ * A mailing the user may read (`findReadableMailings`), and where it sits, or
+ * null: what is read of it is read only once the rule let it through.
+ *
+ * @param {Object} user the request user
+ * @param {string} id
+ * @param {string} fields the fields to read, space separated, kept (`name
+ *   subject`) or left out (`-data`); where the email sits is always read
+ * @returns {Promise<{ mailing: Object, location: Object }|null>}
+ */
+async function locateReadableMailing(user, id, fields) {
+  if (!isObjectIdString(id)) return null;
+  const { workspaces, folders, readable } = await readableScope(
+    user,
+    listingGroupIdOf(user)
+  );
+  const leavesOut = fields.split(/\s+/).every((field) => field.startsWith('-'));
+  const [mailing] = await Mailings.find(
+    { ...readable, _id: { $in: [id] } },
+    leavesOut ? fields : `${fields} _workspace _parentFolder`
+  ).lean();
+  if (!mailing) return null;
+  return { mailing, location: locator(workspaces, folders)(mailing).location };
 }
 
 // What the user may read in a group, as a filter on its mailings, with the
