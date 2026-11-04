@@ -23,13 +23,12 @@ const limit = (windowMs, max) =>
 const RESOURCE_PATH = '/mcp';
 const ISSUER_PATH = '/oauth';
 
-function jsonRpcError(res, status, message, headers = {}) {
+// A refusal before any MCP exchange answers as the SDK's own bearer gate does:
+// the OAuth error body (RFC 6750). Clients act on the status and the
+// challenge; -32001 is the SDK's "Session not found", not a refusal.
+function refuse(res, status, error, description, headers = {}) {
   res.set(headers);
-  res.status(status).json({
-    jsonrpc: '2.0',
-    id: null,
-    error: { code: -32001, message },
-  });
+  res.status(status).json({ error, error_description: description });
 }
 
 /**
@@ -166,9 +165,13 @@ function mountMcp(app, { origin, ...providerOptions }) {
       onerror: (error) => logger.error('[mcp]', error.message),
     })
   );
-  const challenge = {
-    'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}", scope="${READ_SCOPE}"`,
-  };
+  const discovery = `resource_metadata="${resourceMetadataUrl}", scope="${READ_SCOPE}"`;
+  // No error code when no token was sent (RFC 6750, section 3.1).
+  const challengeOf = (header) => ({
+    'WWW-Authenticate': header
+      ? `Bearer error="invalid_token", ${discovery}`
+      : `Bearer ${discovery}`,
+  });
 
   app.all(RESOURCE_PATH, async (req, res, next) => {
     try {
@@ -178,19 +181,21 @@ function mountMcp(app, { origin, ...providerOptions }) {
         resource
       );
       if (!authInfo) {
-        return jsonRpcError(
+        return refuse(
           res,
           401,
+          'invalid_token',
           'A valid access token is required.',
-          challenge
+          challengeOf(req.headers.authorization)
         );
       }
       // What the token said at consent may no longer hold: say so before any
-      // MCP exchange, with the HTTP status a client acts on.
+      // MCP exchange, with the HTTP status a client acts on. Not
+      // insufficient_scope, which would send the client back to consent.
       try {
         await resolveIdentity(authInfo);
       } catch (refusal) {
-        return jsonRpcError(res, 403, refusal.message);
+        return refuse(res, 403, 'access_denied', refusal.message);
       }
       req.auth = authInfo;
       return mcpHandler(req, res, req.body);
