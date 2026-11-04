@@ -5,7 +5,10 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsAiSkillsTab from '~/components/ai-skill/bs-ai-skills-tab.vue';
 import BsAiExpertiseTab from '~/components/ai-skill/bs-ai-expertise-tab.vue';
 import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue';
-import { Plus } from 'lucide-vue';
+import { mapMutations } from 'vuex';
+import { Plus, Download } from 'lucide-vue';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { downloadSkillsExport } from '~/helpers/skills-export-download.js';
 
 const VALID_TABS = ['skills', 'expertise', 'invocations'];
 
@@ -17,6 +20,7 @@ export default {
     BsAiExpertiseTab,
     BsAiInvocationsTab,
     LucidePlus: Plus,
+    LucideDownload: Download,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -26,6 +30,7 @@ export default {
   data() {
     return {
       tab: this.resolveInitialTab(),
+      exportingAll: false,
     };
   },
   head() {
@@ -59,6 +64,25 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    // Every active skill and expertise, in one file (ADR 0018).
+    async exportAll() {
+      this.exportingAll = true;
+      try {
+        await downloadSkillsExport(this.$axios, { all: true });
+        this.showSnackbar({
+          text: this.$t('aiSkills.export.done'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('aiSkills.export.failed'),
+          color: 'error',
+        });
+      } finally {
+        this.exportingAll = false;
+      }
+    },
     resolveInitialTab() {
       const q = this.$route && this.$route.query && this.$route.query.tab;
       return VALID_TABS.includes(q) ? q : 'skills';
@@ -84,6 +108,16 @@ export default {
         {{ pageTitle }}
       </template>
       <template v-if="showAddButton" #actions>
+        <v-btn
+          outlined
+          color="accent"
+          class="mr-2"
+          :loading="exportingAll"
+          @click="exportAll"
+        >
+          <lucide-download :size="18" class="mr-2" />
+          {{ $t('aiSkills.export.all') }}
+        </v-btn>
         <v-btn color="accent" elevation="0" @click="onAdd">
           <lucide-plus :size="18" class="mr-2" />
           {{ addButtonLabel }}

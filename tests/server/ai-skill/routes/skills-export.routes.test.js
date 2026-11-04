@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // The routes of the skills export (ADR 0018): only a super admin exports,
@@ -57,8 +60,7 @@ function makeApp(user) {
 const SUPER_ADMIN = { id: f.ALICE, name: 'Alice', role: 'super_admin' };
 const COMPANY_ADMIN = { id: f.ERIN, name: 'Erin', role: 'company_admin' };
 
-// Turned on by #1409 (a super admin exports a selection or everything)
-describe.skip('exporting through the API', () => {
+describe('exporting through the API', () => {
   beforeEach(() => store.seed(f.SEED));
 
   it('downloads a skills export to a super admin', async () => {
