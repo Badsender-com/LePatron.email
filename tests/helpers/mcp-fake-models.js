@@ -78,6 +78,9 @@ const MODELS = {
   connections: 'McpConnections',
   securityEvents: 'SecurityEvents',
   taxonomyItems: 'TaxonomyItems',
+  // A copy following production (ADR 0019).
+  readTokens: 'SkillsReadTokens',
+  follows: 'SkillsFollows',
 };
 
 // An ObjectId once `structuredClone` copied it: its fields, not its class.
