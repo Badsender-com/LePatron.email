@@ -88,18 +88,7 @@ async function createSkill(data, userId, { initialVersion } = {}) {
     // Seed a v1.0 DRAFT with the generic schemas pre-filled (§B1).
     versions: [
       initialVersion
-        ? {
-            versionMajor: initialVersion.versionMajor,
-            versionMinor: initialVersion.versionMinor,
-            status: 'DRAFT',
-            ...versioned.cloneVersionContent(initialVersion),
-            changelog: initialVersion.changelog || '',
-            releaseNotes: initialVersion.releaseNotes || '',
-            createdBy: userId,
-            createdAt: now,
-            updatedBy: userId,
-            updatedAt: now,
-          }
+        ? versioned.importedDraft(initialVersion, userId)
         : {
             versionMajor: 1,
             versionMinor: 0,
