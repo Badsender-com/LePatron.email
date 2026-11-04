@@ -133,6 +133,7 @@ export default {
           modelHints: version.modelHints,
           procedure: version.procedure,
           consumedExpertiseIds: version.consumedExpertiseIds,
+          testCases: version.testCases,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
         };

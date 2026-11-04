@@ -1795,6 +1795,37 @@ export default {
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
+      SKILL_TEST_CASE_INVALID:
+        'Un cas de test est incomplet : chaque cas a besoin d\'un nom et d\'une entrée.',
+    },
+    testCases: {
+      title: 'Cas de test',
+      help: 'Les entrées sur lesquelles cette skill est vérifiée avant la publication d\'un changement dont elle dépend.',
+      empty: 'Aucun cas de test sur cette version.',
+      add: 'Ajouter un cas de test',
+      edit: 'Modifier le cas de test',
+      view: 'Voir le cas de test',
+      delete: 'Supprimer le cas de test',
+      deleteConfirm: 'Supprimer ce cas de test du brouillon ?',
+      save: 'Valider le cas',
+      name: 'Nom',
+      input: 'Entrée (JSON)',
+      inputHint: 'Un objet JSON avec les champs du schéma d\'entrée de la version.',
+      expectedOutput: 'Ce qu\'une bonne sortie doit contenir',
+      expectedOutputHint: 'Ce que la personne qui relit la comparaison doit retrouver dans la réponse.',
+      notes: 'Notes',
+      fromRunNotes: 'Depuis un run du playground du {date}. Sortie attendue à relire.',
+      errors: {
+        required: 'Ce champ est obligatoire.',
+        invalidJson: 'Ce n\'est pas du JSON valide.',
+        notObject: 'L\'entrée doit être un objet JSON, entre accolades.',
+      },
+      fromRun: {
+        added: 'Cas de test ajouté au brouillon v{version}. Relisez sa sortie attendue dans la page de la skill.',
+        noDraft: 'Cette skill n\'a pas de brouillon ouvert : une version publiée ne se modifie pas. Créez une nouvelle version depuis la page de la skill, puis recommencez.',
+        taskSkill: 'Une skill de tâche n\'a pas de cas de test.',
+        runFailed: 'Seul un run réussi peut devenir un cas de test.',
+      },
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -2014,6 +2045,8 @@ export default {
       markGolden: 'Marquer comme référence',
       unmarkGolden: 'Démarquer la référence',
       compare: 'Comparer avec la référence',
+      makeTestCase: 'En faire un cas de test',
+      makeTestCaseHint: 'Ajoute l\'entrée de ce run, et sa sortie comme sortie attendue, aux cas de test du brouillon ouvert de la skill',
     },
     list: {
       empty: 'Créez un scénario pour tester une skill avec vos expertises. Aucune connaissance technique requise.',

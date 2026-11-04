@@ -29,6 +29,7 @@ const {
   versionLabel,
 } = require('./version-helpers.js');
 const { hasSchema } = require('../schemas');
+const { TEST_CASE } = require('./test-cases.js');
 const skillService = require('./skill.service.js');
 const expertiseService = require('./expertise.service.js');
 
@@ -186,14 +187,6 @@ const version = (content) =>
     releaseNotes: z.string().optional(),
     ...content,
   });
-const TEST_CASE = z.object({
-  name: z.string().min(1),
-  input: z
-    .unknown()
-    .refine((value) => value !== undefined && value !== null, 'Required'),
-  expectedOutput: z.unknown().optional(),
-  notes: z.string().optional(),
-});
 const EXPERTISE = z.object({
   expertiseId: id,
   title: z.string().min(1),

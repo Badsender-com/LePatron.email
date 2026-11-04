@@ -1774,6 +1774,37 @@ export default {
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
+      SKILL_TEST_CASE_INVALID:
+        'A test case is incomplete: each case needs a name and an input.',
+    },
+    testCases: {
+      title: 'Test cases',
+      help: 'The inputs this skill is checked against before a change it depends on is published.',
+      empty: 'No test case on this version.',
+      add: 'Add a test case',
+      edit: 'Edit the test case',
+      view: 'View the test case',
+      delete: 'Delete the test case',
+      deleteConfirm: 'Delete this test case from the draft?',
+      save: 'Confirm the case',
+      name: 'Name',
+      input: 'Input (JSON)',
+      inputHint: 'A JSON object with the fields of the version\'s input schema.',
+      expectedOutput: 'What a good output must contain',
+      expectedOutputHint: 'What the person reading the comparison should find in the answer.',
+      notes: 'Notes',
+      fromRunNotes: 'From a playground run of {date}. Expected output to be reviewed.',
+      errors: {
+        required: 'This field is required.',
+        invalidJson: 'This is not valid JSON.',
+        notObject: 'The input must be a JSON object, between braces.',
+      },
+      fromRun: {
+        added: 'Test case added to draft v{version}. Review its expected output on the skill\'s page.',
+        noDraft: 'This skill has no open draft: a published version does not change. Create a new version from the skill\'s page, then try again.',
+        taskSkill: 'A task skill has no test case.',
+        runFailed: 'Only a successful run can become a test case.',
+      },
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -1990,6 +2021,8 @@ export default {
       markGolden: 'Mark as reference',
       unmarkGolden: 'Remove reference',
       compare: 'Compare with reference',
+      makeTestCase: 'Make it a test case',
+      makeTestCaseHint: 'Adds this run\'s input, and its output as the expected output, to the test cases of the skill\'s open draft',
     },
     list: {
       empty: 'Create a scenario to test a skill with your expertise modules. No technical knowledge required.',
