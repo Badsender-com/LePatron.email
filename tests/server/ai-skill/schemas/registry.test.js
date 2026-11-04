@@ -72,6 +72,16 @@ describe('zod schema registry', () => {
     expect(result.success).toBe(false);
   });
 
+  // The subject may be set in the sending platform: the preheader then carries
+  // the main point of the email on its own.
+  it('preheaderGenInput accepts an email without a subject, not an empty one', () => {
+    const content = [{ role: 'text', text: 'Votre facture est disponible.' }];
+    expect(schemas.preheaderGenInput.safeParse({ content }).success).toBe(true);
+    expect(
+      schemas.preheaderGenInput.safeParse({ content, subject: '' }).success
+    ).toBe(false);
+  });
+
   // A bare `schemas[id]` lookup returned Object.prototype members as truthy
   // non-schemas, which then threw on .safeParse — while hasSchema next to it
   // guarded correctly.

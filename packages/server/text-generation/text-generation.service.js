@@ -26,8 +26,8 @@ const manifest = require('./skill-manifest.js');
  * gathers the email as the editor shows it, the email type when the mailing has
  * one, and the expertises of one scope, then hands them to a skill written by
  * consultants. Subject and preheader are two invocations: the preheader is built
- * from the subject the user picked, so the chaining lives here and in the
- * editor, never from one skill to another.
+ * from the subject the user picked when there is one, so the chaining lives here
+ * and in the editor, never from one skill to another.
  */
 
 // The expertise each invocation reads, as the manifest declares it: one
@@ -37,17 +37,18 @@ function expertiseCategories(scope) {
   return filter.categories;
 }
 
-// What the user may write into the prompt. The AI rate limit caps the request;
-// these keep the user's share of the prompt to an instruction, not a document.
-const MAX_BRIEF_LENGTH = 500;
+// What the user puts into the prompt: an instruction, the current subject or
+// preheader. The AI rate limit caps the request; these keep the user's share of
+// the prompt to a few lines, not a document.
+const MAX_USER_TEXT_LENGTH = 500;
 const MAX_AVOID_LENGTH = 300;
 const MAX_AVOID_ITEMS = 30;
 
 const optionalText = z
   .string()
-  .max(MAX_BRIEF_LENGTH)
-  .optional()
-  // An empty field is no instruction: the skill should not read "".
+  .max(MAX_USER_TEXT_LENGTH)
+  .nullish()
+  // An empty or null field says nothing: the skill should not read "".
   .transform((value) => (value?.trim() ? value : undefined));
 
 const requestSchema = z.object({
@@ -72,7 +73,9 @@ const subjectRequestSchema = requestSchema.extend({
 });
 
 const preheaderRequestSchema = requestSchema.extend({
-  subject: z.string().refine((text) => text.trim().length > 0),
+  // Absent when the subject is set in the sending platform: the skill then
+  // makes the preheader carry the main point of the email.
+  subject: optionalText,
   currentPreheader: optionalText,
 });
 
@@ -243,11 +246,12 @@ async function generateSubjects({ user, body }) {
 }
 
 /**
- * Three preheader proposals that complement the subject the user picked.
+ * Three preheader proposals that complement the subject the user picked, or
+ * carry the main point of the email when it has no subject yet.
  *
  * @param {Object} params
  * @param {Object} params.user the requesting user
- * @param {Object} params.body { mailingId, content, subject, currentPreheader?, brief?, avoid? }
+ * @param {Object} params.body { mailingId, content, subject?, currentPreheader?, brief?, avoid? }
  * @returns {Promise<{ proposals: Array, dropped: number }>}
  */
 async function generatePreheaders({ user, body }) {
@@ -284,7 +288,7 @@ async function generatePreheaders({ user, body }) {
   return screenProposals('preheader', result.output.proposals, {
     sources: [
       ...request.content.map((piece) => piece.text),
-      request.subject,
+      request.subject || '',
       request.currentPreheader || '',
     ],
     avoid: request.avoid,
