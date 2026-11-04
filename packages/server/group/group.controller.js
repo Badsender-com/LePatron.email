@@ -627,9 +627,14 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
-  // MCP turned off ends the group's connected applications: turning it back
-  // on must not revive them (ADR 0012). Read as saved, whatever was sent.
-  if ('enableMcp' in groupToUpdate && updatedGroup && !updatedGroup.enableMcp) {
+  // MCP access turned off, or the MCP module closed, ends the group's
+  // connected applications: turning it back on must not revive them (ADR 0012,
+  // ADR 0017). Read as saved, whatever was sent.
+  const mcpEnded =
+    updatedGroup &&
+    (('enableMcp' in groupToUpdate && !updatedGroup.enableMcp) ||
+      ('enableMcpModule' in groupToUpdate && !updatedGroup.enableMcpModule));
+  if (mcpEnded) {
     await forgetConnections({ _company: req.params.groupId });
   }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));

@@ -131,8 +131,7 @@ describe('PUT /groups/:groupId — MCP module', () => {
   });
 });
 
-// Turned on by #1397 (closing it revokes, after a confirmation)
-describe.skip('PUT /groups/:groupId — closing and opening the MCP module', () => {
+describe('PUT /groups/:groupId — closing and opening the MCP module', () => {
   it("revokes the group's connected applications when closed", async () => {
     given({ enableMcpModule: true, enableMcp: true });
 
