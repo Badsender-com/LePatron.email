@@ -4,10 +4,13 @@ const { AIFeatureConfigs, Integrations } = require('../common/models.common');
 const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const AIFeatureTypes = require('../constant/ai-feature-type.js');
+
+const { AIFeatureTypeValues } = AIFeatureTypes;
 const { validateFeatureConfig } = require('./ai-feature.validation.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
+const ProviderFactory = require('../integration-providers/provider-factory.js');
 
 /**
  * Reasons a feature cannot be used. Consumers that only need "usable or not"
@@ -105,7 +108,12 @@ async function validateIntegrationOwnership({ integrationId, groupId }) {
   if (integration.type !== IntegrationTypes.AI) {
     throw new BadRequest(ERROR_CODES.UNAUTHORIZED_INTEGRATION_TYPE);
   }
+  return integration;
 }
+
+// The features that run skills, so need an engine that writes text: a
+// translation-only integration (DeepL) would fail every invocation.
+const TEXT_FEATURES = [AIFeatureTypes.SKILL, AIFeatureTypes.TEXT_GENERATION];
 
 // Config sub-fields that can be partially updated via $set
 const FEATURE_CONFIG_FIELDS = [
@@ -137,7 +145,16 @@ async function updateFeatureConfig({
   }
 
   if (integrationId) {
-    await validateIntegrationOwnership({ integrationId, groupId });
+    const integration = await validateIntegrationOwnership({
+      integrationId,
+      groupId,
+    });
+    if (
+      TEXT_FEATURES.includes(featureType) &&
+      !ProviderFactory.canGenerateText(integration.provider)
+    ) {
+      throw new BadRequest(ERROR_CODES.INTEGRATION_CANNOT_GENERATE_TEXT);
+    }
   }
 
   validateFeatureConfig(featureConfig);
