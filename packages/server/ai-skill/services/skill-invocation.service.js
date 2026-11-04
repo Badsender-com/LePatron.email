@@ -94,6 +94,9 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * @param {boolean} [params.options.skipLogging=false] — internal flag for the test runner
  * @param {boolean} [params.options.everyAudience=false] — use the skill whatever
  *   its audience, as the platform company does: the super admins' playground
+ * @param {boolean} [params.options.unpublished=false] — also reach a skill
+ *   never published yet, with a pinned version: the publication guard replays
+ *   a feature skill before its first publication (ADR 0019)
  * @returns {Promise<{ output: any, invocationId: string, resolvedConfig: Object, tokenUsage: Object, latencyMs: number }>}
  */
 async function invoke({
@@ -110,7 +113,13 @@ async function invoke({
 
   // ─── 1. Load the skill and pick the version (pinned or active) ─────────
   const skill = await LePatronSkills.findOne(
-    { skillId, status: SkillStatuses.ACTIVE },
+    {
+      skillId,
+      status:
+        options.unpublished && versionRef
+          ? { $ne: SkillStatuses.ARCHIVED }
+          : SkillStatuses.ACTIVE,
+    },
     {
       skillId: 1,
       audience: 1,

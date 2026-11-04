@@ -10,11 +10,14 @@
  * more than a loop, and it follows a change of the declarations at once.
  */
 
+const createError = require('http-errors');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const manifestRegistry = require('./manifest-registry.js');
-
-const KINDS = ['skill', 'expertise'];
+const { asList, manifestsUsing, describeFeature } = require('./feature-use.js');
+const { planReplay, replay } = require('./publication-guard.js');
+const { findVersion } = require('./version-helpers.js');
 
 // What an expertise filter is matched against.
 const MATCHED_ATTRIBUTES = {
@@ -27,24 +30,6 @@ const MATCHED_ATTRIBUTES = {
 };
 const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
 
-function asList(value) {
-  return Array.isArray(value) ? value : [];
-}
-
-function declaresUse(manifest, kind, entity) {
-  if (kind === 'skill') {
-    return asList(manifest.usedSkills).includes(entity.skillId);
-  }
-  if (asList(manifest.usedExpertise).includes(entity.expertiseId)) {
-    return true;
-  }
-  // Only a stored expertise has the attributes a filter is matched against.
-  if (!entity.category) return false;
-  return asList(manifest.expertiseFilters).some((filter) =>
-    manifestRegistry.filterMatchesExpertise(filter, entity)
-  );
-}
-
 /**
  * The features that use a skill or an expertise, from their declarations.
  *
@@ -54,16 +39,7 @@ function declaresUse(manifest, kind, entity) {
  * @returns {Array<{ featureType: string, description: string }>}
  */
 function featuresUsing(kind, entity) {
-  if (!KINDS.includes(kind) || !entity) return [];
-  // A feature loads only active expertises, and calls no archived skill.
-  if (entity.status === SkillStatuses.ARCHIVED) return [];
-  return manifestRegistry
-    .listManifests()
-    .filter((manifest) => declaresUse(manifest, kind, entity))
-    .map((manifest) => ({
-      featureType: manifest.featureType,
-      description: manifest.description || manifest.featureType,
-    }));
+  return manifestsUsing(kind, entity).map(describeFeature);
 }
 
 /**
@@ -127,7 +103,155 @@ function withUsedBy(kind, entity) {
   return { ...record, usedBy: featuresUsing(kind, record) };
 }
 
+// ── The guard on a publication (#1430) ─────────────────────────────────
+
+const ID_FIELDS = { skill: 'skillId', expertise: 'expertiseId' };
+const MODELS = { skill: LePatronSkills, expertise: Expertises };
+
+// Required where used: the skill and expertise services read this module
+// for their list filter, and a top-level require would be circular.
+function serviceFor(kind) {
+  return kind === 'skill'
+    ? require('./skill.service.js')
+    : require('./expertise.service.js');
+}
+
+// The stored skill or expertise and the features that use it; the version
+// asked for must exist.
+async function loadUse({ kind, id, version }) {
+  if (!ID_FIELDS[kind]) throw createError(400, `Unknown kind "${kind}"`);
+  const doc = await MODELS[kind].findOne({ [ID_FIELDS[kind]]: id }).lean();
+  if (!doc) throw createError(404, `${kind} "${id}" not found`);
+  if (!findVersion(doc, version.major, version.minor)) {
+    throw createError(
+      404,
+      `Version ${version.major}.${version.minor} not found`
+    );
+  }
+  return { doc, manifests: manifestsUsing(kind, doc) };
+}
+
+/**
+ * What the guard would replay, without calling the AI: the features that use
+ * what is published, the number of AI calls, the feature skills without a
+ * test case. Read before the person starts the replay.
+ */
+async function planPublication({ kind, id, version }) {
+  const { manifests } = await loadUse({ kind, id, version });
+  if (!manifests.length) return { usedBy: [], calls: 0, missing: [] };
+  const plan = await planReplay({ kind, id, version, manifests });
+  return {
+    usedBy: manifests.map(describeFeature),
+    calls: plan.calls,
+    missing: plan.missing,
+  };
+}
+
+/**
+ * Replay the test cases of the feature skills a version reaches, with the
+ * active version and with the new one. Publishes nothing.
+ *
+ * @returns {Promise<{ usedBy, calls, cases, missing }>}
+ */
+async function guardPublication({ kind, id, version }) {
+  const { manifests } = await loadUse({ kind, id, version });
+  if (!manifests.length)
+    return { usedBy: [], calls: 0, cases: [], missing: [] };
+  const plan = await planReplay({ kind, id, version, manifests });
+  const cases = await replay({ kind, id, version, runs: plan.runs });
+  return {
+    usedBy: manifests.map(describeFeature),
+    calls: plan.calls,
+    cases,
+    missing: plan.missing,
+  };
+}
+
+const isGuard = (guard) => !!guard && Array.isArray(guard.cases);
+
+// A case fails when its new output is missing or breaks the contract.
+const failedCases = (guard) =>
+  guard.cases.filter(
+    (c) =>
+      !c.after || c.after.error || (c.contract && c.contract.after === false)
+  ).length;
+
+async function record(
+  { kind, id, version, guard, application },
+  user,
+  decision
+) {
+  const service = serviceFor(kind);
+  const doc = await (kind === 'skill'
+    ? service.getSkill(id)
+    : service.getExpertise(id));
+  const target = findVersion(doc, version.major, version.minor);
+  target.guardHistory = [
+    ...asList(target.guardHistory),
+    {
+      decision,
+      by: user ? user.id : null,
+      application: application || null,
+      at: new Date(),
+      cases: guard.cases.length,
+      failed: failedCases(guard),
+      missing: asList(guard.missing),
+    },
+  ];
+  await doc.save();
+  return doc;
+}
+
+/**
+ * Publish a draft. A version a feature uses is published only once its guard
+ * has run, whatever it showed: the guard warns, it never blocks. The decision
+ * is recorded with the version.
+ *
+ * @param {{ kind, id, version: { major, minor }, guard?, payload?,
+ *   application? }} params `payload`: changelog and release notes, and for a
+ *   skill the opening the publication asks for (`openToAll`,
+ *   `openExpertiseIds`, ADR 0013); `application`: the assistant that asked,
+ *   if any
+ * @param {{ id: string }} user
+ * @returns {Promise<{ doc: Object, warnings: Object[] }>} the published
+ *   skill or expertise, and the warnings of a skill's opening
+ * @throws {HttpError} 409 `SKILL_PUBLICATION_GUARD_REQUIRED`, with what the
+ *   guard would replay (`usedBy`, `calls`, `missing`)
+ */
+async function publishVersion(params, user) {
+  const { kind, id, version, guard, payload } = params;
+  const { manifests } = await loadUse({ kind, id, version });
+  if (manifests.length && !isGuard(guard)) {
+    const plan = await planPublication({ kind, id, version });
+    throw createError(409, ERROR_CODES.SKILL_PUBLICATION_GUARD_REQUIRED, plan);
+  }
+  const published = await serviceFor(kind).activateVersion(
+    id,
+    version,
+    payload || {},
+    user ? user.id : undefined
+  );
+  // A skill's publication answers the warnings of its opening too.
+  const { skill, warnings = [] } =
+    kind === 'skill' ? published : { skill: published };
+  if (!isGuard(guard)) return { doc: skill, warnings };
+  return { doc: await record(params, user, 'published'), warnings };
+}
+
+/** Record that the person cancelled after the guard. Publishes nothing. */
+async function cancelPublication(params, user) {
+  await loadUse(params);
+  if (!isGuard(params.guard)) {
+    throw createError(400, 'The guard that was cancelled is required');
+  }
+  return record(params, user, 'cancelled');
+}
+
 module.exports = {
+  cancelPublication,
+  guardPublication,
+  planPublication,
+  publishVersion,
   featuresUsing,
   idsUsedByFeatures,
   usedByFeatures,

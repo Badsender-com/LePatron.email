@@ -3,6 +3,7 @@
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
+const { GuardRecordSchema } = require('./guard-record.schema.js');
 const { parseSections } = require('../services/expertise-parser.service.js');
 const {
   SkillCategoryValues,
@@ -45,6 +46,7 @@ const ExpertiseVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+    guardHistory: { type: [GuardRecordSchema], default: [] },
   },
   { _id: false }
 );
