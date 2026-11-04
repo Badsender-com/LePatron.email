@@ -1,4 +1,8 @@
-import { isModuleLocked, isFlagEnabled } from '~/helpers/module-activation.js';
+import {
+  isModuleLocked,
+  isFlagEnabled,
+  canConnectApplications,
+} from '~/helpers/module-activation.js';
 import {
   CAPABILITIES,
   roleCan,
@@ -78,5 +82,32 @@ describe('the Email Builder settings of a selected group without the module', ()
     expect(
       isFlagEnabled('enableEmailBuilder', companyAdmin, withoutEmailBuilder)
     ).toBe(false);
+  });
+});
+
+// Connected applications need the MCP module and MCP access (ADR 0017), with
+// no exception for a super admin, who is shown its selected group.
+describe('canConnectApplications', () => {
+  it('is true when the group has the MCP module and MCP access', () => {
+    expect(
+      canConnectApplications({ enableMcpModule: true, enableMcp: true })
+    ).toBe(true);
+  });
+
+  it('is false when the MCP module is closed, whatever the access says', () => {
+    expect(
+      canConnectApplications({ enableMcpModule: false, enableMcp: true })
+    ).toBe(false);
+  });
+
+  it('is false when the access is off', () => {
+    expect(
+      canConnectApplications({ enableMcpModule: true, enableMcp: false })
+    ).toBe(false);
+  });
+
+  it('is false without a group, or before the flags are known', () => {
+    expect(canConnectApplications(null)).toBe(false);
+    expect(canConnectApplications({ name: 'Acme' })).toBe(false);
   });
 });
