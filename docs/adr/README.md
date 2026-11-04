@@ -6,7 +6,7 @@ Each file records one decision that is hard to reverse, surprising without conte
 - Format and criteria: [.claude/skills/domain-modeling/ADR-FORMAT.md](../../.claude/skills/domain-modeling/ADR-FORMAT.md).
 - Sequential numbering, `NNNN-slug.md`, in English. A reversed decision gets a new ADR; the old one is marked `superseded by ADR-NNNN`.
 - The repository is public: no client name, no unfixed vulnerability, no secret.
-- A number missing from the table belongs to an ADR of a feature branch not merged yet: 0003 and 0009 (quality control), 0010 (AI panel) and 0011 (spelling correction).
+- A number missing from the table belongs to an ADR of a feature branch not merged yet: 0003 and 0009 (quality control), 0010 (AI panel), 0011 (spelling correction), 0015 and 0016 (text generation).
 
 | ADR                                                                           | Decision                                                                                                                                                                                           | Status                       |
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
@@ -20,3 +20,4 @@ Each file records one decision that is hard to reverse, surprising without conte
 | [0012](./0012-mcp-server-inside-the-app-with-its-own-authorization-server.md) | The MCP server runs inside the app, with its own OAuth authorization server; a token is bound to one user and one company; it reads, and writes only feedback and the platform's drafts (ADR 0014) | proposed                     |
 | [0013](./0013-skills-are-feature-or-task-and-have-an-audience.md)             | A skill is a feature skill or a task skill, as its version says; skills and expertises have an audience, the platform company or every company, in the editor as through an assistant              | proposed                     |
 | [0014](./0014-the-badsender-team-drafts-skills-through-mcp.md)                | Holders of platform.manage draft skills and expertises through MCP, with the skills:write scope; drafts only, never published from an assistant                                                    | proposed                     |
+| [0017](./0017-the-mcp-module-is-sold-mcp-access-is-the-company-s-choice.md)   | The MCP module is sold and opened by a super admin; MCP access stays the tech admin's switch; a company's users connect only when both are on                                                      | proposed                     |

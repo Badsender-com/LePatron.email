@@ -224,8 +224,13 @@ An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has a
 _UI_: Application connectée
 _Avoid_: Integration (the AI provider settings of a company), connector, client
 
+**MCP module**:
+What is sold to a company so that its users may connect applications: opened or closed by a super admin, like the other modules. Closed, the company's MCP access cannot be used, and its connected applications are revoked.
+_UI_: Module MCP
+_Avoid_: MCP subscription, MCP licence
+
 **MCP access**:
-The company's switch that lets its users connect applications. Off unless the company's tech admin or a super admin turns it on.
+The company's switch that lets its users connect applications, once the company has the MCP module. Off unless the company's tech admin or a super admin turns it on; opening the module does not turn it on.
 _UI_: Accès MCP
 _Avoid_: MCP subscription (MCP access is not what is sold)
 
