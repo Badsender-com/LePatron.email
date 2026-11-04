@@ -11,6 +11,7 @@ const {
   registerFindSkills,
 } = require('./mcp-skill-resources.js');
 const { registerAuthoringTools } = require('./mcp-authoring.js');
+const { registerPublicationTools } = require('./mcp-publication.js');
 const { registerUseDrafts } = require('./mcp-drafts.js');
 const { registerSubmitFeedback } = require('./mcp-feedback.js');
 const {
@@ -91,6 +92,8 @@ function createMcpServer({ authInfo } = {}) {
   // others never see the writing tools.
   if (hasScope(authInfo, WRITE_SCOPE)) {
     registerAuthoringTools(server);
+    // Publishing a draft, in two calls (ADR 0019).
+    registerPublicationTools(server);
     // Trying the drafts before publishing them (#1385).
     registerUseDrafts(server);
   }

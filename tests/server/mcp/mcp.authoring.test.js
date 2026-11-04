@@ -140,11 +140,12 @@ describe('authoring', () => {
       expect(answer.status).toBe('draft');
     });
 
-    it('offers no tool that publishes, archives, deletes or opens to clients', async () => {
+    // Publishing came with ADR 0019 (publish_draft, #1435), in two calls.
+    it('offers no tool that archives, deletes or opens to clients', async () => {
       const names = await toolNames(await asAuthor());
 
       names.forEach((name) =>
-        expect(name).not.toMatch(/activate|publish|archive|delete|audience/)
+        expect(name).not.toMatch(/archive|delete|audience/)
       );
     });
 
