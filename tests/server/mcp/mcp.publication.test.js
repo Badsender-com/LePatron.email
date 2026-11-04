@@ -41,7 +41,7 @@ describe('publishing and opening from an assistant', () => {
   const toolsOf = async (client) => (await client.listTools()).tools;
 
   // Turned on by #1434 (opening and closing an audience from an assistant)
-  describe.skip('the audience', () => {
+  describe('the audience', () => {
     it('is changed by a tool listed only with the skills:write scope', async () => {
       const reader = await harness.connectAs(f.ALICE, {
         group: f.PLATFORM_GROUP,

@@ -144,8 +144,8 @@ describe('the grammar of every tool', () => {
     });
   });
 
-  // They rewrite the open draft.
-  it('says the tools that rewrite a draft are destructive', () => {
+  // They rewrite the open draft, or change who reads a skill or an expertise.
+  it('says the tools that rewrite a draft or an audience are destructive', () => {
     const destructive = tools
       .filter((tool) => tool.annotations.destructiveHint)
       .map((tool) => tool.name)
@@ -154,6 +154,7 @@ describe('the grammar of every tool', () => {
     expect(destructive).toEqual([
       'propose_expertise_change',
       'propose_skill_change',
+      'set_audience',
     ]);
   });
 
