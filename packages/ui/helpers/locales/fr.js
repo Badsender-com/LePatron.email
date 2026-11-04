@@ -1658,6 +1658,15 @@ export default {
     },
   },
   aiSkills: {
+    export: {
+      all: 'Tout exporter',
+      selection: 'Exporter la sélection',
+      selected: '{count} élément sélectionné | {count} éléments sélectionnés',
+      consumed: 'Avec les expertises que consomment ces skills :',
+      remove: 'Retirer {id} de l\'export',
+      done: 'Export téléchargé.',
+      failed: 'L\'export a échoué.',
+    },
     feedback: {
       tab: 'Avis',
       caption:

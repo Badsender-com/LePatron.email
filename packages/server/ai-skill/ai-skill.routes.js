@@ -6,10 +6,13 @@ const { GUARD_ADMIN } = require('../account/auth.guard.js');
 const skill = require('./controllers/skill.controller.js');
 const expertise = require('./controllers/expertise.controller.js');
 const invocation = require('./controllers/invocation.controller.js');
+const skillsExport = require('./controllers/skills-export.controller.js');
 
 const skillsRouter = express.Router();
 skillsRouter.use(GUARD_ADMIN);
 
+// The skills export (ADR 0018), before the routes keyed by a skill id.
+skillsRouter.post('/export', skillsExport.exportFile);
 skillsRouter.get('/schemas', skill.listSchemas);
 skillsRouter.get('/schemas/:schemaId/descriptor', skill.getSchemaDescriptor);
 skillsRouter.get('/', skill.listSkills);

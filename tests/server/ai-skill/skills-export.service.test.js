@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // The skills export (ADR 0018, epic #1406): a super admin exports the active
@@ -36,18 +39,18 @@ const ORIGIN = 'https://source.lepatron.example';
 const TASK_SKILL = {
   _id: '507f1f77bcf86cd799439903',
   skillId: WRITE_SUBJECT,
-  nature: 'task',
   title: 'Write a subject line',
   description: 'Writes the subject line of an email',
   category: 'redaction',
   status: 'ACTIVE',
-  audience: 'subscribers',
+  audience: 'all',
   activeVersion: { major: 1, minor: 0 },
   versions: [
     {
       versionMajor: 1,
       versionMinor: 0,
       status: 'ACTIVE',
+      nature: 'task',
       procedure: '## Steps\n\n1. Read the brief.\n2. Write three subjects.',
       consumedExpertiseIds: [SUBJECT_LINES, SPAM_WORDS],
     },
@@ -57,7 +60,7 @@ const TASK_SKILL = {
 const SOURCE = {
   ...f.SEED,
   expertises: f.EXPERTISES.map((e) =>
-    e.expertiseId === SUBJECT_LINES ? { ...e, audience: 'subscribers' } : e
+    e.expertiseId === SUBJECT_LINES ? { ...e, audience: 'all' } : e
   ),
   skills: [...f.SKILLS, TASK_SKILL],
 };
@@ -93,8 +96,7 @@ describe('the skills export', () => {
   const exportOf = (selection) =>
     exportSkills(selection, { user: ALICE, origin: ORIGIN });
 
-  // Turned on by #1409 (a super admin exports a selection or everything)
-  describe.skip('exporting', () => {
+  describe('exporting', () => {
     it('says what it is, where it comes from, when and by whom', async () => {
       const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
 
