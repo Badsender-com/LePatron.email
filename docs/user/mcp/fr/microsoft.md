@@ -50,12 +50,12 @@ Dans **Add tool**, choisir **Create a new connection** : l'écran de consentemen
 
 ### Créer un client en mode manuel (admin technique)
 
-1. Dans LePatron, ouvrir **Paramètres › Fonctionnalités IA**, puis le lien **Gérer les clients MCP** de la section Accès MCP, puis **Ajouter un client**.
+1. Dans LePatron, ouvrir **Paramètres › Fonctionnalités IA**, puis, dans la section Accès MCP, le lien **Gérer** de la ligne « Clients enregistrés à la main », puis **Ajouter un client**.
 2. Renseigner :
    - le nom, qui s'affichera sur l'écran de consentement ;
    - l'URL de redirection : la callback URL donnée par Copilot Studio ;
-   - l'envoi du secret : garder « Dans le corps de la requête » sauf indication contraire.
-3. **Copier le secret tout de suite** : il ne sera plus jamais affiché. S'il est perdu, supprimer le client et en créer un autre.
+   - l'envoi du secret, sous « Réglage avancé » : garder « Dans le corps de la requête » sauf indication contraire.
+3. **Copier le secret tout de suite** : il ne sera plus jamais affiché, et la fenêtre ne se ferme qu'une fois qu'il est copié. S'il est perdu, supprimer le client et en créer un autre.
 
 Ce client appartient à votre entreprise : seuls ses utilisateurs peuvent se connecter avec. Le supprimer coupe aussitôt toutes les connexions qui passent par lui.
 
