@@ -195,8 +195,9 @@ describe('every route that writes', () => {
       (match) => match[1]
     );
 
-    // Static files and their cache headers, no route that writes.
-    const notRouters = ['/api/documentation'];
+    // Static files and their cache headers, and the body parser of the skills
+    // import (its routes are the skills router's): no route that writes.
+    const notRouters = ['/api/documentation', '/api/ai-skills/import'];
 
     expect(
       mounted.filter((mount) => !notRouters.includes(mount)).sort()

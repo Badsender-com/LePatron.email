@@ -83,7 +83,9 @@ async function getFacets() {
   return { scopes: clean(scopes), emailTypes: clean(emailTypes) };
 }
 
-async function createExpertise(data, userId) {
+// `initialVersion`, when given, replaces the blank 1.0 draft: an imported
+// version, written with the document in one go (ADR 0018).
+async function createExpertise(data, userId, { initialVersion } = {}) {
   const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
@@ -105,18 +107,31 @@ async function createExpertise(data, userId) {
     // Seed a v1.0 DRAFT (empty content — expertise has no schemas) so the
     // author lands straight in the version editor, parity with skills (§4).
     versions: [
-      {
-        versionMajor: 1,
-        versionMinor: 0,
-        status: 'DRAFT',
-        ...blankVersionContent(),
-        changelog: '',
-        releaseNotes: '',
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      },
+      initialVersion
+        ? {
+            versionMajor: initialVersion.versionMajor,
+            versionMinor: initialVersion.versionMinor,
+            status: 'DRAFT',
+            ...versioned.cloneVersionContent(initialVersion),
+            changelog: initialVersion.changelog || '',
+            releaseNotes: initialVersion.releaseNotes || '',
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          }
+        : {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            ...blankVersionContent(),
+            changelog: '',
+            releaseNotes: '',
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          },
     ],
   };
   try {

@@ -17,7 +17,7 @@ export default {
     expertiseIds: { type: Array, default: () => [] },
   },
   data() {
-    return { consumed: [], removed: [], exporting: false };
+    return { consumed: [], removed: [], exporting: false, reads: 0 };
   },
   computed: {
     count() {
@@ -37,6 +37,9 @@ export default {
     // The list does not carry versions: a skill's active version says
     // whether it is a task skill (ADR 0013), and which expertises it consumes.
     async readConsumed() {
+      // Answers may come back out of order: only the last read counts.
+      this.reads += 1;
+      const read = this.reads;
       try {
         const docs = await Promise.all(
           this.skills.map((skill) =>
@@ -52,9 +55,9 @@ export default {
             ? active.consumedExpertiseIds || []
             : [];
         });
-        this.consumed = [...new Set(ids)];
+        if (read === this.reads) this.consumed = [...new Set(ids)];
       } catch (err) {
-        this.consumed = [];
+        if (read === this.reads) this.consumed = [];
       }
     },
     async exportSelection() {
