@@ -91,7 +91,7 @@ export default {
         this.exportingAll = false;
       }
     },
-    // The lists show the new drafts.
+    // The lists show the new drafts, or what a follow of production brought.
     onImported() {
       if (this.$refs.skillsTab) this.$refs.skillsTab.fetchData();
       if (this.$refs.expertiseTab) this.$refs.expertiseTab.fetchData();
@@ -176,7 +176,7 @@ export default {
             <bs-ai-invocations-tab />
           </v-tab-item>
           <v-tab-item value="sync">
-            <bs-ai-sync-tab />
+            <bs-ai-sync-tab @followed="onImported" />
           </v-tab-item>
         </v-tabs-items>
       </div>

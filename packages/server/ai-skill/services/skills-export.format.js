@@ -179,4 +179,11 @@ const VERSION_FIELDS = {
   skill: versionFieldsOf(SKILL),
 };
 
-module.exports = { FORMAT, FILE, readSkillsExport, VERSION_FIELDS };
+module.exports = {
+  FORMAT,
+  FILE,
+  readSkillsExport,
+  VERSION_FIELDS,
+  // What a file holds of one item, for production's answer to a copy.
+  ITEM_SCHEMAS: { expertise: EXPERTISE, skill: SKILL },
+};

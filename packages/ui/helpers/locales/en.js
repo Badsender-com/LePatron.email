@@ -1694,6 +1694,32 @@ export default {
       failed: 'The export failed.',
       failedBecause: 'The export failed: {reason}',
     },
+    follow: {
+      title: 'Follow production',
+      description:
+        'This instance is a copy: it receives production\'s skills and expertises, as clients live them. What exists only here stays, and a newer local draft is never overwritten.',
+      production: 'Production: {origin}',
+      now: 'Follow now',
+      running: 'Following…',
+      never: 'Production has never been followed yet.',
+      last: 'Last followed on {date} by {by}',
+      loadError: 'The follow of production could not be loaded.',
+      done: 'Production followed.',
+      statuses: {
+        succeeded: 'Succeeded',
+        partial: 'Partly succeeded',
+        failed: 'Failed',
+      },
+      outcomes: {
+        created: '{count} added',
+        updated: '{count} updated',
+        upToDate: '{count} already up to date',
+        kept: '{count} kept on the copy',
+        failed: '{count} failed',
+      },
+      failuresLabel: 'Failed items',
+      nothingWritten: 'Nothing was written.',
+    },
     readTokens: {
       title: 'Read tokens',
       description:

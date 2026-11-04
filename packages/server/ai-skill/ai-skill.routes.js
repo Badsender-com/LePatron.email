@@ -9,6 +9,7 @@ const expertise = require('./controllers/expertise.controller.js');
 const invocation = require('./controllers/invocation.controller.js');
 const skillsExport = require('./controllers/skills-export.controller.js');
 const skillsSource = require('./controllers/skills-source.controller.js');
+const skillsFollow = require('./controllers/skills-follow.controller.js');
 const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 
 const skillsRouter = express.Router();
@@ -22,6 +23,9 @@ skillsRouter.post('/import', skillsExport.importFile);
 skillsRouter.get('/read-tokens', skillsSource.listTokens);
 skillsRouter.post('/read-tokens', skillsSource.createToken);
 skillsRouter.delete('/read-tokens/:tokenId', skillsSource.revokeToken);
+// A copy following production, on demand.
+skillsRouter.get('/follow', skillsFollow.showFollow);
+skillsRouter.post('/follow', skillsFollow.followNow);
 
 // A skills export is 5 MB at most. Mounted by the app on the import routes
 // before its own parser, which reads up to 50 MB: once a body is read, no

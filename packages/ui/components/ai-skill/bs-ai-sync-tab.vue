@@ -9,13 +9,16 @@ import copyToClipboard from '~/helpers/copy-to-clipboard.js';
 import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field';
+import BsAiFollowProduction from '~/components/ai-skill/bs-ai-follow-production.vue';
 
 // Production's read tokens (ADR 0019): a copy (staging, development) follows
 // this instance's skills and expertises with one. A token is shown once, at
-// its creation, and kept nowhere in the page after.
+// its creation, and kept nowhere in the page after. On a copy, the follow of
+// production comes first.
 export default {
   name: 'BsAiSyncTab',
   components: {
+    BsAiFollowProduction,
     BsModalForm,
     BsModalConfirm,
     BsTextField,
@@ -152,6 +155,8 @@ export default {
 
 <template>
   <div class="bs-ai-sync">
+    <bs-ai-follow-production @followed="$emit('followed')" />
+
     <div class="bs-ai-sync__header">
       <div>
         <h2 class="bs-ai-sync__title">

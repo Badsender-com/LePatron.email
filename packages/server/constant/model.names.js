@@ -32,6 +32,7 @@ module.exports = Object.freeze({
   AISkillInvocationModel: 'AISkillInvocation',
   // A copy following production (ADR 0019)
   SkillsReadTokenModel: 'SkillsReadToken',
+  SkillsFollowModel: 'SkillsFollow',
   // AI Playground
   AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
   AIPlaygroundRunModel: 'AIPlaygroundRun',
