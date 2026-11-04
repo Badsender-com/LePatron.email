@@ -16,7 +16,10 @@ const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const {
   SkillStatuses,
   SkillNatures,
+  SkillNatureValues,
+  SkillCategoryValues,
   SkillIdRegex,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const {
   findActiveVersion,
@@ -336,4 +339,108 @@ async function previewImport(json) {
   return { origin, exportedAt, exportedBy, items };
 }
 
-module.exports = { exportSkills, readSkillsExport, previewImport, FORMAT };
+const SERVICES = { expertise: expertiseService, skill: skillService };
+
+// What the services would refuse only once halfway: said before anything is
+// written for the item.
+function assertImportable(kind, item) {
+  if (!SkillCategoryValues.includes(item.category)) {
+    throw createError(400, `Unknown category "${item.category}".`);
+  }
+  if (kind === 'skill' && !SkillNatureValues.includes(item.nature)) {
+    throw createError(400, `Unknown nature "${item.nature}".`);
+  }
+}
+
+// A new item: the document, as the back office creates one, then its
+// version at the source's number in place of the blank 1.0 draft a creation
+// seeds. Nothing opened to the outside, owned by the person importing.
+async function create(kind, item, userId) {
+  const { idField } = ENTITIES[kind];
+  const service = SERVICES[kind];
+  const { version, ...data } = item;
+  const created =
+    kind === 'skill'
+      ? await service.createSkill(
+          { ...data, audience: Audiences.PLATFORM },
+          userId
+        )
+      : await service.createExpertise(
+          { ...data, audience: Audiences.PLATFORM },
+          userId
+        );
+  await service.deleteVersion(created[idField], { major: 1, minor: 0 });
+  await service.createVersionAt(item[idField], version, version, userId);
+}
+
+/**
+ * Imports the chosen items of a skills export as drafts (ADR 0018):
+ * expertises first, then skills, each on its own, so one failing item stops
+ * nothing else. A chosen item the preview does not let through is skipped,
+ * with its reason. Each imported version keeps the source's number; the
+ * active version here keeps serving until a person publishes the draft.
+ *
+ * @param {Object} json the file
+ * @param {{ expertiseIds?: string[], skillIds?: string[] }} chosen
+ * @param {{ user: { id: string } }} context
+ * @returns {Promise<{ created, updated, skipped, failed }>} each a list of
+ *   `{ kind, id, version }`, with a `reason` when skipped and a `message`
+ *   when failed
+ */
+async function importSkills(
+  json,
+  { expertiseIds = [], skillIds = [] },
+  { user }
+) {
+  const file = readSkillsExport(json);
+  const { items } = await previewImport(file);
+  const chosen = { expertise: expertiseIds, skill: skillIds };
+  const report = { created: [], updated: [], skipped: [], failed: [] };
+
+  for (const kind of KINDS) {
+    const { idField } = ENTITIES[kind];
+    const wanted = file[listOf(kind)].filter((item) =>
+      chosen[kind].includes(item[idField])
+    );
+    for (const item of wanted) {
+      const id = item[idField];
+      const entry = { kind, id, version: labelOf(item.version) };
+      const preview = items.find((p) => p.kind === kind && p.id === id);
+      if (preview.state !== 'new' && preview.state !== 'update') {
+        report.skipped.push({
+          ...entry,
+          reason: preview.reason || preview.state,
+        });
+        continue; // eslint-disable-line no-continue
+      }
+      try {
+        assertImportable(kind, item);
+        if (preview.state === 'new') {
+          // eslint-disable-next-line no-await-in-loop
+          await create(kind, item, user.id);
+          report.created.push(entry);
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          await SERVICES[kind].createVersionAt(
+            id,
+            item.version,
+            item.version,
+            user.id
+          );
+          report.updated.push(entry);
+        }
+      } catch (err) {
+        report.failed.push({ ...entry, message: err.message });
+      }
+    }
+  }
+  return report;
+}
+
+module.exports = {
+  exportSkills,
+  readSkillsExport,
+  previewImport,
+  importSkills,
+  FORMAT,
+};

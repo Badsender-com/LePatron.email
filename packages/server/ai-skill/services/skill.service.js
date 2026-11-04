@@ -78,6 +78,8 @@ async function createSkill(data, userId) {
     // Explicit rather than left to the schema: a new skill reaches the
     // platform company only, until it is opened (ADR 0013).
     audience: data.audience || Audiences.PLATFORM,
+    // Not served to assistants until someone decides it (ADR 0013).
+    servedToAssistants: false,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },

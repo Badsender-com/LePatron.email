@@ -6,6 +6,7 @@ const createError = require('http-errors');
 const {
   exportSkills,
   previewImport,
+  importSkills,
 } = require('../services/skills-export.service.js');
 const { siteOrigin } = require('../../email-templates/email-template.js');
 
@@ -54,4 +55,15 @@ const previewFile = asyncHandler(async (req, res) => {
   res.json(await previewImport(req.body));
 });
 
-module.exports = { exportFile, previewFile, capFileSize };
+/**
+ * POST /api/ai-skills/import: the chosen items of the file (`file`,
+ * `expertiseIds`, `skillIds`) imported as drafts; answers the report.
+ */
+const importFile = asyncHandler(async (req, res) => {
+  const { file, expertiseIds, skillIds } = req.body || {};
+  res.json(
+    await importSkills(file, { expertiseIds, skillIds }, { user: req.user })
+  );
+});
+
+module.exports = { exportFile, previewFile, importFile, capFileSize };

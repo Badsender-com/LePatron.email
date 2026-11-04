@@ -154,8 +154,7 @@ describe('previewing through the API', () => {
   });
 });
 
-// Turned on by #1411 (import the chosen items as drafts, with a report)
-describe.skip('importing through the API', () => {
+describe('importing through the API', () => {
   let file;
   beforeEach(async () => {
     store.seed(f.SEED);

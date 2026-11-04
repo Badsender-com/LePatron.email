@@ -18,6 +18,7 @@ skillsRouter.post(
   skillsExport.capFileSize,
   skillsExport.previewFile
 );
+skillsRouter.post('/import', skillsExport.capFileSize, skillsExport.importFile);
 skillsRouter.get('/schemas', skill.listSchemas);
 skillsRouter.get('/schemas/:schemaId/descriptor', skill.getSchemaDescriptor);
 skillsRouter.get('/', skill.listSkills);
