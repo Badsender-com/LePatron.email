@@ -36,10 +36,12 @@ const USER_FIELDS = '_id name email lang role _company isDeactivated';
 // What the handlers read of the company: never its secrets. Whether it
 // allows retex, and how long its logs are kept, for a feedback. The rights on
 // its mailings are the search's, which reads what it needs itself.
-const GROUP_FIELDS = '_id enableMcp isPlatform allowRetex logRetentionDays';
+const GROUP_FIELDS =
+  '_id enableMcpModule enableMcp isPlatform allowRetex logRetentionDays';
 
 const NO_ACCOUNT = 'This account can no longer use LePatron.';
 const NO_COMPANY = 'This connection is not bound to a company of this account.';
+const NO_MCP_MODULE = 'This company has no MCP module.';
 const NO_MCP_ACCESS = 'This company has no MCP access to LePatron.';
 const FAILED = 'LePatron could not answer this request. Try again later.';
 
@@ -196,10 +198,10 @@ function toRequestUser(record, groupId) {
 /**
  * Who calls, checked again on every call (ADR 0012): the token's identity is
  * only what was true at consent. The user must still be active and in the
- * company the token is bound to, and the company must still have MCP access,
- * so a change in the app takes effect at the next call. The ids are strings
- * the server wrote in the token, checked as such before any query: an object
- * there would be a query operator.
+ * company the token is bound to, and the company must still have the MCP
+ * module (ADR 0017) and MCP access, so a change in the app takes effect at the
+ * next call. The ids are strings the server wrote in the token, checked as
+ * such before any query: an object there would be a query operator.
  *
  * @param {Object} [authInfo] the validated access token: its `scopes`, and
  *   `extra.userId` and `extra.groupId`
@@ -232,7 +234,9 @@ async function resolveIdentity(authInfo) {
   if (!permissions.canAccessGroup(user, groupId)) refuse(NO_COMPANY);
 
   const group = await Groups.findById(groupId).select(GROUP_FIELDS).lean();
-  if (!group || group.enableMcp !== true) refuse(NO_MCP_ACCESS);
+  // Sold apart from MCP access, with no way around it (ADR 0017).
+  if (!group || group.enableMcpModule !== true) refuse(NO_MCP_MODULE);
+  if (group.enableMcp !== true) refuse(NO_MCP_ACCESS);
   const drafts =
     hasScope(authInfo, WRITE_SCOPE) &&
     permissions.can(user, CAPABILITIES.PLATFORM_MANAGE) &&

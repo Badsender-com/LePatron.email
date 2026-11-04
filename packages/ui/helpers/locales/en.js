@@ -398,6 +398,11 @@ export default {
         configHint: 'Advanced configuration in dedicated tab',
         toggleMovedHint: 'Module activation is in the General tab',
       },
+      mcp: {
+        name: 'MCP',
+        description: 'Claude, ChatGPT and Copilot connected to LePatron',
+        configHint: 'The tech admin then turns access on in the AI features',
+      },
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',
@@ -680,6 +685,7 @@ export default {
       status: 'Status',
       esp: 'ESP',
       ai: 'AI',
+      mcp: 'MCP',
     },
     users: {
       passwordMail: 'Password\' email',

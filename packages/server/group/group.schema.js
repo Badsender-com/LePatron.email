@@ -168,9 +168,16 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // The MCP module (ADR 0017): what is sold to the company, opened by a
+    // super admin like the modules above. MCP access works only while it is open.
+    enableMcpModule: {
+      type: Boolean,
+      default: false,
+    },
     // MCP access (ADR 0012): the company's switch that lets its users connect
-    // an AI assistant. Off until a super admin or the company's tech admin
-    // turns it on; the update keeps it out of a company admin's reach.
+    // an AI assistant, once the company has the MCP module. Off until a super
+    // admin or the company's tech admin turns it on; the update keeps it out of
+    // a company admin's reach.
     enableMcp: {
       type: Boolean,
       default: false,

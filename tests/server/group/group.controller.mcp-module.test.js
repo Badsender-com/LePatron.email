@@ -4,15 +4,13 @@
 // by a super admin like the other modules. MCP access stays the tech admin's
 // switch; closing the module ends the company's connected applications.
 
-// The mocked database and collaborators of the company update, shared with
-// the tests of the company's switches; required before what it mocks.
 const {
-  storedGroup,
-  update,
   GROUP_ID,
-  superAdmin,
   companyAdmin,
   techAdmin,
+  superAdmin,
+  storedGroup,
+  update,
 } = require('./group-update.harness.js');
 const {
   forgetConnections,
@@ -29,8 +27,7 @@ beforeEach(() => {
   given({ enableMcpModule: false, enableMcp: false });
 });
 
-// Turned on by #1396 (a closed module refuses the assistants)
-describe.skip('PUT /groups/:groupId — MCP module', () => {
+describe('PUT /groups/:groupId — MCP module', () => {
   it('starts closed on a new group', () => {
     const mongoose = require('mongoose');
     const GroupSchema = require('../../../packages/server/group/group.schema.js');
