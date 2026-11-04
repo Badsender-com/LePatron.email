@@ -60,8 +60,11 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      // The MCP module as loaded: only closing an open one is asked.
+      loadedMcpModule: false,
       // The connected applications a closed MCP module is about to end.
       mcpConnections: 0,
+      checkingMcp: false,
     };
   },
   computed: {
@@ -111,6 +114,13 @@ export default {
     },
   },
   watch: {
+    // The page swaps the group for the saved one: what was saved is loaded.
+    group: {
+      immediate: true,
+      handler() {
+        this.loadedMcpModule = this.group?.enableMcpModule === true;
+      },
+    },
     useSamlAuthentication: {
       immediate: true,
       handler(newVal) {
@@ -146,11 +156,15 @@ export default {
     async onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
-      // Closing the MCP module revokes the company's connected applications
-      // (ADR 0017): asked first, as long as some are left. There can be none
-      // unless the module was open.
-      if (this.isEdit && this.group.id && !this.group.enableMcpModule) {
+      // Closing an open MCP module revokes the company's connected
+      // applications (ADR 0017): asked first, as long as some are left.
+      const closing =
+        this.isEdit && this.loadedMcpModule && !this.group.enableMcpModule;
+      if (closing) {
+        if (this.checkingMcp) return;
+        this.checkingMcp = true;
         this.mcpConnections = await this.connectionsCount();
+        this.checkingMcp = false;
         if (this.mcpConnections > 0) return this.$refs.closeMcpModal.open();
       }
       return this.save();
@@ -166,9 +180,9 @@ export default {
         return Infinity;
       }
     },
-    // Connections were left, so the module was open: the switch goes back.
+    // Not closed after all: the switch goes back to the module as loaded.
     keepMcpModule() {
-      this.$set(this.group, 'enableMcpModule', true);
+      this.$set(this.group, 'enableMcpModule', this.loadedMcpModule);
     },
     save() {
       const currentGroup = this.group;
@@ -434,8 +448,8 @@ export default {
           <v-btn
             elevation="0"
             color="accent"
-            :loading="loading"
-            :disabled="disabled || loading"
+            :loading="loading || checkingMcp"
+            :disabled="disabled || loading || checkingMcp"
             @click="onSubmit"
           >
             {{ $t('global.save') }}
