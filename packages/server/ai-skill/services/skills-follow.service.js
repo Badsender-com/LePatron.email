@@ -164,7 +164,13 @@ async function followProduction({ fetchExport, actor }) {
     answer = readProductionAnswer(await fetchExport());
   } catch (err) {
     return record(
-      { ...emptyReport(), status: 'failed', message: err.message },
+      {
+        ...emptyReport(),
+        status: 'failed',
+        // A word the page translates; anything unforeseen reads "unreachable".
+        reason: err.reason || 'unreachable',
+        message: err.message,
+      },
       { actor, startedAt }
     );
   }
@@ -206,6 +212,7 @@ async function lastFollow() {
   const count = (list) => (list || []).length;
   return {
     status: last.status,
+    reason: last.reason || null,
     message: last.message || null,
     origin: last.origin || '',
     by: last.by,

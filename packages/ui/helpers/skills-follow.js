@@ -20,6 +20,25 @@ export function followOutcomes(last) {
   })).filter(({ count }) => count > 0);
 }
 
+// Why a follow wrote nothing, as the server words it.
+export const FOLLOW_FAILURE_REASONS = [
+  'not_configured',
+  'invalid_address',
+  'unreachable',
+  'token_refused',
+  'production_error',
+  'unreadable',
+];
+
+// The words of a failed follow, in the reader's language: an unforeseen
+// reason reads as production out of reach.
+export function followFailureKey(last) {
+  const reason = last && last.reason;
+  return `aiSkills.follow.reasons.${
+    FOLLOW_FAILURE_REASONS.includes(reason) ? reason : 'unreachable'
+  }`;
+}
+
 const STATUS_COLORS = {
   succeeded: 'success',
   partial: 'warning',

@@ -38,7 +38,10 @@ describe('reaching production from a copy', () => {
 
   it('refuses an address that is not https, calling nothing', async () => {
     configure('http://production.example', 'lpsr_x');
-    await expect(source.fetchProductionExport()).rejects.toThrow(/https/);
+    await expect(source.fetchProductionExport()).rejects.toMatchObject({
+      message: expect.stringMatching(/https/),
+      reason: 'invalid_address',
+    });
     expect(mockGuardedFetch).not.toHaveBeenCalled();
   });
 
@@ -46,11 +49,43 @@ describe('reaching production from a copy', () => {
     configure('https://production.example/ignored', 'lpsr_x');
     mockGuardedFetch.mockResolvedValueOnce({ ok: false, status: 401 });
 
-    await expect(source.fetchProductionExport()).rejects.toThrow(
-      'Production refused the read token.'
-    );
+    await expect(source.fetchProductionExport()).rejects.toMatchObject({
+      message: 'Production refused the read token.',
+      reason: 'token_refused',
+    });
     const [url, options] = mockGuardedFetch.mock.calls[0];
     expect(url).toBe('https://production.example/api/skills-source/export');
     expect(options.headers.Authorization).toBe('Bearer lpsr_x');
+  });
+
+  // The page says why in the reader's language; the message stays for logs.
+  it.each([
+    [
+      'cannot be reached',
+      () => Promise.reject(new Error('Host DNS resolution failed')),
+      'unreachable',
+    ],
+    [
+      'answers an error',
+      () => Promise.resolve({ ok: false, status: 503 }),
+      'production_error',
+    ],
+    [
+      'answers something that is not JSON',
+      () =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.reject(new SyntaxError('Unexpected token')),
+        }),
+      'unreadable',
+    ],
+  ])('says why when production %s', async (_case, answer, reason) => {
+    configure('https://production.example', 'lpsr_x');
+    mockGuardedFetch.mockImplementationOnce(answer);
+
+    await expect(source.fetchProductionExport()).rejects.toMatchObject({
+      reason,
+    });
   });
 });

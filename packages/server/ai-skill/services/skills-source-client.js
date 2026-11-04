@@ -18,6 +18,12 @@ const EXPORT_PATH = '/api/skills-source/export';
 const MAX_BYTES = 10 * 1024 * 1024;
 const TIMEOUT_MS = 30 * 1000;
 
+// An error that says why in a word the page translates (`reason`), and in a
+// sentence the logs keep (`message`): never the token.
+function followError(reason, message) {
+  return Object.assign(new Error(message), { reason });
+}
+
 function sourceOf() {
   const { url, token } = config.skillsSource || {};
   return url && token ? { url, token } : null;
@@ -47,10 +53,13 @@ function exportUrlOf(source) {
   try {
     base = new URL(source.url);
   } catch (err) {
-    throw new Error("Production's address is not a valid URL.");
+    throw followError(
+      'invalid_address',
+      "Production's address is not a valid URL."
+    );
   }
   if (base.protocol !== 'https:') {
-    throw new Error("Production's address must use https.");
+    throw followError('invalid_address', "Production's address must use https.");
   }
   return new URL(EXPORT_PATH, base.origin).toString();
 }
@@ -63,26 +72,40 @@ function exportUrlOf(source) {
  */
 async function fetchProductionExport() {
   const source = sourceOf();
-  if (!source) throw new Error('This instance follows no production.');
-  const response = await guardedFetch(exportUrlOf(source), {
-    headers: {
-      Authorization: `Bearer ${source.token}`,
-      Accept: 'application/json',
-    },
-    timeoutMs: TIMEOUT_MS,
-    maxBytes: MAX_BYTES,
-    label: 'Production',
-  });
+  if (!source) {
+    throw followError('not_configured', 'This instance follows no production.');
+  }
+  const url = exportUrlOf(source);
+  let response;
+  try {
+    response = await guardedFetch(url, {
+      headers: {
+        Authorization: `Bearer ${source.token}`,
+        Accept: 'application/json',
+      },
+      timeoutMs: TIMEOUT_MS,
+      maxBytes: MAX_BYTES,
+      label: 'Production',
+    });
+  } catch (err) {
+    throw followError('unreachable', err.message);
+  }
   if (response.status === 401) {
-    throw new Error('Production refused the read token.');
+    throw followError('token_refused', 'Production refused the read token.');
   }
   if (!response.ok) {
-    throw new Error(`Production answered ${response.status}.`);
+    throw followError(
+      'production_error',
+      `Production answered ${response.status}.`
+    );
   }
   try {
     return await response.json();
   } catch (err) {
-    throw new Error('Production answered something that is not JSON.');
+    throw followError(
+      'unreadable',
+      'Production answered something that is not JSON.'
+    );
   }
 }
 
