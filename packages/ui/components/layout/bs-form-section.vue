@@ -20,6 +20,17 @@ export default {
       type: Boolean,
       default: false,
     },
+    // When true, the section is a card of its own: bordered, its icon on a
+    // tile, its content under a rule. For pages that stack features.
+    card: {
+      type: Boolean,
+      default: false,
+    },
+    // A card's icon tile is tinted while its feature is on, grey when off.
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
 };
 </script>
@@ -30,6 +41,8 @@ export default {
     :class="{
       'bs-form-section--last': last,
       'bs-form-section--folded': folded,
+      'bs-form-section--card': card,
+      'bs-form-section--idle': card && !active,
     }"
   >
     <div class="bs-form-section__header">
@@ -125,6 +138,62 @@ export default {
       padding-left: 0;
     }
   }
+}
+
+// A card: the page stacks them on a grey ground, 12px apart.
+.bs-form-section--card {
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+
+  &:last-of-type {
+    margin-bottom: 0;
+    border: 1px solid var(--gray-300);
+  }
+
+  .bs-form-section__header {
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0;
+    padding: 20px 24px;
+  }
+
+  .bs-form-section__icon {
+    width: 40px;
+    height: 40px;
+    margin-top: 0;
+    justify-content: center;
+    border-radius: 7px;
+    background: rgba(0, 172, 220, 0.12);
+    color: var(--v-accent-darken1);
+  }
+
+  .bs-form-section__title {
+    margin-bottom: 2px;
+    color: var(--gray-900);
+  }
+
+  .bs-form-section__description {
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+  }
+
+  .bs-form-section__content {
+    padding: 20px 24px;
+    border-top: 1px solid var(--gray-200);
+
+    &--flush {
+      padding: 0;
+    }
+  }
+}
+
+.bs-form-section--idle .bs-form-section__icon {
+  background: var(--gray-100);
+  color: var(--gray-600);
 }
 
 @media (max-width: 600px) {

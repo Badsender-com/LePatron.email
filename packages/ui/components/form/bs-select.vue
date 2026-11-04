@@ -99,6 +99,9 @@ export default {
            is ours to add, so `aria-describedby` has something to point at.
            Only the first message is tagged: `error-count` defaults to 1, and a
            caller raising it must not produce duplicate ids. -->
+      <template v-if="$scopedSlots.selection" #selection="scope">
+        <slot name="selection" v-bind="scope" />
+      </template>
       <template #message="{ message, key }">
         <span :id="key === 0 ? errorId : null">{{ message }}</span>
       </template>

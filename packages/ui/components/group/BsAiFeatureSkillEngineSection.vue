@@ -154,7 +154,7 @@ export default {
 </script>
 
 <template>
-  <bs-form-section :last="last" :folded="folded">
+  <bs-form-section card :active="skillIsActive" :last="last" :folded="folded">
     <template #icon>
       <lucide-cpu :size="20" />
     </template>
