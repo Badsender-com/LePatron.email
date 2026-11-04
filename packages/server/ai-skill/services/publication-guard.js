@@ -38,19 +38,15 @@ const REPLAY_ERRORS = Object.freeze({
 });
 
 /**
- * What the guard will replay, without calling anything: the feature skills
- * concerned, the version of each the cases run against, the cases, and the
+ * The runs of a replay, without calling anything: for each feature skill, the
+ * version the cases run against before (the active one) and after (its draft
+ * when it is published too, the active one otherwise), its cases, and the
  * feature skills that have none.
  *
- * @param {{ kind: 'skill'|'expertise', id: string,
- *   version: { major: number, minor: number }, manifests: Object[] }} params
- *   `manifests`: the features that use what is published
+ * @param {{ skillIds: string[], drafts: Map<string, { major, minor }> }}
+ *   params `drafts`: the skills published with their new version
  */
-async function planReplay({ kind, id, version, manifests }) {
-  const skillIds =
-    kind === 'skill'
-      ? [id]
-      : [...new Set(manifests.flatMap((m) => asList(m.usedSkills)))];
+async function planRuns({ skillIds, drafts }) {
   const skills = await LePatronSkills.find({
     skillId: { $in: skillIds },
     status: NOT_ARCHIVED,
@@ -62,11 +58,10 @@ async function planReplay({ kind, id, version, manifests }) {
   skillIds.forEach((skillId) => {
     const skill = byId.get(skillId);
     const active = skill ? findActiveVersion(skill) : null;
+    const draft = drafts.get(skillId);
     // A skill's own cases travel with the version being published.
     const after =
-      skill && kind === 'skill'
-        ? findVersion(skill, version.major, version.minor)
-        : active;
+      skill && draft ? findVersion(skill, draft.major, draft.minor) : active;
     const cases = after ? asList(after.testCases) : [];
     if (!cases.length) {
       missing.push(skillId);
@@ -79,6 +74,22 @@ async function planReplay({ kind, id, version, manifests }) {
     0
   );
   return { runs, missing, calls };
+}
+
+/**
+ * What the guard will replay for one version: the feature skills it reaches.
+ *
+ * @param {{ kind: 'skill'|'expertise', id: string,
+ *   version: { major: number, minor: number }, manifests: Object[] }} params
+ *   `manifests`: the features that use what is published
+ */
+function planReplay({ kind, id, version, manifests }) {
+  const skillIds =
+    kind === 'skill'
+      ? [id]
+      : [...new Set(manifests.flatMap((m) => asList(m.usedSkills)))];
+  const drafts = new Map(kind === 'skill' ? [[id, version]] : []);
+  return planRuns({ skillIds, drafts });
 }
 
 function byPromptOrder(a, b) {
@@ -99,10 +110,10 @@ function asInputEntry(projected) {
 
 /**
  * The expertises the features calling a skill load, before and after: the
- * active versions, and the same with the expertise being published swapped
- * for its new version.
+ * active versions, and the same with the expertises being published swapped
+ * for their new versions.
  */
-function expertiseMix(skillId, expertises, override) {
+function expertiseMix(skillId, expertises, overrides) {
   const callers = manifestRegistry
     .listManifests()
     .filter((manifest) => asList(manifest.usedSkills).includes(skillId));
@@ -111,10 +122,13 @@ function expertiseMix(skillId, expertises, override) {
       callers.some((manifest) => declaresUse(manifest, 'expertise', doc))
     )
     .sort(byPromptOrder);
-  const versionOf = (doc, swapped) =>
-    swapped && override && doc.expertiseId === override.id
+  const versionOf = (doc, swapped) => {
+    const override =
+      swapped && overrides.find((o) => o.id === doc.expertiseId);
+    return override
       ? findVersion(doc, override.version.major, override.version.minor)
       : findActiveVersion(doc);
+  };
   const project = (swapped) =>
     loaded
       .map((doc) => projectVersion(doc, versionOf(doc, swapped)))
@@ -160,21 +174,21 @@ async function runOnce({ skillId, version, input, groupId }) {
 }
 
 /**
- * Replay the cases of a plan, one call after the other.
+ * Replay the cases of a plan, one call after the other. `overrides`: the
+ * expertises published, `{ id, version }`, swapped in after.
  *
  * @returns {Promise<Array<{ skillId, name, notes, input,
  *   before: ({ output }|{ error })|null, after: { output }|{ error },
  *   contract: { before: boolean|null, after: boolean|null } }>>}
  */
-async function replay({ kind, id, version, runs }) {
+async function replay({ runs, overrides = [] }) {
   if (!runs.length) return [];
   const groupId = await platformGroupId();
   const expertises = await Expertises.find({ status: NOT_ARCHIVED }).lean();
-  const override = kind === 'expertise' ? { id, version } : null;
   const cases = [];
   for (const run of runs) {
     const { skillId } = run.skill;
-    const mix = expertiseMix(skillId, expertises, override);
+    const mix = expertiseMix(skillId, expertises, overrides);
     for (const testCase of run.cases) {
       const before = run.before
         ? await runOnce({
@@ -207,4 +221,4 @@ async function replay({ kind, id, version, runs }) {
   return cases;
 }
 
-module.exports = { planReplay, replay, REPLAY_ERRORS };
+module.exports = { planReplay, planRuns, replay, REPLAY_ERRORS };

@@ -3,12 +3,8 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import { CheckCircle2, ShieldCheck } from 'lucide-vue';
 import { aiVersionAction } from '~/helpers/ai-skill-routes.js';
 import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
-import {
-  caseOutcome,
-  failedCount,
-  outputText,
-  sideOutcome,
-} from '~/helpers/publication-guard.js';
+import BsAiGuardCases from '~/components/ai-skill/bs-ai-guard-cases.vue';
+import { failedCount } from '~/helpers/publication-guard.js';
 
 // The publication guard (ADR 0019): opened when the server asks for it on a
 // version a feature uses. Says what it would replay, replays it on demand,
@@ -16,6 +12,7 @@ import {
 export default {
   name: 'BsAiPublicationGuardModal',
   components: {
+    BsAiGuardCases,
     BsModalConfirm,
     LucideCheckCircle2: CheckCircle2,
     LucideShieldCheck: ShieldCheck,
@@ -46,9 +43,6 @@ export default {
     },
   },
   methods: {
-    caseOutcome,
-    outputText,
-    sideOutcome,
     open({ version, payload, plan }) {
       Object.assign(this, {
         version,
@@ -107,11 +101,6 @@ export default {
       this.$refs.modal.close();
       this.$emit('cancelled', doc);
     },
-    sideError(result) {
-      return result && result.error
-        ? this.$t(`aiSkills.publicationGuard.errors.${result.error}`)
-        : '';
-    },
   },
 };
 </script>
@@ -136,72 +125,7 @@ export default {
       }}
     </v-alert>
 
-    <template v-if="guard">
-      <p class="text-body-2 font-weight-medium mt-4 mb-2">
-        <template v-if="guard.cases.length">
-          {{
-            $t('aiSkills.publicationGuard.summary', {
-              cases: guard.cases.length,
-              failed,
-            })
-          }}
-        </template>
-        <template v-else>{{ $t('aiSkills.publicationGuard.noCase') }}</template>
-      </p>
-      <div
-        v-for="(c, i) in guard.cases"
-        :key="`${c.skillId}-${i}`"
-        class="guard-case"
-      >
-        <div class="d-flex align-center mb-2">
-          <span class="text-body-2 font-weight-medium">{{ c.name }}</span>
-          <span class="text-caption text--secondary ml-2">{{ c.skillId }}</span>
-          <v-spacer />
-          <v-chip
-            v-if="caseOutcome(c) !== 'ok'"
-            x-small
-            outlined
-            color="warning"
-          >
-            {{
-              sideError(c.after) ||
-              $t('aiSkills.publicationGuard.errors.OUTPUT_CONTRACT')
-            }}
-          </v-chip>
-          <v-chip
-            v-else-if="outputText(c.before) === outputText(c.after)"
-            x-small
-            outlined
-          >
-            {{ $t('aiSkills.publicationGuard.same') }}
-          </v-chip>
-        </div>
-        <div class="guard-sides">
-          <div
-            v-for="side in ['before', 'after']"
-            :key="side"
-            class="guard-side"
-          >
-            <div class="text-caption text--secondary mb-1">
-              {{ $t(`aiSkills.publicationGuard.${side}`) }}
-            </div>
-            <p
-              v-if="sideOutcome(c[side], c.contract[side]) === 'none'"
-              class="text-caption text--secondary mb-0"
-            >
-              {{ $t('aiSkills.publicationGuard.noBefore') }}
-            </p>
-            <p
-              v-else-if="c[side].error"
-              class="text-caption warning--text mb-0"
-            >
-              {{ sideError(c[side]) }}
-            </p>
-            <pre v-else class="guard-output">{{ outputText(c[side]) }}</pre>
-          </div>
-        </div>
-      </div>
-    </template>
+    <bs-ai-guard-cases v-if="guard" :guard="guard" />
 
     <p v-if="error" class="text-caption error--text mt-2 mb-0">{{ error }}</p>
 
@@ -251,23 +175,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.guard-case {
-  border: 1px solid var(--v-border-base, rgba(0, 0, 0, 0.12));
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-.guard-sides {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-.guard-output {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 0.8125rem;
-  margin: 0;
-}
 .modal-actions {
   display: flex;
   align-items: center;

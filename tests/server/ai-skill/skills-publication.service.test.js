@@ -509,7 +509,7 @@ describe('publishing what a feature uses', () => {
   });
 
   // Turned on by #1431 (publishing several drafts at once)
-  describe.skip('several drafts at once', () => {
+  describe('several drafts at once', () => {
     const BOTH = [
       { kind: 'expertise', id: SUBJECT_LINES, version: { major: 2, minor: 2 } },
       { kind: 'skill', id: SUBJECT_IDEAS, version: { major: 1, minor: 3 } },
@@ -539,6 +539,64 @@ describe('publishing what a feature uses', () => {
       );
     });
 
+    // As on its own page (ADR 0013): a task skill's consumed expertise that
+    // is not published is warned of, without stopping the publication.
+    it("reports what a skill's publication warns of", async () => {
+      const DARK_MODE = 'design.dark-mode'; // never published
+      store.seed({
+        ...SEED,
+        expertises: [...SEED.expertises, f.EXPERTISES[2]],
+        skills: [
+          ...SEED.skills,
+          {
+            _id: '507f1f77bcf86cd799439906',
+            skillId: 'redaction.audit',
+            title: 'Audit',
+            category: 'redaction',
+            status: 'DRAFT',
+            audience: 'platform',
+            activeVersion: { major: null, minor: 0 },
+            versions: [
+              {
+                versionMajor: 1,
+                versionMinor: 0,
+                status: 'DRAFT',
+                nature: 'task',
+                procedure: '## Steps',
+                consumedExpertiseIds: [DARK_MODE],
+                changelog: 'First',
+                releaseNotes: 'First',
+              },
+            ],
+          },
+        ],
+      });
+
+      const report = await publication.publishMany(
+        [
+          {
+            kind: 'skill',
+            id: 'redaction.audit',
+            version: { major: 1, minor: 0 },
+          },
+        ],
+        {},
+        ALICE
+      );
+
+      expect(report.published).toEqual([
+        expect.objectContaining({
+          id: 'redaction.audit',
+          warnings: [
+            {
+              code: 'CONSUMED_EXPERTISES_NOT_PUBLISHED',
+              expertiseIds: [DARK_MODE],
+            },
+          ],
+        }),
+      ]);
+    });
+
     it('goes on when one fails, and says why', async () => {
       const guard = await publication.guardMany(BOTH);
 
@@ -558,10 +616,128 @@ describe('publishing what a feature uses', () => {
       expect(report.failed).toEqual([
         expect.objectContaining({
           id: SPAM_WORDS,
+          reason: 'not_found',
           message: expect.any(String),
         }),
       ]);
       expect(report.published).toHaveLength(2);
+    });
+
+    it('refuses, item by item, a draft a feature uses without the guard', async () => {
+      const report = await publication.publishMany(BOTH, {}, ALICE);
+
+      expect(report.failed.map((f) => f.reason)).toEqual([
+        'guard_required',
+        'guard_required',
+      ]);
+      expect(
+        versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status
+      ).toBe('DRAFT');
+    });
+
+    // A draft written since the plan read it, by an assistant or another
+    // person, is not published (ADR 0014); the others are.
+    it('leaves out a draft written since the plan read it, and says so', async () => {
+      const readAt = new Date('2026-11-04T10:00:00.000Z');
+      store.seed({
+        ...SEED,
+        expertises: [
+          {
+            ...subjectLines,
+            versions: subjectLines.versions.map((v) =>
+              v.status === 'DRAFT'
+                ? { ...v, updatedAt: new Date('2026-11-04T11:00:00.000Z') }
+                : v
+            ),
+          },
+          f.EXPERTISES[1],
+        ],
+      });
+      const guard = await publication.guardMany(BOTH);
+      const [lines, ideas] = BOTH;
+
+      const report = await publication.publishMany(
+        [{ ...lines, readAt: readAt.toISOString() }, ideas],
+        { guard },
+        ALICE
+      );
+
+      expect(report.failed).toEqual([
+        expect.objectContaining({ id: SUBJECT_LINES, reason: 'draft_changed' }),
+      ]);
+      expect(report.published.map((p) => p.id)).toEqual([SUBJECT_IDEAS]);
+      expect(
+        versionOf('expertises', 'expertiseId', SUBJECT_LINES, 2, 2).status
+      ).toBe('DRAFT');
+    });
+
+    it('records the decision on each draft', async () => {
+      const guard = await publication.guardMany(BOTH);
+
+      await publication.publishMany(BOTH, { guard }, ALICE);
+
+      expect(
+        versionOf('skills', 'skillId', SUBJECT_IDEAS, 1, 3).guardHistory
+      ).toEqual([expect.objectContaining({ decision: 'published' })]);
+    });
+
+    it('takes the one draft of each item, and says why it leaves one out', async () => {
+      store.seed({
+        ...SEED,
+        skills: [
+          subjectIdeas,
+          {
+            ...preheaderIdeas,
+            versions: [
+              ...preheaderIdeas.versions,
+              { ...subjectIdeas.versions[1], versionMinor: 4 },
+              { ...subjectIdeas.versions[1], versionMajor: 2, versionMinor: 0 },
+            ],
+          },
+        ],
+      });
+
+      const { targets, skipped } = await publication.draftsToPublish([
+        { kind: 'expertise', id: SUBJECT_LINES },
+        { kind: 'skill', id: SUBJECT_IDEAS },
+        { kind: 'skill', id: PREHEADER_IDEAS },
+        { kind: 'expertise', id: SPAM_WORDS },
+        { kind: 'skill', id: 'qc.nowhere' },
+      ]);
+
+      expect(targets).toEqual(BOTH);
+      expect(
+        (
+          await publication.draftsToPublish([
+            {
+              kind: 'expertise',
+              id: SUBJECT_LINES,
+              updatedAt: '2026-11-04T10:00:00.000Z',
+            },
+          ])
+        ).targets[0].readAt
+      ).toBe('2026-11-04T10:00:00.000Z');
+      expect(skipped).toEqual([
+        { kind: 'skill', id: PREHEADER_IDEAS, reason: 'several_drafts' },
+        { kind: 'expertise', id: SPAM_WORDS, reason: 'no_draft' },
+        { kind: 'skill', id: 'qc.nowhere', reason: 'not_found' },
+      ]);
+    });
+
+    it('says what the one guard would replay, without calling the AI', async () => {
+      const plan = await publication.planMany(BOTH);
+
+      expect(plan).toEqual({
+        usedBy: [
+          {
+            featureType: 'subject_generation',
+            description: 'Subject line generation',
+          },
+        ],
+        calls: 2,
+        missing: [PREHEADER_IDEAS],
+      });
+      expect(provider.chatComplete).not.toHaveBeenCalled();
     });
   });
 });
