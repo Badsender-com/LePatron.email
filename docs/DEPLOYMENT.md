@@ -36,3 +36,28 @@ After forking the repo:
 3. Link the existing application to your local repo with `clever link [--org <ORG-NAME>] <APP-NAME> [--alias <alias>]`
 4. Add this environment variable `CC_POST_BUILD_HOOK = yarn build`
 5. Deploy the application by running `clever deploy [--alias <alias>]`
+
+## A copy following production's skills and expertises
+
+Production is the source of skills and expertises (ADR 0019). A copy (staging, development) follows it, on demand from its back office and every night.
+
+### Configuration of a copy
+
+1. In production's back office, a super admin opens **Skills & Expertise → Synchronisation** and creates a read token for this copy. The token is shown once.
+2. On the copy, set two environment variables:
+
+| Variable              | Value                                                                      |
+| --------------------- | -------------------------------------------------------------------------- |
+| `SKILLS_SOURCE_URL`   | Production's address, in https, for example `https://lepatron.example.com` |
+| `SKILLS_SOURCE_TOKEN` | The read token production gave this copy                                   |
+
+Leave both unset on production itself: it follows nothing. Without both, a copy offers no follow and the nightly command does nothing.
+
+### The nightly follow
+
+The web server runs no timer. The hosting platform's scheduler runs `node scripts/follow-production.js` (also `yarn follow-production`) every night:
+
+- On Scalingo, `cron.json` at the root of the repository schedules it at 3:00 (the platform's time zone, UTC). Every app deployed from this repository reads it; on an instance that follows no production, the command does nothing and exits 0.
+- Elsewhere, schedule the same command with the platform's own scheduler.
+
+The command records the follow like the button does, as the nightly follow, and the copy's Synchronisation tab shows the last one. It exits 1 when the follow failed or when some items failed, so the scheduler's logs show it.

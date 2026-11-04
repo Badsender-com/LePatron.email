@@ -12,6 +12,7 @@ const {
   FOLLOW_OUTCOMES,
   FOLLOW_FAILURE_REASONS,
   followFailureKey,
+  followLastKey,
   followOutcomes,
   followStatusColor,
 } = require('~/helpers/skills-follow.js');
@@ -52,6 +53,15 @@ describe("a copy's follows of production", () => {
     expect(followFailureKey({})).toBe('aiSkills.follow.reasons.unreachable');
   });
 
+  it('says who followed: a person, or the night', () => {
+    expect(followLastKey({ trigger: 'manual', by: 'Alice' })).toBe(
+      'aiSkills.follow.last'
+    );
+    expect(followLastKey({ trigger: 'night', by: '' })).toBe(
+      'aiSkills.follow.lastNight'
+    );
+  });
+
   it.each(['en', 'fr'])('has its words in %s', (l) => {
     const locale = fs.readFileSync(
       path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
@@ -65,6 +75,7 @@ describe("a copy's follows of production", () => {
       'now',
       'never',
       'last',
+      'lastNight',
       'succeeded',
       'partial',
       'failed',

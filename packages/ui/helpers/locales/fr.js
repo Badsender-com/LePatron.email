@@ -1727,6 +1727,7 @@ export default {
       running: 'Suivi en cours…',
       never: 'La production n\'a encore jamais été suivie.',
       last: 'Dernier suivi le {date} par {by}',
+      lastNight: 'Dernier suivi le {date}, par le suivi de nuit',
       loadError: 'Le suivi de la production n\'a pas pu être chargé.',
       done: 'Production suivie.',
       statuses: {

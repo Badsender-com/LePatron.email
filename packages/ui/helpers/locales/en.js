@@ -1703,6 +1703,7 @@ export default {
       running: 'Following…',
       never: 'Production has never been followed yet.',
       last: 'Last followed on {date} by {by}',
+      lastNight: 'Last followed on {date}, by the nightly follow',
       loadError: 'The follow of production could not be loaded.',
       done: 'Production followed.',
       statuses: {

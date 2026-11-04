@@ -39,6 +39,13 @@ export function followFailureKey(last) {
   }`;
 }
 
+// Who followed: a person's button, or the night's scheduled command.
+export function followLastKey(last) {
+  return last && last.trigger === 'night'
+    ? 'aiSkills.follow.lastNight'
+    : 'aiSkills.follow.last';
+}
+
 const STATUS_COLORS = {
   succeeded: 'success',
   partial: 'warning',
