@@ -408,6 +408,12 @@ export default {
         description: 'Connexion de Claude, ChatGPT et Copilot à LePatron',
         configHint:
           'L\'admin technique active ensuite l\'accès dans Fonctionnalités IA',
+        closeTitle: 'Fermer le module MCP\u00a0?',
+        close: 'Fermer le module',
+        closeConfirm:
+          ' | L\'application connectée de {group} sera révoquée tout de suite. Son utilisateur devra la reconnecter si le module rouvre. | Les {count} applications connectées de {group} seront révoquées tout de suite. Chaque utilisateur devra reconnecter la sienne si le module rouvre.',
+        closeConfirmUnknown:
+          'Les applications connectées de {group} seront révoquées tout de suite. Chaque utilisateur devra reconnecter la sienne si le module rouvre.',
       },
     },
     mailingTab: {
