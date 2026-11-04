@@ -15,6 +15,7 @@ const {
   MaxConsumedExpertises,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
+const { TEST_CASE } = require('./test-cases.js');
 
 const FORMAT = 1;
 
@@ -33,14 +34,6 @@ const version = (content) =>
     releaseNotes: z.string().optional(),
     ...content,
   });
-const TEST_CASE = z.object({
-  name: z.string().min(1),
-  input: z.unknown().refine((value) => value !== undefined && value !== null, {
-    params: { reason: 'missing' },
-  }),
-  expectedOutput: z.unknown().optional(),
-  notes: z.string().optional(),
-});
 const EXPERTISE = z.object({
   expertiseId: id,
   title: z.string().min(1),

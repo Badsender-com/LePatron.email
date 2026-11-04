@@ -154,6 +154,7 @@ export default {
           modelHints: version.modelHints,
           procedure: version.procedure,
           consumedExpertiseIds: version.consumedExpertiseIds,
+          testCases: version.testCases,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
           // The draft as the page read it: one written since is refused.

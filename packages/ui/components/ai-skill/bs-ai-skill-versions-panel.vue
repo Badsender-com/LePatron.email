@@ -14,6 +14,7 @@ import {
   SKILL_NATURES,
   SKILL_NATURE_VALUES,
 } from '~/helpers/ai-skill-categories.js';
+import BsAiSkillTestCases from '~/components/ai-skill/bs-ai-skill-test-cases.vue';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
 
 // What the version editor lets one change on a DRAFT.
@@ -26,6 +27,7 @@ const EDITABLE_FIELDS = Object.freeze([
   'inputTemplate',
   'procedure',
   'consumedExpertiseIds',
+  'testCases',
   'changelog',
   'releaseNotes',
 ]);
@@ -38,6 +40,7 @@ export default {
     BsTimestamp,
     BsAiSkillFeatureVersionFields,
     BsAiSkillTaskVersionFields,
+    BsAiSkillTestCases,
     LucidePlus: Plus,
     LucideCheckCircle2: CheckCircle2,
     LucideCopy: Copy,
@@ -227,17 +230,24 @@ export default {
                 draftFor(v).consumedExpertiseIds = $event
               "
             />
-            <bs-ai-skill-feature-version-fields
-              v-else
-              :input-schema-id.sync="draftFor(v).inputSchemaId"
-              :output-schema-id.sync="draftFor(v).outputSchemaId"
-              :system-prompt.sync="draftFor(v).systemPrompt"
-              :skill-body.sync="draftFor(v).skillBody"
-              :input-template.sync="draftFor(v).inputTemplate"
-              :schemas="schemas"
-              :descriptor="descriptorFor(v)"
-              :readonly="v.status !== 'DRAFT'"
-            />
+            <template v-else>
+              <bs-ai-skill-feature-version-fields
+                :input-schema-id.sync="draftFor(v).inputSchemaId"
+                :output-schema-id.sync="draftFor(v).outputSchemaId"
+                :system-prompt.sync="draftFor(v).systemPrompt"
+                :skill-body.sync="draftFor(v).skillBody"
+                :input-template.sync="draftFor(v).inputTemplate"
+                :schemas="schemas"
+                :descriptor="descriptorFor(v)"
+                :readonly="v.status !== 'DRAFT'"
+              />
+              <!-- A task skill has no test case: no feature calls it (ADR 0019). -->
+              <bs-ai-skill-test-cases
+                :test-cases="draftFor(v).testCases"
+                :readonly="v.status !== 'DRAFT'"
+                @update:testCases="draftFor(v).testCases = $event"
+              />
+            </template>
             <bs-textarea
               v-if="v.status === 'DRAFT'"
               v-model="draftFor(v).changelog"
