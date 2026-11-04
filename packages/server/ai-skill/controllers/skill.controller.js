@@ -10,6 +10,7 @@ const { listSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
 const { SkillNatures } = require('../constant/skill-constants.js');
+const { withUsedBy } = require('../services/skills-publication.service.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -73,12 +74,16 @@ function versionFromParam(req) {
 module.exports = {
   listSkills: asyncHandler(async (req, res) => {
     const data = await skillService.listSkills(req.query);
-    res.json(data);
+    // Worked out from the features' declarations, never stored (ADR 0019).
+    res.json({
+      ...data,
+      items: (data.items || []).map((item) => withUsedBy('skill', item)),
+    });
   }),
 
   getSkill: asyncHandler(async (req, res) => {
     const skill = await skillService.getSkill(req.params.skillId);
-    res.json(skill);
+    res.json(withUsedBy('skill', skill));
   }),
 
   createSkill: asyncHandler(async (req, res) => {

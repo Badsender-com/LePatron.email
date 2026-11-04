@@ -42,6 +42,28 @@ jest.mock(
   () => ({ listInvocations: jest.fn(), getInvocation: jest.fn() })
 );
 
+// A feature, as a skill manifest declares it: the lists and the detail pages
+// say what it uses (ADR 0019).
+const SUBJECT_FEATURE = {
+  featureType: 'subject_generation',
+  description: 'Subject line generation',
+  usedSkills: ['redaction.subject-ideas'],
+  usedExpertise: [],
+  expertiseFilters: [{ scope: ['subject'], categories: ['redaction'] }],
+};
+const USED_BY_SUBJECT = [
+  { featureType: 'subject_generation', description: 'Subject line generation' },
+];
+jest.mock(
+  '../../../../packages/server/ai-skill/services/manifest-registry',
+  () => ({
+    ...jest.requireActual(
+      '../../../../packages/server/ai-skill/services/manifest-registry'
+    ),
+    listManifests: () => [SUBJECT_FEATURE],
+  })
+);
+
 // Stub the auth guard, on the real rule, so the test picks the user.
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {
@@ -60,6 +82,7 @@ const express = require('express');
 const request = require('../../../helpers/local-request.js');
 
 const skillService = require('../../../../packages/server/ai-skill/services/skill.service');
+const expertiseService = require('../../../../packages/server/ai-skill/services/expertise.service');
 const invocationLog = require('../../../../packages/server/ai-skill/services/invocation-log.service');
 
 const {
@@ -108,7 +131,81 @@ describe('ai-skill HTTP routes', () => {
     });
     const res = await request(makeApp()).get('/api/ai-skills');
     expect(res.status).toBe(200);
-    expect(res.body.items).toEqual([{ skillId: 'a' }]);
+    expect(res.body.items).toEqual([{ skillId: 'a', usedBy: [] }]);
+  });
+
+  describe('used by a feature', () => {
+    const SUBJECT_LINES = {
+      expertiseId: 'redaction.subject-line',
+      category: 'redaction',
+      scope: ['subject'],
+    };
+    const SPAM_WORDS = {
+      expertiseId: 'deliverability.spam-words',
+      category: 'deliverability',
+      scope: [],
+      isTransversal: true,
+    };
+
+    it('is said of each skill of the list', async () => {
+      skillService.listSkills.mockResolvedValue({
+        items: [
+          { skillId: 'redaction.subject-ideas' },
+          { skillId: 'qc.other' },
+        ],
+        total: 2,
+      });
+      const res = await request(makeApp()).get('/api/ai-skills');
+      expect(res.body.items.map((item) => item.usedBy)).toEqual([
+        USED_BY_SUBJECT,
+        [],
+      ]);
+      expect(res.body.total).toBe(2);
+    });
+
+    it('is said of a skill on its page', async () => {
+      skillService.getSkill.mockResolvedValue({
+        skillId: 'redaction.subject-ideas',
+        toJSON: () => ({ skillId: 'redaction.subject-ideas', title: 'Ideas' }),
+      });
+      const res = await request(makeApp()).get(
+        '/api/ai-skills/redaction.subject-ideas'
+      );
+      expect(res.body).toEqual({
+        skillId: 'redaction.subject-ideas',
+        title: 'Ideas',
+        usedBy: USED_BY_SUBJECT,
+      });
+    });
+
+    it('is said of each expertise of the list, from the declared filters', async () => {
+      expertiseService.listExpertise.mockResolvedValue({
+        items: [SUBJECT_LINES, SPAM_WORDS],
+        total: 2,
+      });
+      const res = await request(makeApp()).get('/api/ai-expertise');
+      expect(res.body.items.map((item) => item.usedBy)).toEqual([
+        USED_BY_SUBJECT,
+        [],
+      ]);
+    });
+
+    it('is said of an expertise on its page, and again once it is changed', async () => {
+      expertiseService.getExpertise.mockResolvedValue(SUBJECT_LINES);
+      const shown = await request(makeApp()).get(
+        '/api/ai-expertise/redaction.subject-line'
+      );
+      expect(shown.body.usedBy).toEqual(USED_BY_SUBJECT);
+
+      expertiseService.updateExpertise.mockResolvedValue({
+        ...SUBJECT_LINES,
+        scope: ['body'],
+      });
+      const changed = await request(makeApp())
+        .patch('/api/ai-expertise/redaction.subject-line')
+        .send({ scope: ['body'] });
+      expect(changed.body.usedBy).toEqual([]);
+    });
   });
 
   it('GET /api/ai-skills/schemas exposes the registered zod schemas', async () => {

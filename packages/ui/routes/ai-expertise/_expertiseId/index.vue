@@ -15,11 +15,14 @@ import {
   AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
 import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
+import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
   components: {
     BsAiDetailHeader,
+    BsAiUsedByFeatures,
     BsAiFeedbackTab,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
@@ -46,7 +49,7 @@ export default {
   async asyncData({ $axios, params, error }) {
     try {
       const exp = await $axios.$get(api.aiExpertise(params.expertiseId));
-      return { exp, savedAudience: exp.audience };
+      return { exp, savedAudience: exp.audience, usedBy: usedByOf(exp) };
     } catch (err) {
       return error({ statusCode: 404, message: 'Expertise not found' });
     }
@@ -57,6 +60,9 @@ export default {
       // The audience stored: keeping it to the platform company again is
       // confirmed first.
       savedAudience: null,
+      // Kept apart from the expertise: only the detail and the details save
+      // carry it, and a change of scope or category can change it.
+      usedBy: [],
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -190,6 +196,7 @@ export default {
       :title="exp.title"
       :status="exp.status"
       back-to="/ai-skills?tab=expertise"
+      :used-by-feature="usedBy.length > 0"
       @archive="$refs.archiveModal.open()"
     />
 
@@ -204,6 +211,7 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+    <bs-ai-used-by-features :used-by="usedBy" />
 
     <v-tabs v-model="tab" class="detail-tabs">
       <v-tab href="#details">

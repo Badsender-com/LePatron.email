@@ -11,6 +11,10 @@ import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.v
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { Sparkles } from 'lucide-vue';
 import {
+  isUsedByFeature,
+  filterUsedByFeature,
+} from '~/helpers/used-by-feature.js';
+import {
   skillCategoryOptions,
   skillCategoryLabel,
 } from '~/helpers/ai-skill-categories.js';
@@ -35,6 +39,7 @@ export default {
       search: '',
       filterCategory: null,
       filterStatus: null,
+      onlyUsedByFeature: false,
       saving: false,
       selected: [],
     };
@@ -53,8 +58,9 @@ export default {
       // Client-side text search over title + identifier (parity with the
       // expertise list). `clearable` sets search to null on clear — guard it.
       const q = (this.search || '').trim().toLowerCase();
-      if (!q) return this.items;
-      return this.items.filter((s) =>
+      const items = filterUsedByFeature(this.items, this.onlyUsedByFeature);
+      if (!q) return items;
+      return items.filter((s) =>
         `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
       );
     },
@@ -85,6 +91,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUsedByFeature,
     statusColor(status) {
       return (
         { ACTIVE: 'success', DRAFT: 'warning', ARCHIVED: 'grey' }[status] ||
@@ -193,6 +200,13 @@ export default {
         class="filter-field"
         @change="fetchData"
       />
+      <v-checkbox
+        v-model="onlyUsedByFeature"
+        :label="$t('aiSkills.usedByFeature.filter')"
+        dense
+        hide-details
+        class="filter-checkbox"
+      />
     </div>
 
     <bs-ai-skills-export-bar :skills="selected" />
@@ -211,6 +225,15 @@ export default {
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
         <bs-ai-platform-only-chip :audience="item.audience" />
+        <v-chip
+          v-if="isUsedByFeature(item)"
+          x-small
+          outlined
+          color="primary"
+          class="ml-2"
+        >
+          {{ $t('aiSkills.usedByFeature.badge') }}
+        </v-chip>
       </template>
       <template #item.skillId="{ item }">
         <span class="text-caption text--secondary">{{ item.skillId }}</span>
@@ -273,6 +296,9 @@ export default {
 }
 .filter-field {
   max-width: 220px;
+}
+.filter-checkbox {
+  margin-top: 0;
 }
 .filter-field--search {
   max-width: 280px;

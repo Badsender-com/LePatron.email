@@ -11,6 +11,10 @@ import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.v
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { BookOpen } from 'lucide-vue';
 import {
+  isUsedByFeature,
+  filterUsedByFeature,
+} from '~/helpers/used-by-feature.js';
+import {
   skillCategoryOptions,
   skillCategoryLabel,
 } from '~/helpers/ai-skill-categories.js';
@@ -38,6 +42,7 @@ export default {
       filterCategory: null,
       filterStatus: null,
       filterScope: null,
+      onlyUsedByFeature: false,
     };
   },
   computed: {
@@ -81,18 +86,20 @@ export default {
     filteredItems() {
       // `clearable` sets this.search to null on clear — guard the trim.
       const q = (this.search || '').trim().toLowerCase();
-      return this.items.filter((e) => {
-        if (this.filterCategory && e.category !== this.filterCategory)
-          return false;
-        if (this.filterStatus && e.status !== this.filterStatus) return false;
-        if (this.filterScope && !(e.scope || []).includes(this.filterScope))
-          return false;
-        if (q) {
-          const hay = `${e.title || ''} ${e.expertiseId || ''}`.toLowerCase();
-          if (!hay.includes(q)) return false;
+      return filterUsedByFeature(this.items, this.onlyUsedByFeature).filter(
+        (e) => {
+          if (this.filterCategory && e.category !== this.filterCategory)
+            return false;
+          if (this.filterStatus && e.status !== this.filterStatus) return false;
+          if (this.filterScope && !(e.scope || []).includes(this.filterScope))
+            return false;
+          if (q) {
+            const hay = `${e.title || ''} ${e.expertiseId || ''}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          return true;
         }
-        return true;
-      });
+      );
     },
   },
   mounted() {
@@ -100,6 +107,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUsedByFeature,
     statusColor(status) {
       return (
         { ACTIVE: 'success', DRAFT: 'warning', ARCHIVED: 'grey' }[status] ||
@@ -213,6 +221,13 @@ export default {
         clearable
         class="filter-field"
       />
+      <v-checkbox
+        v-model="onlyUsedByFeature"
+        :label="$t('aiSkills.usedByFeature.filter')"
+        dense
+        hide-details
+        class="filter-checkbox"
+      />
     </div>
 
     <bs-ai-skills-export-bar :expertise-ids="selectedIds" />
@@ -231,6 +246,15 @@ export default {
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
         <bs-ai-platform-only-chip :audience="item.audience" />
+        <v-chip
+          v-if="isUsedByFeature(item)"
+          x-small
+          outlined
+          color="primary"
+          class="ml-2"
+        >
+          {{ $t('aiSkills.usedByFeature.badge') }}
+        </v-chip>
       </template>
       <template #item.expertiseId="{ item }">
         <span class="text-caption text--secondary">{{ item.expertiseId }}</span>
@@ -299,6 +323,9 @@ export default {
   gap: 0.75rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+.filter-checkbox {
+  margin-top: 0;
 }
 .filter-field {
   max-width: 220px;

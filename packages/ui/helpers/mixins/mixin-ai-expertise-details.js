@@ -3,11 +3,12 @@
 // it. While they are read the page is busy; when they cannot be, the user
 // is told and the save goes on.
 //
-// The page has `exp`, `savedAudience`, `saving`, a `closeModal` ref and
-// mixinAiVersionedItem.
+// The page has `exp`, `savedAudience`, `usedBy`, `saving`, a `closeModal`
+// ref and mixinAiVersionedItem.
 
 import * as api from '~/helpers/ai-skill-routes.js';
 import { closesToPlatform } from '~/helpers/ai-skill-audience-change.js';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   methods: {
@@ -55,6 +56,8 @@ export default {
       );
       if (!saved) return;
       this.savedAudience = this.exp.audience;
+      // The scope and the category decide which features load it (ADR 0019).
+      this.usedBy = usedByOf(this.exp);
       this.tellSaved({ unchecked });
     },
   },
