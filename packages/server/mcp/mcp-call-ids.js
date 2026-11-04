@@ -94,14 +94,26 @@ function idsAlong(value, paths) {
   return ids.filter(Boolean);
 }
 
-// What a call asked for, as the log keeps it: the tool or the prompt, and the
-// ids it was given, those its tool declares only.
+// The settings a tool sets, recorded as metadata: their value is a choice
+// among a few, never content (ADR 0019).
+const SETTINGS = ['audience'];
+const MAX_CHANGE_LENGTH = 100;
+
+function changeIn(args) {
+  if (!args || typeof args !== 'object') return null;
+  const setting = SETTINGS.find((key) => typeof args[key] === 'string');
+  return setting ? cut(`${setting}:${args[setting]}`, MAX_CHANGE_LENGTH) : null;
+}
+
+// What a call asked for, as the log keeps it: the tool or the prompt, the
+// ids it was given, those its tool declares only, and the setting it sets.
 function whatWasAsked(method, params = {}, declared) {
   const name = cut(params.name, MAX_NAME_LENGTH);
   if (method === 'tools/call') {
     return {
       name,
       objectIds: idsAlong(params.arguments, declared.get(params.name)),
+      change: changeIn(params.arguments),
     };
   }
   if (method === 'prompts/get') return { name, objectIds: [] };

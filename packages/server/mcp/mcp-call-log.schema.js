@@ -18,6 +18,9 @@ const McpCallLogSchema = new Schema(
     // The tool or the prompt, for a call that names one.
     name: { type: String, default: null },
     objectIds: { type: [String], default: [] },
+    // What a write sets, when it is a setting rather than content: which way
+    // an audience went (ADR 0019). Never the content of a skill or a mailing.
+    change: { type: String, default: null },
     durationMs: { type: Number, default: 0 },
     outcome: {
       type: String,
