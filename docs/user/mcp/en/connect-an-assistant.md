@@ -5,7 +5,9 @@ Your AI assistant (Claude, ChatGPT, Copilot…) can read LePatron on your behalf
 - Badsender's expertises and skills, to use them when you ask it to write or review an email;
 - your mailings: it lists them (by workspace, folder, author, tags or dates, with their status) and reads their text, or the HTML of their preview. Personalization variables, such as `{{firstname}}`, stay as they are. Claude, ChatGPT, Microsoft 365 Copilot and VS Code also show the email itself in the conversation, without running any script; images hosted outside LePatron show as their alternative text.
 
-It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only thing it sends LePatron is your feedback, when you ask it to. Connected by a super admin who allows it at connection, it may also propose drafts of skills and expertises, which a person reviews and publishes.
+It does so with **your rights**, in **one company only**, the one you choose when connecting. It changes nothing in your emails, skills or settings: the only thing it sends LePatron is your feedback, when you ask it to.
+
+The one exception is for the Badsender team: a super admin may let their assistant write, publish and open skills and expertises ([Publish from an assistant](./publish-from-an-assistant.md)).
 
 The connection uses MCP (Model Context Protocol), which all these assistants support.
 

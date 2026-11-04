@@ -5,7 +5,9 @@ Votre assistant IA (Claude, ChatGPT, Copilot…) peut lire LePatron en votre nom
 - les expertises et les skills de Badsender, pour s'en servir quand vous lui demandez d'écrire ou de relire un email ;
 - vos mailings : il les liste (par workspace, dossier, auteur, tags ou dates, avec leur statut) et en lit le texte, ou le HTML de l'aperçu. Les variables de personnalisation, comme `{{firstname}}`, restent telles quelles. Claude, ChatGPT, Microsoft 365 Copilot et VS Code affichent aussi l'email lui-même dans la conversation, sans exécuter aucun script ; les images hébergées hors de LePatron y apparaissent par leur texte alternatif.
 
-Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez. Connecté par un super admin qui l'y autorise à la connexion, il peut aussi proposer des brouillons de skills et d'expertises, qu'une personne relit et publie.
+Il le fait avec **vos droits**, dans **une seule entreprise**, celle que vous choisissez au moment de la connexion. Il ne modifie ni vos emails, ni les skills, ni vos réglages : il n'envoie à LePatron que vos avis, quand vous le lui demandez.
+
+Seule exception, réservée à l'équipe Badsender : un super admin peut autoriser son assistant à rédiger, publier et ouvrir les skills et les expertises ([Publier depuis un assistant](./publier-depuis-un-assistant.md)).
 
 Cette connexion passe par le protocole MCP (Model Context Protocol), que ces assistants savent tous utiliser.
 
