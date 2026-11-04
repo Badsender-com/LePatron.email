@@ -5,13 +5,14 @@ import { Unplug } from 'lucide-vue';
 import { groupConnectedApplications } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 
 // The AI assistants the group's users connected (ADR 0012): the group's tech
-// admin revokes them all at once, say when an assistant leaks. Shown while
-// MCP is off too, as long as connections remain.
+// admin revokes them all at once, say when an assistant leaks. Switching MCP
+// off revokes them too, so the row lives under the switch.
 export default {
   name: 'BsGroupConnectedApplicationsOption',
-  components: { BsModalConfirm, LucideUnplug: Unplug },
+  components: { BsModalConfirm, BsSettingsRow, LucideUnplug: Unplug },
   props: {
     group: { type: Object, required: true },
   },
@@ -19,8 +20,14 @@ export default {
     return { count: null, countError: false, loading: false };
   },
   computed: {
-    shown() {
-      return this.group.enableMcp === true || this.count > 0;
+    summary() {
+      if (this.countError) {
+        return this.$t('connectedApplications.groupCountError');
+      }
+      if (this.count === null) return '';
+      return this.$tc('connectedApplications.groupCount', this.count, {
+        count: this.count,
+      });
     },
   },
   async mounted() {
@@ -61,33 +68,24 @@ export default {
 </script>
 
 <template>
-  <section v-if="shown" class="bs-group-connected-applications-option">
-    <h3 class="text-subtitle-1 font-weight-medium">
-      {{ $t('connectedApplications.pageTitle') }}
-    </h3>
-    <p class="text-body-2 text--secondary">
-      {{ $t('connectedApplications.groupDescription') }}
-    </p>
-    <p v-if="countError" class="text-body-2 text--secondary">
-      {{ $t('connectedApplications.groupCountError') }}
-    </p>
-    <p v-else class="text-body-2">
+  <bs-settings-row class="bs-group-connected-applications-option">
+    <template #title>{{ $t('connectedApplications.pageTitle') }}</template>
+    <template #description>
       <v-progress-circular
-        v-if="count === null"
+        v-if="count === null && !countError"
         indeterminate
-        size="16"
+        size="14"
         width="2"
         color="accent"
       />
-      <template v-else>
-        {{ $tc('connectedApplications.groupCount', count, { count }) }}
-      </template>
-    </p>
+      <template v-else>{{ summary }}</template>
+    </template>
     <v-btn
-      outlined
+      v-if="count > 0"
+      text
       color="error"
+      class="text-none"
       :loading="loading"
-      :disabled="!count"
       @click="$refs.revokeModal.open()"
     >
       <lucide-unplug :size="16" class="mr-2" />
@@ -108,5 +106,5 @@ export default {
         }}
       </p>
     </bs-modal-confirm>
-  </section>
+  </bs-settings-row>
 </template>

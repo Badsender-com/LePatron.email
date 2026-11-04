@@ -12,7 +12,8 @@
  *   imports is an error, so a test says what it replaces.
  * - The Vuetify components (`v-…`) and the ones the script names are left as
  *   plain elements holding their content: a `v-btn` is a button-like element
- *   whose `click` the test dispatches.
+ *   whose `click` the test dispatches. A component of the project the test
+ *   gives compiled (`componentOf`) is rendered, its named slots with it.
  * - `mocks` become the instance's properties (`$t`, `$axios`…).
  *
  * The test file runs in jsdom (`@jest-environment jsdom`).
@@ -51,11 +52,29 @@ function optionsOf(file, imports) {
     module.exports
   );
   const options = module.exports.default || module.exports;
+  // Only the components the test gives compiled are rendered.
+  const rendered = Object.fromEntries(
+    Object.entries(options.components || {}).filter(
+      ([, component]) => component && typeof component.render === 'function'
+    )
+  );
   return {
     ...options,
     ...compileToFunctions(template.content),
-    components: {},
+    components: rendered,
   };
+}
+
+/**
+ * A component of the UI, compiled as `mountSfc` compiles it, for a test to
+ * give in `imports` when what the component shows sits in its slots.
+ *
+ * @param {string} file the path of the .vue file, from the repository root
+ * @param {Object} [imports] what its script imports
+ * @returns {Object} the component's options
+ */
+function componentOf(file, imports = {}) {
+  return optionsOf(path.join(ROOT, file), imports);
 }
 
 /**
@@ -89,4 +108,4 @@ async function settle(vm) {
   await vm.$nextTick();
 }
 
-module.exports = { mountSfc, settle };
+module.exports = { mountSfc, componentOf, settle };

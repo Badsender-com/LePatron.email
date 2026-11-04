@@ -3,12 +3,12 @@
  */
 'use strict';
 
-// The retex switch of a company (ADR 0012), mounted: under it, the admin
+// The retex switch of a company (ADR 0012), mounted: beside it, the admin
 // reads that the rating and the comment of a feedback reach the platform
 // company whether the retex is allowed or not, and what turning it off
 // erases; switching it saves it on its own.
 
-const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
+const { mountSfc, componentOf, settle } = require('../../helpers/mount-sfc.js');
 const mixinGroupSwitch = require('../../../packages/ui/helpers/mixins/mixin-group-switch.js');
 const fr = require('../../../packages/ui/helpers/locales/fr.js').default;
 const en = require('../../../packages/ui/helpers/locales/en.js').default;
@@ -26,20 +26,24 @@ function mountOption(group, $put) {
         _modulesNamespaceMap: { 'page/': { context: { commit } } },
       },
     },
-    imports: { '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch },
+    imports: {
+      '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch,
+      '~/components/layout/bs-settings-row.vue': componentOf(
+        'packages/ui/components/layout/bs-settings-row.vue'
+      ),
+    },
   });
 }
 
 describe('the retex option of a company', () => {
-  it('says under the switch what is always shared, and what turning it off erases', async () => {
+  it('says beside the switch what is always shared, and what turning it off erases', async () => {
     const vm = mountOption({ id: 'g1', allowRetex: false }, jest.fn());
     await settle(vm);
 
-    const text = vm.$el.innerHTML;
-    const switchAt = text.indexOf('<v-switch');
-    expect(switchAt).toBeGreaterThan(-1);
-    expect(text.indexOf('retex.alwaysShared')).toBeGreaterThan(switchAt);
-    expect(text.indexOf('retex.offForgets')).toBeGreaterThan(switchAt);
+    const said = vm.$el.querySelector('.bs-settings-row__description');
+    expect(vm.$el.querySelector('v-switch')).not.toBeNull();
+    expect(said.textContent).toContain('retex.alwaysShared');
+    expect(said.textContent).toContain('retex.offForgets');
   });
 
   it('saves the switch on its own, and tells the page', async () => {
