@@ -11,10 +11,7 @@ import BsAiCopyOriginChip from '~/components/ai-skill/bs-ai-copy-origin-chip.vue
 import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { BookOpen } from 'lucide-vue';
-import {
-  isUsedByFeature,
-  filterUsedByFeature,
-} from '~/helpers/used-by-feature.js';
+import { isUsedByFeature } from '~/helpers/used-by-feature.js';
 import {
   skillCategoryOptions,
   skillCategoryLabel,
@@ -94,20 +91,18 @@ export default {
     filteredItems() {
       // `clearable` sets this.search to null on clear — guard the trim.
       const q = (this.search || '').trim().toLowerCase();
-      return filterUsedByFeature(this.items, this.onlyUsedByFeature).filter(
-        (e) => {
-          if (this.filterCategory && e.category !== this.filterCategory)
-            return false;
-          if (this.filterStatus && e.status !== this.filterStatus) return false;
-          if (this.filterScope && !(e.scope || []).includes(this.filterScope))
-            return false;
-          if (q) {
-            const hay = `${e.title || ''} ${e.expertiseId || ''}`.toLowerCase();
-            if (!hay.includes(q)) return false;
-          }
-          return true;
+      return this.items.filter((e) => {
+        if (this.filterCategory && e.category !== this.filterCategory)
+          return false;
+        if (this.filterStatus && e.status !== this.filterStatus) return false;
+        if (this.filterScope && !(e.scope || []).includes(this.filterScope))
+          return false;
+        if (q) {
+          const hay = `${e.title || ''} ${e.expertiseId || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
         }
-      );
+        return true;
+      });
     },
   },
   mounted() {
@@ -138,7 +133,11 @@ export default {
       this.loading = true;
       try {
         const list = await this.$axios.$get(api.aiExpertiseList(), {
-          params: { pageSize: 200 },
+          // On the server, so the filter reaches past the first page.
+          params: {
+            pageSize: 200,
+            ...(this.onlyUsedByFeature ? { usedByFeature: true } : {}),
+          },
         });
         this.items = list.items || [];
         this.total = list.total || 0;
@@ -235,6 +234,7 @@ export default {
         dense
         hide-details
         class="filter-checkbox"
+        @change="fetchData"
       />
     </div>
 

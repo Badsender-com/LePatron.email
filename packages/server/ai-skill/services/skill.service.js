@@ -16,6 +16,7 @@ const {
 } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const { missingSchemaIds } = require('../schemas');
+const { idsUsedByFeatures } = require('./skills-publication.service.js');
 const {
   assertConsumedExpertises,
   consumedExpertiseWarnings,
@@ -66,10 +67,20 @@ function listItemOf({ versions, ...skill }) {
   };
 }
 
-async function listSkills({ category, status, page = 1, pageSize = 50 } = {}) {
+async function listSkills({
+  category,
+  status,
+  usedByFeature,
+  page = 1,
+  pageSize = 50,
+} = {}) {
   const query = {};
   if (category) query.category = category;
   if (status) query.status = status;
+  // Worked out from the features' declarations (ADR 0019), before paging.
+  if (String(usedByFeature) === 'true') {
+    query.skillId = { $in: await idsUsedByFeatures('skill') };
+  }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
   const [items, total] = await Promise.all([
