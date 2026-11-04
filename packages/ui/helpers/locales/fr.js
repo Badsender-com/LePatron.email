@@ -1743,6 +1743,18 @@ export default {
       },
       failuresLabel: 'Éléments en échec',
       nothingWritten: 'Rien n\'a été écrit.',
+      reasons: {
+        not_configured:
+          'Cette instance n\'est configurée pour suivre aucune production.',
+        invalid_address:
+          'L\'adresse de la production n\'est pas une adresse https valide.',
+        unreachable: 'La production n\'a pas pu être jointe.',
+        token_refused:
+          'La production a refusé le jeton de lecture : il a peut-être été révoqué.',
+        production_error: 'La production a répondu par une erreur.',
+        unreadable:
+          'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
+      },
     },
     readTokens: {
       title: 'Jetons de lecture',

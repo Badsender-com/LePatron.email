@@ -34,6 +34,10 @@ const ANSWER = z
   })
   .passthrough();
 
+// The page says "unreadable"; the message says where, for the logs.
+const unreadable = (message) =>
+  Object.assign(new Error(message), { reason: 'unreadable' });
+
 /**
  * @param {Object} json production's answer
  * @returns {Object} the answer, typed
@@ -41,7 +45,7 @@ const ANSWER = z
  */
 function readProductionAnswer(json) {
   if (!json || json.format !== FORMAT) {
-    throw new Error(
+    throw unreadable(
       `Production answered an unknown format (${
         json && json.format
       }); this copy reads format ${FORMAT}.`
@@ -50,7 +54,7 @@ function readProductionAnswer(json) {
   const parsed = ANSWER.safeParse(json);
   if (!parsed.success) {
     const [issue] = parsed.error.issues;
-    throw new Error(
+    throw unreadable(
       `Production answered something this copy cannot read: ${issue.path.join(
         '.'
       )} ${issue.message}`

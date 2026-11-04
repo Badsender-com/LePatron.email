@@ -1719,6 +1719,18 @@ export default {
       },
       failuresLabel: 'Failed items',
       nothingWritten: 'Nothing was written.',
+      reasons: {
+        not_configured:
+          'This instance is configured to follow no production.',
+        invalid_address:
+          'Production\'s address is not a valid https address.',
+        unreachable: 'Production could not be reached.',
+        token_refused:
+          'Production refused the read token: it may have been revoked.',
+        production_error: 'Production answered with an error.',
+        unreadable:
+          'Production\'s answer could not be read: the two instances may not run the same version of LePatron.',
+      },
     },
     readTokens: {
       title: 'Read tokens',

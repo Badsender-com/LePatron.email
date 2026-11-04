@@ -3,7 +3,11 @@ import { mapMutations } from 'vuex';
 import { RefreshCw } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
-import { followOutcomes, followStatusColor } from '~/helpers/skills-follow.js';
+import {
+  followFailureKey,
+  followOutcomes,
+  followStatusColor,
+} from '~/helpers/skills-follow.js';
 
 // A copy following production (ADR 0019): shown only on a copy, configured
 // with production's address and a read token. A super admin follows it now
@@ -35,6 +39,7 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     followStatusColor,
+    followFailureKey,
     async fetchData() {
       this.loading = true;
       try {
@@ -132,7 +137,8 @@ export default {
         <span class="bs-ai-follow__meta">{{ lastLabel() }}</span>
       </div>
       <p v-if="last.status === 'failed'" class="bs-ai-follow__message">
-        {{ last.message }} {{ $t('aiSkills.follow.nothingWritten') }}
+        {{ $t(followFailureKey(last)) }}
+        {{ $t('aiSkills.follow.nothingWritten') }}
       </p>
       <ul v-else class="bs-ai-follow__outcomes">
         <li v-for="{ outcome, count } in outcomes" :key="outcome">

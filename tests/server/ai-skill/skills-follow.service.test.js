@@ -309,7 +309,7 @@ describe('a copy following production', () => {
         actor: ALICE,
       });
 
-      expect(report).toMatchObject({ status: 'failed' });
+      expect(report).toMatchObject({ status: 'failed', reason: 'unreachable' });
       expect(store.stored('expertises')).toEqual([]);
       expect(store.stored('skills')).toEqual([]);
     });
@@ -322,7 +322,7 @@ describe('a copy following production', () => {
         actor: ALICE,
       });
 
-      expect(report).toMatchObject({ status: 'failed' });
+      expect(report).toMatchObject({ status: 'failed', reason: 'unreadable' });
       expect(store.stored('expertises')).toEqual([]);
     });
 
@@ -359,12 +359,17 @@ describe('a copy following production', () => {
       store.seed(EMPTY_COPY);
       await followProduction({
         fetchExport: async () => {
-          throw new Error('timeout');
+          throw Object.assign(new Error('Production refused the read token.'), {
+            reason: 'token_refused',
+          });
         },
         actor: ALICE,
       });
 
-      expect(await lastFollow()).toMatchObject({ status: 'failed' });
+      expect(await lastFollow()).toMatchObject({
+        status: 'failed',
+        reason: 'token_refused',
+      });
     });
   });
 });

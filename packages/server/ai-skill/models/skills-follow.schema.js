@@ -26,7 +26,9 @@ const SkillsFollowSchema = new Schema({
     enum: ['succeeded', 'partial', 'failed'],
     required: true,
   },
-  // Why the follow wrote nothing, when it failed: never an address.
+  // Why the follow wrote nothing, when it failed: a word the page translates
+  // (`reason`) and a sentence for the logs (`message`), never an address.
+  reason: { type: String, default: null },
   message: { type: String, default: null },
   origin: { type: String, default: '' },
   by: { type: String, default: '' },

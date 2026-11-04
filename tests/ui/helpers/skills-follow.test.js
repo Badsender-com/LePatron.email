@@ -10,6 +10,8 @@ const path = require('path');
 
 const {
   FOLLOW_OUTCOMES,
+  FOLLOW_FAILURE_REASONS,
+  followFailureKey,
   followOutcomes,
   followStatusColor,
 } = require('~/helpers/skills-follow.js');
@@ -40,6 +42,16 @@ describe("a copy's follows of production", () => {
     expect(followStatusColor('failed')).toBe('error');
   });
 
+  it('says why a follow failed in words of its own, whatever the server wrote', () => {
+    expect(followFailureKey({ reason: 'token_refused' })).toBe(
+      'aiSkills.follow.reasons.token_refused'
+    );
+    expect(followFailureKey({ reason: 'something new' })).toBe(
+      'aiSkills.follow.reasons.unreachable'
+    );
+    expect(followFailureKey({})).toBe('aiSkills.follow.reasons.unreachable');
+  });
+
   it.each(['en', 'fr'])('has its words in %s', (l) => {
     const locale = fs.readFileSync(
       path.join(__dirname, `../../../packages/ui/helpers/locales/${l}.js`),
@@ -57,6 +69,7 @@ describe("a copy's follows of production", () => {
       'partial',
       'failed',
       ...FOLLOW_OUTCOMES,
+      ...FOLLOW_FAILURE_REASONS,
     ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
   });
 });
