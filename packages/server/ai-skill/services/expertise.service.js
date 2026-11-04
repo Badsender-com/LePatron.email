@@ -93,11 +93,20 @@ async function getFacets() {
  * @param {*} userId
  * @param {Object} [firstVersion] what the v1.0 draft holds, among its
  *   patchable fields (the body, the examples, the changelog…)
+ * @param {Object} [options]
+ * @param {Object} [options.initialVersion] replaces the v1.0 draft: an
+ *   imported version, at its own number, written with the document in one
+ *   go (ADR 0018)
  * @returns {Promise<Object>} the expertise
  * @throws {HttpError} 409 when the expertiseId exists, 400 when the version
  *   is refused
  */
-async function createExpertise(data, userId, firstVersion = {}) {
+async function createExpertise(
+  data,
+  userId,
+  firstVersion = {},
+  { initialVersion } = {}
+) {
   const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
@@ -120,19 +129,32 @@ async function createExpertise(data, userId, firstVersion = {}) {
     // Seed a v1.0 DRAFT (empty content — expertise has no schemas) so the
     // author lands straight in the version editor, parity with skills (§4).
     versions: [
-      {
-        versionMajor: 1,
-        versionMinor: 0,
-        status: 'DRAFT',
-        ...blankVersionContent(),
-        changelog: '',
-        releaseNotes: '',
-        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      },
+      initialVersion
+        ? {
+            versionMajor: initialVersion.versionMajor,
+            versionMinor: initialVersion.versionMinor,
+            status: 'DRAFT',
+            ...versioned.cloneVersionContent(initialVersion),
+            changelog: initialVersion.changelog || '',
+            releaseNotes: initialVersion.releaseNotes || '',
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          }
+        : {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            ...blankVersionContent(),
+            changelog: '',
+            releaseNotes: '',
+            ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          },
     ],
   };
   try {

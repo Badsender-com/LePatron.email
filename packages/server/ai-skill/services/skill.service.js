@@ -80,11 +80,20 @@ const DEFAULT_OUTPUT_SCHEMA_ID = 'genericTextOutput';
  * @param {Object} [firstVersion] what the v1.0 draft holds besides the
  *   defaults, among its patchable fields (the nature, the procedure, the
  *   consumed expertises, the changelog…)
+ * @param {Object} [options]
+ * @param {Object} [options.initialVersion] replaces the v1.0 draft: an
+ *   imported version, at its own number, written with the document in one
+ *   go (ADR 0018)
  * @returns {Promise<Object>} the skill
  * @throws {HttpError} 409 when the skillId exists, 400 when the version is
  *   refused
  */
-async function createSkill(data, userId, firstVersion = {}) {
+async function createSkill(
+  data,
+  userId,
+  firstVersion = {},
+  { initialVersion } = {}
+) {
   if (firstVersion.consumedExpertiseIds !== undefined) {
     await assertConsumedExpertises(firstVersion.consumedExpertiseIds);
   }
@@ -105,21 +114,34 @@ async function createSkill(data, userId, firstVersion = {}) {
     activeVersion: { major: null, minor: 0 },
     // Seed a v1.0 DRAFT with the generic schemas pre-filled (§B1).
     versions: [
-      {
-        versionMajor: 1,
-        versionMinor: 0,
-        status: 'DRAFT',
-        ...blankVersionContent(),
-        inputSchemaId: DEFAULT_INPUT_SCHEMA_ID,
-        outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
-        changelog: '',
-        releaseNotes: '',
-        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      },
+      initialVersion
+        ? {
+            versionMajor: initialVersion.versionMajor,
+            versionMinor: initialVersion.versionMinor,
+            status: 'DRAFT',
+            ...versioned.cloneVersionContent(initialVersion),
+            changelog: initialVersion.changelog || '',
+            releaseNotes: initialVersion.releaseNotes || '',
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          }
+        : {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            ...blankVersionContent(),
+            inputSchemaId: DEFAULT_INPUT_SCHEMA_ID,
+            outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
+            changelog: '',
+            releaseNotes: '',
+            ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          },
     ],
   };
   try {

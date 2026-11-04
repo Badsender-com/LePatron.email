@@ -217,6 +217,66 @@ describe('the skills export', () => {
         readSkillsExport({ format: 1, expertises: [{ title: 'No id' }] })
       ).toThrow();
     });
+
+    // Refused whole, before the preview, rather than failing item by item.
+    it('refuses a file whose content has the wrong type, category or nature', async () => {
+      const file = await exportOf({ all: true });
+      const broken = (change) => {
+        const copy = JSON.parse(JSON.stringify(file));
+        change(copy);
+        return () => readSkillsExport(copy);
+      };
+
+      expect(
+        broken((c) => {
+          c.skills[1].version.consumedExpertiseIds = SUBJECT_LINES;
+        })
+      ).toThrow(/consumedExpertiseIds/);
+      // As the back office saves them: each once.
+      expect(
+        broken((c) => {
+          c.skills[1].version.consumedExpertiseIds = [
+            SUBJECT_LINES,
+            SUBJECT_LINES,
+          ];
+        })
+      ).toThrow(/consumedExpertiseIds names an expertise twice/);
+      expect(
+        broken((c) => {
+          c.expertises[0].version.body = {};
+        })
+      ).toThrow(/body/);
+      expect(
+        broken((c) => {
+          c.expertises[0].category = 'not-a-category';
+        })
+      ).toThrow(/category/);
+      expect(
+        broken((c) => {
+          c.skills[0].version.nature = 'not-a-nature';
+        })
+      ).toThrow(/nature/);
+      expect(
+        broken((c) => {
+          c.skills[0].version.testCases = [{ name: 'No input' }];
+        })
+      ).toThrow(/testCases/);
+    });
+
+    it('refuses a file that holds an item twice', async () => {
+      const file = await exportOf({ expertiseIds: [SUBJECT_LINES] });
+      file.expertises.push(file.expertises[0]);
+
+      expect(() => readSkillsExport(file)).toThrow(/twice/);
+    });
+
+    it('exports an item chosen twice once', async () => {
+      const file = await exportOf({
+        expertiseIds: [SUBJECT_LINES, SUBJECT_LINES],
+      });
+
+      expect(file.expertises).toHaveLength(1);
+    });
   });
 
   describe('previewing an import', () => {
@@ -313,6 +373,71 @@ describe('the skills export', () => {
       });
     });
 
+    // A version can exist here without being the active one: archived after
+    // an older draft was published.
+    it('blocks a version number that already exists here', async () => {
+      store.seed({
+        ...SOURCE,
+        expertises: SOURCE.expertises.map((e) =>
+          e.expertiseId === SPAM_WORDS
+            ? {
+                ...e,
+                activeVersion: { major: 0, minor: 9 },
+                versions: [
+                  { ...e.versions[0], status: 'ARCHIVED' },
+                  { ...e.versions[0], versionMajor: 0, versionMinor: 9 },
+                ],
+              }
+            : e
+        ),
+      });
+
+      expect(itemOf(await previewImport(file), SPAM_WORDS)).toMatchObject({
+        state: 'blocked',
+        reason: 'version_exists',
+      });
+    });
+
+    it('blocks a skill whose nature differs here', async () => {
+      store.seed({
+        ...SOURCE,
+        skills: SOURCE.skills.map((s) =>
+          s.skillId === WRITE_SUBJECT
+            ? {
+                ...s,
+                activeVersion: { major: 0, minor: 1 },
+                versions: [
+                  {
+                    ...s.versions[0],
+                    nature: 'feature',
+                    versionMajor: 0,
+                    versionMinor: 1,
+                  },
+                ],
+              }
+            : s
+        ),
+      });
+
+      expect(itemOf(await previewImport(file), WRITE_SUBJECT)).toMatchObject({
+        state: 'blocked',
+        reason: 'nature_differs',
+      });
+    });
+
+    // The model checks a schema id on every nature.
+    it('blocks a task skill that names a schema this instance does not have', async () => {
+      store.seed(EMPTY_TARGET);
+      file.skills.find(
+        (s) => s.skillId === WRITE_SUBJECT
+      ).version.inputSchemaId = 'aSchemaFromANewerRelease';
+
+      expect(itemOf(await previewImport(file), WRITE_SUBJECT)).toMatchObject({
+        state: 'blocked',
+        reason: 'missing_schema',
+      });
+    });
+
     it('blocks what is archived here', async () => {
       store.seed({
         ...EMPTY_TARGET,
@@ -391,6 +516,14 @@ describe('the skills export', () => {
       });
     });
 
+    it('writes a new item with its version alone, never a blank 1.0 beside it', async () => {
+      await importAll();
+
+      expect(expertiseOf(SUBJECT_LINES).versions).toEqual([
+        expect.objectContaining({ versionMajor: 2, versionMinor: 1 }),
+      ]);
+    });
+
     it('opens nothing to the outside, and gives the item to the person importing', async () => {
       await importAll();
 
@@ -463,15 +596,27 @@ describe('the skills export', () => {
       ]);
     });
 
-    it('goes on when one item fails, and says which', async () => {
-      file.expertises.find((e) => e.expertiseId === SPAM_WORDS).category =
-        'not-a-category';
+    // The database refuses one document, as a model's validation would.
+    it('goes on when one item fails, says which, and leaves nothing of it', async () => {
+      const create = store.models.Expertises.create;
+      store.models.Expertises.create = async (record) => {
+        if (record.expertiseId === SPAM_WORDS) {
+          throw new Error('Expertise validation failed');
+        }
+        return create(record);
+      };
 
       const report = await importAll();
+      store.models.Expertises.create = create;
 
       expect(report.failed).toEqual([
-        expect.objectContaining({ kind: 'expertise', id: SPAM_WORDS }),
+        expect.objectContaining({
+          kind: 'expertise',
+          id: SPAM_WORDS,
+          message: 'Expertise validation failed',
+        }),
       ]);
+      expect(expertiseOf(SPAM_WORDS)).toBeUndefined();
       expect(report.created.map((item) => item.id)).toEqual([
         SUBJECT_LINES,
         SUBJECT_IDEAS,

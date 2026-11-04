@@ -66,6 +66,7 @@ const {
   skillsRouter: aiSkillsRouter,
   expertiseRouter: aiExpertiseRouter,
   invocationsRouter: aiInvocationsRouter,
+  skillsImportBodyParser: aiSkillsImportBodyParser,
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const mcpClientRouter = require('./mcp/mcp-client.routes.js');
@@ -164,6 +165,8 @@ if (cluster.isMaster) {
   app.use('/mcp', bodyParser.json({ limit: '1mb' }));
   // Nor does the authorization server, which anyone may call.
   app.use('/oauth', ...oauthBodyParsers());
+  // A skills export is 5 MB at most (ADR 0018).
+  app.use('/api/ai-skills/import', aiSkillsImportBodyParser);
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 

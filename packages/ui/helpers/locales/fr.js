@@ -1699,6 +1699,8 @@ export default {
       target_newer: 'Une version plus récente existe ici.',
       draft_open: 'Un brouillon est ouvert ici : publiez-le ou supprimez-le d\'abord.',
       archived: 'Archivé ici.',
+      version_exists: 'Cette version existe déjà ici, sans être la version active.',
+      nature_differs: 'Ce skill n\'a pas la même nature ici (tâche ou fonctionnalité).',
       missing_schema: 'Son schéma n\'existe pas sur cette instance : elle n\'est pas à jour.',
     },
     warnings: {

@@ -1675,6 +1675,8 @@ export default {
       target_newer: 'A newer version exists here.',
       draft_open: 'A draft is open here: publish or delete it first.',
       archived: 'Archived here.',
+      version_exists: 'This version already exists here, without being the active one.',
+      nature_differs: 'This skill has another nature here (task or feature).',
       missing_schema: 'Its schema does not exist on this instance: it is not up to date.',
     },
     warnings: {
