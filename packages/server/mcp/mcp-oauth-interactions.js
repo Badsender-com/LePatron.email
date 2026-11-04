@@ -149,7 +149,7 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
-      return finish(req, res, {
+      return await finish(req, res, {
         login: { accountId },
         consent: { grantId },
       });
@@ -160,7 +160,7 @@ function createInteractionsRouter(provider, resource) {
 
   router.post('/:uid/deny', async (req, res, next) => {
     try {
-      return finish(req, res, {
+      return await finish(req, res, {
         error: 'access_denied',
         error_description: 'The user declined the connection.',
       });
