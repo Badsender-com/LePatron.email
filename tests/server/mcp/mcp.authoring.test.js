@@ -137,7 +137,7 @@ describe('authoring', () => {
         changelog: 'Shorter subjects',
       });
 
-      expect(answer.status).toBe('DRAFT');
+      expect(answer.status).toBe('draft');
     });
 
     it('offers no tool that publishes, archives, deletes or opens to clients', async () => {
@@ -159,18 +159,29 @@ describe('authoring', () => {
         });
     });
 
-    it('marks the writing tools as not read-only and not destructive', async () => {
+    // Proposing rewrites the open draft; creating only adds one.
+    it('marks the writing tools as not read-only, the proposals as destructive', async () => {
       const { tools } = await (await asAuthor()).listTools();
 
-      tools
+      const hints = tools
         .filter((tool) => AUTHORING_TOOLS.includes(tool.name))
-        .forEach((tool) => {
-          expect(tool.annotations).toMatchObject({
-            readOnlyHint: false,
-            destructiveHint: false,
-          });
-          expect(tool.outputSchema.type).toBe('object');
-        });
+        .map((tool) => ({
+          tool: tool.name,
+          readOnly: tool.annotations.readOnlyHint,
+          destructive: tool.annotations.destructiveHint,
+          output: tool.outputSchema.type,
+        }));
+
+      expect(hints).toEqual(
+        expect.arrayContaining(
+          AUTHORING_TOOLS.map((tool) => ({
+            tool,
+            readOnly: false,
+            destructive: tool.startsWith('propose_'),
+            output: 'object',
+          }))
+        )
+      );
     });
   });
 
@@ -188,7 +199,7 @@ describe('authoring', () => {
       expect(answer).toMatchObject({
         expertiseId: SUBJECT_LINES,
         version: '2.2',
-        status: 'DRAFT',
+        status: 'draft',
       });
       const { contents } = await client.readResource({
         uri: `lepatron://expertises/${SUBJECT_LINES}`,
@@ -266,7 +277,7 @@ describe('authoring', () => {
       expect(result.structuredContent).toEqual({
         expertiseId: SUBJECT_LINES,
         version: '2.2',
-        status: 'DRAFT',
+        status: 'draft',
         audience: 'all',
       });
     });
@@ -560,7 +571,7 @@ describe('authoring', () => {
         changelog: 'One more step',
       });
 
-      expect(created).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(created).toMatchObject({ version: '1.0', status: 'draft' });
       expect(changed.version).toBe('1.0');
       expect(changed.text).toContain('+ 2. Never guess.');
     });
@@ -603,7 +614,7 @@ describe('authoring', () => {
       expect(answer).toMatchObject({
         expertiseId: 'design.button-contrast',
         version: '1.0',
-        status: 'DRAFT',
+        status: 'draft',
         audience: 'platform',
       });
       const { resources } = await client.listResources();
@@ -642,7 +653,7 @@ describe('authoring', () => {
         consumedExpertiseIds: [SUBJECT_LINES],
       });
 
-      expect(answer).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(answer).toMatchObject({ version: '1.0', status: 'draft' });
       expect(storedSkill().versions).toEqual([
         expect.objectContaining({
           versionMajor: 1,
@@ -667,7 +678,7 @@ describe('authoring', () => {
       const again = await call(client, 'create_task_skill', TASK_SKILL);
 
       expect(refused.error).toContain('design.never-written');
-      expect(again).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(again).toMatchObject({ version: '1.0', status: 'draft' });
       expect(storedSkill().versions).toHaveLength(1);
       expect(storedSkill().versions[0].nature).toBe('task');
     });

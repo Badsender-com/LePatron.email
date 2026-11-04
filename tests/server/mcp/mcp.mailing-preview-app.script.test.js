@@ -78,7 +78,7 @@ describe('the preview app, as a host runs it', () => {
     const app = await runApp(options);
     app.fromHost({
       method: 'ui/notifications/tool-result',
-      params: { _meta: { 'lepatron/previewHtml': preview } },
+      params: { _meta: { 'email.lepatron/previewHtml': preview } },
     });
     await settled();
     return app;
@@ -196,7 +196,7 @@ describe('the preview app, as a host runs it', () => {
 
     fromHost({
       method: 'ui/notifications/tool-result',
-      params: { _meta: { 'lepatron/previewHtml': '<p>An email</p>' } },
+      params: { _meta: { 'email.lepatron/previewHtml': '<p>An email</p>' } },
     });
 
     expect(frame.style.pointerEvents).toBe('none');

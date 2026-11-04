@@ -31,6 +31,7 @@ const {
   CREATE_EXPERTISE_INPUT,
   CREATE_TASK_SKILL_INPUT,
 } = require('./mcp-authoring.schemas.js');
+const { ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
 
 // What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
@@ -69,7 +70,8 @@ function answerOf(entity, doc, draft) {
     answer: {
       [idField]: doc[idField],
       version: label(draft),
-      status: draft.status,
+      // Lower case, as every other state an assistant reads.
+      status: String(draft.status).toLowerCase(),
       audience: doc.audience,
     },
     diff: draftDiff(findActiveVersion(doc), draft, fields),
@@ -155,7 +157,7 @@ async function assertNew(entity, id) {
     if (err.status === 404) return;
     throw err;
   }
-  throw createError(409, `"${id}" already exists`);
+  throw createError(409, `"${id}" already exists.`);
 }
 
 // A creation is one write, the v1.0 draft whole: nothing is left behind when
@@ -190,8 +192,6 @@ function asAuthor(write) {
   });
 }
 
-const WRITING = { readOnlyHint: false, destructiveHint: false };
-
 // How an expertise's body is cut into sections, which the server checks.
 const SECTIONS =
   'The body is Markdown; each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
@@ -204,7 +204,7 @@ function registerAuthoringTools(server) {
       description: `Writes a change to an expertise as a draft: the open draft, or a new one from the active version. Never published from here: a person publishes it in the back office. Give a changelog. ${SECTIONS}`,
       inputSchema: PROPOSE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: OVERWRITING,
     },
     asAuthor(({ expertiseId, ...change }, user) =>
       writeDraft('expertise', expertiseId, change, user)
@@ -219,7 +219,7 @@ function registerAuthoringTools(server) {
         'Writes a change to a skill as a draft: the procedure and consumed expertises of a task skill, or the instructions and template of a feature skill. Never published from here. Give a changelog.',
       inputSchema: PROPOSE_SKILL_INPUT,
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: OVERWRITING,
     },
     asAuthor(({ skillId, ...change }, user) =>
       writeDraft('skill', skillId, change, user)
@@ -233,7 +233,7 @@ function registerAuthoringTools(server) {
       description: `Creates an expertise as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company. ${SECTIONS}`,
       inputSchema: CREATE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: ADDITIVE,
     },
     asAuthor(({ body, changelog: log, ...data }, user) =>
       createDraft('expertise', data, { body, changelog: log }, user)
@@ -248,7 +248,7 @@ function registerAuthoringTools(server) {
         'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company.',
       inputSchema: CREATE_TASK_SKILL_INPUT,
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: ADDITIVE,
     },
     asAuthor(
       ({ procedure, consumedExpertiseIds, changelog: log, ...data }, user) =>

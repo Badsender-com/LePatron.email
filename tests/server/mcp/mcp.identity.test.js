@@ -191,7 +191,7 @@ describe('identity and MCP access', () => {
     const { error } = harness.answerOf(
       await client.callTool({
         name: 'find_applicable_expertises',
-        arguments: { scope: 'subject', categories: ['redaction'] },
+        arguments: { scope: ['subject'], categories: ['redaction'] },
       })
     );
 
@@ -232,7 +232,7 @@ describe('identity and MCP access', () => {
     const { error } = harness.answerOf(
       await client.callTool({
         name: 'find_applicable_expertises',
-        arguments: { scope: 'subject', categories: ['redaction'] },
+        arguments: { scope: ['subject'], categories: ['redaction'] },
       })
     );
 

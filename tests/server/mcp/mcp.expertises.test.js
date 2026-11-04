@@ -155,7 +155,7 @@ describe('expertises', () => {
 
     it('reads the scopes as the expertises store them', async () => {
       const answer = await find({
-        scope: ' Subject ',
+        scope: [' Subject '],
         categories: ['redaction'],
       });
 
@@ -166,7 +166,7 @@ describe('expertises', () => {
     // is written for still finds it.
     it('finds a transversal expertise whatever the scope', async () => {
       const answer = await find({
-        scope: 'footer',
+        scope: ['footer'],
         categories: ['deliverability'],
       });
 
@@ -186,7 +186,7 @@ describe('expertises', () => {
     // told what it may ask for, in a note that is not an error.
     describe('its note on the scopes', () => {
       it('gives the scopes in use, not those of a draft or a transversal expertise', async () => {
-        const answer = await find({ scope: 'subject', categories: ['qc'] });
+        const answer = await find({ scope: ['subject'], categories: ['qc'] });
 
         expect(answer).toMatchObject({
           scopesInUse: ['subject'],
@@ -218,8 +218,8 @@ describe('expertises', () => {
     });
 
     it.each([
-      ['a blank scope', { scope: '  ', categories: ['redaction'] }],
-      ['no category', { scope: 'subject', categories: [] }],
+      ['a blank scope', { scope: ['  '], categories: ['redaction'] }],
+      ['no category', { scope: ['subject'], categories: [] }],
       [
         'too many scopes',
         { scope: Array(11).fill('subject'), categories: ['redaction'] },
@@ -227,7 +227,7 @@ describe('expertises', () => {
       [
         'a long email type',
         {
-          scope: 'subject',
+          scope: ['subject'],
           categories: ['redaction'],
           emailType: 'x'.repeat(51),
         },

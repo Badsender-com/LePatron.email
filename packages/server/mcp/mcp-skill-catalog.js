@@ -132,11 +132,19 @@ function argumentsOf({ version }) {
   if (isTask(version)) return [];
   const described = describeSchema(version.inputSchemaId);
   if (described) {
-    return described.fields.map(({ name, required }) => ({ name, required }));
+    return described.fields.map(({ name, required, description }) => ({
+      name,
+      description: description || `The ${name} the skill works on.`,
+      required,
+    }));
   }
   return placeholderPaths(version.inputTemplate)
     .filter((path) => !isExpertisePath(path))
-    .map((name) => ({ name, required: false }));
+    .map((name) => ({
+      name,
+      description: `Fills {{${name}}} in the skill's template.`,
+      required: false,
+    }));
 }
 
 /**

@@ -26,6 +26,8 @@ const { registerSearchAndFetch } = require('./mcp-search.js');
 const { guardCalls } = require('./mcp-call-guard.js');
 const { hasScope, WRITE_SCOPE } = require('./mcp-identity.js');
 
+const { siteOrigin } = require('../email-templates/email-template.js');
+
 const { version } = require('../../../package.json');
 
 const INSTRUCTIONS = [
@@ -56,7 +58,20 @@ const INSTRUCTIONS = [
  */
 function createMcpServer({ authInfo } = {}) {
   const server = new McpServer(
-    { name: 'lepatron', title: 'LePatron', version },
+    {
+      name: 'lepatron',
+      title: 'LePatron',
+      version,
+      description:
+        'The email production platform: its expertises, its skills and your mailings.',
+      websiteUrl: siteOrigin(),
+      icons: [
+        {
+          src: `${siteOrigin()}/pique_aiguille.svg`,
+          mimeType: 'image/svg+xml',
+        },
+      ],
+    },
     { instructions: INSTRUCTIONS }
   );
   // Before anything is registered: every handler is rate limited and logged.

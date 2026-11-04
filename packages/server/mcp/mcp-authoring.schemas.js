@@ -32,50 +32,97 @@ const CONSUMED = z
 const changelog = z
   .string()
   .min(1, 'A changelog is required')
-  .max(MAX_CHANGELOG_LENGTH);
+  .max(MAX_CHANGELOG_LENGTH)
+  .describe('What changes and why, in a sentence or two, in French.');
 
 const ANSWER = z.object({
   expertiseId: z.string().optional(),
   skillId: z.string().optional(),
   version: z.string(),
-  status: z.string(),
+  status: z.enum(['draft']),
   audience: z.string().optional(),
 });
+const major = z
+  .boolean()
+  .optional()
+  .describe(
+    'true for a major version (a change of meaning). Default: a minor one.'
+  );
+const newIdOf = (kind) =>
+  NEW_ID.describe(
+    `The ${kind} id: lower case letters, digits, dots, dashes and underscores, e.g. redaction.subject.length.`
+  );
+const categoryParam = z
+  .enum(SkillCategoryValues)
+  .describe(`One of: ${SkillCategoryValues.join(', ')}.`);
+const expertiseIds = CONSUMED.optional().describe(
+  `The expertiseIds the procedure reads, in the order it reads them, ${MaxConsumedExpertises} at most.`
+);
+
 const PROPOSE_EXPERTISE_INPUT = z.object({
-  expertiseId: ID,
-  body: TEXT.optional(),
-  examplesGood: EXAMPLES.optional(),
-  examplesBad: EXAMPLES.optional(),
+  expertiseId: ID.describe(
+    'The expertise to change, as find_applicable_expertises gives it.'
+  ),
+  body: TEXT.optional().describe(
+    'The whole new text, in Markdown. Left out: unchanged.'
+  ),
+  examplesGood: EXAMPLES.optional().describe(
+    'The whole new list of good examples. Left out: unchanged.'
+  ),
+  examplesBad: EXAMPLES.optional().describe(
+    'The whole new list of bad examples. Left out: unchanged.'
+  ),
   changelog,
-  major: z.boolean().optional(),
+  major,
 });
 const PROPOSE_SKILL_INPUT = z.object({
-  skillId: ID,
-  procedure: TEXT.optional(),
-  consumedExpertiseIds: CONSUMED.optional(),
-  systemPrompt: TEXT.optional(),
-  skillBody: TEXT.optional(),
-  inputTemplate: TEXT.optional(),
+  skillId: ID.describe('The skill to change, as find_skills gives it.'),
+  procedure: TEXT.optional().describe(
+    'A task skill: the whole new procedure, in Markdown.'
+  ),
+  consumedExpertiseIds: expertiseIds,
+  systemPrompt: TEXT.optional().describe(
+    'A feature skill: the whole new instructions.'
+  ),
+  skillBody: TEXT.optional().describe('A feature skill: the whole new body.'),
+  inputTemplate: TEXT.optional().describe(
+    'A feature skill: the whole new input template.'
+  ),
   changelog,
-  major: z.boolean().optional(),
+  major,
 });
 const CREATE_EXPERTISE_INPUT = z.object({
-  expertiseId: NEW_ID,
-  title: TITLE,
-  category: z.enum(SkillCategoryValues),
-  description: DESCRIPTION.optional(),
-  scope: z.array(z.string().max(MAX_SCOPE_LENGTH)).max(MAX_SCOPES).optional(),
-  isTransversal: z.boolean().optional(),
-  body: TEXT,
+  expertiseId: newIdOf('expertise'),
+  title: TITLE.describe('Its title, in French.'),
+  category: categoryParam,
+  description: DESCRIPTION.optional().describe(
+    'What it covers, in a sentence, in French.'
+  ),
+  scope: z
+    .array(z.string().max(MAX_SCOPE_LENGTH))
+    .max(MAX_SCOPES)
+    .optional()
+    .describe(
+      'The parts of the email it applies to, e.g. ["subject", "preheader"].'
+    ),
+  isTransversal: z
+    .boolean()
+    .optional()
+    .describe('true if it applies to every part of the email.'),
+  body: TEXT.describe('Its text, in Markdown, in French.'),
   changelog,
 });
 const CREATE_TASK_SKILL_INPUT = z.object({
-  skillId: NEW_ID,
-  title: TITLE,
-  category: z.enum(SkillCategoryValues),
-  description: DESCRIPTION.optional(),
-  procedure: TEXT,
-  consumedExpertiseIds: CONSUMED.optional(),
+  skillId: newIdOf('skill'),
+  title: TITLE.describe('Its title, in French.'),
+  category: categoryParam,
+  description: DESCRIPTION.optional().describe(
+    'When to use it, in a sentence, in French: find_skills matches on it.'
+  ),
+  procedure: TEXT.describe(
+    'The procedure an assistant follows, in Markdown, in French.'
+  ),
+  consumedExpertiseIds: expertiseIds,
   changelog,
 });
 
