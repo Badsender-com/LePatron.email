@@ -48,12 +48,12 @@ In **Add tool**, choose **Create a new connection**: the LePatron consent screen
 
 ### Create a client for the manual type (tech admin)
 
-1. In LePatron, open **Settings › AI features**, then the **Manage MCP clients** link of the MCP access section, then **Add a client**.
+1. In LePatron, open **Settings › AI features**, then, in the MCP access section, the **Manage** link of the "Clients registered by hand" row, then **Add a client**.
 2. Fill in:
    - the name, shown on the consent screen;
    - the redirect URL: the callback URL Copilot Studio gave;
-   - how the secret is sent: keep "In the request body" unless told otherwise.
-3. **Copy the secret right away**: it will never be shown again. If it is lost, delete the client and create another one.
+   - how the secret is sent, under "Advanced setting": keep "In the request body" unless told otherwise.
+3. **Copy the secret right away**: it will never be shown again, and the dialog only closes once it is copied. If it is lost, delete the client and create another one.
 
 The client belongs to your company: only its users can connect with it. Deleting it cuts every connection made through it at once.
 
