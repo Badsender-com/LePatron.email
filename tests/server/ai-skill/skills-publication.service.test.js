@@ -165,7 +165,7 @@ describe('publishing what a feature uses', () => {
   });
 
   // Turned on by #1428 (used by a feature, worked out and shown)
-  describe.skip('used by a feature', () => {
+  describe('used by a feature', () => {
     it('is said of an expertise a feature loads through its declared filters', async () => {
       expect(
         await publication.usedByFeatures({

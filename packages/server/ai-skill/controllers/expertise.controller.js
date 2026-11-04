@@ -6,6 +6,7 @@ const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
 const { assertCopy } = require('../services/skills-copy.service.js');
+const { withUsedBy } = require('../services/skills-publication.service.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -27,11 +28,21 @@ function versionFromParam(req) {
 
 module.exports = {
   listExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.listExpertise(req.query));
+    const data = await expertiseService.listExpertise(req.query);
+    // Worked out from the features' declarations, never stored (ADR 0019).
+    res.json({
+      ...data,
+      items: (data.items || []).map((item) => withUsedBy('expertise', item)),
+    });
   }),
 
   getExpertise: asyncHandler(async (req, res) => {
-    res.json(await expertiseService.getExpertise(req.params.expertiseId));
+    res.json(
+      withUsedBy(
+        'expertise',
+        await expertiseService.getExpertise(req.params.expertiseId)
+      )
+    );
   }),
 
   getActivationImpact: asyncHandler(async (req, res) => {
@@ -58,8 +69,12 @@ module.exports = {
   }),
 
   updateExpertise: asyncHandler(async (req, res) => {
+    // The scope and the category decide which features load it.
     res.json(
-      await expertiseService.updateExpertise(req.params.expertiseId, req.body)
+      withUsedBy(
+        'expertise',
+        await expertiseService.updateExpertise(req.params.expertiseId, req.body)
+      )
     );
   }),
 

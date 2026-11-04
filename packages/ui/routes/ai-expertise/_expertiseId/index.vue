@@ -18,11 +18,14 @@ import {
 import BsAiCopyPanel from '~/components/ai-skill/bs-ai-copy-panel.vue';
 import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
 import { fetchCopyState, copyActionsOf } from '~/helpers/skills-copy.js';
+import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
   components: {
     BsAiDetailHeader,
+    BsAiUsedByFeatures,
     BsAiFeedbackTab,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
@@ -58,6 +61,7 @@ export default {
       return {
         exp,
         savedAudience: exp.audience,
+        usedBy: usedByOf(exp),
         isCopy: copyState.isCopy,
         followedOnce: copyState.followedOnce,
       };
@@ -74,6 +78,9 @@ export default {
       // On a copy, the page says where the expertise comes from (ADR 0019).
       isCopy: false,
       followedOnce: false,
+      // Kept apart from the expertise: only the detail and the details save
+      // carry it, and a change of scope or category can change it.
+      usedBy: [],
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -214,6 +221,7 @@ export default {
       :title="exp.title"
       :status="exp.status"
       back-to="/ai-skills?tab=expertise"
+      :used-by-feature="usedBy.length > 0"
       @archive="$refs.archiveModal.open()"
     />
 
@@ -234,6 +242,7 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+    <bs-ai-used-by-features :used-by="usedBy" />
 
     <bs-ai-copy-panel
       kind="expertise"

@@ -23,12 +23,15 @@ import {
   skillCategoryLabel,
   AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
+import BsAiUsedByFeatures from '~/components/ai-skill/bs-ai-used-by-features.vue';
+import { usedByOf } from '~/helpers/used-by-feature.js';
 
 export default {
   name: 'PageAiSkillDetail',
   components: {
     BsAiDraftChangedAlert,
     BsAiDetailHeader,
+    BsAiUsedByFeatures,
     BsAiFeedbackTab,
     BsAiActivateModal,
     BsAiArchiveModal,
@@ -65,6 +68,7 @@ export default {
       return {
         skill,
         savedAudience: skill.audience,
+        usedBy: usedByOf(skill),
         schemas: schemasRes.schemas || [],
         isCopy: copyState.isCopy,
         followedOnce: copyState.followedOnce,
@@ -78,6 +82,8 @@ export default {
       skill: null,
       // The audience stored: opening the skill to all is confirmed first.
       savedAudience: null,
+      // Kept apart from the skill: only the detail answers carry it.
+      usedBy: [],
       schemas: [],
       // On a copy, the page says where the skill comes from (ADR 0019).
       isCopy: false,
@@ -260,6 +266,7 @@ export default {
       :status="skill.status"
       back-to="/ai-skills?tab=skills"
       :playground-to="`/ai-playground/new?skillId=${skill.skillId}`"
+      :used-by-feature="usedBy.length > 0"
       @archive="$refs.archiveModal.open()"
     />
 
@@ -280,6 +287,7 @@ export default {
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
     </p>
+    <bs-ai-used-by-features :used-by="usedBy" />
 
     <bs-ai-copy-panel
       kind="skill"
