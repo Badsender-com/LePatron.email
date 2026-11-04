@@ -363,4 +363,4 @@ function registerAuthoringTools(server) {
   );
 }
 
-module.exports = { registerAuthoringTools };
+module.exports = { registerAuthoringTools, mayDraft, isRefusal };
