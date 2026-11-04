@@ -52,8 +52,7 @@ describe('the MCP module at consent', () => {
     });
   });
 
-  // Turned on by #1398 (the AI features page and the consent say it is missing)
-  describe.skip('why a user is stopped', () => {
+  describe('why a user is stopped', () => {
     it('tells a user whose group lacks the module', async () => {
       oauth.update(app, 'groups', f.CLIENT_GROUP, { enableMcpModule: false });
       const { agent, uid } = await consentFor(f.FRANK);
