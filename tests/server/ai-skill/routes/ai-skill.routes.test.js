@@ -64,6 +64,34 @@ jest.mock(
   })
 );
 
+// Publishing reads the store for the features that use a version: here, no
+// feature uses any, so it comes down to the activation of the mocked service.
+// The guard itself is tested on its own (skills-publication.service.test.js,
+// routes/publication.routes.test.js).
+jest.mock(
+  '../../../../packages/server/ai-skill/services/skills-publication.service',
+  () => {
+    const actual = jest.requireActual(
+      '../../../../packages/server/ai-skill/services/skills-publication.service'
+    );
+    return {
+      ...actual,
+      // As the service answers: the item, and a skill's opening warnings.
+      publishVersion: async ({ kind, id, version, payload }, user) => {
+        const published = await require(`../../../../packages/server/ai-skill/services/${kind}.service`).activateVersion(
+          id,
+          version,
+          payload,
+          user.id
+        );
+        return kind === 'skill'
+          ? { doc: published.skill, warnings: published.warnings || [] }
+          : { doc: published, warnings: [] };
+      },
+    };
+  }
+);
+
 // Stub the auth guard, on the real rule, so the test picks the user.
 jest.mock('../../../../packages/server/account/auth.guard', () => ({
   GUARD_ADMIN: (req, res, next) => {

@@ -121,3 +121,11 @@ export function aiExpertiseKeepOnCopy(expertiseId) {
 export function aiExpertiseDuplicateOnCopy(expertiseId) {
   return `/ai-expertise/${expertiseId}/duplicate-on-copy`;
 }
+
+// The publication guard (ADR 0019) on a version of a skill or an expertise:
+// `publication` (what it would replay), `guard`, `cancel-publication`, and
+// `activate`, which publishes with the guard that ran.
+export function aiVersionAction(kind, id, major, minor, action) {
+  const base = kind === 'skill' ? aiSkill(id) : aiExpertise(id);
+  return `${base}/versions/${versionLabel(major, minor)}/${action}`;
+}

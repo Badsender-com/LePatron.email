@@ -15,6 +15,10 @@ const {
   expertiseCopies,
 } = require('./controllers/skills-copy.controller.js');
 const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
+const {
+  skillPublication,
+  expertisePublication,
+} = require('./controllers/publication.controller.js');
 
 const skillsRouter = express.Router();
 skillsRouter.use(GUARD_ADMIN);
@@ -52,6 +56,16 @@ skillsRouter.delete('/:skillId/versions/:version', skill.deleteVersion);
 skillsRouter.post(
   '/:skillId/versions/:version/activate',
   skill.activateVersion
+);
+// The publication guard (ADR 0019): what it replays, the replay, a cancel.
+skillsRouter.get(
+  '/:skillId/versions/:version/publication',
+  skillPublication.plan
+);
+skillsRouter.post('/:skillId/versions/:version/guard', skillPublication.guard);
+skillsRouter.post(
+  '/:skillId/versions/:version/cancel-publication',
+  skillPublication.cancel
 );
 skillsRouter.post('/:skillId/archive', skill.archiveSkill);
 // On a copy: an item kept on the copy, or a version duplicated (ADR 0019).
@@ -94,6 +108,18 @@ expertiseRouter.delete(
 expertiseRouter.post(
   '/:expertiseId/versions/:version/activate',
   expertise.activateVersion
+);
+expertiseRouter.get(
+  '/:expertiseId/versions/:version/publication',
+  expertisePublication.plan
+);
+expertiseRouter.post(
+  '/:expertiseId/versions/:version/guard',
+  expertisePublication.guard
+);
+expertiseRouter.post(
+  '/:expertiseId/versions/:version/cancel-publication',
+  expertisePublication.cancel
 );
 expertiseRouter.post('/:expertiseId/archive', expertise.archiveExpertise);
 expertiseRouter.post('/:expertiseId/keep-on-copy', expertiseCopies.keep);

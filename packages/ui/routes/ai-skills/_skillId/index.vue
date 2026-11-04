@@ -6,6 +6,8 @@ import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
 import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiPublicationGuardModal from '~/components/ai-skill/bs-ai-publication-guard-modal.vue';
+import { guardRequired } from '~/helpers/publication-guard.js';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
@@ -34,6 +36,7 @@ export default {
     BsAiUsedByFeatures,
     BsAiFeedbackTab,
     BsAiActivateModal,
+    BsAiPublicationGuardModal,
     BsAiArchiveModal,
     BsAiSkillVersionsPanel,
     BsAiSkillDetailsForm,
@@ -230,31 +233,56 @@ export default {
       this.$refs.activateModal.open(version);
     },
     // Published, and opened to all with the expertises chosen when the
-    // modal says so, in one request.
+    // modal says so, in one request. A version a feature uses goes through
+    // its guard first (ADR 0019), with the same payload.
     async activateVersion(payload) {
       this.saving = true;
+      // The update date of the draft the page read goes with the
+      // publication, through the guard too (ADR 0014).
+      const sent = {
+        ...payload,
+        updatedAt: this.readAtOf(this.activatingVersion),
+      };
       try {
         const { versionMajor, versionMinor } = this.activatingVersion;
         const res = await this.$axios.$post(
           api.aiSkillActivate(this.skill.skillId, versionMajor, versionMinor),
-          { ...payload, updatedAt: this.readAtOf(this.activatingVersion) }
+          sent
         );
-        // Non-blocking coherence warnings surface post-activation too (§3).
-        this.versionWarnings = res.warnings || [];
-        this.warningsVersionKey = `${versionMajor}.${versionMinor}`;
-        delete res.warnings;
-        this.skill = res;
-        this.savedAudience = res.audience;
-        if (this.$refs.activateModal) this.$refs.activateModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.activated'),
-          color: 'success',
-        });
+        this.onPublished(res);
       } catch (err) {
-        this.handleError(err);
+        const plan = guardRequired(err);
+        if (!plan) return this.handleError(err);
+        this.$refs.activateModal.close();
+        this.$refs.guardModal.open({
+          version: this.activatingVersion,
+          payload: sent,
+          plan,
+        });
       } finally {
         this.saving = false;
       }
+    },
+    onPublished(res) {
+      const { versionMajor, versionMinor } = this.activatingVersion;
+      // Non-blocking coherence warnings surface post-activation too (§3).
+      this.versionWarnings = res.warnings || [];
+      this.warningsVersionKey = `${versionMajor}.${versionMinor}`;
+      delete res.warnings;
+      this.skill = res;
+      this.savedAudience = res.audience;
+      if (this.$refs.activateModal) this.$refs.activateModal.close();
+      this.showSnackbar({
+        text: this.$t('aiSkills.version.activated'),
+        color: 'success',
+      });
+    },
+    onGuardCancelled(doc) {
+      this.skill = doc;
+      this.showSnackbar({
+        text: this.$t('aiSkills.publicationGuard.cancelled'),
+        color: 'info',
+      });
     },
   },
 };
@@ -370,6 +398,13 @@ export default {
     <bs-ai-skill-open-modal
       ref="openModal"
       @confirm="(ids) => patchDetails(ids)"
+    />
+    <bs-ai-publication-guard-modal
+      ref="guardModal"
+      kind="skill"
+      :entity-id="skill.skillId || ''"
+      @published="onPublished"
+      @cancelled="onGuardCancelled"
     />
     <bs-ai-archive-modal
       ref="archiveModal"

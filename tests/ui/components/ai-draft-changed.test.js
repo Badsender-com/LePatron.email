@@ -111,7 +111,7 @@ describe('a draft written since the page read it', () => {
     ['packages/ui/routes/ai-expertise/_expertiseId/index.vue'],
     ['packages/ui/routes/ai-skills/_skillId/index.vue'],
   ])(
-    '%s sends it with a save and a publication, and tells the refusal',
+    '%s sends it with a save and a publication, through the guard too, and tells the refusal',
     (file) => {
       const source = fs.readFileSync(
         path.join(__dirname, '../../..', file),
@@ -120,8 +120,10 @@ describe('a draft written since the page read it', () => {
 
       expect(source).toMatch(/updatedAt: this\.readAtOf\(version\)/);
       expect(source).toMatch(
-        /\.\.\.payload, updatedAt: this\.readAtOf\(this\.activatingVersion\)/
+        /\.\.\.payload,\s+updatedAt: this\.readAtOf\(this\.activatingVersion\)/
       );
+      // The publication guard publishes with the same date (#1430).
+      expect(source).toMatch(/guardModal\.open\(\{[^}]*payload: sent/);
       expect(source).toMatch(
         /<bs-ai-draft-changed-alert\s+v-if="draftChanged"/
       );

@@ -4,6 +4,7 @@ const { Schema } = require('mongoose');
 const createError = require('http-errors');
 const { ObjectId, Mixed } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
+const { GuardRecordSchema } = require('./guard-record.schema.js');
 const { hasSchema } = require('../schemas');
 const {
   SkillCategoryValues,
@@ -82,6 +83,7 @@ const SkillVersionSchema = new Schema(
     // written on this instance.
     followedAt: { type: Date },
     testCases: { type: [TestCaseSchema], default: [] },
+    guardHistory: { type: [GuardRecordSchema], default: [] },
   },
   { _id: false }
 );

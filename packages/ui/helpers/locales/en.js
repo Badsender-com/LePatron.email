@@ -2049,6 +2049,33 @@ export default {
         'Too many items already hold the copy\'s work on {id}: delete some before creating another.',
       SKILL_TEST_CASE_INVALID:
         'A test case is incomplete: each case needs a name and an input.',
+      SKILL_PUBLICATION_GUARD_REQUIRED:
+        'A feature uses this version: check it before publishing it.',
+    },
+    publicationGuard: {
+      title: 'Check before publishing',
+      intro: 'LePatron replays the test cases of the feature skills concerned, with the active version and then with this one. A difference warns you without blocking: you decide.',
+      usedBy: 'Used by: {features}.',
+      calls: '{calls} AI call(s), with the AI engine of the platform group.',
+      missing: 'No test case, so not checked: {skills}.',
+      noCase: 'No test case to replay: read the version again before publishing it.',
+      run: 'Run the check',
+      running: 'Checking, one call after the other…',
+      summary: '{cases} case(s) replayed, {failed} with a difference.',
+      before: 'Active version',
+      after: 'This version',
+      noBefore: 'Not published yet',
+      same: 'Same output',
+      contractOk: 'Follows the output contract',
+      publish: 'Publish',
+      publishAnyway: 'Publish despite the differences',
+      cancel: 'Cancel the publication',
+      cancelled: 'Publication cancelled: the version stays a draft.',
+      errors: {
+        OUTPUT_CONTRACT: 'The answer does not follow the output contract.',
+        INPUT_INVALID: 'The case input no longer follows the input schema.',
+        CALL_FAILED: 'The AI call failed.',
+      },
     },
     testCases: {
       title: 'Test cases',

@@ -12,6 +12,7 @@ const { templateWarnings } = require('../services/template-coherence.js');
 const { SkillNatures } = require('../constant/skill-constants.js');
 const { assertCopy } = require('../services/skills-copy.service.js');
 const { withUsedBy } = require('../services/skills-publication.service.js');
+const { skillPublication } = require('./publication.controller.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -177,12 +178,9 @@ module.exports = {
     const { major, minor } = versionFromParam(req);
     // Keeping on the copy what is published is a copy's (ADR 0019).
     if ((req.body || {}).keepOnCopy === true) assertCopy();
-    const { skill, warnings } = await skillService.activateVersion(
-      req.params.skillId,
-      { major, minor },
-      req.body,
-      userIdOf(req)
-    );
+    // Through the publication guard when a feature uses the version (ADR 0019),
+    // with the opening the request asks for (ADR 0013).
+    const { doc: skill, warnings } = await skillPublication.publish(req);
     // Non-blocking coherence warnings surface post-activation too (e.g. a
     // schema that accepts expertises but a template that never inserts them),
     // with those of the expertises a task version consumes and of its opening.

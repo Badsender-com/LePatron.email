@@ -8,6 +8,8 @@ import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
+import BsAiPublicationGuardModal from '~/components/ai-skill/bs-ai-publication-guard-modal.vue';
+import { guardRequired } from '~/helpers/publication-guard.js';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiExpertiseCloseModal from '~/components/ai-skill/bs-ai-expertise-close-modal.vue';
@@ -30,6 +32,7 @@ export default {
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
+    BsAiPublicationGuardModal,
     BsAiArchiveModal,
     BsAiDraftChangedAlert,
     BsAiExpertiseCloseModal,
@@ -193,23 +196,52 @@ export default {
       this.$refs.activateModal.open(version);
     },
     // Published, and opened to all when the modal says so, in one request.
+    // A version a feature uses goes through its guard first (ADR 0019), with
+    // the same payload.
     async activateVersion(payload) {
-      const { versionMajor, versionMinor } = this.activatingVersion;
-      const done = await this.replaceItem(
-        () =>
-          this.$axios.$post(
-            api.aiExpertiseActivate(
-              this.exp.expertiseId,
-              versionMajor,
-              versionMinor
-            ),
-            { ...payload, updatedAt: this.readAtOf(this.activatingVersion) }
+      this.saving = true;
+      // The update date of the draft the page read goes with the
+      // publication, through the guard too (ADR 0014).
+      const sent = {
+        ...payload,
+        updatedAt: this.readAtOf(this.activatingVersion),
+      };
+      try {
+        const { versionMajor, versionMinor } = this.activatingVersion;
+        const exp = await this.$axios.$post(
+          api.aiExpertiseActivate(
+            this.exp.expertiseId,
+            versionMajor,
+            versionMinor
           ),
-        'aiSkills.version.activated'
-      );
-      if (!done) return;
-      this.savedAudience = this.exp.audience;
-      if (this.$refs.activateModal) this.$refs.activateModal.close();
+          sent
+        );
+        this.onGuardDone(exp, true);
+      } catch (err) {
+        const plan = guardRequired(err);
+        if (!plan) return this.handleError(err);
+        this.$refs.activateModal.close();
+        this.$refs.guardModal.open({
+          version: this.activatingVersion,
+          payload: sent,
+          plan,
+        });
+      } finally {
+        this.saving = false;
+      }
+    },
+    onGuardDone(doc, published) {
+      this.exp = doc;
+      if (published) {
+        this.savedAudience = doc.audience;
+        if (this.$refs.activateModal) this.$refs.activateModal.close();
+      }
+      this.showSnackbar({
+        text: published
+          ? this.$t('aiSkills.version.activated')
+          : this.$t('aiSkills.publicationGuard.cancelled'),
+        color: published ? 'success' : 'info',
+      });
     },
   },
 };
@@ -334,6 +366,13 @@ export default {
       :offer-keep-on-copy="offerKeepOnCopy"
       :item-followed="!!exp.followedAt"
       @confirm="activateVersion"
+    />
+    <bs-ai-publication-guard-modal
+      ref="guardModal"
+      kind="expertise"
+      :entity-id="exp.expertiseId || ''"
+      @published="onGuardDone($event, true)"
+      @cancelled="onGuardDone($event, false)"
     />
     <bs-ai-archive-modal
       ref="archiveModal"

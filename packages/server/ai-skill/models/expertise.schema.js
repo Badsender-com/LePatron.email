@@ -4,6 +4,7 @@ const { Schema } = require('mongoose');
 const createError = require('http-errors');
 const { ObjectId } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
+const { GuardRecordSchema } = require('./guard-record.schema.js');
 const { parseSections } = require('../services/expertise-parser.service.js');
 const {
   SkillCategoryValues,
@@ -50,6 +51,7 @@ const ExpertiseVersionSchema = new Schema(
     // When a follow of production brought it (ADR 0019): unset on a version
     // written on this instance.
     followedAt: { type: Date },
+    guardHistory: { type: [GuardRecordSchema], default: [] },
   },
   { _id: false }
 );
