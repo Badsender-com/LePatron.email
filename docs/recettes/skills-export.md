@@ -45,6 +45,11 @@ Sur A, publier une nouvelle version mineure de X, puis l'exporter. Sur B :
 5. **Archivé ici :** archiver X sur B, réimporter : **Bloqué**, « Archivé ici ».
 6. **Schéma manquant :** dans un fichier, remplacer l'`inputSchemaId` du skill de fonctionnalité par un identifiant inconnu : **Bloqué**, « Son schéma n'existe pas sur cette instance ».
 
+7. **Version déjà là :** sur B, archiver la version active de X après en avoir publié une plus ancienne, puis importer un fichier au numéro archivé : **Bloqué**, « Cette version existe déjà ici ».
+8. **Autre nature :** dans un fichier, passer la `nature` du skill de tâche à `feature`, sur une B qui l'a déjà : **Bloqué**, « Ce skill n'a pas la même nature ici ».
+9. **Fichier mal formé :** une catégorie inconnue, un `body` qui n'est pas du texte, un même élément deux fois : le fichier est refusé avant l'aperçu.
+10. **Version refusée par le modèle :** une expertise nouvelle dont deux sections ont le même identifiant (`## [a] Un` et `## [a] Deux`) : l'import la met en échec avec la raison, et elle n'apparaît pas dans la liste.
+
 ## 5. Droits
 
 Avec le compte **admin d'entreprise** de B : la page Skills & Expertise n'est pas accessible, et les appels `POST /api/ai-skills/export`, `/api/ai-skills/import/preview` et `/api/ai-skills/import` répondent 401.

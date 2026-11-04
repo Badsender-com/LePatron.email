@@ -24,7 +24,7 @@ To carry everything at once, **Export all**, at the top of the page, exports eve
 ## Importing
 
 1. On the other instance, click **Import**, at the top of the page, and choose the file. It is 5 MB at most.
-2. Click **See the preview**. Nothing is written yet: the preview says, for each item, what the import would do.
+2. Click **See the preview**. A file that cannot be read, of another format or malformed is refused whole, with the reason. Otherwise nothing is written yet: the preview says, for each item, what the import would do.
 
 | State          | What it means                                                       |
 | -------------- | ------------------------------------------------------------------- |
@@ -38,14 +38,18 @@ An item is blocked when:
 - **the two instances diverged:** same version number, different content. To be settled by hand;
 - **a newer version exists here:** an import never goes back;
 - **a draft is open here:** publish or delete it first, an import never overwrites it;
+- **this version already exists here without being the active one**, archived for instance;
+- **the skill has another nature here** (task or feature): an import brings a version, not a change of nature;
 - **it is archived here;**
-- **its schema does not exist on this instance:** a feature skill needs a schema that lives in the code. The instance is not up to date.
+- **its schema does not exist on this instance:** a skill names a schema that lives in the code. The instance is not up to date.
 
 A task skill missing an expertise, both here and in the file, is imported anyway, with a warning: it reads, but without that expertise.
 
 3. New items and updates are checked. Uncheck those you do not want, then click **Import the selection**.
 
 ## After the import
+
+An update brings a version, not the description: the title, category and scope stay as this instance has them.
 
 Each imported item arrives **as a draft**, with the version number it has on the instance it comes from: both instances then speak of the same "2.1". On an update, the active version keeps serving until the draft is published.
 
