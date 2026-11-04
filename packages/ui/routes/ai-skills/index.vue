@@ -5,8 +5,9 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsAiSkillsTab from '~/components/ai-skill/bs-ai-skills-tab.vue';
 import BsAiExpertiseTab from '~/components/ai-skill/bs-ai-expertise-tab.vue';
 import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue';
+import BsAiSkillsImportModal from '~/components/ai-skill/bs-ai-skills-import-modal.vue';
 import { mapMutations } from 'vuex';
-import { Plus, Download } from 'lucide-vue';
+import { Plus, Download, Upload } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { downloadSkillsExport } from '~/helpers/skills-export-download.js';
 
@@ -19,8 +20,10 @@ export default {
     BsAiSkillsTab,
     BsAiExpertiseTab,
     BsAiInvocationsTab,
+    BsAiSkillsImportModal,
     LucidePlus: Plus,
     LucideDownload: Download,
+    LucideUpload: Upload,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -112,6 +115,15 @@ export default {
           outlined
           color="accent"
           class="mr-2"
+          @click="$refs.importModal.open()"
+        >
+          <lucide-upload :size="18" class="mr-2" />
+          {{ $t('skillsImport.open') }}
+        </v-btn>
+        <v-btn
+          outlined
+          color="accent"
+          class="mr-2"
           :loading="exportingAll"
           @click="exportAll"
         >
@@ -153,6 +165,8 @@ export default {
         </v-tabs-items>
       </div>
     </v-container>
+
+    <bs-ai-skills-import-modal ref="importModal" />
   </div>
 </template>
 

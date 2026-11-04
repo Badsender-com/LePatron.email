@@ -44,8 +44,7 @@ const ITEMS = [
   },
 ];
 
-// Turned on by #1410 (preview an import before anything is written)
-describe.skip('the preview of an import', () => {
+describe('the preview of an import', () => {
   let helper;
   beforeAll(() => {
     // Required here: the helper does not exist until #1410 ships it.

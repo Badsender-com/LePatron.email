@@ -1,8 +1,12 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const createError = require('http-errors');
 
-const { exportSkills } = require('../services/skills-export.service.js');
+const {
+  exportSkills,
+  previewImport,
+} = require('../services/skills-export.service.js');
 const { siteOrigin } = require('../../email-templates/email-template.js');
 
 // The file's name says where and when it was exported:
@@ -30,4 +34,24 @@ const exportFile = asyncHandler(async (req, res) => {
   res.type('application/json').send(JSON.stringify(file, null, 2));
 });
 
-module.exports = { exportFile };
+// A skills export is refused over 5 MB (ADR 0018). The app has read the
+// body already, up to its own 50 MB: the size the request announced decides.
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
+function capFileSize(req, _res, next) {
+  const size = Number(req.headers['content-length'] || 0);
+  if (size > MAX_FILE_BYTES) {
+    return next(createError(413, 'A skills export is 5 MB at most.'));
+  }
+  return next();
+}
+
+/**
+ * POST /api/ai-skills/import/preview: what importing the file would do here,
+ * item by item, writing nothing. A file that cannot be read is refused whole.
+ */
+const previewFile = asyncHandler(async (req, res) => {
+  res.json(await previewImport(req.body));
+});
+
+module.exports = { exportFile, previewFile, capFileSize };

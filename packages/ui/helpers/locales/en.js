@@ -1633,6 +1633,42 @@ export default {
       hint: 'The block will show up at the end of the editor palette.',
     },
   },
+  skillsImport: {
+    open: 'Import',
+    title: 'Import skills and expertises',
+    file: 'Skills export (.json)',
+    fileHint: 'A file exported from another LePatron instance, 5 MB at most.',
+    preview: 'See the preview',
+    reading: 'Reading the file…',
+    from: 'Exported from {origin} by {by}, on {date}.',
+    counter: '{count} item to import | {count} items to import',
+    nothing: 'Nothing to import: everything is up to date or blocked.',
+    otherFile: 'Choose another file',
+    current: 'here: {version}',
+    notJson: 'This file is not JSON.',
+    tooLarge: 'This file is over 5 MB.',
+    unreadable: 'This file is not a readable skills export: {message}',
+    kinds: {
+      expertise: 'Expertise',
+      skill: 'Skill',
+    },
+    states: {
+      new: 'New',
+      update: 'Update',
+      up_to_date: 'Up to date',
+      blocked: 'Blocked',
+    },
+    reasons: {
+      diverged: 'Same version, different content: the two instances diverged.',
+      target_newer: 'A newer version exists here.',
+      draft_open: 'A draft is open here: publish or delete it first.',
+      archived: 'Archived here.',
+      missing_schema: 'Its schema does not exist on this instance: it is not up to date.',
+    },
+    warnings: {
+      missing_expertises: 'Expertises missing here and from the file: {ids}',
+    },
+  },
   aiSkills: {
     export: {
       all: 'Export all',
