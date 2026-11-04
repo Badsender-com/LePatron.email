@@ -10,7 +10,8 @@ const { sanitizePreviewCached } = require('../mailing/mailing.service.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { approvedMailingIds } = require('./mcp-mailing-status.js');
 const { mailingText, variablesOf } = require('./mcp-mailing-text.js');
-const { MAILING, asItem, failure } = require('./mcp-mailings.js');
+const { MAILING, asItem } = require('./mcp-mailings.js');
+const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
 const { PREVIEW_TOOL_META, withPreview } = require('./mcp-preview-app.js');
 
 // Reading one mailing (#1304, ADR 0012): its facts and derived status, and its
@@ -129,8 +130,17 @@ function registerGetMailing(server) {
       description:
         'Reads one mailing the user may read in LePatron: its facts and status, as list_mailings gives them, and its content. By default its text, in reading order: subject, preheader, headings after #, paragraphs, links as [label](href), images by their alternative text. With format html, its HTML instead, as the app previews it. Personalization variables ({{firstname}}, %%FIRSTNAME%%, [[firstname]]) are kept where they stand and listed in variables: never fill them in. A mailing without content (null) says why in contentMissing: never saved in the editor, or too large to read here.',
       inputSchema: z.object({
-        mailingId: z.string(),
-        format: z.enum(FORMATS).optional(),
+        mailingId: z
+          .string()
+          .describe(
+            'The id of the mailing, as list_mailings or search gave it.'
+          ),
+        format: z
+          .enum(FORMATS)
+          .optional()
+          .describe(
+            'text (default): the content in reading order. html: the HTML the app previews.'
+          ),
       }),
       outputSchema: MAILING.extend({
         text: z.string().nullable().optional(),
@@ -138,7 +148,7 @@ function registerGetMailing(server) {
         contentMissing: z.enum(Object.values(NO_CONTENT)).optional(),
         variables: z.array(z.string()),
       }),
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
       // The clients that render MCP Apps show the email itself (#1342).
       _meta: PREVIEW_TOOL_META,
     },

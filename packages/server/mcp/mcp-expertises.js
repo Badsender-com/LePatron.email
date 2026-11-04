@@ -14,6 +14,7 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { audienceFilter } = require('./mcp-audience.js');
+const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
 const {
   servedStatuses,
   servedVersion,
@@ -134,28 +135,43 @@ function registerFindApplicableExpertises(server) {
       description:
         'Finds the Badsender expertises that apply to a piece of an email: a scope (e.g. "subject", "cta"), one or more categories, and optionally an email type and a language. Read each one through its resource URI.',
       inputSchema: z.object({
-        scope: z.union([z.string(), z.array(z.string())]).optional(),
-        categories: z.array(z.enum(SkillCategoryValues)).optional(),
-        emailType: z.string().optional(),
-        language: z.string().optional(),
+        scope: z
+          .array(z.string())
+          .min(1)
+          .describe(
+            'The parts of the email worked on, e.g. ["subject"], ["preheader"], ["cta"].'
+          ),
+        categories: z
+          .array(z.enum(SkillCategoryValues))
+          .min(1)
+          .describe(
+            `The kinds of know-how wanted, one or more of: ${SkillCategoryValues.join(
+              ', '
+            )}.`
+          ),
+        emailType: z
+          .string()
+          .optional()
+          .describe(
+            'The type of the email, e.g. promo. Without it, the type is not checked.'
+          ),
+        language: z
+          .string()
+          .optional()
+          .describe(
+            'The language of the email, as an ISO 639-1 code: fr, en, de… Without it, the language is not checked.'
+          ),
       }),
       outputSchema: z.object({ expertises: z.array(EXPERTISE) }),
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     async ({ scope, categories, emailType, language }, ctx) => {
       const { group, drafts } = await resolveIdentity(ctx.http?.authInfo);
-      const scopes = [].concat(scope || []).filter(Boolean);
-      if (!scopes.length || !categories || !categories.length) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text:
-                'Give a scope and at least one category: the expertises are written for a precise part of an email.',
-            },
-          ],
-        };
+      const scopes = scope.filter(Boolean);
+      if (!scopes.length) {
+        return failure(
+          'Give a scope, e.g. ["subject"]: the expertises are written for a precise part of an email.'
+        );
       }
       // The features' own conditions, on what this group is served: the
       // active versions, or in drafts mode the drafts, never published ones

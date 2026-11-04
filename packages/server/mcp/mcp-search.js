@@ -7,6 +7,7 @@ const { containingRegExp } = require('../utils/text-search.js');
 const { resolveIdentity } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const expertises = require('./mcp-expertises.js');
+const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
 // company knowledge (ADR 0012): a result is an id, a title and a URL, and
@@ -139,11 +140,6 @@ async function fetchDocument({ id }, ctx) {
   return answered(document);
 }
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-
 function answered(answer) {
   return {
     content: [{ type: 'text', text: JSON.stringify(answer) }],
@@ -158,11 +154,17 @@ function registerSearchAndFetch(server) {
     'search',
     {
       title: 'Search LePatron',
-      description:
-        'Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the Badsender expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. Read a result with fetch.',
-      inputSchema: z.object({ query: z.string().max(MAX_QUERY_LENGTH) }),
+      description: `Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the Badsender expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. At most ${MAX_MAILINGS} mailings are returned, the most recently updated first: narrow the words to find an older one. Read a result with fetch.`,
+      inputSchema: z.object({
+        query: z
+          .string()
+          .max(MAX_QUERY_LENGTH)
+          .describe(
+            `A few words, as a person types them; only the first ${MAX_WORDS} are used. French words for the expertises.`
+          ),
+      }),
       outputSchema: z.object({ results: z.array(RESULT) }),
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     search
   );
@@ -172,12 +174,18 @@ function registerSearchAndFetch(server) {
       title: 'Read a search result',
       description:
         'Reads a result of search by its id: a mailing as text (its facts, then its content), an expertise as Markdown.',
-      inputSchema: z.object({ id: z.string() }),
+      inputSchema: z.object({
+        id: z
+          .string()
+          .describe(
+            'The id of a search result, as search gave it (mailing:… or expertise:…).'
+          ),
+      }),
       outputSchema: RESULT.extend({
         text: z.string(),
         metadata: z.record(z.string(), z.unknown()),
       }),
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     fetchDocument
   );

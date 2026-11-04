@@ -6,6 +6,7 @@ const { resolveIdentity } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill, versionOf } = require('./mcp-skill-catalog.js');
 const { readableMailing } = require('./mcp-mailing-read.js');
+const { failure, ADDITIVE } = require('./mcp-tool-grammar.js');
 const {
   computeExpiresAt,
 } = require('../ai-skill/services/invocation-logger.service.js');
@@ -26,11 +27,6 @@ async function resolveReference({ kind, id }, identity) {
   return found ? { kind, id, version: versionOf(found.version) } : null;
 }
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-
 /**
  * A feedback, and its retex (ADR 0012): the session summary the assistant
  * writes is kept only when the group allows retex and the user agreed to it
@@ -45,7 +41,9 @@ async function submitFeedback(args, ctx) {
     // eslint-disable-next-line no-await-in-loop
     const resolved = await resolveReference(reference, identity);
     if (!resolved) {
-      return failure(`Not found: the ${reference.kind} ${reference.id}`);
+      return failure(
+        `Not found: the ${reference.kind} ${reference.id}, or this user may not read it.`
+      );
     }
     references.push(resolved);
   }
@@ -88,25 +86,48 @@ function registerSubmitFeedback(server) {
       description:
         "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The comment is always kept: write what the user says of LePatron, never the content of their conversation. A summary of the session may be attached only if the user explicitly agrees to share it with Badsender (consentToRetex); ask them first. The answer says whether the summary was kept.",
       inputSchema: z.object({
-        rating: z.enum(['up', 'down']),
-        comment: z.string().max(MAX_COMMENT).optional(),
+        rating: z
+          .enum(['up', 'down'])
+          .describe('up: the user is satisfied. down: they are not.'),
+        comment: z
+          .string()
+          .max(MAX_COMMENT)
+          .optional()
+          .describe('What the user says of LePatron, in their words.'),
         references: z
           .array(
             z.object({
-              kind: z.enum(['skill', 'expertise', 'mailing']),
-              id: z.string().max(200),
+              kind: z
+                .enum(['skill', 'expertise', 'mailing'])
+                .describe('skill, expertise or mailing.'),
+              id: z
+                .string()
+                .max(200)
+                .describe('Its skillId, expertiseId or mailingId.'),
             })
           )
           .max(MAX_REFERENCES)
-          .optional(),
-        consentToRetex: z.boolean().optional(),
-        sessionSummary: z.string().max(MAX_SUMMARY).optional(),
+          .optional()
+          .describe(`What the feedback is about, ${MAX_REFERENCES} at most.`),
+        consentToRetex: z
+          .boolean()
+          .optional()
+          .describe(
+            'true only if the user explicitly agreed to share a summary of the session with Badsender, for this feedback.'
+          ),
+        sessionSummary: z
+          .string()
+          .max(MAX_SUMMARY)
+          .optional()
+          .describe(
+            "A summary of the session, kept only with consentToRetex and if the company allows it. Never the user's own content."
+          ),
       }),
       outputSchema: z.object({
         recorded: z.boolean(),
         retex: z.enum(['none', 'kept', 'dropped']),
       }),
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      annotations: ADDITIVE,
     },
     submitFeedback
   );

@@ -100,10 +100,15 @@ function argumentsOf({ doc, version }) {
   if (isTask(doc)) return [];
   const described = describeSchema(version.inputSchemaId);
   if (described) {
-    return described.fields.map(({ name, required }) => ({ name, required }));
+    return described.fields.map(({ name, required, description }) => ({
+      name,
+      description: description || `The ${name} the skill works on.`,
+      required,
+    }));
   }
   return placeholdersOf(version.inputTemplate).map((name) => ({
     name,
+    description: `Fills {{${name}}} in the skill's template.`,
     required: false,
   }));
 }

@@ -185,7 +185,7 @@ describe('drafts mode', () => {
       await turnOn(author);
 
       const { expertises } = await call(author, 'find_applicable_expertises', {
-        scope: 'image',
+        scope: ['image'],
         categories: ['design'],
       });
 

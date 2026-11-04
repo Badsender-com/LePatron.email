@@ -108,18 +108,29 @@ describe('authoring', () => {
       );
     });
 
-    it('marks the writing tools as not read-only and not destructive', async () => {
+    // Proposing rewrites the open draft; creating only adds one.
+    it('marks the writing tools as not read-only, the proposals as destructive', async () => {
       const { tools } = await (await asAuthor()).listTools();
 
-      tools
+      const hints = tools
         .filter((tool) => AUTHORING_TOOLS.includes(tool.name))
-        .forEach((tool) => {
-          expect(tool.annotations).toMatchObject({
-            readOnlyHint: false,
-            destructiveHint: false,
-          });
-          expect(tool.outputSchema.type).toBe('object');
-        });
+        .map((tool) => ({
+          tool: tool.name,
+          readOnly: tool.annotations.readOnlyHint,
+          destructive: tool.annotations.destructiveHint,
+          output: tool.outputSchema.type,
+        }));
+
+      expect(hints).toEqual(
+        expect.arrayContaining(
+          AUTHORING_TOOLS.map((tool) => ({
+            tool,
+            readOnly: false,
+            destructive: tool.startsWith('propose_'),
+            output: 'object',
+          }))
+        )
+      );
     });
   });
 
@@ -137,7 +148,7 @@ describe('authoring', () => {
       expect(answer).toMatchObject({
         expertiseId: SUBJECT_LINES,
         version: '2.2',
-        status: 'DRAFT',
+        status: 'draft',
       });
       const { contents } = await client.readResource({
         uri: `lepatron://expertises/${SUBJECT_LINES}`,
@@ -257,7 +268,7 @@ describe('authoring', () => {
         changelog: 'One more step',
       });
 
-      expect(created).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(created).toMatchObject({ version: '1.0', status: 'draft' });
       expect(changed.version).toBe('1.0');
       expect(changed.diff).toContain('+ 2. Never guess.');
     });
@@ -279,7 +290,7 @@ describe('authoring', () => {
       expect(answer).toMatchObject({
         expertiseId: 'design.button-contrast',
         version: '1.0',
-        status: 'DRAFT',
+        status: 'draft',
         audience: 'platform',
       });
       const { resources } = await client.listResources();

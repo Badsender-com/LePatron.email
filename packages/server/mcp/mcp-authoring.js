@@ -15,6 +15,7 @@ const {
   SkillNatures,
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity, WRITE_SCOPE } = require('./mcp-identity.js');
+const { failure, ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
 
 const ENTITIES = {
   expertise: {
@@ -37,10 +38,6 @@ const ENTITIES = {
   },
 };
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
 const success = (answer) => ({
   content: [{ type: 'text', text: JSON.stringify(answer) }],
   structuredContent: answer,
@@ -120,7 +117,8 @@ async function writeDraft(entity, id, { major, ...patch }, user) {
   return {
     [ENTITIES[entity].idField]: id,
     version: label(draft),
-    status: draft.status,
+    // Lower case, as every other state an assistant reads.
+    status: String(draft.status).toLowerCase(),
     audience: saved.audience,
     diff: diffOf(active ? textOf(active) : '', textOf(draft)),
   };
@@ -134,7 +132,7 @@ async function assertNew(entity, id) {
     () => true,
     () => false
   );
-  if (exists) throw new Error(`"${id}" already exists`);
+  if (exists) throw new Error(`"${id}" already exists.`);
 }
 
 // Runs a write for an author, turning the services' errors into answers.
@@ -158,12 +156,36 @@ const ANSWER = z.object({
   expertiseId: z.string().optional(),
   skillId: z.string().optional(),
   version: z.string(),
-  status: z.string(),
+  status: z.enum(['draft']),
   audience: z.string().optional(),
   diff: z.string(),
 });
-const WRITING = { readOnlyHint: false, destructiveHint: false };
-const changelog = z.string().min(1, 'A changelog is required');
+const changelog = z
+  .string()
+  .min(1, 'A changelog is required.')
+  .describe('What changes and why, in a sentence or two, in French.');
+const major = z
+  .boolean()
+  .optional()
+  .describe(
+    'true for a major version (a change of meaning). Default: a minor one.'
+  );
+const idOf = (kind) =>
+  z
+    .string()
+    .regex(/^[a-z0-9._-]+$/)
+    .describe(
+      `The ${kind} id: lower case letters, digits, dots, dashes and underscores, e.g. redaction.subject.length.`
+    );
+const categoryParam = z
+  .enum(SkillCategoryValues)
+  .describe(`One of: ${SkillCategoryValues.join(', ')}.`);
+const expertiseIds = z
+  .array(z.string())
+  .optional()
+  .describe(
+    'The expertiseIds the procedure reads, in the order it reads them.'
+  );
 
 function registerAuthoringTools(server) {
   server.registerTool(
@@ -173,15 +195,30 @@ function registerAuthoringTools(server) {
       description:
         'Writes a change to a Badsender expertise as a draft: the open draft, or a new one from the active version. Never published from here: a person publishes it in the back office. Give a changelog.',
       inputSchema: z.object({
-        expertiseId: z.string(),
-        body: z.string().optional(),
-        examplesGood: z.array(z.string()).optional(),
-        examplesBad: z.array(z.string()).optional(),
+        expertiseId: z
+          .string()
+          .describe(
+            'The expertise to change, as find_applicable_expertises gives it.'
+          ),
+        body: z
+          .string()
+          .optional()
+          .describe('The whole new text, in Markdown. Left out: unchanged.'),
+        examplesGood: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'The whole new list of good examples. Left out: unchanged.'
+          ),
+        examplesBad: z
+          .array(z.string())
+          .optional()
+          .describe('The whole new list of bad examples. Left out: unchanged.'),
         changelog,
-        major: z.boolean().optional(),
+        major,
       }),
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: OVERWRITING,
     },
     asAuthor(({ expertiseId, ...change }, user) =>
       writeDraft('expertise', expertiseId, change, user)
@@ -195,17 +232,31 @@ function registerAuthoringTools(server) {
       description:
         'Writes a change to a Badsender skill as a draft: the procedure and consumed expertises of a task skill, or the instructions and template of a feature skill. Never published from here. Give a changelog.',
       inputSchema: z.object({
-        skillId: z.string(),
-        procedure: z.string().optional(),
-        consumedExpertiseIds: z.array(z.string()).optional(),
-        systemPrompt: z.string().optional(),
-        skillBody: z.string().optional(),
-        inputTemplate: z.string().optional(),
+        skillId: z
+          .string()
+          .describe('The skill to change, as find_skills gives it.'),
+        procedure: z
+          .string()
+          .optional()
+          .describe('A task skill: the whole new procedure, in Markdown.'),
+        consumedExpertiseIds: expertiseIds,
+        systemPrompt: z
+          .string()
+          .optional()
+          .describe('A feature skill: the whole new instructions.'),
+        skillBody: z
+          .string()
+          .optional()
+          .describe('A feature skill: the whole new body.'),
+        inputTemplate: z
+          .string()
+          .optional()
+          .describe('A feature skill: the whole new input template.'),
         changelog,
-        major: z.boolean().optional(),
+        major,
       }),
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: OVERWRITING,
     },
     asAuthor(({ skillId, ...change }, user) =>
       writeDraft('skill', skillId, change, user)
@@ -219,17 +270,28 @@ function registerAuthoringTools(server) {
       description:
         'Creates a Badsender expertise as a draft, read by the Badsender team only until a person publishes and opens it in the back office.',
       inputSchema: z.object({
-        expertiseId: z.string().regex(/^[a-z0-9._-]+$/),
-        title: z.string(),
-        category: z.enum(SkillCategoryValues),
-        description: z.string().optional(),
-        scope: z.array(z.string()).optional(),
-        isTransversal: z.boolean().optional(),
-        body: z.string(),
+        expertiseId: idOf('expertise'),
+        title: z.string().describe('Its title, in French.'),
+        category: categoryParam,
+        description: z
+          .string()
+          .optional()
+          .describe('What it covers, in a sentence, in French.'),
+        scope: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'The parts of the email it applies to, e.g. ["subject", "preheader"].'
+          ),
+        isTransversal: z
+          .boolean()
+          .optional()
+          .describe('true if it applies to every part of the email.'),
+        body: z.string().describe('Its text, in Markdown, in French.'),
         changelog,
       }),
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: ADDITIVE,
     },
     asAuthor(async ({ body, changelog: log, ...data }, user) => {
       await assertNew('expertise', data.expertiseId);
@@ -250,16 +312,25 @@ function registerAuthoringTools(server) {
       description:
         'Creates a Badsender task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, read by the Badsender team only until a person publishes and opens it.',
       inputSchema: z.object({
-        skillId: z.string().regex(/^[a-z0-9._-]+$/),
-        title: z.string(),
-        category: z.enum(SkillCategoryValues),
-        description: z.string().optional(),
-        procedure: z.string(),
-        consumedExpertiseIds: z.array(z.string()).optional(),
+        skillId: idOf('skill'),
+        title: z.string().describe('Its title, in French.'),
+        category: categoryParam,
+        description: z
+          .string()
+          .optional()
+          .describe(
+            'When to use it, in a sentence, in French: find_skills matches on it.'
+          ),
+        procedure: z
+          .string()
+          .describe(
+            'The procedure an assistant follows, in Markdown, in French.'
+          ),
+        consumedExpertiseIds: expertiseIds,
         changelog,
       }),
       outputSchema: ANSWER,
-      annotations: WRITING,
+      annotations: ADDITIVE,
     },
     asAuthor(
       async (

@@ -86,7 +86,7 @@ describe('email preview app', () => {
     });
 
     expect(result.structuredContent.text).toContain('Black Friday is coming');
-    expect(result._meta?.['lepatron/previewHtml']).toContain(
+    expect(result._meta?.['email.lepatron/previewHtml']).toContain(
       'href="https://shop.example.test/black-friday"'
     );
   });
@@ -98,7 +98,7 @@ describe('email preview app', () => {
     });
 
     expect(result.structuredContent.html).toContain('Black Friday is coming');
-    expect(result._meta?.['lepatron/previewHtml']).toBeUndefined();
+    expect(result._meta?.['email.lepatron/previewHtml']).toBeUndefined();
   });
 
   it('reads the preview where the result carries it', () => {
@@ -113,6 +113,6 @@ describe('email preview app', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result._meta?.['lepatron/previewHtml']).toBeUndefined();
+    expect(result._meta?.['email.lepatron/previewHtml']).toBeUndefined();
   });
 });

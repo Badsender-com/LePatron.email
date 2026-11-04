@@ -17,6 +17,7 @@ const {
 } = require('./mcp-skill-catalog.js');
 const expertises = require('./mcp-expertises.js');
 const { draftNotice } = require('./mcp-drafts.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
@@ -101,7 +102,7 @@ const SKILL = z.object({
   skillId: z.string(),
   title: z.string(),
   description: z.string(),
-  nature: z.string(),
+  nature: z.enum(['task', 'feature']),
   draft: z.boolean().optional(),
   uri: z.string(),
 });
@@ -122,15 +123,23 @@ function registerFindSkills(server) {
   server.registerTool(
     'find_skills',
     {
-      title: 'Find a Badsender skill',
+      title: 'Find the Badsender skills',
       description:
         'Finds the Badsender skills whose identifier, title or description match what the user wants to do. They are written in French: search with French words. When nothing matches, or without a query, every skill is listed (matched is false then): pick by their descriptions. Read the one that fits through its resource URI, then follow it.',
-      inputSchema: z.object({ query: z.string().optional() }),
+      inputSchema: z.object({
+        query: z
+          .string()
+          .max(200)
+          .optional()
+          .describe(
+            'What the user wants to do, in French words. Without it, every skill is listed.'
+          ),
+      }),
       outputSchema: z.object({
         skills: z.array(SKILL),
         matched: z.boolean(),
       }),
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     async ({ query }, ctx) => {
       const { group, drafts } = await resolveIdentity(ctx.http?.authInfo);
