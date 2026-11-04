@@ -185,6 +185,26 @@ function createVersionedEntityService({
   }
 
   /**
+   * A draft version as an import brings it (ADR 0018): its number and content
+   * as given, for a document created with it rather than with a blank 1.0.
+   */
+  function importedDraft(version, userId) {
+    const now = new Date();
+    return {
+      versionMajor: version.versionMajor,
+      versionMinor: version.versionMinor,
+      status: 'DRAFT',
+      ...cloneVersionContent(version),
+      changelog: version.changelog || '',
+      releaseNotes: version.releaseNotes || '',
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
+  /**
    * New draft at a number given rather than the next one: an imported version
    * keeps the number it has on the instance it comes from (ADR 0018). Only
    * ahead of the active version, and never beside an open draft, which an
@@ -337,6 +357,7 @@ function createVersionedEntityService({
     openOrStartDraft: drafts.openOrStartDraft,
     writeDraftIfUnchanged: drafts.writeDraftIfUnchanged,
     createVersionAt,
+    importedDraft,
     updateVersion,
     deleteVersion,
     activateVersion,

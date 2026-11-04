@@ -130,18 +130,7 @@ async function createExpertise(
     // author lands straight in the version editor, parity with skills (§4).
     versions: [
       initialVersion
-        ? {
-            versionMajor: initialVersion.versionMajor,
-            versionMinor: initialVersion.versionMinor,
-            status: 'DRAFT',
-            ...versioned.cloneVersionContent(initialVersion),
-            changelog: initialVersion.changelog || '',
-            releaseNotes: initialVersion.releaseNotes || '',
-            createdBy: userId,
-            createdAt: now,
-            updatedBy: userId,
-            updatedAt: now,
-          }
+        ? versioned.importedDraft(initialVersion, userId)
         : {
             versionMajor: 1,
             versionMinor: 0,
