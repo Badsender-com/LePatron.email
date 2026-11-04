@@ -24,7 +24,7 @@ Pour tout emporter d'un coup, **Tout exporter**, en haut de la page, exporte cha
 ## Importer
 
 1. Sur l'autre instance, cliquer sur **Importer**, en haut de la page, et choisir le fichier. Il fait 5 Mo au plus.
-2. Cliquer sur **Voir l'aperçu**. Rien n'est encore écrit : l'aperçu dit, pour chaque élément, ce que l'import ferait.
+2. Cliquer sur **Voir l'aperçu**. Un fichier illisible, d'un autre format ou mal formé est refusé en entier, avec la raison. Sinon, rien n'est encore écrit : l'aperçu dit, pour chaque élément, ce que l'import ferait.
 
 | État            | Ce que ça veut dire                                                  |
 | --------------- | -------------------------------------------------------------------- |
@@ -38,14 +38,18 @@ Un élément est bloqué quand :
 - **les deux instances ont divergé :** même numéro de version, contenu différent. À régler à la main ;
 - **une version plus récente existe ici :** l'import ne revient jamais en arrière ;
 - **un brouillon est ouvert ici :** publiez-le ou supprimez-le d'abord, l'import ne l'écrase jamais ;
+- **cette version existe déjà ici sans être la version active**, par exemple archivée ;
+- **le skill n'a pas la même nature ici** (tâche ou fonctionnalité) : un import apporte une version, pas un changement de nature ;
 - **il est archivé ici ;**
-- **son schéma n'existe pas sur cette instance :** un skill de fonctionnalité a besoin d'un schéma qui est dans le code. L'instance n'est pas à jour.
+- **son schéma n'existe pas sur cette instance :** un skill nomme un schéma qui est dans le code. L'instance n'est pas à jour.
 
 Un skill de tâche dont une expertise manque, à la fois ici et dans le fichier, s'importe quand même, avec un avertissement : il se lit, mais il lui manquera cette expertise.
 
 3. Les éléments nouveaux et les mises à jour sont cochés. Décochez ceux que vous ne voulez pas, puis cliquez sur **Importer la sélection**.
 
 ## Après l'import
+
+Une mise à jour apporte une version, pas la description : le titre, la catégorie et le périmètre restent ceux de cette instance.
 
 Chaque élément importé arrive **en brouillon**, avec le numéro de version qu'il a sur l'instance d'origine : les deux instances parlent ainsi de la même « 2.1 ». Sur une mise à jour, la version active continue de servir jusqu'à la publication.
 
