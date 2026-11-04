@@ -3,12 +3,14 @@ import { mapMutations } from 'vuex';
 
 import { groupsItem } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
 
 // Retex (ADR 0012): whether a summary of an assistant session, sent with a
 // feedback, may be kept for Badsender. Each user is still asked every time.
 // Saved on its own, like the two-factor option.
 export default {
   name: 'BsGroupRetexOption',
+  components: { BsSettingsRow },
   props: {
     group: { type: Object, required: true },
   },
@@ -42,23 +44,19 @@ export default {
 </script>
 
 <template>
-  <section class="bs-group-retex-option">
-    <h3 class="text-subtitle-1 font-weight-medium">
-      {{ $t('retex.title') }}
-    </h3>
-    <p class="text-body-2 text--secondary">
-      {{ $t('retex.description') }}
-    </p>
+  <bs-settings-row class="bs-group-retex-option" title-id="retex-option-title">
+    <template #title>{{ $t('retex.title') }}</template>
+    <template #description>{{ $t('retex.description') }}</template>
     <v-switch
       :key="switchKey"
       :input-value="group.allowRetex === true"
-      :label="$t('retex.switch')"
+      aria-labelledby="retex-option-title"
       :loading="loading"
       :disabled="loading"
       color="accent"
       hide-details
-      class="mt-0"
+      class="mt-0 pt-0"
       @change="save"
     />
-  </section>
+  </bs-settings-row>
 </template>

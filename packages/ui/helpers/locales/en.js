@@ -795,10 +795,9 @@ export default {
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
   retex: {
-    title: 'Session summaries from AI assistants',
+    title: 'Session summaries',
     description:
-      'When a user sends feedback from their AI assistant, they may attach a summary of the session to help Badsender improve its expertises and skills. The summary is kept only if the company allows it here, and the user agrees to it for that feedback.',
-    switch: 'Allow session summaries',
+      'With a feedback, the user may attach a summary of their session, to help Badsender improve its expertises and skills. They agree to it every time.',
     updated: 'Session summaries updated',
   },
   oauthConsent: {
@@ -843,7 +842,12 @@ export default {
   mcpClients: {
     pageTitle: 'MCP clients',
     description:
-      'Assistants that cannot register themselves, such as Copilot Studio in manual mode, are given a client ID and a secret here. Only the company\'s users can connect with them. Claude, ChatGPT and Microsoft 365 Copilot do not need one.',
+      'For an assistant that asks for a client ID and a secret, such as Copilot Studio in manual mode. Only the company\'s users can connect with them. Claude, ChatGPT and Microsoft 365 Copilot register themselves: they have nothing to do here.',
+    listLabel: 'Registered clients',
+    clientMeta: 'Created on {date} · secret sent: {authMethod}',
+    clientIdLine: 'Client ID: {id}',
+    secretFootnote:
+      'The secret is only shown at creation. If it is lost, delete the client and create another one.',
     mcpOff:
       'The company\'s MCP access is off: these clients cannot connect. It is turned on in',
     add: 'Add a client',
@@ -856,15 +860,20 @@ export default {
     authMethod: 'Secret sent',
     authMethodHint:
       'Where the assistant sends the secret to LePatron. If unsure, keep “In the request body”.',
+    advanced: 'Advanced setting: how the secret is sent',
     authMethods: {
       client_secret_post: 'In the request body',
       client_secret_basic: 'In the header (Basic)',
     },
-    empty: 'No client registered.',
+    empty: 'No client registered',
+    emptyHint:
+      'That is the usual case: only a manual set-up of Copilot Studio asks for one.',
     loadError: 'The MCP clients could not be loaded.',
-    createdTitle: 'Client “{name}” created',
-    secretOnce:
-      'Copy the secret now: it will never be shown again. If it is lost, delete the client and create another one.',
+    createdBadge: 'Client created',
+    createdTitle: 'Copy these values into “{name}”',
+    secretOnce: 'The secret will never be shown again.',
+    serverOnPage: 'The server addresses remain available on this page.',
+    copySecretFirst: 'Copy the secret to finish',
     secretSaved: 'I copied the secret',
     copyField: 'Copy: {field}',
     deleteNamed: 'Delete {name}',
@@ -876,14 +885,13 @@ export default {
     deleted: 'Client deleted',
     serverTitle: 'Server settings',
     serverDescription:
-      'The values the assistant asks for to connect to LePatron.',
+      'What the assistant\'s set-up screen asks for, besides the client ID and the secret.',
     settings: {
       clientId: 'Client ID',
       clientSecret: 'Client secret',
       mcpUrl: 'MCP server URL',
       authorizationUrl: 'Authorization URL',
-      tokenUrl: 'Token URL',
-      refreshUrl: 'Refresh URL',
+      tokenUrl: 'Token and refresh URL',
       scope: 'Scope',
       scopeHint:
         'Read only. Proposing drafts of skills and expertises (skills:write) is only granted to Badsender super admins, when they ask for it at connection.',
@@ -919,8 +927,6 @@ export default {
     revokeConfirm:
       '“{name}” will lose its access to LePatron for the company {group} at once. To use it again, connect it again.',
     revoked: 'Application revoked',
-    groupDescription:
-      'The AI assistants the company\'s users connected to LePatron. Each user can revoke their own; you can revoke them all at once, for instance if an access leaked.',
     groupCount:
       'No connected applications | 1 connected application | {count} connected applications',
     groupRevoke: 'Revoke all',
@@ -935,8 +941,17 @@ export default {
     description:
       'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
     switch: 'Allow AI assistants to connect',
-    manageClients: 'Manage MCP clients',
-    off: 'Turn off access',
+    on: 'On',
+    off: 'Off',
+    address: 'Address to give your users',
+    addressHint:
+      'They add it as a connector in their assistant, then sign in with their LePatron account.',
+    copyAddress: 'Copy the MCP server address',
+    clientsTitle: 'Clients registered by hand',
+    clientsDescription:
+      'Only Copilot Studio in manual mode needs one: Claude, ChatGPT and Microsoft 365 Copilot register themselves.',
+    manageClients: 'Manage',
+    turnOff: 'Turn off access',
     offTitle: 'Turn MCP access off?',
     offConfirm:
       'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
@@ -1470,6 +1485,8 @@ export default {
       title: 'Translation',
       description: 'Automatically translate your emails into different languages using AI.',
       enableLabel: 'Enable translation',
+      on: 'On',
+      off: 'Off',
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
@@ -1485,6 +1502,8 @@ export default {
       title: 'Skills engine',
       description: 'Generic AI engine powering every skill invocation for this company (and Playground tests via the platform company).',
       enableLabel: 'Enable the Skills engine',
+      on: 'On',
+      off: 'Off',
       model: 'AI model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
     },

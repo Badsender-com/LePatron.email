@@ -1072,10 +1072,9 @@ export default {
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
   retex: {
-    title: 'Retour d\'expérience des assistants IA',
+    title: 'Retour d\'expérience',
     description:
-      'Quand un utilisateur envoie un avis depuis son assistant IA, il peut y joindre un résumé de la session pour aider Badsender à améliorer ses expertises et skills. Ce résumé n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte pour cet avis.',
-    switch: 'Autoriser le retour d\'expérience',
+      'Avec un avis, l\'utilisateur peut joindre le résumé de sa session, pour aider Badsender à améliorer ses expertises et skills. Il l\'accepte à chaque fois.',
     updated: 'Retour d\'expérience mis à jour',
   },
   oauthConsent: {
@@ -1120,7 +1119,12 @@ export default {
   mcpClients: {
     pageTitle: 'Clients MCP',
     description:
-      'Les assistants qui ne savent pas s\'enregistrer eux-mêmes, comme Copilot Studio en mode manuel, reçoivent ici un identifiant et un secret. Seuls les utilisateurs de l\'entreprise peuvent se connecter avec. Claude, ChatGPT et Microsoft 365 Copilot n\'en ont pas besoin.',
+      'Pour un assistant qui demande un identifiant et un secret, comme Copilot Studio en mode manuel. Seuls les utilisateurs de l\'entreprise peuvent se connecter avec. Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls : ils n\'ont rien à faire ici.',
+    listLabel: 'Clients enregistrés',
+    clientMeta: 'Créé le {date} · envoi du secret : {authMethod}',
+    clientIdLine: 'Identifiant : {id}',
+    secretFootnote:
+      'Le secret n\'est montré qu\'à la création. S\'il est perdu, supprimez le client et créez-en un autre.',
     mcpOff:
       'L\'accès MCP de l\'entreprise est coupé : ces clients ne peuvent pas se connecter. Il s\'active dans',
     add: 'Ajouter un client',
@@ -1133,15 +1137,20 @@ export default {
     authMethod: 'Envoi du secret',
     authMethodHint:
       'Où l\'assistant envoie le secret à LePatron. Dans le doute, gardez « Dans le corps de la requête ».',
+    advanced: 'Réglage avancé : envoi du secret',
     authMethods: {
       client_secret_post: 'Dans le corps de la requête',
       client_secret_basic: 'Dans l\'en-tête (Basic)',
     },
-    empty: 'Aucun client enregistré.',
+    empty: 'Aucun client enregistré',
+    emptyHint:
+      'C\'est le cas normal : seule une configuration manuelle de Copilot Studio en demande un.',
     loadError: 'Impossible de charger les clients MCP.',
-    createdTitle: 'Client « {name} » créé',
-    secretOnce:
-      'Copiez le secret maintenant : il ne sera plus jamais affiché. S\'il est perdu, supprimez le client et créez-en un autre.',
+    createdBadge: 'Client créé',
+    createdTitle: 'Copiez ces valeurs dans « {name} »',
+    secretOnce: 'Le secret ne sera plus jamais affiché.',
+    serverOnPage: 'Les adresses du serveur restent disponibles sur cette page.',
+    copySecretFirst: 'Copiez le secret pour terminer',
     secretSaved: 'J\'ai copié le secret',
     copyField: 'Copier : {field}',
     deleteNamed: 'Supprimer {name}',
@@ -1153,14 +1162,13 @@ export default {
     deleted: 'Client supprimé',
     serverTitle: 'Paramètres du serveur',
     serverDescription:
-      'Les valeurs que l\'assistant demande pour se connecter à LePatron.',
+      'Ce que l\'écran de configuration de l\'assistant demande, en plus de l\'identifiant et du secret.',
     settings: {
       clientId: 'Identifiant client (client ID)',
       clientSecret: 'Secret client (client secret)',
       mcpUrl: 'URL du serveur MCP',
       authorizationUrl: 'URL d\'autorisation',
-      tokenUrl: 'URL du token',
-      refreshUrl: 'URL de renouvellement',
+      tokenUrl: 'URL du token et de renouvellement',
       scope: 'Scope',
       scopeHint:
         'Lecture seule. Proposer des brouillons de skills et d\'expertises (skills:write) n\'est accordé qu\'aux super admins Badsender, sur leur demande à la connexion.',
@@ -1196,8 +1204,6 @@ export default {
     revokeConfirm:
       '« {name} » perdra aussitôt son accès à LePatron pour l\'entreprise {group}. Pour l\'utiliser à nouveau, il faudra la reconnecter.',
     revoked: 'Application révoquée',
-    groupDescription:
-      'Les assistants IA que les utilisateurs de l\'entreprise ont connectés à LePatron. Chaque utilisateur peut révoquer les siens\u00a0; vous pouvez tous les révoquer d\'un coup, par exemple si un accès a fuité.',
     groupCount:
       'Aucune application connectée | 1 application connectée | {count} applications connectées',
     groupRevoke: 'Tout révoquer',
@@ -1212,8 +1218,17 @@ export default {
     description:
       'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
     switch: 'Autoriser la connexion des assistants IA',
-    manageClients: 'Gérer les clients MCP',
-    off: 'Couper l\'accès',
+    on: 'Activé',
+    off: 'Désactivé',
+    address: 'Adresse à donner à vos utilisateurs',
+    addressHint:
+      'Ils l\'ajoutent comme connecteur dans leur assistant, puis se connectent avec leur compte LePatron.',
+    copyAddress: 'Copier l\'adresse du serveur MCP',
+    clientsTitle: 'Clients enregistrés à la main',
+    clientsDescription:
+      'Seul Copilot Studio en mode manuel en a besoin : Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls.',
+    manageClients: 'Gérer',
+    turnOff: 'Couper l\'accès',
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
       'Tous les assistants connectés aux comptes de {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',
@@ -1489,6 +1504,8 @@ export default {
       title: 'Traduction',
       description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
       enableLabel: 'Activer la traduction',
+      on: 'Activée',
+      off: 'Désactivée',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
       availableLanguages: 'Langues disponibles',
@@ -1504,6 +1521,8 @@ export default {
       title: 'Moteur Skills',
       description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
       enableLabel: 'Activer le moteur Skills',
+      on: 'Activé',
+      off: 'Désactivé',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
     },
