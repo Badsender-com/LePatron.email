@@ -35,6 +35,7 @@ function safeRequire(path) {
 const MANIFESTS = [
   safeRequire('../../translation/skill-manifest.js'),
   safeRequire('../../email-builder/skill-manifest.js'),
+  safeRequire('../../text-generation/skill-manifest.js'),
 ].filter(Boolean);
 
 function listManifests() {
