@@ -17,4 +17,11 @@ router.post(
   textGeneration.generateSubject
 );
 
+router.post(
+  '/preheader',
+  GUARD_USER,
+  aiRateLimit(),
+  textGeneration.generatePreheader
+);
+
 module.exports = router;
