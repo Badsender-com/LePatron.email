@@ -1,14 +1,30 @@
 <script>
+import {
+  AlertTriangle,
+  Ban,
+  Building2,
+  Check,
+  Clock,
+  Eye,
+  Info,
+  Link2,
+  User,
+} from 'lucide-vue';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
 
-// What each scope lets the application do, in the user's words.
 const WRITE_SCOPE = 'skills:write';
-const SCOPE_LABELS = {
-  'mcp:read': 'oauthConsent.scopes.read',
-  'skills:write': 'oauthConsent.scopes.write',
-};
+
+// Two letters for a name: the application's and the user's avatars.
+const initialsOf = (name) =>
+  String(name || '?')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
 // The consent of a connected application (ADR 0012): which application asks,
 // what it will be able to do, and the company the connection is bound to.
@@ -16,7 +32,18 @@ const SCOPE_LABELS = {
 export default {
   name: 'BsPageOAuthConsent',
   meta: { acl: acls.ACL_USER },
-  components: { BsLoginLogo },
+  components: {
+    BsLoginLogo,
+    LucideAlertTriangle: AlertTriangle,
+    LucideBan: Ban,
+    LucideBuilding2: Building2,
+    LucideCheck: Check,
+    LucideClock: Clock,
+    LucideEye: Eye,
+    LucideInfo: Info,
+    LucideLink2: Link2,
+    LucideUser: User,
+  },
   layout: 'centered',
   data() {
     return {
@@ -61,31 +88,35 @@ export default {
       );
       return group ? group.name : '';
     },
-    // Its name is only what it claims, unless a company registered it.
-    registrationNote() {
+    // Who vouches for the application's name, shown as a badge: the company
+    // that registered it, the host that publishes its identity, or nobody.
+    registrationBadge() {
       const client = this.interaction?.client;
       if (client?.registration === 'preRegistered') {
         return this.$t('oauthConsent.registration.preRegistered', {
           company: client.company,
         });
       }
-      if (client?.registration === 'dynamic') {
-        return this.$t('oauthConsent.registration.dynamic');
-      }
       if (client?.registration === 'metadataDocument') {
         return this.$t('oauthConsent.registration.metadataDocument', {
           host: client.host,
         });
       }
-      return '';
+      return this.isSelfRegistered
+        ? this.$t('oauthConsent.registration.dynamicBadge')
+        : '';
+    },
+    clientInitials() {
+      return initialsOf(this.interaction?.client.name);
+    },
+    account() {
+      return this.interaction?.account || {};
+    },
+    accountInitials() {
+      return initialsOf(this.account.name || this.account.email);
     },
     canWrite() {
       return (this.interaction?.scopes || []).includes(WRITE_SCOPE);
-    },
-    scopeLabels() {
-      return (this.interaction?.scopes || [])
-        .filter((scope) => scope !== WRITE_SCOPE && SCOPE_LABELS[scope])
-        .map((scope) => this.$t(SCOPE_LABELS[scope]));
     },
   },
   async mounted() {
@@ -143,103 +174,188 @@ export default {
 </script>
 
 <template>
-  <div style="display: block; margin: 0 auto; text-align: center">
-    <bs-login-logo />
-    <p style="color: white; font-size: 0.875rem">Email Builder by Badsender</p>
-    <v-card class="elevation-24 text-left">
+  <div class="bs-oauth-consent">
+    <div class="bs-oauth-consent__brand">
+      <bs-login-logo />
+      <span>Email Builder by Badsender</span>
+    </div>
+
+    <v-card class="bs-oauth-consent__card">
       <v-progress-linear v-if="isLoading" indeterminate color="accent" />
+
       <template v-else-if="error">
-        <v-card-text>
-          <v-alert type="warning" text class="mb-2">
-            {{ error }}
-          </v-alert>
-          <p class="text-body-2 mb-0">{{ $t('oauthConsent.closeHint') }}</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text color="primary" :href="switchAccountUrl">
+        <div class="bs-oauth-consent__header">
+          <span class="bs-oauth-consent__state bs-oauth-consent__state--error">
+            <lucide-ban :size="26" />
+          </span>
+          <h1 class="bs-oauth-consent__heading">
+            {{ $t('oauthConsent.errorTitle') }}
+          </h1>
+          <p class="bs-oauth-consent__message">{{ error }}</p>
+          <p class="bs-oauth-consent__note">
+            <lucide-info :size="16" />
+            <span>{{ $t('oauthConsent.closeHint') }}</span>
+          </p>
+        </div>
+        <div class="bs-oauth-consent__actions">
+          <v-btn
+            outlined
+            color="primary"
+            class="text-none"
+            :href="switchAccountUrl"
+          >
+            <lucide-user :size="16" class="mr-2" />
             {{ $t('oauthConsent.switchAccount') }}
           </v-btn>
-        </v-card-actions>
+        </div>
       </template>
 
       <template v-else>
-        <v-card-title class="bs-oauth-consent__title">
-          <h1 class="text-h6">
-            {{ $t('oauthConsent.title', { client }) }}
+        <!-- First, when nobody vouches for the name. -->
+        <div
+          v-if="isSelfRegistered"
+          role="alert"
+          class="bs-oauth-consent__banner"
+        >
+          <lucide-alert-triangle :size="18" />
+          <span>
+            <strong>{{ $t('oauthConsent.registration.dynamicTitle') }}</strong>
+            {{ $t('oauthConsent.registration.dynamic') }}
+          </span>
+        </div>
+
+        <div class="bs-oauth-consent__header">
+          <div class="bs-oauth-consent__link" aria-hidden="true">
+            <span
+              :class="[
+                'bs-oauth-consent__tile',
+                { 'bs-oauth-consent__tile--unverified': isSelfRegistered },
+              ]"
+            >
+              <span
+                class="bs-oauth-consent__avatar bs-oauth-consent__avatar--app"
+              >
+                {{ clientInitials }}
+              </span>
+            </span>
+            <span class="bs-oauth-consent__chain">
+              <span><lucide-link2 :size="16" /></span>
+            </span>
+            <span class="bs-oauth-consent__tile">
+              <img src="/pique_aiguille.svg" alt="" height="36" />
+            </span>
+          </div>
+          <h1 class="bs-oauth-consent__heading">
+            {{ $t('oauthConsent.heading', { client }) }}
           </h1>
-        </v-card-title>
-        <v-divider />
-        <v-card-text>
-          <!-- First, and a warning when nobody vouches for the name. -->
-          <v-alert
-            v-if="registrationNote"
-            :type="isSelfRegistered ? 'warning' : 'info'"
-            :dense="!isSelfRegistered"
-            text
-            class="text-body-2"
+          <span
+            v-if="registrationBadge"
+            :class="[
+              'bs-oauth-consent__badge',
+              isSelfRegistered
+                ? 'bs-oauth-consent__badge--warning'
+                : 'bs-oauth-consent__badge--success',
+            ]"
           >
-            {{ registrationNote }}
-          </v-alert>
-          <p class="mb-1">{{ $t('oauthConsent.intro', { client }) }}</p>
-          <p class="text-caption">
-            {{
-              $t('oauthConsent.account', { email: interaction.account.email })
-            }}
+            <lucide-alert-triangle v-if="isSelfRegistered" :size="12" />
+            <lucide-check v-else :size="12" />
+            {{ registrationBadge }}
+          </span>
+        </div>
+
+        <div class="bs-oauth-consent__body">
+          <div class="bs-oauth-consent__account">
+            <span class="bs-oauth-consent__avatar">{{ accountInitials }}</span>
+            <span class="bs-oauth-consent__who">
+              <strong>{{ account.name || account.email }}</strong>
+              <span v-if="account.name">{{ account.email }}</span>
+            </span>
             <a :href="switchAccountUrl">{{
-              $t('oauthConsent.switchAccount')
+              $t('oauthConsent.changeAccount')
             }}</a>
+          </div>
+
+          <section class="bs-oauth-consent__section">
+            <h2 class="bs-oauth-consent__label">
+              {{ $t('oauthConsent.canDo') }}
+            </h2>
+            <ul class="bs-oauth-consent__rights">
+              <li>
+                <span
+                  class="bs-oauth-consent__icon bs-oauth-consent__icon--accent"
+                >
+                  <lucide-eye :size="16" />
+                </span>
+                <span>
+                  <strong>{{ $t('oauthConsent.rights.read') }}</strong>
+                  <span>{{ $t('oauthConsent.rights.readHint') }}</span>
+                </span>
+              </li>
+              <li v-if="!canWrite">
+                <span class="bs-oauth-consent__icon">
+                  <lucide-ban :size="16" />
+                </span>
+                <span>
+                  <strong>{{ $t('oauthConsent.rights.readOnly') }}</strong>
+                  <span>{{ $t('oauthConsent.rights.readOnlyHint') }}</span>
+                </span>
+              </li>
+            </ul>
+            <label
+              v-if="canWrite"
+              :class="[
+                'bs-oauth-consent__write',
+                { 'bs-oauth-consent__write--on': allowWrite },
+              ]"
+            >
+              <input v-model="allowWrite" type="checkbox" />
+              <span>
+                <strong>{{ $t('oauthConsent.allowWrite') }}</strong>
+                <span>{{ $t('oauthConsent.allowWriteHint') }}</span>
+              </span>
+            </label>
+          </section>
+
+          <section class="bs-oauth-consent__section">
+            <h2 class="bs-oauth-consent__label">
+              {{ $t('oauthConsent.group') }}
+            </h2>
+            <v-select
+              v-if="interaction.groups.length > 1"
+              v-model="groupId"
+              :items="interaction.groups"
+              item-text="name"
+              item-value="id"
+              :placeholder="$t('oauthConsent.pickGroup')"
+              :aria-label="$t('oauthConsent.group')"
+              outlined
+              dense
+              hide-details
+            />
+            <div v-else class="bs-oauth-consent__company">
+              <lucide-building2 :size="18" />
+              <strong>{{ interaction.groups[0].name }}</strong>
+            </div>
+            <p class="bs-oauth-consent__hint">
+              {{ $t('oauthConsent.groupHint') }}
+            </p>
+          </section>
+
+          <p class="bs-oauth-consent__hint bs-oauth-consent__footnote">
+            <lucide-clock :size="14" />
+            <span>
+              {{
+                $t('oauthConsent.footnote', { host: interaction.redirectHost })
+              }}
+            </span>
           </p>
-          <p class="text-caption">
-            {{
-              $t('oauthConsent.redirectHost', {
-                host: interaction.redirectHost,
-              })
-            }}
-          </p>
-          <p class="mb-1">
-            {{ $t('oauthConsent.canDo') }}
-          </p>
-          <ul :class="canWrite ? 'mb-0' : 'mb-4'">
-            <li v-for="label in scopeLabels" :key="label">
-              {{ label }}
-            </li>
-          </ul>
-          <v-checkbox
-            v-if="canWrite"
-            v-model="allowWrite"
-            :label="$t('oauthConsent.allowWrite')"
-            :hint="$t('oauthConsent.allowWriteHint')"
-            persistent-hint
-            color="accent"
-            class="mt-2 mb-4"
-          />
-          <v-select
-            v-if="interaction.groups.length > 1"
-            v-model="groupId"
-            :items="interaction.groups"
-            item-text="name"
-            item-value="id"
-            :placeholder="$t('oauthConsent.pickGroup')"
-            :label="$t('oauthConsent.group')"
-            :hint="$t('oauthConsent.groupHint')"
-            persistent-hint
-            outlined
-            dense
-          />
-          <p v-else class="mb-0">
-            <strong>{{ $t('oauthConsent.group') }}</strong>
-            <br />
-            {{ interaction.groups[0].name }}
-            <br />
-            <span class="text-caption">{{ $t('oauthConsent.groupHint') }}</span>
-          </p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
+        </div>
+
+        <div class="bs-oauth-consent__actions">
           <v-btn
             text
             color="primary"
+            class="text-none"
             :loading="sending === 'deny'"
             :disabled="!!sending"
             @click="deny"
@@ -249,26 +365,429 @@ export default {
           <v-btn
             color="accent"
             elevation="0"
+            class="text-none"
             :loading="sending === 'allow'"
             :disabled="!groupId || !!sending"
             @click="allow"
           >
+            <lucide-check :size="16" class="mr-2" />
             {{
               groupName
                 ? $t('oauthConsent.allowIn', { group: groupName })
                 : $t('oauthConsent.allow')
             }}
           </v-btn>
-        </v-card-actions>
+        </div>
       </template>
     </v-card>
   </div>
 </template>
 
-<style scoped>
-/* A long application name wraps rather than hides the end of it. */
-.bs-oauth-consent__title h1 {
-  word-break: break-word;
-  line-height: 1.4;
+<style lang="scss" scoped>
+// The consent of a connected application, after the LePatron design system:
+// a flat white card on the sign-in backdrop, accent for the one action.
+.bs-oauth-consent {
+  // Out of the login layout's narrow column: 480px, centred on the page.
+  position: relative;
+  left: 50%;
+  width: min(480px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  color: rgba(0, 0, 0, 0.87);
+
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 24px;
+    color: #cfdbe1;
+    font-size: 12px;
+  }
+
+  &__card.v-card {
+    border-radius: var(--r-md);
+    box-shadow: 0 12px 32px rgba(13, 43, 62, 0.18);
+    overflow: hidden;
+  }
+
+  &__banner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 32px;
+    background: rgba(255, 180, 0, 0.14);
+    border-bottom: 1px solid rgba(255, 180, 0, 0.35);
+    font-size: 13px;
+    line-height: 1.5;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: #b07400;
+    }
+
+    strong {
+      display: block;
+      font-size: 14px;
+    }
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 32px 24px;
+    text-align: center;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+  }
+
+  &__tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    box-sizing: border-box;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    background: #f9fafb;
+
+    &--unverified {
+      border: 1px dashed var(--gray-400);
+    }
+  }
+
+  &__chain {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 88px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 50%;
+      border-top: 2px dashed var(--gray-300);
+    }
+
+    span {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--r-pill);
+      background: #fff;
+      color: #0091b8;
+    }
+  }
+
+  &__avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--v-primary-base);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+
+    &--app {
+      width: 40px;
+      height: 40px;
+      background: #265090;
+      font-size: 15px;
+    }
+  }
+
+  &__heading {
+    margin: 0;
+    color: var(--v-primary-base);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  &__message {
+    max-width: 360px;
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 14px;
+  }
+
+  &__state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--r-pill);
+
+    &--error {
+      background: rgba(240, 78, 35, 0.12);
+      color: #c53a12;
+    }
+  }
+
+  &__note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    background: #f9fafb;
+    color: var(--gray-700);
+    font-size: 13px;
+    text-align: left;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+
+  &__badge {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+
+    &--success {
+      background: rgba(76, 175, 80, 0.12);
+      color: #2e7d32;
+    }
+
+    &--warning {
+      background: rgba(255, 180, 0, 0.16);
+      color: #8a5b00;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 32px 24px;
+  }
+
+  &__account {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 7px;
+    background: #f9fafb;
+
+    a {
+      color: #0091b8;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+
+      &:hover {
+        color: var(--v-primary-base);
+      }
+    }
+  }
+
+  &__who {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    font-size: 14px;
+
+    strong {
+      font-weight: 500;
+    }
+
+    span {
+      overflow-wrap: anywhere;
+      color: var(--gray-600);
+      font-size: 12px;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__label {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__rights {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    li > span:last-child {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    strong {
+      color: var(--gray-900);
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  &__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-pill);
+    background: var(--gray-100);
+    color: var(--gray-700);
+
+    &--accent {
+      background: rgba(0, 172, 220, 0.12);
+      color: #0091b8;
+    }
+  }
+
+  &__write {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 4px;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-300);
+    border-radius: 7px;
+    cursor: pointer;
+
+    &--on {
+      border-color: var(--v-accent-base);
+      background: var(--accent-tint-selected);
+    }
+
+    input {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      accent-color: var(--v-accent-base);
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--gray-600);
+      font-size: 12px;
+    }
+
+    strong {
+      color: var(--gray-900);
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  &__company {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-300);
+    border-radius: 7px;
+    font-size: 14px;
+
+    strong {
+      font-weight: 500;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 12px;
+  }
+
+  &__footnote {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 16px 32px;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  // On a phone, the actions take the width, the one to allow on top.
+  @media (max-width: 480px) {
+    &__header,
+    &__body,
+    &__actions,
+    &__banner {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    &__actions {
+      flex-direction: column-reverse;
+
+      .v-btn {
+        width: 100%;
+      }
+    }
+  }
 }
 </style>
