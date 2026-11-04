@@ -350,6 +350,7 @@ describe('a copy following production', () => {
       expect(await lastFollow()).toMatchObject({
         status: 'succeeded',
         by: 'Alice',
+        trigger: 'manual',
         created: expect.any(Number),
         failed: 0,
       });
