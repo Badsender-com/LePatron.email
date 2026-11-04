@@ -81,6 +81,8 @@ const otherTechAdmin = {
 /**
  * The group as stored: read by the controller after the write, and what the
  * write of its switches replaces.
+ *
+ * @returns {Object} the stored group, as the writes change it
  */
 function storedGroup(fields) {
   const group = { id: GROUP_ID, name: 'Client group', ...fields };
@@ -100,6 +102,7 @@ function storedGroup(fields) {
   groupService.updateGroup.mockImplementation(async (changes) =>
     Object.assign(group, changes)
   );
+  return group;
 }
 
 /**
