@@ -229,6 +229,7 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
+  createVersionAt,
   deleteVersion,
 } = versioned;
 
@@ -290,6 +291,7 @@ module.exports = {
   updateSkill,
   createMinorVersion,
   createMajorVersion,
+  createVersionAt,
   updateVersion,
   deleteVersion,
   activateVersion,

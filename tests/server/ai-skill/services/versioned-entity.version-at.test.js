@@ -37,8 +37,7 @@ const ENTITIES = [
 
 const USER_ID = 'user-1';
 
-// Turned on by #1408 (a draft can be created at a given version number)
-describe.skip.each(ENTITIES)('a draft at a given number — $label', (entity) => {
+describe.each(ENTITIES)('a draft at a given number — $label', (entity) => {
   let doc;
   let service;
 
