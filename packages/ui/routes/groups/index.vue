@@ -367,28 +367,20 @@ export default {
             />
           </template>
 
-          <template #item.enableCrmIntelligence="{ item }">
+          <!-- The modules sold to a company: opened, or not. -->
+          <template
+            v-for="flag in ['enableCrmIntelligence', 'enableMcpModule']"
+            #[`item.${flag}`]="{ item }"
+          >
             <lucide-check
-              v-if="item.enableCrmIntelligence"
+              v-if="item[flag]"
+              :key="flag"
               :size="16"
               class="accent--text"
             />
             <lucide-x-circle
               v-else
-              :size="16"
-              class="error--text"
-              style="opacity: 0.35"
-            />
-          </template>
-
-          <template #item.enableMcpModule="{ item }">
-            <lucide-check
-              v-if="item.enableMcpModule"
-              :size="16"
-              class="accent--text"
-            />
-            <lucide-x-circle
-              v-else
+              :key="flag"
               :size="16"
               class="error--text"
               style="opacity: 0.35"
