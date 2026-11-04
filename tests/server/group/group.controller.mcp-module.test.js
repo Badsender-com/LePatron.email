@@ -89,8 +89,7 @@ beforeEach(() => {
   given({ enableMcpModule: false, enableMcp: false });
 });
 
-// Turned on by #1396 (a closed module refuses the assistants)
-describe.skip('PUT /groups/:groupId — MCP module', () => {
+describe('PUT /groups/:groupId — MCP module', () => {
   it('starts closed on a new group', () => {
     const mongoose = require('mongoose');
     const GroupSchema = require('../../../packages/server/group/group.schema.js');

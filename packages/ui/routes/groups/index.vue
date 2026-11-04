@@ -120,6 +120,13 @@ export default {
           width: '60px',
         },
         {
+          text: this.$t('tableHeaders.groups.mcp'),
+          align: 'center',
+          value: 'enableMcpModule',
+          sortable: false,
+          width: '60px',
+        },
+        {
           text: this.$t('global.actions'),
           value: 'actions',
           align: 'right',
@@ -363,6 +370,20 @@ export default {
           <template #item.enableCrmIntelligence="{ item }">
             <lucide-check
               v-if="item.enableCrmIntelligence"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
+
+          <template #item.enableMcpModule="{ item }">
+            <lucide-check
+              v-if="item.enableMcpModule"
               :size="16"
               class="accent--text"
             />

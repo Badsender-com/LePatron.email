@@ -71,7 +71,11 @@ async function resolveIdentity(authInfo) {
   }
 
   const group = await Groups.findById(groupId).lean();
-  if (!group || group.enableMcp !== true) {
+  // Sold apart from MCP access, with no way around it (ADR 0017).
+  if (!group || group.enableMcpModule !== true) {
+    refuse('This group has no MCP module.');
+  }
+  if (group.enableMcp !== true) {
     refuse('This group has no MCP access to LePatron.');
   }
   const drafts =

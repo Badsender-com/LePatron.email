@@ -18,7 +18,8 @@ const refuse = (res, status, message, code) =>
 
 // The account behind the app's session, read as the MCP server reads it, and
 // the groups a connection may be bound to: the user's own, or, for a super
-// admin, every group with MCP access.
+// admin, every group with MCP access. Either way, only a group that has the
+// MCP module (ADR 0017).
 async function consenterOf(req) {
   const userId = req.user?.id;
   const record =
@@ -33,8 +34,9 @@ async function consenterOf(req) {
     group: { id: String(record._company) },
   });
   const isPlatform = permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
+  const open = { enableMcpModule: true, enableMcp: true };
   const groups = await Groups.find(
-    isPlatform ? { enableMcp: true } : { _id: record._company, enableMcp: true }
+    isPlatform ? open : { _id: record._company, ...open }
   )
     .select('_id name')
     .sort({ name: 1 })

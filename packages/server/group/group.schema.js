@@ -168,9 +168,16 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    // MCP access (ADR 0012): the subscription that lets the group's users
-    // connect an AI assistant. Off until a super admin or the group's tech admin
-    // turns it on; the group update keeps it out of a company admin's reach.
+    // The MCP module (ADR 0017): what Badsender sells the group, opened by a
+    // super admin like the modules above. MCP access works only while it is open.
+    enableMcpModule: {
+      type: Boolean,
+      default: false,
+    },
+    // MCP access (ADR 0012): lets the group's users connect an AI assistant,
+    // once the group has the MCP module. Off until a super admin or the group's
+    // tech admin turns it on; the group update keeps it out of a company
+    // admin's reach.
     enableMcp: {
       type: Boolean,
       default: false,
