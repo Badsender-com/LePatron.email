@@ -222,6 +222,21 @@ A file that carries the active version of chosen skills and expertises from one 
 _UI_: Export de skills
 _Avoid_: Backup (it holds no history), sync (nothing happens on its own), package
 
+**Copy**:
+A LePatron instance (staging, development) whose skills and expertises follow production's, which is their only source. A copy keeps what exists only on it.
+_UI_: Copie
+_Avoid_: Mirror (a copy keeps its own items), replica, sync target
+
+**Used by a feature**:
+Said of an active skill or expertise that a LePatron feature calls or loads, as worked out from the features' own declarations, never set by hand. Publishing a new version of one replays its test cases first.
+_UI_: Utilisé par une fonctionnalité
+_Avoid_: Production-grade, locked, frozen
+
+**Test case**:
+An input a feature skill is checked against, kept with the skill's version, replayed before a change it depends on is published.
+_UI_: Cas de test
+_Avoid_: Golden run (the playground run that proves a case), unit test
+
 ### AI assistants
 
 **Connected application**:
