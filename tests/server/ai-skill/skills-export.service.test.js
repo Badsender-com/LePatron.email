@@ -360,8 +360,7 @@ describe('the skills export', () => {
     });
   });
 
-  // Turned on by #1411 (import the chosen items as drafts, with a report)
-  describe.skip('importing', () => {
+  describe('importing', () => {
     let file;
     beforeEach(async () => {
       file = await exportOf({ all: true });

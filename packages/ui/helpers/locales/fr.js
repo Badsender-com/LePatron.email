@@ -1672,6 +1672,18 @@ export default {
     notJson: 'Ce fichier n\'est pas du JSON.',
     tooLarge: 'Ce fichier dépasse 5 Mo.',
     unreadable: 'Ce fichier n\'est pas un export de skills lisible : {message}',
+    run: 'Importer la sélection',
+    report: {
+      created: '{count} créé | {count} créés',
+      updated: '{count} mis à jour | {count} mis à jour',
+      skipped: '{count} ignoré | {count} ignorés',
+      failed: '{count} en échec | {count} en échec',
+      publish: 'Ces brouillons attendent d\'être relus et publiés :',
+      nothing: 'Aucun brouillon n\'a été écrit.',
+      failedItem: '{id} : {message}',
+      skippedItem: '{id} : {reason}',
+    },
+    importFailed: 'L\'import a échoué : {message}',
     kinds: {
       expertise: 'Expertise',
       skill: 'Skill',

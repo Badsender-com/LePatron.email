@@ -1648,6 +1648,18 @@ export default {
     notJson: 'This file is not JSON.',
     tooLarge: 'This file is over 5 MB.',
     unreadable: 'This file is not a readable skills export: {message}',
+    run: 'Import the selection',
+    report: {
+      created: '{count} created | {count} created',
+      updated: '{count} updated | {count} updated',
+      skipped: '{count} skipped | {count} skipped',
+      failed: '{count} failed | {count} failed',
+      publish: 'These drafts wait to be reviewed and published:',
+      nothing: 'No draft was written.',
+      failedItem: '{id}: {message}',
+      skippedItem: '{id}: {reason}',
+    },
+    importFailed: 'The import failed: {message}',
     kinds: {
       expertise: 'Expertise',
       skill: 'Skill',

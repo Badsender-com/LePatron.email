@@ -107,8 +107,7 @@ describe('the preview of an import', () => {
   );
 });
 
-// Turned on by #1411 (import the chosen items as drafts, with a report)
-describe.skip('the report of an import', () => {
+describe('the report of an import', () => {
   let helper;
   beforeAll(() => {
     helper = require('~/helpers/skills-import.js');

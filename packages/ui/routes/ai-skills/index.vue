@@ -86,6 +86,11 @@ export default {
         this.exportingAll = false;
       }
     },
+    // The lists show the new drafts.
+    onImported() {
+      if (this.$refs.skillsTab) this.$refs.skillsTab.fetchData();
+      if (this.$refs.expertiseTab) this.$refs.expertiseTab.fetchData();
+    },
     resolveInitialTab() {
       const q = this.$route && this.$route.query && this.$route.query.tab;
       return VALID_TABS.includes(q) ? q : 'skills';
@@ -166,7 +171,7 @@ export default {
       </div>
     </v-container>
 
-    <bs-ai-skills-import-modal ref="importModal" />
+    <bs-ai-skills-import-modal ref="importModal" @imported="onImported" />
   </div>
 </template>
 

@@ -26,3 +26,26 @@ export function importPayload(keys) {
       .map((key) => key.slice(kind.length + 1));
   return { expertiseIds: idsOf('expertise'), skillIds: idsOf('skill') };
 }
+
+// How many items each outcome of the import holds.
+export function reportCounts(report) {
+  return ['created', 'updated', 'skipped', 'failed'].reduce(
+    (counts, outcome) => ({
+      ...counts,
+      [outcome]: (report[outcome] || []).length,
+    }),
+    {}
+  );
+}
+
+// The drafts the import wrote, each linked to its page in the back office,
+// where a person publishes it.
+export function draftLinks(report) {
+  return [...(report.created || []), ...(report.updated || [])].map(
+    ({ kind, id, version }) => ({
+      id,
+      version,
+      to: kind === 'skill' ? `/ai-skills/${id}` : `/ai-expertise/${id}`,
+    })
+  );
+}

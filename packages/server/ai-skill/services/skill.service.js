@@ -98,6 +98,8 @@ async function createSkill(data, userId, firstVersion = {}) {
     // request: a new skill reaches the platform company only, until it is
     // opened, an act of its own (ADR 0013).
     audience: Audiences.PLATFORM,
+    // Not served to assistants until someone decides it (ADR 0013).
+    servedToAssistants: false,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
