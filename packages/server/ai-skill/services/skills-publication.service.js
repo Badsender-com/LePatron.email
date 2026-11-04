@@ -171,7 +171,10 @@ async function guardPublication({ kind, id, version }) {
   };
 }
 
-const isGuard = (guard) => !!guard && Array.isArray(guard.cases);
+// A guard that ran: its full answer, or the counts an assistant's
+// confirmation carries (ADR 0019).
+const isGuard = (guard) =>
+  !!guard && (Array.isArray(guard.cases) || !!guard.summary);
 
 // A case fails when its new output is missing or breaks the contract.
 const failedCases = (guard) =>
@@ -197,9 +200,17 @@ async function record(
       by: user ? user.id : null,
       application: application || null,
       at: new Date(),
-      cases: guard.cases.length,
-      failed: failedCases(guard),
-      missing: asList(guard.missing),
+      ...(guard.summary
+        ? {
+            cases: guard.summary.cases,
+            failed: guard.summary.failed,
+            missing: asList(guard.summary.missing),
+          }
+        : {
+            cases: guard.cases.length,
+            failed: failedCases(guard),
+            missing: asList(guard.missing),
+          }),
     },
   ];
   await doc.save();
