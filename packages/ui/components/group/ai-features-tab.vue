@@ -393,14 +393,10 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-// The features stack as cards on a grey ground (the AI features mockup).
-.ai-features {
-  background: var(--surface-muted);
-}
-
+// The features stack as cards (the AI features mockup), on the settings
+// page's own ground: a grey of their own would stop at the content's edge.
 .ai-features__cards {
   max-width: 880px;
-  padding: 24px 32px 64px;
 }
 
 .upcoming-features {
