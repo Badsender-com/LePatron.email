@@ -40,3 +40,15 @@ export function isFlagEnabled(flag, user, group) {
   // shouldn't be locked out.
   return group[flag] !== false;
 }
+
+/**
+ * Whether the users of a group may connect AI assistants to LePatron: the
+ * group has the MCP module and allows MCP access (ADR 0017). No exception for
+ * a super admin: the caller passes its selected group, like any module.
+ *
+ * @param {Object} group
+ * @returns {boolean}
+ */
+export function canConnectApplications(group) {
+  return Boolean(group && group.enableMcpModule === true && group.enableMcp);
+}
