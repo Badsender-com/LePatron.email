@@ -159,6 +159,7 @@ describe('identity and MCP access', () => {
 
     expect(group).toEqual({
       _id: f.CLIENT_GROUP,
+      enableMcpModule: true,
       enableMcp: true,
       allowRetex: false,
       logRetentionDays: 30,

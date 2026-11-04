@@ -21,6 +21,7 @@ import {
   Boxes,
   Shield,
   KeyRound,
+  Plug,
 } from 'lucide-vue';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
@@ -40,6 +41,7 @@ export default {
     LucideBoxes: Boxes,
     LucideShield: Shield,
     LucideKeyRound: KeyRound,
+    LucidePlug: Plug,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -268,6 +270,37 @@ export default {
             </div>
             <v-switch
               v-model="localModel.enableCrmIntelligence"
+              hide-details
+              :disabled="disabled"
+              class="module-card__switch"
+            />
+          </div>
+
+          <!-- MCP Module (ADR 0017): sold apart from MCP access, which the
+               company's tech admin then turns on in its AI features. -->
+          <div class="module-card">
+            <div class="module-card__content">
+              <div class="module-card__icon">
+                <lucide-plug :size="28" color="#00acdc" />
+              </div>
+              <div class="module-card__info">
+                <div class="module-card__name">
+                  {{ $t('groups.modules.mcp.name') }}
+                </div>
+                <div class="module-card__description">
+                  {{ $t('groups.modules.mcp.description') }}
+                </div>
+                <div
+                  v-if="localModel.enableMcpModule"
+                  class="module-card__hint"
+                >
+                  <lucide-arrow-right :size="14" color="#9e9e9e" />
+                  {{ $t('groups.modules.mcp.configHint') }}
+                </div>
+              </div>
+            </div>
+            <v-switch
+              v-model="localModel.enableMcpModule"
               hide-details
               :disabled="disabled"
               class="module-card__switch"

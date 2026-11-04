@@ -4,84 +4,22 @@
 // by a super admin like the other modules. MCP access stays the tech admin's
 // switch; closing the module ends the company's connected applications.
 
-jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
-  forgetConnections: jest.fn(),
-}));
-jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Groups: { findById: jest.fn() },
-  SecurityEvents: { create: jest.fn() },
-  Profiles: {},
-  Templates: {},
-  Mailings: {},
-}));
-jest.mock('../../../packages/server/group/group.service.js', () => ({
-  updateGroup: jest.fn(),
-  findUserByGroupId: jest.fn(),
-}));
-jest.mock('../../../packages/server/profile/profile.service.js', () => ({}));
-jest.mock(
-  '../../../packages/server/emails-group/emails-group.service.js',
-  () => ({})
-);
-jest.mock(
-  '../../../packages/server/personalized-variables/personalized-variable.service.js',
-  () => ({})
-);
-jest.mock('../../../packages/server/group/group-ftp.service.js', () => ({
-  processCredentialsForUpdate: jest.fn((body) => ({ ...body })),
-  validateSshKeyOrThrow: jest.fn(),
-  maskFtpCredentials: jest.fn((group) => group),
-}));
-jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
-  createWorkspace: jest.fn(),
-  findWorkspaces: jest.fn(),
-}));
-jest.mock(
-  '../../../packages/server/ai-skill/services/invocation-log.service.js',
-  () => ({ restampRetention: jest.fn() })
-);
-jest.mock('../../../packages/server/mcp/mcp-retention.js', () => ({
-  restampMcpRetention: jest.fn(),
-}));
-jest.mock('../../../packages/server/utils/logger.js', () => ({
-  log: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-}));
-
-const groupService = require('../../../packages/server/group/group.service.js');
-const groupController = require('../../../packages/server/group/group.controller.js');
-const { Groups } = require('../../../packages/server/common/models.common.js');
+const {
+  GROUP_ID,
+  companyAdmin,
+  techAdmin,
+  superAdmin,
+  storedGroup,
+  update,
+} = require('./group-update.harness.js');
 const {
   forgetConnections,
 } = require('../../../packages/server/mcp/mcp-connections.js');
 
-const GROUP_ID = '507f1f77bcf86cd799439001';
-const superAdmin = { id: 's1', role: 'super_admin', group: 'platform' };
-const companyAdmin = { id: 'a1', role: 'company_admin', group: GROUP_ID };
-const techAdmin = { id: 'a2', role: 'company_admin_tech', group: GROUP_ID };
-
 let saved;
 
-async function update(user, body) {
-  await groupController.update(
-    { params: { groupId: GROUP_ID }, body, user },
-    { json: jest.fn() }
-  );
-  return groupService.updateGroup.mock.calls[0][0];
-}
-
 function given(group) {
-  saved = { id: GROUP_ID, name: 'Client group', ...group };
-  // The group as saved: what the controller reads back.
-  groupService.updateGroup.mockImplementation(async (changes) =>
-    Object.assign(saved, changes)
-  );
-  Groups.findById.mockReturnValue({
-    lean: jest.fn().mockResolvedValue(saved),
-    then: (resolve, reject) => Promise.resolve(saved).then(resolve, reject),
-  });
+  saved = storedGroup(group);
 }
 
 beforeEach(() => {
@@ -89,8 +27,7 @@ beforeEach(() => {
   given({ enableMcpModule: false, enableMcp: false });
 });
 
-// Turned on by #1396 (a closed module refuses the assistants)
-describe.skip('PUT /groups/:groupId — MCP module', () => {
+describe('PUT /groups/:groupId — MCP module', () => {
   it('starts closed on a new group', () => {
     const mongoose = require('mongoose');
     const GroupSchema = require('../../../packages/server/group/group.schema.js');
