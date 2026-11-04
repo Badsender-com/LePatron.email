@@ -160,7 +160,10 @@ function createInteractionsRouter(provider, resource) {
         scopes: req.granted,
         groups: req.consenter.groups,
         // Whose rights the application gets, for the user to check.
-        account: { email: req.consenter.user.email },
+        account: {
+          name: req.consenter.user.name,
+          email: req.consenter.user.email,
+        },
       });
     } catch (err) {
       next(err);

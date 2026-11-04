@@ -805,31 +805,35 @@ export default {
     title: 'Connect {client} to LePatron',
     pageTitle: 'Connect an assistant to LePatron',
     loginHint: 'Log in to let your AI assistant access LePatron.',
-    intro: '{client} asks to connect to your LePatron account.',
-    account: 'With the rights of the account {email}.',
+    heading: '{client} asks to access your LePatron account',
+    errorTitle: 'Cannot connect',
+    changeAccount: 'Change account',
     switchAccount: 'Use another account',
     closeHint: 'You can close this window and start the connection again from your assistant.',
-    redirectHost: 'Once allowed, you will be sent back to {host}.',
-    canDo: 'This application will be able to:',
- registration: {
+    canDo: 'This application will be able to',
+    rights: {
+      read: 'Read the expertises, the skills and your mailings',
+      readHint: 'With your rights, exactly as in the app.',
+      readOnly: 'Change, publish or delete nothing',
+      readOnlyHint: 'The access is read only.',
+    },
+    registration: {
+      dynamicTitle: 'Unverified application',
       dynamic:
-        'This application registered itself: LePatron cannot vouch for its name. Only go on if you just started the connection from it.',
-      metadataDocument: 'Its identity is published by {host}.',
-      preRegistered: 'Application declared by the company {company}.',
+        'It registered itself: LePatron cannot vouch for its name. Only go on if you just started the connection from it.',
+      dynamicBadge: 'Name given by the application',
+      metadataDocument: 'Identity verified by {host}',
+      preRegistered: 'Declared by the company {company}',
     },
-    scopes: {
-      read:
-        'read the expertises, skills and mailings you have access to, with your rights',
-      write:
-        'propose drafts of skills and expertises, which only a person can publish',
-    },
-    allowWrite: 'Also let it propose drafts of skills and expertises',
+    allowWrite: 'Also propose drafts of skills and expertises',
     allowWriteHint:
       'Super admins only. Only a person publishes a draft. Tick it only for an assistant of the Badsender team.',
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',
     pickGroup: 'Pick a company',
+    footnote:
+      'Valid for 90 days, revocable at any time from Connected applications. Once allowed, you will be sent back to {host}.',
     allow: 'Allow',
     allowIn: 'Allow in {group}',
     deny: 'Deny',
