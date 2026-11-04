@@ -251,6 +251,7 @@ const {
   createMinorVersion,
   createMajorVersion,
   openOrStartDraft,
+  createVersionAt,
   deleteVersion,
 } = versioned;
 
@@ -325,6 +326,7 @@ module.exports = {
   createMajorVersion,
   openOrStartDraft,
   writeDraftIfUnchanged,
+  createVersionAt,
   updateVersion,
   deleteVersion,
   activateVersion,
