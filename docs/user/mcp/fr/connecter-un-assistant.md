@@ -6,9 +6,9 @@ Cette connexion passe par le protocole MCP (Model Context Protocol), que ces ass
 
 ## Avant de commencer
 
-- **L'accès MCP doit être activé pour votre entreprise.** L'admin technique de l'entreprise (ou Badsender) l'active dans **Paramètres › Fonctionnalités IA › Accès MCP**, avec l'interrupteur « Autoriser la connexion des assistants IA ». S'il est coupé, la connexion est refusée.
+- **L'accès MCP doit être activé pour votre entreprise.** L'admin technique de l'entreprise (ou Badsender) l'active dans **Paramètres › Fonctionnalités IA › Accès MCP**, avec l'interrupteur de la section. S'il est coupé, la connexion est refusée.
 - **Connectez-vous avec votre propre compte LePatron**, celui de tous les jours.
-- **L'adresse du serveur MCP** est celle de votre LePatron suivie de `/mcp`, par exemple `https://app.lepatron.email/mcp`. Votre admin technique la retrouve, avec toutes les autres valeurs utiles, dans **Paramètres › Fonctionnalités IA › Accès MCP › Gérer les clients MCP**, sous « Paramètres du serveur ».
+- **L'adresse du serveur MCP** est celle de votre LePatron suivie de `/mcp`, par exemple `https://app.lepatron.email/mcp`. Votre admin technique la copie dans **Paramètres › Fonctionnalités IA › Accès MCP**, sous « Adresse à donner à vos utilisateurs ». Les autres valeurs qu'un assistant peut demander sont sur la page des clients MCP (ligne « Clients enregistrés à la main », lien **Gérer**), sous « Paramètres du serveur ».
 
 ## Choisissez votre assistant
 

@@ -6,9 +6,9 @@ The connection uses MCP (Model Context Protocol), which all these assistants sup
 
 ## Before you start
 
-- **MCP access must be on for your company.** The company's tech admin (or Badsender) turns it on in **Settings › AI Features › MCP access**, with the "Allow AI assistants to connect" switch. When it is off, the connection is refused.
+- **MCP access must be on for your company.** The company's tech admin (or Badsender) turns it on in **Settings › AI Features › MCP access**, with the switch of the section. When it is off, the connection is refused.
 - **Log in with your own LePatron account**, the one you use every day.
-- **The MCP server address** is your LePatron address followed by `/mcp`, for instance `https://app.lepatron.email/mcp`. Your tech admin finds it, with every other value an assistant may ask for, in **Settings › AI features › MCP access › Manage MCP clients**, under "Server settings".
+- **The MCP server address** is your LePatron address followed by `/mcp`, for instance `https://app.lepatron.email/mcp`. Your tech admin copies it in **Settings › AI features › MCP access**, under "Address to give your users". The other values an assistant may ask for are on the MCP clients page (row "Clients registered by hand", **Manage** link), under "Server settings".
 
 ## Pick your assistant
 
