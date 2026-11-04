@@ -6,6 +6,7 @@ const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { setDraftsMode } = require('./mcp-connections.js');
+const { failure, SETTING } = require('./mcp-tool-grammar.js');
 
 // How long the drafts mode stays on: an afternoon of tries, not a habit.
 const DRAFTS_TTL = 4 * 3600 * 1000;
@@ -30,12 +31,11 @@ function draftNotice({ version, draft }) {
     : '';
 }
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
+const USE_DRAFTS_INPUT = z.object({
+  on: z
+    .boolean()
+    .describe('true to turn the drafts mode on, false to turn it off.'),
 });
-
-const USE_DRAFTS_INPUT = z.object({ on: z.boolean() });
 const USE_DRAFTS_OUTPUT = z.object({
   drafts: z.boolean(),
   until: z.string().nullable(),
@@ -61,7 +61,7 @@ function registerUseDrafts(server) {
         'Turns the drafts mode on or off for this connection. While on, every skill and expertise is served at its latest unpublished draft when it has one, the expertises a skill consumes included, so a draft can be tried before it is published. Each content served from a draft says so. The mode turns itself off after a few hours, and at each new connection. The prompts and resources listed change with the mode: reload them when told so.',
       inputSchema: USE_DRAFTS_INPUT,
       outputSchema: USE_DRAFTS_OUTPUT,
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      annotations: SETTING,
     },
     withIdentity(async ({ user }, { on }, ctx) => {
       const authInfo = ctx.http?.authInfo;
@@ -74,7 +74,7 @@ function registerUseDrafts(server) {
       const until = on ? new Date(Date.now() + DRAFTS_TTL) : null;
       if (!(await setDraftsMode(authInfo?.extra?.grantId, until))) {
         return failure(
-          'This connection cannot keep the drafts mode: connect through LePatron’s authorization server.'
+          'This connection cannot keep the drafts mode: connect through the authorization server of LePatron.'
         );
       }
       // In the answer's own stream, so it reaches a client that keeps none

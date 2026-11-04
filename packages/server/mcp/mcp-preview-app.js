@@ -14,7 +14,7 @@ const PREVIEW_APP_URI = 'ui://lepatron/mailing-preview';
 const APP_MIME_TYPE = 'text/html;profile=mcp-app';
 // Where get_mailing's result carries the preview: a key of LePatron's, out of
 // the `ui` namespace the MCP Apps spec keeps for itself.
-const PREVIEW_META_KEY = 'lepatron/previewHtml';
+const PREVIEW_META_KEY = 'email.lepatron/previewHtml';
 
 const APP_HTML = fs.readFileSync(
   path.join(__dirname, 'mailing-preview-app.html'),

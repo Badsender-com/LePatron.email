@@ -8,6 +8,7 @@ const { containingRegExp } = require('../utils/text-search.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { mailingOf, asPlainText } = require('./mcp-mailing-read.js');
 const expertises = require('./mcp-expertises.js');
+const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // `search` and `fetch` in the shape ChatGPT expects for deep research and
 // company knowledge (ADR 0012): a result is an id, a title and a URL, and
@@ -140,11 +141,6 @@ async function fetchDocument(identity, { id }) {
   return answered(document);
 }
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-
 function answered(answer) {
   return {
     content: [{ type: 'text', text: JSON.stringify(answer) }],
@@ -153,9 +149,23 @@ function answered(answer) {
 }
 
 const RESULT = z.object({ id: z.string(), title: z.string(), url: z.string() });
-const SEARCH_INPUT = z.object({ query: z.string().max(MAX_QUERY_LENGTH) });
+const SEARCH_INPUT = z.object({
+  query: z
+    .string()
+    .max(MAX_QUERY_LENGTH)
+    .describe(
+      `A few words, as a person types them; only the first ${MAX_WORDS} are used. French words for the expertises.`
+    ),
+});
 const SEARCH_OUTPUT = z.object({ results: z.array(RESULT) });
-const FETCH_INPUT = z.object({ id: z.string().max(MAX_ID_LENGTH) });
+const FETCH_INPUT = z.object({
+  id: z
+    .string()
+    .max(MAX_ID_LENGTH)
+    .describe(
+      'The id of a search result, as search gave it (mailing:… or expertise:…).'
+    ),
+});
 const FETCH_OUTPUT = RESULT.extend({
   text: z.string(),
   metadata: z.record(z.string(), z.unknown()),
@@ -166,11 +176,10 @@ function registerSearchAndFetch(server) {
     'search',
     {
       title: 'Search LePatron',
-      description:
-        'Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. Read a result with fetch.',
+      description: `Searches the mailings the user may read, by words of their name, subject, tags or email type (not their content), and the expertises, by words of their title or section headings. Every word must match, whatever its case and accents; a word may be a part of a longer one. The expertises are written in French: search them with French words. At most ${MAX_MAILINGS} mailings are returned, the most recently updated first: narrow the words to find an older one. Read a result with fetch.`,
       inputSchema: SEARCH_INPUT,
       outputSchema: SEARCH_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(search)
   );
@@ -182,7 +191,7 @@ function registerSearchAndFetch(server) {
         'Reads a result of search by its id: a mailing as text (its facts, then its content), an expertise as Markdown.',
       inputSchema: FETCH_INPUT,
       outputSchema: FETCH_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(fetchDocument)
   );
