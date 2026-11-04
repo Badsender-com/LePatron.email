@@ -189,8 +189,18 @@ export default {
       <p class="bs-mcp-clients__intro">
         {{ $t('mcpClients.description') }}
       </p>
+      <!-- Without the MCP module, these clients cannot connect either
+           (ADR 0017). -->
       <v-alert
-        v-if="group.id && group.enableMcp !== true"
+        v-if="group.id && group.enableMcpModule !== true"
+        type="info"
+        outlined
+        text
+      >
+        {{ $t('mcpAccess.noModule', { group: group.name }) }}
+      </v-alert>
+      <v-alert
+        v-else-if="group.id && group.enableMcp !== true"
         type="info"
         outlined
         text
