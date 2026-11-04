@@ -8,13 +8,19 @@ La documentation utilisateur suivie pendant la recette est dans [docs/user/mcp/]
 
 ### Clés de signature
 
-Le serveur ne démarre pas, hors développement, sans les clés qui signent les tokens MCP : sans elles, il signerait avec les clés de développement d'`oidc-provider`, qui sont publiques. Les générer une fois par environnement, et les garder secrètes :
+Le serveur ne démarre pas, hors développement, sans les clés qui signent les tokens MCP : sans elles, il signerait avec les clés de développement d'`oidc-provider`, qui sont publiques. Les générer une fois par environnement, et les garder secrètes. La commande n'utilise que Node, depuis n'importe quel dossier :
 
 ```bash
-node -e "const {generateKeyPair, exportJWK}=require('jose');generateKeyPair('RS256',{extractable:true}).then(async({privateKey})=>console.log(JSON.stringify({keys:[{...(await exportJWK(privateKey)),use:'sig',alg:'RS256',kid:'mcp-1'}]})))"
+node -e "const {generateKeyPairSync}=require('crypto');const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});console.log(JSON.stringify({keys:[{...privateKey.export({format:'jwk'}),use:'sig',alg:'RS256',kid:'mcp-1'}]}))"
 ```
 
-Puis les donner à l'application dans la variable `lepatron_mcpOauthJwks`. Les changer déconnecte tous les assistants.
+Puis les donner à l'application dans la variable `lepatron_mcpOauthJwks`. Sur Scalingo, en une fois, sans que la clé ne s'affiche :
+
+```bash
+scalingo --app <app> env-set "lepatron_mcpOauthJwks=$(node -e "const {generateKeyPairSync}=require('crypto');const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});console.log(JSON.stringify({keys:[{...privateKey.export({format:'jwk'}),use:'sig',alg:'RS256',kid:'mcp-1'}]}))")"
+```
+
+Les changer déconnecte tous les assistants.
 
 ### Module MCP
 
