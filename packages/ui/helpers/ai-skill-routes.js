@@ -101,3 +101,9 @@ export function aiVersionAction(kind, id, major, minor, action) {
   const base = kind === 'skill' ? aiSkill(id) : aiExpertise(id);
   return `${base}/versions/${versionLabel(major, minor)}/${action}`;
 }
+
+// Several drafts published at once (ADR 0019): `plan`, `guard`, `cancel`, or
+// the publication itself without an action.
+export function aiSkillsPublications(action) {
+  return action ? `/ai-skills/publications/${action}` : '/ai-skills/publications';
+}

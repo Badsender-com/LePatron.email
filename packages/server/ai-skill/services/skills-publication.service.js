@@ -11,6 +11,7 @@
  */
 
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
@@ -158,7 +159,10 @@ async function guardPublication({ kind, id, version }) {
   if (!manifests.length)
     return { usedBy: [], calls: 0, cases: [], missing: [] };
   const plan = await planReplay({ kind, id, version, manifests });
-  const cases = await replay({ kind, id, version, runs: plan.runs });
+  const cases = await replay({
+    runs: plan.runs,
+    overrides: kind === 'expertise' ? [{ id, version }] : [],
+  });
   return {
     usedBy: manifests.map(describeFeature),
     calls: plan.calls,
@@ -238,6 +242,32 @@ async function publishVersion(params, user) {
   return { doc: await record(params, user, 'published'), warnings };
 }
 
+/**
+ * What a skill's publication warns of, past its opening (ADR 0013): the
+ * expertises the version published consumes that are not published, or kept
+ * to the platform company while the skill is open to every company. Read once
+ * published: a failure to read them is logged, and warns of nothing.
+ *
+ * @param {{ kind, id, version: { major, minor } }} target
+ * @param {Object} doc the item as published
+ * @returns {Promise<Array<{ code: string, expertiseIds: string[] }>>}
+ */
+async function consumedWarningsOf({ kind, id, version }, doc) {
+  if (kind !== 'skill') return [];
+  try {
+    return await serviceFor('skill').consumedExpertiseWarnings(
+      doc,
+      findVersion(doc, version.major, version.minor)
+    );
+  } catch (error) {
+    logger.error(
+      `[ai-skill] the warnings of ${id} ${version.major}.${version.minor} could not be read`,
+      error
+    );
+    return [];
+  }
+}
+
 /** Record that the person cancelled after the guard. Publishes nothing. */
 async function cancelPublication(params, user) {
   await loadUse(params);
@@ -248,7 +278,9 @@ async function cancelPublication(params, user) {
 }
 
 module.exports = {
+  loadUse,
   cancelPublication,
+  consumedWarningsOf,
   guardPublication,
   planPublication,
   publishVersion,
@@ -257,3 +289,15 @@ module.exports = {
   usedByFeatures,
   withUsedBy,
 };
+
+// Several drafts at once (#1431): read lazily by its own module, which needs
+// `loadUse` and `publishVersion` from this one.
+const batch = require('./publication-batch.js');
+
+Object.assign(module.exports, {
+  cancelMany: batch.cancelMany,
+  draftsToPublish: batch.draftsToPublish,
+  guardMany: batch.guardMany,
+  planMany: batch.planMany,
+  publishMany: batch.publishMany,
+});
