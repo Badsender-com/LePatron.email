@@ -13,14 +13,23 @@ const {
 const {
   Audiences,
   SkillNatures,
+  SkillStatuses,
   MinorVersionDefaults,
 } = require('../ai-skill/constant/skill-constants.js');
+const {
+  platformOnlyExpertises,
+} = require('../ai-skill/services/consumed-expertises.js');
+const {
+  openTaskSkillsConsuming,
+} = require('../ai-skill/services/audience-opening.js');
+const logger = require('../utils/logger.js');
 const {
   withIdentity,
   hasScope,
   isRefusal,
   failure,
   refused,
+  success,
   WRITE_SCOPE,
 } = require('./mcp-identity.js');
 const { draftDiff, differs } = require('./mcp-draft-diff.js');
@@ -30,18 +39,28 @@ const {
   PROPOSE_SKILL_INPUT,
   CREATE_EXPERTISE_INPUT,
   CREATE_TASK_SKILL_INPUT,
+  SET_AUDIENCE_INPUT,
+  AUDIENCE_ANSWER,
 } = require('./mcp-authoring.schemas.js');
-const { ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
+const { ADDITIVE, OVERWRITING, SWITCHING } = require('./mcp-tool-grammar.js');
+
+// Said in an answer whose change is saved, when what it leaves behind could
+// not be read.
+const WARNING_UNCHECKED = 'WARNING_UNCHECKED';
 
 // What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
   expertise: {
     service: expertiseService,
+    get: 'getExpertise',
+    update: 'updateExpertise',
     idField: 'expertiseId',
     fields: ['body', 'examplesGood', 'examplesBad'],
   },
   skill: {
     service: skillService,
+    get: 'getSkill',
+    update: 'updateSkill',
     idField: 'skillId',
     fields: [
       'procedure',
@@ -172,17 +191,17 @@ async function createDraft(entity, data, firstVersion, user) {
   return answerOf(entity, created, created.versions[0]);
 }
 
+const DRAFTING_REFUSED =
+  'Not allowed: drafting skills and expertises needs the skills:write scope and the right to manage the platform.';
+
 // Runs a write for an author, who calls checked first (`withIdentity`), and
-// answers what the services refuse.
-function asAuthor(write) {
+// answers what the services refuse: a draft as `drafted` says it, anything
+// else as it is.
+function asAuthor(write, refusal = DRAFTING_REFUSED, present = drafted) {
   return withIdentity(async ({ user }, args, ctx) => {
-    if (!mayDraft(user, ctx?.http?.authInfo)) {
-      return failure(
-        'Not allowed: drafting skills and expertises needs the skills:write scope and the right to manage the platform.'
-      );
-    }
+    if (!mayDraft(user, ctx?.http?.authInfo)) return failure(refusal);
     try {
-      return drafted(await write(args, user));
+      return present(await write(args, user));
     } catch (err) {
       // What the services refuse is the assistant's to fix; anything else
       // is not for it, and `withIdentity` logs it and answers a plain message.
@@ -195,6 +214,76 @@ function asAuthor(write) {
 // How an expertise's body is cut into sections, which the server checks.
 const SECTIONS =
   'The body is Markdown; each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
+
+// What opening or closing leaves behind, read once the audience is saved:
+// a failure to read it is logged and said, never answered as an error.
+async function audienceNotes(kind, id, active, opening) {
+  try {
+    if (kind === 'skill' && opening) {
+      return { platformOnlyExpertises: await platformOnlyExpertises(active) };
+    }
+    if (kind === 'expertise' && !opening) {
+      return { openTaskSkills: await openTaskSkillsConsuming(id) };
+    }
+    return {};
+  } catch (error) {
+    logger.error(
+      `[mcp] what the audience of ${kind} ${id} leaves behind could not be read`,
+      error
+    );
+    return { warnings: [{ code: WARNING_UNCHECKED }] };
+  }
+}
+
+/**
+ * Opens an active skill or expertise to every company, or keeps it to the
+ * platform company again, through the services the back office uses (ADR
+ * 0019, ADR 0013). Clients read the active version only, so a version never
+ * published is never opened. A task skill opened may open with it the
+ * consumed expertises still kept to the platform company, chosen one by one
+ * (`openExpertiseIds`), as the back office's confirmation offers; the answer
+ * lists those it leaves kept, and, for an expertise kept again, the open task
+ * skills that consume it.
+ */
+async function setAudience({ kind, id, audience, openExpertiseIds }) {
+  const { service, get } = ENTITIES[kind];
+  const doc = await service[get](id);
+  const active = findActiveVersion(doc);
+  const opening = audience === Audiences.ALL;
+  if (opening && doc.status === SkillStatuses.ARCHIVED) {
+    throw createError(409, `"${id}" is archived: it is opened to no company.`);
+  }
+  if (opening && !active) {
+    throw createError(
+      409,
+      `"${id}" was never published: a person publishes a version before it is opened.`
+    );
+  }
+  if (openExpertiseIds !== undefined && (kind !== 'skill' || !opening)) {
+    throw createError(
+      400,
+      'openExpertiseIds goes only with opening a skill to every company.'
+    );
+  }
+  let saved;
+  let warnings = [];
+  if (kind === 'skill') {
+    ({ skill: saved, warnings } = await skillService.updateSkill(id, {
+      audience,
+      ...(openExpertiseIds !== undefined && { openExpertiseIds }),
+    }));
+  } else {
+    saved = await expertiseService.updateExpertise(id, { audience });
+  }
+  const notes = await audienceNotes(kind, id, active, opening);
+  return {
+    id,
+    audience: saved.audience,
+    clientsRead: active ? label(active) : null,
+    ...notes,
+    warnings: [...warnings, ...(notes.warnings || [])],
+  };
+}
 
 function registerAuthoringTools(server) {
   server.registerTool(
@@ -230,7 +319,7 @@ function registerAuthoringTools(server) {
     'create_expertise',
     {
       title: 'Create an expertise',
-      description: `Creates an expertise as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company. ${SECTIONS}`,
+      description: `Creates an expertise as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until it is opened to every company (set_audience). ${SECTIONS}`,
       inputSchema: CREATE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: ADDITIVE,
@@ -245,7 +334,7 @@ function registerAuthoringTools(server) {
     {
       title: 'Create a task skill',
       description:
-        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company.',
+        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until it is opened to every company (set_audience).',
       inputSchema: CREATE_TASK_SKILL_INPUT,
       outputSchema: ANSWER,
       annotations: ADDITIVE,
@@ -264,6 +353,23 @@ function registerAuthoringTools(server) {
           },
           user
         )
+    )
+  );
+
+  server.registerTool(
+    'set_audience',
+    {
+      title: 'Open or close a skill or an expertise',
+      description:
+        'Opens a published skill or expertise to every company, or keeps it to the platform company again. Only its active version is opened, never a draft: the answer says which version clients read. Opening a task skill answers the expertises it consumes that stay kept to the platform company (platformOnlyExpertises): tell the user, and call again with openExpertiseIds for those they choose to open too. Keeping an expertise to the platform company again answers the open task skills that consume it (openTaskSkills). Ask the user before any change.',
+      inputSchema: SET_AUDIENCE_INPUT,
+      outputSchema: AUDIENCE_ANSWER,
+      annotations: SWITCHING,
+    },
+    asAuthor(
+      setAudience,
+      'Not allowed: opening or closing skills and expertises needs the skills:write scope and the right to manage the platform.',
+      success
     )
   );
 }

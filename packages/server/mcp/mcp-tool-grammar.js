@@ -1,6 +1,6 @@
 'use strict';
 
-// What every LePatron tool says the same way: what it may do, in four
+// What every LePatron tool says the same way: what it may do, in five
 // presets. They are written out in full, since a client that misses one
 // assumes the worst (a destructive write reaching the open world), and the
 // ChatGPT review asks for the three of them on every tool. How a tool fails is
@@ -29,6 +29,14 @@ const OVERWRITING = Object.freeze({
   openWorldHint: false,
 });
 
+/** Replaces a state with the one given: the same call gives the same state. */
+const SWITCHING = Object.freeze({
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+  openWorldHint: false,
+});
+
 /** A setting of the connection: the same call gives the same state. */
 const SETTING = Object.freeze({
   readOnlyHint: false,
@@ -37,4 +45,10 @@ const SETTING = Object.freeze({
   openWorldHint: false,
 });
 
-module.exports = { READ_ONLY, ADDITIVE, OVERWRITING, SETTING };
+module.exports = {
+  READ_ONLY,
+  ADDITIVE,
+  OVERWRITING,
+  SWITCHING,
+  SETTING,
+};
