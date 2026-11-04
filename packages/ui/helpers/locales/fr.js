@@ -1718,6 +1718,42 @@ export default {
       failed: 'L\'export a échoué.',
       failedBecause: 'L\'export a échoué : {reason}',
     },
+    readTokens: {
+      title: 'Jetons de lecture',
+      description:
+        'Une copie (recette, développement) suit les skills et expertises de cette instance avec un jeton de lecture. Un jeton ne lit rien d\'autre.',
+      listLabel: 'Jetons de lecture actifs',
+      add: 'Créer un jeton',
+      addDescription:
+        'Un jeton par copie : vous pourrez révoquer celle que vous retirez sans toucher aux autres.',
+      name: 'Nom',
+      nameHint: 'La copie qu\'il sert, par exemple « Recette ».',
+      nameTooLong: 'Le nom compte 100 caractères au plus.',
+      meta: 'Créé le {date} · {lastUse}',
+      lastUsed: 'dernière utilisation le {date}',
+      neverUsed: 'jamais utilisé',
+      empty: 'Aucun jeton de lecture.',
+      emptyHint:
+        'Créez-en un pour chaque copie qui suit les skills et expertises de cette instance.',
+      footnote:
+        'Le jeton n\'est montré qu\'à la création. S\'il est perdu, révoquez-le et créez-en un autre.',
+      createdBadge: 'Jeton créé',
+      createdTitle: 'Le jeton « {name} »',
+      token: 'Jeton',
+      copy: 'Copier',
+      copied: 'Copié',
+      copyToken: 'Copier le jeton',
+      once: 'Ce jeton ne sera plus affiché : copiez-le maintenant dans la configuration de la copie.',
+      copyFirst: 'Copiez le jeton avant de fermer.',
+      saved: 'J\'ai enregistré le jeton',
+      revoke: 'Révoquer',
+      revokeNamed: 'Révoquer le jeton « {name} »',
+      revokeTitle: 'Révoquer ce jeton ?',
+      revokeConfirm:
+        'La copie qui utilise « {name} » ne pourra plus lire cette instance. Un jeton révoqué ne se rétablit pas.',
+      revoked: 'Jeton révoqué.',
+      loadError: 'Les jetons de lecture n\'ont pas pu être chargés.',
+    },
     feedback: {
       tab: 'Avis',
       caption:
@@ -1784,6 +1820,7 @@ export default {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
+      sync: 'Synchronisation',
       details: 'Détails',
       versions: 'Versions',
     },

@@ -8,6 +8,8 @@ const skill = require('./controllers/skill.controller.js');
 const expertise = require('./controllers/expertise.controller.js');
 const invocation = require('./controllers/invocation.controller.js');
 const skillsExport = require('./controllers/skills-export.controller.js');
+const skillsSource = require('./controllers/skills-source.controller.js');
+const { createRateLimiter, clientIp } = require('../utils/rate-limit.js');
 
 const skillsRouter = express.Router();
 skillsRouter.use(GUARD_ADMIN);
@@ -16,6 +18,10 @@ skillsRouter.use(GUARD_ADMIN);
 skillsRouter.post('/export', skillsExport.exportFile);
 skillsRouter.post('/import/preview', skillsExport.previewFile);
 skillsRouter.post('/import', skillsExport.importFile);
+// Production's read tokens, for the copies that follow it (ADR 0019).
+skillsRouter.get('/read-tokens', skillsSource.listTokens);
+skillsRouter.post('/read-tokens', skillsSource.createToken);
+skillsRouter.delete('/read-tokens/:tokenId', skillsSource.revokeToken);
 
 // A skills export is 5 MB at most. Mounted by the app on the import routes
 // before its own parser, which reads up to 50 MB: once a body is read, no
@@ -84,8 +90,24 @@ invocationsRouter.use(GUARD_ADMIN);
 invocationsRouter.get('/', invocation.listInvocations);
 invocationsRouter.get('/:id', invocation.getInvocation);
 
+// What a copy reads production with (ADR 0019): a read token, never a
+// session, and the export only. Mounted by the app before the session. A copy
+// follows on demand and every night: a few calls an hour are plenty, and a
+// guessed token gets nowhere.
+const HOUR = 60 * 60 * 1000;
+const skillsSourceRouter = express.Router();
+skillsSourceRouter.use(
+  createRateLimiter({ windowMs: HOUR, max: 60, keyOf: clientIp })
+);
+skillsSourceRouter.get(
+  '/export',
+  skillsSource.requireReadToken,
+  skillsSource.exportSource
+);
+
 module.exports = {
   skillsRouter,
+  skillsSourceRouter,
   skillsImportBodyParser,
   expertiseRouter,
   invocationsRouter,

@@ -29,6 +29,7 @@ const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
 const LePatronSkillSchema = require('../ai-skill/models/le-patron-skill.schema.js');
 const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
+const SkillsReadTokenSchema = require('../ai-skill/models/skills-read-token.schema.js');
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
@@ -96,6 +97,10 @@ const AISkillInvocations = mongoose.model(
   modelNames.AISkillInvocationModel,
   AISkillInvocationSchema
 );
+const SkillsReadTokens = mongoose.model(
+  modelNames.SkillsReadTokenModel,
+  SkillsReadTokenSchema
+);
 const AIPlaygroundScenarios = mongoose.model(
   modelNames.AIPlaygroundScenarioModel,
   AIPlaygroundScenarioSchema
@@ -152,6 +157,7 @@ module.exports = {
   LePatronSkills,
   Expertises,
   AISkillInvocations,
+  SkillsReadTokens,
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TaxonomyItems,

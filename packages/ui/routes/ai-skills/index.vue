@@ -5,6 +5,7 @@ import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsAiSkillsTab from '~/components/ai-skill/bs-ai-skills-tab.vue';
 import BsAiExpertiseTab from '~/components/ai-skill/bs-ai-expertise-tab.vue';
 import BsAiInvocationsTab from '~/components/ai-skill/bs-ai-invocations-tab.vue';
+import BsAiSyncTab from '~/components/ai-skill/bs-ai-sync-tab.vue';
 import BsAiSkillsImportModal from '~/components/ai-skill/bs-ai-skills-import-modal.vue';
 import { mapMutations } from 'vuex';
 import { Plus, Download, Upload } from 'lucide-vue';
@@ -14,7 +15,7 @@ import {
   exportFailureMessage,
 } from '~/helpers/skills-export-download.js';
 
-const VALID_TABS = ['skills', 'expertise', 'invocations'];
+const VALID_TABS = ['skills', 'expertise', 'invocations', 'sync'];
 
 export default {
   name: 'PageAiSkillsHub',
@@ -23,6 +24,7 @@ export default {
     BsAiSkillsTab,
     BsAiExpertiseTab,
     BsAiInvocationsTab,
+    BsAiSyncTab,
     BsAiSkillsImportModal,
     LucidePlus: Plus,
     LucideDownload: Download,
@@ -155,6 +157,9 @@ export default {
       <v-tab href="#invocations">
         {{ $t('aiSkills.tabs.invocations') }}
       </v-tab>
+      <v-tab href="#sync">
+        {{ $t('aiSkills.tabs.sync') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -169,6 +174,9 @@ export default {
           </v-tab-item>
           <v-tab-item value="invocations">
             <bs-ai-invocations-tab />
+          </v-tab-item>
+          <v-tab-item value="sync">
+            <bs-ai-sync-tab />
           </v-tab-item>
         </v-tabs-items>
       </div>

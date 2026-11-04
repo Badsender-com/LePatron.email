@@ -67,6 +67,7 @@ const {
   expertiseRouter: aiExpertiseRouter,
   invocationsRouter: aiInvocationsRouter,
   skillsImportBodyParser: aiSkillsImportBodyParser,
+  skillsSourceRouter: aiSkillsSourceRouter,
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const mcpClientRouter = require('./mcp/mcp-client.routes.js');
@@ -278,6 +279,11 @@ if (cluster.isMaster) {
 
   app.use(logger.logRequest());
   app.use(logger.logResponse());
+
+  // What a copy reads production's skills and expertises with (ADR 0019): a
+  // read token, before the session's user is read, so the route knows no one.
+  // The logs above keep the method and the path, never the token.
+  app.use('/api/skills-source', aiSkillsSourceRouter);
 
   app.use(passport.initialize());
   app.use(passport.session());

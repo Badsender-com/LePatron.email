@@ -102,7 +102,7 @@ describe('a copy following production', () => {
   };
 
   // Turned on by #1424 (production's read tokens and read route)
-  describe.skip("production's answer", () => {
+  describe("production's answer", () => {
     it('holds every skill and expertise production has, archived ones included', () => {
       expect(production.expertises.map((e) => e.expertiseId).sort()).toEqual(
         [DARK_MODE, SPAM_WORDS, SUBJECT_LINES, OLD_RULES].sort()

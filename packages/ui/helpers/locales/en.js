@@ -1694,6 +1694,42 @@ export default {
       failed: 'The export failed.',
       failedBecause: 'The export failed: {reason}',
     },
+    readTokens: {
+      title: 'Read tokens',
+      description:
+        'A copy (staging, development) follows the skills and expertises of this instance with a read token. A token reads nothing else.',
+      listLabel: 'Active read tokens',
+      add: 'Create a token',
+      addDescription:
+        'One token per copy: you can revoke the one you retire without touching the others.',
+      name: 'Name',
+      nameHint: 'The copy it serves, for example "Staging".',
+      nameTooLong: 'The name is 100 characters at most.',
+      meta: 'Created on {date} · {lastUse}',
+      lastUsed: 'last used on {date}',
+      neverUsed: 'never used',
+      empty: 'No read token.',
+      emptyHint:
+        'Create one for each copy that follows the skills and expertises of this instance.',
+      footnote:
+        'The token is shown at creation only. If it is lost, revoke it and create another one.',
+      createdBadge: 'Token created',
+      createdTitle: 'The "{name}" token',
+      token: 'Token',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyToken: 'Copy the token',
+      once: 'This token will not be shown again: copy it now into the configuration of the copy.',
+      copyFirst: 'Copy the token before closing.',
+      saved: 'I saved the token',
+      revoke: 'Revoke',
+      revokeNamed: 'Revoke the "{name}" token',
+      revokeTitle: 'Revoke this token?',
+      revokeConfirm:
+        'The copy using "{name}" will no longer read this instance. A revoked token cannot be restored.',
+      revoked: 'Token revoked.',
+      loadError: 'The read tokens could not be loaded.',
+    },
     feedback: {
       tab: 'Feedback',
       caption:
@@ -1759,6 +1795,7 @@ export default {
       skills: 'Skills',
       expertise: 'Expertise',
       invocations: 'Invocations',
+      sync: 'Sync',
       details: 'Details',
       versions: 'Versions',
     },

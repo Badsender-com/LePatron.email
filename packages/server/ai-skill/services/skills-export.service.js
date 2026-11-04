@@ -92,16 +92,27 @@ function versionOf(version, contentFields) {
   };
 }
 
-function itemOf(kind, doc) {
-  const { idField, fields, contentFields } = ENTITIES[kind];
+// What a skill or an expertise is, without any of its versions.
+function identityOf(kind, doc) {
+  const { idField, fields } = ENTITIES[kind];
   const item = { [idField]: doc[idField] };
   fields.forEach((field) => {
     if (doc[field] !== undefined && doc[field] !== null) {
       item[field] = copy(doc[field]);
     }
   });
-  item.version = versionOf(findActiveVersion(doc), contentFields);
   return item;
+}
+
+// A version as a file carries it, for an item of this kind.
+const versionOfKind = (kind, version) =>
+  versionOf(version, ENTITIES[kind].contentFields);
+
+function itemOf(kind, doc) {
+  return {
+    ...identityOf(kind, doc),
+    version: versionOfKind(kind, findActiveVersion(doc)),
+  };
 }
 
 // Why an item cannot be exported, as an ERROR_CODES entry, or null.
@@ -152,6 +163,9 @@ async function everyExportable(kind) {
 }
 
 const byId = (idField) => (a, b) => a[idField].localeCompare(b[idField]);
+
+// Every skill or expertise of the instance, archived ones included.
+const everyItem = (kind) => ENTITIES[kind].model().find({}).lean();
 
 /**
  * The skills export of a selection, or of every active item.
@@ -215,6 +229,10 @@ module.exports = {
   // What the import reads a file's items with (skills-import.service.js).
   ENTITIES,
   contentOf,
+  identityOf,
+  versionOfKind,
+  everyItem,
+  byId,
   readSkillsExport,
   FORMAT,
 };
