@@ -2,6 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-04
+- Epic: #1394
 - Amends: ADR 0012 (MCP access as the subscription)
 
 MCP is billed as a flat-rate module. ADR 0012 made MCP access both the thing sold and the thing a company turns on, so a group's tech admin could switch on what nobody had bought. The two are now apart: the **MCP module**, opened or closed by a super admin in the company's Modules, like Email Builder and CRM Intelligence; and **MCP access**, the tech admin's switch in the AI features, unchanged. A company's users connect an assistant only when the module is open **and** the access is on.
