@@ -30,6 +30,8 @@ module.exports = Object.freeze({
   LePatronSkillModel: 'LePatronSkill',
   ExpertiseModel: 'Expertise',
   AISkillInvocationModel: 'AISkillInvocation',
+  // A copy following production (ADR 0019)
+  SkillsReadTokenModel: 'SkillsReadToken',
   // AI Playground
   AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
   AIPlaygroundRunModel: 'AIPlaygroundRun',

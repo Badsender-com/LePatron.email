@@ -93,3 +93,11 @@ export function aiSkillsImportPreview() {
 export function aiSkillsImport() {
   return '/ai-skills/import';
 }
+
+// Production's read tokens, for the copies that follow it (ADR 0019).
+export function aiSkillsReadTokens() {
+  return '/ai-skills/read-tokens';
+}
+export function aiSkillsReadToken(tokenId) {
+  return `/ai-skills/read-tokens/${tokenId}`;
+}
