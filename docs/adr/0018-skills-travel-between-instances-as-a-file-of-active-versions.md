@@ -2,7 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-04
-- Epic: #
+- Epic: #1406
 
 The platform company writes its skills and expertises on one LePatron instance and needs them on the others (production, dedicated instances), where today they are typed again by hand. A super admin now exports a **skills export**, a JSON file holding the active version of the skills and expertises they select, or of all of them, and imports it on another instance, where each one arrives as a draft that a person publishes.
 
