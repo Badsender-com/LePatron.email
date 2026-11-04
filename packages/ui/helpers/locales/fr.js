@@ -1120,9 +1120,9 @@ export default {
       metadataDocument: 'Identité vérifiée par {host}',
       preRegistered: 'Déclarée par l\'entreprise {company}',
     },
-    allowWrite: 'Proposer aussi des brouillons de skills et d\'expertises',
+    allowWrite: 'Écrire aussi, publier et ouvrir les skills et expertises',
     allowWriteHint:
-      'Réservé aux super admins. Seule une personne publie un brouillon. À ne cocher que pour un assistant de l\'entreprise plateforme.',
+      'Réservé aux super admins. L\'assistant pourra rédiger des brouillons, les publier et ouvrir une fiche aux clients, chaque publication et chaque ouverture après votre confirmation dans la conversation. À ne cocher que pour un assistant de l\'entreprise plateforme.',
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
