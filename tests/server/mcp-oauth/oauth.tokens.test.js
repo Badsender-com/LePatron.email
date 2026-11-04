@@ -96,6 +96,11 @@ describe('token and refresh', () => {
     const response = await oauth.callMcp(app, 'not-a-token');
 
     expect(response.status).toBe(401);
+    // As the SDK's own gate answers (RFC 6750): the client reauthorizes.
+    expect(response.body.error).toBe('invalid_token');
+    expect(response.headers['www-authenticate']).toMatch(
+      /^Bearer error="invalid_token", /
+    );
   });
 
   it('refuses a token once the group loses MCP access', async () => {
@@ -105,6 +110,9 @@ describe('token and refresh', () => {
     const response = await oauth.callMcp(app, body.access_token);
 
     expect(response.status).toBe(403);
+    // Not insufficient_scope: no new consent would open the door.
+    expect(response.body.error).toBe('access_denied');
+    expect(response.headers['www-authenticate']).toBeUndefined();
   });
 
   describe('refresh', () => {
