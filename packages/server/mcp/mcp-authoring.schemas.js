@@ -5,6 +5,7 @@
 
 const { z } = require('zod');
 const {
+  AudienceValues,
   SkillCategoryValues,
   SkillIdRegex,
   MaxConsumedExpertises,
@@ -132,6 +133,50 @@ const CREATE_TASK_SKILL_INPUT = z.object({
   addressesRetex,
 });
 
+// Opening or closing a skill or an expertise (ADR 0019).
+const SET_AUDIENCE_INPUT = z.object({
+  kind: z.enum(['skill', 'expertise']).describe('One of: skill, expertise.'),
+  id: ID.describe(
+    'The skillId or expertiseId, as find_skills or find_applicable_expertises gives it.'
+  ),
+  audience: z
+    .enum(AudienceValues)
+    .describe(
+      'all: every company, in the editor and in the assistants of those with MCP access; platform: the platform company only.'
+    ),
+  openExpertiseIds: CONSUMED.optional().describe(
+    'Opening a task skill only: the expertises it consumes that are kept to the platform company, as platformOnlyExpertises listed them, to open to every company with it. Opening an expertise also applies it, at once, to the editor features of every company: ask the user for each one.'
+  ),
+});
+const AUDIENCE_ANSWER = z.object({
+  id: z.string(),
+  audience: z.enum(AudienceValues),
+  clientsRead: z
+    .string()
+    .nullable()
+    .describe('The version clients read, null when none was published.'),
+  platformOnlyExpertises: z
+    .array(z.object({ expertiseId: z.string(), title: z.string() }))
+    .optional()
+    .describe(
+      'A task skill opened: the expertises it consumes still kept to the platform company, which the assistants of the other companies follow it without.'
+    ),
+  openTaskSkills: z
+    .array(z.object({ skillId: z.string(), title: z.string() }))
+    .optional()
+    .describe(
+      'An expertise kept to the platform company again: the task skills open to every company that consume it, and no longer receive it at the clients.'
+    ),
+  warnings: z
+    .array(
+      z.object({
+        code: z.string(),
+        expertiseIds: z.array(z.string()).optional(),
+      })
+    )
+    .describe('What the change could not do or check, if anything.'),
+});
+
 module.exports = {
   ID,
   ANSWER,
@@ -139,4 +184,6 @@ module.exports = {
   PROPOSE_SKILL_INPUT,
   CREATE_EXPERTISE_INPUT,
   CREATE_TASK_SKILL_INPUT,
+  SET_AUDIENCE_INPUT,
+  AUDIENCE_ANSWER,
 };

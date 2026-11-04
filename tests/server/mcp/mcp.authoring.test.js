@@ -158,13 +158,12 @@ describe('authoring', () => {
       expect(answer.status).toBe('draft');
     });
 
-    // Publishing came with ADR 0019 (publish_draft, #1435), in two calls.
-    it('offers no tool that archives, deletes or opens to clients', async () => {
+    // Publishing (publish_draft, #1435) and opening to clients (set_audience,
+    // #1434) came with ADR 0019, each in two calls.
+    it('offers no tool that archives or deletes', async () => {
       const names = await toolNames(await asAuthor());
 
-      names.forEach((name) =>
-        expect(name).not.toMatch(/archive|delete|audience/)
-      );
+      names.forEach((name) => expect(name).not.toMatch(/archive|delete/));
     });
 
     it('tells how the body of an expertise is cut into sections', async () => {

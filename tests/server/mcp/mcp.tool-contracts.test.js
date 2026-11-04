@@ -138,11 +138,12 @@ describe('the grammar of every tool', () => {
 
   // How a tool fails is said with the identity (mcp-identity.js): the
   // presets hold what a tool may do, and nothing else.
-  it('keeps the four presets of annotations, and only them', () => {
+  it('keeps the five presets of annotations, and only them', () => {
     expect(Object.keys(grammar)).toEqual([
       'READ_ONLY',
       'ADDITIVE',
       'OVERWRITING',
+      'SWITCHING',
       'SETTING',
     ]);
   });
@@ -207,7 +208,8 @@ describe('the grammar of every tool', () => {
   });
 
   // As its preset declares it: said of a tool that writes only, and true
-  // for a setting or a dismissal, which the same call leaves the same.
+  // for a setting, a dismissal or an audience, which the same call leaves the
+  // same.
   it('says whether calling a tool that writes again changes anything', () => {
     const presets = Object.values(grammar);
     const idempotent = (value) =>
@@ -224,7 +226,11 @@ describe('the grammar of every tool', () => {
         ),
       }).toEqual({ tool: tool.name, preset: true });
     });
-    expect(idempotent(true)).toEqual(['dismiss_retex', 'use_drafts']);
+    expect(idempotent(true)).toEqual([
+      'dismiss_retex',
+      'set_audience',
+      'use_drafts',
+    ]);
     expect(idempotent(undefined)).toEqual(
       tools
         .filter((tool) => tool.annotations.readOnlyHint)
@@ -233,8 +239,9 @@ describe('the grammar of every tool', () => {
     );
   });
 
-  // They rewrite the open draft, or publish it.
-  it('says the tools that rewrite or publish a draft are destructive', () => {
+  // They rewrite the open draft, publish it, or change who reads a skill or an
+  // expertise.
+  it('says the tools that rewrite or publish a draft, or change an audience, are destructive', () => {
     const destructive = tools
       .filter((tool) => tool.annotations.destructiveHint)
       .map((tool) => tool.name)
@@ -244,6 +251,7 @@ describe('the grammar of every tool', () => {
       'propose_expertise_change',
       'propose_skill_change',
       'publish_draft',
+      'set_audience',
     ]);
   });
 
