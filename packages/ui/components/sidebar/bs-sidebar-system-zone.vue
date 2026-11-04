@@ -64,11 +64,13 @@ export default {
         if (item.id === 'settings') {
           return canAccessSettings;
         }
-        // The AI assistants connected to LePatron, where the group allows
-        // them, or for whoever manages the platform.
+        // The AI assistants connected to LePatron, where the group has the
+        // MCP module and allows them (ADR 0017), or for whoever manages the
+        // platform.
         if (item.id === 'connectedApplications') {
           return (
-            this.userGroup?.enableMcp === true ||
+            (this.userGroup?.enableMcpModule === true &&
+              this.userGroup?.enableMcp === true) ||
             this.can(CAPABILITIES.PLATFORM_MANAGE)
           );
         }
