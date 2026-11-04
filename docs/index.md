@@ -4,25 +4,27 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 
 ## 📋 Quick Reference
 
-| File                                                         | Purpose                                                      | Primary Audience         |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------ |
-| [AGENTS.md](../AGENTS.md)                                    | Technical guidelines, conventions, code review criteria      | AI agents, developers    |
-| [AI-POLICIES.md](./AI_POLICIES.md)                           | PR structure, quality standards, anti-patterns               | AI agents                |
-| [UX-GUIDELINES.md](./agents/ux-guidelines.md)                | Design system, component reuse, Vuetify patterns             | AI agents, UI developers |
-| [CLAUDE.md](./CLAUDE.md)                                     | Claude Code commands and quick reference                     | Claude Code users        |
-| [agents/rights-review.md](./agents/rights-review.md)         | Reviewing a diff's impact on every role                      | AI agents, reviewers     |
-| [CONTRIBUTING.md](./CONTRIBUTING.md)                         | How to contribute to the project                             | Contributors             |
-| [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                                 | Template developers      |
-| [README.md](./README.md)                                     | Project overview and setup                                   | Everyone                 |
-| [adr/](./adr/)                                               | Architecture Decision Records                                | AI agents, developers    |
-| [node-upgrades.md](./node-upgrades.md)                       | Node version: where it is set, past upgrades                 | Developers               |
-| [user/mcp/](./user/mcp/README.md)                            | Connecting an AI assistant to LePatron (FR, EN)              | Users, support           |
-| [recettes/mcp-clients.md](./recettes/mcp-clients.md)         | MCP client matrix replayed on staging before a release       | QA, release managers     |
-| [user/skills-export/](./user/skills-export/README.md)        | Moving skills and expertises between instances (FR, EN)      | Super admins, support    |
-| [recettes/skills-export.md](./recettes/skills-export.md)     | Skills export and import, from one instance to another       | QA, release managers     |
-| [user/skills-follow/](./user/skills-follow/README.md)        | A copy following production's skills and expertises (FR, EN) | Super admins, support    |
-| [recettes/skills-follow.md](./recettes/skills-follow.md)     | A copy following production, end to end                      | QA, release managers     |
-| [../.claude/skills/](../.claude/skills/)                     | Agent skills, including the new feature workflow             | AI agents                |
+| File                                                               | Purpose                                                      | Primary Audience         |
+| ------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------ |
+| [AGENTS.md](../AGENTS.md)                                          | Technical guidelines, conventions, code review criteria      | AI agents, developers    |
+| [AI-POLICIES.md](./AI_POLICIES.md)                                 | PR structure, quality standards, anti-patterns               | AI agents                |
+| [UX-GUIDELINES.md](./agents/ux-guidelines.md)                      | Design system, component reuse, Vuetify patterns             | AI agents, UI developers |
+| [CLAUDE.md](./CLAUDE.md)                                           | Claude Code commands and quick reference                     | Claude Code users        |
+| [agents/rights-review.md](./agents/rights-review.md)               | Reviewing a diff's impact on every role                      | AI agents, reviewers     |
+| [CONTRIBUTING.md](./CONTRIBUTING.md)                               | How to contribute to the project                             | Contributors             |
+| [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md)       | Mosaico template development                                 | Template developers      |
+| [README.md](./README.md)                                           | Project overview and setup                                   | Everyone                 |
+| [adr/](./adr/)                                                     | Architecture Decision Records                                | AI agents, developers    |
+| [node-upgrades.md](./node-upgrades.md)                             | Node version: where it is set, past upgrades                 | Developers               |
+| [user/mcp/](./user/mcp/README.md)                                  | Connecting an AI assistant to LePatron (FR, EN)              | Users, support           |
+| [recettes/mcp-clients.md](./recettes/mcp-clients.md)               | MCP client matrix replayed on staging before a release       | QA, release managers     |
+| [user/skills-export/](./user/skills-export/README.md)              | Moving skills and expertises between instances (FR, EN)      | Super admins, support    |
+| [recettes/skills-export.md](./recettes/skills-export.md)           | Skills export and import, from one instance to another       | QA, release managers     |
+| [user/skills-follow/](./user/skills-follow/README.md)              | A copy following production's skills and expertises (FR, EN) | Super admins, support    |
+| [recettes/skills-follow.md](./recettes/skills-follow.md)           | A copy following production, end to end                      | QA, release managers     |
+| [user/skills-publication/](./user/skills-publication/README.md)    | Publishing what a feature uses, with a check (FR, EN)        | Super admins, support    |
+| [recettes/skills-publication.md](./recettes/skills-publication.md) | Publication guard and bulk publication                       | QA, release managers     |
+| [../.claude/skills/](../.claude/skills/)                           | Agent skills, including the new feature workflow             | AI agents                |
 
 ## 📚 Documentation Structure
 
