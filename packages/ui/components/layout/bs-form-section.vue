@@ -14,12 +14,24 @@ export default {
       type: Boolean,
       default: false,
     },
+    // When true, hides the content: a feature switched off folds its
+    // settings under its header. v-show, so the content stays mounted.
+    folded: {
+      type: Boolean,
+      default: false,
+    },
   },
 };
 </script>
 
 <template>
-  <div class="bs-form-section" :class="{ 'bs-form-section--last': last }">
+  <div
+    class="bs-form-section"
+    :class="{
+      'bs-form-section--last': last,
+      'bs-form-section--folded': folded,
+    }"
+  >
     <div class="bs-form-section__header">
       <span v-if="$slots.icon" class="bs-form-section__icon">
         <slot name="icon" />
@@ -40,6 +52,7 @@ export default {
       </div>
     </div>
     <div
+      v-show="!folded"
       class="bs-form-section__content"
       :class="{ 'bs-form-section__content--flush': flush }"
     >
@@ -66,6 +79,10 @@ export default {
     align-items: flex-start;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
+  }
+
+  &--folded &__header {
+    margin-bottom: 0;
   }
 
   &__icon {

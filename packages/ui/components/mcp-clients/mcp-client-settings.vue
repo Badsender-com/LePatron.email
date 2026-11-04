@@ -1,36 +1,42 @@
 <script>
 import { mapMutations } from 'vuex';
-import { Copy } from 'lucide-vue';
+import { Copy, Check } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
 /**
  * What an assistant's set-up screen asks for, each with a copy button: the
- * authorization server's URLs and scope, and, after a creation, the client's
+ * authorization server's URLs and scope, or, after a creation, the client's
  * id and its secret.
  */
 export default {
   name: 'BsMcpClientSettings',
-  components: { LucideCopy: Copy },
+  components: { LucideCopy: Copy, LucideCheck: Check },
   props: {
-    origin: { type: String, required: true },
+    origin: { type: String, default: '' },
+    // Given, the rows are the client's id and secret instead of the server's.
     client: { type: Object, default: null },
+  },
+  data() {
+    return { copiedKey: null };
   },
   computed: {
     rows() {
-      const server = [
+      if (this.client) {
+        return [
+          { key: 'clientId', value: this.client.clientId },
+          { key: 'clientSecret', value: this.client.clientSecret },
+        ];
+      }
+      return [
         { key: 'mcpUrl', value: `${this.origin}/mcp` },
         { key: 'authorizationUrl', value: `${this.origin}/oauth/auth` },
         { key: 'tokenUrl', value: `${this.origin}/oauth/token` },
-        { key: 'refreshUrl', value: `${this.origin}/oauth/token` },
         { key: 'scope', value: 'mcp:read' },
       ];
-      if (!this.client) return server;
-      return [
-        { key: 'clientId', value: this.client.clientId },
-        { key: 'clientSecret', value: this.client.clientSecret },
-        ...server,
-      ];
     },
+  },
+  beforeDestroy() {
+    clearTimeout(this.copiedTimer);
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -39,13 +45,15 @@ export default {
         field: this.$t(`mcpClients.settings.${key}`),
       });
     },
-    async copy(value) {
+    async copy(row) {
       try {
-        await navigator.clipboard.writeText(value);
-        this.showSnackbar({
-          text: this.$t('mcpClients.copied'),
-          color: 'success',
-        });
+        await navigator.clipboard.writeText(row.value);
+        this.copiedKey = row.key;
+        this.$emit('copied', row.key);
+        clearTimeout(this.copiedTimer);
+        this.copiedTimer = setTimeout(() => {
+          this.copiedKey = null;
+        }, 2000);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -67,32 +75,27 @@ export default {
         { 'bs-mcp-client-settings__row--secret': row.key === 'clientSecret' },
       ]"
     >
-      <dt class="text-caption text--secondary">
+      <dt class="bs-mcp-client-settings__label">
         {{ $t(`mcpClients.settings.${row.key}`) }}
       </dt>
       <dd class="bs-mcp-client-settings__value">
         <code>{{ row.value }}</code>
-        <v-tooltip bottom>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              icon
-              small
-              :aria-label="copyLabel(row.key)"
-              v-bind="attrs"
-              @click="copy(row.value)"
-              v-on="on"
-            >
-              <lucide-copy :size="16" />
-            </v-btn>
-          </template>
-          <span>{{ copyLabel(row.key) }}</span>
-        </v-tooltip>
-      </dd>
-      <dd
-        v-if="row.key === 'scope'"
-        class="text-caption text--secondary mt-1 mb-0"
-      >
-        {{ $t('mcpClients.settings.scopeHint') }}
+        <v-btn
+          text
+          small
+          class="text-none"
+          :color="copiedKey === row.key ? 'success' : undefined"
+          :aria-label="copyLabel(row.key)"
+          @click="copy(row)"
+        >
+          <lucide-check v-if="copiedKey === row.key" :size="14" class="mr-1" />
+          <lucide-copy v-else :size="14" class="mr-1" />
+          {{
+            copiedKey === row.key
+              ? $t('mcpClients.copied')
+              : $t('mcpClients.copy')
+          }}
+        </v-btn>
       </dd>
     </div>
   </dl>
@@ -102,21 +105,35 @@ export default {
 .bs-mcp-client-settings {
   margin: 0;
 
-  &__row + &__row {
-    margin-top: 8px;
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+
+    & + & {
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
   }
 
   // The one value that is never shown again.
   &__row--secret {
-    padding: 8px;
-    border-left: 3px solid var(--v-warning-base);
-    background: rgba(0, 0, 0, 0.03);
+    padding: 0.5rem 0.75rem;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 180, 0, 0.6);
+    background: rgba(255, 180, 0, 0.08);
+  }
+
+  &__label {
+    font-size: 0.8125rem;
+    color: rgba(0, 0, 0, 0.6);
   }
 
   &__value {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.5rem;
     margin: 0;
 
     code {
@@ -125,7 +142,16 @@ export default {
       overflow-wrap: anywhere;
       background: transparent;
       padding: 0;
+      font-size: 0.8125rem;
+      color: rgba(0, 0, 0, 0.87);
     }
+  }
+}
+
+@media (max-width: 600px) {
+  .bs-mcp-client-settings__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
   }
 }
 </style>

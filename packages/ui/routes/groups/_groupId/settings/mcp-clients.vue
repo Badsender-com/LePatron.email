@@ -1,6 +1,6 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex';
-import { Plus, Trash2, KeyRound } from 'lucide-vue';
+import { Plus, Trash2, KeyRound, Check, AlertTriangle } from 'lucide-vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
@@ -26,6 +26,8 @@ export default {
     LucidePlus: Plus,
     LucideTrash2: Trash2,
     LucideKeyRound: KeyRound,
+    LucideCheck: Check,
+    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -52,6 +54,8 @@ export default {
       modalLoading: false,
       created: null,
       showCreated: false,
+      // The dialog of the secret closes once the secret has been copied.
+      secretCopied: false,
       toDelete: null,
       origin: '',
     };
@@ -66,16 +70,6 @@ export default {
     },
     groupId() {
       return this.$route.params.groupId;
-    },
-    headers() {
-      return [
-        { text: this.$t('mcpClients.name'), value: 'name' },
-        { text: this.$t('mcpClients.settings.clientId'), value: 'clientId' },
-        { text: this.$t('mcpClients.redirectUris'), value: 'redirectUris' },
-        { text: this.$t('mcpClients.authMethod'), value: 'authMethod' },
-        { text: this.$t('global.createdAt'), value: 'createdAt' },
-        { text: '', value: 'actions', sortable: false, align: 'end' },
-      ];
     },
   },
   mounted() {
@@ -97,6 +91,7 @@ export default {
         this.$refs.createModal.close();
         // The secret is shown once, here, and kept nowhere in the page.
         this.created = { ...client, clientSecret };
+        this.secretCopied = false;
         this.showCreated = true;
       } catch (error) {
         this.notifyError(error);
@@ -107,6 +102,20 @@ export default {
     closeCreated() {
       this.showCreated = false;
       this.created = null;
+    },
+    onCopied(key) {
+      if (key === 'clientSecret') this.secretCopied = true;
+    },
+    metaOf(client) {
+      return this.$t('mcpClients.clientMeta', {
+        authMethod: this.$t(
+          `mcpClients.authMethods.${client.tokenEndpointAuthMethod}`
+        ),
+        date: this.$options.filters.preciseDateTime(
+          client.createdAt,
+          this.$i18n.locale
+        ),
+      });
     },
     askDelete(client) {
       this.toDelete = client;
@@ -167,6 +176,7 @@ export default {
         <v-btn
           color="accent"
           elevation="0"
+          class="text-none"
           :disabled="loadError"
           @click="openCreateModal"
         >
@@ -175,8 +185,8 @@ export default {
         </v-btn>
       </template>
     </bs-page-header>
-    <v-container fluid>
-      <p class="text-body-2 text--secondary">
+    <v-container fluid class="bs-mcp-clients">
+      <p class="bs-mcp-clients__intro">
         {{ $t('mcpClients.description') }}
       </p>
       <v-alert
@@ -193,80 +203,130 @@ export default {
       <v-alert v-if="loadError" type="error" outlined text>
         {{ $t('mcpClients.loadError') }}
       </v-alert>
-      <v-data-table
-        :headers="headers"
-        :items="clients"
-        item-key="clientId"
-        hide-default-footer
-        disable-pagination
-      >
-        <template #no-data>
-          <div class="py-6 text--secondary">
-            <lucide-key-round :size="32" class="mb-2" />
-            <p class="mb-0">{{ $t('mcpClients.empty') }}</p>
-          </div>
-        </template>
-        <template #item.clientId="{ item }">
-          <code class="bs-mcp-clients__id">{{ item.clientId }}</code>
-        </template>
-        <template #item.redirectUris="{ item }">
-          <div v-for="uri in item.redirectUris" :key="uri">{{ uri }}</div>
-        </template>
-        <template #item.authMethod="{ item }">
-          {{ $t(`mcpClients.authMethods.${item.tokenEndpointAuthMethod}`) }}
-        </template>
-        <template #item.createdAt="{ item }">
-          {{ item.createdAt | preciseDateTime($i18n.locale) }}
-        </template>
-        <template #item.actions="{ item }">
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                color="error"
-                :aria-label="$t('mcpClients.deleteNamed', { name: item.name })"
-                v-bind="attrs"
-                @click="askDelete(item)"
-                v-on="on"
-              >
-                <lucide-trash-2 :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('mcpClients.deleteNamed', { name: item.name }) }}</span>
-          </v-tooltip>
-        </template>
-      </v-data-table>
 
-      <h2 class="text-subtitle-1 mt-8 mb-2">
-        {{ $t('mcpClients.serverTitle') }}
-      </h2>
-      <p class="text-body-2 text--secondary">
-        {{ $t('mcpClients.serverDescription') }}
-      </p>
-      <bs-mcp-client-settings v-if="origin" :origin="origin" />
+      <section
+        v-else-if="clients.length"
+        class="bs-mcp-clients__card"
+        :aria-label="$t('mcpClients.listLabel')"
+      >
+        <ul class="bs-mcp-clients__list">
+          <li
+            v-for="client in clients"
+            :key="client.clientId"
+            class="bs-mcp-clients__client"
+          >
+            <span class="bs-mcp-clients__client-icon" aria-hidden="true">
+              <lucide-key-round :size="18" />
+            </span>
+            <div class="bs-mcp-clients__client-text">
+              <span class="bs-mcp-clients__client-name">{{ client.name }}</span>
+              <span class="bs-mcp-clients__client-meta">
+                {{ metaOf(client) }}
+              </span>
+              <span
+                v-for="uri in client.redirectUris"
+                :key="uri"
+                class="bs-mcp-clients__client-uri"
+              >
+                {{ uri }}
+              </span>
+              <span class="bs-mcp-clients__client-uri">
+                {{ $t('mcpClients.clientIdLine', { id: client.clientId }) }}
+              </span>
+            </div>
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  color="error"
+                  :aria-label="
+                    $t('mcpClients.deleteNamed', { name: client.name })
+                  "
+                  v-bind="attrs"
+                  @click="askDelete(client)"
+                  v-on="on"
+                >
+                  <lucide-trash-2 :size="18" />
+                </v-btn>
+              </template>
+              <span>{{
+                $t('mcpClients.deleteNamed', { name: client.name })
+              }}</span>
+            </v-tooltip>
+          </li>
+        </ul>
+        <p class="bs-mcp-clients__footnote">
+          {{ $t('mcpClients.secretFootnote') }}
+        </p>
+      </section>
+
+      <section v-else class="bs-mcp-clients__empty">
+        <span class="bs-mcp-clients__empty-title">
+          {{ $t('mcpClients.empty') }}
+        </span>
+        <span class="bs-mcp-clients__empty-text">
+          {{ $t('mcpClients.emptyHint') }}
+        </span>
+      </section>
+
+      <section
+        class="bs-mcp-clients__card bs-mcp-clients__server"
+        aria-labelledby="mcp-server-title"
+      >
+        <h2 id="mcp-server-title" class="bs-mcp-clients__server-title">
+          {{ $t('mcpClients.serverTitle') }}
+        </h2>
+        <p class="bs-mcp-clients__server-text">
+          {{ $t('mcpClients.serverDescription') }}
+        </p>
+        <bs-mcp-client-settings v-if="origin" :origin="origin" />
+        <p class="bs-mcp-clients__footnote">
+          {{ $t('mcpClients.settings.scopeHint') }}
+        </p>
+      </section>
 
       <bs-modal-create-mcp-client
         ref="createModal"
         :loading="modalLoading"
         @submit="createClient"
       />
-      <!-- Closed only by its button: the secret is shown this once. -->
-      <v-dialog :value="showCreated" width="640" persistent>
+      <!-- Closed only by its button, once the secret is copied: it is shown
+           this once. -->
+      <v-dialog :value="showCreated" width="560" persistent>
         <v-card v-if="created" flat tile>
-          <v-card-title>
-            {{ $t('mcpClients.createdTitle', { name: created.name }) }}
+          <v-card-title class="bs-mcp-clients__created-title">
+            <v-chip small color="success" text-color="white" label>
+              <lucide-check :size="14" class="mr-1" />
+              {{ $t('mcpClients.createdBadge') }}
+            </v-chip>
+            <span>{{
+              $t('mcpClients.createdTitle', { name: created.name })
+            }}</span>
           </v-card-title>
           <v-card-text>
-            <v-alert type="warning" outlined text dense>
+            <bs-mcp-client-settings :client="created" @copied="onCopied" />
+            <p class="bs-mcp-clients__secret-warning">
+              <lucide-alert-triangle :size="14" />
               {{ $t('mcpClients.secretOnce') }}
-            </v-alert>
-            <bs-mcp-client-settings :origin="origin" :client="created" />
+            </p>
+            <p class="bs-mcp-clients__footnote mb-0">
+              {{ $t('mcpClients.serverOnPage') }}
+            </p>
           </v-card-text>
           <v-divider />
           <v-card-actions>
             <v-spacer />
-            <v-btn color="accent" elevation="0" @click="closeCreated">
+            <span v-if="!secretCopied" class="bs-mcp-clients__footnote mr-3">
+              {{ $t('mcpClients.copySecretFirst') }}
+            </span>
+            <v-btn
+              color="accent"
+              elevation="0"
+              class="text-none"
+              :disabled="!secretCopied"
+              @click="closeCreated"
+            >
               {{ $t('mcpClients.secretSaved') }}
             </v-btn>
           </v-card-actions>
@@ -287,9 +347,146 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.bs-mcp-clients__id {
-  background: transparent;
-  padding: 0;
-  overflow-wrap: anywhere;
+.bs-mcp-clients {
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  &__intro {
+    margin: 0;
+    max-width: 680px;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  &__card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__client {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1rem 1rem 1.5rem;
+
+    & + & {
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  &__client-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--v-secondary-base);
+    background: rgba(38, 80, 144, 0.1);
+  }
+
+  &__client-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__client-name {
+    font-weight: 600;
+  }
+
+  &__client-meta {
+    font-size: 0.8125rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &__client-uri {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+    overflow-wrap: anywhere;
+  }
+
+  &__footnote {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &__card > &__footnote {
+    padding: 0.625rem 1.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  &__empty-title {
+    font-weight: 600;
+  }
+
+  &__empty-text {
+    max-width: 440px;
+    font-size: 0.8125rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &__server .bs-mcp-client-settings {
+    padding: 0 1rem 0.5rem 1.5rem;
+  }
+
+  &__server-title {
+    margin: 0;
+    padding: 1rem 1.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  &__server-text {
+    margin: 0.125rem 0 0.5rem;
+    padding: 0 1.5rem;
+    font-size: 0.8125rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  &__created-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    word-break: normal;
+  }
+
+  &__secret-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0.75rem 0 0.5rem;
+    font-size: 0.75rem;
+    color: #8a5a00;
+  }
 }
 </style>

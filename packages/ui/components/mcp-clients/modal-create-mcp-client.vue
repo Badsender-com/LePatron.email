@@ -5,6 +5,7 @@ import BsModalForm from '~/components/modal/bs-modal-form.vue';
 import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea';
 import BsSelect from '~/components/form/bs-select';
+import { ChevronDown, ChevronRight } from 'lucide-vue';
 
 const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
 
@@ -36,13 +37,20 @@ const emptyClient = () => ({
 
 export default {
   name: 'BsModalCreateMcpClient',
-  components: { BsModalForm, BsTextField, BsTextarea, BsSelect },
+  components: {
+    BsModalForm,
+    BsTextField,
+    BsTextarea,
+    BsSelect,
+    LucideChevronDown: ChevronDown,
+    LucideChevronRight: ChevronRight,
+  },
   mixins: [validationMixin],
   props: {
     loading: { type: Boolean, default: false },
   },
   data() {
-    return { client: emptyClient() };
+    return { client: emptyClient(), advanced: false };
   },
   validations() {
     return {
@@ -93,6 +101,7 @@ export default {
   methods: {
     open() {
       this.client = emptyClient();
+      this.advanced = false;
       this.$v.$reset();
       this.$refs.modal.open();
     },
@@ -147,12 +156,27 @@ export default {
       @input="$v.client.redirectUris.$touch()"
       @blur="$v.client.redirectUris.$touch()"
     />
-    <bs-select
-      v-model="client.tokenEndpointAuthMethod"
-      :label="$t('mcpClients.authMethod')"
-      :hint="$t('mcpClients.authMethodHint')"
-      :items="authMethods"
-      :disabled="loading"
-    />
+    <!-- The default suits nearly every assistant: folded away. -->
+    <v-btn
+      text
+      small
+      class="text-none px-1"
+      :aria-expanded="String(advanced)"
+      aria-controls="mcp-client-advanced"
+      @click="advanced = !advanced"
+    >
+      <lucide-chevron-down v-if="advanced" :size="16" class="mr-1" />
+      <lucide-chevron-right v-else :size="16" class="mr-1" />
+      {{ $t('mcpClients.advanced') }}
+    </v-btn>
+    <div v-show="advanced" id="mcp-client-advanced" class="mt-3">
+      <bs-select
+        v-model="client.tokenEndpointAuthMethod"
+        :label="$t('mcpClients.authMethod')"
+        :hint="$t('mcpClients.authMethodHint')"
+        :items="authMethods"
+        :disabled="loading"
+      />
+    </div>
   </bs-modal-form>
 </template>
