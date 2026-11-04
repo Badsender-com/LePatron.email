@@ -11,6 +11,7 @@ const { recordConnection, revokeConnections } = require('./mcp-connections.js');
 const { companyOfClient } = require('./mcp-clients.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
+const NO_MODULE = 'This company has no MCP module.';
 
 // `code` is what the consent page translates.
 const refuse = (res, status, message, code) =>
@@ -41,8 +42,15 @@ async function consenterOf(req) {
     .select('_id name')
     .sort({ name: 1 })
     .lean();
+  // A user stopped by their own group is told whether it lacks the module,
+  // which only Badsender opens, or MCP access, which its tech admin turns on.
+  const ownGroup =
+    !isPlatform && groups.length === 0
+      ? await Groups.findById(record._company).select('enableMcpModule').lean()
+      : null;
   return {
     user,
+    lacksModule: Boolean(ownGroup) && ownGroup.enableMcpModule !== true,
     groups: groups.map((group) => ({
       id: String(group._id),
       name: group.name,
@@ -104,7 +112,9 @@ function createInteractionsRouter(provider, resource) {
         );
       }
       if (consenter.groups.length === 0) {
-        return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
+        return consenter.lacksModule
+          ? refuse(res, 403, NO_MODULE, 'no_mcp_module')
+          : refuse(res, 403, NO_ACCESS, 'no_mcp_access');
       }
       const interaction = await provider
         .interactionDetails(req, res)

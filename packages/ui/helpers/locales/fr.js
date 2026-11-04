@@ -1135,6 +1135,8 @@ export default {
       'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
     noAccess:
       'Votre entreprise n\'a pas l\'accès MCP : demandez à son administrateur de l\'activer.',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de votre entreprise : contactez Badsender pour l\'ajouter.',
   },
   mcpClients: {
     pageTitle: 'Clients MCP',
@@ -1249,6 +1251,10 @@ export default {
       'Seul Copilot Studio en mode manuel en a besoin : Claude, ChatGPT et Microsoft 365 Copilot s\'enregistrent seuls.',
     manageClients: 'Gérer',
     turnOff: 'Couper l\'accès',
+    notIncluded: 'Non inclus',
+    noModule:
+      'Le module MCP n\'est pas inclus dans l\'abonnement de {group}. Contactez Badsender pour l\'ajouter.',
+    openModule: 'Ouvrir le module',
     offTitle: 'Couper l\'accès MCP ?',
     offConfirm:
       'Tous les assistants connectés aux comptes de {group} seront déconnectés tout de suite. Le réactiver ne les reconnectera pas : chaque utilisateur devra connecter le sien à nouveau.',

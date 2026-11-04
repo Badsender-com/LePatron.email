@@ -857,6 +857,8 @@ export default {
       'This account cannot connect an assistant: log in with your user account.',
     noAccess:
       'Your company has no MCP access: ask its administrator to turn it on.',
+    noModule:
+      'The MCP module is not part of your company\'s subscription: contact Badsender to add it.',
   },
   mcpClients: {
     pageTitle: 'MCP clients',
@@ -971,6 +973,10 @@ export default {
       'Only Copilot Studio in manual mode needs one: Claude, ChatGPT and Microsoft 365 Copilot register themselves.',
     manageClients: 'Manage',
     turnOff: 'Turn off access',
+    notIncluded: 'Not included',
+    noModule:
+      'The MCP module is not part of the subscription of {group}. Contact Badsender to add it.',
+    openModule: 'Open the module',
     offTitle: 'Turn MCP access off?',
     offConfirm:
       'Every assistant connected to the accounts of {group} will be disconnected at once. Turning it back on reconnects none: each user will connect theirs again.',
