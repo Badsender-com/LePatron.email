@@ -190,6 +190,11 @@ _Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the p
 A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
 _Avoid_: Client expertise, brand skill
 
+**Skills export**:
+A file that carries the active version of chosen skills and expertises from one LePatron instance to another, where each arrives as a draft to publish.
+_UI_: Export de skills
+_Avoid_: Backup (it holds no history), sync (nothing happens on its own), package
+
 ### AI assistants
 
 **Connected application**:
