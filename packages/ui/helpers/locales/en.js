@@ -837,9 +837,9 @@ export default {
       metadataDocument: 'Identity verified by {host}',
       preRegistered: 'Declared by the company {company}',
     },
-    allowWrite: 'Also propose drafts of skills and expertises',
+    allowWrite: 'Also write, publish and open skills and expertises',
     allowWriteHint:
-      'Super admins only. Only a person publishes a draft. Tick it only for an assistant of the Badsender team.',
+      'Super admins only. The assistant may write drafts, publish them and open an item to clients, each publication and each opening after your confirmation in the conversation. Tick it only for an assistant of the Badsender team.',
     group: 'Company',
     groupHint:
       'The assistant will only see this company. To read another one, connect it again.',
