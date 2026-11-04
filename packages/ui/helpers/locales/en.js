@@ -969,7 +969,7 @@ export default {
       'They paste it in their assistant\'s connectors, then sign in with their LePatron account.',
     step1: 'You turn the access on for the company.',
     step2: 'Each user connects their assistant, with their own account.',
-    step3: 'The assistant reads expertises, skills and mailings, and changes nothing.',
+    step3: 'The assistant reads expertises, skills and mailings, and never changes your mailings.',
     copyAddress: 'Copy the MCP server address',
     clientsTitle: 'Clients registered by hand',
     clientsDescription:

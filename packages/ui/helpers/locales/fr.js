@@ -1247,7 +1247,7 @@ export default {
       'Ils la collent dans les connecteurs de leur assistant, puis se connectent avec leur compte LePatron.',
     step1: 'Vous activez l\'accès pour l\'entreprise.',
     step2: 'Chaque utilisateur connecte son assistant, avec son propre compte.',
-    step3: 'L\'assistant lit expertises, skills et mailings, sans rien modifier.',
+    step3: 'L\'assistant lit expertises, skills et mailings, sans modifier vos mailings.',
     copyAddress: 'Copier l\'adresse du serveur MCP',
     clientsTitle: 'Clients enregistrés à la main',
     clientsDescription:

@@ -132,7 +132,10 @@ export default {
     <!-- Off, the section says what turning it on does, in three steps. -->
     <ol v-else-if="!enabled" class="bs-group-mcp-access-option__steps">
       <li v-for="step in [1, 2, 3]" :key="step">
-        <span class="bs-group-mcp-access-option__step-number">
+        <span
+          class="bs-group-mcp-access-option__step-number"
+          aria-hidden="true"
+        >
           {{ step }}
         </span>
         {{ $t(`mcpAccess.step${step}`) }}
