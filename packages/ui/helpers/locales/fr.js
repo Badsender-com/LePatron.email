@@ -1238,13 +1238,16 @@ export default {
   mcpAccess: {
     title: 'Accès MCP',
     description:
-      'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
+      'Vos utilisateurs connectent Claude, ChatGPT ou Copilot à LePatron. L\'assistant lit avec leurs droits, dans cette entreprise seulement.',
     switch: 'Autoriser la connexion des assistants IA',
     on: 'Activé',
     off: 'Désactivé',
     address: 'Adresse à donner à vos utilisateurs',
     addressHint:
-      'Ils l\'ajoutent comme connecteur dans leur assistant, puis se connectent avec leur compte LePatron.',
+      'Ils la collent dans les connecteurs de leur assistant, puis se connectent avec leur compte LePatron.',
+    step1: 'Vous activez l\'accès pour l\'entreprise.',
+    step2: 'Chaque utilisateur connecte son assistant, avec son propre compte.',
+    step3: 'L\'assistant lit expertises, skills et mailings, sans rien modifier.',
     copyAddress: 'Copier l\'adresse du serveur MCP',
     clientsTitle: 'Clients enregistrés à la main',
     clientsDescription:
@@ -1536,6 +1539,7 @@ export default {
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
       availableLanguages: 'Langues disponibles',
       languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      languagesSelected: '{count} langue sélectionnée | {count} langues sélectionnées',
       minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
       formalityHint: 'Appliqué aux langues cibles qui distinguent les registres (vouvoiement, tutoiement…). Les autres restent en ton neutre.',
@@ -1545,7 +1549,7 @@ export default {
     },
     skill: {
       title: 'Moteur Skills',
-      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
+      description: 'Le modèle qui exécute les skills, dans l\'éditeur comme depuis un assistant connecté.',
       enableLabel: 'Activer le moteur Skills',
       on: 'Activé',
       off: 'Désactivé',

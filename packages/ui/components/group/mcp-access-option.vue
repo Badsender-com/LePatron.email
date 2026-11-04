@@ -91,7 +91,9 @@ export default {
 <template>
   <bs-form-section
     class="bs-group-mcp-access-option"
-    :folded="hasModule && !enabled"
+    card
+    :active="enabled"
+    :flush="enabled"
   >
     <template #icon>
       <lucide-plug :size="20" />
@@ -127,7 +129,17 @@ export default {
       </nuxt-link>
     </p>
 
-    <template v-else-if="enabled">
+    <!-- Off, the section says what turning it on does, in three steps. -->
+    <ol v-else-if="!enabled" class="bs-group-mcp-access-option__steps">
+      <li v-for="step in [1, 2, 3]" :key="step">
+        <span class="bs-group-mcp-access-option__step-number">
+          {{ step }}
+        </span>
+        {{ $t(`mcpAccess.step${step}`) }}
+      </li>
+    </ol>
+
+    <template v-else>
       <div class="bs-group-mcp-access-option__address">
         <label
           for="mcp-address"
@@ -201,10 +213,8 @@ export default {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 1rem 1.25rem;
-    border-radius: 7px;
-    background: rgba(0, 0, 0, 0.02);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 20px 24px;
+    background: var(--surface-muted);
   }
 
   &__address-label {
@@ -254,8 +264,42 @@ export default {
 
   &__rows {
     list-style: none;
-    margin: 1rem 0 0;
+    margin: 0;
     padding: 0;
+
+    ::v-deep .bs-settings-row {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--gray-200);
+    }
+  }
+
+  &__steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8125rem;
+      color: var(--gray-800);
+    }
+  }
+
+  &__step-number {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-pill);
+    background: var(--gray-100);
+    font-size: 0.75rem;
+    font-weight: 600;
   }
 }
 </style>

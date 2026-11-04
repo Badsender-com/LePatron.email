@@ -960,13 +960,16 @@ export default {
   mcpAccess: {
     title: 'MCP access',
     description:
-      'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
+      'Your users connect Claude, ChatGPT or Copilot to LePatron. The assistant reads with their rights, in this company only.',
     switch: 'Allow AI assistants to connect',
     on: 'On',
     off: 'Off',
     address: 'Address to give your users',
     addressHint:
-      'They add it as a connector in their assistant, then sign in with their LePatron account.',
+      'They paste it in their assistant\'s connectors, then sign in with their LePatron account.',
+    step1: 'You turn the access on for the company.',
+    step2: 'Each user connects their assistant, with their own account.',
+    step3: 'The assistant reads expertises, skills and mailings, and changes nothing.',
     copyAddress: 'Copy the MCP server address',
     clientsTitle: 'Clients registered by hand',
     clientsDescription:
@@ -1516,6 +1519,7 @@ export default {
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
       languagesHint: 'Select at least 2 languages (source and target)',
+      languagesSelected: '{count} language selected | {count} languages selected',
       minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
       formalityHint: 'Applied to target languages that distinguish formal and informal address. Other languages keep a neutral tone.',
@@ -1525,7 +1529,7 @@ export default {
     },
     skill: {
       title: 'Skills engine',
-      description: 'Generic AI engine powering every skill invocation for this company (and Playground tests via the platform company).',
+      description: 'The model that runs the skills, in the editor as from a connected assistant.',
       enableLabel: 'Enable the Skills engine',
       on: 'On',
       off: 'Off',
