@@ -1,17 +1,13 @@
 'use strict';
 
 // "Used by a feature" in the back office (ADR 0019, #1428): the badge of a
-// row, the filter of the lists, and its words in both languages. The project
+// row and its words in both languages. The server filters the lists. The project
 // has no @vue/test-utils: the rules live in this helper, the lists read them.
 
 const fs = require('fs');
 const path = require('path');
 
-const {
-  usedByOf,
-  isUsedByFeature,
-  filterUsedByFeature,
-} = require('~/helpers/used-by-feature.js');
+const { usedByOf, isUsedByFeature } = require('~/helpers/used-by-feature.js');
 
 const SUBJECT = {
   featureType: 'subject_generation',
@@ -32,13 +28,6 @@ describe('used by a feature', () => {
     expect(isUsedByFeature(USED)).toBe(true);
     expect(isUsedByFeature(UNUSED)).toBe(false);
     expect(isUsedByFeature(UNKNOWN)).toBe(false);
-  });
-
-  it('keeps every row with the filter off, only the used ones with it on', () => {
-    const rows = [USED, UNUSED, UNKNOWN];
-    expect(filterUsedByFeature(rows, false)).toEqual(rows);
-    expect(filterUsedByFeature(rows, true)).toEqual([USED]);
-    expect(filterUsedByFeature(undefined, true)).toEqual([]);
   });
 
   it.each(['en', 'fr'])('has its words in %s', (l) => {

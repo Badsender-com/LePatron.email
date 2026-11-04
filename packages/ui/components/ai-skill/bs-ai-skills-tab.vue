@@ -10,10 +10,7 @@ import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip
 import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { Sparkles } from 'lucide-vue';
-import {
-  isUsedByFeature,
-  filterUsedByFeature,
-} from '~/helpers/used-by-feature.js';
+import { isUsedByFeature } from '~/helpers/used-by-feature.js';
 import {
   skillCategoryOptions,
   skillCategoryLabel,
@@ -58,7 +55,7 @@ export default {
       // Client-side text search over title + identifier (parity with the
       // expertise list). `clearable` sets search to null on clear — guard it.
       const q = (this.search || '').trim().toLowerCase();
-      const items = filterUsedByFeature(this.items, this.onlyUsedByFeature);
+      const items = this.items;
       if (!q) return items;
       return items.filter((s) =>
         `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
@@ -119,6 +116,8 @@ export default {
         const params = {};
         if (this.filterCategory) params.category = this.filterCategory;
         if (this.filterStatus) params.status = this.filterStatus;
+        // On the server, so the filter reaches past the first page.
+        if (this.onlyUsedByFeature) params.usedByFeature = true;
         const list = await this.$axios.$get(api.aiSkills(), { params });
         this.items = list.items || [];
         this.total = list.total || 0;
@@ -206,6 +205,7 @@ export default {
         dense
         hide-details
         class="filter-checkbox"
+        @change="fetchData"
       />
     </div>
 

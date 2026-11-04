@@ -11,10 +11,3 @@ export function usedByOf(item) {
 export function isUsedByFeature(item) {
   return usedByOf(item).length > 0;
 }
-
-// The list filter: everything when it is off, only what a feature uses when
-// it is on.
-export function filterUsedByFeature(items, onlyUsed) {
-  const list = Array.isArray(items) ? items : [];
-  return onlyUsed ? list.filter(isUsedByFeature) : list;
-}

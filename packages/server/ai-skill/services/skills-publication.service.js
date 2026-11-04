@@ -10,10 +10,22 @@
  * more than a loop, and it follows a change of the declarations at once.
  */
 
-const { Expertises } = require('../../common/models.common.js');
+const { Expertises, LePatronSkills } = require('../../common/models.common.js');
+const { SkillStatuses } = require('../constant/skill-constants.js');
 const manifestRegistry = require('./manifest-registry.js');
 
 const KINDS = ['skill', 'expertise'];
+
+// What an expertise filter is matched against.
+const MATCHED_ATTRIBUTES = {
+  expertiseId: 1,
+  status: 1,
+  category: 1,
+  scope: 1,
+  isTransversal: 1,
+  appliesToEmailTypes: 1,
+};
+const NOT_ARCHIVED = { $ne: SkillStatuses.ARCHIVED };
 
 function asList(value) {
   return Array.isArray(value) ? value : [];
@@ -43,6 +55,8 @@ function declaresUse(manifest, kind, entity) {
  */
 function featuresUsing(kind, entity) {
   if (!KINDS.includes(kind) || !entity) return [];
+  // A feature loads only active expertises, and calls no archived skill.
+  if (entity.status === SkillStatuses.ARCHIVED) return [];
   return manifestRegistry
     .listManifests()
     .filter((manifest) => declaresUse(manifest, kind, entity))
@@ -58,18 +72,49 @@ function featuresUsing(kind, entity) {
  * that is not stored can still be named by a feature.
  */
 async function usedByFeatures({ kind, id }) {
-  if (kind !== 'expertise') return featuresUsing(kind, { skillId: id });
+  if (kind !== 'expertise') {
+    const skill = await LePatronSkills.findOne(
+      { skillId: id },
+      { skillId: 1, status: 1 }
+    ).lean();
+    return featuresUsing(kind, skill || { skillId: id });
+  }
   const expertise = await Expertises.findOne(
     { expertiseId: id },
-    {
-      expertiseId: 1,
-      category: 1,
-      scope: 1,
-      isTransversal: 1,
-      appliesToEmailTypes: 1,
-    }
+    MATCHED_ATTRIBUTES
   ).lean();
   return featuresUsing(kind, expertise || { expertiseId: id });
+}
+
+/**
+ * The identifiers of every stored skill or expertise a feature uses, for the
+ * lists of the back office to filter on before they page.
+ *
+ * @param {'skill'|'expertise'} kind
+ * @returns {Promise<string[]>}
+ */
+async function idsUsedByFeatures(kind) {
+  if (kind === 'skill') {
+    const named = [
+      ...new Set(
+        manifestRegistry
+          .listManifests()
+          .flatMap((manifest) => asList(manifest.usedSkills))
+      ),
+    ];
+    const skills = await LePatronSkills.find(
+      { skillId: { $in: named }, status: NOT_ARCHIVED },
+      { skillId: 1 }
+    ).lean();
+    return skills.map((skill) => skill.skillId);
+  }
+  const expertises = await Expertises.find(
+    { status: NOT_ARCHIVED },
+    MATCHED_ATTRIBUTES
+  ).lean();
+  return expertises
+    .filter((expertise) => featuresUsing('expertise', expertise).length)
+    .map((expertise) => expertise.expertiseId);
 }
 
 /**
@@ -84,6 +129,7 @@ function withUsedBy(kind, entity) {
 
 module.exports = {
   featuresUsing,
+  idsUsedByFeatures,
   usedByFeatures,
   withUsedBy,
 };
