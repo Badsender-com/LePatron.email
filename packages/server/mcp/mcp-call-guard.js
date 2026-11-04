@@ -106,9 +106,21 @@ function idsIn(value, key = '', depth = 0) {
   return ID_KEY.test(key) && typeof value === 'string' ? [value] : [];
 }
 
+// The settings a tool sets, recorded as metadata: their value is a choice
+// among a few, never content.
+const SETTINGS = ['audience'];
+const changeIn = (args = {}) => {
+  const setting = SETTINGS.find((key) => typeof args[key] === 'string');
+  return setting ? `${setting}:${args[setting]}` : null;
+};
+
 function whatWasAsked(method, params = {}) {
   if (method === 'tools/call') {
-    return { name: params.name, objectIds: idsIn(params.arguments) };
+    return {
+      name: params.name,
+      objectIds: idsIn(params.arguments),
+      change: changeIn(params.arguments),
+    };
   }
   if (method === 'prompts/get') return { name: params.name, objectIds: [] };
   if (method === 'resources/read') return { objectIds: [params.uri] };
