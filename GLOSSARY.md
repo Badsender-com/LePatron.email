@@ -193,8 +193,13 @@ An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has a
 _UI_: Application connectée
 _Avoid_: Integration (the AI provider settings of a group), connector, client
 
+**MCP module**:
+What Badsender sells a group so that its users may connect applications: opened or closed by a super admin, like the other modules. Closed, the group's MCP access cannot be used, and its connected applications are revoked.
+_UI_: Module MCP
+_Avoid_: MCP subscription, MCP licence
+
 **MCP access**:
-The setting that lets the users of a group connect applications. Off unless a super admin or the group's tech admin turns it on.
+The setting that lets the users of a group connect applications, once the group has the MCP module. Off unless a super admin or the group's tech admin turns it on; opening the module does not turn it on.
 _UI_: Accès MCP
 
 **Feedback**:
