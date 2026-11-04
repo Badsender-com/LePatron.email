@@ -74,6 +74,13 @@ const config = rc('lepatron', {
   encryptionWriteLegacy: process.env.ENCRYPTION_WRITE_LEGACY === 'true',
   NODE_ENV: process.env.NODE_ENV,
   helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
+  // A copy (staging, development) follows production's skills and
+  // expertises with a read token production gave it (ADR 0019). Unset on
+  // production itself, which follows nothing.
+  skillsSource: {
+    url: process.env.SKILLS_SOURCE_URL,
+    token: process.env.SKILLS_SOURCE_TOKEN,
+  },
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';

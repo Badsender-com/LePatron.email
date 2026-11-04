@@ -1680,6 +1680,32 @@ export default {
       done: 'Export téléchargé.',
       failed: 'L\'export a échoué.',
     },
+    follow: {
+      title: 'Suivre la production',
+      description:
+        'Cette instance est une copie : elle reçoit les skills et expertises de la production, telles que les clients les vivent. Ce qui n\'existe qu\'ici reste, un brouillon local plus récent n\'est jamais écrasé.',
+      production: 'Production : {origin}',
+      now: 'Suivre maintenant',
+      running: 'Suivi en cours…',
+      never: 'La production n\'a encore jamais été suivie.',
+      last: 'Dernier suivi le {date} par {by}',
+      loadError: 'Le suivi de la production n\'a pas pu être chargé.',
+      done: 'Production suivie.',
+      statuses: {
+        succeeded: 'Réussi',
+        partial: 'Réussi en partie',
+        failed: 'Échoué',
+      },
+      outcomes: {
+        created: '{count} ajoutée(s)',
+        updated: '{count} mise(s) à jour',
+        upToDate: '{count} déjà à jour',
+        kept: '{count} conservée(s) sur la copie',
+        failed: '{count} en échec',
+      },
+      failuresLabel: 'Éléments en échec',
+      nothingWritten: 'Rien n\'a été écrit.',
+    },
     readTokens: {
       title: 'Jetons de lecture',
       description:
