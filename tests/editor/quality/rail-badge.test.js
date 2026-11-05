@@ -10,7 +10,7 @@ const DONE = {
   status: 'done',
   blockingCount: 0,
   issueCount: 0,
-  cleared: false,
+  ready: false,
   ranCount: 3,
   total: 3,
 };
@@ -38,7 +38,7 @@ describe("the badge of « Tester l'email » in the panel rail", () => {
   });
 
   it('ticks a ready email', () => {
-    expect(railBadgeOf({ ...DONE, cleared: true })).toMatchObject({
+    expect(railBadgeOf({ ...DONE, ready: true })).toMatchObject({
       kind: 'ready',
       labelKey: 'panel-rail-ready',
     });

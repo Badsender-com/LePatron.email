@@ -21,7 +21,9 @@ const SendTestPanel = Vue.component('SendTestPanel', {
     // What the last review found: 'idle' | 'running' | 'done' | 'stale',
     // and its error count.
     status: { type: String, default: 'idle' },
-    errorCount: { type: Number, default: 0 },
+    // The ready rule (ADR 0020), and what is left to fix when not ready.
+    ready: { type: Boolean, default: false },
+    issueCount: { type: Number, default: 0 },
     // The tab is shown.
     active: { type: Boolean, default: false },
   },
@@ -110,9 +112,10 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         <span class="qc-spinner" aria-hidden="true"></span>
         <span class="qc-notice__text">{{ t('Running checks…') }}</span>
       </div>
-      <div v-else-if="status === 'done' && errorCount" class="qc-notice qc-notice--error" role="status">
+      <div v-else-if="status === 'done' && !ready" class="qc-notice qc-notice--error" role="status">
         <span class="lucide lucide-alert-circle" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('__count__ errors are still to fix: you can send a test anyway', { count: errorCount }) }}</span>
+        <span v-if="issueCount" class="qc-notice__text">{{ t('__count__ issues are still to fix: you can send a test anyway', { count: issueCount }) }}</span>
+        <span v-else class="qc-notice__text">{{ t('A check could not run: you can send a test anyway') }}</span>
         <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('See the results') }}</button>
       </div>
       <div v-else-if="status === 'idle' || status === 'stale'" class="qc-notice" role="status">

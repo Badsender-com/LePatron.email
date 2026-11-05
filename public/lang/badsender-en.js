@@ -533,6 +533,14 @@ module.exports = {
   'quality-category-accessibility': 'Accessibility',
   'quality-category-copy': 'Copy',
   'quality-category-performance': 'Performance',
+  'quality-ready-title': 'Ready to go',
+  'quality-ready-text':
+    '__count__ checks run at __when__. No error nor warning.',
+  'quality-ready-infos': ' __count__ info(s) to read if you wish.',
+  '__count__ issues are still to fix: you can send a test anyway':
+    '__count__ issue(s) to fix: you can send a test anyway',
+  'A check could not run: you can send a test anyway':
+    'A check could not run: you can send a test anyway',
   'quality-badge-stale': 'Re-run needed',
   '__count__ checks not run': '__count__ checks not run',
   '__count__ ignored findings': '__count__ ignored findings',
@@ -577,9 +585,6 @@ module.exports = {
   '__count__ issues': '__count__ issues',
   '__count__ issues to fix: open the quality control':
     '__count__ issues to fix: open the quality control',
-  'All checks passed': 'All checks passed',
-  '__passed__ of __total__ checks · __when__':
-    '__passed__ of __total__ checks · __when__',
   'Go to block': 'Go to block',
   'Send a test email': 'Send a test email',
   'This check could not run': 'This check could not run',
@@ -786,8 +791,6 @@ module.exports = {
   'Colour an email client cannot read in the HTML code: __colors__':
     'Colour an email client cannot read in the HTML code: __colors__',
   'Send a test': 'Send a test',
-  '__count__ errors are still to fix: you can send a test anyway':
-    '__count__ errors are still to fix: you can send a test anyway',
   'See the results': 'See the results',
   'The quality checks have not run on this version yet':
     'The quality checks have not run on this version yet',

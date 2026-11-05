@@ -261,7 +261,7 @@ describe('QualityDrawer', () => {
     );
   });
 
-  it('celebrates a clean email, counting its checks at an absolute time', async () => {
+  it('says a clean email is ready, counting its checks at an absolute time', async () => {
     const { vm, el } = await mountDrawer({
       findings: [],
       checks: [{ ...sizeCheck }, { ...sizeCheck, ruleId: 'links' }],
@@ -270,15 +270,33 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
 
     expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
-      'All checks passed'
+      'quality-ready-title'
     );
     expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
-      /2 of 2 checks · \d\d:\d\d/
+      /quality-ready-text/
     );
     expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.querySelector('[aria-live]').textContent).toBe(
-      'All checks passed'
+      'quality-ready-title'
     );
+  });
+
+  it('says an email with infos only is ready, the infos left to read (ADR 0020)', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [{ ...linkFinding, severity: 'info' }],
+      checks: [{ ...sizeCheck }],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+
+    expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
+      'quality-ready-title'
+    );
+    expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
+      /quality-ready-infos/
+    );
+    expect(el.querySelector('.qc-drawer__summary')).toBeNull();
+    expect(el.textContent).toContain('quality-group-infos');
   });
 
   it('announces only what was found, never the zeros', async () => {

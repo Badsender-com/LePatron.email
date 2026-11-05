@@ -21,8 +21,8 @@ function createCounts(ko, { active, checks }) {
         (f) => f.blocking || f.severity === 'error' || f.severity === 'warning'
       ).length
   );
-  // A check that could not run, or was cancelled, was never judged: no green
-  // tick while one is left, as the drawer's "all passed" (allPassed).
+  // A check that could not run, or was cancelled, was never judged: the email
+  // is not ready while one is left.
   const ranCount = ko.pureComputed(
     () =>
       checks().filter((c) => c.status !== 'error' && c.status !== 'cancelled')
@@ -39,9 +39,11 @@ function createCounts(ko, { active, checks }) {
       () => checks().filter((c) => c.status === 'passed').length
     ),
     ranCount,
-    // Nothing to fix, every check judged. A check whose findings are ignored
-    // or only infos is not "passed", and still clears the email.
-    cleared: ko.pureComputed(
+    // The ready rule (ADR 0020), the one of the rail badge, the card of the
+    // drawer and the banner of the send test tab: nothing to fix, every check
+    // judged. A check whose findings are ignored or only infos is not
+    // "passed", and the email is still ready.
+    ready: ko.pureComputed(
       () => issueCount() === 0 && ranCount() === checks().length
     ),
   };

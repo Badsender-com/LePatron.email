@@ -207,18 +207,20 @@ describe('SendTestPanel', () => {
     expect(el.querySelector('button[type="submit"]').disabled).toBe(false);
   });
 
-  it('recalls the errors left, without stopping the send', async () => {
-    const { el, events } = await mountPanel({ status: 'done', errorCount: 2 });
-    expect(el.querySelector('.qc-notice--error').textContent).toContain(
-      '2 errors'
-    );
+  it('recalls what is left to fix, without stopping the send', async () => {
+    const { el, events } = await mountPanel({
+      status: 'done',
+      ready: false,
+      issueCount: 2,
+    });
+    expect(el.querySelector('.qc-notice--error').textContent).toContain('2');
     el.querySelector('.qc-notice .qc-link-button').click();
     expect(events.showResults).toBe(true);
   });
 
   it('offers to run the checks when they never ran, or ran on an earlier version', async () => {
     for (const status of ['idle', 'stale']) {
-      const { el, events } = await mountPanel({ status, errorCount: 2 });
+      const { el, events } = await mountPanel({ status, issueCount: 2 });
       expect(el.querySelector('.qc-notice').textContent).toContain(
         'The quality checks have not run on this version yet'
       );

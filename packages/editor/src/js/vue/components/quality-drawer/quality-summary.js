@@ -3,7 +3,7 @@ const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
 const { formatTime } = require('./quality-items');
 
 // The head of the results: whether they still describe the email, what they
-// count by severity (or that every check passed), and how the server's checks
+// count by severity (or that the email is ready), and how the server's checks
 // went.
 const QualitySummary = Vue.component('QualitySummary', {
   props: {
@@ -11,8 +11,9 @@ const QualitySummary = Vue.component('QualitySummary', {
     status: { type: String, required: true },
     // Results by severity: { error: 2, warning: 0, … }.
     counts: { type: Object, required: true },
-    // Every check passed: nothing to fix, nothing left unjudged.
-    allPassed: { type: Boolean, default: false },
+    // The ready rule (ADR 0020): nothing to fix, nothing left unjudged; infos
+    // may be left, to read if one wishes.
+    ready: { type: Boolean, default: false },
     checksTotal: { type: Number, default: 0 },
     ranAt: { type: Date, default: null },
     remoteStatus: { type: String, default: 'idle' },
@@ -49,7 +50,7 @@ const QualitySummary = Vue.component('QualitySummary', {
         </button>
       </div>
 
-      <div v-if="!allPassed" class="qc-drawer__summary">
+      <div v-if="!ready" class="qc-drawer__summary">
         <span class="qc-pills">
           <span
             v-for="severity in pills"
@@ -68,9 +69,10 @@ const QualitySummary = Vue.component('QualitySummary', {
       </div>
       <div v-else-if="remoteStatus !== 'running'" class="qc-drawer__clean">
         <span class="qc-drawer__clean-icon" aria-hidden="true"><span class="lucide lucide-check"></span></span>
-        <p class="qc-drawer__clean-title">{{ t('All checks passed') }}</p>
+        <p class="qc-drawer__clean-title">{{ t('quality-ready-title') }}</p>
         <p class="qc-drawer__clean-text">
-          {{ t('__passed__ of __total__ checks · __when__', { passed: counts.success, total: checksTotal, when: lastRunLabel }) }}
+          {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}
+          <template v-if="counts.info">{{ t('quality-ready-infos', { count: counts.info }) }}</template>
         </p>
       </div>
 

@@ -10,9 +10,6 @@
  * if it blocks. It is the rule the top bar badge called `cleared`, renamed
  * `ready`, and now the one rule of the rail badge, the card of the quality
  * panel and the banner of the send test tab, which counted errors only.
- *
- * Turned on by the PR of the ready rule, which retires `cleared` and its test
- * in quality-review.test.js.
  */
 
 const ko = require('knockout');
@@ -57,7 +54,7 @@ async function mountBanner(props) {
   return app;
 }
 
-describe.skip('the ready rule (ADR 0020)', () => {
+describe('the ready rule (ADR 0020)', () => {
   describe('ready', () => {
     it('is ready with infos left, the rename of cleared', () => {
       const counts = countsOf([finding('info')]);
