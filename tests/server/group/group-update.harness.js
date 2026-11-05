@@ -9,7 +9,7 @@
 // test's module registry when this file loads.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
-  Groups: { findById: jest.fn() },
+  Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },
   Profiles: {},
   Templates: {},
@@ -63,22 +63,38 @@ const otherTechAdmin = {
   group: OTHER_GROUP_ID,
 };
 
-/** The group as stored, read by the controller before and after the write. */
+/**
+ * The group as stored: read by the controller after the write, and what the
+ * write of its switches replaces.
+ */
 function storedGroup(fields) {
   const group = { id: GROUP_ID, name: 'Client group', ...fields };
   Groups.findById.mockReturnValue({
     lean: jest.fn().mockResolvedValue(group),
     then: (resolve, reject) => Promise.resolve(group).then(resolve, reject),
   });
+  Groups.findOneAndUpdate.mockReturnValue({
+    lean: jest.fn().mockResolvedValue(group),
+  });
 }
 
-/** Runs the controller; answers what it hands to the write. */
+/**
+ * Runs the controller; answers what it writes: the update it hands to the
+ * service, and the switches it sets on their own.
+ */
 async function update(user, body) {
   await groupController.update(
     { params: { groupId: GROUP_ID }, body, user },
     { json: jest.fn() }
   );
-  return groupService.updateGroup.mock.calls[0][0];
+  const switches = Groups.findOneAndUpdate.mock.calls.map(
+    ([, change]) => change.$set
+  );
+  return Object.assign(
+    {},
+    groupService.updateGroup.mock.calls[0][0],
+    ...switches
+  );
 }
 
 // The guards of PUT /groups/:groupId as the router declares them: every

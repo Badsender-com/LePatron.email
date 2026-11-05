@@ -3,6 +3,8 @@
 // POST /groups seeds the default email types. Only a super admin creates a
 // company, and their session carries no `lang`: the language has to come from the
 // interface, and must not be stored on the company as if it were one of its fields.
+// A company starts with its switches off: they are turned on from its settings,
+// where each one is a security event.
 
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: {},
@@ -106,5 +108,20 @@ describe('POST /groups — default email types language', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ id: GROUP_ID })
     );
+  });
+});
+
+describe('POST /groups — the company switches', () => {
+  it.each([
+    ['requireTwoFactor', true],
+    ['requireTwoFactor', 'yes'],
+    ['enableMcp', true],
+    ['enableMcp', { $ne: false }],
+  ])('creates the company without %s, sent as %p', async (field, value) => {
+    await create({ name: 'Acme', [field]: value });
+
+    expect(groupService.createGroup.mock.calls[0][0]).toEqual({
+      name: 'Acme',
+    });
   });
 });

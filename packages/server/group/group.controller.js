@@ -11,14 +11,9 @@ const {
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const permissions = require('../account/permissions.js');
-const {
-  requirementChangeOf,
-  recordRequirementChange,
-} = require('../two-factor/group-option.js');
-const {
-  mcpAccessChangeOf,
-  recordMcpAccessChange,
-} = require('../mcp/mcp-access-option.js');
+const { recordRequirementChange } = require('../two-factor/group-option.js');
+const { recordMcpAccessChange } = require('../mcp/mcp-access-option.js');
+const { takeSwitches, writeSwitches } = require('./group-switch.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
@@ -185,6 +180,9 @@ async function create(req, res) {
 
   // Not a company field: the language the default email types are seeded in.
   const { defaultEmailTypesLang, ...groupToCreate } = req.body;
+  // A company starts with its switches off: they are turned on from its
+  // settings, where each one is recorded as a security event.
+  takeSwitches(groupToCreate);
 
   if ('idpCert' in groupToCreate) {
     groupToCreate.idpCert = normalizeIdpCert(groupToCreate.idpCert);
@@ -601,18 +599,18 @@ async function update(req, res) {
       )?.logRetentionDays
     : undefined;
 
-  const twoFactorChange = await requirementChangeOf(
-    req.params.groupId,
-    groupToUpdate
-  );
-  const mcpAccessChange = await mcpAccessChangeOf(
-    req.params.groupId,
-    groupToUpdate
-  );
-
+  // The company's switches are written apart, after the rest, in the one
+  // operation that tells what they were: a security event is recorded for a
+  // switch this request changed, and for it only.
+  const switches = takeSwitches(groupToUpdate);
   await groupService.updateGroup(groupToUpdate);
-  await recordRequirementChange(user, req.params.groupId, twoFactorChange);
-  await recordMcpAccessChange(user, req.params.groupId, mcpAccessChange);
+  const switched = await writeSwitches(req.params.groupId, switches);
+  await recordRequirementChange(
+    user,
+    req.params.groupId,
+    switched.requireTwoFactor
+  );
+  await recordMcpAccessChange(user, req.params.groupId, switched.enableMcp);
 
   // AISkillInvocation.expiresAt is stamped at write time, so a retention change
   // has to be propagated to the invocations already logged — otherwise lowering

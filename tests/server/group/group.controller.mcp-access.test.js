@@ -10,6 +10,7 @@
 const createError = require('http-errors');
 const mongoose = require('mongoose');
 const {
+  Groups,
   SecurityEvents,
   groupService,
   GROUP_ID,
@@ -151,6 +152,47 @@ describe('PUT /groups/:groupId — MCP access, the security event', () => {
 
     const actions = SecurityEvents.create.mock.calls.map(([e]) => e.action);
     expect(actions).toEqual(['two-factor.required', 'mcp-access.enabled']);
+  });
+
+  // The change is the one the write made: the value it replaced, read in
+  // the same operation, decides it.
+  it('judges the change by the value its own write replaced', async () => {
+    storedGroup({ enableMcp: false });
+    Groups.findOneAndUpdate.mockReturnValue({
+      lean: jest.fn().mockResolvedValue({ _id: GROUP_ID, enableMcp: true }),
+    });
+
+    await update(techAdmin, { enableMcp: true });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it('reads and writes the switches at once, on their fields only', async () => {
+    await update(techAdmin, {
+      name: 'Renamed',
+      enableMcp: true,
+      requireTwoFactor: true,
+    });
+
+    expect(Groups.findOneAndUpdate).toHaveBeenCalledTimes(1);
+    expect(Groups.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: GROUP_ID },
+      { $set: { requireTwoFactor: true, enableMcp: true } },
+      {
+        new: false,
+        projection: { requireTwoFactor: 1, enableMcp: 1 },
+      }
+    );
+    expect(groupService.updateGroup).toHaveBeenCalledWith({
+      name: 'Renamed',
+      id: GROUP_ID,
+    });
+  });
+
+  it('writes no switch when the request carries none', async () => {
+    await update(techAdmin, { name: 'Renamed' });
+
+    expect(Groups.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   it.each(['mcp-access.enabled', 'mcp-access.disabled'])(
