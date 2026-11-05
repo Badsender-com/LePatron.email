@@ -243,7 +243,7 @@ function commentsLoader(opts) {
      * The counters before the list loads; afterwards they come from it.
      */
     viewModel.loadCommentCounts = function () {
-      if (viewModel.commentsStatus() === false) store.start();
+      if (!store.listLoaded()) store.start();
     };
 
     /**

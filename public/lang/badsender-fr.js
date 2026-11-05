@@ -356,6 +356,26 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-filter-label': 'Filtrer les commentaires',
+  'comments-filter-no-block': 'Aucun bloc sélectionné',
+  'comments-anonymous': 'Anonyme',
+  'comments-whole-email': "Tout l'email",
+  'comments-approval-lifted':
+    "Validation levée par le commentaire de __name__. L'email doit être approuvé à nouveau.",
+  'comments-approval-held':
+    'Validation suspendue : un commentaire bloquant est ouvert.',
+  'comments-withdraw-approval': "Retirer l'approbation",
+  'comments-retry': 'Réessayer',
+  'comments-empty-block': 'Aucun commentaire sur ce bloc.',
+  'comments-empty-text':
+    "Écrivez sur l'email ou sélectionnez un bloc dans le canevas.",
+  'comments-resolved-count-one': '1 commentaire résolu',
+  'comments-resolved-count': '__count__ commentaires résolus',
+  'comments-approved-the-email': "a approuvé l'email",
+  'comments-details': 'Détails du commentaire résolu',
+  'comments-load-failed': 'Impossible de charger les commentaires',
+  'comments-filter-note':
+    "Filtre de lecture : vous lisez les commentaires du bloc __block__. Votre prochain commentaire porte sur ce qu'indique le champ « Sur », plus bas.",
   'comments-new-one': '1 nouveau commentaire · Afficher',
   'comments-new': '__count__ nouveaux commentaires · Afficher',
   'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',

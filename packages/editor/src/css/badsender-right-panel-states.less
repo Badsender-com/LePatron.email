@@ -1,0 +1,63 @@
+////////
+// RIGHT PANEL — the states of a panel's body (ADR 0020, board v3-shell), the
+// same in the three panels: loading, empty, empty and compact, loading error.
+// Rendered by js/vue/components/right-panel/right-panel-state.js.
+////////
+
+.slidebar.right-panel {
+  // ===== States of a body: loading, empty, compact, error =====
+  .right-panel-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--gray-700);
+
+    &__icon {
+      font-size: 28px;
+      color: var(--gray-500);
+    }
+
+    &__spinner {
+      font-size: 22px;
+      color: var(--accent);
+      animation: lucide-spin 1s linear infinite;
+    }
+
+    &__title {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+
+    &__text {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    &--error &__icon {
+      color: @qc-error;
+    }
+
+    &--compact {
+      flex-direction: row;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--gray-200);
+      border-radius: @qc-radius;
+      background: var(--gray-50);
+      text-align: left;
+
+      .right-panel-state__icon { font-size: 18px; }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slidebar.right-panel .right-panel-state__spinner {
+    animation: none;
+  }
+}
