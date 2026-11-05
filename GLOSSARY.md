@@ -168,7 +168,7 @@ _Avoid_: Sent, exported (a ZIP download is also called an export)
 ### Skills and expertises
 
 **Expertise**:
-A piece of Badsender's email know-how, written in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
+A piece of email know-how the platform company writes, in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
 _UI_: Expertise
 _Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
 
@@ -186,15 +186,19 @@ Who may read a skill or an expertise outside the back office: the platform group
 _UI_: Audience
 _Avoid_: Visibility, exposure, scope (an expertise's scope is the part of an email it covers)
 
+**CRM governance**:
+A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
+_Avoid_: Client expertise, brand skill
+
 ### AI assistants
 
 **Connected application**:
-An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one group. The user or a company admin can revoke it at any time.
+An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one company. The user or a company admin can revoke it at any time.
 _UI_: Application connectée
-_Avoid_: Integration (the AI provider settings of a group), connector, client
+_Avoid_: Integration (the AI provider settings of a company), connector, client
 
 **MCP access**:
-The setting that lets the users of a group connect applications. Off unless a super admin or the group's tech admin turns it on.
+The setting that lets the users of a company connect applications. Off unless a super admin or the company's tech admin turns it on.
 _UI_: Accès MCP
 
 **Feedback**:
@@ -202,6 +206,6 @@ A rating and a comment a user sends from a connected application about what LePa
 _UI_: Avis
 
 **Retex**:
-The summary of an assistant session, attached to a feedback, so the platform group can improve its expertises, skills and features. Sent only when the group allows it and the user agrees to it for that feedback.
+The summary of an assistant session, attached to a feedback, so the platform company can improve its expertises, skills and features. Sent only when the company allows it and the user agrees to it for that feedback.
 _UI_: Retour d'expérience
 _Avoid_: Telemetry, session log

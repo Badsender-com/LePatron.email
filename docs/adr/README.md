@@ -6,6 +6,7 @@ Each file records one decision that is hard to reverse, surprising without conte
 - Format and criteria: [.claude/skills/domain-modeling/ADR-FORMAT.md](../../.claude/skills/domain-modeling/ADR-FORMAT.md).
 - Sequential numbering, `NNNN-slug.md`, in English. A reversed decision gets a new ADR; the old one is marked `superseded by ADR-NNNN`.
 - The repository is public: no client name, no unfixed vulnerability, no secret.
+- A number missing from the table belongs to an ADR of a feature branch not merged yet: 0003 and 0009 (quality control), 0010 (AI panel) and 0011 (spelling correction).
 
 | ADR                                                                           | Decision                                                                                                                                                            | Status                       |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
@@ -16,5 +17,5 @@ Each file records one decision that is hard to reverse, surprising without conte
 | [0006](./0006-editing-a-gallery-image-adds-a-copy.md)                         | Editing a gallery image adds a numbered copy; it never replaces the original                                                                                        | proposed                     |
 | [0007](./0007-search-across-accessible-workspaces.md)                         | Searching every accessible workspace is a read-only listing with its own route; the database applies the rights on an explicit list of locations                    | proposed                     |
 | [0008](./0008-two-factor-authentication-required-by-group.md)                 | A group requires two-factor authentication of all its members or none; the session opens only once the code is checked; a trusted device skips the code for 30 days | proposed                     |
-| [0012](./0012-mcp-server-inside-the-app-with-its-own-authorization-server.md) | The MCP server runs inside the app, with its own OAuth authorization server; a token is bound to one user and one group; read-only first                            | proposed                     |
+| [0012](./0012-mcp-server-inside-the-app-with-its-own-authorization-server.md) | The MCP server runs inside the app, with its own OAuth authorization server; a token is bound to one user and one company; read-only first                          | proposed                     |
 | [0013](./0013-skills-are-feature-or-task-and-have-an-audience.md)             | A skill is a feature skill or a task skill; skills and expertises have an audience, the platform group or every subscribed group                                    | proposed                     |
