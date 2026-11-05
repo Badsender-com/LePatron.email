@@ -386,7 +386,7 @@ module.exports = {
   'comments-approve-email': "Approuver l'email",
   'comments-mention-list': 'Personnes à mentionner',
   'comments-approved-badge': 'Validé',
-  'comments-withdraw-confirm': 'Retirer votre approbation de cet email ?',
+  'comments-withdraw-confirm': "Retirer l'approbation de cet email ?",
   'comments-withdrawn': 'Approbation retirée',
   'comments-new-one': '1 nouveau commentaire · Afficher',
   'comments-new': '__count__ nouveaux commentaires · Afficher',

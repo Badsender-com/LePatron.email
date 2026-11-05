@@ -53,6 +53,10 @@ function server(items) {
       options.success(
         comment({ ...body, _parentComment: body.parentCommentId || null })
       );
+    } else if (options.method === 'PATCH') {
+      const id = /comments\/([^/]+)/.exec(options.url)[1];
+      const found = items.find((c) => c._id === id) || {};
+      options.success({ ...found, resolved: /\/resolve$/.test(options.url) });
     } else if (/\/comments$/.test(options.url)) {
       options.success({ items });
     } else if (/counts$|unresolved-count$/.test(options.url)) {
@@ -147,6 +151,36 @@ describe('the comments panel', () => {
     approve.click();
     await flush();
     expect(posted).toEqual([]);
+  });
+
+  it('offers no second approval once the email is approved', async () => {
+    const { root } = await open({ items: [comment({ decision: 'approved' })] });
+    expect(root.querySelector('.comment-composer__approve')).toBeNull();
+  });
+
+  it('approves with neither type nor priority, whatever the draft says', async () => {
+    const { vm, root, posted } = await open();
+    vm.commentsStore.draftSeverity('blocking');
+    vm.commentsStore.draftCategory('design');
+    await Vue.nextTick();
+    root.querySelector('.comment-composer__approve').click();
+    await flush();
+    expect(posted).toEqual([
+      expect.objectContaining({
+        decision: 'approved',
+        category: 'general',
+        severity: 'info',
+      }),
+    ]);
+  });
+
+  it('keeps the focus in the panel when a comment leaves its place', async () => {
+    const { root } = await open({ items: [comment()] });
+    root.querySelector('[aria-label="comments-resolve"]').click();
+    await flush();
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(document.activeElement.id).toBe('comments-panel-title');
   });
 
   it('offers no approval to a writer', async () => {

@@ -15,6 +15,8 @@ const template = require('./comments-panel.template');
 
 const MENTION = /@\[([^\]]+)\]\(([a-f0-9]+)\)/g;
 const isRoot = (c) => !c._parentComment;
+const cssEscape = (value) =>
+  window.CSS && window.CSS.escape ? window.CSS.escape(value) : value;
 // Frozen: Vue leaves them as the store gave them, without its getters.
 const frozen = (items) => Object.freeze((items || []).slice());
 
@@ -135,16 +137,31 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     send(write) {
       if (this.busy) return Promise.resolve(false);
       this.busy = true;
-      return write().then((done) => {
-        this.busy = false;
-        return done;
-      });
+      return write()
+        .catch(() => false)
+        .then((done) => {
+          this.busy = false;
+          return done;
+        });
+    },
+    // The control that had the focus went with its comment: the title takes
+    // it, and says where the user is.
+    refocus() {
+      if (this.$refs.shell) this.$refs.shell.focusTitle();
     },
     submit() {
       this.send(() => this.vm.createComment());
     },
+    // The approval, once posted, takes the focus: the button goes.
     approve() {
-      this.send(() => this.vm.createComment('approved'));
+      this.send(() => this.vm.createComment('approved')).then((done) => {
+        if (!done) return;
+        this.$nextTick(() => {
+          const approval = this.$el.querySelector('.comment-approval');
+          if (approval) approval.focus();
+          else this.refocus();
+        });
+      });
     },
     mention(mention) {
       const tracked = this.vm.trackedMentions;
@@ -188,17 +205,27 @@ const CommentsPanel = Vue.component('CommentsPanel', {
       this.edit = null;
       this.$nextTick(() => {
         const item = this.$el.querySelector(
-          `[data-comment-id="${CSS.escape(comment._id)}"]`
+          `[data-comment-id="${cssEscape(comment._id)}"]`
         );
         if (item) item.focus();
       });
     },
+    // A deleted, resolved or reopened comment leaves its place in the list:
+    // the focus goes to the title, not to the page.
     act(name, comment) {
-      const actions = this.vm.commentsActions;
-      if (name === 'go-to-block') this.vm.goToCommentBlock(comment);
-      else if (name === 'delete') actions.remove(comment).catch(() => {});
-      else if (name === 'resolve') actions.resolve(comment).catch(() => {});
-      else if (name === 'unresolve') actions.unresolve(comment).catch(() => {});
+      if (name === 'go-to-block') {
+        this.vm.goToCommentBlock(comment);
+        return;
+      }
+      const write = {
+        delete: 'remove',
+        resolve: 'resolve',
+        unresolve: 'unresolve',
+      }[name];
+      this.vm.commentsActions[write](comment).then(
+        (done) => done !== false && this.refocus(),
+        () => {}
+      );
     },
   },
   template,

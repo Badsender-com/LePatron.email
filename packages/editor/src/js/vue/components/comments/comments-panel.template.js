@@ -8,6 +8,7 @@
 
 module.exports = `
 <right-panel-shell
+  ref="shell"
   class="comments-panel"
   title-id="comments-panel-title"
   :title="t('comments-title')"
@@ -19,6 +20,10 @@ module.exports = `
   <template v-if="approved" v-slot:title-after>
     <span class="comments-panel__approved">
       <span class="lucide lucide-check-check" aria-hidden="true"></span>{{ t('comments-approved-badge') }}
+    </span>
+    <span v-if="unresolved" class="right-panel-shell__count">
+      <span aria-hidden="true">{{ unresolved }}</span>
+      <span class="qc-sr-only">{{ countLabel }}</span>
     </span>
   </template>
 
@@ -93,7 +98,7 @@ module.exports = `
     :label-of="labelOf"
     :category="category"
     :severity="severity"
-    :can-approve="canApprove"
+    :can-approve="canApprove && !approved"
     :approve-blocked="openBlocking"
     :busy="busy"
     :t="t"

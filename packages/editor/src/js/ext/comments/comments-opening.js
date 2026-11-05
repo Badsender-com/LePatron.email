@@ -61,6 +61,8 @@ function installCommentsOpening(viewModel, { store }) {
     });
     viewModel.showComments(true);
     if (blockId) goToBlock(viewModel, blockId);
+    // The form is filled in: the user reads it and sends it.
+    focusForm();
   };
 
   // The comments held behind the pill join the list; the focus goes to the
@@ -69,9 +71,12 @@ function installCommentsOpening(viewModel, { store }) {
     const shown = store.showNew();
     if (!shown.length) return;
     setTimeout(function () {
-      const first = document.querySelector(
-        '#toolcomments [data-comment-id="' + CSS.escape(shown[0]._id) + '"]'
-      );
+      // A reply shows in its comment's card; else the title says where.
+      const id = shown[0]._parentComment || shown[0]._id;
+      const first =
+        document.querySelector(
+          '#toolcomments [data-comment-id="' + CSS.escape(id) + '"]'
+        ) || document.getElementById('comments-panel-title');
       if (first) first.focus();
     }, 0);
   };

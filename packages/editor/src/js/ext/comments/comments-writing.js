@@ -43,8 +43,11 @@ function installCommentsWriting(viewModel, { store, actions }) {
       .create({
         text: written.text,
         mentions: written.mentions,
-        category: viewModel.newCommentCategory(),
-        severity: viewModel.newCommentSeverity(),
+        // An approval has neither type nor priority (ADR 0020).
+        category:
+          decision === 'approved' ? 'general' : viewModel.newCommentCategory(),
+        severity:
+          decision === 'approved' ? 'info' : viewModel.newCommentSeverity(),
         decision: typeof decision === 'string' ? decision : null,
         blockId: store.target(),
       })
