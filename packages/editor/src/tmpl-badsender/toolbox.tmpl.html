@@ -378,6 +378,13 @@
     </div>
     <!-- /ko -->
 
+    <!-- New comments, held while the user reads (ADR 0020) -->
+    <div class="comments-new-pill-zone" aria-live="polite">
+      <!-- ko if: $root.commentsStore.pendingCount() > 0 -->
+      <button type="button" class="comments-new-pill" data-bind="click: $root.commentsStore.showNew, text: $root.t($root.commentsStore.pendingCount() === 1 ? 'comments-new-one' : 'comments-new', { count: $root.commentsStore.pendingCount() })"></button>
+      <!-- /ko -->
+    </div>
+
     <!-- Comments list -->
   <div class="comments-list" data-bind="foreach: $root.filteredComments()">
     <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">

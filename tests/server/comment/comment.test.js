@@ -27,6 +27,17 @@ describe('Comment Service', () => {
   // Helper to create mock ObjectId
   const mockObjectId = () => new mongoose.Types.ObjectId();
 
+  // The two reads of an email: whole, to place a block (creating a comment),
+  // or light, to check the access (ADR 0020).
+  const found = (mailing) => ({
+    populate: jest.fn().mockResolvedValue(mailing),
+    select: jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue(mailing),
+      }),
+    }),
+  });
+
   // Helper to mock mailing access verification
   const mockMailingAccess = (mailingId, groupId, mailingData = {}) => {
     const mockMailing = {
@@ -35,17 +46,13 @@ describe('Comment Service', () => {
       data: { mainBlocks: { blocks: [] } },
       ...mailingData,
     };
-    Mailings.findById = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(mockMailing),
-    });
+    Mailings.findById = jest.fn().mockReturnValue(found(mockMailing));
     return mockMailing;
   };
 
   // Helper to mock mailing not found
   const mockMailingNotFound = () => {
-    Mailings.findById = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(null),
-    });
+    Mailings.findById = jest.fn().mockReturnValue(found(null));
   };
 
   // Helper to create a test user with company access

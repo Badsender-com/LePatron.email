@@ -39,12 +39,15 @@ afterEach(() => {
 });
 
 describe('createCommentFromQc', () => {
-  it('opens the comments on the block, with the draft ready', () => {
+  // ADR 0020: the finding's block is the target of the comment; the filter
+  // of the list is left alone.
+  it('opens the comments with the block as the target, the draft ready', () => {
     const vm = editorWithComments();
     vm.createCommentFromQc(draft());
 
     expect(vm.showComments()).toBe(true);
-    expect(vm.selectedBlockForComments()).toBe('b1');
+    expect(vm.commentTarget()).toBe('b1');
+    expect(vm.selectedBlockForComments()).toBeNull();
     expect(vm.newCommentText()).toBe(draft().text);
     expect(vm.newCommentSeverity()).toBe('blocking');
   });
@@ -65,7 +68,7 @@ describe('createCommentFromQc', () => {
     vm.createCommentFromQc(draft({ blockId: 'gone' }));
 
     expect(vm.showComments()).toBe(true);
-    expect(vm.selectedBlockForComments()).toBeNull();
+    expect(vm.commentTarget()).toBeNull();
     expect(vm.selectBlock).not.toHaveBeenCalled();
   });
 });

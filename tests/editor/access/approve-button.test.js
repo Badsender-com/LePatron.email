@@ -52,9 +52,14 @@ describe('the "Approuver" button', () => {
 });
 
 describe('the unresolved counter of the editor', () => {
-  it('counts neither the replies nor the approvals, as the server does', () => {
+  const ITEMS = [];
+  it('counts neither the replies nor the approvals, as the server does', async () => {
     const vm = editorFor('reviewer');
-    vm.commentsStatus(true);
+    $.ajax.mockImplementation((options) => {
+      if (/\/comments$/.test(options.url)) options.success({ items: ITEMS });
+      return $.Deferred().promise();
+    });
+    await vm.loadComments();
     vm.comments([
       { _id: 'c1', resolved: false, _parentComment: null, decision: null },
       { _id: 'c2', resolved: true, _parentComment: null, decision: null },

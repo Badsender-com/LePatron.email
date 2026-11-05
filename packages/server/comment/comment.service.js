@@ -84,15 +84,21 @@ const POPULATE_AUTHOR = {
  * Verify user has access to a mailing
  * @param {string} mailingId - The mailing ID
  * @param {Object} user - The user object
+ * @param {Object} [options]
+ * @param {boolean} [options.full] - the whole email, for a block's place;
+ *   otherwise only its template's company, read lightly: the editor lists
+ *   the comments every 30 seconds while the panel is open (ADR 0020)
  * @returns {Object} The mailing with _wireframe populated
  * @throws {NotFound} If mailing doesn't exist
  * @throws {Forbidden} If user doesn't have access
  */
-async function verifyMailingAccess(mailingId, user) {
-  const mailing = await Mailings.findById(mailingId).populate(
-    '_wireframe',
-    '_company'
-  );
+async function verifyMailingAccess(mailingId, user, { full = false } = {}) {
+  const mailing = full
+    ? await Mailings.findById(mailingId).populate('_wireframe', '_company')
+    : await Mailings.findById(mailingId)
+        .select('_wireframe')
+        .populate('_wireframe', '_company')
+        .lean();
 
   if (!mailing) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
@@ -122,7 +128,7 @@ async function createComment({
   mentions,
 }) {
   // Validate mailing exists and user has access
-  const mailing = await verifyMailingAccess(mailingId, user);
+  const mailing = await verifyMailingAccess(mailingId, user, { full: true });
 
   const isApproval = approval.isApproval(decision);
   if (isApproval) {

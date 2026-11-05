@@ -27,7 +27,7 @@ const user = {
   _company: GROUP,
 };
 
-describe.skip('listing the comments reads the email lightly (ADR 0020, P5)', () => {
+describe('listing the comments reads the email lightly (ADR 0020, P5)', () => {
   it('selects the template only, to check the company', async () => {
     const select = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnValue({

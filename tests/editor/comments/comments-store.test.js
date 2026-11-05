@@ -66,7 +66,7 @@ const settle = () => new Promise((resolve) => setImmediate(resolve));
 beforeEach(() => jest.useFakeTimers('legacy'));
 afterEach(() => jest.useRealTimers());
 
-describe.skip('the comments store (ADR 0020, P5)', () => {
+describe('the comments store (ADR 0020, P5)', () => {
   describe('loading', () => {
     it('loads the counters at start, panel closed, without the list', async () => {
       const { store, api } = mount();
@@ -237,5 +237,20 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
       expect(store.filter()).toBe(null);
       expect(store.hasDraft()).toBe(true);
     });
+  });
+
+  it('calls the timers as plain functions, as a browser requires', async () => {
+    jest.useRealTimers();
+    const strict = jest
+      .spyOn(global, 'setInterval')
+      .mockImplementation(function (_fn, _ms) {
+        if (this !== undefined && this !== global) {
+          throw new TypeError('Illegal invocation');
+        }
+        return 1;
+      });
+    const { isOpen } = mount();
+    expect(() => isOpen(true)).not.toThrow();
+    strict.mockRestore();
   });
 });

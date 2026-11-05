@@ -42,13 +42,18 @@ const userOf = (role) => ({
 const NOT_AN_APPROVAL = { $ne: COMMENT_DECISIONS.APPROVED };
 
 function mailingAccess() {
+  const mailing = {
+    _id: MAILING,
+    _wireframe: { _company: GROUP },
+    data: {
+      mainBlocks: { blocks: [{ id: 'ko_textBlock_3', type: 'textBlock' }] },
+    },
+  };
+  // Read whole to create a comment, lightly to check the access.
   Mailings.findById = jest.fn().mockReturnValue({
-    populate: jest.fn().mockResolvedValue({
-      _id: MAILING,
-      _wireframe: { _company: GROUP },
-      data: {
-        mainBlocks: { blocks: [{ id: 'ko_textBlock_3', type: 'textBlock' }] },
-      },
+    populate: jest.fn().mockResolvedValue(mailing),
+    select: () => ({
+      populate: () => ({ lean: jest.fn().mockResolvedValue(mailing) }),
     }),
   });
 }

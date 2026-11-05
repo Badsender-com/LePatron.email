@@ -338,6 +338,8 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  'comments-new-one': '1 new comment · Show',
+  'comments-new': '__count__ new comments · Show',
   'comments-rail-marker-one': '1 unresolved comment on the block __block__',
   'comments-rail-marker':
     '__count__ unresolved comments on the block __block__',

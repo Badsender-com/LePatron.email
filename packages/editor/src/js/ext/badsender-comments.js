@@ -20,6 +20,11 @@ const {
 const { findBlockById, goToBlock } = require('./block-navigation.js');
 const { installRightPanel } = require('./right-panel.js');
 const { createCommentsRail } = require('./comments/comments-rail.js');
+const { createCommentsStore } = require('./comments/comments-store.js');
+const {
+  createCommentsApi,
+  normalizeComment,
+} = require('./comments/comments-api.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -48,15 +53,28 @@ function commentsLoader(opts) {
     // One of the right panels: opening it closes quality control or the AI
     // panel (ADR 0010).
     viewModel.showComments = installRightPanel(viewModel, ko).flag('comments');
-    viewModel.comments = ko.observableArray([]);
-    viewModel.commentsStatus = ko.observable(false); // false | 'loading' | number
-    viewModel.commentCounts = ko.observable({}); // { blockId: count }
-    viewModel.initialUnresolvedCount = ko.observable(0); // Count loaded on init (before full comments load)
-    viewModel.selectedBlockForComments = ko.observable(null);
-    viewModel.selectedBlockSnapshot = ko.observable(null); // { id, index, type }
-    viewModel.newCommentText = ko.observable('');
-    viewModel.newCommentCategory = ko.observable('general');
-    viewModel.newCommentSeverity = ko.observable('info');
+    // The comments' state lives in a store the panel and the canvas pieces
+    // share (ADR 0020); these names stay for the Knockout panel until it moves
+    // to Vue.
+    const store = createCommentsStore(ko, {
+      api: createCommentsApi({ apiBaseUrl, mailingId }),
+      isOpen: viewModel.showComments,
+      selection: viewModel.selectedBlock,
+    });
+    viewModel.commentsStore = store;
+    viewModel.comments = store.comments;
+    viewModel.commentsStatus = store.status;
+    viewModel.commentCounts = store.counts;
+    // The filter of the list only reads; the target of a new comment is apart.
+    viewModel.selectedBlockForComments = store.filter;
+    viewModel.commentTarget = store.target;
+    viewModel.newCommentText = store.draftText;
+    viewModel.newCommentCategory = store.draftCategory;
+    viewModel.newCommentSeverity = store.draftSeverity;
+    // A draft the quality control must not take the panel from.
+    viewModel.hasCommentDraft = function () {
+      return viewModel.showComments() && store.hasDraft();
+    };
     viewModel.replyingTo = ko.observable(null);
     viewModel.editingComment = ko.observable(null);
     viewModel.editCommentText = ko.observable('');
@@ -79,17 +97,8 @@ function commentsLoader(opts) {
     viewModel.lastSelectedBlock = ko.observable(null);
 
     // ===== COMPUTED =====
-    viewModel.unresolvedCommentCount = ko.computed(function () {
-      // If comments are loaded, use the actual count
-      if (viewModel.comments().length > 0 || viewModel.commentsStatus() !== false) {
-        // Never a reply nor an approval, as the server counts them (ADR 0020).
-        return viewModel.comments().filter(function (c) {
-          return !c.resolved && !c._parentComment && c.decision !== 'approved';
-        }).length;
-      }
-      // Otherwise use the initial count loaded on init
-      return viewModel.initialUnresolvedCount();
-    });
+    // Never a reply nor an approval, as the server counts them (ADR 0020).
+    viewModel.unresolvedCommentCount = store.unresolvedCount;
 
     // A blocking comment open keeps the email from being approved: the server
     // refuses it too (ADR 0020). Root comments only, never an approval.
@@ -104,9 +113,27 @@ function commentsLoader(opts) {
       });
     });
 
+    // What the Knockout list shows: a view of each comment, which reads the
+    // store's object through its prototype. The store updates a comment in
+    // place on a refresh (its revision moves on); a new view then makes the
+    // list draw that row again, while the store keeps its object.
+    const views = new Map();
+    const viewOf = function (comment, revision) {
+      const known = views.get(comment._id);
+      if (known && known.comment === comment && known.revision === revision) {
+        return known.view;
+      }
+      const view = Object.create(comment);
+      views.set(comment._id, { comment: comment, revision: revision, view: view });
+      return view;
+    };
+
     viewModel.filteredComments = ko.computed(function () {
       const blockId = viewModel.selectedBlockForComments();
-      const allComments = viewModel.comments();
+      const revision = store.revision();
+      const allComments = viewModel.comments().map(function (c) {
+        return viewOf(c, revision);
+      });
 
       var filtered;
       if (!blockId) {
@@ -129,9 +156,15 @@ function commentsLoader(opts) {
     });
 
     viewModel.getReplies = function (parentId) {
-      return viewModel.comments().filter(function (c) {
-        return c._parentComment === parentId;
-      });
+      const revision = store.revision();
+      return viewModel
+        .comments()
+        .filter(function (c) {
+          return c._parentComment === parentId;
+        })
+        .map(function (c) {
+          return viewOf(c, revision);
+        });
     };
 
     // Filtered mention suggestions based on query
@@ -169,7 +202,7 @@ function commentsLoader(opts) {
     // Block label for comment form context indicator
     // Shows which block the new comment will be attached to
     viewModel.commentFormBlockLabel = ko.computed(function () {
-      const blockId = viewModel.selectedBlockForComments();
+      const blockId = store.target();
       if (!blockId) return null; // null means global comment
 
       try {
@@ -185,8 +218,7 @@ function commentsLoader(opts) {
      * Clear block association for new comment (switch to global)
      */
     viewModel.clearBlockForComment = function () {
-      viewModel.selectedBlockForComments(null);
-      viewModel.selectedBlockSnapshot(null);
+      store.setTarget(null);
     };
 
     // ===== COMMENTS RAIL =====
@@ -208,7 +240,8 @@ function commentsLoader(opts) {
     };
     const rail = createCommentsRail(ko, {
       counts: viewModel.commentCounts,
-      target: viewModel.selectedBlockForComments,
+      // The active marker is the target's (ADR 0020, decision 7b).
+      target: store.target,
       openForBlock: function (blockId) {
         viewModel.openCommentsForBlock(blockId);
       },
@@ -223,54 +256,19 @@ function commentsLoader(opts) {
 // ===== METHODS =====
 
     /**
-     * Load only the unresolved comments count (lightweight, called on init)
-     */
-    viewModel.loadUnresolvedCount = function () {
-      $.ajax({
-        url: apiBaseUrl + '/mailings/' + mailingId + '/comments/unresolved-count',
-        method: 'GET',
-        success: function (response) {
-          viewModel.initialUnresolvedCount(response.count || 0);
-        },
-        error: function () {
-          // Silently fail - not critical
-          viewModel.initialUnresolvedCount(0);
-        },
-      });
-    };
-
-    /**
-     * Load comments for the current mailing
+     * The list, as at an opening; the counters follow it once loaded.
      */
     viewModel.loadComments = function () {
-      viewModel.commentsStatus('loading');
-
-      $.ajax({
-        url: mailingCommentsUrl,
-        method: 'GET',
-        success: function (response) {
-          viewModel.comments(response.items || []);
-          viewModel.commentsStatus(response.items ? response.items.length : 0);
-          viewModel.loadCommentCounts();
-        },
-        error: function () {
-          viewModel.commentsStatus(false);
-          viewModel.notifier.error(viewModel.t('comments-load-error'));
-        },
+      return store.load().catch(function () {
+        viewModel.notifier.error(viewModel.t('comments-load-error'));
       });
     };
 
     /**
-     * Load comment counts per block (for indicators)
+     * The counters before the list loads; afterwards they come from it.
      */
     viewModel.loadCommentCounts = function () {
-      $.ajax({
-        url: apiBaseUrl + '/mailings/' + mailingId + '/comments/counts',
-        method: 'GET',
-        success: function (response) {
-          viewModel.commentCounts(response.counts || {});
-        },
-      });
+      if (viewModel.commentsStatus() === false) store.start();
     };
 
     /**
@@ -453,25 +451,21 @@ function commentsLoader(opts) {
       // Reconstruct full mention format for storage
       const textForStorage = viewModel.reconstructTextForStorage(text);
 
-      const blockSnapshot = viewModel.selectedBlockSnapshot();
+      // The server takes the block's place from the email as saved.
+      const parent = viewModel.replyingTo();
       const data = {
         text: textForStorage,
         category: viewModel.newCommentCategory(),
         severity: viewModel.newCommentSeverity(),
         decision: typeof decision === 'string' ? decision : null,
-        blockId: viewModel.selectedBlockForComments() || null,
-        blockSnapshot: blockSnapshot
-          ? {
-              index: blockSnapshot.index,
-              type: blockSnapshot.type,
-            }
-          : null,
+        // A reply is on its comment's block; a new comment on its target.
+        blockId: parent ? parent.blockId || null : store.target(),
         mentions: mentions,
       };
 
       // If replying to a comment
-      if (viewModel.replyingTo()) {
-        data.parentCommentId = viewModel.replyingTo()._id;
+      if (parent) {
+        data.parentCommentId = parent._id;
       }
 
       $.ajax({
@@ -480,10 +474,10 @@ function commentsLoader(opts) {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function (comment) {
-          viewModel.comments.push(comment);
-          viewModel.newCommentText('');
-          viewModel.newCommentCategory('general');
-          viewModel.newCommentSeverity('info');
+          viewModel.comments.push(normalizeComment(comment));
+          store.clearDraft();
+          // The next comment follows the selection again.
+          if (!parent) store.followSelection();
           viewModel.replyingTo(null);
           viewModel.clearTrackedMentions();
           viewModel.loadCommentCounts();
@@ -663,7 +657,9 @@ function commentsLoader(opts) {
      * Open comments for a specific block
      */
     viewModel.openCommentsForBlock = function (blockId) {
+      // The comments of the block, read and written on.
       viewModel.selectedBlockForComments(blockId);
+      store.setTarget(blockId);
       viewModel.lastSelectedBlock(blockId); // Remember for filter chip
       viewModel.showComments(true);
 
@@ -689,19 +685,20 @@ function commentsLoader(opts) {
     viewModel.createCommentFromQc = function (draft) {
       viewModel.replyingTo(null);
       // A block deleted since the check: the comment is about the whole email.
-      if (draft.blockId && findBlockById(viewModel, draft.blockId)) {
-        viewModel.openCommentsForBlock(draft.blockId);
-      } else {
-        viewModel.showAllComments();
-        viewModel.showComments(true);
-      }
-      // A comment being written is kept: the finding follows it.
-      const current = viewModel.newCommentText() || '';
-      viewModel.newCommentText(
-        current.trim() ? current + '\n\n' + draft.text : draft.text
-      );
-      viewModel.newCommentSeverity(draft.severity);
-      viewModel.newCommentCategory(draft.category);
+      const blockId =
+        draft.blockId && findBlockById(viewModel, draft.blockId)
+          ? draft.blockId
+          : null;
+      // The finding's block is the target, the filter is left alone; a
+      // comment being written is kept, the finding follows it.
+      store.draftFromQuality({
+        blockId: blockId,
+        text: draft.text,
+        severity: draft.severity,
+        category: draft.category,
+      });
+      viewModel.showComments(true);
+      if (blockId) goToBlock(viewModel, blockId);
     };
 
     /**
@@ -712,27 +709,13 @@ function commentsLoader(opts) {
      */
     viewModel.commentBlock = function (blockData, parent, index) {
       // Unwrap observables
-      const unwrappedBlock = ko.toJS(blockData);
-      const blockId = unwrappedBlock.id || null;
-      const blockIndex = ko.utils.unwrapObservable(index);
-      const blockType = unwrappedBlock._type || unwrappedBlock.type || 'unknown';
+      const blockId = ko.toJS(blockData).id || null;
 
-      // Store block snapshot for context
-      viewModel.selectedBlockSnapshot({
-        id: blockId,
-        index: blockIndex,
-        type: blockType,
-      });
-
-      // Open comments panel filtered to this block
+      // Open the comments on this block: read and written on.
       viewModel.selectedBlockForComments(blockId);
+      store.setTarget(blockId);
       viewModel.lastSelectedBlock(blockId); // Remember for filter chip
       viewModel.showComments(true);
-
-      // Load comments if not already loaded
-      if (viewModel.commentsStatus() === false) {
-        viewModel.loadComments();
-      }
     };
 
     /**
@@ -906,13 +889,9 @@ function commentsLoader(opts) {
 
     // ===== SUBSCRIPTIONS =====
 
-    // Load comments and users when panel opens for the first time
-    const commentsOpenSub = viewModel.showComments.subscribe(function (isOpen) {
-      if (isOpen && viewModel.commentsStatus() === false) {
-        viewModel.loadComments();
-        viewModel.loadGroupUsers();
-        commentsOpenSub.dispose();
-      }
+    // The store loads the list at each opening; the users for mentions once.
+    const usersSub = viewModel.showComments.subscribe(function (isOpen) {
+      if (isOpen) viewModel.loadGroupUsers();
     });
 
     // The canvas is laid out once the editor is shown: place the markers
@@ -930,53 +909,11 @@ function commentsLoader(opts) {
       ? viewModel.previewMode.subscribe(placeRailSoon)
       : null;
 
-    // Subscribe to selected block changes to update lastSelectedBlock
-    // When a block is deselected, reset to "All" filter
-    viewModel.selectedBlock.subscribe(function (block) {
-      if (block) {
-        // Get block ID - handle observable or direct value
-        const blockId = typeof block.id === 'function' ? block.id() : block.id;
-        if (blockId) {
-          viewModel.lastSelectedBlock(blockId);
-
-          // If comments panel is open, also set the block for new comments
-          // This enables the "click on block to associate comment" UX
-          if (viewModel.showComments()) {
-            viewModel.selectedBlockForComments(blockId);
-
-            // Update block snapshot for context
-            try {
-              const blocks = viewModel.content().mainBlocks().blocks();
-              for (var i = 0; i < blocks.length; i++) {
-                const b = blocks[i];
-                const blockData = typeof b === 'function' ? b() : b;
-                if (!blockData) continue;
-                const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-                if (id === blockId) {
-                  let blockType = blockData._type || blockData.type;
-                  if (typeof blockType === 'function') blockType = blockType();
-                  if (typeof blockType === 'object' && blockType !== null) {
-                    blockType = blockType.name || blockType.label || 'unknown';
-                  }
-                  viewModel.selectedBlockSnapshot({
-                    id: blockId,
-                    index: i,
-                    type: blockType || 'unknown',
-                  });
-                  break;
-                }
-              }
-            } catch (e) {
-              // Fallback - just set the ID
-              viewModel.selectedBlockSnapshot({ id: blockId, index: null, type: 'unknown' });
-            }
-          }
-        }
-      } else {
-        // Block was deselected - reset to "All" filter
-        viewModel.lastSelectedBlock(null);
-        viewModel.selectedBlockForComments(null);
-      }
+    // The block chip of the filter names the block last selected. Selecting
+    // a block no longer filters the list: the target of a new comment
+    // follows the selection instead (the store, ADR 0020).
+    const selectionSub = viewModel.selectedBlock.subscribe(function (block) {
+      viewModel.lastSelectedBlock(block ? ko.unwrap(block.id) || null : null);
     });
 
     // Check URL parameter to auto-open comments panel
@@ -984,26 +921,25 @@ function commentsLoader(opts) {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('comments') === '1') {
         // Delay to ensure the editor is fully loaded
+        // Opening loads the comments, once.
         setTimeout(function () {
           viewModel.showComments(true);
-          viewModel.loadComments();
-          viewModel.loadGroupUsers();
         }, 500);
       }
     } catch (e) {
       // URLSearchParams not supported or other error
     }
 
-    // Load unresolved count on init (for floating indicator)
-    viewModel.loadUnresolvedCount();
-
-    // Load comment counts per block on init (for rail indicators)
-    viewModel.loadCommentCounts();
+    // The counters of the panel button and the rail, panel closed.
+    store.start();
 
     return {
       dispose: function () {
         clearTimeout(railTimer);
         panelSub.dispose();
+        usersSub.dispose();
+        selectionSub.dispose();
+        store.dispose();
         if (previewSub) previewSub.dispose();
         rail.dispose();
       },
