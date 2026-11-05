@@ -95,14 +95,27 @@ describe('published.repository', () => {
       });
     });
 
-    it('never reads the test cases, even when asked', async () => {
-      const spy = jest.spyOn(LePatronSkills, 'aggregate');
+    it.each([
+      ['by name', { doc: [], version: ['testCases'] }],
+      ['by a path inside', { doc: [], version: ['testCases.input'] }],
+      ['through the history', { doc: ['versions'], version: [] }],
+    ])(
+      'never reads the test cases, even when asked %s',
+      async (_case, fields) => {
+        const spy = jest.spyOn(LePatronSkills, 'aggregate');
 
-      await findPublished(LePatronSkills, {}, { doc: [], version: [] });
+        const [found] = await findPublished(LePatronSkills, {}, fields);
 
-      const [, , , { $project }] = spy.mock.calls[0][0];
-      expect(Object.keys($project)).not.toContain('versions.testCases');
-      expect(Object.keys($project)).not.toContain('versions');
-    });
+        const [, , , { $project }] = spy.mock.calls[0][0];
+        expect(Object.keys($project)).toEqual([
+          'status',
+          'activeVersion',
+          'versions.versionMajor',
+          'versions.versionMinor',
+          'versions.status',
+        ]);
+        expect(found.version).not.toHaveProperty('testCases');
+      }
+    );
   });
 });

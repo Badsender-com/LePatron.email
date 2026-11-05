@@ -18,6 +18,11 @@ const { findActiveVersion } = require('../services/version-helpers.js');
 // What `published` reads, whatever the caller asks for.
 const DOC_FIELDS = ['status', 'activeVersion'];
 const VERSION_FIELDS = ['versionMajor', 'versionMinor', 'status'];
+// What never leaves, whatever the caller asks for: a skill's test cases carry
+// the briefs its authors tried, and the whole history of its versions.
+const NEVER_READ = new Set(['testCases', 'versions']);
+const readable = (names) =>
+  names.filter((name) => !NEVER_READ.has(name.split('.')[0]));
 
 /**
  * @param {Object} [doc] a skill or an expertise, with all its versions or its
@@ -43,7 +48,8 @@ const included = (names, prefix = '') =>
  *   since an aggregation casts nothing
  * @param {Object} fields
  * @param {string[]} fields.doc the fields read of each item
- * @param {string[]} fields.version the fields read of its active version
+ * @param {string[]} fields.version the fields read of its active version;
+ *   `testCases` never is, even when named
  * @returns {Promise<Array<{ doc: Object, version: Object }>>}
  */
 async function findPublished(Model, filter, fields) {
@@ -55,8 +61,11 @@ async function findPublished(Model, filter, fields) {
     { $match: { 'versions.status': SkillStatuses.ACTIVE } },
     {
       $project: {
-        ...included([...DOC_FIELDS, ...fields.doc]),
-        ...included([...VERSION_FIELDS, ...fields.version], 'versions.'),
+        ...included([...DOC_FIELDS, ...readable(fields.doc)]),
+        ...included(
+          [...VERSION_FIELDS, ...readable(fields.version)],
+          'versions.'
+        ),
       },
     },
   ]);
