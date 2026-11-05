@@ -182,9 +182,9 @@ _UI_: Skill de tâche
 _Avoid_: Workflow, playbook, recipe
 
 **Audience**:
-Who may read a skill or an expertise outside the back office: the platform group, or every subscribed group. A new one starts with the platform group.
+The companies that may use a skill or an expertise, in the editor as through an assistant: the platform company alone, while it is tried, or every company. A new one starts with the platform company.
 _UI_: Audience
-_Avoid_: Visibility, exposure, scope (an expertise's scope is the part of an email it covers)
+_Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the part of an email it covers)
 
 **CRM governance**:
 A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
