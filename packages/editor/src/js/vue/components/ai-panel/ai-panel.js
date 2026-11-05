@@ -82,6 +82,31 @@ const AiPanel = Vue.component('AiPanel', {
     labelsOf(id) {
       return definitionOf(id).labels;
     },
+    // The name an action takes on its target: « Corriger ce champ », « ce
+    // bloc », « tout l'email » (board a2).
+    nameOf(id, target) {
+      const { labels } = definitionOf(id);
+      const kind = target && target.kind;
+      return this.t((labels.byKind && labels.byKind[kind]) || labels.name);
+    },
+    descriptionOf(id, target) {
+      const { labels } = definitionOf(id);
+      const kind = target && target.kind;
+      const key =
+        (labels.describeByKind && labels.describeByKind[kind]) ||
+        labels.description;
+      return key ? this.t(key) : '';
+    },
+    iconOf(id) {
+      return definitionOf(id).icon || 'lucide-bot';
+    },
+    // The block a target is on, as the comments name it.
+    blockOf(target) {
+      if (!target || !target.blockId) return '';
+      return typeof this.vm.commentBlockLabel === 'function'
+        ? this.vm.commentBlockLabel(target.blockId)
+        : '';
+    },
     stepsOf(session) {
       return STEPS_BY_FAMILY[definitionOf(session.state.action).family];
     },

@@ -16,7 +16,19 @@ module.exports = {
 
   route: 'corrections',
 
+  // In the panel's list (board a2): each action says what it is on.
+  icon: 'lucide-spell-check',
   labels: {
     name: 'ai-panel-action-correct',
+    byKind: {
+      blockField: 'ai-panel-correct-field',
+      block: 'ai-panel-correct-block',
+      email: 'ai-panel-correct-email',
+    },
+    describeByKind: {
+      blockField: 'ai-panel-correct-field-desc',
+      block: 'ai-panel-correct-block-desc',
+      email: 'ai-panel-correct-email-desc',
+    },
   },
 };

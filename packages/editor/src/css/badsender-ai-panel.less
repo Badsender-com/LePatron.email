@@ -15,7 +15,8 @@
 
   // Its layout is the shell's (badsender-right-panel-ui.less).
   .ai-panel {
-    p {
+    // Without weight: a paragraph of the panel sets its own margin.
+    :where(p, h3) {
       margin: 0;
     }
 
@@ -25,8 +26,10 @@
       list-style: none;
     }
 
-    // In the shell's body, which alone scrolls.
+    // In the shell's body, which alone scrolls; fills it, the note at its
+    // foot.
     &__body {
+      flex: 1 0 auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -47,29 +50,91 @@
       gap: 8px;
     }
 
+    // An action of the list (boards a1, a2): its icon, its name on its
+    // target and what it does, a chevron; the finest selection's first.
     &__action {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid var(--gray-300);
+      border: 1px solid var(--gray-200);
       border-radius: @qc-radius;
       background: var(--white);
-      color: var(--primary);
-      font-size: 13px;
-      font-weight: 600;
+      color: var(--gray-900);
       text-align: left;
       cursor: pointer;
 
       &:hover {
-        background: var(--gray-100);
+        border-color: var(--gray-300);
+        background: var(--gray-50);
       }
 
       &:focus-visible {
-        outline: 2px solid var(--accent);
+        outline: 2px solid var(--primary);
         outline-offset: 2px;
       }
+
+      &--first,
+      &--first:hover {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 8%, var(--white));
+      }
+    }
+
+    &__action-icon {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: @qc-radius;
+      background: var(--gray-100);
+      color: var(--primary);
+      font-size: 17px;
+    }
+
+    &__action-text {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    &__action-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    &__action-desc {
+      font-size: 12px;
+      color: var(--gray-700);
+    }
+
+    &__action-chevron {
+      flex: none;
+      color: var(--gray-600);
+    }
+
+    &__section {
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    &__section-meta {
+      font-weight: 400;
+    }
+
+    // Under the list: nothing changes without the user's consent.
+    &__note {
+      margin-top: auto;
+      padding-top: 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--gray-700);
     }
 
     &__hint,
@@ -81,11 +146,15 @@
 
     &__invite {
       display: flex;
-      gap: 8px;
-      padding: 12px;
-      border: 1px dashed var(--gray-300);
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--gray-200);
       border-radius: @qc-radius;
+      background: var(--gray-50);
       color: var(--gray-700);
+      line-height: 1.5;
+
+      > .lucide { flex: none; margin-top: 2px; font-size: 17px; }
     }
 
     // ===== The steps of an action =====
