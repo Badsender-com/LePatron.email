@@ -5,6 +5,7 @@ const {
 } = require('./quality-checks-panel');
 const { SendTestPanel } = require('./send-test-panel');
 const { CAPABILITIES } = require('../../../../../../shared/access/roles.js');
+const koMirror = require('../../mixins/ko-mirror');
 
 // Frozen: the template reads it, and Vue would otherwise make it reactive.
 const TABS = Object.freeze([
@@ -21,6 +22,7 @@ const TABS = Object.freeze([
 // (viewModel.quality, see ext/quality/quality-review.js); this only shows it.
 const QualityDrawer = Vue.component('QualityDrawer', {
   components: { QualityChecksPanel, SendTestPanel },
+  mixins: [koMirror],
   props: {
     vm: { type: Object, required: true },
   },
@@ -53,41 +55,25 @@ const QualityDrawer = Vue.component('QualityDrawer', {
   },
   created() {
     this.tabs = TABS;
-    this.subscriptions = [];
   },
   mounted() {
     const q = this.vm.quality;
     // Each observable feeds its own field: a change repaints only what it
     // touches, instead of every list on every notification.
-    const bind = (observable, apply) => {
-      apply(observable());
-      return observable.subscribe(apply);
-    };
-    this.subscriptions = [
-      bind(this.vm.showQuality, (value) => (this.open = value)),
-      bind(q.tab, (value) => (this.tab = value)),
-      bind(q.status, (value) => (this.status = value)),
-      bind(q.remoteStatus, (value) => (this.remoteStatus = value)),
-      bind(q.remoteError, (value) => (this.remoteError = value)),
-      bind(q.activeFindings, (value) => (this.findings = value)),
-      bind(q.ignoredFindings, (value) => (this.ignoredFindings = value)),
-      bind(q.checks, (value) => (this.checks = value)),
-      bind(q.ranAt, (value) => (this.ranAt = value)),
-      bind(q.errorCount, (value) => (this.errorCount = value)),
-    ];
+    this.mirror(this.vm.showQuality, (value) => (this.open = value));
+    this.mirror(q.tab, (value) => (this.tab = value));
+    this.mirror(q.status, (value) => (this.status = value));
+    this.mirror(q.remoteStatus, (value) => (this.remoteStatus = value));
+    this.mirror(q.remoteError, (value) => (this.remoteError = value));
+    this.mirror(q.activeFindings, (value) => (this.findings = value));
+    this.mirror(q.ignoredFindings, (value) => (this.ignoredFindings = value));
+    this.mirror(q.checks, (value) => (this.checks = value));
+    this.mirror(q.ranAt, (value) => (this.ranAt = value));
+    this.mirror(q.errorCount, (value) => (this.errorCount = value));
     // The editor opens before the user is known: locked until they are.
-    if (this.vm.currentUser) {
-      this.subscriptions.push(
-        bind(this.vm.currentUser, () => {
-          this.ignoreLocked = !this.vm.userCan(
-            CAPABILITIES.MAILING_EDIT_CONTENT
-          );
-        })
-      );
-    }
-  },
-  beforeDestroy() {
-    this.subscriptions.forEach((subscription) => subscription.dispose());
+    this.mirror(this.vm.currentUser, () => {
+      this.ignoreLocked = !this.vm.userCan(CAPABILITIES.MAILING_EDIT_CONTENT);
+    });
   },
   methods: {
     t(key, params) {

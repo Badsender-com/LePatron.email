@@ -537,11 +537,13 @@ describe('QualityDrawer', () => {
   it('lets go of its subscriptions when destroyed', async () => {
     const { vm, app } = await mountDrawer({ findings: [], checks: [] });
     const drawer = app.$children[0];
-    expect(drawer.subscriptions.length).toBeGreaterThan(0);
+    vm.quality.status('done');
+    expect(drawer.status).toBe('done');
     app.$destroy();
     apps.splice(0);
     const before = drawer.status;
     vm.quality.status('running');
     expect(drawer.status).toBe(before);
+    expect(vm.quality.status.getSubscriptionsCount()).toBe(0);
   });
 });
