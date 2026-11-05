@@ -427,26 +427,8 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   let approvedMailingIds = new Set();
   if (Comment) {
     approvedMailingIds = new Set(await Comment.findApprovedMailingIds(ids));
-    const commentCounts = await Comment.aggregate([
-      {
-        $match: {
-          _mailing: { $in: ids },
-          _parentComment: null,
-          resolved: false,
-          isDeleted: false,
-        },
-      },
-      {
-        $group: {
-          _id: '$_mailing',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-    commentCountsMap = commentCounts.reduce((acc, item) => {
-      acc[item._id.toString()] = item.count;
-      return acc;
-    }, {});
+    // Never a reply nor an approval (ADR 0020), as the editor counts them.
+    commentCountsMap = await Comment.countUnresolvedByMailings(ids);
   }
 
   // Strip previewHtml defensively: the projection above already omits it, but

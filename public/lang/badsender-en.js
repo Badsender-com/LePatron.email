@@ -339,7 +339,7 @@ module.exports = {
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
   'comments-decision-approve': 'Approve',
-  'comments-decision-approve-default-text': 'I approve this email',
+  'comments-decision-approve-default-text': 'Ready to send',
   'comments-decision-approved': 'Approved',
   'comments-decision-changes-requested': 'Changes requested',
   'toolbox-readonly-all':

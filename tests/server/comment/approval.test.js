@@ -83,7 +83,7 @@ beforeEach(() => {
   created();
 });
 
-describe.skip('approving an email (ADR 0020)', () => {
+describe('approving an email (ADR 0020)', () => {
   describe('who may approve: mailing.approve', () => {
     it.each(['reviewer', 'company_admin', 'company_admin_tech', 'super_admin'])(
       'a %s may',

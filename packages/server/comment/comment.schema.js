@@ -157,20 +157,51 @@ CommentSchema.virtual('isRootComment').get(function () {
   return this._parentComment === null;
 });
 
+// What every unresolved counter counts: the root comments left open, never a
+// reply nor an approval (ADR 0020). `$ne` keeps the comments stored before
+// decisions existed, and the requests for changes. One copy, read by the
+// counters of the editor, the rail and the email listing.
+const UNRESOLVED_ROOT_COMMENTS = Object.freeze({
+  _parentComment: null,
+  resolved: false,
+  isDeleted: false,
+  decision: { $ne: COMMENT_DECISIONS.APPROVED },
+});
+
 // Static: Count unresolved root comments for a mailing
 CommentSchema.statics.countUnresolvedByMailing = async function (mailingId) {
   return this.countDocuments({
     _mailing: mailingId,
-    _parentComment: null, // Only count root comments
-    resolved: false,
-    isDeleted: false,
+    ...UNRESOLVED_ROOT_COMMENTS,
   });
 };
 
+// Static: the unresolved count of each mailing, by id (as a string), for the
+// email listing; a mailing without one is absent.
+CommentSchema.statics.countUnresolvedByMailings = async function (mailingIds) {
+  const counts = await this.aggregate([
+    { $match: { _mailing: { $in: mailingIds }, ...UNRESOLVED_ROOT_COMMENTS } },
+    { $group: { _id: '$_mailing', count: { $sum: 1 } } },
+  ]);
+  return counts.reduce((byMailing, item) => {
+    byMailing[item._id.toString()] = item.count;
+    return byMailing;
+  }, {});
+};
+
 // Static: ids (as strings) of the mailings whose latest root comment is an
-// approval. A comment posted after the approval, whatever it says, lifts it: a
-// plain comment already is an implicit request for changes (plan section 3.4).
+// approval, with no blocking root comment open (ADR 0020). A comment posted
+// after the approval, whatever it says, lifts it: a plain comment already is an
+// implicit request for changes (plan section 3.4). A blocking comment reopened,
+// or posted while the approval was being checked, lifts it too.
 CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
+  const isOpenBlocking = {
+    $and: [
+      { $eq: ['$resolved', false] },
+      { $eq: ['$severity', COMMENT_SEVERITIES.BLOCKING] },
+      { $ne: ['$decision', COMMENT_DECISIONS.APPROVED] },
+    ],
+  };
   const latestByMailing = await this.aggregate([
     {
       $match: {
@@ -180,8 +211,14 @@ CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
       },
     },
     { $sort: { createdAt: -1 } },
-    { $group: { _id: '$_mailing', decision: { $first: '$decision' } } },
-    { $match: { decision: COMMENT_DECISIONS.APPROVED } },
+    {
+      $group: {
+        _id: '$_mailing',
+        decision: { $first: '$decision' },
+        openBlocking: { $sum: { $cond: [isOpenBlocking, 1, 0] } },
+      },
+    },
+    { $match: { decision: COMMENT_DECISIONS.APPROVED, openBlocking: 0 } },
   ]);
   return latestByMailing.map((item) => item._id.toString());
 };
@@ -192,9 +229,7 @@ CommentSchema.statics.getBlockCommentCounts = async function (mailingId) {
     {
       $match: {
         _mailing: new mongoose.Types.ObjectId(mailingId),
-        _parentComment: null,
-        resolved: false,
-        isDeleted: false,
+        ...UNRESOLVED_ROOT_COMMENTS,
       },
     },
     {

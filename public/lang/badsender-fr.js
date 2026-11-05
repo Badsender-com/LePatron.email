@@ -352,7 +352,7 @@ module.exports = {
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
   'comments-decision-approve': 'Approuver',
-  'comments-decision-approve-default-text': 'Je valide cet email',
+  'comments-decision-approve-default-text': 'Bon pour envoi',
   'comments-decision-approved': 'Approuvé',
   'comments-decision-changes-requested': 'Changements demandés',
   'toolbox-readonly-all':

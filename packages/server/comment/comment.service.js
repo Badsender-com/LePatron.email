@@ -1,9 +1,14 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { BadRequest, Forbidden, NotFound } = require('http-errors');
+const { BadRequest, Conflict, Forbidden, NotFound } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
+const {
+  COMMENT_CATEGORIES,
+  COMMENT_SEVERITIES,
+  COMMENT_DECISIONS,
+} = require('./comment.schema.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
@@ -103,6 +108,29 @@ async function verifyMailingAccess(mailingId, user) {
 }
 
 /**
+ * No approval while a root comment, not an approval, is unresolved and
+ * blocking (ADR 0020). A reply may carry a priority but is never counted.
+ * The computation of "approved" holds the same rule, for what this check
+ * cannot see: a blocking comment reopened or posted after it.
+ *
+ * @param {string} mailingId
+ * @throws {Conflict} COMMENT_APPROVAL_BLOCKED
+ */
+async function assertNoOpenBlocking(mailingId) {
+  const openBlocking = await Comments.countDocuments({
+    _mailing: mailingId,
+    _parentComment: null,
+    isDeleted: false,
+    resolved: false,
+    severity: COMMENT_SEVERITIES.BLOCKING,
+    decision: { $ne: COMMENT_DECISIONS.APPROVED },
+  });
+  if (openBlocking > 0) {
+    throw new Conflict(ERROR_CODES.COMMENT_APPROVAL_BLOCKED);
+  }
+}
+
+/**
  * Create a new comment
  */
 async function createComment({
@@ -116,8 +144,15 @@ async function createComment({
   parentCommentId,
   mentions,
 }) {
+  const isApproval = decision === COMMENT_DECISIONS.APPROVED;
+  if (isApproval && !permissions.can(user, CAPABILITIES.MAILING_APPROVE)) {
+    throw new Forbidden(ERROR_CODES.COMMENT_APPROVAL_FORBIDDEN);
+  }
+
   // Validate mailing exists and user has access
   const mailing = await verifyMailingAccess(mailingId, user);
+
+  if (isApproval) await assertNoOpenBlocking(mailingId);
 
   // Validate parent comment if provided
   if (parentCommentId) {
@@ -136,20 +171,24 @@ async function createComment({
   const mentionCompanyId = mailing._wireframe?._company || userCompanyId;
   await validateMentions(mentions, mentionCompanyId);
 
+  // An approval is an event of the thread (ADR 0020): no type, no priority,
+  // no block, whatever the request says.
+  const targetBlockId = isApproval ? null : blockId;
+
   // Capture block snapshot if blockId provided
   let blockSnapshot = null;
-  if (blockId) {
-    blockSnapshot = captureBlockSnapshot(mailing, blockId);
+  if (targetBlockId) {
+    blockSnapshot = captureBlockSnapshot(mailing, targetBlockId);
   }
 
   const comment = await Comments.create({
     _mailing: mailingId,
     _company: mailing._wireframe?._company || userCompanyId,
-    blockId,
+    blockId: targetBlockId,
     blockSnapshot,
     text,
-    category: category || 'general',
-    severity: severity || 'info',
+    category: (!isApproval && category) || COMMENT_CATEGORIES.GENERAL,
+    severity: (!isApproval && severity) || COMMENT_SEVERITIES.INFO,
     decision: decision || null,
     _author: user._id || user.id,
     authorName: user.name,
@@ -243,6 +282,15 @@ async function updateComment({ commentId, user, updates }) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);
   }
 
+  // An approval has no type and no priority (ADR 0020): only its text changes.
+  const isApproval = comment.decision === COMMENT_DECISIONS.APPROVED;
+  if (
+    isApproval &&
+    (updates.category !== undefined || updates.severity !== undefined)
+  ) {
+    throw new BadRequest(ERROR_CODES.COMMENT_APPROVAL_FIXED);
+  }
+
   const allowedFields = ['text', 'category', 'severity'];
   const updateData = {};
 
@@ -316,6 +364,11 @@ async function resolveComment({ commentId, user }) {
   // Verify user has access to the mailing this comment belongs to
   await verifyMailingAccess(comment._mailing, user);
 
+  // An approval is an event, not a comment to resolve (ADR 0020).
+  if (comment.decision === COMMENT_DECISIONS.APPROVED) {
+    throw new BadRequest(ERROR_CODES.COMMENT_APPROVAL_FIXED);
+  }
+
   if (comment.resolved) {
     throw new BadRequest(ERROR_CODES.COMMENT_ALREADY_RESOLVED);
   }
@@ -362,6 +415,11 @@ async function unresolveComment({ commentId, user }) {
 
   // Verify user has access to the mailing this comment belongs to
   await verifyMailingAccess(comment._mailing, user);
+
+  // An approval is an event, not a comment to resolve (ADR 0020).
+  if (comment.decision === COMMENT_DECISIONS.APPROVED) {
+    throw new BadRequest(ERROR_CODES.COMMENT_APPROVAL_FIXED);
+  }
 
   if (!comment.resolved) {
     throw new BadRequest(ERROR_CODES.COMMENT_NOT_RESOLVED);

@@ -69,8 +69,9 @@ function commentsLoader(opts) {
     viewModel.unresolvedCommentCount = ko.computed(function () {
       // If comments are loaded, use the actual count
       if (viewModel.comments().length > 0 || viewModel.commentsStatus() !== false) {
+        // Never a reply nor an approval, as the server counts them (ADR 0020).
         return viewModel.comments().filter(function (c) {
-          return !c.resolved && !c._parentComment;
+          return !c.resolved && !c._parentComment && c.decision !== 'approved';
         }).length;
       }
       // Otherwise use the initial count loaded on init
@@ -865,12 +866,11 @@ function commentsLoader(opts) {
     };
 
     /**
-     * Approving is commenting with a decision: every role that comments can
-     * (product decision of 2026-10-13, see docs/plans/rbac-refonte.md
-     * section 3.4).
+     * Approving is a capability of its own: the reviewer and the admins
+     * (ADR 0020, amending ADR 0004).
      */
     viewModel.canPostDecision = function () {
-      return userCan(viewModel, CAPABILITIES.MAILING_COMMENT);
+      return userCan(viewModel, CAPABILITIES.MAILING_APPROVE);
     };
 
     /**
