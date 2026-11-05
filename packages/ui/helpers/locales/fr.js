@@ -1466,6 +1466,7 @@ export default {
       intro:
         'Ce Skill consomme des Expertises réservées à l\'entreprise plateforme : les assistants des autres entreprises le suivront sans elles.',
       openToo: 'L\'ouvrir aussi à toutes les entreprises',
+      openTooNamed: 'L\'ouvrir aussi à toutes les entreprises : {title}',
       appliesAtOnce:
         'Ouvrir une Expertise l\'applique aussi, tout de suite, aux fonctionnalités de l\'éditeur de toutes les entreprises. Sans case cochée, le Skill s\'ouvre sans elles.',
     },

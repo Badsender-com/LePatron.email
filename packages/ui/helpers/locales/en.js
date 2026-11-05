@@ -1447,6 +1447,7 @@ export default {
       intro:
         'This skill consumes expertises kept to the platform company: the assistants of the other companies will follow it without them.',
       openToo: 'Open it to all companies too',
+      openTooNamed: 'Open it to all companies too: {title}',
       appliesAtOnce:
         'Opening an expertise also applies it, at once, to the editor features of every company. With none checked, the skill opens without them.',
     },

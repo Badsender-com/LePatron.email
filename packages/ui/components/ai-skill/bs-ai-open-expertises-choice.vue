@@ -47,6 +47,9 @@ export default {
       <v-checkbox
         :input-value="isChecked(expertise.expertiseId)"
         :label="$t('aiSkills.openExpertises.openToo')"
+        :aria-label="
+          $t('aiSkills.openExpertises.openTooNamed', { title: expertise.title })
+        "
         :disabled="disabled"
         dense
         hide-details
