@@ -139,8 +139,7 @@ describe('spelling correction: the steps of a correction', () => {
       wait,
     });
 
-  // Turned on by #1254 (correct a field)
-  describe.skip('a field', () => {
+  describe('a field', () => {
     it('sends the visible text of the targeted field only', async () => {
       api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
       await open(FIELD_TARGET).request();
@@ -225,6 +224,24 @@ describe('spelling correction: the steps of a correction', () => {
       );
     });
 
+    it('leaves out a correction that crosses the formatting, and counts it', async () => {
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les <strong>soldes</strong> commence demain</p>';
+      api.generate.mockResolvedValue({
+        corrections: [
+          fix('titleText', 'soldes commence', 'soldes commencent'),
+          fix('titleText', 'demain', 'demain matin'),
+        ],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      expect(session.state.corrections.map((c) => c.before)).toEqual([
+        'demain',
+      ]);
+      expect(session.state.dropped).toBe(1);
+    });
+
     it('corrects a field the user targets even when it holds sample text', async () => {
       api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
       await open({ ...FIELD_TARGET, field: 'buttonText' }).request();
@@ -239,6 +256,127 @@ describe('spelling correction: the steps of a correction', () => {
       await session.request();
       expect(session.state.corrections).toEqual([]);
       expect(session.state.done).toBe(true);
+    });
+
+    it('writes an alternative text as plain text, never as HTML', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [fix('image.alt', 'lin bleu', 'lin "bleu" & blanc')],
+        dropped: 0,
+      });
+      const session = open({ ...FIELD_TARGET, field: 'image.alt' });
+      await session.request();
+      session.accept(session.state.corrections[0].id);
+      expect(editor.html['ko_textBlock_3:image.alt']).toBe(
+        'Une robe en lin "bleu" & blanc'
+      );
+    });
+
+    it('keeps its own id and block whatever the server answers', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [
+          {
+            ...fix('titleText', 'soldes commence', 'soldes commencent'),
+            id: 'x',
+            blockId: 'ko_other_1',
+            status: 'accepted',
+          },
+        ],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      expect(session.state.corrections[0]).toEqual(
+        expect.objectContaining({
+          id: 1,
+          blockId: 'ko_textBlock_3',
+          status: 'pending',
+        })
+      );
+    });
+
+    it('marks a correction of a deleted block as not applied, without failing', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [fix('titleText', 'soldes commence', 'soldes commencent')],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      delete editor.html['ko_textBlock_3:titleText'];
+      session.accept(session.state.corrections[0].id);
+      expect(session.state.corrections[0].status).toBe('stale');
+    });
+
+    it('marks a correction not applied when the editor refuses to write it', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [fix('titleText', 'soldes commence', 'soldes commencent')],
+        dropped: 0,
+      });
+      editor.writeField = () => {
+        throw new Error('gone');
+      };
+      const session = open(FIELD_TARGET);
+      await session.request();
+      expect(session.accept(session.state.corrections[0].id)).toEqual({
+        accepted: 0,
+        stale: 1,
+      });
+      expect(session.state.corrections[0].status).toBe('stale');
+      expect(editor.calls).toContainEqual(['stopMultiple']);
+    });
+
+    it('counts as accepted a correction the text already holds', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [fix('titleText', 'soldes commence', 'soldes commencent')],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les soldes commencent demain</p>';
+      session.accept(session.state.corrections[0].id);
+      expect(session.state.corrections[0].status).toBe('accepted');
+      expect(editor.calls.filter(([name]) => name === 'writeField')).toEqual(
+        []
+      );
+    });
+
+    it('shows an accepted correction the undo took back as undone, to accept again', async () => {
+      api.generate.mockResolvedValue({
+        corrections: [fix('titleText', 'soldes commence', 'soldes commencent')],
+        dropped: 0,
+      });
+      const session = open(FIELD_TARGET);
+      await session.request();
+      const [correction] = session.state.corrections;
+      session.accept(correction.id);
+      // The editor's undo puts the text back.
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les soldes commence demain</p>';
+      session.refresh();
+      expect(correction.status).toBe('undone');
+      // Redone: accepted again.
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les soldes commencent demain</p>';
+      session.refresh();
+      expect(correction.status).toBe('accepted');
+      editor.html['ko_textBlock_3:titleText'] =
+        '<p>Les soldes commence demain</p>';
+      session.refresh();
+      session.accept(correction.id);
+      expect(correction.status).toBe('accepted');
+      expect(editor.html['ko_textBlock_3:titleText']).toBe(
+        '<p>Les soldes commencent demain</p>'
+      );
+    });
+
+    it('undoes and redoes with the editor', () => {
+      editor.undo = jest.fn();
+      editor.redo = jest.fn();
+      const session = open(FIELD_TARGET);
+      session.undo();
+      session.redo();
+      expect(editor.undo).toHaveBeenCalled();
+      expect(editor.redo).toHaveBeenCalled();
     });
 
     it('reports an error the user can act on, by status', async () => {

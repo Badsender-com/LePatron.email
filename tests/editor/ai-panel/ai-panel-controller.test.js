@@ -28,16 +28,38 @@ const PREHEADER_BLOCK = block('preheaderBlock', 'ko_preheaderBlock_1');
 function mount({ context = CONTEXT, definitions } = {}) {
   const isOpen = ko.observable(false);
   const selection = ko.observable(null);
-  const editor = { context: () => context };
+  const fieldSelection = ko.observable(null);
+  let edited = null;
+  // The editor's undo stack: each step calls back.
+  const history = ko.observable(0);
+  const editor = {
+    context: () => context,
+    onHistory(callback) {
+      const subscription = history.subscribe(callback);
+      return () => subscription.dispose();
+    },
+  };
   const panel = createAiPanel({
     ko,
     editor,
     api: { generate: jest.fn() },
     isOpen,
     selection,
+    fieldSelection,
+    editedField: () => edited,
     definitions,
   });
-  return { panel, isOpen, selection };
+  // The user clicks in a field: the editor selects it, and it is being edited.
+  const editField = (target, block) => {
+    edited = target;
+    selection(block);
+    fieldSelection({});
+  };
+  // The focus leaves the field (to the panel), with no new selection.
+  const blur = () => {
+    edited = null;
+  };
+  return { panel, isOpen, selection, editField, blur, history };
 }
 
 const ids = (actions) => actions.map((action) => action.id);
@@ -90,6 +112,37 @@ describe('ai panel: the controller', () => {
       expect(panel.target()).toEqual({ kind: 'email' });
     });
 
+    it('follows the field being edited, and offers « Corriger » on it', () => {
+      const { panel, isOpen, editField } = mount();
+      isOpen(true);
+      const title = {
+        kind: 'blockField',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+        field: 'titleText',
+      };
+      editField(title, COVER);
+      expect(panel.target()).toEqual(title);
+      expect(ids(panel.targetActions())).toEqual(['correct-text']);
+    });
+
+    it('keeps the field it followed when the focus moves to the panel', () => {
+      const { panel, isOpen, editField, blur } = mount();
+      isOpen(true);
+      const title = {
+        kind: 'blockField',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+        field: 'titleText',
+      };
+      editField(title, COVER);
+      panel.openAction('correct-text', title);
+      // « Toutes les actions »: the focus is in the panel now, not in the field.
+      blur();
+      panel.showList();
+      expect(panel.target()).toEqual(title);
+    });
+
     it('offers the preheader’s actions on the block that holds it', () => {
       const { panel, isOpen, selection } = mount();
       isOpen(true);
@@ -135,9 +188,29 @@ describe('ai panel: the controller', () => {
     });
   });
 
+  it('refreshes the action under way after each step of the editor undo', () => {
+    const { panel, history } = mount();
+    panel.openTarget({
+      kind: 'blockField',
+      blockId: 'ko_coverBlock_1',
+      blockType: 'coverBlock',
+      field: 'titleText',
+    });
+    const refresh = jest.fn();
+    panel.session().refresh = refresh;
+    history(1);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('lets go of the view model on dispose', () => {
-    const { panel, isOpen, selection } = mount();
+    const { panel, isOpen, selection, history } = mount();
+    panel.openTarget({ kind: 'preheader' });
+    const refresh = jest.fn();
+    panel.session().refresh = refresh;
     panel.dispose();
+    history(1);
+    expect(refresh).not.toHaveBeenCalled();
+    panel.showList();
     isOpen(true);
     selection(COVER);
     expect(panel.target()).toEqual({ kind: 'email' });
