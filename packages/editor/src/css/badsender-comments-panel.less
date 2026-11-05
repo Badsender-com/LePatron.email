@@ -40,13 +40,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      height: 30px;
-      padding: 0 12px;
+      height: 28px;
+      padding: 0 10px;
       border: 1px solid var(--gray-300);
-      border-radius: 15px;
+      border-radius: @qc-radius-pill;
       background: var(--white);
       color: var(--gray-800);
-      font-size: 12px;
+      font-size: @qc-font-sm;
       font-weight: 500;
       cursor: pointer;
 
@@ -138,10 +138,10 @@
   .comment-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     padding: 12px;
     border: 1px solid var(--gray-200);
-    border-radius: @qc-radius;
+    border-radius: @qc-radius-card;
     background: var(--white);
 
     // Given the focus after an action: a ring at the keyboard only.
@@ -201,7 +201,7 @@
     &__date,
     &__target,
     &__gone {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--gray-600);
     }
 
@@ -209,8 +209,8 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 2px 8px;
-      border-radius: 4px;
+      padding: 2px 6px;
+      border-radius: @qc-radius;
       background: var(--gray-100);
       color: var(--gray-800);
       font-size: 11px;
@@ -243,7 +243,7 @@
   .comment-reply {
     margin-left: 16px;
     padding: 8px 10px;
-    border-radius: @qc-radius;
+    border-radius: @qc-radius-card;
     background: var(--gray-50);
 
     &__head {
@@ -280,8 +280,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: @qc-radius;
     font-size: 11px;
     font-weight: 600;
 

@@ -13,7 +13,7 @@
 .qc-group__header {
   margin: 0;
   padding: 12px 0 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -38,7 +38,7 @@
 
 .qc-row {
   border: 1px solid var(--gray-200);
-  border-radius: @qc-radius;
+  border-radius: @qc-radius-card;
   background: var(--white);
 
   &--expanded {
@@ -55,7 +55,7 @@
     align-items: flex-start;
     gap: 10px;
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 0;
     background: transparent;
     text-align: left;
@@ -102,8 +102,8 @@
 
   // A finding of a blocking check: it stops the download and the ESP send.
   &__blocking {
-    padding: 0 6px;
-    border-radius: 4px;
+    padding: 1px 6px;
+    border-radius: @qc-radius;
     font-size: 11px;
     font-weight: 600;
     color: var(--white);
@@ -122,8 +122,8 @@
 
   &__category {
     flex: none;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 1px 6px;
+    border-radius: @qc-radius;
     background: var(--gray-100);
     color: var(--gray-800);
     font-size: 11px;

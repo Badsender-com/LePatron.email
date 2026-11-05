@@ -20,10 +20,11 @@
 
   .comment-composer__row {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
 
     > .comments-menu { flex: 1; min-width: 0; }
-    > .comment-composer__add { flex: none; height: 34px; }
+    > .comment-composer__add { flex: none; }
 
     // The right-hand menu opens from its right edge, inside the panel.
     > .comments-menu:last-child .comments-menu__popup {
@@ -84,13 +85,14 @@
       align-items: center;
       gap: 6px;
       width: 100%;
-      height: 34px;
+      height: 30px;
       padding: 0 10px;
       border: 1px solid var(--gray-300);
       border-radius: @qc-radius;
       background: var(--white);
       color: var(--gray-900);
       font: inherit;
+      font-size: @qc-font-sm;
       text-align: left;
       cursor: pointer;
 
