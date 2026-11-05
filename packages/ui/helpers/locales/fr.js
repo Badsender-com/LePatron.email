@@ -1535,6 +1535,8 @@ export default {
         'Ces Expertises consommées ne sont pas publiées : {expertiseIds}. L\'assistant ne les reçoit pas tant qu\'elles ne le sont pas.',
       CONSUMED_EXPERTISES_PLATFORM_ONLY:
         'Ces Expertises consommées sont réservées à l\'entreprise plateforme : {expertiseIds}. Les assistants des autres entreprises suivent ce Skill sans elles.',
+      OPEN_EXPERTISES_FAILED:
+        'Le Skill est enregistré, mais ces Expertises n\'ont pas pu être ouvertes à toutes les entreprises : {expertiseIds}. Ouvrez-les depuis leurs détails.',
     },
     emailTypes: {
       editorial: 'Éditorial',

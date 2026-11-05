@@ -16,6 +16,7 @@ import {
   SKILL_NATURES,
 } from '~/helpers/ai-skill-categories.js';
 import { opensToAll } from '~/helpers/ai-skill-audience-change.js';
+import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -135,6 +136,8 @@ export default {
       await this.patchDetails([]);
     },
 
+    // Saved, and opened to all with the expertises chosen. The skill saved,
+    // what its opening warns of replaces the success message.
     async patchDetails(openExpertiseIds) {
       const {
         title,
@@ -143,19 +146,30 @@ export default {
         audience,
         servedToAssistants,
       } = this.skill;
-      const saved = await this.replaceItem(
-        () =>
-          this.$axios.$patch(api.aiSkill(this.skill.skillId), {
-            title,
-            description,
-            category,
-            audience,
-            servedToAssistants,
-            ...(openExpertiseIds.length ? { openExpertiseIds } : {}),
-          }),
-        'global.savedSuccessfully'
+      let warnings = [];
+      const saved = await this.replaceItem(async () => {
+        const res = await this.$axios.$patch(api.aiSkill(this.skill.skillId), {
+          title,
+          description,
+          category,
+          audience,
+          servedToAssistants,
+          ...(openExpertiseIds.length ? { openExpertiseIds } : {}),
+        });
+        warnings = res.warnings || [];
+        delete res.warnings;
+        return res;
+      });
+      if (!saved) return;
+      this.savedAudience = this.skill.audience;
+      this.showSnackbar(
+        warnings.length
+          ? {
+              text: warnings.map((w) => skillWarningMessage(this, w)).join(' '),
+              color: 'warning',
+            }
+          : { text: this.$t('global.savedSuccessfully'), color: 'success' }
       );
-      if (saved) this.savedAudience = this.skill.audience;
     },
 
     activeVersion() {

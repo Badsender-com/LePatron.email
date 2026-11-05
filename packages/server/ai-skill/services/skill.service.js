@@ -117,12 +117,16 @@ const PATCHABLE_FIELDS = [
 ];
 
 /**
+ * Everything is checked before anything is written; the skill saved, the
+ * expertises chosen open with it, and a failure to open them is a warning.
+ *
  * @param {string} skillId
  * @param {Object} patch the PATCHABLE_FIELDS to set, and `openExpertiseIds`:
  *   expertises the active version consumes kept to the platform company,
  *   opened to every company with the skill when the patch opens it too
  *   (ADR 0013)
- * @returns {Promise<Object>} the skill
+ * @returns {Promise<{skill: Object, warnings: Object[]}>} the skill, and the
+ *   warnings of its opening
  */
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
@@ -135,8 +139,7 @@ async function updateSkill(skillId, patch) {
     if (patch[key] !== undefined) skill[key] = patch[key];
   }
   await skill.save();
-  await openExpertises(opened);
-  return skill;
+  return { skill, warnings: await openExpertises(opened, skillId) };
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────
@@ -236,7 +239,11 @@ function versionOf(skill, { major, minor }) {
  * Publish a draft (versioned-entity.service.js). `payload.openToAll` opens
  * the skill to every company in the same write, and
  * `payload.openExpertiseIds` the expertises of that version chosen to open
- * with it, checked before anything is published.
+ * with it, checked before anything is published. The publication done, a
+ * failure to open them is a warning.
+ *
+ * @returns {Promise<{skill: Object, warnings: Object[]}>} the skill, and the
+ *   warnings of its opening
  */
 async function activateVersion(skillId, ref, payload = {}, userId) {
   const opened =
@@ -248,8 +255,7 @@ async function activateVersion(skillId, ref, payload = {}, userId) {
           payload.openToAll === true
         );
   const skill = await versioned.activateVersion(skillId, ref, payload, userId);
-  await openExpertises(opened);
-  return skill;
+  return { skill, warnings: await openExpertises(opened, skillId) };
 }
 
 /**

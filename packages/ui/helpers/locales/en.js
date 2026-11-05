@@ -1516,6 +1516,8 @@ export default {
         'These expertises consumed are not published: {expertiseIds}. The assistant does not receive them until they are.',
       CONSUMED_EXPERTISES_PLATFORM_ONLY:
         'These expertises consumed are kept to the platform company: {expertiseIds}. The assistants of the other companies follow this skill without them.',
+      OPEN_EXPERTISES_FAILED:
+        'The skill is saved, but these expertises could not be opened to all companies: {expertiseIds}. Open them from their details.',
     },
     emailTypes: {
       editorial: 'Editorial',

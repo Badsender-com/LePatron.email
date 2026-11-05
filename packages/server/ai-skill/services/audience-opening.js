@@ -9,6 +9,7 @@
  */
 
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
@@ -62,19 +63,37 @@ async function assertOpenable(version, ids, opening) {
   return [...new Set(ids)];
 }
 
+// The warning a skill saved answers when the expertises chosen to open with
+// it could not be (`aiSkills.warnings.*` in the UI).
+const OPEN_EXPERTISES_FAILED = 'OPEN_EXPERTISES_FAILED';
+
 /**
- * Opens these expertises to every company: in the editor's features as
- * through an assistant, at once.
+ * Opens these expertises to every company, in the editor's features as
+ * through an assistant, at once, once the skill is saved. The skill is: a
+ * failure here is logged and told as a warning, never answered as an error.
  *
  * @param {string[]} ids checked by assertOpenable
- * @returns {Promise<void>}
+ * @param {string} skillId the skill opened with them, for the log
+ * @returns {Promise<Array<{code: string, expertiseIds: string[]}>>} the
+ *   warning of the expertises not opened, if any
  */
-async function openExpertises(ids) {
-  if (!ids.length) return;
-  await Expertises.updateMany(
-    { expertiseId: { $in: ids } },
-    { $set: { audience: Audiences.ALL } }
-  );
+async function openExpertises(ids, skillId) {
+  if (!ids.length) return [];
+  try {
+    await Expertises.updateMany(
+      { expertiseId: { $in: ids } },
+      { $set: { audience: Audiences.ALL } }
+    );
+    return [];
+  } catch (error) {
+    logger.error(
+      `[ai-skill] the expertises chosen to open with ${skillId} could not be opened: ${ids.join(
+        ', '
+      )}`,
+      error
+    );
+    return [{ code: OPEN_EXPERTISES_FAILED, expertiseIds: ids }];
+  }
 }
 
 /**

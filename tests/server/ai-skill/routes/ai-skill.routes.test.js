@@ -148,9 +148,12 @@ describe('ai-skill HTTP routes', () => {
       versions: [{ versionMajor: 1, versionMinor: 0, status: 'DRAFT' }],
     });
     skillService.activateVersion.mockResolvedValue({
-      skillId: 'a',
-      status: 'ACTIVE',
-      activeVersion: { major: 1, minor: 0 },
+      skill: {
+        skillId: 'a',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+      },
+      warnings: [],
     });
     skillService.createMinorVersion.mockResolvedValue({
       skillId: 'a',
@@ -233,7 +236,7 @@ describe('ai-skill HTTP routes', () => {
       code: 'CONSUMED_EXPERTISES_NOT_PUBLISHED',
       expertiseIds: ['qc.draft'],
     };
-    skillService.activateVersion.mockResolvedValue(skill);
+    skillService.activateVersion.mockResolvedValue({ skill, warnings: [] });
     skillService.consumedExpertiseWarnings.mockResolvedValueOnce([warning]);
 
     const res = await request(makeApp())
@@ -253,9 +256,12 @@ describe('ai-skill HTTP routes', () => {
     const logger = require('../../../../packages/server/utils/logger.js');
     const logged = jest.spyOn(logger, 'error').mockImplementation(() => {});
     skillService.activateVersion.mockResolvedValue({
-      skillId: 'a',
-      status: 'ACTIVE',
-      versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+      skill: {
+        skillId: 'a',
+        status: 'ACTIVE',
+        versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+      },
+      warnings: [],
     });
     skillService.consumedExpertiseWarnings.mockRejectedValueOnce(
       new Error('connection lost')

@@ -27,7 +27,9 @@ const {
 } = require('../../../helpers/ai-skill-opening-seed.js');
 const {
   mockStore,
+  Expertises,
 } = require('../../../../packages/server/common/models.common');
+const logger = require('../../../../packages/server/utils/logger.js');
 
 beforeEach(() => seedOpening(mockStore));
 
@@ -146,5 +148,59 @@ describe('publishing an expertise open to every company', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ status: 'ACTIVE', audience: 'all' });
+  });
+});
+
+// The skill saved, its expertises failing to open never turns it into an
+// error: the failure is logged and answered as a warning.
+describe('expertises that cannot be opened with the skill', () => {
+  let logged;
+  beforeEach(() => {
+    logged = jest.spyOn(logger, 'error').mockImplementation(() => {});
+    jest
+      .spyOn(Expertises, 'updateMany')
+      .mockRejectedValueOnce(new Error('connection lost'));
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  const failed = {
+    code: 'OPEN_EXPERTISES_FAILED',
+    expertiseIds: ['qc.proving'],
+  };
+
+  it('leave the publication done, with a warning', async () => {
+    const res = await publish({
+      openToAll: true,
+      openExpertiseIds: ['qc.proving'],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: 'ACTIVE', audience: 'all' });
+    expect(res.body.warnings).toContainEqual(failed);
+    expect(await read('/api/ai-skills/qc.review')).toMatchObject({
+      status: 'ACTIVE',
+      audience: 'all',
+    });
+    expect(logged).toHaveBeenCalled();
+  });
+
+  it('leave the skill opened from its details, with a warning', async () => {
+    const res = await request(app())
+      .patch('/api/ai-skills/qc.live')
+      .send({ audience: 'all', openExpertiseIds: ['qc.proving'] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ audience: 'all', warnings: [failed] });
+    expect((await read('/api/ai-skills/qc.live')).audience).toBe('all');
+    expect(logged).toHaveBeenCalled();
+  });
+
+  it('warn of nothing when none is chosen', async () => {
+    const res = await request(app())
+      .patch('/api/ai-skills/qc.live')
+      .send({ audience: 'all' });
+
+    expect(res.body.warnings).toEqual([]);
+    expect(logged).not.toHaveBeenCalled();
   });
 });

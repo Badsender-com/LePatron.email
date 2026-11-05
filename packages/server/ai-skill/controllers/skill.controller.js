@@ -43,9 +43,9 @@ function withVersionWarnings(skill, major, minor) {
 }
 
 // At publication, what the version's consumed expertises warn of too, with
-// the audience the skill has now. The publication is done: reading what it
-// warns of never turns it into an error.
-async function withPublicationWarnings(skill, major, minor) {
+// the audience the skill has now, and those of its opening. The publication
+// is done: reading what it warns of never turns it into an error.
+async function withPublicationWarnings(skill, major, minor, opening) {
   const payload = withVersionWarnings(skill, major, minor);
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
@@ -59,7 +59,7 @@ async function withPublicationWarnings(skill, major, minor) {
       error
     );
   }
-  payload.warnings = [...payload.warnings, ...consumed];
+  payload.warnings = [...payload.warnings, ...consumed, ...opening];
   return payload;
 }
 
@@ -86,9 +86,16 @@ module.exports = {
     res.status(201).json(skill);
   }),
 
+  // The skill saved, and what its opening warns of (ADR 0013).
   updateSkill: asyncHandler(async (req, res) => {
-    const skill = await skillService.updateSkill(req.params.skillId, req.body);
-    res.json(skill);
+    const { skill, warnings } = await skillService.updateSkill(
+      req.params.skillId,
+      req.body
+    );
+    res.json({
+      ...(typeof skill.toJSON === 'function' ? skill.toJSON() : skill),
+      warnings,
+    });
   }),
 
   createMinorVersion: asyncHandler(async (req, res) => {
@@ -140,7 +147,7 @@ module.exports = {
 
   activateVersion: asyncHandler(async (req, res) => {
     const { major, minor } = versionFromParam(req);
-    const skill = await skillService.activateVersion(
+    const { skill, warnings } = await skillService.activateVersion(
       req.params.skillId,
       { major, minor },
       req.body,
@@ -148,8 +155,8 @@ module.exports = {
     );
     // Non-blocking coherence warnings surface post-activation too (e.g. a
     // schema that accepts expertises but a template that never inserts them),
-    // with those of the expertises a task version consumes.
-    res.json(await withPublicationWarnings(skill, major, minor));
+    // with those of the expertises a task version consumes and of its opening.
+    res.json(await withPublicationWarnings(skill, major, minor, warnings));
   }),
 
   getPlatformOnlyExpertises: asyncHandler(async (req, res) => {
