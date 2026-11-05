@@ -1,6 +1,6 @@
 'use strict';
 
-const { Groups } = require('../common/models.common.js');
+const { switchChangeOf } = require('../group/group-switch.js');
 const { recordSecurityEvent } = require('./security-event.service.js');
 const { SECURITY_ACTIONS } = require('./two-factor.constants.js');
 
@@ -12,12 +12,8 @@ const { SECURITY_ACTIONS } = require('./two-factor.constants.js');
  * @param {Object} payload the update, changed in place
  * @returns {Promise<boolean|null>} the new value when it changes, else null
  */
-async function requirementChangeOf(groupId, payload) {
-  if (!('requireTwoFactor' in payload)) return null;
-  payload.requireTwoFactor = payload.requireTwoFactor === true;
-  const stored = await Groups.findById(groupId, { requireTwoFactor: 1 }).lean();
-  const before = Boolean(stored && stored.requireTwoFactor);
-  return before === payload.requireTwoFactor ? null : payload.requireTwoFactor;
+function requirementChangeOf(groupId, payload) {
+  return switchChangeOf(groupId, payload, 'requireTwoFactor');
 }
 
 /**
