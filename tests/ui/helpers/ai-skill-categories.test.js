@@ -3,6 +3,7 @@
 const {
   SKILL_CATEGORIES,
   SKILL_AUDIENCES,
+  SKILL_NATURE_VALUES,
   AUDIENCE_ITEM_KINDS,
   skillCategoryOptions,
   skillCategoryLabel,
@@ -11,6 +12,7 @@ const {
 const {
   SkillCategoryValues,
   AudienceValues,
+  SkillNatureValues,
 } = require('../../../packages/server/ai-skill/constant/skill-constants');
 const fr = require('../../../packages/ui/helpers/locales/fr.js').default;
 const en = require('../../../packages/ui/helpers/locales/en.js').default;
@@ -42,6 +44,13 @@ describe('skillCategoryLabel', () => {
     expect(skillCategoryLabel(vm, 'qc')).toBe('t(aiSkills.categories.qc)');
     expect(skillCategoryLabel(vm, null)).toBe('');
     expect(skillCategoryLabel(vm, '')).toBe('');
+  });
+});
+
+// Read from packages/shared by both sides, never copied (ADR 0013).
+describe('the natures of a skill', () => {
+  it('are the server ones, in the same order', () => {
+    expect(SKILL_NATURE_VALUES).toEqual(SkillNatureValues);
   });
 });
 

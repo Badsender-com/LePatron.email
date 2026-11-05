@@ -9,6 +9,8 @@ import {
   skillCategoryOptions,
   audienceOptions,
   AUDIENCE_ITEM_KINDS,
+  AUDIENCES,
+  SKILL_NATURES,
 } from '~/helpers/ai-skill-categories.js';
 
 export default {
@@ -27,7 +29,7 @@ export default {
     audienceOptions() {
       return audienceOptions(
         this,
-        this.nature === 'task'
+        this.nature === SKILL_NATURES.TASK
           ? AUDIENCE_ITEM_KINDS.TASK_SKILL
           : AUDIENCE_ITEM_KINDS.FEATURE_SKILL
       );
@@ -35,7 +37,7 @@ export default {
     // One stored before audiences has none until the migration opens it, and
     // no client uses it meanwhile: shown as the platform company's.
     audience() {
-      return this.value.audience || 'platform';
+      return this.value.audience || AUDIENCES.PLATFORM;
     },
     // The nature is the active version's (ADR 0013), set on a draft version;
     // the mark only counts while the active version is a feature skill's.
@@ -49,10 +51,12 @@ export default {
     nature() {
       const versions = this.value.versions || [];
       const version = this.activeVersion || versions[versions.length - 1];
-      return (version && version.nature) || 'feature';
+      return (version && version.nature) || SKILL_NATURES.FEATURE;
     },
     activeIsTask() {
-      return !!this.activeVersion && this.activeVersion.nature === 'task';
+      return (
+        !!this.activeVersion && this.activeVersion.nature === SKILL_NATURES.TASK
+      );
     },
   },
   methods: {

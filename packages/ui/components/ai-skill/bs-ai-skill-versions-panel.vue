@@ -9,6 +9,10 @@ import mixinVersionDrafts from '~/helpers/mixins/mixin-version-drafts.js';
 import mixinSchemaDescriptors from '~/helpers/mixins/mixin-schema-descriptors.js';
 import BsAiSkillFeatureVersionFields from '~/components/ai-skill/bs-ai-skill-feature-version-fields.vue';
 import BsAiSkillTaskVersionFields from '~/components/ai-skill/bs-ai-skill-task-version-fields.vue';
+import {
+  SKILL_NATURES,
+  SKILL_NATURE_VALUES,
+} from '~/helpers/ai-skill-categories.js';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
 
 // What the version editor lets one change on a DRAFT.
@@ -67,7 +71,7 @@ export default {
       return EDITABLE_FIELDS;
     },
     natureOptions() {
-      return ['feature', 'task'].map((value) => ({
+      return SKILL_NATURE_VALUES.map((value) => ({
         value,
         text: this.$t(`aiSkills.natures.${value}`),
       }));
@@ -87,7 +91,7 @@ export default {
     // were versioned is a feature skill's.
     isTask(v) {
       const draft = this.draftFor(v);
-      return ((draft && draft.nature) || v.nature) === 'task';
+      return ((draft && draft.nature) || v.nature) === SKILL_NATURES.TASK;
     },
     // The server sends warning codes; the wording lives in the locales.
     warningsFor(v) {

@@ -12,6 +12,7 @@ import {
   skillCategoryOptions,
   audienceOptions,
   AUDIENCE_ITEM_KINDS,
+  AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
 
 export default {
@@ -40,7 +41,7 @@ export default {
     // One stored before audiences has none until the migration opens it, and
     // no client uses it meanwhile: shown as the platform company's.
     audience() {
-      return this.value.audience || 'platform';
+      return this.value.audience || AUDIENCES.PLATFORM;
     },
     emailTypeItems() {
       return emailTypeItems(this.emailTypeFacets);

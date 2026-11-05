@@ -1,5 +1,13 @@
 'use strict';
 
+const {
+  SKILL_NATURES,
+  SKILL_NATURE_VALUES,
+  AUDIENCES,
+  AUDIENCE_VALUES,
+  MAX_CONSUMED_EXPERTISES,
+} = require('../../../shared/ai-skill/constants.js');
+
 const SkillCategories = Object.freeze({
   REDACTION: 'redaction',
   QC: 'qc',
@@ -20,25 +28,12 @@ const SkillStatuses = Object.freeze({
 
 const SkillStatusValues = Object.values(SkillStatuses);
 
-// What a skill is (ADR 0013): a feature skill is a function a LePatron feature
-// calls (template, schemas, output contract); a task skill is a procedure
-// written for an assistant, with the expertises it consumes, in order.
-const SkillNatures = Object.freeze({
-  FEATURE: 'feature',
-  TASK: 'task',
-});
-
-const SkillNatureValues = Object.values(SkillNatures);
-
-// Who may use a skill or an expertise (ADR 0013), in the editor as through an
-// assistant: the platform company only, where a first draft is proven, or every
-// company. A new one starts with the platform company.
-const Audiences = Object.freeze({
-  PLATFORM: 'platform',
-  ALL: 'all',
-});
-
-const AudienceValues = Object.values(Audiences);
+// The nature of a skill and the audience of a skill or an expertise (ADR
+// 0013), with the back office (packages/shared/ai-skill/constants.js).
+const SkillNatures = SKILL_NATURES;
+const SkillNatureValues = [...SKILL_NATURE_VALUES];
+const Audiences = AUDIENCES;
+const AudienceValues = [...AUDIENCE_VALUES];
 
 const InvocationStatuses = Object.freeze({
   SUCCESS: 'SUCCESS',
@@ -65,9 +60,7 @@ const MinorVersionDefaults = Object.freeze({
 const SkillIdRegex = /^[a-z0-9._-]+$/;
 const SectionIdRegex = /^[a-z0-9-]+$/;
 const MaxSkillIdLength = 100;
-// The expertises a task skill's version consumes, at most (ADR 0013): an
-// assistant reads them all before following the procedure.
-const MaxConsumedExpertises = 20;
+const MaxConsumedExpertises = MAX_CONSUMED_EXPERTISES;
 const DefaultLogRetentionDays = 30;
 // NB: the retention bounds (7/365 days) live as literals on
 // Group.logRetentionDays (group.schema.js) — single source of truth there.

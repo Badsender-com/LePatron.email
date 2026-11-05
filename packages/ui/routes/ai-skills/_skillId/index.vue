@@ -11,7 +11,10 @@ import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -63,6 +66,11 @@ export default {
       const av = this.skill && this.skill.activeVersion;
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
+    },
+    // Still kept to the platform company, or not opened yet: the publication
+    // reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.skill && this.skill.audience !== AUDIENCES.ALL;
     },
   },
   methods: {
@@ -248,7 +256,7 @@ export default {
         if (openToAll) {
           this.skill = await this.$axios.$patch(
             api.aiSkill(this.skill.skillId),
-            { audience: 'all' }
+            { audience: AUDIENCES.ALL }
           );
         }
       } catch (err) {
@@ -358,7 +366,7 @@ export default {
       ref="activateModal"
       :loading="saving"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
-      :platform-only="skill.audience !== 'all'"
+      :platform-only="platformOnly"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

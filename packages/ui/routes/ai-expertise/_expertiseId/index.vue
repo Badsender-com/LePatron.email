@@ -10,7 +10,10 @@ import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-deta
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -54,6 +57,11 @@ export default {
       const av = this.exp && this.exp.activeVersion;
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
+    },
+    // Still kept to the platform company, or not opened yet: the publication
+    // reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.exp && this.exp.audience !== AUDIENCES.ALL;
     },
     activeVersion() {
       const av = this.exp && this.exp.activeVersion;
@@ -241,7 +249,7 @@ export default {
         if (openToAll) {
           this.exp = await this.$axios.$patch(
             api.aiExpertise(this.exp.expertiseId),
-            { audience: 'all' }
+            { audience: AUDIENCES.ALL }
           );
         }
       } catch (err) {
@@ -360,7 +368,7 @@ export default {
       :show-impact="true"
       :impact="activationImpact"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
-      :platform-only="exp.audience !== 'all'"
+      :platform-only="platformOnly"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

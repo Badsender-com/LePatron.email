@@ -2,9 +2,10 @@
 // editor lists them: in the order the assistant reads them, each with its
 // title, or flagged when the editor cannot find it.
 
-// The server's MaxConsumedExpertises (ai-skill/constant/skill-constants.js):
-// a version consumes twenty expertises at most.
-export const MAX_CONSUMED_EXPERTISES = 20;
+import { MAX_CONSUMED_EXPERTISES } from '../../shared/ai-skill/constants.js';
+
+// A version consumes this many expertises at most, as the server checks.
+export { MAX_CONSUMED_EXPERTISES };
 
 /**
  * The rows of the list, one per consumed id, in order.
