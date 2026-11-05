@@ -1494,6 +1494,8 @@ export default {
         'Les Expertises consommées doivent être une liste d\'identifiants d\'Expertise.',
       SKILL_CONSUMED_EXPERTISES_TOO_MANY:
         'Une version consomme au plus {max} Expertises.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'Ces Expertises sont consommées plusieurs fois : {expertiseIds}. Gardez-en une seule fois chacune.',
       SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
         'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
@@ -1512,6 +1514,10 @@ export default {
         'Champ(s) requis du schéma « {schemaId} » non référencé(s) dans le template : {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'Ces Expertises consommées ne sont pas publiées : {expertiseIds}. L\'assistant ne les reçoit pas tant qu\'elles ne le sont pas.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'Ces Expertises consommées sont réservées à l\'entreprise plateforme : {expertiseIds}. Les assistants des autres entreprises suivent ce Skill sans elles.',
     },
     emailTypes: {
       editorial: 'Éditorial',
@@ -1632,7 +1638,13 @@ export default {
       consumedExpertisesRetry: 'Réessayer',
       consumedExpertiseNotFound: 'Introuvable',
       consumedExpertiseNotFoundHint:
-        'Absente des Expertises actives listées ici. Archivée, elle n\'est plus servie à l\'assistant : retirez-la si elle n\'a plus lieu d\'être.',
+        'Aucune Expertise lue ici ne porte cet identifiant : l\'assistant ne la reçoit pas. Retirez-la.',
+      consumedExpertiseNotPublished: 'Non publiée',
+      consumedExpertiseNotPublishedHint:
+        'Brouillon ou archivée : l\'assistant ne la reçoit pas tant qu\'aucune de ses versions n\'est publiée. Publiez-la, ou retirez-la.',
+      consumedExpertisePlatformOnly: 'Entreprise plateforme uniquement',
+      consumedExpertisePlatformOnlyHint:
+        'Seuls les assistants de l\'entreprise plateforme la reçoivent : ouvrez-la à toutes les entreprises pour que leurs assistants la reçoivent aussi.',
       consumedExpertiseUp: 'Monter',
       consumedExpertiseDown: 'Descendre',
       consumedExpertiseRemove: 'Retirer',

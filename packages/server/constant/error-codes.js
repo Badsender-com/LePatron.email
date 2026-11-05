@@ -196,8 +196,9 @@ module.exports = {
   SKILL_PROCEDURE_REQUIRED_TO_PUBLISH: 'SKILL_PROCEDURE_REQUIRED_TO_PUBLISH',
   SKILL_TEMPLATE_UNKNOWN_FIELDS: 'SKILL_TEMPLATE_UNKNOWN_FIELDS',
   // The expertises a task skill's version consumes: a list of expertise ids,
-  // bounded, each naming an expertise that exists (ADR 0013).
+  // bounded, each naming an expertise that exists, once (ADR 0013).
   SKILL_CONSUMED_EXPERTISES_INVALID: 'SKILL_CONSUMED_EXPERTISES_INVALID',
+  SKILL_CONSUMED_EXPERTISES_DUPLICATED: 'SKILL_CONSUMED_EXPERTISES_DUPLICATED',
   SKILL_CONSUMED_EXPERTISES_TOO_MANY: 'SKILL_CONSUMED_EXPERTISES_TOO_MANY',
   SKILL_CONSUMED_EXPERTISES_NOT_FOUND: 'SKILL_CONSUMED_EXPERTISES_NOT_FOUND',
   // A feature skill still meant for the platform company, invoked on behalf

@@ -3,21 +3,31 @@
 // follows, and the expertises it consumes, in the order it reads them. The
 // panel owns the draft; this component only emits the new values.
 //
-// The editor reads the active expertises, up to a page of them. A consumed
-// id it does not find there (archived, or past that page) stays listed as
-// not found, so that it can be removed: the assistant is not served it.
+// The editor reads the expertises, whatever their status, up to a page of
+// them, and offers the published ones. A consumed one says what keeps it from
+// an assistant: not found (no such id among those read), not published (a
+// draft, or archived), or kept to the platform company.
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import { aiExpertiseList } from '~/helpers/ai-skill-routes.js';
 import {
   MAX_CONSUMED_EXPERTISES,
+  CONSUMED_STATES,
   consumedRows,
   addableExpertises,
+  withConsumed,
   moveConsumed,
 } from '~/helpers/ai-skill-consumed-expertises.js';
 import { ChevronUp, ChevronDown, X } from 'lucide-vue';
 
-// The active expertises the editor offers, at most: the list route's page.
+// The expertises the editor reads, at most: the list route's page.
 const EXPERTISES_PAGE_SIZE = 200;
+
+// The label and the help of each state, under aiSkills.version.
+const STATE_KEYS = Object.freeze({
+  [CONSUMED_STATES.NOT_FOUND]: 'consumedExpertiseNotFound',
+  [CONSUMED_STATES.NOT_PUBLISHED]: 'consumedExpertiseNotPublished',
+  [CONSUMED_STATES.PLATFORM_ONLY]: 'consumedExpertisePlatformOnly',
+});
 
 export default {
   name: 'BsAiSkillTaskVersionFields',
@@ -71,7 +81,7 @@ export default {
       this.loadError = false;
       try {
         const list = await this.$axios.$get(aiExpertiseList(), {
-          params: { status: 'ACTIVE', pageSize: EXPERTISES_PAGE_SIZE },
+          params: { pageSize: EXPERTISES_PAGE_SIZE },
         });
         this.expertises = list.items || [];
         this.loaded = true;
@@ -85,10 +95,15 @@ export default {
     emitIds(ids) {
       this.$emit('update:consumedExpertiseIds', ids);
     },
+    stateLabel(state) {
+      return this.$t(`aiSkills.version.${STATE_KEYS[state]}`);
+    },
+    stateHint(state) {
+      return this.$t(`aiSkills.version.${STATE_KEYS[state]}Hint`);
+    },
     add(expertiseId) {
-      if (expertiseId && !this.full) {
-        this.emitIds([...this.consumedExpertiseIds, expertiseId]);
-      }
+      const ids = withConsumed(this.consumedExpertiseIds, expertiseId);
+      if (ids.length !== this.consumedExpertiseIds.length) this.emitIds(ids);
       this.$nextTick(() => {
         this.picked = null;
       });
@@ -138,18 +153,20 @@ export default {
             <v-list-item-title>
               {{ row.title || row.id }}
               <v-chip
-                v-if="row.missing"
+                v-if="row.state"
                 x-small
                 outlined
                 color="warning"
                 class="ml-2"
-                :title="$t('aiSkills.version.consumedExpertiseNotFoundHint')"
               >
-                {{ $t('aiSkills.version.consumedExpertiseNotFound') }}
+                {{ stateLabel(row.state) }}
               </v-chip>
             </v-list-item-title>
             <v-list-item-subtitle v-if="row.title">
               <code>{{ row.id }}</code>
+            </v-list-item-subtitle>
+            <v-list-item-subtitle v-if="row.state" class="text-wrap">
+              {{ stateHint(row.state) }}
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action v-if="!readonly" class="flex-row align-center">

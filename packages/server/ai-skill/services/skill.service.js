@@ -9,7 +9,10 @@ const {
 } = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
-const { assertConsumedExpertises } = require('./consumed-expertises.js');
+const {
+  assertConsumedExpertises,
+  consumedExpertiseWarnings,
+} = require('./consumed-expertises.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -226,5 +229,6 @@ module.exports = {
   deleteVersion,
   activateVersion,
   archiveSkill,
+  consumedExpertiseWarnings,
   versionLabel,
 };

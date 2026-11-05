@@ -7,7 +7,29 @@ const {
   SkillIdRegex,
   MaxSkillIdLength,
   MaxConsumedExpertises,
+  SkillNatures,
+  SkillStatuses,
+  Audiences,
 } = require('../constant/skill-constants.js');
+const { published } = require('../repositories/published.repository.js');
+const { isAvailableTo } = require('./audience.js');
+
+// Warning identifiers sent to the UI with a publication, which holds the
+// fr/en wording under `aiSkills.warnings.*`, as for the template's.
+const ConsumedWarningCodes = Object.freeze({
+  NOT_PUBLISHED: 'CONSUMED_EXPERTISES_NOT_PUBLISHED',
+  PLATFORM_ONLY: 'CONSUMED_EXPERTISES_PLATFORM_ONLY',
+});
+
+// What a warning reads of a consumed expertise: whether it is published, and
+// its audience; of its versions, the active one alone.
+const PUBLICATION_FIELDS = Object.freeze({
+  expertiseId: 1,
+  status: 1,
+  audience: 1,
+  activeVersion: 1,
+  versions: { $elemMatch: { status: SkillStatuses.ACTIVE } },
+});
 
 function isExpertiseId(id) {
   return (
@@ -20,7 +42,8 @@ function isExpertiseId(id) {
 /**
  * The expertises a skill's version consumes (ADR 0013), checked when a draft
  * is saved and when it is published: a list of at most MaxConsumedExpertises
- * expertise ids, each naming an expertise that exists, whatever its status.
+ * expertise ids, each named once and naming an expertise that exists,
+ * whatever its status.
  * An expertise is archived, never deleted, so one that exists at save still
  * does at publication; the MCP adapter skips the ones not published.
  *
@@ -30,7 +53,9 @@ function isExpertiseId(id) {
  * @param {*} ids the version's `consumedExpertiseIds`, as the request sent it
  * @returns {Promise<void>}
  * @throws {HttpError} 400 SKILL_CONSUMED_EXPERTISES_INVALID,
- *   SKILL_CONSUMED_EXPERTISES_TOO_MANY (with `max`) or
+ *   SKILL_CONSUMED_EXPERTISES_TOO_MANY (with `max`),
+ *   SKILL_CONSUMED_EXPERTISES_DUPLICATED (with the `expertiseIds` named
+ *   more than once) or
  *   SKILL_CONSUMED_EXPERTISES_NOT_FOUND (with the `expertiseIds` missing)
  */
 async function assertConsumedExpertises(ids) {
@@ -46,14 +71,21 @@ async function assertConsumedExpertises(ids) {
     throw createError(400, ERROR_CODES.SKILL_CONSUMED_EXPERTISES_INVALID);
   }
   if (!ids.length) return;
+  const duplicated = [
+    ...new Set(ids.filter((id, index) => ids.indexOf(id) !== index)),
+  ];
+  if (duplicated.length) {
+    throw createError(400, ERROR_CODES.SKILL_CONSUMED_EXPERTISES_DUPLICATED, {
+      expertiseIds: duplicated,
+    });
+  }
 
-  const wanted = [...new Set(ids)];
   const found = await Expertises.find(
-    { expertiseId: { $in: wanted } },
+    { expertiseId: { $in: ids } },
     { expertiseId: 1 }
   ).lean();
   const known = new Set(found.map((e) => e.expertiseId));
-  const missing = wanted.filter((id) => !known.has(id));
+  const missing = ids.filter((id) => !known.has(id));
   if (missing.length) {
     throw createError(400, ERROR_CODES.SKILL_CONSUMED_EXPERTISES_NOT_FOUND, {
       expertiseIds: missing,
@@ -61,4 +93,56 @@ async function assertConsumedExpertises(ids) {
   }
 }
 
-module.exports = { assertConsumedExpertises };
+/**
+ * What a publication warns of, without refusing it (ADR 0013): a consumed
+ * expertise that is not published is not served to the assistant, nor one
+ * kept to the platform company to the assistants of the other companies,
+ * when the skill is open to them. A feature skill's version consumes none.
+ *
+ * @param {Object} skill the skill, with its audience
+ * @param {Object} [version] the version published
+ * @returns {Promise<Array<{code: string, expertiseIds: string[]}>>}
+ */
+async function consumedExpertiseWarnings(skill, version) {
+  const ids =
+    version && version.nature === SkillNatures.TASK
+      ? [...new Set(version.consumedExpertiseIds || [])]
+      : [];
+  if (!ids.length) return [];
+
+  const docs = await Expertises.find(
+    { expertiseId: { $in: ids } },
+    PUBLICATION_FIELDS
+  ).lean();
+  const publishedById = new Map(
+    docs.filter((doc) => published(doc)).map((doc) => [doc.expertiseId, doc])
+  );
+  const warnings = [];
+  const notPublished = ids.filter((id) => !publishedById.has(id));
+  if (notPublished.length) {
+    warnings.push({
+      code: ConsumedWarningCodes.NOT_PUBLISHED,
+      expertiseIds: notPublished,
+    });
+  }
+  // A client company's view: what is not opened to all.
+  const platformOnly =
+    skill.audience === Audiences.ALL
+      ? ids.filter(
+          (id) => publishedById.has(id) && !isAvailableTo(publishedById.get(id))
+        )
+      : [];
+  if (platformOnly.length) {
+    warnings.push({
+      code: ConsumedWarningCodes.PLATFORM_ONLY,
+      expertiseIds: platformOnly,
+    });
+  }
+  return warnings;
+}
+
+module.exports = {
+  assertConsumedExpertises,
+  consumedExpertiseWarnings,
+  ConsumedWarningCodes,
+};

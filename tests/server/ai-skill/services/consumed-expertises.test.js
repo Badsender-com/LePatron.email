@@ -2,8 +2,9 @@
 
 // The expertises a task skill's version consumes (ADR 0013), checked when a
 // draft is saved and when it is published: a list of at most twenty
-// expertise ids, each naming an expertise that exists. The MCP adapter then
-// serves the published ones, in the order of the list.
+// expertise ids, each named once and naming an expertise that exists. The MCP
+// adapter then serves the published ones, in the order of the list. What a
+// publication warns of is in consumed-expertise-warnings.test.js.
 
 jest.mock('../../../../packages/server/common/models.common', () => ({
   LePatronSkills: { findOne: jest.fn() },
@@ -85,15 +86,29 @@ describe('saving the expertises a draft consumes', () => {
     expect(doc.save).toHaveBeenCalled();
   });
 
-  it('reads the expertises at once, each id once', async () => {
+  it('reads the expertises at once', async () => {
     skillWith();
 
-    await save(['brand.tone', 'qc.deliverability', 'brand.tone']);
+    await save(['brand.tone', 'qc.deliverability']);
 
     expect(Expertises.find).toHaveBeenCalledTimes(1);
     expect(Expertises.find.mock.calls[0][0]).toEqual({
       expertiseId: { $in: ['brand.tone', 'qc.deliverability'] },
     });
+  });
+
+  it('refuses an expertise named twice, names it, and reads nothing', async () => {
+    const doc = skillWith();
+
+    await expect(
+      save(['brand.tone', 'qc.deliverability', 'brand.tone'])
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'SKILL_CONSUMED_EXPERTISES_DUPLICATED',
+      expertiseIds: ['brand.tone'],
+    });
+    expect(Expertises.find).not.toHaveBeenCalled();
+    expect(doc.save).not.toHaveBeenCalled();
   });
 
   it('takes an empty list without reading anything', async () => {
@@ -200,6 +215,18 @@ describe('publishing a draft that consumes expertises', () => {
       status: 400,
       message: 'SKILL_CONSUMED_EXPERTISES_TOO_MANY',
     });
+  });
+
+  it('refuses one that names an expertise twice', async () => {
+    const doc = skillWith({
+      consumedExpertiseIds: ['brand.tone', 'brand.tone'],
+    });
+
+    await expect(publish()).rejects.toMatchObject({
+      status: 400,
+      message: 'SKILL_CONSUMED_EXPERTISES_DUPLICATED',
+    });
+    expect(doc.versions[0].status).toBe('DRAFT');
   });
 
   it('refuses one stored with an id that is not one', async () => {

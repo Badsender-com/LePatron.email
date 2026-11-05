@@ -19,6 +19,7 @@ jest.mock(
     deleteVersion: jest.fn(),
     activateVersion: jest.fn(),
     archiveSkill: jest.fn(),
+    consumedExpertiseWarnings: jest.fn(async () => []),
   })
 );
 jest.mock(
@@ -220,6 +221,32 @@ describe('ai-skill HTTP routes', () => {
       expect(res.body.warnings.length > 0).toBe(warned);
     }
   );
+
+  // What a task version consumes warns at publication, after the template's.
+  it('POST a publication answers the warnings of the consumed expertises', async () => {
+    const skill = {
+      skillId: 'a',
+      audience: 'all',
+      versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+    };
+    const warning = {
+      code: 'CONSUMED_EXPERTISES_NOT_PUBLISHED',
+      expertiseIds: ['qc.draft'],
+    };
+    skillService.activateVersion.mockResolvedValue(skill);
+    skillService.consumedExpertiseWarnings.mockResolvedValueOnce([warning]);
+
+    const res = await request(makeApp())
+      .post('/api/ai-skills/a/versions/1.0/activate')
+      .send({ changelog: 'c', releaseNotes: 'r' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.warnings).toEqual([warning]);
+    expect(skillService.consumedExpertiseWarnings).toHaveBeenCalledWith(
+      skill,
+      skill.versions[0]
+    );
+  });
 
   it('GET /api/ai-invocations forwards filters as query', async () => {
     invocationLog.listInvocations.mockResolvedValue({

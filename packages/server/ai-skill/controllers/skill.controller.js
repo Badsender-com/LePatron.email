@@ -41,6 +41,17 @@ function withVersionWarnings(skill, major, minor) {
   return payload;
 }
 
+// At publication, what the version's consumed expertises warn of too.
+async function withPublicationWarnings(skill, major, minor) {
+  const payload = withVersionWarnings(skill, major, minor);
+  const version = (skill.versions || []).find(
+    (v) => v.versionMajor === major && v.versionMinor === minor
+  );
+  const consumed = await skillService.consumedExpertiseWarnings(skill, version);
+  payload.warnings = [...payload.warnings, ...consumed];
+  return payload;
+}
+
 function versionFromParam(req) {
   const parsed = parseVersionParam(req.params.version);
   if (!parsed)
@@ -125,8 +136,9 @@ module.exports = {
       userIdOf(req)
     );
     // Non-blocking coherence warnings surface post-activation too (e.g. a
-    // schema that accepts expertises but a template that never inserts them).
-    res.json(withVersionWarnings(skill, major, minor));
+    // schema that accepts expertises but a template that never inserts them),
+    // with those of the expertises a task version consumes.
+    res.json(await withPublicationWarnings(skill, major, minor));
   }),
 
   archiveSkill: asyncHandler(async (req, res) => {

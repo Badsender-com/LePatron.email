@@ -1475,6 +1475,8 @@ export default {
         'The expertises consumed must be a list of expertise ids.',
       SKILL_CONSUMED_EXPERTISES_TOO_MANY:
         'A version consumes {max} expertises at most.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'These expertises are consumed more than once: {expertiseIds}. Keep each of them once.',
       SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
         'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
@@ -1493,6 +1495,10 @@ export default {
         'Required field(s) of schema "{schemaId}" not referenced in the template: {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'The schema accepts expertises but the template does not insert them: they would be ignored at invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'These expertises consumed are not published: {expertiseIds}. The assistant does not receive them until they are.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'These expertises consumed are kept to the platform company: {expertiseIds}. The assistants of the other companies follow this skill without them.',
     },
     emailTypes: {
       editorial: 'Editorial',
@@ -1612,7 +1618,13 @@ export default {
       consumedExpertisesRetry: 'Retry',
       consumedExpertiseNotFound: 'Not found',
       consumedExpertiseNotFoundHint:
-        'Not among the active expertises listed here. Once archived, it no longer reaches the assistant: remove it if it no longer belongs.',
+        'No expertise read here has this id: the assistant does not receive it. Remove it.',
+      consumedExpertiseNotPublished: 'Not published',
+      consumedExpertiseNotPublishedHint:
+        'A draft, or archived: the assistant does not receive it until a version of it is published. Publish it, or remove it.',
+      consumedExpertisePlatformOnly: 'Platform company only',
+      consumedExpertisePlatformOnlyHint:
+        'Only the platform company\'s assistants receive it: open it to all companies for their assistants to receive it too.',
       consumedExpertiseUp: 'Move up',
       consumedExpertiseDown: 'Move down',
       consumedExpertiseRemove: 'Remove',
