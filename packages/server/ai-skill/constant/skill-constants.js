@@ -1,6 +1,8 @@
 'use strict';
 
 const {
+  STATUSES,
+  STATUS_VALUES,
   SKILL_NATURES,
   SKILL_NATURE_VALUES,
   AUDIENCES,
@@ -20,16 +22,11 @@ const SkillCategories = Object.freeze({
 
 const SkillCategoryValues = Object.values(SkillCategories);
 
-const SkillStatuses = Object.freeze({
-  DRAFT: 'DRAFT',
-  ACTIVE: 'ACTIVE',
-  ARCHIVED: 'ARCHIVED',
-});
-
-const SkillStatusValues = Object.values(SkillStatuses);
-
-// The nature of a skill and the audience of a skill or an expertise (ADR
-// 0013), with the back office (packages/shared/ai-skill/constants.js).
+// The statuses, the nature of a skill and the audience of a skill or an
+// expertise (ADR 0013), with the back office
+// (packages/shared/ai-skill/constants.js).
+const SkillStatuses = STATUSES;
+const SkillStatusValues = [...STATUS_VALUES];
 const SkillNatures = SKILL_NATURES;
 const SkillNatureValues = [...SKILL_NATURE_VALUES];
 const Audiences = AUDIENCES;

@@ -6,6 +6,7 @@
 import {
   AUDIENCES,
   MAX_CONSUMED_EXPERTISES,
+  STATUSES,
 } from '../../shared/ai-skill/constants.js';
 
 // A version consumes this many expertises at most, as the server checks.
@@ -22,7 +23,7 @@ export const CONSUMED_STATES = Object.freeze({
 // Published: an active expertise with an active version, as the server
 // serves it.
 const isPublished = (expertise) =>
-  expertise.status === 'ACTIVE' &&
+  expertise.status === STATUSES.ACTIVE &&
   !!expertise.activeVersion &&
   expertise.activeVersion.major != null;
 

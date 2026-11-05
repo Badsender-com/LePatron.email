@@ -1,6 +1,6 @@
 // The versions of a skill or an expertise, as the back office reads them.
 
-const DRAFT = 'DRAFT';
+import { STATUSES } from '../../shared/ai-skill/constants.js';
 
 // Newest first: by major, then by minor.
 const newestFirst = (a, b) =>
@@ -16,7 +16,7 @@ const newestFirst = (a, b) =>
  */
 export function latestDraft(versions) {
   const [latest] = (versions || [])
-    .filter((version) => version.status === DRAFT)
+    .filter((version) => version.status === STATUSES.DRAFT)
     .sort(newestFirst);
   return latest || null;
 }

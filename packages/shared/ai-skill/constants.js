@@ -2,6 +2,19 @@
 
 // What the server and the back office both read of skills and expertises
 // (ADR 0013), defined once.
+//
+// No syntax that needs a Babel helper here (spread, classes, `for...of`): the
+// UI's build compiles this file, and an injected helper import would turn it
+// into a module that can no longer use `module.exports`.
+
+// Where a skill, an expertise or one of their versions stands: a draft is
+// edited, the active one is served, an archived one is kept for the record.
+const STATUSES = Object.freeze({
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+});
+const STATUS_VALUES = Object.freeze(Object.values(STATUSES));
 
 // What a skill is: a feature skill is a function a LePatron feature calls
 // (template, schemas, output contract); a task skill is a procedure written
@@ -27,6 +40,8 @@ const AUDIENCE_VALUES = Object.freeze(Object.values(AUDIENCES));
 const MAX_CONSUMED_EXPERTISES = 20;
 
 module.exports = {
+  STATUSES,
+  STATUS_VALUES,
   SKILL_NATURES,
   SKILL_NATURE_VALUES,
   AUDIENCES,
