@@ -153,6 +153,7 @@ export default {
 
           <v-switch
             v-model="localGroup.downloadMailingWithFtpImages"
+            color="accent"
             :label="$t('forms.group.exportFtp')"
             hide-details
             class="mb-4"
@@ -184,6 +185,7 @@ export default {
 
           <v-switch
             v-model="localGroup.downloadMailingWithCdnImages"
+            color="accent"
             :label="$t('forms.group.exportCdn')"
             hide-details
             class="mb-4"
