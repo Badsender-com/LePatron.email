@@ -441,11 +441,14 @@
         <button class="comments-btn-icon" data-bind="click: function() { $root.startReply($data); }, clickBubble: false, attr: { title: $root.t('comments-reply'), 'aria-label': $root.t('comments-reply') }">
           <span class="lucide lucide-reply"></span>
         </button>
+        <!-- An approval is an event, neither resolved nor reopened (ADR 0020). -->
+        <!-- ko if: $data.decision !== 'approved' -->
         <button class="comments-btn-icon btn-icon-success" data-bind="click: function() { $root.resolveComment($data); }, clickBubble: false, attr: { title: $root.t('comments-resolve'), 'aria-label': $root.t('comments-resolve') }">
           <span class="lucide lucide-check"></span>
         </button>
         <!-- /ko -->
-        <!-- ko if: resolved -->
+        <!-- /ko -->
+        <!-- ko if: resolved && $data.decision !== 'approved' -->
         <button class="comments-btn-icon btn-icon-warning" data-bind="click: function() { $root.unresolveComment($data); }, clickBubble: false, attr: { title: $root.t('comments-unresolve'), 'aria-label': $root.t('comments-unresolve') }">
           <span class="lucide lucide-rotate-ccw"></span>
         </button>
@@ -593,9 +596,13 @@
           </span>
           <!-- /ko -->
         </div>
+        <!-- ko if: $root.canPostDecision() && $root.hasOpenBlocking() -->
+        <p id="comments-approve-blocked" class="comments-approve-blocked" data-bind="text: $root.t('comments-approve-blocked')"></p>
+        <!-- /ko -->
         <div class="comments-form-submit-actions">
           <!-- ko if: $root.canPostDecision() -->
-          <button class="comments-btn comments-btn-decision comments-btn-approve" data-bind="click: function() { $root.createComment('approved'); }">
+          <!-- Disabled while a blocking comment is open, with the reason (ADR 0020). -->
+          <button class="comments-btn comments-btn-decision comments-btn-approve" data-bind="click: function() { $root.createComment('approved'); }, enable: !$root.hasOpenBlocking(), attr: { 'aria-describedby': $root.hasOpenBlocking() ? 'comments-approve-blocked' : null }">
             <span class="lucide lucide-check"></span>
             <span data-bind="text: $root.t('comments-decision-approve')">Approve</span>
           </button>

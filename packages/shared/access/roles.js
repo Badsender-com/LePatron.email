@@ -44,8 +44,10 @@ const CAPABILITIES = Object.freeze({
   // apart in a save until #1103.
   MAILING_EDIT_STRUCTURE: 'mailing.edit-structure',
   MAILING_EDIT_STYLE: 'mailing.edit-style',
-  // Comment, reply, resolve, approve.
+  // Comment, reply, resolve.
   MAILING_COMMENT: 'mailing.comment',
+  // Approve an email: say it may be sent (ADR 0020).
+  MAILING_APPROVE: 'mailing.approve',
   MAILING_SEND_TEST: 'mailing.send-test',
   // ZIP, FTP or CDN hosting, ESP.
   MAILING_EXPORT: 'mailing.export',
@@ -67,18 +69,22 @@ const ALL_CAPABILITIES = Object.freeze(
 
 const C = CAPABILITIES;
 
-// Reads, comments, approves, sends tests and exports. Writes no email.
-const REVIEWER_CAPABILITIES = [
+// What every role holds: comment, send tests, export, the gallery.
+const MEMBER_CAPABILITIES = [
   C.MAILING_COMMENT,
   C.MAILING_SEND_TEST,
   C.MAILING_EXPORT,
   C.GALLERY_MANAGE,
 ];
 
+// Reads, comments, approves, sends tests and exports. Writes no email.
+const REVIEWER_CAPABILITIES = MEMBER_CAPABILITIES.concat([C.MAILING_APPROVE]);
+
 // Edits the content and declines the existing emails into variants (copy,
 // duplicate). Starts no email from a template and deletes nothing; the
-// structure and the style are locked in the editor.
-const WRITER_CAPABILITIES = REVIEWER_CAPABILITIES.concat([
+// structure and the style are locked in the editor. Does not approve: whoever
+// designs an email does not say it may be sent (ADR 0020).
+const WRITER_CAPABILITIES = MEMBER_CAPABILITIES.concat([
   C.MAILING_EDIT_CONTENT,
   C.MAILING_ORGANIZE,
   C.FOLDER_MANAGE,
@@ -93,8 +99,10 @@ const REGULAR_USER_CAPABILITIES = WRITER_CAPABILITIES.concat([
   C.BLOCK_LIBRARY_ADD,
 ]);
 
+// The admins approve, as the reviewer does (ADR 0020).
 const GROUP_ADMIN_CAPABILITIES = REGULAR_USER_CAPABILITIES.concat([
   C.GROUP_MANAGE,
+  C.MAILING_APPROVE,
 ]);
 
 // A company admin with the technical settings on top (product decision of

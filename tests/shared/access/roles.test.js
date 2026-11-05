@@ -44,6 +44,13 @@ const MATRIX = {
   [CAPABILITIES.MAILING_EDIT_STRUCTURE]: AUTHORS,
   [CAPABILITIES.MAILING_EDIT_STYLE]: AUTHORS,
   [CAPABILITIES.MAILING_COMMENT]: EVERY_ROLE,
+  // ADR 0020: the reviewer and the admins, not who designs the email.
+  [CAPABILITIES.MAILING_APPROVE]: [
+    SUPER_ADMIN,
+    GROUP_ADMIN_TECH,
+    GROUP_ADMIN,
+    REVIEWER,
+  ],
   [CAPABILITIES.MAILING_SEND_TEST]: EVERY_ROLE,
   [CAPABILITIES.MAILING_EXPORT]: EVERY_ROLE,
   [CAPABILITIES.FOLDER_MANAGE]: [...AUTHORS, WRITER],
@@ -112,24 +119,19 @@ describe('isRoleWithin: nobody hands out more than they hold', () => {
     expect(isRoleWithin(role, own(actor))).toBe(expected);
   });
 
+  // The lists are no longer nested from the reviewer up (ADR 0020): an admin
+  // must still hold every right of the roles below, or could no longer give
+  // them nor manage their accounts.
+  it.each([GROUP_ADMIN, GROUP_ADMIN_TECH])(
+    'a %s holds every right of the roles below',
+    (admin) => {
+      [REGULAR_USER, WRITER, REVIEWER].forEach((role) => {
+        expect(isRoleWithin(role, own(admin))).toBe(true);
+      });
+    }
+  );
+
   it('refuses an unknown role, though it holds nothing', () => {
     expect(isRoleWithin('owner', ALL_CAPABILITIES)).toBe(false);
-  });
-});
-
-// ADR 0020 and the amendment of ADR 0004: approving an email is a capability
-// of its own. Turned on by the PR of the approval's server rules, which adds the
-// row to MATRIX above and removes this block.
-describe.skip('mailing.approve: the reviewer and the admins', () => {
-  const APPROVERS = [SUPER_ADMIN, GROUP_ADMIN_TECH, GROUP_ADMIN, REVIEWER];
-
-  it.each(EVERY_ROLE)('for %s', (role) => {
-    expect(roleCan(role, CAPABILITIES.MAILING_APPROVE)).toBe(
-      APPROVERS.includes(role)
-    );
-  });
-
-  it('leaves a company admin able to make a reviewer', () => {
-    expect(isRoleWithin(REVIEWER, capabilitiesOfRole(GROUP_ADMIN))).toBe(true);
   });
 });

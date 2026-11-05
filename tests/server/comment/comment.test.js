@@ -100,7 +100,7 @@ describe('Comment Service', () => {
     });
 
     describe('decision', () => {
-      const createWith = async (fields) => {
+      const createWith = async (fields, role) => {
         const mailingId = mockObjectId();
         const groupId = mockObjectId();
         const commentId = mockObjectId();
@@ -112,17 +112,20 @@ describe('Comment Service', () => {
           populate: jest.fn().mockReturnThis(),
           lean: jest.fn().mockResolvedValue({ _id: commentId }),
         });
+        // No blocking comment open (ADR 0020, tests/server/comment/approval.test.js).
+        Comments.countDocuments = jest.fn().mockResolvedValue(0);
 
         await commentService.createComment({
           mailingId: mailingId.toString(),
-          user: createTestUser(mockObjectId(), groupId),
+          user: { ...createTestUser(mockObjectId(), groupId), role },
           text: 'Test comment',
           ...fields,
         });
       };
 
       it('should create a comment carrying an approval decision', async () => {
-        await createWith({ decision: COMMENT_DECISIONS.APPROVED });
+        // Approving takes mailing.approve: a reviewer's (ADR 0020).
+        await createWith({ decision: COMMENT_DECISIONS.APPROVED }, 'reviewer');
 
         expect(Comments.create).toHaveBeenCalledWith(
           expect.objectContaining({ decision: COMMENT_DECISIONS.APPROVED })
