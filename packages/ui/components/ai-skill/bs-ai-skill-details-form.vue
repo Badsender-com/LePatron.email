@@ -12,6 +12,7 @@ import {
   AUDIENCES,
   SKILL_NATURES,
 } from '~/helpers/ai-skill-categories.js';
+import { latestDraft } from '~/helpers/ai-skill-versions.js';
 
 export default {
   name: 'BsAiSkillDetailsForm',
@@ -49,8 +50,7 @@ export default {
       );
     },
     nature() {
-      const versions = this.value.versions || [];
-      const version = this.activeVersion || versions[versions.length - 1];
+      const version = this.activeVersion || latestDraft(this.value.versions);
       return (version && version.nature) || SKILL_NATURES.FEATURE;
     },
     activeIsTask() {
