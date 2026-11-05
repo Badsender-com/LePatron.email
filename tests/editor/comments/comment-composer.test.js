@@ -89,7 +89,7 @@ describe('the comment form', () => {
       options.map((o) => o.textContent.trim().replace(/\s+/g, ' '))
     ).toEqual([
       'comments-whole-email comments-context-global',
-      'Block b1 comments-target-selected',
+      'Cover comments-target-selected',
     ]);
     expect(options[1].getAttribute('aria-selected')).toBe('true');
     expect(root.textContent).toContain('comments-target-note');
@@ -141,16 +141,27 @@ describe('the comment form', () => {
     expect(events).toEqual([['approve', undefined]]);
   });
 
-  it('disables approving while a blocking comment is open, with the reason', () => {
-    const { root } = composer({ canApprove: true, approveBlocked: true });
+  it('disables approving while a blocking comment is open, with the reason read from the button', () => {
+    const { root, events } = composer({
+      canApprove: true,
+      approveBlocked: true,
+    });
     const button = root.querySelector('.comment-composer__approve');
-    expect(button.disabled).toBe(true);
-    expect(button.getAttribute('aria-describedby')).toBe(
-      'comments-approve-blocked'
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    button.click();
+    expect(events).toEqual([]);
+    const reason = root.querySelector(
+      `#${button.getAttribute('aria-describedby')}`
     );
-    expect(
-      root.querySelector('#comments-approve-blocked').textContent
-    ).toContain('comments-approve-blocked');
+    expect(reason.textContent).toContain('comments-approve-blocked');
+  });
+
+  it('adds nothing without text', () => {
+    const { root, events } = composer({ text: '  ' });
+    expect(root.querySelector('button[type="submit"]').disabled).toBe(true);
+    root.dispatchEvent(new Event('submit'));
+    expect(events).toEqual([]);
   });
 });
 
@@ -233,6 +244,27 @@ describe('mentions', () => {
     ]);
     expect(app.text).toBe('Hello @Tom Roe ');
     expect(textarea.value).toBe('Hello @Tom Roe ');
+  });
+
+  it('suggests no one in the middle of an address', async () => {
+    const { root } = composer();
+    await type(root.querySelector('textarea'), 'write to ana@to');
+    expect(root.querySelector('.mention-textarea__list').style.display).toBe(
+      'none'
+    );
+  });
+
+  it('inserts nothing when the caret left the mention, and never doubles the text', async () => {
+    const { root, events } = composer();
+    const textarea = root.querySelector('textarea');
+    await type(textarea, 'Hello @to');
+    // The caret goes back to the start, with no new input.
+    textarea.setSelectionRange(0, 0);
+    key(textarea, 'Enter');
+    expect(events.filter(([name]) => name === 'mention')).toEqual([]);
+    expect(events.filter(([name]) => name === 'input')).toEqual([
+      ['input', 'Hello @to'],
+    ]);
   });
 
   it('closes the suggestions on Escape, the panel staying open', async () => {

@@ -11,8 +11,10 @@ let uid = 0;
  * company's users, the name typed after it filters them. A chosen user shows
  * as « @Name » and is told to the panel, which stores the mention.
  *
- * At the keyboard: Up and Down move among the suggestions, Enter or Tab
- * choose, Escape closes them without closing the panel.
+ * A mention starts a word: « ana@example » suggests no one. At the keyboard:
+ * Up and Down move among the suggestions, Enter or Tab choose, Escape closes
+ * them without closing the panel. While an input method composes, keys are
+ * its own.
  */
 const MentionTextarea = Vue.component('MentionTextarea', {
   props: {
@@ -22,6 +24,7 @@ const MentionTextarea = Vue.component('MentionTextarea', {
     placeholder: { type: String, default: '' },
     label: { type: String, required: true },
     rows: { type: Number, default: 3 },
+    t: { type: Function, default: null },
   },
   data: () => ({ query: null, at: -1, active: 0 }),
   created() {
@@ -44,22 +47,40 @@ const MentionTextarea = Vue.component('MentionTextarea', {
     focus() {
       this.$refs.input.focus();
     },
-    onInput(event) {
-      const { value, selectionStart } = event.target;
-      this.$emit('input', value);
+    // The mention being typed where the caret is now, if any.
+    contextAt() {
+      const { value, selectionStart } = this.$refs.input;
       const context = findMentionContext(value, selectionStart);
+      if (!context) return null;
+      // A mention starts a word: not the middle of an address.
+      const before = value.charAt(context.atIndex - 1);
+      return context.atIndex === 0 || /\s/.test(before) ? context : null;
+    },
+    follow() {
+      const context = this.contextAt();
       this.query = context ? context.query : null;
       this.at = context ? context.atIndex : -1;
+    },
+    onInput(event) {
+      this.$emit('input', event.target.value);
+      this.follow();
       this.active = 0;
     },
     close() {
       this.query = null;
     },
     insert(user) {
-      // What is typed, not the prop: the panel may not have passed it back yet.
+      // Read again where the caret is: it may have moved since the last key
+      // typed. What is typed, not the prop: the panel may not have passed it
+      // back yet.
+      const context = this.contextAt();
+      if (!context) {
+        this.close();
+        return;
+      }
       const input = this.$refs.input;
       const cursor = input.selectionStart;
-      const before = input.value.slice(0, this.at);
+      const before = input.value.slice(0, context.atIndex);
       const after = input.value.slice(cursor);
       const shown = `@${user.name}`;
       this.$emit('input', `${before}${shown} ${after}`);
@@ -76,7 +97,7 @@ const MentionTextarea = Vue.component('MentionTextarea', {
       });
     },
     onKey(event) {
-      if (!this.open) return;
+      if (!this.open || event.isComposing) return;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;
@@ -101,16 +122,16 @@ const MentionTextarea = Vue.component('MentionTextarea', {
         :value="value"
         :placeholder="placeholder"
         :aria-label="label"
-        role="combobox"
         aria-autocomplete="list"
-        :aria-expanded="open ? 'true' : 'false'"
-        :aria-controls="listId"
+        :aria-controls="open ? listId : null"
         :aria-activedescendant="open ? listId + '-' + active : null"
         @input="onInput"
         @keydown="onKey"
+        @keyup="open && follow()"
+        @click="open && follow()"
         @blur="close"
       ></textarea>
-      <ul v-show="open" :id="listId" role="listbox" class="mention-textarea__list">
+      <ul v-show="open" :id="listId" role="listbox" :aria-label="t ? t('comments-mention-list') : label" class="mention-textarea__list">
         <li
           v-for="(user, i) in suggestions"
           :id="listId + '-' + i"

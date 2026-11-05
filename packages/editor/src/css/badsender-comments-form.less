@@ -23,6 +23,12 @@
     gap: 8px;
 
     > .comments-menu { flex: 1; min-width: 0; }
+
+    // The right-hand menu opens from its right edge, inside the panel.
+    > .comments-menu:last-child .comments-menu__popup {
+      left: auto;
+      right: 0;
+    }
   }
 
   .comment-composer__blocked {
@@ -34,6 +40,12 @@
     line-height: 1.4;
 
     > .lucide { color: @qc-error; flex: none; }
+  }
+
+  // Disabled, but focusable: its reason is read from it.
+  .comment-composer__approve[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 
   .comment-composer__actions,
@@ -132,14 +144,15 @@
       border-radius: 4px;
       cursor: pointer;
 
-      &[aria-selected='true'] {
-        background: color-mix(in srgb, var(--accent) 12%, var(--white));
-      }
-
       &:hover,
       &:focus {
         outline: none;
         background: var(--gray-100);
+      }
+
+      // The chosen option keeps its tint, focused or not (board c2).
+      &[aria-selected='true'] {
+        background: color-mix(in srgb, var(--accent) 12%, var(--white));
       }
 
       &:focus-visible {

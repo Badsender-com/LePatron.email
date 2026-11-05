@@ -9,8 +9,9 @@ let uid = 0;
  * « Type », « Priorité ». A button that names the choice and its value, and a
  * list of options, with an optional note below them.
  *
- * At the keyboard: Enter, Space or Down opens on the chosen option; Up and
- * Down move, Enter or Space choose, Escape and Tab close. Escape stops here:
+ * At the keyboard: Enter, Space or Down opens on the chosen option, Up on the
+ * last; Up, Down, Home and End move, Enter or Space choose, Escape and Tab
+ * close. Escape stops here:
  * the panel would close otherwise (its binding listens to it).
  */
 const CommentsMenu = Vue.component('CommentsMenu', {
@@ -38,8 +39,11 @@ const CommentsMenu = Vue.component('CommentsMenu', {
     document.removeEventListener('mousedown', this.onOutside, true);
   },
   methods: {
-    show() {
-      this.active = Math.max(0, this.options.indexOf(this.chosen));
+    // On the chosen option; Up opens on the last.
+    show(last = false) {
+      this.active = last
+        ? this.options.length - 1
+        : Math.max(0, this.options.indexOf(this.chosen));
       this.open = true;
       document.addEventListener('mousedown', this.onOutside, true);
       this.$nextTick(() => this.focusActive());
@@ -81,6 +85,10 @@ const CommentsMenu = Vue.component('CommentsMenu', {
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         this.move(-1);
+      } else if (event.key === 'Home' || event.key === 'End') {
+        event.preventDefault();
+        this.active = event.key === 'Home' ? 0 : this.options.length - 1;
+        this.focusActive();
       } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         this.choose(this.options[this.active]);
@@ -97,9 +105,10 @@ const CommentsMenu = Vue.component('CommentsMenu', {
         class="comments-menu__button"
         aria-haspopup="listbox"
         :aria-expanded="open ? 'true' : 'false'"
-        :aria-controls="listId"
+        :aria-controls="open ? listId : null"
         @click="toggle"
-        @keydown.down.prevent="show"
+        @keydown.down.prevent="show()"
+        @keydown.up.prevent="show(true)"
       >
         <span class="comments-menu__label">{{ label }}</span>
         <span v-if="chosen.icon" :class="['lucide', chosen.icon]" aria-hidden="true"></span>

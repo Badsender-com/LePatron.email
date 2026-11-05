@@ -6,7 +6,8 @@ const { MentionTextarea } = require('./mention-textarea');
 /**
  * Writing in the thread (ADR 0020): a reply under its comment, or a comment
  * being edited in its place. The text, with mentions; « Annuler » and the
- * action. Escape cancels; the panel stays open.
+ * action. Escape cancels; the panel stays open, and gives the focus back to
+ * the button that opened the form.
  */
 const CommentInlineForm = Vue.component('CommentInlineForm', {
   components: { MentionTextarea },
@@ -29,20 +30,21 @@ const CommentInlineForm = Vue.component('CommentInlineForm', {
     },
   },
   template: `
-    <form class="comment-inline-form" @submit.prevent="busy || $emit('submit')" @keydown="onKey">
+    <form class="comment-inline-form" @submit.prevent="busy || !text.trim() || $emit('submit')" @keydown="onKey">
       <mention-textarea
         ref="text"
         :rows="2"
         :value="text"
         :users="users"
         :label="label"
+        :t="t"
         :placeholder="t('comments-placeholder')"
         @input="$emit('input', $event)"
         @mention="$emit('mention', $event)"
       ></mention-textarea>
       <div class="comment-inline-form__actions">
         <button type="button" class="qc-button qc-button--ghost qc-button--sm" @click="$emit('cancel')">{{ t('comments-cancel') }}</button>
-        <button type="submit" class="qc-button qc-button--cta qc-button--sm" :disabled="busy">{{ submitLabel }}</button>
+        <button type="submit" class="qc-button qc-button--cta qc-button--sm" :disabled="busy || !text.trim()">{{ submitLabel }}</button>
       </div>
     </form>
   `,
