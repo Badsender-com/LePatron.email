@@ -1,8 +1,9 @@
 'use strict';
 
 // The skills and expertises written before audiences were used by every
-// company (ADR 0013): the migration opens those with no audience to all, and
-// leaves alone one already set, the platform company's above all.
+// company (ADR 0013): the migration opens to all those with no audience, a
+// null one, or `subscribers` (the name `all` had on some test instances), and
+// leaves alone `platform` and `all`.
 
 const {
   WITHOUT_AUDIENCE,
@@ -21,8 +22,15 @@ function fakeModel(docs) {
 }
 
 describe('migrate-audience-all', () => {
-  it('selects a skill or an expertise that has no audience', () => {
-    expect(matches({ skillId: 'qc.subject' }, WITHOUT_AUDIENCE)).toBe(true);
+  it.each([
+    ['no audience', { skillId: 'qc.subject' }],
+    ['a null audience', { skillId: 'qc.subject', audience: null }],
+    [
+      'the former name of all',
+      { skillId: 'qc.subject', audience: 'subscribers' },
+    ],
+  ])('selects a skill or an expertise that has %s', (_case, doc) => {
+    expect(matches(doc, WITHOUT_AUDIENCE)).toBe(true);
   });
 
   it.each(['platform', 'all'])(
@@ -34,22 +42,28 @@ describe('migrate-audience-all', () => {
     }
   );
 
-  it('opens to every company those with no audience', async () => {
+  it('opens to every company those with no audience, a null one or the former name', async () => {
     const model = fakeModel([
       { skillId: 'qc.subject' },
+      { skillId: 'qc.preheader', audience: null },
+      { skillId: 'qc.footer', audience: 'subscribers' },
       { skillId: 'qc.cta', audience: 'platform' },
+      { skillId: 'qc.links', audience: 'all' },
     ]);
 
-    await expect(migrate(model, { dryRun: false })).resolves.toBe(1);
+    await expect(migrate(model, { dryRun: false })).resolves.toBe(3);
     expect(model.updateMany).toHaveBeenCalledWith(WITHOUT_AUDIENCE, {
       $set: { audience: 'all' },
     });
   });
 
   it('writes nothing on a dry run', async () => {
-    const model = fakeModel([{ skillId: 'qc.subject' }]);
+    const model = fakeModel([
+      { skillId: 'qc.subject' },
+      { skillId: 'qc.footer', audience: 'subscribers' },
+    ]);
 
-    await expect(migrate(model, { dryRun: true })).resolves.toBe(1);
+    await expect(migrate(model, { dryRun: true })).resolves.toBe(2);
     expect(model.updateMany).not.toHaveBeenCalled();
   });
 

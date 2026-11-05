@@ -8,7 +8,10 @@
  * ADR 0013 adds an audience to skills and expertises, and a new one starts
  * with the platform company. The ones written before were used by every
  * company: they get the audience `all`, without which no client company reads
- * them any more (services/audience.js). One already set is left as it is.
+ * them any more (services/audience.js). An audience stored as `null`, or as
+ * `subscribers` (the name `all` had while the audience was being built, left
+ * on some test instances), is read the same way. `platform` and `all` are left
+ * as they are.
  *
  * Idempotent: re-running is a no-op.
  *
@@ -29,14 +32,19 @@ const { Audiences } = require(server(
   'skill-constants.js'
 ));
 
-// The documents to migrate: those with no audience.
-const WITHOUT_AUDIENCE = Object.freeze({ audience: { $exists: false } });
+// The name `all` had while the audience was being built.
+const FORMER_ALL = 'subscribers';
+// The documents to migrate: those with no audience, a null one or the former
+// name of `all` (`$in` with null matches a missing field too).
+const WITHOUT_AUDIENCE = Object.freeze({
+  audience: { $in: [null, FORMER_ALL] },
+});
 
 /**
  * @param {import('mongoose').Model} model the skills or the expertises
  * @param {Object} options
  * @param {boolean} options.dryRun counts without writing
- * @returns {Promise<number>} how many have no audience
+ * @returns {Promise<number>} how many had no audience of `platform` or `all`
  */
 async function migrate(model, { dryRun }) {
   const count = await model.countDocuments(WITHOUT_AUDIENCE);
