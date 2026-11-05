@@ -50,6 +50,8 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
     STATUS_LABELS,
     ROLE_LABELS,
     undoKeys: IS_MAC ? '⌘Z' : 'Ctrl+Z',
+    // The list shown again from the summary (« Revoir les corrections »).
+    reviewing: false,
   }),
   computed: {
     state() {
@@ -87,6 +89,55 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
         open: group.corrections.filter(isOpen).length,
       }));
     },
+    // Everything answered once the analysis is over (board a5): the summary.
+    summary() {
+      return (
+        this.state.done &&
+        this.state.corrections.length > 0 &&
+        !this.open.length &&
+        !this.reviewing
+      );
+    },
+    // What became of the corrections, and what was not read.
+    tally() {
+      const count = (status) =>
+        this.state.corrections.filter((c) => c.status === status).length;
+      const leftOut = this.state.leftOut || {};
+      return {
+        done: [
+          ['ai-panel-tally-accepted', count('accepted')],
+          ['ai-panel-tally-ignored', count('ignored')],
+          ['ai-panel-tally-stale', count('stale')],
+        ].filter(([, n]) => n > 0),
+        unread: [
+          ['ai-panel-tally-sample', leftOut.sample || 0],
+          ['ai-panel-tally-too-long', this.state.tooLong || 0],
+          ['ai-panel-tally-dropped', this.state.dropped || 0],
+        ].filter(([, n]) => n > 0),
+      };
+    },
+    // The main buttons, in the panel's foot (boards a4, a5).
+    footerButtons() {
+      const acceptAll = this.open.length > 0 && {
+        id: 'accept-all',
+        label: this.t('ai-panel-accept-all-count', { count: this.open.length }),
+        primary: true,
+      };
+      if (this.state.isLoading) {
+        const stop = this.state.progress &&
+          !this.state.stopped && {
+            id: 'stop',
+            label: this.t('ai-panel-correction-stop'),
+          };
+        return [stop, acceptAll].filter(Boolean);
+      }
+      if (acceptAll) return [acceptAll];
+      const done = { id: 'done', label: this.t('ai-panel-done'), primary: true };
+      if (this.summary) {
+        return [{ id: 'review', label: this.t('ai-panel-review') }, done];
+      }
+      return [done];
+    },
     failedLabels() {
       return this.state.failedBlocks
         .map((blockId) => this.session.blockLabel(blockId))
@@ -94,6 +145,12 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
     },
   },
   watch: {
+    footerButtons: {
+      immediate: true,
+      handler(buttons) {
+        this.$emit('footer', buttons);
+      },
+    },
     'state.pausedFor'(seconds) {
       if (seconds) {
         this.$emit('announce', this.t('ai-panel-correction-paused', { seconds }));
@@ -152,6 +209,15 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
     },
     stop() {
       this.session.stop();
+    },
+    // A button of the panel's foot.
+    onFooter(id) {
+      if (id === 'stop') this.stop();
+      else if (id === 'accept-all') this.acceptAll();
+      else if (id === 'review') {
+        this.reviewing = true;
+        this.focusRef('summary');
+      } else if (id === 'done') this.$emit('back');
     },
     accept(correction) {
       const { accepted } = this.session.accept(correction.id);

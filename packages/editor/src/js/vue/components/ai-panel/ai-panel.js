@@ -50,6 +50,9 @@ const AiPanel = Vue.component('AiPanel', {
     sessionKey: 0,
     // Said to screen readers: proposals arrived, copied, undone.
     liveMessage: '',
+    // The main buttons of the steps under way, in the panel's foot (boards
+    // a3 to a5): [{ id, label, primary?, disabled? }], said by the steps.
+    footer: [],
   }),
   created() {
     this.iconsObserver = null;
@@ -77,7 +80,13 @@ const AiPanel = Vue.component('AiPanel', {
     startSession() {
       this.sessionKey += 1;
       this.liveMessage = '';
+      this.footer = [];
       this.focusHeading();
+    },
+    // A button of the foot: the steps that named it carry it out.
+    onFooter(id) {
+      const steps = this.$refs.steps;
+      if (steps && typeof steps.onFooter === 'function') steps.onFooter(id);
     },
     labelsOf(id) {
       return definitionOf(id).labels;
