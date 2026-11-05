@@ -177,7 +177,12 @@ describe('ai panel: the steps of an AI action', () => {
     });
 
     it('reports an error the user can act on, by status', async () => {
-      api.generate.mockRejectedValue({ response: { status: 403 } });
+      api.generate.mockRejectedValue({
+        response: {
+          status: 403,
+          data: { message: 'TEXT_GENERATION_DISABLED' },
+        },
+      });
       await session.request({});
       expect(session.state.error).toBe('text-generation-error-disabled');
     });

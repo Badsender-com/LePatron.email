@@ -1019,6 +1019,8 @@ module.exports = {
     "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
   'text-generation-error-disabled':
     "La génération de texte n'est pas activée pour votre groupe.",
+  'text-generation-error-forbidden':
+    "Vous n'avez pas le droit de modifier cet email : les outils IA ne sont pas disponibles.",
   'text-generation-error-unavailable':
     "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
   'text-generation-error-rate-limited':

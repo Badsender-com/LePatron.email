@@ -78,7 +78,7 @@ function metadataFor({ role, feature = true, canWrite = true }) {
     .then((result) => result.metadata);
 }
 
-describe.skip('findOneForMosaico — canUseTextGeneration (ADR 0020)', () => {
+describe('findOneForMosaico — canUseTextGeneration (ADR 0020)', () => {
   it.each(['writer', 'regular_user', 'company_admin', 'super_admin'])(
     'is true for a %s who may write where the email lives',
     async (role) => {

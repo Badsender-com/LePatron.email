@@ -99,8 +99,9 @@ module.exports = {
     };
   },
   init(vm) {
-    // Nothing to offer without an AI action: no panel, no work behind it.
-    if (!vm.metadata.hasTextGenerationFeature) return;
+    // Nothing to offer without an AI action, for this user on this email
+    // (ADR 0020): no panel, no work behind it.
+    if (!vm.metadata.canUseTextGeneration) return;
     if (!document.getElementById('ai-panel')) return;
 
     editor = createEditorAccess(vm);

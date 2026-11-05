@@ -173,9 +173,8 @@ function createEditorAccess(viewModel) {
     },
     // The context the action registry decides from.
     context() {
-      const textGeneration = Boolean(
-        viewModel.metadata.hasTextGenerationFeature
-      );
+      // For this user on this email (ADR 0020), not only for the company.
+      const textGeneration = Boolean(viewModel.metadata.canUseTextGeneration);
       return {
         textGeneration,
         hasSubject: Boolean(knownSubject().trim()),

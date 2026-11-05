@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
@@ -626,6 +628,16 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
+  // Whether this user may use the AI tools on this email: the rule of the text
+  // generation routes (the feature, the capability, where the email lives),
+  // known before the editor starts so that every way in is hidden at once
+  // (ADR 0020). `hasTextGenerationFeature` keeps saying "on for the company".
+  const canUseTextGeneration = Boolean(
+    hasTextGenerationFeature &&
+      canWrite &&
+      permissions.can(user, CAPABILITIES.MAILING_EDIT_CONTENT)
+  );
+
   // Lazy require like the services above: share-link.service reaches
   // models.common, which reaches back here.
   const shareLinkService = require('../share-link/share-link.service.js');
@@ -663,6 +675,8 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       // The text generation button. Independent of the email metadata: without
       // them, the subject proposal is offered to copy.
       hasTextGenerationFeature,
+      // The AI tools of the editor, for this user on this email.
+      canUseTextGeneration,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
       // Named after the descriptors' flags, which the editor reads them by.
