@@ -10,7 +10,7 @@ module.exports = {
   id: 'correct-text',
   family: 'corrections',
   feature: 'textGeneration',
-  targets: ['blockField', 'block'],
+  targets: ['blockField', 'block', 'email'],
   // A correction is always written: block fields are the email's own.
   describe: () => ({ canApply: true }),
 

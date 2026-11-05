@@ -27,10 +27,13 @@ describe('ai panel: the action registry', () => {
   const ids = (result) => result.actions.map((action) => action.id);
 
   describe('the whole email (« Outils IA » with nothing selected)', () => {
-    // Updated by #1256: « Corriger » joins them on the whole email.
-    it('offers both actions as a list', () => {
+    it('offers its actions as a list', () => {
       const result = availableActions({ kind: 'email' }, ON);
-      expect(ids(result)).toEqual(['generate-subject', 'generate-preheader']);
+      expect(ids(result)).toEqual([
+        'generate-subject',
+        'generate-preheader',
+        'correct-text',
+      ]);
       expect(result.opens).toBe('list');
     });
 
@@ -134,7 +137,7 @@ describe('ai panel: the action registry', () => {
     it('is offered nowhere else', () => {
       expect(
         ids(availableActions({ kind: 'email' }, ON, [...ACTIONS, rewrite]))
-      ).toEqual(['generate-subject', 'generate-preheader']);
+      ).not.toContain('rewrite-text');
     });
 
     it('is not offered when its AI feature is off', () => {
@@ -186,8 +189,7 @@ describe('ai panel: the action registry', () => {
       });
     });
 
-    // Turned on by #1256 (correct the whole email)
-    describe.skip('on the whole email', () => {
+    describe('on the whole email', () => {
       it('comes after generating the subject and the preheader', () => {
         expect(ids(availableActions({ kind: 'email' }, ON))).toEqual([
           'generate-subject',

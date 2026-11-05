@@ -64,6 +64,41 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
         (c) => c.status === 'accepted' || c.status === 'undone'
       );
     },
+    // The corrections by block on the whole email; one group otherwise.
+    groups() {
+      if (this.state.target.kind !== 'email') {
+        return [{ blockId: null, label: null, corrections: this.state.corrections }];
+      }
+      const groups = [];
+      this.state.corrections.forEach((correction) => {
+        let group = groups.find((g) => g.blockId === correction.blockId);
+        if (!group) {
+          group = {
+            blockId: correction.blockId,
+            label: this.session.blockLabel(correction.blockId),
+            corrections: [],
+          };
+          groups.push(group);
+        }
+        group.corrections.push(correction);
+      });
+      return groups.map((group) => ({
+        ...group,
+        open: group.corrections.filter(isOpen).length,
+      }));
+    },
+    failedLabels() {
+      return this.state.failedBlocks
+        .map((blockId) => this.session.blockLabel(blockId))
+        .join(', ');
+    },
+  },
+  watch: {
+    'state.pausedFor'(seconds) {
+      if (seconds) {
+        this.$emit('announce', this.t('ai-panel-correction-paused', { seconds }));
+      }
+    },
   },
   mounted() {
     this.analyse();
@@ -96,13 +131,27 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
       await this.session.request();
       if (this.state.error) return;
       const count = this.state.corrections.length;
-      this.$emit(
-        'announce',
-        count
+      let said;
+      if (this.state.stopped) {
+        const { done, total } = this.state.progress;
+        said = this.t(countKey('ai-panel-correction-stopped', done), {
+          done,
+          total,
+        });
+      } else if (this.state.target.kind === 'email') {
+        said = count
+          ? this.tCount('ai-panel-correction-finished', count)
+          : this.t('ai-panel-no-correction');
+      } else {
+        said = count
           ? this.tCount('ai-panel-corrections-count', count)
-          : this.t('ai-panel-no-correction')
-      );
+          : this.t('ai-panel-no-correction');
+      }
+      this.$emit('announce', said);
       this.focusRef('summary');
+    },
+    stop() {
+      this.session.stop();
     },
     accept(correction) {
       const { accepted } = this.session.accept(correction.id);
@@ -117,6 +166,17 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
       this.$emit('announce', said.join(' '));
       if (accepted) this.$emit('changed');
       this.focusRef('summary');
+    },
+    acceptBlock(group) {
+      const { accepted, stale } = this.session.acceptBlock(group.blockId);
+      const said = [this.tCount('ai-panel-corrections-accepted', accepted)];
+      if (stale) said.push(this.tCount('ai-panel-corrections-stale', stale));
+      this.$emit('announce', said.join(' '));
+      if (accepted) this.$emit('changed');
+      this.focusNext(group.corrections[group.corrections.length - 1]);
+    },
+    goToBlock(blockId) {
+      this.session.goToBlock(blockId);
     },
     ignore(correction) {
       this.session.ignore(correction.id);
