@@ -246,7 +246,6 @@
     "yargs": "13.2.2"
   },
   "resolutions": {
-    "@nuxtjs/vuetify/**/sass": "1.32.13",
     "winston": "3.2.1",
     "vue-server-renderer": "2.6.14",
     "@types/bson": "4.0.5",
@@ -254,7 +253,19 @@
     "jsonwebtoken": "9.0.2",
     "xml-crypto": "2.1.6",
     "xmldom": "npm:@xmldom/xmldom@0.7.13",
-    "sib-api-v3-sdk/superagent": "10.3.0"
+    "sib-api-v3-sdk/superagent": "10.3.0",
+    "@puppeteer/browsers@npm:1.9.1": "patch:@puppeteer/browsers@npm%3A1.9.1#~/.yarn/patches/@puppeteer-browsers-npm-1.9.1-f9743bc3b8.patch"
+  },
+  "dependenciesMeta": {
+    "gifsicle": {
+      "built": true
+    },
+    "puppeteer": {
+      "built": true
+    },
+    "sharp": {
+      "built": true
+    }
   },
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",
@@ -294,8 +305,7 @@
     "test:e2e-ci": "cypress run"
   },
   "engines": {
-    "node": "24.22.1",
-    "yarn": "<2"
+    "node": "24.22.1"
   },
   "husky": {
     "hooks": {
@@ -306,5 +316,6 @@
     "*.{js,vue,css,scss,md}": "prettier --write",
     "*.{js,vue}": "eslint --cache --fix --ignore-pattern 'public/source/*'",
     "packages/shared/block-builder/components/*.{vue,slots.js}": "node scripts/compile-block-builder-components.js --stage"
-  }
+  },
+  "packageManager": "yarn@4.18.1+sha512.b2e1e7524f654f2749d32b4ebcb4622473cb5bcbc485df2007e12a154e50162a4d795526768bc5f5b8f81717bfd79deb2472813d86fb5ae2eb551fa9c872b08f"
 }

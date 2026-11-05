@@ -15,6 +15,7 @@ Complete guide to LePatron.email documentation for developers and AI agents.
 | [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) | Mosaico template development                            | Template developers      |
 | [README.md](./README.md)                                     | Project overview and setup                              | Everyone                 |
 | [adr/](./adr/)                                               | Architecture Decision Records                           | AI agents, developers    |
+| [package-manager.md](./package-manager.md)                   | Yarn 4: settings, install scripts, CI and Clever Cloud  | Developers               |
 | [node-upgrades.md](./node-upgrades.md)                       | Node version: where it is set, past upgrades            | Developers               |
 | [../.claude/skills/](../.claude/skills/)                     | Agent skills, including the new feature workflow        | AI agents                |
 

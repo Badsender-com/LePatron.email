@@ -34,5 +34,5 @@ After forking the repo:
 1. You must commit before deploy `git commit -m "Clever deploy"`
 2. Install and follow setup instructions [Clever tools](https://github.com/CleverCloud/clever-tools)
 3. Link the existing application to your local repo with `clever link [--org <ORG-NAME>] <APP-NAME> [--alias <alias>]`
-4. Add this environment variable `CC_POST_BUILD_HOOK = yarn build`
+4. Add these environment variables: `CC_NODE_BUILD_TOOL = yarn-berry` (the project runs on Yarn 4, see [package-manager.md](./package-manager.md#clever-cloud)) and `CC_POST_BUILD_HOOK = yarn build`
 5. Deploy the application by running `clever deploy [--alias <alias>]`

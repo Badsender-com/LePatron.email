@@ -2,6 +2,8 @@
 
 The Node version lives in two places that must agree: `.nvmrc` (read by nvm and by both CI workflows through `node-version-file`) and `engines.node` in `package.json` (read by Clever Cloud). Both hold an exact version, so a Node patch is a pull request.
 
+Yarn comes from Corepack ([package-manager.md](./package-manager.md)), which Node ships up to version 24. Moving to Node 25 or later means installing it (`npm install -g corepack`) on developer machines and in CI, where `corepack enable` runs before `actions/setup-node`.
+
 ## Node 18.18.0 → 24.22.1
 
 Node 18 has been out of support since April 2025, and the authorization server of the MCP epic (#1290) is `oidc-provider`, an ESM-only package. A CommonJS app can only `require()` it from Node 22.12, where `require(esm)` is on by default. Node 24 was picked over 22 because 22 leaves support in April 2027, 24 in April 2028.
