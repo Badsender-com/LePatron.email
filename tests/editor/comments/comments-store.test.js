@@ -117,6 +117,16 @@ describe('the comments store (ADR 0020, P5)', () => {
       expect(store.pendingCount()).toBe(0);
     });
 
+    it('says a first load failed, for the panel to offer a retry', async () => {
+      const { api, isOpen, store } = mount();
+      api.list.mockRejectedValueOnce({ status: 500 });
+      isOpen(true);
+      await settle();
+      expect(store.status()).toBe('error');
+      await store.load();
+      expect(store.status()).toBe(store.comments().length);
+    });
+
     it('sends one refresh at a time', async () => {
       const { api, isOpen } = mount();
       isOpen(true);

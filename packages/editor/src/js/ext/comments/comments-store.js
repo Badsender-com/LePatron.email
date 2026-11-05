@@ -57,8 +57,8 @@ function createCommentsStore(
 ) {
   const comments = ko.observableArray([]);
   const pending = ko.observableArray([]);
-  // false before the first load, 'loading' while it runs, then the number of
-  // comments.
+  // false before the first load, 'loading' while it runs, 'error' when it
+  // failed, then the number of comments.
   const status = ko.observable(false);
   // The list loaded once: the counters come from it from then on.
   const listLoaded = ko.observable(false);
@@ -132,7 +132,8 @@ function createCommentsStore(
       },
       (error) => {
         if (disposed) return;
-        status(listLoaded() ? comments().length : false);
+        // The list shown stays; without one, the panel offers to retry.
+        status(listLoaded() ? comments().length : 'error');
         throw error;
       }
     );
