@@ -158,3 +158,61 @@ describe.skip('authorization and consent', () => {
     });
   });
 });
+
+// The consent screen asks for a session like any page of the app, so the
+// two-factor step of ADR 0008 comes before it: a password alone never consents.
+// Turned on by #1306 (OAuth connection end to end)
+describe.skip('two-factor authentication before the consent', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+    oauth.update(app, 'groups', f.CLIENT_GROUP, { requireTwoFactor: true });
+  });
+
+  const beforeCode = async (userId) => {
+    const agent = oauth.signInBeforeCode(app, userId);
+    const uid = await oauth.startConsent(
+      agent,
+      CIMD_CLIENT,
+      oauth.pkce().challenge
+    );
+    return { agent, uid };
+  };
+
+  describe.each([
+    ['a member of a company that requires it', f.FRANK],
+    ['a super admin', f.ALICE],
+  ])('%s, between the password and the code', (_who, userId) => {
+    it('is shown no consent', async () => {
+      const { agent, uid } = await beforeCode(userId);
+
+      const response = await agent.get(`/api/oauth/interactions/${uid}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('cannot consent', async () => {
+      const { agent, uid } = await beforeCode(userId);
+
+      const consent = await agent
+        .post(`/api/oauth/interactions/${uid}/consent`)
+        .send({ groupId: f.CLIENT_GROUP });
+
+      expect(consent.status).toBe(401);
+      expect(consent.body.redirectTo).toBeUndefined();
+    });
+  });
+
+  it('shows the consent once the code is checked', async () => {
+    const agent = oauth.signIn(app, f.FRANK);
+    const uid = await oauth.startConsent(
+      agent,
+      CIMD_CLIENT,
+      oauth.pkce().challenge
+    );
+
+    const response = await agent.get(`/api/oauth/interactions/${uid}`);
+
+    expect(response.status).toBe(200);
+  });
+});

@@ -17,8 +17,9 @@
  * 4. The authorization server redirects to the client with a code and `iss`.
  * 5. `POST /oauth/token` trades the code and the PKCE verifier for tokens.
  *
- * `createApp`, `signIn`, `update` and `serveClientMetadata` are written by #1306, which
- * mounts the authorization server; the rest drives the flow above.
+ * `createApp`, `signIn`, `signInBeforeCode`, `update` and `serveClientMetadata`
+ * are written by #1306, which mounts the authorization server; the rest drives
+ * the flow above.
  */
 
 const crypto = require('crypto');
@@ -47,8 +48,20 @@ function createApp() {
   throw new Error(NOT_YET);
 }
 
-/** A supertest agent carrying the session of `userId`, as after the login. */
+/**
+ * A supertest agent carrying the session of `userId`, as after the login, its
+ * verification code checked when one is asked (ADR 0008).
+ */
 function signIn() {
+  throw new Error(NOT_YET);
+}
+
+/**
+ * A supertest agent of `userId` between the password and the verification
+ * code (ADR 0008): the pending step is in its session, the account is not
+ * signed in yet.
+ */
+function signInBeforeCode() {
   throw new Error(NOT_YET);
 }
 
@@ -153,6 +166,7 @@ module.exports = {
   CIMD_CLIENT,
   createApp,
   signIn,
+  signInBeforeCode,
   update,
   serveClientMetadata,
   pkce,
