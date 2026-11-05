@@ -1,17 +1,14 @@
 'use strict';
 
 const { z } = require('zod');
-const { Expertises } = require('../common/models.common.js');
 const {
-  findApplicable,
+  findApplicableWithScopesInUse,
 } = require('../ai-skill/repositories/expertise.repository.js');
 const { normalizeScopes } = require('../ai-skill/services/expertise-scope.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
-  SkillStatuses,
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
-const { audienceFilter } = require('../ai-skill/services/audience.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { uriOf } = require('./mcp-expertises.js');
 
@@ -55,24 +52,6 @@ const DESCRIPTION = [
   'Read each expertise through its resource URI.',
 ].join(' ');
 
-/**
- * The scopes an expertise the company may read is written for: those of the
- * active, scoped expertises, normalised. A transversal one applies whatever
- * the scope, so its own scopes match nothing.
- *
- * @param {Object} group the company of the caller, with `isPlatform`
- * @returns {Promise<string[]>}
- */
-async function scopesInUse(group) {
-  return normalizeScopes(
-    await Expertises.distinct('scope', {
-      status: SkillStatuses.ACTIVE,
-      isTransversal: { $ne: true },
-      ...audienceFilter(group),
-    })
-  );
-}
-
 const quoted = (scopes) => scopes.map((scope) => `"${scope}"`).join(', ');
 
 function listed(scopes) {
@@ -94,20 +73,20 @@ const filled = (value) => (value && value.trim()) || undefined;
 
 async function findExpertises({ group }, args) {
   const scopes = normalizeScopes(args.scope);
-  // The features' own lookup, with the audience of the caller's company. Its
-  // diagnostic is for a scope written in a feature's code: an assistant's is
-  // answered in the note below.
-  const [found, inUse] = await Promise.all([
-    findApplicable({
-      scope: scopes,
-      categories: args.categories,
-      emailType: filled(args.emailType),
-      language: filled(args.language),
-      groupId: group._id,
-      warnOnUnmatched: false,
-    }),
-    scopesInUse(group),
-  ]);
+  // The features' own lookup, with the scopes in use, both within the
+  // audience of the caller's company. Its diagnostic is for a scope written
+  // in a feature's code: an assistant's is answered in the note below.
+  const {
+    expertises: found,
+    scopesInUse: inUse,
+  } = await findApplicableWithScopesInUse({
+    scope: scopes,
+    categories: args.categories,
+    emailType: filled(args.emailType),
+    language: filled(args.language),
+    groupId: group._id,
+    warnOnUnmatched: false,
+  });
   const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
   const answer = {
     expertises: found.map((expertise) => ({

@@ -66,15 +66,34 @@ const APPLICABLE_FIELDS = Object.freeze({
  *   assistant sends through MCP, which answers it itself
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
-async function findApplicable({
-  scope,
-  categories,
-  emailType,
-  language,
-  groupId,
-  everyAudience = false,
-  warnOnUnmatched = true,
-} = {}) {
+async function findApplicable(filters = {}) {
+  const query = applicableQuery(filters);
+  const audience = await audienceOf(filters.groupId, filters.everyAudience);
+  return matching(query, audience, filters.warnOnUnmatched !== false);
+}
+
+/**
+ * `findApplicable`, with the scopes in use for the same company: those of
+ * the active, scoped expertises it may read, normalised. A transversal one
+ * applies whatever the scope, so its own scopes match nothing. The company
+ * is read once, for both.
+ *
+ * @param {Object} filters as findApplicable takes them
+ * @returns {Promise<{expertises: Object[], scopesInUse: string[]}>}
+ */
+async function findApplicableWithScopesInUse(filters = {}) {
+  const query = applicableQuery(filters);
+  const audience = await audienceOf(filters.groupId, filters.everyAudience);
+  const [expertises, inUse] = await Promise.all([
+    matching(query, audience, filters.warnOnUnmatched !== false),
+    scopesInUse(audience),
+  ]);
+  return { expertises, scopesInUse: inUse };
+}
+
+// The query of a match, checked: a call without a scope or a category is a
+// contract violation by the calling code.
+function applicableQuery({ scope, categories, emailType, language }) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
   // the match below is a strict string equality, so `cta` must meet `CTA`.
   const scopes = normalizeScopes(scope);
@@ -112,9 +131,12 @@ async function findApplicable({
       ],
     });
   }
+  return { scopes, and };
+}
 
+async function matching({ scopes, and }, audience, warnOnUnmatched) {
   const docs = await Expertises.find(
-    { $and: and, ...(await audienceOf(groupId, everyAudience)) },
+    { $and: and, ...audience },
     APPLICABLE_FIELDS
   ).lean();
 
@@ -139,6 +161,17 @@ async function findApplicable({
       if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
       return a.expertiseId.localeCompare(b.expertiseId);
     });
+}
+
+// The scopes in use within an audience.
+async function scopesInUse(audience) {
+  return normalizeScopes(
+    await Expertises.distinct('scope', {
+      status: SkillStatuses.ACTIVE,
+      isTransversal: { $ne: true },
+      ...audience,
+    })
+  );
 }
 
 // The audience filter of the caller's company, read with what it needs only.
@@ -234,4 +267,9 @@ function projectActiveVersion(doc) {
   return projectVersion(doc, findActiveVersion(doc));
 }
 
-module.exports = { findApplicable, projectActiveVersion, projectVersion };
+module.exports = {
+  findApplicable,
+  findApplicableWithScopesInUse,
+  projectActiveVersion,
+  projectVersion,
+};
