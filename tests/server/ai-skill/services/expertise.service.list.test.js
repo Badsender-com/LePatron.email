@@ -17,9 +17,9 @@ const {
   listExpertise,
 } = require('../../../../packages/server/ai-skill/services/expertise.service.js');
 const {
-  MAX_SEARCH_LENGTH,
-  MAX_LISTED_IDS,
-} = require('../../../../packages/server/ai-skill/services/expertise-list-filter.js');
+  EXPERTISE_SEARCH_MAX_LENGTH,
+  MAX_CONSUMED_EXPERTISES,
+} = require('../../../../packages/shared/ai-skill/constants.js');
 const {
   mockStore,
 } = require('../../../../packages/server/common/models.common');
@@ -79,17 +79,19 @@ describe('listExpertise, searched', () => {
     expect(await idsOf({ search: '   ' })).toHaveLength(4);
   });
 
-  it(`refuses a search longer than ${MAX_SEARCH_LENGTH} characters`, async () => {
+  it(`refuses a search longer than ${EXPERTISE_SEARCH_MAX_LENGTH} characters`, async () => {
     await expect(
-      listExpertise({ search: 'a'.repeat(MAX_SEARCH_LENGTH + 1) })
+      listExpertise({ search: 'a'.repeat(EXPERTISE_SEARCH_MAX_LENGTH + 1) })
     ).rejects.toMatchObject({
       status: 400,
       message: 'EXPERTISE_LIST_FILTER_INVALID',
       filter: 'search',
-      max: MAX_SEARCH_LENGTH,
+      max: EXPERTISE_SEARCH_MAX_LENGTH,
     });
     expect(
-      await idsOf({ search: `${'a'.repeat(MAX_SEARCH_LENGTH - 3)}cta` })
+      await idsOf({
+        search: `${'a'.repeat(EXPERTISE_SEARCH_MAX_LENGTH - 3)}cta`,
+      })
     ).toEqual([]);
   });
 
@@ -133,8 +135,11 @@ describe('listExpertise, by ids', () => {
     expect(await idsOf({ ids: ['qc.gone'] })).toEqual([]);
   });
 
-  it(`reads ${MAX_LISTED_IDS} expertises at most`, async () => {
-    const ids = Array.from({ length: MAX_LISTED_IDS }, (_, i) => `qc.e${i}`);
+  it(`reads ${MAX_CONSUMED_EXPERTISES} expertises at most`, async () => {
+    const ids = Array.from(
+      { length: MAX_CONSUMED_EXPERTISES },
+      (_, i) => `qc.e${i}`
+    );
     expect(await idsOf({ ids })).toEqual([]);
     await expect(
       listExpertise({ ids: [...ids, 'qc.cta'] })
@@ -142,7 +147,7 @@ describe('listExpertise, by ids', () => {
       status: 400,
       message: 'EXPERTISE_LIST_FILTER_INVALID',
       filter: 'ids',
-      max: MAX_LISTED_IDS,
+      max: MAX_CONSUMED_EXPERTISES,
     });
   });
 

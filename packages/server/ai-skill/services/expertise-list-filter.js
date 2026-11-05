@@ -14,11 +14,6 @@ const {
   EXPERTISE_SEARCH_MAX_LENGTH,
 } = require('../../../shared/ai-skill/constants.js');
 
-// What a search may be, at most, as the back office bounds it.
-const MAX_SEARCH_LENGTH = EXPERTISE_SEARCH_MAX_LENGTH;
-// The expertises a list reads by id, at most: those a version consumes.
-const MAX_LISTED_IDS = MaxConsumedExpertises;
-
 // Each refusal names its filter, and the bound it went past, if any.
 const refuse = (filter, max) =>
   createError(400, ERROR_CODES.EXPERTISE_LIST_FILTER_INVALID, {
@@ -40,8 +35,11 @@ function oneOf(value, allowed, filter) {
 // pattern the client wrote.
 function searchFilter(search) {
   if (search === undefined) return null;
-  if (typeof search !== 'string' || search.length > MAX_SEARCH_LENGTH) {
-    throw refuse('search', MAX_SEARCH_LENGTH);
+  if (
+    typeof search !== 'string' ||
+    search.length > EXPERTISE_SEARCH_MAX_LENGTH
+  ) {
+    throw refuse('search', EXPERTISE_SEARCH_MAX_LENGTH);
   }
   const text = search.trim();
   if (!text) return null;
@@ -49,13 +47,14 @@ function searchFilter(search) {
   return { $or: [{ title: pattern }, { expertiseId: pattern }] };
 }
 
-// `?ids=a` or `?ids=a&ids=b`: expertise ids, a few of them.
+// `?ids=a` or `?ids=a&ids=b`: expertise ids, no more than a version
+// consumes.
 function idsFilter(ids) {
   if (ids === undefined) return null;
   const list = Array.isArray(ids) ? ids : [ids];
   const valid =
     list.length > 0 &&
-    list.length <= MAX_LISTED_IDS &&
+    list.length <= MaxConsumedExpertises &&
     list.every(
       (id) =>
         typeof id === 'string' &&
@@ -63,7 +62,7 @@ function idsFilter(ids) {
         SkillIdRegex.test(id)
     );
   if (!valid) {
-    throw refuse('ids', MAX_LISTED_IDS);
+    throw refuse('ids', MaxConsumedExpertises);
   }
   return { expertiseId: { $in: list } };
 }
@@ -76,9 +75,9 @@ function idsFilter(ids) {
  * @param {string} [filters.category] one of the categories
  * @param {string} [filters.status] one of the statuses
  * @param {string} [filters.search] found in the title or the expertiseId,
- *   whatever the case, MAX_SEARCH_LENGTH characters at most
+ *   whatever the case, EXPERTISE_SEARCH_MAX_LENGTH characters at most
  * @param {string|string[]} [filters.ids] these expertises exactly, whatever
- *   their status unless `status` names one, MAX_LISTED_IDS at most
+ *   their status unless `status` names one, MaxConsumedExpertises at most
  * @returns {Object} the filter of the query
  * @throws {HttpError} 400 EXPERTISE_LIST_FILTER_INVALID, with the `filter`
  *   refused and, for `search` and `ids`, the `max` it takes
@@ -92,4 +91,4 @@ function listFilter({ category, status, search, ids }) {
   return Object.assign(query, searchFilter(search), idsFilter(ids));
 }
 
-module.exports = { listFilter, MAX_SEARCH_LENGTH, MAX_LISTED_IDS };
+module.exports = { listFilter };

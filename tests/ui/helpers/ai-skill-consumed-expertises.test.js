@@ -21,8 +21,8 @@ const {
   MaxConsumedExpertises,
 } = require('../../../packages/server/ai-skill/constant/skill-constants');
 const {
-  MAX_SEARCH_LENGTH,
-} = require('../../../packages/server/ai-skill/services/expertise-list-filter');
+  EXPERTISE_SEARCH_MAX_LENGTH,
+} = require('../../../packages/shared/ai-skill/constants');
 
 const published = (expertiseId, title, fields = {}) => ({
   expertiseId,
@@ -136,7 +136,7 @@ describe('searchParams', () => {
 
   it('never sends a search longer than the server takes', () => {
     expect(searchParams('a'.repeat(500)).search).toHaveLength(
-      MAX_SEARCH_LENGTH
+      EXPERTISE_SEARCH_MAX_LENGTH
     );
   });
 });
