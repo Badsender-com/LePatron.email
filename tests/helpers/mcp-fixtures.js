@@ -13,10 +13,7 @@
  * in its stand-ins for the models (`tests/helpers/mcp-harness.js`).
  */
 
-// Dates are relative to the run, so a mailing's status does not drift with the
-// calendar: "planned in 5 days" stays in the future.
-const NOW = new Date();
-const daysFrom = (days) => new Date(NOW.getTime() + days * 24 * 3600 * 1000);
+const { NOW, daysFrom } = require('./mcp-clock');
 
 const PLATFORM_GROUP = '507f1f77bcf86cd799439a01';
 const CLIENT_GROUP = '507f1f77bcf86cd799439b01';
@@ -186,7 +183,8 @@ const COMMENTS = [M_NEWSLETTER, M_SCHEDULED, M_APPROVED].map((_mailing, i) => ({
   _id: `507f1f77bcf86cd79943970${i}`,
   _mailing,
   _company: CLIENT_GROUP,
-  author: REX,
+  _author: REX,
+  authorName: 'Rex',
   text: 'Good to go',
   decision: 'approved',
   createdAt: daysFrom(-3),

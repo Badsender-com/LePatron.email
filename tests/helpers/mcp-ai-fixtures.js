@@ -3,13 +3,22 @@
 /**
  * The expertises and skills of the platform, for the MCP acceptance tests
  * (epic #1290): an active expertise with an archived and a draft version, a
- * transversal one, a draft one and an archived one; an active skill and a
- * draft one. All are opened to every company. Re-exported by
- * `mcp-fixtures.js`.
+ * transversal one, a draft one and an archived one, with the fields their
+ * schema gives them by default; an active skill and a draft one. All are
+ * opened to every company. Re-exported by `mcp-fixtures.js`.
  */
 
-const NOW = new Date();
-const daysFrom = (days) => new Date(NOW.getTime() + days * 24 * 3600 * 1000);
+const { daysFrom } = require('./mcp-clock');
+
+// What the expertise schema gives a document it does not set.
+const EXPERTISE_DEFAULTS = {
+  description: '',
+  scope: [],
+  isTransversal: false,
+  appliesToEmailTypes: [],
+  appliesToLanguages: [],
+};
+const expertise = (fields) => ({ ...EXPERTISE_DEFAULTS, ...fields });
 
 function version(versionMajor, versionMinor, status, body, extra = {}) {
   return {
@@ -29,7 +38,7 @@ const SUBJECT_BODY_V2 =
   '## Length\n\nKeep the subject under 50 characters.\n\n## Tone\n\nOne promise, no shouting.';
 
 const EXPERTISES = [
-  {
+  expertise({
     _id: '507f1f77bcf86cd799439801',
     expertiseId: 'redaction.subject-line',
     title: 'Subject lines',
@@ -50,8 +59,8 @@ const EXPERTISES = [
       }),
       version(3, 0, 'DRAFT', '## Length\n\nA draft nobody validated.'),
     ],
-  },
-  {
+  }),
+  expertise({
     _id: '507f1f77bcf86cd799439802',
     expertiseId: 'deliverability.spam-words',
     title: 'Spam words',
@@ -66,8 +75,8 @@ const EXPERTISES = [
     versions: [
       version(1, 0, 'ACTIVE', '## Words\n\nAvoid "free" in a subject.'),
     ],
-  },
-  {
+  }),
+  expertise({
     _id: '507f1f77bcf86cd799439803',
     expertiseId: 'design.dark-mode',
     title: 'Dark mode',
@@ -77,8 +86,8 @@ const EXPERTISES = [
     audience: 'all',
     activeVersion: { major: null, minor: 0 },
     versions: [version(1, 0, 'DRAFT', '## Logos\n\nNot validated yet.')],
-  },
-  {
+  }),
+  expertise({
     _id: '507f1f77bcf86cd799439804',
     expertiseId: 'redaction.old-rules',
     title: 'Old rules',
@@ -88,7 +97,7 @@ const EXPERTISES = [
     audience: 'all',
     activeVersion: { major: 1, minor: 0 },
     versions: [version(1, 0, 'ARCHIVED', '## Old\n\nRetired.')],
-  },
+  }),
 ];
 
 const SKILLS = [

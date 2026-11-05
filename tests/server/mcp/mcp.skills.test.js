@@ -3,9 +3,11 @@
  */
 'use strict';
 
-// The skills a connected application runs (ADR 0012): each active skill is a
-// prompt, its arguments drawn from the skill's input schema, so the assistant
-// runs it the platform's way with its own model.
+// The skills a connected application runs (ADR 0012, ADR 0013): a published
+// feature skill marked for assistants is a prompt, its arguments drawn from
+// its input schema, so the assistant runs it the platform's way with its own
+// model; find_skills finds the skills served by intent. Task skills, and a
+// feature skill that is not marked, are in mcp.task-skills.test.js.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -21,7 +23,7 @@ describe('skills', () => {
   });
   afterEach(() => harness.disconnect());
 
-  it('offers the active skills, and only them', async () => {
+  it('offers the published skills served to assistants, and only them', async () => {
     const { prompts } = await client.listPrompts();
 
     expect(prompts.map((prompt) => prompt.name)).toEqual([SUBJECT_IDEAS]);
