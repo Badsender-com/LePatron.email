@@ -14,6 +14,7 @@ const {
   servedSkill,
   argumentsOf,
   inputOf,
+  isSent,
   usesExpertise,
   EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
@@ -64,7 +65,8 @@ async function taskMessages({ doc, version }, group) {
 // no system role: the instructions come first, as the user's.
 function featureMessages(found, args) {
   const missing = argumentsOf(found).filter(
-    (argument) => argument.required && !args[argument.name]
+    (argument) =>
+      argument.required && !(isSent(args, argument.name) && args[argument.name])
   );
   if (missing.length) {
     throw new ProtocolError(

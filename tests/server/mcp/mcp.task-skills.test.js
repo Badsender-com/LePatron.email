@@ -61,7 +61,7 @@ const markedWithoutSchema = {
       ...f.SKILLS[0].versions[0],
       inputSchemaId: 'subjectGenInput', // not in the code's registry
       inputTemplate:
-        '<expertise>{{input.expertise}}</expertise>\n<type>{{input.emailType}}</type>\n<content>{{input.content}}</content>\n<brief>{{input.brief}}</brief>\n<brand>{{input.brand.name}}</brand>',
+        '<expertise>{{input.expertise}}</expertise>\n<type>{{input.emailType}}</type>\n<content>{{input.content}}</content>\n<brief>{{input.brief}}</brief>\n<brand>{{input.brand.name}}</brand>\n<tone>{{input.toString}}</tone>',
     },
   ],
 };
@@ -209,6 +209,7 @@ describe('task skills', () => {
         'brief',
         'content',
         'emailType',
+        'toString',
       ]);
     });
 
@@ -223,6 +224,19 @@ describe('task skills', () => {
         '<brand>Acme</brand>'
       );
       expect({}.polluted).toBeUndefined();
+    });
+
+    // Every object has a `toString`: an argument the client did not send is
+    // not read from what the arguments inherit.
+    it('leaves empty a placeholder the client did not send, whatever its name', async () => {
+      const { messages } = await client.getPrompt({
+        name: 'redaction.objet',
+        arguments: { content: 'A new collection' },
+      });
+
+      expect(messages.map((m) => m.content.text).join('\n')).toContain(
+        '<tone></tone>'
+      );
     });
 
     // The app's feature composes the expertise; an assistant has none to.

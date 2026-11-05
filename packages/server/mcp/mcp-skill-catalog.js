@@ -113,6 +113,17 @@ function argumentsOf({ version }) {
     .map((name) => ({ name, required: false }));
 }
 
+/**
+ * Whether the client sent an argument: its own key only, so a name every
+ * object inherits (`toString`) is not mistaken for one.
+ *
+ * @param {Object} args the arguments the client sends
+ * @param {string} name
+ * @returns {boolean}
+ */
+const isSent = (args, name) =>
+  Object.hasOwn(args, name) && args[name] !== undefined;
+
 // Never a key of the input: it would reach the prototype of every object.
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
@@ -129,7 +140,7 @@ function inputOf(found, args) {
   const input = Object.create(null);
   argumentsOf(found).forEach(({ name }) => {
     const keys = name.split('.');
-    if (args[name] === undefined || keys.some((key) => UNSAFE_KEYS.has(key))) {
+    if (!isSent(args, name) || keys.some((key) => UNSAFE_KEYS.has(key))) {
       return;
     }
     const last = keys.pop();
@@ -152,6 +163,7 @@ module.exports = {
   servedSkill,
   argumentsOf,
   inputOf,
+  isSent,
   usesExpertise,
   EXPERTISE_NOTICE,
 };

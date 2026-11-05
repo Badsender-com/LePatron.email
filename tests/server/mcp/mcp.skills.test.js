@@ -9,10 +9,32 @@
 // model; find_skills finds the skills served by intent. Task skills, and a
 // feature skill that is not marked, are in mcp.task-skills.test.js.
 
+// A schema that takes a required argument named like what every object
+// inherits, which no schema of the code does.
+jest.mock(
+  '../../../packages/server/ai-skill/schemas/describe-schema.js',
+  () => {
+    const actual = jest.requireActual(
+      '../../../packages/server/ai-skill/schemas/describe-schema.js'
+    );
+    return {
+      ...actual,
+      describeSchema: (schemaId) =>
+        schemaId === 'toneInput'
+          ? {
+              hasExpertiseField: false,
+              fields: [{ name: 'toString', required: true }],
+            }
+          : actual.describeSchema(schemaId),
+    };
+  }
+);
+
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
 const SUBJECT_IDEAS = 'redaction.subject-ideas';
+const SCHEMA_ID = 'toneInput';
 
 describe('skills', () => {
   let client;
@@ -133,4 +155,46 @@ describe('find_skills', () => {
       expect((await find(query)).error).toMatch(/Input validation error/);
     }
   );
+});
+
+// A required argument is one the client sent, by its own name.
+const TONE = {
+  ...f.SKILLS[0],
+  _id: '507f1f77bcf86cd799439915',
+  skillId: 'redaction.tone',
+  title: 'Set the tone',
+  versions: [
+    {
+      ...f.SKILLS[0].versions[0],
+      inputSchemaId: SCHEMA_ID,
+      inputTemplate: 'Tone: {{input.toString}}',
+    },
+  ],
+};
+
+describe('a required prompt argument', () => {
+  let client;
+
+  beforeEach(async () => {
+    harness.seed({ ...f.SEED, skills: [TONE] });
+    client = await harness.connectAs(f.WREN);
+  });
+  afterEach(() => harness.disconnect());
+
+  it('is missing when not sent, even named like what every object has', async () => {
+    await expect(
+      client.getPrompt({ name: TONE.skillId, arguments: {} })
+    ).rejects.toThrow(/Missing required argument: toString/);
+  });
+
+  it('is read when sent', async () => {
+    const { messages } = await client.getPrompt({
+      name: TONE.skillId,
+      arguments: { toString: 'warm' },
+    });
+
+    expect(messages.map((m) => m.content.text).join('\n')).toContain(
+      'Tone: warm'
+    );
+  });
 });
