@@ -109,6 +109,23 @@ function commentsLoader(opts) {
       }
     };
 
+    // Changes whenever the blocks of the email change: the panel, in Vue,
+    // reads their labels again.
+    viewModel.commentBlocksVersion = ko.pureComputed(function () {
+      try {
+        return viewModel
+          .content()
+          .mainBlocks()
+          .blocks()
+          .map(function (block) {
+            return ko.unwrap(ko.unwrap(block).id);
+          })
+          .join(',');
+      } catch (e) {
+        return '';
+      }
+    });
+
     // Any block of the email, its header and footer included.
     viewModel.blockExists = function (blockId) {
       return !blockId || Boolean(findBlockById(viewModel, blockId));

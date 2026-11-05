@@ -93,7 +93,7 @@ function installCommentsWriting(viewModel, { store, actions }) {
       viewModel.notifier.error(viewModel.t('comments-text-required'));
       return Promise.resolve(false);
     }
-    return actions.update(comment, written.text).then(
+    return actions.update(comment, written.text, written.mentions).then(
       () => true,
       () => false
     );

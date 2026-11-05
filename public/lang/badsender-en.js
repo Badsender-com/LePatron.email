@@ -342,7 +342,6 @@ module.exports = {
   'comments-severity-blocking': 'Blocking',
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
-  'comments-no-block': 'This comment is not linked to a block',
   'comments-filter-label': 'Filter the comments',
   'comments-filter-no-block': 'No block selected',
   'comments-anonymous': 'Anonymous',

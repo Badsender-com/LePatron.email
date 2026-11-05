@@ -32,6 +32,21 @@ describe('findBlockById', () => {
     expect(findBlockById(viewModel, 'ko_headerBlock_1')).toBe(header);
   });
 
+  it('takes no other field of the content for a block, nor stops on one being rebuilt', () => {
+    const viewModel = fakeViewModel({ blocks: [{ id: 'main-1' }] });
+    const content = viewModel.content();
+    viewModel.content = () => ({
+      ...content,
+      theme: () => ({ id: () => 'theme-1' }),
+      broken: () => {
+        throw new Error('rebuilding');
+      },
+    });
+
+    expect(findBlockById(viewModel, 'theme-1')).toBeNull();
+    expect(findBlockById(viewModel, 'main-1')).toMatchObject({ id: 'main-1' });
+  });
+
   it('answers null for a block that is gone, or no id', () => {
     const viewModel = fakeViewModel({ blocks: [{ id: 'main-1' }] });
 

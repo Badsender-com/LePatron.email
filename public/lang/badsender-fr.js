@@ -355,7 +355,6 @@ module.exports = {
   'comments-severity-blocking': 'Bloquant',
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
-  'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
   'comments-filter-label': 'Filtrer les commentaires',
   'comments-filter-no-block': 'Aucun bloc sélectionné',
   'comments-anonymous': 'Anonyme',

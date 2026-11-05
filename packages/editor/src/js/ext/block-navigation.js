@@ -7,6 +7,25 @@
 const SCROLL_DELAY_MS = 100;
 
 const unwrap = (value) => (typeof value === 'function' ? value() : value);
+// Read without making the caller depend on it: a computed looking for one
+// block need not follow every field of the content.
+const peek = (value) =>
+  typeof value === 'function' && typeof value.peek === 'function'
+    ? value.peek()
+    : unwrap(value);
+
+// A field of the content that holds a block alone (a header): an object with
+// an id and a type. A field being rebuilt is no block.
+function singleBlock(field) {
+  try {
+    const value = peek(field);
+    return value && typeof value === 'object' && value.id && value.type
+      ? value
+      : null;
+  } catch (e) {
+    return null;
+  }
+}
 
 /**
  * The block of the content model with this id, or null. Every container of
@@ -23,10 +42,8 @@ function findBlockById(viewModel, blockId) {
     const content = viewModel.content();
     const keys = Object.keys(content);
     for (const key of keys.filter((name) => !/Blocks$/.test(name))) {
-      const single = unwrap(content[key]);
-      if (single && typeof single === 'object' && unwrap(single.id) === blockId) {
-        return single;
-      }
+      const single = singleBlock(content[key]);
+      if (single && unwrap(single.id) === blockId) return single;
     }
     const containers = keys.filter((key) => /Blocks$/.test(key));
     for (const key of containers) {

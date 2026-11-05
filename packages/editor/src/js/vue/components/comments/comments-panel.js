@@ -55,6 +55,7 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     openBlocking: false,
     // Whom the rights are read for: they change once the user is known.
     userKey: 0,
+    blocksVersion: 0,
     busy: false,
     reply: null,
     edit: null,
@@ -79,6 +80,9 @@ const CommentsPanel = Vue.component('CommentsPanel', {
       this.selectedId = id || null;
     });
     this.mirror(vm.currentUser, () => (this.userKey += 1));
+    // Blocks added, moved, deleted or restored: their labels and whether they
+    // still exist are read again (Vue does not follow the email's model).
+    this.mirror(vm.commentBlocksVersion, () => (this.blocksVersion += 1));
   },
   computed: {
     approved() {
@@ -90,7 +94,7 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     },
     // The chip of a block: the block read, else the block selected.
     filterBlock() {
-      const id = this.filter || this.selectedId;
+      const id = this.blocksVersion >= 0 && (this.filter || this.selectedId);
       if (!id) return null;
       return {
         id,
@@ -99,7 +103,7 @@ const CommentsPanel = Vue.component('CommentsPanel', {
       };
     },
     selected() {
-      if (!this.selectedId) return null;
+      if (!this.selectedId || this.blocksVersion < 0) return null;
       return { id: this.selectedId, label: this.vm.commentBlockLabel(this.selectedId) };
     },
     canApprove() {
@@ -120,10 +124,10 @@ const CommentsPanel = Vue.component('CommentsPanel', {
       return this.vm.formatDate(date);
     },
     labelOf(blockId) {
-      return this.vm.commentBlockLabel(blockId);
+      return this.blocksVersion >= 0 && this.vm.commentBlockLabel(blockId);
     },
     blockExists(blockId) {
-      return this.vm.blockExists(blockId);
+      return this.blocksVersion >= 0 && this.vm.blockExists(blockId);
     },
     can(action, comment) {
       if (this.userKey < 0) return false;
@@ -137,7 +141,8 @@ const CommentsPanel = Vue.component('CommentsPanel', {
     send(write) {
       if (this.busy) return Promise.resolve(false);
       this.busy = true;
-      return write()
+      return Promise.resolve()
+        .then(write)
         .catch(() => false)
         .then((done) => {
           this.busy = false;

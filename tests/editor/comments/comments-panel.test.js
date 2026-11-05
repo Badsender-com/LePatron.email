@@ -227,11 +227,13 @@ describe('the comments panel', () => {
     root
       .querySelector('.comment-inline-form')
       .dispatchEvent(new Event('submit'));
+    await flush();
     const patch = $.ajax.mock.calls.find(
       ([options]) => options.method === 'PATCH'
     );
     expect(JSON.parse(patch[0].data)).toEqual({
       text: 'Ask @[Tom Roe](ab12) again',
+      mentions: ['ab12'],
     });
   });
 

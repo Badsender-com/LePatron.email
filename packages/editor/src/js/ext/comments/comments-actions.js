@@ -19,7 +19,9 @@ const CREATE_ERROR_KEYS = {
 
 function createErrorKey(xhr) {
   const code = xhr && xhr.responseJSON && xhr.responseJSON.message;
-  return CREATE_ERROR_KEYS[code] || 'comments-create-error';
+  return Object.prototype.hasOwnProperty.call(CREATE_ERROR_KEYS, code)
+    ? CREATE_ERROR_KEYS[code]
+    : 'comments-create-error';
 }
 
 /**
@@ -53,10 +55,15 @@ function createCommentsActions({
         contentType: 'application/json',
         ...options,
         data: options.data ? JSON.stringify(options.data) : undefined,
+        // An answer the store cannot take still settles the request.
         success(answer) {
-          success(answer);
-          if (done) notifier().success(t(done));
-          resolve(answer);
+          try {
+            success(answer);
+            if (done) notifier().success(t(done));
+            resolve(answer);
+          } catch (error) {
+            reject(error);
+          }
         },
         error(xhr) {
           notifier().error(t(typeof failed === 'function' ? failed(xhr) : failed));
@@ -88,9 +95,14 @@ function createCommentsActions({
         }
       );
     },
-    update(comment, text) {
+    // The text and the mentions it holds, as at its creation.
+    update(comment, text, mentions) {
       return request(
-        { url: commentUrl(comment._id), method: 'PATCH', data: { text } },
+        {
+          url: commentUrl(comment._id),
+          method: 'PATCH',
+          data: mentions ? { text, mentions } : { text },
+        },
         {
           done: 'comments-updated',
           failed: 'comments-update-error',
