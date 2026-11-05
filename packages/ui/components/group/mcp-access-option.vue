@@ -1,43 +1,14 @@
 <script>
-import { mapMutations } from 'vuex';
+import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
 
-import { groupsItem } from '~/helpers/api-routes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-
-// MCP access (ADR 0012): the group's users connect their AI assistant to
-// LePatron. Set by a super admin or the group's tech admin, saved on its own.
+// MCP access (ADR 0012): the company's users connect their AI assistant to
+// LePatron. Set by a super admin or the company's tech admin, saved on its
+// own.
 export default {
   name: 'BsGroupMcpAccessOption',
-  props: {
-    group: { type: Object, required: true },
-  },
-  data() {
-    return { loading: false };
-  },
-  methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async save(value) {
-      this.loading = true;
-      try {
-        const group = await this.$axios.$put(
-          groupsItem({ groupId: this.group.id }),
-          { enableMcp: Boolean(value) }
-        );
-        this.$emit('update', group);
-        this.showSnackbar({
-          text: this.$t('mcpAccess.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-      } finally {
-        this.loading = false;
-      }
-    },
-  },
+  mixins: [
+    mixinGroupSwitch({ field: 'enableMcp', updatedKey: 'mcpAccess.updated' }),
+  ],
 };
 </script>
 
@@ -50,7 +21,7 @@ export default {
       {{ $t('mcpAccess.description') }}
     </p>
     <v-switch
-      :input-value="group.enableMcp === true"
+      :input-value="switchValue"
       :label="$t('mcpAccess.switch')"
       :loading="loading"
       :disabled="loading"
