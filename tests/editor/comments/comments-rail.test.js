@@ -53,14 +53,17 @@ function mount({ counts = {}, blocks = [] } = {}) {
     scroller: () => scroller,
   });
   rail.update();
+  mounted.push(rail);
   return { rail, state, scroller, listen };
 }
 
+const mounted = [];
 afterEach(() => {
+  mounted.splice(0).forEach((rail) => rail.dispose());
   document.body.innerHTML = '';
 });
 
-describe.skip('the comment markers rail (ADR 0020, P4)', () => {
+describe('the comment markers rail (ADR 0020, P4)', () => {
   it('shows a marker per block with unresolved comments, in the order of the email', () => {
     const { rail } = mount({
       blocks: ['b1', 'b2', 'b3'],
@@ -126,5 +129,103 @@ describe.skip('the comment markers rail (ADR 0020, P4)', () => {
     const remove = jest.spyOn(scroller, 'removeEventListener');
     rail.dispose();
     expect(remove).toHaveBeenCalledWith('scroll', onScroll);
+  });
+});
+
+describe('the comment markers rail in the editor (ADR 0020, P4)', () => {
+  const $ = require('jquery');
+  const commentsLoader = require('../../../packages/editor/src/js/ext/badsender-comments.js');
+  const { fakeViewModel } = require('../quality/fake-view-model');
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  function editor() {
+    jest.useFakeTimers();
+    jest.spyOn($, 'ajax').mockImplementation(() => $.Deferred().promise());
+    const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
+    vm.selectedBlock = ko.observable(null);
+    const plugin = commentsLoader({ metadata: { id: 'm1', groupId: 'g1' } })(
+      vm
+    );
+    return { vm, plugin };
+  }
+
+  it('marks active the block of a new comment, and names the block', () => {
+    const scroller = canvas(['b1']);
+    const { vm } = editor();
+    vm.commentCounts({ b1: { count: 2, maxSeverity: 'important' } });
+    vm.commentsRail.update();
+    vm.selectedBlockForComments('b1');
+    expect(vm.commentsRail.markers()).toEqual([
+      expect.objectContaining({ blockId: 'b1', count: 2, active: true }),
+    ]);
+    expect(vm.commentsRail.markers()[0].label).toBe('Hero');
+    expect(scroller.querySelector('[data-block-id="b1"]')).not.toBeNull();
+  });
+
+  it('lets go of the canvas when the editor goes', () => {
+    const scroller = canvas(['b1']);
+    const remove = jest.spyOn(scroller, 'removeEventListener');
+    const { vm, plugin } = editor();
+    vm.commentsRail.update();
+    plugin.dispose();
+    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
+  });
+});
+
+describe('the comment markers rail, after the review (ADR 0020, P4)', () => {
+  it('keeps its markers from a scroll to the next, so a focused one stays', () => {
+    const { rail } = mount({ blocks: ['b1'], counts: { b1: { count: 1 } } });
+    const first = rail.markers()[0];
+    rail.update();
+    expect(rail.markers()[0]).toBe(first);
+  });
+
+  it('finds a block by its attribute, whatever its id holds', () => {
+    const odd = 'a"] , *';
+    const { rail } = mount({ blocks: ['b1'], counts: { [odd]: { count: 1 } } });
+    expect(() => rail.update()).not.toThrow();
+    expect(rail.markers()).toEqual([]);
+  });
+});
+
+describe('the place of the rail (ADR 0020, P4)', () => {
+  function placed({ emailRight, canvasLeft, canvasWidth }) {
+    const { rail, scroller } = mount({
+      blocks: ['b1'],
+      counts: { b1: { count: 1 } },
+    });
+    const email = document.createElement('replacedbody');
+    email.getBoundingClientRect = () => ({ right: emailRight });
+    scroller.appendChild(email);
+    scroller.getBoundingClientRect = () => ({ left: canvasLeft });
+    Object.defineProperty(scroller, 'clientWidth', { value: canvasWidth });
+    rail.update();
+    return rail.left();
+  }
+
+  it('sits beside the email', () => {
+    expect(
+      placed({ emailRight: 1100, canvasLeft: 400, canvasWidth: 1000 })
+    ).toBe(1108);
+  });
+
+  it('stays inside the canvas when the email reaches its edge', () => {
+    expect(
+      placed({ emailRight: 1390, canvasLeft: 400, canvasWidth: 1000 })
+    ).toBe(1348);
+  });
+
+  it('lets go of the window too when disposed', () => {
+    const remove = jest.spyOn(window, 'removeEventListener');
+    const { rail } = mount({ blocks: ['b1'], counts: { b1: { count: 1 } } });
+    rail.dispose();
+    expect(remove).toHaveBeenCalledWith('resize', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('transitionend', expect.any(Function));
+    remove.mockRestore();
   });
 });

@@ -165,8 +165,8 @@
 // =============================================
 .comments-rail {
   position: fixed;
-  // Position just to the right of centered email content (700px / 2 = 350px from center)
-  // Account for left sidebar width (content is centered in the area AFTER the sidebar)
+  // Placed by comments-rail.js beside the email actually shown (inline
+  // `left`); this guess only holds until the canvas is measured.
   left: calc(50% + 350px + (@leftsidebar-width / 2));
   top: var(--top-bar-height, 50px);
   bottom: 60px;
@@ -175,33 +175,19 @@
   pointer-events: none;
   transition: left 0.2s ease;
 
-  // When panel is open, canvas shrinks on right, so center shifts left
-  &.panel-open {
-    left: calc(50% + 350px);
-  }
-
   // Hide on mobile/tablet
   @media (max-width: 768px) {
     display: none;
-  }
-
-  // Adjust for larger screens with wider email content
-  @media (min-width: 1400px) {
-    left: calc(50% + 400px + (@leftsidebar-width / 2));
-    &.panel-open {
-      left: calc(50% + 400px);
-    }
-  }
-  @media (min-width: 1600px) {
-    left: calc(50% + 450px + (@leftsidebar-width / 2));
-    &.panel-open {
-      left: calc(50% + 450px);
-    }
   }
 }
 
 .rail-marker {
   position: absolute;
+  // A button: no border nor margin, the rail's own font, on one line.
+  border: 0;
+  margin: 0;
+  font: inherit;
+  white-space: nowrap;
   height: 26px;
   padding: 0 8px;
   border-radius: @comment-border-radius-pill;
@@ -247,6 +233,11 @@
     &.active {
       transform: scale(1.15);
     }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .rail-count {

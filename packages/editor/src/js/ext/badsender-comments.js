@@ -19,6 +19,7 @@ const {
 } = require('./comments-utils.js');
 const { findBlockById, goToBlock } = require('./block-navigation.js');
 const { installRightPanel } = require('./right-panel.js');
+const { createCommentsRail } = require('./comments/comments-rail.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -189,137 +190,34 @@ function commentsLoader(opts) {
     };
 
     // ===== COMMENTS RAIL =====
-    // Observable for rail marker positions (updated on scroll)
-    viewModel.railMarkerPositions = ko.observable({});
-
-    // Check if rail should be visible (only if there are block-specific comments)
-    viewModel.commentsRailVisible = ko.computed(function () {
-      const counts = viewModel.commentCounts();
-      return Object.keys(counts).some(function (blockId) {
-        // Skip global comments (no blockId)
-        if (!blockId || blockId === 'null' || blockId === 'undefined') return false;
-
-        const blockData = counts[blockId];
-        // Handle both old format (number) and new format ({ count, maxSeverity })
-        const count = typeof blockData === 'object' ? blockData.count : blockData;
-        return count > 0;
-      });
-    });
-
-    // Get blocks with comments for the rail display
-    viewModel.blocksWithComments = ko.computed(function () {
-      const counts = viewModel.commentCounts();
-      const positions = viewModel.railMarkerPositions();
-      const result = [];
-
-      Object.keys(counts).forEach(function (blockId) {
-        // Skip global comments (no blockId or null/undefined)
-        if (!blockId || blockId === 'null' || blockId === 'undefined') return;
-
-        const blockData = counts[blockId];
-        // Handle both old format (number) and new format ({ count, maxSeverity })
-        const count = typeof blockData === 'object' ? blockData.count : blockData;
-        const maxSeverity = typeof blockData === 'object' ? blockData.maxSeverity : 'info';
-
-        if (count <= 0) return;
-
-        // Skip if position not available (block not in DOM or out of view)
-        const posData = positions[blockId];
-        if (!posData || !posData.visible) return;
-
-        // Get block type for label (uses formatBlockName for humanization)
-        let blockLabel = blockId;
-        try {
-          const blocks = viewModel.content().mainBlocks().blocks();
-          for (var i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
-            const blockInfo = typeof block === 'function' ? block() : block;
-            if (!blockInfo) continue;
-            const id = typeof blockInfo.id === 'function' ? blockInfo.id() : blockInfo.id;
-            if (id === blockId) {
-              // Unwrap potential observables for block type
-              let blockType = blockInfo._type || blockInfo.type;
-              if (typeof blockType === 'function') blockType = blockType();
-              if (typeof blockType === 'object' && blockType !== null) {
-                blockType = blockType.name || blockType.label || 'Block';
-              }
-              blockType = blockType || 'Block';
-              // Format block name for human readability
-              blockLabel = formatBlockName(blockType);
-              break;
-            }
-          }
-        } catch (e) {
-          // Use blockId as fallback
-        }
-
-        result.push({
-          blockId: blockId,
-          position: posData.top,
-          unresolvedCount: count,
-          maxSeverity: maxSeverity,
-          blockLabel: blockLabel,
-        });
-      });
-
-      // Sort by position
-      result.sort(function (a, b) {
-        return a.position - b.position;
-      });
-
-      return result;
-    });
-
-    /**
-     * Update rail marker positions based on block DOM positions
-     * Called on scroll and when comments change
-     * Returns position data with visibility info (markers scroll with blocks)
-     */
-    viewModel.updateRailPositions = function () {
-      const counts = viewModel.commentCounts();
-      const positions = {};
-      const scrollContainer = document.querySelector('#main-wysiwyg-area');
-      const topBarHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--top-bar-height') || '50', 10);
-
-      if (!scrollContainer) return;
-
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const viewportTop = topBarHeight;
-      const viewportBottom = window.innerHeight - 60; // 60px for bottom toolbar
-      const markerHeight = 28;
-
-      Object.keys(counts).forEach(function (blockId) {
-        // Skip global comments (no blockId)
-        if (!blockId || blockId === 'null' || blockId === 'undefined') return;
-
-        const blockData = counts[blockId];
-        const count = typeof blockData === 'object' ? blockData.count : blockData;
-        if (count <= 0) return;
-
-        // Find the block element in the DOM
-        const blockElement = scrollContainer.querySelector(
-          '.editable[data-block-id="' + blockId + '"]'
-        );
-
-        if (blockElement) {
-          const blockRect = blockElement.getBoundingClientRect();
-          // Calculate position relative to viewport (center of block)
-          const blockCenter = blockRect.top + (blockRect.height / 2) - topBarHeight;
-
-          // Check if marker would be visible in the viewport
-          const markerTop = blockCenter - (markerHeight / 2);
-          const markerBottom = blockCenter + (markerHeight / 2);
-          const isVisible = markerBottom > 0 && markerTop < (viewportBottom - viewportTop);
-
-          positions[blockId] = {
-            top: blockCenter,
-            visible: isVisible,
-          };
-        }
-      });
-
-      viewModel.railMarkerPositions(positions);
+    // The comment markers beside the email (ADR 0020): a module of its own,
+    // which stays in Knockout when the panel moves to Vue.
+    const labelOfBlock = function (blockId) {
+      const block = findBlockById(viewModel, blockId);
+      // A block outside the lists (the header, the footer): its type is in
+      // its id, ko_<type>_<n>.
+      if (!block) {
+        const match = /^ko_(.+)_\d+$/.exec(blockId);
+        return match ? formatBlockName(match[1]) : blockId;
+      }
+      let blockType = ko.unwrap(block._type || block.type);
+      if (typeof blockType === 'object' && blockType !== null) {
+        blockType = blockType.name || blockType.label;
+      }
+      return formatBlockName(blockType || 'Block');
     };
+    const rail = createCommentsRail(ko, {
+      counts: viewModel.commentCounts,
+      target: viewModel.selectedBlockForComments,
+      openForBlock: function (blockId) {
+        viewModel.openCommentsForBlock(blockId);
+      },
+      labelOf: labelOfBlock,
+      scroller: function () {
+        return document.querySelector('#main-wysiwyg-area');
+      },
+    });
+    viewModel.commentsRail = rail;
 
     /**
 // ===== METHODS =====
@@ -1017,29 +915,20 @@ function commentsLoader(opts) {
       }
     });
 
-    // Update rail positions when comment counts change
-    viewModel.commentCounts.subscribe(function () {
-      setTimeout(viewModel.updateRailPositions, 100);
-    });
-
-    // Setup scroll listener for rail position updates
-    setTimeout(function () {
-      const scrollContainer = document.querySelector('#main-wysiwyg-area');
-      if (scrollContainer) {
-        let scrollTimeout;
-        scrollContainer.addEventListener('scroll', function () {
-          // Throttle scroll updates
-          if (scrollTimeout) return;
-          scrollTimeout = setTimeout(function () {
-            scrollTimeout = null;
-            viewModel.updateRailPositions();
-          }, 16); // ~60fps
-        });
-
-        // Initial position update
-        viewModel.updateRailPositions();
-      }
-    }, 500);
+    // The canvas is laid out once the editor is shown: place the markers
+    // then. The canvas slides when a panel opens, and the rail follows it on
+    // its own; it snaps back when the last one closes, and does not slide with
+    // reduced motion: a panel opening or closing places them again too.
+    let railTimer = setTimeout(rail.update, 500);
+    const placeRailSoon = function () {
+      clearTimeout(railTimer);
+      railTimer = setTimeout(rail.update, 250);
+    };
+    const panelSub = viewModel.rightPanel.anyOpen.subscribe(placeRailSoon);
+    // The email narrows or widens with the preview (desktop, mobile, both).
+    const previewSub = ko.isSubscribable(viewModel.previewMode)
+      ? viewModel.previewMode.subscribe(placeRailSoon)
+      : null;
 
     // Subscribe to selected block changes to update lastSelectedBlock
     // When a block is deselected, reset to "All" filter
@@ -1110,6 +999,15 @@ function commentsLoader(opts) {
 
     // Load comment counts per block on init (for rail indicators)
     viewModel.loadCommentCounts();
+
+    return {
+      dispose: function () {
+        clearTimeout(railTimer);
+        panelSub.dispose();
+        if (previewSub) previewSub.dispose();
+        rail.dispose();
+      },
+    };
   };
 }
 
