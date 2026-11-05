@@ -1605,6 +1605,17 @@ export default {
       consumedExpertises: 'Expertises consumed',
       consumedExpertisesHint:
         'In the order the assistant reads them. Their active version is attached to the skill.',
+      consumedExpertisesEmpty: 'No expertise consumed.',
+      consumedExpertisesAdd: 'Add an expertise',
+      consumedExpertisesMax: 'A version consumes {max} expertises at most.',
+      consumedExpertisesLoadError: 'The expertises could not be loaded.',
+      consumedExpertisesRetry: 'Retry',
+      consumedExpertiseNotFound: 'Not found',
+      consumedExpertiseNotFoundHint:
+        'Not among the active expertises listed here. Once archived, it no longer reaches the assistant: remove it if it no longer belongs.',
+      consumedExpertiseUp: 'Move up',
+      consumedExpertiseDown: 'Move down',
+      consumedExpertiseRemove: 'Remove',
       systemPrompt: 'System prompt',
       skillBody: 'Skill body',
       inputTemplate: 'Input template (uses {input.*} placeholders)',

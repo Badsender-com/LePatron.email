@@ -1624,6 +1624,18 @@ export default {
       consumedExpertises: 'Expertises consommées',
       consumedExpertisesHint:
         'Dans l\'ordre où l\'assistant les lit. Leur version active est jointe au Skill.',
+      consumedExpertisesEmpty: 'Aucune Expertise consommée.',
+      consumedExpertisesAdd: 'Ajouter une Expertise',
+      consumedExpertisesMax: 'Une version consomme au plus {max} Expertises.',
+      consumedExpertisesLoadError:
+        'Les Expertises n\'ont pas pu être chargées.',
+      consumedExpertisesRetry: 'Réessayer',
+      consumedExpertiseNotFound: 'Introuvable',
+      consumedExpertiseNotFoundHint:
+        'Absente des Expertises actives listées ici. Archivée, elle n\'est plus servie à l\'assistant : retirez-la si elle n\'a plus lieu d\'être.',
+      consumedExpertiseUp: 'Monter',
+      consumedExpertiseDown: 'Descendre',
+      consumedExpertiseRemove: 'Retirer',
       systemPrompt: 'System prompt',
       skillBody: 'Corps de la skill',
       inputTemplate: 'Modèle d\'entrée (utilise les placeholders {input.*})',
