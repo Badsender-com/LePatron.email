@@ -3,15 +3,20 @@
 /**
  * How MongoDB reads a query, for the in-memory fake models: which records a
  * filter matches, in which order a sort puts them, what a projection keeps.
- * Where the fakes would answer something MongoDB would not, these throw.
+ * Where the fakes would answer something MongoDB
+ * would not, these throw.
  *
  * - **Filters**: equality (an array field matches one of its elements, or the
  *   same array), `$in`, `$nin`, `$ne`, `$exists` (a stored `null` exists),
  *   `$gt`, `$gte`, `$lt`, `$lte`, `$regex` (a string with `$options`, or a
  *   RegExp with its own flags), a bare RegExp, `$size` (an array of that
- *   length), `$or`, `$and`, `$nor`. Any other
- *   operator, a dotted path or an embedded document throws.
- * - **Sort and projection**: objects or strings, as Mongoose takes them.
+ *   length), `$or`, `$and`, `$nor`. A dotted path reads an embedded document,
+ *   and each element of an array on its way. Any other operator, a positional
+ *   path (`versions.0`) or an embedded document as a value throws.
+ * - **Sort and projection**: objects or strings, as Mongoose takes them. A
+ *   projection keeps or drops dotted paths, and `$elemMatch` keeps the first
+ *   element of an array that matches.
+ * - **Aggregation**: in fake-mongo-aggregate.js, through these.
  */
 
 const isPlainObject = (value) =>
@@ -110,15 +115,37 @@ function matchesCondition(actual, condition) {
   });
 }
 
+// What a dotted path reaches, as MongoDB walks it: into an embedded document,
+// and through an array into each of its elements.
+function valueAt(record, path) {
+  return path.split('.').reduce((value, key) => {
+    if (/^\d+$/.test(key)) {
+      throw new Error(
+        `fake models: the positional path ${path} is not supported`
+      );
+    }
+    if (Array.isArray(value)) {
+      const reached = value
+        .map((element) => (isPlainObject(element) ? element[key] : undefined))
+        .filter((element) => element !== undefined);
+      return reached.length ? reached.flat() : undefined;
+    }
+    return isPlainObject(value) ? value[key] : undefined;
+  }, record);
+}
+
 function matches(record, filter = {}) {
   return Object.entries(filter).every(([key, condition]) => {
     if (key === '$or') return condition.some((part) => matches(record, part));
     if (key === '$and') return condition.every((part) => matches(record, part));
     if (key === '$nor') return !condition.some((part) => matches(record, part));
-    if (key.startsWith('$') || key.includes('.')) {
+    if (key.startsWith('$')) {
       throw new Error(`fake models: ${key} is not supported`);
     }
-    return matchesCondition(record[key], condition);
+    return matchesCondition(
+      key.includes('.') ? valueAt(record, key) : record[key],
+      condition
+    );
   });
 }
 
@@ -161,28 +188,96 @@ function sortedBy(spec, list) {
   });
 }
 
-// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }` or `'name -data'`. `_id` is
-// kept unless excluded.
+const entriesOf = (projection) =>
+  typeof projection === 'string'
+    ? projection
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((key) => (key.startsWith('-') ? [key.slice(1), 0] : [key, 1]))
+    : Object.entries(projection);
+
+// A copy of a value without a dotted path, through the arrays on its way.
+function withoutPath(value, [key, ...rest]) {
+  if (Array.isArray(value)) {
+    return value.map((element) => withoutPath(element, [key, ...rest]));
+  }
+  if (!isPlainObject(value) || !(key in value)) return value;
+  const { [key]: dropped, ...others } = value;
+  return rest.length ? { ...value, [key]: withoutPath(dropped, rest) } : others;
+}
+
+// `{ versions: { status: true } }` for `'versions.status'`: what an inclusion
+// keeps, as a tree.
+function inclusionTree(keys) {
+  const tree = {};
+  keys.forEach((key) => {
+    const segments = key.split('.');
+    const last = segments.pop();
+    const node = segments.reduce((parent, segment) => {
+      if (parent[segment] === true) return {};
+      parent[segment] = parent[segment] || {};
+      return parent[segment];
+    }, tree);
+    node[last] = true;
+  });
+  return tree;
+}
+
+// An embedded document keeps the included paths, an array keeps its embedded
+// documents so reduced, and a scalar on the way is dropped.
+function picked(value, tree) {
+  if (Array.isArray(value)) {
+    return value.filter(isPlainObject).map((element) => picked(element, tree));
+  }
+  const copy = {};
+  Object.entries(tree).forEach(([key, node]) => {
+    const field = value[key];
+    if (field === undefined) return;
+    if (node === true) copy[key] = field;
+    else if (Array.isArray(field) || isPlainObject(field)) {
+      copy[key] = picked(field, node);
+    }
+  });
+  return copy;
+}
+
+function elemMatched(record, key, condition) {
+  if (key.includes('.')) {
+    throw new Error(`fake models: $elemMatch on ${key} is not supported`);
+  }
+  const list = record[key];
+  const element = Array.isArray(list)
+    ? list.find((candidate) => matches(candidate, condition))
+    : undefined;
+  return element === undefined ? undefined : [element];
+}
+
+// `{ name: 1 }`, `{ id: '$_id' }`, `{ data: 0 }`, `'name -data'`,
+// `{ 'versions.body': 1 }` or `{ versions: { $elemMatch: { status: 'ACTIVE' } } }`.
+// `_id` is kept unless excluded.
 function projected(record, projection) {
   if (!projection) return { ...record };
-  const entries =
-    typeof projection === 'string'
-      ? projection
-          .split(/\s+/)
-          .filter(Boolean)
-          .map((key) => (key.startsWith('-') ? [key.slice(1), 0] : [key, 1]))
-      : Object.entries(projection);
+  const entries = entriesOf(projection);
   if (entries.every(([, value]) => value === 0)) {
-    const copy = { ...record };
-    entries.forEach(([key]) => delete copy[key]);
-    return copy;
+    return entries.reduce((copy, [key]) => withoutPath(copy, key.split('.')), {
+      ...record,
+    });
   }
   const excludesId = entries.some(([key, value]) => key === '_id' && !value);
-  const copy = excludesId ? {} : { _id: record._id };
+  const included = entries
+    .filter(([key, value]) => value === 1 && key !== '_id')
+    .map(([key]) => key);
+  const copy = {
+    ...(excludesId || record._id === undefined ? {} : { _id: record._id }),
+    ...picked(record, inclusionTree(included)),
+  };
   entries.forEach(([key, value]) => {
-    if (value === 1 && record[key] !== undefined) copy[key] = record[key];
     if (typeof value === 'string' && value.startsWith('$')) {
       copy[key] = record[value.slice(1)];
+    }
+    if (isPlainObject(value) && '$elemMatch' in value) {
+      const element = elemMatched(record, key, value.$elemMatch);
+      if (element) copy[key] = element;
     }
   });
   return copy;

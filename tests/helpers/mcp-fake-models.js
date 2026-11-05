@@ -11,10 +11,13 @@
  *   document also has `id` and `toObject()` / `toJSON()`.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
+ * - `aggregate` answers plain copies, as Mongoose does, through the stages
+ *   fake-mongo-aggregate.js reads.
  * - Each collection the seed names is a model; the others are empty.
  */
 
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
+const { aggregated } = require('./fake-mongo-aggregate.js');
 
 // Collection → the name `models.common.js` exports it under.
 const MODELS = {
@@ -102,10 +105,17 @@ function model(records) {
       return projection ? q.select(projection) : q;
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
+    // A record without the field gives no value.
     distinct: (field, filter = {}) =>
       Promise.resolve([
-        ...new Set(matching(filter)().flatMap((record) => record[field])),
+        ...new Set(
+          matching(filter)()
+            .flatMap((record) => record[field])
+            .filter((value) => value !== undefined)
+        ),
       ]),
+    aggregate: (pipeline) =>
+      Promise.resolve().then(() => aggregated(records, pipeline).map(copy)),
   };
 }
 

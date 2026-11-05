@@ -6,6 +6,7 @@
 
 const { createListingStore } = require('./fake-listing-models.js');
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
+const { aggregated } = require('./fake-mongo-aggregate.js');
 
 const GROUP = '507f1f77bcf86cd799439b01';
 const WORKSPACE = '507f1f77bcf86cd799439d01';
@@ -92,10 +93,22 @@ describe('fake listing models, filters as MongoDB reads them', () => {
     expect(matches({}, { tags: { $size: 0 } })).toBe(false);
   });
 
+  it('reads a dotted path into an embedded document, and through an array', () => {
+    const skill = {
+      activeVersion: { major: 2 },
+      versions: [{ status: 'ARCHIVED' }, { status: 'ACTIVE' }],
+    };
+
+    expect(matches(skill, { 'activeVersion.major': 2 })).toBe(true);
+    expect(matches(skill, { 'versions.status': 'ACTIVE' })).toBe(true);
+    expect(matches(skill, { 'versions.status': 'DRAFT' })).toBe(false);
+    expect(matches(skill, { 'owner.name': { $exists: false } })).toBe(true);
+  });
+
   it.each([
     ['an unknown operator', { $text: { $search: 'spring' } }],
     ['an unknown field operator', { name: { $elemMatch: {} } }],
-    ['a dotted path', { 'location.workspace': WORKSPACE }],
+    ['a positional path', { 'versions.0.status': 'ACTIVE' }],
     ['an embedded document', { location: { workspace: WORKSPACE } }],
   ])('throws on %s rather than match nothing', (_, filter) => {
     expect(() => matches({ name: 'Spring' }, filter)).toThrow(
@@ -124,5 +137,66 @@ describe('fake listing models, sort and projection', () => {
       _id: 'x',
       name: 'A',
     });
+  });
+});
+
+describe('fake listing models, dotted projections and aggregations', () => {
+  const skill = {
+    _id: 'x',
+    title: 'A',
+    activeVersion: { major: 2, minor: 0 },
+    versions: [
+      { versionMajor: 1, status: 'ARCHIVED', body: 'old', testCases: [1] },
+      { versionMajor: 2, status: 'ACTIVE', body: 'new', testCases: [2] },
+    ],
+  };
+
+  it('keeps or drops a dotted path, in every element of an array', () => {
+    expect(projected(skill, { 'versions.status': 1 })).toEqual({
+      _id: 'x',
+      versions: [{ status: 'ARCHIVED' }, { status: 'ACTIVE' }],
+    });
+    expect(
+      projected(skill, { 'versions.testCases': 0 }).versions.map(Object.keys)
+    ).toEqual([
+      ['versionMajor', 'status', 'body'],
+      ['versionMajor', 'status', 'body'],
+    ]);
+    expect(skill.versions[0].testCases).toEqual([1]);
+  });
+
+  it('keeps the first element that matches an $elemMatch, or no field', () => {
+    expect(
+      projected(skill, {
+        title: 1,
+        versions: { $elemMatch: { status: 'ACTIVE' } },
+      })
+    ).toEqual({ _id: 'x', title: 'A', versions: [skill.versions[1]] });
+    expect(
+      projected(skill, { versions: { $elemMatch: { status: 'DRAFT' } } })
+    ).toEqual({ _id: 'x' });
+  });
+
+  it('unwinds an array, then matches and projects each element', () => {
+    const answer = aggregated(
+      [skill, { _id: 'y', versions: [] }],
+      [
+        { $match: { title: 'A' } },
+        { $unwind: '$versions' },
+        { $match: { 'versions.status': 'ACTIVE' } },
+        { $project: { title: 1, 'versions.body': 1 } },
+      ]
+    );
+
+    expect(answer).toEqual([
+      { _id: 'x', title: 'A', versions: { body: 'new' } },
+    ]);
+  });
+
+  it.each([
+    ['an unknown stage', [{ $lookup: {} }]],
+    ['the unwind of a dotted path', [{ $unwind: '$a.b' }]],
+  ])('throws on %s', (_, pipeline) => {
+    expect(() => aggregated([skill], pipeline)).toThrow('is not supported');
   });
 });
