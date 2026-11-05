@@ -25,12 +25,16 @@ const SendTestPanel = Vue.component('SendTestPanel', {
     ready: { type: Boolean, default: false },
     issueCount: { type: Number, default: 0 },
     blockingCount: { type: Number, default: 0 },
+    // The server's checks of links and images, still awaited when 'running'.
+    remoteStatus: { type: String, default: 'idle' },
     // The tab is shown.
     active: { type: Boolean, default: false },
   },
   data: () => ({
     // The addresses and the saved list, as chips (recipients-field.js).
     chips: [],
+    // An address typed and not yet a chip: enough to send, once checked.
+    hasDraft: false,
     emailGroups: [],
     groupsRequested: false,
     isSending: false,
@@ -54,7 +58,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
       );
     },
     canSend() {
-      return !this.isSending && this.chips.length > 0;
+      return !this.isSending && (this.chips.length > 0 || this.hasDraft);
     },
     // What the panel's foot shows of the send (quality-drawer.js).
     state() {
@@ -128,9 +132,14 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         emailsGroupId: this.selectedGroup && this.selectedGroup.code,
         html,
       })
-        .then(() => {
-          this.sent = { count: this.recipientCount, at: new Date() };
-          this.vm.notifier.success(this.t('send-test-success'));
+        // Said in the tab (board q5): the count is the server's, the typed
+        // addresses and the list's without their duplicates.
+        .then((response) => {
+          const result = response && response.data && response.data.result;
+          this.sent = {
+            count: Array.isArray(result) ? result.length : this.recipientCount,
+            at: new Date(),
+          };
         })
         .catch(() => this.vm.notifier.error(this.t('send-test-error')))
         .finally(() => {
@@ -141,13 +150,14 @@ const SendTestPanel = Vue.component('SendTestPanel', {
   },
   template: `
     <div class="qc-send">
-      <div v-if="status === 'running'" class="qc-notice" role="status">
+      <div v-if="status === 'running' || (status === 'done' && remoteStatus === 'running')" class="qc-notice" role="status">
         <span class="qc-spinner" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('Running checks…') }}</span>
+        <span class="qc-notice__text">{{ status === 'running' ? t('Running checks…') : t('Checking links and images…') }}</span>
       </div>
-      <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="{ 'qc-notice--error': blockingCount > 0 }" role="status">
+      <!-- Red only when something blocks the export (decision 6). -->
+      <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="blockingCount > 0 ? 'qc-notice--error' : 'qc-notice--neutral'" role="status">
         <span class="lucide" :class="blockingCount > 0 ? 'lucide-alert-circle' : issueCount ? 'lucide-triangle-alert' : 'lucide-circle-slash'" aria-hidden="true"></span>
-        <span v-if="issueCount" class="qc-notice__text">{{ t('__count__ issues are still to fix: you can send a test anyway', { count: issueCount }) }}</span>
+        <span v-if="issueCount" class="qc-notice__text">{{ t(issueCount === 1 ? 'quality-send-not-ready-one' : 'quality-send-not-ready', { count: issueCount }) }}</span>
         <span v-else class="qc-notice__text">{{ t('A check could not run: you can send a test anyway') }}</span>
         <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('quality-see-checks') }}</button>
       </div>
@@ -159,7 +169,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
 
       <div v-if="sent" class="qc-notice qc-notice--success" role="status">
         <span class="lucide lucide-check-circle" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('quality-test-sent', { count: sent.count, when: sentAt() }) }}</span>
+        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}</span>
       </div>
 
       <!-- Sent from the panel's foot: its button names this form. -->
@@ -170,6 +180,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
           :lists="emailGroups"
           :label="t('quality-recipients')"
           :t="t"
+          @draft="hasDraft = $event"
         ></recipients-field>
       </form>
 

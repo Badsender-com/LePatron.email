@@ -23,8 +23,8 @@
     cursor: text;
 
     &:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
     }
 
     &--invalid {
@@ -99,7 +99,9 @@
     border-radius: 4px;
     cursor: pointer;
 
-    &[aria-selected='true'] { background: var(--gray-100); }
+    &[aria-selected='true'] {
+      background: color-mix(in srgb, var(--accent) 14%, var(--white));
+    }
   }
 }
 

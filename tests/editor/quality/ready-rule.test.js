@@ -90,7 +90,7 @@ describe('the ready rule (ADR 0020)', () => {
     it('recalls the warnings left too, not only the errors', async () => {
       app = await mountBanner({ status: 'done', ready: false, issueCount: 2 });
       expect(app.$el.querySelector('.qc-notice').textContent).toContain(
-        '2 issues are still to fix'
+        'quality-send-not-ready'
       );
     });
 

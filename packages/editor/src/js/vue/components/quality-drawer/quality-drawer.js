@@ -168,6 +168,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :ready="ready"
         :issue-count="issueCount"
         :blocking-count="blockingCount"
+        :remote-status="remoteStatus"
         :active="open && tab === 'send'"
         @show-results="goTo('checks')"
         @state="sendState = $event"

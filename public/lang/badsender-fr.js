@@ -212,13 +212,6 @@ module.exports = {
   // test list
   'send-test-success': 'Email envoyé avec succès',
   'send-test-error': "Erreur lors de l'envoi de l'email :(",
-  'placeholder-input-emails-test':
-    'Exemple : premieremail@test.com;secondemail@test.com',
-  'emails-test': 'Saisir un ou plusieurs emails',
-  'emails-invalid':
-    'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
-  'placeholder-emails-groups': 'Sélectionnez une liste',
-  'sending-test-mails': "Envoi de l'email de test…",
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
@@ -598,21 +591,30 @@ module.exports = {
   'quality-blocking-suffix': ', dont __count__ bloquants',
   'quality-recipients': 'Destinataires',
   'quality-recipients-placeholder': 'Adresse ou liste…',
-  'quality-recipients-help':
-    "Tapez une adresse puis Entrée, ou le nom d'une liste enregistrée. __count__ destinataire(s).",
   'quality-recipient-remove': 'Retirer __name__',
-  'quality-test-sent': 'Test envoyé à __count__ destinataire(s) à __when__.',
+  'quality-test-sent': 'Test envoyé à __count__ destinataires à __when__.',
   'quality-send-test': 'Envoyer le test',
   'quality-send-again': 'Envoyer à nouveau',
   'quality-see-checks': 'Voir le contrôle',
   'quality-share-definitive':
     'Désactiver un lien est définitif : il ne fonctionnera plus.',
+  'quality-recipients-help':
+    "Tapez une adresse puis Entrée, ou le nom d'une liste enregistrée.",
+  'quality-send-not-ready-one':
+    "L'email n'est pas encore prêt (1 point à corriger). Vous pouvez quand même envoyer un test.",
+  'quality-send-not-ready':
+    "L'email n'est pas encore prêt (__count__ points à corriger). Vous pouvez quand même envoyer un test.",
+  'quality-test-sent-one': 'Test envoyé à 1 destinataire à __when__.',
+  'quality-recipient-remove-list': 'Retirer la liste __name__',
+  'quality-recipients-invalid': "« __value__ » n'est pas une adresse email.",
+  'quality-recipients-count-one': '1 destinataire.',
+  'quality-recipients-count': '__count__ destinataires.',
+  'quality-share-definitive-short': '· définitif, le lien ne fonctionnera plus',
+  'quality-share-revoked': 'Lien désactivé.',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
   'quality-ready-infos': '__count__ info(s) à consulter si vous le souhaitez.',
-  '__count__ issues are still to fix: you can send a test anyway':
-    '__count__ point(s) à corriger : vous pouvez tout de même envoyer un test',
   'A check could not run: you can send a test anyway':
     "Un contrôle n'a pas pu s'exécuter : vous pouvez tout de même envoyer un test",
   'quality-badge-stale': 'À relancer',
@@ -870,16 +872,11 @@ module.exports = {
   'Colour an email client cannot read in the HTML code: __colors__':
     'Couleur illisible par les clients mail dans le code HTML : __colors__',
   'Send a test': 'Envoi de test',
-  'See the results': 'Voir les résultats',
   'The quality checks have not run on this version yet':
     "Le contrôle qualité n'a pas encore été lancé sur cette version",
-  'Separate addresses with a semicolon':
-    'Séparez les adresses par un point-virgule',
   'Saved list of addresses': "Liste d'adresses enregistrée",
   'The saved lists of addresses could not be loaded':
     "Les listes d'adresses enregistrées n'ont pas pu être chargées",
-  'Send the test email': "Envoyer l'email de test",
-  'Add comment': 'Ajouter un commentaire',
   'Stop ignoring': 'Ne plus ignorer',
   'Ignored: __title__': 'Ignoré : __title__',
   'The change could not be saved':

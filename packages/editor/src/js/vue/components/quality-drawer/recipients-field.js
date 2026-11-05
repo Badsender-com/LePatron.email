@@ -23,7 +23,7 @@ const RecipientsField = Vue.component('RecipientsField', {
     label: { type: String, required: true },
     t: { type: Function, required: true },
   },
-  data: () => ({ draft: '', invalid: false, active: 0 }),
+  data: () => ({ draft: '', invalid: [], active: 0, dismissed: false }),
   created() {
     uid += 1;
     this.inputId = `recipients-${uid}`;
@@ -39,7 +39,7 @@ const RecipientsField = Vue.component('RecipientsField', {
     },
     suggestions() {
       const query = this.draft.trim().toLowerCase();
-      if (!query || query.includes('@')) return [];
+      if (this.dismissed || !query || query.includes('@')) return [];
       return this.lists
         .filter((list) => list.label.toLowerCase().includes(query))
         .slice(0, MAX_SUGGESTIONS);
@@ -49,25 +49,38 @@ const RecipientsField = Vue.component('RecipientsField', {
     update(chips) {
       this.$emit('input', chips);
     },
-    // What is typed, as addresses; what is not one stays, marked.
+    // What is typed, as addresses, each once whatever its case; what is not
+    // one stays, named.
     commit() {
       const parts = this.draft.split(/[\s,;]+/).filter(Boolean);
       if (!parts.length) return true;
-      const known = new Set(this.value.map((chip) => chip.value));
-      const added = parts
-        .filter((part) => isEmail(part) && !known.has(part))
-        .map((part) => ({ kind: 'email', value: part }));
+      const known = new Set(
+        this.value
+          .filter((chip) => chip.kind === 'email')
+          .map((chip) => chip.value.toLowerCase())
+      );
+      const added = [];
+      parts.filter((part) => isEmail(part)).forEach((part) => {
+        if (known.has(part.toLowerCase())) return;
+        known.add(part.toLowerCase());
+        added.push({ kind: 'email', value: part });
+      });
       const rest = parts.filter((part) => !isEmail(part));
       if (added.length) this.update(this.value.concat(added));
-      this.draft = rest.join(' ');
-      this.invalid = rest.length > 0;
-      return !this.invalid;
+      this.invalid = rest;
+      this.setDraft(rest.join(' '));
+      return rest.length === 0;
+    },
+    // Whether what is typed may be sent: something, not known as invalid.
+    setDraft(value) {
+      this.draft = value;
+      this.$emit('draft', value.trim() !== '' && !this.invalid.length);
     },
     choose(list) {
       const others = this.value.filter((chip) => chip.kind !== 'list');
       this.update(others.concat({ kind: 'list', ...list }));
-      this.draft = '';
-      this.invalid = false;
+      this.setDraft('');
+      this.invalid = [];
       this.$refs.input.focus();
     },
     remove(index) {
@@ -86,18 +99,25 @@ const RecipientsField = Vue.component('RecipientsField', {
         if (open) this.choose(this.suggestions[this.active]);
         else this.commit();
       } else if (event.key === 'Escape' && open) {
+        // The list closes; what was typed stays.
         event.preventDefault();
         event.stopPropagation();
-        this.draft = '';
+        this.dismissed = true;
       } else if (event.key === 'Backspace' && !this.draft && this.value.length) {
         this.remove(this.value.length - 1);
       }
     },
     onInput(event) {
-      this.draft = event.target.value;
-      this.invalid = false;
+      this.invalid = [];
+      this.setDraft(event.target.value);
       this.active = 0;
+      this.dismissed = false;
       if (/[,;]\s*$|\s$/.test(this.draft) && this.draft.includes('@')) this.commit();
+    },
+    removeLabel(chip) {
+      return chip.kind === 'list'
+        ? this.t('quality-recipient-remove-list', { name: chip.label })
+        : this.t('quality-recipient-remove', { name: chip.value });
     },
     chipLabel(chip) {
       if (chip.kind === 'email') return chip.value;
@@ -107,10 +127,10 @@ const RecipientsField = Vue.component('RecipientsField', {
   template: `
     <div class="qc-recipients">
       <label :for="inputId" class="qc-field__label">{{ label }}</label>
-      <div class="qc-recipients__box" :class="{ 'qc-recipients__box--invalid': invalid }" @click="$refs.input.focus()">
+      <div class="qc-recipients__box" :class="{ 'qc-recipients__box--invalid': invalid.length }" @click="$refs.input.focus()">
         <span v-for="(chip, i) in value" :key="chip.kind + (chip.value || chip.code)" class="qc-recipients__chip">
           <span v-if="chip.kind === 'list'" class="lucide lucide-users" aria-hidden="true"></span>{{ chipLabel(chip) }}
-          <button type="button" class="qc-recipients__remove" :aria-label="t('quality-recipient-remove', { name: chipLabel(chip) })" @click.stop="remove(i)">
+          <button type="button" class="qc-recipients__remove" :aria-label="removeLabel(chip)" @click.stop="remove(i)">
             <span class="lucide lucide-x" aria-hidden="true"></span>
           </button>
         </span>
@@ -122,10 +142,12 @@ const RecipientsField = Vue.component('RecipientsField', {
           autocomplete="off"
           :value="draft"
           :placeholder="t('quality-recipients-placeholder')"
-          :aria-invalid="invalid ? 'true' : 'false'"
+          role="combobox"
+          :aria-invalid="invalid.length ? 'true' : 'false'"
           :aria-describedby="helpId"
           aria-autocomplete="list"
-          :aria-controls="suggestions.length ? listId : null"
+          :aria-expanded="suggestions.length ? 'true' : 'false'"
+          :aria-controls="listId"
           :aria-activedescendant="suggestions.length ? listId + '-' + active : null"
           @input="onInput"
           @keydown="onKey"
@@ -145,8 +167,11 @@ const RecipientsField = Vue.component('RecipientsField', {
           <span class="lucide lucide-users" aria-hidden="true"></span>{{ chipLabel(list) }}
         </li>
       </ul>
-      <p :id="helpId" class="qc-field__help" :class="{ 'qc-field__help--error': invalid }" aria-live="polite">
-        {{ invalid ? t('emails-invalid') : t('quality-recipients-help', { count: count }) }}
+      <!-- The help stays as it is; what changes is said apart, briefly. -->
+      <p :id="helpId" class="qc-field__help">{{ t('quality-recipients-help') }}</p>
+      <p class="qc-field__help" :class="{ 'qc-field__help--error': invalid.length }" aria-live="polite">
+        <template v-if="invalid.length">{{ t('quality-recipients-invalid', { value: invalid.join(' ') }) }}</template>
+        <template v-else-if="count">{{ t(count === 1 ? 'quality-recipients-count-one' : 'quality-recipients-count', { count: count }) }}</template>
       </p>
     </div>
   `,

@@ -102,7 +102,11 @@ describe('SendTestPanel', () => {
       html: '<p>email</p>',
       emailsGroupId: 'g1',
     });
-    expect(vm.notifier.success).toHaveBeenCalledWith('send-test-success');
+    // Said in the tab (board q5), not by a second notice.
+    expect(el.querySelector('.qc-notice--success').textContent).toContain(
+      'quality-test-sent'
+    );
+    expect(vm.notifier.success).not.toHaveBeenCalled();
   });
 
   it('reviews the very HTML it sends, exported once, without opening anything', async () => {
@@ -167,10 +171,56 @@ describe('SendTestPanel', () => {
     await flush();
 
     expect(axios.post).not.toHaveBeenCalled();
-    expect(el.querySelector('.qc-field__help').textContent.trim()).toBe(
-      'emails-invalid'
+    expect(el.querySelector('.qc-field__help--error').textContent.trim()).toBe(
+      'quality-recipients-invalid'
     );
     expect(panel.canSend).toBe(false);
+  });
+
+  it('may send an address only typed: it becomes a chip first', async () => {
+    const { el, panel } = await mountPanel({ status: 'done' });
+    const input = el.querySelector('.qc-recipients__input');
+    input.value = 'a@b.co';
+    input.dispatchEvent(new Event('input'));
+    await Vue.nextTick();
+    expect(panel.canSend).toBe(true);
+    submit(el);
+    await flush();
+    expect(axios.post.mock.calls[0][1].rcpt).toBe('a@b.co');
+  });
+
+  it('keeps one chip per address, whatever its case', async () => {
+    const { el, panel } = await mountPanel({ status: 'done' });
+    const input = el.querySelector('.qc-recipients__input');
+    input.value = 'a@b.co A@b.co a@b.co';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await Vue.nextTick();
+    expect(panel.chips).toEqual([{ kind: 'email', value: 'a@b.co' }]);
+  });
+
+  it('closes the lists on Escape, keeping what was typed', async () => {
+    const { el } = await mountPanel({ status: 'done' });
+    const input = el.querySelector('.qc-recipients__input');
+    input.value = 'mark';
+    input.dispatchEvent(new Event('input'));
+    await Vue.nextTick();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await Vue.nextTick();
+    expect(input.value).toBe('mark');
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('says how many were sent to, as the server counts them', async () => {
+    axios.post.mockResolvedValue({
+      data: { result: ['a@b.co', 'x@y.co', 'z@y.co'] },
+    });
+    const { el, panel } = await mountPanel({ status: 'done' });
+    panel.chips = [{ kind: 'email', value: 'a@b.co' }];
+    await Vue.nextTick();
+    submit(el);
+    await flush();
+    expect(panel.sent.count).toBe(3);
   });
 
   it('makes chips of the addresses typed, and of one saved list', async () => {
@@ -244,7 +294,7 @@ describe('SendTestPanel', () => {
       issueCount: 2,
     });
     expect(el.querySelector('.qc-notice').textContent).toContain(
-      '2 issues are still to fix'
+      'quality-send-not-ready'
     );
     el.querySelector('.qc-notice .qc-link-button').click();
     expect(events.showResults).toBe(true);
