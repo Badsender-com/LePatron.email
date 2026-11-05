@@ -376,6 +376,13 @@ module.exports = {
   'comments-load-failed': 'Impossible de charger les commentaires',
   'comments-filter-note':
     "Filtre de lecture : vous lisez les commentaires du bloc __block__. Votre prochain commentaire porte sur ce qu'indique le champ « Sur », plus bas.",
+  'comments-target': 'Sur',
+  'comments-target-selected': 'Bloc sélectionné dans le canevas',
+  'comments-target-chosen': 'Bloc choisi',
+  'comments-target-note': "La cible suit la sélection du canevas tant que vous ne la changez pas ici. Pour un autre bloc, sélectionnez-le dans l'email.",
+  'comments-type': 'Type',
+  'comments-priority': 'Priorité',
+  'comments-approve-email': "Approuver l'email",
   'comments-new-one': '1 nouveau commentaire · Afficher',
   'comments-new': '__count__ nouveaux commentaires · Afficher',
   'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',
