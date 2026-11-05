@@ -14,6 +14,8 @@ const MESSAGES = {
     'Les expertises sont ignorées.',
   'aiSkills.warnings.TEMPLATE_UNKNOWN_FIELDS':
     'Absents de « {schemaId} » : {fields}.',
+  'aiSkills.errors.SKILL_CONSUMED_EXPERTISES_NOT_FOUND':
+    'Ces Expertises consommées n’existent pas : {expertiseIds}.',
   'global.errors.errorOccured': 'Une erreur est survenue',
 };
 
@@ -43,6 +45,19 @@ describe('skillErrorMessage', () => {
     );
     expect(message).toBe(
       'Champs absents du schéma « genericTextInput » : brief, tone.'
+    );
+  });
+
+  it('joins any list it interpolates, the expertises consumed too', () => {
+    const message = skillErrorMessage(
+      vm,
+      axiosError({
+        message: 'SKILL_CONSUMED_EXPERTISES_NOT_FOUND',
+        expertiseIds: ['qc.gone', 'qc.never-was'],
+      })
+    );
+    expect(message).toBe(
+      'Ces Expertises consommées n’existent pas : qc.gone, qc.never-was.'
     );
   });
 

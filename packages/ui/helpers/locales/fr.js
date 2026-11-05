@@ -1490,6 +1490,12 @@ export default {
       other: 'Autre',
     },
     errors: {
+      SKILL_CONSUMED_EXPERTISES_INVALID:
+        'Les Expertises consommées doivent être une liste d\'identifiants d\'Expertise.',
+      SKILL_CONSUMED_EXPERTISES_TOO_MANY:
+        'Une version consomme au plus {max} Expertises.',
+      SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
+        'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:

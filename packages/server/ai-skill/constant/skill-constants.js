@@ -65,6 +65,9 @@ const MinorVersionDefaults = Object.freeze({
 const SkillIdRegex = /^[a-z0-9._-]+$/;
 const SectionIdRegex = /^[a-z0-9-]+$/;
 const MaxSkillIdLength = 100;
+// The expertises a task skill's version consumes, at most (ADR 0013): an
+// assistant reads them all before following the procedure.
+const MaxConsumedExpertises = 20;
 const DefaultLogRetentionDays = 30;
 // NB: the retention bounds (7/365 days) live as literals on
 // Group.logRetentionDays (group.schema.js) — single source of truth there.
@@ -83,5 +86,6 @@ module.exports = {
   SkillIdRegex,
   SectionIdRegex,
   MaxSkillIdLength,
+  MaxConsumedExpertises,
   DefaultLogRetentionDays,
 };

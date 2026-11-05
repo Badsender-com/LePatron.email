@@ -46,8 +46,9 @@ const {
  * @param {string} options.entityNoun Lowercase, for prose ("skill")
  * @param {string} options.idField Business key field ("skillId")
  * @param {Array<{name: string, default: Function, deep?: boolean}>} options.contentFields
- * @param {(version: Object, doc: Object) => void} [options.activationGate] Throws
- *   to refuse publication; receives the version and the document it belongs to
+ * @param {(version: Object, doc: Object) => (void|Promise<void>)} [options.activationGate]
+ *   Throws (or rejects) to refuse publication; receives the version and the
+ *   document it belongs to
  */
 function createVersionedEntityService({
   model,
@@ -202,7 +203,7 @@ function createVersionedEntityService({
       throw createError(409, 'Only DRAFT versions can be activated');
     }
 
-    if (activationGate) activationGate(version, doc);
+    if (activationGate) await activationGate(version, doc);
 
     // Major releases require explicit changelog and releaseNotes. Minor
     // releases inherit the auto-filled defaults from createMinorVersion.

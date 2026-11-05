@@ -9,6 +9,7 @@ const {
 } = require('../constant/skill-constants.js');
 const { versionLabel } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
+const { assertConsumedExpertises } = require('./consumed-expertises.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -147,7 +148,9 @@ const VERSION_CONTENT_FIELDS = [
  * Publication gate specific to skills. Expertises have no equivalent, which is
  * exactly why it is injected rather than living in the shared lifecycle.
  */
-function assertSkillPublishable(version) {
+async function assertSkillPublishable(version) {
+  // Checked at save too; checked again here, on what is about to be served.
+  await assertConsumedExpertises(version.consumedExpertiseIds || []);
   // A task skill's version has no template nor schema: its procedure is what
   // it serves. The gate is the one of the nature of the version published.
   if (version.nature === SkillNatures.TASK) {
@@ -196,10 +199,18 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
-  updateVersion,
   deleteVersion,
   activateVersion,
 } = versioned;
+
+// A draft saved with its consumed expertises gets them checked before
+// anything is written (the shared lifecycle knows nothing of them).
+async function updateVersion(skillId, ref, patch, userId) {
+  if (patch && patch.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(patch.consumedExpertiseIds);
+  }
+  return versioned.updateVersion(skillId, ref, patch, userId);
+}
 
 const archiveSkill = versioned.archive;
 
