@@ -13,7 +13,7 @@ import {
   skillCategoryLabel,
   AUDIENCES,
 } from '~/helpers/ai-skill-categories.js';
-import { closesToPlatform } from '~/helpers/ai-skill-audience-change.js';
+import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -38,6 +38,7 @@ export default {
       },
       archivedKey: 'aiSkills.expertise.archived',
     }),
+    mixinAiExpertiseDetails,
   ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
@@ -94,52 +95,6 @@ export default {
   methods: {
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
-    },
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      const skills = closesToPlatform(this.savedAudience, this.exp.audience)
-        ? await this.readOpenTaskSkills()
-        : [];
-      if (skills && skills.length) {
-        this.$refs.closeModal.open(skills);
-        return;
-      }
-      await this.patchDetails({ unchecked: skills === null });
-    },
-    // The open task skills that consume it. The page is busy while they are
-    // read; null when they cannot be, and saving stays possible.
-    async readOpenTaskSkills() {
-      this.saving = true;
-      try {
-        const res = await this.$axios.$get(
-          api.aiExpertiseOpenTaskSkills(this.exp.expertiseId)
-        );
-        return res.skills || [];
-      } catch (err) {
-        return null;
-      } finally {
-        this.saving = false;
-      }
-    },
-    async patchDetails({ unchecked = false } = {}) {
-      const saved = await this.replaceItem(() =>
-        this.$axios.$patch(api.aiExpertise(this.exp.expertiseId), {
-          title: this.exp.title,
-          description: this.exp.description,
-          category: this.exp.category,
-          scope: this.exp.scope,
-          isTransversal: this.exp.isTransversal,
-          appliesToEmailTypes: this.exp.appliesToEmailTypes,
-          appliesToLanguages: this.exp.appliesToLanguages,
-          audience: this.exp.audience,
-        })
-      );
-      if (!saved) return;
-      this.savedAudience = this.exp.audience;
-      this.tellSaved({ unchecked });
     },
     // `silent` skips the snackbar: publishing an edited draft saves it first
     // (see askActivate) and only the activation is worth announcing.

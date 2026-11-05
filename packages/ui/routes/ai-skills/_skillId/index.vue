@@ -10,12 +10,11 @@ import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-p
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
 import BsAiSkillOpenModal from '~/components/ai-skill/bs-ai-skill-open-modal.vue';
+import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
 import {
   skillCategoryLabel,
   AUDIENCES,
-  SKILL_NATURES,
 } from '~/helpers/ai-skill-categories.js';
-import { opensToAll } from '~/helpers/ai-skill-audience-change.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -41,6 +40,7 @@ export default {
       },
       archivedKey: 'aiSkills.skill.archived',
     }),
+    mixinAiSkillDetails,
   ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
@@ -99,73 +99,6 @@ export default {
   methods: {
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
-    },
-
-    // What opening it to all, with this version, would leave out for the
-    // other companies: a task version's expertises kept to the platform
-    // company. The page is busy while they are read; null when they cannot
-    // be, and opening stays possible.
-    async readPlatformOnlyExpertises(version) {
-      if (!version || version.nature !== SKILL_NATURES.TASK) return [];
-      this.saving = true;
-      try {
-        const res = await this.$axios.$get(
-          api.aiSkillPlatformOnlyExpertises(
-            this.skill.skillId,
-            version.versionMajor,
-            version.versionMinor
-          )
-        );
-        return res.expertises || [];
-      } catch (err) {
-        return null;
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      const expertises = opensToAll(this.savedAudience, this.skill.audience)
-        ? await this.readPlatformOnlyExpertises(this.activeVersion())
-        : [];
-      if (expertises && expertises.length) {
-        this.$refs.openModal.open(expertises);
-        return;
-      }
-      await this.patchDetails([], { unchecked: expertises === null });
-    },
-
-    // Saved, and opened to all with the expertises chosen. The skill saved,
-    // what its opening warns of replaces the success message.
-    async patchDetails(openExpertiseIds, { unchecked = false } = {}) {
-      const {
-        title,
-        description,
-        category,
-        audience,
-        servedToAssistants,
-      } = this.skill;
-      let warnings = [];
-      const saved = await this.replaceItem(async () => {
-        const res = await this.$axios.$patch(api.aiSkill(this.skill.skillId), {
-          title,
-          description,
-          category,
-          audience,
-          servedToAssistants,
-          ...(openExpertiseIds.length ? { openExpertiseIds } : {}),
-        });
-        warnings = res.warnings || [];
-        delete res.warnings;
-        return res;
-      });
-      if (!saved) return;
-      this.savedAudience = this.skill.audience;
-      this.tellSaved({ warnings, unchecked });
     },
 
     activeVersion() {
