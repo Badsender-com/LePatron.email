@@ -39,6 +39,7 @@ function mount({ counts = {}, blocks = [] } = {}) {
     createCommentsRail,
   } = require('../../../packages/editor/src/js/ext/comments/comments-rail.js');
   const scroller = canvas(blocks);
+  const listen = jest.spyOn(scroller, 'addEventListener');
   const state = {
     counts: ko.observable(counts),
     target: ko.observable(null),
@@ -52,7 +53,7 @@ function mount({ counts = {}, blocks = [] } = {}) {
     scroller: () => scroller,
   });
   rail.update();
-  return { rail, state, scroller };
+  return { rail, state, scroller, listen };
 }
 
 afterEach(() => {
@@ -113,17 +114,17 @@ describe.skip('the comment markers rail (ADR 0020, P4)', () => {
       b1: { count: 1 },
       b2: { count: 4, maxSeverity: 'important' },
     });
-    rail.update();
     expect(rail.markers().map((m) => m.blockId)).toEqual(['b1', 'b2']);
   });
 
   it('stops listening to the canvas scroll once disposed', () => {
-    const { rail, scroller } = mount({
+    const { rail, scroller, listen } = mount({
       blocks: ['b1'],
       counts: { b1: { count: 1 } },
     });
+    const [, onScroll] = listen.mock.calls.find(([type]) => type === 'scroll');
     const remove = jest.spyOn(scroller, 'removeEventListener');
     rail.dispose();
-    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('scroll', onScroll);
   });
 });

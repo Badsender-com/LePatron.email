@@ -186,7 +186,7 @@ _UI_: « Sur : Tout l'email », « Sur : <bloc> »
 _Avoid_: Selected block, filter
 
 **Blocking comment**:
-A root comment of priority "blocking", not resolved. While one is open, the email cannot be approved.
+A root comment of priority "blocking", not resolved. While one is open, the email cannot be approved. Not to be confused with a blocking rule of the quality control (see Check state), which stops the export.
 _UI_: Bloquant
 
 **Approval**:
@@ -195,7 +195,7 @@ _UI_: « Approuver l'email » ; « Bon pour envoi »
 _Avoid_: Validation (for the event), sign-off
 
 **Approved email**:
-An email whose last root comment is an approval and that has no blocking comment open. A new root comment lifts it.
+An email whose last root comment is an approval and that has no blocking comment open. A new root comment lifts it, even once resolved: only deleting that comment restores the approval.
 _UI_: Validé
 _Avoid_: Validated, signed off
 
@@ -270,7 +270,7 @@ _Avoid_: Override, surcharge, Hérité du groupe, Propre au template
 
 **Ready email**:
 An email whose quality run went through every check and left no error and no warning unignored; an info counts only if it is blocking. Ready or not, only blocking findings stop the download and the ESP send.
-_UI_: Prêt ; « Tous les contrôles sont réussis »
+_UI_: Prêt ; « Prêt à partir »
 _Avoid_: Cleared, passed, valid
 
 ### AI

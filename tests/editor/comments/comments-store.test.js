@@ -9,8 +9,9 @@
  * Seam: `createCommentsStore(ko, options)` over a mocked API and fake timers.
  * Comments load once at the first opening, refresh every 30 seconds while the
  * panel is open and the tab visible, and at every reopening; a refresh merges
- * by comment, so a reply or an edit under way keeps its object. The target of
- * a new comment is not the filter of the list.
+ * by comment, so a reply or an edit under way keeps its object, and new
+ * comments wait behind a pill. The target of a new comment is not the filter
+ * of the list.
  *
  * Turned on by P5 (the comments' controller).
  */
@@ -38,7 +39,8 @@ function mount({ items = [] } = {}) {
     list: jest
       .fn()
       .mockImplementation(async () => items.map((c) => ({ ...c }))),
-    counts: jest.fn().mockResolvedValue({}),
+    counts: jest.fn().mockResolvedValue({ b1: { count: 2 } }),
+    unresolvedCount: jest.fn().mockResolvedValue(3),
   };
   const page = { hidden: false };
   const isOpen = ko.observable(false);
@@ -66,6 +68,16 @@ afterEach(() => jest.useRealTimers());
 
 describe.skip('the comments store (ADR 0020, P5)', () => {
   describe('loading', () => {
+    it('loads the counters at start, panel closed, without the list', async () => {
+      const { store, api } = mount();
+      store.start();
+      await settle();
+      expect(api.counts).toHaveBeenCalledTimes(1);
+      expect(api.list).not.toHaveBeenCalled();
+      expect(store.unresolvedCount()).toBe(3);
+      expect(store.counts()).toEqual({ b1: { count: 2 } });
+    });
+
     it('loads once at the first opening, not twice from the URL', async () => {
       const { store, api, isOpen } = mount({ items: [comment('c1')] });
       store.openFromUrl();
@@ -91,46 +103,72 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
       const { api, isOpen } = mount();
       isOpen(true);
       await settle();
+      api.counts.mockClear();
       jest.advanceTimersByTime(REFRESH_MS);
       await settle();
       expect(api.list).toHaveBeenCalledTimes(2);
       expect(api.counts).not.toHaveBeenCalled();
     });
 
-    it('waits while the tab is hidden, and while the panel is closed', async () => {
+    it('waits while the tab is hidden, and stops once the panel is closed', async () => {
       const { api, isOpen, page } = mount();
       isOpen(true);
       await settle();
       page.hidden = true;
       jest.advanceTimersByTime(REFRESH_MS);
-      isOpen(false);
-      page.hidden = false;
-      jest.advanceTimersByTime(REFRESH_MS * 3);
       await settle();
       expect(api.list).toHaveBeenCalledTimes(1);
+
+      page.hidden = false;
+      jest.advanceTimersByTime(REFRESH_MS);
+      await settle();
+      expect(api.list).toHaveBeenCalledTimes(2);
+
+      isOpen(false);
+      jest.advanceTimersByTime(REFRESH_MS * 3);
+      await settle();
+      expect(api.list).toHaveBeenCalledTimes(2);
     });
 
-    it('merges by comment: an object already shown keeps its identity', async () => {
+    it('updates a comment shown in place: it keeps its identity', async () => {
       const { store, isOpen, setItems } = mount({ items: [comment('c1')] });
       isOpen(true);
       await settle();
       const shown = store.comments()[0];
-      setItems([comment('c1', { text: 'modifié' }), comment('c2')]);
+      setItems([comment('c1', { text: 'modifié' })]);
       jest.advanceTimersByTime(REFRESH_MS);
       await settle();
       expect(store.comments()[0]).toBe(shown);
       expect(shown.text).toBe('modifié');
-      expect(store.comments().map((c) => c._id)).toEqual(['c1', 'c2']);
+    });
+
+    it('holds new comments behind the pill until the user shows them', async () => {
+      const { store, isOpen, setItems } = mount({ items: [comment('c1')] });
+      isOpen(true);
+      await settle();
+      setItems([comment('c1'), comment('c2'), comment('c3')]);
+      jest.advanceTimersByTime(REFRESH_MS);
+      await settle();
+      expect(store.comments().map((c) => c._id)).toEqual(['c1']);
+      expect(store.pendingCount()).toBe(2);
+
+      store.showNew();
+      expect(store.comments().map((c) => c._id)).toEqual(['c1', 'c2', 'c3']);
+      expect(store.pendingCount()).toBe(0);
     });
 
     it('stops refreshing once disposed', async () => {
       const { store, api, isOpen } = mount();
       isOpen(true);
       await settle();
+      jest.advanceTimersByTime(REFRESH_MS);
+      await settle();
+      expect(api.list).toHaveBeenCalledTimes(2);
+
       store.dispose();
       jest.advanceTimersByTime(REFRESH_MS * 2);
       await settle();
-      expect(api.list).toHaveBeenCalledTimes(1);
+      expect(api.list).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -154,6 +192,8 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
         items: [
           comment('c1', { blockId: 'b1', severity: 'blocking' }),
           comment('c2', { blockId: 'b1' }),
+          // On the whole email: counted apart, never under a block key.
+          comment('g1'),
           comment('a1', {
             blockId: 'b1',
             decision: 'approved',
@@ -163,7 +203,9 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
       });
       isOpen(true);
       await settle();
-      expect(store.counts().b1).toEqual({ count: 2, maxSeverity: 'blocking' });
+      expect(store.counts()).toEqual({
+        b1: { count: 2, maxSeverity: 'blocking' },
+      });
     });
   });
 

@@ -209,6 +209,47 @@ describe.skip('approving an email (ADR 0020)', () => {
         decision: NOT_AN_APPROVAL,
       });
     });
+
+    it('is left out of the counts of the email listing', async () => {
+      const aggregate = jest
+        .fn()
+        .mockResolvedValue([{ _id: MAILING, count: 2 }]);
+      const counts = await CommentSchema.statics.countUnresolvedByMailings.call(
+        { aggregate },
+        [MAILING]
+      );
+      expect(aggregate.mock.calls[0][0][0].$match).toMatchObject({
+        _parentComment: null,
+        decision: NOT_AN_APPROVAL,
+      });
+      expect(counts).toEqual({ [MAILING.toString()]: 2 });
+    });
+  });
+
+  describe('an approval is neither resolved nor reopened', () => {
+    it.each([
+      ['resolveComment', false],
+      ['unresolveComment', true],
+    ])('%s refuses an approval', async (method, resolved) => {
+      Comments.findById = jest.fn().mockResolvedValue({
+        _id: id(),
+        _mailing: MAILING,
+        decision: COMMENT_DECISIONS.APPROVED,
+        resolved,
+        isDeleted: false,
+      });
+      Comments.findByIdAndUpdate = jest.fn();
+      await expect(
+        commentService[method]({
+          commentId: id().toString(),
+          user: userOf('reviewer'),
+        })
+      ).rejects.toMatchObject({
+        status: 400,
+        message: ERROR_CODES.COMMENT_APPROVAL_FIXED,
+      });
+      expect(Comments.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
   });
 
   describe('an approved email has no blocking comment open', () => {
