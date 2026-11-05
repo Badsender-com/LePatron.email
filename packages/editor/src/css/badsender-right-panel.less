@@ -161,3 +161,16 @@
     animation: none;
   }
 }
+
+// The notices keep to the canvas, between the left bar and the panel rail,
+// or the open panel: never over the form of a panel.
+#toast-container.toast-bottom-full-width {
+  right: @panel-rail-width;
+  left: var(--left-bar-width, @leftsidebar-width);
+  width: auto !important;
+  margin: 0 24px;
+}
+
+body:has(#page.withRightPanel) #toast-container.toast-bottom-full-width {
+  right: @leftsidebar-width + @panel-rail-width;
+}

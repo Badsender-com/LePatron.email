@@ -44,6 +44,11 @@ module.exports = `
   </template>
 
   <template v-else>
+    <!-- What the field holds now (board a3), when it holds something. -->
+    <div v-if="currentText && labels.current" class="ai-panel__current">
+      <p class="ai-panel__label">{{ t(labels.current) }}</p>
+      <p class="ai-panel__current-text">{{ currentText }}</p>
+    </div>
     <label for="ai-panel-brief" class="ai-panel__label">{{ t('text-generation-brief-label') }}</label>
     <textarea id="ai-panel-brief" ref="brief" class="ai-panel__brief" v-model="brief" rows="2" maxlength="500"
               :placeholder="t('text-generation-brief-placeholder')"></textarea>

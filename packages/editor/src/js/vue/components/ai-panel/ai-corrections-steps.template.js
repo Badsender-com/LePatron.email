@@ -84,7 +84,7 @@ module.exports = `
       <span class="lucide lucide-check-circle" aria-hidden="true"></span>
       <span class="qc-notice__text">
         <strong>{{ t(state.stopped ? 'ai-panel-analysis-stopped' : 'ai-panel-analysis-done') }}</strong>
-        <template v-if="state.progress"><br>{{ tCount('ai-panel-blocks-read', blocksRead) }}</template>
+        <br>{{ readSummary }}
       </span>
     </div>
     <h3 class="ai-panel__section">{{ t('ai-panel-tally-corrections') }}</h3>

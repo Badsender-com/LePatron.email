@@ -41,6 +41,7 @@ module.exports = {
   icon: 'lucide-align-left',
   labels: {
     name: 'ai-panel-action-preheader',
+    current: 'ai-panel-current-preheader',
     description: 'ai-panel-preheader-desc',
     generate: 'ai-panel-generate-preheader',
     proposals: 'text-generation-preheaders-title',

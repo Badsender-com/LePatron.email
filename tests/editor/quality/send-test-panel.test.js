@@ -211,6 +211,22 @@ describe('SendTestPanel', () => {
     expect(input.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('says the subject it went with (board q5)', async () => {
+    const { vm, el, panel } = await mountPanel({ status: 'done' });
+    vm.emailMetadataStore = {
+      isActive: () => true,
+      snapshot: () => ({ subject: 'Nos nouveautés' }),
+    };
+    panel.chips = [{ kind: 'email', value: 'a@b.co' }];
+    await Vue.nextTick();
+    submit(el);
+    await flush();
+    expect(el.querySelector('.qc-notice--success').textContent).toContain(
+      'quality-test-sent-subject'
+    );
+    expect(panel.sent.subject).toBe('Nos nouveautés');
+  });
+
   it('says how many were sent to, as the server counts them', async () => {
     axios.post.mockResolvedValue({
       data: { result: ['a@b.co', 'x@y.co', 'z@y.co'] },

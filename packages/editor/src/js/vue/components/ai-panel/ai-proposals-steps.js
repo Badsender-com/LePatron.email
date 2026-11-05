@@ -58,6 +58,12 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
     nextAction() {
       return this.session.nextAction();
     },
+    // Read once the steps open: what the user is about to replace.
+    currentText() {
+      return typeof this.session.current === 'function'
+        ? this.session.current()
+        : '';
+    },
     // The main buttons, in the panel's foot (board a3): what to do next.
     footerButtons() {
       if (this.urgesFirst) return [];

@@ -70,6 +70,8 @@ function createCorrectionsSession({
     leftOut: null,
     // Fields too long to be checked, left out.
     tooLong: 0,
+    // Fields sent to be read, for the summary (board a5).
+    fieldsRead: 0,
     // No field had any text to correct: nothing was asked.
     nothingToCorrect: false,
     // The whole email: blocks corrected so far, out of all.
@@ -126,6 +128,7 @@ function createCorrectionsSession({
       .filter((field) => field.text);
     const sent = withText.filter((field) => field.text.length <= MAX_FIELD_LENGTH);
     state.tooLong += withText.length - sent.length;
+    state.fieldsRead += sent.length;
     for (const batch of batchesOf(sent)) {
       if (cancelled) break;
       await correctBatch(blockTarget, batch);

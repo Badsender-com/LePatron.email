@@ -134,6 +134,9 @@ function commentsLoader(opts) {
       }
     });
 
+    // Its type alone, as the filter's chip names it (board c1).
+    viewModel.commentBlockType = labelOfBlock;
+
     // Any block of the email, its header and footer included.
     viewModel.blockExists = function (blockId) {
       return !blockId || Boolean(findBlockById(viewModel, blockId));

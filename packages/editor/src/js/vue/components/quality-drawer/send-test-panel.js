@@ -6,6 +6,7 @@ const {
   sendTestEmail,
 } = require('../send-test/send-test-api');
 const { formatTime } = require('./quality-items');
+const { getSubject } = require('../../../ext/email-subject');
 
 // The "Send a test" tab of the quality drawer: the recipients, an optional
 // saved list, and a word on what the quality review found. What is left to
@@ -139,6 +140,8 @@ const SendTestPanel = Vue.component('SendTestPanel', {
           this.sent = {
             count: Array.isArray(result) ? result.length : this.recipientCount,
             at: new Date(),
+            // The subject it went with, when the email has one (board q5).
+            subject: getSubject(this.vm) || '',
           };
         })
         .catch(() => this.vm.notifier.error(this.t('send-test-error')))
@@ -169,7 +172,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
 
       <div v-if="sent" class="qc-notice qc-notice--success" role="status">
         <span class="lucide lucide-check-circle" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}</span>
+        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}<template v-if="sent.subject"> {{ t('quality-test-sent-subject', { subject: sent.subject }) }}</template></span>
       </div>
 
       <!-- Sent from the panel's foot: its button names this form. -->

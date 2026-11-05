@@ -128,6 +128,12 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
       const done = this.state.progress ? this.state.progress.done : 0;
       return Math.max(0, done - this.state.failedBlocks.length);
     },
+    // « 8 blocs, 27 champs relus » on the whole email; the fields elsewhere.
+    readSummary() {
+      const fields = this.tCount('ai-panel-fields-read', this.state.fieldsRead || 0);
+      if (!this.state.progress) return fields;
+      return `${this.tCount('ai-panel-blocks-count', this.blocksRead)}, ${fields}`;
+    },
     // The main buttons, in the panel's foot (boards a4, a5).
     footerButtons() {
       const acceptAll = this.open.length > 0 && {

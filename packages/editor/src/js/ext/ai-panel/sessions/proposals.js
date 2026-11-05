@@ -130,6 +130,10 @@ function createProposalsSession({ definition, target, api, editor }) {
       state.copiedIndex = index;
       if (definition.onCopied) definition.onCopied(editor, selected().text);
     },
+    // What the field holds now, for the user to compare (board a3).
+    current() {
+      return definition.read ? definition.read(editor) || '' : '';
+    },
     // What the panel offers once this action is applied, or copied.
     nextAction() {
       return state.applied || state.copiedIndex !== null ? definition.next : null;
