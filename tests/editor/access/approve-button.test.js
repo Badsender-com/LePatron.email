@@ -69,3 +69,48 @@ describe('the unresolved counter of the editor', () => {
     expect(vm.unresolvedCommentCount()).toBe(1);
   });
 });
+
+describe('approving over an open blocking comment', () => {
+  const blocking = (fields = {}) => ({
+    _id: 'b1',
+    resolved: false,
+    _parentComment: null,
+    severity: 'blocking',
+    decision: null,
+    ...fields,
+  });
+
+  it('is disabled while a root blocking comment is open', () => {
+    const vm = editorFor('reviewer');
+    vm.comments([blocking()]);
+    expect(vm.hasOpenBlocking()).toBe(true);
+  });
+
+  it.each([
+    ['resolved', { resolved: true }],
+    ['a reply', { _parentComment: 'c0' }],
+    ['an approval stored as blocking', { decision: 'approved' }],
+  ])('is not held back by a blocking comment %s', (_label, fields) => {
+    const vm = editorFor('reviewer');
+    vm.comments([blocking(fields)]);
+    expect(vm.hasOpenBlocking()).toBe(false);
+  });
+
+  it.each([
+    ['COMMENT_APPROVAL_BLOCKED', 'comments-approve-blocked'],
+    ['COMMENT_APPROVAL_FORBIDDEN', 'comments-approve-forbidden'],
+    ['SOMETHING_ELSE', 'comments-create-error'],
+  ])('says why the server refused it: %s', (code, key) => {
+    const vm = editorFor('reviewer');
+    vm.t = (k) => k;
+    vm.notifier = { error: jest.fn(), success: jest.fn() };
+    $.ajax.mockImplementation((options) => {
+      if (options.method === 'POST') {
+        options.error({ responseJSON: { message: code } });
+      }
+      return $.Deferred().promise();
+    });
+    vm.createComment('approved');
+    expect(vm.notifier.error).toHaveBeenCalledWith(key);
+  });
+});

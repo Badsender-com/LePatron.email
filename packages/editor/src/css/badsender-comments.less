@@ -735,9 +735,22 @@
   background: var(--success);
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: darken(#4caf50, 8%);
   }
+
+  // A blocking comment is open (ADR 0020): the reason shows above.
+  &:disabled {
+    background: @comment-gray-200;
+    color: @comment-gray-500;
+    cursor: not-allowed;
+  }
+}
+
+.comments-approve-blocked {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: @comment-gray-600;
 }
 
 // Icon Action Button (per 02-components.md specifications)

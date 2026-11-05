@@ -24,6 +24,18 @@ const { installRightPanel } = require('./right-panel.js');
  * Comments extension for the Mosaico editor
  * Adds collaborative commenting functionality on blocks
  */
+// What the user is told when the server refuses a new comment: an approval
+// over an open blocking comment, or by someone who may not approve, says why.
+const CREATE_ERROR_KEYS = {
+  COMMENT_APPROVAL_BLOCKED: 'comments-approve-blocked',
+  COMMENT_APPROVAL_FORBIDDEN: 'comments-approve-forbidden',
+};
+
+function createErrorKey(xhr) {
+  const code = xhr && xhr.responseJSON && xhr.responseJSON.message;
+  return CREATE_ERROR_KEYS[code] || 'comments-create-error';
+}
+
 function commentsLoader(opts) {
   const mailingId = opts.metadata.id;
   const groupId = opts.metadata.groupId;
@@ -76,6 +88,19 @@ function commentsLoader(opts) {
       }
       // Otherwise use the initial count loaded on init
       return viewModel.initialUnresolvedCount();
+    });
+
+    // A blocking comment open keeps the email from being approved: the server
+    // refuses it too (ADR 0020). Root comments only, never an approval.
+    viewModel.hasOpenBlocking = ko.computed(function () {
+      return viewModel.comments().some(function (c) {
+        return (
+          !c.resolved &&
+          !c._parentComment &&
+          c.severity === 'blocking' &&
+          c.decision !== 'approved'
+        );
+      });
     });
 
     viewModel.filteredComments = ko.computed(function () {
@@ -566,8 +591,8 @@ function commentsLoader(opts) {
           viewModel.loadCommentCounts();
           viewModel.notifier.success(viewModel.t('comments-created'));
         },
-        error: function () {
-          viewModel.notifier.error(viewModel.t('comments-create-error'));
+        error: function (xhr) {
+          viewModel.notifier.error(viewModel.t(createErrorKey(xhr)));
         },
       });
     };

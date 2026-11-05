@@ -340,6 +340,9 @@ module.exports = {
   'comments-no-block': 'This comment is not linked to a block',
   'comments-decision-approve': 'Approve',
   'comments-decision-approve-default-text': 'Ready to send',
+  'comments-approve-blocked':
+    'A blocking comment is open. Resolve it before approving the email.',
+  'comments-approve-forbidden': 'You may not approve this email.',
   'comments-decision-approved': 'Approved',
   'comments-decision-changes-requested': 'Changes requested',
   'toolbox-readonly-all':

@@ -226,6 +226,31 @@ describe('approving an email (ADR 0020)', () => {
     });
   });
 
+  describe('an approval is kept by who may approve', () => {
+    it('refuses to change its text once its author may no longer approve', async () => {
+      const author = userOf('writer');
+      Comments.findById = jest.fn().mockResolvedValue({
+        _id: id(),
+        _author: author._id,
+        _mailing: MAILING,
+        decision: COMMENT_DECISIONS.APPROVED,
+        isDeleted: false,
+      });
+      Comments.findByIdAndUpdate = jest.fn();
+      await expect(
+        commentService.updateComment({
+          commentId: id().toString(),
+          user: author,
+          updates: { text: 'Finalement non' },
+        })
+      ).rejects.toMatchObject({
+        status: 403,
+        message: ERROR_CODES.COMMENT_APPROVAL_FORBIDDEN,
+      });
+      expect(Comments.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('an approval is neither resolved nor reopened', () => {
     it.each([
       ['resolveComment', false],
@@ -260,7 +285,23 @@ describe('approving an email (ADR 0020)', () => {
       ]);
       const pipeline = aggregate.mock.calls[0][0];
       const group = pipeline.find((stage) => stage.$group).$group;
-      expect(group).toHaveProperty('openBlocking');
+      // An open blocking root comment, never an approval (stored blocking
+      // before ADR 0020); a missing decision is not an approval.
+      expect(group.openBlocking).toEqual({
+        $sum: {
+          $cond: [
+            {
+              $and: [
+                { $eq: ['$resolved', false] },
+                { $eq: ['$severity', 'blocking'] },
+                { $ne: ['$decision', COMMENT_DECISIONS.APPROVED] },
+              ],
+            },
+            1,
+            0,
+          ],
+        },
+      });
       expect(pipeline[pipeline.length - 1]).toEqual({
         $match: { decision: COMMENT_DECISIONS.APPROVED, openBlocking: 0 },
       });

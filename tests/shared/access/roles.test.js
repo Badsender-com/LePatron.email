@@ -119,6 +119,18 @@ describe('isRoleWithin: nobody hands out more than they hold', () => {
     expect(isRoleWithin(role, own(actor))).toBe(expected);
   });
 
+  // The lists are no longer nested from the reviewer up (ADR 0020): an admin
+  // must still hold every right of the roles below, or could no longer give
+  // them nor manage their accounts.
+  it.each([GROUP_ADMIN, GROUP_ADMIN_TECH])(
+    'a %s holds every right of the roles below',
+    (admin) => {
+      [REGULAR_USER, WRITER, REVIEWER].forEach((role) => {
+        expect(isRoleWithin(role, own(admin))).toBe(true);
+      });
+    }
+  );
+
   it('refuses an unknown role, though it holds nothing', () => {
     expect(isRoleWithin('owner', ALL_CAPABILITIES)).toBe(false);
   });

@@ -353,6 +353,10 @@ module.exports = {
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
   'comments-decision-approve': 'Approuver',
   'comments-decision-approve-default-text': 'Bon pour envoi',
+  'comments-approve-blocked':
+    "Un commentaire bloquant est ouvert. Il doit être résolu avant d'approuver l'email.",
+  'comments-approve-forbidden':
+    "Vous n'avez pas le droit d'approuver cet email.",
   'comments-decision-approved': 'Approuvé',
   'comments-decision-changes-requested': 'Changements demandés',
   'toolbox-readonly-all':

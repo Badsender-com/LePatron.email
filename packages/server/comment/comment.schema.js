@@ -168,6 +168,21 @@ const UNRESOLVED_ROOT_COMMENTS = Object.freeze({
   decision: { $ne: COMMENT_DECISIONS.APPROVED },
 });
 
+// The open blocking comments, that keep an email from being approved: the
+// unresolved root comments of priority "blocking". The aggregation of
+// findApprovedMailingIds says the same as an expression (OPEN_BLOCKING_EXPR).
+const OPEN_BLOCKING_ROOT_COMMENTS = Object.freeze({
+  ...UNRESOLVED_ROOT_COMMENTS,
+  severity: COMMENT_SEVERITIES.BLOCKING,
+});
+const OPEN_BLOCKING_EXPR = Object.freeze({
+  $and: [
+    { $eq: ['$resolved', false] },
+    { $eq: ['$severity', COMMENT_SEVERITIES.BLOCKING] },
+    { $ne: ['$decision', COMMENT_DECISIONS.APPROVED] },
+  ],
+});
+
 // Static: Count unresolved root comments for a mailing
 CommentSchema.statics.countUnresolvedByMailing = async function (mailingId) {
   return this.countDocuments({
@@ -195,13 +210,6 @@ CommentSchema.statics.countUnresolvedByMailings = async function (mailingIds) {
 // implicit request for changes (plan section 3.4). A blocking comment reopened,
 // or posted while the approval was being checked, lifts it too.
 CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
-  const isOpenBlocking = {
-    $and: [
-      { $eq: ['$resolved', false] },
-      { $eq: ['$severity', COMMENT_SEVERITIES.BLOCKING] },
-      { $ne: ['$decision', COMMENT_DECISIONS.APPROVED] },
-    ],
-  };
   const latestByMailing = await this.aggregate([
     {
       $match: {
@@ -215,7 +223,7 @@ CommentSchema.statics.findApprovedMailingIds = async function (mailingIds) {
       $group: {
         _id: '$_mailing',
         decision: { $first: '$decision' },
-        openBlocking: { $sum: { $cond: [isOpenBlocking, 1, 0] } },
+        openBlocking: { $sum: { $cond: [OPEN_BLOCKING_EXPR, 1, 0] } },
       },
     },
     { $match: { decision: COMMENT_DECISIONS.APPROVED, openBlocking: 0 } },
@@ -265,4 +273,6 @@ module.exports = {
   COMMENT_CATEGORIES,
   COMMENT_SEVERITIES,
   COMMENT_DECISIONS,
+  OPEN_BLOCKING_ROOT_COMMENTS,
+  OPEN_BLOCKING_EXPR,
 };
