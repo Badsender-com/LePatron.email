@@ -21,6 +21,8 @@
 @qc-tint-info: rgba(33, 150, 243, 0.12);
 @qc-tint-success: rgba(76, 175, 80, 0.12);
 @qc-radius: 5px;
+// Cards, rows and replies (boards v3).
+@qc-radius-card: 7px;
 @qc-motion: 0.2s ease-out;
 
 .slidebar.right-panel {
@@ -129,8 +131,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    height: 32px;
+    gap: 7px;
+    height: 36px;
     padding: 0 14px;
     border: 1px solid transparent;
     border-radius: @qc-radius;
@@ -170,7 +172,7 @@
     &--sm {
       height: 28px;
       padding: 0 10px;
-      font-size: 12px;
+      font-size: 12.5px;
     }
 
     &--grow {
