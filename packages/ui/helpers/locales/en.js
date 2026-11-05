@@ -1442,6 +1442,19 @@ export default {
       },
     },
     platformOnly: 'Platform company only',
+    openExpertises: {
+      skillTitle: 'Open this skill to all companies',
+      intro:
+        'This skill consumes expertises kept to the platform company: the assistants of the other companies will follow it without them.',
+      openToo: 'Open it to all companies too',
+      appliesAtOnce:
+        'Opening an expertise also applies it, at once, to the editor features of every company. With none checked, the skill opens without them.',
+    },
+    closeExpertise: {
+      title: 'Keep this expertise to the platform company',
+      intro:
+        'These task skills, open to all companies, consume it: they will no longer receive it at the clients.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

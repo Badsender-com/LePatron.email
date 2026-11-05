@@ -1,6 +1,8 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsAiOpenExpertisesChoice from '~/components/ai-skill/bs-ai-open-expertises-choice.vue';
+import { openingPayload } from '~/helpers/ai-skill-audience-change.js';
 import { CheckCircle2 } from 'lucide-vue';
 
 export default {
@@ -8,6 +10,7 @@ export default {
   components: {
     BsModalConfirm,
     BsTextarea,
+    BsAiOpenExpertisesChoice,
     LucideCheckCircle2: CheckCircle2,
   },
   props: {
@@ -22,11 +25,15 @@ export default {
     // The item is still used by the platform company only (ADR 0013):
     // publishing does not open it, so the modal says so and offers to.
     platformOnly: { type: Boolean, default: false },
+    // What the version consumes kept to the platform company, offered to
+    // open with the item: [{ expertiseId, title }] (a task skill only).
+    platformOnlyExpertises: { type: Array, default: () => [] },
   },
   data() {
     return {
       payload: { changelog: '', releaseNotes: '' },
       openToAll: false,
+      openExpertiseIds: [],
     };
   },
   computed: {
@@ -45,6 +52,7 @@ export default {
         releaseNotes: (seed && seed.releaseNotes) || '',
       };
       this.openToAll = false;
+      this.openExpertiseIds = [];
       this.$refs.modal.open();
     },
     close() {
@@ -52,13 +60,15 @@ export default {
     },
     onSubmit() {
       if (!this.canSubmit) return;
-      // The audience is the item's, not the version's: it travels apart from
-      // what the activation posts.
-      this.$emit(
-        'confirm',
-        { ...this.payload },
-        { openToAll: this.platformOnly && this.openToAll }
-      );
+      // Published and opened in one request, with the expertises chosen.
+      this.$emit('confirm', {
+        ...this.payload,
+        ...openingPayload(
+          this.platformOnly && this.openToAll,
+          this.openExpertiseIds,
+          this.platformOnlyExpertises
+        ),
+      });
     },
     filterLabel(filter) {
       const parts = [];
@@ -142,6 +152,12 @@ export default {
           class="mt-1"
         />
       </v-alert>
+      <bs-ai-open-expertises-choice
+        v-if="platformOnly && openToAll"
+        v-model="openExpertiseIds"
+        :expertises="platformOnlyExpertises"
+        :disabled="loading"
+      />
 
       <v-divider class="mt-4" />
       <div class="modal-actions">

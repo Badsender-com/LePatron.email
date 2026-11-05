@@ -1461,6 +1461,19 @@ export default {
       },
     },
     platformOnly: 'Entreprise plateforme uniquement',
+    openExpertises: {
+      skillTitle: 'Ouvrir ce Skill à toutes les entreprises',
+      intro:
+        'Ce Skill consomme des Expertises réservées à l\'entreprise plateforme : les assistants des autres entreprises le suivront sans elles.',
+      openToo: 'L\'ouvrir aussi à toutes les entreprises',
+      appliesAtOnce:
+        'Ouvrir une Expertise l\'applique aussi, tout de suite, aux fonctionnalités de l\'éditeur de toutes les entreprises. Sans case cochée, le Skill s\'ouvre sans elles.',
+    },
+    closeExpertise: {
+      title: 'Réserver cette Expertise à l\'entreprise plateforme',
+      intro:
+        'Ces Skills de tâche, ouverts à toutes les entreprises, la consomment : ils ne la recevront plus chez les clients.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

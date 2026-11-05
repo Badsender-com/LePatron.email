@@ -26,6 +26,12 @@ export function aiSkillActivate(skillId, major, minor) {
     minor
   )}/activate`;
 }
+export function aiSkillPlatformOnlyExpertises(skillId, major, minor) {
+  return `/ai-skills/${skillId}/versions/${versionLabel(
+    major,
+    minor
+  )}/platform-only-expertises`;
+}
 export function aiSkillArchive(skillId) {
   return `/ai-skills/${skillId}/archive`;
 }
@@ -44,6 +50,9 @@ export function aiExpertise(expertiseId) {
 }
 export function aiExpertiseActivationImpact(expertiseId) {
   return `/ai-expertise/${expertiseId}/activation-impact`;
+}
+export function aiExpertiseOpenTaskSkills(expertiseId) {
+  return `/ai-expertise/${expertiseId}/open-task-skills`;
 }
 export function aiExpertiseFacets() {
   return '/ai-expertise/facets';
