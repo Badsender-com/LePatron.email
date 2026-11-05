@@ -1,6 +1,8 @@
 'use strict';
 
-const { recordSecurityEvent } = require('./security-event.service.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
 const { SECURITY_ACTIONS } = require('./two-factor.constants.js');
 
 /**

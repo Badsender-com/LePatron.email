@@ -10,7 +10,7 @@ const { SecurityEvents } = require('../common/models.common.js');
  *
  * @param {Object} event
  * @param {string} event.action one of SECURITY_EVENT_ACTIONS
- *   (security-event/security-event.actions.js)
+ *   (security-event.actions.js)
  * @param {string} [event.user] the id of the account acted on
  * @param {string} [event.actor] the id of who acted
  * @param {string} [event.group] the id of the group acted on

@@ -2,7 +2,7 @@
 
 const {
   recordSecurityEvent,
-} = require('../two-factor/security-event.service.js');
+} = require('../security-event/security-event.service.js');
 const {
   MCP_ACCESS_ACTIONS,
 } = require('../security-event/security-event.actions.js');

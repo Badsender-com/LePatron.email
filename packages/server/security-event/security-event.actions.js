@@ -21,6 +21,9 @@ const MCP_ACCESS_ACTIONS = Object.freeze({
   DISABLED: 'mcp-access.disabled',
 });
 
+// How long a security event is kept, then removed by its TTL index.
+const SECURITY_EVENT_TTL_SECONDS = 365 * 24 * 60 * 60;
+
 const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(TWO_FACTOR_ACTIONS),
   ...Object.values(MCP_ACCESS_ACTIONS),
@@ -30,4 +33,5 @@ module.exports = {
   TWO_FACTOR_ACTIONS,
   MCP_ACCESS_ACTIONS,
   SECURITY_EVENT_ACTIONS,
+  SECURITY_EVENT_TTL_SECONDS,
 };

@@ -32,7 +32,7 @@ const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TaxonomyItemSchema = require('../taxonomy/taxonomy.schema.js');
-const SecurityEventSchema = require('../two-factor/security-event.schema.js');
+const SecurityEventSchema = require('../security-event/security-event.schema.js');
 
 /// ///
 // EXPORTS

@@ -3,13 +3,12 @@
 const { Schema } = require('mongoose');
 
 const { UserModel, GroupModel } = require('../constant/model.names.js');
-const {
-  METHODS,
-  SECURITY_EVENT_TTL_SECONDS,
-} = require('./two-factor.constants.js');
+// The verification method of a two-factor event.
+const { METHODS } = require('../two-factor/two-factor.constants.js');
 const {
   SECURITY_EVENT_ACTIONS,
-} = require('../security-event/security-event.actions.js');
+  SECURITY_EVENT_TTL_SECONDS,
+} = require('./security-event.actions.js');
 
 const { ObjectId } = Schema.Types;
 

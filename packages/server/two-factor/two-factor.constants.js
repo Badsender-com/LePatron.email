@@ -61,5 +61,4 @@ module.exports = {
   EMAIL_CODES_PER_HOUR: 10,
   // The step of the code, rate limited apart from the password.
   CODE_ATTEMPTS_PER_HOUR_PER_ACCOUNT: 20,
-  SECURITY_EVENT_TTL_SECONDS: 365 * 24 * 60 * 60,
 };

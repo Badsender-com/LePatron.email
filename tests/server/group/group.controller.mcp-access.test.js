@@ -27,7 +27,7 @@ const {
   CAPABILITIES,
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
-const SecurityEventSchema = require('../../../packages/server/two-factor/security-event.schema.js');
+const SecurityEventSchema = require('../../../packages/server/security-event/security-event.schema.js');
 
 beforeEach(() => {
   jest.clearAllMocks();

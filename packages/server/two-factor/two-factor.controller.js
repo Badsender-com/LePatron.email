@@ -15,7 +15,9 @@ const superAdminPolicy = require('../user/super-admin-policy.js');
 const rightsPolicy = require('../user/rights-policy.js');
 const pendingStep = require('./pending-step.js');
 const codes = require('./codes.js');
-const { recordSecurityEvent } = require('./security-event.service.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
 const {
   sendTwoFactorEmail,
   deviceTrustedTexts,
