@@ -4,21 +4,25 @@
  * The expertises and skills of the platform, for the MCP acceptance tests
  * (epic #1290): an active expertise with an archived and a draft version, a
  * transversal one, a draft one and an archived one, with the fields their
- * schema gives them by default; an active skill and a draft one. All are
+ * schema gives them by default, read from the schema itself; an active skill
+ * and a draft one. All are
  * opened to every company. Re-exported by `mcp-fixtures.js`.
  */
 
+const { Mongoose } = require('mongoose');
+const ExpertiseSchema = require('../../packages/server/ai-skill/models/expertise.schema.js');
 const { daysFrom } = require('./mcp-clock');
 
-// What the expertise schema gives a document it does not set.
-const EXPERTISE_DEFAULTS = {
-  description: '',
-  scope: [],
-  isTransversal: false,
-  appliesToEmailTypes: [],
-  appliesToLanguages: [],
-};
-const expertise = (fields) => ({ ...EXPERTISE_DEFAULTS, ...fields });
+// The expertise schema, on a Mongoose of its own that connects to nothing:
+// a record gets what the schema gives a document it does not set, as stored.
+const Expertise = new Mongoose().model('Expertise', ExpertiseSchema);
+
+// The id stays the string the fixtures name it by: the fake models copy the
+// records, which an ObjectId does not survive.
+function expertise(fields) {
+  const stored = new Expertise(fields).toObject({ virtuals: false });
+  return { ...stored, _id: fields._id };
+}
 
 function version(versionMajor, versionMinor, status, body, extra = {}) {
   return {
@@ -26,8 +30,6 @@ function version(versionMajor, versionMinor, status, body, extra = {}) {
     versionMinor,
     status,
     body,
-    examplesGood: [],
-    examplesBad: [],
     createdAt: daysFrom(-60),
     updatedAt: daysFrom(-20),
     ...extra,
