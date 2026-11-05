@@ -21,10 +21,11 @@ const ConsumedWarningCodes = Object.freeze({
   PLATFORM_ONLY: 'CONSUMED_EXPERTISES_PLATFORM_ONLY',
 });
 
-// What a warning reads of a consumed expertise: whether it is published, and
-// its audience; of its versions, the active one alone.
+// What a warning reads of a consumed expertise: its title, whether it is
+// published, and its audience; of its versions, the active one alone.
 const PUBLICATION_FIELDS = Object.freeze({
   expertiseId: 1,
+  title: 1,
   status: 1,
   audience: 1,
   activeVersion: 1,
@@ -93,6 +94,49 @@ async function assertConsumedExpertises(ids) {
   }
 }
 
+// The ids a version consumes, each once: a feature skill's version
+// consumes none.
+const consumedIdsOf = (version) =>
+  version && version.nature === SkillNatures.TASK
+    ? [...new Set(version.consumedExpertiseIds || [])]
+    : [];
+
+// The consumed expertises that are published, by id.
+async function publishedConsumed(ids) {
+  const docs = await Expertises.find(
+    { expertiseId: { $in: ids } },
+    PUBLICATION_FIELDS
+  ).lean();
+  return new Map(
+    docs.filter((doc) => published(doc)).map((doc) => [doc.expertiseId, doc])
+  );
+}
+
+// A client company's view: the published ones not opened to all.
+const keptToPlatform = (ids, publishedById) =>
+  ids.filter(
+    (id) => publishedById.has(id) && !isAvailableTo(publishedById.get(id))
+  );
+
+/**
+ * The expertises a version consumes that are published but kept to the
+ * platform company (ADR 0013): those the assistants of the other companies
+ * would follow the skill without, once it is open to them. In the order the
+ * version consumes them.
+ *
+ * @param {Object} [version] a skill's version
+ * @returns {Promise<Array<{expertiseId: string, title: string}>>}
+ */
+async function platformOnlyExpertises(version) {
+  const ids = consumedIdsOf(version);
+  if (!ids.length) return [];
+  const publishedById = await publishedConsumed(ids);
+  return keptToPlatform(ids, publishedById).map((id) => ({
+    expertiseId: id,
+    title: publishedById.get(id).title,
+  }));
+}
+
 /**
  * What a publication warns of, without refusing it (ADR 0013): a consumed
  * expertise that is not published is not served to the assistant, nor one
@@ -104,19 +148,10 @@ async function assertConsumedExpertises(ids) {
  * @returns {Promise<Array<{code: string, expertiseIds: string[]}>>}
  */
 async function consumedExpertiseWarnings(skill, version) {
-  const ids =
-    version && version.nature === SkillNatures.TASK
-      ? [...new Set(version.consumedExpertiseIds || [])]
-      : [];
+  const ids = consumedIdsOf(version);
   if (!ids.length) return [];
 
-  const docs = await Expertises.find(
-    { expertiseId: { $in: ids } },
-    PUBLICATION_FIELDS
-  ).lean();
-  const publishedById = new Map(
-    docs.filter((doc) => published(doc)).map((doc) => [doc.expertiseId, doc])
-  );
+  const publishedById = await publishedConsumed(ids);
   const warnings = [];
   const notPublished = ids.filter((id) => !publishedById.has(id));
   if (notPublished.length) {
@@ -125,13 +160,8 @@ async function consumedExpertiseWarnings(skill, version) {
       expertiseIds: notPublished,
     });
   }
-  // A client company's view: what is not opened to all.
   const platformOnly =
-    skill.audience === Audiences.ALL
-      ? ids.filter(
-          (id) => publishedById.has(id) && !isAvailableTo(publishedById.get(id))
-        )
-      : [];
+    skill.audience === Audiences.ALL ? keptToPlatform(ids, publishedById) : [];
   if (platformOnly.length) {
     warnings.push({
       code: ConsumedWarningCodes.PLATFORM_ONLY,
@@ -144,5 +174,7 @@ async function consumedExpertiseWarnings(skill, version) {
 module.exports = {
   assertConsumedExpertises,
   consumedExpertiseWarnings,
+  consumedIdsOf,
+  platformOnlyExpertises,
   ConsumedWarningCodes,
 };

@@ -8,7 +8,9 @@
  * back what the MCP server answers, whatever query it builds.
  *
  * - A `.lean()` query answers copies of the stored fields; otherwise a
- *   document also has `id` and `toObject()` / `toJSON()`.
+ *   document also has `id`, `toObject()` / `toJSON()`, and `save()`, which
+ *   stores its fields back, unless it was read with a projection.
+ * - `updateMany` takes a `$set` only.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
@@ -35,10 +37,23 @@ const MODELS = {
 /* global structuredClone */
 const copy = (record) => structuredClone(record);
 
-function toDocument(record) {
+// `stored` is the record itself, which `save` writes back to; none for a
+// document read with a projection, which has only some of its fields.
+function toDocument(record, stored) {
   const doc = { ...copy(record), id: String(record._id) };
   Object.defineProperty(doc, 'toObject', { value: () => copy(record) });
   Object.defineProperty(doc, 'toJSON', { value: () => ({ ...doc }) });
+  Object.defineProperty(doc, 'save', {
+    value: async () => {
+      if (!stored) {
+        throw new Error('fake MCP models: save of a projected document');
+      }
+      const { id: _id, ...fields } = doc;
+      Object.keys(stored).forEach((key) => delete stored[key]);
+      Object.assign(stored, copy(fields));
+      return doc;
+    },
+  });
   return doc;
 }
 
@@ -52,10 +67,15 @@ function query(list, shape) {
   const resolve = () => {
     const sorted = sortedBy(sortSpec, list()).slice(skip);
     const page = limit === undefined ? sorted : sorted.slice(0, limit);
-    const shaped = page.map((record) =>
-      selectSpec ? projected(record, selectSpec) : record
+    return shape(
+      page.map((record) => {
+        if (selectSpec) {
+          const shaped = projected(record, selectSpec);
+          return lean ? copy(shaped) : toDocument(shaped);
+        }
+        return lean ? copy(record) : toDocument(record, record);
+      })
     );
-    return shape(shaped.map(lean ? copy : toDocument));
   };
   const chain = {
     sort(spec) {
@@ -114,6 +134,16 @@ function model(records) {
             .filter((value) => value !== undefined)
         ),
       ]),
+    updateMany: (filter, update) =>
+      Promise.resolve().then(() => {
+        const { $set, ...others } = update;
+        if (!$set || Object.keys(others).length) {
+          throw new Error('fake MCP models: updateMany takes a $set only');
+        }
+        const found = matching(filter)();
+        found.forEach((record) => Object.assign(record, copy($set)));
+        return { n: found.length, nModified: found.length };
+      }),
     aggregate: (pipeline) =>
       Promise.resolve().then(() => aggregated(records, pipeline).map(copy)),
   };

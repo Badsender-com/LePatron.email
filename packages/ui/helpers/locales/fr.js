@@ -1504,6 +1504,8 @@ export default {
         'Ces Expertises sont consommées plusieurs fois : {expertiseIds}. Gardez-en une seule fois chacune.',
       SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
         'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Seules les Expertises que cette version consomme s\'ouvrent avec le Skill. Celles-ci n\'en font pas partie : {expertiseIds}.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:

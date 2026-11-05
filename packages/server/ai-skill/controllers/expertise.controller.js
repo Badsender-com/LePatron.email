@@ -4,6 +4,7 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
+const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -37,6 +38,12 @@ module.exports = {
       matches: await expertiseService.getActivationImpact(
         req.params.expertiseId
       ),
+    });
+  }),
+
+  getOpenTaskSkills: asyncHandler(async (req, res) => {
+    res.json({
+      skills: await openTaskSkillsConsuming(req.params.expertiseId),
     });
   }),
 

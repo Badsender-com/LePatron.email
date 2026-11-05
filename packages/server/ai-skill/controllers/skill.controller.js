@@ -152,6 +152,15 @@ module.exports = {
     res.json(await withPublicationWarnings(skill, major, minor));
   }),
 
+  getPlatformOnlyExpertises: asyncHandler(async (req, res) => {
+    res.json({
+      expertises: await skillService.versionPlatformOnlyExpertises(
+        req.params.skillId,
+        versionFromParam(req)
+      ),
+    });
+  }),
+
   archiveSkill: asyncHandler(async (req, res) => {
     const skill = await skillService.archiveSkill(req.params.skillId);
     res.json(skill);

@@ -30,6 +30,7 @@ const createError = require('http-errors');
 const {
   SkillStatuses,
   MinorVersionDefaults,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const {
   findVersion,
@@ -193,7 +194,8 @@ function createVersionedEntityService({
   /**
    * Publish a DRAFT: run the entity's own gate, require release notes on a
    * major, archive the version it replaces, and move the `activeVersion`
-   * pointer.
+   * pointer. `payload.openToAll` opens the item to every company in the same
+   * write (ADR 0013), so a publication never stands half done.
    */
   async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
@@ -232,6 +234,7 @@ function createVersionedEntityService({
       minor: version.versionMinor,
     };
     doc.status = SkillStatuses.ACTIVE;
+    if (payload.openToAll === true) doc.audience = Audiences.ALL;
     await doc.save();
     return doc;
   }

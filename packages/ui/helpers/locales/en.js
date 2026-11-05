@@ -1484,6 +1484,8 @@ export default {
         'These expertises are consumed more than once: {expertiseIds}. Keep each of them once.',
       SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
         'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Only the expertises this version consumes open with the skill. These are not among them: {expertiseIds}.',
       SKILL_NOT_AVAILABLE_TO_COMPANY:
         'This feature is not available to your company yet.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:

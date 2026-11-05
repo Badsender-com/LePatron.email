@@ -7,12 +7,18 @@ const {
   SkillStatuses,
   SkillNatures,
 } = require('../constant/skill-constants.js');
-const { versionLabel } = require('./version-helpers.js');
+const {
+  versionLabel,
+  findVersion,
+  findActiveVersion,
+} = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const {
   assertConsumedExpertises,
   consumedExpertiseWarnings,
+  platformOnlyExpertises,
 } = require('./consumed-expertises.js');
+const { assertOpenable, openExpertises } = require('./audience-opening.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -109,12 +115,24 @@ const PATCHABLE_FIELDS = [
   'servedToAssistants',
 ];
 
+/**
+ * @param {string} skillId
+ * @param {Object} patch the PATCHABLE_FIELDS to set, and `openExpertiseIds`:
+ *   expertises the active version consumes, opened to every company with
+ *   the skill (ADR 0013)
+ * @returns {Promise<Object>} the skill
+ */
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
+  const opened = assertOpenable(
+    findActiveVersion(skill),
+    patch.openExpertiseIds
+  );
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
   }
   await skill.save();
+  await openExpertises(opened);
   return skill;
 }
 
@@ -203,8 +221,42 @@ const {
   createMinorVersion,
   createMajorVersion,
   deleteVersion,
-  activateVersion,
 } = versioned;
+
+function versionOf(skill, { major, minor }) {
+  const version = findVersion(skill, major, minor);
+  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
+  return version;
+}
+
+/**
+ * Publish a draft (versioned-entity.service.js). `payload.openToAll` opens
+ * the skill to every company in the same write, and
+ * `payload.openExpertiseIds` the expertises of that version chosen to open
+ * with it, checked before anything is published.
+ */
+async function activateVersion(skillId, ref, payload = {}, userId) {
+  const opened =
+    payload.openExpertiseIds === undefined
+      ? []
+      : assertOpenable(
+          versionOf(await getSkill(skillId), ref),
+          payload.openExpertiseIds
+        );
+  const skill = await versioned.activateVersion(skillId, ref, payload, userId);
+  await openExpertises(opened);
+  return skill;
+}
+
+/**
+ * What opening the skill to every company would leave out for them, with
+ * this version: its consumed expertises kept to the platform company.
+ *
+ * @returns {Promise<Array<{expertiseId: string, title: string}>>}
+ */
+async function versionPlatformOnlyExpertises(skillId, ref) {
+  return platformOnlyExpertises(versionOf(await getSkill(skillId), ref));
+}
 
 // A draft saved with its consumed expertises gets them checked before
 // anything is written (the shared lifecycle knows nothing of them).
@@ -230,5 +282,6 @@ module.exports = {
   activateVersion,
   archiveSkill,
   consumedExpertiseWarnings,
+  versionPlatformOnlyExpertises,
   versionLabel,
 };
