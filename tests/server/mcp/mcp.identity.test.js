@@ -8,6 +8,8 @@
 // so a change takes effect without waiting for the token to expire. That every
 // primitive the server registers checks it is in mcp.primitives.test.js.
 
+const createError = require('http-errors');
+const { ProtocolErrorCode } = require('@modelcontextprotocol/server');
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 // The stand-ins the harness put in place of the models, and of the logger.
@@ -189,6 +191,55 @@ describe('identity and MCP access', () => {
 
     expect(error).toMatch(/could not answer this request/);
     expect(error).not.toMatch(/db\.internal/);
+    read.mockRestore();
+  });
+
+  // A service that refuses a request says why, in a message meant to be
+  // shown: the assistant reads it, as the MCP error of its status.
+  it('tells a request a service refuses as it says it, as invalid params', async () => {
+    logger.error.mockClear();
+    const read = jest
+      .spyOn(models.Expertises, 'aggregate')
+      .mockRejectedValue(createError(404, 'Expertise "qc.gone" not found'));
+    const client = await harness.connectAs(f.FRANK);
+
+    const refusal = client.listResources();
+
+    await expect(refusal).rejects.toThrow(/not found/);
+    await expect(refusal).rejects.toMatchObject({
+      code: ProtocolErrorCode.InvalidParams,
+    });
+    expect(logger.error).not.toHaveBeenCalled();
+    read.mockRestore();
+  });
+
+  it('tells a tool a request a service refuses, in its result', async () => {
+    const read = jest
+      .spyOn(models.Expertises, 'distinct')
+      .mockRejectedValue(createError(400, 'This scope is not one'));
+    const client = await harness.connectAs(f.FRANK);
+
+    const { error } = harness.answerOf(
+      await client.callTool({
+        name: 'find_applicable_expertises',
+        arguments: { scope: 'subject', categories: ['redaction'] },
+      })
+    );
+
+    expect(error).toMatch(/This scope is not one/);
+    read.mockRestore();
+  });
+
+  it('tells nothing of a server error, even one http-errors made', async () => {
+    const read = jest
+      .spyOn(models.Expertises, 'aggregate')
+      .mockRejectedValue(createError(503, 'db.internal is down'));
+    const client = await harness.connectAs(f.FRANK);
+
+    const refusal = client.listResources();
+
+    await expect(refusal).rejects.toThrow(/could not answer this request/);
+    await expect(refusal).rejects.not.toThrow(/db\.internal/);
     read.mockRestore();
   });
 

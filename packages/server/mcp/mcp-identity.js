@@ -27,6 +27,37 @@ function refuse(message) {
   throw new ProtocolError(ProtocolErrorCode.InvalidRequest, message);
 }
 
+// The MCP error of a request the services refuse (`http-errors`), by status:
+// what was asked for is wrong or missing, which MCP answers as invalid
+// params (a resource not found too, as the SDK sends it); any other client
+// error is an invalid request.
+const CLIENT_ERRORS = Object.freeze({
+  400: ProtocolErrorCode.InvalidParams,
+  404: ProtocolErrorCode.InvalidParams,
+  422: ProtocolErrorCode.InvalidParams,
+});
+
+/**
+ * What the assistant may be told of a failure: a ProtocolError as the
+ * handler threw it, or a client error a service threw with a message meant
+ * to be shown (`expose`), as the MCP error of its status. Anything else is
+ * not for the assistant.
+ *
+ * @param {Error} error
+ * @returns {ProtocolError|null}
+ */
+function toldToAssistant(error) {
+  if (error instanceof ProtocolError) return error;
+  const status = error && error.status;
+  if (error && error.expose === true && status >= 400 && status < 500) {
+    return new ProtocolError(
+      CLIENT_ERRORS[status] || ProtocolErrorCode.InvalidRequest,
+      error.message
+    );
+  }
+  return null;
+}
+
 /**
  * The request user the services read, built from the account's fields in
  * `USER_FIELDS` (`_id`, `name`, `email`, `lang`, `role`, `_company`,
@@ -101,9 +132,11 @@ async function resolveIdentity(authInfo) {
  * `mcp.primitives.test.js` walks every primitive to catch.
  *
  * What the assistant is told of a failure is what it can act on: a refusal
- * or a resource not found, as the handlers throw them (`ProtocolError`).
- * Anything else is logged, and the assistant reads a message that says
- * nothing of the server.
+ * or a resource not found, as the handlers throw them (`ProtocolError`), and
+ * a request a service refuses with a message meant to be shown (an
+ * `http-errors` 4xx with `expose`), as the MCP error of its status. Anything
+ * else is logged, and the assistant reads a message that says nothing of the
+ * server.
  *
  * @param {Function} handler `(identity, ...sdkArguments)`
  * @returns {Function} the handler the SDK calls
@@ -115,7 +148,8 @@ function withIdentity(handler) {
       const identity = await resolveIdentity(ctx?.http?.authInfo);
       return await handler(identity, ...args);
     } catch (error) {
-      if (error instanceof ProtocolError) throw error;
+      const told = toldToAssistant(error);
+      if (told) throw told;
       logger.error('[mcp] a request failed', error);
       throw new ProtocolError(ProtocolErrorCode.InternalError, FAILED);
     }
