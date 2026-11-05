@@ -198,6 +198,7 @@ describe('identity and MCP access', () => {
   // shown: the assistant reads it, as the MCP error of its status.
   it('tells a request a service refuses as it says it, as invalid params', async () => {
     logger.error.mockClear();
+    logger.warn.mockClear();
     const read = jest
       .spyOn(models.Expertises, 'aggregate')
       .mockRejectedValue(createError(404, 'Expertise "qc.gone" not found'));
@@ -210,6 +211,9 @@ describe('identity and MCP access', () => {
       code: ProtocolErrorCode.InvalidParams,
     });
     expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringMatching(/404.*Expertise "qc.gone" not found/)
+    );
     read.mockRestore();
   });
 

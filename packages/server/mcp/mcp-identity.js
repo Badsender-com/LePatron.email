@@ -134,9 +134,9 @@ async function resolveIdentity(authInfo) {
  * What the assistant is told of a failure is what it can act on: a refusal
  * or a resource not found, as the handlers throw them (`ProtocolError`), and
  * a request a service refuses with a message meant to be shown (an
- * `http-errors` 4xx with `expose`), as the MCP error of its status. Anything
- * else is logged, and the assistant reads a message that says nothing of the
- * server.
+ * `http-errors` 4xx with `expose`), as the MCP error of its status, logged
+ * as a warning. Anything else is logged as an error, and the assistant
+ * reads a message that says nothing of the server.
  *
  * @param {Function} handler `(identity, ...sdkArguments)`
  * @returns {Function} the handler the SDK calls
@@ -149,6 +149,13 @@ function withIdentity(handler) {
       return await handler(identity, ...args);
     } catch (error) {
       const told = toldToAssistant(error);
+      // A request a service refused is logged too, as a warning: the
+      // assistant reads why, the server keeps a trace of it.
+      if (told && told !== error) {
+        logger.warn(
+          `[mcp] a request was refused (${error.status}): ${error.message}`
+        );
+      }
       if (told) throw told;
       logger.error('[mcp] a request failed', error);
       throw new ProtocolError(ProtocolErrorCode.InternalError, FAILED);
