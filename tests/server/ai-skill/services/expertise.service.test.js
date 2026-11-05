@@ -99,6 +99,18 @@ describe('expertise.service', () => {
     expect(doc.save).toHaveBeenCalled();
   });
 
+  // What the publication's confirmation sends to open an expertise to every
+  // company (ADR 0013).
+  it('updateExpertise patches the audience', async () => {
+    const doc = mockExpertiseDoc({ audience: 'platform' });
+    Expertises.findOne.mockResolvedValue(doc);
+
+    await expertiseService.updateExpertise('a', { audience: 'all' });
+
+    expect(doc.audience).toBe('all');
+    expect(doc.save).toHaveBeenCalled();
+  });
+
   describe('getActivationImpact', () => {
     it('throws 404 when the expertise is missing', async () => {
       Expertises.findOne.mockResolvedValue(null);
