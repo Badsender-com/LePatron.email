@@ -5,8 +5,8 @@
 
 // Who may read through MCP (ADR 0012): every role of a company that has MCP
 // access, with the rights the user has in the app, checked again on every call
-// so a change takes effect without waiting for the token to expire. Every
-// primitive the server registers checks it.
+// so a change takes effect without waiting for the token to expire. That every
+// primitive the server registers checks it is in mcp.primitives.test.js.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -124,6 +124,31 @@ describe('identity and MCP access', () => {
     }
   );
 
+  it('builds the request user from the account, its company by id only', async () => {
+    const { user } = await resolveIdentity({
+      scopes: ['mcp:read'],
+      extra: { userId: f.FRANK, groupId: f.CLIENT_GROUP },
+    });
+
+    expect(user).toMatchObject({
+      id: f.FRANK,
+      role: 'regular_user',
+      group: { id: f.CLIENT_GROUP },
+    });
+    expect(user.capabilities).toEqual(expect.any(Array));
+    expect(user).not.toHaveProperty('selectedGroup');
+    expect(user).not.toHaveProperty('password');
+  });
+
+  it('gives a super admin the company the token is bound to as its selected one', async () => {
+    const { user } = await resolveIdentity({
+      scopes: ['mcp:read'],
+      extra: { userId: f.ALICE, groupId: f.CLIENT_GROUP },
+    });
+
+    expect(user.selectedGroup).toEqual({ id: f.CLIENT_GROUP });
+  });
+
   it('reads of the company what the handlers use, never its secrets', async () => {
     const { group } = await resolveIdentity({
       scopes: ['mcp:read'],
@@ -171,116 +196,5 @@ describe('identity and MCP access', () => {
     const client = await harness.connectAs(f.FRANK, { scopes: [] });
 
     await expect(client.listResources()).rejects.toThrow(/mcp:read/);
-  });
-});
-
-// Arguments a tool's input schema accepts, so that a call reaches the handler
-// instead of stopping at the validation of its arguments.
-function sampleOf(schema) {
-  if (schema.enum) return schema.enum[0];
-  if (schema.anyOf) return sampleOf(schema.anyOf[0]);
-  switch (schema.type) {
-    case 'string':
-      return 'any';
-    case 'array':
-      return [sampleOf(schema.items)];
-    case 'object':
-      return Object.fromEntries(
-        (schema.required || []).map((name) => [
-          name,
-          sampleOf(schema.properties[name]),
-        ])
-      );
-    default:
-      throw new Error(`Teach sampleOf the schema ${JSON.stringify(schema)}`);
-  }
-}
-
-// Every request a connected application can make that reads data, built from
-// what a reader is offered, so a primitive registered later is walked without
-// a line here. `tools/list` and `resources/templates/list` are left out: the
-// SDK answers them from what is registered, the same to every caller.
-async function everyRequest() {
-  const reader = await harness.connectAs(f.FRANK);
-  const [
-    { tools },
-    { prompts },
-    { resources },
-    { resourceTemplates },
-  ] = await Promise.all([
-    reader.listTools(),
-    reader.listPrompts(),
-    reader.listResources(),
-    reader.listResourceTemplates(),
-  ]);
-  expect([tools, prompts, resources, resourceTemplates]).not.toContainEqual([]);
-  const fill = (template) => template.replace(/\{[^}]+\}/g, 'any');
-  return [
-    ['prompts/list', (client) => client.listPrompts()],
-    ['resources/list', (client) => client.listResources()],
-    ...tools.map(({ name, inputSchema }) => [
-      `tool ${name}`,
-      (client) => client.callTool({ name, arguments: sampleOf(inputSchema) }),
-    ]),
-    ...prompts.map(({ name }) => [
-      `prompt ${name}`,
-      (client) => client.getPrompt({ name, arguments: {} }),
-    ]),
-    ...resources.map(({ uri }) => [
-      `resource ${uri}`,
-      (client) => client.readResource({ uri }),
-    ]),
-    ...resourceTemplates.map(({ uriTemplate }) => [
-      `template ${uriTemplate}`,
-      (client) => client.readResource({ uri: fill(uriTemplate) }),
-    ]),
-  ];
-}
-
-// A tool reports a refusal in its result; anything else rejects.
-async function answerTo(request, client) {
-  try {
-    const result = await request(client);
-    return result.isError ? harness.answerOf(result).error : 'answered';
-  } catch (error) {
-    return error.message;
-  }
-}
-
-describe('every primitive', () => {
-  beforeEach(() => harness.seed(f.SEED));
-  afterEach(() => harness.disconnect());
-
-  it.each([
-    ['a company without MCP access', f.NINA, {}, NO_MCP_ACCESS],
-    ['a deactivated account', f.DEAN, {}, NO_ACCOUNT],
-    ['a token without the read scope', f.FRANK, { scopes: [] }, /mcp:read/],
-  ])('refuses %s', async (_case, userId, options, refusal) => {
-    const requests = await everyRequest();
-    const client = await harness.connectAs(userId, options);
-
-    const answers = await Promise.all(
-      requests.map(async ([name, request]) => [
-        name,
-        await answerTo(request, client),
-      ])
-    );
-
-    expect(answers.filter(([, answer]) => !refusal.test(answer))).toEqual([]);
-  });
-});
-
-describe('the static listings', () => {
-  beforeEach(() => harness.seed(f.SEED));
-  afterEach(() => harness.disconnect());
-
-  it('answer the same to any caller, since they read nothing', async () => {
-    const reader = await harness.connectAs(f.FRANK);
-    const refused = await harness.connectAs(f.NINA);
-
-    expect(await refused.listTools()).toEqual(await reader.listTools());
-    expect(await refused.listResourceTemplates()).toEqual(
-      await reader.listResourceTemplates()
-    );
   });
 });

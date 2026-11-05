@@ -28,10 +28,20 @@ function refuse(message) {
 }
 
 /**
- * The user as the app's routes receive it (see `deserializeUser` in
- * auth.guard.js), with a super admin's selected group set to the group the
- * token is bound to: the services that answer a tool read the user as they
- * would on a request of the app.
+ * The request user the services read, built from the account's fields in
+ * `USER_FIELDS` (`_id`, `name`, `email`, `lang`, `role`, `_company`,
+ * `isDeactivated`), with `id`, `group: { id }` and the capabilities of its
+ * role (`permissions.withCapabilities`). A super admin also has
+ * `selectedGroup: { id }`, the company the token is bound to, which
+ * request-scope.js reads as the company it works in.
+ *
+ * Narrower than the app's request user (`deserializeUser` in auth.guard.js):
+ * `group` is not populated, so it carries none of the company's name or
+ * settings, which a handler reads itself when it needs them.
+ *
+ * @param {Object} record the account, as `USER_FIELDS` reads it
+ * @param {string} groupId the company the token is bound to
+ * @returns {Object}
  */
 function toRequestUser(record, groupId) {
   const user = permissions.withCapabilities({
@@ -88,7 +98,7 @@ async function resolveIdentity(authInfo) {
  * resolved before the handler runs, which receives the identity first, then
  * what the SDK gives it, whose last argument is the request context carrying
  * the validated token. A handler registered without it answers anyone, which
- * `mcp.identity.test.js` walks every primitive to catch.
+ * `mcp.primitives.test.js` walks every primitive to catch.
  *
  * What the assistant is told of a failure is what it can act on: a refusal
  * or a resource not found, as the handlers throw them (`ProtocolError`).
