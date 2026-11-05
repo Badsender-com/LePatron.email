@@ -253,6 +253,13 @@ describe('the comments panel', () => {
     expect(vm.commentsStore.target()).toBeNull();
   });
 
+  it('names a block by its type and its place in the email (board c1)', async () => {
+    const { root } = await open({ items: [comment({ blockId: 'b1' })] });
+    expect(root.querySelector('.comment-item__target').textContent).toContain(
+      'comments-block-place'
+    );
+  });
+
   it('closes through the right panel', async () => {
     const { vm, root } = await open();
     root.querySelector('.right-panel-shell__close').click();

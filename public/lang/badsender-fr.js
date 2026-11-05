@@ -387,6 +387,7 @@ module.exports = {
   'comments-approved-badge': 'Validé',
   'comments-withdraw-confirm': "Retirer l'approbation de cet email ?",
   'comments-withdrawn': 'Approbation retirée',
+  'comments-block-place': 'bloc __place__',
   'comments-new-one': '1 nouveau commentaire · Afficher',
   'comments-new': '__count__ nouveaux commentaires · Afficher',
   'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',

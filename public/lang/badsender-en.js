@@ -373,6 +373,7 @@ module.exports = {
   'comments-approved-badge': 'Approved',
   'comments-withdraw-confirm': 'Withdraw the approval of this email?',
   'comments-withdrawn': 'Approval withdrawn',
+  'comments-block-place': 'block __place__',
   'comments-new-one': '1 new comment · Show',
   'comments-new': '__count__ new comments · Show',
   'comments-rail-marker-one': '1 unresolved comment on the block __block__',

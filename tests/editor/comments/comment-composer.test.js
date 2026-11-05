@@ -132,6 +132,19 @@ describe('the comment form', () => {
     );
   });
 
+  it('adds on the type and priority line for whom may not approve (board c1)', () => {
+    const { root } = composer({ text: 'Hi' });
+    expect(
+      root.querySelector('.comment-composer__row button[type="submit"]')
+    ).not.toBeNull();
+    const approver = composer({ text: 'Hi', canApprove: true });
+    expect(
+      approver.root.querySelector(
+        '.comment-composer__actions button[type="submit"]'
+      )
+    ).not.toBeNull();
+  });
+
   it("offers « Approuver l'email » only to whom may approve", () => {
     expect(
       composer().root.querySelector('.comment-composer__approve')

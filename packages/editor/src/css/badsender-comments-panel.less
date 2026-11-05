@@ -144,7 +144,12 @@
     border-radius: @qc-radius;
     background: var(--white);
 
+    // Given the focus after an action: a ring at the keyboard only.
     &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
       outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
