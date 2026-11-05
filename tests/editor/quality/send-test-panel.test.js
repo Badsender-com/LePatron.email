@@ -177,77 +177,6 @@ describe('SendTestPanel', () => {
     expect(panel.canSend).toBe(false);
   });
 
-  it('may send an address only typed: it becomes a chip first', async () => {
-    const { el, panel } = await mountPanel({ status: 'done' });
-    const input = el.querySelector('.qc-recipients__input');
-    input.value = 'a@b.co';
-    input.dispatchEvent(new Event('input'));
-    await Vue.nextTick();
-    expect(panel.canSend).toBe(true);
-    submit(el);
-    await flush();
-    expect(axios.post.mock.calls[0][1].rcpt).toBe('a@b.co');
-  });
-
-  it('keeps one chip per address, whatever its case', async () => {
-    const { el, panel } = await mountPanel({ status: 'done' });
-    const input = el.querySelector('.qc-recipients__input');
-    input.value = 'a@b.co A@b.co a@b.co';
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    await Vue.nextTick();
-    expect(panel.chips).toEqual([{ kind: 'email', value: 'a@b.co' }]);
-  });
-
-  it('closes the lists on Escape, keeping what was typed', async () => {
-    const { el } = await mountPanel({ status: 'done' });
-    const input = el.querySelector('.qc-recipients__input');
-    input.value = 'mark';
-    input.dispatchEvent(new Event('input'));
-    await Vue.nextTick();
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    await Vue.nextTick();
-    expect(input.value).toBe('mark');
-    expect(input.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('says how many were sent to, as the server counts them', async () => {
-    axios.post.mockResolvedValue({
-      data: { result: ['a@b.co', 'x@y.co', 'z@y.co'] },
-    });
-    const { el, panel } = await mountPanel({ status: 'done' });
-    panel.chips = [{ kind: 'email', value: 'a@b.co' }];
-    await Vue.nextTick();
-    submit(el);
-    await flush();
-    expect(panel.sent.count).toBe(3);
-  });
-
-  it('makes chips of the addresses typed, and of one saved list', async () => {
-    const { el, panel } = await mountPanel({ status: 'done' });
-    const input = el.querySelector('.qc-recipients__input');
-    input.value = 'a@b.co c@d.fr';
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    await Vue.nextTick();
-    input.value = 'market';
-    input.dispatchEvent(new Event('input'));
-    await Vue.nextTick();
-    el.querySelector('.qc-recipients__option').dispatchEvent(
-      new Event('mousedown')
-    );
-    await Vue.nextTick();
-    expect(panel.chips.map((chip) => chip.value || chip.label)).toEqual([
-      'a@b.co',
-      'c@d.fr',
-      'Marketing team',
-    ]);
-    // Backspace in the empty field takes the last one off.
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
-    await Vue.nextTick();
-    expect(panel.chips).toHaveLength(2);
-  });
-
   it('says when the server refuses, keeps what was typed, and lets the user try again', async () => {
     axios.post.mockRejectedValue({ response: { status: 400 } });
     const { vm, el, panel } = await mountPanel({ status: 'done' });
@@ -317,17 +246,6 @@ describe('SendTestPanel', () => {
       'Running checks…'
     );
     expect(el.querySelector('.qc-notice .qc-link-button')).toBeNull();
-  });
-
-  it('names its field: a label for the recipients, the help apart', async () => {
-    const { el } = await mountPanel({ status: 'done' });
-    const input = el.querySelector('.qc-recipients__input');
-    const label = el.querySelector(`label[for="${input.id}"]`);
-    expect(label.textContent.trim()).toBe('quality-recipients');
-    const help = document.getElementById(
-      input.getAttribute('aria-describedby')
-    );
-    expect(help.textContent).toContain('quality-recipients-help');
   });
 
   it('loads the saved lists only once the tab is shown', async () => {

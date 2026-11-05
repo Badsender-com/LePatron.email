@@ -70,6 +70,8 @@ function createCorrectionsSession({
     leftOut: null,
     // Fields too long to be checked, left out.
     tooLong: 0,
+    // Fields sent to be read, for the summary (board a5).
+    fieldsRead: 0,
     // No field had any text to correct: nothing was asked.
     nothingToCorrect: false,
     // The whole email: blocks corrected so far, out of all.
@@ -113,6 +115,9 @@ function createCorrectionsSession({
     state.corrections = state.corrections.concat(
       corrections.filter((_, i) => sides[i] === 'before')
     );
+    // Read once the server answered: a retry, a failure or a stop counts
+    // nothing more.
+    state.fieldsRead += sent.length;
   }
 
   /** @returns {Promise<boolean>} whether anything was sent */

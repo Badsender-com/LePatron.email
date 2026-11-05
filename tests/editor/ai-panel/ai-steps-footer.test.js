@@ -39,6 +39,7 @@ function mount(component, session, extra = {}) {
             generate: 'gen',
             proposals: 'props',
             continueWith: 'next',
+            current: 'ai-panel-current-subject',
           }),
         },
         on: {
@@ -162,7 +163,8 @@ describe('the steps of a correction, in the foot', () => {
     await Vue.nextTick();
     const finished = app.$el.querySelector('.ai-panel__finished').textContent;
     expect(finished).toContain('ai-panel-analysis-stopped');
-    expect(finished).toContain('ai-panel-blocks-read-one 1');
+    expect(finished).toContain('ai-panel-blocks-count-one 1');
+    expect(finished).toContain('ai-panel-fields-read 0');
     const unread = [...app.$el.querySelectorAll('.ai-panel__tally dt')].map(
       (d) => d.textContent
     );
@@ -215,5 +217,16 @@ describe('the steps of a proposal, in the foot', () => {
       ['more', false],
       ['apply', true],
     ]);
+  });
+
+  it('shows what the field holds now, above the instruction (board a3)', () => {
+    const session = proposals({});
+    session.current = () => 'Nos nouveautés de novembre';
+    const { app } = mount(AiProposalsSteps, session, {
+      action: { id: 'generate-subject', canApply: true },
+    });
+    expect(app.$el.querySelector('.ai-panel__current').textContent).toContain(
+      'Nos nouveautés de novembre'
+    );
   });
 });

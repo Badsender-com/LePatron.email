@@ -135,10 +135,15 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         // Said in the tab (board q5): the count is the server's, the typed
         // addresses and the list's without their duplicates.
         .then((response) => {
-          const result = response && response.data && response.data.result;
+          const data = (response && response.data) || {};
           this.sent = {
-            count: Array.isArray(result) ? result.length : this.recipientCount,
+            count: Array.isArray(data.result)
+              ? data.result.length
+              : this.recipientCount,
             at: new Date(),
+            // The subject the server sent it with, saved or not here
+            // (board q5).
+            subject: typeof data.subject === 'string' ? data.subject : '',
           };
         })
         .catch(() => this.vm.notifier.error(this.t('send-test-error')))
@@ -169,7 +174,7 @@ const SendTestPanel = Vue.component('SendTestPanel', {
 
       <div v-if="sent" class="qc-notice qc-notice--success" role="status">
         <span class="lucide lucide-check-circle" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}</span>
+        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}<template v-if="sent.subject"> {{ t('quality-test-sent-subject', { subject: sent.subject }) }}</template></span>
       </div>
 
       <!-- Sent from the panel's foot: its button names this form. -->

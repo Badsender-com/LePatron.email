@@ -28,6 +28,7 @@ module.exports = {
   icon: 'lucide-mail',
   labels: {
     name: 'ai-panel-action-subject',
+    current: 'ai-panel-current-subject',
     description: 'ai-panel-subject-desc',
     generate: 'ai-panel-generate-subject',
     proposals: 'text-generation-subjects-title',

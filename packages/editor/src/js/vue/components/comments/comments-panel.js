@@ -98,7 +98,10 @@ const CommentsPanel = Vue.component('CommentsPanel', {
       if (!id) return null;
       return {
         id,
-        label: this.vm.commentBlockLabel(id),
+        // « Cover · 1 »: its type, the count after it.
+        label: this.vm.commentBlockType
+          ? this.vm.commentBlockType(id)
+          : this.vm.commentBlockLabel(id),
         count: this.roots.filter((c) => c.blockId === id).length,
       };
     },

@@ -379,6 +379,17 @@ describe('spelling correction: the steps of a correction', () => {
       expect(editor.redo).toHaveBeenCalled();
     });
 
+    it('counts a field read once the server answered, not when it failed (board a5)', async () => {
+      api.generate.mockResolvedValue({ corrections: [], dropped: 0 });
+      const read = open(FIELD_TARGET);
+      await read.request();
+      expect(read.state.fieldsRead).toBe(1);
+      api.generate.mockRejectedValue({ response: { status: 500 } });
+      const failed = open(FIELD_TARGET);
+      await failed.request();
+      expect(failed.state.fieldsRead).toBe(0);
+    });
+
     it('reports an error the user can act on, by status', async () => {
       api.generate.mockRejectedValue({
         response: {
