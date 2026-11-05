@@ -16,7 +16,7 @@ const {
   SkillStatuses,
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
-const { resolveIdentity } = require('./mcp-identity.js');
+const { withIdentity } = require('./mcp-identity.js');
 const {
   audienceFilter,
   isAvailableTo,
@@ -92,12 +92,9 @@ function registerExpertiseResources(server) {
   server.registerResource(
     'expertises',
     new ResourceTemplate(URI_TEMPLATE, {
-      list: async (ctx) => {
-        const { group } = await resolveIdentity(ctx.http?.authInfo);
-        return {
-          resources: (await publishedExpertises(group)).map(asResource),
-        };
-      },
+      list: withIdentity(async ({ group }) => ({
+        resources: (await publishedExpertises(group)).map(asResource),
+      })),
     }),
     {
       title: 'Badsender expertises',
@@ -105,8 +102,7 @@ function registerExpertiseResources(server) {
         'The email expertise of Badsender, one Markdown document per topic, in its active version.',
       mimeType: 'text/markdown',
     },
-    async (uri, { expertiseId }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
+    withIdentity(async ({ group }, uri, { expertiseId }) => {
       const found = await readableExpertise(expertiseId, group);
       if (!found) throw new ResourceNotFoundError(uri.href);
       return {
@@ -114,7 +110,7 @@ function registerExpertiseResources(server) {
           { uri: uri.href, mimeType: 'text/markdown', text: asMarkdown(found) },
         ],
       };
-    }
+    })
   );
 }
 
@@ -141,40 +137,41 @@ function registerFindApplicableExpertises(server) {
       outputSchema: z.object({ expertises: z.array(EXPERTISE) }),
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async ({ scope, categories, emailType, language }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
-      const scopes = [].concat(scope || []).filter(Boolean);
-      if (!scopes.length || !categories || !categories.length) {
+    withIdentity(
+      async ({ group }, { scope, categories, emailType, language }) => {
+        const scopes = [].concat(scope || []).filter(Boolean);
+        if (!scopes.length || !categories || !categories.length) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: 'text',
+                text:
+                  'Give a scope and at least one category: the expertises are written for a precise part of an email.',
+              },
+            ],
+          };
+        }
+        // The features' own lookup, with the audience of the caller's company.
+        const found = await findApplicable({
+          scope: scopes,
+          categories,
+          emailType,
+          language,
+          group,
+        });
+        const expertises = found.map((expertise) => ({
+          expertiseId: expertise.expertiseId,
+          title: expertise.title,
+          version: versionOf(expertise),
+          uri: uriOf(expertise.expertiseId),
+        }));
         return {
-          isError: true,
-          content: [
-            {
-              type: 'text',
-              text:
-                'Give a scope and at least one category: the expertises are written for a precise part of an email.',
-            },
-          ],
+          content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
+          structuredContent: { expertises },
         };
       }
-      // The features' own lookup, with the audience of the caller's company.
-      const found = await findApplicable({
-        scope: scopes,
-        categories,
-        emailType,
-        language,
-        group,
-      });
-      const expertises = found.map((expertise) => ({
-        expertiseId: expertise.expertiseId,
-        title: expertise.title,
-        version: versionOf(expertise),
-        uri: uriOf(expertise.expertiseId),
-      }));
-      return {
-        content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
-        structuredContent: { expertises },
-      };
-    }
+    )
   );
 }
 

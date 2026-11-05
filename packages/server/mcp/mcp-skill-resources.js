@@ -5,7 +5,7 @@ const {
   ResourceTemplate,
   ResourceNotFoundError,
 } = require('@modelcontextprotocol/server');
-const { resolveIdentity } = require('./mcp-identity.js');
+const { withIdentity } = require('./mcp-identity.js');
 const {
   uriOf,
   natureOf,
@@ -59,10 +59,9 @@ function registerSkillResources(server) {
   server.registerResource(
     'skills',
     new ResourceTemplate('lepatron://skills/{skillId}', {
-      list: async (ctx) => {
-        const { group } = await resolveIdentity(ctx.http?.authInfo);
-        return { resources: (await servedSkills(group)).map(asResource) };
-      },
+      list: withIdentity(async ({ group }) => ({
+        resources: (await servedSkills(group)).map(asResource),
+      })),
     }),
     {
       title: 'Badsender skills',
@@ -70,8 +69,7 @@ function registerSkillResources(server) {
         'Procedures written by Badsender for an assistant, to run on what the user provides.',
       mimeType: 'text/markdown',
     },
-    async (uri, { skillId }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
+    withIdentity(async ({ group }, uri, { skillId }) => {
       const found = await servedSkill(skillId, group);
       if (!found) throw new ResourceNotFoundError(uri.href);
       const consumedIds = found.version.consumedExpertiseIds || [];
@@ -88,7 +86,7 @@ function registerSkillResources(server) {
           },
         ],
       };
-    }
+    })
   );
 }
 
@@ -120,8 +118,7 @@ function registerFindSkills(server) {
       outputSchema: z.object({ skills: z.array(SKILL) }),
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async ({ query }, ctx) => {
-      const { group } = await resolveIdentity(ctx.http?.authInfo);
+    withIdentity(async ({ group }, { query }) => {
       const skills = (await servedSkills(group))
         .filter(matching(query))
         .map(({ doc, version }) => ({
@@ -135,7 +132,7 @@ function registerFindSkills(server) {
         content: [{ type: 'text', text: JSON.stringify({ skills }) }],
         structuredContent: { skills },
       };
-    }
+    })
   );
 }
 

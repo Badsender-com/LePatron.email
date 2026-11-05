@@ -1,6 +1,7 @@
 'use strict';
 
 const { McpServer } = require('@modelcontextprotocol/server');
+const { guardListing } = require('./mcp-identity.js');
 const {
   registerExpertiseResources,
   registerFindApplicableExpertises,
@@ -21,8 +22,9 @@ const INSTRUCTIONS = [
 
 /**
  * A fresh MCP server (ADR 0012): it keeps no state, so the HTTP endpoint
- * builds one per request, and each handler resolves who calls from the
- * validated token the transport hands it.
+ * builds one per request, and every handler resolves who calls from the
+ * validated token the transport hands it (`withIdentity`), the listings the
+ * SDK answers itself included. Only `initialize` and `ping` answer anyone.
  *
  * @returns {McpServer}
  */
@@ -36,6 +38,8 @@ function createMcpServer() {
   registerSkillPrompts(server);
   registerSkillResources(server);
   registerFindSkills(server);
+  guardListing(server, 'tools/list');
+  guardListing(server, 'resources/templates/list');
   return server;
 }
 

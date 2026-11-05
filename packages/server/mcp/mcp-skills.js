@@ -7,7 +7,7 @@ const {
 const {
   buildPrompt,
 } = require('../ai-skill/services/prompt-builder.service.js');
-const { resolveIdentity } = require('./mcp-identity.js');
+const { withIdentity } = require('./mcp-identity.js');
 const {
   isTask,
   servedSkills,
@@ -78,13 +78,11 @@ function featureMessages(found, input) {
   ];
 }
 
-async function listPrompts(ctx) {
-  const { group } = await resolveIdentity(ctx.http?.authInfo);
+async function listPrompts({ group }) {
   return { prompts: (await servedSkills(group)).map(asPrompt) };
 }
 
-async function getPrompt(request, ctx) {
-  const { group } = await resolveIdentity(ctx.http?.authInfo);
+async function getPrompt({ group }, request) {
   const { name, arguments: input = {} } = request.params;
   const found = await servedSkill(name, group);
   if (!found) {
@@ -108,10 +106,8 @@ async function getPrompt(request, ctx) {
  */
 function registerSkillPrompts(server) {
   server.server.registerCapabilities({ prompts: {} });
-  server.server.setRequestHandler('prompts/list', (_request, ctx) =>
-    listPrompts(ctx)
-  );
-  server.server.setRequestHandler('prompts/get', getPrompt);
+  server.server.setRequestHandler('prompts/list', withIdentity(listPrompts));
+  server.server.setRequestHandler('prompts/get', withIdentity(getPrompt));
 }
 
 module.exports = { registerSkillPrompts };
