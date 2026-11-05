@@ -109,9 +109,9 @@ function registerExpertiseResources(server) {
       })),
     }),
     {
-      title: 'Badsender expertises',
+      title: 'Expertises',
       description:
-        'The email expertise of Badsender, one Markdown document per topic, in its active version.',
+        'Email know-how, one Markdown document per topic, in its active version.',
       mimeType: 'text/markdown',
     },
     withIdentity(async ({ group }, uri, { expertiseId }) => {

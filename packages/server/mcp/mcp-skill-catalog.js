@@ -92,7 +92,7 @@ function usesExpertise(version) {
 // What an assistant is told of the expertises a feature skill applies, since
 // LePatron attaches none to it here.
 const EXPERTISE_NOTICE =
-  'This skill applies Badsender expertises, which are not attached to it here. Before running it, find the ones that apply to the piece of the email you work on with find_applicable_expertises, read them, and apply them.';
+  'This skill applies expertises, which are not attached to it here. Before running it, find the ones that apply to the piece of the email you work on with find_applicable_expertises, read them, and apply them.';
 
 /**
  * The arguments of a skill's prompt. A task skill takes none: the user brings

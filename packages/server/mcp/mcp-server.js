@@ -17,8 +17,8 @@ const { version } = require('../../../package.json');
 
 const INSTRUCTIONS = [
   'LePatron is an email production platform.',
-  'Its expertises are the email know-how of Badsender: read them before advising on an email.',
-  'Everything you read here is limited to the group and the rights of the user who connected you.',
+  'Its expertises are the email know-how the platform writes: read the ones that apply before advising on an email.',
+  'Everything you read here is limited to the company and the rights of the user who connected you.',
 ].join(' ');
 
 /**

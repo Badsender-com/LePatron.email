@@ -67,9 +67,9 @@ function registerSkillResources(server) {
       })),
     }),
     {
-      title: 'Badsender skills',
+      title: 'Skills',
       description:
-        'Procedures written by Badsender for an assistant, to run on what the user provides.',
+        'Procedures written for an assistant, to run on what the user provides.',
       mimeType: 'text/markdown',
     },
     withIdentity(async ({ group }, uri, { skillId }) => {
@@ -125,8 +125,8 @@ function registerFindSkills(server) {
   server.registerTool(
     'find_skills',
     {
-      title: 'Find a Badsender skill',
-      description: `Finds the Badsender skills whose title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. Read the one that fits through its resource URI, then follow it.`,
+      title: 'Find a skill',
+      description: `Finds the skills whose title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. Read the one that fits through its resource URI, then follow it.`,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },

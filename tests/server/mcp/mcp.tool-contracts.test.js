@@ -8,6 +8,8 @@
 // runs without a confirmation in the clients that honour the hint; the one tool
 // that writes (`submit_feedback`) says it destroys nothing, which ChatGPT checks.
 // Written over whatever tools exist, so it holds as each ticket adds its own.
+// What the server tells an assistant speaks the glossary's words: a company,
+// the platform company, never a group nor the name of the platform's owner.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -15,11 +17,12 @@ const f = require('../../helpers/mcp-fixtures');
 const WRITING_TOOLS = ['submit_feedback'];
 
 describe('tool contracts', () => {
+  let client;
   let tools;
 
   beforeEach(async () => {
     harness.seed(f.SEED);
-    const client = await harness.connectAs(f.FRANK);
+    client = await harness.connectAs(f.FRANK);
     ({ tools } = await client.listTools());
   });
   afterEach(() => harness.disconnect());
@@ -66,5 +69,22 @@ describe('tool contracts', () => {
         title: 'string',
       });
     });
+  });
+
+  it('says company, never group nor Badsender, in what it serves', async () => {
+    const { resourceTemplates } = await client.listResourceTemplates();
+    const { messages } = await client.getPrompt({
+      name: 'redaction.subject-ideas',
+      arguments: { prompt: 'A teaser' },
+    });
+    const served = [
+      client.getInstructions(),
+      ...tools.flatMap((tool) => [tool.title, tool.description]),
+      ...resourceTemplates.flatMap((t) => [t.title, t.description]),
+      ...messages.map((message) => message.content.text),
+    ].join('\n');
+
+    expect(served).toMatch(/company/);
+    expect(served).not.toMatch(/badsender|\bgroups?\b/i);
   });
 });
