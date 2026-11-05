@@ -6,7 +6,6 @@ const {
   sendTestEmail,
 } = require('../send-test/send-test-api');
 const { formatTime } = require('./quality-items');
-const { getSubject } = require('../../../ext/email-subject');
 
 // The "Send a test" tab of the quality drawer: the recipients, an optional
 // saved list, and a word on what the quality review found. What is left to
@@ -136,12 +135,15 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         // Said in the tab (board q5): the count is the server's, the typed
         // addresses and the list's without their duplicates.
         .then((response) => {
-          const result = response && response.data && response.data.result;
+          const data = (response && response.data) || {};
           this.sent = {
-            count: Array.isArray(result) ? result.length : this.recipientCount,
+            count: Array.isArray(data.result)
+              ? data.result.length
+              : this.recipientCount,
             at: new Date(),
-            // The subject it went with, when the email has one (board q5).
-            subject: getSubject(this.vm) || '',
+            // The subject the server sent it with, saved or not here
+            // (board q5).
+            subject: typeof data.subject === 'string' ? data.subject : '',
           };
         })
         .catch(() => this.vm.notifier.error(this.t('send-test-error')))

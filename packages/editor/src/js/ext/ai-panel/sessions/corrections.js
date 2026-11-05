@@ -115,6 +115,9 @@ function createCorrectionsSession({
     state.corrections = state.corrections.concat(
       corrections.filter((_, i) => sides[i] === 'before')
     );
+    // Read once the server answered: a retry, a failure or a stop counts
+    // nothing more.
+    state.fieldsRead += sent.length;
   }
 
   /** @returns {Promise<boolean>} whether anything was sent */
@@ -128,7 +131,6 @@ function createCorrectionsSession({
       .filter((field) => field.text);
     const sent = withText.filter((field) => field.text.length <= MAX_FIELD_LENGTH);
     state.tooLong += withText.length - sent.length;
-    state.fieldsRead += sent.length;
     for (const batch of batchesOf(sent)) {
       if (cancelled) break;
       await correctBatch(blockTarget, batch);
