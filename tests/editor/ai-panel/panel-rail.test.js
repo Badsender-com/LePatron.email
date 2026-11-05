@@ -49,18 +49,15 @@ describe('the panel rail', () => {
     });
   });
 
-  it("says every badge of « Tester l'email » in words", () => {
-    const badges = parse(badge).querySelectorAll('.panel-rail__badge');
-    expect(badges.length).toBeGreaterThan(0);
-    badges.forEach((item) => {
-      expect(item.querySelector('.panel-rail__sr')).not.toBeNull();
-    });
+  it('says its quality badge in words, chosen by rail-badge.js', () => {
+    const item = parse(badge).querySelector('.panel-rail__badge');
+    expect(item.querySelector('.panel-rail__sr')).not.toBeNull();
+    expect(badge).toContain('$root.quality.railBadge()');
   });
 
-  it('counts in red only what blocks the export', () => {
-    const red = parse(badge).querySelector('.panel-rail__badge--blocking');
-    expect(red.querySelector('[aria-hidden]').getAttribute('data-bind')).toBe(
-      'text: $root.quality.blockingCount()'
-    );
+  it('comes after the top bar and the panels: the keyboard reaches it after the top bar', () => {
+    const rail = main.indexOf('class="panel-rail"');
+    expect(main.indexOf('id="toolbar"')).toBeLessThan(rail);
+    expect(main.indexOf('id="main-toolbox"')).toBeLessThan(rail);
   });
 });

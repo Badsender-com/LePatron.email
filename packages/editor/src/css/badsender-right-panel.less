@@ -68,11 +68,12 @@
 // `aria-expanded`, as screen readers do.
 .panel-rail {
   position: fixed;
-  top: var(--top-bar-height, 40px);
+  top: var(--top-bar-height, 50px);
   right: 0;
   bottom: 0;
-  // Above the comment markers (150), below the top bar (201) and dialogs.
-  z-index: 160;
+  // The panels' level, and after them in the page: a sliding panel passes
+  // under the rail. Below the top bar (201) and its menus, and the dialogs.
+  z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,10 +101,16 @@
 
     &:hover { background: var(--gray-100); }
 
+    // Tinted with the accent, as the board draws it; the icon takes the
+    // brand's dark colour, which the tint alone would not be enough to say.
     &[aria-expanded='true'] {
       border-color: var(--accent);
-      background: var(--gray-50);
+      background: color-mix(in srgb, var(--accent) 14%, var(--white));
       color: var(--primary);
+
+      &:hover {
+        background: color-mix(in srgb, var(--accent) 22%, var(--white));
+      }
     }
 
     &:focus-visible {
@@ -120,12 +127,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
     border: 2px solid var(--white);
-    border-radius: 11px;
-    box-sizing: content-box;
+    border-radius: 10px;
+    box-sizing: border-box;
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
@@ -136,27 +143,21 @@
     &--volume { background: var(--accent); color: var(--primary); }
     &--blocking { background: @qc-error; color: var(--white); }
     &--ready { background: @qc-success; color: var(--white); }
-    &--neutral { background: var(--gray-200); color: var(--gray-800); }
+    // The states the board does not draw: said by their icon.
+    &--stale,
+    &--incomplete,
+    &--running { background: var(--gray-200); color: var(--gray-800); }
 
-    &--running {
-      min-width: 10px;
-      width: 10px;
-      height: 10px;
-      padding: 0;
-      border-color: var(--white);
-      background: var(--accent);
-    }
+    &--running > .lucide { animation: lucide-spin 1s linear infinite; }
   }
 
   &__sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    .visually-hidden();
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-rail__badge--running > .lucide {
+    animation: none;
   }
 }

@@ -1,39 +1,13 @@
-<!-- The badge of « Tester l'email » in the panel rail (ADR 0020). Red counts
-     only what blocks the export, the accent counts the rest to fix, a green
-     tick says the email is ready; each says itself to screen readers. -->
-<!-- ko if: $root.quality.status() === 'running' -->
-<span class="panel-rail__badge panel-rail__badge--running">
-  <span class="panel-rail__sr" data-bind="text: $root.t('Running…')"></span>
-</span>
-<!-- /ko -->
-<!-- ko if: $root.quality.status() === 'done' && $root.quality.blockingCount() > 0 -->
-<span class="panel-rail__badge panel-rail__badge--blocking">
-  <span aria-hidden="true" data-bind="text: $root.quality.blockingCount()"></span>
-  <span class="panel-rail__sr" data-bind="text: $root.t('panel-rail-blocking', { count: $root.quality.blockingCount() })"></span>
-</span>
-<!-- /ko -->
-<!-- ko if: $root.quality.status() === 'done' && $root.quality.blockingCount() === 0 && $root.quality.issueCount() > 0 -->
-<span class="panel-rail__badge panel-rail__badge--volume">
-  <span aria-hidden="true" data-bind="text: $root.quality.issueCount()"></span>
-  <span class="panel-rail__sr" data-bind="text: $root.t('__count__ issues', { count: $root.quality.issueCount() })"></span>
-</span>
-<!-- /ko -->
-<!-- ko if: $root.quality.status() === 'done' && $root.quality.cleared() -->
-<span class="panel-rail__badge panel-rail__badge--ready">
-  <span class="lucide lucide-check" aria-hidden="true"></span>
-  <span class="panel-rail__sr" data-bind="text: $root.t('panel-rail-ready')"></span>
-</span>
-<!-- /ko -->
-<!-- Nothing to fix, but a check could not run: no green tick. -->
-<!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 && !$root.quality.cleared() -->
-<span class="panel-rail__badge panel-rail__badge--neutral">
-  <span aria-hidden="true">?</span>
-  <span class="panel-rail__sr" data-bind="text: $root.t('__passed__ of __total__ checks passed', { passed: $root.quality.ranCount(), total: $root.quality.checks().length })"></span>
-</span>
-<!-- /ko -->
-<!-- ko if: $root.quality.status() === 'stale' -->
-<span class="panel-rail__badge panel-rail__badge--neutral">
-  <span aria-hidden="true">!</span>
-  <span class="panel-rail__sr" data-bind="text: $root.t('quality-badge-stale')"></span>
+<!-- The badge of « Tester l'email » in the panel rail (ADR 0020): chosen by
+     ext/quality/rail-badge.js, said in words. -->
+<!-- ko with: $root.quality.railBadge() -->
+<span class="panel-rail__badge" data-bind="css: 'panel-rail__badge--' + kind">
+  <!-- ko if: kind === 'blocking' || kind === 'volume' -->
+  <span aria-hidden="true" data-bind="text: $data.count > 99 ? '99+' : $data.count"></span>
+  <!-- /ko -->
+  <!-- ko ifnot: kind === 'blocking' || kind === 'volume' -->
+  <span aria-hidden="true" data-bind="css: { lucide: true, 'lucide-check': kind === 'ready', 'lucide-loader': kind === 'running', 'lucide-rotate-ccw': kind === 'stale', 'lucide-minus': kind === 'incomplete' }"></span>
+  <!-- /ko -->
+  <span class="panel-rail__sr" data-bind="text: $root.t($data.labelKey, $data.params || {})"></span>
 </span>
 <!-- /ko -->
