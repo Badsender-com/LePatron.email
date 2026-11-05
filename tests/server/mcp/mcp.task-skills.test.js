@@ -61,7 +61,7 @@ const markedWithoutSchema = {
       ...f.SKILLS[0].versions[0],
       inputSchemaId: 'subjectGenInput', // not in the code's registry
       inputTemplate:
-        '<expertise>{{input.expertise}}</expertise>\n<type>{{input.emailType}}</type>\n<content>{{input.content}}</content>\n<brief>{{input.brief}}</brief>',
+        '<expertise>{{input.expertise}}</expertise>\n<type>{{input.emailType}}</type>\n<content>{{input.content}}</content>\n<brief>{{input.brief}}</brief>\n<brand>{{input.brand.name}}</brand>',
     },
   ],
 };
@@ -205,10 +205,24 @@ describe('task skills', () => {
       const prompt = await promptNamed('redaction.objet');
 
       expect(prompt.arguments.map((a) => a.name).sort()).toEqual([
+        'brand.name',
         'brief',
         'content',
         'emailType',
       ]);
+    });
+
+    // An argument is a string: a dotted placeholder is one by its whole path.
+    it('fills a dotted placeholder from the argument of that path', async () => {
+      const { messages } = await client.getPrompt({
+        name: 'redaction.objet',
+        arguments: { 'brand.name': 'Acme', '__proto__.polluted': 'yes' },
+      });
+
+      expect(messages.map((m) => m.content.text).join('\n')).toContain(
+        '<brand>Acme</brand>'
+      );
+      expect({}.polluted).toBeUndefined();
     });
 
     // The app's feature composes the expertise; an assistant has none to.

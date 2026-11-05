@@ -13,6 +13,7 @@ const {
   servedSkills,
   servedSkill,
   argumentsOf,
+  inputOf,
   usesExpertise,
   EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
@@ -61,9 +62,9 @@ async function taskMessages({ doc, version }, group) {
 // invocation builds (prompt-builder.service.js), the user's input fenced, and
 // never its JSON output contract, which only LePatron reads. An MCP prompt has
 // no system role: the instructions come first, as the user's.
-function featureMessages(found, input) {
+function featureMessages(found, args) {
   const missing = argumentsOf(found).filter(
-    (argument) => argument.required && !input[argument.name]
+    (argument) => argument.required && !args[argument.name]
   );
   if (missing.length) {
     throw new ProtocolError(
@@ -71,7 +72,10 @@ function featureMessages(found, input) {
       `Missing required argument: ${missing.map((a) => a.name).join(', ')}`
     );
   }
-  const { messages } = buildPrompt({ version: found.version, input });
+  const { messages } = buildPrompt({
+    version: found.version,
+    input: inputOf(found, args),
+  });
   return [
     ...messages.map((message) => text(message.content)),
     ...(usesExpertise(found.version) ? [text(EXPERTISE_NOTICE)] : []),

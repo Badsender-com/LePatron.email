@@ -64,17 +64,17 @@ async function servedSkill(skillId, group) {
   return found && isServed(found) ? found : null;
 }
 
-// The placeholders of a template, by their first segment, the expertise
-// excepted: `{{input.brief}}` gives `brief`.
-function placeholdersOf(template) {
-  const names = new Set();
+// The paths a template places: `{{input.brand.name}}` gives `brand.name`.
+function placeholderPaths(template) {
+  const paths = new Set();
   String(template || '').replace(PLACEHOLDER_REGEX, (_match, path) => {
-    names.add(path.split('.')[0]);
+    paths.add(path);
     return '';
   });
-  names.delete(EXPERTISE_FIELD);
-  return [...names];
+  return [...paths];
 }
+
+const isExpertisePath = (path) => path.split('.')[0] === EXPERTISE_FIELD;
 
 /**
  * Whether a feature skill applies expertises: its input schema takes them, or
@@ -86,12 +86,7 @@ function placeholdersOf(template) {
 function usesExpertise(version) {
   const described = describeSchema(version.inputSchemaId);
   if (described) return described.hasExpertiseField;
-  const names = new Set();
-  String(version.inputTemplate || '').replace(PLACEHOLDER_REGEX, (_m, path) => {
-    names.add(path.split('.')[0]);
-    return '';
-  });
-  return names.has(EXPERTISE_FIELD);
+  return placeholderPaths(version.inputTemplate).some(isExpertisePath);
 }
 
 // What an assistant is told of the expertises a feature skill applies, since
@@ -103,7 +98,9 @@ const EXPERTISE_NOTICE =
  * The arguments of a skill's prompt. A task skill takes none: the user brings
  * what it needs into the conversation. A feature skill takes the fields of its
  * input schema when the code knows it, else the placeholders of its template,
- * all optional, so a skill for assistants needs no deployment.
+ * all optional, so a skill for assistants needs no deployment. An argument is
+ * a string, so a dotted placeholder is an argument by its whole path
+ * (`brand.name`), which `inputOf` puts back where the template reads it.
  */
 function argumentsOf({ version }) {
   if (isTask(version)) return [];
@@ -111,10 +108,40 @@ function argumentsOf({ version }) {
   if (described) {
     return described.fields.map(({ name, required }) => ({ name, required }));
   }
-  return placeholdersOf(version.inputTemplate).map((name) => ({
-    name,
-    required: false,
-  }));
+  return placeholderPaths(version.inputTemplate)
+    .filter((path) => !isExpertisePath(path))
+    .map((name) => ({ name, required: false }));
+}
+
+// Never a key of the input: it would reach the prototype of every object.
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * The input a skill's template reads, from the prompt's arguments: only the
+ * arguments the skill declares, each at its path. A value already in place
+ * keeps it, so `brand` and `brand.name` never overwrite each other.
+ *
+ * @param {Object} found the served skill and its version
+ * @param {Object} args the arguments the client sends, strings by name
+ * @returns {Object}
+ */
+function inputOf(found, args) {
+  const input = Object.create(null);
+  argumentsOf(found).forEach(({ name }) => {
+    const keys = name.split('.');
+    if (args[name] === undefined || keys.some((key) => UNSAFE_KEYS.has(key))) {
+      return;
+    }
+    const last = keys.pop();
+    let node = input;
+    for (const key of keys) {
+      if (node[key] === undefined) node[key] = Object.create(null);
+      if (typeof node[key] !== 'object') return;
+      node = node[key];
+    }
+    if (node[last] === undefined) node[last] = args[name];
+  });
+  return input;
 }
 
 module.exports = {
@@ -124,6 +151,7 @@ module.exports = {
   servedSkills,
   servedSkill,
   argumentsOf,
+  inputOf,
   usesExpertise,
   EXPERTISE_NOTICE,
 };
