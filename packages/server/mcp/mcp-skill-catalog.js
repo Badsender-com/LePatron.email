@@ -12,7 +12,10 @@ const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
 const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
-const { audienceFilter } = require('../ai-skill/services/audience.js');
+const {
+  audienceFilter,
+  isAvailableTo,
+} = require('../ai-skill/services/audience.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant
@@ -24,15 +27,12 @@ const isTask = (doc) => doc.nature === SkillNatures.TASK;
 const versionOf = (version) =>
   `${version.versionMajor}.${version.versionMinor}`;
 
-// What reaches assistants (ADR 0013): an active skill the group may read, a
-// task skill always, a feature skill only when marked so.
-function servedFilter(group) {
-  return {
-    status: SkillStatuses.ACTIVE,
-    ...audienceFilter(group),
-    $or: [{ nature: SkillNatures.TASK }, { servedToAssistants: true }],
-  };
-}
+// What reaches assistants (ADR 0013): an active skill, a task skill always, a
+// feature skill only when marked so; and of those, what the company may use.
+const SERVED = Object.freeze({
+  status: SkillStatuses.ACTIVE,
+  $or: [{ nature: SkillNatures.TASK }, { servedToAssistants: true }],
+});
 
 function published(doc) {
   if (!doc) return null;
@@ -42,7 +42,10 @@ function published(doc) {
 }
 
 async function servedSkills(group) {
-  const docs = await LePatronSkills.find(servedFilter(group)).lean();
+  const docs = await LePatronSkills.find({
+    ...SERVED,
+    ...audienceFilter(group),
+  }).lean();
   return docs
     .map(published)
     .filter(Boolean)
@@ -50,12 +53,11 @@ async function servedSkills(group) {
 }
 
 async function servedSkill(skillId, group) {
-  return published(
-    await LePatronSkills.findOne({
-      skillId: String(skillId),
-      ...servedFilter(group),
-    }).lean()
-  );
+  const doc = await LePatronSkills.findOne({
+    skillId: String(skillId),
+    ...SERVED,
+  }).lean();
+  return isAvailableTo(doc, group) ? published(doc) : null;
 }
 
 // The placeholders of a template, by their first segment, the expertise

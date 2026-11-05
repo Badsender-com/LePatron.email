@@ -246,7 +246,9 @@ function buildInvocationOptions(scenario, overrides) {
   // playground is where long prompts and large outputs are deliberately tried
   // out, by one super-admin who is watching the request — a timeout here reads
   // as "the model is broken".
-  const opts = { timeoutMs: PlaygroundTimeoutMs };
+  // The super admins try here a skill not opened to the clients yet, in
+  // whatever company the scenario runs.
+  const opts = { timeoutMs: PlaygroundTimeoutMs, everyAudience: true };
   const po =
     (overrides && overrides.providerOverride) || scenario.providerOverride;
   if (!po) return opts;

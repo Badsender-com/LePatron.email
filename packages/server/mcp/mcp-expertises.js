@@ -17,7 +17,10 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity } = require('./mcp-identity.js');
-const { audienceFilter } = require('../ai-skill/services/audience.js');
+const {
+  audienceFilter,
+  isAvailableTo,
+} = require('../ai-skill/services/audience.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
@@ -79,12 +82,10 @@ function asMarkdown({ doc, version }) {
 
 // The active version of an expertise the group may read, or null.
 async function readableExpertise(expertiseId, group) {
-  return published(
-    await Expertises.findOne({
-      expertiseId: String(expertiseId),
-      ...audienceFilter(group),
-    }).lean()
-  );
+  const doc = await Expertises.findOne({
+    expertiseId: String(expertiseId),
+  }).lean();
+  return isAvailableTo(doc, group) ? published(doc) : null;
 }
 
 function registerExpertiseResources(server) {

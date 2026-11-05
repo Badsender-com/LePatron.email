@@ -35,6 +35,7 @@ const aiFeatureService = require('../../ai-feature/ai-feature.service.js');
 const { FeatureResolutionReasons } = aiFeatureService;
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const { getSchema } = require('../schemas');
 const {
   buildOutputContract,
@@ -45,6 +46,7 @@ const {
   InvocationStatuses,
 } = require('../constant/skill-constants.js');
 const { resolveConfig } = require('./config-resolver.service.js');
+const { isAvailableTo } = require('./audience.js');
 const { buildFieldErrors } = require('./format-validation-error.js');
 const {
   buildPrompt,
@@ -90,6 +92,8 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * @param {Object} [params.options]
  * @param {boolean} [params.options.dryRun=false]
  * @param {boolean} [params.options.skipLogging=false] — internal flag for the test runner
+ * @param {boolean} [params.options.everyAudience=false] — use the skill whatever
+ *   its audience, as the platform company does: the super admins' playground
  * @returns {Promise<{ output: any, invocationId: string, resolvedConfig: Object, tokenUsage: Object, latencyMs: number }>}
  */
 async function invoke({
@@ -109,6 +113,7 @@ async function invoke({
     { skillId, status: SkillStatuses.ACTIVE },
     {
       skillId: 1,
+      audience: 1,
       activeVersion: 1,
       versions: 1,
     }
@@ -138,7 +143,14 @@ async function invoke({
     );
   }
 
-  // ─── 2. Validate input against zod schema (schemas live on the version) ──
+  // ─── 2. The audience: a skill still proven by the platform company is not
+  // used on behalf of a client's user (ADR 0013) ─────────────────────────────
+  const group = await loadGroup(groupId);
+  if (!options.everyAudience && !isAvailableTo(skill, group)) {
+    throw createError(403, ERROR_CODES.SKILL_NOT_AVAILABLE_TO_COMPANY);
+  }
+
+  // ─── 3. Validate input against zod schema (schemas live on the version) ──
   const inputSchema = getSchema(version.inputSchemaId);
   if (!inputSchema) {
     throw configError(
@@ -147,7 +159,7 @@ async function invoke({
     );
   }
   // Checked here, next to the input schema, rather than where it is used at
-  // step 6: an id that no longer resolves (schema renamed or removed in code
+  // step 7: an id that no longer resolves (schema renamed or removed in code
   // while a version still points at it) otherwise surfaced as a TypeError
   // *after* the provider call had been made and billed.
   if (!getSchema(version.outputSchemaId)) {
@@ -180,15 +192,13 @@ async function invoke({
     });
   }
 
-  // ─── 3. Resolve provider config (Group > Skill > default) ──────────────
-  const {
-    integration,
-    groupFeatureConfig,
-    group,
-  } = await resolveGroupIntegration(groupId);
+  // ─── 4. Resolve provider config (Group > Skill > default) ──────────────
+  const { integration, groupFeatureConfig } = await resolveGroupIntegration(
+    groupId
+  );
   // Group-level content-logging opt-out — applies to success AND failure
-  // paths below. (The INPUT_VALIDATION failure above happens before the
-  // group is resolved; nothing was sent to a provider at that point.)
+  // paths below. (Not to the INPUT_VALIDATION failure above: nothing was sent
+  // to a provider at that point.)
   const allowContent = group ? group.logSkillInvocationContent !== false : true;
   // Passed to every log call below so the TTL deadline is stamped without the
   // logger having to re-read the Group.
@@ -200,7 +210,7 @@ async function invoke({
     defaults: {},
   });
 
-  // ─── 4. Build the prompt with random XML tags ──────────────────────────
+  // ─── 5. Build the prompt with random XML tags ──────────────────────────
   // The output-format contract is derived from the skill's outputSchemaId and
   // injected automatically — skill authors must not write it by hand.
   const { messages } = buildPrompt({
@@ -220,7 +230,7 @@ async function invoke({
     };
   }
 
-  // ─── 5. Call the provider ──────────────────────────────────────────────
+  // ─── 6. Call the provider ──────────────────────────────────────────────
   const provider = ProviderFactory.createProvider(
     integration,
     groupFeatureConfig
@@ -278,7 +288,7 @@ async function invoke({
     });
   }
 
-  // ─── 6. Parse + validate output ────────────────────────────────────────
+  // ─── 7. Parse + validate output ────────────────────────────────────────
   const outputSchema = getSchema(version.outputSchemaId);
   let parsedOutput;
   try {
@@ -329,7 +339,7 @@ async function invoke({
     });
   }
 
-  // ─── 7. Log success ────────────────────────────────────────────────────
+  // ─── 8. Log success ────────────────────────────────────────────────────
   const completedAt = new Date();
   const latencyMs = completedAt - startedAt;
 
@@ -406,15 +416,18 @@ const ENGINE_ERROR_MESSAGES = {
     `Group ${groupId} has a 'skill' integration that is inactive`,
 };
 
-async function resolveGroupIntegration(groupId) {
-  // The Group document itself stays this module's business: it carries the RGPD
-  // content opt-out and the log retention window, neither of which the shared
-  // feature helper knows or should know about.
+// The Group document itself stays this module's business: it carries whether
+// it is the platform company, the RGPD content opt-out and the log retention
+// window, none of which the shared feature helper knows or should know about.
+async function loadGroup(groupId) {
   const group = await Groups.findById(groupId).lean();
   if (!group) {
     throw configError(404, `Group ${groupId} not found`);
   }
+  return group;
+}
 
+async function resolveGroupIntegration(groupId) {
   const resolved = await aiFeatureService.resolveActiveFeature({
     groupId,
     featureType: AIFeatureTypes.SKILL,
@@ -432,7 +445,6 @@ async function resolveGroupIntegration(groupId) {
   return {
     integration: resolved.integration,
     groupFeatureConfig: resolved.feature.config || {},
-    group,
   };
 }
 

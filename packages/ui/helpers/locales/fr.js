@@ -1476,6 +1476,8 @@ export default {
       other: 'Autre',
     },
     errors: {
+      SKILL_NOT_AVAILABLE_TO_COMPANY:
+        'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
       SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
         'La procédure d\'un Skill de tâche doit être rédigée avant de publier cette version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
