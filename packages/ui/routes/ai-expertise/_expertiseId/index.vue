@@ -103,40 +103,43 @@ export default {
       const skills = closesToPlatform(this.savedAudience, this.exp.audience)
         ? await this.readOpenTaskSkills()
         : [];
-      if (skills.length) {
+      if (skills && skills.length) {
         this.$refs.closeModal.open(skills);
         return;
       }
-      await this.patchDetails();
+      await this.patchDetails({ unchecked: skills === null });
     },
-    // The open task skills that consume it. None to tell when they cannot
-    // be read: saving stays possible.
+    // The open task skills that consume it. The page is busy while they are
+    // read; null when they cannot be, and saving stays possible.
     async readOpenTaskSkills() {
+      this.saving = true;
       try {
         const res = await this.$axios.$get(
           api.aiExpertiseOpenTaskSkills(this.exp.expertiseId)
         );
         return res.skills || [];
       } catch (err) {
-        return [];
+        return null;
+      } finally {
+        this.saving = false;
       }
     },
-    async patchDetails() {
-      const saved = await this.replaceItem(
-        () =>
-          this.$axios.$patch(api.aiExpertise(this.exp.expertiseId), {
-            title: this.exp.title,
-            description: this.exp.description,
-            category: this.exp.category,
-            scope: this.exp.scope,
-            isTransversal: this.exp.isTransversal,
-            appliesToEmailTypes: this.exp.appliesToEmailTypes,
-            appliesToLanguages: this.exp.appliesToLanguages,
-            audience: this.exp.audience,
-          }),
-        'global.savedSuccessfully'
+    async patchDetails({ unchecked = false } = {}) {
+      const saved = await this.replaceItem(() =>
+        this.$axios.$patch(api.aiExpertise(this.exp.expertiseId), {
+          title: this.exp.title,
+          description: this.exp.description,
+          category: this.exp.category,
+          scope: this.exp.scope,
+          isTransversal: this.exp.isTransversal,
+          appliesToEmailTypes: this.exp.appliesToEmailTypes,
+          appliesToLanguages: this.exp.appliesToLanguages,
+          audience: this.exp.audience,
+        })
       );
-      if (saved) this.savedAudience = this.exp.audience;
+      if (!saved) return;
+      this.savedAudience = this.exp.audience;
+      this.tellSaved({ unchecked });
     },
     // `silent` skips the snackbar: publishing an edited draft saves it first
     // (see askActivate) and only the activation is worth announcing.
@@ -187,13 +190,16 @@ export default {
       // must show either way. Informed consent: surface which features will
       // load this expertise. Changelog/notes required for major only.
       this.activationImpact = [];
+      this.saving = true;
       try {
         const res = await this.$axios.$get(
           api.aiExpertiseActivationImpact(this.exp.expertiseId)
         );
         this.activationImpact = res.matches || [];
       } catch (err) {
-        this.activationImpact = [];
+        this.tellWarningUnchecked();
+      } finally {
+        this.saving = false;
       }
       // Pre-fill changelog / release notes from the draft, shared modal.
       this.$refs.activateModal.open(version);
@@ -320,7 +326,7 @@ export default {
       :loading="saving"
       @confirm="archive"
     />
-    <bs-ai-expertise-close-modal ref="closeModal" @confirm="patchDetails" />
+    <bs-ai-expertise-close-modal ref="closeModal" @confirm="patchDetails()" />
   </div>
 </template>
 

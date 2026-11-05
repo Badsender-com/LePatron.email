@@ -1442,6 +1442,9 @@ export default {
       },
     },
     platformOnly: 'Platform company only',
+    warningUnchecked: 'The warning about this change could not be checked.',
+    savedWarningUnchecked:
+      'Saved, but the warning about this change could not be checked.',
     openExpertises: {
       skillTitle: 'Open this skill to all companies',
       intro:

@@ -16,7 +16,6 @@ import {
   SKILL_NATURES,
 } from '~/helpers/ai-skill-categories.js';
 import { opensToAll } from '~/helpers/ai-skill-audience-change.js';
-import { skillWarningMessage } from '~/helpers/ai-skill-errors.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -104,9 +103,11 @@ export default {
 
     // What opening it to all, with this version, would leave out for the
     // other companies: a task version's expertises kept to the platform
-    // company. None to tell when it cannot be read: opening stays possible.
+    // company. The page is busy while they are read; null when they cannot
+    // be, and opening stays possible.
     async readPlatformOnlyExpertises(version) {
       if (!version || version.nature !== SKILL_NATURES.TASK) return [];
+      this.saving = true;
       try {
         const res = await this.$axios.$get(
           api.aiSkillPlatformOnlyExpertises(
@@ -117,7 +118,9 @@ export default {
         );
         return res.expertises || [];
       } catch (err) {
-        return [];
+        return null;
+      } finally {
+        this.saving = false;
       }
     },
 
@@ -129,16 +132,16 @@ export default {
       const expertises = opensToAll(this.savedAudience, this.skill.audience)
         ? await this.readPlatformOnlyExpertises(this.activeVersion())
         : [];
-      if (expertises.length) {
+      if (expertises && expertises.length) {
         this.$refs.openModal.open(expertises);
         return;
       }
-      await this.patchDetails([]);
+      await this.patchDetails([], { unchecked: expertises === null });
     },
 
     // Saved, and opened to all with the expertises chosen. The skill saved,
     // what its opening warns of replaces the success message.
-    async patchDetails(openExpertiseIds) {
+    async patchDetails(openExpertiseIds, { unchecked = false } = {}) {
       const {
         title,
         description,
@@ -162,14 +165,7 @@ export default {
       });
       if (!saved) return;
       this.savedAudience = this.skill.audience;
-      this.showSnackbar(
-        warnings.length
-          ? {
-              text: warnings.map((w) => skillWarningMessage(this, w)).join(' '),
-              color: 'warning',
-            }
-          : { text: this.$t('global.savedSuccessfully'), color: 'success' }
-      );
+      this.tellSaved({ warnings, unchecked });
     },
 
     activeVersion() {
@@ -238,9 +234,11 @@ export default {
         return;
       }
       this.activatingVersion = version;
-      this.platformOnlyExpertises = this.platformOnly
+      const expertises = this.platformOnly
         ? await this.readPlatformOnlyExpertises(version)
         : [];
+      if (expertises === null) this.tellWarningUnchecked();
+      this.platformOnlyExpertises = expertises || [];
       // Both major AND minor go through the modal: activating any version
       // instantly changes the doctrine features consume. Pre-filled from the
       // draft (one click). Only difference: changelog/notes are required for a
@@ -357,7 +355,10 @@ export default {
       :platform-only-expertises="platformOnlyExpertises"
       @confirm="activateVersion"
     />
-    <bs-ai-skill-open-modal ref="openModal" @confirm="patchDetails" />
+    <bs-ai-skill-open-modal
+      ref="openModal"
+      @confirm="(ids) => patchDetails(ids)"
+    />
     <bs-ai-archive-modal
       ref="archiveModal"
       :title="$t('aiSkills.skill.archiveTitle')"

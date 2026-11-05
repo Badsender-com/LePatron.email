@@ -4,11 +4,15 @@
 //
 // The page names the data key of its item, the field of its id, its routes
 // and the snackbar of its archive; it has a `saving` flag and an
-// `archiveModal` ref.
+// `archiveModal` ref. A warning read before a dialog opens shows the page
+// busy; when it cannot be read, the user is told and the change goes on.
 
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
+import {
+  skillErrorMessage,
+  skillWarningMessage,
+} from '~/helpers/ai-skill-errors.js';
 
 /**
  * @param {Object} item
@@ -33,6 +37,27 @@ export default function mixinAiVersionedItem({
           text: skillErrorMessage(this, err),
           color: 'error',
         });
+      },
+      // A warning read before a dialog opens that could not be: the change
+      // goes on without it, and the user is told so.
+      tellWarningUnchecked() {
+        this.showSnackbar({
+          text: this.$t('aiSkills.warningUnchecked'),
+          color: 'warning',
+        });
+      },
+      // Saved, with what the save warns of, or the warning it could not
+      // check before.
+      tellSaved({ warnings = [], unchecked = false } = {}) {
+        const notes = [
+          ...(unchecked ? [this.$t('aiSkills.savedWarningUnchecked')] : []),
+          ...warnings.map((warning) => skillWarningMessage(this, warning)),
+        ];
+        this.showSnackbar(
+          notes.length
+            ? { text: notes.join(' '), color: 'warning' }
+            : { text: this.$t('global.savedSuccessfully'), color: 'success' }
+        );
       },
       itemId() {
         return this[key][idField];

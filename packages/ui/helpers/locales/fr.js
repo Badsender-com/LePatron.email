@@ -1461,6 +1461,10 @@ export default {
       },
     },
     platformOnly: 'Entreprise plateforme uniquement',
+    warningUnchecked:
+      'L\'avertissement lié à ce changement n\'a pas pu être vérifié.',
+    savedWarningUnchecked:
+      'Enregistré, mais l\'avertissement lié à ce changement n\'a pas pu être vérifié.',
     openExpertises: {
       skillTitle: 'Ouvrir ce Skill à toutes les entreprises',
       intro:
