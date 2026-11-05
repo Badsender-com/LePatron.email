@@ -161,8 +161,10 @@ function sampleOf(schema) {
   }
 }
 
-// Every request a connected application can make, built from what a reader
-// is offered, so a primitive registered later is walked without a line here.
+// Every request a connected application can make that reads data, built from
+// what a reader is offered, so a primitive registered later is walked without
+// a line here. `tools/list` and `resources/templates/list` are left out: the
+// SDK answers them from what is registered, the same to every caller.
 async function everyRequest() {
   const reader = await harness.connectAs(f.FRANK);
   const [
@@ -179,10 +181,8 @@ async function everyRequest() {
   expect([tools, prompts, resources, resourceTemplates]).not.toContainEqual([]);
   const fill = (template) => template.replace(/\{[^}]+\}/g, 'any');
   return [
-    ['tools/list', (client) => client.listTools()],
     ['prompts/list', (client) => client.listPrompts()],
     ['resources/list', (client) => client.listResources()],
-    ['resources/templates/list', (client) => client.listResourceTemplates()],
     ...tools.map(({ name, inputSchema }) => [
       `tool ${name}`,
       (client) => client.callTool({ name, arguments: sampleOf(inputSchema) }),
@@ -232,5 +232,20 @@ describe('every primitive', () => {
     );
 
     expect(answers.filter(([, answer]) => !refusal.test(answer))).toEqual([]);
+  });
+});
+
+describe('the static listings', () => {
+  beforeEach(() => harness.seed(f.SEED));
+  afterEach(() => harness.disconnect());
+
+  it('answer the same to any caller, since they read nothing', async () => {
+    const reader = await harness.connectAs(f.FRANK);
+    const refused = await harness.connectAs(f.NINA);
+
+    expect(await refused.listTools()).toEqual(await reader.listTools());
+    expect(await refused.listResourceTemplates()).toEqual(
+      await reader.listResourceTemplates()
+    );
   });
 });

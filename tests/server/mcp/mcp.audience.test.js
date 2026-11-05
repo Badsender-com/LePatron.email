@@ -107,19 +107,16 @@ describe('audience', () => {
     (await client.listResources()).resources.map((r) => r.uri);
   const promptNames = async (client) =>
     (await client.listPrompts()).prompts.map((p) => p.name);
+  const found = async (client) =>
+    harness.answerOf(
+      await client.callTool({
+        name: 'find_applicable_expertises',
+        arguments: { scope: ['subject'], categories: ['design'] },
+      })
+    );
   const foundIds = async (client) =>
-    harness
-      .answerOf(
-        await client.callTool({
-          name: 'find_applicable_expertises',
-          arguments: { scope: ['subject'], categories: ['design'] },
-        })
-      )
-      .expertises.map((e) => e.expertiseId);
-  const describedScopes = async (client) =>
-    (await client.listTools()).tools.find(
-      (tool) => tool.name === 'find_applicable_expertises'
-    ).description;
+    (await found(client)).expertises.map((e) => e.expertiseId);
+  const scopesInUse = async (client) => (await found(client)).scopesInUse;
   const taskSkillText = async (client) =>
     (await client.readResource({ uri: 'lepatron://skills/qc.spacing-review' }))
       .contents[0].text;
@@ -135,7 +132,7 @@ describe('audience', () => {
           client.readResource({ uri: uriOf(DRAFT_SHEET) })
         ).rejects.toThrow(/not found/i);
         expect(await foundIds(client)).not.toContain(DRAFT_SHEET);
-        expect(await describedScopes(client)).not.toContain('"spacing"');
+        expect(await scopesInUse(client)).not.toContain('spacing');
         expect(await taskSkillText(client)).toContain(
           uriOf('redaction.subject-line')
         );
@@ -178,7 +175,7 @@ describe('audience', () => {
         });
         expect(contents[0].text).toContain('A rule still being proven.');
         expect(await foundIds(client)).toContain(DRAFT_SHEET);
-        expect(await describedScopes(client)).toContain('"spacing"');
+        expect(await scopesInUse(client)).toContain('spacing');
         expect(await taskSkillText(client)).toContain(uriOf(DRAFT_SHEET));
         expect(await promptNames(client)).toContain(PROVING_SKILL.skillId);
       }

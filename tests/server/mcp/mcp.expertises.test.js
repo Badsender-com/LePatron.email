@@ -5,8 +5,8 @@
 
 // The expertises a connected application reads (ADR 0012): the active version
 // of each active expertise, as a resource, with its version and update date,
-// and the tool that finds those that apply to a piece of an email, among the
-// scopes in use. Drafts and archives never leave LePatron.
+// and the tool that finds those that apply to a piece of an email, and tells
+// the scopes in use. Drafts and archives never leave LePatron.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -144,9 +144,9 @@ describe('expertises', () => {
       ]);
     });
 
-    it('never finds an archived expertise', async () => {
+    it('never finds a draft or an archived expertise', async () => {
       const answer = await find({
-        scope: ['subject'],
+        scope: ['subject', 'image'],
         categories: ['redaction', 'design'],
       });
 
@@ -162,16 +162,53 @@ describe('expertises', () => {
       expect(ids(answer)).toEqual(['redaction.subject-line']);
     });
 
-    // Only a draft is written for "image": an assistant that guessed it is
-    // told what it may ask for, never a message meant for a developer.
-    it('answers a scope nothing is written for with the scopes in use', async () => {
+    // A transversal expertise applies whatever the scope, so a scope nothing
+    // is written for still finds it.
+    it('finds a transversal expertise whatever the scope', async () => {
       const answer = await find({
-        scope: ['subject', 'image'],
-        categories: ['redaction', 'design'],
+        scope: 'footer',
+        categories: ['deliverability'],
       });
 
-      expect(answer.error).toMatch(/No expertise is written for "image"/);
-      expect(answer.error).toMatch(/The scopes in use: "subject"\./);
+      expect(ids(answer)).toEqual(['deliverability.spam-words']);
+    });
+
+    it('finds what the known scopes give, a scope nothing is written for aside', async () => {
+      const answer = await find({
+        scope: ['subject', 'footer'],
+        categories: ['redaction'],
+      });
+
+      expect(ids(answer)).toEqual(['redaction.subject-line']);
+    });
+
+    // Only a draft is written for "image": an assistant that guessed it is
+    // told what it may ask for, in a note that is not an error.
+    describe('its note on the scopes', () => {
+      it('gives the scopes in use, not those of a draft or a transversal expertise', async () => {
+        const answer = await find({ scope: 'subject', categories: ['qc'] });
+
+        expect(answer).toMatchObject({
+          scopesInUse: ['subject'],
+          unmatchedScopes: [],
+        });
+      });
+
+      it('names the scopes asked for that nothing is written for', async () => {
+        const result = await client.callTool({
+          name: 'find_applicable_expertises',
+          arguments: {
+            scope: ['subject', 'image'],
+            categories: ['redaction', 'design'],
+          },
+        });
+
+        expect(result.isError).toBeFalsy();
+        expect(result.structuredContent.unmatchedScopes).toEqual(['image']);
+        expect(result.content.map((part) => part.text)).toContain(
+          'No expertise is written for "image". The scopes in use: "subject".'
+        );
+      });
     });
 
     it('asks for a scope and a category rather than answering everything', async () => {
@@ -201,30 +238,15 @@ describe('expertises', () => {
       expect(answer.error).toMatch(/Input validation error/);
     });
 
-    describe('its description', () => {
-      const description = async () =>
-        (await client.listTools()).tools.find(
-          (tool) => tool.name === 'find_applicable_expertises'
-        ).description;
+    // The same for every caller: tools/list reads nothing.
+    it('has a fixed description that tells the answer gives the scopes in use', async () => {
+      const { tools } = await client.listTools();
+      const tool = tools.find((t) => t.name === 'find_applicable_expertises');
 
-      it('names the scopes in use, not those of a draft or a transversal expertise', async () => {
-        expect(await description()).toMatch(/The scopes in use: "subject"\.$/);
-      });
-
-      it('keeps them a minute', async () => {
-        const now = Date.now();
-        const clock = jest.spyOn(Date, 'now').mockReturnValue(now);
-        await description();
-
-        harness.update('expertises', f.EXPERTISES[0]._id, {
-          scope: ['subject', 'preheader'],
-        });
-        expect(await description()).not.toMatch(/preheader/);
-
-        clock.mockReturnValue(now + 61 * 1000);
-        expect(await description()).toMatch(/"preheader", "subject"/);
-        clock.mockRestore();
-      });
+      expect(tool.description).toMatch(
+        /the answer also gives the scopes in use/i
+      );
+      expect(tool.description).not.toMatch(/"subject"/);
     });
   });
 });

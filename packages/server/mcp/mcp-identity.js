@@ -99,26 +99,4 @@ function withIdentity(handler) {
   };
 }
 
-/**
- * Puts the identity check in front of a listing the SDK answers itself from
- * what is registered (`tools/list`, `resources/templates/list`), and lets the
- * caller's identity reshape its answer.
- *
- * @param {McpServer} server
- * @param {string} method
- * @param {Function} [reshape] `(answer, identity)`, the answer for this caller
- */
-function guardListing(server, method, reshape = (answer) => answer) {
-  // The SDK installs these handlers as tools and resources are registered, and
-  // offers no other way to wrap them than its protected accessor.
-  const answer = server.server._getRequestHandler(method);
-  server.server.removeRequestHandler(method);
-  server.server.setRequestHandler(
-    method,
-    withIdentity(async (identity, request, ctx) =>
-      reshape(await answer(request, ctx), identity)
-    )
-  );
-}
-
-module.exports = { resolveIdentity, withIdentity, guardListing, READ_SCOPE };
+module.exports = { resolveIdentity, withIdentity, READ_SCOPE };

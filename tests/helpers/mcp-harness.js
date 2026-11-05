@@ -5,8 +5,7 @@
  * driven by an in-memory MCP client, the way a connected application sees it.
  *
  * - `seed(records)` empties the stand-ins for the models and stores the
- *   records, as the schemas declare them (see `mcp-fixtures.js`), and forgets
- *   what the server keeps between calls.
+ *   records, as the schemas declare them (see `mcp-fixtures.js`).
  * - `connectAs(userId, options)` connects an MCP client to a fresh MCP server,
  *   with the identity a validated access token carries: the user, the group
  *   the token is bound to (the user's own group unless `group` says
@@ -46,8 +45,6 @@ let clients = [];
 
 function seed(records) {
   store.seed(records);
-  // The scopes in use are kept a minute: a new seed is a new database.
-  require('../../packages/server/mcp/mcp-find-expertises.js').forgetScopesInUse();
 }
 
 function update(collection, id, changes) {

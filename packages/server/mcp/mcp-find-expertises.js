@@ -20,9 +20,8 @@ const TOOL = 'find_applicable_expertises';
 // What an assistant may send: a few short values, never an unbounded `$in`.
 const MAX_SCOPES = 10;
 const MAX_VALUE_LENGTH = 50;
-// How many scopes in use the description and a refusal name.
+// How many scopes in use an answer names.
 const MAX_LISTED_SCOPES = 100;
-const SCOPES_KEPT_MS = 60 * 1000;
 
 const VALUE = z.string().max(MAX_VALUE_LENGTH);
 const SCOPE = VALUE.regex(/\S/, 'A scope is not blank');
@@ -44,109 +43,87 @@ const FIND_OUTPUT = z.object({
       uri: z.string(),
     })
   ),
+  scopesInUse: z.array(z.string()),
+  unmatchedScopes: z.array(z.string()),
 });
 
-const DESCRIPTION =
-  'Finds the expertises that apply to a piece of an email: one or more scopes, one or more categories, and optionally an email type and a language. Read each one through its resource URI.';
-
-// The scopes in use, for each audience a company reads: kept a minute, and
-// bounded by construction, since there are two audiences to key on (the
-// platform company's and every other company's).
-const scopesKept = new Map();
+// Fixed: `tools/list` is the same for every caller, and reads nothing.
+const DESCRIPTION = [
+  'Finds the expertises that apply to a piece of an email: one or more scopes, one or more categories, and optionally an email type and a language.',
+  'A transversal expertise applies whatever the scope.',
+  'The answer also gives the scopes in use, and the scopes you asked for that no expertise is written for: call again with scopes in use to find more.',
+  'Read each expertise through its resource URI.',
+].join(' ');
 
 /**
  * The scopes an expertise the company may read is written for: those of the
  * active, scoped expertises, normalised. A transversal one applies whatever
  * the scope, so its own scopes match nothing.
  *
- * @param {Object} group the company of the caller
+ * @param {Object} group the company of the caller, with `isPlatform`
  * @returns {Promise<string[]>}
  */
 async function scopesInUse(group) {
-  const audience = audienceFilter(group);
-  const key = JSON.stringify(audience);
-  const kept = scopesKept.get(key);
-  if (kept && kept.until > Date.now()) return kept.scopes;
-  const scopes = normalizeScopes(
+  return normalizeScopes(
     await Expertises.distinct('scope', {
       status: SkillStatuses.ACTIVE,
       isTransversal: { $ne: true },
-      ...audience,
+      ...audienceFilter(group),
     })
   );
-  scopesKept.set(key, { scopes, until: Date.now() + SCOPES_KEPT_MS });
-  return scopes;
 }
 
-// For the tests, which change the expertises between two runs.
-function forgetScopesInUse() {
-  scopesKept.clear();
-}
+const quoted = (scopes) => scopes.map((scope) => `"${scope}"`).join(', ');
 
 function listed(scopes) {
   if (!scopes.length) return 'none yet';
-  const named = scopes.slice(0, MAX_LISTED_SCOPES).map((s) => `"${s}"`);
-  const more = scopes.length - named.length;
-  return `${named.join(', ')}${more > 0 ? ` and ${more} more` : ''}`;
+  const more = scopes.length - MAX_LISTED_SCOPES;
+  return `${quoted(scopes.slice(0, MAX_LISTED_SCOPES))}${
+    more > 0 ? ` and ${more} more` : ''
+  }`;
 }
 
-/**
- * The tools as `tools/list` lists them, the scopes this company may ask
- * `find_applicable_expertises` for in its description.
- *
- * @param {{ tools: Object[] }} answer what the SDK lists
- * @param {{ group: Object }} identity
- */
-async function withScopesDescribed(answer, { group }) {
-  const description = `${DESCRIPTION} The scopes in use: ${listed(
-    await scopesInUse(group)
-  )}.`;
-  return {
-    ...answer,
-    tools: answer.tools.map((tool) =>
-      tool.name === TOOL ? { ...tool, description } : tool
-    ),
-  };
-}
-
-function unknownScopesAnswer(unknown, inUse) {
-  const text = `No expertise is written for ${unknown
-    .map((s) => `"${s}"`)
-    .join(', ')}. The scopes in use: ${listed(
-    inUse
-  )}. Call again with one or more of them.`;
-  return { isError: true, content: [{ type: 'text', text }] };
+// Not an error: what was found stands, the note says how to find more.
+function noteOn(unmatched, inUse) {
+  return `No expertise is written for ${quoted(
+    unmatched
+  )}. The scopes in use: ${listed(inUse)}.`;
 }
 
 const filled = (value) => (value && value.trim()) || undefined;
 
 async function findExpertises({ group }, args) {
   const scopes = normalizeScopes(args.scope);
-  const inUse = await scopesInUse(group);
-  const unknown = scopes.filter((scope) => !inUse.includes(scope));
-  if (unknown.length) return unknownScopesAnswer(unknown, inUse);
-
   // The features' own lookup, with the audience of the caller's company. Its
   // diagnostic is for a scope written in a feature's code: an assistant's is
-  // answered above.
-  const found = await findApplicable({
-    scope: scopes,
-    categories: args.categories,
-    emailType: filled(args.emailType),
-    language: filled(args.language),
-    groupId: group._id,
-    warnOnUnmatched: false,
-  });
-  const expertises = found.map((expertise) => ({
-    expertiseId: expertise.expertiseId,
-    title: expertise.title,
-    version: versionLabel(expertise),
-    uri: uriOf(expertise.expertiseId),
-  }));
-  return {
-    content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
-    structuredContent: { expertises },
+  // answered in the note below.
+  const [found, inUse] = await Promise.all([
+    findApplicable({
+      scope: scopes,
+      categories: args.categories,
+      emailType: filled(args.emailType),
+      language: filled(args.language),
+      groupId: group._id,
+      warnOnUnmatched: false,
+    }),
+    scopesInUse(group),
+  ]);
+  const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
+  const answer = {
+    expertises: found.map((expertise) => ({
+      expertiseId: expertise.expertiseId,
+      title: expertise.title,
+      version: versionLabel(expertise),
+      uri: uriOf(expertise.expertiseId),
+    })),
+    scopesInUse: inUse.slice(0, MAX_LISTED_SCOPES),
+    unmatchedScopes,
   };
+  const content = [{ type: 'text', text: JSON.stringify(answer) }];
+  if (unmatchedScopes.length) {
+    content.push({ type: 'text', text: noteOn(unmatchedScopes, inUse) });
+  }
+  return { content, structuredContent: answer };
 }
 
 function registerFindApplicableExpertises(server) {
@@ -163,8 +140,4 @@ function registerFindApplicableExpertises(server) {
   );
 }
 
-module.exports = {
-  registerFindApplicableExpertises,
-  withScopesDescribed,
-  forgetScopesInUse,
-};
+module.exports = { registerFindApplicableExpertises };
