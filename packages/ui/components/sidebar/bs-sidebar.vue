@@ -79,6 +79,7 @@ import BsSidebarCompanySwitcher from './bs-sidebar-company-switcher.vue';
 import BsSidebarSystemZone from './bs-sidebar-system-zone.vue';
 import BsSidebarToggle from './bs-sidebar-toggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
+import { declaredSidebarModule } from '~/helpers/declared-sidebar-module.js';
 import { isModuleLocked } from '~/helpers/module-activation';
 import { HELP_DOCS_URL } from '~/helpers/constants/external-urls';
 import {
@@ -133,10 +134,7 @@ export default {
       // A page without a module in its path (the global admin pages, such as
       // /ai-skills or /super-admins) declares the one it belongs to, so it
       // keeps the settings menu after a reload.
-      const declared = []
-        .concat(this.$route.meta || [])
-        .map((meta) => meta && meta.sidebarModule)
-        .find(Boolean);
+      const declared = declaredSidebarModule(this.$route);
       if (declared) return declared;
       const match = SIDEBAR_MODULES.find((m) =>
         (m.pathPrefixes || []).some((prefix) => path.startsWith(prefix))
