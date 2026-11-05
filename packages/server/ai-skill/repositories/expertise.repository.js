@@ -9,7 +9,8 @@
 
 const createError = require('http-errors');
 const logger = require('../../utils/logger.js');
-const { Expertises } = require('../../common/models.common.js');
+const { Expertises, Groups } = require('../../common/models.common.js');
+const { isObjectIdString } = require('../../utils/model.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { normalizeScopes } = require('../services/expertise-scope.js');
 const { findActiveVersion } = require('../services/version-helpers.js');
@@ -44,7 +45,8 @@ const APPLICABLE_FIELDS = Object.freeze({
  *   - AND ( appliesToLanguages empty   OR  language ∈ appliesToLanguages )
  *   - AND its audience lets the caller's company use it (ADR 0013): every
  *     audience for the platform company, `all` only for any other company
- *     and for a caller that names none
+ *     and for a caller that names none. Whether the company is the platform
+ *     company is read here, from its id, never taken from the caller.
  *
  * NB: an expertise with an empty scope that is NOT transversal NEVER matches
  * (inverted semantics). isTransversal short-circuits ONLY the scope clause —
@@ -55,8 +57,10 @@ const APPLICABLE_FIELDS = Object.freeze({
  * @param {string[]} filters.categories — REQUIRED, non-empty
  * @param {string} [filters.emailType]
  * @param {string} [filters.language]
- * @param {Object} [filters.group] the company of the caller, as its document
- *   stores it; `PLATFORM_READER` (services/audience.js) for the playground
+ * @param {string|ObjectId} [filters.groupId] the id of the caller's company;
+ *   without one, the caller is treated as a client company
+ * @param {boolean} [filters.everyAudience=false] read every audience whatever
+ *   the company, as the platform company does: the super admins' playground
  * @param {boolean} [filters.warnOnUnmatched=true] whether a scope that matched
  *   nothing is logged: for a scope written in a feature's code, not for one an
  *   assistant sends through MCP, which answers it itself
@@ -67,7 +71,8 @@ async function findApplicable({
   categories,
   emailType,
   language,
-  group,
+  groupId,
+  everyAudience = false,
   warnOnUnmatched = true,
 } = {}) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
@@ -109,7 +114,7 @@ async function findApplicable({
   }
 
   const docs = await Expertises.find(
-    { $and: and, ...audienceFilter(group) },
+    { $and: and, ...(await audienceOf(groupId, everyAudience)) },
     APPLICABLE_FIELDS
   ).lean();
 
@@ -134,6 +139,17 @@ async function findApplicable({
       if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
       return a.expertiseId.localeCompare(b.expertiseId);
     });
+}
+
+// The audience filter of the caller's company, read with what it needs only.
+// An id that is not one names no company: the caller is then a client.
+async function audienceOf(groupId, everyAudience) {
+  if (everyAudience) return {};
+  const id = groupId ? String(groupId) : '';
+  const group = isObjectIdString(id)
+    ? await Groups.findById(id).select('isPlatform').lean()
+    : null;
+  return audienceFilter(group);
 }
 
 /**

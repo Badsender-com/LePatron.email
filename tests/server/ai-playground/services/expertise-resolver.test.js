@@ -64,7 +64,7 @@ describe('expertise-resolver.resolveExpertise', () => {
       categories: ['redaction'],
       emailType: undefined,
       language: undefined,
-      group: { isPlatform: true },
+      everyAudience: true,
     });
   });
 
@@ -85,7 +85,7 @@ describe('expertise-resolver.resolveExpertise', () => {
       categories: ['redaction'],
       emailType: 'promo',
       language: 'fr',
-      group: { isPlatform: true },
+      everyAudience: true,
     });
   });
 
@@ -251,7 +251,7 @@ describe('previewFilter', () => {
       categories: ['redaction'],
       emailType: null,
       language: null,
-      group: { isPlatform: true },
+      everyAudience: true,
     });
   });
 

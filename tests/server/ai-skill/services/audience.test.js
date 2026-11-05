@@ -5,7 +5,6 @@
 // the check on a loaded document answer the same.
 
 const {
-  PLATFORM_READER,
   audienceFilter,
   isAvailableTo,
 } = require('../../../../packages/server/ai-skill/services/audience.js');
@@ -25,11 +24,6 @@ describe('audience', () => {
     [
       'the platform company',
       PLATFORM,
-      { platform: true, all: true, none: true },
-    ],
-    [
-      'the playground',
-      PLATFORM_READER,
       { platform: true, all: true, none: true },
     ],
   ])('for %s', (_label, group, expected) => {

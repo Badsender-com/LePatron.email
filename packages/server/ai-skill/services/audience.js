@@ -11,10 +11,6 @@ const { Audiences } = require('../constant/skill-constants.js');
  * for `scripts/migrate-audience-all.js`.
  */
 
-// A reader that uses every audience, as the platform company does: the super
-// admins' playground, which tries what is not opened yet.
-const PLATFORM_READER = Object.freeze({ isPlatform: true });
-
 function readsEveryAudience(group) {
   return Boolean(group) && group.isPlatform === true;
 }
@@ -48,7 +44,6 @@ function newItemAudience() {
 }
 
 module.exports = {
-  PLATFORM_READER,
   audienceFilter,
   isAvailableTo,
   newItemAudience,

@@ -134,7 +134,7 @@ async function findExpertises({ group }, args) {
     categories: args.categories,
     emailType: filled(args.emailType),
     language: filled(args.language),
-    group,
+    groupId: group._id,
     warnOnUnmatched: false,
   });
   const expertises = found.map((expertise) => ({
