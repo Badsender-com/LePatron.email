@@ -449,3 +449,37 @@ describe("the server's checks", () => {
     console.error.mockRestore();
   });
 });
+
+// ADR 0020: an email is ready when no error or warning is left unignored and
+// every check ran; an info counts only if it blocks. One rule for the badge of
+// the rail button, the card of the panel and the banner of the send test tab.
+// Turned on by the PR of the ready rule.
+describe.skip('the ready rule (ADR 0020)', () => {
+  const run = (findings, checks = [{ status: 'passed' }]) => {
+    const { vm, flush } = setup({ findings, checks });
+    vm.quality.run();
+    flush();
+    return vm;
+  };
+
+  it('is ready with infos left', () => {
+    expect(run([finding('info')]).quality.ready()).toBe(true);
+  });
+
+  it('is not ready with a warning, nor with a blocking info', () => {
+    expect(run([finding('warning')]).quality.ready()).toBe(false);
+    expect(run([{ ...finding('info'), blocking: true }]).quality.ready()).toBe(
+      false
+    );
+  });
+
+  it('is not ready while a check did not run', () => {
+    const vm = run([], [{ status: 'passed' }, { status: 'error' }]);
+    expect(vm.quality.ready()).toBe(false);
+  });
+
+  it('counts the warnings, not only the errors, as left to fix before a test', () => {
+    const vm = run([finding('warning'), finding('info')]);
+    expect(vm.quality.issueCount()).toBe(1);
+  });
+});

@@ -116,3 +116,20 @@ describe('isRoleWithin: nobody hands out more than they hold', () => {
     expect(isRoleWithin('owner', ALL_CAPABILITIES)).toBe(false);
   });
 });
+
+// ADR 0020 and the amendment of ADR 0004: approving an email is a capability
+// of its own. Turned on by the PR of the approval's server rules, which adds the
+// row to MATRIX above and removes this block.
+describe.skip('mailing.approve: the reviewer and the admins', () => {
+  const APPROVERS = [SUPER_ADMIN, GROUP_ADMIN_TECH, GROUP_ADMIN, REVIEWER];
+
+  it.each(EVERY_ROLE)('for %s', (role) => {
+    expect(roleCan(role, CAPABILITIES.MAILING_APPROVE)).toBe(
+      APPROVERS.includes(role)
+    );
+  });
+
+  it('leaves a company admin able to make a reviewer', () => {
+    expect(isRoleWithin(REVIEWER, capabilitiesOfRole(GROUP_ADMIN))).toBe(true);
+  });
+});

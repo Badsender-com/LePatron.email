@@ -282,3 +282,25 @@ describe('SendTestPanel', () => {
     console.error.mockRestore();
   });
 });
+
+// ADR 0020: the banner of the send test tab follows the ready rule, warnings
+// included. Turned on by the PR of the ready rule.
+describe.skip('the send test banner and the ready rule (ADR 0020)', () => {
+  it('recalls the points left to fix, warnings included', async () => {
+    const { el } = await mountPanel({
+      status: 'done',
+      ready: false,
+      issueCount: 5,
+    });
+    expect(el.querySelector('.qc-notice').textContent).toContain('5');
+  });
+
+  it('says nothing once the email is ready, infos left or not', async () => {
+    const { el } = await mountPanel({
+      status: 'done',
+      ready: true,
+      issueCount: 0,
+    });
+    expect(el.querySelector('.qc-notice')).toBeNull();
+  });
+});
