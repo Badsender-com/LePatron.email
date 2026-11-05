@@ -193,9 +193,28 @@ describe('fake listing models, dotted projections and aggregations', () => {
     ]);
   });
 
+  // Mongoose casts a find's filter, never an aggregation's: MongoDB compares
+  // the string with the ObjectId stored, and finds nothing.
+  it('finds no id by a string in an aggregation, as a find does', () => {
+    const id = { _bsontype: 'ObjectID', toString: () => 'abc' };
+    const stored = [{ ...skill, _id: id, _company: id }];
+
+    expect(aggregated([skill], [{ $match: { _id: 'x' } }])).toEqual([]);
+    expect(aggregated([skill], [{ $match: { _id: { $in: ['x'] } } }])).toEqual(
+      []
+    );
+    expect(aggregated(stored, [{ $match: { _company: 'abc' } }])).toEqual([]);
+    expect(matches(skill, { _id: 'x' })).toBe(true);
+    expect(matches(stored[0], { _company: 'abc' })).toBe(true);
+  });
+
   it.each([
     ['an unknown stage', [{ $lookup: {} }]],
     ['the unwind of a dotted path', [{ $unwind: '$a.b' }]],
+    [
+      'an $elemMatch in a $project',
+      [{ $project: { versions: { $elemMatch: { status: 'ACTIVE' } } } }],
+    ],
   ])('throws on %s', (_, pipeline) => {
     expect(() => aggregated([skill], pipeline)).toThrow('is not supported');
   });
