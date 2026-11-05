@@ -11,6 +11,7 @@ import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
 import {
   skillCategoryOptions,
   audienceOptions,
+  AUDIENCE_ITEM_KINDS,
 } from '~/helpers/ai-skill-categories.js';
 
 export default {
@@ -34,7 +35,7 @@ export default {
       return skillCategoryOptions(this);
     },
     audienceOptions() {
-      return audienceOptions(this);
+      return audienceOptions(this, AUDIENCE_ITEM_KINDS.EXPERTISE);
     },
     // One stored before audiences has none until the migration opens it, and
     // no client uses it meanwhile: shown as the platform company's.

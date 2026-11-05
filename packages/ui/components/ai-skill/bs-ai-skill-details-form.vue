@@ -8,6 +8,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import {
   skillCategoryOptions,
   audienceOptions,
+  AUDIENCE_ITEM_KINDS,
 } from '~/helpers/ai-skill-categories.js';
 
 export default {
@@ -21,8 +22,15 @@ export default {
     categoryOptions() {
       return skillCategoryOptions(this);
     },
+    // Worded for what the skill is: its active version's nature, else its
+    // latest draft's.
     audienceOptions() {
-      return audienceOptions(this);
+      return audienceOptions(
+        this,
+        this.nature === 'task'
+          ? AUDIENCE_ITEM_KINDS.TASK_SKILL
+          : AUDIENCE_ITEM_KINDS.FEATURE_SKILL
+      );
     },
     // One stored before audiences has none until the migration opens it, and
     // no client uses it meanwhile: shown as the platform company's.
@@ -31,13 +39,20 @@ export default {
     },
     // The nature is the active version's (ADR 0013), set on a draft version;
     // the mark only counts while the active version is a feature skill's.
-    activeIsTask() {
+    activeVersion() {
       const av = this.value.activeVersion;
-      if (!av || av.major == null) return false;
-      const active = (this.value.versions || []).find(
+      if (!av || av.major == null) return null;
+      return (this.value.versions || []).find(
         (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
       );
-      return !!active && active.nature === 'task';
+    },
+    nature() {
+      const versions = this.value.versions || [];
+      const version = this.activeVersion || versions[versions.length - 1];
+      return (version && version.nature) || 'feature';
+    },
+    activeIsTask() {
+      return !!this.activeVersion && this.activeVersion.nature === 'task';
     },
   },
   methods: {

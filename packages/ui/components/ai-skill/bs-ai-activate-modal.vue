@@ -19,10 +19,14 @@ export default {
     // Changelog / release notes are mandatory for a major version, optional for
     // a minor (both go through this modal so the impact alert always shows).
     isMajor: { type: Boolean, default: true },
+    // The item is still used by the platform company only (ADR 0013):
+    // publishing does not open it, so the modal says so and offers to.
+    platformOnly: { type: Boolean, default: false },
   },
   data() {
     return {
       payload: { changelog: '', releaseNotes: '' },
+      openToAll: false,
     };
   },
   computed: {
@@ -40,6 +44,7 @@ export default {
         changelog: (seed && seed.changelog) || '',
         releaseNotes: (seed && seed.releaseNotes) || '',
       };
+      this.openToAll = false;
       this.$refs.modal.open();
     },
     close() {
@@ -47,7 +52,13 @@ export default {
     },
     onSubmit() {
       if (!this.canSubmit) return;
-      this.$emit('confirm', { ...this.payload });
+      // The audience is the item's, not the version's: it travels apart from
+      // what the activation posts.
+      this.$emit(
+        'confirm',
+        { ...this.payload },
+        { openToAll: this.platformOnly && this.openToAll }
+      );
     },
     filterLabel(filter) {
       const parts = [];
@@ -112,6 +123,24 @@ export default {
           </ul>
         </template>
         <span v-else>{{ $t('aiSkills.expertise.impactNone') }}</span>
+      </v-alert>
+
+      <v-alert
+        v-if="platformOnly"
+        type="info"
+        dense
+        outlined
+        class="mt-4 mb-0 text-caption"
+      >
+        {{ $t('aiSkills.version.platformOnlyReminder') }}
+        <v-checkbox
+          v-model="openToAll"
+          :label="$t('aiSkills.version.openToAll')"
+          :disabled="loading"
+          dense
+          hide-details
+          class="mt-1"
+        />
       </v-alert>
 
       <v-divider class="mt-4" />

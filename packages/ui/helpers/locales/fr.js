@@ -1442,11 +1442,25 @@ export default {
       'Servi via MCP aux assistants connectés, sans son contrat de sortie. À laisser décoché pour un Skill dont l\'entrée est construite par l\'éditeur.',
     audience: 'Audience',
     audienceHint:
-      'Qui la lit en dehors du back-office, via les assistants IA connectés. Une nouvelle fiche reste à l\'équipe Badsender tant qu\'elle n\'est pas éprouvée.',
+      'Qui peut s\'en servir. Une nouvelle fiche reste réservée à l\'entreprise plateforme le temps de l\'éprouver : ouvrez-la ensuite à toutes les entreprises.',
     audiences: {
-      platform: 'Équipe Badsender (groupe plateforme)',
-      all: 'Toutes les entreprises',
+      expertise: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si elles ont l\'accès MCP',
+      },
+      featureSkill: {
+        platform:
+          'Entreprise plateforme uniquement (en test) : le bouton est masqué chez les clients',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si la case est cochée et qu\'elles ont l\'accès MCP',
+      },
+      taskSkill: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all: 'Toutes les entreprises qui ont l\'accès MCP',
+      },
     },
+    platformOnly: 'Entreprise plateforme uniquement',
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
@@ -1615,6 +1629,9 @@ export default {
       activate: 'Activer',
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      platformOnlyReminder:
+        'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
+      openToAll: 'L\'ouvrir à toutes les entreprises',
       activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
       changelog: 'Changelog',
       changelogPlaceholder:

@@ -221,7 +221,7 @@ export default {
       // Pre-fill changelog / release notes from the draft, shared modal.
       this.$refs.activateModal.open(version);
     },
-    async activateVersion(payload) {
+    async activateVersion(payload, { openToAll } = {}) {
       this.saving = true;
       try {
         this.exp = await this.$axios.$post(
@@ -237,6 +237,13 @@ export default {
           text: this.$t('aiSkills.version.activated'),
           color: 'success',
         });
+        // After the publication, which stands even if this fails.
+        if (openToAll) {
+          this.exp = await this.$axios.$patch(
+            api.aiExpertise(this.exp.expertiseId),
+            { audience: 'all' }
+          );
+        }
       } catch (err) {
         this.handleError(err);
       } finally {
@@ -353,6 +360,7 @@ export default {
       :show-impact="true"
       :impact="activationImpact"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="exp.audience !== 'all'"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

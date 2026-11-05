@@ -6,6 +6,7 @@ import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiExpertiseCreateModal from '~/components/ai-skill/bs-ai-expertise-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
+import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
 import { BookOpen } from 'lucide-vue';
 import {
   skillCategoryOptions,
@@ -20,6 +21,7 @@ export default {
     BsDataTable,
     BsAiExpertiseCreateModal,
     BsTimestamp,
+    BsAiPlatformOnlyChip,
     LucideBookOpen: BookOpen,
   },
   data() {
@@ -209,6 +211,7 @@ export default {
     >
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
+        <bs-ai-platform-only-chip :audience="item.audience" />
       </template>
       <template #item.expertiseId="{ item }">
         <span class="text-caption text--secondary">{{ item.expertiseId }}</span>

@@ -1423,11 +1423,25 @@ export default {
       'Served through MCP to connected assistants, without its output contract. Leave unchecked for a skill whose input the editor builds.',
     audience: 'Audience',
     audienceHint:
-      'Who reads it outside the back office, through connected AI assistants. A new one stays with the Badsender team until it is proven.',
+      'Who may use it. A new one stays with the platform company while it is proven: then open it to all companies.',
     audiences: {
-      platform: 'Badsender team (platform group)',
-      all: 'All companies',
+      expertise: {
+        platform: 'Platform company only (testing)',
+        all:
+          'All companies: in the editor, and in their assistant if they have MCP access',
+      },
+      featureSkill: {
+        platform:
+          'Platform company only (testing): the button is hidden for clients',
+        all:
+          'All companies: in the editor, and in their assistant if the box is checked and they have MCP access',
+      },
+      taskSkill: {
+        platform: 'Platform company only (testing)',
+        all: 'All companies that have MCP access',
+      },
     },
+    platformOnly: 'Platform company only',
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
@@ -1596,6 +1610,9 @@ export default {
       activate: 'Activate',
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      platformOnlyReminder:
+        'This item stays visible to the platform company only.',
+      openToAll: 'Open it to all companies',
       activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
       changelog: 'Changelog',
       changelogPlaceholder:

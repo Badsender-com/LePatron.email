@@ -30,10 +30,20 @@ export function skillCategoryLabel(vm, value) {
 // `Audiences`; the platform company comes first, as the default of a new one.
 export const SKILL_AUDIENCES = ['platform', 'all'];
 
-// Items for an audience select. `vm` is the component instance (for $t).
-export function audienceOptions(vm) {
+// What the audience means depends on the item: an expertise is read in the
+// editor and by assistants, a feature skill runs a button of the editor and
+// may be offered to assistants, a task skill only reaches assistants.
+export const AUDIENCE_ITEM_KINDS = Object.freeze({
+  EXPERTISE: 'expertise',
+  FEATURE_SKILL: 'featureSkill',
+  TASK_SKILL: 'taskSkill',
+});
+
+// Items for an audience select. `vm` is the component instance (for $t),
+// `kind` one of AUDIENCE_ITEM_KINDS.
+export function audienceOptions(vm, kind) {
   return SKILL_AUDIENCES.map((value) => ({
     value,
-    text: vm.$t(`aiSkills.audiences.${value}`),
+    text: vm.$t(`aiSkills.audiences.${kind}.${value}`),
   }));
 }

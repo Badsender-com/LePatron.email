@@ -6,6 +6,7 @@ import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
+import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
 import { Sparkles } from 'lucide-vue';
 import {
   skillCategoryOptions,
@@ -20,6 +21,7 @@ export default {
     BsDataTable,
     BsAiSkillCreateModal,
     BsTimestamp,
+    BsAiPlatformOnlyChip,
     LucideSparkles: Sparkles,
   },
   data() {
@@ -192,6 +194,7 @@ export default {
     >
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
+        <bs-ai-platform-only-chip :audience="item.audience" />
       </template>
       <template #item.skillId="{ item }">
         <span class="text-caption text--secondary">{{ item.skillId }}</span>

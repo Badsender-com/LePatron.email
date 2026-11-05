@@ -223,7 +223,7 @@ export default {
       // major (versionMinor === 0), optional for a minor.
       this.$refs.activateModal.open(version);
     },
-    async activateVersion(payload) {
+    async activateVersion(payload, { openToAll } = {}) {
       this.saving = true;
       try {
         const res = await this.$axios.$post(
@@ -244,6 +244,13 @@ export default {
           text: this.$t('aiSkills.version.activated'),
           color: 'success',
         });
+        // After the publication, which stands even if this fails.
+        if (openToAll) {
+          this.skill = await this.$axios.$patch(
+            api.aiSkill(this.skill.skillId),
+            { audience: 'all' }
+          );
+        }
       } catch (err) {
         this.handleError(err);
       } finally {
@@ -351,6 +358,7 @@ export default {
       ref="activateModal"
       :loading="saving"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="skill.audience !== 'all'"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal
