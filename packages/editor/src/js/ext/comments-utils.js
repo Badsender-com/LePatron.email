@@ -156,27 +156,6 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-/**
- * Format comment text with styled mentions
- * Converts @[Name](userId) to <span class="comment-mention">@Name</span>
- * @param {string} text - Raw comment text
- * @returns {string} - HTML with styled mentions
- */
-function formatCommentText(text) {
-  if (!text) return '';
-
-  // First escape HTML
-  let escaped = escapeHtml(text);
-
-  // Then replace mention patterns with styled spans
-  const mentionRegex = /@\[([^\]]+)\]\([a-f0-9]+\)/g;
-  escaped = escaped.replace(mentionRegex, '<span class="comment-mention">@$1</span>');
-
-  // Convert newlines to <br>
-  escaped = escaped.replace(/\n/g, '<br>');
-
-  return escaped;
-}
 
 // ===== MENTION UTILITIES =====
 
@@ -258,7 +237,6 @@ module.exports = {
 
   // Text utilities
   escapeHtml: escapeHtml,
-  formatCommentText: formatCommentText,
 
   // Mention utilities
   findMentionContext: findMentionContext,

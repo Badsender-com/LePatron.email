@@ -54,10 +54,13 @@ const RightPanelShell = Vue.component('RightPanelShell', {
           <span class="lucide lucide-arrow-left" aria-hidden="true"></span>
         </button>
         <h2 :id="titleId" ref="title" tabindex="-1" class="right-panel-shell__title">{{ title }}</h2>
-        <span v-if="count !== null" class="right-panel-shell__count">
+        <!-- After the title: the count, or what the panel puts in its place. -->
+        <slot name="title-after">
+          <span v-if="count !== null" class="right-panel-shell__count">
           <span aria-hidden="true">{{ count }}</span>
           <span class="qc-sr-only">{{ countLabel || count }}</span>
         </span>
+        </slot>
         <button
           type="button"
           class="qc-icon-button right-panel-shell__close"

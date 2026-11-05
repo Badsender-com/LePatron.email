@@ -27,6 +27,7 @@ const qualityDrawerPlugin = require('./vue/qualityDrawerPlugin');
 // registers the `vueGalleryPanel` Knockout binding of the gallery panes
 require('./vue/galleryPlugin');
 const aiPanelPlugin = require('./vue/aiPanelPlugin');
+const commentsPanelPlugin = require('./vue/commentsPanelPlugin');
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
@@ -242,6 +243,7 @@ var start = function (
     emailMetadataPlugin,
     qualityDrawerPlugin,
     aiPanelPlugin,
+    commentsPanelPlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)

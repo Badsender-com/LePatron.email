@@ -1,0 +1,74 @@
+////////
+// COMMENTS PANEL, in Vue — an approval in the thread (ADR 0020, boards
+// v3-comments-c4 and c6): an event, not a comment to resolve, and why it no
+// longer holds.
+////////
+
+.slidebar.right-panel {
+  // ===== An approval: an event of the thread =====
+  .comment-approval {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+
+    &:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    &__mark {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: @qc-tint-success;
+      color: @qc-success;
+    }
+
+    &--lifted &__mark {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+
+    &__body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    &__head {
+      margin: 0;
+    }
+
+    &__name {
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+
+    &__text {
+      align-self: stretch;
+      padding: 8px 12px;
+      border-radius: @qc-radius;
+      background: var(--gray-50);
+    }
+
+    &__lifted {
+      display: flex;
+      gap: 8px;
+      align-self: stretch;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: @qc-radius;
+      background: @qc-tint-warning;
+      color: var(--gray-900);
+
+      > .lucide { color: @qc-warning; }
+    }
+  }
+}
