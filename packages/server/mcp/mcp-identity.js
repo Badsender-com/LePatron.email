@@ -5,6 +5,7 @@ const {
   ProtocolErrorCode,
 } = require('@modelcontextprotocol/server');
 const { Users, Groups } = require('../common/models.common.js');
+const logger = require('../utils/logger.js');
 const permissions = require('../account/permissions.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
@@ -20,6 +21,7 @@ const GROUP_FIELDS = '_id enableMcp isPlatform';
 const NO_ACCOUNT = 'This account can no longer use LePatron.';
 const NO_COMPANY = 'This connection is not bound to a company of this account.';
 const NO_MCP_ACCESS = 'This company has no MCP access to LePatron.';
+const FAILED = 'LePatron could not answer this request. Try again later.';
 
 function refuse(message) {
   throw new ProtocolError(ProtocolErrorCode.InvalidRequest, message);
@@ -88,14 +90,25 @@ async function resolveIdentity(authInfo) {
  * the validated token. A handler registered without it answers anyone, which
  * `mcp.identity.test.js` walks every primitive to catch.
  *
+ * What the assistant is told of a failure is what it can act on: a refusal
+ * or a resource not found, as the handlers throw them (`ProtocolError`).
+ * Anything else is logged, and the assistant reads a message that says
+ * nothing of the server.
+ *
  * @param {Function} handler `(identity, ...sdkArguments)`
  * @returns {Function} the handler the SDK calls
  */
 function withIdentity(handler) {
   return async (...args) => {
-    const ctx = args[args.length - 1];
-    const identity = await resolveIdentity(ctx?.http?.authInfo);
-    return handler(identity, ...args);
+    try {
+      const ctx = args[args.length - 1];
+      const identity = await resolveIdentity(ctx?.http?.authInfo);
+      return await handler(identity, ...args);
+    } catch (error) {
+      if (error instanceof ProtocolError) throw error;
+      logger.error('[mcp] a request failed', error);
+      throw new ProtocolError(ProtocolErrorCode.InternalError, FAILED);
+    }
   };
 }
 

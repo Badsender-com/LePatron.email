@@ -10,8 +10,9 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
-// The stand-ins the harness put in place of the models.
+// The stand-ins the harness put in place of the models, and of the logger.
 const models = require('../../../packages/server/common/models.common.js');
+const logger = require('../../../packages/server/utils/logger.js');
 const {
   resolveIdentity,
 } = require('../../../packages/server/mcp/mcp-identity.js');
@@ -130,6 +131,40 @@ describe('identity and MCP access', () => {
     });
 
     expect(group).toEqual({ _id: f.CLIENT_GROUP, enableMcp: true });
+  });
+
+  // What fails in the server is logged; the assistant is told nothing of it.
+  it('answers a failure it did not expect with a message that says nothing of the server', async () => {
+    const failure = new Error('lost the connection to db.internal:27017');
+    const read = jest
+      .spyOn(models.Expertises, 'aggregate')
+      .mockRejectedValue(failure);
+    const client = await harness.connectAs(f.FRANK);
+
+    const refusal = client.listResources();
+
+    await expect(refusal).rejects.toThrow(/could not answer this request/);
+    await expect(refusal).rejects.not.toThrow(/db\.internal/);
+    expect(logger.error).toHaveBeenCalledWith(expect.any(String), failure);
+    read.mockRestore();
+  });
+
+  it('tells a tool the same, in its result', async () => {
+    const read = jest
+      .spyOn(models.Expertises, 'distinct')
+      .mockRejectedValue(new Error('lost the connection to db.internal'));
+    const client = await harness.connectAs(f.FRANK);
+
+    const { error } = harness.answerOf(
+      await client.callTool({
+        name: 'find_applicable_expertises',
+        arguments: { scope: 'subject', categories: ['redaction'] },
+      })
+    );
+
+    expect(error).toMatch(/could not answer this request/);
+    expect(error).not.toMatch(/db\.internal/);
+    read.mockRestore();
   });
 
   it('refuses a token the user did not consent to reading with', async () => {
