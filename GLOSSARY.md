@@ -198,8 +198,9 @@ _UI_: Application connectée
 _Avoid_: Integration (the AI provider settings of a company), connector, client
 
 **MCP access**:
-The setting that lets the users of a company connect applications. Off unless a super admin or the company's tech admin turns it on.
+The company's switch that lets its users connect applications. Off unless the company's tech admin or a super admin turns it on.
 _UI_: Accès MCP
+_Avoid_: MCP subscription (MCP access is not what is sold)
 
 **Feedback**:
 A rating and a comment a user sends from a connected application about what LePatron gave them.
