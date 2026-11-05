@@ -287,8 +287,13 @@ module.exports = {
 
   // Comments
   'Comment block': 'Commenter ce bloc',
+  'panel-rail-label': 'Panneaux',
+  'panel-rail-unresolved-one': '1 commentaire non résolu',
+  'panel-rail-unresolved': '__count__ commentaires non résolus',
+  'panel-rail-blocking-one': '1 point bloquant',
+  'panel-rail-blocking': '__count__ points bloquants',
+  'panel-rail-ready': 'Prêt à partir',
   'comments-title': 'Commentaires',
-  'comments-toggle': 'Afficher les commentaires',
   'comments-loading': 'Chargement des commentaires...',
   'comments-empty': 'Aucun commentaire',
   'comments-load-error': 'Erreur lors du chargement des commentaires',
@@ -569,7 +574,6 @@ module.exports = {
   'Required tracking parameters missing: __keys__':
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
-  'Test your email': 'Tester votre email',
   'Run quality checks': 'Lancer le contrôle qualité',
   'Links, images and weight are checked before you send a test.':
     "Les liens, les images et le poids de l'email sont vérifiés avant l'envoi d'un test.",

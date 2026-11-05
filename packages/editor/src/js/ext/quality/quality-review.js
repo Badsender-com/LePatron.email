@@ -9,6 +9,7 @@ const { watchContent } = require('./content-watch');
 const { checkStateOf } = require('./settings');
 const { displayBlockingFindings } = require('../badsender-control-quality');
 const { installRightPanel } = require('../right-panel.js');
+const { createRailBadge } = require('./rail-badge');
 
 const {
   runQualityChecks,
@@ -404,6 +405,8 @@ function installQualityReview(viewModel, ko, deps = {}) {
       return null;
     },
   };
+  // What the panel rail's button says of the review.
+  viewModel.quality.railBadge = createRailBadge(ko, viewModel.quality);
 }
 
 module.exports = { installQualityReview };

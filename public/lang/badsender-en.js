@@ -274,8 +274,13 @@ module.exports = {
 
   // Comments
   'Comment block': 'Comment this block',
+  'panel-rail-label': 'Panels',
+  'panel-rail-unresolved-one': '1 unresolved comment',
+  'panel-rail-unresolved': '__count__ unresolved comments',
+  'panel-rail-blocking-one': '1 blocking issue',
+  'panel-rail-blocking': '__count__ blocking issues',
+  'panel-rail-ready': 'Ready to go',
   'comments-title': 'Comments',
-  'comments-toggle': 'Show comments',
   'comments-loading': 'Loading comments...',
   'comments-empty': 'No comments yet',
   'comments-load-error': 'Error loading comments',
@@ -552,7 +557,6 @@ module.exports = {
   'Required tracking parameters missing: __keys__':
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
-  'Test your email': 'Test your email',
   'Run quality checks': 'Run quality checks',
   'Links, images and weight are checked before you send a test.':
     'Links, images and weight are checked before you send a test.',
