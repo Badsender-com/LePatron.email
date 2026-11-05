@@ -1432,7 +1432,7 @@ export default {
   aiSkills: {
     nature: 'Nature',
     natureHint:
-      'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit.',
+      'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit. Le Skill a la nature de sa version publiée : pour en changer, publiez une version de l\'autre nature.',
     natures: {
       feature: 'Skill de fonctionnalité',
       task: 'Skill de tâche',

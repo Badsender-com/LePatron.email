@@ -48,6 +48,14 @@ const SkillVersionSchema = new Schema(
       enum: VersionStatusValues,
       default: 'DRAFT',
     },
+    // What the skill is while this version is active (ADR 0013): a feature
+    // skill, or a task skill. Changing it is publishing a version of the
+    // other nature; the version it replaces keeps its own.
+    nature: {
+      type: String,
+      enum: SkillNatureValues,
+      default: SkillNatures.FEATURE,
+    },
     systemPrompt: { type: String, default: '' },
     skillBody: { type: String, default: '' },
     inputTemplate: { type: String, default: '' },
@@ -110,13 +118,9 @@ const LePatronSkillSchema = new Schema(
       enum: AudienceValues,
       default: newItemAudience,
     },
-    nature: {
-      type: String,
-      enum: SkillNatureValues,
-      default: SkillNatures.FEATURE,
-    },
     // A feature skill reaches assistants only when marked so (ADR 0013); a
-    // task skill always does, within its audience.
+    // task skill always does, within its audience. Read only while the active
+    // version is a feature skill's.
     servedToAssistants: { type: Boolean, default: false },
     activeVersion: {
       type: ActiveVersionSchema,

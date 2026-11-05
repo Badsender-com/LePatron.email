@@ -20,7 +20,6 @@ const REPORT = 'qc.read-sending-report';
 const TASK_SKILL = {
   _id: '507f1f77bcf86cd799439911',
   skillId: REPORT,
-  nature: 'task',
   title: 'Read a sending report',
   description: 'Reads a report the user provides and lists what stands out.',
   category: 'qc',
@@ -32,6 +31,7 @@ const TASK_SKILL = {
       versionMajor: 1,
       versionMinor: 0,
       status: 'ACTIVE',
+      nature: 'task',
       procedure:
         '## Steps\n\n1. Describe the report before reading it.\n2. Never guess a missing value.',
       consumedExpertiseIds: [
@@ -64,13 +64,45 @@ const markedWithoutSchema = {
   ],
 };
 
+// The nature is the active version's: a task draft over an unmarked feature
+// skill serves nothing yet; a task version published over a feature one
+// serves the task.
+const taskDraftOverFeature = {
+  ...unmarkedFeature,
+  _id: '507f1f77bcf86cd799439914',
+  skillId: 'qc.task-in-draft',
+  title: 'A procedure still in draft',
+  versions: [
+    ...unmarkedFeature.versions,
+    { ...TASK_SKILL.versions[0], versionMinor: 3, status: 'DRAFT' },
+  ],
+};
+const taskOverFeature = {
+  ...unmarkedFeature,
+  _id: '507f1f77bcf86cd799439915',
+  skillId: 'qc.task-now',
+  title: 'A procedure now published',
+  activeVersion: { major: 2, minor: 0 },
+  versions: [
+    { ...unmarkedFeature.versions[0], status: 'ARCHIVED' },
+    { ...TASK_SKILL.versions[0], versionMajor: 2 },
+  ],
+};
+
 describe('task skills', () => {
   let client;
 
   beforeEach(async () => {
     harness.seed({
       ...f.SEED,
-      skills: [...f.SKILLS, TASK_SKILL, unmarkedFeature, markedWithoutSchema],
+      skills: [
+        ...f.SKILLS,
+        TASK_SKILL,
+        unmarkedFeature,
+        markedWithoutSchema,
+        taskDraftOverFeature,
+        taskOverFeature,
+      ],
     });
     client = await harness.connectAs(f.FRANK);
   });
@@ -130,6 +162,21 @@ describe('task skills', () => {
         }),
       ]);
       expect(byDescription.skills.map((s) => s.skillId)).toEqual([REPORT]);
+    });
+  });
+
+  describe('the nature', () => {
+    it("is the active version's, not a draft's", async () => {
+      expect(await promptNamed('qc.task-in-draft')).toBeUndefined();
+      expect(await promptNamed('qc.task-now')).toBeDefined();
+    });
+
+    it('is what find_skills tells of a skill', async () => {
+      const { skills } = await findSkills('procedure');
+
+      expect(skills).toEqual([
+        expect.objectContaining({ skillId: 'qc.task-now', nature: 'task' }),
+      ]);
     });
   });
 

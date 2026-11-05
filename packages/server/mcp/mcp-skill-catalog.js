@@ -23,21 +23,23 @@ const {
 const EXPERTISE_FIELD = 'expertise';
 
 const uriOf = (skillId) => `lepatron://skills/${skillId}`;
-const isTask = (doc) => doc.nature === SkillNatures.TASK;
+// The nature of a skill is its active version's (ADR 0013). One stored before
+// natures were versioned has none, and is a feature skill.
+const natureOf = (version) => version.nature || SkillNatures.FEATURE;
+const isTask = (version) => natureOf(version) === SkillNatures.TASK;
 const versionOf = (version) =>
   `${version.versionMajor}.${version.versionMinor}`;
 
-// What reaches assistants (ADR 0013): an active skill, a task skill always, a
-// feature skill only when marked so; and of those, what the company may use.
-const SERVED = Object.freeze({
-  status: SkillStatuses.ACTIVE,
-  $or: [{ nature: SkillNatures.TASK }, { servedToAssistants: true }],
-});
+// What reaches assistants (ADR 0013): the active version of an active skill
+// the company may use, a task skill's always, a feature skill's only when the
+// skill is marked so.
+const SERVED = Object.freeze({ status: SkillStatuses.ACTIVE });
 
 function published(doc) {
   if (!doc) return null;
   const version = findActiveVersion(doc);
   if (!version || version.status !== SkillStatuses.ACTIVE) return null;
+  if (!isTask(version) && doc.servedToAssistants !== true) return null;
   return { doc, version };
 }
 
@@ -101,8 +103,8 @@ const EXPERTISE_NOTICE =
  * input schema when the code knows it, else the placeholders of its template,
  * all optional, so a skill for assistants needs no deployment.
  */
-function argumentsOf({ doc, version }) {
-  if (isTask(doc)) return [];
+function argumentsOf({ version }) {
+  if (isTask(version)) return [];
   const described = describeSchema(version.inputSchemaId);
   if (described) {
     return described.fields.map(({ name, required }) => ({ name, required }));
@@ -115,6 +117,7 @@ function argumentsOf({ doc, version }) {
 
 module.exports = {
   uriOf,
+  natureOf,
   isTask,
   versionOf,
   servedSkills,

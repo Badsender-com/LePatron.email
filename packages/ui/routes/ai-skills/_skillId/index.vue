@@ -83,7 +83,6 @@ export default {
           description: this.skill.description,
           category: this.skill.category,
           audience: this.skill.audience,
-          nature: this.skill.nature,
           servedToAssistants: this.skill.servedToAssistants,
         };
         this.skill = await this.$axios.$patch(
@@ -149,6 +148,7 @@ export default {
       this.saving = true;
       try {
         const payload = {
+          nature: version.nature,
           systemPrompt: version.systemPrompt,
           skillBody: version.skillBody,
           inputTemplate: version.inputTemplate,

@@ -8,6 +8,7 @@ const {
 const { resolveIdentity } = require('./mcp-identity.js');
 const {
   uriOf,
+  natureOf,
   isTask,
   versionOf,
   servedSkills,
@@ -22,7 +23,7 @@ const expertises = require('./mcp-expertises.js');
 // chosen by the user; a resource lets the assistant pick a skill itself. It
 // lists only the consumed expertises the group may read, as the prompt does.
 function asMarkdown({ doc, version }, readableIds = []) {
-  const body = isTask(doc)
+  const body = isTask(version)
     ? version.procedure
     : [
         version.systemPrompt,
@@ -123,11 +124,11 @@ function registerFindSkills(server) {
       const { group } = await resolveIdentity(ctx.http?.authInfo);
       const skills = (await servedSkills(group))
         .filter(matching(query))
-        .map(({ doc }) => ({
+        .map(({ doc, version }) => ({
           skillId: doc.skillId,
           title: doc.title,
           description: doc.description || '',
-          nature: doc.nature || 'feature',
+          nature: natureOf(version),
           uri: uriOf(doc.skillId),
         }));
       return {

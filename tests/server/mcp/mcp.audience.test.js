@@ -48,7 +48,6 @@ const PROVING_SKILL = {
 const CONSUMING_TASK = {
   _id: '507f1f77bcf86cd799439906',
   skillId: 'qc.spacing-review',
-  nature: 'task',
   title: 'Review the spacing',
   category: 'qc',
   status: 'ACTIVE',
@@ -59,6 +58,7 @@ const CONSUMING_TASK = {
       versionMajor: 1,
       versionMinor: 0,
       status: 'ACTIVE',
+      nature: 'task',
       procedure: 'Check the spacing.',
       consumedExpertiseIds: ['redaction.subject-line', DRAFT_SHEET],
     },

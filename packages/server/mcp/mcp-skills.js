@@ -95,7 +95,7 @@ async function getPrompt(request, ctx) {
   }
   return {
     description: found.doc.description || undefined,
-    messages: isTask(found.doc)
+    messages: isTask(found.version)
       ? await taskMessages(found, group)
       : featureMessages(found, input),
   };

@@ -16,6 +16,7 @@ const COPIED_FEEDBACK_MS = 1500;
 
 // What the version editor lets one change on a DRAFT.
 const EDITABLE_FIELDS = Object.freeze([
+  'nature',
   'inputSchemaId',
   'outputSchemaId',
   'systemPrompt',
@@ -81,9 +82,11 @@ export default {
     editableVersionFields() {
       return EDITABLE_FIELDS;
     },
-    // A task skill has a procedure instead of a template and schemas.
-    isTask() {
-      return this.skill.nature === 'task';
+    natureOptions() {
+      return ['feature', 'task'].map((value) => ({
+        value,
+        text: this.$t(`aiSkills.natures.${value}`),
+      }));
     },
     inputSchemas() {
       return this.schemas.filter((s) => /Input$/.test(s));
@@ -119,6 +122,13 @@ export default {
     clearTimeout(this.copiedTimer);
   },
   methods: {
+    // The nature is the version's (ADR 0013): a task skill's version has a
+    // procedure instead of a template and schemas. One stored before natures
+    // were versioned is a feature skill's.
+    isTask(v) {
+      const draft = this.draftFor(v);
+      return ((draft && draft.nature) || v.nature) === 'task';
+    },
     // The schema id currently shown for a version: its draft value while the
     // panel is open, the server value otherwise.
     draftInputSchemaId(v) {
@@ -275,8 +285,20 @@ export default {
             </div>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
+            <bs-select
+              v-model="draftFor(v).nature"
+              :items="natureOptions"
+              item-text="text"
+              item-value="value"
+              :label="$t('aiSkills.nature')"
+              :hint="$t('aiSkills.natureHint')"
+              persistent-hint
+              :readonly="v.status !== 'DRAFT'"
+              :disabled="v.status !== 'DRAFT'"
+              class="mb-3"
+            />
             <bs-ai-skill-task-version-fields
-              v-if="isTask"
+              v-if="isTask(v)"
               :procedure="draftFor(v).procedure"
               :consumed-expertise-ids="draftFor(v).consumedExpertiseIds"
               :readonly="v.status !== 'DRAFT'"

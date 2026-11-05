@@ -29,15 +29,15 @@ export default {
     audience() {
       return this.value.audience || 'platform';
     },
-    // A skill stored before natures existed is a feature skill.
-    nature() {
-      return this.value.nature || 'feature';
-    },
-    natureOptions() {
-      return ['feature', 'task'].map((value) => ({
-        value,
-        text: this.$t(`aiSkills.natures.${value}`),
-      }));
+    // The nature is the active version's (ADR 0013), set on a draft version;
+    // the mark only counts while the active version is a feature skill's.
+    activeIsTask() {
+      const av = this.value.activeVersion;
+      if (!av || av.major == null) return false;
+      const active = (this.value.versions || []).find(
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
+      );
+      return !!active && active.nature === 'task';
     },
   },
   methods: {
@@ -79,18 +79,8 @@ export default {
       persistent-hint
       @input="update({ audience: $event })"
     />
-    <bs-select
-      :value="nature"
-      :items="natureOptions"
-      item-text="text"
-      item-value="value"
-      :label="$t('aiSkills.nature')"
-      :hint="$t('aiSkills.natureHint')"
-      persistent-hint
-      @input="update({ nature: $event })"
-    />
     <v-checkbox
-      v-if="nature === 'feature'"
+      v-if="!activeIsTask"
       :input-value="value.servedToAssistants === true"
       :label="$t('aiSkills.servedToAssistants')"
       :hint="$t('aiSkills.servedToAssistantsHint')"

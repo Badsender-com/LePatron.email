@@ -190,6 +190,37 @@ describe('ai-skill HTTP routes', () => {
     expect(r5.body.status).toBe('ARCHIVED');
   });
 
+  // A task skill's version has neither template nor schema (ADR 0013): the
+  // template warnings of a feature skill do not apply to it.
+  it.each([
+    ['feature', 'warns', true],
+    ['task', 'does not warn', false],
+  ])(
+    'PATCH a version of a %s skill %s about its template',
+    async (nature, _label, warned) => {
+      skillService.updateVersion.mockResolvedValue({
+        skillId: 'a',
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            nature,
+            inputSchemaId: 'genericTextInput',
+            inputTemplate: '',
+          },
+        ],
+      });
+
+      const res = await request(makeApp())
+        .patch('/api/ai-skills/a/versions/1.1')
+        .send({ nature });
+
+      expect(res.status).toBe(200);
+      expect(res.body.warnings.length > 0).toBe(warned);
+    }
+  );
+
   it('GET /api/ai-invocations forwards filters as query', async () => {
     invocationLog.listInvocations.mockResolvedValue({
       items: [],

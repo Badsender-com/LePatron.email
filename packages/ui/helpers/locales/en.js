@@ -1413,7 +1413,7 @@ export default {
   aiSkills: {
     nature: 'Nature',
     natureHint:
-      'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows.',
+      'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows. The skill has the nature of its published version: to change it, publish a version of the other nature.',
     natures: {
       feature: 'Feature skill',
       task: 'Task skill',

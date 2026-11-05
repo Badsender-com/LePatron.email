@@ -8,6 +8,7 @@ const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
+const { SkillNatures } = require('../constant/skill-constants.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -21,17 +22,22 @@ function userIdOf(req) {
 }
 
 // Serialize a skill and append non-blocking template↔schema coherence warnings
-// for the given version (DRAFT save AND activation surface them). Tolerant of a
-// plain object so the service layer can be mocked in routing tests.
+// for the given version (DRAFT save AND activation surface them). A task
+// skill's version has neither template nor schema: nothing to warn about.
+// Tolerant of a plain object so the service layer can be mocked in routing
+// tests.
 function withVersionWarnings(skill, major, minor) {
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
   );
   const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
-  payload.warnings = templateWarnings(
-    version ? version.inputTemplate : '',
-    version ? version.inputSchemaId : ''
-  );
+  payload.warnings =
+    version && version.nature === SkillNatures.TASK
+      ? []
+      : templateWarnings(
+          version ? version.inputTemplate : '',
+          version ? version.inputSchemaId : ''
+        );
   return payload;
 }
 
