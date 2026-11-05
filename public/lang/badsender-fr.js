@@ -351,6 +351,8 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-rail-marker':
+    '__count__ commentaire(s) non résolu(s) sur le bloc __block__',
   'comments-decision-approve': 'Approuver',
   'comments-decision-approve-default-text': 'Bon pour envoi',
   'comments-approve-blocked':

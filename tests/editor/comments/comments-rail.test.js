@@ -60,7 +60,7 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-describe.skip('the comment markers rail (ADR 0020, P4)', () => {
+describe('the comment markers rail (ADR 0020, P4)', () => {
   it('shows a marker per block with unresolved comments, in the order of the email', () => {
     const { rail } = mount({
       blocks: ['b1', 'b2', 'b3'],
@@ -126,5 +126,50 @@ describe.skip('the comment markers rail (ADR 0020, P4)', () => {
     const remove = jest.spyOn(scroller, 'removeEventListener');
     rail.dispose();
     expect(remove).toHaveBeenCalledWith('scroll', onScroll);
+  });
+});
+
+describe('the comment markers rail in the editor (ADR 0020, P4)', () => {
+  const $ = require('jquery');
+  const commentsLoader = require('../../../packages/editor/src/js/ext/badsender-comments.js');
+  const { fakeViewModel } = require('../quality/fake-view-model');
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  function editor() {
+    jest.useFakeTimers();
+    jest.spyOn($, 'ajax').mockImplementation(() => $.Deferred().promise());
+    const vm = fakeViewModel({ blocks: [{ id: 'b1', type: 'heroBlock' }] });
+    vm.selectedBlock = ko.observable(null);
+    const plugin = commentsLoader({ metadata: { id: 'm1', groupId: 'g1' } })(
+      vm
+    );
+    return { vm, plugin };
+  }
+
+  it('marks active the block of a new comment, and names the block', () => {
+    const scroller = canvas(['b1']);
+    const { vm } = editor();
+    vm.commentCounts({ b1: { count: 2, maxSeverity: 'important' } });
+    vm.commentsRail.update();
+    vm.selectedBlockForComments('b1');
+    expect(vm.commentsRail.markers()).toEqual([
+      expect.objectContaining({ blockId: 'b1', count: 2, active: true }),
+    ]);
+    expect(vm.commentsRail.markers()[0].label).not.toBe('b1');
+    expect(scroller).toBeTruthy();
+  });
+
+  it('lets go of the canvas when the editor goes', () => {
+    const scroller = canvas(['b1']);
+    const remove = jest.spyOn(scroller, 'removeEventListener');
+    const { vm, plugin } = editor();
+    vm.commentsRail.update();
+    plugin.dispose();
+    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
   });
 });

@@ -338,6 +338,8 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  'comments-rail-marker':
+    '__count__ unresolved comment(s) on the block __block__',
   'comments-decision-approve': 'Approve',
   'comments-decision-approve-default-text': 'Ready to send',
   'comments-approve-blocked':
