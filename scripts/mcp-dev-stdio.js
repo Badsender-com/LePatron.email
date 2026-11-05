@@ -6,14 +6,15 @@
  * to try it in an MCP client (Claude Code, Claude Desktop, MCP Inspector)
  * before the OAuth connection exists (#1306). Development only: the identity
  * is taken from the command line instead of a token, so anyone who runs it
- * reads as any account. It refuses to run in production, and against a
- * database that is not on this machine unless `--allow-remote-database` says
- * so on purpose, whatever NODE_ENV says. Everything the server checks on a
+ * reads as any account. It runs only when NODE_ENV says `development`, set
+ * explicitly (the configuration takes an unset one for development), and
+ * against a database that is not on this machine only when
+ * `--allow-remote-database` says so on purpose. Everything the server checks on a
  * call still applies: the user must be active and in the company, and the
  * company must have MCP access.
  *
  * Usage:
- *   node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
+ *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
  *
  * `--group` is the company a super admin works in; anyone else reads their
  * own. The database is the one the configuration reads (node.config.js, through
@@ -55,11 +56,14 @@ function isLocalDatabase(uri) {
 /**
  * @param {{ isDev: boolean, database: string }} config
  * @param {string[]} argv the command line
+ * @param {Object} [env] the environment, `process.env` by default
  * @throws {Error} when the bridge must not run, without naming the database
  */
-function assertMayRun(config, argv) {
-  if (!config.isDev) {
-    throw new Error('mcp-dev-stdio runs in development only.');
+function assertMayRun(config, argv, env = process.env) {
+  if (env.NODE_ENV !== 'development' || !config.isDev) {
+    throw new Error(
+      'mcp-dev-stdio runs in development only: set NODE_ENV=development.'
+    );
   }
   if (
     !isLocalDatabase(config.database) &&
@@ -97,7 +101,7 @@ async function main(protocolOut) {
   const email = argument('email');
   if (!email) {
     throw new Error(
-      'Usage: node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>]'
+      'Usage: NODE_ENV=development node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>]'
     );
   }
 

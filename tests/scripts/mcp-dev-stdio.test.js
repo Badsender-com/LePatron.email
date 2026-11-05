@@ -1,8 +1,8 @@
 'use strict';
 
 // The stdio bridge reads as whichever account its command line names, so it
-// runs against a database on this machine only, unless told otherwise on
-// purpose, and NODE_ENV left unset is no permission. It never prints the
+// runs only when NODE_ENV says development explicitly, and against a database
+// on this machine only, unless told otherwise on purpose. It never prints the
 // database's URI, which may carry credentials.
 
 const {
@@ -11,7 +11,9 @@ const {
 } = require('../../scripts/mcp-dev-stdio.js');
 
 const REMOTE = 'mongodb://admin:s3cret@db.example.test:27017/lepatron';
+const LOCAL = 'mongodb://localhost/lepatron';
 const DEV = { isDev: true };
+const DEV_ENV = { NODE_ENV: 'development' };
 
 describe('mcp-dev-stdio', () => {
   it.each([
@@ -35,12 +37,12 @@ describe('mcp-dev-stdio', () => {
 
   it('runs against a local database', () => {
     expect(() =>
-      assertMayRun({ ...DEV, database: 'mongodb://localhost/lepatron' }, [])
+      assertMayRun({ ...DEV, database: LOCAL }, [], DEV_ENV)
     ).not.toThrow();
   });
 
   it('refuses a remote database without saying so on purpose, and never names it', () => {
-    const run = () => assertMayRun({ ...DEV, database: REMOTE }, []);
+    const run = () => assertMayRun({ ...DEV, database: REMOTE }, [], DEV_ENV);
 
     expect(run).toThrow(/local database only/);
     expect(run).not.toThrow(/s3cret|example\.test/);
@@ -48,15 +50,31 @@ describe('mcp-dev-stdio', () => {
 
   it('runs against a remote database when told so on purpose', () => {
     expect(() =>
-      assertMayRun({ ...DEV, database: REMOTE }, ['--allow-remote-database'])
+      assertMayRun(
+        { ...DEV, database: REMOTE },
+        ['--allow-remote-database'],
+        DEV_ENV
+      )
     ).not.toThrow();
   });
 
-  it('never runs outside development', () => {
+  it.each([
+    ['NODE_ENV left unset', {}],
+    ['NODE_ENV set to production', { NODE_ENV: 'production' }],
+    ['NODE_ENV set to test', { NODE_ENV: 'test' }],
+  ])('never runs with %s', (_case, env) => {
     expect(() =>
-      assertMayRun({ isDev: false, database: 'mongodb://localhost/lepatron' }, [
-        '--allow-remote-database',
-      ])
+      assertMayRun(
+        { ...DEV, database: LOCAL },
+        ['--allow-remote-database'],
+        env
+      )
+    ).toThrow(/development only/);
+  });
+
+  it('never runs when the configuration is not development', () => {
+    expect(() =>
+      assertMayRun({ isDev: false, database: LOCAL }, [], DEV_ENV)
     ).toThrow(/development only/);
   });
 });
