@@ -2,6 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const _ = require('lodash');
 const { QualityGroup } = require('./quality-group');
 const { QualitySummary } = require('./quality-summary');
+const { verdictOf } = require('./quality-verdict');
 const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
 const { findingItems, checkItems } = require('./quality-items');
 const { commentDraftFor } = require('./quality-actions');
@@ -101,26 +102,30 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         return this.t('Checking links and images…');
       }
       if (!this.hasResults) return '';
-      // Ready, infos left or not: said as the card says it.
-      if (this.ready && this.status === 'done') {
-        return [
-          this.t('quality-ready-title'),
-          this.counts.info
-            ? this.t('quality-ready-infos', { count: this.counts.info })
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ');
+      if (this.status === 'stale') {
+        return this.t('The results date from before your last changes');
       }
-      const parts = SEVERITY_ORDER.filter(
-        (s) => s !== 'success' && this.counts[s] > 0
-      ).map((s) =>
-        this.t(SEVERITY_META[s].countKey, { count: this.counts[s] })
+      // Said as the card says it (quality-verdict.js).
+      const verdict = verdictOf(
+        {
+          ready: this.ready,
+          issueCount: this.issueCount,
+          blockingCount: this.blockingCount,
+        },
+        this.t
       );
-      return parts.join(', ');
+      const infos =
+        verdict.kind === 'ready' && this.counts.info
+          ? this.t('quality-ready-infos', { count: this.counts.info })
+          : '';
+      return [verdict.title, infos].filter(Boolean).join('. ');
     },
   },
   watch: {
+    // A ready email leaves only its infos to read (board q3): they show.
+    ready(isReady) {
+      if (isReady) this.openGroups.info = true;
+    },
     items(items) {
       const all = items.concat(this.ignoredItems);
       if (!all.some((item) => item.id === this.expandedId)) {
@@ -220,7 +225,6 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           :remote-status="remoteStatus"
           :remote-error="remoteError"
           :t="t"
-          @run="run"
         ></quality-summary>
         <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
 
@@ -229,7 +233,6 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
             v-for="group in groups"
             :key="group.severity"
             :id="group.severity"
-            :icon="group.meta.icon"
             :label-key="group.meta.groupKey"
             :count-key="group.meta.countKey"
             :items="group.items"
@@ -249,7 +252,6 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           <quality-group
             v-if="ignoredItems.length"
             id="ignored"
-            icon="lucide-ban"
             label-key="quality-group-ignored"
             count-key="__count__ ignored findings"
             :items="ignoredItems"

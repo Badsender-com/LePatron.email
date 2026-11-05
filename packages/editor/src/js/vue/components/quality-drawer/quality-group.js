@@ -8,7 +8,6 @@ const QualityGroup = Vue.component('QualityGroup', {
   props: {
     // 'error', 'warning', …, or 'ignored'.
     id: { type: String, required: true },
-    icon: { type: String, required: true },
     labelKey: { type: String, required: true },
     // Read with the count, for assistive technology: "4 errors".
     countKey: { type: String, required: true },

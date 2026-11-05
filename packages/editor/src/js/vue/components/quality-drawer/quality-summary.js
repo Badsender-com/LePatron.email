@@ -1,5 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { formatTime } = require('./quality-items');
+const { verdictOf } = require('./quality-verdict');
 
 // The head of the results: whether they still describe the email, where the
 // email stands (ready, or what is left to fix), and how the server's checks
@@ -23,40 +24,14 @@ const QualitySummary = Vue.component('QualitySummary', {
     t: { type: Function, required: true },
   },
   computed: {
-    // 'ready', 'blocking' (red: it stops the export, decision 6), 'todo',
-    // or 'incomplete' (a check could not run).
     verdict() {
-      if (this.ready) return 'ready';
-      if (this.blockingCount) return 'blocking';
-      return this.issueCount ? 'todo' : 'incomplete';
-    },
-    verdictIcon() {
-      return {
-        ready: 'lucide-check-circle',
-        blocking: 'lucide-lock',
-        todo: 'lucide-triangle-alert',
-        incomplete: 'lucide-circle-slash',
-      }[this.verdict];
-    },
-    verdictTitle() {
-      const count = this.issueCount;
-      return {
-        ready: this.t('quality-ready-title'),
-        blocking: this.t('quality-not-ready-blocking', {
-          count,
-          blocking: this.blockingCount,
-        }),
-        todo: this.t('quality-not-ready', { count }),
-        incomplete: this.t('quality-not-run-title'),
-      }[this.verdict];
-    },
-    verdictText() {
-      return this.t(
+      return verdictOf(
         {
-          blocking: 'quality-blocking-text',
-          todo: 'quality-not-ready-text',
-          incomplete: 'quality-not-run-text',
-        }[this.verdict]
+          ready: this.ready,
+          issueCount: this.issueCount,
+          blockingCount: this.blockingCount,
+        },
+        this.t
       );
     },
     lastRunLabel() {
@@ -79,16 +54,18 @@ const QualitySummary = Vue.component('QualitySummary', {
       <!-- Where the email stands (boards q2, q3): ready, or what is left
            to fix and what of it blocks. Results of an earlier version say
            nothing: the banner above says to run again. -->
-      <div v-if="status === 'done' && remoteStatus !== 'running'" class="qc-status" :class="'qc-status--' + verdict">
-        <span :class="['lucide', verdictIcon, 'qc-status__icon']" aria-hidden="true"></span>
+      <div v-if="status === 'done' && remoteStatus !== 'running'" class="qc-status" :class="'qc-status--' + verdict.kind">
+        <span :class="['lucide', verdict.icon, 'qc-status__icon']" aria-hidden="true"></span>
         <div class="qc-status__body">
-          <p class="qc-status__title">{{ verdictTitle }}</p>
+          <p class="qc-status__title">{{ verdict.title }}</p>
           <p class="qc-status__text">
-            <template v-if="verdict === 'ready'">
+            <template v-if="verdict.kind === 'ready'">
               {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}
               <template v-if="counts.info"> {{ t('quality-ready-infos', { count: counts.info }) }}</template>
             </template>
-            <template v-else>{{ verdictText }}</template>
+            <!-- A server check that failed says why, here alone. -->
+            <template v-else-if="verdict.kind === 'incomplete' && remoteStatus === 'error'">{{ remoteErrorText }}</template>
+            <template v-else>{{ t(verdict.textKey) }}</template>
           </p>
         </div>
       </div>
@@ -96,7 +73,7 @@ const QualitySummary = Vue.component('QualitySummary', {
       <p v-if="remoteStatus === 'running'" class="qc-remote">
         <span class="qc-spinner" aria-hidden="true"></span>{{ t('Checking links and images…') }}
       </p>
-      <p v-if="remoteStatus === 'error'" class="qc-remote qc-remote--error" role="status">
+      <p v-if="remoteStatus === 'error' && !(status === 'done' && verdict.kind === 'incomplete')" class="qc-remote qc-remote--error" role="status">
         <span class="lucide lucide-circle-help" aria-hidden="true"></span>{{ remoteErrorText }}
       </p>
     </div>

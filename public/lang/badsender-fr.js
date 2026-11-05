@@ -586,15 +586,16 @@ module.exports = {
   'quality-ready-to-run': '__count__ contrôles prêts à être lancés',
   'quality-ready-to-run-text':
     'Liens, images, poids, accessibilité, rédaction et code. Les liens et les images sont vérifiés en ligne.',
-  'quality-not-ready': 'Pas prêt : __count__ point(s) à corriger',
-  'quality-not-ready-blocking':
-    'Pas prêt : __count__ point(s) à corriger, dont __blocking__ bloquant(s)',
+  'quality-not-ready': 'Pas prêt : __count__ points à corriger',
   'quality-blocking-text':
     "Tant que le bloquant reste, l'email ne peut être ni téléchargé ni envoyé à l'ESP.",
   'quality-not-ready-text':
     "Rien n'empêche de télécharger l'email ni d'envoyer un test.",
   'quality-not-run-title': "Un contrôle n'a pas pu s'exécuter",
   'quality-not-run-text': "Relancez le contrôle pour juger tout l'email.",
+  'quality-not-ready-one': 'Pas prêt : 1 point à corriger',
+  'quality-blocking-suffix-one': ', dont 1 bloquant',
+  'quality-blocking-suffix': ', dont __count__ bloquants',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',

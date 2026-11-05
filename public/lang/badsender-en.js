@@ -569,15 +569,16 @@ module.exports = {
   'quality-ready-to-run': '__count__ checks ready to run',
   'quality-ready-to-run-text':
     'Links, images, weight, accessibility, writing and code. Links and images are checked online.',
-  'quality-not-ready': 'Not ready: __count__ issue(s) to fix',
-  'quality-not-ready-blocking':
-    'Not ready: __count__ issue(s) to fix, __blocking__ blocking',
+  'quality-not-ready': 'Not ready: __count__ issues to fix',
   'quality-blocking-text':
     'While the blocking issue remains, the email can be neither downloaded nor sent to the ESP.',
   'quality-not-ready-text':
     'Nothing stops downloading the email or sending a test.',
   'quality-not-run-title': 'A check could not run',
   'quality-not-run-text': 'Run the checks again to judge the whole email.',
+  'quality-not-ready-one': 'Not ready: 1 issue to fix',
+  'quality-blocking-suffix-one': ', 1 blocking',
+  'quality-blocking-suffix': ', __count__ blocking',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
     '__count__ checks run at __when__. No errors or warnings.',

@@ -10,12 +10,8 @@ const { RightPanelShell } = require('../right-panel/right-panel-shell');
 
 // Frozen: the template reads it, and Vue would otherwise make it reactive.
 const TABS = Object.freeze([
-  Object.freeze({
-    name: 'checks',
-    labelKey: 'Quality control',
-    icon: 'lucide-shield-check',
-  }),
-  Object.freeze({ name: 'send', labelKey: 'Send a test', icon: 'lucide-send' }),
+  Object.freeze({ name: 'checks', labelKey: 'Quality control' }),
+  Object.freeze({ name: 'send', labelKey: 'Send a test' }),
 ]);
 
 // The quality drawer, "Test your email": the checks of the email and sending
@@ -91,8 +87,13 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         if (tab && tab[0]) tab[0].focus();
       });
     },
-    // Arrow keys move between tabs, as in any tablist.
+    // Arrow keys move between tabs, Home and End to the ends, as in any
+    // tablist.
     onTabKey(event) {
+      if (event.key === 'Home' || event.key === 'End') {
+        this.goTo(TABS[event.key === 'Home' ? 0 : TABS.length - 1].name);
+        return;
+      }
       const i = TABS.findIndex((tab) => tab.name === this.tab);
       const step = event.key === 'ArrowRight' ? 1 : TABS.length - 1;
       this.goTo(TABS[(i + step) % TABS.length].name);
@@ -103,7 +104,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     },
     runFromSend() {
       this.goTo('checks');
-      this.vm.quality.run();
+      this.run();
     },
   },
   template: `
@@ -115,7 +116,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       @close="vm.rightPanel.hide()"
     >
       <template v-slot:nav>
-      <div class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
+      <div class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey" @keydown.home.prevent="onTabKey" @keydown.end.prevent="onTabKey">
         <button
           v-for="item in tabs"
           :key="item.name"
@@ -178,12 +179,13 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         <button v-else-if="status === 'running'" type="button" class="qc-button qc-button--outline" @click="vm.quality.cancel()">
           {{ t('quality-action-cancel') }}
         </button>
+        <!-- Results of an earlier version: running again comes first. -->
         <template v-else>
-          <button type="button" class="qc-button qc-button--outline" @click="run">
+          <button type="button" :class="['qc-button', status === 'stale' ? 'qc-button--cta' : 'qc-button--outline']" @click="run">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
           </button>
-          <button type="button" class="qc-button qc-button--cta" @click="goTo('send')">
-            <span class="lucide lucide-send" aria-hidden="true"></span>{{ t('quality-send-a-test') }}
+          <button type="button" :class="['qc-button', status === 'stale' ? 'qc-button--outline' : 'qc-button--cta']" @click="goTo('send')">
+            {{ t('quality-send-a-test') }}
           </button>
         </template>
       </template>

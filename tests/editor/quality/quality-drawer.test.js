@@ -199,7 +199,7 @@ describe('QualityDrawer', () => {
     expect(el.querySelector('.qc-group--not-run')).not.toBeNull();
     expect(el.textContent).toContain('This check could not run');
     expect(el.querySelector('[aria-live]').textContent).toBe(
-      '1 checks not run'
+      'quality-not-run-title'
     );
   });
 
@@ -299,7 +299,7 @@ describe('QualityDrawer', () => {
     expect(el.textContent).toContain('quality-group-infos');
     // Said as the card says it, not as « 1 infos ».
     expect(el.querySelector('[aria-live]').textContent).toBe(
-      'quality-ready-title quality-ready-infos'
+      'quality-ready-title. quality-ready-infos'
     );
   });
 
@@ -324,7 +324,8 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
     const card = el.querySelector('.qc-status--blocking');
-    expect(card.textContent).toContain('quality-not-ready-blocking');
+    expect(card.textContent).toContain('quality-not-ready-one');
+    expect(card.textContent).toContain('quality-blocking-suffix-one');
     expect(card.textContent).toContain('quality-blocking-text');
   });
 
@@ -340,14 +341,16 @@ describe('QualityDrawer', () => {
     expect(vm.quality.status()).not.toBe('idle');
   });
 
-  it('announces only what was found, never the zeros', async () => {
+  it('announces where the email stands, as the card says it', async () => {
     const { vm, el } = await mountDrawer({
       findings: [linkFinding],
       checks: [{ ...sizeCheck }],
     });
     vm.quality.run();
     await Vue.nextTick();
-    expect(el.querySelector('[aria-live]').textContent).toBe('1 errors');
+    expect(el.querySelector('[aria-live]').textContent).toBe(
+      'quality-not-ready-one'
+    );
   });
 
   it('says when the results predate the last changes, and offers to re-run', async () => {
@@ -368,8 +371,8 @@ describe('QualityDrawer', () => {
     // The results stay readable meanwhile.
     expect(el.querySelector('.qc-row')).not.toBeNull();
 
-    // « Relancer », in the panel's foot.
-    el.querySelector('.right-panel-shell__footer .qc-button--outline').click();
+    // « Relancer », first in the panel's foot once the results are stale.
+    el.querySelector('.right-panel-shell__footer .qc-button--cta').click();
     await Vue.nextTick();
     expect(el.querySelector('.qc-stale')).toBeNull();
   });
@@ -567,7 +570,8 @@ describe('QualityDrawer', () => {
     vm.quality.remoteError('too-frequent');
     vm.quality.remoteStatus('error');
     await Vue.nextTick();
-    expect(el.querySelector('.qc-remote--error').textContent).toContain(
+    // Said once, in the card: the email could not be judged whole.
+    expect(el.querySelector('.qc-status').textContent).toContain(
       'Too many checks in a short time'
     );
   });

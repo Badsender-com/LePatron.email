@@ -44,6 +44,10 @@
   &--expanded {
     border-color: var(--gray-300);
     background: var(--gray-50);
+
+    // Grey text one shade darker on grey.
+    .qc-row__block,
+    .qc-row__desc { color: var(--gray-700); }
   }
 
   &__head {
@@ -57,6 +61,11 @@
     text-align: left;
     color: inherit;
     cursor: pointer;
+
+    // It opens: what to do with the finding is inside.
+    &:hover {
+      background: var(--gray-50);
+    }
 
     &:focus-visible {
       outline: 2px solid var(--primary);
