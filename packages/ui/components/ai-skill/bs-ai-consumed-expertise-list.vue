@@ -6,11 +6,20 @@
 import { CONSUMED_STATES } from '~/helpers/ai-skill-consumed-expertises.js';
 import { ChevronUp, ChevronDown, X } from 'lucide-vue';
 
-// The label and the help of each state, under aiSkills.version.
-const STATE_KEYS = Object.freeze({
-  [CONSUMED_STATES.NOT_FOUND]: 'consumedExpertiseNotFound',
-  [CONSUMED_STATES.NOT_PUBLISHED]: 'consumedExpertiseNotPublished',
-  [CONSUMED_STATES.PLATFORM_ONLY]: 'consumedExpertisePlatformOnly',
+// The label and the help of each state: the platform company's label is the
+// one its badge reads everywhere.
+const STATE_LABELS = Object.freeze({
+  [CONSUMED_STATES.NOT_FOUND]: 'aiSkills.version.consumedExpertiseNotFound',
+  [CONSUMED_STATES.NOT_PUBLISHED]:
+    'aiSkills.version.consumedExpertiseNotPublished',
+  [CONSUMED_STATES.PLATFORM_ONLY]: 'aiSkills.platformOnly',
+});
+const STATE_HINTS = Object.freeze({
+  [CONSUMED_STATES.NOT_FOUND]: 'aiSkills.version.consumedExpertiseNotFoundHint',
+  [CONSUMED_STATES.NOT_PUBLISHED]:
+    'aiSkills.version.consumedExpertiseNotPublishedHint',
+  [CONSUMED_STATES.PLATFORM_ONLY]:
+    'aiSkills.version.consumedExpertisePlatformOnlyHint',
 });
 
 export default {
@@ -26,10 +35,10 @@ export default {
   },
   methods: {
     stateLabel(state) {
-      return this.$t(`aiSkills.version.${STATE_KEYS[state]}`);
+      return this.$t(STATE_LABELS[state]);
     },
     stateHint(state) {
-      return this.$t(`aiSkills.version.${STATE_KEYS[state]}Hint`);
+      return this.$t(STATE_HINTS[state]);
     },
     move(index, offset) {
       this.$emit('move', index, offset);

@@ -176,5 +176,4 @@ module.exports = {
   consumedExpertiseWarnings,
   consumedIdsOf,
   platformOnlyExpertises,
-  ConsumedWarningCodes,
 };

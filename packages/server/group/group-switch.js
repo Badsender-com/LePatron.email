@@ -49,4 +49,4 @@ async function writeSwitches(groupId, switches) {
   );
 }
 
-module.exports = { SWITCHES, takeSwitches, writeSwitches };
+module.exports = { takeSwitches, writeSwitches };

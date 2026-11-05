@@ -1668,7 +1668,6 @@ export default {
       consumedExpertiseNotPublished: 'Non publiée',
       consumedExpertiseNotPublishedHint:
         'Brouillon ou archivée : l\'assistant ne la reçoit pas tant qu\'aucune de ses versions n\'est publiée. Publiez-la, ou retirez-la.',
-      consumedExpertisePlatformOnly: 'Entreprise plateforme uniquement',
       consumedExpertisePlatformOnlyHint:
         'Seuls les assistants de l\'entreprise plateforme la reçoivent : ouvrez-la à toutes les entreprises pour que leurs assistants la reçoivent aussi.',
       consumedExpertiseUp: 'Monter',

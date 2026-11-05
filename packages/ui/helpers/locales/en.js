@@ -1645,7 +1645,6 @@ export default {
       consumedExpertiseNotPublished: 'Not published',
       consumedExpertiseNotPublishedHint:
         'A draft, or archived: the assistant does not receive it until a version of it is published. Publish it, or remove it.',
-      consumedExpertisePlatformOnly: 'Platform company only',
       consumedExpertisePlatformOnlyHint:
         'Only the platform company\'s assistants receive it: open it to all companies for their assistants to receive it too.',
       consumedExpertiseUp: 'Move up',
