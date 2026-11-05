@@ -39,6 +39,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     ranAt: null,
     ready: false,
     issueCount: 0,
+    blockingCount: 0,
     // Ignoring is shared by everyone who edits the email, so it takes the
     // same right: a reviewer sees the button, greyed out.
     ignoreLocked: true,
@@ -68,6 +69,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     this.mirror(q.ranAt, (value) => (this.ranAt = value));
     this.mirror(q.ready, (value) => (this.ready = value));
     this.mirror(q.issueCount, (value) => (this.issueCount = value));
+    this.mirror(q.blockingCount, (value) => (this.blockingCount = value));
     // The editor opens before the user is known: locked until they are.
     this.mirror(this.vm.currentUser, () => {
       this.ignoreLocked = !this.vm.userCan(CAPABILITIES.MAILING_EDIT_CONTENT);
@@ -155,6 +157,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :status="status"
         :ready="ready"
         :issue-count="issueCount"
+        :blocking-count="blockingCount"
         :active="open && tab === 'send'"
         @show-results="goTo('checks')"
         @run-checks="runFromSend"

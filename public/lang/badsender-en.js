@@ -535,8 +535,8 @@ module.exports = {
   'quality-category-performance': 'Performance',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
-    '__count__ checks run at __when__. No error nor warning.',
-  'quality-ready-infos': ' __count__ info(s) to read if you wish.',
+    '__count__ checks run at __when__. No errors or warnings.',
+  'quality-ready-infos': '__count__ info(s) to read if you wish.',
   '__count__ issues are still to fix: you can send a test anyway':
     '__count__ issue(s) to fix: you can send a test anyway',
   'A check could not run: you can send a test anyway':

@@ -134,7 +134,7 @@ function installQualityReview(viewModel, ko, deps = {}) {
   const isIgnored = (finding) =>
     !finding.blocking && ignores.has(finding.fingerprint);
   const active = ko.pureComputed(() => findings().filter((f) => !isIgnored(f)));
-  const counts = createCounts(ko, { active, checks });
+  const counts = createCounts(ko, { active, checks, remoteStatus });
   const { issueCount } = counts;
 
   const freshness = () => (resultVersion === contentVersion ? 'done' : 'stale');

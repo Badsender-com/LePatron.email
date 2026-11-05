@@ -50,7 +50,8 @@ const QualitySummary = Vue.component('QualitySummary', {
         </button>
       </div>
 
-      <div v-if="!ready" class="qc-drawer__summary">
+      <!-- Results of an earlier version never say the email is ready. -->
+      <div v-if="!ready || status === 'stale'" class="qc-drawer__summary">
         <span class="qc-pills">
           <span
             v-for="severity in pills"
@@ -72,7 +73,7 @@ const QualitySummary = Vue.component('QualitySummary', {
         <p class="qc-drawer__clean-title">{{ t('quality-ready-title') }}</p>
         <p class="qc-drawer__clean-text">
           {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}
-          <template v-if="counts.info">{{ t('quality-ready-infos', { count: counts.info }) }}</template>
+          <template v-if="counts.info"> {{ t('quality-ready-infos', { count: counts.info }) }}</template>
         </p>
       </div>
 

@@ -17,6 +17,7 @@ function railBadgeOf({
   ready,
   ranCount,
   total,
+  remoteStatus = 'idle',
 }) {
   if (status === 'running') return { kind: 'running', labelKey: 'Running…' };
   if (status === 'stale') {
@@ -41,6 +42,10 @@ function railBadgeOf({
     };
   }
   if (ready) return { kind: 'ready', labelKey: 'panel-rail-ready' };
+  // Nothing found yet, the server's checks still awaited.
+  if (remoteStatus === 'running') {
+    return { kind: 'running', labelKey: 'Running…' };
+  }
   // Nothing to fix, but a check could not run: no green tick.
   return {
     kind: 'incomplete',
@@ -59,6 +64,7 @@ function createRailBadge(ko, quality) {
       ready: quality.ready(),
       ranCount: quality.ranCount(),
       total: quality.checks().length,
+      remoteStatus: quality.remoteStatus(),
     })
   );
 }

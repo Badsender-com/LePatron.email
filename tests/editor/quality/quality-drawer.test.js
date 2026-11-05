@@ -297,6 +297,23 @@ describe('QualityDrawer', () => {
     );
     expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.textContent).toContain('quality-group-infos');
+    // Said as the card says it, not as « 1 infos ».
+    expect(el.querySelector('[aria-live]').textContent).toBe(
+      'quality-ready-title quality-ready-infos'
+    );
+  });
+
+  it('never says results of an earlier version are ready', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [],
+      checks: [{ ...sizeCheck }],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+    vm.quality.status('stale');
+    await Vue.nextTick();
+    expect(el.querySelector('.qc-drawer__clean')).toBeNull();
+    expect(el.querySelector('.qc-drawer__summary')).not.toBeNull();
   });
 
   it('announces only what was found, never the zeros', async () => {

@@ -7,12 +7,10 @@
  * @param {Object} state
  * @param {Function} state.active - the findings not ignored
  * @param {Function} state.checks - one entry per check, with its status
+ * @param {Function} [state.remoteStatus] - the server's checks, which come
+ *   after the others: 'running' while they are awaited
  */
-function createCounts(ko, { active, checks }) {
-  const countOf = (...severities) =>
-    ko.pureComputed(
-      () => active().filter((f) => severities.includes(f.severity)).length
-    );
+function createCounts(ko, { active, checks, remoteStatus = () => 'idle' }) {
   // What the toolbar badge counts: what should be fixed, not the infos,
   // unless they block an export.
   const issueCount = ko.pureComputed(
@@ -29,7 +27,6 @@ function createCounts(ko, { active, checks }) {
         .length
   );
   return {
-    errorCount: countOf('error'),
     issueCount,
     // The findings that stop an export (ADR 0009).
     blockingCount: ko.pureComputed(
@@ -41,10 +38,15 @@ function createCounts(ko, { active, checks }) {
     ranCount,
     // The ready rule (ADR 0020), the one of the rail badge, the card of the
     // drawer and the banner of the send test tab: nothing to fix, every check
-    // judged. A check whose findings are ignored or only infos is not
-    // "passed", and the email is still ready.
+    // judged, the server's included. A check whose findings are ignored or
+    // only infos is not "passed", and the email is still ready. No check, no
+    // verdict.
     ready: ko.pureComputed(
-      () => issueCount() === 0 && ranCount() === checks().length
+      () =>
+        checks().length > 0 &&
+        issueCount() === 0 &&
+        ranCount() === checks().length &&
+        remoteStatus() !== 'running'
     ),
   };
 }

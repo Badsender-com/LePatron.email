@@ -98,12 +98,23 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         return this.t('Checking links and images…');
       }
       if (!this.hasResults) return '';
+      // Ready, infos left or not: said as the card says it.
+      if (this.ready && this.status === 'done') {
+        return [
+          this.t('quality-ready-title'),
+          this.counts.info
+            ? this.t('quality-ready-infos', { count: this.counts.info })
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+      }
       const parts = SEVERITY_ORDER.filter(
         (s) => s !== 'success' && this.counts[s] > 0
       ).map((s) =>
         this.t(SEVERITY_META[s].countKey, { count: this.counts[s] })
       );
-      return parts.length ? parts.join(', ') : this.t('quality-ready-title');
+      return parts.join(', ');
     },
   },
   watch: {
@@ -261,7 +272,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         </div>
 
         <footer class="qc-drawer__footer">
-          <button v-if="ready" type="button" class="qc-button qc-button--outline" @click="run">
+          <button v-if="ready && status === 'done'" type="button" class="qc-button qc-button--outline" @click="run">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
           </button>
           <button type="button" class="qc-button qc-button--cta qc-button--grow" @click="$emit('send-test')">

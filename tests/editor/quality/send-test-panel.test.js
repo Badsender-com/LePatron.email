@@ -213,7 +213,9 @@ describe('SendTestPanel', () => {
       ready: false,
       issueCount: 2,
     });
-    expect(el.querySelector('.qc-notice--error').textContent).toContain('2');
+    expect(el.querySelector('.qc-notice').textContent).toContain(
+      '2 issues are still to fix'
+    );
     el.querySelector('.qc-notice .qc-link-button').click();
     expect(events.showResults).toBe(true);
   });

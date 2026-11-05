@@ -27,10 +27,11 @@ Vue.config.devtools = false;
 const finding = (severity, fields = {}) => ({ severity, ...fields });
 const PASSED = { status: 'passed' };
 
-function countsOf(findings, checks = [PASSED]) {
+function countsOf(findings, checks = [PASSED], remoteStatus = 'idle') {
   return createCounts(ko, {
     active: ko.observable(findings),
     checks: ko.observable(checks),
+    remoteStatus: ko.observable(remoteStatus),
   });
 }
 
@@ -72,6 +73,14 @@ describe('the ready rule (ADR 0020)', () => {
     it('is not ready while a check did not run', () => {
       expect(countsOf([], [PASSED, { status: 'error' }]).ready()).toBe(false);
     });
+
+    it("is not ready while the server's checks are awaited", () => {
+      expect(countsOf([], [PASSED], 'running').ready()).toBe(false);
+    });
+
+    it('gives no verdict without a check', () => {
+      expect(countsOf([], []).ready()).toBe(false);
+    });
   });
 
   describe('the banner of the send test tab', () => {
@@ -80,12 +89,29 @@ describe('the ready rule (ADR 0020)', () => {
 
     it('recalls the warnings left too, not only the errors', async () => {
       app = await mountBanner({ status: 'done', ready: false, issueCount: 2 });
-      expect(app.$el.querySelector('.qc-notice').textContent).toContain('2');
+      expect(app.$el.querySelector('.qc-notice').textContent).toContain(
+        '2 issues are still to fix'
+      );
     });
 
     it('is shown while a check did not run, with no point to fix', async () => {
       app = await mountBanner({ status: 'done', ready: false, issueCount: 0 });
-      expect(app.$el.querySelector('.qc-notice')).not.toBeNull();
+      expect(app.$el.querySelector('.qc-notice').textContent).toContain(
+        'A check could not run'
+      );
+    });
+
+    it('is red only when something blocks the export (decision 6)', async () => {
+      app = await mountBanner({ status: 'done', ready: false, issueCount: 2 });
+      expect(app.$el.querySelector('.qc-notice--error')).toBeNull();
+      app.$destroy();
+      app = await mountBanner({
+        status: 'done',
+        ready: false,
+        issueCount: 2,
+        blockingCount: 1,
+      });
+      expect(app.$el.querySelector('.qc-notice--error')).not.toBeNull();
     });
 
     it('is gone once the email is ready, infos left or not', async () => {

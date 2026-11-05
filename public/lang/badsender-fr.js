@@ -552,7 +552,7 @@ module.exports = {
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
-  'quality-ready-infos': ' __count__ info(s) à consulter si vous le souhaitez.',
+  'quality-ready-infos': '__count__ info(s) à consulter si vous le souhaitez.',
   '__count__ issues are still to fix: you can send a test anyway':
     '__count__ point(s) à corriger : vous pouvez tout de même envoyer un test',
   'A check could not run: you can send a test anyway':

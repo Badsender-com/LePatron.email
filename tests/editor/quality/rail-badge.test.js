@@ -44,6 +44,15 @@ describe("the badge of « Tester l'email » in the panel rail", () => {
     });
   });
 
+  it("waits for the server's checks before saying anything else", () => {
+    expect(railBadgeOf({ ...DONE, remoteStatus: 'running' })).toMatchObject({
+      kind: 'running',
+    });
+    expect(
+      railBadgeOf({ ...DONE, remoteStatus: 'running', issueCount: 1 })
+    ).toMatchObject({ kind: 'volume' });
+  });
+
   it('never ticks while a check could not run', () => {
     expect(railBadgeOf({ ...DONE, ranCount: 2 })).toMatchObject({
       kind: 'incomplete',
