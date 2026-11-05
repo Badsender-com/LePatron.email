@@ -12,7 +12,11 @@
 const COPY = [{ role: 'title', text: 'Les soldes commencent' }];
 
 function fakeEditor(overrides = {}) {
-  const state = { subject: 'Ancien objet', preheader: 'Ancien préheader' };
+  const state = {
+    subject: 'Ancien objet',
+    preheader: 'Ancien préheader',
+    remembered: null,
+  };
   const calls = [];
   return {
     state,
@@ -22,6 +26,11 @@ function fakeEditor(overrides = {}) {
     canApplySubject: true,
     canApplyPreheader: true,
     getSubject: () => state.subject,
+    // The subject on screen, or the one the user copied for their platform.
+    knownSubject: () => state.subject || state.remembered,
+    rememberSubject: (value) => {
+      state.remembered = value;
+    },
     setSubject: (value) => {
       calls.push(['setSubject', value]);
       state.subject = value;
@@ -46,14 +55,12 @@ const answer = (...texts) => ({
   dropped: 0,
 });
 
-// Turned on by #1181 (the « Outils IA » panel with the subject and preheader actions)
-describe.skip('ai panel: the steps of an AI action', () => {
+describe('ai panel: the steps of an AI action', () => {
   let createActionSession;
   let api;
   let editor;
 
   beforeAll(() => {
-    // Required here, not at the top of the file: the module ships with #1181.
     ({
       createActionSession,
     } = require('../../../packages/editor/src/js/ext/ai-panel/action-session'));
@@ -138,6 +145,37 @@ describe.skip('ai panel: the steps of an AI action', () => {
       expect(session.textToCopy()).toBe('A');
     });
 
+    it('sends the instruction as edited when asked for others', async () => {
+      api.generate.mockResolvedValue(answer('A', 'B', 'C'));
+      await session.request({ brief: 'Insister sur la livraison' });
+      await session.requestMore({ brief: 'Plus court' });
+      expect(api.generate.mock.calls[1][1].brief).toBe('Plus court');
+    });
+
+    it('keeps the proposals shown when the others are all set aside', async () => {
+      api.generate
+        .mockResolvedValueOnce(answer('A', 'B', 'C'))
+        .mockResolvedValueOnce({ proposals: [], dropped: 3 });
+      await session.request({});
+      await session.requestMore();
+      expect(session.state.proposals.map((p) => p.text)).toEqual([
+        'A',
+        'B',
+        'C',
+      ]);
+      expect(session.state.dropped).toBe(3);
+    });
+
+    it('does not undo over what the user changed by hand since', async () => {
+      api.generate.mockResolvedValue(answer('A', 'B', 'C'));
+      await session.request({});
+      session.select(1);
+      session.apply();
+      editor.state.subject = 'B, retouché';
+      expect(session.undo()).toBe(false);
+      expect(editor.state.subject).toBe('B, retouché');
+    });
+
     it('reports an error the user can act on, by status', async () => {
       api.generate.mockRejectedValue({ response: { status: 403 } });
       await session.request({});
@@ -192,6 +230,31 @@ describe.skip('ai panel: the steps of an AI action', () => {
       ]);
       session.undo();
       expect(editor.state.preheader).toBe('Ancien préheader');
+    });
+  });
+
+  describe('a subject the email has no field for', () => {
+    it('remembers the copied subject, offers the preheader next and builds it on that subject', async () => {
+      editor = fakeEditor({ canApplySubject: false });
+      editor.state.subject = '';
+      const subject = createActionSession({
+        action: 'generate-subject',
+        api,
+        editor,
+      });
+      api.generate.mockResolvedValue(answer('A', 'B', 'C'));
+      await subject.request({});
+      subject.copied(1);
+      expect(subject.state.copiedIndex).toBe(1);
+      expect(subject.nextAction()).toBe('generate-preheader');
+
+      const preheader = createActionSession({
+        action: 'generate-preheader',
+        api,
+        editor,
+      });
+      await preheader.request({});
+      expect(api.generate.mock.calls[1][1].subject).toBe('B');
     });
   });
 
