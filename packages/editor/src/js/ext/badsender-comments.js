@@ -6,7 +6,6 @@ const { userCan } = require('./user-can.js');
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
 const {
   formatBlockName,
-  getBlockLabelWithNumber,
   formatCommentDate,
 } = require('./comments-utils.js');
 const { findBlockById, goToBlock } = require('./block-navigation.js');
@@ -99,11 +98,20 @@ function commentsLoader(opts) {
       return formatBlockName(blockType || 'Block');
     };
 
-    // « Cover · bloc 2 »: its type, numbered among the blocks of that type.
+    // « Cover · bloc 2 »: its type, and its place among the blocks of the
+    // email; a block out of the list (a header) by its type alone.
     viewModel.commentBlockLabel = function (blockId) {
       try {
         const blocks = viewModel.content().mainBlocks().blocks();
-        return getBlockLabelWithNumber(blocks, blockId) || labelOfBlock(blockId);
+        const place = blocks.findIndex(function (block) {
+          return ko.unwrap(ko.unwrap(block).id) === blockId;
+        });
+        if (place === -1) return labelOfBlock(blockId);
+        return (
+          labelOfBlock(blockId) +
+          ' · ' +
+          viewModel.t('comments-block-place', { place: place + 1 })
+        );
       } catch (e) {
         return labelOfBlock(blockId);
       }

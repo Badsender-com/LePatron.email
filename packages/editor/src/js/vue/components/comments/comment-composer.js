@@ -123,13 +123,14 @@ const CommentComposer = Vue.component('CommentComposer', {
       <div class="comment-composer__row">
         <comments-menu :label="t('comments-type')" :value="category" :options="categories" @input="$emit('category', $event)"></comments-menu>
         <comments-menu :label="t('comments-priority')" :value="severity" :options="severities" @input="$emit('severity', $event)"></comments-menu>
+        <!-- Who may not approve adds on this line (board c1); who may, below. -->
+        <button v-if="!canApprove" type="submit" class="qc-button qc-button--cta comment-composer__add" :disabled="busy || !text.trim()">{{ t('comments-add') }}</button>
       </div>
       <p v-if="canApprove && approveBlocked" :id="reasonId" class="comment-composer__blocked">
         <span class="lucide lucide-alert-circle" aria-hidden="true"></span>{{ t('comments-approve-blocked') }}
       </p>
-      <div class="comment-composer__actions">
+      <div v-if="canApprove" class="comment-composer__actions">
         <button
-          v-if="canApprove"
           type="button"
           class="qc-button qc-button--outline comment-composer__approve"
           :aria-disabled="approveBlocked || busy ? 'true' : 'false'"
