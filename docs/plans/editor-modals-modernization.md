@@ -10,12 +10,12 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 ### 1. Modales Vue.js / Materialize CSS
 
-| #   | Modale          | Fichier                                                    | Priorité | Statut       |
-| --- | --------------- | ---------------------------------------------------------- | -------- | ------------ |
-| 1.1 | Delete Block    | `src/js/vue/components/delete-block-modal/delete.modal.js` | Haute    | [x] **Fait** |
-| 1.2 | Save Block      | `src/js/vue/components/save-block-modal/save-modal.js`     | Haute    | [x] **Fait** |
-| 1.3 | Send Test Email | `src/js/vue/components/send-test/test-modal.js`            | Haute    | [x] **Fait** |
-| 1.4 | Base Modal      | `src/js/vue/components/modal/modalComponent.js`            | Critique | [x] **Fait** |
+| #   | Modale          | Fichier                                                                                           | Priorité | Statut       |
+| --- | --------------- | ------------------------------------------------------------------------------------------------- | -------- | ------------ |
+| 1.1 | Delete Block    | `src/js/vue/components/delete-block-modal/delete.modal.js`                                        | Haute    | [x] **Fait** |
+| 1.2 | Save Block      | `src/js/vue/components/save-block-modal/save-modal.js`                                            | Haute    | [x] **Fait** |
+| 1.3 | Send Test Email | remplacée par l'onglet « Envoi de test » du panneau qualité (`quality-drawer/send-test-panel.js`) | Haute    | [x] **Fait** |
+| 1.4 | Base Modal      | `src/js/vue/components/modal/modalComponent.js`                                                   | Critique | [x] **Fait** |
 
 ### 2. Modales ESP (Email Service Provider)
 
@@ -408,12 +408,12 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 - Suppression de tous les appels `M.updateTextFields()` (Materialize)
 - Les modales utilisent déjà le `ModalComponent` modernisé
 - Les styles sont appliqués via `badsender-modal.less` (classes legacy supportées)
-- Création de `SimpleSelect` pour remplacer `vue-select` dans test-modal.js
+- Création de `SimpleSelect` pour remplacer `vue-select` dans test-modal.js (modale depuis remplacée par l'onglet « Envoi de test » du panneau qualité, `quality-drawer/send-test-panel.js`)
 
 **Fichiers modifiés :**
 
 - `esp-send-mail.js` - Suppression M.updateTextFields()
-- `test-modal.js` - Suppression M.updateTextFields(), utilisation SimpleSelect
+- `test-modal.js` - Suppression M.updateTextFields(), utilisation SimpleSelect (fichier supprimé depuis : l'envoi de test vit dans `quality-drawer/send-test-panel.js`)
 - `SendinBlueComponent.js` - Suppression M.updateTextFields()
 - `ActitoComponent.js` - Suppression M.updateTextFields()
 - `DscComponent.js` - Suppression M.updateTextFields()

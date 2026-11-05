@@ -17,6 +17,8 @@ const mailings = require('./mailing.controller.js');
 const mailingSearch = require('./mailing-search.controller.js');
 const { requireJsonBody } = require('../utils/require-json-body.js');
 const mailingMetadata = require('./mailing-metadata.controller.js');
+const mailingQuality = require('./mailing-quality.controller.js');
+const shareLinks = require('../share-link/share-link.controller.js');
 const translation = require('../translation/translation.controller.js');
 
 // All routes below require an authenticated user AND the Email Builder module
@@ -63,6 +65,36 @@ router.patch(
   GUARD_CAN(C.MAILING_EDIT_CONTENT),
   GUARD_EMAIL_METADATA,
   mailingMetadata.updateMetadata
+);
+router.patch(
+  '/:mailingId/quality-ignores',
+  GUARD_CAN(C.MAILING_EDIT_CONTENT),
+  // A form posted from another site must not change what the team ignores.
+  requireJsonBody,
+  mailingQuality.updateQualityIgnores
+);
+router.post(
+  '/:mailingId/quality/resources',
+  GUARD_USER,
+  // A form posted from another site would spend the user's runs.
+  requireJsonBody,
+  mailingQuality.checkResources
+);
+router.get(
+  '/:mailingId/share-links',
+  GUARD_CAN(C.MAILING_SEND_TEST),
+  shareLinks.list
+);
+router.post(
+  '/:mailingId/share-links',
+  GUARD_CAN(C.MAILING_SEND_TEST),
+  requireJsonBody,
+  shareLinks.create
+);
+router.delete(
+  '/:mailingId/share-links/:linkId',
+  GUARD_CAN(C.MAILING_SEND_TEST),
+  shareLinks.revoke
 );
 router.put(
   '/:mailingId/mosaico',

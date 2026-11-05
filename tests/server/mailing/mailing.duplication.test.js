@@ -56,6 +56,14 @@ describe('MailingSchema.methods.duplicate', () => {
     expect(doc.plannedSendDate).toBeUndefined();
   });
 
+  it('clears the ignored quality findings', () => {
+    const doc = makeDoc({ qualityIgnores: [{ fingerprint: 'x' }] });
+
+    MailingSchema.methods.duplicate.call(doc, {});
+
+    expect(doc.qualityIgnores).toBeUndefined();
+  });
+
   it('keeps the subject, the typology and the trigger', () => {
     const doc = makeDoc();
     const emailType = doc._emailType;
@@ -101,7 +109,12 @@ describe('buildMailingCopy', () => {
     _emailType: 'type-a',
     trigger: 'automated',
     plannedSendDate: new Date('2026-07-01'),
+    qualityIgnores: [{ fingerprint: 'unfilled-links|b1|-|x', _user: 'u1' }],
   };
+
+  it('drops the ignored quality findings: the copy is reviewed afresh', () => {
+    expect(buildMailingCopy(source)).not.toHaveProperty('qualityIgnores');
+  });
 
   it('drops the planned send date', () => {
     expect(buildMailingCopy(source)).not.toHaveProperty('plannedSendDate');

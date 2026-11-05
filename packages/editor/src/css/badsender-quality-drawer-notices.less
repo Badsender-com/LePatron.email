@@ -1,0 +1,46 @@
+////////
+// QUALITY DRAWER — notices of the results list.
+// Imported inside `#toolquality { }` by badsender-quality-drawer.less, which
+// also declares the @qc-* variables used here.
+////////
+
+// A check that could not run: neither passed nor failed.
+.qc-sev--not-run {
+  color: var(--gray-600);
+}
+.qc-pill--not-run {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+// "The results date from before your last changes", above the summary.
+.qc-stale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: @qc-tint-warning;
+  border-bottom: 1px solid var(--gray-200);
+  color: @qc-warning-text;
+  font-size: 12px;
+
+  > .lucide {
+    font-size: 14px;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    color: var(--gray-800);
+  }
+}
+
+// The server could not check the links and images.
+.qc-remote--error {
+  background: var(--gray-50);
+  color: var(--gray-800);
+
+  > .lucide {
+    color: var(--gray-600);
+  }
+}
