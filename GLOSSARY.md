@@ -190,7 +190,7 @@ A root comment of priority "blocking", not resolved. While one is open, the emai
 _UI_: Bloquant
 
 **Approval**:
-The event by which someone allowed to approve says an email may be sent. It shows in the thread of comments but is not a comment to resolve: it has no type, priority or block, and counts in no counter of unresolved comments. Its author withdraws it by deleting it.
+The event by which someone allowed to approve says an email may be sent. It shows in the thread of comments but is not a comment to resolve: it has no type, priority or block, and counts in no counter of unresolved comments. Its author, or a moderator of the comments, withdraws it by deleting it; editing the email does not withdraw it.
 _UI_: « Approuver l'email » ; « Bon pour envoi »
 _Avoid_: Validation (for the event), sign-off
 
