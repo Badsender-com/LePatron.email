@@ -57,10 +57,6 @@ const QualityIssueRow = Vue.component('QualityIssueRow', {
           <span v-if="!expanded" class="qc-row__desc">{{ item.description }}</span>
         </span>
         <span class="qc-row__category">{{ item.category }}</span>
-        <span
-          :class="['lucide', expanded ? 'lucide-chevron-up' : 'lucide-chevron-down', 'qc-row__chevron']"
-          aria-hidden="true"
-        ></span>
       </button>
       <div v-if="expanded" :id="panelId" class="qc-row__panel">
         <p class="qc-row__full">{{ item.description }}</p>

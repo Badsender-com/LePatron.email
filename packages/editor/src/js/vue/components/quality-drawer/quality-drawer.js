@@ -97,6 +97,10 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       const step = event.key === 'ArrowRight' ? 1 : TABS.length - 1;
       this.goTo(TABS[(i + step) % TABS.length].name);
     },
+    run() {
+      clearHighlight();
+      this.vm.quality.run();
+    },
     runFromSend() {
       this.goTo('checks');
       this.vm.quality.run();
@@ -110,7 +114,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       :close-label="t('right-panel-close')"
       @close="vm.rightPanel.hide()"
     >
-      <div slot="nav" class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
+      <template v-slot:nav>
+      <div class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
         <button
           v-for="item in tabs"
           :key="item.name"
@@ -125,9 +130,10 @@ const QualityDrawer = Vue.component('QualityDrawer', {
           :tabindex="tab === item.name ? 0 : -1"
           @click="select(item.name)"
         >
-          <span :class="['lucide', item.icon]" aria-hidden="true"></span>{{ t(item.labelKey) }}
+          {{ t(item.labelKey) }}
         </button>
       </div>
+      </template>
 
       <quality-checks-panel
         v-show="tab === 'checks'"
@@ -144,8 +150,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :checks="checks"
         :ran-at="ranAt"
         :ready="ready"
+        :issue-count="issueCount"
+        :blocking-count="blockingCount"
         :ignore-locked="ignoreLocked"
-        @send-test="goTo('send')"
       ></quality-checks-panel>
       <send-test-panel
         v-show="tab === 'send'"
@@ -162,6 +169,24 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         @show-results="goTo('checks')"
         @run-checks="runFromSend"
       ></send-test-panel>
+
+      <!-- The checks' actions, in the panel's foot (boards q1 to q3). -->
+      <template v-if="tab === 'checks'" v-slot:footer>
+        <button v-if="status === 'idle'" type="button" class="qc-button qc-button--cta" @click="run">
+          <span class="lucide lucide-play" aria-hidden="true"></span>{{ t('quality-run') }}
+        </button>
+        <button v-else-if="status === 'running'" type="button" class="qc-button qc-button--outline" @click="vm.quality.cancel()">
+          {{ t('quality-action-cancel') }}
+        </button>
+        <template v-else>
+          <button type="button" class="qc-button qc-button--outline" @click="run">
+            <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
+          </button>
+          <button type="button" class="qc-button qc-button--cta" @click="goTo('send')">
+            <span class="lucide lucide-send" aria-hidden="true"></span>{{ t('quality-send-a-test') }}
+          </button>
+        </template>
+      </template>
     </right-panel-shell>
   `,
 });

@@ -42,6 +42,9 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     // The ready rule (ADR 0020), the rail badge's: nothing to fix, every check
     // judged; infos may be left.
     ready: { type: Boolean, default: false },
+    // What is left to fix, and what of it blocks the export.
+    issueCount: { type: Number, default: 0 },
+    blockingCount: { type: Number, default: 0 },
     // The user's role may not ignore (quality-drawer.js).
     ignoreLocked: { type: Boolean, default: false },
   },
@@ -192,21 +195,17 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
   },
   template: `
     <div class="qc-panel">
+      <!-- Before a run (board q1): what will be checked; « Lancer le
+           contrôle » is the panel's foot. -->
       <div v-if="status === 'idle'" class="qc-drawer__empty">
-        <span class="qc-drawer__empty-icon" aria-hidden="true"><span class="lucide lucide-shield-check"></span></span>
-        <p class="qc-drawer__empty-title">{{ t('Run quality checks') }}</p>
-        <p class="qc-drawer__empty-text">{{ t('Links, images and weight are checked before you send a test.') }}</p>
-        <button type="button" class="qc-button qc-button--cta" @click="run">
-          <span class="lucide lucide-play" aria-hidden="true"></span>
-          {{ t('Run quality checks') }}
-        </button>
-        <p class="qc-drawer__hint">{{ t('__count__ checks', { count: vm.quality.ruleCount }) }}</p>
-        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__hint qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
+        <span class="lucide lucide-shield-check qc-drawer__empty-icon" aria-hidden="true"></span>
+        <p class="qc-drawer__empty-title">{{ t('quality-ready-to-run', { count: vm.quality.ruleCount }) }}</p>
+        <p class="qc-drawer__empty-text">{{ t('quality-ready-to-run-text') }}</p>
+        <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__empty-text qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
       </div>
 
       <div v-else-if="status === 'running'" class="qc-drawer__running">
         <span class="qc-running-label"><span class="qc-spinner" aria-hidden="true"></span>{{ t('Running checks…') }}</span>
-        <button type="button" class="qc-button qc-button--outline qc-button--sm" @click="vm.quality.cancel()">{{ t('quality-action-cancel') }}</button>
       </div>
 
       <template v-else>
@@ -214,6 +213,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           :status="status"
           :counts="counts"
           :ready="ready"
+          :issue-count="issueCount"
+          :blocking-count="blockingCount"
           :checks-total="checks.length"
           :ran-at="ranAt"
           :remote-status="remoteStatus"
@@ -271,14 +272,6 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
           <button type="button" class="qc-link-button" @click="undoIgnore">{{ t('quality-action-undo') }}</button>
         </div>
 
-        <footer class="qc-drawer__footer">
-          <button v-if="ready && status === 'done'" type="button" class="qc-button qc-button--outline" @click="run">
-            <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
-          </button>
-          <button type="button" class="qc-button qc-button--cta qc-button--grow" @click="$emit('send-test')">
-            <span class="lucide lucide-send" aria-hidden="true"></span>{{ t('Send a test email') }}
-          </button>
-        </footer>
       </template>
 
       <p class="qc-sr-only" aria-live="polite" aria-atomic="false">{{ liveMessage }}</p>

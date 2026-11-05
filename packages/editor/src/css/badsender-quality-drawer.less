@@ -21,43 +21,32 @@
 // ===== Drawer =====
 .qc-drawer {
   // Its layout is the shell's (badsender-right-panel-ui.less).
-  &__empty,
-  &__clean {
+  // Before a run (board q1).
+  &__empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-  }
-
-  &__empty {
     flex: 1;
     justify-content: center;
     padding: 40px 32px;
   }
 
   &__empty-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 64px;
-    height: 64px;
-    margin-bottom: 20px;
-    border-radius: 50%;
-    background: @qc-tint-info;
-    color: var(--accent);
-    font-size: 28px;
+    margin-bottom: 16px;
+    color: var(--gray-500);
+    font-size: 30px;
   }
 
-  &__empty-title,
-  &__clean-title {
+  &__empty-title {
     margin: 0 0 8px;
     font-size: 15px;
     font-weight: 600;
   }
 
   &__empty-text {
-    max-width: 260px;
-    margin: 0 0 24px;
+    max-width: 300px;
+    margin: 0 0 8px;
     line-height: 1.5;
     color: var(--gray-700);
   }
@@ -68,53 +57,63 @@
     color: var(--gray-600);
   }
 
-  &__running,
-  &__summary {
+  &__running {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 14px 16px;
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
   }
 
-  &__clean {
-    padding: 24px 20px;
-    background: linear-gradient(180deg, @qc-tint-success 0%, var(--white) 100%);
-    border-bottom: 1px solid var(--gray-200);
-  }
-
-  &__clean-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 10px;
-    border: 2px solid @qc-success;
-    border-radius: 50%;
-    background: var(--white);
-    color: @qc-success;
-    font-size: 22px;
-  }
-
-  &__clean-text {
-    margin: 0;
-    font-size: 12px;
-    color: var(--gray-700);
-  }
-
+  // The shell's body scrolls, the actions staying in its foot.
   &__list {
-    flex: 1;
-    overflow-y: auto;
+    padding-bottom: 16px;
+  }
+}
+
+// ===== Where the email stands (boards q2, q3) =====
+// Red only when something blocks the export (decision 6).
+.qc-status {
+  display: flex;
+  gap: 12px;
+  margin: 12px 16px 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: @qc-radius;
+  background: var(--gray-50);
+
+  &__icon {
+    flex: none;
+    margin-top: 2px;
+    font-size: 18px;
   }
 
-  &__footer {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    border-top: 1px solid var(--gray-200);
+  &__title {
+    margin: 0 0 4px;
+    font-weight: 600;
+    color: var(--gray-900);
   }
+
+  &__text {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--gray-800);
+  }
+
+  &--ready {
+    border-color: transparent;
+    background: @qc-tint-success;
+
+    .qc-status__icon { color: @qc-success; }
+  }
+
+  &--blocking {
+    border-color: color-mix(in srgb, @qc-error 35%, var(--white));
+    background: @qc-tint-error;
+
+    .qc-status__icon { color: @qc-error-text; }
+  }
+
+  &--todo .qc-status__icon { color: @qc-warning; }
+  &--incomplete .qc-status__icon { color: var(--gray-600); }
 }
 
 .qc-running-label {

@@ -192,10 +192,12 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean')).toBeNull();
+    expect(el.querySelector('.qc-status--ready')).toBeNull();
+    expect(el.querySelector('.qc-status--incomplete').textContent).toContain(
+      'quality-not-run-title'
+    );
     expect(el.querySelector('.qc-group--not-run')).not.toBeNull();
     expect(el.textContent).toContain('This check could not run');
-    expect(el.querySelector('.qc-pill--not-run').textContent).toContain('1');
     expect(el.querySelector('[aria-live]').textContent).toBe(
       '1 checks not run'
     );
@@ -269,13 +271,12 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
-      'quality-ready-title'
-    );
-    expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
+    expect(
+      el.querySelector('.qc-status--ready .qc-status__title').textContent
+    ).toBe('quality-ready-title');
+    expect(el.querySelector('.qc-status__text').textContent).toMatch(
       /quality-ready-text/
     );
-    expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.querySelector('[aria-live]').textContent).toBe(
       'quality-ready-title'
     );
@@ -289,13 +290,12 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
-      'quality-ready-title'
-    );
-    expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
+    expect(
+      el.querySelector('.qc-status--ready .qc-status__title').textContent
+    ).toBe('quality-ready-title');
+    expect(el.querySelector('.qc-status__text').textContent).toMatch(
       /quality-ready-infos/
     );
-    expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.textContent).toContain('quality-group-infos');
     // Said as the card says it, not as « 1 infos ».
     expect(el.querySelector('[aria-live]').textContent).toBe(
@@ -312,8 +312,32 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
     vm.quality.status('stale');
     await Vue.nextTick();
-    expect(el.querySelector('.qc-drawer__clean')).toBeNull();
-    expect(el.querySelector('.qc-drawer__summary')).not.toBeNull();
+    expect(el.querySelector('.qc-status')).toBeNull();
+    expect(el.querySelector('.qc-stale')).not.toBeNull();
+  });
+
+  it('says what is left to fix, in red only when something blocks the export (board q2)', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [{ ...linkFinding, blocking: true }],
+      checks: [{ ...sizeCheck }],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+    const card = el.querySelector('.qc-status--blocking');
+    expect(card.textContent).toContain('quality-not-ready-blocking');
+    expect(card.textContent).toContain('quality-blocking-text');
+  });
+
+  it('runs the checks from the foot of the panel (board q1)', async () => {
+    const { vm, el } = await mountDrawer({ findings: [], checks: [] });
+    const run = el.querySelector('.right-panel-shell__footer .qc-button--cta');
+    expect(run.textContent).toContain('quality-run');
+    expect(el.querySelector('.qc-drawer__empty').textContent).toContain(
+      'quality-ready-to-run'
+    );
+    run.click();
+    await Vue.nextTick();
+    expect(vm.quality.status()).not.toBe('idle');
   });
 
   it('announces only what was found, never the zeros', async () => {
@@ -344,7 +368,8 @@ describe('QualityDrawer', () => {
     // The results stay readable meanwhile.
     expect(el.querySelector('.qc-row')).not.toBeNull();
 
-    banner.querySelector('button').click();
+    // « Relancer », in the panel's foot.
+    el.querySelector('.right-panel-shell__footer .qc-button--outline').click();
     await Vue.nextTick();
     expect(el.querySelector('.qc-stale')).toBeNull();
   });
@@ -357,7 +382,7 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    el.querySelector('.qc-drawer__footer .qc-button--cta').click();
+    el.querySelector('.right-panel-shell__footer .qc-button--cta').click();
     await Vue.nextTick();
     await Vue.nextTick();
 
