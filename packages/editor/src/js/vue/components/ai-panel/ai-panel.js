@@ -7,6 +7,7 @@ const { FIELD_TARGETS } = require('../../../ext/ai-panel/targets');
 const { AiProposalsSteps } = require('./ai-proposals-steps');
 const { AiCorrectionsSteps } = require('./ai-corrections-steps');
 const template = require('./ai-panel.template');
+const koMirror = require('../../mixins/ko-mirror');
 
 // The component that renders the steps of each family of AI actions.
 const STEPS_BY_FAMILY = {
@@ -19,7 +20,6 @@ const MIRRORED = [
   'target',
   'actions',
   'targetActions',
-  'session',
   'sessionAction',
   'selectionChanged',
 ];
@@ -33,6 +33,7 @@ const MIRRORED = [
  */
 const AiPanel = Vue.component('AiPanel', {
   components: { AiProposalsSteps, AiCorrectionsSteps },
+  mixins: [koMirror],
   props: {
     vm: { type: Object, required: true },
     panel: { type: Object, required: true },
@@ -48,35 +49,34 @@ const AiPanel = Vue.component('AiPanel', {
     sessionKey: 0,
     // Said to screen readers: proposals arrived, copied, undone.
     liveMessage: '',
-    subscriptions: [],
-    iconsObserver: null,
   }),
   created() {
-    this.sync();
-    this.subscriptions = MIRRORED.map((name) =>
-      this.panel[name].subscribe(() => this.sync(name))
+    this.iconsObserver = null;
+    MIRRORED.forEach((name) =>
+      this.mirror(this.panel[name], (value) => (this[name] = value))
+    );
+    // A session that changes starts its steps afresh.
+    this.mirror(
+      this.panel.session,
+      (value) => (this.session = value),
+      () => this.startSession()
     );
   },
   mounted() {
     this.watchFieldIcons();
   },
   beforeDestroy() {
-    this.subscriptions.forEach((subscription) => subscription.dispose());
     if (this.iconsObserver) this.iconsObserver.disconnect();
   },
   methods: {
     t(key, params) {
       return this.vm.t(key, params);
     },
-    sync(changed) {
-      MIRRORED.forEach((name) => {
-        this[name] = this.panel[name]();
-      });
-      if (changed === 'session') {
-        this.sessionKey += 1;
-        this.liveMessage = '';
-        this.focusHeading();
-      }
+    // The session changed: its steps start afresh, the heading takes the focus.
+    startSession() {
+      this.sessionKey += 1;
+      this.liveMessage = '';
+      this.focusHeading();
     },
     labelsOf(id) {
       return definitionOf(id).labels;
