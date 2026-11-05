@@ -1018,9 +1018,9 @@ module.exports = {
   'text-generation-empty-email':
     "L'email ne contient pas encore de texte : ajoutez du contenu avant de demander des propositions.",
   'text-generation-error-disabled':
-    "La génération de texte n'est pas activée pour votre groupe.",
+    "La génération de texte n'est pas activée pour votre entreprise.",
   'text-generation-error-forbidden':
-    "Vous n'avez pas le droit de modifier cet email : les outils IA ne sont pas disponibles.",
+    "Vous ne pouvez plus modifier cet email : les Outils IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
   'text-generation-error-unavailable':
     "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
   'text-generation-error-rate-limited':

@@ -39,11 +39,22 @@ const MailingSchema = require('../../../packages/server/mailing/mailing.schema')
 
 const COMPANY = mongoose.Types.ObjectId('507f1f77bcf86cd799439a01');
 
-function metadataFor({ role, feature = true, canWrite = true }) {
-  aiFeatureService.getEditorFeatureFlags.mockResolvedValue({
-    hasTranslationFeature: false,
-    hasTextGenerationFeature: feature,
-  });
+const OTHER_COMPANY = mongoose.Types.ObjectId('507f1f77bcf86cd799439b01');
+
+function metadataFor({
+  role,
+  feature = true,
+  canWrite = true,
+  emailCompany = COMPANY,
+  emailCompanyFeature = feature,
+}) {
+  aiFeatureService.getEditorFeatureFlags.mockImplementation(
+    async ({ groupId }) => ({
+      hasTranslationFeature: false,
+      hasTextGenerationFeature:
+        String(groupId) === String(COMPANY) ? feature : emailCompanyFeature,
+    })
+  );
   mailingService.userCanEditMailing.mockResolvedValue(canWrite);
   const mailing = {
     _id: mongoose.Types.ObjectId('507f1f77bcf86cd799439055'),
@@ -51,7 +62,7 @@ function metadataFor({ role, feature = true, canWrite = true }) {
     data: {},
     previewHtml: '',
     _workspace: mongoose.Types.ObjectId('507f1f77bcf86cd799439301'),
-    _company: { _id: COMPANY, id: String(COMPANY), name: 'Company A' },
+    _company: { _id: emailCompany, id: String(emailCompany), name: 'A' },
     _wireframe: {
       _id: mongoose.Types.ObjectId('507f1f77bcf86cd799439201'),
       name: 'News',
@@ -95,6 +106,23 @@ describe('findOneForMosaico — canUseTextGeneration (ADR 0020)', () => {
   it('is false without the right to write where the email lives', async () => {
     const metadata = await metadataFor({ role: 'writer', canWrite: false });
     expect(metadata.canUseTextGeneration).toBe(false);
+  });
+
+  it('reads the feature of the company billed, the email’s, not its template’s', async () => {
+    const off = await metadataFor({
+      role: 'super_admin',
+      emailCompany: OTHER_COMPANY,
+      emailCompanyFeature: false,
+    });
+    expect(off.canUseTextGeneration).toBe(false);
+    expect(off.hasTextGenerationFeature).toBe(true);
+    const on = await metadataFor({
+      role: 'super_admin',
+      feature: false,
+      emailCompany: OTHER_COMPANY,
+      emailCompanyFeature: true,
+    });
+    expect(on.canUseTextGeneration).toBe(true);
   });
 
   it('is false when the company has no text generation', async () => {

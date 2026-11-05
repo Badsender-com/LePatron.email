@@ -7,6 +7,7 @@
 const {
   errorKey,
 } = require('../../../packages/editor/src/js/ext/ai-panel/sessions/errors.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 
 const failure = (status, message) => ({
   response: { status, data: message ? { message } : undefined },
@@ -14,7 +15,7 @@ const failure = (status, message) => ({
 
 describe('errorKey', () => {
   it('says the feature is off only when the server says so', () => {
-    expect(errorKey(failure(403, 'TEXT_GENERATION_DISABLED'))).toBe(
+    expect(errorKey(failure(403, ERROR_CODES.TEXT_GENERATION_DISABLED))).toBe(
       'text-generation-error-disabled'
     );
   });

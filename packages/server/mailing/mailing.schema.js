@@ -631,9 +631,19 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   // Whether this user may use the AI tools on this email: the rule of the text
   // generation routes (the feature, the capability, where the email lives),
   // known before the editor starts so that every way in is hidden at once
-  // (ADR 0020). `hasTextGenerationFeature` keeps saying "on for the company".
+  // (ADR 0020). The routes read the feature of the company billed, the
+  // email's, which may not be its template's (invocation-context.js).
+  const billedGroupId = (mailing._company && mailing._company._id) || groupId;
+  const billedHasTextGeneration =
+    String(billedGroupId) === String(groupId)
+      ? hasTextGenerationFeature
+      : (
+          await aiFeatureService.getEditorFeatureFlags({
+            groupId: billedGroupId,
+          })
+        ).hasTextGenerationFeature;
   const canUseTextGeneration = Boolean(
-    hasTextGenerationFeature &&
+    billedHasTextGeneration &&
       canWrite &&
       permissions.can(user, CAPABILITIES.MAILING_EDIT_CONTENT)
   );
@@ -672,8 +682,8 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       hasHtmlPreview: !!mailing.previewHtml,
       canWrite,
       hasTranslationFeature,
-      // The text generation button. Independent of the email metadata: without
-      // them, the subject proposal is offered to copy.
+      // Text generation on for the template's company; the editor reads
+      // canUseTextGeneration below.
       hasTextGenerationFeature,
       // The AI tools of the editor, for this user on this email.
       canUseTextGeneration,

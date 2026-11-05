@@ -984,9 +984,9 @@ module.exports = {
   'text-generation-empty-email':
     'The email has no text yet: add content before asking for proposals.',
   'text-generation-error-disabled':
-    'Text generation is not enabled for your group.',
+    'Text generation is not enabled for your company.',
   'text-generation-error-forbidden':
-    'You may not edit this email: the AI tools are not available.',
+    'You can no longer edit this email, so the AI tools are unavailable. Reload the page, or ask an administrator for access.',
   'text-generation-error-unavailable':
     'Text generation is not available right now. Contact your administrator.',
   'text-generation-error-rate-limited':

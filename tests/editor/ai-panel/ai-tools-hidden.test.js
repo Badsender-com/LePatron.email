@@ -49,4 +49,51 @@ describe('the AI tools, for this user on this email', () => {
       plugin.dispose();
     });
   });
+
+  it.each([
+    [false, false],
+    [true, true],
+  ])(
+    'offers AI actions in the registry context: %s gives %s',
+    (canUse, expected) => {
+      const {
+        createEditorAccess,
+      } = require('../../../packages/editor/src/js/ext/ai-panel/editor-access.js');
+      const vm = {
+        metadata: {
+          hasTextGenerationFeature: true,
+          canUseTextGeneration: canUse,
+        },
+        content: ko.observable({}),
+      };
+      expect(createEditorAccess(vm).context().textGeneration).toBe(expected);
+    }
+  );
+
+  it.each([
+    [false, false],
+    [true, true],
+  ])('adds the text editor AI button: %s gives %s', (canUse, expected) => {
+    jest.isolateModules(() => {
+      global.$ = global.jQuery = require('jquery');
+      // The module's own knockout, in this isolated registry.
+      const isolatedKo = require('knockout');
+      isolatedKo.bindingHandlers.wysiwyg = {};
+      const extend = require('../../../packages/editor/src/js/ext/badsender-extend-text-editor.js');
+      const plugin = extend({ tinymce: {}, lang: 'en' });
+      plugin.viewModel({
+        metadata: {
+          hasTextGenerationFeature: true,
+          canUseTextGeneration: canUse,
+        },
+      });
+      expect(
+        String(isolatedKo.bindingHandlers.wysiwyg.fullOptions.toolbar1 || '')
+      ).toEqual(
+        expected
+          ? expect.stringContaining('aiactions')
+          : expect.not.stringContaining('aiactions')
+      );
+    });
+  });
 });
