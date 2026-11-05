@@ -16,57 +16,12 @@
  * Turned on by P5 (the comments' controller).
  */
 
-const ko = require('knockout');
-
-const REFRESH_MS = 30 * 1000;
-
-const comment = (id, fields = {}) => ({
-  _id: id,
-  text: `Commentaire ${id}`,
-  resolved: false,
-  _parentComment: null,
-  decision: null,
-  severity: 'info',
-  blockId: null,
-  ...fields,
-});
-
-function mount({ items = [] } = {}) {
-  const {
-    createCommentsStore,
-  } = require('../../../packages/editor/src/js/ext/comments/comments-store.js');
-  const api = {
-    list: jest
-      .fn()
-      .mockImplementation(async () => items.map((c) => ({ ...c }))),
-    counts: jest.fn().mockResolvedValue({ b1: { count: 2 } }),
-    unresolvedCount: jest.fn().mockResolvedValue(3),
-  };
-  const page = { hidden: false };
-  const isOpen = ko.observable(false);
-  const selection = ko.observable(null);
-  const store = createCommentsStore(ko, {
-    api,
-    isOpen,
-    selection,
-    isPageHidden: () => page.hidden,
-  });
-  return {
-    store,
-    api,
-    page,
-    isOpen,
-    selection,
-    setItems: (next) => (items = next),
-  };
-}
-
-const settle = () => new Promise((resolve) => setImmediate(resolve));
+const { REFRESH_MS, comment, mount, settle } = require('./store-harness.js');
 
 beforeEach(() => jest.useFakeTimers('legacy'));
 afterEach(() => jest.useRealTimers());
 
-describe.skip('the comments store (ADR 0020, P5)', () => {
+describe('the comments store (ADR 0020, P5)', () => {
   describe('loading', () => {
     it('loads the counters at start, panel closed, without the list', async () => {
       const { store, api } = mount();
@@ -78,9 +33,8 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
       expect(store.counts()).toEqual({ b1: { count: 2 } });
     });
 
-    it('loads once at the first opening, not twice from the URL', async () => {
+    it('loads once at an opening', async () => {
       const { store, api, isOpen } = mount({ items: [comment('c1')] });
-      store.openFromUrl();
       isOpen(true);
       await settle();
       expect(api.list).toHaveBeenCalledTimes(1);
@@ -130,16 +84,59 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
       expect(api.list).toHaveBeenCalledTimes(2);
     });
 
-    it('updates a comment shown in place: it keeps its identity', async () => {
-      const { store, isOpen, setItems } = mount({ items: [comment('c1')] });
+    // A view draws again only the comment that changed: a reply or an edit
+    // under way elsewhere in the thread is left alone.
+    it('takes a changed comment at its place, and leaves the others as they are', async () => {
+      const { store, isOpen, setItems } = mount({
+        items: [comment('c1'), comment('c2')],
+      });
       isOpen(true);
       await settle();
-      const shown = store.comments()[0];
-      setItems([comment('c1', { text: 'modifié' })]);
+      const [first, second] = store.comments();
+      setItems([comment('c1', { text: 'modifié' }), comment('c2')]);
       jest.advanceTimersByTime(REFRESH_MS);
       await settle();
-      expect(store.comments()[0]).toBe(shown);
-      expect(shown.text).toBe('modifié');
+      expect(store.comments()[0]).not.toBe(first);
+      expect(store.comments()[0].text).toBe('modifié');
+      expect(store.comments()[1]).toBe(second);
+    });
+
+    it('drops a refresh sent before one of the user’s own changes', async () => {
+      const { store, api, isOpen } = mount({ items: [comment('c1')] });
+      isOpen(true);
+      await settle();
+      let answer;
+      api.list.mockImplementationOnce(
+        () => new Promise((resolve) => (answer = resolve))
+      );
+      jest.advanceTimersByTime(REFRESH_MS);
+      store.upsert(comment('mine'));
+      answer([comment('c1')]);
+      await settle();
+      expect(store.comments().map((c) => c._id)).toEqual(['c1', 'mine']);
+      expect(store.pendingCount()).toBe(0);
+    });
+
+    it('sends one refresh at a time', async () => {
+      const { api, isOpen } = mount();
+      isOpen(true);
+      await settle();
+      api.list.mockImplementation(() => new Promise(() => {}));
+      jest.advanceTimersByTime(REFRESH_MS * 3);
+      await settle();
+      expect(api.list).toHaveBeenCalledTimes(2);
+    });
+
+    it('stops refreshing once the session or the access is refused', async () => {
+      const { api, isOpen } = mount();
+      isOpen(true);
+      await settle();
+      api.list.mockRejectedValueOnce({ status: 401 });
+      jest.advanceTimersByTime(REFRESH_MS);
+      await settle();
+      jest.advanceTimersByTime(REFRESH_MS * 2);
+      await settle();
+      expect(api.list).toHaveBeenCalledTimes(2);
     });
 
     it('holds new comments behind the pill until the user shows them', async () => {
@@ -210,13 +207,14 @@ describe.skip('the comments store (ADR 0020, P5)', () => {
   });
 
   describe('the target of a new comment', () => {
-    it('follows the canvas selection until the user changes it', () => {
+    it('follows the canvas selection; a choice holds until the next selection', () => {
       const { store, selection } = mount();
       selection({ id: () => 'b1' });
       expect(store.target()).toBe('b1');
       store.setTarget(null);
-      selection({ id: () => 'b2' });
       expect(store.target()).toBe(null);
+      selection({ id: () => 'b2' });
+      expect(store.target()).toBe('b2');
     });
 
     it('is not the filter: filtering on a block leaves the target alone', () => {

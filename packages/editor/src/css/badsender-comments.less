@@ -738,6 +738,31 @@
   }
 }
 
+.comments-new-pill-zone {
+  display: flex;
+  justify-content: center;
+}
+
+// New comments held by the refresh (ADR 0020): accent means a number.
+.comments-new-pill {
+  margin: 8px auto;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: @comment-border-radius-pill;
+  // Text on a light accent: white on the accent fails contrast.
+  background: fade(@bs-accent-color, 15%);
+  color: @bs-primary-color;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid @bs-accent-color;
+    outline-offset: 2px;
+  }
+}
+
 .comments-approve-blocked {
   margin: 0 0 8px;
   font-size: 12px;

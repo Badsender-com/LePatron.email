@@ -351,6 +351,8 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  'comments-new-one': '1 nouveau commentaire · Afficher',
+  'comments-new': '__count__ nouveaux commentaires · Afficher',
   'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',
   'comments-rail-marker':
     '__count__ commentaires non résolus sur le bloc __block__',

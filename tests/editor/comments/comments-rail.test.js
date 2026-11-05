@@ -154,12 +154,28 @@ describe('the comment markers rail in the editor (ADR 0020, P4)', () => {
     return { vm, plugin };
   }
 
-  it('marks active the block of a new comment, and names the block', () => {
+  it('marks active the block of a new comment, and names the block', async () => {
     const scroller = canvas(['b1']);
     const { vm } = editor();
-    vm.commentCounts({ b1: { count: 2, maxSeverity: 'important' } });
+    const comment = (id) => ({
+      _id: id,
+      blockId: 'b1',
+      severity: 'important',
+      resolved: false,
+      _parentComment: null,
+    });
+    $.ajax.mockImplementation((options) => {
+      if (/\/comments$/.test(options.url)) {
+        options.success({ items: [comment('c1'), comment('c2')] });
+      }
+      return $.Deferred().promise();
+    });
+    await vm.loadComments();
     vm.commentsRail.update();
+    // The target, not the filter (decision 7b).
     vm.selectedBlockForComments('b1');
+    expect(vm.commentsRail.markers()[0].active).toBe(false);
+    vm.commentsStore.setTarget('b1');
     expect(vm.commentsRail.markers()).toEqual([
       expect.objectContaining({ blockId: 'b1', count: 2, active: true }),
     ]);
