@@ -18,24 +18,21 @@ const Vue = require('vue/dist/vue.common');
  *
  * Opening, closing, Escape, `hidden`/`inert` and the focus on open and close
  * stay with the `rightPanel` binding on the panel's container
- * (ext/right-panel.js): closing here goes through it.
+ * (ext/right-panel.js): the close button emits `close`, and the panel closes
+ * through it; a panel may first keep what the user was writing.
  */
 const RightPanelShell = Vue.component('RightPanelShell', {
   props: {
-    vm: { type: Object, required: true },
     titleId: { type: String, required: true },
     title: { type: String, required: true },
     closeLabel: { type: String, required: true },
-    // Shown after the title when not null; said with its label.
+    // Shown after the title when not null; said with its label, or as is.
     count: { type: Number, default: null },
     countLabel: { type: String, default: '' },
     // A second level: the back arrow, named by this label, emits `back`.
     backLabel: { type: String, default: '' },
   },
   methods: {
-    close() {
-      this.vm.rightPanel.hide();
-    },
     // The title is announced when the panel changes level.
     focusTitle() {
       this.$nextTick(() => {
@@ -59,14 +56,14 @@ const RightPanelShell = Vue.component('RightPanelShell', {
         <h2 :id="titleId" ref="title" tabindex="-1" class="right-panel-shell__title">{{ title }}</h2>
         <span v-if="count !== null" class="right-panel-shell__count">
           <span aria-hidden="true">{{ count }}</span>
-          <span class="qc-sr-only">{{ countLabel }}</span>
+          <span class="qc-sr-only">{{ countLabel || count }}</span>
         </span>
         <button
           type="button"
           class="qc-icon-button right-panel-shell__close"
           :aria-label="closeLabel"
           :title="closeLabel"
-          @click="close"
+          @click="$emit('close')"
         >
           <span class="lucide lucide-x" aria-hidden="true"></span>
         </button>

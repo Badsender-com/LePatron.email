@@ -18,13 +18,12 @@ Vue.config.devtools = false;
 function mount(attrs = '', inner = '<p>Body</p>', data = {}) {
   const el = document.createElement('div');
   document.body.appendChild(el);
-  const vm = { rightPanel: { hide: jest.fn() } };
   const app = new Vue({
     components: { RightPanelShell },
-    data: () => ({ vm, back: jest.fn(), ...data }),
-    template: `<right-panel-shell ref="shell" :vm="vm" title-id="t1" title="Commentaires" close-label="Fermer" ${attrs} @back="back">${inner}</right-panel-shell>`,
+    data: () => ({ back: jest.fn(), close: jest.fn(), ...data }),
+    template: `<right-panel-shell ref="shell" title-id="t1" title="Commentaires" close-label="Fermer le panneau" ${attrs} @back="back" @close="close">${inner}</right-panel-shell>`,
   }).$mount(el);
-  return { app, root: app.$el, vm };
+  return { app, root: app.$el };
 }
 
 afterEach(() => {
@@ -42,13 +41,13 @@ describe('the right panel shell', () => {
     expect(root.querySelector('.right-panel-shell__count')).toBeNull();
   });
 
-  it('closes through the right panel, with a named button', () => {
-    const { root, vm } = mount();
+  it('asks its panel to close, with a named button', () => {
+    const { root, app } = mount();
     const close = root.querySelector('.right-panel-shell__close');
     expect(close.tagName).toBe('BUTTON');
-    expect(close.getAttribute('aria-label')).toBe('Fermer');
+    expect(close.getAttribute('aria-label')).toBe('Fermer le panneau');
     close.click();
-    expect(vm.rightPanel.hide).toHaveBeenCalled();
+    expect(app.close).toHaveBeenCalled();
   });
 
   it('shows a count after the title, said with its label', () => {
@@ -58,6 +57,12 @@ describe('the right panel shell', () => {
     expect(count.querySelector('.qc-sr-only').textContent).toBe(
       '2 non résolus'
     );
+  });
+
+  it('says the count as is when it has no label', () => {
+    const { root } = mount(':count="3"');
+    const count = root.querySelector('.right-panel-shell__count');
+    expect(count.querySelector('.qc-sr-only').textContent).toBe('3');
   });
 
   it('shows a count of zero', () => {

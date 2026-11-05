@@ -101,12 +101,12 @@ const QualityDrawer = Vue.component('QualityDrawer', {
   template: `
     <right-panel-shell
       class="qc-drawer"
-      :vm="vm"
       title-id="qc-drawer-title"
-      :title="t('Test your email')"
-      :close-label="t('quality-action-close')"
+      :title="t('Test email')"
+      :close-label="t('right-panel-close')"
+      @close="vm.rightPanel.hide()"
     >
-      <div slot="nav" class="qc-tabs" role="tablist" :aria-label="t('Test your email')" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
+      <div slot="nav" class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
         <button
           v-for="item in tabs"
           :key="item.name"

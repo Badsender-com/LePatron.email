@@ -521,7 +521,6 @@ module.exports = {
   'Quality control': 'Contrôle qualité',
   // Prefixed: this dictionary is merged with Mosaico's, where a bare
   // "Error" or "Copy" would collide.
-  'quality-action-close': 'Fermer',
   'quality-action-cancel': 'Annuler',
   'quality-action-ignore': 'Ignorer',
   'quality-ignore-locked':
@@ -907,6 +906,8 @@ module.exports = {
 
   // text generation (epic #1163)
   // AI panel, « Outils IA » (ADR 0010)
+  'right-panel-close': 'Fermer le panneau',
+  'ai-panel-back': 'Retour aux actions',
   'ai-panel-title': 'Outils IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
@@ -914,7 +915,6 @@ module.exports = {
     "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
   'ai-panel-select-invite':
     'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
-  'ai-panel-all-actions': 'Toutes les actions',
   'ai-panel-no-subject':
     "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
   'ai-panel-subject-first': "Générer d'abord l'objet",

@@ -91,9 +91,10 @@ const AiPanel = Vue.component('AiPanel', {
     refresh() {
       this.panel.refresh();
     },
+    // Back to the list: the session ends, and its change gives the focus to
+    // the title (startSession).
     showList(target) {
       this.panel.showList(target);
-      this.focusHeading();
     },
     openAction(id, target) {
       this.panel.openAction(id, target);

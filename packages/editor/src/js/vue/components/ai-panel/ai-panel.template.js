@@ -15,12 +15,12 @@ module.exports = `
 <right-panel-shell
   ref="shell"
   class="ai-panel"
-  :vm="vm"
   title-id="ai-panel-title"
   :title="session ? t(labelsOf(session.state.action).name) : t('ai-panel-title')"
-  :close-label="t('Close')"
-  :back-label="session ? t('ai-panel-all-actions') : ''"
+  :close-label="t('right-panel-close')"
+  :back-label="session ? t('ai-panel-back') : ''"
   @back="showList()"
+  @close="vm.rightPanel.hide()"
 >
   <div class="ai-panel__body">
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>

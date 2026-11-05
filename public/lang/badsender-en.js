@@ -505,7 +505,6 @@ module.exports = {
   'Quality control': 'Quality control',
   // Prefixed: this dictionary is merged with Mosaico's, where a bare
   // "Error" or "Copy" would collide.
-  'quality-action-close': 'Close',
   'quality-action-cancel': 'Cancel',
   'quality-action-ignore': 'Ignore',
   'quality-ignore-locked':
@@ -879,13 +878,14 @@ module.exports = {
 
   // text generation (epic #1163)
   // AI panel, « Outils IA » (ADR 0010)
+  'right-panel-close': 'Close the panel',
+  'ai-panel-back': 'Back to the actions',
   'ai-panel-title': 'AI tools',
   'ai-panel-action-subject': 'Generate the subject',
   'ai-panel-action-preheader': 'Generate the preheader',
   'ai-panel-copy-only':
     'No field in this email: the proposal will be for you to copy into your sending platform.',
   'ai-panel-select-invite': 'Select a block or a field to see its AI actions.',
-  'ai-panel-all-actions': 'All actions',
   'ai-panel-no-subject':
     'This email has no subject yet. The preheader complements it: better start with the subject.',
   'ai-panel-subject-first': 'Generate the subject first',

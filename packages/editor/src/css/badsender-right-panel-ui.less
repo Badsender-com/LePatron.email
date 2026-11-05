@@ -3,6 +3,9 @@
 // the shell, buttons, notices, spinner. Born with the quality drawer, hence the qc-
 // prefix; quality control and the AI panel both use it.
 //
+// Focus rings are in the brand's dark colour: the accent, on white, falls
+// below the 3:1 a focus indicator needs.
+//
 // Scoped under `.slidebar.right-panel` (0,2,0): the editor's generic
 // `.mo button` / `.mo p` rules sit at (0,1,1) and would win otherwise.
 ////////
@@ -42,12 +45,26 @@
       border-bottom: 1px solid var(--gray-200);
     }
 
+    &__back,
+    &__close {
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 17px;
+    }
+
     &__back {
       margin-left: -8px;
     }
 
+    // The close button keeps its place, whatever precedes it.
+    &__close {
+      margin-left: auto;
+    }
+
     &__title {
-      flex: 1;
+      flex: 0 1 auto;
       min-width: 0;
       margin: 0;
       overflow: hidden;
@@ -64,19 +81,20 @@
       }
     }
 
-    // Before the close button, after a title that takes the room left.
+    // Right after the title.
     &__count {
       flex: none;
-      min-width: 20px;
-      height: 20px;
-      padding: 0 6px;
-      border-radius: 10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      box-sizing: border-box;
       background: var(--accent);
       // The dark brand colour on the accent: white would fall below 4.5:1.
       color: var(--primary);
       font-size: 11px;
-      font-weight: 600;
-      line-height: 20px;
+      font-weight: 700;
+      line-height: 18px;
       text-align: center;
     }
 
@@ -121,7 +139,7 @@
     transition: background-color 0.15s;
 
     &:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
 
@@ -173,7 +191,7 @@
     cursor: pointer;
 
     &:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--primary);
       outline-offset: 2px;
     }
   }

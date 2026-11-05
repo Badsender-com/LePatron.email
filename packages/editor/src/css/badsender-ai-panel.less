@@ -13,17 +13,8 @@
     height: 100%;
   }
 
+  // Its layout is the shell's (badsender-right-panel-ui.less).
   .ai-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    font-size: 13px;
-    color: var(--gray-900);
-
-    button {
-      font-family: inherit;
-    }
-
     p {
       margin: 0;
     }
@@ -34,9 +25,8 @@
       list-style: none;
     }
 
+    // In the shell's body, which alone scrolls.
     &__body {
-      flex: 1;
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 12px;
