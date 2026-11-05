@@ -7,6 +7,21 @@ const tinymceConfigFull = require('./utils/tinymce-config');
  * text-color and colorpicker plugins
  */
 
+// The AI button, first: the toolbar is wider than a narrow canvas, its end
+// hidden.
+function withAiActions(options) {
+  const plugins = Array.isArray(options.plugins)
+    ? options.plugins.join(' ')
+    : options.plugins || '';
+  return {
+    ...options,
+    plugins: [`${plugins} aiactions`.trim()],
+    toolbar1: options.toolbar1
+      ? `aiactions | ${options.toolbar1}`
+      : 'aiactions',
+  };
+}
+
 module.exports = (opts) => {
   function viewModel(viewModel) {
     viewModel.tinyMceConfiguration = ko.observable(null);
@@ -58,11 +73,18 @@ module.exports = (opts) => {
     };
 
     //- https://www.tinymce.com/docs/configure/url-handling/#convert_urls
-    const textEditorFullOptions = $.extend(
+    const merged = $.extend(
       { convert_urls: false },
       textEditorOptions,
       opts.tinymce
     );
+    // The AI button opens the field's actions; only a group with text
+    // generation has any (#1257). Added to the toolbar the editor ends up
+    // with, a template's own included.
+    const textEditorFullOptions =
+      viewModel.metadata && viewModel.metadata.hasTextGenerationFeature
+        ? withAiActions(merged)
+        : merged;
 
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 

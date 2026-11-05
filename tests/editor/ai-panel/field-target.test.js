@@ -31,10 +31,12 @@ const paths = (list) => () => list;
 
 describe('spelling correction: the targeted field', () => {
   let fieldTargetOf;
+  let blockTargetOf;
 
   beforeAll(() => {
     ({
       fieldTargetOf,
+      blockTargetOf,
     } = require('../../../packages/editor/src/js/ext/ai-panel/field-target'));
   });
 
@@ -85,5 +87,19 @@ describe('spelling correction: the targeted field', () => {
         pathsOf: paths(['titleText']),
       })
     ).toBeNull();
+  });
+
+  describe('the block of an element no field matches', () => {
+    it('is the block it is in', () => {
+      expect(blockTargetOf(document.getElementById('custom-id'))).toEqual({
+        kind: 'block',
+        blockId: 'ko_textBlock_3',
+        blockType: 'textBlock',
+      });
+    });
+
+    it('is nothing outside any block', () => {
+      expect(blockTargetOf(document.getElementById('outside'))).toBeNull();
+    });
   });
 });
