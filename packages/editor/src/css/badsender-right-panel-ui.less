@@ -208,6 +208,9 @@
     text-underline-offset: 2px;
 
     &:hover { text-decoration-thickness: 2px; }
+
+    // An action that cannot be undone.
+    &--danger { color: @qc-error-text; }
   }
 
   .qc-icon-button {
@@ -246,6 +249,18 @@
     &--error {
       background: @qc-tint-error;
       color: @qc-error;
+    }
+
+    &--success {
+      background: @qc-tint-success;
+      color: @qc-success;
+    }
+
+    // Something to know, nothing blocking (board q4).
+    &--neutral {
+      border: 1px solid var(--gray-200);
+      background: var(--gray-50);
+      color: @qc-warning;
     }
 
     &__text {

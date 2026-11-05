@@ -1,11 +1,11 @@
 const Vue = require('vue/dist/vue.common');
-const { SimpleSelect } = require('../select/simpleSelect');
+const { RecipientsField } = require('./recipients-field');
 const { ShareLinkPanel } = require('./share-link-panel');
 const {
-  areEmails,
   fetchEmailGroups,
   sendTestEmail,
 } = require('../send-test/send-test-api');
+const { formatTime } = require('./quality-items');
 
 // The "Send a test" tab of the quality drawer: the recipients, an optional
 // saved list, and a word on what the quality review found. What is left to
@@ -16,7 +16,7 @@ const {
 // drawer is a non-modal dialog, and what was typed stays (the tab is only
 // hidden, never destroyed).
 const SendTestPanel = Vue.component('SendTestPanel', {
-  components: { SimpleSelect, ShareLinkPanel },
+  components: { RecipientsField, ShareLinkPanel },
   props: {
     vm: { type: Object, required: true },
     // What the last review found: 'idle' | 'running' | 'done' | 'stale'.
@@ -25,29 +25,57 @@ const SendTestPanel = Vue.component('SendTestPanel', {
     ready: { type: Boolean, default: false },
     issueCount: { type: Number, default: 0 },
     blockingCount: { type: Number, default: 0 },
+    // The server's checks of links and images, still awaited when 'running'.
+    remoteStatus: { type: String, default: 'idle' },
     // The tab is shown.
     active: { type: Boolean, default: false },
   },
   data: () => ({
-    recipients: '',
+    // The addresses and the saved list, as chips (recipients-field.js).
+    chips: [],
+    // An address typed and not yet a chip: enough to send, once checked.
+    hasDraft: false,
     emailGroups: [],
     groupsRequested: false,
-    selectedGroup: null,
-    touched: false,
     isSending: false,
+    // The last test sent: { count, at }.
+    sent: null,
   }),
   computed: {
-    recipientsValid() {
-      return areEmails(this.recipients);
+    recipients() {
+      return this.chips
+        .filter((chip) => chip.kind === 'email')
+        .map((chip) => chip.value)
+        .join(';');
+    },
+    selectedGroup() {
+      return this.chips.find((chip) => chip.kind === 'list') || null;
+    },
+    recipientCount() {
+      return this.chips.reduce(
+        (sum, chip) => sum + (chip.kind === 'list' ? chip.count || 0 : 1),
+        0
+      );
     },
     canSend() {
-      const hasTarget =
-        this.recipients.trim() ||
-        (this.selectedGroup && this.selectedGroup.code);
-      return !this.isSending && this.recipientsValid && Boolean(hasTarget);
+      return !this.isSending && (this.chips.length > 0 || this.hasDraft);
+    },
+    // What the panel's foot shows of the send (quality-drawer.js).
+    state() {
+      return {
+        canSend: this.canSend,
+        isSending: this.isSending,
+        sent: Boolean(this.sent),
+      };
     },
   },
   watch: {
+    state: {
+      immediate: true,
+      handler(state) {
+        this.$emit('state', state);
+      },
+    },
     // The saved lists are asked for the first time the tab is shown: most
     // editing sessions never open it.
     active: {
@@ -60,6 +88,9 @@ const SendTestPanel = Vue.component('SendTestPanel', {
   methods: {
     t(key, params) {
       return this.vm.t(key, params);
+    },
+    sentAt() {
+      return this.sent ? formatTime(this.sent.at) : '';
     },
     loadGroups() {
       this.groupsRequested = true;
@@ -75,7 +106,9 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         });
     },
     send() {
-      this.touched = true;
+      // An address typed and not yet a chip joins the others first.
+      const field = this.$refs.recipients;
+      if (field && !field.commit()) return;
       if (!this.canSend) return;
       // One export: the quality review judges the very HTML that is sent,
       // without opening anything (the user is sending, not reviewing).
@@ -99,7 +132,15 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         emailsGroupId: this.selectedGroup && this.selectedGroup.code,
         html,
       })
-        .then(() => this.vm.notifier.success(this.t('send-test-success')))
+        // Said in the tab (board q5): the count is the server's, the typed
+        // addresses and the list's without their duplicates.
+        .then((response) => {
+          const result = response && response.data && response.data.result;
+          this.sent = {
+            count: Array.isArray(result) ? result.length : this.recipientCount,
+            at: new Date(),
+          };
+        })
         .catch(() => this.vm.notifier.error(this.t('send-test-error')))
         .finally(() => {
           // The drawer stays open: the user may send again, or go on fixing.
@@ -109,15 +150,16 @@ const SendTestPanel = Vue.component('SendTestPanel', {
   },
   template: `
     <div class="qc-send">
-      <div v-if="status === 'running'" class="qc-notice" role="status">
+      <div v-if="status === 'running' || (status === 'done' && remoteStatus === 'running')" class="qc-notice" role="status">
         <span class="qc-spinner" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('Running checks…') }}</span>
+        <span class="qc-notice__text">{{ status === 'running' ? t('Running checks…') : t('Checking links and images…') }}</span>
       </div>
-      <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="{ 'qc-notice--error': blockingCount > 0 }" role="status">
-        <span class="lucide" :class="blockingCount > 0 ? 'lucide-alert-circle' : issueCount ? 'lucide-info' : 'lucide-circle-slash'" aria-hidden="true"></span>
-        <span v-if="issueCount" class="qc-notice__text">{{ t('__count__ issues are still to fix: you can send a test anyway', { count: issueCount }) }}</span>
+      <!-- Red only when something blocks the export (decision 6). -->
+      <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="blockingCount > 0 ? 'qc-notice--error' : 'qc-notice--neutral'" role="status">
+        <span class="lucide" :class="blockingCount > 0 ? 'lucide-alert-circle' : issueCount ? 'lucide-triangle-alert' : 'lucide-circle-slash'" aria-hidden="true"></span>
+        <span v-if="issueCount" class="qc-notice__text">{{ t(issueCount === 1 ? 'quality-send-not-ready-one' : 'quality-send-not-ready', { count: issueCount }) }}</span>
         <span v-else class="qc-notice__text">{{ t('A check could not run: you can send a test anyway') }}</span>
-        <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('See the results') }}</button>
+        <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('quality-see-checks') }}</button>
       </div>
       <div v-else-if="status === 'idle' || status === 'stale'" class="qc-notice" role="status">
         <span class="lucide lucide-info" aria-hidden="true"></span>
@@ -125,39 +167,21 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         <button type="button" class="qc-link-button" @click="$emit('run-checks')">{{ t('Run quality checks') }}</button>
       </div>
 
-      <form class="qc-send__form" @submit.prevent="send">
-        <div class="qc-field">
-          <label for="qc-send-recipients" class="qc-field__label">{{ t('emails-test') }}</label>
-          <input
-            id="qc-send-recipients"
-            v-model="recipients"
-            type="text"
-            class="qc-field__input"
-            :class="{ 'qc-field__input--invalid': touched && !recipientsValid }"
-            :placeholder="t('placeholder-input-emails-test')"
-            :aria-invalid="touched && !recipientsValid ? 'true' : 'false'"
-            aria-describedby="qc-send-help"
-            @blur="touched = true"
-          >
-          <span id="qc-send-help" class="qc-field__help" :class="{ 'qc-field__help--error': touched && !recipientsValid }">
-            {{ touched && !recipientsValid ? t('emails-invalid') : t('Separate addresses with a semicolon') }}
-          </span>
-        </div>
+      <div v-if="sent" class="qc-notice qc-notice--success" role="status">
+        <span class="lucide lucide-check-circle" aria-hidden="true"></span>
+        <span class="qc-notice__text">{{ t(sent.count === 1 ? 'quality-test-sent-one' : 'quality-test-sent', { count: sent.count, when: sentAt() }) }}</span>
+      </div>
 
-        <div v-if="emailGroups.length" class="qc-field">
-          <span id="qc-send-groups-label" class="qc-field__label">{{ t('Saved list of addresses') }}</span>
-          <SimpleSelect
-            v-model="selectedGroup"
-            labelledby="qc-send-groups-label"
-            :placeholder="t('placeholder-emails-groups')"
-            :options="emailGroups"
-          />
-        </div>
-
-        <button type="submit" class="qc-button qc-button--cta qc-send__submit" :disabled="!canSend">
-          <span class="lucide lucide-send" aria-hidden="true"></span>
-          {{ isSending ? t('sending-test-mails') : t('Send the test email') }}
-        </button>
+      <!-- Sent from the panel's foot: its button names this form. -->
+      <form id="qc-send-form" class="qc-send__form" @submit.prevent="send">
+        <recipients-field
+          ref="recipients"
+          v-model="chips"
+          :lists="emailGroups"
+          :label="t('quality-recipients')"
+          :t="t"
+          @draft="hasDraft = $event"
+        ></recipients-field>
       </form>
 
       <share-link-panel :vm="vm" :active="active"></share-link-panel>

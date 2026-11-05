@@ -36,6 +36,8 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
     busy: false,
     // Links being turned off: a second click must not send a second request.
     revoking: [],
+    // Said once a link is turned off.
+    revokedMessage: '',
   }),
   computed: {
     url() {
@@ -167,6 +169,13 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
         .then(() => {
           this.links = this.links.filter((l) => l.id !== link.id);
           if (this.created && this.created.id === link.id) this.created = null;
+          // The button went with its link: the section's title takes the
+          // focus, and the user hears it is done.
+          this.revokedMessage = this.t('quality-share-revoked');
+          this.$nextTick(() => {
+            const title = this.$el && this.$el.querySelector('#qc-share-title');
+            if (title) title.focus();
+          });
         })
         .catch(() =>
           this.vm.notifier.error(this.t('The link could not be turned off'))
@@ -178,13 +187,13 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
   },
   template: `
     <section v-if="url" class="qc-share" aria-labelledby="qc-share-title">
-      <h3 id="qc-share-title" class="qc-share__title">{{ t('Share a preview') }}</h3>
+      <h3 id="qc-share-title" class="qc-share__title" tabindex="-1">{{ t('Share a preview') }}</h3>
       <p class="qc-field__help">{{ t('Anyone with the link sees the last saved version of the email, without an account.') }}</p>
 
       <div class="qc-share__create">
         <div class="qc-field qc-share__expiry">
-          <span class="qc-field__label">{{ t('Valid for') }}</span>
-          <SimpleSelect v-model="expiry" :options="expiryOptions" />
+          <span id="qc-share-expiry-label" class="qc-field__label">{{ t('Valid for') }}</span>
+          <SimpleSelect v-model="expiry" labelledby="qc-share-expiry-label" :options="expiryOptions" />
         </div>
         <button type="button" class="qc-button qc-button--outline qc-share__button" :disabled="busy" @click="create">
           <span class="lucide lucide-link" aria-hidden="true"></span>{{ t('Create a link') }}
@@ -202,7 +211,7 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
             :aria-label="t('Preview link')"
             @focus="$event.target.select()"
           >
-          <button type="button" class="qc-button qc-button--cta qc-share__button" @click="copy(created, $refs.createdUrl)">
+          <button type="button" class="qc-button qc-button--outline qc-share__button" @click="copy(created, $refs.createdUrl)">
             <span :class="['lucide', copiedId === created.id ? 'lucide-check' : 'lucide-copy']" aria-hidden="true"></span>{{ copiedId === created.id ? t('quality-share-copied') : t('Copy link') }}
           </button>
         </div>
@@ -231,13 +240,18 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
           >
           <button
             type="button"
-            class="qc-link-button"
+            class="qc-link-button qc-link-button--danger"
             :disabled="revoking.includes(link.id)"
             :aria-label="t('Turn off the link: __link__', { link: describe(link) })"
+            aria-describedby="qc-share-definitive"
             @click="revoke(link)"
           >{{ t('Turn off') }}</button>
+          <span class="qc-share__definitive" aria-hidden="true">{{ t('quality-share-definitive-short') }}</span>
         </li>
       </ul>
+      <!-- Decision 5: anyone may turn a link off, for good, and is told so. -->
+      <p v-if="links.length" id="qc-share-definitive" class="qc-sr-only">{{ t('quality-share-definitive') }}</p>
+      <p class="qc-sr-only" aria-live="polite">{{ revokedMessage }}</p>
     </section>
   `,
 });

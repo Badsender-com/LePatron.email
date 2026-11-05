@@ -203,13 +203,6 @@ module.exports = {
   // test list
   'send-test-success': 'Email sent successfully',
   'send-test-error': 'An error has occured while sending the emai :(l',
-  'placeholder-input-emails-test':
-    'Example: firstemail@test.com;secondemail@test.com',
-  'emails-test': 'Enter one or more emails',
-  'emails-invalid':
-    'The email addresses entered are invalid. Please separate email addresses with ";"',
-  'placeholder-emails-groups': 'Select a list',
-  'sending-test-mails': 'Sending test mail…',
 
   // SaveBlockModal translations
   'title-save-block': 'Save block',
@@ -579,12 +572,35 @@ module.exports = {
   'quality-not-ready-one': 'Not ready: 1 issue to fix',
   'quality-blocking-suffix-one': ', 1 blocking',
   'quality-blocking-suffix': ', __count__ blocking',
+  'quality-recipients': 'Recipients',
+  'quality-recipients-placeholder': 'Address or list…',
+  'quality-recipient-remove': 'Remove __name__',
+  'quality-test-sent': 'Test sent to __count__ recipients at __when__.',
+  'quality-send-test': 'Send the test',
+  'quality-send-again': 'Send again',
+  'quality-see-checks': 'See the checks',
+  'quality-share-definitive':
+    'Turning a link off is for good: it will no longer work.',
+  'quality-recipients-help':
+    'Type an address then Enter, or the name of a saved list.',
+  'quality-send-not-ready-one':
+    'The email is not ready yet (1 issue to fix). You can send a test anyway.',
+  'quality-send-not-ready':
+    'The email is not ready yet (__count__ issues to fix). You can send a test anyway.',
+  'quality-test-sent-one': 'Test sent to 1 recipient at __when__.',
+  'quality-recipient-remove-list': 'Remove the list __name__',
+  'quality-recipients-invalid': '« __value__ » is not an email address.',
+  'quality-recipients-count-one': '1 recipient.',
+  'quality-recipients-count': '__count__ recipients.',
+  'quality-share-definitive-short': '· for good, the link will no longer work',
+  'quality-share-revoked': 'Link turned off.',
+  'Add comment': 'Add comment',
+  'sending-test-mails': 'Sending test mail…',
+  'Saved list of addresses': 'Saved list of addresses',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
     '__count__ checks run at __when__. No errors or warnings.',
   'quality-ready-infos': '__count__ info(s) to read if you wish.',
-  '__count__ issues are still to fix: you can send a test anyway':
-    '__count__ issue(s) to fix: you can send a test anyway',
   'A check could not run: you can send a test anyway':
     'A check could not run: you can send a test anyway',
   'quality-badge-stale': 'Re-run needed',
@@ -833,15 +849,10 @@ module.exports = {
   'Colour an email client cannot read in the HTML code: __colors__':
     'Colour an email client cannot read in the HTML code: __colors__',
   'Send a test': 'Send a test',
-  'See the results': 'See the results',
   'The quality checks have not run on this version yet':
     'The quality checks have not run on this version yet',
-  'Separate addresses with a semicolon': 'Separate addresses with a semicolon',
-  'Saved list of addresses': 'Saved list of addresses',
   'The saved lists of addresses could not be loaded':
     'The saved lists of addresses could not be loaded',
-  'Send the test email': 'Send the test email',
-  'Add comment': 'Add comment',
   'Stop ignoring': 'Stop ignoring',
   'Ignored: __title__': 'Ignored: __title__',
   'The change could not be saved': 'The change could not be saved',
@@ -897,7 +908,7 @@ module.exports = {
     'Google lists this link as unsafe: __label__',
   'Google could not check this link, check it by hand: __label__':
     'Google could not check this link, check it by hand: __label__',
-  'Share a preview': 'Share a preview',
+  'Share a preview': 'Preview link',
   'Anyone with the link sees the last saved version of the email, without an account.':
     'Anyone with the link sees the last saved version of the email, without an account.',
   'Valid for': 'Valid for',
@@ -909,12 +920,12 @@ module.exports = {
   'Copy it now: it will not be shown again.':
     'Copy it now: it will not be shown again.',
   'Active links': 'Active links',
-  'Turn off': 'Turn off',
+  'Turn off': 'Turn off the link',
   'The link could not be created': 'The link could not be created',
   'Copy failed: select the link and copy it':
     'Copy failed: select the link and copy it',
   'The link could not be turned off': 'The link could not be turned off',
-  'Copy link': 'Copy link',
+  'Copy link': 'Copy',
   'Created __created__ by __name__, until __date__':
     'Created __created__ by __name__, until __date__',
   'Created __created__, until __date__': 'Created __created__, until __date__',

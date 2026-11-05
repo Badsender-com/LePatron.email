@@ -43,6 +43,8 @@ function fetchEmailGroups(vm) {
     (response.data.items || []).map((group) => ({
       label: group.name,
       code: group.id,
+      // How many addresses it holds, read as the server reads them.
+      count: addressesOf(group.emails).length,
     }))
   );
 }

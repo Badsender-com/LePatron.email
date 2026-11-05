@@ -57,8 +57,8 @@
 
 // ===== "Send a test" tab =====
 .qc-send {
+  // The shell's body scrolls; « Envoyer le test » is its foot.
   padding: 0 16px 16px;
-  overflow-y: auto;
 
   &__form {
     display: flex;
@@ -197,4 +197,14 @@
   &__meta {
     color: var(--gray-700);
   }
+}
+
+// Beside « Désactiver le lien »: it is for good (decision 5).
+.qc-share__definitive {
+  font-size: 12px;
+  color: var(--gray-700);
+}
+
+.qc-share__title:focus {
+  outline: none;
 }
