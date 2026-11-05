@@ -160,6 +160,45 @@ The email model a company is given, built by the operator: its blocks, styles an
 _UI_: Template
 _Avoid_: Wireframe (the code keeps `_wireframe`)
 
+**Right panel**:
+One of the three panels that take turns on the right of the editor, one open at a time: the comments, the quality panel ("Tester l'email") and the AI panel. They share one shell: header, close button, body, foot, empty, loading and error states.
+_UI_: Commentaires, Tester l'email, Outils IA
+_Avoid_: Drawer, sidebar, slidebar (in prose; the code keeps `.slidebar`)
+
+**Panel rail**:
+The vertical strip on the right edge of the editor, below the top bar, holding the button of each right panel and its badge.
+_Avoid_: Toolbar, dock
+
+**Comment markers rail**:
+The column beside the email, in the canvas, with a marker on each block that has unresolved comments.
+_Avoid_: Panel rail (the rail of the panel buttons)
+
+### Comments
+
+**Comment**:
+A remark posted on an email, on the whole email or on one of its blocks, with a type and a priority; it is resolved once dealt with. A reply belongs to a root comment and has no type, priority or reply of its own.
+_UI_: Commentaire
+_Avoid_: Note, annotation
+
+**Comment target**:
+What a new comment is about: the whole email or one block. It follows the selection in the canvas until the user changes it, and is distinct from the filter of the list, which only reads.
+_UI_: « Sur : Tout l'email », « Sur : <bloc> »
+_Avoid_: Selected block, filter
+
+**Blocking comment**:
+A root comment of priority "blocking", not resolved. While one is open, the email cannot be approved.
+_UI_: Bloquant
+
+**Approval**:
+The event by which someone allowed to approve says an email may be sent. It shows in the thread of comments but is not a comment to resolve: it has no type, priority or block, and counts in no counter of unresolved comments. Its author withdraws it by deleting it.
+_UI_: « Approuver l'email » ; « Bon pour envoi »
+_Avoid_: Validation (for the event), sign-off
+
+**Approved email**:
+An email whose last root comment is an approval and that has no blocking comment open. A new root comment lifts it.
+_UI_: Validé
+_Avoid_: Validated, signed off
+
 ### Quality control
 
 **Quality run**:
@@ -228,6 +267,11 @@ _Avoid_: Default (in UI text)
 A rule whose state or thresholds a company or a template sets differently from what applies below it. The company's exceptions are its **general settings**, for all its templates; a template's own exceptions apply over them, for that template only. The settings page lists exceptions only, and names neither a company nor a group: its readers are the company's admins.
 _UI_: Exception ; Réglages généraux ; Exception propre à ce template ; « Réglage général : … »
 _Avoid_: Override, surcharge, Hérité du groupe, Propre au template
+
+**Ready email**:
+An email whose quality run went through every check and left no error and no warning unignored; an info counts only if it is blocking. Ready or not, only blocking findings stop the download and the ESP send.
+_UI_: Prêt ; « Tous les contrôles sont réussis »
+_Avoid_: Cleared, passed, valid
 
 ### AI
 

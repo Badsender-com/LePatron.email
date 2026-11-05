@@ -4,6 +4,7 @@
 - Date: 2026-10-13, revised 2026-10-15
 - Issue: #1099
 - Extends: ADR 0002 (the permissions module)
+- Amended: 2026-11-05 (ADR 0020), on who may approve an email
 
 Three roles join `regular_user`, `company_admin` and `super_admin` (ADR 0002): `company_admin_tech`, `reviewer` and `writer`. The design, the rights matrix and the progress live in `docs/plans/rbac-refonte.md`; this record keeps the decisions that are hard to reverse or easy to misread.
 
@@ -15,7 +16,7 @@ A tech admin is a company admin with the technical settings on top (integrations
 
 What the server enforces for the writer is what a route can tell: starting an email from a template, deleting one, deleting a folder (which deletes its emails), saving to the block library. A writer declines the existing emails into variants, so copying and duplicating are open to it. Inside a save, the email's JSON mixes structure, content and style, so the writer's limits on structure and style are held by the editor only, until #1103. The reviewer saves nothing, not even the save the editor runs on opening an email without preview: the stored rendering is what the exports send, so it waits for someone who may edit the email.
 
-Every role may approve an email, comment, send tests, export and use the image gallery.
+Every role may comment, send tests, export and use the image gallery. Every role could also approve an email until the amendment below.
 
 ## Considered Options
 
@@ -31,3 +32,11 @@ Every role may approve an email, comment, send tests, export and use the image g
 - The writer's limits on structure and style guide users, they are not a boundary between roles, until #1103.
 - A misspelt capability throws, on the server when the routes load and in the editor and the UI at the first check, instead of refusing everyone silently.
 - The workspace created with a group resets every role but the super admin to `regular_user` (`group.service.js`); whether the three new roles should be kept is to be settled with the super admin epic's owner.
+
+## Amendment (ADR 0020): approving is a capability of its own
+
+An approval says the email may be sent, for the team; a writer or a regular user who designed the email approving it themself empties it of meaning. Approving becomes `mailing.approve`, held by the reviewer, the company admin and the tech admin (and, like every capability, the super admin and the bootstrap account), not by the writer nor the regular user.
+
+- **The role lists stop being nested from the reviewer up.** The reviewer's list, which the writer's and the regular user's extended, splits into a base every role holds (comment, send tests, export, the gallery) and `mailing.approve`, which the reviewer and the admins add to it. The other inclusions hold: the writer's list is in the regular user's, the regular user's in the company admin's, the company admin's in the tech admin's.
+- **The server checks it where the approval is created**, on the comment route, when the comment carries the decision `approved`; a comment without a decision still needs `mailing.comment` only. A request for changes is not offered by the editor and keeps the comment capability, until it is.
+- **The editor shows "Approve the email" from the capability**, never from the role, as for every other right.
