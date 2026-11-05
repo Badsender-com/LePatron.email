@@ -916,13 +916,19 @@ function commentsLoader(opts) {
     });
 
     // The canvas is laid out once the editor is shown: place the markers
-    // then. The rail follows the slide of the canvas on its own; with reduced
-    // motion there is no slide to follow, so a panel opening or closing
-    // places them again too.
-    const railTimers = [setTimeout(rail.update, 500)];
-    const panelSub = viewModel.rightPanel.anyOpen.subscribe(function () {
-      railTimers.push(setTimeout(rail.update, 250));
-    });
+    // then. The canvas slides when a panel opens, and the rail follows it on
+    // its own; it snaps back when the last one closes, and does not slide with
+    // reduced motion: a panel opening or closing places them again too.
+    let railTimer = setTimeout(rail.update, 500);
+    const placeRailSoon = function () {
+      clearTimeout(railTimer);
+      railTimer = setTimeout(rail.update, 250);
+    };
+    const panelSub = viewModel.rightPanel.anyOpen.subscribe(placeRailSoon);
+    // The email narrows or widens with the preview (desktop, mobile, both).
+    const previewSub = ko.isSubscribable(viewModel.previewMode)
+      ? viewModel.previewMode.subscribe(placeRailSoon)
+      : null;
 
     // Subscribe to selected block changes to update lastSelectedBlock
     // When a block is deselected, reset to "All" filter
@@ -996,8 +1002,9 @@ function commentsLoader(opts) {
 
     return {
       dispose: function () {
-        railTimers.forEach(clearTimeout);
+        clearTimeout(railTimer);
         panelSub.dispose();
+        if (previewSub) previewSub.dispose();
         rail.dispose();
       },
     };

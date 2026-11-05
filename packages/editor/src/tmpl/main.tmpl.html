@@ -12,17 +12,20 @@
   <div class="comments-rail" data-bind="style: { left: $root.commentsRail.left() === null ? '' : $root.commentsRail.left() + 'px' }">
     <!-- ko foreach: $root.commentsRail.markers() -->
     <button type="button" class="rail-marker"
-         data-bind="style: { top: position + 'px' },
+         data-bind="style: { top: view().position + 'px' },
                     css: {
-                      'active': active,
-                      'severity-blocking': maxSeverity === 'blocking',
-                      'severity-important': maxSeverity === 'important'
+                      'active': view().active,
+                      'severity-blocking': view().maxSeverity === 'blocking',
+                      'severity-important': view().maxSeverity === 'important'
                     },
                     click: function() { $root.commentsRail.open($data); },
-                    clickBubble: false,
-                    attr: { title: label, 'aria-label': $root.t('comments-rail-marker', { count: count, block: label }) }">
+                    attr: {
+                      title: label,
+                      'aria-current': view().active ? 'true' : null,
+                      'aria-label': $root.t(view().count === 1 ? 'comments-rail-marker-one' : 'comments-rail-marker', { count: view().count, block: label })
+                    }">
       <span class="lucide lucide-message-circle rail-icon" aria-hidden="true"></span>
-      <span class="rail-count" data-bind="text: count"></span>
+      <span class="rail-count" data-bind="text: view().count"></span>
     </button>
     <!-- /ko -->
   </div>

@@ -19,9 +19,10 @@ const MARKER_HEIGHT = 28;
 // Room kept below the canvas for the bottom bar.
 const BOTTOM_BAR = 60;
 const RAIL_GAP = 8;
-const RAIL_WIDTH = 40;
+// The widest marker, active (scaled) and with a two-digit count.
+const RAIL_WIDTH = 52;
 // What moves the email without a scroll: the window resized, the canvas
-// sliding when a panel opens or closes, a preview switched.
+// sliding when a panel opens (watchSize: a preview switched).
 const LAYOUT_EVENTS = ['resize', 'transitionend'];
 // The canvas, whose `right` slides when a right panel opens or closes.
 const CANVAS_ID = 'main-edit-area';
@@ -68,11 +69,15 @@ function createCommentsRail(
         10
       ) || 40;
     const visibleHeight = win.innerHeight - BOTTOM_BAR - topBar;
+    // Matched by attribute, never put into a selector: a block id comes from
+    // stored comments.
+    const elements = {};
+    container.querySelectorAll('.editable[data-block-id]').forEach((el) => {
+      elements[el.getAttribute('data-block-id')] = el;
+    });
     const next = {};
     blockIds().forEach((id) => {
-      const block = container.querySelector(
-        `.editable[data-block-id="${id}"]`
-      );
+      const block = elements[id];
       if (!block) return;
       const rect = block.getBoundingClientRect();
       const center = rect.top + rect.height / 2 - topBar;
@@ -85,13 +90,28 @@ function createCommentsRail(
     });
     positions(next);
     left(railLeft(container));
+    watchSize(container);
+  }
+
+  // The email's content grew or shrank, or a preview switched: its size
+  // changes with no scroll nor resize of the window. Only while the page is
+  // drawn; the editor also places the rail on a preview switch.
+  let sizeObserver = null;
+  function watchSize(container) {
+    if (sizeObserver || typeof win.ResizeObserver !== 'function') return;
+    const email = container.querySelector('replacedbody');
+    if (!email) return;
+    sizeObserver = new win.ResizeObserver(() => onScroll());
+    sizeObserver.observe(email);
   }
 
   // Beside the email shown, kept inside the canvas.
   function railLeft(container) {
     const email = container.querySelector('replacedbody');
     if (!email || !email.getBoundingClientRect) return null;
-    const canvasRight = container.getBoundingClientRect().right;
+    // The canvas's visible right edge, its scrollbar left out.
+    const canvasRight =
+      container.getBoundingClientRect().left + container.clientWidth;
     const emailRight = email.getBoundingClientRect().right;
     if (!canvasRight && !emailRight) return null;
     return Math.min(emailRight + RAIL_GAP, canvasRight - RAIL_WIDTH);
@@ -124,20 +144,38 @@ function createCommentsRail(
     measure(container);
   }
 
+  // One marker per block, kept from a measure to the next: the rail's buttons
+  // are not rendered again on each scroll, and keep the focus. Its values are
+  // updated in place; `view` tells the template.
+  const byBlock = new Map();
+  function markerOf(id) {
+    if (!byBlock.has(id)) {
+      byBlock.set(id, { blockId: id, label: labelOf(id), view: ko.observable() });
+    }
+    return byBlock.get(id);
+  }
+
   const markers = ko.pureComputed(() => {
     const all = counts();
     const where = positions();
     const active = target();
     return blockIds()
       .filter((id) => where[id] && where[id].visible)
-      .map((id) => ({
-        blockId: id,
-        position: where[id].top,
-        count: countOf(all[id]),
-        maxSeverity: severityOf(all[id]),
-        label: labelOf(id),
-        active: active === id,
-      }))
+      .map((id) => {
+        const marker = Object.assign(markerOf(id), {
+          position: where[id].top,
+          count: countOf(all[id]),
+          maxSeverity: severityOf(all[id]),
+          active: active === id,
+        });
+        marker.view({
+          position: marker.position,
+          count: marker.count,
+          maxSeverity: marker.maxSeverity,
+          active: marker.active,
+        });
+        return marker;
+      })
       .sort((a, b) => a.position - b.position);
   });
 
@@ -161,6 +199,8 @@ function createCommentsRail(
       if (listened) listened.removeEventListener('scroll', onScroll);
       LAYOUT_EVENTS.forEach((type) => win.removeEventListener(type, onLayout));
       listened = null;
+      if (sizeObserver) sizeObserver.disconnect();
+      sizeObserver = null;
     },
   };
 }

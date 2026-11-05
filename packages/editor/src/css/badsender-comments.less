@@ -183,9 +183,11 @@
 
 .rail-marker {
   position: absolute;
-  // A button: no border, the rail's own font.
+  // A button: no border nor margin, the rail's own font, on one line.
   border: 0;
+  margin: 0;
   font: inherit;
+  white-space: nowrap;
   height: 26px;
   padding: 0 8px;
   border-radius: @comment-border-radius-pill;
