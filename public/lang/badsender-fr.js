@@ -549,6 +549,14 @@ module.exports = {
   'quality-category-accessibility': 'Accessibilité',
   'quality-category-copy': 'Rédaction',
   'quality-category-performance': 'Performance',
+  'quality-ready-title': 'Prêt à partir',
+  'quality-ready-text':
+    '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
+  'quality-ready-infos': '__count__ info(s) à consulter si vous le souhaitez.',
+  '__count__ issues are still to fix: you can send a test anyway':
+    '__count__ point(s) à corriger : vous pouvez tout de même envoyer un test',
+  'A check could not run: you can send a test anyway':
+    "Un contrôle n'a pas pu s'exécuter : vous pouvez tout de même envoyer un test",
   'quality-badge-stale': 'À relancer',
   '__count__ checks not run': '__count__ contrôle(s) non exécuté(s)',
   '__count__ ignored findings': '__count__ résultat(s) ignoré(s)',
@@ -594,9 +602,6 @@ module.exports = {
   '__count__ issues': '__count__ point(s) à corriger',
   '__count__ issues to fix: open the quality control':
     '__count__ point(s) à corriger : ouvrez le contrôle qualité',
-  'All checks passed': 'Tous les contrôles sont réussis',
-  '__passed__ of __total__ checks · __when__':
-    '__passed__ contrôles sur __total__ · __when__',
   'Go to block': 'Aller au bloc',
   'Send a test email': 'Envoyer un email de test',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
@@ -811,8 +816,6 @@ module.exports = {
   'Colour an email client cannot read in the HTML code: __colors__':
     'Couleur illisible par les clients mail dans le code HTML : __colors__',
   'Send a test': 'Envoi de test',
-  '__count__ errors are still to fix: you can send a test anyway':
-    '__count__ erreur(s) restent à corriger : vous pouvez tout de même envoyer un test',
   'See the results': 'Voir les résultats',
   'The quality checks have not run on this version yet':
     "Le contrôle qualité n'a pas encore été lancé sur cette version",

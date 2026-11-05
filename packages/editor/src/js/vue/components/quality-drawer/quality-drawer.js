@@ -37,7 +37,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     ignoredFindings: [],
     checks: [],
     ranAt: null,
-    errorCount: 0,
+    ready: false,
+    issueCount: 0,
+    blockingCount: 0,
     // Ignoring is shared by everyone who edits the email, so it takes the
     // same right: a reviewer sees the button, greyed out.
     ignoreLocked: true,
@@ -65,7 +67,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     this.mirror(q.ignoredFindings, (value) => (this.ignoredFindings = value));
     this.mirror(q.checks, (value) => (this.checks = value));
     this.mirror(q.ranAt, (value) => (this.ranAt = value));
-    this.mirror(q.errorCount, (value) => (this.errorCount = value));
+    this.mirror(q.ready, (value) => (this.ready = value));
+    this.mirror(q.issueCount, (value) => (this.issueCount = value));
+    this.mirror(q.blockingCount, (value) => (this.blockingCount = value));
     // The editor opens before the user is known: locked until they are.
     this.mirror(this.vm.currentUser, () => {
       this.ignoreLocked = !this.vm.userCan(CAPABILITIES.MAILING_EDIT_CONTENT);
@@ -139,6 +143,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :ignored-findings="ignoredFindings"
         :checks="checks"
         :ran-at="ranAt"
+        :ready="ready"
         :ignore-locked="ignoreLocked"
         @send-test="goTo('send')"
       ></quality-checks-panel>
@@ -150,7 +155,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         class="qc-drawer__tabpanel"
         :vm="vm"
         :status="status"
-        :error-count="errorCount"
+        :ready="ready"
+        :issue-count="issueCount"
+        :blocking-count="blockingCount"
         :active="open && tab === 'send'"
         @show-results="goTo('checks')"
         @run-checks="runFromSend"

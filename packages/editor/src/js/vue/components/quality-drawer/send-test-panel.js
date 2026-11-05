@@ -8,8 +8,9 @@ const {
 } = require('../send-test/send-test-api');
 
 // The "Send a test" tab of the quality drawer: the recipients, an optional
-// saved list, and a word on what the quality review found. Errors never stop
-// the send: they are only recalled, with a way back to the results.
+// saved list, and a word on what the quality review found. What is left to
+// fix never stops the send: it is only recalled, with a way back to the
+// results; in red only when something blocks the export (decision 6).
 //
 // Escape in the recipients field closes the drawer, as anywhere in it: the
 // drawer is a non-modal dialog, and what was typed stays (the tab is only
@@ -18,10 +19,12 @@ const SendTestPanel = Vue.component('SendTestPanel', {
   components: { SimpleSelect, ShareLinkPanel },
   props: {
     vm: { type: Object, required: true },
-    // What the last review found: 'idle' | 'running' | 'done' | 'stale',
-    // and its error count.
+    // What the last review found: 'idle' | 'running' | 'done' | 'stale'.
     status: { type: String, default: 'idle' },
-    errorCount: { type: Number, default: 0 },
+    // The ready rule (ADR 0020), and what is left to fix when not ready.
+    ready: { type: Boolean, default: false },
+    issueCount: { type: Number, default: 0 },
+    blockingCount: { type: Number, default: 0 },
     // The tab is shown.
     active: { type: Boolean, default: false },
   },
@@ -110,9 +113,10 @@ const SendTestPanel = Vue.component('SendTestPanel', {
         <span class="qc-spinner" aria-hidden="true"></span>
         <span class="qc-notice__text">{{ t('Running checks…') }}</span>
       </div>
-      <div v-else-if="status === 'done' && errorCount" class="qc-notice qc-notice--error" role="status">
-        <span class="lucide lucide-alert-circle" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('__count__ errors are still to fix: you can send a test anyway', { count: errorCount }) }}</span>
+      <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="{ 'qc-notice--error': blockingCount > 0 }" role="status">
+        <span class="lucide" :class="blockingCount > 0 ? 'lucide-alert-circle' : issueCount ? 'lucide-info' : 'lucide-circle-slash'" aria-hidden="true"></span>
+        <span v-if="issueCount" class="qc-notice__text">{{ t('__count__ issues are still to fix: you can send a test anyway', { count: issueCount }) }}</span>
+        <span v-else class="qc-notice__text">{{ t('A check could not run: you can send a test anyway') }}</span>
         <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('See the results') }}</button>
       </div>
       <div v-else-if="status === 'idle' || status === 'stale'" class="qc-notice" role="status">

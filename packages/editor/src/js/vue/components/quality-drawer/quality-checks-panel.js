@@ -39,6 +39,9 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     ignoredFindings: { type: Array, default: () => [] },
     checks: { type: Array, default: () => [] },
     ranAt: { type: Date, default: null },
+    // The ready rule (ADR 0020), the rail badge's: nothing to fix, every check
+    // judged; infos may be left.
+    ready: { type: Boolean, default: false },
     // The user's role may not ignore (quality-drawer.js).
     ignoreLocked: { type: Boolean, default: false },
   },
@@ -80,10 +83,6 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
     hasIssues() {
       return this.findings.length > 0;
     },
-    // "All checks passed" only when every check was judged.
-    allPassed() {
-      return !this.hasIssues && !this.counts['not-run'];
-    },
     hasResults() {
       return this.status === 'done' || this.status === 'stale';
     },
@@ -99,12 +98,23 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         return this.t('Checking links and images…');
       }
       if (!this.hasResults) return '';
+      // Ready, infos left or not: said as the card says it.
+      if (this.ready && this.status === 'done') {
+        return [
+          this.t('quality-ready-title'),
+          this.counts.info
+            ? this.t('quality-ready-infos', { count: this.counts.info })
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+      }
       const parts = SEVERITY_ORDER.filter(
         (s) => s !== 'success' && this.counts[s] > 0
       ).map((s) =>
         this.t(SEVERITY_META[s].countKey, { count: this.counts[s] })
       );
-      return parts.length ? parts.join(', ') : this.t('All checks passed');
+      return parts.join(', ');
     },
   },
   watch: {
@@ -203,7 +213,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         <quality-summary
           :status="status"
           :counts="counts"
-          :all-passed="allPassed"
+          :ready="ready"
           :checks-total="checks.length"
           :ran-at="ranAt"
           :remote-status="remoteStatus"
@@ -262,7 +272,7 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         </div>
 
         <footer class="qc-drawer__footer">
-          <button v-if="allPassed" type="button" class="qc-button qc-button--outline" @click="run">
+          <button v-if="ready && status === 'done'" type="button" class="qc-button qc-button--outline" @click="run">
             <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
           </button>
           <button type="button" class="qc-button qc-button--cta qc-button--grow" @click="$emit('send-test')">

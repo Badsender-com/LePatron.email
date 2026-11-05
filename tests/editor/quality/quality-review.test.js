@@ -101,7 +101,7 @@ describe('installQualityReview', () => {
     const pending = setup(result);
     pending.vm.quality.run();
     pending.flush();
-    expect(pending.vm.quality.cleared()).toBe(false);
+    expect(pending.vm.quality.ready()).toBe(false);
 
     const { vm, flush } = setup(result, {
       vm: {
@@ -115,24 +115,25 @@ describe('installQualityReview', () => {
     flush();
     expect(vm.quality.issueCount()).toBe(0);
     expect(vm.quality.passedCount()).toBe(1);
-    expect(vm.quality.cleared()).toBe(true);
+    expect(vm.quality.ready()).toBe(true);
     expect(vm.quality.ranCount()).toBe(3);
 
     for (const status of ['error', 'cancelled']) {
       vm.quality.checks(result.checks.concat({ status }));
-      expect(vm.quality.cleared()).toBe(false);
+      expect(vm.quality.ready()).toBe(false);
       expect(vm.quality.ranCount()).toBe(3);
     }
   });
 
-  it('counts the errors left, for the "Send a test" tab', () => {
+  it('counts what is left to fix, for the "Send a test" tab: errors and warnings', () => {
     const { vm, flush } = setup({
       findings: [finding('error'), finding('error'), finding('warning')],
       checks: [],
     });
     vm.quality.run();
     flush();
-    expect(vm.quality.errorCount()).toBe(2);
+    expect(vm.quality.issueCount()).toBe(3);
+    expect(vm.quality.ready()).toBe(false);
   });
 });
 

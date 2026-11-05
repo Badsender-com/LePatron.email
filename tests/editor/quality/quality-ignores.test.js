@@ -53,7 +53,6 @@ describe('ignored findings', () => {
     expect(vm.quality.ignoredFindings().map((f) => f.fingerprint)).toEqual([
       'a',
     ]);
-    expect(vm.quality.errorCount()).toBe(0);
     expect(vm.quality.issueCount()).toBe(1);
   });
 
