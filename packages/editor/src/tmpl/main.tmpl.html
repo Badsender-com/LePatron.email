@@ -36,34 +36,54 @@
 
     <!-- ko template: {name: 'edit-name' } --># creation name #<!-- /ko -->
 
-    <input id="previewBoth" type="radio" name="previewMode" value="both" data-bind="checked: $root.previewMode, button: { text: false, label: 'both', icons: { primary: 'lucide lucide-fw lucide-columns-2' } }">
-      <label for="previewBoth" title="Both screen" data-bind="attr: { title: $root.t('Mobile and desktop') }">Mobile and desktop</label>
-    </input>
-    <input id="previewDesktop" type="radio" name="previewMode" value="desktop" data-bind="checked: $root.previewMode, button: { text: false, label: 'desktop', icons: { primary: 'lucide lucide-fw lucide-monitor' } }">
-      <label for="previewDesktop" title="Desktop" data-bind="attr: { title: $root.t('Desktop') }">Desktop</label>
-    </input>
-    <input id="previewMobile" type="radio" name="previewMode" value="mobile" data-bind="checked: $root.previewMode, button: { text: false, label: 'mobile', icons: { primary: 'lucide lucide-fw lucide-smartphone' } }">
-      <label for="previewMobile" title="Smartphone" data-bind="attr: { title: $root.t('Smartphone') }">Smartphone</label>
-    </input>
-
-    <span>
-      <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'lucide lucide-fw lucide-image', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
-    </span>
-    <!-- ko if: typeof $root.undo != 'undefined' -->
-    <span class="leftButtons">
+    <!-- The right of the top bar (boards « Topbar allégée »): the preview,
+         the history, then Save and Export. Native buttons, out of jQuery UI. -->
+    <div class="topbar-right">
+      <div class="topbar-segmented" role="group" data-bind="attr: { 'aria-label': $root.t('topbar-preview-label') }">
+        <!-- ko foreach: [{ mode: 'both', icon: 'lucide-columns-2', label: 'Mobile and desktop' }, { mode: 'desktop', icon: 'lucide-monitor', label: 'Desktop' }, { mode: 'mobile', icon: 'lucide-smartphone', label: 'Smartphone' }] -->
+        <button type="button" class="topbar-segmented__item" data-bind="click: function() { $root.previewMode(mode); }, css: { 'is-active': $root.previewMode() === mode }, attr: { title: $root.t(label), 'aria-label': $root.t(label), 'aria-pressed': $root.previewMode() === mode ? 'true' : 'false' }">
+          <span class="lucide" data-bind="css: icon" aria-hidden="true"></span>
+        </button>
+        <!-- /ko -->
+      </div>
+      <span class="topbar-separator" aria-hidden="true"></span>
+      <!-- The gallery leaves for the left bar in its own iteration (tab
+           « Images »); it stays here until then. -->
+      <button type="button" class="topbar-icon-button" data-bind="click: function() { $root.showGallery(!$root.showGallery()); }, css: { 'is-active': $root.showGallery() }, attr: { title: $root.t('Show image gallery'), 'aria-label': $root.t('Show image gallery'), 'aria-pressed': $root.showGallery() ? 'true' : 'false' }">
+        <span class="lucide lucide-image" aria-hidden="true"></span>
+      </button>
+      <!-- ko if: typeof $root.undo != 'undefined' -->
+      <span class="topbar-separator" aria-hidden="true"></span>
       <span class="undo-button-wrapper">
-        <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'lucide lucide-undo' }, label: $root.undo.name, text: false}">UNDO</a>
+        <button type="button" class="topbar-icon-button" data-bind="click: $root.undo.execute, clickBubble: false, disable: !$root.undo.enabled(), attr: { title: $root.t('Undo last operation'), 'aria-label': $root.t('Undo last operation') }">
+          <span class="lucide lucide-undo-2" aria-hidden="true"></span>
+        </button>
         <!-- ko if: $root.undoCount && $root.undoCount() > 0 -->
-        <span class="undo-count-badge" data-bind="text: $root.undoCount()"></span>
+        <span class="undo-count-badge" aria-hidden="true" data-bind="text: $root.undoCount()"></span>
         <!-- /ko -->
       </span>
       <span class="undo-button-wrapper">
-        <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'lucide lucide-redo' }, label: $root.redo.name, text: false}">REDO</a>
+        <button type="button" class="topbar-icon-button" data-bind="click: $root.redo.execute, clickBubble: false, disable: !$root.redo.enabled(), attr: { title: $root.t('Redo last operation'), 'aria-label': $root.t('Redo last operation') }">
+          <span class="lucide lucide-redo-2" aria-hidden="true"></span>
+        </button>
         <!-- ko if: $root.redoCount && $root.redoCount() > 0 -->
-        <span class="undo-count-badge" data-bind="text: $root.redoCount()"></span>
+        <span class="undo-count-badge" aria-hidden="true" data-bind="text: $root.redoCount()"></span>
         <!-- /ko -->
       </span>
-    </span>
+      <!-- /ko -->
+      <span class="topbar-separator" aria-hidden="true"></span>
+      <div class="topbar-actions">
+        <!-- ko if: typeof $root.save !== 'undefined' -->
+        <!-- Kept focusable when it cannot save, so that its reason is read. -->
+        <button type="button" class="topbar-button" data-bind="click: function() { if ($root.canSave() && $root.save.enabled()) $root.save.execute(); }, clickBubble: false, attr: { title: $root.canSave() ? $root.t('Save template') : $root.t('topbar-save-readonly'), 'aria-disabled': !$root.save.enabled() || !$root.canSave() ? 'true' : 'false' }">
+          <span class="lucide lucide-save" aria-hidden="true"></span><span data-bind="text: $root.t($root.save.name)"></span>
+        </button>
+        <!-- /ko -->
+        <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
+      </div>
+    </div>
+
+    <!-- ko if: typeof $root.undo != 'undefined' -->
     <!-- ko if: $root.debug -->
     <a href="javascript:void(0)" data-bind="click: $root.undoReset, clickBubble: false, button: { disabled: !$root.undo.enabled() && !$root.redo.enabled(), label: 'reset', text: true }">RESET</a>
     <!-- /ko -->
@@ -80,13 +100,6 @@
     <input type="checkbox" data-bind="checked: $root.showToolbox" /> toolbox
     </span>
 
-    <div class="rightButtons">
-
-    <!-- ko if: typeof $root.save !== 'undefined' -->
-    <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: function() { if ($root.canSave()) $root.save.execute(); }, clickBubble: false, button: { disabled: !$root.save.enabled() || !$root.canSave(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
-    <!-- /ko -->
-    <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
-    </div>
   </div>
 
   <!-- ko template: {name: 'dialog-select-image' } --># dialog image selection #<!-- /ko -->

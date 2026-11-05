@@ -20,37 +20,34 @@
   />
   <input type="hidden" name="html" id="downloadHtmlTextarea" />
 
+  <!-- « Exporter » (boards « Topbar allégée »): the download itself when it is
+       the only way out, else the menu of the ways out, opened on hover or on
+       focus. -->
   <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
-  <a
-    title="Download template"
-    href="javascript:void(0)"
+  <button
+    type="button"
+    class="topbar-button"
     data-bind="
       attr: { title: $root.t('Download template') },
       click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
       clickBubble: false,
-      button: {
-        disabled: !$root.download.enabled(),
-        icons: { primary: 'lucide lucide-fw lucide-download' },
-        label: $root.t($root.download.name),
-        text: true
-      }
+      disable: !$root.download.enabled()
     "
   >
-    DOWNLOAD
-  </a>
+    <span class="lucide lucide-download" aria-hidden="true"></span
+    ><span data-bind="text: $root.t('topbar-export')">Export</span>
+  </button>
   <!-- /ko -->
 
 <!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
-  <p
-    class="download-form__btn-menu"
-    data-bind="
-      button: {
-        icons: { primary: 'lucide lucide-fw lucide-download' },
-        label: $root.t($root.download.name)
-      }"
+  <button
+    type="button"
+    class="topbar-button download-form__btn-menu"
+    aria-haspopup="true"
   >
-    DL CDN
-  </p>
+    <span data-bind="text: $root.t('topbar-export')">Export</span
+    ><span class="lucide lucide-chevron-down" aria-hidden="true"></span>
+  </button>
   <aside class="download-form__menu">
     <a
       href="javascript:void(0)"

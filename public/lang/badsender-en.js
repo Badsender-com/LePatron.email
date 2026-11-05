@@ -268,6 +268,10 @@ module.exports = {
   // Comments
   'Comment block': 'Comment this block',
   'panel-rail-label': 'Panels',
+  'topbar-export': 'Export',
+  'topbar-preview-label': 'Preview',
+  'topbar-save-readonly':
+    'Review mode: you do not change the email, nothing to save.',
   'panel-rail-unresolved-one': '1 unresolved comment',
   'panel-rail-unresolved': '__count__ unresolved comments',
   'panel-rail-blocking-one': '1 blocking issue',

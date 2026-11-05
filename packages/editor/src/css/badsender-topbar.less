@@ -3,11 +3,6 @@
   display: flex;
   background: var(--v-primary-base);
 
-  .leftButtons {
-    border-right: 1px solid var(--v-primary-lighten2);
-    border-left: 1px solid var(--v-primary-lighten2);
-  }
-
   // Undo / Redo count indicator — overlaid on the top-right corner of the
   // arrow icon so it reads as part of the button, not a sibling element.
   // Discreet neutral fill (no warning semantics).
@@ -17,8 +12,8 @@
   }
   .undo-count-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 0;
+    right: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -35,10 +30,6 @@
     pointer-events: none;
     z-index: 1;
   }
-  .rightButtons {
-    display: flex;
-  }
-
   .ui-button {
     line-height: 36px;
     color: white;
@@ -48,19 +39,6 @@
     padding: 0 .75em;
     text-transform: none;
     font-weight: 500;
-
-    &.primaryButton {
-      color: white;
-      background-color: var(--v-primary-base);
-      border-bottom: 3px solid var(--v-accent-base);
-
-      &:hover,
-      &.pressed {
-        color: white;
-        background-color: var(--v-accent-base);
-        border-bottom: 3px solid var(--v-accent-base);
-      }
-    }
 
     .ui-icon,
     .ui-button-text {
@@ -227,12 +205,17 @@
 }
 
 .download-form:hover .download-form__menu,
+.download-form:focus-within .download-form__menu,
 .download-form__menu:hover {
   opacity: 1;
   pointer-events: initial;
 }
 #toolbar .download-form__btn-menu {
   margin: 0;
+}
+// The menu hangs from the bottom of « Exporter », not of the bar.
+#toolbar .download-form__menu {
+  top: calc(100% + 6px);
 }
 // MOBILE PREVIEW
 // • revert some styles from mosaico
