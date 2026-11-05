@@ -3,8 +3,10 @@
  * the AI panel take turns there, one open at a time (js/ext/right-panel.js).
  *
  * One copy of what each panel used to carry: the slide from the right, and the
- * canvas making room. `.slidebar.right-panel` (0,2,0) outranks the left-hand
- * `.slidebar` defaults of style_mosaico_tools.less and the gallery's.
+ * canvas making room. The panels sit in #main-toolbox, whose
+ * `#main-toolbox > div > div { height: 100% }` (1,0,2) would stretch them to
+ * the whole window, their foot under its bottom edge: the selector takes the id
+ * too (1,2,0), which also outranks the `.slidebar` defaults of the left bar.
  */
 
 @right-panel-motion: 0.2s ease-out;
@@ -20,7 +22,7 @@
   100% { right: @right-panel-offset; }
 }
 
-.slidebar.right-panel {
+#main-toolbox .slidebar.right-panel {
   position: fixed;
   left: auto;
   right: 0;
@@ -44,8 +46,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slidebar.right-panel,
-  .slidebar.right-panel.hidden,
+  #main-toolbox .slidebar.right-panel,
+  #main-toolbox .slidebar.right-panel.hidden,
   .withRightPanel #main-edit-area {
     animation: none;
     transition: none;
