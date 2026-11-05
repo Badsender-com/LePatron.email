@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 
 const skillService = require('../services/skill.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
@@ -41,13 +42,23 @@ function withVersionWarnings(skill, major, minor) {
   return payload;
 }
 
-// At publication, what the version's consumed expertises warn of too.
+// At publication, what the version's consumed expertises warn of too, with
+// the audience the skill has now. The publication is done: reading what it
+// warns of never turns it into an error.
 async function withPublicationWarnings(skill, major, minor) {
   const payload = withVersionWarnings(skill, major, minor);
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
   );
-  const consumed = await skillService.consumedExpertiseWarnings(skill, version);
+  let consumed = [];
+  try {
+    consumed = await skillService.consumedExpertiseWarnings(skill, version);
+  } catch (error) {
+    logger.error(
+      `[ai-skill] the warnings of ${skill.skillId} ${major}.${minor} could not be read`,
+      error
+    );
+  }
   payload.warnings = [...payload.warnings, ...consumed];
   return payload;
 }

@@ -248,6 +248,29 @@ describe('ai-skill HTTP routes', () => {
     );
   });
 
+  // The publication is done: what it warns of cannot turn it into an error.
+  it('POST a publication answers it, without warnings, when they cannot be read', async () => {
+    const logger = require('../../../../packages/server/utils/logger.js');
+    const logged = jest.spyOn(logger, 'error').mockImplementation(() => {});
+    skillService.activateVersion.mockResolvedValue({
+      skillId: 'a',
+      status: 'ACTIVE',
+      versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+    });
+    skillService.consumedExpertiseWarnings.mockRejectedValueOnce(
+      new Error('connection lost')
+    );
+
+    const res = await request(makeApp())
+      .post('/api/ai-skills/a/versions/1.0/activate')
+      .send({ changelog: 'c', releaseNotes: 'r' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: 'ACTIVE', warnings: [] });
+    expect(logged).toHaveBeenCalled();
+    logged.mockRestore();
+  });
+
   it('GET /api/ai-invocations forwards filters as query', async () => {
     invocationLog.listInvocations.mockResolvedValue({
       items: [],
