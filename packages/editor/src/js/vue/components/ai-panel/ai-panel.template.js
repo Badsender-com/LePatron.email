@@ -33,9 +33,9 @@ module.exports = `
         {{ t('ai-panel-select-invite') }}
       </p>
       <template v-else>
-        <p class="ai-panel__section">
-          {{ target.kind === 'blockField' ? t('ai-panel-selected-field') : t('ai-panel-selected-block') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span>
-        </p>
+        <h3 class="ai-panel__section">
+          {{ target.kind === 'block' ? t('ai-panel-selected-block') : t('ai-panel-selected-field') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span>
+        </h3>
         <ul v-if="targetActions.length" class="ai-panel__actions">
           <li v-for="(item, i) in targetActions" :key="item.id">
             <button type="button" class="ai-panel__action" :class="{ 'ai-panel__action--first': i === 0 }" @click="openAction(item.id, target)">
@@ -50,7 +50,7 @@ module.exports = `
         </ul>
         <p v-else class="ai-panel__hint">{{ t('ai-panel-no-action-yet') }}</p>
       </template>
-      <p class="ai-panel__section">{{ t('ai-panel-whole-email') }}</p>
+      <h3 class="ai-panel__section">{{ t('ai-panel-whole-email') }}</h3>
       <ul class="ai-panel__actions">
         <li v-for="item in actions" :key="item.id">
           <button type="button" class="ai-panel__action" @click="openAction(item.id)">

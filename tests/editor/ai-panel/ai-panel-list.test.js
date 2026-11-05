@@ -78,4 +78,20 @@ describe('the list of the AI panel', () => {
         .textContent
     ).toBe('ai-panel-correct-field-desc');
   });
+
+  it('names a block’s action « Corriger ce bloc », and a subject or preheader as a field', () => {
+    const block = mount({ kind: 'block', blockId: 'b1' }, [
+      { id: 'correct-text', canApply: true },
+    ]);
+    expect(names(block)[0]).toBe('ai-panel-correct-block');
+    expect(block.querySelector('h3.ai-panel__section').textContent).toContain(
+      'ai-panel-selected-block'
+    );
+    const preheader = mount({ kind: 'preheader' }, [
+      { id: 'generate-preheader', canApply: true },
+    ]);
+    expect(
+      preheader.querySelector('h3.ai-panel__section').textContent
+    ).toContain('ai-panel-selected-field');
+  });
 });

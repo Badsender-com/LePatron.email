@@ -15,7 +15,8 @@
 
   // Its layout is the shell's (badsender-right-panel-ui.less).
   .ai-panel {
-    p {
+    // Without weight: a paragraph of the panel sets its own margin.
+    :where(p, h3) {
       margin: 0;
     }
 
@@ -74,7 +75,8 @@
         outline-offset: 2px;
       }
 
-      &--first {
+      &--first,
+      &--first:hover {
         border-color: var(--accent);
         background: color-mix(in srgb, var(--accent) 8%, var(--white));
       }

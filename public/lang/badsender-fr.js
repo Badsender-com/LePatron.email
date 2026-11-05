@@ -976,8 +976,7 @@ module.exports = {
   'ai-panel-correct-email-desc': 'Orthographe et grammaire, bloc par bloc',
   'ai-panel-subject-desc': 'Trois propositions à partir du contenu',
   'ai-panel-preheader-desc': "En cohérence avec l'objet",
-  'ai-panel-list-note':
-    "Rien n'est modifié dans l'email sans votre accord. Chaque modification acceptée s'annule avec Ctrl+Z.",
+  'ai-panel-list-note': "Rien n'est modifié dans l'email sans votre accord.",
   'ai-panel-title': 'Outils IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',

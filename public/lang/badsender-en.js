@@ -948,8 +948,7 @@ module.exports = {
   'ai-panel-correct-email-desc': 'Spelling and grammar, block by block',
   'ai-panel-subject-desc': 'Three proposals from the content',
   'ai-panel-preheader-desc': 'Consistent with the subject',
-  'ai-panel-list-note':
-    'Nothing changes in the email without your consent. Each accepted change is undone with Ctrl+Z.',
+  'ai-panel-list-note': 'Nothing changes in the email without your consent.',
   'ai-panel-title': 'AI tools',
   'ai-panel-action-subject': 'Generate the subject',
   'ai-panel-action-preheader': 'Generate the preheader',
