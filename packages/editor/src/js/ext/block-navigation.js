@@ -11,7 +11,8 @@ const unwrap = (value) => (typeof value === 'function' ? value() : value);
 /**
  * The block of the content model with this id, or null. Every container of
  * the template is searched (`mainBlocks`, `headerBlocks`…), as the quality
- * engine judges them all (quality/context.js).
+ * engine judges them all (quality/context.js), and the blocks a template
+ * holds alone, out of any list (a header, a footer).
  * @param {Object} viewModel
  * @param {string} blockId
  * @returns {Object|null}
@@ -20,9 +21,14 @@ function findBlockById(viewModel, blockId) {
   if (!blockId) return null;
   try {
     const content = viewModel.content();
-    const containers = Object.keys(content).filter((key) =>
-      /Blocks$/.test(key)
-    );
+    const keys = Object.keys(content);
+    for (const key of keys.filter((name) => !/Blocks$/.test(name))) {
+      const single = unwrap(content[key]);
+      if (single && typeof single === 'object' && unwrap(single.id) === blockId) {
+        return single;
+      }
+    }
+    const containers = keys.filter((key) => /Blocks$/.test(key));
     for (const key of containers) {
       const container = unwrap(content[key]);
       const blocks = (container && unwrap(container.blocks)) || [];

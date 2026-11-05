@@ -7,7 +7,27 @@
 // `.mo p` / `.mo button` rules would win otherwise.
 ////////
 
+// The panel's place: its shell fills the right panel, as the others'.
+#toolcomments #comments-panel {
+  height: 100%;
+}
+
 .slidebar.right-panel {
+  // ===== The header's « Validé », in place of the count =====
+  .comments-panel__approved {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: @qc-tint-success;
+    color: var(--gray-900);
+    font-size: 12px;
+    font-weight: 600;
+
+    > .lucide { color: @qc-success; }
+  }
+
   // ===== Filter: two chips that only read =====
   .comments-filter {
     display: flex;
@@ -262,72 +282,5 @@
     &--changes { background: var(--gray-100); color: var(--gray-800); }
     &--important { background: @qc-tint-warning; color: @qc-warning-text; }
     &--resolved { background: @qc-tint-success; color: @qc-success; }
-  }
-
-  // ===== An approval: an event of the thread =====
-  .comment-approval {
-    display: flex;
-    gap: 10px;
-    padding: 4px 0;
-
-    &:focus {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
-    }
-
-    &__mark {
-      display: inline-flex;
-      flex: none;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: @qc-tint-success;
-      color: @qc-success;
-    }
-
-    &--lifted &__mark {
-      background: var(--gray-100);
-      color: var(--gray-600);
-    }
-
-    &__body {
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    &__head {
-      margin: 0;
-    }
-
-    &__name {
-      font-weight: 600;
-      color: var(--gray-900);
-    }
-
-    &__text {
-      align-self: stretch;
-      padding: 8px 12px;
-      border-radius: @qc-radius;
-      background: var(--gray-50);
-    }
-
-    &__lifted {
-      display: flex;
-      gap: 8px;
-      align-self: stretch;
-      margin: 0;
-      padding: 8px 12px;
-      border-radius: @qc-radius;
-      background: @qc-tint-warning;
-      color: var(--gray-900);
-
-      > .lucide { color: @qc-warning; }
-    }
   }
 }

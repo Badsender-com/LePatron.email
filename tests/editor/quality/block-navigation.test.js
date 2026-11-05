@@ -23,6 +23,15 @@ describe('findBlockById', () => {
     });
   });
 
+  it('finds a block a template holds alone, out of any list (a header)', () => {
+    const viewModel = fakeViewModel({ blocks: [{ id: 'main-1' }] });
+    const content = viewModel.content();
+    const header = { id: () => 'ko_headerBlock_1', type: () => 'headerBlock' };
+    viewModel.content = () => ({ ...content, headerBlock: () => header });
+
+    expect(findBlockById(viewModel, 'ko_headerBlock_1')).toBe(header);
+  });
+
   it('answers null for a block that is gone, or no id', () => {
     const viewModel = fakeViewModel({ blocks: [{ id: 'main-1' }] });
 
