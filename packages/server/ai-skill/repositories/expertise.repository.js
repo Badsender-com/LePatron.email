@@ -57,6 +57,9 @@ const APPLICABLE_FIELDS = Object.freeze({
  * @param {string} [filters.language]
  * @param {Object} [filters.group] the company of the caller, as its document
  *   stores it; `PLATFORM_READER` (services/audience.js) for the playground
+ * @param {boolean} [filters.warnOnUnmatched=true] whether a scope that matched
+ *   nothing is logged: for a scope written in a feature's code, not for one an
+ *   assistant sends through MCP, which answers it itself
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
 async function findApplicable({
@@ -65,6 +68,7 @@ async function findApplicable({
   emailType,
   language,
   group,
+  warnOnUnmatched = true,
 } = {}) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
   // the match below is a strict string equality, so `cta` must meet `CTA`.
@@ -113,10 +117,12 @@ async function findApplicable({
   // it issues a `distinct` — on a feature whose scope matches no scoped
   // expertise that would be one extra round-trip on EVERY call, in the hottest
   // path of the module. Errors inside are swallowed by the function itself.
-  warnOnUnmatchedScopes(scopes, docs).catch(() => {
-    // Belt and braces: the diagnostic must never surface as an invocation
-    // failure, and nothing awaits it to notice.
-  });
+  if (warnOnUnmatched) {
+    warnOnUnmatchedScopes(scopes, docs).catch(() => {
+      // Belt and braces: the diagnostic must never surface as an invocation
+      // failure, and nothing awaits it to notice.
+    });
+  }
 
   // Deterministic order = the order expertises appear in the composed prompt:
   // transversal (general) first, then alphabetical by expertiseId. Stable so

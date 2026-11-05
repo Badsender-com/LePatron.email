@@ -18,7 +18,7 @@ const PROVING = {
   expertiseId: DRAFT_SHEET,
   title: 'Draft guidelines',
   category: 'design',
-  scope: ['subject'],
+  scope: ['subject', 'spacing'],
   isTransversal: false,
   appliesToEmailTypes: [],
   appliesToLanguages: [],
@@ -116,6 +116,10 @@ describe('audience', () => {
         })
       )
       .expertises.map((e) => e.expertiseId);
+  const describedScopes = async (client) =>
+    (await client.listTools()).tools.find(
+      (tool) => tool.name === 'find_applicable_expertises'
+    ).description;
   const taskSkillText = async (client) =>
     (await client.readResource({ uri: 'lepatron://skills/qc.spacing-review' }))
       .contents[0].text;
@@ -131,6 +135,7 @@ describe('audience', () => {
           client.readResource({ uri: uriOf(DRAFT_SHEET) })
         ).rejects.toThrow(/not found/i);
         expect(await foundIds(client)).not.toContain(DRAFT_SHEET);
+        expect(await describedScopes(client)).not.toContain('"spacing"');
         expect(await taskSkillText(client)).toContain(
           uriOf('redaction.subject-line')
         );
@@ -173,6 +178,7 @@ describe('audience', () => {
         });
         expect(contents[0].text).toContain('A rule still being proven.');
         expect(await foundIds(client)).toContain(DRAFT_SHEET);
+        expect(await describedScopes(client)).toContain('"spacing"');
         expect(await taskSkillText(client)).toContain(uriOf(DRAFT_SHEET));
         expect(await promptNames(client)).toContain(PROVING_SKILL.skillId);
       }

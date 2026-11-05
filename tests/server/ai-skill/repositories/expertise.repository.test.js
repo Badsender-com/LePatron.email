@@ -320,6 +320,20 @@ describe('expertise.repository', () => {
       expect(message).toContain('objet');
     });
 
+    // A scope an assistant guesses through MCP is answered there, not logged
+    // as a mistake in a feature's code, nor read again with a `distinct`.
+    it('stays silent when the caller turns the diagnostic off', async () => {
+      mockReturnDocs([]);
+      await findApplicable({
+        scope: 'bouton',
+        categories: ['redaction'],
+        warnOnUnmatched: false,
+      });
+      await flushWarning();
+      expect(Expertises.distinct).not.toHaveBeenCalled();
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
     /**
      * The nastiest shape: transversal expertises match whatever the scope, so
      * the returned list is NOT empty. The prompt is not broken, just poorer —

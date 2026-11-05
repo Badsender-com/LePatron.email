@@ -2,10 +2,11 @@
 
 const { McpServer } = require('@modelcontextprotocol/server');
 const { guardListing } = require('./mcp-identity.js');
+const { registerExpertiseResources } = require('./mcp-expertises.js');
 const {
-  registerExpertiseResources,
   registerFindApplicableExpertises,
-} = require('./mcp-expertises.js');
+  withScopesDescribed,
+} = require('./mcp-find-expertises.js');
 const { registerSkillPrompts } = require('./mcp-skills.js');
 const {
   registerSkillResources,
@@ -38,7 +39,7 @@ function createMcpServer() {
   registerSkillPrompts(server);
   registerSkillResources(server);
   registerFindSkills(server);
-  guardListing(server, 'tools/list');
+  guardListing(server, 'tools/list', withScopesDescribed);
   guardListing(server, 'resources/templates/list');
   return server;
 }

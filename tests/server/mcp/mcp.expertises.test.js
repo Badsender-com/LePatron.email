@@ -4,8 +4,9 @@
 'use strict';
 
 // The expertises a connected application reads (ADR 0012): the active version
-// of each active expertise, as a resource, with its version and update date.
-// Drafts and archives never leave LePatron.
+// of each active expertise, as a resource, with its version and update date,
+// and the tool that finds those that apply to a piece of an email, among the
+// scopes in use. Drafts and archives never leave LePatron.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -143,19 +144,87 @@ describe('expertises', () => {
       ]);
     });
 
-    it('never finds a draft or an archived expertise', async () => {
+    it('never finds an archived expertise', async () => {
       const answer = await find({
-        scope: ['subject', 'image'],
+        scope: ['subject'],
         categories: ['redaction', 'design'],
       });
 
       expect(ids(answer)).toEqual(['redaction.subject-line']);
     });
 
+    it('reads the scopes as the expertises store them', async () => {
+      const answer = await find({
+        scope: ' Subject ',
+        categories: ['redaction'],
+      });
+
+      expect(ids(answer)).toEqual(['redaction.subject-line']);
+    });
+
+    // Only a draft is written for "image": an assistant that guessed it is
+    // told what it may ask for, never a message meant for a developer.
+    it('answers a scope nothing is written for with the scopes in use', async () => {
+      const answer = await find({
+        scope: ['subject', 'image'],
+        categories: ['redaction', 'design'],
+      });
+
+      expect(answer.error).toMatch(/No expertise is written for "image"/);
+      expect(answer.error).toMatch(/The scopes in use: "subject"\./);
+    });
+
     it('asks for a scope and a category rather than answering everything', async () => {
       const answer = await find({ categories: ['redaction'] });
 
       expect(answer.error).toMatch(/scope/i);
+    });
+
+    it.each([
+      ['a blank scope', { scope: '  ', categories: ['redaction'] }],
+      ['no category', { scope: 'subject', categories: [] }],
+      [
+        'too many scopes',
+        { scope: Array(11).fill('subject'), categories: ['redaction'] },
+      ],
+      [
+        'a long email type',
+        {
+          scope: 'subject',
+          categories: ['redaction'],
+          emailType: 'x'.repeat(51),
+        },
+      ],
+    ])('refuses %s before reading anything', async (_case, args) => {
+      const answer = await find(args);
+
+      expect(answer.error).toMatch(/Input validation error/);
+    });
+
+    describe('its description', () => {
+      const description = async () =>
+        (await client.listTools()).tools.find(
+          (tool) => tool.name === 'find_applicable_expertises'
+        ).description;
+
+      it('names the scopes in use, not those of a draft or a transversal expertise', async () => {
+        expect(await description()).toMatch(/The scopes in use: "subject"\.$/);
+      });
+
+      it('keeps them a minute', async () => {
+        const now = Date.now();
+        const clock = jest.spyOn(Date, 'now').mockReturnValue(now);
+        await description();
+
+        harness.update('expertises', f.EXPERTISES[0]._id, {
+          scope: ['subject', 'preheader'],
+        });
+        expect(await description()).not.toMatch(/preheader/);
+
+        clock.mockReturnValue(now + 61 * 1000);
+        expect(await description()).toMatch(/"preheader", "subject"/);
+        clock.mockRestore();
+      });
     });
   });
 });
