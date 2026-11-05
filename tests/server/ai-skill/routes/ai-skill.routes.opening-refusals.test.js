@@ -6,7 +6,8 @@
 // What opening a task skill to every company refuses (ADR 0013), on the real
 // services: expertises named outside the request that opens the skill, or
 // other than those the confirmation offers (the published expertises the
-// version consumes kept to the platform company). A refusal writes nothing.
+// version consumes kept to the platform company), and anyone but a super
+// admin. A refusal writes nothing.
 
 jest.mock('../../../../packages/server/common/models.common', () => {
   const { createMcpStore } = require('../../../helpers/mcp-fake-models.js');
@@ -28,6 +29,11 @@ const {
 } = require('../../../../packages/server/common/models.common');
 
 beforeEach(() => seedOpening(mockStore));
+
+const COMPANY_ADMIN = Object.freeze({
+  id: '507f1f77bcf86cd799439002',
+  role: 'company_admin',
+});
 
 const publish = (body, user) =>
   request(aiSkillApp(user))
@@ -114,6 +120,39 @@ describe('the expertises named to open with a change of audience', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.expertiseIds).toEqual(['qc.other']);
+    await expectNothingOpened();
+  });
+});
+
+describe('a member of a company who is not a super admin', () => {
+  it.each([
+    ['/api/ai-skills/qc.review/versions/1.0/platform-only-expertises'],
+    ['/api/ai-expertise/qc.proving/open-task-skills'],
+  ])('cannot read %s', async (path) => {
+    const res = await request(aiSkillApp(COMPANY_ADMIN)).get(path);
+
+    expect(res.status).toBe(401);
+    expect(res.body).not.toHaveProperty('expertises');
+    expect(res.body).not.toHaveProperty('skills');
+  });
+
+  it('cannot open a skill and its expertises from its details', async () => {
+    const res = await patch(
+      { audience: 'all', openExpertiseIds: ['qc.proving'] },
+      COMPANY_ADMIN
+    );
+
+    expect(res.status).toBe(401);
+    await expectNothingOpened();
+  });
+
+  it('cannot publish a skill opening its expertises', async () => {
+    const res = await publish(
+      { openToAll: true, openExpertiseIds: ['qc.proving'] },
+      COMPANY_ADMIN
+    );
+
+    expect(res.status).toBe(401);
     await expectNothingOpened();
   });
 });
