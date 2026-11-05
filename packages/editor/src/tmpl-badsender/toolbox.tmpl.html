@@ -351,9 +351,9 @@
         <span data-bind="text: $root.t('comments-filter-all')">All</span>
       </button>
       <button class="comment-filter-chip"
-              data-bind="css: { selected: $root.selectedBlockForComments(), disabled: !$root.lastSelectedBlock() },
+              data-bind="css: { selected: $root.selectedBlockForComments(), disabled: !$root.selectedBlockForComments() && !$root.lastSelectedBlock() },
                          click: $root.filterToCurrentBlock,
-                         enable: $root.lastSelectedBlock()">
+                         enable: $root.selectedBlockForComments() || $root.lastSelectedBlock()">
         <span class="lucide lucide-box"></span>
         <span data-bind="text: $root.currentBlockLabel()">Current block</span>
       </button>
@@ -371,7 +371,7 @@
     <!-- /ko -->
 
     <!-- Empty state -->
-    <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
+    <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 && $root.commentsStore.pendingCount() === 0 -->
     <div class="comments-empty">
       <span class="lucide lucide-messages-square"></span>
       <span data-bind="text: $root.t('comments-empty')">No comments</span>
@@ -381,13 +381,13 @@
     <!-- New comments, held while the user reads (ADR 0020) -->
     <div class="comments-new-pill-zone" aria-live="polite">
       <!-- ko if: $root.commentsStore.pendingCount() > 0 -->
-      <button type="button" class="comments-new-pill" data-bind="click: $root.commentsStore.showNew, text: $root.t($root.commentsStore.pendingCount() === 1 ? 'comments-new-one' : 'comments-new', { count: $root.commentsStore.pendingCount() })"></button>
+      <button type="button" class="comments-new-pill" data-bind="click: $root.showNewComments, text: $root.t($root.commentsStore.pendingCount() === 1 ? 'comments-new-one' : 'comments-new', { count: $root.commentsStore.pendingCount() })"></button>
       <!-- /ko -->
     </div>
 
     <!-- Comments list -->
   <div class="comments-list" data-bind="foreach: $root.filteredComments()">
-    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
+    <div class="comment-item" tabindex="-1" data-bind="attr: { 'data-comment-id': _id }, css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
       <!-- Comment header -->
       <div class="comment-header">
         <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonymous'"></span>

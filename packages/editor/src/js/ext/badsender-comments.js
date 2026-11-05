@@ -21,10 +21,7 @@ const { findBlockById, goToBlock } = require('./block-navigation.js');
 const { installRightPanel } = require('./right-panel.js');
 const { createCommentsRail } = require('./comments/comments-rail.js');
 const { createCommentsStore } = require('./comments/comments-store.js');
-const {
-  createCommentsApi,
-  normalizeComment,
-} = require('./comments/comments-api.js');
+const { createCommentsApi } = require('./comments/comments-api.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -103,7 +100,8 @@ function commentsLoader(opts) {
     // A blocking comment open keeps the email from being approved: the server
     // refuses it too (ADR 0020). Root comments only, never an approval.
     viewModel.hasOpenBlocking = ko.computed(function () {
-      return viewModel.comments().some(function (c) {
+      // Held behind the pill included: the server counts them too.
+      return store.allComments().some(function (c) {
         return (
           !c.resolved &&
           !c._parentComment &&
@@ -113,27 +111,9 @@ function commentsLoader(opts) {
       });
     });
 
-    // What the Knockout list shows: a view of each comment, which reads the
-    // store's object through its prototype. The store updates a comment in
-    // place on a refresh (its revision moves on); a new view then makes the
-    // list draw that row again, while the store keeps its object.
-    const views = new Map();
-    const viewOf = function (comment, revision) {
-      const known = views.get(comment._id);
-      if (known && known.comment === comment && known.revision === revision) {
-        return known.view;
-      }
-      const view = Object.create(comment);
-      views.set(comment._id, { comment: comment, revision: revision, view: view });
-      return view;
-    };
-
     viewModel.filteredComments = ko.computed(function () {
       const blockId = viewModel.selectedBlockForComments();
-      const revision = store.revision();
-      const allComments = viewModel.comments().map(function (c) {
-        return viewOf(c, revision);
-      });
+      const allComments = viewModel.comments();
 
       var filtered;
       if (!blockId) {
@@ -156,15 +136,9 @@ function commentsLoader(opts) {
     });
 
     viewModel.getReplies = function (parentId) {
-      const revision = store.revision();
-      return viewModel
-        .comments()
-        .filter(function (c) {
-          return c._parentComment === parentId;
-        })
-        .map(function (c) {
-          return viewOf(c, revision);
-        });
+      return viewModel.comments().filter(function (c) {
+        return c._parentComment === parentId;
+      });
     };
 
     // Filtered mention suggestions based on query
@@ -184,7 +158,8 @@ function commentsLoader(opts) {
     // Current block label for filter chip
     // Shows human-readable block name with numbering for duplicates
     viewModel.currentBlockLabel = ko.computed(function () {
-      const blockId = viewModel.lastSelectedBlock();
+      // The block the list is filtered on, else the one last selected.
+      const blockId = store.filter() || viewModel.lastSelectedBlock();
       // When no block is selected, show "No block" text
       if (!blockId) {
         return viewModel.t('comments-no-block-selected') || 'Aucun bloc';
@@ -474,7 +449,7 @@ function commentsLoader(opts) {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function (comment) {
-          viewModel.comments.push(normalizeComment(comment));
+          store.upsert(comment);
           store.clearDraft();
           // The next comment follows the selection again.
           if (!parent) store.followSelection();
@@ -525,14 +500,7 @@ function commentsLoader(opts) {
         data: JSON.stringify({ text: text }),
         success: function (updatedComment) {
           // Update in array
-          const comments = viewModel.comments();
-          const index = comments.findIndex(function (c) {
-            return c._id === updatedComment._id;
-          });
-          if (index >= 0) {
-            comments[index] = updatedComment;
-            viewModel.comments(comments);
-          }
+          store.upsert(updatedComment);
           viewModel.cancelEditComment();
           viewModel.notifier.success(viewModel.t('comments-updated'));
         },
@@ -555,10 +523,7 @@ function commentsLoader(opts) {
         method: 'DELETE',
         success: function () {
           // Remove from array (and its replies)
-          const comments = viewModel.comments().filter(function (c) {
-            return c._id !== comment._id && c._parentComment !== comment._id;
-          });
-          viewModel.comments(comments);
+          store.remove(comment._id);
           viewModel.loadCommentCounts();
           viewModel.notifier.success(viewModel.t('comments-deleted'));
         },
@@ -576,14 +541,7 @@ function commentsLoader(opts) {
         url: apiBaseUrl + '/comments/' + comment._id + '/resolve',
         method: 'PATCH',
         success: function (updatedComment) {
-          const comments = viewModel.comments();
-          const index = comments.findIndex(function (c) {
-            return c._id === updatedComment._id;
-          });
-          if (index >= 0) {
-            comments[index] = updatedComment;
-            viewModel.comments(comments);
-          }
+          store.upsert(updatedComment);
           viewModel.loadCommentCounts();
           viewModel.notifier.success(viewModel.t('comments-resolved'));
         },
@@ -601,14 +559,7 @@ function commentsLoader(opts) {
         url: apiBaseUrl + '/comments/' + comment._id + '/unresolve',
         method: 'PATCH',
         success: function (updatedComment) {
-          const comments = viewModel.comments();
-          const index = comments.findIndex(function (c) {
-            return c._id === updatedComment._id;
-          });
-          if (index >= 0) {
-            comments[index] = updatedComment;
-            viewModel.comments(comments);
-          }
+          store.upsert(updatedComment);
           viewModel.loadCommentCounts();
           viewModel.notifier.success(viewModel.t('comments-unresolved'));
         },
@@ -728,6 +679,21 @@ function commentsLoader(opts) {
     /**
      * Filter comments to the last selected block
      */
+    /**
+     * The comments held behind the pill join the list; the focus goes to the
+     * first of them, as the pill goes.
+     */
+    viewModel.showNewComments = function () {
+      const shown = store.showNew();
+      if (!shown.length) return;
+      setTimeout(function () {
+        const first = document.querySelector(
+          '#toolcomments [data-comment-id="' + CSS.escape(shown[0]._id) + '"]'
+        );
+        if (first) first.focus();
+      }, 0);
+    };
+
     viewModel.filterToCurrentBlock = function () {
       const blockId = viewModel.lastSelectedBlock();
       if (blockId) {
