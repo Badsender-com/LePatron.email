@@ -596,6 +596,17 @@ module.exports = {
   'quality-not-ready-one': 'Pas prêt : 1 point à corriger',
   'quality-blocking-suffix-one': ', dont 1 bloquant',
   'quality-blocking-suffix': ', dont __count__ bloquants',
+  'quality-recipients': 'Destinataires',
+  'quality-recipients-placeholder': 'Adresse ou liste…',
+  'quality-recipients-help':
+    "Tapez une adresse puis Entrée, ou le nom d'une liste enregistrée. __count__ destinataire(s).",
+  'quality-recipient-remove': 'Retirer __name__',
+  'quality-test-sent': 'Test envoyé à __count__ destinataire(s) à __when__.',
+  'quality-send-test': 'Envoyer le test',
+  'quality-send-again': 'Envoyer à nouveau',
+  'quality-see-checks': 'Voir le contrôle',
+  'quality-share-definitive':
+    'Désactiver un lien est définitif : il ne fonctionnera plus.',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
@@ -925,10 +936,10 @@ module.exports = {
     'Google signale ce lien comme dangereux : __label__',
   'Google could not check this link, check it by hand: __label__':
     "Google n'a pas pu vérifier ce lien, vérifiez-le vous-même : __label__",
-  'Share a preview': 'Partager un aperçu',
+  'Share a preview': "Lien d'aperçu",
   'Anyone with the link sees the last saved version of the email, without an account.':
     "Toute personne qui a le lien voit la dernière version enregistrée de l'email, sans compte.",
-  'Valid for': 'Durée de validité',
+  'Valid for': 'Valable',
   '1 day': '1 jour',
   '__count__ days': '__count__ jours',
   'Create a link': 'Créer un lien',
@@ -937,12 +948,12 @@ module.exports = {
   'Copy it now: it will not be shown again.':
     'Copiez-le maintenant : il ne sera plus affiché.',
   'Active links': 'Liens actifs',
-  'Turn off': 'Désactiver',
+  'Turn off': 'Désactiver le lien',
   'The link could not be created': "Le lien n'a pas pu être créé",
   'Copy failed: select the link and copy it':
     'La copie a échoué : sélectionnez le lien et copiez-le',
   'The link could not be turned off': "Le lien n'a pas pu être désactivé",
-  'Copy link': 'Copier le lien',
+  'Copy link': 'Copier',
   'Created __created__ by __name__, until __date__':
     "Créé le __created__ par __name__, jusqu'au __date__",
   'Created __created__, until __date__':

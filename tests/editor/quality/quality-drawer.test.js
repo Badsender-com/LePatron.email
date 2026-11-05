@@ -329,6 +329,20 @@ describe('QualityDrawer', () => {
     expect(card.textContent).toContain('quality-blocking-text');
   });
 
+  it('sends the test from the foot of the panel, on the send tab (board q4)', async () => {
+    const { vm, el } = await mountDrawer({ findings: [], checks: [] });
+    vm.quality.tab('send');
+    await Vue.nextTick();
+    await Vue.nextTick();
+    const send = el.querySelector(
+      '.right-panel-shell__footer button[type="submit"]'
+    );
+    expect(send.getAttribute('form')).toBe('qc-send-form');
+    expect(send.textContent).toContain('quality-send-test');
+    // Nothing to send to yet.
+    expect(send.disabled).toBe(true);
+  });
+
   it('runs the checks from the foot of the panel (board q1)', async () => {
     const { vm, el } = await mountDrawer({ findings: [], checks: [] });
     const run = el.querySelector('.right-panel-shell__footer .qc-button--cta');

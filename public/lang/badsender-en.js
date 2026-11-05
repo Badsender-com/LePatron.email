@@ -579,6 +579,17 @@ module.exports = {
   'quality-not-ready-one': 'Not ready: 1 issue to fix',
   'quality-blocking-suffix-one': ', 1 blocking',
   'quality-blocking-suffix': ', __count__ blocking',
+  'quality-recipients': 'Recipients',
+  'quality-recipients-placeholder': 'Address or list…',
+  'quality-recipients-help':
+    'Type an address then Enter, or the name of a saved list. __count__ recipient(s).',
+  'quality-recipient-remove': 'Remove __name__',
+  'quality-test-sent': 'Test sent to __count__ recipient(s) at __when__.',
+  'quality-send-test': 'Send the test',
+  'quality-send-again': 'Send again',
+  'quality-see-checks': 'See the checks',
+  'quality-share-definitive':
+    'Turning a link off is for good: it will no longer work.',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
     '__count__ checks run at __when__. No errors or warnings.',
@@ -897,7 +908,7 @@ module.exports = {
     'Google lists this link as unsafe: __label__',
   'Google could not check this link, check it by hand: __label__':
     'Google could not check this link, check it by hand: __label__',
-  'Share a preview': 'Share a preview',
+  'Share a preview': 'Preview link',
   'Anyone with the link sees the last saved version of the email, without an account.':
     'Anyone with the link sees the last saved version of the email, without an account.',
   'Valid for': 'Valid for',
@@ -909,12 +920,12 @@ module.exports = {
   'Copy it now: it will not be shown again.':
     'Copy it now: it will not be shown again.',
   'Active links': 'Active links',
-  'Turn off': 'Turn off',
+  'Turn off': 'Turn off the link',
   'The link could not be created': 'The link could not be created',
   'Copy failed: select the link and copy it':
     'Copy failed: select the link and copy it',
   'The link could not be turned off': 'The link could not be turned off',
-  'Copy link': 'Copy link',
+  'Copy link': 'Copy',
   'Created __created__ by __name__, until __date__':
     'Created __created__ by __name__, until __date__',
   'Created __created__, until __date__': 'Created __created__, until __date__',

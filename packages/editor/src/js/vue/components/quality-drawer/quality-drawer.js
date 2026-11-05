@@ -36,6 +36,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     ready: false,
     issueCount: 0,
     blockingCount: 0,
+    // What the send test tab's foot shows (send-test-panel.js).
+    sendState: { canSend: false, isSending: false, sent: false },
     // Ignoring is shared by everyone who edits the email, so it takes the
     // same right: a reviewer sees the button, greyed out.
     ignoreLocked: true,
@@ -168,6 +170,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :blocking-count="blockingCount"
         :active="open && tab === 'send'"
         @show-results="goTo('checks')"
+        @state="sendState = $event"
         @run-checks="runFromSend"
       ></send-test-panel>
 
@@ -188,6 +191,11 @@ const QualityDrawer = Vue.component('QualityDrawer', {
             {{ t('quality-send-a-test') }}
           </button>
         </template>
+      </template>
+      <template v-else v-slot:footer>
+        <button type="submit" form="qc-send-form" class="qc-button qc-button--cta" :disabled="!sendState.canSend">
+          <span class="lucide lucide-send" aria-hidden="true"></span>{{ sendState.isSending ? t('sending-test-mails') : sendState.sent ? t('quality-send-again') : t('quality-send-test') }}
+        </button>
       </template>
     </right-panel-shell>
   `,

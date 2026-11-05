@@ -231,13 +231,15 @@ const ShareLinkPanel = Vue.component('ShareLinkPanel', {
           >
           <button
             type="button"
-            class="qc-link-button"
+            class="qc-link-button qc-link-button--danger"
             :disabled="revoking.includes(link.id)"
             :aria-label="t('Turn off the link: __link__', { link: describe(link) })"
             @click="revoke(link)"
           >{{ t('Turn off') }}</button>
         </li>
       </ul>
+      <!-- Decision 5: anyone may turn a link off, for good, and is told so. -->
+      <p v-if="links.length" class="qc-field__help">{{ t('quality-share-definitive') }}</p>
     </section>
   `,
 });
