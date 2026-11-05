@@ -14,11 +14,10 @@ const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillNatures,
-  SkillStatuses,
   Audiences,
   MaxConsumedExpertises,
 } = require('../constant/skill-constants.js');
-const { published } = require('../repositories/published.repository.js');
+const { findPublished } = require('../repositories/published.repository.js');
 const {
   isExpertiseId,
   platformOnlyExpertises,
@@ -105,27 +104,17 @@ async function openExpertises(ids, skillId) {
  * @returns {Promise<Array<{skillId: string, title: string}>>}
  */
 async function openTaskSkillsConsuming(expertiseId) {
-  const skills = await LePatronSkills.find(
-    {
-      status: SkillStatuses.ACTIVE,
-      audience: Audiences.ALL,
-      'versions.consumedExpertiseIds': String(expertiseId),
-    },
-    {
-      skillId: 1,
-      title: 1,
-      status: 1,
-      activeVersion: 1,
-      versions: { $elemMatch: { status: SkillStatuses.ACTIVE } },
-    }
-  ).lean();
-  return skills
-    .map((skill) => published(skill))
+  const id = String(expertiseId);
+  const found = await findPublished(
+    LePatronSkills,
+    { audience: Audiences.ALL, 'versions.consumedExpertiseIds': id },
+    { doc: ['skillId', 'title'], version: ['nature', 'consumedExpertiseIds'] }
+  );
+  return found
     .filter(
-      (found) =>
-        found &&
-        found.version.nature === SkillNatures.TASK &&
-        (found.version.consumedExpertiseIds || []).includes(expertiseId)
+      ({ version }) =>
+        version.nature === SkillNatures.TASK &&
+        (version.consumedExpertiseIds || []).includes(id)
     )
     .map(({ doc }) => ({ skillId: doc.skillId, title: doc.title }));
 }
