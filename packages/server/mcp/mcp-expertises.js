@@ -10,41 +10,35 @@ const {
   findApplicable,
 } = require('../ai-skill/repositories/expertise.repository.js');
 const {
-  findActiveVersion,
-} = require('../ai-skill/services/version-helpers.js');
+  findPublished,
+} = require('../ai-skill/repositories/published.repository.js');
+const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
-  SkillStatuses,
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity } = require('./mcp-identity.js');
-const {
-  audienceFilter,
-  isAvailableTo,
-} = require('../ai-skill/services/audience.js');
+const { audienceFilter } = require('../ai-skill/services/audience.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
-const versionOf = (version) =>
-  `${version.versionMajor}.${version.versionMinor}`;
 
-// The active version of an active expertise: what leaves LePatron (ADR 0012).
-// Drafts and archives never do, nor an expertise without an active version.
-function published(doc) {
-  if (!doc || doc.status !== SkillStatuses.ACTIVE) return null;
-  const version = findActiveVersion(doc);
-  if (!version || version.status !== SkillStatuses.ACTIVE) return null;
-  return { doc, version };
-}
+// What each read keeps of an expertise and of its active version.
+const LISTED = {
+  doc: ['expertiseId', 'title', 'description'],
+  version: ['updatedAt'],
+};
+const READ = {
+  doc: ['expertiseId', 'title'],
+  version: ['updatedAt', 'body', 'examplesGood', 'examplesBad'],
+};
+const NAMED = { doc: ['expertiseId'], version: [] };
+
+const byExpertiseId = (a, b) =>
+  a.doc.expertiseId.localeCompare(b.doc.expertiseId);
 
 async function publishedExpertises(group) {
-  const docs = await Expertises.find({
-    status: SkillStatuses.ACTIVE,
-    ...audienceFilter(group),
-  }).lean();
-  return docs
-    .map(published)
-    .filter(Boolean)
-    .sort((a, b) => a.doc.expertiseId.localeCompare(b.doc.expertiseId));
+  const found = await findPublished(Expertises, audienceFilter(group), LISTED);
+  return found.sort(byExpertiseId);
 }
 
 function asResource({ doc, version }) {
@@ -69,7 +63,7 @@ function asMarkdown({ doc, version }) {
   return [
     `# ${doc.title}`,
     '',
-    `Version ${versionOf(version)}, updated on ${updated}.`,
+    `Version ${versionLabel(version)}, updated on ${updated}.`,
     '',
     version.body,
     '',
@@ -80,12 +74,37 @@ function asMarkdown({ doc, version }) {
     .trim();
 }
 
-// The active version of an expertise the group may read, or null.
+// The active version of an expertise the company may read, or null.
 async function readableExpertise(expertiseId, group) {
-  const doc = await Expertises.findOne({
-    expertiseId: String(expertiseId),
-  }).lean();
-  return isAvailableTo(doc, group) ? published(doc) : null;
+  const [found] = await findPublished(
+    Expertises,
+    { expertiseId: String(expertiseId), ...audienceFilter(group) },
+    READ
+  );
+  return found || null;
+}
+
+/**
+ * The expertises a task skill consumes that the company may read, in the
+ * skill's order, in one read: those not published, or not for this company,
+ * are left out.
+ *
+ * @param {string[]} [ids] the skill version's `consumedExpertiseIds`
+ * @param {Object} group the company of the caller
+ * @param {Object} [options]
+ * @param {boolean} [options.content] read their content, not only their ids
+ * @returns {Promise<Array<{ doc: Object, version: Object }>>}
+ */
+async function consumedExpertises(ids = [], group, { content = false } = {}) {
+  const wanted = [...new Set(ids.map(String))];
+  if (!wanted.length) return [];
+  const found = await findPublished(
+    Expertises,
+    { expertiseId: { $in: wanted }, ...audienceFilter(group) },
+    content ? READ : NAMED
+  );
+  const byId = new Map(found.map((item) => [item.doc.expertiseId, item]));
+  return wanted.map((id) => byId.get(id)).filter(Boolean);
 }
 
 function registerExpertiseResources(server) {
@@ -114,11 +133,21 @@ function registerExpertiseResources(server) {
   );
 }
 
-const EXPERTISE = z.object({
-  expertiseId: z.string(),
-  title: z.string(),
-  version: z.string(),
-  uri: z.string(),
+const FIND_INPUT = z.object({
+  scope: z.union([z.string(), z.array(z.string())]).optional(),
+  categories: z.array(z.enum(SkillCategoryValues)).optional(),
+  emailType: z.string().optional(),
+  language: z.string().optional(),
+});
+const FIND_OUTPUT = z.object({
+  expertises: z.array(
+    z.object({
+      expertiseId: z.string(),
+      title: z.string(),
+      version: z.string(),
+      uri: z.string(),
+    })
+  ),
 });
 
 function registerFindApplicableExpertises(server) {
@@ -128,13 +157,8 @@ function registerFindApplicableExpertises(server) {
       title: 'Find the expertises that apply',
       description:
         'Finds the Badsender expertises that apply to a piece of an email: a scope (e.g. "subject", "cta"), one or more categories, and optionally an email type and a language. Read each one through its resource URI.',
-      inputSchema: z.object({
-        scope: z.union([z.string(), z.array(z.string())]).optional(),
-        categories: z.array(z.enum(SkillCategoryValues)).optional(),
-        emailType: z.string().optional(),
-        language: z.string().optional(),
-      }),
-      outputSchema: z.object({ expertises: z.array(EXPERTISE) }),
+      inputSchema: FIND_INPUT,
+      outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     withIdentity(
@@ -163,7 +187,7 @@ function registerFindApplicableExpertises(server) {
         const expertises = found.map((expertise) => ({
           expertiseId: expertise.expertiseId,
           title: expertise.title,
-          version: versionOf(expertise),
+          version: versionLabel(expertise),
           uri: uriOf(expertise.expertiseId),
         }));
         return {
@@ -178,7 +202,7 @@ function registerFindApplicableExpertises(server) {
 module.exports = {
   registerExpertiseResources,
   registerFindApplicableExpertises,
-  readableExpertise,
+  consumedExpertises,
   asMarkdown,
   uriOf,
 };

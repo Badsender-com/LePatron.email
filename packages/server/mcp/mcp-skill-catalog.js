@@ -2,20 +2,14 @@
 
 const { LePatronSkills } = require('../common/models.common.js');
 const {
-  findActiveVersion,
-} = require('../ai-skill/services/version-helpers.js');
-const {
-  SkillStatuses,
-  SkillNatures,
-} = require('../ai-skill/constant/skill-constants.js');
+  findPublished,
+} = require('../ai-skill/repositories/published.repository.js');
+const { SkillNatures } = require('../ai-skill/constant/skill-constants.js');
 const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
 const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
-const {
-  audienceFilter,
-  isAvailableTo,
-} = require('../ai-skill/services/audience.js');
+const { audienceFilter } = require('../ai-skill/services/audience.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant
@@ -27,39 +21,47 @@ const uriOf = (skillId) => `lepatron://skills/${skillId}`;
 // natures were versioned has none, and is a feature skill.
 const natureOf = (version) => version.nature || SkillNatures.FEATURE;
 const isTask = (version) => natureOf(version) === SkillNatures.TASK;
-const versionOf = (version) =>
-  `${version.versionMajor}.${version.versionMinor}`;
 
-// What reaches assistants (ADR 0013): the active version of an active skill
-// the company may use, a task skill's always, a feature skill's only when the
-// skill is marked so.
-const SERVED = Object.freeze({ status: SkillStatuses.ACTIVE });
+// What each read keeps of a skill and of its active version: a listing names
+// a skill and its arguments, a read runs it.
+const LISTED = {
+  doc: ['skillId', 'title', 'description', 'servedToAssistants'],
+  version: ['nature', 'inputSchemaId', 'inputTemplate'],
+};
+const READ = {
+  doc: LISTED.doc,
+  version: [
+    ...LISTED.version,
+    'systemPrompt',
+    'skillBody',
+    'procedure',
+    'consumedExpertiseIds',
+  ],
+};
 
-function published(doc) {
-  if (!doc) return null;
-  const version = findActiveVersion(doc);
-  if (!version || version.status !== SkillStatuses.ACTIVE) return null;
-  if (!isTask(version) && doc.servedToAssistants !== true) return null;
-  return { doc, version };
-}
+// What reaches assistants (ADR 0013): a published skill the company may use,
+// a task skill always, a feature skill only when the skill is marked so.
+const isServed = ({ doc, version }) =>
+  isTask(version) || doc.servedToAssistants === true;
 
 async function servedSkills(group) {
-  const docs = await LePatronSkills.find({
-    ...SERVED,
-    ...audienceFilter(group),
-  }).lean();
-  return docs
-    .map(published)
-    .filter(Boolean)
+  const found = await findPublished(
+    LePatronSkills,
+    audienceFilter(group),
+    LISTED
+  );
+  return found
+    .filter(isServed)
     .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId));
 }
 
 async function servedSkill(skillId, group) {
-  const doc = await LePatronSkills.findOne({
-    skillId: String(skillId),
-    ...SERVED,
-  }).lean();
-  return isAvailableTo(doc, group) ? published(doc) : null;
+  const [found] = await findPublished(
+    LePatronSkills,
+    { skillId: String(skillId), ...audienceFilter(group) },
+    READ
+  );
+  return found && isServed(found) ? found : null;
 }
 
 // The placeholders of a template, by their first segment, the expertise
@@ -119,7 +121,6 @@ module.exports = {
   uriOf,
   natureOf,
   isTask,
-  versionOf,
   servedSkills,
   servedSkill,
   argumentsOf,

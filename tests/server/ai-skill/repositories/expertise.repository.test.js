@@ -118,6 +118,16 @@ describe('expertise.repository', () => {
       ]);
     });
 
+    it('reads the active version alone, never the history', async () => {
+      mockReturnDocs([]);
+      await findApplicable({ scope: 'cta', categories: ['redaction'] });
+
+      expect(Expertises.find.mock.calls[0][1]).toMatchObject({
+        expertiseId: 1,
+        versions: { $elemMatch: { status: 'ACTIVE' } },
+      });
+    });
+
     // The audience applies in the editor as through an assistant (ADR 0013).
     describe('the audience', () => {
       const audienceOf = async (group) => {

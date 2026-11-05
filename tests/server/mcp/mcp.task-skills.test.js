@@ -12,6 +12,8 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+// The stand-ins the harness put in place of the models.
+const models = require('../../../packages/server/common/models.common.js');
 const {
   buildOutputContract,
 } = require('../../../packages/server/ai-skill/schemas/output-contract.js');
@@ -135,6 +137,16 @@ describe('task skills', () => {
       expect(expertises[1].resource.text).toContain(
         'Keep the subject under 50 characters.'
       );
+    });
+
+    it('reads the expertises it consumes in one query, whatever their number', async () => {
+      const reads = jest.spyOn(models.Expertises, 'aggregate');
+
+      await client.getPrompt({ name: REPORT });
+      await client.readResource({ uri: `lepatron://skills/${REPORT}` });
+
+      expect(reads).toHaveBeenCalledTimes(2);
+      reads.mockRestore();
     });
 
     it('is a resource an assistant reads', async () => {

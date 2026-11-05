@@ -6,11 +6,11 @@ const {
   ResourceNotFoundError,
 } = require('@modelcontextprotocol/server');
 const { withIdentity } = require('./mcp-identity.js');
+const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const {
   uriOf,
   natureOf,
   isTask,
-  versionOf,
   servedSkills,
   servedSkill,
   usesExpertise,
@@ -21,7 +21,7 @@ const expertises = require('./mcp-expertises.js');
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
 // chosen by the user; a resource lets the assistant pick a skill itself. It
-// lists only the consumed expertises the group may read, as the prompt does.
+// lists only the consumed expertises the company may read, as the prompt does.
 function asMarkdown({ doc, version }, readableIds = []) {
   const body = isTask(version)
     ? version.procedure
@@ -36,7 +36,7 @@ function asMarkdown({ doc, version }, readableIds = []) {
   return [
     `# ${doc.title}`,
     '',
-    `Version ${versionOf(version)}.`,
+    `Version ${versionLabel(version)}.`,
     '',
     body,
     ...(consumed.length
@@ -72,11 +72,11 @@ function registerSkillResources(server) {
     withIdentity(async ({ group }, uri, { skillId }) => {
       const found = await servedSkill(skillId, group);
       if (!found) throw new ResourceNotFoundError(uri.href);
-      const consumedIds = found.version.consumedExpertiseIds || [];
-      const readable = await Promise.all(
-        consumedIds.map((id) => expertises.readableExpertise(id, group))
+      const readable = await expertises.consumedExpertises(
+        found.version.consumedExpertiseIds,
+        group
       );
-      const readableIds = consumedIds.filter((_id, index) => readable[index]);
+      const readableIds = readable.map(({ doc }) => doc.expertiseId);
       return {
         contents: [
           {
@@ -90,12 +90,17 @@ function registerSkillResources(server) {
   );
 }
 
-const SKILL = z.object({
-  skillId: z.string(),
-  title: z.string(),
-  description: z.string(),
-  nature: z.string(),
-  uri: z.string(),
+const FIND_INPUT = z.object({ query: z.string().min(1) });
+const FIND_OUTPUT = z.object({
+  skills: z.array(
+    z.object({
+      skillId: z.string(),
+      title: z.string(),
+      description: z.string(),
+      nature: z.string(),
+      uri: z.string(),
+    })
+  ),
 });
 
 // Every word of the query, in the title or the description, whatever the case.
@@ -114,8 +119,8 @@ function registerFindSkills(server) {
       title: 'Find a Badsender skill',
       description:
         'Finds the Badsender skills whose title or description match what the user wants to do. Read the one that fits through its resource URI, then follow it.',
-      inputSchema: z.object({ query: z.string().min(1) }),
-      outputSchema: z.object({ skills: z.array(SKILL) }),
+      inputSchema: FIND_INPUT,
+      outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     withIdentity(async ({ group }, { query }) => {

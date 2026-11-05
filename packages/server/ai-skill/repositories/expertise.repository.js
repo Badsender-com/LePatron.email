@@ -15,6 +15,19 @@ const { normalizeScopes } = require('../services/expertise-scope.js');
 const { findActiveVersion } = require('../services/version-helpers.js');
 const { audienceFilter } = require('../services/audience.js');
 
+// What a match reads: the fields `projectVersion` and the diagnostic use, and
+// the ACTIVE version alone, never the history (one version is ACTIVE at a
+// time, the one `activeVersion` points at).
+const APPLICABLE_FIELDS = Object.freeze({
+  expertiseId: 1,
+  title: 1,
+  category: 1,
+  scope: 1,
+  isTransversal: 1,
+  activeVersion: 1,
+  versions: { $elemMatch: { status: SkillStatuses.ACTIVE } },
+});
+
 /**
  * Find ACTIVE expertise modules matching an invocation context, projecting
  * only the active version of each. Used by features composing skill inputs.
@@ -91,10 +104,10 @@ async function findApplicable({
     });
   }
 
-  const docs = await Expertises.find({
-    $and: and,
-    ...audienceFilter(group),
-  }).lean();
+  const docs = await Expertises.find(
+    { $and: and, ...audienceFilter(group) },
+    APPLICABLE_FIELDS
+  ).lean();
 
   // Not awaited: the diagnostic does nothing for this invocation's result, and
   // it issues a `distinct` — on a feature whose scope matches no scoped

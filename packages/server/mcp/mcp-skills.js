@@ -33,17 +33,17 @@ const text = (content) => ({
 });
 
 // A task skill: its procedure, then the active version of each expertise it
-// consumes, in its order, embedded so it runs the Badsender way (ADR 0013).
-// One the group may not read, or no longer published, is left out.
+// consumes, in its order, embedded so it runs as the platform wrote it (ADR
+// 0013). One the company may not read, or no longer published, is left out.
 async function taskMessages({ doc, version }, group) {
-  const consumed = await Promise.all(
-    (version.consumedExpertiseIds || []).map((id) =>
-      expertises.readableExpertise(id, group)
-    )
+  const consumed = await expertises.consumedExpertises(
+    version.consumedExpertiseIds,
+    group,
+    { content: true }
   );
   return [
     text(`# ${doc.title}\n\n${version.procedure}`),
-    ...consumed.filter(Boolean).map((found) => ({
+    ...consumed.map((found) => ({
       role: 'user',
       content: {
         type: 'resource',
