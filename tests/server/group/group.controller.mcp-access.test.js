@@ -4,10 +4,13 @@
 // for any company and a tech admin for its own, as it sets up the company's
 // AI features. The group update keeps it out of a company admin's reach, as
 // every field it may not set, and the route keeps every other company's
-// members out.
+// members out. Turning it on or off is a security event, as switching
+// two-factor authentication is (ADR 0008).
 
 const createError = require('http-errors');
+const mongoose = require('mongoose');
 const {
+  SecurityEvents,
   groupService,
   GROUP_ID,
   companyAdmin,
@@ -23,6 +26,7 @@ const {
   CAPABILITIES,
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
+const SecurityEventSchema = require('../../../packages/server/two-factor/security-event.schema.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -104,4 +108,61 @@ describe('PUT /groups/:groupId — MCP access', () => {
     expect(payload).not.toHaveProperty('enableMcp');
     expect(groupService.updateGroup).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('PUT /groups/:groupId — MCP access, the security event', () => {
+  it('records MCP access turned on, by whom', async () => {
+    await update(techAdmin, { enableMcp: true });
+
+    expect(SecurityEvents.create).toHaveBeenCalledTimes(1);
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'mcp-access.enabled',
+      actor: 'a2',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records it turned off', async () => {
+    storedGroup({ enableMcp: true });
+
+    await update(superAdmin, { enableMcp: false });
+
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'mcp-access.disabled',
+      actor: 'a3',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records nothing when it does not change', async () => {
+    await update(techAdmin, { enableMcp: false, name: 'Renamed' });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it('records nothing from a company admin, whose request drops it', async () => {
+    await update(companyAdmin, { enableMcp: true });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it('records each switch apart when both change at once', async () => {
+    await update(techAdmin, { enableMcp: true, requireTwoFactor: true });
+
+    const actions = SecurityEvents.create.mock.calls.map(([e]) => e.action);
+    expect(actions).toEqual(['two-factor.required', 'mcp-access.enabled']);
+  });
+
+  it.each(['mcp-access.enabled', 'mcp-access.disabled'])(
+    'is an action the security events accept: %s',
+    (action) => {
+      const SecurityEvent = mongoose.model(
+        `McpAccessEvent-${action}`,
+        SecurityEventSchema
+      );
+      const event = new SecurityEvent({ action, group: GROUP_ID });
+
+      expect(event.validateSync()).toBeUndefined();
+    }
+  );
 });

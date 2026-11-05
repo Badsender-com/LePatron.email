@@ -15,7 +15,10 @@ const {
   requirementChangeOf,
   recordRequirementChange,
 } = require('../two-factor/group-option.js');
-const { switchChangeOf } = require('./group-switch.js');
+const {
+  mcpAccessChangeOf,
+  recordMcpAccessChange,
+} = require('../mcp/mcp-access-option.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
@@ -602,12 +605,14 @@ async function update(req, res) {
     req.params.groupId,
     groupToUpdate
   );
-  // MCP access is a switch of the company like two-factor authentication:
-  // true only when the request says so (ADR 0012).
-  await switchChangeOf(req.params.groupId, groupToUpdate, 'enableMcp');
+  const mcpAccessChange = await mcpAccessChangeOf(
+    req.params.groupId,
+    groupToUpdate
+  );
 
   await groupService.updateGroup(groupToUpdate);
   await recordRequirementChange(user, req.params.groupId, twoFactorChange);
+  await recordMcpAccessChange(user, req.params.groupId, mcpAccessChange);
 
   // AISkillInvocation.expiresAt is stamped at write time, so a retention change
   // has to be propagated to the invocations already logged — otherwise lowering
