@@ -84,7 +84,8 @@ describe('listExpertise, searched', () => {
       listExpertise({ search: 'a'.repeat(MAX_SEARCH_LENGTH + 1) })
     ).rejects.toMatchObject({
       status: 400,
-      message: 'EXPERTISE_SEARCH_INVALID',
+      message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter: 'search',
       max: MAX_SEARCH_LENGTH,
     });
     expect(
@@ -98,7 +99,8 @@ describe('listExpertise, searched', () => {
   ])('refuses %s as a search', async (_case, search) => {
     await expect(listExpertise({ search })).rejects.toMatchObject({
       status: 400,
-      message: 'EXPERTISE_SEARCH_INVALID',
+      message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter: 'search',
     });
   });
 
@@ -106,10 +108,11 @@ describe('listExpertise, searched', () => {
     ['status', { status: { $ne: 'ARCHIVED' } }],
     ['status', { status: 'PUBLISHED' }],
     ['category', { category: { $ne: null } }],
-  ])('refuses a %s that is not one', async (_field, filters) => {
+  ])('refuses a %s that is not one', async (filter, filters) => {
     await expect(listExpertise(filters)).rejects.toMatchObject({
       status: 400,
       message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter,
     });
   });
 });
@@ -137,7 +140,8 @@ describe('listExpertise, by ids', () => {
       listExpertise({ ids: [...ids, 'qc.cta'] })
     ).rejects.toMatchObject({
       status: 400,
-      message: 'EXPERTISE_IDS_INVALID',
+      message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter: 'ids',
       max: MAX_LISTED_IDS,
     });
   });
@@ -150,7 +154,8 @@ describe('listExpertise, by ids', () => {
   ])('refuses %s', async (_case, ids) => {
     await expect(listExpertise({ ids })).rejects.toMatchObject({
       status: 400,
-      message: 'EXPERTISE_IDS_INVALID',
+      message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter: 'ids',
     });
   });
 });

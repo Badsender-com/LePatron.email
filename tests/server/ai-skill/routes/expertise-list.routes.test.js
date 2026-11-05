@@ -69,18 +69,18 @@ describe('GET /api/ai-expertise', () => {
   });
 
   it.each([
-    ['search[$regex]=.*', 'EXPERTISE_SEARCH_INVALID'],
-    [`search=${'a'.repeat(101)}`, 'EXPERTISE_SEARCH_INVALID'],
-    ['ids[$ne]=x', 'EXPERTISE_IDS_INVALID'],
-    [
-      Array.from({ length: 21 }, (_, i) => `ids=qc.e${i}`).join('&'),
-      'EXPERTISE_IDS_INVALID',
-    ],
-    ['status[$ne]=ARCHIVED', 'EXPERTISE_LIST_FILTER_INVALID'],
-  ])('refuses ?%s', async (query, code) => {
+    ['search[$regex]=.*', 'search'],
+    [`search=${'a'.repeat(101)}`, 'search'],
+    ['ids[$ne]=x', 'ids'],
+    [Array.from({ length: 21 }, (_, i) => `ids=qc.e${i}`).join('&'), 'ids'],
+    ['status[$ne]=ARCHIVED', 'status'],
+  ])('refuses ?%s', async (query, filter) => {
     const { status, body } = await listed(query);
 
     expect(status).toBe(400);
-    expect(body.message).toBe(code);
+    expect(body).toMatchObject({
+      message: 'EXPERTISE_LIST_FILTER_INVALID',
+      filter,
+    });
   });
 });

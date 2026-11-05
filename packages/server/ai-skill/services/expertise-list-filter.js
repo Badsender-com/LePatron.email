@@ -19,12 +19,19 @@ const MAX_SEARCH_LENGTH = EXPERTISE_SEARCH_MAX_LENGTH;
 // The expertises a list reads by id, at most: those a version consumes.
 const MAX_LISTED_IDS = MaxConsumedExpertises;
 
+// Each refusal names its filter, and the bound it went past, if any.
+const refuse = (filter, max) =>
+  createError(400, ERROR_CODES.EXPERTISE_LIST_FILTER_INVALID, {
+    filter,
+    ...(max ? { max } : {}),
+  });
+
 // A query string value is a string, or a list of them, or an object Express
 // built from `?status[$ne]=`: only a string is a filter.
-function oneOf(value, allowed, code) {
+function oneOf(value, allowed, filter) {
   if (value === undefined || value === '') return undefined;
   if (typeof value !== 'string' || !allowed.includes(value)) {
-    throw createError(400, code);
+    throw refuse(filter);
   }
   return value;
 }
@@ -34,9 +41,7 @@ function oneOf(value, allowed, code) {
 function searchFilter(search) {
   if (search === undefined) return null;
   if (typeof search !== 'string' || search.length > MAX_SEARCH_LENGTH) {
-    throw createError(400, ERROR_CODES.EXPERTISE_SEARCH_INVALID, {
-      max: MAX_SEARCH_LENGTH,
-    });
+    throw refuse('search', MAX_SEARCH_LENGTH);
   }
   const text = search.trim();
   if (!text) return null;
@@ -58,9 +63,7 @@ function idsFilter(ids) {
         SkillIdRegex.test(id)
     );
   if (!valid) {
-    throw createError(400, ERROR_CODES.EXPERTISE_IDS_INVALID, {
-      max: MAX_LISTED_IDS,
-    });
+    throw refuse('ids', MAX_LISTED_IDS);
   }
   return { expertiseId: { $in: list } };
 }
@@ -77,14 +80,13 @@ function idsFilter(ids) {
  * @param {string|string[]} [filters.ids] these expertises exactly, whatever
  *   their status unless `status` names one, MAX_LISTED_IDS at most
  * @returns {Object} the filter of the query
- * @throws {HttpError} 400 EXPERTISE_LIST_FILTER_INVALID,
- *   EXPERTISE_SEARCH_INVALID or EXPERTISE_IDS_INVALID (each with `max`)
+ * @throws {HttpError} 400 EXPERTISE_LIST_FILTER_INVALID, with the `filter`
+ *   refused and, for `search` and `ids`, the `max` it takes
  */
 function listFilter({ category, status, search, ids }) {
-  const invalid = ERROR_CODES.EXPERTISE_LIST_FILTER_INVALID;
   const query = {};
-  const categoryValue = oneOf(category, SkillCategoryValues, invalid);
-  const statusValue = oneOf(status, SkillStatusValues, invalid);
+  const categoryValue = oneOf(category, SkillCategoryValues, 'category');
+  const statusValue = oneOf(status, SkillStatusValues, 'status');
   if (categoryValue) query.category = categoryValue;
   if (statusValue) query.status = statusValue;
   return Object.assign(query, searchFilter(search), idsFilter(ids));
