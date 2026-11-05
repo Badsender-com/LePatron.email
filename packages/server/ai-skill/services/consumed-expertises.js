@@ -172,8 +172,8 @@ async function consumedExpertiseWarnings(skill, version) {
 }
 
 module.exports = {
+  isExpertiseId,
   assertConsumedExpertises,
   consumedExpertiseWarnings,
-  consumedIdsOf,
   platformOnlyExpertises,
 };

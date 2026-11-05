@@ -15,34 +15,50 @@ const {
   SkillNatures,
   SkillStatuses,
   Audiences,
+  MaxConsumedExpertises,
 } = require('../constant/skill-constants.js');
 const { published } = require('../repositories/published.repository.js');
-const { consumedIdsOf } = require('./consumed-expertises.js');
+const {
+  isExpertiseId,
+  platformOnlyExpertises,
+} = require('./consumed-expertises.js');
+
+const refused = (expertiseIds = []) =>
+  createError(400, ERROR_CODES.SKILL_OPEN_EXPERTISES_INVALID, {
+    expertiseIds,
+  });
 
 /**
- * The expertises to open with a skill, checked: only expertises the version
- * consumes, each named once.
+ * The expertises to open with a skill, checked before anything is written:
+ * only in the request that opens the skill to every company, and only those
+ * the confirmation offers, the published expertises the version consumes
+ * that are kept to the platform company. A list no longer than a version
+ * consumes, of expertise ids, before any is compared.
  *
  * @param {Object} [version] the version the skill serves, or publishes
  * @param {*} ids the `openExpertiseIds` of the request
- * @returns {string[]} the ids to open
+ * @param {boolean} opening whether the same request opens the skill to every
+ *   company
+ * @returns {Promise<string[]>} the ids to open, each once
  * @throws {HttpError} 400 SKILL_OPEN_EXPERTISES_INVALID, with the
- *   `expertiseIds` the version does not consume
+ *   `expertiseIds` not offered when the list itself is valid
  */
-function assertOpenable(version, ids) {
+async function assertOpenable(version, ids, opening) {
   if (ids === undefined) return [];
-  if (!Array.isArray(ids) || !ids.every((id) => typeof id === 'string')) {
-    throw createError(400, ERROR_CODES.SKILL_OPEN_EXPERTISES_INVALID, {
-      expertiseIds: [],
-    });
+  if (
+    !opening ||
+    !Array.isArray(ids) ||
+    ids.length > MaxConsumedExpertises ||
+    !ids.every(isExpertiseId)
+  ) {
+    throw refused();
   }
-  const consumed = new Set(consumedIdsOf(version));
-  const foreign = ids.filter((id) => !consumed.has(id));
-  if (foreign.length) {
-    throw createError(400, ERROR_CODES.SKILL_OPEN_EXPERTISES_INVALID, {
-      expertiseIds: foreign,
-    });
-  }
+  if (!ids.length) return [];
+  const offered = new Set(
+    (await platformOnlyExpertises(version)).map((e) => e.expertiseId)
+  );
+  const foreign = [...new Set(ids.filter((id) => !offered.has(id)))];
+  if (foreign.length) throw refused(foreign);
   return [...new Set(ids)];
 }
 

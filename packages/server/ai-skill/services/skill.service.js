@@ -6,6 +6,7 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   SkillStatuses,
   SkillNatures,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const {
   versionLabel,
@@ -118,15 +119,17 @@ const PATCHABLE_FIELDS = [
 /**
  * @param {string} skillId
  * @param {Object} patch the PATCHABLE_FIELDS to set, and `openExpertiseIds`:
- *   expertises the active version consumes, opened to every company with
- *   the skill (ADR 0013)
+ *   expertises the active version consumes kept to the platform company,
+ *   opened to every company with the skill when the patch opens it too
+ *   (ADR 0013)
  * @returns {Promise<Object>} the skill
  */
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
-  const opened = assertOpenable(
+  const opened = await assertOpenable(
     findActiveVersion(skill),
-    patch.openExpertiseIds
+    patch.openExpertiseIds,
+    patch.audience === Audiences.ALL
   );
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
@@ -239,9 +242,10 @@ async function activateVersion(skillId, ref, payload = {}, userId) {
   const opened =
     payload.openExpertiseIds === undefined
       ? []
-      : assertOpenable(
+      : await assertOpenable(
           versionOf(await getSkill(skillId), ref),
-          payload.openExpertiseIds
+          payload.openExpertiseIds,
+          payload.openToAll === true
         );
   const skill = await versioned.activateVersion(skillId, ref, payload, userId);
   await openExpertises(opened);
