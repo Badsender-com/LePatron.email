@@ -4,7 +4,8 @@
  * The expertises and skills of the platform, for the MCP acceptance tests
  * (epic #1290): an active expertise with an archived and a draft version, a
  * transversal one, a draft one and an archived one; an active skill and a
- * draft one. Re-exported by `mcp-fixtures.js`.
+ * draft one. All are opened to every company. Re-exported by
+ * `mcp-fixtures.js`.
  */
 
 const NOW = new Date();
@@ -38,6 +39,7 @@ const EXPERTISES = [
     appliesToEmailTypes: [],
     appliesToLanguages: ['fr', 'en'],
     status: 'ACTIVE',
+    audience: 'all',
     activeVersion: { major: 2, minor: 1 },
     versions: [
       version(1, 0, 'ARCHIVED', '## Length\n\nUnder 60 characters.'),
@@ -59,6 +61,7 @@ const EXPERTISES = [
     appliesToEmailTypes: [],
     appliesToLanguages: [],
     status: 'ACTIVE',
+    audience: 'all',
     activeVersion: { major: 1, minor: 0 },
     versions: [
       version(1, 0, 'ACTIVE', '## Words\n\nAvoid "free" in a subject.'),
@@ -71,6 +74,7 @@ const EXPERTISES = [
     category: 'design',
     scope: ['image'],
     status: 'DRAFT',
+    audience: 'all',
     activeVersion: { major: null, minor: 0 },
     versions: [version(1, 0, 'DRAFT', '## Logos\n\nNot validated yet.')],
   },
@@ -81,6 +85,7 @@ const EXPERTISES = [
     category: 'redaction',
     scope: ['subject'],
     status: 'ARCHIVED',
+    audience: 'all',
     activeVersion: { major: 1, minor: 0 },
     versions: [version(1, 0, 'ARCHIVED', '## Old\n\nRetired.')],
   },
@@ -96,6 +101,7 @@ const SKILLS = [
     description: 'Three subject lines for an email',
     category: 'redaction',
     status: 'ACTIVE',
+    audience: 'all',
     activeVersion: { major: 1, minor: 2 },
     versions: [
       {
@@ -116,6 +122,7 @@ const SKILLS = [
     title: 'Not released',
     category: 'qc',
     status: 'DRAFT',
+    audience: 'all',
     activeVersion: { major: null, minor: 0 },
     versions: [],
   },

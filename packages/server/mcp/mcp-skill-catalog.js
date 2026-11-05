@@ -12,7 +12,7 @@ const { describeSchema } = require('../ai-skill/schemas/describe-schema.js');
 const {
   PLACEHOLDER_REGEX,
 } = require('../ai-skill/services/prompt-builder.service.js');
-const { audienceFilter } = require('./mcp-audience.js');
+const { audienceFilter } = require('../ai-skill/services/audience.js');
 
 // The expertise a feature skill applies is composed by the feature that calls
 // it in the app (findApplicable, with that feature's own scope). An assistant

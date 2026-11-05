@@ -30,12 +30,12 @@ const SkillNatures = Object.freeze({
 
 const SkillNatureValues = Object.values(SkillNatures);
 
-// Who may read a skill or an expertise outside the back office (ADR 0013): the
-// platform group, where the Badsender team proves a first draft, or every group
-// subscribed to MCP access. A new one starts with the platform group.
+// Who may use a skill or an expertise (ADR 0013), in the editor as through an
+// assistant: the platform company only, where a first draft is proven, or every
+// company. A new one starts with the platform company.
 const Audiences = Object.freeze({
   PLATFORM: 'platform',
-  SUBSCRIBERS: 'subscribers',
+  ALL: 'all',
 });
 
 const AudienceValues = Object.values(Audiences);

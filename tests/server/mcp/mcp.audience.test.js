@@ -3,10 +3,10 @@
  */
 'use strict';
 
-// The audience of a skill or an expertise (ADR 0013): the platform group, or
-// every subscribed group. A new one starts with the platform group, where the
-// Badsender team proves it before it is opened; a client never reads it until
-// then. The ones that exist count as opened to every subscribed group.
+// The audience of a skill or an expertise (ADR 0013): the platform company
+// only, or all companies. A new one starts with the platform company, where it
+// is proven before it is opened; a client never reads it until then, nor one
+// that has no audience yet, until the migration opens it.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -51,6 +51,7 @@ const CONSUMING_TASK = {
   title: 'Review the spacing',
   category: 'qc',
   status: 'ACTIVE',
+  audience: 'all',
   activeVersion: { major: 1, minor: 0 },
   versions: [
     {
@@ -127,11 +128,18 @@ describe('audience', () => {
       ).rejects.toThrow(/not found/i);
     });
 
-    it('reads what exists from before audiences, as opened to every group', async () => {
-      expect(await expertiseUris(client)).toContain(
+    it('reads nothing that has no audience yet', async () => {
+      harness.update('expertises', f.EXPERTISES[0]._id, {
+        audience: undefined,
+      });
+      harness.update('skills', f.SKILLS[0]._id, { audience: undefined });
+
+      expect(await expertiseUris(client)).not.toContain(
         uriOf('redaction.subject-line')
       );
-      expect(await promptNames(client)).toContain('redaction.subject-ideas');
+      expect(await promptNames(client)).not.toContain(
+        'redaction.subject-ideas'
+      );
     });
   });
 
@@ -159,10 +167,10 @@ describe('audience', () => {
     });
   });
 
-  it('opens an expertise to every group once its audience changes', async () => {
+  it('opens an expertise to every company once its audience is all', async () => {
     const client = await harness.connectAs(f.FRANK);
 
-    harness.update('expertises', PROVING._id, { audience: 'subscribers' });
+    harness.update('expertises', PROVING._id, { audience: 'all' });
 
     expect(await expertiseUris(client)).toContain(uriOf(DRAFT_SHEET));
   });

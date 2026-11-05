@@ -24,10 +24,10 @@ export default {
     audienceOptions() {
       return audienceOptions(this);
     },
-    // One stored before audiences existed has none, and the MCP server opens
-    // it to every subscribed group (ADR 0013): show what it applies.
+    // One stored before audiences has none until the migration opens it, and
+    // no client uses it meanwhile: shown as the platform company's.
     audience() {
-      return this.value.audience || 'subscribers';
+      return this.value.audience || 'platform';
     },
     // A skill stored before natures existed is a feature skill.
     nature() {

@@ -26,10 +26,9 @@ export function skillCategoryLabel(vm, value) {
   return value ? vm.$t(`aiSkills.categories.${value}`) : '';
 }
 
-// Who may read a skill or an expertise outside the back office (ADR 0013).
-// Mirrors the server enum `Audiences`; the platform group comes first, as the
-// default of a new one.
-export const SKILL_AUDIENCES = ['platform', 'subscribers'];
+// Who may use a skill or an expertise (ADR 0013). Mirrors the server enum
+// `Audiences`; the platform company comes first, as the default of a new one.
+export const SKILL_AUDIENCES = ['platform', 'all'];
 
 // Items for an audience select. `vm` is the component instance (for $t).
 export function audienceOptions(vm) {

@@ -8,13 +8,13 @@ const {
   SkillCategoryValues,
   SkillStatuses,
   SkillStatusValues,
-  Audiences,
   AudienceValues,
   SkillNatures,
   SkillNatureValues,
   SkillIdRegex,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
+const { newItemAudience } = require('../services/audience.js');
 
 const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
 
@@ -103,10 +103,12 @@ const LePatronSkillSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
+    // No audience on a document written before audiences: it waits for the
+    // migration, closed to the clients (services/audience.js).
     audience: {
       type: String,
       enum: AudienceValues,
-      default: Audiences.PLATFORM,
+      default: newItemAudience,
     },
     nature: {
       type: String,

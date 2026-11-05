@@ -17,7 +17,7 @@ const {
   SkillCategoryValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { resolveIdentity } = require('./mcp-identity.js');
-const { audienceFilter } = require('./mcp-audience.js');
+const { audienceFilter } = require('../ai-skill/services/audience.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;

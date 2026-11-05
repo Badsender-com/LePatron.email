@@ -25,6 +25,7 @@ const TASK_SKILL = {
   description: 'Reads a report the user provides and lists what stands out.',
   category: 'qc',
   status: 'ACTIVE',
+  audience: 'all',
   activeVersion: { major: 1, minor: 0 },
   versions: [
     {
