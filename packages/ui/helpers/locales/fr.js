@@ -1490,6 +1490,12 @@ export default {
       other: 'Autre',
     },
     errors: {
+      EXPERTISE_LIST_FILTER_INVALID:
+        'Ce filtre de la liste des Expertises n\'est pas reconnu.',
+      EXPERTISE_SEARCH_INVALID:
+        'La recherche d\'Expertises est un texte de {max} caractères au plus.',
+      EXPERTISE_IDS_INVALID:
+        'La liste lit au plus {max} Expertises par leur identifiant.',
       SKILL_CONSUMED_EXPERTISES_INVALID:
         'Les Expertises consommées doivent être une liste d\'identifiants d\'Expertise.',
       SKILL_CONSUMED_EXPERTISES_TOO_MANY:

@@ -204,6 +204,11 @@ module.exports = {
   // A feature skill still meant for the platform company, invoked on behalf
   // of a user of another company (ADR 0013).
   SKILL_NOT_AVAILABLE_TO_COMPANY: 'SKILL_NOT_AVAILABLE_TO_COMPANY',
+  // The filters of the expertise list: a status or a category among theirs,
+  // a short search text, a few expertise ids.
+  EXPERTISE_LIST_FILTER_INVALID: 'EXPERTISE_LIST_FILTER_INVALID',
+  EXPERTISE_SEARCH_INVALID: 'EXPERTISE_SEARCH_INVALID',
+  EXPERTISE_IDS_INVALID: 'EXPERTISE_IDS_INVALID',
   UNAUTHORIZED_INTEGRATION_PROVIDER: 'UNAUTHORIZED_INTEGRATION_PROVIDER',
   FORBIDDEN_INTEGRATION_ACCESS: 'FORBIDDEN_INTEGRATION_ACCESS',
   FAILED_INTEGRATION_DELETE: 'FAILED_INTEGRATION_DELETE',
