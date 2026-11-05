@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Outils IA · générer l'objet, propositions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#093040}a:hover{color:#00acdc}
+.p{width:360px;height:680px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;font-family:'Inter',-apple-system,'Segoe UI',sans-serif;color:#111827;font-size:13px;line-height:1.5}
+.ph{height:52px;flex-shrink:0;display:flex;align-items:center;gap:4px;padding:0 8px 0 6px;border-bottom:1px solid #e5e7eb}
+.pt{font-size:15px;font-weight:600;color:#093040}
+.pb{flex:1;min-height:0;overflow:hidden;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pf{flex-shrink:0;border-top:1px solid #e5e7eb;background:#f9fafb;padding:12px 16px;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.ib{width:32px;height:32px;border:none;border-radius:5px;background:transparent;color:#6b7280;display:inline-flex;align-items:center;justify-content:center;padding:0;font:inherit}
+.btn{height:36px;padding:0 14px;border-radius:5px;font-family:inherit;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:7px;box-sizing:border-box}
+.btn-p{background:#00acdc;color:#fff;border:1px solid #00acdc}
+.btn-s{background:#fff;color:#111827;border:1px solid #e5e7eb}
+.lab{font-size:12px;font-weight:600;color:#374151}
+.fld{height:34px;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:5px;background:#fff;padding:0 10px;display:flex;align-items:center;font-size:13px;color:#9ca3af}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #e5e7eb;border-radius:7px;background:#fff;font-family:inherit;text-align:left;width:100%;box-sizing:border-box}
+.opt-on{border-color:#00acdc;background:rgba(0,172,220,0.06)}
+.rad{width:16px;height:16px;border-radius:8px;border:1.5px solid #9ca3af;box-sizing:border-box;flex-shrink:0;margin-top:2px;display:inline-flex;align-items:center;justify-content:center}
+.rad-on{border-color:#00acdc}
+.ang{font-size:11px;font-weight:500;color:#374151;background:#f3f4f6;border-radius:5px;padding:1px 6px}
+.meta{font-size:11.5px;color:#6b7280}
+</style>
+</helmet>
+<div class="p" style="width: 360px; height: 680px">
+<div class="ph"><button class="ib" aria-label="Retour aux actions"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button><span class="pt">Générer l'objet</span><div style="flex: 1"></div><button class="ib" aria-label="Fermer le panneau"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<div class="pb">
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="lab">Objet actuel</span><span style="color: #374151">Nos nouveautés de novembre</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label class="lab" for="consigne">Consigne (facultative)</label><div class="fld" id="consigne">Ton, angle, longueur…</div></div>
+
+<div role="radiogroup" aria-label="Propositions d'objet" style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px">
+<button class="opt opt-on" role="radio" aria-checked="true"><span class="rad rad-on"><span style="width: 8px; height: 8px; border-radius: 4px; background: #00acdc"></span></span><span style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span style="font-weight: 600; color: #111827">Vos soirées d'hiver, version cocooning</span><span style="display: flex; gap: 8px; align-items: center"><span class="ang">Bénéfice</span><span class="meta">38 caractères</span></span><span class="meta">Mobile : « Vos soirées d'hiver, version coco… »</span></span></button>
+<button class="opt" role="radio" aria-checked="false"><span class="rad"></span><span style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span style="font-weight: 600; color: #111827">Plus que 3 jours pour profiter de -20 %</span><span style="display: flex; gap: 8px; align-items: center"><span class="ang">Urgence</span><span class="meta">39 caractères</span></span><span class="meta">Mobile : « Plus que 3 jours pour profiter … »</span></span></button>
+<button class="opt" role="radio" aria-checked="false"><span class="rad"></span><span style="display: flex; flex-direction: column; gap: 4px; flex: 1"><span style="font-weight: 600; color: #111827">Ce que nos clients ont commandé en premier</span><span style="display: flex; gap: 8px; align-items: center"><span class="ang">Curiosité</span><span class="meta">42 caractères</span></span><span class="meta">Mobile : « Ce que nos clients ont command… »</span></span></button>
+</div>
+<p style="margin: 0; font-size: 12px; color: #6b7280">1 proposition écartée : elle commençait par un emoji.</p>
+</div>
+<div class="pf"><button class="btn btn-s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Proposer d'autres</button><button class="btn btn-p">Appliquer</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":680}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
