@@ -7,8 +7,12 @@
 
 const {
   MAX_CONSUMED_EXPERTISES,
+  SEARCH_RESULTS,
   CONSUMED_STATES,
   consumedRows,
+  idsToRead,
+  searchParams,
+  withRead,
   addableExpertises,
   withConsumed,
   moveConsumed,
@@ -16,6 +20,9 @@ const {
 const {
   MaxConsumedExpertises,
 } = require('../../../packages/server/ai-skill/constant/skill-constants');
+const {
+  MAX_SEARCH_LENGTH,
+} = require('../../../packages/server/ai-skill/services/expertise-list-filter');
 
 const published = (expertiseId, title, fields = {}) => ({
   expertiseId,
@@ -40,7 +47,10 @@ const EXPERTISES = [
 describe('consumedRows', () => {
   it('lists the consumed expertises in their order, with their titles', () => {
     expect(
-      consumedRows(['qc.subject-line', 'brand.tone'], EXPERTISES, true)
+      consumedRows(['qc.subject-line', 'brand.tone'], EXPERTISES, [
+        'qc.subject-line',
+        'brand.tone',
+      ])
     ).toEqual([
       { id: 'qc.subject-line', title: 'Subject line', state: null },
       { id: 'brand.tone', title: 'Brand tone', state: null },
@@ -60,20 +70,85 @@ describe('consumedRows', () => {
   ])(
     'says of one %s what keeps it from an assistant',
     (_case, id, title, state) => {
-      expect(consumedRows([id], EXPERTISES, true)).toEqual([
+      expect(consumedRows([id], EXPERTISES, [id])).toEqual([
         { id, title, state },
       ]);
     }
   );
 
-  it('flags nothing missing while the expertises are not read, or failed to be', () => {
-    expect(consumedRows(['qc.never-was'], [], false)).toEqual([
+  it('says not found only of an id the server was asked for', () => {
+    expect(
+      consumedRows(['qc.never-was', 'qc.not-read-yet'], [], ['qc.never-was'])
+    ).toEqual([
+      { id: 'qc.never-was', title: null, state: CONSUMED_STATES.NOT_FOUND },
+      { id: 'qc.not-read-yet', title: null, state: null },
+    ]);
+  });
+
+  it('flags nothing missing while nothing is read, or reading failed', () => {
+    expect(consumedRows(['qc.never-was'], [], [])).toEqual([
       { id: 'qc.never-was', title: null, state: null },
     ]);
   });
 
   it('answers no row for no id', () => {
-    expect(consumedRows(undefined, EXPERTISES, true)).toEqual([]);
+    expect(consumedRows(undefined, EXPERTISES, [])).toEqual([]);
+  });
+});
+
+describe('idsToRead', () => {
+  it('asks the server for the ids not asked for yet, each once', () => {
+    expect(idsToRead(['a', 'b', 'c', 'b'], ['b'])).toEqual(['a', 'c']);
+  });
+
+  it('asks for nothing when every id is read', () => {
+    expect(idsToRead(['a'], ['a'])).toEqual([]);
+    expect(idsToRead(undefined, [])).toEqual([]);
+  });
+
+  it('asks for no more than the server reads at once', () => {
+    const ids = Array.from(
+      { length: MAX_CONSUMED_EXPERTISES + 5 },
+      (_, i) => `e${i}`
+    );
+
+    expect(idsToRead(ids, [])).toHaveLength(MAX_CONSUMED_EXPERTISES);
+  });
+});
+
+describe('searchParams', () => {
+  it('searches the published expertises, a few of them', () => {
+    expect(searchParams('  CTA ')).toEqual({
+      status: 'ACTIVE',
+      pageSize: SEARCH_RESULTS,
+      search: 'CTA',
+    });
+    expect(SEARCH_RESULTS).toBeLessThanOrEqual(20);
+  });
+
+  it('lists the first published ones before anything is typed', () => {
+    expect(searchParams(null)).toEqual({
+      status: 'ACTIVE',
+      pageSize: SEARCH_RESULTS,
+    });
+    expect(searchParams('   ')).not.toHaveProperty('search');
+  });
+
+  it('never sends a search longer than the server takes', () => {
+    expect(searchParams('a'.repeat(500)).search).toHaveLength(
+      MAX_SEARCH_LENGTH
+    );
+  });
+});
+
+describe('withRead', () => {
+  it('keeps each expertise once, the latest read', () => {
+    const known = [published('a', 'Old A'), published('b', 'B')];
+
+    expect(withRead(known, [published('a', 'New A')])).toEqual([
+      published('a', 'New A'),
+      published('b', 'B'),
+    ]);
   });
 });
 

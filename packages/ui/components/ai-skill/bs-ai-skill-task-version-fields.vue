@@ -3,40 +3,30 @@
 // follows, and the expertises it consumes, in the order it reads them. The
 // panel owns the draft; this component only emits the new values.
 //
-// The editor reads the expertises, whatever their status, up to a page of
-// them, and offers the published ones. A consumed one says what keeps it from
-// an assistant: not found (no such id among those read), not published (a
-// draft, or archived), or kept to the platform company.
+// The consumed expertises are read by id, whatever their status, so each one
+// says what keeps it from an assistant: not found (no expertise has that id),
+// not published (a draft, or archived), or kept to the platform company. One
+// is added by a search of the published ones, on the server.
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsAiConsumedExpertiseList from '~/components/ai-skill/bs-ai-consumed-expertise-list.vue';
 import { aiExpertiseList } from '~/helpers/ai-skill-routes.js';
 import {
   MAX_CONSUMED_EXPERTISES,
-  CONSUMED_STATES,
   consumedRows,
+  idsToRead,
+  searchParams,
+  withRead,
   addableExpertises,
   withConsumed,
   moveConsumed,
 } from '~/helpers/ai-skill-consumed-expertises.js';
-import { ChevronUp, ChevronDown, X } from 'lucide-vue';
 
-// The expertises the editor reads, at most: the list route's page.
-const EXPERTISES_PAGE_SIZE = 200;
-
-// The label and the help of each state, under aiSkills.version.
-const STATE_KEYS = Object.freeze({
-  [CONSUMED_STATES.NOT_FOUND]: 'consumedExpertiseNotFound',
-  [CONSUMED_STATES.NOT_PUBLISHED]: 'consumedExpertiseNotPublished',
-  [CONSUMED_STATES.PLATFORM_ONLY]: 'consumedExpertisePlatformOnly',
-});
+// How long the search waits for the typing to pause.
+const SEARCH_DELAY_MS = 300;
 
 export default {
   name: 'BsAiSkillTaskVersionFields',
-  components: {
-    BsTextarea,
-    LucideChevronUp: ChevronUp,
-    LucideChevronDown: ChevronDown,
-    LucideX: X,
-  },
+  components: { BsTextarea, BsAiConsumedExpertiseList },
   props: {
     procedure: { type: String, default: '' },
     consumedExpertiseIds: { type: Array, default: () => [] },
@@ -44,10 +34,16 @@ export default {
   },
   data() {
     return {
+      // The expertises read, consumed or found, and the ids asked for.
       expertises: [],
-      loaded: false,
-      loading: false,
+      readIds: [],
       loadError: false,
+      results: [],
+      search: null,
+      searching: false,
+      searchError: false,
+      // Only the answer to the latest search is shown.
+      searchCount: 0,
       // Reset after each pick, so the field is ready for the next one.
       picked: null,
     };
@@ -57,55 +53,83 @@ export default {
       return consumedRows(
         this.consumedExpertiseIds,
         this.expertises,
-        this.loaded
+        this.readIds
       );
     },
     addableItems() {
-      return addableExpertises(this.expertises, this.consumedExpertiseIds);
+      return addableExpertises(this.results, this.consumedExpertiseIds);
     },
     full() {
       return this.consumedExpertiseIds.length >= MAX_CONSUMED_EXPERTISES;
     },
-    maxHint() {
-      return this.$t('aiSkills.version.consumedExpertisesMax', {
-        max: MAX_CONSUMED_EXPERTISES,
-      });
+    hint() {
+      return this.full
+        ? this.$t('aiSkills.version.consumedExpertisesMax', {
+            max: MAX_CONSUMED_EXPERTISES,
+          })
+        : '';
     },
   },
-  mounted() {
-    this.loadExpertises();
+  watch: {
+    consumedExpertiseIds: { handler: 'readConsumed', immediate: true },
+    search(text) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(
+        () => this.runSearch(text),
+        SEARCH_DELAY_MS
+      );
+    },
+  },
+  beforeDestroy() {
+    clearTimeout(this.searchTimer);
   },
   methods: {
-    async loadExpertises() {
-      this.loading = true;
+    async readConsumed() {
+      const ids = idsToRead(this.consumedExpertiseIds, this.readIds);
+      if (!ids.length) return;
       this.loadError = false;
       try {
         const list = await this.$axios.$get(aiExpertiseList(), {
-          params: { pageSize: EXPERTISES_PAGE_SIZE },
+          params: { ids, pageSize: MAX_CONSUMED_EXPERTISES },
         });
-        this.expertises = list.items || [];
-        this.loaded = true;
+        this.expertises = withRead(this.expertises, list.items || []);
+        this.readIds = [...this.readIds, ...ids];
       } catch (err) {
-        this.expertises = [];
         this.loadError = true;
-      } finally {
-        this.loading = false;
       }
+    },
+    async runSearch(text) {
+      const count = (this.searchCount += 1);
+      this.searching = true;
+      this.searchError = false;
+      try {
+        const list = await this.$axios.$get(aiExpertiseList(), {
+          params: searchParams(text),
+        });
+        if (count === this.searchCount) this.results = list.items || [];
+      } catch (err) {
+        if (count === this.searchCount) this.searchError = true;
+      } finally {
+        if (count === this.searchCount) this.searching = false;
+      }
+    },
+    // The first list shows when the field is entered, before any typing.
+    searchOnce() {
+      if (!this.searchCount) this.runSearch('');
     },
     emitIds(ids) {
       this.$emit('update:consumedExpertiseIds', ids);
     },
-    stateLabel(state) {
-      return this.$t(`aiSkills.version.${STATE_KEYS[state]}`);
-    },
-    stateHint(state) {
-      return this.$t(`aiSkills.version.${STATE_KEYS[state]}Hint`);
-    },
     add(expertiseId) {
+      const found = this.results.filter((e) => e.expertiseId === expertiseId);
+      // Known from the search: no need to read it again.
+      this.expertises = withRead(this.expertises, found);
+      this.readIds = [...this.readIds, ...found.map((e) => e.expertiseId)];
       const ids = withConsumed(this.consumedExpertiseIds, expertiseId);
       if (ids.length !== this.consumedExpertiseIds.length) this.emitIds(ids);
       this.$nextTick(() => {
         this.picked = null;
+        this.search = null;
       });
     },
     remove(index) {
@@ -141,111 +165,41 @@ export default {
         <div class="d-flex align-center">
           <span>{{ $t('aiSkills.version.consumedExpertisesLoadError') }}</span>
           <v-spacer />
-          <v-btn text small color="error" @click="loadExpertises">
+          <v-btn text small color="error" @click="readConsumed">
             {{ $t('aiSkills.version.consumedExpertisesRetry') }}
           </v-btn>
         </div>
       </v-alert>
-      <v-list v-if="rows.length" dense outlined class="py-0 consumed-list">
-        <v-list-item v-for="(row, index) in rows" :key="row.id">
-          <span class="text-caption text--secondary mr-3">{{ index + 1 }}</span>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ row.title || row.id }}
-              <v-chip
-                v-if="row.state"
-                x-small
-                outlined
-                color="warning"
-                class="ml-2"
-              >
-                {{ stateLabel(row.state) }}
-              </v-chip>
-            </v-list-item-title>
-            <v-list-item-subtitle v-if="row.title">
-              <code>{{ row.id }}</code>
-            </v-list-item-subtitle>
-            <v-list-item-subtitle v-if="row.state" class="text-wrap">
-              {{ stateHint(row.state) }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action v-if="!readonly" class="flex-row align-center">
-            <v-tooltip top>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :disabled="index === 0"
-                  :aria-label="$t('aiSkills.version.consumedExpertiseUp')"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="move(index, -1)"
-                >
-                  <lucide-chevron-up :size="16" />
-                </v-btn>
-              </template>
-              <span>{{ $t('aiSkills.version.consumedExpertiseUp') }}</span>
-            </v-tooltip>
-            <v-tooltip top>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :disabled="index === rows.length - 1"
-                  :aria-label="$t('aiSkills.version.consumedExpertiseDown')"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="move(index, 1)"
-                >
-                  <lucide-chevron-down :size="16" />
-                </v-btn>
-              </template>
-              <span>{{ $t('aiSkills.version.consumedExpertiseDown') }}</span>
-            </v-tooltip>
-            <v-tooltip top>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  class="error--text"
-                  :aria-label="$t('aiSkills.version.consumedExpertiseRemove')"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click="remove(index)"
-                >
-                  <lucide-x :size="16" />
-                </v-btn>
-              </template>
-              <span>{{ $t('aiSkills.version.consumedExpertiseRemove') }}</span>
-            </v-tooltip>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
-      <p v-else class="text-body-2 text--secondary mb-0">
-        {{ $t('aiSkills.version.consumedExpertisesEmpty') }}
-      </p>
+      <bs-ai-consumed-expertise-list
+        :rows="rows"
+        :readonly="readonly"
+        @move="move"
+        @remove="remove"
+      />
       <v-autocomplete
         v-if="!readonly"
         v-model="picked"
+        :search-input.sync="search"
         :items="addableItems"
         :label="$t('aiSkills.version.consumedExpertisesAdd')"
-        :loading="loading"
-        :disabled="full || loadError"
-        :hint="full ? maxHint : ''"
+        :placeholder="$t('aiSkills.version.consumedExpertisesSearch')"
+        :no-data-text="$t('aiSkills.version.consumedExpertisesNoResult')"
+        :loading="searching"
+        :disabled="full"
+        :hint="hint"
+        :error-messages="
+          searchError
+            ? $t('aiSkills.version.consumedExpertisesSearchError')
+            : []
+        "
         persistent-hint
+        no-filter
         outlined
         dense
         class="mt-3"
+        @focus="searchOnce"
         @change="add"
       />
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.consumed-list code {
-  font-size: 0.72rem;
-  background: none;
-  padding: 0;
-}
-</style>

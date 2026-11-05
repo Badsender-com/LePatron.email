@@ -39,6 +39,10 @@ const AUDIENCE_VALUES = Object.freeze(Object.values(AUDIENCES));
 // reads them all before following the procedure.
 const MAX_CONSUMED_EXPERTISES = 20;
 
+// What a search of the expertise list may be, at most: a title or an id,
+// never a page of text.
+const EXPERTISE_SEARCH_MAX_LENGTH = 100;
+
 module.exports = {
   STATUSES,
   STATUS_VALUES,
@@ -47,4 +51,5 @@ module.exports = {
   AUDIENCES,
   AUDIENCE_VALUES,
   MAX_CONSUMED_EXPERTISES,
+  EXPERTISE_SEARCH_MAX_LENGTH,
 };

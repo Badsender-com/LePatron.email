@@ -10,9 +10,12 @@ const {
   MaxSkillIdLength,
   MaxConsumedExpertises,
 } = require('../constant/skill-constants.js');
+const {
+  EXPERTISE_SEARCH_MAX_LENGTH,
+} = require('../../../shared/ai-skill/constants.js');
 
-// What a search may be, at most: a title or an id, never a page of text.
-const MAX_SEARCH_LENGTH = 100;
+// What a search may be, at most, as the back office bounds it.
+const MAX_SEARCH_LENGTH = EXPERTISE_SEARCH_MAX_LENGTH;
 // The expertises a list reads by id, at most: those a version consumes.
 const MAX_LISTED_IDS = MaxConsumedExpertises;
 

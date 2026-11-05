@@ -1638,13 +1638,18 @@ export default {
         'Dans l\'ordre où l\'assistant les lit. Leur version active est jointe au Skill.',
       consumedExpertisesEmpty: 'Aucune Expertise consommée.',
       consumedExpertisesAdd: 'Ajouter une Expertise',
+      consumedExpertisesSearch:
+        'Chercher une Expertise publiée par son titre ou son identifiant',
+      consumedExpertisesNoResult: 'Aucune Expertise publiée trouvée.',
+      consumedExpertisesSearchError:
+        'La recherche a échoué. Tapez de nouveau pour réessayer.',
       consumedExpertisesMax: 'Une version consomme au plus {max} Expertises.',
       consumedExpertisesLoadError:
         'Les Expertises n\'ont pas pu être chargées.',
       consumedExpertisesRetry: 'Réessayer',
       consumedExpertiseNotFound: 'Introuvable',
       consumedExpertiseNotFoundHint:
-        'Aucune Expertise lue ici ne porte cet identifiant : l\'assistant ne la reçoit pas. Retirez-la.',
+        'Aucune Expertise ne porte cet identifiant : l\'assistant ne la reçoit pas. Retirez-la.',
       consumedExpertiseNotPublished: 'Non publiée',
       consumedExpertiseNotPublishedHint:
         'Brouillon ou archivée : l\'assistant ne la reçoit pas tant qu\'aucune de ses versions n\'est publiée. Publiez-la, ou retirez-la.',

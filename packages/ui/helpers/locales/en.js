@@ -1618,12 +1618,15 @@ export default {
         'In the order the assistant reads them. Their active version is attached to the skill.',
       consumedExpertisesEmpty: 'No expertise consumed.',
       consumedExpertisesAdd: 'Add an expertise',
+      consumedExpertisesSearch: 'Search a published expertise by title or id',
+      consumedExpertisesNoResult: 'No published expertise found.',
+      consumedExpertisesSearchError: 'The search failed. Type again to retry.',
       consumedExpertisesMax: 'A version consumes {max} expertises at most.',
       consumedExpertisesLoadError: 'The expertises could not be loaded.',
       consumedExpertisesRetry: 'Retry',
       consumedExpertiseNotFound: 'Not found',
       consumedExpertiseNotFoundHint:
-        'No expertise read here has this id: the assistant does not receive it. Remove it.',
+        'No expertise has this id: the assistant does not receive it. Remove it.',
       consumedExpertiseNotPublished: 'Not published',
       consumedExpertiseNotPublishedHint:
         'A draft, or archived: the assistant does not receive it until a version of it is published. Publish it, or remove it.',
