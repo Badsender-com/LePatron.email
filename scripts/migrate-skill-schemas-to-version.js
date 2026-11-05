@@ -58,6 +58,9 @@ async function main() {
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    // indexes are the server's job: a build still running at disconnect()
+    // retries every 10 s per index and keeps the script from exiting
+    autoIndex: false,
   });
   try {
     // Read raw (lean) so we still see the soon-to-be-removed root fields.

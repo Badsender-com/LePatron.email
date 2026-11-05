@@ -68,6 +68,9 @@ async function main() {
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    // indexes are the server's job: a build still running at disconnect()
+    // retries every 10 s per index and keeps the script from exiting
+    autoIndex: false,
   });
   try {
     // Raw collection access: the field no longer exists on the Mongoose schema,
