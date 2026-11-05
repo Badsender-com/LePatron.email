@@ -362,6 +362,15 @@ module.exports = {
   'comments-load-failed': "Couldn't load the comments",
   'comments-filter-note':
     'Reading filter: you read the comments of the block __block__. Your next comment is on what the « On » field shows, below.',
+  'comments-target': 'On',
+  'comments-target-selected': 'Block selected in the canvas',
+  'comments-target-chosen': 'Block chosen',
+  'comments-target-note':
+    'The target follows the canvas selection until you change it here. For another block, select it in the email.',
+  'comments-type': 'Type',
+  'comments-priority': 'Priority',
+  'comments-approve-email': 'Approve the email',
+  'comments-mention-list': 'People to mention',
   'comments-new-one': '1 new comment · Show',
   'comments-new': '__count__ new comments · Show',
   'comments-rail-marker-one': '1 unresolved comment on the block __block__',
