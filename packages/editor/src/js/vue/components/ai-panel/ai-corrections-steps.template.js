@@ -19,20 +19,21 @@ const correction = `
           <p :id="'ai-correction-' + correction.id" class="ai-panel__change">
             <span class="qc-sr-only">{{ t('ai-panel-correction-before') }}</span>
             <del class="ai-panel__before">{{ correction.before }}</del>
-            <span class="lucide lucide-arrow-right" aria-hidden="true"></span>
             <span class="qc-sr-only">{{ t('ai-panel-correction-after') }}</span>
             <ins class="ai-panel__after">{{ correction.after }}</ins>
           </p>
           <p v-if="isOpen(correction)" class="ai-panel__hint">{{ correction.reason }}</p>
-          <p v-if="correction.status !== 'pending'" class="ai-panel__status-label">{{ t(STATUS_LABELS[correction.status]) }}</p>
-          <div v-if="isOpen(correction)" class="ai-panel__buttons ai-panel__buttons--start">
-            <button :ref="'accept-' + correction.id" type="button" class="qc-button qc-button--outline qc-button--sm"
-                    :aria-describedby="'ai-correction-' + correction.id" @click="accept(correction)">
-              {{ t('ai-panel-accept') }}
-            </button>
-            <button v-if="correction.status === 'pending'" type="button" class="qc-button qc-button--ghost qc-button--sm"
+          <p v-if="correction.status !== 'pending'" class="ai-panel__status-label">
+            <span v-if="correction.status === 'accepted'" class="lucide lucide-check" aria-hidden="true"></span>{{ t(STATUS_LABELS[correction.status]) }}
+          </p>
+          <div v-if="isOpen(correction)" class="ai-panel__buttons ai-panel__buttons--end">
+            <button v-if="correction.status === 'pending'" type="button" class="qc-button qc-button--outline qc-button--sm"
                     :aria-describedby="'ai-correction-' + correction.id" @click="ignore(correction)">
               {{ t('ai-panel-ignore') }}
+            </button>
+            <button :ref="'accept-' + correction.id" type="button" class="qc-button qc-button--outline qc-button--sm"
+                    :aria-describedby="'ai-correction-' + correction.id" @click="accept(correction)">
+              <span class="lucide lucide-check" aria-hidden="true"></span>{{ t('ai-panel-accept') }}
             </button>
           </div>
         </li>`;
@@ -46,15 +47,18 @@ module.exports = `
     <span class="qc-notice__text">{{ t('ai-panel-correction-paused', { seconds: state.pausedFor }) }}</span>
   </p>
 
-  <div v-if="state.isLoading" class="ai-panel__status">
-    <span class="qc-spinner" aria-hidden="true"></span>
-    <span v-if="state.progress">
-      {{ t('ai-panel-correcting-blocks', { done: Math.min(state.progress.done + 1, state.progress.total), total: state.progress.total }) }}
-    </span>
-    <span v-else>{{ t('ai-panel-correcting') }}</span>
-    <button v-if="state.progress && !state.stopped" type="button" class="qc-button qc-button--ghost qc-button--sm" @click="stop">
-      {{ t('ai-panel-correction-stop') }}
-    </button>
+  <!-- The analysis under way (board a4); « Arrêter l'analyse » is the foot. -->
+  <div v-if="state.isLoading" ref="summary" tabindex="-1" class="ai-panel__progress" aria-labelledby="ai-panel-progress">
+    <p id="ai-panel-progress" class="ai-panel__progress-line">
+      <span class="qc-spinner" aria-hidden="true"></span>
+      <span v-if="state.progress">
+        {{ t('ai-panel-correcting-blocks', { done: Math.min(state.progress.done + 1, state.progress.total), total: state.progress.total }) }}
+      </span>
+      <span v-else>{{ t('ai-panel-correcting') }}</span>
+      <span v-if="state.corrections.length" class="ai-panel__progress-count">{{ tCount('ai-panel-corrections-count', state.corrections.length) }}</span>
+    </p>
+    <progress v-if="state.progress" class="ai-panel__progress-bar" :max="state.progress.total" :value="state.progress.done"
+              :aria-label="t('ai-panel-correcting')"></progress>
   </div>
 
   <p v-if="state.done && state.stopped" class="qc-notice">
@@ -73,22 +77,40 @@ module.exports = `
     <span class="qc-notice__text">{{ t('ai-panel-no-correction') }}</span>
   </p>
 
-  <template v-if="state.corrections.length">
-    <div class="ai-panel__corrections-head">
-      <p id="ai-panel-corrections" ref="summary" tabindex="-1" class="ai-panel__intro">
-        {{ tCount('ai-panel-corrections-count', state.corrections.length) }}
-      </p>
-      <button v-if="open.length > 1 && !state.isLoading" type="button" class="qc-button qc-button--cta qc-button--sm" @click="acceptAll">
-        {{ t('ai-panel-accept-all') }}
-      </button>
+  <!-- Everything answered (board a5): what became of the corrections, and
+       what was not read. « Revoir les corrections » shows the list again. -->
+  <template v-if="summary">
+    <div ref="summary" tabindex="-1" class="qc-notice qc-notice--success ai-panel__finished">
+      <span class="lucide lucide-check-circle" aria-hidden="true"></span>
+      <span class="qc-notice__text">
+        <strong>{{ t(state.stopped ? 'ai-panel-analysis-stopped' : 'ai-panel-analysis-done') }}</strong>
+        <template v-if="state.progress"><br>{{ tCount('ai-panel-blocks-read', blocksRead) }}</template>
+      </span>
     </div>
+    <h3 class="ai-panel__section">{{ t('ai-panel-tally-corrections') }}</h3>
+    <dl class="ai-panel__tally">
+      <div v-for="[key, count] in tally.done" :key="key"><dt>{{ tCount(key, count) }}</dt><dd>{{ count }}</dd></div>
+    </dl>
+    <template v-if="tally.unread.length">
+      <h3 class="ai-panel__section">{{ t('ai-panel-tally-unread') }}</h3>
+      <dl class="ai-panel__tally">
+        <div v-for="[key, count] in tally.unread" :key="key"><dt>{{ tCount(key, count) }}</dt><dd>{{ count }}</dd></div>
+      </dl>
+    </template>
+    <p class="ai-panel__note">{{ t('ai-panel-correction-undo-hint', { keys: undoKeys }) }}</p>
+  </template>
+
+  <template v-else-if="state.corrections.length">
+    <p v-if="!state.isLoading" id="ai-panel-corrections" ref="summary" tabindex="-1" class="ai-panel__intro">
+      {{ tCount('ai-panel-corrections-count', state.corrections.length) }}
+    </p>
 
     <section v-for="group in groups" :key="group.blockId || 'one'" class="ai-panel__group">
       <div v-if="group.label" class="ai-panel__group-head">
         <h3 class="ai-panel__section">{{ group.label }}</h3>
-        <button v-if="session.canGoToBlock(group.blockId)" type="button" class="qc-button qc-button--outline qc-button--sm"
+        <button v-if="session.canGoToBlock(group.blockId)" type="button" class="qc-link-button"
                 @click="goToBlock(group.blockId)">
-          {{ t('ai-panel-go-to-block') }}<span class="lucide lucide-arrow-right" aria-hidden="true"></span>
+          {{ t('ai-panel-go-to-block') }}
         </button>
       </div>
       <ul class="ai-panel__corrections" :aria-label="group.label || null" :aria-labelledby="group.label ? null : 'ai-panel-corrections'">${correction}
@@ -102,7 +124,7 @@ module.exports = `
     <p v-if="hasAccepted" class="ai-panel__hint">{{ t('ai-panel-correction-undo-hint', { keys: undoKeys }) }}</p>
   </template>
 
-  <template v-if="state.done || state.corrections.length">
+  <template v-if="!summary && (state.done || state.corrections.length)">
     <p v-if="state.failedBlocks.length" class="qc-notice qc-notice--error" role="alert">
       {{ t('ai-panel-blocks-failed', { blocks: failedLabels }) }}
     </p>

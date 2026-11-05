@@ -41,12 +41,6 @@ module.exports = `
       </p>
     </div>
     <p v-if="undoRefused" class="qc-notice qc-notice--error" role="alert">{{ t('ai-panel-undo-changed') }}</p>
-    <div class="ai-panel__buttons">
-      <button type="button" class="qc-button qc-button--outline" @click="undo">{{ t('ai-panel-undo') }}</button>
-      <button v-if="nextAction" type="button" class="qc-button qc-button--cta" @click="$emit('open-action', nextAction)">
-        {{ t(labelsOf(nextAction).continueWith) }}
-      </button>
-    </div>
   </template>
 
   <template v-else>
@@ -54,14 +48,11 @@ module.exports = `
     <textarea id="ai-panel-brief" ref="brief" class="ai-panel__brief" v-model="brief" rows="2" maxlength="500"
               :placeholder="t('text-generation-brief-placeholder')"></textarea>
 
-    <template v-if="!state.proposals.length">
-      <p v-if="state.dropped" class="ai-panel__hint">{{ t('text-generation-none') }}</p>
-      <button type="button" class="qc-button qc-button--cta ai-panel__start" :disabled="state.isLoading" @click="generate">
-        {{ t(labels.generate) }}
-      </button>
-    </template>
+    <!-- « Proposer », « Proposer d'autres », « Appliquer », « Annuler » and
+         what comes next are the panel's foot (footerButtons). -->
+    <p v-if="!state.proposals.length && state.dropped" class="ai-panel__hint">{{ t('text-generation-none') }}</p>
 
-    <template v-else>
+    <template v-if="state.proposals.length">
       <p id="ai-panel-proposals" ref="proposals" tabindex="-1" class="ai-panel__intro">{{ t(labels.proposals) }}</p>
       <p v-if="!canApply" class="ai-panel__hint">{{ t(labels.copyHint) }}</p>
       <p v-if="state.dropped" class="ai-panel__hint">{{ t('text-generation-dropped', { count: state.dropped }) }}</p>
@@ -95,18 +86,6 @@ module.exports = `
       </ul>
 
       <p v-if="copyError" class="qc-notice qc-notice--error" role="alert">{{ t('text-generation-error-copy') }}</p>
-      <div class="ai-panel__buttons">
-        <button type="button" class="qc-button qc-button--outline" :disabled="state.isLoading" @click="more">
-          {{ t('text-generation-more') }}
-        </button>
-        <button v-if="canApply" type="button" class="qc-button qc-button--cta" :disabled="!picked || state.isLoading"
-                @click="apply">
-          {{ t('text-generation-apply') }}
-        </button>
-        <button v-else-if="nextAction" type="button" class="qc-button qc-button--cta" @click="$emit('open-action', nextAction)">
-          {{ t(labelsOf(nextAction).continueWith) }}
-        </button>
-      </div>
     </template>
 
     <p v-if="state.isLoading" class="ai-panel__status">

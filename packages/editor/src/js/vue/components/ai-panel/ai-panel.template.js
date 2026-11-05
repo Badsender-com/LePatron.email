@@ -74,9 +74,18 @@ module.exports = `
         </button>
       </p>
 
-      <component :is="stepsOf(session)" :key="sessionKey" :vm="vm" :session="session" :action="sessionAction"
-                 :labels-of="labelsOf" @open-action="openAction" @announce="announce" @changed="refresh"></component>
+      <component ref="steps" :is="stepsOf(session)" :key="sessionKey" :vm="vm" :session="session" :action="sessionAction"
+                 :labels-of="labelsOf" @open-action="openAction" @announce="announce" @changed="refresh"
+                 @footer="footer = $event" @back="showList()"></component>
     </template>
   </div>
+
+  <template v-if="session && footer.length" v-slot:footer>
+    <button v-for="button in footer" :key="button.id" type="button"
+            :class="['qc-button', button.primary ? 'qc-button--cta' : 'qc-button--outline']"
+            :disabled="button.disabled" @click="onFooter(button.id)" @keydown="onFooterKey">
+      <span v-if="button.icon" :class="['lucide', button.icon]" aria-hidden="true"></span>{{ button.label }}
+    </button>
+  </template>
 </right-panel-shell>
 `;

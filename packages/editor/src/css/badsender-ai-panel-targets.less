@@ -87,25 +87,88 @@
     -webkit-user-select: text;
   }
 
+  // Before struck on red, after on green (board a4); the words say which.
+  &__before,
+  &__after {
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: var(--gray-900);
+  }
+
   &__before {
-    color: var(--gray-700);
+    background: @qc-tint-error;
     text-decoration: line-through;
   }
 
   &__after {
-    font-weight: 600;
-    color: var(--gray-900);
+    background: @qc-tint-success;
     text-decoration: none;
   }
 
-  &__buttons--start {
-    justify-content: flex-start;
+  &__buttons--end {
+    justify-content: flex-end;
   }
 
   &__status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     font-weight: 500;
+    color: var(--gray-800);
+
+    > .lucide { color: @qc-success; }
+  }
+
+  // ===== The analysis under way (board a4) =====
+  &__progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__progress-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__progress-count {
+    margin-left: auto;
     color: var(--gray-700);
+  }
+
+  &__progress-bar {
+    width: 100%;
+    height: 4px;
+    border: 0;
+    border-radius: 2px;
+    background: var(--gray-200);
+    appearance: none;
+
+    &::-webkit-progress-bar { border-radius: 2px; background: var(--gray-200); }
+    &::-webkit-progress-value { border-radius: 2px; background: var(--accent); }
+    &::-moz-progress-bar { border-radius: 2px; background: var(--accent); }
+  }
+
+  // ===== The summary (board a5) =====
+  &__finished:focus {
+    outline: none;
+  }
+
+  &__tally {
+    margin: 0;
+
+    > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    dt { color: var(--gray-900); }
+    dd { margin: 0; font-weight: 600; }
   }
 }
 

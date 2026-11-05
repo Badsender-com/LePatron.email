@@ -10,7 +10,9 @@ const template = require('./ai-proposals-steps.template');
  * renders them and keeps the focus where the user goes on.
  *
  * Emits `open-action` (the suggested or next action), `announce` (said to
- * screen readers) and `changed` (the email changed: the panel re-reads it).
+ * screen readers), `changed` (the email changed: the panel re-reads it) and
+ * `footer` (its main buttons, [{ id, label, primary?, disabled? }], drawn in
+ * the panel's foot, which calls `onFooter(id)`).
  */
 const AiProposalsSteps = Vue.component('AiProposalsSteps', {
   props: {
@@ -56,6 +58,51 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
     nextAction() {
       return this.session.nextAction();
     },
+    // The main buttons, in the panel's foot (board a3): what to do next.
+    footerButtons() {
+      if (this.urgesFirst) return [];
+      const next = this.nextAction && {
+        id: 'next',
+        label: this.t(this.labelsOf(this.nextAction).continueWith),
+        primary: true,
+      };
+      if (this.state.applied) {
+        return [{ id: 'undo', label: this.t('ai-panel-undo') }, next].filter(
+          Boolean
+        );
+      }
+      if (!this.state.proposals.length) {
+        return [
+          {
+            id: 'generate',
+            label: this.t(this.labels.generate),
+            primary: true,
+            disabled: this.state.isLoading,
+          },
+        ];
+      }
+      const more = {
+        id: 'more',
+        label: this.t('text-generation-more'),
+        icon: 'lucide-refresh-cw',
+        disabled: this.state.isLoading,
+      };
+      const apply = this.canApply && {
+        id: 'apply',
+        label: this.t('text-generation-apply'),
+        primary: true,
+        disabled: !this.picked || this.state.isLoading,
+      };
+      return [more, apply || next].filter(Boolean);
+    },
+  },
+  watch: {
+    footerButtons: {
+      immediate: true,
+      handler(buttons) {
+        this.$emit('footer', buttons);
+      },
+    },
   },
   methods: {
     t(key, params) {
@@ -68,6 +115,14 @@ const AiProposalsSteps = Vue.component('AiProposalsSteps', {
         const target = Array.isArray(element) ? element[0] : element;
         if (target) target.focus();
       });
+    },
+    // A button of the panel's foot.
+    onFooter(id) {
+      if (id === 'next') this.$emit('open-action', this.nextAction);
+      else if (id === 'undo') this.undo();
+      else if (id === 'generate') this.generate();
+      else if (id === 'more') this.more();
+      else if (id === 'apply') this.apply();
     },
     goOn() {
       this.goOnAnyway = true;
