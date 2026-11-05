@@ -6,6 +6,7 @@ const {
 const { SendTestPanel } = require('./send-test-panel');
 const { CAPABILITIES } = require('../../../../../../shared/access/roles.js');
 const koMirror = require('../../mixins/ko-mirror');
+const { RightPanelShell } = require('../right-panel/right-panel-shell');
 
 // Frozen: the template reads it, and Vue would otherwise make it reactive.
 const TABS = Object.freeze([
@@ -21,7 +22,7 @@ const TABS = Object.freeze([
 // a test of it, as two tabs. Its state lives on the view model
 // (viewModel.quality, see ext/quality/quality-review.js); this only shows it.
 const QualityDrawer = Vue.component('QualityDrawer', {
-  components: { QualityChecksPanel, SendTestPanel },
+  components: { QualityChecksPanel, SendTestPanel, RightPanelShell },
   mixins: [koMirror],
   props: {
     vm: { type: Object, required: true },
@@ -41,11 +42,6 @@ const QualityDrawer = Vue.component('QualityDrawer', {
     // same right: a reviewer sees the button, greyed out.
     ignoreLocked: true,
   }),
-  computed: {
-    currentTab() {
-      return TABS.find((tab) => tab.name === this.tab) || TABS[0];
-    },
-  },
   watch: {
     // Focus and Escape are the right panel's (ext/right-panel.js): the drawer
     // only clears what it highlighted in the canvas.
@@ -101,28 +97,16 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       this.goTo('checks');
       this.vm.quality.run();
     },
-    close() {
-      this.vm.showQuality(false);
-    },
   },
   template: `
-    <section
+    <right-panel-shell
       class="qc-drawer"
-      role="dialog"
-      aria-modal="false"
-      aria-labelledby="qc-drawer-title"
+      :vm="vm"
+      title-id="qc-drawer-title"
+      :title="t('Test your email')"
+      :close-label="t('quality-action-close')"
     >
-      <header class="right-panel__header">
-        <div>
-          <p class="right-panel__eyebrow">{{ t('Test your email') }}</p>
-          <h2 id="qc-drawer-title" class="right-panel__title">{{ t(currentTab.labelKey) }}</h2>
-        </div>
-        <button ref="close" type="button" class="qc-icon-button" :aria-label="t('quality-action-close')" :title="t('quality-action-close')" @click="close">
-          <span class="lucide lucide-x" aria-hidden="true"></span>
-        </button>
-      </header>
-
-      <div class="qc-tabs" role="tablist" :aria-label="t('Test your email')" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
+      <div slot="nav" class="qc-tabs" role="tablist" :aria-label="t('Test your email')" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
         <button
           v-for="item in tabs"
           :key="item.name"
@@ -171,7 +155,7 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         @show-results="goTo('checks')"
         @run-checks="runFromSend"
       ></send-test-panel>
-    </section>
+    </right-panel-shell>
   `,
 });
 

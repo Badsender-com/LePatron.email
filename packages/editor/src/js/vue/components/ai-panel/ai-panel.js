@@ -8,6 +8,7 @@ const { AiProposalsSteps } = require('./ai-proposals-steps');
 const { AiCorrectionsSteps } = require('./ai-corrections-steps');
 const template = require('./ai-panel.template');
 const koMirror = require('../../mixins/ko-mirror');
+const { RightPanelShell } = require('../right-panel/right-panel-shell');
 
 // The component that renders the steps of each family of AI actions.
 const STEPS_BY_FAMILY = {
@@ -32,7 +33,7 @@ const MIRRORED = [
  * (ext/right-panel.js); it also places the AI icons on the fields.
  */
 const AiPanel = Vue.component('AiPanel', {
-  components: { AiProposalsSteps, AiCorrectionsSteps },
+  components: { AiProposalsSteps, AiCorrectionsSteps, RightPanelShell },
   mixins: [koMirror],
   props: {
     vm: { type: Object, required: true },
@@ -85,9 +86,7 @@ const AiPanel = Vue.component('AiPanel', {
       return STEPS_BY_FAMILY[definitionOf(session.state.action).family];
     },
     focusHeading() {
-      this.$nextTick(() => {
-        if (this.$refs.heading) this.$refs.heading.focus();
-      });
+      if (this.$refs.shell) this.$refs.shell.focusTitle();
     },
     refresh() {
       this.panel.refresh();
@@ -126,9 +125,6 @@ const AiPanel = Vue.component('AiPanel', {
       });
       this.iconsObserver.observe(root, { childList: true, subtree: true });
       place();
-    },
-    close() {
-      this.vm.showAi(false);
     },
   },
   template,

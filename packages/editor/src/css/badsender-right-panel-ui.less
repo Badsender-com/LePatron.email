@@ -1,6 +1,6 @@
 ////////
-// RIGHT PANEL — the shared kit of the right-hand panels (ADR 0010): header,
-// buttons, notices, spinner. Born with the quality drawer, hence the qc-
+// RIGHT PANEL — the shared kit of the right-hand panels (ADR 0010, 0020):
+// the shell, buttons, notices, spinner. Born with the quality drawer, hence the qc-
 // prefix; quality control and the AI panel both use it.
 //
 // Scoped under `.slidebar.right-panel` (0,2,0): the editor's generic
@@ -20,33 +20,88 @@
 @qc-motion: 0.2s ease-out;
 
 .slidebar.right-panel {
-  // ===== Header =====
-  .right-panel__header {
+  // ===== Shell (ADR 0020): header, nav, body, foot =====
+  .right-panel-shell {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--gray-200);
-  }
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    color: var(--gray-900);
 
-  .right-panel__eyebrow {
-    margin: 0;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--gray-600);
-  }
+    button {
+      font-family: inherit;
+    }
 
-  .right-panel__title {
-    margin: 2px 0 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--primary);
+    &__header {
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: 8px;
+      height: 52px;
+      padding: 0 8px 0 16px;
+      border-bottom: 1px solid var(--gray-200);
+    }
 
-    // Focused when an action opens, to be announced; not a control.
-    &:focus {
-      outline: none;
+    &__back {
+      margin-left: -8px;
+    }
+
+    &__title {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--primary);
+
+      // Focused when the panel changes level, to be announced; not a control.
+      &:focus {
+        outline: none;
+      }
+    }
+
+    // Before the close button, after a title that takes the room left.
+    &__count {
+      flex: none;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--accent);
+      // The dark brand colour on the accent: white would fall below 4.5:1.
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 20px;
+      text-align: center;
+    }
+
+    &__nav {
+      flex: none;
+      padding: 12px 16px 0;
+    }
+
+    // The only part that scrolls; a panel with its own scrolling list fills it.
+    &__body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    &__footer {
+      display: flex;
+      flex: none;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--gray-200);
+      background: var(--gray-50);
     }
   }
 

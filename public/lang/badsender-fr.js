@@ -908,7 +908,6 @@ module.exports = {
   // text generation (epic #1163)
   // AI panel, « Outils IA » (ADR 0010)
   'ai-panel-title': 'Outils IA',
-  'ai-panel-actions': 'Actions disponibles',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
   'ai-panel-copy-only':

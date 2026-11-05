@@ -78,7 +78,7 @@ describe('the AI panel and its controller', () => {
     panel.session(SESSION);
     await component.$nextTick();
     await component.$nextTick();
-    expect(document.activeElement).toBe(component.$refs.heading);
+    expect(document.activeElement.id).toBe('ai-panel-title');
     component.$root.$destroy();
   });
 

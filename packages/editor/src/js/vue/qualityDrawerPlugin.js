@@ -2,6 +2,8 @@ const Vue = require('vue/dist/vue.common');
 const { QualityDrawer } = require('./components/quality-drawer/quality-drawer');
 const { installQualityReview } = require('../ext/quality/quality-review');
 
+let app = null;
+
 module.exports = {
   viewModel(vm, ko) {
     // Before bindings: the toolbar button and the panel bind to this state.
@@ -16,6 +18,14 @@ module.exports = {
       template: '<quality-drawer :vm="viewModel"></quality-drawer>',
     });
 
-    new Vue({ el: '#quality-drawer' });
+    app = new Vue({ el: '#quality-drawer' });
+  },
+  // Called by the template loader when the editor swaps templates: the drawer
+  // lets go of the view model it subscribed to.
+  dispose() {
+    if (app) {
+      app.$destroy();
+      app = null;
+    }
   },
 };
