@@ -125,7 +125,8 @@
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: calc(@topbar-height + 4px);
+  // From the bottom of « Exporter », not of the bar.
+  top: calc(100% + 6px);
   width: max-content;
   min-width: 180px;
   background: rgba(255, 255, 255, 0.95);
@@ -205,17 +206,10 @@
 }
 
 .download-form:hover .download-form__menu,
-.download-form:focus-within .download-form__menu,
+.download-form__menu.is-open,
 .download-form__menu:hover {
   opacity: 1;
   pointer-events: initial;
-}
-#toolbar .download-form__btn-menu {
-  margin: 0;
-}
-// The menu hangs from the bottom of « Exporter », not of the bar.
-#toolbar .download-form__menu {
-  top: calc(100% + 6px);
 }
 // MOBILE PREVIEW
 // • revert some styles from mosaico
@@ -226,11 +220,6 @@
 
       .fa {
         font-size: 1.25rem;
-      }
-    }
-    .ui-button[for='showGallery'] {
-      .ui-icon {
-        margin-right: 0;
       }
     }
   }

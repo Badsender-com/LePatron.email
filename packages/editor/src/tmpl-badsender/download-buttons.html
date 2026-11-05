@@ -6,7 +6,8 @@
   action="#"
   method="POST"
   data-bind="
-    css: { 'download-form--cdn': $root.downloadCdn }
+    css: { 'download-form--cdn': $root.downloadCdn },
+    event: { keydown: $root.exportMenu.onKeydown, focusout: $root.exportMenu.onFocusout }
   "
 >
   <input type="hidden" name="action" value="download" />
@@ -21,8 +22,7 @@
   <input type="hidden" name="html" id="downloadHtmlTextarea" />
 
   <!-- « Exporter » (boards « Topbar allégée »): the download itself when it is
-       the only way out, else the menu of the ways out, opened on hover or on
-       focus. -->
+       the only way out, else the menu of the ways out (ext/topbar/export-menu.js). -->
   <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
   <button
     type="button"
@@ -43,16 +43,25 @@
   <button
     type="button"
     class="topbar-button download-form__btn-menu"
-    aria-haspopup="true"
+    aria-controls="download-form-menu"
+    data-bind="
+      click: $root.exportMenu.toggle,
+      clickBubble: false,
+      attr: { 'aria-expanded': $root.exportMenu.open() ? 'true' : 'false' }
+    "
   >
     <span data-bind="text: $root.t('topbar-export')">Export</span
     ><span class="lucide lucide-chevron-down" aria-hidden="true"></span>
   </button>
-  <aside class="download-form__menu">
+  <aside
+    id="download-form-menu"
+    class="download-form__menu"
+    data-bind="css: { 'is-open': $root.exportMenu.open() }"
+  >
     <a
       href="javascript:void(0)"
       data-bind="
-        click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
+        click: function (){ $root.exportMenu.close(); $root.download.execute({forCdn: false, forFtp: false}) },
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
@@ -68,7 +77,7 @@
     <a
       href="javascript:void(0)"
       data-bind="
-        click: function (){ $root.download.execute({forCdn: true, forFtp: false}) },
+        click: function (){ $root.exportMenu.close(); $root.download.execute({forCdn: true, forFtp: false}) },
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
@@ -84,7 +93,7 @@
     <a
       href="javascript:void(0)"
       data-bind="
-        click: function (){ $root.download.execute({forCdn: false, forFtp: true}) },
+        click: function (){ $root.exportMenu.close(); $root.download.execute({forCdn: false, forFtp: true}) },
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
@@ -101,7 +110,7 @@
     <div data-bind="foreach: profiles">
       <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
         <a href="javascript:void(0)" data-bind="
-          click: $root.setSelectedProfile.bind($index()),
+          click: function (profile, event) { $root.exportMenu.close(); $root.setSelectedProfile(profile, event); },
           button: {
           disabled: !$root.download.enabled(),
           icons: { primary: 'lucide lucide-fw lucide-cable' },

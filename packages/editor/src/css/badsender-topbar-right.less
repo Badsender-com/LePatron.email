@@ -50,9 +50,10 @@
         background: rgba(255, 255, 255, 0.12);
       }
 
+      // A shade over the board's .22: 3:1 against the group's ground.
       &.is-active {
         opacity: 1;
-        background: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.3);
       }
     }
   }
@@ -104,8 +105,8 @@
     padding: 0 14px;
     border: 0;
     border-radius: 7px;
-    background: var(--v-accent-base);
-    color: var(--v-primary-base);
+    background: var(--accent);
+    color: var(--primary);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -139,5 +140,14 @@
       outline: 2px solid var(--white);
       outline-offset: 2px;
     }
+  }
+
+  .topbar-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }

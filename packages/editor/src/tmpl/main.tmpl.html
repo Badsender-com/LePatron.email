@@ -49,7 +49,7 @@
       <span class="topbar-separator" aria-hidden="true"></span>
       <!-- The gallery leaves for the left bar in its own iteration (tab
            « Images »); it stays here until then. -->
-      <button type="button" class="topbar-icon-button" data-bind="click: function() { $root.showGallery(!$root.showGallery()); }, css: { 'is-active': $root.showGallery() }, attr: { title: $root.t('Show image gallery'), 'aria-label': $root.t('Show image gallery'), 'aria-pressed': $root.showGallery() ? 'true' : 'false' }">
+      <button type="button" class="topbar-icon-button" data-bind="click: function() { $root.showGallery(!$root.showGallery()); }, css: { 'is-active': $root.showGallery() }, attr: { title: $root.t('Show image gallery'), 'aria-label': $root.t('Gallery'), 'aria-pressed': $root.showGallery() ? 'true' : 'false' }">
         <span class="lucide lucide-image" aria-hidden="true"></span>
       </button>
       <!-- ko if: typeof $root.undo != 'undefined' -->
@@ -75,9 +75,11 @@
       <div class="topbar-actions">
         <!-- ko if: typeof $root.save !== 'undefined' -->
         <!-- Kept focusable when it cannot save, so that its reason is read. -->
-        <button type="button" class="topbar-button" data-bind="click: function() { if ($root.canSave() && $root.save.enabled()) $root.save.execute(); }, clickBubble: false, attr: { title: $root.canSave() ? $root.t('Save template') : $root.t('topbar-save-readonly'), 'aria-disabled': !$root.save.enabled() || !$root.canSave() ? 'true' : 'false' }">
+        <button type="button" class="topbar-button" data-bind="click: function() { if ($root.canSave() && $root.save.enabled()) $root.save.execute(); }, clickBubble: false, attr: { title: $root.canSave() ? $root.t('Save template') : $root.t('topbar-save-readonly'), 'aria-disabled': !$root.save.enabled() || !$root.canSave() ? 'true' : 'false', 'aria-describedby': $root.canSave() ? null : 'topbar-save-reason' }">
           <span class="lucide lucide-save" aria-hidden="true"></span><span data-bind="text: $root.t($root.save.name)"></span>
         </button>
+        <!-- Its reason read by screen readers; the title shows it on hover and focus. -->
+        <span id="topbar-save-reason" class="topbar-sr" data-bind="text: $root.t('topbar-save-readonly')"></span>
         <!-- /ko -->
         <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
       </div>

@@ -48,3 +48,7 @@ ADR 0010 gave the comments, the quality control and the AI panel one place and o
 - A reviewer may resolve a blocking comment posted by someone else, then approve.
 - Approvals posted by a writer or a regular user before `mailing.approve` existed are kept as they are, and still count.
 - A client may approve with a stale view: the server rule and the 30-second refresh, not the disabled button, keep a blocking comment from being approved over.
+
+## Amendment: the right of the top bar
+
+The top bar keeps its place and stays in Knockout; its right follows the same grammar as the panels, with the same tokens (`--primary`, `--accent`) as the panels' kit. It holds the preview (a segmented control), the history, then « Sauvegarder » and « Exporter » on the accent. The image gallery stays there until the left bar's own iteration takes it in. « Exporter » is the download when there is one way out, else a menu that a button opens and closes, and Escape closes. When the user may not save, « Sauvegarder » stays focusable and says why.

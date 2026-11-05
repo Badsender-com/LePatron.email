@@ -75,7 +75,10 @@ describe('the right of the top bar', () => {
     const buttons = parse(download).querySelectorAll('button');
     expect(buttons).toHaveLength(2);
     buttons.forEach((b) => expect(b.innerHTML).toContain("t('topbar-export')"));
-    expect(buttons[1].getAttribute('aria-haspopup')).toBe('true');
+    const bind = buttons[1].getAttribute('data-bind');
+    expect(bind).toContain('$root.exportMenu.toggle');
+    expect(bind).toContain("'aria-expanded'");
+    expect(buttons[1].getAttribute('aria-controls')).toBe('download-form-menu');
   });
 
   it.each(['topbar-export', 'topbar-preview-label', 'topbar-save-readonly'])(
