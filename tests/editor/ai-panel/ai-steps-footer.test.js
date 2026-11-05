@@ -122,13 +122,52 @@ describe('the steps of a correction, in the foot', () => {
       (d) => d.textContent
     );
     expect(rows).toEqual([
-      'ai-panel-tally-accepted',
-      'ai-panel-tally-ignored',
-      'ai-panel-tally-too-long',
+      'ai-panel-tally-accepted-one 1',
+      'ai-panel-tally-ignored-one 1',
+      'ai-panel-tally-too-long-one 1',
     ]);
     expect(last().map((b) => b.id)).toEqual(['review', 'done']);
     steps.onFooter('done');
     expect(events.back).toBe(1);
+  });
+
+  it('keeps the focus in the steps when everything is accepted during the analysis', async () => {
+    const session = correctionsSession({
+      isLoading: true,
+      done: false,
+      progress: { done: 1, total: 3 },
+      corrections: [correction('c1')],
+    });
+    session.acceptAll = jest.fn(() => {
+      session.state.corrections[0].status = 'accepted';
+      return { accepted: 1, stale: 0 };
+    });
+    const { steps, app } = mount(AiCorrectionsSteps, session);
+    await flush();
+    steps.onFooter('accept-all');
+    await Vue.nextTick();
+    await Vue.nextTick();
+    expect(app.$el.contains(document.activeElement)).toBe(true);
+  });
+
+  it('says a stopped analysis was stopped, and what it did not read', async () => {
+    const session = correctionsSession({
+      stopped: true,
+      progress: { done: 2, total: 5 },
+      failedBlocks: ['b9'],
+      corrections: [correction('c1', 'accepted')],
+    });
+    const { app } = mount(AiCorrectionsSteps, session);
+    await flush();
+    await Vue.nextTick();
+    const finished = app.$el.querySelector('.ai-panel__finished').textContent;
+    expect(finished).toContain('ai-panel-analysis-stopped');
+    expect(finished).toContain('ai-panel-blocks-read-one 1');
+    const unread = [...app.$el.querySelectorAll('.ai-panel__tally dt')].map(
+      (d) => d.textContent
+    );
+    expect(unread).toContain('ai-panel-tally-not-analysed 3');
+    expect(unread).toContain('ai-panel-tally-failed-one 1');
   });
 
   it('shows the corrections again from the summary', async () => {

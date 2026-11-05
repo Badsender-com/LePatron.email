@@ -10,7 +10,9 @@ const template = require('./ai-proposals-steps.template');
  * renders them and keeps the focus where the user goes on.
  *
  * Emits `open-action` (the suggested or next action), `announce` (said to
- * screen readers) and `changed` (the email changed: the panel re-reads it).
+ * screen readers), `changed` (the email changed: the panel re-reads it) and
+ * `footer` (its main buttons, [{ id, label, primary?, disabled? }], drawn in
+ * the panel's foot, which calls `onFooter(id)`).
  */
 const AiProposalsSteps = Vue.component('AiProposalsSteps', {
   props: {

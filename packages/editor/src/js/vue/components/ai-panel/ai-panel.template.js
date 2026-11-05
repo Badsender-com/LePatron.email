@@ -83,7 +83,7 @@ module.exports = `
   <template v-if="session && footer.length" v-slot:footer>
     <button v-for="button in footer" :key="button.id" type="button"
             :class="['qc-button', button.primary ? 'qc-button--cta' : 'qc-button--outline']"
-            :disabled="button.disabled" @click="onFooter(button.id)">
+            :disabled="button.disabled" @click="onFooter(button.id)" @keydown="onFooterKey">
       <span v-if="button.icon" :class="['lucide', button.icon]" aria-hidden="true"></span>{{ button.label }}
     </button>
   </template>

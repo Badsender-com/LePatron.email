@@ -48,8 +48,8 @@ module.exports = `
   </p>
 
   <!-- The analysis under way (board a4); « Arrêter l'analyse » is the foot. -->
-  <div v-if="state.isLoading" class="ai-panel__progress">
-    <p class="ai-panel__progress-line">
+  <div v-if="state.isLoading" ref="summary" tabindex="-1" class="ai-panel__progress" aria-labelledby="ai-panel-progress">
+    <p id="ai-panel-progress" class="ai-panel__progress-line">
       <span class="qc-spinner" aria-hidden="true"></span>
       <span v-if="state.progress">
         {{ t('ai-panel-correcting-blocks', { done: Math.min(state.progress.done + 1, state.progress.total), total: state.progress.total }) }}
@@ -83,18 +83,18 @@ module.exports = `
     <div ref="summary" tabindex="-1" class="qc-notice qc-notice--success ai-panel__finished">
       <span class="lucide lucide-check-circle" aria-hidden="true"></span>
       <span class="qc-notice__text">
-        <strong>{{ t('ai-panel-analysis-done') }}</strong>
-        <template v-if="state.progress"><br>{{ tCount('ai-panel-blocks-read', state.progress.done) }}</template>
+        <strong>{{ t(state.stopped ? 'ai-panel-analysis-stopped' : 'ai-panel-analysis-done') }}</strong>
+        <template v-if="state.progress"><br>{{ tCount('ai-panel-blocks-read', blocksRead) }}</template>
       </span>
     </div>
     <h3 class="ai-panel__section">{{ t('ai-panel-tally-corrections') }}</h3>
     <dl class="ai-panel__tally">
-      <div v-for="[key, count] in tally.done" :key="key"><dt>{{ t(key) }}</dt><dd>{{ count }}</dd></div>
+      <div v-for="[key, count] in tally.done" :key="key"><dt>{{ tCount(key, count) }}</dt><dd>{{ count }}</dd></div>
     </dl>
     <template v-if="tally.unread.length">
       <h3 class="ai-panel__section">{{ t('ai-panel-tally-unread') }}</h3>
       <dl class="ai-panel__tally">
-        <div v-for="[key, count] in tally.unread" :key="key"><dt>{{ t(key) }}</dt><dd>{{ count }}</dd></div>
+        <div v-for="[key, count] in tally.unread" :key="key"><dt>{{ tCount(key, count) }}</dt><dd>{{ count }}</dd></div>
       </dl>
     </template>
     <p class="ai-panel__note">{{ t('ai-panel-correction-undo-hint', { keys: undoKeys }) }}</p>

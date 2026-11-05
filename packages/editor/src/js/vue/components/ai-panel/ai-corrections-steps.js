@@ -37,7 +37,9 @@ const countKey = (key, count) => (count === 1 ? `${key}-one` : key);
  * corrections.js); this renders them and keeps the focus and the announces.
  * Ctrl+Z (⌘Z) in the panel undoes in the editor, Ctrl+Shift+Z redoes.
  *
- * Emits `announce` (said to screen readers) and `changed` (the email changed).
+ * Emits `announce` (said to screen readers), `changed` (the email changed),
+ * `footer` (its main buttons, [{ id, label, primary?, disabled? }], drawn in
+ * the panel's foot, which calls `onFooter(id)`) and `back` (to the list).
  */
 const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
   props: {
@@ -103,6 +105,9 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
       const count = (status) =>
         this.state.corrections.filter((c) => c.status === status).length;
       const leftOut = this.state.leftOut || {};
+      const { progress } = this.state;
+      // Blocks never analysed: the analysis was stopped, or they failed.
+      const notAnalysed = progress ? progress.total - progress.done : 0;
       return {
         done: [
           ['ai-panel-tally-accepted', count('accepted')],
@@ -113,8 +118,15 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
           ['ai-panel-tally-sample', leftOut.sample || 0],
           ['ai-panel-tally-too-long', this.state.tooLong || 0],
           ['ai-panel-tally-dropped', this.state.dropped || 0],
+          ['ai-panel-tally-not-analysed', notAnalysed],
+          ['ai-panel-tally-failed', this.state.failedBlocks.length],
         ].filter(([, n]) => n > 0),
       };
+    },
+    // Blocks the analysis read, those that failed left out.
+    blocksRead() {
+      const done = this.state.progress ? this.state.progress.done : 0;
+      return Math.max(0, done - this.state.failedBlocks.length);
     },
     // The main buttons, in the panel's foot (boards a4, a5).
     footerButtons() {
@@ -150,6 +162,11 @@ const AiCorrectionsSteps = Vue.component('AiCorrectionsSteps', {
       handler(buttons) {
         this.$emit('footer', buttons);
       },
+    },
+    // An undo reopens a correction: the summary gives way to the list, and
+    // the focus goes to its head rather than to the page.
+    summary(shown, wasShown) {
+      if (wasShown && !shown && !this.reviewing) this.focusRef('summary');
     },
     'state.pausedFor'(seconds) {
       if (seconds) {

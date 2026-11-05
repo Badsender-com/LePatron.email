@@ -88,6 +88,11 @@ const AiPanel = Vue.component('AiPanel', {
       const steps = this.$refs.steps;
       if (steps && typeof steps.onFooter === 'function') steps.onFooter(id);
     },
+    // Ctrl+Z from the foot undoes as it does from the steps.
+    onFooterKey(event) {
+      const steps = this.$refs.steps;
+      if (steps && typeof steps.onKeydown === 'function') steps.onKeydown(event);
+    },
     labelsOf(id) {
       return definitionOf(id).labels;
     },

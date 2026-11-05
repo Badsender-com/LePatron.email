@@ -992,6 +992,19 @@ module.exports = {
   'ai-panel-tally-too-long': 'Champs de plus de 5 000 caractères',
   'ai-panel-tally-dropped':
     'Corrections écartées : elles touchaient une mise en forme',
+  'ai-panel-analysis-stopped': 'Analyse arrêtée',
+  'ai-panel-tally-accepted-one': 'Acceptée',
+  'ai-panel-tally-ignored-one': 'Ignorée',
+  'ai-panel-tally-stale-one':
+    "Non appliquée : le texte a changé depuis l'analyse",
+  'ai-panel-tally-sample-one': "Champ encore au texte d'exemple",
+  'ai-panel-tally-too-long-one': 'Champ de plus de 5 000 caractères',
+  'ai-panel-tally-dropped-one':
+    'Correction écartée : elle touchait une mise en forme',
+  'ai-panel-tally-not-analysed-one': 'Bloc non analysé',
+  'ai-panel-tally-not-analysed': 'Blocs non analysés',
+  'ai-panel-tally-failed-one': 'Bloc en échec',
+  'ai-panel-tally-failed': 'Blocs en échec',
   'ai-panel-title': 'Outils IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
@@ -1013,7 +1026,6 @@ module.exports = {
   'ai-panel-corrections-count-one': '1 correction',
   'ai-panel-accept': 'Accepter',
   'ai-panel-ignore': 'Ignorer',
-  'ai-panel-accept-all': 'Tout accepter',
   'ai-panel-correction-accepted': 'Acceptée',
   'ai-panel-correction-ignored': 'Ignorée',
   'ai-panel-correction-undone': 'Annulée',
