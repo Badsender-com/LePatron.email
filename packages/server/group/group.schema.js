@@ -168,9 +168,9 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    // MCP access (ADR 0012): the subscription that lets the group's users
-    // connect an AI assistant. Off until a super admin or the group's tech admin
-    // turns it on; the group update keeps it out of a company admin's reach.
+    // MCP access (ADR 0012): the company's switch that lets its users connect
+    // an AI assistant. Off until a super admin or the company's tech admin
+    // turns it on; the update keeps it out of a company admin's reach.
     enableMcp: {
       type: Boolean,
       default: false,

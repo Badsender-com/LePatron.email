@@ -44,7 +44,8 @@ const PROVING_SKILL = {
   title: 'Review an email against a checklist',
   audience: 'platform',
 };
-// A task skill open to every group that consumes an expertise still proven.
+// A task skill open to every company, that consumes an expertise still
+// proven by the platform company.
 const CONSUMING_TASK = {
   _id: '507f1f77bcf86cd799439906',
   skillId: 'qc.spacing-review',
