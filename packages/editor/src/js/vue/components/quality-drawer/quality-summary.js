@@ -1,9 +1,9 @@
 const Vue = require('vue/dist/vue.common');
-const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
 const { formatTime } = require('./quality-items');
+const { verdictOf } = require('./quality-verdict');
 
-// The head of the results: whether they still describe the email, what they
-// count by severity (or that the email is ready), and how the server's checks
+// The head of the results: whether they still describe the email, where the
+// email stands (ready, or what is left to fix), and how the server's checks
 // went.
 const QualitySummary = Vue.component('QualitySummary', {
   props: {
@@ -14,6 +14,9 @@ const QualitySummary = Vue.component('QualitySummary', {
     // The ready rule (ADR 0020): nothing to fix, nothing left unjudged; infos
     // may be left, to read if one wishes.
     ready: { type: Boolean, default: false },
+    // What is left to fix, and what of it blocks the export.
+    issueCount: { type: Number, default: 0 },
+    blockingCount: { type: Number, default: 0 },
     checksTotal: { type: Number, default: 0 },
     ranAt: { type: Date, default: null },
     remoteStatus: { type: String, default: 'idle' },
@@ -21,10 +24,14 @@ const QualitySummary = Vue.component('QualitySummary', {
     t: { type: Function, required: true },
   },
   computed: {
-    // What is to deal with, never the passed ones; "not run" only when some.
-    pills() {
-      return SEVERITY_ORDER.filter(
-        (s) => s !== 'success' && (s !== 'not-run' || this.counts[s] > 0)
+    verdict() {
+      return verdictOf(
+        {
+          ready: this.ready,
+          issueCount: this.issueCount,
+          blockingCount: this.blockingCount,
+        },
+        this.t
       );
     },
     lastRunLabel() {
@@ -36,51 +43,37 @@ const QualitySummary = Vue.component('QualitySummary', {
         : this.t('The links and images could not be checked');
     },
   },
-  created() {
-    // A constant the template reads: not state.
-    this.severityMeta = SEVERITY_META;
-  },
   template: `
     <div class="qc-summary">
       <div v-if="status === 'stale'" class="qc-stale" role="status">
         <span class="lucide lucide-rotate-ccw" aria-hidden="true"></span>
+        <!-- « Relancer » is the panel's foot. -->
         <span class="qc-stale__text">{{ t('The results date from before your last changes') }}</span>
-        <button type="button" class="qc-button qc-button--outline qc-button--sm" @click="$emit('run')">
-          <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
-        </button>
       </div>
 
-      <!-- Results of an earlier version never say the email is ready. -->
-      <div v-if="!ready || status === 'stale'" class="qc-drawer__summary">
-        <span class="qc-pills">
-          <span
-            v-for="severity in pills"
-            :key="severity"
-            class="qc-pill"
-            :class="['qc-pill--' + severity, { 'qc-pill--empty': !counts[severity] }]"
-          >
-            <span :class="['lucide', severityMeta[severity].icon]" aria-hidden="true"></span>
-            <span aria-hidden="true">{{ counts[severity] }}</span>
-            <span class="qc-sr-only">{{ t(severityMeta[severity].countKey, { count: counts[severity] }) }}</span>
-          </span>
-        </span>
-        <button type="button" class="qc-link-button" @click="$emit('run')">
-          <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
-        </button>
-      </div>
-      <div v-else-if="remoteStatus !== 'running'" class="qc-drawer__clean">
-        <span class="qc-drawer__clean-icon" aria-hidden="true"><span class="lucide lucide-check"></span></span>
-        <p class="qc-drawer__clean-title">{{ t('quality-ready-title') }}</p>
-        <p class="qc-drawer__clean-text">
-          {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}
-          <template v-if="counts.info"> {{ t('quality-ready-infos', { count: counts.info }) }}</template>
-        </p>
+      <!-- Where the email stands (boards q2, q3): ready, or what is left
+           to fix and what of it blocks. Results of an earlier version say
+           nothing: the banner above says to run again. -->
+      <div v-if="status === 'done' && remoteStatus !== 'running'" class="qc-status" :class="'qc-status--' + verdict.kind">
+        <span :class="['lucide', verdict.icon, 'qc-status__icon']" aria-hidden="true"></span>
+        <div class="qc-status__body">
+          <p class="qc-status__title">{{ verdict.title }}</p>
+          <p class="qc-status__text">
+            <template v-if="verdict.kind === 'ready'">
+              {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}
+              <template v-if="counts.info"> {{ t('quality-ready-infos', { count: counts.info }) }}</template>
+            </template>
+            <!-- A server check that failed says why, here alone. -->
+            <template v-else-if="verdict.kind === 'incomplete' && remoteStatus === 'error'">{{ remoteErrorText }}</template>
+            <template v-else>{{ t(verdict.textKey) }}</template>
+          </p>
+        </div>
       </div>
 
       <p v-if="remoteStatus === 'running'" class="qc-remote">
         <span class="qc-spinner" aria-hidden="true"></span>{{ t('Checking links and images…') }}
       </p>
-      <p v-if="remoteStatus === 'error'" class="qc-remote qc-remote--error" role="status">
+      <p v-if="remoteStatus === 'error' && !(status === 'done' && verdict.kind === 'incomplete')" class="qc-remote qc-remote--error" role="status">
         <span class="lucide lucide-circle-help" aria-hidden="true"></span>{{ remoteErrorText }}
       </p>
     </div>

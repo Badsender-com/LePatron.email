@@ -1,49 +1,24 @@
 ////////
-// QUALITY DRAWER — result list: summary pills, severity groups, rows, buttons.
+// QUALITY DRAWER — result list: severity groups, rows, buttons.
 // Imported inside `#toolquality { }` by badsender-quality-drawer.less, which
 // also declares the @qc-* variables used here.
 ////////
 
-// ===== Summary pills =====
-.qc-pills {
-  display: inline-flex;
-  gap: 6px;
+// ===== Groups and rows (boards q2, q3) =====
+// A group: a chevron, its name and its count; its findings as cards.
+.qc-group {
+  padding: 0 16px;
 }
 
-.qc-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.4;
-
-  &--error { background: @qc-tint-error; color: @qc-error; }
-  &--warning { background: @qc-tint-warning; color: @qc-warning-text; }
-  &--info { background: @qc-tint-info; color: @qc-info; }
-  &--success { background: @qc-tint-success; color: @qc-success; }
-  &--empty { background: var(--gray-100); color: var(--gray-600); }
-}
-
-// ===== Groups and rows =====
 .qc-group__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 0;
-  padding: 10px 16px;
-  background: var(--gray-50);
-  border-top: 1px solid var(--gray-200);
-  font-size: 11px;
+  padding: 12px 0 8px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .qc-group__label {
-  color: var(--gray-700);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--gray-800);
 }
 
 .qc-group__count {
@@ -51,17 +26,33 @@
   color: var(--gray-600);
 }
 
+.qc-group__chevron {
+  color: var(--gray-700);
+}
+
+.qc-group [role='region'] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .qc-row {
-  border-top: 1px solid var(--gray-200);
+  border: 1px solid var(--gray-200);
+  border-radius: @qc-radius;
   background: var(--white);
 
   &--expanded {
+    border-color: var(--gray-300);
     background: var(--gray-50);
+
+    // Grey text one shade darker on grey.
+    .qc-row__block,
+    .qc-row__desc { color: var(--gray-700); }
   }
 
   &__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     width: 100%;
     padding: 10px 12px;
@@ -71,15 +62,21 @@
     color: inherit;
     cursor: pointer;
 
+    // It opens: what to do with the finding is inside.
+    &:hover {
+      background: var(--gray-50);
+    }
+
     &:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--primary);
       outline-offset: -2px;
     }
   }
 
   &__icon {
     flex-shrink: 0;
-    font-size: 15px;
+    margin-top: 1px;
+    font-size: 16px;
   }
 
   &__main {
@@ -89,29 +86,28 @@
 
   &__line {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
   }
 
   &__title {
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--gray-900);
   }
 
   &__block {
-    font-family: monospace;
-    font-size: 11px;
     color: var(--gray-600);
   }
 
   // A finding of a blocking check: it stops the download and the ESP send.
   &__blocking {
-    margin-left: 4px;
     padding: 0 6px;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
-    color: #fff;
-    background: var(--danger, #c62828);
+    color: var(--white);
+    background: @qc-error-text;
   }
 
   &__desc {
@@ -125,15 +121,13 @@
   }
 
   &__category {
-    font-size: 10px;
+    flex: none;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    font-size: 11px;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--gray-600);
-  }
-
-  &__chevron {
-    color: var(--gray-600);
   }
 
   &__panel {
@@ -175,13 +169,8 @@
   font: inherit;
   cursor: pointer;
 
-  // The chevron sits at the far end of the header.
-  > .lucide:last-child {
-    margin-left: auto;
-  }
-
   &:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
 }

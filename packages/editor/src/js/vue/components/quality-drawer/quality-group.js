@@ -8,7 +8,6 @@ const QualityGroup = Vue.component('QualityGroup', {
   props: {
     // 'error', 'warning', …, or 'ignored'.
     id: { type: String, required: true },
-    icon: { type: String, required: true },
     labelKey: { type: String, required: true },
     // Read with the count, for assistive technology: "4 errors".
     countKey: { type: String, required: true },
@@ -40,11 +39,10 @@ const QualityGroup = Vue.component('QualityGroup', {
           :aria-controls="regionId"
           @click="$emit('toggle-open')"
         >
-          <span :class="['lucide', icon, 'qc-sev--' + id]" aria-hidden="true"></span>
+          <span :class="['lucide', open ? 'lucide-chevron-down' : 'lucide-chevron-right', 'qc-group__chevron']" aria-hidden="true"></span>
           <span class="qc-group__label">{{ t(labelKey) }}</span>
           <span class="qc-group__count" aria-hidden="true">{{ items.length }}</span>
           <span class="qc-sr-only">{{ t(countKey, { count: items.length }) }}</span>
-          <span :class="['lucide', open ? 'lucide-chevron-up' : 'lucide-chevron-down']" aria-hidden="true"></span>
         </button>
       </h3>
       <div v-if="open" :id="regionId" role="region" :aria-labelledby="toggleId">

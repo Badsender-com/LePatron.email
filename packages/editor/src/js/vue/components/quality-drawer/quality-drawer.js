@@ -10,12 +10,8 @@ const { RightPanelShell } = require('../right-panel/right-panel-shell');
 
 // Frozen: the template reads it, and Vue would otherwise make it reactive.
 const TABS = Object.freeze([
-  Object.freeze({
-    name: 'checks',
-    labelKey: 'Quality control',
-    icon: 'lucide-shield-check',
-  }),
-  Object.freeze({ name: 'send', labelKey: 'Send a test', icon: 'lucide-send' }),
+  Object.freeze({ name: 'checks', labelKey: 'Quality control' }),
+  Object.freeze({ name: 'send', labelKey: 'Send a test' }),
 ]);
 
 // The quality drawer, "Test your email": the checks of the email and sending
@@ -91,15 +87,24 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         if (tab && tab[0]) tab[0].focus();
       });
     },
-    // Arrow keys move between tabs, as in any tablist.
+    // Arrow keys move between tabs, Home and End to the ends, as in any
+    // tablist.
     onTabKey(event) {
+      if (event.key === 'Home' || event.key === 'End') {
+        this.goTo(TABS[event.key === 'Home' ? 0 : TABS.length - 1].name);
+        return;
+      }
       const i = TABS.findIndex((tab) => tab.name === this.tab);
       const step = event.key === 'ArrowRight' ? 1 : TABS.length - 1;
       this.goTo(TABS[(i + step) % TABS.length].name);
     },
+    run() {
+      clearHighlight();
+      this.vm.quality.run();
+    },
     runFromSend() {
       this.goTo('checks');
-      this.vm.quality.run();
+      this.run();
     },
   },
   template: `
@@ -110,7 +115,8 @@ const QualityDrawer = Vue.component('QualityDrawer', {
       :close-label="t('right-panel-close')"
       @close="vm.rightPanel.hide()"
     >
-      <div slot="nav" class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey">
+      <template v-slot:nav>
+      <div class="qc-tabs" role="tablist" @keydown.right.prevent="onTabKey" @keydown.left.prevent="onTabKey" @keydown.home.prevent="onTabKey" @keydown.end.prevent="onTabKey">
         <button
           v-for="item in tabs"
           :key="item.name"
@@ -125,9 +131,10 @@ const QualityDrawer = Vue.component('QualityDrawer', {
           :tabindex="tab === item.name ? 0 : -1"
           @click="select(item.name)"
         >
-          <span :class="['lucide', item.icon]" aria-hidden="true"></span>{{ t(item.labelKey) }}
+          {{ t(item.labelKey) }}
         </button>
       </div>
+      </template>
 
       <quality-checks-panel
         v-show="tab === 'checks'"
@@ -144,8 +151,9 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         :checks="checks"
         :ran-at="ranAt"
         :ready="ready"
+        :issue-count="issueCount"
+        :blocking-count="blockingCount"
         :ignore-locked="ignoreLocked"
-        @send-test="goTo('send')"
       ></quality-checks-panel>
       <send-test-panel
         v-show="tab === 'send'"
@@ -162,6 +170,25 @@ const QualityDrawer = Vue.component('QualityDrawer', {
         @show-results="goTo('checks')"
         @run-checks="runFromSend"
       ></send-test-panel>
+
+      <!-- The checks' actions, in the panel's foot (boards q1 to q3). -->
+      <template v-if="tab === 'checks'" v-slot:footer>
+        <button v-if="status === 'idle'" type="button" class="qc-button qc-button--cta" @click="run">
+          <span class="lucide lucide-play" aria-hidden="true"></span>{{ t('quality-run') }}
+        </button>
+        <button v-else-if="status === 'running'" type="button" class="qc-button qc-button--outline" @click="vm.quality.cancel()">
+          {{ t('quality-action-cancel') }}
+        </button>
+        <!-- Results of an earlier version: running again comes first. -->
+        <template v-else>
+          <button type="button" :class="['qc-button', status === 'stale' ? 'qc-button--cta' : 'qc-button--outline']" @click="run">
+            <span class="lucide lucide-refresh-cw" aria-hidden="true"></span>{{ t('Re-run') }}
+          </button>
+          <button type="button" :class="['qc-button', status === 'stale' ? 'qc-button--outline' : 'qc-button--cta']" @click="goTo('send')">
+            {{ t('quality-send-a-test') }}
+          </button>
+        </template>
+      </template>
     </right-panel-shell>
   `,
 });

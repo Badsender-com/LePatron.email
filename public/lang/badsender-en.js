@@ -564,6 +564,21 @@ module.exports = {
   'quality-category-accessibility': 'Accessibility',
   'quality-category-copy': 'Copy',
   'quality-category-performance': 'Performance',
+  'quality-run': 'Run the checks',
+  'quality-send-a-test': 'Send a test',
+  'quality-ready-to-run': '__count__ checks ready to run',
+  'quality-ready-to-run-text':
+    'Links, images, weight, accessibility, writing and code. Links and images are checked online.',
+  'quality-not-ready': 'Not ready: __count__ issues to fix',
+  'quality-blocking-text':
+    'While the blocking issue remains, the email can be neither downloaded nor sent to the ESP.',
+  'quality-not-ready-text':
+    'Nothing stops downloading the email or sending a test.',
+  'quality-not-run-title': 'A check could not run',
+  'quality-not-run-text': 'Run the checks again to judge the whole email.',
+  'quality-not-ready-one': 'Not ready: 1 issue to fix',
+  'quality-blocking-suffix-one': ', 1 blocking',
+  'quality-blocking-suffix': ', __count__ blocking',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
     '__count__ checks run at __when__. No errors or warnings.',
@@ -597,9 +612,6 @@ module.exports = {
     'Required tracking parameters missing: __keys__',
   'Test email': 'Test email',
   'Run quality checks': 'Run quality checks',
-  'Links, images and weight are checked before you send a test.':
-    'Links, images and weight are checked before you send a test.',
-  '__count__ checks': '__count__ checks',
   Blocking: 'Blocking',
   'This email cannot leave yet': 'This email cannot leave yet',
   'Your quality settings make these checks blocking: fix them before downloading or sending the email.':
@@ -617,7 +629,6 @@ module.exports = {
   '__count__ issues to fix: open the quality control':
     '__count__ issues to fix: open the quality control',
   'Go to block': 'Go to block',
-  'Send a test email': 'Send a test email',
   'This check could not run': 'This check could not run',
   'Required tracking parameters': 'Required tracking parameters',
   'All required tracking parameters are filled in':

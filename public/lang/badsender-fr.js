@@ -581,6 +581,21 @@ module.exports = {
   'quality-category-accessibility': 'Accessibilité',
   'quality-category-copy': 'Rédaction',
   'quality-category-performance': 'Performance',
+  'quality-run': 'Lancer le contrôle',
+  'quality-send-a-test': 'Envoyer un test',
+  'quality-ready-to-run': '__count__ contrôles prêts à être lancés',
+  'quality-ready-to-run-text':
+    'Liens, images, poids, accessibilité, rédaction et code. Les liens et les images sont vérifiés en ligne.',
+  'quality-not-ready': 'Pas prêt : __count__ points à corriger',
+  'quality-blocking-text':
+    "Tant que le bloquant reste, l'email ne peut être ni téléchargé ni envoyé à l'ESP.",
+  'quality-not-ready-text':
+    "Rien n'empêche de télécharger l'email ni d'envoyer un test.",
+  'quality-not-run-title': "Un contrôle n'a pas pu s'exécuter",
+  'quality-not-run-text': "Relancez le contrôle pour juger tout l'email.",
+  'quality-not-ready-one': 'Pas prêt : 1 point à corriger',
+  'quality-blocking-suffix-one': ', dont 1 bloquant',
+  'quality-blocking-suffix': ', dont __count__ bloquants',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
@@ -615,9 +630,6 @@ module.exports = {
     'Paramètres de tracking obligatoires manquants : __keys__',
   'Test email': "Tester l'email",
   'Run quality checks': 'Lancer le contrôle qualité',
-  'Links, images and weight are checked before you send a test.':
-    "Les liens, les images et le poids de l'email sont vérifiés avant l'envoi d'un test.",
-  '__count__ checks': '__count__ contrôles',
   Blocking: 'Bloquant',
   'This email cannot leave yet': 'Cet email ne peut pas encore partir',
   'Your quality settings make these checks blocking: fix them before downloading or sending the email.':
@@ -635,7 +647,6 @@ module.exports = {
   '__count__ issues to fix: open the quality control':
     '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'Go to block': 'Aller au bloc',
-  'Send a test email': 'Envoyer un email de test',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
   'Required tracking parameters': 'Paramètres de tracking obligatoires',
   'All required tracking parameters are filled in':

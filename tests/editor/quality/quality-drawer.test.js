@@ -192,12 +192,14 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean')).toBeNull();
+    expect(el.querySelector('.qc-status--ready')).toBeNull();
+    expect(el.querySelector('.qc-status--incomplete').textContent).toContain(
+      'quality-not-run-title'
+    );
     expect(el.querySelector('.qc-group--not-run')).not.toBeNull();
     expect(el.textContent).toContain('This check could not run');
-    expect(el.querySelector('.qc-pill--not-run').textContent).toContain('1');
     expect(el.querySelector('[aria-live]').textContent).toBe(
-      '1 checks not run'
+      'quality-not-run-title'
     );
   });
 
@@ -269,13 +271,12 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
-      'quality-ready-title'
-    );
-    expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
+    expect(
+      el.querySelector('.qc-status--ready .qc-status__title').textContent
+    ).toBe('quality-ready-title');
+    expect(el.querySelector('.qc-status__text').textContent).toMatch(
       /quality-ready-text/
     );
-    expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.querySelector('[aria-live]').textContent).toBe(
       'quality-ready-title'
     );
@@ -289,17 +290,16 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    expect(el.querySelector('.qc-drawer__clean-title').textContent).toBe(
-      'quality-ready-title'
-    );
-    expect(el.querySelector('.qc-drawer__clean-text').textContent).toMatch(
+    expect(
+      el.querySelector('.qc-status--ready .qc-status__title').textContent
+    ).toBe('quality-ready-title');
+    expect(el.querySelector('.qc-status__text').textContent).toMatch(
       /quality-ready-infos/
     );
-    expect(el.querySelector('.qc-drawer__summary')).toBeNull();
     expect(el.textContent).toContain('quality-group-infos');
     // Said as the card says it, not as « 1 infos ».
     expect(el.querySelector('[aria-live]').textContent).toBe(
-      'quality-ready-title quality-ready-infos'
+      'quality-ready-title. quality-ready-infos'
     );
   });
 
@@ -312,18 +312,45 @@ describe('QualityDrawer', () => {
     await Vue.nextTick();
     vm.quality.status('stale');
     await Vue.nextTick();
-    expect(el.querySelector('.qc-drawer__clean')).toBeNull();
-    expect(el.querySelector('.qc-drawer__summary')).not.toBeNull();
+    expect(el.querySelector('.qc-status')).toBeNull();
+    expect(el.querySelector('.qc-stale')).not.toBeNull();
   });
 
-  it('announces only what was found, never the zeros', async () => {
+  it('says what is left to fix, in red only when something blocks the export (board q2)', async () => {
+    const { vm, el } = await mountDrawer({
+      findings: [{ ...linkFinding, blocking: true }],
+      checks: [{ ...sizeCheck }],
+    });
+    vm.quality.run();
+    await Vue.nextTick();
+    const card = el.querySelector('.qc-status--blocking');
+    expect(card.textContent).toContain('quality-not-ready-one');
+    expect(card.textContent).toContain('quality-blocking-suffix-one');
+    expect(card.textContent).toContain('quality-blocking-text');
+  });
+
+  it('runs the checks from the foot of the panel (board q1)', async () => {
+    const { vm, el } = await mountDrawer({ findings: [], checks: [] });
+    const run = el.querySelector('.right-panel-shell__footer .qc-button--cta');
+    expect(run.textContent).toContain('quality-run');
+    expect(el.querySelector('.qc-drawer__empty').textContent).toContain(
+      'quality-ready-to-run'
+    );
+    run.click();
+    await Vue.nextTick();
+    expect(vm.quality.status()).not.toBe('idle');
+  });
+
+  it('announces where the email stands, as the card says it', async () => {
     const { vm, el } = await mountDrawer({
       findings: [linkFinding],
       checks: [{ ...sizeCheck }],
     });
     vm.quality.run();
     await Vue.nextTick();
-    expect(el.querySelector('[aria-live]').textContent).toBe('1 errors');
+    expect(el.querySelector('[aria-live]').textContent).toBe(
+      'quality-not-ready-one'
+    );
   });
 
   it('says when the results predate the last changes, and offers to re-run', async () => {
@@ -344,7 +371,8 @@ describe('QualityDrawer', () => {
     // The results stay readable meanwhile.
     expect(el.querySelector('.qc-row')).not.toBeNull();
 
-    banner.querySelector('button').click();
+    // « Relancer », first in the panel's foot once the results are stale.
+    el.querySelector('.right-panel-shell__footer .qc-button--cta').click();
     await Vue.nextTick();
     expect(el.querySelector('.qc-stale')).toBeNull();
   });
@@ -357,7 +385,7 @@ describe('QualityDrawer', () => {
     vm.quality.run();
     await Vue.nextTick();
 
-    el.querySelector('.qc-drawer__footer .qc-button--cta').click();
+    el.querySelector('.right-panel-shell__footer .qc-button--cta').click();
     await Vue.nextTick();
     await Vue.nextTick();
 
@@ -542,7 +570,8 @@ describe('QualityDrawer', () => {
     vm.quality.remoteError('too-frequent');
     vm.quality.remoteStatus('error');
     await Vue.nextTick();
-    expect(el.querySelector('.qc-remote--error').textContent).toContain(
+    // Said once, in the card: the email could not be judged whole.
+    expect(el.querySelector('.qc-status').textContent).toContain(
       'Too many checks in a short time'
     );
   });
