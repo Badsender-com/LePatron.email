@@ -31,6 +31,38 @@
   </div>
   <!-- /ko -->
 
+  <!-- Panel rail (ADR 0020): one button per right panel, below the top bar on
+       the right edge. Its own place, out of #main-edit-area, whose click
+       unselects the block. One aria-controls per panel: the right panel binding
+       gives the focus back to it on close. -->
+  <nav class="panel-rail" data-bind="attr: { 'aria-label': $root.t('panel-rail-label') }, tooltips: {}">
+    <!-- ko if: typeof $root.showComments !== 'undefined' -->
+    <button id="comments-toggle" type="button" class="panel-rail__button" aria-controls="toolcomments" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-title'), 'aria-expanded': $root.showComments() ? 'true' : 'false' }">
+      <span class="lucide lucide-messages-square" aria-hidden="true"></span>
+      <span class="panel-rail__sr" data-bind="text: $root.t('comments-title')"></span>
+      <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
+      <span class="panel-rail__badge panel-rail__badge--volume">
+        <span aria-hidden="true" data-bind="text: $root.unresolvedCommentCount()"></span>
+        <span class="panel-rail__sr" data-bind="text: $root.t('panel-rail-unresolved', { count: $root.unresolvedCommentCount() })"></span>
+      </span>
+      <!-- /ko -->
+    </button>
+    <!-- /ko -->
+    <!-- ko if: typeof $root.showQuality !== 'undefined' -->
+    <button id="quality-toggle" type="button" class="panel-rail__button" aria-controls="toolquality" data-bind="click: function() { $root.showQuality(!$root.showQuality()); }, clickBubble: false, attr: { title: $root.t('Test email'), 'aria-expanded': $root.showQuality() ? 'true' : 'false' }">
+      <span class="lucide lucide-shield-check" aria-hidden="true"></span>
+      <span class="panel-rail__sr" data-bind="text: $root.t('Test email')"></span>
+      <!-- ko template: { name: 'panel-rail-quality-badge' } --><!-- /ko -->
+    </button>
+    <!-- /ko -->
+    <!-- ko if: $root.metadata.canUseTextGeneration && typeof $root.showAi !== 'undefined' -->
+    <button id="ai-toggle" type="button" class="panel-rail__button" aria-controls="toolai" data-bind="click: function() { $root.showAi(!$root.showAi()); }, clickBubble: false, attr: { title: $root.t('ai-panel-title'), 'aria-expanded': $root.showAi() ? 'true' : 'false' }">
+      <span class="lucide lucide-wand-2" aria-hidden="true"></span>
+      <span class="panel-rail__sr" data-bind="text: $root.t('ai-panel-title')"></span>
+    </button>
+    <!-- /ko -->
+  </nav>
+
   <div id="toolbar" class="mo" data-bind="tooltips: {}">
 
 
@@ -48,12 +80,6 @@
 
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'lucide lucide-fw lucide-image', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
-    </span>
-    <span class="comments-button-wrapper" tabindex="0" role="button" aria-controls="toolcomments" data-bind="click: function() { $root.showComments(!$root.showComments()); }, event: { keydown: function(d, e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $root.showComments(!$root.showComments()); } return true; } }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle'), 'aria-expanded': $root.showComments() ? 'true' : 'false' }">
-      <span class="lucide lucide-messages-square"></span>
-      <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
-      <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
-      <!-- /ko -->
     </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
     <span class="leftButtons">
@@ -90,36 +116,6 @@
 
     <!-- ko if: typeof $root.save !== 'undefined' -->
     <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: function() { if ($root.canSave()) $root.save.execute(); }, clickBubble: false, button: { disabled: !$root.save.enabled() || !$root.canSave(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
-    <!-- /ko -->
-    <!-- ko if: $root.metadata.canUseTextGeneration && typeof $root.showAi !== 'undefined' -->
-    <button id="ai-toggle" type="button" class="right-panel-toggle" aria-controls="toolai" data-bind="click: function() { $root.showAi(!$root.showAi()); }, clickBubble: false, attr: { title: $root.t('ai-panel-title'), 'aria-expanded': $root.showAi() ? 'true' : 'false' }">
-      <span class="lucide lucide-bot" aria-hidden="true"></span>
-      <span data-bind="text: $root.t('ai-panel-title')">AI tools</span>
-    </button>
-    <!-- /ko -->
-    <!-- ko if: typeof $root.showQuality !== 'undefined' -->
-    <button id="quality-toggle" type="button" class="right-panel-toggle" aria-controls="toolquality" data-bind="click: function() { $root.showQuality(!$root.showQuality()); }, clickBubble: false, attr: { title: $root.t('Test your email'), 'aria-expanded': $root.showQuality() ? 'true' : 'false' }">
-      <span class="lucide lucide-shield-check" aria-hidden="true"></span>
-      <span data-bind="text: $root.t('Test email')">Test email</span>
-      <!-- ko if: $root.quality.status() === 'running' -->
-      <span class="right-panel-toggle__badge" data-bind="text: $root.t('Running…')"></span>
-      <!-- /ko -->
-      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() > 0 -->
-      <span class="right-panel-toggle__badge right-panel-toggle__badge--error" data-bind="text: $root.quality.issueCount(), attr: { 'aria-label': $root.t('__count__ issues', { count: $root.quality.issueCount() }) }"></span>
-      <!-- /ko -->
-      <!-- ko if: $root.quality.status() === 'done' && $root.quality.cleared() -->
-      <span class="right-panel-toggle__badge right-panel-toggle__badge--success" data-bind="attr: { 'aria-label': $root.t('__count__ checks passed', { count: $root.quality.ranCount() }) }">
-        <span class="lucide lucide-check" aria-hidden="true"></span><span aria-hidden="true" data-bind="text: $root.quality.ranCount()"></span>
-      </span>
-      <!-- /ko -->
-      <!-- Nothing to fix, but a check could not run: no green tick. -->
-      <!-- ko if: $root.quality.status() === 'done' && $root.quality.issueCount() === 0 && !$root.quality.cleared() -->
-      <span class="right-panel-toggle__badge" data-bind="text: $root.quality.ranCount() + '/' + $root.quality.checks().length, attr: { 'aria-label': $root.t('__passed__ of __total__ checks passed', { passed: $root.quality.ranCount(), total: $root.quality.checks().length }) }"></span>
-      <!-- /ko -->
-      <!-- ko if: $root.quality.status() === 'stale' -->
-      <span class="right-panel-toggle__badge right-panel-toggle__badge--stale" data-bind="text: $root.t('quality-badge-stale')"></span>
-      <!-- /ko -->
-    </button>
     <!-- /ko -->
     <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
     </div>

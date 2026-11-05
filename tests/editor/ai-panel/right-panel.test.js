@@ -69,7 +69,7 @@ describe('ai panel: the right panel state', () => {
     expect(panel.open()).toBe('comments');
   });
 
-  it('tells the layout that a right panel is open, whichever it is, so the canvas and the comments rail make room', () => {
+  it('tells the layout that a right panel is open, whichever it is, so the canvas makes room', () => {
     const seen = [];
     panel.anyOpen.subscribe((value) => seen.push(value));
     panel.show('quality');

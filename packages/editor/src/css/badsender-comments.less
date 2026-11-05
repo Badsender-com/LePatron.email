@@ -115,49 +115,6 @@
 }
 
 // =============================================
-// Comments Visibility Indicators
-// =============================================
-
-// Wrapper for comments button in toolbar - simplified clickable button
-.comments-button-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 7px 10px;
-  cursor: pointer;
-  color: white;
-  transition: background-color 0.15s ease;
-  border-radius: 2px;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  // Comment icon
-  > .lucide {
-    font-size: 18px;
-  }
-}
-
-// Badge on Comments button in toolbar
-.comments-toolbar-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: @comment-accent-highlight;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: @comment-border-radius-pill;
-  min-width: 18px;
-  height: 18px;
-  line-height: 1;
-  text-align: center;
-}
-
-
-// =============================================
 // Comments Rail - Per-block indicators on the right
 // Positioned just to the right of the centered email content
 // Follows block positions on scroll (decision UX #2)

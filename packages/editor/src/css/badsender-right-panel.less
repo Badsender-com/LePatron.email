@@ -3,7 +3,7 @@
  * the AI panel take turns there, one open at a time (js/ext/right-panel.js).
  *
  * One copy of what each panel used to carry: the slide from the right, and the
- * canvas making room. The panels sit in #main-toolbox, whose
+ * canvas making room; and the panel rail that opens them (ADR 0020). The panels sit in #main-toolbox, whose
  * `#main-toolbox > div > div { height: 100% }` (1,0,2) would stretch them to
  * the whole window, their foot under its bottom edge: the selector takes the id
  * too (1,2,0), which also outranks the `.slidebar` defaults of the left bar.
@@ -11,21 +11,24 @@
 
 @right-panel-motion: 0.2s ease-out;
 @right-panel-offset: -(@leftsidebar-width + 50px);
+// The panel rail (ADR 0020): 40 px buttons, 6 px around them.
+@panel-rail-width: 52px;
 
 @keyframes right-panel-slide-in {
   0% { right: @right-panel-offset; }
-  100% { right: 0; }
+  100% { right: @panel-rail-width; }
 }
 
 @keyframes right-panel-slide-out {
-  0% { right: 0; }
+  0% { right: @panel-rail-width; }
   100% { right: @right-panel-offset; }
 }
 
 #main-toolbox .slidebar.right-panel {
   position: fixed;
   left: auto;
-  right: 0;
+  // Between the rail and the canvas, which it pushes.
+  right: @panel-rail-width;
   top: var(--top-bar-height, 50px);
   height: calc(100vh - var(--top-bar-height, 50px));
   background: var(--white);
@@ -39,9 +42,15 @@
   }
 }
 
-// Whichever right panel is open, the canvas shrinks rather than hides under it.
+// The rail always takes its place; whichever right panel is open, the canvas
+// shrinks rather than hides under it. Below its minimum width, the email
+// partly goes under the panel (decision 2b).
+#main-edit-area {
+  right: @panel-rail-width;
+}
+
 .withRightPanel #main-edit-area {
-  right: @leftsidebar-width;
+  right: @leftsidebar-width + @panel-rail-width;
   transition: right @right-panel-motion;
 }
 
@@ -54,52 +63,100 @@
   }
 }
 
-// The top bar buttons that open a right panel (quality control, AI): one look,
-// the open state read from `aria-expanded`, as screen readers do.
-.right-panel-toggle {
-  display: inline-flex;
+// The panel rail: below the top bar, on the right edge, always shown. The open
+// panel's button is tinted with the accent; the open state is read from
+// `aria-expanded`, as screen readers do.
+.panel-rail {
+  position: fixed;
+  top: var(--top-bar-height, 40px);
+  right: 0;
+  bottom: 0;
+  // Above the comment markers (150), below the top bar (201) and dialogs.
+  z-index: 160;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  align-self: center;
-  height: 30px;
-  margin: 0 6px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: @qc-radius;
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--white);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
+  gap: 8px;
+  width: @panel-rail-width;
+  padding: 8px 0;
+  border-left: 1px solid var(--gray-200);
+  background: var(--white);
+  box-sizing: border-box;
 
-  &:hover { background: rgba(255, 255, 255, 0.2); }
-
-  // Open panel.
-  &[aria-expanded='true'] {
-    background: var(--white);
-    color: var(--primary);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--white);
-    outline-offset: 2px;
-  }
-
-  > .lucide-shield-check { font-size: 15px; }
-
-  &__badge {
+  &__button {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    padding: 1px 6px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.2);
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: @qc-radius;
+    background: transparent;
+    color: var(--gray-700);
+    font-size: 20px;
+    cursor: pointer;
+
+    &:hover { background: var(--gray-100); }
+
+    &[aria-expanded='true'] {
+      border-color: var(--accent);
+      background: var(--gray-50);
+      color: var(--primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+  }
+
+  // On the top right corner of its button.
+  &__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 2px solid var(--white);
+    border-radius: 11px;
+    box-sizing: content-box;
     font-size: 10px;
     font-weight: 700;
+    line-height: 1;
 
-    &--error { background: @qc-error; color: var(--white); }
-    &--success { background: @qc-success; color: var(--white); }
-    &--stale { background: @qc-warning; color: var(--white); }
+    > .lucide { font-size: 11px; }
+
+    // The dark brand colour on the accent: white would fall below 4.5:1.
+    &--volume { background: var(--accent); color: var(--primary); }
+    &--blocking { background: @qc-error; color: var(--white); }
+    &--ready { background: @qc-success; color: var(--white); }
+    &--neutral { background: var(--gray-200); color: var(--gray-800); }
+
+    &--running {
+      min-width: 10px;
+      width: 10px;
+      height: 10px;
+      padding: 0;
+      border-color: var(--white);
+      background: var(--accent);
+    }
+  }
+
+  &__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
