@@ -13,6 +13,7 @@ const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 const { normalizeScopes } = require('../services/expertise-scope.js');
 const { findActiveVersion } = require('../services/version-helpers.js');
+const { audienceFilter } = require('../services/audience.js');
 
 /**
  * Find ACTIVE expertise modules matching an invocation context, projecting
@@ -28,6 +29,9 @@ const { findActiveVersion } = require('../services/version-helpers.js');
  *   - AND expertise.category ∈ categories
  *   - AND ( appliesToEmailTypes empty  OR  emailType ∈ appliesToEmailTypes )
  *   - AND ( appliesToLanguages empty   OR  language ∈ appliesToLanguages )
+ *   - AND its audience lets the caller's company use it (ADR 0013): every
+ *     audience for the platform company, `all` only for any other company
+ *     and for a caller that names none
  *
  * NB: an expertise with an empty scope that is NOT transversal NEVER matches
  * (inverted semantics). isTransversal short-circuits ONLY the scope clause —
@@ -38,9 +42,17 @@ const { findActiveVersion } = require('../services/version-helpers.js');
  * @param {string[]} filters.categories — REQUIRED, non-empty
  * @param {string} [filters.emailType]
  * @param {string} [filters.language]
+ * @param {Object} [filters.group] the company of the caller, as its document
+ *   stores it; `PLATFORM_READER` (services/audience.js) for the playground
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
-async function findApplicable({ scope, categories, emailType, language } = {}) {
+async function findApplicable({
+  scope,
+  categories,
+  emailType,
+  language,
+  group,
+} = {}) {
   // Normalised on the way in, as the write side is (services/expertise-scope):
   // the match below is a strict string equality, so `cta` must meet `CTA`.
   const scopes = normalizeScopes(scope);
@@ -79,7 +91,10 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
     });
   }
 
-  const docs = await Expertises.find({ $and: and }).lean();
+  const docs = await Expertises.find({
+    $and: and,
+    ...audienceFilter(group),
+  }).lean();
 
   // Not awaited: the diagnostic does nothing for this invocation's result, and
   // it issues a `distinct` — on a feature whose scope matches no scoped

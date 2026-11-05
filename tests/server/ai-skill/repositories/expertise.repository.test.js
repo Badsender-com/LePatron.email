@@ -118,6 +118,31 @@ describe('expertise.repository', () => {
       ]);
     });
 
+    // The audience applies in the editor as through an assistant (ADR 0013).
+    describe('the audience', () => {
+      const audienceOf = async (group) => {
+        mockReturnDocs([]);
+        await findApplicable({ scope: 'cta', categories: ['qc'], group });
+        return Expertises.find.mock.calls[0][0].audience;
+      };
+
+      it('gives a client company only what is opened to all', async () => {
+        expect(await audienceOf({ _id: 'client', isPlatform: false })).toBe(
+          'all'
+        );
+      });
+
+      it('treats a call that names no company as a client', async () => {
+        expect(await audienceOf(undefined)).toBe('all');
+      });
+
+      it('gives the platform company every audience', async () => {
+        expect(await audienceOf({ _id: 'platform', isPlatform: true })).toBe(
+          undefined
+        );
+      });
+    });
+
     it('wraps a scalar scope into an array', async () => {
       mockReturnDocs([]);
       await findApplicable({ scope: 'cta', categories: ['redaction'] });

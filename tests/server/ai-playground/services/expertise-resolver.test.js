@@ -64,10 +64,12 @@ describe('expertise-resolver.resolveExpertise', () => {
       categories: ['redaction'],
       emailType: undefined,
       language: undefined,
+      group: { isPlatform: true },
     });
   });
 
-  it('passes scope+categories+emailType+language to the repo', async () => {
+  // The super admins try in the playground what the clients cannot use yet.
+  it('passes scope+categories+emailType+language to the repo, reading every audience', async () => {
     expertiseRepo.findApplicable.mockResolvedValue([]);
     await resolveExpertise({
       expertiseRefs: [],
@@ -83,6 +85,7 @@ describe('expertise-resolver.resolveExpertise', () => {
       categories: ['redaction'],
       emailType: 'promo',
       language: 'fr',
+      group: { isPlatform: true },
     });
   });
 
@@ -248,6 +251,7 @@ describe('previewFilter', () => {
       categories: ['redaction'],
       emailType: null,
       language: null,
+      group: { isPlatform: true },
     });
   });
 

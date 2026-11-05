@@ -155,25 +155,20 @@ function registerFindApplicableExpertises(server) {
           ],
         };
       }
+      // The features' own lookup, with the audience of the caller's company.
       const found = await findApplicable({
         scope: scopes,
         categories,
         emailType,
         language,
+        group,
       });
-      // The lookup is the features' own, which knows no audience: what the
-      // group may not read is dropped from what it found.
-      const readable = new Set(
-        (await publishedExpertises(group)).map(({ doc }) => doc.expertiseId)
-      );
-      const expertises = found
-        .filter((expertise) => readable.has(expertise.expertiseId))
-        .map((expertise) => ({
-          expertiseId: expertise.expertiseId,
-          title: expertise.title,
-          version: versionOf(expertise),
-          uri: uriOf(expertise.expertiseId),
-        }));
+      const expertises = found.map((expertise) => ({
+        expertiseId: expertise.expertiseId,
+        title: expertise.title,
+        version: versionOf(expertise),
+        uri: uriOf(expertise.expertiseId),
+      }));
       return {
         content: [{ type: 'text', text: JSON.stringify({ expertises }) }],
         structuredContent: { expertises },

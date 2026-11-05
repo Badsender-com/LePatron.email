@@ -3,6 +3,7 @@
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const expertiseRepo = require('../../ai-skill/repositories/expertise.repository.js');
+const { PLATFORM_READER } = require('../../ai-skill/services/audience.js');
 const { VersionRefModes } = require('../constant/playground-constants.js');
 const {
   findVersion,
@@ -43,6 +44,8 @@ async function resolveExpertise(scenario) {
       categories: filter.categories,
       emailType: filter.emailType || undefined,
       language: filter.language || undefined,
+      // The super admins try here what is not opened to the clients yet.
+      group: PLATFORM_READER,
     });
   }
   return [];
@@ -112,7 +115,10 @@ function normaliseFilter(source = {}) {
  */
 async function previewFilter(source) {
   const filter = normaliseFilter(source);
-  const matches = await expertiseRepo.findApplicable(filter);
+  const matches = await expertiseRepo.findApplicable({
+    ...filter,
+    group: PLATFORM_READER,
+  });
   return {
     count: matches.length,
     items: matches.map((m) => ({
