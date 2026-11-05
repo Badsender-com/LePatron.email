@@ -2,7 +2,7 @@
 
 LePatron.email is an open-source email builder based on Mosaico: users build responsive HTML emails by drag and drop, manage templates, and export to Email Service Providers (ESP).
 
-Yarn monorepo, Node 18.18.0 (`.nvmrc`):
+Yarn monorepo, Node 24 LTS (exact version in `.nvmrc`):
 
 ```
 /packages

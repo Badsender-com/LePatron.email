@@ -98,7 +98,7 @@ class SendinBlueProvider {
 
       return createCampaignApiResult?.id;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response?.text ?? e.message);
       throw e;
     }
   }
@@ -134,7 +134,7 @@ class SendinBlueProvider {
       }
       return createTemplateApiResult?.id;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response?.text ?? e.message);
       throw e;
     }
   }
@@ -168,7 +168,7 @@ class SendinBlueProvider {
 
       return;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response?.text ?? e.message);
       throw e;
     }
   }
@@ -197,7 +197,7 @@ class SendinBlueProvider {
         emailCampaignsData
       );
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response?.text ?? e.message);
       throw e;
     }
   }

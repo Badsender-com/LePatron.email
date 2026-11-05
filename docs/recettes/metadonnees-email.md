@@ -17,10 +17,10 @@ PR empilées, plus les deux PR extraites qui doivent être vérifiées **avant**
 
 ### Environnement
 
-LePatron exige **Node 18.18.0**. Le `default` de nvm peut être une autre version :
+LePatron exige la version de Node écrite dans `.nvmrc`. Le `default` de nvm peut être une autre version :
 
 ```bash
-nvm use 18.18.0 && node -v   # doit afficher v18.18.0
+nvm use && node -v   # doit afficher la version de .nvmrc
 ```
 
 Mongo de dev : conteneur `lepatron_mongo_container`, base `lepatron`, **port 27019**.

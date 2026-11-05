@@ -1,5 +1,9 @@
 'use strict';
 
+const { disableOutboundKeepAlive } = require('./utils/outbound-keep-alive.js');
+// First, before any module can make an outbound call.
+disableOutboundKeepAlive();
+
 const path = require('path');
 const chalk = require('chalk');
 const bodyParser = require('body-parser');
