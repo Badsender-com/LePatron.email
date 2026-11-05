@@ -594,6 +594,9 @@ module.exports = {
   'quality-recipients-count': '__count__ recipients.',
   'quality-share-definitive-short': '· for good, the link will no longer work',
   'quality-share-revoked': 'Link turned off.',
+  'Add comment': 'Add comment',
+  'sending-test-mails': 'Sending test mail…',
+  'Saved list of addresses': 'Saved list of addresses',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
     '__count__ checks run at __when__. No errors or warnings.',

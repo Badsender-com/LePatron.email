@@ -611,6 +611,8 @@ module.exports = {
   'quality-recipients-count': '__count__ destinataires.',
   'quality-share-definitive-short': '· définitif, le lien ne fonctionnera plus',
   'quality-share-revoked': 'Lien désactivé.',
+  'Add comment': 'Ajouter un commentaire',
+  'sending-test-mails': "Envoi de l'email de test…",
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
     '__count__ contrôles exécutés à __when__. Aucune erreur ni avertissement.',
