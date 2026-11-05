@@ -380,7 +380,12 @@ describe('spelling correction: the steps of a correction', () => {
     });
 
     it('reports an error the user can act on, by status', async () => {
-      api.generate.mockRejectedValue({ response: { status: 403 } });
+      api.generate.mockRejectedValue({
+        response: {
+          status: 403,
+          data: { message: 'TEXT_GENERATION_DISABLED' },
+        },
+      });
       const session = open(FIELD_TARGET);
       await session.request();
       expect(session.state.error).toBe('text-generation-error-disabled');
@@ -541,7 +546,12 @@ describe('spelling correction: the steps of a correction', () => {
     });
 
     it('stops on a failure of the feature itself, rather than failing every block', async () => {
-      api.generate.mockRejectedValue({ response: { status: 403 } });
+      api.generate.mockRejectedValue({
+        response: {
+          status: 403,
+          data: { message: 'TEXT_GENERATION_DISABLED' },
+        },
+      });
       const session = open(EMAIL);
       await session.request();
       expect(api.generate).toHaveBeenCalledTimes(1);

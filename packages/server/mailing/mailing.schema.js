@@ -2,6 +2,8 @@
 
 const _ = require('lodash');
 const { isBootstrapAccount } = require('../account/bootstrap-account.js');
+const permissions = require('../account/permissions.js');
+const { CAPABILITIES } = require('../../shared/access/roles.js');
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
@@ -626,6 +628,26 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingService = require('./mailing.service.js');
   const canWrite = await mailingService.userCanEditMailing(user, mailing);
 
+  // Whether this user may use the AI tools on this email: the rule of the text
+  // generation routes (the feature, the capability, where the email lives),
+  // known before the editor starts so that every way in is hidden at once
+  // (ADR 0020). The routes read the feature of the company billed, the
+  // email's, which may not be its template's (invocation-context.js).
+  const billedGroupId = (mailing._company && mailing._company._id) || groupId;
+  const billedHasTextGeneration =
+    String(billedGroupId) === String(groupId)
+      ? hasTextGenerationFeature
+      : (
+          await aiFeatureService.getEditorFeatureFlags({
+            groupId: billedGroupId,
+          })
+        ).hasTextGenerationFeature;
+  const canUseTextGeneration = Boolean(
+    billedHasTextGeneration &&
+      canWrite &&
+      permissions.can(user, CAPABILITIES.MAILING_EDIT_CONTENT)
+  );
+
   // Lazy require like the services above: share-link.service reaches
   // models.common, which reaches back here.
   const shareLinkService = require('../share-link/share-link.service.js');
@@ -660,9 +682,11 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       hasHtmlPreview: !!mailing.previewHtml,
       canWrite,
       hasTranslationFeature,
-      // The text generation button. Independent of the email metadata: without
-      // them, the subject proposal is offered to copy.
+      // Text generation on for the template's company; the editor reads
+      // canUseTextGeneration below.
       hasTextGenerationFeature,
+      // The AI tools of the editor, for this user on this email.
+      canUseTextGeneration,
       // Drive palette visibility of the two synthetic blocks only — their
       // definitions are always injected client-side. Independent of each other.
       // Named after the descriptors' flags, which the editor reads them by.

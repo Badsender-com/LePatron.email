@@ -78,11 +78,11 @@ module.exports = (opts) => {
       textEditorOptions,
       opts.tinymce
     );
-    // The AI button opens the field's actions; only a group with text
-    // generation has any (#1257). Added to the toolbar the editor ends up
-    // with, a template's own included.
+    // The AI button opens the field's actions; only who may use text
+    // generation on this email has any (#1257, ADR 0020). Added to the
+    // toolbar the editor ends up with, a template's own included.
     const textEditorFullOptions =
-      viewModel.metadata && viewModel.metadata.hasTextGenerationFeature
+      viewModel.metadata && viewModel.metadata.canUseTextGeneration
         ? withAiActions(merged)
         : merged;
 
