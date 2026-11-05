@@ -3,7 +3,9 @@
 const {
   recordSecurityEvent,
 } = require('../two-factor/security-event.service.js');
-const { MCP_ACCESS_ACTIONS } = require('./mcp-access.constants.js');
+const {
+  MCP_ACCESS_ACTIONS,
+} = require('../security-event/security-event.actions.js');
 
 /**
  * Records who turned MCP access on or off, as for the two-factor

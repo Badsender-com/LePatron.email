@@ -1,6 +1,9 @@
 'use strict';
 
 const ERROR_CODES = require('../constant/error-codes.js');
+const {
+  TWO_FACTOR_ACTIONS,
+} = require('../security-event/security-event.actions.js');
 
 // Two-factor authentication (ADR 0008). Every limit is here, named.
 
@@ -12,15 +15,8 @@ const METHODS = Object.freeze({ TOTP: 'totp', EMAIL: 'email' });
 // What the login answer asks after a right password.
 const STEPS = Object.freeze({ VERIFY: 'verify', SETUP: 'setup' });
 
-const SECURITY_ACTIONS = Object.freeze({
-  RESET: 'two-factor.reset',
-  REQUIRED: 'two-factor.required',
-  NOT_REQUIRED: 'two-factor.not-required',
-  SET_UP: 'two-factor.set-up',
-  RECOVERY_CODE_USED: 'two-factor.recovery-code-used',
-  DEVICE_TRUSTED: 'two-factor.device-trusted',
-  WRONG_CODES: 'two-factor.wrong-codes',
-});
+// What its security events record, with the other security events.
+const SECURITY_ACTIONS = TWO_FACTOR_ACTIONS;
 
 // The codes of the refusals, read by the login page.
 const ERRORS = Object.freeze({

@@ -4,25 +4,24 @@ const { Schema } = require('mongoose');
 
 const { UserModel, GroupModel } = require('../constant/model.names.js');
 const {
-  SECURITY_ACTIONS,
   METHODS,
   SECURITY_EVENT_TTL_SECONDS,
 } = require('./two-factor.constants.js');
-const { MCP_ACCESS_ACTIONS } = require('../mcp/mcp-access.constants.js');
+const {
+  SECURITY_EVENT_ACTIONS,
+} = require('../security-event/security-event.actions.js');
 
 const { ObjectId } = Schema.Types;
 
 // An action on an account's two-factor authentication, or on a company's MCP
-// access (ADR 0012): who did it, to whom, when (ADR 0008). Kept a year, then removed by the TTL index. Not the `Log`
-// collection, whose fields are those of the ESP SOAP calls.
+// access (ADR 0012): who did it, to whom, when (ADR 0008). Kept a year, then
+// removed by the TTL index. Not the `Log` collection, whose fields are those
+// of the ESP SOAP calls.
 const SecurityEventSchema = Schema(
   {
     action: {
       type: String,
-      enum: [
-        ...Object.values(SECURITY_ACTIONS),
-        ...Object.values(MCP_ACCESS_ACTIONS),
-      ],
+      enum: SECURITY_EVENT_ACTIONS,
       required: true,
     },
     // The account acted on; none when the action is on a group.
