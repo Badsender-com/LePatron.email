@@ -10,6 +10,7 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+const { ROLES } = require('../../../packages/shared/access/roles.js');
 
 const DRAFT_SHEET = 'design.draft-guidelines';
 const PROVING = {
@@ -65,10 +66,37 @@ const CONSUMING_TASK = {
 };
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
+// A member of each role, in the platform company and in a client company. A
+// super admin always belongs to the platform company (ADR 0002): in a client
+// company, it is one whose connection is bound to that company.
+const PLATFORM_MEMBERS = Object.values(ROLES)
+  .filter((role) => role !== ROLES.SUPER_ADMIN)
+  .map((role, i) => ({
+    _id: `507f1f77bcf86cd7994396${String(i).padStart(2, '0')}`,
+    name: `Platform ${role}`,
+    email: `platform-${role}@example.test`,
+    lang: 'en',
+    role,
+    _company: f.PLATFORM_GROUP,
+  }));
+const platformMember = (role) =>
+  role === ROLES.SUPER_ADMIN
+    ? [f.ALICE, { group: f.PLATFORM_GROUP }]
+    : [PLATFORM_MEMBERS.find((user) => user.role === role)._id, {}];
+const CLIENT_MEMBERS = {
+  [ROLES.SUPER_ADMIN]: [f.ALICE, { group: f.CLIENT_GROUP }],
+  [ROLES.GROUP_ADMIN]: [f.ERIN, {}],
+  [ROLES.GROUP_ADMIN_TECH]: [f.TESS, {}],
+  [ROLES.REGULAR_USER]: [f.FRANK, {}],
+  [ROLES.WRITER]: [f.WREN, {}],
+  [ROLES.REVIEWER]: [f.REX, {}],
+};
+
 describe('audience', () => {
   beforeEach(() =>
     harness.seed({
       ...f.SEED,
+      users: [...f.USERS, ...PLATFORM_MEMBERS],
       expertises: [...f.EXPERTISES, PROVING],
       skills: [...f.SKILLS, PROVING_SKILL, CONSUMING_TASK],
     })
@@ -79,56 +107,46 @@ describe('audience', () => {
     (await client.listResources()).resources.map((r) => r.uri);
   const promptNames = async (client) =>
     (await client.listPrompts()).prompts.map((p) => p.name);
-
-  describe('for a client group', () => {
-    let client;
-    beforeEach(async () => {
-      client = await harness.connectAs(f.FRANK);
-    });
-
-    it('lists no expertise meant for the platform group', async () => {
-      expect(await expertiseUris(client)).not.toContain(uriOf(DRAFT_SHEET));
-    });
-
-    it('reads no expertise meant for the platform group', async () => {
-      await expect(
-        client.readResource({ uri: uriOf(DRAFT_SHEET) })
-      ).rejects.toThrow(/not found/i);
-    });
-
-    it('finds no expertise meant for the platform group', async () => {
-      const answer = harness.answerOf(
+  const foundIds = async (client) =>
+    harness
+      .answerOf(
         await client.callTool({
           name: 'find_applicable_expertises',
           arguments: { scope: ['subject'], categories: ['design'] },
         })
-      );
+      )
+      .expertises.map((e) => e.expertiseId);
+  const taskSkillText = async (client) =>
+    (await client.readResource({ uri: 'lepatron://skills/qc.spacing-review' }))
+      .contents[0].text;
 
-      expect(answer.expertises.map((e) => e.expertiseId)).not.toContain(
-        DRAFT_SHEET
-      );
-    });
+  describe('for a client company', () => {
+    it.each(Object.values(ROLES))(
+      'keeps from its %s what is meant for the platform company',
+      async (role) => {
+        const client = await harness.connectAs(...CLIENT_MEMBERS[role]);
 
-    it('names no expertise meant for the platform group in a skill it reads', async () => {
-      const { contents } = await client.readResource({
-        uri: 'lepatron://skills/qc.spacing-review',
-      });
-
-      expect(contents[0].text).toContain(uriOf('redaction.subject-line'));
-      expect(contents[0].text).not.toContain(DRAFT_SHEET);
-    });
-
-    it('offers no skill meant for the platform group', async () => {
-      expect(await promptNames(client)).not.toContain(PROVING_SKILL.skillId);
-      await expect(
-        client.getPrompt({
-          name: PROVING_SKILL.skillId,
-          arguments: { prompt: 'Review this email' },
-        })
-      ).rejects.toThrow(/not found/i);
-    });
+        expect(await expertiseUris(client)).not.toContain(uriOf(DRAFT_SHEET));
+        await expect(
+          client.readResource({ uri: uriOf(DRAFT_SHEET) })
+        ).rejects.toThrow(/not found/i);
+        expect(await foundIds(client)).not.toContain(DRAFT_SHEET);
+        expect(await taskSkillText(client)).toContain(
+          uriOf('redaction.subject-line')
+        );
+        expect(await taskSkillText(client)).not.toContain(DRAFT_SHEET);
+        expect(await promptNames(client)).not.toContain(PROVING_SKILL.skillId);
+        await expect(
+          client.getPrompt({
+            name: PROVING_SKILL.skillId,
+            arguments: { prompt: 'Review this email' },
+          })
+        ).rejects.toThrow(/not found/i);
+      }
+    );
 
     it('reads nothing that has no audience yet', async () => {
+      const client = await harness.connectAs(f.FRANK);
       harness.update('expertises', f.EXPERTISES[0]._id, {
         audience: undefined,
       });
@@ -143,28 +161,22 @@ describe('audience', () => {
     });
   });
 
-  describe('for the platform group', () => {
-    it('lists, reads and offers what is meant for it', async () => {
-      const client = await harness.connectAs(f.ALICE, {
-        group: f.PLATFORM_GROUP,
-      });
+  describe('for the platform company', () => {
+    it.each(Object.values(ROLES))(
+      'lists, reads, finds and offers to its %s what is meant for it',
+      async (role) => {
+        const client = await harness.connectAs(...platformMember(role));
 
-      expect(await expertiseUris(client)).toContain(uriOf(DRAFT_SHEET));
-      const { contents } = await client.readResource({
-        uri: uriOf(DRAFT_SHEET),
-      });
-      expect(contents[0].text).toContain('A rule still being proven.');
-      expect(await promptNames(client)).toContain(PROVING_SKILL.skillId);
-    });
-
-    // A super admin working in a client group sees what that group sees.
-    it('keeps it from a super admin bound to a client group', async () => {
-      const client = await harness.connectAs(f.ALICE, {
-        group: f.CLIENT_GROUP,
-      });
-
-      expect(await expertiseUris(client)).not.toContain(uriOf(DRAFT_SHEET));
-    });
+        expect(await expertiseUris(client)).toContain(uriOf(DRAFT_SHEET));
+        const { contents } = await client.readResource({
+          uri: uriOf(DRAFT_SHEET),
+        });
+        expect(contents[0].text).toContain('A rule still being proven.');
+        expect(await foundIds(client)).toContain(DRAFT_SHEET);
+        expect(await taskSkillText(client)).toContain(uriOf(DRAFT_SHEET));
+        expect(await promptNames(client)).toContain(PROVING_SKILL.skillId);
+      }
+    );
   });
 
   it('opens an expertise to every company once its audience is all', async () => {
