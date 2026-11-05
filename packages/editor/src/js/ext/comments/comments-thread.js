@@ -42,6 +42,7 @@ function threadOf(comments, filter = null) {
     replies[id].sort((a, b) => timeOf(a) - timeOf(b))
   );
   return {
+    // An approval stays in the thread, resolved or not: it is an event.
     items: shown.filter((c) => !c.resolved || isApproval(c)),
     resolved: shown.filter((c) => c.resolved && !isApproval(c)),
     repliesOf: (id) => replies[id] || [],

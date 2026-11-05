@@ -24,6 +24,9 @@ const CommentsList = Vue.component('CommentsList', {
   components: { CommentItem, CommentApproval, RightPanelState },
   props: {
     comments: { type: Array, default: () => [] },
+    // Every comment known, those held behind the pill included: whether the
+    // email is approved counts them, as the server does.
+    allComments: { type: Array, default: null },
     // The block id read, or null for all.
     filter: { type: String, default: null },
     // The store's status: false, 'loading', 'error', or the count loaded.
@@ -44,10 +47,18 @@ const CommentsList = Vue.component('CommentsList', {
       return threadOf(this.comments, this.filter);
     },
     approval() {
-      return approvalOf(this.comments);
+      return approvalOf(this.allComments || this.comments);
     },
     loading() {
       return this.status === 'loading';
+    },
+    // What a comment asks, carried up as is.
+    itemListeners() {
+      const names = ['reply', 'resolve', 'unresolve', 'edit', 'delete', 'go-to-block'];
+      return names.reduce((acc, name) => {
+        acc[name] = (comment) => this.$emit(name, comment);
+        return acc;
+      }, {});
     },
     empty() {
       return (
@@ -68,15 +79,17 @@ const CommentsList = Vue.component('CommentsList', {
       <right-panel-state
         v-else-if="status === 'error'"
         kind="error"
-        :title="t('comments-load-error')"
+        :title="t('comments-load-failed')"
         :retry-label="t('comments-retry')"
         @retry="$emit('retry')"
       ></right-panel-state>
 
       <template v-else>
-        <div class="comments-list__pill" aria-live="polite">
+        <!-- Always in the page: a live region added with its content is not
+             always announced. -->
+        <div class="comments-list__pill" aria-live="polite" aria-atomic="true">
           <button v-if="pendingCount" type="button" class="comments-new-pill" @click="$emit('show-new')">
-            {{ t(pendingCount === 1 ? 'comments-new-one' : 'comments-new', { count: pendingCount }) }}
+            <span class="lucide lucide-arrow-up" aria-hidden="true"></span>{{ t(pendingCount === 1 ? 'comments-new-one' : 'comments-new', { count: pendingCount }) }}
           </button>
         </div>
 
@@ -92,6 +105,7 @@ const CommentsList = Vue.component('CommentsList', {
             :approval="item"
             :lifted="approval.liftedBy[item._id] || null"
             :can-withdraw="can('delete', item)"
+            :replies="thread.repliesOf(item._id)"
             :t="t"
             :format-date="formatDate"
             @withdraw="$emit('delete', $event)"
@@ -106,7 +120,7 @@ const CommentsList = Vue.component('CommentsList', {
             :label-of="labelOf"
             :block-exists="blockExists"
             :can="can"
-            v-on="$listeners"
+            v-on="itemListeners"
           >
             <template v-if="editingId === item._id" v-slot:body>
               <slot name="edit" :comment="item"></slot>
@@ -116,11 +130,11 @@ const CommentsList = Vue.component('CommentsList', {
         </template>
 
         <section v-if="thread.resolved.length" class="comments-list__resolved">
-          <button type="button" class="comments-list__resolved-toggle" :aria-expanded="showResolved ? 'true' : 'false'" @click="showResolved = !showResolved">
+          <button type="button" class="comments-list__resolved-toggle" :aria-expanded="showResolved ? 'true' : 'false'" aria-controls="comments-resolved-list" @click="showResolved = !showResolved">
             <span :class="['lucide', showResolved ? 'lucide-chevron-down' : 'lucide-chevron-right']" aria-hidden="true"></span>
             {{ t(thread.resolved.length === 1 ? 'comments-resolved-count-one' : 'comments-resolved-count', { count: thread.resolved.length }) }}
           </button>
-          <template v-if="showResolved">
+          <div v-if="showResolved" id="comments-resolved-list" class="comments-list__resolved-items">
             <comment-item
               v-for="item in thread.resolved"
               :key="item._id"
@@ -131,9 +145,9 @@ const CommentsList = Vue.component('CommentsList', {
               :label-of="labelOf"
               :block-exists="blockExists"
               :can="can"
-              v-on="$listeners"
+              v-on="itemListeners"
             ></comment-item>
-          </template>
+          </div>
         </section>
       </template>
     </div>

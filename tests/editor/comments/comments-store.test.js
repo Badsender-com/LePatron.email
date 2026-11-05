@@ -123,7 +123,10 @@ describe('the comments store (ADR 0020, P5)', () => {
       isOpen(true);
       await settle();
       expect(store.status()).toBe('error');
+      // The counters still come from the server until a list loads.
+      expect(store.listLoaded()).toBe(false);
       await store.load();
+      expect(store.listLoaded()).toBe(true);
       expect(store.status()).toBe(store.comments().length);
     });
 

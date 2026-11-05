@@ -3,9 +3,10 @@
 const Vue = require('vue/dist/vue.common');
 
 /**
- * The filter of the comments list (ADR 0020, decision 7): it only reads.
- * « Tous » and the block selected in the canvas, each with its count; with
- * no block selected, the second chip says so and cannot be chosen.
+ * The filter of the comments list (ADR 0020, decision 7): it only reads, and
+ * says so under the chips while a block is read. « Tous » and a block, each
+ * with its count: the block read, or else the block selected in the canvas;
+ * with none, the second chip says so and cannot be chosen.
  */
 const CommentsFilter = Vue.component('CommentsFilter', {
   props: {
@@ -23,7 +24,7 @@ const CommentsFilter = Vue.component('CommentsFilter', {
         class="comments-filter__chip"
         :aria-pressed="filter === null ? 'true' : 'false'"
         @click="$emit('filter', null)"
-      >{{ t('comments-filter-all') }} · {{ allCount }}</button>
+      ><span v-if="filter === null" class="lucide lucide-check" aria-hidden="true"></span>{{ t('comments-filter-all') }} · {{ allCount }}</button>
       <button
         v-if="block"
         type="button"
@@ -31,9 +32,10 @@ const CommentsFilter = Vue.component('CommentsFilter', {
         :aria-pressed="filter === block.id ? 'true' : 'false'"
         @click="$emit('filter', block.id)"
       >
-        <span class="lucide lucide-box" aria-hidden="true"></span>{{ block.label }} · {{ block.count }}
+        <span :class="['lucide', filter === block.id ? 'lucide-check' : 'lucide-box']" aria-hidden="true"></span>{{ block.label }} · {{ block.count }}
       </button>
       <span v-else class="comments-filter__chip comments-filter__chip--none">{{ t('comments-filter-no-block') }}</span>
+      <p v-if="filter && block && filter === block.id" class="comments-filter__note">{{ t('comments-filter-note', { block: block.label }) }}</p>
     </div>
   `,
 });

@@ -18,12 +18,19 @@ const CommentApproval = Vue.component('CommentApproval', {
     // { by: name } or { blocking: true } when it no longer holds, or null.
     lifted: { type: Object, default: null },
     canWithdraw: { type: Boolean, default: false },
+    // Replies written under the approval before it became an event.
+    replies: { type: Array, default: () => [] },
     t: { type: Function, required: true },
     formatDate: { type: Function, required: true },
   },
   computed: {
     author() {
-      return authorOf(this.approval) || this.t('comments-anonymous');
+      return this.authorOf(this.approval);
+    },
+  },
+  methods: {
+    authorOf(comment) {
+      return authorOf(comment) || this.t('comments-anonymous');
     },
   },
   template: `
@@ -31,7 +38,7 @@ const CommentApproval = Vue.component('CommentApproval', {
       <span class="comment-approval__mark" aria-hidden="true"><span class="lucide lucide-check-check"></span></span>
       <div class="comment-approval__body">
         <p class="comment-approval__head">
-          <span>{{ t('comments-approved-by', { name: author }) }}</span>
+          <strong class="comment-approval__name">{{ author }}</strong> {{ t('comments-approved-the-email') }}
           <span class="comment-item__date"> · {{ formatDate(approval.createdAt) }}</span>
         </p>
         <p v-if="lifted" class="comment-approval__lifted" role="note">
@@ -40,6 +47,15 @@ const CommentApproval = Vue.component('CommentApproval', {
           <span v-else>{{ t('comments-approval-lifted', { name: lifted.by || t('comments-anonymous') }) }}</span>
         </p>
         <comment-text v-else class="comment-approval__text" :text="approval.text"></comment-text>
+        <ul v-if="replies.length" class="comment-item__replies">
+          <li v-for="reply in replies" :key="reply._id" class="comment-reply">
+            <p class="comment-reply__head">
+              <span class="comment-item__author">{{ authorOf(reply) }}</span>
+              <span class="comment-item__date">{{ formatDate(reply.createdAt) }}</span>
+            </p>
+            <comment-text :text="reply.text"></comment-text>
+          </li>
+        </ul>
         <button v-if="canWithdraw" type="button" class="qc-link-button comment-approval__withdraw" @click="$emit('withdraw', approval)">{{ t('comments-withdraw-approval') }}</button>
       </div>
     </article>

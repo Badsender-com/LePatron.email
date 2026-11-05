@@ -128,6 +128,15 @@ describe('the comments list', () => {
     expect(root.querySelector('.comment-badge--info')).toBeNull();
   });
 
+  it('shows a request for changes, a decision of older comments', () => {
+    const { root } = mount({
+      comments: [comment({ decision: 'changes_requested' })],
+    });
+    expect(root.querySelector('.comment-badge--changes').textContent).toContain(
+      'comments-decision-changes-requested'
+    );
+  });
+
   it('folds the resolved comments under their count', async () => {
     const { root } = mount({
       comments: [comment({ resolved: true }), comment({ resolved: true })],
@@ -178,8 +187,13 @@ describe('an approval in the list', () => {
     const approval = comment({ decision: 'approved', text: 'Bon pour envoi' });
     const { root, events } = mount({ comments: [approval], can: () => true });
     expect(root.querySelector('.comment-item')).toBeNull();
-    expect(root.querySelector('.comment-approval__head').textContent).toContain(
-      'comments-approved-by Author 1'
+    expect(
+      root
+        .querySelector('.comment-approval__head')
+        .textContent.replace(/\s+/g, ' ')
+    ).toContain('Author 1 comments-approved-the-email');
+    expect(root.querySelector('.comment-approval__name').textContent).toBe(
+      'Author 1'
     );
     root.querySelector('.comment-approval__withdraw').click();
     expect(events).toEqual([['delete', approval]]);
@@ -192,6 +206,26 @@ describe('an approval in the list', () => {
     expect(
       root.querySelector('.comment-approval__lifted').textContent
     ).toContain('comments-approval-lifted Author 2');
+  });
+
+  it('is lifted by a comment still held behind the pill, as the server counts it', () => {
+    const approval = comment({ decision: 'approved' });
+    const held = comment();
+    const { root } = mount({
+      comments: [approval],
+      allComments: [approval, held],
+      pendingCount: 1,
+    });
+    expect(root.querySelector('.comment-approval__lifted')).not.toBeNull();
+  });
+
+  it('shows the replies written under it', () => {
+    const approval = comment({ decision: 'approved' });
+    const reply = comment({ _parentComment: approval._id, text: 'Thanks' });
+    const { root } = mount({ comments: [approval, reply] });
+    expect(
+      texts(root, '.comment-approval .comment-reply .comment-text')
+    ).toEqual(['Thanks']);
   });
 
   it('stays out of a block filter', () => {
@@ -250,6 +284,26 @@ describe('the filter of the comments', () => {
     expect(block.textContent.trim()).toBe('Cover · 1');
     block.click();
     expect(events).toEqual([['filter', 'b1']]);
+  });
+
+  it('says it only reads while a block is read', () => {
+    const { root } = mount(
+      {
+        filter: 'b1',
+        allCount: 3,
+        block: { id: 'b1', label: 'Cover', count: 1 },
+      },
+      CommentsFilter
+    );
+    expect(root.querySelector('.comments-filter__note').textContent).toBe(
+      'comments-filter-note Cover'
+    );
+    expect(
+      mount(
+        { filter: null, block: { id: 'b1', label: 'Cover', count: 1 } },
+        CommentsFilter
+      ).root.querySelector('.comments-filter__note')
+    ).toBeNull();
   });
 
   it('says when no block is selected', () => {

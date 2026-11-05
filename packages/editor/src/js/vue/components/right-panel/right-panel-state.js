@@ -19,7 +19,7 @@ const RightPanelState = Vue.component('RightPanelState', {
     retryLabel: { type: String, default: '' },
   },
   template: `
-    <div class="right-panel-state" :class="'right-panel-state--' + kind" :role="kind === 'error' ? 'alert' : 'status'">
+    <div class="right-panel-state" :class="'right-panel-state--' + kind" :role="kind === 'error' ? 'alert' : kind === 'loading' ? 'status' : null">
       <span v-if="kind === 'loading'" class="lucide lucide-loader right-panel-state__spinner" aria-hidden="true"></span>
       <span v-else-if="kind === 'error'" class="lucide lucide-alert-circle right-panel-state__icon" aria-hidden="true"></span>
       <span v-else-if="icon" :class="['lucide', icon, 'right-panel-state__icon']" aria-hidden="true"></span>

@@ -203,6 +203,8 @@ function createCommentsStore(
   return {
     comments,
     pending,
+    // The list loaded once: the counters come from it from then on.
+    listLoaded,
     allComments,
     pendingCount: ko.pureComputed(() => pending().length),
     status,

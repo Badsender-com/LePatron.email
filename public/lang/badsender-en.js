@@ -346,10 +346,7 @@ module.exports = {
   'comments-filter-label': 'Filter the comments',
   'comments-filter-no-block': 'No block selected',
   'comments-anonymous': 'Anonymous',
-  'comments-unfold': 'Unfold the comment',
-  'comments-fold': 'Fold the comment',
-  'comments-whole-email': 'The whole email',
-  'comments-approved-by': '__name__ approved the email',
+  'comments-whole-email': 'Whole email',
   'comments-approval-lifted':
     "Approval lifted by __name__'s comment. The email must be approved again.",
   'comments-approval-held': 'Approval on hold: a blocking comment is open.',
@@ -360,6 +357,11 @@ module.exports = {
     'Write about the email, or select a block in the canvas.',
   'comments-resolved-count-one': '1 resolved comment',
   'comments-resolved-count': '__count__ resolved comments',
+  'comments-approved-the-email': 'approved the email',
+  'comments-details': 'Resolved comment details',
+  'comments-load-failed': "Couldn't load the comments",
+  'comments-filter-note':
+    'Reading filter: you read the comments of the block __block__. Your next comment is on what the « On » field shows, below.',
   'comments-new-one': '1 new comment · Show',
   'comments-new': '__count__ new comments · Show',
   'comments-rail-marker-one': '1 unresolved comment on the block __block__',

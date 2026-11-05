@@ -359,10 +359,7 @@ module.exports = {
   'comments-filter-label': 'Filtrer les commentaires',
   'comments-filter-no-block': 'Aucun bloc sélectionné',
   'comments-anonymous': 'Anonyme',
-  'comments-unfold': 'Déplier le commentaire',
-  'comments-fold': 'Replier le commentaire',
   'comments-whole-email': "Tout l'email",
-  'comments-approved-by': "__name__ a approuvé l'email",
   'comments-approval-lifted':
     "Validation levée par le commentaire de __name__. L'email doit être approuvé à nouveau.",
   'comments-approval-held':
@@ -374,6 +371,11 @@ module.exports = {
     "Écrivez sur l'email ou sélectionnez un bloc dans le canevas.",
   'comments-resolved-count-one': '1 commentaire résolu',
   'comments-resolved-count': '__count__ commentaires résolus',
+  'comments-approved-the-email': "a approuvé l'email",
+  'comments-details': 'Détails du commentaire résolu',
+  'comments-load-failed': 'Impossible de charger les commentaires',
+  'comments-filter-note':
+    "Filtre de lecture : vous lisez les commentaires du bloc __block__. Votre prochain commentaire porte sur ce qu'indique le champ « Sur », plus bas.",
   'comments-new-one': '1 nouveau commentaire · Afficher',
   'comments-new': '__count__ nouveaux commentaires · Afficher',
   'comments-rail-marker-one': '1 commentaire non résolu sur le bloc __block__',

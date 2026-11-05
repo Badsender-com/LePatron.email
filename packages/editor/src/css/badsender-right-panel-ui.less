@@ -11,6 +11,7 @@
 ////////
 
 @qc-error: #d32f2f;
+@qc-error-text: #b71c1c; // text on its tint: 5.6:1, where @qc-error falls to 4.3:1
 @qc-warning: #b07400; // icons only: 3.9:1, enough for a graphic, not for text
 @qc-warning-text: #8a5a00; // 5.9:1 on white
 @qc-info: #1565c0;
@@ -196,12 +197,16 @@
     }
   }
 
+  // A link reads as one without its colour: the accent, on white, falls below
+  // 4.5:1.
   .qc-link-button {
     font-size: 12px;
     font-weight: 500;
-    color: var(--accent);
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
 
-    &:hover { text-decoration: underline; }
+    &:hover { text-decoration-thickness: 2px; }
   }
 
   .qc-icon-button {

@@ -61,32 +61,38 @@ const CommentItem = Vue.component('CommentItem', {
     },
   },
   template: `
-    <article class="comment-item" :class="{ 'comment-item--resolved': comment.resolved }" tabindex="-1" :data-comment-id="comment._id">
+    <article class="comment-item" :class="{ 'comment-item--resolved': comment.resolved, 'comment-item--blocking': severity === 'blocking' }" tabindex="-1" :data-comment-id="comment._id">
       <header class="comment-item__head">
         <span class="comment-item__author">{{ author }}</span>
         <span class="comment-item__date">{{ formatDate(comment.createdAt) }}</span>
-        <span v-if="severity" class="comment-badge" :class="'comment-badge--' + severity">
-          <span :class="['lucide', severity === 'blocking' ? 'lucide-alert-circle' : 'lucide-triangle-alert']" aria-hidden="true"></span>{{ t('comments-severity-' + severity) }}
+        <span class="comment-item__tags">
+          <span v-if="severity" class="comment-badge" :class="'comment-badge--' + severity">
+            <span :class="['lucide', severity === 'blocking' ? 'lucide-alert-circle' : 'lucide-triangle-alert']" aria-hidden="true"></span>{{ t('comments-severity-' + severity) }}
+          </span>
+          <span v-if="comment.decision === 'changes_requested'" class="comment-badge comment-badge--changes">
+            <span class="lucide lucide-x" aria-hidden="true"></span>{{ t('comments-decision-changes-requested') }}
+          </span>
+          <span v-if="comment.resolved" class="comment-badge comment-badge--resolved">
+            <span class="lucide lucide-check" aria-hidden="true"></span>{{ t('comments-resolved-badge') }}
+          </span>
+          <span class="comment-item__category">
+            <span :class="['lucide', categoryIcon]" aria-hidden="true"></span>{{ category }}
+          </span>
+          <button
+            v-if="comment.resolved"
+            type="button"
+            class="qc-icon-button comment-item__fold"
+            :aria-expanded="folded ? 'false' : 'true'"
+            :aria-controls="'comment-body-' + comment._id"
+            :aria-label="t('comments-details')"
+            @click="unfolded = !unfolded"
+          >
+            <span :class="['lucide', folded ? 'lucide-chevron-right' : 'lucide-chevron-down']" aria-hidden="true"></span>
+          </button>
         </span>
-        <span v-if="comment.resolved" class="comment-badge comment-badge--resolved">
-          <span class="lucide lucide-check" aria-hidden="true"></span>{{ t('comments-resolved-badge') }}
-        </span>
-        <span class="comment-item__category">
-          <span :class="['lucide', categoryIcon]" aria-hidden="true"></span>{{ category }}
-        </span>
-        <button
-          v-if="comment.resolved"
-          type="button"
-          class="qc-icon-button comment-item__fold"
-          :aria-expanded="folded ? 'false' : 'true'"
-          :aria-label="t(folded ? 'comments-unfold' : 'comments-fold')"
-          @click="unfolded = !unfolded"
-        >
-          <span :class="['lucide', folded ? 'lucide-chevron-down' : 'lucide-chevron-up']" aria-hidden="true"></span>
-        </button>
       </header>
 
-      <template v-if="!folded">
+      <div v-if="!folded" :id="'comment-body-' + comment._id" class="comment-item__body">
         <p class="comment-item__target">
           <template v-if="onBlock">
             <span class="lucide lucide-box" aria-hidden="true"></span>
@@ -141,7 +147,7 @@ const CommentItem = Vue.component('CommentItem', {
             <span class="lucide lucide-trash-2" aria-hidden="true"></span>
           </button>
         </div>
-      </template>
+      </div>
     </article>
   `,
 });
