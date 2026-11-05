@@ -17,6 +17,9 @@ const {
   EXPERTISE_NOTICE,
 } = require('./mcp-skill-catalog.js');
 const expertises = require('./mcp-expertises.js');
+const {
+  SkillNatureValues,
+} = require('../ai-skill/constant/skill-constants.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
@@ -90,14 +93,20 @@ function registerSkillResources(server) {
   );
 }
 
-const FIND_INPUT = z.object({ query: z.string().min(1) });
+// What an assistant may send, and how many skills it is answered.
+const MAX_QUERY_LENGTH = 200;
+const MAX_FOUND_SKILLS = 10;
+
+const FIND_INPUT = z.object({
+  query: z.string().max(MAX_QUERY_LENGTH).regex(/\S/, 'A query is not blank'),
+});
 const FIND_OUTPUT = z.object({
   skills: z.array(
     z.object({
       skillId: z.string(),
       title: z.string(),
       description: z.string(),
-      nature: z.string(),
+      nature: z.enum(SkillNatureValues),
       uri: z.string(),
     })
   ),
@@ -105,7 +114,7 @@ const FIND_OUTPUT = z.object({
 
 // Every word of the query, in the title or the description, whatever the case.
 function matching(query) {
-  const words = String(query).toLowerCase().split(/\s+/).filter(Boolean);
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return ({ doc }) => {
     const haystack = `${doc.title} ${doc.description || ''}`.toLowerCase();
     return words.every((word) => haystack.includes(word));
@@ -117,8 +126,7 @@ function registerFindSkills(server) {
     'find_skills',
     {
       title: 'Find a Badsender skill',
-      description:
-        'Finds the Badsender skills whose title or description match what the user wants to do. Read the one that fits through its resource URI, then follow it.',
+      description: `Finds the Badsender skills whose title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. Read the one that fits through its resource URI, then follow it.`,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
       annotations: { readOnlyHint: true, openWorldHint: false },
@@ -126,6 +134,7 @@ function registerFindSkills(server) {
     withIdentity(async ({ group }, { query }) => {
       const skills = (await servedSkills(group))
         .filter(matching(query))
+        .slice(0, MAX_FOUND_SKILLS)
         .map(({ doc, version }) => ({
           skillId: doc.skillId,
           title: doc.title,

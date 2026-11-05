@@ -75,3 +75,60 @@ describe('skills', () => {
     ).rejects.toThrow(/not found/i);
   });
 });
+
+describe('find_skills', () => {
+  // More task skills than an answer holds, all about a sending report.
+  const REPORTS = Array.from({ length: 12 }, (_, i) => ({
+    _id: `507f1f77bcf86cd7994399${String(i).padStart(2, '0')}`,
+    skillId: `qc.report-${String(i).padStart(2, '0')}`,
+    title: `Read a sending report, part ${i}`,
+    description: '',
+    category: 'qc',
+    status: 'ACTIVE',
+    audience: 'all',
+    servedToAssistants: false,
+    activeVersion: { major: 1, minor: 0 },
+    versions: [
+      {
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'ACTIVE',
+        nature: 'task',
+        procedure: 'Read it.',
+        consumedExpertiseIds: [],
+      },
+    ],
+  }));
+  let client;
+
+  beforeEach(async () => {
+    harness.seed({ ...f.SEED, skills: [...f.SKILLS, ...REPORTS] });
+    client = await harness.connectAs(f.WREN);
+  });
+  afterEach(() => harness.disconnect());
+
+  const find = async (query) =>
+    harness.answerOf(
+      await client.callTool({ name: 'find_skills', arguments: { query } })
+    );
+
+  it('answers ten skills at most', async () => {
+    const { skills } = await find('  Sending   REPORT ');
+
+    expect(skills).toHaveLength(10);
+    expect(skills[0]).toMatchObject({
+      skillId: 'qc.report-00',
+      nature: 'task',
+    });
+  });
+
+  it.each([
+    ['a blank query', '   '],
+    ['a query too long to be an intent', 'report '.repeat(30)],
+  ])(
+    'refuses %s rather than answer the whole catalog',
+    async (_case, query) => {
+      expect((await find(query)).error).toMatch(/Input validation error/);
+    }
+  );
+});
