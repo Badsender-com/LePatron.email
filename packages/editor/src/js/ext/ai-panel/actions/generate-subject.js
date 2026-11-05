@@ -25,8 +25,10 @@ module.exports = {
   onCopied: (editor, text) => editor.rememberSubject(text),
   next: 'generate-preheader',
 
+  icon: 'lucide-mail',
   labels: {
     name: 'ai-panel-action-subject',
+    description: 'ai-panel-subject-desc',
     generate: 'ai-panel-generate-subject',
     proposals: 'text-generation-subjects-title',
     copyHint: 'text-generation-copy-hint',

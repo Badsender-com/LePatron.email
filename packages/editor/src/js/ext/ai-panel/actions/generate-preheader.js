@@ -38,8 +38,10 @@ module.exports = {
   },
   next: null,
 
+  icon: 'lucide-align-left',
   labels: {
     name: 'ai-panel-action-preheader',
+    description: 'ai-panel-preheader-desc',
     generate: 'ai-panel-generate-preheader',
     proposals: 'text-generation-preheaders-title',
     copyHint: 'text-generation-copy-hint-preheader',

@@ -940,12 +940,23 @@ module.exports = {
   // AI panel, « Outils IA » (ADR 0010)
   'right-panel-close': 'Close the panel',
   'ai-panel-back': 'Back to the actions',
+  'ai-panel-correct-field': 'Correct this field',
+  'ai-panel-correct-block': 'Correct this block',
+  'ai-panel-correct-email': 'Correct the whole email',
+  'ai-panel-correct-field-desc': 'Spelling and grammar of the field',
+  'ai-panel-correct-block-desc': 'The text fields of the block',
+  'ai-panel-correct-email-desc': 'Spelling and grammar, block by block',
+  'ai-panel-subject-desc': 'Three proposals from the content',
+  'ai-panel-preheader-desc': 'Consistent with the subject',
+  'ai-panel-list-note':
+    'Nothing changes in the email without your consent. Each accepted change is undone with Ctrl+Z.',
   'ai-panel-title': 'AI tools',
   'ai-panel-action-subject': 'Generate the subject',
   'ai-panel-action-preheader': 'Generate the preheader',
   'ai-panel-copy-only':
     'No field in this email: the proposal will be for you to copy into your sending platform.',
-  'ai-panel-select-invite': 'Select a block or a field to see its AI actions.',
+  'ai-panel-select-invite':
+    'Select a field or a block in the email to correct it.',
   'ai-panel-no-subject':
     'This email has no subject yet. The preheader complements it: better start with the subject.',
   'ai-panel-subject-first': 'Generate the subject first',

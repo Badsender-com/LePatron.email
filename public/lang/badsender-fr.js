@@ -968,13 +968,23 @@ module.exports = {
   // AI panel, « Outils IA » (ADR 0010)
   'right-panel-close': 'Fermer le panneau',
   'ai-panel-back': 'Retour aux actions',
+  'ai-panel-correct-field': 'Corriger ce champ',
+  'ai-panel-correct-block': 'Corriger ce bloc',
+  'ai-panel-correct-email': "Corriger tout l'email",
+  'ai-panel-correct-field-desc': 'Orthographe et grammaire du champ',
+  'ai-panel-correct-block-desc': 'Les champs de texte du bloc',
+  'ai-panel-correct-email-desc': 'Orthographe et grammaire, bloc par bloc',
+  'ai-panel-subject-desc': 'Trois propositions à partir du contenu',
+  'ai-panel-preheader-desc': "En cohérence avec l'objet",
+  'ai-panel-list-note':
+    "Rien n'est modifié dans l'email sans votre accord. Chaque modification acceptée s'annule avec Ctrl+Z.",
   'ai-panel-title': 'Outils IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
   'ai-panel-copy-only':
     "Pas de champ dans cet email : la proposition sera à copier pour votre outil d'envoi.",
   'ai-panel-select-invite':
-    'Sélectionnez un bloc ou un champ pour voir ses actions IA.',
+    "Sélectionnez un champ ou un bloc dans l'email pour le corriger.",
   'ai-panel-no-subject':
     "Cet email n'a pas encore d'objet. Le préheader le complète : mieux vaut commencer par l'objet.",
   'ai-panel-subject-first': "Générer d'abord l'objet",

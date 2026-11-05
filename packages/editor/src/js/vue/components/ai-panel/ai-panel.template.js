@@ -16,7 +16,7 @@ module.exports = `
   ref="shell"
   class="ai-panel"
   title-id="ai-panel-title"
-  :title="session ? t(labelsOf(session.state.action).name) : t('ai-panel-title')"
+  :title="session ? nameOf(session.state.action, session.state.target) : t('ai-panel-title')"
   :close-label="t('right-panel-close')"
   :back-label="session ? t('ai-panel-back') : ''"
   @back="showList()"
@@ -25,35 +25,45 @@ module.exports = `
   <div class="ai-panel__body">
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>
 
+    <!-- The list (boards a1, a2): what the selection offers, the action of
+         the finest selection first and set forth, then the whole email's. -->
     <template v-if="!session">
-      <template v-if="target.kind !== 'email'">
+      <p v-if="target.kind === 'email'" class="ai-panel__invite">
+        <span class="lucide lucide-box" aria-hidden="true"></span>
+        {{ t('ai-panel-select-invite') }}
+      </p>
+      <template v-else>
         <p class="ai-panel__section">
-          {{ target.kind === 'blockField' ? t('ai-panel-selected-field') : t('ai-panel-selected-block') }}
+          {{ target.kind === 'blockField' ? t('ai-panel-selected-field') : t('ai-panel-selected-block') }}<span v-if="blockOf(target)" class="ai-panel__section-meta"> · {{ blockOf(target) }}</span>
         </p>
         <ul v-if="targetActions.length" class="ai-panel__actions">
-          <li v-for="item in targetActions" :key="item.id">
-            <button type="button" class="ai-panel__action" @click="openAction(item.id, target)">
-              <span class="lucide lucide-bot" aria-hidden="true"></span>
-              <span>{{ t(labelsOf(item.id).name) }}</span>
+          <li v-for="(item, i) in targetActions" :key="item.id">
+            <button type="button" class="ai-panel__action" :class="{ 'ai-panel__action--first': i === 0 }" @click="openAction(item.id, target)">
+              <span :class="['lucide', iconOf(item.id), 'ai-panel__action-icon']" aria-hidden="true"></span>
+              <span class="ai-panel__action-text">
+                <span class="ai-panel__action-name">{{ nameOf(item.id, target) }}</span>
+                <span v-if="descriptionOf(item.id, target)" class="ai-panel__action-desc">{{ descriptionOf(item.id, target) }}</span>
+              </span>
+              <span class="lucide lucide-chevron-right ai-panel__action-chevron" aria-hidden="true"></span>
             </button>
           </li>
         </ul>
         <p v-else class="ai-panel__hint">{{ t('ai-panel-no-action-yet') }}</p>
-        <p class="ai-panel__section">{{ t('ai-panel-whole-email') }}</p>
       </template>
+      <p class="ai-panel__section">{{ t('ai-panel-whole-email') }}</p>
       <ul class="ai-panel__actions">
         <li v-for="item in actions" :key="item.id">
           <button type="button" class="ai-panel__action" @click="openAction(item.id)">
-            <span class="lucide lucide-bot" aria-hidden="true"></span>
-            <span>{{ t(labelsOf(item.id).name) }}</span>
+            <span :class="['lucide', iconOf(item.id), 'ai-panel__action-icon']" aria-hidden="true"></span>
+            <span class="ai-panel__action-text">
+              <span class="ai-panel__action-name">{{ nameOf(item.id, { kind: 'email' }) }}</span>
+              <span class="ai-panel__action-desc">{{ item.canApply ? descriptionOf(item.id, { kind: 'email' }) : t('ai-panel-copy-only') }}</span>
+            </span>
+            <span class="lucide lucide-chevron-right ai-panel__action-chevron" aria-hidden="true"></span>
           </button>
-          <p v-if="!item.canApply" class="ai-panel__hint">{{ t('ai-panel-copy-only') }}</p>
         </li>
       </ul>
-      <p v-if="target.kind === 'email'" class="ai-panel__invite">
-        <span class="lucide lucide-info" aria-hidden="true"></span>
-        {{ t('ai-panel-select-invite') }}
-      </p>
+      <p class="ai-panel__note">{{ t('ai-panel-list-note') }}</p>
     </template>
 
     <template v-else>
