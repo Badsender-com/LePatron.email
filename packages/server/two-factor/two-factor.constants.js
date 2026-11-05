@@ -3,6 +3,7 @@
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
   TWO_FACTOR_ACTIONS,
+  TWO_FACTOR_METHODS,
 } = require('../security-event/security-event.actions.js');
 
 // Two-factor authentication (ADR 0008). Every limit is here, named.
@@ -10,7 +11,8 @@ const {
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 
-const METHODS = Object.freeze({ TOTP: 'totp', EMAIL: 'email' });
+// Named with the security events, which record them.
+const METHODS = TWO_FACTOR_METHODS;
 
 // What the login answer asks after a right password.
 const STEPS = Object.freeze({ VERIFY: 'verify', SETUP: 'setup' });

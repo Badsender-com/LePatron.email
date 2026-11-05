@@ -1,8 +1,8 @@
 'use strict';
 
-// The actions a security event records (ADR 0008), in one place that depends
-// on no module: the schema of the events reads them all, and each module
-// records its own.
+// The actions a security event records (ADR 0008), and the two-factor
+// methods it names, in one place that depends on no module: the schema of
+// the events reads them all, and each module records its own.
 
 // An account's two-factor authentication, and the company's requirement of it.
 const TWO_FACTOR_ACTIONS = Object.freeze({
@@ -14,6 +14,10 @@ const TWO_FACTOR_ACTIONS = Object.freeze({
   DEVICE_TRUSTED: 'two-factor.device-trusted',
   WRONG_CODES: 'two-factor.wrong-codes',
 });
+
+// The verification methods of two-factor authentication, which an event of
+// it names. Two-factor reads them from here.
+const TWO_FACTOR_METHODS = Object.freeze({ TOTP: 'totp', EMAIL: 'email' });
 
 // A company's MCP access (ADR 0012).
 const MCP_ACCESS_ACTIONS = Object.freeze({
@@ -31,6 +35,7 @@ const SECURITY_EVENT_ACTIONS = Object.freeze([
 
 module.exports = {
   TWO_FACTOR_ACTIONS,
+  TWO_FACTOR_METHODS,
   MCP_ACCESS_ACTIONS,
   SECURITY_EVENT_ACTIONS,
   SECURITY_EVENT_TTL_SECONDS,

@@ -3,11 +3,10 @@
 const { Schema } = require('mongoose');
 
 const { UserModel, GroupModel } = require('../constant/model.names.js');
-// The verification method of a two-factor event.
-const { METHODS } = require('../two-factor/two-factor.constants.js');
 const {
   SECURITY_EVENT_ACTIONS,
   SECURITY_EVENT_TTL_SECONDS,
+  TWO_FACTOR_METHODS,
 } = require('./security-event.actions.js');
 
 const { ObjectId } = Schema.Types;
@@ -28,7 +27,8 @@ const SecurityEventSchema = Schema(
     // Who acted, when it is not the account itself.
     actor: { type: ObjectId, ref: UserModel },
     group: { type: ObjectId, ref: GroupModel },
-    method: { type: String, enum: Object.values(METHODS) },
+    // The verification method of a two-factor event.
+    method: { type: String, enum: Object.values(TWO_FACTOR_METHODS) },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );
