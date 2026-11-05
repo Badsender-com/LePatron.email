@@ -6,12 +6,11 @@
  * to try it in an MCP client (Claude Code, Claude Desktop, MCP Inspector)
  * before the OAuth connection exists (#1306). Development only: the identity
  * is taken from the command line instead of a token, so anyone who runs it
- * reads as any account. It runs only when NODE_ENV says `development`, set
- * explicitly (the configuration takes an unset one for development), and
- * against a database that is not on this machine only when
- * `--allow-remote-database` says so on purpose. Everything the server checks on a
- * call still applies: the user must be active and in the company, and the
- * company must have MCP access.
+ * reads as any account. It runs only when NODE_ENV=development is set
+ * explicitly, and against a database that is not on this machine only when
+ * `--allow-remote-database` says so on purpose. Everything the server checks
+ * on a call still applies: the user must be active and in the company, and
+ * the company must have MCP access.
  *
  * Usage:
  *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
