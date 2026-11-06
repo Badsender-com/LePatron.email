@@ -11,28 +11,33 @@
 
 @right-panel-motion: 0.2s ease-out;
 @right-panel-offset: -(@leftsidebar-width + 50px);
-// The panel rail (ADR 0020): 40 px buttons, 6 px around them.
-@panel-rail-width: 52px;
+// The panel rail and the open panel float over the canvas, as on the boards
+// (ADR 0020): 14 px from the edges, the rail a card of 40 px buttons, the
+// panel 10 px beside it.
+@panel-float-inset: 14px;
+@panel-rail-width: 50px; // 40 px buttons, 4 px padding, 1 px border
+@right-panel-right: @panel-float-inset + @panel-rail-width + 10px;
 
 @keyframes right-panel-slide-in {
   0% { right: @right-panel-offset; }
-  100% { right: @panel-rail-width; }
+  100% { right: @right-panel-right; }
 }
 
 @keyframes right-panel-slide-out {
-  0% { right: @panel-rail-width; }
+  0% { right: @right-panel-right; }
   100% { right: @right-panel-offset; }
 }
 
 #main-toolbox .slidebar.right-panel {
   position: fixed;
   left: auto;
-  // Between the rail and the canvas, which it pushes.
-  right: @panel-rail-width;
-  top: var(--top-bar-height, 50px);
-  height: calc(100vh - var(--top-bar-height, 50px));
+  right: @right-panel-right;
+  top: calc(var(--top-bar-height, 52px) + @panel-float-inset);
+  height: calc(100vh - var(--top-bar-height, 52px) - 2 * @panel-float-inset);
+  overflow: hidden;
   background: var(--white);
-  border-left: 1px solid var(--gray-300, #e0e0e0);
+  border-radius: 12px;
+  box-shadow: var(--shadow-3);
   animation: right-panel-slide-in @right-panel-motion 0s 1;
 
   &.hidden {
@@ -42,16 +47,23 @@
   }
 }
 
-// The rail always takes its place; whichever right panel is open, the canvas
-// shrinks rather than hides under it. Below its minimum width, the email
-// partly goes under the panel (decision 2b).
+// Closed, the canvas takes the whole width, the rail floating over it. Open,
+// it makes room for the panel and its margins rather than hiding under it.
+// Below its minimum width, the email partly goes under the panel (decision
+// 2b).
 #main-edit-area {
-  right: @panel-rail-width;
+  right: 0;
 }
 
 .withRightPanel #main-edit-area {
-  right: @leftsidebar-width + @panel-rail-width;
+  right: @leftsidebar-width + @right-panel-right + @panel-float-inset;
   transition: right @right-panel-motion;
+}
+
+// Around the floating panel, the canvas's white rather than the body's dark
+// brand colour, when the canvas keeps its minimum width.
+#page.withRightPanel {
+  background: var(--white);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -68,20 +80,21 @@
 // `aria-expanded`, as screen readers do.
 .panel-rail {
   position: fixed;
-  top: var(--top-bar-height, 50px);
-  right: 0;
-  bottom: 0;
+  top: calc(var(--top-bar-height, 52px) + @panel-float-inset);
+  right: @panel-float-inset;
   // The panels' level, and after them in the page: a sliding panel passes
   // under the rail. Below the top bar (201) and its menus, and the dialogs.
   z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   width: @panel-rail-width;
-  padding: 8px 0;
-  border-left: 1px solid var(--gray-200);
+  padding: 4px;
+  border: 1px solid var(--gray-300);
+  border-radius: 12px;
   background: var(--white);
+  box-shadow: var(--shadow-2);
   box-sizing: border-box;
 
   &__button {
@@ -93,7 +106,7 @@
     height: 40px;
     padding: 0;
     border: 1px solid transparent;
-    border-radius: @qc-radius;
+    border-radius: 9px;
     background: transparent;
     color: var(--gray-700);
     font-size: 20px;
@@ -139,8 +152,7 @@
 
     > .lucide { font-size: 11px; }
 
-    // The dark brand colour on the accent: white would fall below 4.5:1.
-    &--volume { background: var(--accent); color: var(--primary); }
+    &--volume { background: var(--accent); color: var(--white); }
     &--blocking { background: @qc-error; color: var(--white); }
     &--ready { background: @qc-success; color: var(--white); }
     // The states the board does not draw: said by their icon.
@@ -167,7 +179,7 @@
 // in #mo-body, inside #page. Too narrow a canvas (a panel open on a small
 // window): over the canvas and the panel rather than nowhere.
 #toast-container.toast-bottom-full-width {
-  right: @panel-rail-width;
+  right: 0;
   left: 0;
   width: auto !important;
   margin: 0 24px;
@@ -179,6 +191,6 @@
 
 @media (min-width: 1200px) {
   #page.withRightPanel #toast-container.toast-bottom-full-width {
-    right: @leftsidebar-width + @panel-rail-width;
+    right: @leftsidebar-width + @right-panel-right + @panel-float-inset;
   }
 }
