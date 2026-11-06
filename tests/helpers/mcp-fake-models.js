@@ -14,9 +14,14 @@
  *   was read is pushed to, so two documents read at once that each add one
  *   keep both; any other field is set as the document holds it.
  * - `create(record)` stores a copy, with an `_id` when it has none.
+ * - `validate()` runs no schema: the hooks are tested on the real schemas
+ *   (tests/server/ai-skill/models/).
  * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set` and a
  *   `$push`, and answers the document before the update, or after it with
- *   `{ new: true }`, or null when nothing matches.
+ *   `{ new: true }`, or null when nothing matches. A `$set` of `array.$`
+ *   replaces the first element the filter's `$elemMatch` on that array
+ *   matches, each field compared as MongoDB does (a date by its time), as
+ *   the positional operator does; any other positional path throws.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
@@ -78,6 +83,7 @@ function toDocument(record, stored) {
   const doc = { ...copy(record), id: String(record._id) };
   Object.defineProperty(doc, 'toObject', { value: () => fieldsOf(doc) });
   Object.defineProperty(doc, 'toJSON', { value: () => ({ ...doc }) });
+  Object.defineProperty(doc, 'validate', { value: async () => undefined });
   Object.defineProperty(doc, 'save', {
     value: async () => {
       if (!stored) {
@@ -90,15 +96,31 @@ function toDocument(record, stored) {
   return doc;
 }
 
+// `array.$`: the element of `array` the filter's `$elemMatch` matched.
+function setPositional(record, path, value, filter) {
+  const field = path.slice(0, -2);
+  const condition = filter[field] && filter[field].$elemMatch;
+  if (path !== `${field}.$` || field.includes('.') || !condition) {
+    throw new Error(`fake MCP models: the positional path ${path}`);
+  }
+  const index = (record[field] || []).findIndex((element) =>
+    matches(element, condition)
+  );
+  record[field][index] = copy(value);
+}
+
 // `{ $set, $push }`, as findOneAndUpdate takes them.
-function applyUpdate(record, update) {
+function applyUpdate(record, update, filter) {
   const { $set = {}, $push = {}, ...others } = update;
   if (Object.keys(others).length) {
     throw new Error(
       `fake MCP models: ${Object.keys(others).join(', ')} is not supported`
     );
   }
-  Object.assign(record, copy($set));
+  Object.entries($set).forEach(([path, value]) => {
+    if (path.includes('$')) setPositional(record, path, value, filter);
+    else record[path] = copy(value);
+  });
   Object.entries($push).forEach(([key, value]) => {
     record[key] = [...(record[key] || []), copy(value)];
   });
@@ -196,7 +218,7 @@ function model(records) {
           const [record] = matching(filter)();
           if (!record) return [];
           const before = copy(record);
-          applyUpdate(record, update);
+          applyUpdate(record, update, filter);
           return [options.new ? record : before];
         },
         (docs) => docs[0] || null

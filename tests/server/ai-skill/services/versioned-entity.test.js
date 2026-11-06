@@ -274,6 +274,67 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
     });
   });
 
+  // An assistant's change is written on the condition that the draft it read
+  // was not written since: its update date.
+  describe('writeDraftIfUnchanged', () => {
+    const READ_AT = new Date('2026-11-01T10:00:00Z');
+    const readDraft = () =>
+      makeVersion({ versionMinor: 1, status: 'DRAFT', updatedAt: READ_AT });
+
+    beforeEach(() => {
+      build({ versions: [makeVersion(), readDraft()] });
+      doc.validate = jest.fn().mockResolvedValue(undefined);
+    });
+
+    it('validates, then writes the draft only if its update date is the one read', async () => {
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(doc);
+      const [, version] = doc.versions;
+
+      await service.writeDraftIfUnchanged(
+        doc,
+        version,
+        { changelog: 'Shorter' },
+        USER_ID
+      );
+
+      expect(doc.validate).toHaveBeenCalled();
+      const [filter, update] = model.findOneAndUpdate.mock.calls[0];
+      expect(filter.versions.$elemMatch).toEqual({
+        versionMajor: 1,
+        versionMinor: 1,
+        status: 'DRAFT',
+        updatedAt: READ_AT,
+      });
+      expect(update.$set['versions.$']).toMatchObject({ changelog: 'Shorter' });
+      expect(update.$set['versions.$'].updatedAt.getTime()).toBeGreaterThan(
+        READ_AT.getTime()
+      );
+    });
+
+    it('refuses when the draft changed since it was read', async () => {
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.writeDraftIfUnchanged(doc, doc.versions[1], {}, USER_ID)
+      ).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringMatching(/changed since it was read/),
+      });
+    });
+
+    it('writes nothing the schema refuses', async () => {
+      model.findOneAndUpdate = jest.fn();
+      doc.validate.mockRejectedValue(
+        Object.assign(new Error('bad section'), { status: 400 })
+      );
+
+      await expect(
+        service.writeDraftIfUnchanged(doc, doc.versions[1], {}, USER_ID)
+      ).rejects.toMatchObject({ status: 400 });
+      expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateVersion', () => {
     it('patches content fields plus the release notes', async () => {
       build({ versions: [makeVersion({ status: 'DRAFT' })] });

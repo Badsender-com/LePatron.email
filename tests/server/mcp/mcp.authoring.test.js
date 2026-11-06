@@ -349,28 +349,101 @@ describe('authoring', () => {
       expect(open.changelog).toBe('Shorter subjects');
     });
 
-    // An assistant may send two changes at once: the second goes to the
-    // draft the first started.
-    it('opens one draft for two changes proposed at once', async () => {
-      harness.seed(WITHOUT_DRAFT);
-      const client = await asAuthor();
-      const propose = (body) =>
-        call(client, 'propose_expertise_change', {
-          expertiseId: SUBJECT_LINES,
-          body,
-          changelog: 'Shorter',
+    // An assistant may send changes at once (a race first reproduced in
+    // review): one draft is opened, and no change is written over another
+    // without saying so. A change that finds the draft changed since it read
+    // it is refused, to be sent again; nothing it said is lost silently.
+    describe('changes proposed at once', () => {
+      const proposeAll = async (seed) => {
+        harness.seed(seed);
+        const client = await asAuthor();
+        const proposals = [
+          { body: '## A\n\nfirst', changelog: 'First change' },
+          { body: '## B\n\nsecond', changelog: 'Second change' },
+        ];
+        const answers = await Promise.all(
+          proposals.map((proposal) =>
+            call(client, 'propose_expertise_change', {
+              expertiseId: SUBJECT_LINES,
+              ...proposal,
+            })
+          )
+        );
+        const { versions } = harness
+          .stored('expertises')
+          .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
+        return {
+          proposals,
+          answers,
+          drafts: versions.filter((v) => v.status === 'DRAFT'),
+        };
+      };
+
+      it.each([
+        ['when they start the draft', WITHOUT_DRAFT],
+        ['into an open draft', withVersions([draft(2, 2)])],
+      ])('keeps every change it says it wrote, %s', async (_case, seed) => {
+        const { proposals, answers, drafts } = await proposeAll(seed);
+
+        expect(drafts).toHaveLength(1);
+        const [open] = drafts;
+        expect(open.changelog).not.toContain('Correction mineure');
+        answers.forEach((answer, i) => {
+          if (answer.error) {
+            expect(answer.error).toMatch(/changed since it was read/);
+            expect(open.changelog).not.toContain(proposals[i].changelog);
+          } else {
+            expect(open.changelog).toContain(proposals[i].changelog);
+          }
         });
+        const written = answers.filter((answer) => !answer.error);
+        expect(written.length).toBeGreaterThan(0);
+      });
 
-      const answers = await Promise.all([
-        propose(NEW_BODY),
-        propose(`${NEW_BODY}\n\n## Emojis\n\nOne at most.`),
-      ]);
+      // Both read the same open draft before either writes.
+      it('refuses the second of two changes written over the same reading', async () => {
+        const { answers, drafts } = await proposeAll(
+          withVersions([draft(2, 2)])
+        );
 
-      expect(answers.map((answer) => answer.version)).toEqual(['2.2', '2.2']);
+        expect(answers.filter((answer) => answer.error)).toHaveLength(1);
+        expect(drafts[0].body).toBe('## A\n\nfirst');
+      });
+    });
+
+    it('counts the default changelog of a minor version as empty', async () => {
+      harness.seed(
+        withVersions([{ ...draft(2, 2), changelog: 'Correction mineure' }])
+      );
+
+      await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter subjects',
+      });
+
       const { versions } = harness
         .stored('expertises')
         .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
-      expect(versions.filter((v) => v.status === 'DRAFT')).toHaveLength(1);
+      expect(versions.find((v) => v.status === 'DRAFT').changelog).toBe(
+        'Shorter subjects'
+      );
+    });
+
+    it('refuses a proposal that would make the changelog of a draft too long', async () => {
+      harness.seed(
+        withVersions([{ ...draft(2, 2), changelog: 'x'.repeat(9990) }])
+      );
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter subjects',
+      });
+
+      expect(answer.error).toMatch(
+        /changelog of this draft would exceed 10000/
+      );
     });
 
     it('starts a major draft when asked', async () => {

@@ -6,17 +6,22 @@
  * elements or as a whole. Read by fake-mongo-query.js.
  */
 
+// A date, whatever realm built it: the records the fakes store are copied by
+// `structuredClone`, whose dates are not the test's own `Date`.
+const isDate = (value) =>
+  Object.prototype.toString.call(value) === '[object Date]';
+
 const isPlainObject = (value) =>
   !!value &&
   typeof value === 'object' &&
   !Array.isArray(value) &&
-  !(value instanceof Date) &&
+  !isDate(value) &&
   !(value instanceof RegExp) &&
   !value._bsontype;
 
 // What a stored value compares as: a date by its time, an id by its hex.
 function comparable(value) {
-  if (value instanceof Date) return value.getTime();
+  if (isDate(value)) return value.getTime();
   if (value === undefined || value === null) return value;
   if (typeof value === 'number') return value;
   return String(value);

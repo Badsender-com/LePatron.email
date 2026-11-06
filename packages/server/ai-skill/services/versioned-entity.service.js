@@ -38,9 +38,9 @@ const {
   maxMajor,
   maxMinorFor,
   assertDraft,
-  openDraftOf,
-  versionLabel,
+  laterThan,
 } = require('./version-helpers.js');
+const { createDraftWriter } = require('./versioned-draft.js');
 
 /**
  * @param {Object} options
@@ -178,86 +178,6 @@ function createVersionedEntityService({
     return doc;
   }
 
-  /**
-   * The draft a change goes to, when there is one: the open draft (the
-   * latest one newer than the active version). A major change is never
-   * written into an open minor, and an archived document takes no draft.
-   *
-   * @returns {Object|null} the open draft, or null when one is to be started
-   * @throws {HttpError} 409
-   */
-  function draftToWrite(doc, id, major) {
-    if (doc.status === SkillStatuses.ARCHIVED) {
-      throw createError(409, `"${id}" is archived: it takes no new draft.`);
-    }
-    const open = openDraftOf(doc);
-    if (open && major && open.versionMinor > 0) {
-      throw createError(
-        409,
-        `The minor draft ${versionLabel(
-          open
-        )} is open: propose this change to it, or ask a person to publish or discard it before a major version.`
-      );
-    }
-    return open;
-  }
-
-  /**
-   * The draft a change from an assistant goes to (ADR 0014): the open draft,
-   * or a new one started from the active version, so that only one draft is
-   * ever open. One read, and a write only when a draft is started, on the
-   * condition that the versions did not change since that read: of two
-   * changes made at once, the second writes into the draft the first
-   * started. The back office keeps starting the drafts it is asked for.
-   *
-   * @param {string} id
-   * @param {Object} [options]
-   * @param {boolean} [options.major] a major draft rather than a minor one
-   * @param {*} [options.userId]
-   * @returns {Promise<{doc: Object, version: Object, started: boolean}>}
-   *   the document, the draft, and whether this call started it
-   * @throws {HttpError} 404, or 409 when the document is archived, when a
-   *   major is asked while a minor draft is open, or when it changed in a
-   *   way that leaves no draft to write
-   */
-  async function openOrStartDraft(id, { major = false, userId } = {}) {
-    const doc = await getDoc(id);
-    const open = draftToWrite(doc, id, major);
-    if (open) return { doc, version: open, started: false };
-
-    // A minor by default, a major on request or when nothing is published
-    // yet, as the back office starts them.
-    const active = findActiveVersion(doc);
-    const draft =
-      major || !active
-        ? majorDraftOf(doc, active, userId)
-        : minorDraftOf(doc, active, userId);
-    const written = await model.findOneAndUpdate(
-      {
-        [idField]: id,
-        status: { $ne: SkillStatuses.ARCHIVED },
-        versions: { $size: (doc.versions || []).length },
-      },
-      { $push: { versions: draft } },
-      { new: true }
-    );
-    if (written) {
-      return {
-        doc: written,
-        version: findVersion(written, draft.versionMajor, draft.versionMinor),
-        started: true,
-      };
-    }
-    // Another write came first: the draft it started is the one to write.
-    const now = await getDoc(id);
-    const started = draftToWrite(now, id, major);
-    if (started) return { doc: now, version: started, started: false };
-    throw createError(
-      409,
-      `The ${entityNoun} "${id}" changed while the draft was started: send the change again.`
-    );
-  }
-
   async function updateVersion(id, { major, minor }, patch, userId) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
@@ -266,10 +186,22 @@ function createVersionedEntityService({
       if (patch[key] !== undefined) version[key] = patch[key];
     }
     version.updatedBy = userId;
-    version.updatedAt = new Date();
+    version.updatedAt = laterThan(version.updatedAt);
     await doc.save();
     return doc;
   }
+
+  // The assistant's way to a draft (ADR 0014), one open at a time, each
+  // write conditioned on what it read: versioned-draft.js.
+  const drafts = createDraftWriter({
+    model,
+    idField,
+    entityNoun,
+    getDoc,
+    minorDraftOf,
+    majorDraftOf,
+    patchable: PATCHABLE_VERSION_FIELDS,
+  });
 
   async function deleteVersion(id, { major, minor }) {
     const doc = await getDoc(id);
@@ -343,7 +275,8 @@ function createVersionedEntityService({
     cloneVersionContent,
     createMinorVersion,
     createMajorVersion,
-    openOrStartDraft,
+    openOrStartDraft: drafts.openOrStartDraft,
+    writeDraftIfUnchanged: drafts.writeDraftIfUnchanged,
     updateVersion,
     deleteVersion,
     activateVersion,

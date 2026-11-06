@@ -82,7 +82,22 @@ function openDraftOf(doc) {
     .reduce((latest, v) => (!latest || isAfter(v, latest) ? v : latest), null);
 }
 
+/**
+ * A version's new update date: now, and always later than the one it had, so
+ * that a write conditioned on the date read (versioned-draft.js) never
+ * mistakes a version written since for the one read, even within the same
+ * millisecond.
+ *
+ * @param {Date} [previous]
+ * @returns {Date}
+ */
+function laterThan(previous) {
+  const before = previous ? new Date(previous).getTime() : 0;
+  return new Date(Math.max(Date.now(), before + 1));
+}
+
 module.exports = {
+  laterThan,
   parseVersionParam,
   versionLabel,
   findVersion,

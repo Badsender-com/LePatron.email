@@ -13,6 +13,7 @@ const {
 const {
   Audiences,
   SkillNatures,
+  MinorVersionDefaults,
 } = require('../ai-skill/constant/skill-constants.js');
 const {
   withIdentity,
@@ -98,25 +99,37 @@ function drafted({ answer, diff }) {
 }
 
 // The changelog of a draft a proposal writes into: the draft's own, then the
-// proposal's, so that what a person or an earlier proposal wrote stays. A
-// draft this proposal started has only the default of a new version.
-function changelogAfter(version, started, changelog) {
-  const before = started ? '' : String(version.changelog || '').trim();
-  return before ? `${before}\n${changelog}` : changelog;
+// proposal's, so that what a person or an earlier proposal wrote stays. The
+// default of a new minor version says nothing, and counts as empty. Bounded,
+// so a draft proposed to again and again stays readable.
+const MAX_DRAFT_CHANGELOG = 10000;
+
+function changelogAfter(version, changelog) {
+  const before = String(version.changelog || '').trim();
+  const said = before && before !== MinorVersionDefaults.changelog;
+  const after = said ? `${before}\n${changelog}` : changelog;
+  if (after.length > MAX_DRAFT_CHANGELOG) {
+    throw createError(
+      400,
+      `The changelog of this draft would exceed ${MAX_DRAFT_CHANGELOG} characters: ask a person to shorten it in the back office before proposing more.`
+    );
+  }
+  return after;
 }
 
-// The open draft, or a new one the versioning service starts (ADR 0014).
+// The open draft, or a new one the versioning service starts, written on the
+// condition that it did not change since it was read (ADR 0014).
 async function writeDraft(entity, id, { major, ...patch }, user) {
   const { service } = ENTITIES[entity];
-  const { version, started } = await service.openOrStartDraft(id, {
+  const { doc, version } = await service.openOrStartDraft(id, {
     major,
     userId: user.id,
   });
   const ref = { major: version.versionMajor, minor: version.versionMinor };
-  const saved = await service.updateVersion(
-    id,
-    ref,
-    { ...patch, changelog: changelogAfter(version, started, patch.changelog) },
+  const saved = await service.writeDraftIfUnchanged(
+    doc,
+    version,
+    { ...patch, changelog: changelogAfter(version, patch.changelog) },
     user.id
   );
   return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));

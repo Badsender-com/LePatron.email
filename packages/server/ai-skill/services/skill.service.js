@@ -302,6 +302,17 @@ async function updateVersion(skillId, ref, patch, userId) {
   return versioned.updateVersion(skillId, ref, patch, userId);
 }
 
+/**
+ * An assistant's change to a draft it read (versioned-draft.js), its
+ * consumed expertises checked before anything is written.
+ */
+async function writeDraftIfUnchanged(doc, version, patch, userId) {
+  if (patch && patch.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(patch.consumedExpertiseIds);
+  }
+  return versioned.writeDraftIfUnchanged(doc, version, patch, userId);
+}
+
 const archiveSkill = versioned.archive;
 
 module.exports = {
@@ -313,6 +324,7 @@ module.exports = {
   createMinorVersion,
   createMajorVersion,
   openOrStartDraft,
+  writeDraftIfUnchanged,
   updateVersion,
   deleteVersion,
   activateVersion,
