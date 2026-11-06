@@ -131,13 +131,13 @@ function createInteractionsRouter(provider, resource) {
           );
         }
       }
-      const requested = String(interaction.params.scope || '').split(' ');
       req.interaction = interaction;
       req.clientCompany = company;
       req.consenter = consenter;
-      req.granted = consenter.scopes.filter((scope) =>
-        requested.includes(scope)
-      );
+      // What the user may grant, whatever the application asked for: the
+      // clients only know of the read scope the server advertises, and the
+      // consent offers drafting to whoever may manage the platform (ADR 0014).
+      req.granted = consenter.scopes;
       return next();
     } catch (err) {
       return next(err);
@@ -160,7 +160,10 @@ function createInteractionsRouter(provider, resource) {
         scopes: req.granted,
         groups: req.consenter.groups,
         // Whose rights the application gets, for the user to check.
-        account: { email: req.consenter.user.email },
+        account: {
+          name: req.consenter.user.name,
+          email: req.consenter.user.email,
+        },
       });
     } catch (err) {
       next(err);
@@ -176,7 +179,12 @@ function createInteractionsRouter(provider, resource) {
 
   router.post('/:uid/consent', async (req, res, next) => {
     try {
-      const { interaction, consenter, granted } = req;
+      const { interaction, consenter } = req;
+      // Drafting is offered, never assumed (ADR 0014): granted only when the
+      // user ticks it, whatever the application asked for.
+      const granted = req.granted.filter(
+        (scope) => scope !== WRITE_SCOPE || req.body?.allowWrite === true
+      );
       const groupId = String(req.body?.groupId || '');
       if (!consenter.groups.some((group) => group.id === groupId)) {
         return refuse(res, 403, NO_ACCESS, 'no_mcp_access');
@@ -194,6 +202,12 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
+      // The token carries what was granted: the provider resumes the
+      // authorization with the parameters the interaction keeps.
+      interaction.params.scope = granted.join(' ');
+      await interaction.save(
+        Math.max(interaction.exp - Math.floor(Date.now() / 1000), 1)
+      );
       const client = await provider.Client.find(interaction.params.client_id);
       // Connecting an application again replaces its previous connection to
       // the group: one line per application, and no older token lives on.

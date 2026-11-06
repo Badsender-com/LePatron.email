@@ -146,6 +146,79 @@ describe('token and refresh', () => {
   });
 });
 
+// The clients only ask for the read scope the server advertises: the consent
+// grants drafting to whoever may manage the platform (ADR 0014), and to no one
+// else, whatever is asked.
+describe('the scopes a token carries', () => {
+  let app;
+  beforeEach(() => {
+    app = oauth.createApp();
+  });
+
+  // Answered as JSON, or as an event stream whose data is the JSON-RPC answer.
+  const toolsOf = async (accessToken) => {
+    const response = await oauth.callMcp(app, accessToken, 'tools/list');
+    const data = /^data: (.*)$/m.exec(response.text);
+    const answer = data ? JSON.parse(data[1]) : response.body;
+    return answer.result.tools.map((tool) => tool.name);
+  };
+
+  it('gives a super admin who ticks it the drafting scope, though only reading was asked for', async () => {
+    const tokens = await oauth.connect(app, f.ALICE, {
+      group: f.PLATFORM_GROUP,
+      scope: 'mcp:read',
+      allowWrite: true,
+    });
+
+    expect(tokens.scope.split(' ').sort()).toEqual([
+      'mcp:read',
+      'skills:write',
+    ]);
+    expect(await toolsOf(tokens.access_token)).toContain('create_expertise');
+  });
+
+  it('keeps a super admin who does not tick it to reading', async () => {
+    const tokens = await oauth.connect(app, f.ALICE, {
+      group: f.CLIENT_GROUP,
+      scope: 'mcp:read skills:write',
+    });
+
+    expect(tokens.scope).toBe('mcp:read');
+    expect(await toolsOf(tokens.access_token)).not.toContain(
+      'create_expertise'
+    );
+  });
+
+  it('keeps a regular user to reading, though drafting was asked for and ticked', async () => {
+    const tokens = await oauth.connect(app, f.FRANK, {
+      group: f.CLIENT_GROUP,
+      scope: 'mcp:read skills:write',
+      allowWrite: true,
+    });
+
+    expect(tokens.scope).toBe('mcp:read');
+    expect(await toolsOf(tokens.access_token)).not.toContain(
+      'create_expertise'
+    );
+  });
+
+  it('keeps the scope through a refresh', async () => {
+    const tokens = await oauth.connect(app, f.ALICE, {
+      group: f.PLATFORM_GROUP,
+      allowWrite: true,
+    });
+
+    const { body } = await request(app).post('/oauth/token').type('form').send({
+      grant_type: 'refresh_token',
+      refresh_token: tokens.refresh_token,
+      client_id: CIMD_CLIENT.client_id,
+      resource: oauth.MCP_RESOURCE,
+    });
+
+    expect(body.scope.split(' ').sort()).toEqual(['mcp:read', 'skills:write']);
+  });
+});
+
 describe('audience', () => {
   let app;
   beforeEach(() => {

@@ -143,11 +143,12 @@ function model(records) {
       records.push(stored);
       return toDocument(stored, stored);
     },
-    // `$set` only.
+    // `$set` only; answered as Mongoose 5 does.
     updateOne: async (filter, { $set = {} } = {}) => {
       const record = records.find((candidate) => matches(candidate, filter));
       if (record) Object.assign(record, copy($set));
-      return { matchedCount: record ? 1 : 0 };
+      const n = record ? 1 : 0;
+      return { n, nModified: n, ok: 1 };
     },
     deleteMany: async (filter = {}) => {
       const kept = records.filter((record) => !matches(record, filter));

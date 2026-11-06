@@ -1082,28 +1082,35 @@ export default {
     title: 'Connecter {client} à LePatron',
     pageTitle: 'Connecter un assistant à LePatron',
     loginHint: 'Connectez-vous pour autoriser votre assistant IA à accéder à LePatron.',
-    intro: '{client} demande à se connecter à votre compte LePatron.',
-    account: 'Avec les droits du compte {email}.',
+    heading: '{client} demande l\'accès à votre compte LePatron',
+    errorTitle: 'Connexion impossible',
+    changeAccount: 'Changer de compte',
     switchAccount: 'Utiliser un autre compte',
     closeHint: 'Vous pouvez fermer cette fenêtre et relancer la connexion depuis votre assistant.',
-    redirectHost: 'Après accord, vous serez renvoyé vers {host}.',
-    canDo: 'Cette application pourra :',
+    canDo: 'Cette application pourra',
+    rights: {
+      read: 'Lire les expertises, les skills et vos mailings',
+      readHint: 'Avec vos droits, exactement comme dans l\'application.',
+      readOnly: 'Rien modifier, publier ni supprimer',
+      readOnlyHint: 'L\'accès est en lecture seule.',
+    },
     registration: {
+      dynamicTitle: 'Application non vérifiée',
       dynamic:
-        'Cette application s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
-      metadataDocument: 'Son identité est publiée par {host}.',
-      preRegistered: 'Application déclarée par l\'entreprise {company}.',
+        'Elle s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
+      dynamicBadge: 'Nom déclaré par l\'application',
+      metadataDocument: 'Identité vérifiée par {host}',
+      preRegistered: 'Déclarée par l\'entreprise {company}',
     },
-    scopes: {
-      read:
-        'lire les expertises, les skills et les mailings auxquels vous avez accès, avec vos droits',
-      write:
-        'proposer des brouillons de skills et d\'expertises, que seule une personne peut publier',
-    },
+    allowWrite: 'Proposer aussi des brouillons de skills et d\'expertises',
+    allowWriteHint:
+      'Réservé aux super admins. Seule une personne publie un brouillon. À ne cocher que pour un assistant de l\'équipe Badsender.',
     group: 'Entreprise',
     groupHint:
       'L\'assistant ne verra que cette entreprise. Pour en lire une autre, connectez-le à nouveau.',
     pickGroup: 'Choisissez une entreprise',
+    footnote:
+      'Valable 90 jours, révocable à tout moment depuis Applications connectées. Après accord, vous serez renvoyé vers {host}.',
     allow: 'Autoriser',
     allowIn: 'Autoriser dans {group}',
     deny: 'Refuser',
