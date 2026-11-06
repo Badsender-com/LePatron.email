@@ -4,26 +4,62 @@ const { z } = require('zod');
 const { McpFeedbacks } = require('../common/models.common.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity, failure, success } = require('./mcp-identity.js');
-const { readableExpertise } = require('./mcp-expertises.js');
-const { servedSkill } = require('./mcp-skill-catalog.js');
-const { readableMailing } = require('./mcp-mailings.js');
+const { namedExpertises } = require('./mcp-expertises.js');
+const { namedSkills } = require('./mcp-skill-catalog.js');
+const {
+  findReadableMailings,
+} = require('../mailing/mailing-search.service.js');
 const {
   computeExpiresAt,
 } = require('../ai-skill/services/invocation-logger.service.js');
 
-// What a reference points at, read as the user may read it, with the version
-// it was given on; null when the user may not read it.
-async function resolveReference({ kind, id }, identity) {
-  if (kind === 'mailing') {
-    return (await readableMailing(id, identity))
-      ? { kind, id, version: null }
-      : null;
-  }
-  const found =
-    kind === 'skill'
-      ? await servedSkill(id, identity.group)
-      : await readableExpertise(id, identity.group);
-  return found ? { kind, id, version: versionLabel(found.version) } : null;
+const keyOf = ({ kind, id }) => `${kind}:${id}`;
+
+// What each kind of reference is read with, as the user may read it, by name
+// only: the version a skill or an expertise was given on, none for a mailing,
+// whose content is never read to check a right.
+const READERS = {
+  skill: async (ids, { group }) =>
+    (await namedSkills(ids, group)).map(({ doc, version }) => [
+      doc.skillId,
+      versionLabel(version),
+    ]),
+  expertise: async (ids, { group }) =>
+    (await namedExpertises(ids, group)).map(({ doc, version }) => [
+      doc.expertiseId,
+      versionLabel(version),
+    ]),
+  mailing: async (ids, { user }) =>
+    (await findReadableMailings(user, ids)).map((m) => [String(m._id), null]),
+};
+
+/**
+ * The references of a feedback, each once, read by kind in one query each.
+ *
+ * @returns {Promise<{ references?: Object[], missing?: Object }>} the
+ *   references with their version, or the first one the user may not read
+ */
+async function resolveReferences(references, identity) {
+  const unique = [...new Map(references.map((r) => [keyOf(r), r])).values()];
+  const found = new Map();
+  await Promise.all(
+    Object.entries(READERS).map(async ([kind, read]) => {
+      const ids = unique.filter((r) => r.kind === kind).map((r) => r.id);
+      if (!ids.length) return;
+      (await read(ids, identity)).forEach(([id, version]) =>
+        found.set(keyOf({ kind, id }), version)
+      );
+    })
+  );
+  const missing = unique.find((r) => !found.has(keyOf(r)));
+  if (missing) return { missing };
+  return {
+    references: unique.map(({ kind, id }) => ({
+      kind,
+      id,
+      version: found.get(keyOf({ kind, id })),
+    })),
+  };
 }
 
 /**
@@ -34,15 +70,11 @@ async function resolveReference({ kind, id }, identity) {
  */
 async function submitFeedback(identity, args, ctx) {
   const authInfo = ctx.http?.authInfo || {};
-  const references = [];
-  for (const reference of args.references || []) {
-    // eslint-disable-next-line no-await-in-loop
-    const resolved = await resolveReference(reference, identity);
-    if (!resolved) {
-      return failure(`Not found: the ${reference.kind} ${reference.id}`);
-    }
-    references.push(resolved);
-  }
+  const { references, missing } = await resolveReferences(
+    args.references || [],
+    identity
+  );
+  if (missing) return failure(`Not found: the ${missing.kind} ${missing.id}`);
 
   const summary = (args.sessionSummary || '').trim();
   const allowed =

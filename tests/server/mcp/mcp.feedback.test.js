@@ -62,6 +62,84 @@ describe('feedback and retex', () => {
     expect(answer.error).toMatch(/not found/i);
   });
 
+  // A mailing is pointed at only by who may read it, by the rule of the
+  // search across accessible workspaces (ADR 0007).
+  describe('a reference to a mailing', () => {
+    const about = (id) => ({
+      rating: 'up',
+      references: [{ kind: 'mailing', id }],
+    });
+
+    it('records one the user may read', async () => {
+      expect(await submit(f.FRANK, about(f.M_NEWSLETTER))).toEqual({
+        recorded: true,
+        retex: 'none',
+      });
+      expect(harness.stored('feedbacks')[0].references).toEqual([
+        { kind: 'mailing', id: f.M_NEWSLETTER, version: null },
+      ]);
+    });
+
+    it('records one in a folder of a workspace the user may read', async () => {
+      expect(await submit(f.FRANK, about(f.M_ARCHIVED))).toMatchObject({
+        recorded: true,
+      });
+    });
+
+    it('never reaches another company’s mailing, even for a super admin bound to a company', async () => {
+      const client = await harness.connectAs(f.ALICE, {
+        group: f.CLIENT_GROUP,
+      });
+      const send = async (id) =>
+        harness.answerOf(
+          await client.callTool({
+            name: 'submit_feedback',
+            arguments: about(id),
+          })
+        );
+
+      expect(await send(f.M_PROMO)).toMatchObject({ recorded: true });
+      expect((await send(f.M_OTHER)).error).toMatch(/not found/i);
+    });
+  });
+
+  it('keeps who sent it, from which application, until the company’s log retention ends', async () => {
+    const client = await harness.connectAs(f.FRANK, { clientId: 'claude' });
+    const before = Date.now();
+
+    await client.callTool({
+      name: 'submit_feedback',
+      arguments: { rating: 'up', comment: 'Useful' },
+    });
+
+    const [feedback] = harness.stored('feedbacks');
+    expect(feedback).toMatchObject({
+      _user: f.FRANK,
+      _company: f.CLIENT_GROUP,
+      clientId: 'claude',
+    });
+    // The fixture's company keeps its logs 30 days.
+    const days = (new Date(feedback.expiresAt) - before) / (24 * 3600 * 1000);
+    expect(days).toBeGreaterThanOrEqual(30);
+    expect(days).toBeLessThan(30.01);
+  });
+
+  it('keeps each thing it is about once', async () => {
+    await submit(f.FRANK, {
+      rating: 'up',
+      references: [
+        { kind: 'skill', id: 'redaction.subject-ideas' },
+        { kind: 'expertise', id: 'redaction.subject-line' },
+        { kind: 'skill', id: 'redaction.subject-ideas' },
+      ],
+    });
+
+    expect(harness.stored('feedbacks')[0].references).toEqual([
+      { kind: 'skill', id: 'redaction.subject-ideas', version: '1.2' },
+      { kind: 'expertise', id: 'redaction.subject-line', version: '2.1' },
+    ]);
+  });
+
   it.each([
     ['the group does not allow retex', false, true, 'dropped'],
     ['the user does not agree to it', true, false, 'dropped'],
