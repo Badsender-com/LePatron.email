@@ -11,8 +11,7 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
-// Turned on by #1305 (search and fetch for ChatGPT)
-describe.skip('search and fetch', () => {
+describe('search and fetch', () => {
   let client;
 
   beforeEach(async () => {
@@ -36,6 +35,32 @@ describe.skip('search and fetch', () => {
       expect(ids(await search('black friday'))).toEqual(
         [`mailing:${f.M_ARCHIVED}`, `mailing:${f.M_NEWSLETTER}`].sort()
       );
+    });
+
+    it('finds a mailing by its subject, a tag or its email type', async () => {
+      const PROMOTIONAL = '507f1f77bcf86cd799439a01';
+      harness.seed({
+        ...f.SEED,
+        taxonomyItems: [
+          {
+            _id: PROMOTIONAL,
+            _company: f.CLIENT_GROUP,
+            type: 'emailType',
+            label: 'Promotional',
+          },
+        ],
+      });
+      harness.update('mailings', f.M_APPROVED, {
+        subject: 'Welcome aboard',
+        tags: ['onboarding'],
+        _emailType: PROMOTIONAL,
+      });
+      client = await harness.connectAs(f.FRANK);
+
+      for (const query of ['aboard', 'onboarding', 'promotional']) {
+        // eslint-disable-next-line no-await-in-loop
+        expect(ids(await search(query))).toEqual([`mailing:${f.M_APPROVED}`]);
+      }
     });
 
     it('gives each result an id, a title and a link to the app', async () => {
@@ -69,6 +94,46 @@ describe.skip('search and fetch', () => {
       expect(ids(await search('old rules'))).toEqual([]);
     });
 
+    it('matches whatever the case and the accents, both ways', async () => {
+      harness.update('mailings', f.M_APPROVED, {
+        name: 'Événement de rentrée',
+      });
+
+      expect(ids(await search('EVENEMENT rentree'))).toEqual([
+        `mailing:${f.M_APPROVED}`,
+      ]);
+      expect(ids(await search('Black Fridäy 2025'))).toEqual([
+        `mailing:${f.M_NEWSLETTER}`,
+      ]);
+    });
+
+    it('finds a mailing whose words sit in different fields', async () => {
+      // "black" in the name, "prices" in the subject.
+      expect(ids(await search('black prices'))).toEqual([
+        `mailing:${f.M_NEWSLETTER}`,
+      ]);
+    });
+
+    it('takes every character of a word as written', async () => {
+      harness.update('mailings', f.M_APPROVED, { name: 'Up to 50% (c++) off' });
+
+      expect(ids(await search('(c++)'))).toEqual([`mailing:${f.M_APPROVED}`]);
+      expect(ids(await search('.*'))).toEqual([]);
+    });
+
+    it('finds nothing for a query of blanks', async () => {
+      expect(await search('   ')).toEqual({ results: [] });
+    });
+
+    it('refuses a query longer than a few words could be', async () => {
+      const result = await client.callTool({
+        name: 'search',
+        arguments: { query: 'word '.repeat(100) },
+      });
+
+      expect(result.isError).toBe(true);
+    });
+
     // No full-text search on content in this version.
     it('does not search the content of a mailing', async () => {
       expect(ids(await search('free delivery'))).toEqual([]);
@@ -86,6 +151,13 @@ describe.skip('search and fetch', () => {
         metadata: expect.objectContaining({ status: 'pushed-to-esp' }),
       });
       expect(document.text).toContain('Black Friday is coming');
+    });
+
+    it('reads back a mailing without content, saying why', async () => {
+      const document = await fetch(`mailing:${f.M_NO_PREVIEW}`);
+
+      expect(document.title).toBe('Blank draft');
+      expect(document.text).toContain('never saved in the editor');
     });
 
     it('reads back the active version of an expertise', async () => {

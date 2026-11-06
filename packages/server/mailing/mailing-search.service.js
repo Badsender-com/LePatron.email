@@ -9,7 +9,10 @@ const {
   Workspaces,
   Folders,
   Mailings,
+  TaxonomyItems,
 } = require('../common/models.common.js');
+const { TaxonomyTypes } = require('../constant/taxonomy-type.js');
+const { containing, containingRegExp } = require('../utils/text-search.js');
 const permissions = require('../account/permissions.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
 
@@ -39,11 +42,12 @@ module.exports = { searchMailings, accessibleLocations, findReadableMailing };
  * @param {Object} params.user the request user
  * @param {Object} params.filters the listing's filters
  * @param {Object} params.pagination the listing's pagination
- * @param {Object} [params.within] narrows the search, among the accessible
- *   locations only: `workspaceIds`, `folderIds` (a folder with its
- *   subfolders), `userIds` (the authors' accounts) and `authorName` (a part of
- *   the author's name, whatever the case). A location the user may not read
- *   finds nothing.
+ * @param {Object} [params.within] narrows the search, never beyond what the
+ *   user may read: by location, `workspaceIds` and `folderIds` (a folder with
+ *   its subfolders; one the user may not read finds nothing); by author,
+ *   `userIds` (their accounts) or `authorName` (a part of their name); by
+ *   text, `words` (each one in the name, the subject, a tag or the email
+ *   type's label). Texts match whatever their case and accents.
  * @returns {Promise<{ meta: Object, items: Object }>} the listing's answer,
  *   each email with its `location` and whether the user may open it
  *   (`hasAccess`)
@@ -64,6 +68,7 @@ async function searchMailings({
   const items = await findPage({
     _company: mongoose.Types.ObjectId(groupId),
     ...authorsOf(within),
+    ...(await wordsFilter(within, groupId)),
     $or: [
       { _parentFolder: { $in: scope.folders.map((folder) => folder._id) } },
       // An email in a folder is found through its folder only: a workspace
@@ -103,11 +108,36 @@ function authorsOf({ userIds, authorName } = {}) {
     ...(userIds && {
       _user: { $in: userIds.map((id) => mongoose.Types.ObjectId(String(id))) },
     }),
-    ...(authorName && {
-      author: {
-        $regex: String(authorName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-        $options: 'i',
-      },
+    ...(authorName && { author: containing(authorName) }),
+  };
+}
+
+// Every word somewhere in what describes an email, whatever its case and
+// accents: its name, its subject, a tag or its email type's label. Never its
+// content.
+async function wordsFilter({ words } = {}, groupId) {
+  const kept = (words || []).map(String).filter(Boolean);
+  if (kept.length === 0) return {};
+  const types = await TaxonomyItems.find({
+    _company: groupId,
+    type: TaxonomyTypes.EMAIL_TYPE,
+  })
+    .select('label')
+    .lean();
+  return {
+    $and: kept.map((word) => {
+      const pattern = containingRegExp(word);
+      const typeIds = types
+        .filter((type) => pattern.test(type.label))
+        .map((type) => type._id);
+      return {
+        $or: [
+          { name: containing(word) },
+          { subject: containing(word) },
+          { tags: containing(word) },
+          ...(typeIds.length ? [{ _emailType: { $in: typeIds } }] : []),
+        ],
+      };
     }),
   };
 }
