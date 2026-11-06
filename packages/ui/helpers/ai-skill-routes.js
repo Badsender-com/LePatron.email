@@ -82,3 +82,8 @@ export function aiInvocations() {
 export function aiInvocation(id) {
   return `/ai-invocations/${id}`;
 }
+
+// The skills export (ADR 0018).
+export function aiSkillsExport() {
+  return '/ai-skills/export';
+}

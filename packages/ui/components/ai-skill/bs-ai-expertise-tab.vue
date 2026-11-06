@@ -7,6 +7,8 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiExpertiseCreateModal from '~/components/ai-skill/bs-ai-expertise-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
+import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
+import { isExportable } from '~/helpers/skills-export-download.js';
 import { BookOpen } from 'lucide-vue';
 import {
   skillCategoryOptions,
@@ -20,6 +22,7 @@ export default {
   components: {
     BsDataTable,
     BsAiExpertiseCreateModal,
+    BsAiSkillsExportBar,
     BsTimestamp,
     BsAiPlatformOnlyChip,
     LucideBookOpen: BookOpen,
@@ -30,6 +33,7 @@ export default {
       items: [],
       total: 0,
       saving: false,
+      selected: [],
       search: '',
       filterCategory: null,
       filterStatus: null,
@@ -63,6 +67,16 @@ export default {
         { text: this.$t('aiSkills.expertise.scope'), value: 'scope' },
         { text: this.$t('global.updatedAt'), value: 'updatedAt' },
       ];
+    },
+    // Only what has an active version can be exported (ADR 0018).
+    tableItems() {
+      return this.filteredItems.map((item) => ({
+        ...item,
+        exportable: isExportable(item),
+      }));
+    },
+    selectedIds() {
+      return this.selected.map((item) => item.expertiseId);
     },
     filteredItems() {
       // `clearable` sets this.search to null on clear — guard the trim.
@@ -201,10 +215,15 @@ export default {
       />
     </div>
 
+    <bs-ai-skills-export-bar :expertise-ids="selectedIds" />
+
     <bs-data-table
+      v-model="selected"
       :headers="tableHeaders"
-      :items="filteredItems"
+      :items="tableItems"
       :loading="loading"
+      show-select
+      selectable-key="exportable"
       item-key="expertiseId"
       clickable
       @click:row="openItem"

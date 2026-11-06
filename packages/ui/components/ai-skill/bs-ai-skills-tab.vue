@@ -7,6 +7,8 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal.vue';
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
+import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
+import { isExportable } from '~/helpers/skills-export-download.js';
 import { Sparkles } from 'lucide-vue';
 import {
   skillCategoryOptions,
@@ -20,6 +22,7 @@ export default {
   components: {
     BsDataTable,
     BsAiSkillCreateModal,
+    BsAiSkillsExportBar,
     BsTimestamp,
     BsAiPlatformOnlyChip,
     LucideSparkles: Sparkles,
@@ -33,6 +36,7 @@ export default {
       filterCategory: null,
       filterStatus: null,
       saving: false,
+      selected: [],
     };
   },
   computed: {
@@ -53,6 +57,13 @@ export default {
       return this.items.filter((s) =>
         `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
       );
+    },
+    // Only what has an active version can be exported (ADR 0018).
+    tableItems() {
+      return this.filteredItems.map((item) => ({
+        ...item,
+        exportable: isExportable(item),
+      }));
     },
     tableHeaders() {
       return [
@@ -184,10 +195,15 @@ export default {
       />
     </div>
 
+    <bs-ai-skills-export-bar :skills="selected" />
+
     <bs-data-table
+      v-model="selected"
       :headers="tableHeaders"
-      :items="filteredItems"
+      :items="tableItems"
       :loading="loading"
+      show-select
+      selectable-key="exportable"
       item-key="skillId"
       clickable
       @click:row="openSkill"
