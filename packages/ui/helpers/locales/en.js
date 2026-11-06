@@ -402,6 +402,12 @@ export default {
         name: 'MCP',
         description: 'Claude, ChatGPT and Copilot connected to LePatron',
         configHint: 'The tech admin then turns access on in the AI features',
+        closeTitle: 'Close the MCP module?',
+        close: 'Close the module',
+        closeConfirm:
+          ' | The connected application of {group} will be revoked at once. Its user will connect it again if the module reopens. | The {count} connected applications of {group} will be revoked at once. Each user will connect theirs again if the module reopens.',
+        closeConfirmUnknown:
+          'The connected applications of {group} will be revoked at once. Each user will connect theirs again if the module reopens.',
       },
     },
     mailingTab: {

@@ -2,11 +2,15 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
-import { groupsItem } from '~/helpers/api-routes.js';
+import {
+  groupsItem,
+  groupConnectedApplications,
+} from '~/helpers/api-routes.js';
 import { CAN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select';
@@ -29,6 +33,7 @@ export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
+    BsModalConfirm,
     BsTextField,
     BsTextarea,
     BsSelect,
@@ -55,6 +60,11 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      // The MCP module as loaded: only closing an open one is asked.
+      loadedMcpModule: false,
+      // The connected applications a closed MCP module is about to end.
+      mcpConnections: 0,
+      checkingMcp: false,
     };
   },
   computed: {
@@ -72,6 +82,16 @@ export default {
       set(updatedGroup) {
         this.$emit('update', updatedGroup);
       },
+    },
+    closeMcpMessage() {
+      const group = this.group.name;
+      if (!Number.isFinite(this.mcpConnections)) {
+        return this.$t('groups.modules.mcp.closeConfirmUnknown', { group });
+      }
+      return this.$tc('groups.modules.mcp.closeConfirm', this.mcpConnections, {
+        count: this.mcpConnections,
+        group,
+      });
     },
     isGroupCreationPage() {
       return this.$route.path === '/groups/new';
@@ -94,6 +114,13 @@ export default {
     },
   },
   watch: {
+    // The page swaps the group for the saved one: what was saved is loaded.
+    group: {
+      immediate: true,
+      handler() {
+        this.loadedMcpModule = this.group?.enableMcpModule === true;
+      },
+    },
     useSamlAuthentication: {
       immediate: true,
       handler(newVal) {
@@ -126,9 +153,38 @@ export default {
       }
       return errors;
     },
-    onSubmit() {
+    async onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
+      // Closing an open MCP module revokes the company's connected
+      // applications (ADR 0017): asked first, as long as some are left.
+      const closing =
+        this.isEdit && this.loadedMcpModule && !this.group.enableMcpModule;
+      if (closing) {
+        if (this.checkingMcp) return;
+        this.checkingMcp = true;
+        this.mcpConnections = await this.connectionsCount();
+        this.checkingMcp = false;
+        if (this.mcpConnections > 0) return this.$refs.closeMcpModal.open();
+      }
+      return this.save();
+    },
+    async connectionsCount() {
+      try {
+        const { count } = await this.$axios.$get(
+          groupConnectedApplications({ groupId: this.group.id })
+        );
+        return count;
+      } catch (error) {
+        // Unknown: still asked, without a number.
+        return Infinity;
+      }
+    },
+    // Not closed after all: the switch goes back to the module as loaded.
+    keepMcpModule() {
+      this.$set(this.group, 'enableMcpModule', this.loadedMcpModule);
+    },
+    save() {
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
@@ -392,8 +448,8 @@ export default {
           <v-btn
             elevation="0"
             color="accent"
-            :loading="loading"
-            :disabled="disabled || loading"
+            :loading="loading || checkingMcp"
+            :disabled="disabled || loading || checkingMcp"
             @click="onSubmit"
           >
             {{ $t('global.save') }}
@@ -448,6 +504,16 @@ export default {
         "
       />
     </bs-modal-confirm-form>
+
+    <bs-modal-confirm
+      ref="closeMcpModal"
+      :title="$t('groups.modules.mcp.closeTitle')"
+      :action-label="$t('groups.modules.mcp.close')"
+      @confirm="save"
+      @cancel="keepMcpModule"
+    >
+      <p>{{ closeMcpMessage }}</p>
+    </bs-modal-confirm>
   </div>
 </template>
 
