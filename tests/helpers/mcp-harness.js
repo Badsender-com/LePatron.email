@@ -20,7 +20,8 @@
  *   so far are written: the server writes them in the background.
  * - `advanceClock(ms)` moves the server's clock forward, for what is counted
  *   per minute (the rate limit).
- * - `disconnect()` closes every client opened since the last `seed`.
+ * - `disconnect()` closes every client opened since the last `seed`, once
+ *   the call logs being written are.
  *
  * Requiring this file replaces the models with the stand-ins of
  * `mcp-fake-models.js` for the whole test file, and quiets the logger: require
@@ -117,10 +118,12 @@ function advanceClock(ms) {
   clock.now = () => previous() + ms;
 }
 
+// Each test leaves no call log still being written for the next one to find.
 async function disconnect() {
   const open = clients;
   clients = [];
   await Promise.all(open.map((client) => client.close()));
+  await callLog().callLogsWritten();
 }
 
 // What a tool answers, as the client receives it: the structured content, or
