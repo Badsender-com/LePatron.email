@@ -94,16 +94,50 @@ describe('authoring', () => {
       );
     });
 
-    it('refuses a user who may not manage the platform, whatever the token says', async () => {
-      const client = await harness.connectAs(f.ERIN, { scopes: WRITE });
+    // Every role, as a right is tested (AGENTS.md): only the one that may
+    // manage the platform writes, whatever the token says.
+    it.each([
+      ['a company admin', f.ERIN],
+      ['a tech admin', f.TESS],
+      ['a regular user', f.FRANK],
+      ['a writer', f.WREN],
+      ['a reviewer', f.REX],
+    ])(
+      'refuses %s, whatever the token says, and writes nothing',
+      async (_role, userId) => {
+        const client = await harness.connectAs(userId, { scopes: WRITE });
 
-      const answer = await call(client, 'propose_expertise_change', {
+        const answers = await Promise.all([
+          call(client, 'propose_expertise_change', {
+            expertiseId: SUBJECT_LINES,
+            body: NEW_BODY,
+            changelog: 'Shorter subjects',
+          }),
+          call(client, 'create_task_skill', {
+            skillId: 'qc.read-sending-report',
+            title: 'Read a sending report',
+            category: 'qc',
+            procedure: '1. Read',
+            changelog: 'First draft',
+          }),
+        ]);
+
+        answers.forEach((answer) =>
+          expect(answer.error).toMatch(/not allowed/i)
+        );
+        expect(harness.stored('expertises')).toEqual(f.SEED.expertises);
+        expect(harness.stored('skills')).toEqual(f.SEED.skills);
+      }
+    );
+
+    it('lets a super admin write', async () => {
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
         expertiseId: SUBJECT_LINES,
         body: NEW_BODY,
         changelog: 'Shorter subjects',
       });
 
-      expect(answer.error).toMatch(/not allowed/i);
+      expect(answer.status).toBe('DRAFT');
     });
 
     it('offers no tool that publishes, archives, deletes or opens to clients', async () => {
