@@ -191,6 +191,30 @@ describe('authoring', () => {
       expect(second.diff).toContain('+ One at most.');
     });
 
+    // An assistant may send two changes at once: the second goes to the
+    // draft the first started.
+    it('opens one draft for two changes proposed at once', async () => {
+      harness.seed(WITHOUT_DRAFT);
+      const client = await asAuthor();
+      const propose = (body) =>
+        call(client, 'propose_expertise_change', {
+          expertiseId: SUBJECT_LINES,
+          body,
+          changelog: 'Shorter',
+        });
+
+      const answers = await Promise.all([
+        propose(NEW_BODY),
+        propose(`${NEW_BODY}\n\n## Emojis\n\nOne at most.`),
+      ]);
+
+      expect(answers.map((answer) => answer.version)).toEqual(['2.2', '2.2']);
+      const { versions } = harness
+        .stored('expertises')
+        .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
+      expect(versions.filter((v) => v.status === 'DRAFT')).toHaveLength(1);
+    });
+
     it('starts a major draft when asked', async () => {
       harness.seed(WITHOUT_DRAFT);
 

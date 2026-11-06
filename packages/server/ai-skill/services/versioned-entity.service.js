@@ -38,6 +38,8 @@ const {
   maxMajor,
   maxMinorFor,
   assertDraft,
+  openDraftOf,
+  versionLabel,
 } = require('./version-helpers.js');
 
 /**
@@ -105,6 +107,45 @@ function createVersionedEntityService({
     'releaseNotes',
   ];
 
+  // A minor draft on top of the active version: a minor release carries no
+  // doctrine change, so it is pre-filled and the activation gate does not ask
+  // for it (unlike a major). These are stored CONTENT, displayed as authored —
+  // see MinorVersionDefaults for why they are French and not an i18n key.
+  function minorDraftOf(doc, active, userId) {
+    const now = new Date();
+    return {
+      versionMajor: active.versionMajor,
+      versionMinor: maxMinorFor(doc, active.versionMajor) + 1,
+      status: 'DRAFT',
+      ...cloneVersionContent(active),
+      changelog: MinorVersionDefaults.changelog,
+      releaseNotes: MinorVersionDefaults.releaseNotes,
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
+  // A major draft seeded from `seed`, or blank. Its changelog and release
+  // notes are left empty on purpose: the activation gate requires the author
+  // to write both before a major can be published.
+  function majorDraftOf(doc, seed, userId) {
+    const now = new Date();
+    return {
+      versionMajor: maxMajor(doc) + 1,
+      versionMinor: 0,
+      status: 'DRAFT',
+      ...cloneVersionContent(seed),
+      changelog: '',
+      releaseNotes: '',
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    };
+  }
+
   /**
    * New minor draft on top of the currently active version. Refuses when there
    * is no active version: a minor release is by definition a correction of
@@ -119,24 +160,7 @@ function createVersionedEntityService({
         `Cannot create a minor version: no active version on this ${entityNoun}`
       );
     }
-    const versionMajor = active.versionMajor;
-    const now = new Date();
-    doc.versions.push({
-      versionMajor,
-      versionMinor: maxMinorFor(doc, versionMajor) + 1,
-      status: 'DRAFT',
-      ...cloneVersionContent(active),
-      // A minor release carries no doctrine change, so it is pre-filled and the
-      // activation gate does not ask for it (unlike a major). These are stored
-      // CONTENT, displayed as authored — see MinorVersionDefaults for why they
-      // are French and not an i18n key.
-      changelog: MinorVersionDefaults.changelog,
-      releaseNotes: MinorVersionDefaults.releaseNotes,
-      createdBy: userId,
-      createdAt: now,
-      updatedBy: userId,
-      updatedAt: now,
-    });
+    doc.versions.push(minorDraftOf(doc, active, userId));
     await doc.save();
     return doc;
   }
@@ -147,24 +171,90 @@ function createVersionedEntityService({
    */
   async function createMajorVersion(id, { source, userId } = {}) {
     const doc = await getDoc(id);
-    const seed = source || findActiveVersion(doc);
-    const now = new Date();
-    doc.versions.push({
-      versionMajor: maxMajor(doc) + 1,
-      versionMinor: 0,
-      status: 'DRAFT',
-      ...cloneVersionContent(seed),
-      // Left empty on purpose: the activation gate requires the author to write
-      // both before a major can be published.
-      changelog: '',
-      releaseNotes: '',
-      createdBy: userId,
-      createdAt: now,
-      updatedBy: userId,
-      updatedAt: now,
-    });
+    doc.versions.push(
+      majorDraftOf(doc, source || findActiveVersion(doc), userId)
+    );
     await doc.save();
     return doc;
+  }
+
+  /**
+   * The draft a change goes to, when there is one: the open draft (the
+   * latest one newer than the active version). A major change is never
+   * written into an open minor, and an archived document takes no draft.
+   *
+   * @returns {Object|null} the open draft, or null when one is to be started
+   * @throws {HttpError} 409
+   */
+  function draftToWrite(doc, id, major) {
+    if (doc.status === SkillStatuses.ARCHIVED) {
+      throw createError(409, `"${id}" is archived: it takes no new draft.`);
+    }
+    const open = openDraftOf(doc);
+    if (open && major && open.versionMinor > 0) {
+      throw createError(
+        409,
+        `The minor draft ${versionLabel(
+          open
+        )} is open: propose this change to it, or ask a person to publish or discard it before a major version.`
+      );
+    }
+    return open;
+  }
+
+  /**
+   * The draft a change from an assistant goes to (ADR 0014): the open draft,
+   * or a new one started from the active version, so that only one draft is
+   * ever open. One read, and a write only when a draft is started, on the
+   * condition that the versions did not change since that read: of two
+   * changes made at once, the second writes into the draft the first
+   * started. The back office keeps starting the drafts it is asked for.
+   *
+   * @param {string} id
+   * @param {Object} [options]
+   * @param {boolean} [options.major] a major draft rather than a minor one
+   * @param {*} [options.userId]
+   * @returns {Promise<{doc: Object, version: Object}>} the document and the
+   *   draft
+   * @throws {HttpError} 404, or 409 when the document is archived, when a
+   *   major is asked while a minor draft is open, or when it changed in a
+   *   way that leaves no draft to write
+   */
+  async function openOrStartDraft(id, { major = false, userId } = {}) {
+    const doc = await getDoc(id);
+    const open = draftToWrite(doc, id, major);
+    if (open) return { doc, version: open };
+
+    // A minor by default, a major on request or when nothing is published
+    // yet, as the back office starts them.
+    const active = findActiveVersion(doc);
+    const draft =
+      major || !active
+        ? majorDraftOf(doc, active, userId)
+        : minorDraftOf(doc, active, userId);
+    const written = await model.findOneAndUpdate(
+      {
+        [idField]: id,
+        status: { $ne: SkillStatuses.ARCHIVED },
+        versions: { $size: (doc.versions || []).length },
+      },
+      { $push: { versions: draft } },
+      { new: true }
+    );
+    if (written) {
+      return {
+        doc: written,
+        version: findVersion(written, draft.versionMajor, draft.versionMinor),
+      };
+    }
+    // Another write came first: the draft it started is the one to write.
+    const now = await getDoc(id);
+    const started = draftToWrite(now, id, major);
+    if (started) return { doc: now, version: started };
+    throw createError(
+      409,
+      `The ${entityNoun} "${id}" changed while the draft was started: send the change again.`
+    );
   }
 
   async function updateVersion(id, { major, minor }, patch, userId) {
@@ -252,6 +342,7 @@ function createVersionedEntityService({
     cloneVersionContent,
     createMinorVersion,
     createMajorVersion,
+    openOrStartDraft,
     updateVersion,
     deleteVersion,
     activateVersion,

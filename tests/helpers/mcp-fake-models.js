@@ -9,9 +9,14 @@
  *
  * - A `.lean()` query answers copies of the stored fields; otherwise a
  *   document also has `id`, `toObject()` / `toJSON()`, and `save()`, which
- *   stores its fields back, unless it was read with a projection.
+ *   stores its fields back, unless it was read with a projection. As
+ *   Mongoose does, an array the document only added elements to since it
+ *   was read is pushed to, so two documents read at once that each add one
+ *   keep both; any other field is set as the document holds it.
  * - `create(record)` stores a copy, with an `_id` when it has none.
- * - `updateMany` takes a `$set` only.
+ * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set` and a
+ *   `$push`, and answers the document before the update, or after it with
+ *   `{ new: true }`, or null when nothing matches.
  * - `populate` is not supported: it throws, rather than answer a document
  *   MongoDB would have filled.
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
@@ -19,6 +24,7 @@
  * - Each collection the seed names is a model; the others are empty.
  */
 
+const { isDeepStrictEqual } = require('util');
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
 const { aggregated } = require('./fake-mongo-aggregate.js');
 
@@ -46,9 +52,29 @@ function fieldsOf(doc) {
   return copy(fields);
 }
 
+// What a save writes back to the record: an array the document only added
+// elements to since `read` is pushed to; any other field is set.
+function saveInto(stored, fields, read) {
+  Object.keys(stored).forEach((key) => {
+    if (!(key in fields)) delete stored[key];
+  });
+  Object.entries(fields).forEach(([key, value]) => {
+    const before = read[key];
+    const pushedOnly =
+      Array.isArray(value) &&
+      Array.isArray(before) &&
+      Array.isArray(stored[key]) &&
+      value.length > before.length &&
+      isDeepStrictEqual(value.slice(0, before.length), before);
+    if (pushedOnly) stored[key].push(...value.slice(before.length));
+    else stored[key] = value;
+  });
+}
+
 // `stored` is the record itself, which `save` writes back to; none for a
 // document read with a projection, which has only some of its fields.
 function toDocument(record, stored) {
+  const read = copy(record);
   const doc = { ...copy(record), id: String(record._id) };
   Object.defineProperty(doc, 'toObject', { value: () => fieldsOf(doc) });
   Object.defineProperty(doc, 'toJSON', { value: () => ({ ...doc }) });
@@ -57,12 +83,25 @@ function toDocument(record, stored) {
       if (!stored) {
         throw new Error('fake MCP models: save of a projected document');
       }
-      Object.keys(stored).forEach((key) => delete stored[key]);
-      Object.assign(stored, fieldsOf(doc));
+      saveInto(stored, fieldsOf(doc), read);
       return doc;
     },
   });
   return doc;
+}
+
+// `{ $set, $push }`, as findOneAndUpdate takes them.
+function applyUpdate(record, update) {
+  const { $set = {}, $push = {}, ...others } = update;
+  if (Object.keys(others).length) {
+    throw new Error(
+      `fake MCP models: ${Object.keys(others).join(', ')} is not supported`
+    );
+  }
+  Object.assign(record, copy($set));
+  Object.entries($push).forEach(([key, value]) => {
+    record[key] = [...(record[key] || []), copy(value)];
+  });
 }
 
 let nextId = 0;
@@ -151,6 +190,17 @@ function model(records) {
             .filter((value) => value !== undefined)
         ),
       ]),
+    findOneAndUpdate: (filter, update, options = {}) =>
+      query(
+        () => {
+          const [record] = matching(filter)();
+          if (!record) return [];
+          const before = copy(record);
+          applyUpdate(record, update);
+          return [options.new ? record : before];
+        },
+        (docs) => docs[0] || null
+      ),
     updateMany: (filter, update) =>
       Promise.resolve().then(() => {
         const { $set, ...others } = update;

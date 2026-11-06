@@ -9,7 +9,6 @@ const skillService = require('../ai-skill/services/skill.service.js');
 const {
   findActiveVersion,
   findVersion,
-  openDraftOf,
   versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
 const {
@@ -74,35 +73,6 @@ function diffOf(activeText, draftText) {
   ].join('\n');
 }
 
-// The open draft, or a new one from the active version: a minor by default, a
-// major on request or when nothing is published yet. A major is never written
-// into an open minor, nor a draft started on an archived skill or expertise.
-async function draftOf(entity, id, major, userId) {
-  const { service } = ENTITIES[entity];
-  const doc = await service[entity === 'skill' ? 'getSkill' : 'getExpertise'](
-    id
-  );
-  if (doc.status === 'ARCHIVED') {
-    throw createError(409, `"${id}" is archived: it takes no new draft.`);
-  }
-  const open = openDraftOf(doc);
-  if (open && major && open.versionMinor > 0) {
-    throw createError(
-      409,
-      `The minor draft ${label(
-        open
-      )} is open: propose this change to it, or ask a person to publish or discard it before a major version.`
-    );
-  }
-  if (open) return { doc, version: open };
-  const next =
-    major || !findActiveVersion(doc)
-      ? await service.createMajorVersion(id, { userId })
-      : await service.createMinorVersion(id, userId);
-  const created = next.versions[next.versions.length - 1];
-  return { doc: next, version: created };
-}
-
 // What a write answers: the version written, and its difference with the
 // active version, for the person to read before publishing.
 function answerOf(entity, doc, draft) {
@@ -117,9 +87,13 @@ function answerOf(entity, doc, draft) {
   };
 }
 
+// The open draft, or a new one the versioning service starts (ADR 0014).
 async function writeDraft(entity, id, { major, ...patch }, user) {
   const { service } = ENTITIES[entity];
-  const { version } = await draftOf(entity, id, major, user.id);
+  const { version } = await service.openOrStartDraft(id, {
+    major,
+    userId: user.id,
+  });
   const ref = { major: version.versionMajor, minor: version.versionMinor };
   const saved = await service.updateVersion(id, ref, patch, user.id);
   return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));

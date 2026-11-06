@@ -250,6 +250,7 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
   deleteVersion,
 } = versioned;
 
@@ -311,6 +312,7 @@ module.exports = {
   updateSkill,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
   updateVersion,
   deleteVersion,
   activateVersion,

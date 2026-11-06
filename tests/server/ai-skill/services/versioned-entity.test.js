@@ -222,6 +222,58 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
     });
   });
 
+  // The assistant's way to a draft (ADR 0014): one draft open at a time.
+  describe('openOrStartDraft', () => {
+    const active = () => makeVersion({ versionMajor: 2, versionMinor: 0 });
+
+    it('starts a minor draft on the condition that the versions did not change', async () => {
+      build({ versions: [active()], activeVersion: { major: 2, minor: 0 } });
+      model.findOneAndUpdate = jest.fn(async (_filter, { $push }) => ({
+        ...doc,
+        versions: [...doc.versions, $push.versions],
+      }));
+
+      const { version } = await service.openOrStartDraft('an-id', {
+        userId: USER_ID,
+      });
+
+      expect(version).toMatchObject({ versionMajor: 2, versionMinor: 1 });
+      expect(model.findOneAndUpdate).toHaveBeenCalledWith(
+        {
+          [entity.idField]: 'an-id',
+          status: { $ne: 'ARCHIVED' },
+          versions: { $size: 1 },
+        },
+        { $push: { versions: expect.objectContaining({ status: 'DRAFT' }) } },
+        { new: true }
+      );
+    });
+
+    it('writes nothing when a draft is open', async () => {
+      build({
+        versions: [active(), makeVersion({ versionMinor: 1, status: 'DRAFT' })],
+        activeVersion: { major: 2, minor: 0 },
+      });
+      doc.versions[1].versionMajor = 2;
+      model.findOneAndUpdate = jest.fn();
+
+      const { version } = await service.openOrStartDraft('an-id');
+
+      expect(version).toMatchObject({ versionMajor: 2, versionMinor: 1 });
+      expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('refuses when the document changed and leaves no draft to write', async () => {
+      build({ versions: [active()], activeVersion: { major: 2, minor: 0 } });
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(null);
+
+      await expect(service.openOrStartDraft('an-id')).rejects.toMatchObject({
+        status: 409,
+      });
+      expect(model.findOne).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('updateVersion', () => {
     it('patches content fields plus the release notes', async () => {
       build({ versions: [makeVersion({ status: 'DRAFT' })] });
