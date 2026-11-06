@@ -4,7 +4,7 @@ const { ProtocolError } = require('@modelcontextprotocol/server');
 const { isObjectIdString } = require('../utils/model.js');
 const { admitCaller, admitCompany, refusalOf } = require('./mcp-rate-limit.js');
 const { identify } = require('./mcp-identity.js');
-const { recordCall } = require('./mcp-call-log.js');
+const { recordCall, callStarted } = require('./mcp-call-log.js');
 const {
   declaredIdsOf,
   whatWasAsked,
@@ -30,7 +30,7 @@ function outcomeOf(failed, refusal) {
  * members still. The log keeps metadata only: who, from which application,
  * what was asked by its ids, how long it took and how it ended.
  */
-function guarded(method, handler, declared) {
+function guardedCall(method, handler, declared) {
   return async (request, ctx) => {
     const authInfo = ctx?.http?.authInfo || {};
     // Ids as the server wrote them in the token, checked as such before any
@@ -76,6 +76,20 @@ function guarded(method, handler, declared) {
         },
         identity
       );
+    }
+  };
+}
+
+// A guarded call counts as running from its start to its log, for what stops
+// the server to wait for (callsAndLogsDone).
+function guarded(method, handler, declared) {
+  const call = guardedCall(method, handler, declared);
+  return async (request, ctx) => {
+    const over = callStarted();
+    try {
+      return await call(request, ctx);
+    } finally {
+      over();
     }
   };
 }

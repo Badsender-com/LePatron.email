@@ -234,6 +234,43 @@ describe('call log', () => {
       create.mockRestore();
     });
 
+    // What stops the server (the stdio bridge) waits for the calls still
+    // running, and for their logs.
+    it('is waited for, with the calls still running, by what stops the server', async () => {
+      const {
+        callsAndLogsDone,
+      } = require('../../../packages/server/mcp/mcp-call-log.js');
+      const client = await harness.connectAs(f.FRANK);
+      let answer;
+      const held = new Promise((resolve) => {
+        answer = resolve;
+      });
+      const find = models().Expertises.aggregate;
+      const aggregate = jest
+        .spyOn(models().Expertises, 'aggregate')
+        .mockImplementationOnce(async (...args) => {
+          await held;
+          return find(...args);
+        });
+      const call = client.listResources();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      let done = false;
+      const stopped = callsAndLogsDone({ pollMs: 5 }).then(() => {
+        done = true;
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(done).toBe(false);
+      answer();
+      await call;
+      await stopped;
+
+      expect((await logs()).map((log) => log.method)).toEqual([
+        'resources/list',
+      ]);
+      aggregate.mockRestore();
+    });
+
     it('reads the company once for a call, to know who makes it', async () => {
       const client = await harness.connectAs(f.FRANK);
       const findById = jest.spyOn(models().Groups, 'findById');

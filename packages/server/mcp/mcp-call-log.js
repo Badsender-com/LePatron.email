@@ -17,8 +17,10 @@ const MAX_RETENTIONS_KEPT = 10000;
 
 // The log retention of each company, as last read: { days, at }.
 const retentions = new Map();
-// The writes not done yet, for the tests to wait for.
+// The writes not done yet, and the calls still running, for what stops the
+// server (the stdio bridge) and the tests to wait for.
 const pending = new Set();
+const running = new Set();
 
 function keepRetention(groupId, days) {
   if (retentions.size >= MAX_RETENTIONS_KEPT) retentions.clear();
@@ -76,6 +78,37 @@ async function callLogsWritten() {
 }
 
 /**
+ * Counts a call as running until the function it answers is called, once
+ * its log is started.
+ *
+ * @returns {Function} what says the call is over
+ */
+function callStarted() {
+  const call = {};
+  running.add(call);
+  return () => running.delete(call);
+}
+
+/**
+ * Resolves once no call is running and no call log is being written, the
+ * logs of the calls that end meanwhile included: what a server waits for
+ * before it stops.
+ *
+ * @param {Object} [options]
+ * @param {number} [options.pollMs] how often the running calls are looked at
+ * @returns {Promise<void>}
+ */
+async function callsAndLogsDone({ pollMs = 50 } = {}) {
+  while (running.size || pending.size) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.all([
+      ...pending,
+      new Promise((resolve) => setTimeout(resolve, pollMs)),
+    ]);
+  }
+}
+
+/**
  * Forgets the retention kept for a company, when it changes: the next call
  * log without an identity reads it again.
  *
@@ -93,6 +126,8 @@ function forgetRetentions() {
 module.exports = {
   recordCall,
   callLogsWritten,
+  callStarted,
+  callsAndLogsDone,
   forgetRetention,
   forgetRetentions,
 };

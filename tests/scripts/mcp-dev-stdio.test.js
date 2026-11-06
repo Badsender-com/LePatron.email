@@ -106,6 +106,22 @@ describe('mcp-dev-stdio', () => {
       expect(steps).toEqual(['written', 'disconnected', 'exit 0']);
     });
 
+    it('stops all the same, with an error code, when the calls do not end in time', async () => {
+      const exit = jest.fn();
+      const disconnect = jest.fn();
+      const stop = stopper({
+        flush: () => new Promise(() => {}),
+        disconnect,
+        exit,
+        timeoutMs: 20,
+      });
+
+      await stop();
+
+      expect(exit).toHaveBeenCalledWith(1);
+      expect(disconnect).not.toHaveBeenCalled();
+    });
+
     it('stops once, however often it is asked', async () => {
       const exit = jest.fn();
       const stop = stopper({

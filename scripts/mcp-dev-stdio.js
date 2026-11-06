@@ -76,29 +76,43 @@ function assertMayRun(config, argv, env = process.env) {
   }
 }
 
+// How long the bridge waits for its calls and their logs before it stops
+// all the same.
+const STOP_TIMEOUT_MS = 10000;
+
 /**
- * How the bridge stops: once the call logs being written are, since the
- * server writes them in the background and a client stops the bridge right
- * after its last call; then the database is let go. Asked more than once, it
- * stops once.
+ * How the bridge stops: once the calls still running and their call logs
+ * are done, since the server writes the logs in the background and a client
+ * stops the bridge right after its last call; then the database is let go.
+ * Past the timeout, it stops all the same, with an error code. Asked more
+ * than once, it stops once.
  *
  * @param {Object} steps
- * @param {Function} steps.flush resolves once the call logs are written
+ * @param {Function} steps.flush resolves once the calls and their logs are
+ *   done
  * @param {Function} steps.disconnect lets the database go
  * @param {Function} steps.exit `process.exit`
+ * @param {number} [steps.timeoutMs]
  * @returns {Function} what stops the bridge
  */
-function stopper({ flush, disconnect, exit }) {
+function stopper({ flush, disconnect, exit, timeoutMs = STOP_TIMEOUT_MS }) {
   let stopping;
   return () => {
     if (!stopping) {
-      stopping = Promise.resolve()
-        .then(flush)
+      let timer;
+      const late = new Promise((resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('the calls did not end in time')),
+          timeoutMs
+        );
+      });
+      stopping = Promise.race([Promise.resolve().then(flush), late])
         .then(disconnect)
         .then(
           () => exit(0),
           () => exit(1)
-        );
+        )
+        .finally(() => clearTimeout(timer));
     }
     return stopping;
   };
@@ -162,9 +176,9 @@ async function main(protocolOut) {
     },
   };
 
-  const { callLogsWritten } = require(server('mcp', 'mcp-call-log.js'));
+  const { callsAndLogsDone } = require(server('mcp', 'mcp-call-log.js'));
   const stop = stopper({
-    flush: callLogsWritten,
+    flush: callsAndLogsDone,
     disconnect: () => mongoose.disconnect(),
     exit: (code) => process.exit(code),
   });
