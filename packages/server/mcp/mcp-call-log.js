@@ -75,9 +75,24 @@ async function callLogsWritten() {
   await Promise.all([...pending]);
 }
 
+/**
+ * Forgets the retention kept for a company, when it changes: the next call
+ * log without an identity reads it again.
+ *
+ * @param {string} groupId
+ */
+function forgetRetention(groupId) {
+  retentions.delete(String(groupId));
+}
+
 // For the tests: every company's retention read again.
 function forgetRetentions() {
   retentions.clear();
 }
 
-module.exports = { recordCall, callLogsWritten, forgetRetentions };
+module.exports = {
+  recordCall,
+  callLogsWritten,
+  forgetRetention,
+  forgetRetentions,
+};

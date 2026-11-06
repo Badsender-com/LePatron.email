@@ -230,6 +230,26 @@ describe('call log', () => {
       findById.mockRestore();
     });
 
+    it('reads the retention of a company again once it changes', async () => {
+      const client = await harness.connectAs(f.DEAN);
+      const findById = jest.spyOn(models().Groups, 'findById');
+      const {
+        forgetRetention,
+      } = require('../../../packages/server/mcp/mcp-call-log.js');
+
+      await client.listResources().catch(() => null);
+      await logs();
+      harness.update('groups', f.CLIENT_GROUP, { logRetentionDays: 7 });
+      forgetRetention(f.CLIENT_GROUP);
+      await client.listResources().catch(() => null);
+      const kept = await logs();
+
+      expect(findById).toHaveBeenCalledTimes(2);
+      const days = (new Date(kept[1].expiresAt) - Date.now()) / 86400000;
+      expect(days).toBeLessThan(7.01);
+      findById.mockRestore();
+    });
+
     it('reads the retention of a company once a minute for calls without an identity', async () => {
       const client = await harness.connectAs(f.DEAN);
       const findById = jest.spyOn(models().Groups, 'findById');

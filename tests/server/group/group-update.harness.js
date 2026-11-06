@@ -42,6 +42,9 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   createWorkspace: jest.fn(),
   findWorkspaces: jest.fn(),
 }));
+jest.mock('../../../packages/server/mcp/mcp-call-log.js', () => ({
+  forgetRetention: jest.fn(),
+}));
 jest.mock('../../../packages/server/group/log-retention.js', () => ({
   restampLogs: jest.fn(() => Promise.resolve()),
 }));

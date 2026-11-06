@@ -23,6 +23,7 @@ const personalizedVariableService = require('../personalized-variables/personali
 const groupFtpService = require('../group/group-ftp.service.js');
 const { restampLogs } = require('./log-retention.js');
 const { forgetRetex } = require('../mcp/mcp-access-option.js');
+const { forgetRetention } = require('../mcp/mcp-call-log.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -623,6 +624,8 @@ async function update(req, res) {
   // purge this replaced. Done after the answer, which does not wait for it.
   const nextRetention = Number(groupToUpdate.logRetentionDays);
   if (carriesRetention && nextRetention !== previousRetention) {
+    // The MCP call logs written from now on take the new retention at once.
+    forgetRetention(req.params.groupId);
     restampLogs(req.params.groupId, nextRetention).catch((error) =>
       logger.error(
         `[group] the logs of group=${req.params.groupId} did not take the new retention`,

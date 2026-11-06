@@ -34,6 +34,9 @@ const {
   restampLogs,
 } = require('../../../packages/server/group/log-retention.js');
 const logger = require('../../../packages/server/utils/logger.js');
+const {
+  forgetRetention,
+} = require('../../../packages/server/mcp/mcp-call-log.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -364,6 +367,13 @@ describe('PUT /groups/:groupId — log retention', () => {
     expect(restampLogs).toHaveBeenCalledWith(GROUP_ID, 7);
   });
 
+  // The call logs written from now on take the new retention at once.
+  it('forgets the retention the call log keeps for the company', async () => {
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(forgetRetention).toHaveBeenCalledWith(GROUP_ID);
+  });
+
   it('answers without waiting for the logs', async () => {
     restampLogs.mockReturnValueOnce(new Promise(() => {}));
     const res = { json: jest.fn() };
@@ -398,5 +408,6 @@ describe('PUT /groups/:groupId — log retention', () => {
     await update(superAdmin, { logRetentionDays: 7 });
 
     expect(restampLogs).not.toHaveBeenCalled();
+    expect(forgetRetention).not.toHaveBeenCalled();
   });
 });

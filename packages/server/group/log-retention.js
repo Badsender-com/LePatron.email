@@ -87,16 +87,7 @@ async function restamp(model, dateField, groupId, days) {
   return restamped;
 }
 
-/**
- * Re-stamps every log of a company when its retention changes: `expiresAt`
- * is set at write time, and a shorter retention must reach what is already
- * kept, as the nightly purge the TTL indexes replaced did.
- *
- * @param {import('mongoose').Types.ObjectId|string} groupId
- * @param {number} retentionDays
- * @returns {Promise<Object>} how many were re-stamped, by log
- */
-async function restampLogs(groupId, retentionDays) {
+async function restampAll(groupId, retentionDays) {
   const counts = {};
   for (const { name, model, dateField } of LOGS) {
     // eslint-disable-next-line no-await-in-loop
@@ -108,6 +99,42 @@ async function restampLogs(groupId, retentionDays) {
     )}`
   );
   return counts;
+}
+
+// The re-stamping of each company, in this process: one runs at a time, and
+// of those asked for while it runs, the last one alone runs after it.
+const queues = new Map();
+
+/**
+ * Re-stamps every log of a company when its retention changes: `expiresAt`
+ * is set at write time, and a shorter retention must reach what is already
+ * kept, as the nightly purge the TTL indexes replaced did.
+ *
+ * Two changes close together never mix: the re-stampings of a company run
+ * one after the other, and one asked for while another runs is skipped when
+ * a later one is asked for before it starts, so the last retention asked for
+ * is the one the logs end with. One that fails is the caller's to log: it is
+ * not run again by itself, and the next change of the retention runs it all.
+ *
+ * @param {import('mongoose').Types.ObjectId|string} groupId
+ * @param {number} retentionDays
+ * @returns {Promise<Object|null>} how many were re-stamped, by log; null when
+ *   a later change replaced this one before it ran
+ */
+function restampLogs(groupId, retentionDays) {
+  const key = String(groupId);
+  const queue = queues.get(key) || { last: Promise.resolve(), asked: 0 };
+  queues.set(key, queue);
+  queue.asked += 1;
+  const turn = queue.asked;
+  const run = queue.last.then(() =>
+    turn === queue.asked ? restampAll(groupId, retentionDays) : null
+  );
+  queue.last = run.catch(() => null);
+  queue.last.then(() => {
+    if (turn === queue.asked) queues.delete(key);
+  });
+  return run;
 }
 
 module.exports = { computeExpiresAt, restamp, restampLogs, LOGS };

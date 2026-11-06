@@ -155,6 +155,56 @@ describe('restampLogs', () => {
   });
 });
 
+// Two changes of a company's retention close together never mix: one
+// re-stamping runs at a time, and the last retention asked for wins.
+describe('restampLogs, changes close together', () => {
+  it('runs them one after the other, skipping one a later change replaced', async () => {
+    holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
+    let running = 0;
+    let most = 0;
+    const written = [];
+    let release;
+    const firstHeld = new Promise((resolve) => {
+      release = resolve;
+    });
+    models.AISkillInvocations.bulkWrite.mockImplementation(async ([op]) => {
+      running += 1;
+      most = Math.max(most, running);
+      written.push(op.updateOne.update.$set.expiresAt.toISOString());
+      if (written.length === 1) await firstHeld;
+      running -= 1;
+      return {};
+    });
+
+    const first = restampLogs(GROUP_ID, 7);
+    await new Promise(setImmediate);
+    const second = restampLogs(GROUP_ID, 30);
+    const third = restampLogs(GROUP_ID, 90);
+    release();
+
+    await expect(first).resolves.toMatchObject({ invocations: 1 });
+    await expect(second).resolves.toBeNull();
+    await expect(third).resolves.toMatchObject({ invocations: 1 });
+    expect(most).toBe(1);
+    expect(written).toEqual([
+      computeExpiresAt(FROM, 7).toISOString(),
+      computeExpiresAt(FROM, 90).toISOString(),
+    ]);
+  });
+
+  it('runs the next one after one that failed', async () => {
+    holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
+    models.AISkillInvocations.bulkWrite.mockRejectedValueOnce(
+      new Error('timed out')
+    );
+
+    await expect(restampLogs(GROUP_ID, 7)).rejects.toThrow('timed out');
+    await expect(restampLogs(GROUP_ID, 30)).resolves.toMatchObject({
+      invocations: 1,
+    });
+  });
+});
+
 // Re-stamping reads a company's logs by company: each collection is indexed
 // so, with the date the logs count from.
 describe('the logs a retention reaches', () => {
