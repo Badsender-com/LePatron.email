@@ -31,7 +31,7 @@ Sur A :
 ## 3. Importer
 
 1. Importer la sélection. Le compte-rendu indique les éléments créés, avec un lien vers chaque brouillon.
-2. Ouvrir un brouillon : il porte le numéro de version de A, il est **en brouillon**, sans version active. Son audience est le **groupe plateforme**, il n'est pas servi aux assistants, et vous en êtes propriétaire.
+2. Ouvrir un brouillon : il porte le numéro de version de A, il est **en brouillon**, sans version active. Son audience est l'**entreprise plateforme**, il n'est pas servi aux assistants, et vous en êtes propriétaire.
 3. Publier le brouillon du skill de tâche : il fonctionne comme sur A.
 
 ## 4. Mises à jour et blocages

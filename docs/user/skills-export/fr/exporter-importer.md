@@ -56,7 +56,7 @@ Chaque élément importé arrive **en brouillon**, avec le numéro de version qu
 
 Un élément importé :
 
-- n'est ouvert qu'au **groupe plateforme**, quelle que soit son audience d'origine ;
+- n'est ouvert qu'à l'**entreprise plateforme**, quelle que soit son audience d'origine ;
 - n'est **pas servi aux assistants** ;
 - a pour **propriétaire** la personne qui a importé.
 

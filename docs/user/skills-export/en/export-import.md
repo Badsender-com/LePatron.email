@@ -56,7 +56,7 @@ Each imported item arrives **as a draft**, with the version number it has on the
 
 An imported item:
 
-- is open to the **platform group** only, whatever its audience was;
+- is open to the **platform company** only, whatever its audience was;
 - is **not served to assistants**;
 - is **owned** by the person who imported it.
 
