@@ -12,6 +12,7 @@ const {
   versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
 const {
+  Audiences,
   SkillCategoryValues,
   SkillNatures,
   SkillIdRegex,
@@ -23,28 +24,27 @@ const {
   isRefusal,
   failure,
   refused,
-  success,
   WRITE_SCOPE,
 } = require('./mcp-identity.js');
+const { draftDiff } = require('./mcp-draft-diff.js');
 
+// What an assistant writes of each, and the fields its difference shows.
 const ENTITIES = {
   expertise: {
     service: expertiseService,
     idField: 'expertiseId',
-    textOf: (v) =>
-      [v.body, ...(v.examplesGood || []), ...(v.examplesBad || [])].join('\n'),
+    fields: ['body', 'examplesGood', 'examplesBad'],
   },
   skill: {
     service: skillService,
     idField: 'skillId',
-    textOf: (v) =>
-      [
-        v.procedure,
-        ...(v.consumedExpertiseIds || []),
-        v.systemPrompt,
-        v.skillBody,
-        v.inputTemplate,
-      ].join('\n'),
+    fields: [
+      'procedure',
+      'consumedExpertiseIds',
+      'systemPrompt',
+      'skillBody',
+      'inputTemplate',
+    ],
   },
 };
 
@@ -57,33 +57,40 @@ function mayDraft(user, authInfo) {
   );
 }
 
-// The lines the draft adds and removes against the active version, for the
-// person to read before publishing.
-function diffOf(activeText, draftText) {
-  const lines = (text) =>
-    String(text || '')
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
-  const before = lines(activeText);
-  const after = lines(draftText);
-  return [
-    ...before.filter((line) => !after.includes(line)).map((l) => `- ${l}`),
-    ...after.filter((line) => !before.includes(line)).map((l) => `+ ${l}`),
-  ].join('\n');
-}
-
 // What a write answers: the version written, and its difference with the
 // active version, for the person to read before publishing.
 function answerOf(entity, doc, draft) {
-  const { idField, textOf } = ENTITIES[entity];
-  const active = findActiveVersion(doc);
+  const { idField, fields } = ENTITIES[entity];
   return {
-    [idField]: doc[idField],
-    version: label(draft),
-    status: draft.status,
-    audience: doc.audience,
-    diff: diffOf(active ? textOf(active) : '', textOf(draft)),
+    answer: {
+      [idField]: doc[idField],
+      version: label(draft),
+      status: draft.status,
+      audience: doc.audience,
+    },
+    diff: draftDiff(findActiveVersion(doc), draft, fields),
+  };
+}
+
+// The tool's result: the difference is sent once, in the text every client
+// reads, and the structured answer says what was written.
+function drafted({ answer, diff }) {
+  const id = answer.expertiseId || answer.skillId;
+  const kept =
+    answer.audience === Audiences.ALL
+      ? 'open to every company'
+      : 'kept to the platform company';
+  const said = diff
+    ? `Its difference with the active version, for the person to read before publishing:\n${diff}`
+    : 'It does not differ from the active version.';
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Draft ${answer.version} of "${id}" written, ${kept}: a person publishes it in the back office. ${said}`,
+      },
+    ],
+    structuredContent: answer,
   };
 }
 
@@ -148,7 +155,7 @@ function asAuthor(write) {
       );
     }
     try {
-      return success(await write(args, user));
+      return drafted(await write(args, user));
     } catch (err) {
       // What the services refuse is the assistant's to fix; anything else
       // is not for it, and `withIdentity` logs it and answers a plain message.
@@ -189,7 +196,6 @@ const ANSWER = z.object({
   version: z.string(),
   status: z.string(),
   audience: z.string().optional(),
-  diff: z.string(),
 });
 const WRITING = { readOnlyHint: false, destructiveHint: false };
 

@@ -65,8 +65,14 @@ describe('authoring', () => {
 
   const asAuthor = () =>
     harness.connectAs(f.ALICE, { group: f.PLATFORM_GROUP, scopes: WRITE });
-  const call = async (client, name, args) =>
-    harness.answerOf(await client.callTool({ name, arguments: args }));
+  // The structured answer, and the text that carries the difference with the
+  // active version, sent once.
+  const call = async (client, name, args) => {
+    const result = await client.callTool({ name, arguments: args });
+    const answer = harness.answerOf(result);
+    if (result.isError) return answer;
+    return { ...answer, text: result.content.map((p) => p.text).join('\n') };
+  };
   const toolNames = async (client) =>
     (await client.listTools()).tools.map((tool) => tool.name);
 
@@ -166,9 +172,9 @@ describe('authoring', () => {
         changelog: 'Shorter subjects',
       });
 
-      expect(answer.diff).toContain('- Keep the subject under 50 characters.');
-      expect(answer.diff).toContain('+ Keep the subject under 45 characters.');
-      expect(answer.diff).not.toContain('One promise, no shouting.');
+      expect(answer.text).toContain('- Keep the subject under 50 characters.');
+      expect(answer.text).toContain('+ Keep the subject under 45 characters.');
+      expect(answer.text).not.toContain('One promise, no shouting.');
     });
 
     // The fixture's expertise already has a 3.0 draft: a change goes there,
@@ -188,7 +194,86 @@ describe('authoring', () => {
 
       expect(first.version).toBe('3.0');
       expect(second.version).toBe('3.0');
-      expect(second.diff).toContain('+ One at most.');
+      expect(second.text).toContain('+ One at most.');
+    });
+
+    it('sends the difference once, in the text', async () => {
+      harness.seed(WITHOUT_DRAFT);
+      const client = await asAuthor();
+
+      const result = await client.callTool({
+        name: 'propose_expertise_change',
+        arguments: {
+          expertiseId: SUBJECT_LINES,
+          body: NEW_BODY,
+          changelog: 'Shorter subjects',
+        },
+      });
+
+      const sent = JSON.stringify(result);
+      const line = '+ Keep the subject under 45 characters.';
+      expect(sent.indexOf(line)).toBeGreaterThan(-1);
+      expect(sent.indexOf(line)).toBe(sent.lastIndexOf(line));
+      expect(result.structuredContent).toEqual({
+        expertiseId: SUBJECT_LINES,
+        version: '2.2',
+        status: 'DRAFT',
+        audience: 'all',
+      });
+    });
+
+    // A task skill reads its expertises in their order (ADR 0013).
+    it('shows the consumed expertises put in another order', async () => {
+      const SPAM_WORDS = 'deliverability.spam-words';
+      harness.seed({
+        ...f.SEED,
+        skills: [
+          {
+            skillId: 'qc.review',
+            title: 'Review an email',
+            category: 'qc',
+            status: 'ACTIVE',
+            audience: 'all',
+            activeVersion: { major: 1, minor: 0 },
+            versions: [
+              {
+                versionMajor: 1,
+                versionMinor: 0,
+                status: 'ACTIVE',
+                nature: 'task',
+                procedure: '1. Review',
+                consumedExpertiseIds: [SUBJECT_LINES, SPAM_WORDS],
+              },
+            ],
+          },
+        ],
+      });
+
+      const answer = await call(await asAuthor(), 'propose_skill_change', {
+        skillId: 'qc.review',
+        consumedExpertiseIds: [SPAM_WORDS, SUBJECT_LINES],
+        changelog: 'Spam words first',
+      });
+
+      expect(answer.text).toContain('@@ consumedExpertiseIds');
+      expect(answer.text).toMatch(/^- redaction\.subject-line$/m);
+      expect(answer.text).toMatch(/^\+ redaction\.subject-line$/m);
+    });
+
+    it('bounds the difference of a long change', async () => {
+      harness.seed(WITHOUT_DRAFT);
+      const body = Array.from({ length: 400 }, (_, i) => `Rule ${i}`).join(
+        '\n'
+      );
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body,
+        changelog: 'Many rules',
+      });
+
+      expect(answer.text).toMatch(/… \d+ more lines$/);
+      expect(answer.text.split('\n').length).toBeLessThan(210);
     });
 
     // What a person or an earlier proposal wrote of the draft stays.
@@ -333,7 +418,7 @@ describe('authoring', () => {
 
       expect(created).toMatchObject({ version: '1.0', status: 'DRAFT' });
       expect(changed.version).toBe('1.0');
-      expect(changed.diff).toContain('+ 2. Never guess.');
+      expect(changed.text).toContain('+ 2. Never guess.');
     });
 
     // The assistant fixes what it is told: the code alone does not say which.
