@@ -142,7 +142,11 @@ export default {
         outlined
         class="mt-4 mb-0 text-caption"
       >
-        {{ $t('aiSkills.version.platformOnlyReminder') }}
+        {{
+          openToAll
+            ? $t('aiSkills.version.openToAllNotice')
+            : $t('aiSkills.version.platformOnlyReminder')
+        }}
         <v-checkbox
           v-model="openToAll"
           :label="$t('aiSkills.version.openToAll')"

@@ -1690,6 +1690,8 @@ export default {
       platformOnlyReminder:
         'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
       openToAll: 'L\'ouvrir à toutes les entreprises',
+      openToAllNotice:
+        'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
       activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
       changelog: 'Changelog',
       changelogPlaceholder:

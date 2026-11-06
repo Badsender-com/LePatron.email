@@ -1667,6 +1667,8 @@ export default {
       platformOnlyReminder:
         'This item stays visible to the platform company only.',
       openToAll: 'Open it to all companies',
+      openToAllNotice:
+        'This item opens to all companies as soon as it is published.',
       activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
       changelog: 'Changelog',
       changelogPlaceholder:

@@ -84,6 +84,7 @@ describe('audienceOptions', () => {
       aiSkills.platformOnly,
       aiSkills.version.platformOnlyReminder,
       aiSkills.version.openToAll,
+      aiSkills.version.openToAllNotice,
     ];
 
     labels.forEach((label) => {
