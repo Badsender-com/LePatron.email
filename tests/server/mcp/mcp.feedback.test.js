@@ -215,39 +215,84 @@ describe('feedback and retex', () => {
     }
   );
 
-  // Stopping the retex forgets what it kept (ADR 0012); the PUT that calls
-  // it is tested with the group's switches.
-  it('forgets the summaries a company kept when it stops the retex, and keeps the feedbacks', async () => {
-    harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
-    await submit(f.FRANK, {
-      rating: 'down',
-      comment: 'Too long',
-      consentToRetex: true,
-      sessionSummary: SUMMARY,
-    });
-    const {
-      McpFeedbacks,
-    } = require('../../../packages/server/common/models.common.js');
-    await McpFeedbacks.create({
-      _company: f.OTHER_GROUP,
-      rating: 'up',
-      retex: 'Another company’s summary',
-    });
-    const {
-      forgetRetex,
-    } = require('../../../packages/server/mcp/mcp-access-option.js');
+  // Stopping the retex forgets what it let the feedbacks keep (ADR 0012): the
+  // summaries, and the comments longer than 500 characters, cut. The PUT that
+  // calls it is tested with the group's switches.
+  describe('the retex stopped', () => {
+    const LONG = 'c'.repeat(1200);
+    const models = () =>
+      require('../../../packages/server/common/models.common.js');
+    const forgetRetex = (...args) =>
+      require('../../../packages/server/mcp/mcp-access-option.js').forgetRetex(
+        ...args
+      );
+    const kept = () => harness.stored('feedbacks');
 
-    await forgetRetex(f.CLIENT_GROUP);
-
-    const kept = harness.stored('feedbacks');
-    expect(kept.find((k) => k._company === f.CLIENT_GROUP)).toMatchObject({
-      rating: 'down',
-      comment: 'Too long',
-      retex: null,
+    beforeEach(() => {
+      harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
     });
-    expect(kept.find((k) => k._company === f.OTHER_GROUP).retex).toBe(
-      'Another company’s summary'
-    );
+
+    it('forgets the summaries and cuts the long comments of the company, and keeps its feedbacks', async () => {
+      await submit(f.FRANK, {
+        rating: 'down',
+        comment: LONG,
+        consentToRetex: true,
+        sessionSummary: SUMMARY,
+      });
+      await models().McpFeedbacks.create({
+        _company: f.OTHER_GROUP,
+        rating: 'up',
+        comment: LONG,
+        retex: 'Another company’s summary',
+      });
+
+      await forgetRetex(f.CLIENT_GROUP);
+      await forgetRetex(f.CLIENT_GROUP);
+
+      const ours = kept().find((k) => k._company === f.CLIENT_GROUP);
+      expect(ours).toMatchObject({ rating: 'down', retex: null });
+      expect(ours.comment).toBe('c'.repeat(500));
+      expect(kept().find((k) => k._company === f.OTHER_GROUP)).toMatchObject({
+        retex: 'Another company’s summary',
+        comment: LONG,
+      });
+    });
+
+    // The switch turned off while the feedback was being written: the
+    // feedback keeps no more than the others once the retex is stopped.
+    it('forgets what a feedback written meanwhile kept', async () => {
+      const create = models().McpFeedbacks.create;
+      const spy = jest
+        .spyOn(models().McpFeedbacks, 'create')
+        .mockImplementationOnce(async (record) => {
+          harness.update('groups', f.CLIENT_GROUP, { allowRetex: false });
+          return create(record);
+        });
+
+      const answer = await submit(f.FRANK, {
+        rating: 'down',
+        comment: LONG,
+        consentToRetex: true,
+        sessionSummary: SUMMARY,
+      });
+      spy.mockRestore();
+
+      expect(answer).toEqual({ recorded: true, retex: 'dropped' });
+      expect(kept()[0]).toMatchObject({ retex: null });
+      expect(kept()[0].comment).toHaveLength(500);
+    });
+
+    it('leaves a feedback written while it is allowed as written', async () => {
+      const answer = await submit(f.FRANK, {
+        rating: 'down',
+        comment: LONG,
+        consentToRetex: true,
+        sessionSummary: SUMMARY,
+      });
+
+      expect(answer).toEqual({ recorded: true, retex: 'kept' });
+      expect(kept()[0]).toMatchObject({ retex: SUMMARY, comment: LONG });
+    });
   });
 
   // The super admins' list of feedbacks, read through its route (agreed as a

@@ -34,4 +34,13 @@ describe('the retex option of a company', () => {
   ])('says it in %s', (_lang, messages, said) => {
     expect(messages.retex.alwaysShared).toMatch(said);
   });
+
+  // Turning the retex off forgets what it let the feedbacks keep (ADR 0012).
+  it.each([
+    ['fr', fr, /efface les résumés.*500 caractères/],
+    ['en', en, /erases the session summaries.*500 characters/],
+  ])('says in %s what turning it off erases', (_lang, messages, said) => {
+    expect(source).toMatch(/\$t\('retex\.offForgets'\)/);
+    expect(messages.retex.offForgets).toMatch(said);
+  });
 });

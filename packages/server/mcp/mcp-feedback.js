@@ -1,7 +1,11 @@
 'use strict';
 
 const { z } = require('zod');
-const { McpFeedbacks } = require('../common/models.common.js');
+const { McpFeedbacks, Groups } = require('../common/models.common.js');
+const {
+  forgetRetex,
+  MAX_COMMENT_WITHOUT_RETEX,
+} = require('./mcp-access-option.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity, failure, success } = require('./mcp-identity.js');
 const { namedExpertises } = require('./mcp-expertises.js');
@@ -12,6 +16,11 @@ const {
 const { computeExpiresAt } = require('../group/log-retention.js');
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
+
+async function stillAllowsRetex(groupId) {
+  const group = await Groups.findById(groupId).select('allowRetex').lean();
+  return Boolean(group && group.allowRetex === true);
+}
 
 // What each kind of reference is read with, as the user may read it, by name
 // only: the version a skill or an expertise was given on, none for a mailing,
@@ -88,7 +97,7 @@ async function submitFeedback(identity, args, ctx) {
   let retex = 'none';
   if (summary) retex = allowed ? 'kept' : 'dropped';
 
-  await McpFeedbacks.create({
+  const feedback = await McpFeedbacks.create({
     _company: identity.group._id,
     _user: identity.user._id,
     clientId: authInfo.clientId || '',
@@ -99,6 +108,15 @@ async function submitFeedback(identity, args, ctx) {
     expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
   });
 
+  // The company may have stopped the retex while this feedback was written:
+  // what it let the feedback keep is then forgotten, as for the others.
+  const keptByRetex =
+    retex === 'kept' || comment.length > MAX_COMMENT_WITHOUT_RETEX;
+  if (keptByRetex && !(await stillAllowsRetex(identity.group._id))) {
+    await forgetRetex(identity.group._id, { _id: feedback._id });
+    if (retex === 'kept') retex = 'dropped';
+  }
+
   return success({ recorded: true, retex });
 }
 
@@ -107,7 +125,6 @@ async function submitFeedback(identity, args, ctx) {
 // granted, by the company and by the user (ADR 0012).
 const MAX_REFERENCES = 20;
 const MAX_COMMENT = 4000;
-const MAX_COMMENT_WITHOUT_RETEX = 500;
 const MAX_SUMMARY = 20000;
 const MAX_ID_LENGTH = 200;
 

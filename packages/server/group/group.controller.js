@@ -612,9 +612,10 @@ async function update(req, res) {
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
   await recordSwitches(user, req.params.groupId, switched);
-  // Stopping the retex forgets the session summaries already kept for the
-  // platform company (ADR 0012).
-  if (switched.allowRetex === false) await forgetRetex(req.params.groupId);
+  // Stopping the retex forgets what it let the feedbacks keep (ADR 0012),
+  // whenever a request says it is off: the security event records the
+  // change only, and a forgetting that failed can be run again.
+  if (switches.allowRetex === false) await forgetRetex(req.params.groupId);
 
   // A log's end of retention is stamped at write time, so a retention change
   // has to reach the logs already kept: lowering it would otherwise apply to

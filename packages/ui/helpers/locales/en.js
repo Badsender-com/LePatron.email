@@ -801,6 +801,8 @@ export default {
     switch: 'Allow session summaries',
     alwaysShared:
       'The rating and the comment of a feedback are always shared with the platform company, whether session summaries are allowed or not.',
+    offForgets:
+      'Turning it off erases the session summaries already kept, and shortens the comments of the feedbacks to 500 characters, the length allowed without them.',
     updated: 'Session summaries updated',
   },
   mcpAccess: {

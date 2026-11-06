@@ -28,8 +28,11 @@ export default {
       inset
       @change="save"
     />
-    <p class="text-caption text--secondary mb-0">
+    <p class="text-caption text--secondary mb-1">
       {{ $t('retex.alwaysShared') }}
+    </p>
+    <p class="text-caption text--secondary mb-0">
+      {{ $t('retex.offForgets') }}
     </p>
   </section>
 </template>

@@ -11,7 +11,11 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },
-  McpFeedbacks: { updateMany: jest.fn() },
+  McpFeedbacks: {
+    updateMany: jest.fn(),
+    find: jest.fn(() => ({ lean: () => ({ cursor: () => [] }) })),
+    bulkWrite: jest.fn(),
+  },
   Profiles: {},
   Templates: {},
   Mailings: {},

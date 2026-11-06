@@ -1078,6 +1078,8 @@ export default {
     switch: 'Autoriser le retour d\'expérience',
     alwaysShared:
       'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
+    offForgets:
+      'Le désactiver efface les résumés de session déjà conservés, et raccourcit les commentaires des avis à 500 caractères, la longueur permise sans eux.',
     updated: 'Retour d\'expérience mis à jour',
   },
   mcpAccess: {

@@ -16,6 +16,8 @@
  * - `create(record)` stores a copy, with an `_id` when it has none.
  * - `validate()` runs no schema: the hooks are tested on the real schemas
  *   (tests/server/ai-skill/models/).
+ * - A query's `cursor()` yields its documents to a `for await`.
+ * - `bulkWrite` takes `updateOne` operations of a `$set` only.
  * - `updateMany` takes a `$set` only; `findOneAndUpdate` a `$set` and a
  *   `$push`, and answers the document before the update, or after it with
  *   `{ new: true }`, or null when nothing matches. A `$set` of `array.$`
@@ -174,6 +176,12 @@ function query(list, shape) {
     populate() {
       throw new Error('fake MCP models: populate is not supported');
     },
+    // What a Mongoose cursor gives a `for await`: the documents, one by one.
+    cursor: () => ({
+      async *[Symbol.asyncIterator]() {
+        yield* await Promise.resolve().then(resolve);
+      },
+    }),
     exec: () => Promise.resolve().then(resolve),
     then: (onFulfilled, onRejected) =>
       Promise.resolve().then(resolve).then(onFulfilled, onRejected),
@@ -223,6 +231,19 @@ function model(records) {
         },
         (docs) => docs[0] || null
       ),
+    // `updateOne` operations of a `$set` only.
+    bulkWrite: (operations) =>
+      Promise.resolve().then(() => {
+        operations.forEach(({ updateOne, ...others }) => {
+          const { $set, ...rest } = (updateOne && updateOne.update) || {};
+          if (!$set || Object.keys(rest).length || Object.keys(others).length) {
+            throw new Error('fake MCP models: bulkWrite takes updateOne $set');
+          }
+          const [record] = matching(updateOne.filter)();
+          if (record) Object.assign(record, copy($set));
+        });
+        return { nModified: operations.length };
+      }),
     updateMany: (filter, update) =>
       Promise.resolve().then(() => {
         const { $set, ...others } = update;

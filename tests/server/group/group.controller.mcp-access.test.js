@@ -310,23 +310,40 @@ describe('PUT /groups/:groupId — retex, the security event', () => {
   );
 });
 
-// Stopping the retex forgets what it kept (ADR 0012): the feedbacks stay,
-// with their rating and comment.
+// Stopping the retex forgets what it let the feedbacks keep (ADR 0012): the
+// summaries, and the comments longer than they may be without it. Whenever a
+// request says it is off, so a forgetting that failed runs again; the
+// security event records the change only.
 describe('PUT /groups/:groupId — retex stopped', () => {
-  it('forgets the session summaries kept for the company', async () => {
-    storedGroup({ allowRetex: true });
-
-    await update(techAdmin, { allowRetex: false });
-
+  const forgotten = () =>
     expect(McpFeedbacks.updateMany).toHaveBeenCalledWith(
       { _company: GROUP_ID, retex: { $ne: null } },
       { $set: { retex: null } }
     );
+
+  it('forgets the session summaries kept for the company, and cuts the long comments', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: false });
+
+    forgotten();
+    expect(McpFeedbacks.find).toHaveBeenCalledWith(
+      { _company: GROUP_ID, comment: { $regex: '^[\\s\\S]{501}' } },
+      { comment: 1 }
+    );
+  });
+
+  it('forgets them again when it is already stopped, recording no event', async () => {
+    storedGroup({ allowRetex: false });
+
+    await update(techAdmin, { allowRetex: false });
+
+    forgotten();
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
   });
 
   it.each([
     ['allowed', { allowRetex: false }, { allowRetex: true }],
-    ['already stopped', { allowRetex: false }, { allowRetex: false }],
     ['not in the request', { allowRetex: true }, { name: 'Renamed' }],
   ])('forgets nothing when it is %s', async (_case, stored, body) => {
     storedGroup(stored);
