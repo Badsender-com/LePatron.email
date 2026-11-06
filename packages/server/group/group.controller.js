@@ -23,6 +23,7 @@ const personalizedVariableService = require('../personalized-variables/personali
 const groupFtpService = require('../group/group-ftp.service.js');
 const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
 const { restampMcpRetention } = require('../mcp/mcp-retention.js');
+const { forgetRetex } = require('../mcp/mcp-access-option.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -612,6 +613,9 @@ async function update(req, res) {
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
   await recordSwitches(user, req.params.groupId, switched);
+  // Stopping the retex forgets the session summaries already kept for the
+  // platform company (ADR 0012).
+  if (switched.allowRetex === false) await forgetRetex(req.params.groupId);
 
   // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
   // logs' and feedbacks', so a retention change has to be propagated to what

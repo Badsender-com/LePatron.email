@@ -1,5 +1,6 @@
 'use strict';
 
+const { McpFeedbacks } = require('../common/models.common.js');
 const {
   recordSecurityEvent,
 } = require('../security-event/security-event.service.js');
@@ -46,4 +47,19 @@ async function recordRetexChange(actor, groupId, change) {
   });
 }
 
-module.exports = { recordMcpAccessChange, recordRetexChange };
+/**
+ * Forgets the session summaries kept for the platform company from a
+ * company's feedbacks, when the company stops the retex (ADR 0012). The
+ * feedbacks stay, with their rating and their comment.
+ *
+ * @param {string} groupId
+ * @returns {Promise<void>}
+ */
+async function forgetRetex(groupId) {
+  await McpFeedbacks.updateMany(
+    { _company: groupId, retex: { $ne: null } },
+    { $set: { retex: null } }
+  );
+}
+
+module.exports = { recordMcpAccessChange, recordRetexChange, forgetRetex };

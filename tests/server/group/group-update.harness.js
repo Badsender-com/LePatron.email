@@ -11,6 +11,7 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },
+  McpFeedbacks: { updateMany: jest.fn() },
   Profiles: {},
   Templates: {},
   Mailings: {},
@@ -54,6 +55,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
 } = require('../../../packages/server/common/models.common.js');
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
@@ -136,6 +138,7 @@ function guardRefusal(user) {
 module.exports = {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
   groupService,
   groupController,
   GROUP_ID,

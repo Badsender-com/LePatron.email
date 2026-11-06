@@ -215,6 +215,41 @@ describe('feedback and retex', () => {
     }
   );
 
+  // Stopping the retex forgets what it kept (ADR 0012); the PUT that calls
+  // it is tested with the group's switches.
+  it('forgets the summaries a company kept when it stops the retex, and keeps the feedbacks', async () => {
+    harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
+    await submit(f.FRANK, {
+      rating: 'down',
+      comment: 'Too long',
+      consentToRetex: true,
+      sessionSummary: SUMMARY,
+    });
+    const {
+      McpFeedbacks,
+    } = require('../../../packages/server/common/models.common.js');
+    await McpFeedbacks.create({
+      _company: f.OTHER_GROUP,
+      rating: 'up',
+      retex: 'Another company’s summary',
+    });
+    const {
+      forgetRetex,
+    } = require('../../../packages/server/mcp/mcp-access-option.js');
+
+    await forgetRetex(f.CLIENT_GROUP);
+
+    const kept = harness.stored('feedbacks');
+    expect(kept.find((k) => k._company === f.CLIENT_GROUP)).toMatchObject({
+      rating: 'down',
+      comment: 'Too long',
+      retex: null,
+    });
+    expect(kept.find((k) => k._company === f.OTHER_GROUP).retex).toBe(
+      'Another company’s summary'
+    );
+  });
+
   // The super admins' list of feedbacks, read through its route (agreed as a
   // third seam: no MCP client sees it).
   describe('the list of feedbacks', () => {

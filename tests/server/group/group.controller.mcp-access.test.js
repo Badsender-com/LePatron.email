@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 const {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
   groupService,
   GROUP_ID,
   companyAdmin,
@@ -293,6 +294,33 @@ describe('PUT /groups/:groupId — retex, the security event', () => {
       expect(event.validateSync()).toBeUndefined();
     }
   );
+});
+
+// Stopping the retex forgets what it kept (ADR 0012): the feedbacks stay,
+// with their rating and comment.
+describe('PUT /groups/:groupId — retex stopped', () => {
+  it('forgets the session summaries kept for the company', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: false });
+
+    expect(McpFeedbacks.updateMany).toHaveBeenCalledWith(
+      { _company: GROUP_ID, retex: { $ne: null } },
+      { $set: { retex: null } }
+    );
+  });
+
+  it.each([
+    ['allowed', { allowRetex: false }, { allowRetex: true }],
+    ['already stopped', { allowRetex: false }, { allowRetex: false }],
+    ['not in the request', { allowRetex: true }, { name: 'Renamed' }],
+  ])('forgets nothing when it is %s', async (_case, stored, body) => {
+    storedGroup(stored);
+
+    await update(techAdmin, body);
+
+    expect(McpFeedbacks.updateMany).not.toHaveBeenCalled();
+  });
 });
 
 describe('PUT /groups/:groupId — log retention', () => {
