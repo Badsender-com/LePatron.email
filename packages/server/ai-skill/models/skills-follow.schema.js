@@ -31,6 +31,8 @@ const SkillsFollowSchema = new Schema({
   reason: { type: String, default: null },
   message: { type: String, default: null },
   origin: { type: String, default: '' },
+  // A person's button, or the night's scheduled command (`by` is then empty).
+  trigger: { type: String, enum: ['manual', 'night'], default: 'manual' },
   by: { type: String, default: '' },
   _by: { type: ObjectId, ref: UserModel, default: null },
   startedAt: { type: Date, required: true },

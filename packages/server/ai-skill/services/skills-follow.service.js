@@ -132,9 +132,10 @@ const emptyReport = () => ({
   failed: [],
 });
 
-async function record(report, { actor, startedAt }) {
+async function record(report, { actor, trigger, startedAt }) {
   await SkillsFollows.create({
     ...report,
+    trigger,
     by: actor.name || '',
     _by: actor.id || null,
     startedAt,
@@ -152,12 +153,13 @@ async function record(report, { actor, startedAt }) {
  * @param {Object} options
  * @param {() => Promise<Object>} options.fetchExport production's answer
  * @param {{ id?: string, name?: string }} options.actor who follows
+ * @param {'manual'|'night'} [options.trigger] a person's button, or the night
  * @returns {Promise<Object>} the report: `status` (`succeeded`, `partial`,
  *   `failed`), `origin`, and the lists `created`, `updated`, `upToDate`,
  *   `kept` (with a `reason`) and `failed` (with a `message`), each of
  *   `{ kind, id, version }`
  */
-async function followProduction({ fetchExport, actor }) {
+async function followProduction({ fetchExport, actor, trigger = 'manual' }) {
   const startedAt = new Date();
   let answer;
   try {
@@ -171,7 +173,7 @@ async function followProduction({ fetchExport, actor }) {
         reason: err.reason || 'unreachable',
         message: err.message,
       },
-      { actor, startedAt }
+      { actor, trigger, startedAt }
     );
   }
 
@@ -197,7 +199,7 @@ async function followProduction({ fetchExport, actor }) {
     report.kept.push(...(await localOnly(kind, idField, answer[list])));
   }
   report.status = report.failed.length ? 'partial' : 'succeeded';
-  return record(report, { actor, startedAt });
+  return record(report, { actor, trigger, startedAt });
 }
 
 /**
@@ -212,6 +214,7 @@ async function lastFollow() {
   const count = (list) => (list || []).length;
   return {
     status: last.status,
+    trigger: last.trigger || 'manual',
     reason: last.reason || null,
     message: last.message || null,
     origin: last.origin || '',

@@ -5,6 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import {
   followFailureKey,
+  followLastKey,
   followOutcomes,
   followStatusColor,
 } from '~/helpers/skills-follow.js';
@@ -56,7 +57,7 @@ export default {
       }
     },
     lastLabel() {
-      return this.$t('aiSkills.follow.last', {
+      return this.$t(followLastKey(this.last), {
         date: this.$options.filters.preciseDateTime(
           this.last.at,
           this.$i18n.locale
