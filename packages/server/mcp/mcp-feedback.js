@@ -79,6 +79,14 @@ async function submitFeedback(identity, args, ctx) {
   const summary = (args.sessionSummary || '').trim();
   const allowed =
     identity.group.allowRetex === true && args.consentToRetex === true;
+  // The comment reaches the platform company whatever the retex: without it,
+  // it stays a short word on LePatron, never room for a session summary.
+  const comment = args.comment || '';
+  if (!allowed && comment.length > MAX_COMMENT_WITHOUT_RETEX) {
+    return failure(
+      `The comment is limited to ${MAX_COMMENT_WITHOUT_RETEX} characters when no session summary may be shared (the user's consent and the company's): say in a few words what the user thinks of LePatron.`
+    );
+  }
   let retex = 'none';
   if (summary) retex = allowed ? 'kept' : 'dropped';
 
@@ -87,7 +95,7 @@ async function submitFeedback(identity, args, ctx) {
     _user: identity.user._id,
     clientId: authInfo.clientId || '',
     rating: args.rating,
-    comment: args.comment || '',
+    comment,
     references,
     retex: retex === 'kept' ? summary : null,
     expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
@@ -97,9 +105,11 @@ async function submitFeedback(identity, args, ctx) {
 }
 
 // What one feedback holds at most: a few things it is about, and a comment
-// and a summary a person reads.
+// and a summary a person reads. The comment is short unless the retex is
+// granted, by the company and by the user (ADR 0012).
 const MAX_REFERENCES = 20;
 const MAX_COMMENT = 4000;
+const MAX_COMMENT_WITHOUT_RETEX = 500;
 const MAX_SUMMARY = 20000;
 const MAX_ID_LENGTH = 200;
 
@@ -128,8 +138,7 @@ function registerSubmitFeedback(server) {
     'submit_feedback',
     {
       title: 'Send feedback on LePatron',
-      description:
-        "Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The comment is always kept: write what the user says of LePatron, never the content of their conversation. A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. The answer says whether the summary was kept.",
+      description: `Sends the user's feedback on what LePatron gave them: a thumbs up or down, a comment, and what it is about (skills, expertises, mailings). The rating and the comment are always shared with the platform company: write what the user says of LePatron, never the content of their conversation, in ${MAX_COMMENT_WITHOUT_RETEX} characters at most, or ${MAX_COMMENT} when a session summary may be shared. A summary of the session may be attached only if the user explicitly agrees to share it with the platform company (consentToRetex); ask them first. It is kept only if their company allows it too. The answer says whether the summary was kept.`,
       inputSchema: FEEDBACK_INPUT,
       outputSchema: FEEDBACK_OUTPUT,
       annotations: { readOnlyHint: false, destructiveHint: false },

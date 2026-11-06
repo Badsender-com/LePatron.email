@@ -799,6 +799,8 @@ export default {
     description:
       'When a user sends feedback from their AI assistant, they may attach a summary of the session to help the platform company improve its expertises and skills. The summary is kept only if the company allows it here, and the user agrees to it for that feedback.',
     switch: 'Allow session summaries',
+    alwaysShared:
+      'The rating and the comment of a feedback are always shared with the platform company, whether session summaries are allowed or not.',
     updated: 'Session summaries updated',
   },
   mcpAccess: {

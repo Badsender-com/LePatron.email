@@ -28,5 +28,8 @@ export default {
       inset
       @change="save"
     />
+    <p class="text-caption text--secondary mb-0">
+      {{ $t('retex.alwaysShared') }}
+    </p>
   </section>
 </template>

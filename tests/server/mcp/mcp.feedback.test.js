@@ -140,6 +140,61 @@ describe('feedback and retex', () => {
     ]);
   });
 
+  // The comment reaches the platform company whatever the retex: without
+  // it, a short word on LePatron, never room for a session summary.
+  describe('the length of a comment', () => {
+    const SHORT = 'c'.repeat(500);
+    const LONG = 'c'.repeat(501);
+
+    it.each([
+      ['the company does not allow retex', false, true],
+      ['the user does not agree to it', true, false],
+    ])(
+      'is 500 characters at most when %s',
+      async (_case, allowRetex, consent) => {
+        harness.update('groups', f.CLIENT_GROUP, { allowRetex });
+
+        const short = await submit(f.FRANK, {
+          rating: 'up',
+          comment: SHORT,
+          consentToRetex: consent,
+        });
+        const long = await submit(f.FRANK, {
+          rating: 'up',
+          comment: LONG,
+          consentToRetex: consent,
+        });
+
+        expect(short).toMatchObject({ recorded: true });
+        expect(long.error).toMatch(/500 characters/);
+        expect(harness.stored('feedbacks')).toHaveLength(1);
+      }
+    );
+
+    it('is 4000 characters at most when the retex is granted', async () => {
+      harness.update('groups', f.CLIENT_GROUP, { allowRetex: true });
+
+      const answer = await submit(f.FRANK, {
+        rating: 'up',
+        comment: 'c'.repeat(4000),
+        consentToRetex: true,
+      });
+
+      expect(answer).toMatchObject({ recorded: true });
+    });
+
+    it('is said in the description of the tool', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const { tools } = await client.listTools();
+      const tool = tools.find((t) => t.name === 'submit_feedback');
+
+      expect(tool.description).toMatch(
+        /always shared with the platform company/
+      );
+      expect(tool.description).toMatch(/500 characters/);
+    });
+  });
+
   it.each([
     ['the group does not allow retex', false, true, 'dropped'],
     ['the user does not agree to it', true, false, 'dropped'],
