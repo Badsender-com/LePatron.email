@@ -61,13 +61,13 @@ export default {
           <lucide-thumbs-up
             v-if="item.rating === 'up'"
             :size="18"
-            color="#4caf50"
+            class="rating-up"
             :aria-label="$t('aiSkills.feedback.up')"
           />
           <lucide-thumbs-down
             v-else
             :size="18"
-            color="#e53935"
+            class="rating-down"
             :aria-label="$t('aiSkills.feedback.down')"
           />
         </v-list-item-icon>
@@ -92,5 +92,12 @@ export default {
 <style scoped>
 .retex-text {
   white-space: pre-wrap;
+}
+/* The theme's colors, for the white label: an icon strokes its text color. */
+.rating-up {
+  color: var(--v-success-base);
+}
+.rating-down {
+  color: var(--v-error-base);
 }
 </style>
