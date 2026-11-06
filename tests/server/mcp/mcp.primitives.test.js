@@ -10,11 +10,12 @@
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
+const { SCOPES } = require('../../../packages/server/mcp/mcp-identity.js');
 
 const NO_ACCOUNT = /can no longer use LePatron/;
 const NO_MCP_ACCESS = /no MCP access/;
 // Every scope a token may carry, so the tools a scope adds are walked too.
-const EVERY_SCOPE = ['mcp:read', 'skills:write'];
+const EVERY_SCOPE = SCOPES;
 
 // Arguments a tool's input schema accepts, so that a call reaches the handler
 // instead of stopping at the validation of its arguments.

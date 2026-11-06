@@ -17,10 +17,15 @@ const {
   SkillIdRegex,
   MaxConsumedExpertises,
 } = require('../ai-skill/constant/skill-constants.js');
-const { withIdentity } = require('./mcp-identity.js');
-
-// The scope a token needs for the writing tools to exist (ADR 0014).
-const WRITE_SCOPE = 'skills:write';
+const {
+  withIdentity,
+  hasScope,
+  isRefusal,
+  failure,
+  refused,
+  success,
+  WRITE_SCOPE,
+} = require('./mcp-identity.js');
 
 const ENTITIES = {
   expertise: {
@@ -43,20 +48,13 @@ const ENTITIES = {
   },
 };
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-const success = (answer) => ({
-  content: [{ type: 'text', text: JSON.stringify(answer) }],
-  structuredContent: answer,
-});
-
 // Whether who calls may write: the capability is asked again on every call,
 // whatever the token says (ADR 0014).
 function mayDraft(user, authInfo) {
-  const scoped = (authInfo?.scopes || []).includes(WRITE_SCOPE);
-  return scoped && permissions.can(user, CAPABILITIES.PLATFORM_MANAGE);
+  return (
+    hasScope(authInfo, WRITE_SCOPE) &&
+    permissions.can(user, CAPABILITIES.PLATFORM_MANAGE)
+  );
 }
 
 // The lines the draft adds and removes against the active version, for the
@@ -139,12 +137,6 @@ async function assertNew(entity, id) {
   if (exists) throw createError(409, `"${id}" already exists`);
 }
 
-// Whether the services refused the write with a message meant to be shown
-// (an `http-errors` 4xx): anything else is not for the assistant, and
-// `withIdentity` logs it and answers a plain message.
-const isRefusal = (err) =>
-  Boolean(err) && err.expose === true && err.status >= 400 && err.status < 500;
-
 // Runs a write for an author, who calls checked first (`withIdentity`), and
 // answers what the services refuse.
 function asAuthor(write) {
@@ -157,7 +149,9 @@ function asAuthor(write) {
     try {
       return success(await write(args, user));
     } catch (err) {
-      if (isRefusal(err)) return failure(err.message);
+      // What the services refuse is the assistant's to fix; anything else
+      // is not for it, and `withIdentity` logs it and answers a plain message.
+      if (isRefusal(err)) return refused(err);
       throw err;
     }
   });
@@ -323,4 +317,4 @@ function registerAuthoringTools(server) {
   );
 }
 
-module.exports = { registerAuthoringTools, WRITE_SCOPE };
+module.exports = { registerAuthoringTools };

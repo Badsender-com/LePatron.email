@@ -261,6 +261,27 @@ describe('authoring', () => {
       expect(changed.version).toBe('1.0');
       expect(changed.diff).toContain('+ 2. Never guess.');
     });
+
+    // The assistant fixes what it is told: the code alone does not say which.
+    it('says which expertises a refusal is about', async () => {
+      const client = await asAuthor();
+      await call(client, 'create_task_skill', {
+        skillId: 'qc.read-sending-report',
+        title: 'Read a sending report',
+        category: 'qc',
+        procedure: '## Steps\n\n1. Describe the report.',
+        changelog: 'First draft',
+      });
+
+      const answer = await call(client, 'propose_skill_change', {
+        skillId: 'qc.read-sending-report',
+        consumedExpertiseIds: ['design.never-written'],
+        changelog: 'Reads the contrast',
+      });
+
+      expect(answer.error).toMatch(/SKILL_CONSUMED_EXPERTISES_NOT_FOUND/);
+      expect(answer.error).toContain('design.never-written');
+    });
   });
 
   describe('creating', () => {

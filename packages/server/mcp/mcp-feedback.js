@@ -3,7 +3,7 @@
 const { z } = require('zod');
 const { McpFeedbacks } = require('../common/models.common.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
-const { withIdentity } = require('./mcp-identity.js');
+const { withIdentity, failure, success } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill } = require('./mcp-skill-catalog.js');
 const { readableMailing } = require('./mcp-mailings.js');
@@ -25,11 +25,6 @@ async function resolveReference({ kind, id }, identity) {
       : await readableExpertise(id, identity.group);
   return found ? { kind, id, version: versionLabel(found.version) } : null;
 }
-
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
 
 /**
  * A feedback, and its retex (ADR 0012): the session summary the assistant
@@ -66,11 +61,7 @@ async function submitFeedback(identity, args, ctx) {
     expiresAt: computeExpiresAt(new Date(), identity.group.logRetentionDays),
   });
 
-  const answer = { recorded: true, retex };
-  return {
-    content: [{ type: 'text', text: JSON.stringify(answer) }],
-    structuredContent: answer,
-  };
+  return success({ recorded: true, retex });
 }
 
 // What one feedback holds at most: a few things it is about, and a comment
