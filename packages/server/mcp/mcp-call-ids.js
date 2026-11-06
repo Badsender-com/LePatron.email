@@ -42,14 +42,25 @@ function idPathsOf(schema, depth = 0) {
   return Object.keys(tree).length ? tree : null;
 }
 
-function declaredIdsOf(inputSchema) {
-  if (!inputSchema) return null;
+// The ids each input schema declares, read once: the server is built for
+// every request, its tools registered again with the same schemas.
+const declaredBySchema = new WeakMap();
+
+function readDeclaredIds(inputSchema) {
   try {
     return idPathsOf(z.toJSONSchema(inputSchema, { io: 'input' }));
   } catch (err) {
     // A schema JSON cannot describe declares no id the log could keep.
     return null;
   }
+}
+
+function declaredIdsOf(inputSchema) {
+  if (!inputSchema || typeof inputSchema !== 'object') return null;
+  if (!declaredBySchema.has(inputSchema)) {
+    declaredBySchema.set(inputSchema, readDeclaredIds(inputSchema));
+  }
+  return declaredBySchema.get(inputSchema);
 }
 
 // The ids found along the declared paths, until MAX_IDS of them, reading at

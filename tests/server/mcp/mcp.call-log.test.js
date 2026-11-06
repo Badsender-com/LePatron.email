@@ -85,6 +85,21 @@ describe('call log', () => {
       expect(JSON.stringify(log)).not.toContain('xxxx');
     });
 
+    // The server is built for every request: what a tool declares is read
+    // once, not on each of them.
+    it('reads the ids a tool declares once', async () => {
+      const { z } = require('zod');
+      await harness.connectAs(f.FRANK);
+      const toJSONSchema = jest.spyOn(z, 'toJSONSchema');
+
+      await harness.connectAs(f.FRANK);
+      await harness.connectAs(f.ERIN);
+
+      const calls = toJSONSchema.mock.calls.length;
+      toJSONSchema.mockRestore();
+      expect(calls).toBe(0);
+    });
+
     it('cuts an id at 200 characters', async () => {
       const log = await callTool('submit_feedback', {
         rating: 'up',
