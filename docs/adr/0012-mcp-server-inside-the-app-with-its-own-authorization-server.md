@@ -1,4 +1,4 @@
-# MCP server: inside the app, with its own authorization server, read-only for everything but the platform's own skills and expertises
+# MCP server: inside the app, with its own authorization server; it reads, and writes only feedback and the platform's own drafts
 
 - Status: proposed
 - Date: 2026-10-15

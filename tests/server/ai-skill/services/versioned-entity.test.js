@@ -1,5 +1,12 @@
 'use strict';
 
+// The model is a mock: the tests of the assistant's drafts check the
+// conditions each write sends (`$size`, `$elemMatch` on the update date), not
+// what MongoDB does with them. What those conditions do with two proposals at
+// once is tested on the fake models, which match an `$elemMatch` element by
+// element and replace the element a positional `$set` names
+// (tests/server/mcp/mcp.authoring.test.js, "changes proposed at once").
+
 jest.mock('../../../../packages/server/common/models.common.js', () => ({
   LePatronSkills: {},
   Expertises: {},
