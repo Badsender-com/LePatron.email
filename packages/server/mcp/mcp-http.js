@@ -56,7 +56,8 @@ async function authInfoOf(provider, header, resource) {
       .filter(Boolean),
     expiresAt: token.exp,
     resource: new URL(resource),
-    extra: identity,
+    // The grant's connection keeps the drafts mode (#1385).
+    extra: { ...identity, grantId: token.grantId },
   };
 }
 

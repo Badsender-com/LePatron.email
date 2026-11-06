@@ -112,8 +112,7 @@ async function main(protocolOut) {
   } = require('@modelcontextprotocol/server/stdio');
   const { Users } = require(server('common', 'models.common.js'));
   const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
-  const { READ_SCOPE } = require(server('mcp', 'mcp-identity.js'));
-  const { WRITE_SCOPE } = require(server('mcp', 'mcp-authoring.js'));
+  const { READ_SCOPE, WRITE_SCOPE } = require(server('mcp', 'mcp-identity.js'));
 
   await mongoose.connect(config.database, {
     useNewUrlParser: true,

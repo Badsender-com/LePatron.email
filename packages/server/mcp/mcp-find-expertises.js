@@ -37,6 +37,7 @@ const FIND_OUTPUT = z.object({
       expertiseId: z.string(),
       title: z.string(),
       version: z.string(),
+      draft: z.boolean().optional(),
       uri: z.string(),
     })
   ),
@@ -71,7 +72,7 @@ function noteOn(unmatched, inUse) {
 
 const filled = (value) => (value && value.trim()) || undefined;
 
-async function findExpertises({ group }, args) {
+async function findExpertises({ group, drafts }, args) {
   const scopes = normalizeScopes(args.scope);
   // The features' own lookup, with the scopes in use, both within the
   // audience of the caller's company. Its diagnostic is for a scope written
@@ -86,6 +87,9 @@ async function findExpertises({ group }, args) {
     language: filled(args.language),
     groupId: group._id,
     warnOnUnmatched: false,
+    // In a super admin's drafts mode, what it is served: the open drafts, the
+    // expertises never published included (#1385).
+    drafts,
   });
   const unmatchedScopes = scopes.filter((scope) => !inUse.includes(scope));
   const answer = {
@@ -93,6 +97,7 @@ async function findExpertises({ group }, args) {
       expertiseId: expertise.expertiseId,
       title: expertise.title,
       version: versionLabel(expertise),
+      ...(expertise.draft && { draft: true }),
       uri: uriOf(expertise.expertiseId),
     })),
     scopesInUse: inUse.slice(0, MAX_LISTED_SCOPES),

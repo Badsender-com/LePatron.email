@@ -6,16 +6,19 @@ const {
 } = require('@modelcontextprotocol/server');
 const { Expertises } = require('../common/models.common.js');
 const {
-  findPublished,
+  findServed,
 } = require('../ai-skill/repositories/published.repository.js');
 const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { audienceFilter } = require('../ai-skill/services/audience.js');
+const { draftNotice } = require('./mcp-drafts.js');
 
 const URI_TEMPLATE = 'lepatron://expertises/{expertiseId}';
 const uriOf = (expertiseId) => `lepatron://expertises/${expertiseId}`;
 
-// What each read keeps of an expertise and of its active version.
+// What each read keeps of an expertise and of the version it is served at:
+// its active version, or in a super admin's drafts mode its open draft
+// (#1385).
 const LISTED = {
   doc: ['expertiseId', 'title', 'description'],
   version: ['updatedAt'],
@@ -29,16 +32,18 @@ const NAMED = { doc: ['expertiseId'], version: [] };
 const byExpertiseId = (a, b) =>
   a.doc.expertiseId.localeCompare(b.doc.expertiseId);
 
-async function publishedExpertises(group) {
-  const found = await findPublished(Expertises, audienceFilter(group), LISTED);
+async function servedExpertises(group, drafts = false) {
+  const found = await findServed(Expertises, audienceFilter(group), LISTED, {
+    drafts,
+  });
   return found.sort(byExpertiseId);
 }
 
-function asResource({ doc, version }) {
+function asResource({ doc, version, draft }) {
   return {
     uri: uriOf(doc.expertiseId),
     name: doc.expertiseId,
-    title: doc.title,
+    title: draft ? `${doc.title} (draft ${versionLabel(version)})` : doc.title,
     description: doc.description || undefined,
     mimeType: 'text/markdown',
     annotations: { lastModified: new Date(version.updatedAt).toISOString() },
@@ -51,13 +56,16 @@ function bulleted(title, examples) {
 }
 
 // One Markdown document: the expertise, its version, its examples.
-function asMarkdown({ doc, version }) {
+function asMarkdown(found) {
+  const { doc, version } = found;
   const updated = new Date(version.updatedAt).toISOString().slice(0, 10);
+  const notice = draftNotice(found);
   return [
     `# ${doc.title}`,
     '',
     `Version ${versionLabel(version)}, updated on ${updated}.`,
     '',
+    ...(notice ? [notice, ''] : []),
     version.body,
     '',
     ...bulleted('Good examples', version.examplesGood),
@@ -67,12 +75,13 @@ function asMarkdown({ doc, version }) {
     .trim();
 }
 
-// The active version of an expertise the company may read, or null.
-async function readableExpertise(expertiseId, group) {
-  const [found] = await findPublished(
+// The version of an expertise the company may read it at, or null.
+async function readableExpertise(expertiseId, group, drafts = false) {
+  const [found] = await findServed(
     Expertises,
     { expertiseId: String(expertiseId), ...audienceFilter(group) },
-    READ
+    READ,
+    { drafts }
   );
   return found || null;
 }
@@ -80,21 +89,27 @@ async function readableExpertise(expertiseId, group) {
 /**
  * The expertises a task skill consumes that the company may read, in the
  * skill's order, in one read: those not published, or not for this company,
- * are left out.
+ * are left out. In drafts mode, each is read at its open draft (#1385).
  *
  * @param {string[]} [ids] the skill version's `consumedExpertiseIds`
  * @param {Object} group the company of the caller
  * @param {Object} [options]
  * @param {boolean} [options.content] read their content, not only their ids
- * @returns {Promise<Array<{ doc: Object, version: Object }>>}
+ * @param {boolean} [options.drafts] at their open draft, in drafts mode
+ * @returns {Promise<Array<{ doc: Object, version: Object, draft: boolean }>>}
  */
-async function consumedExpertises(ids = [], group, { content = false } = {}) {
+async function consumedExpertises(
+  ids = [],
+  group,
+  { content = false, drafts = false } = {}
+) {
   const wanted = [...new Set(ids.map(String))];
   if (!wanted.length) return [];
-  const found = await findPublished(
+  const found = await findServed(
     Expertises,
     { expertiseId: { $in: wanted }, ...audienceFilter(group) },
-    content ? READ : NAMED
+    content ? READ : NAMED,
+    { drafts }
   );
   const byId = new Map(found.map((item) => [item.doc.expertiseId, item]));
   return wanted.map((id) => byId.get(id)).filter(Boolean);
@@ -104,8 +119,8 @@ function registerExpertiseResources(server) {
   server.registerResource(
     'expertises',
     new ResourceTemplate(URI_TEMPLATE, {
-      list: withIdentity(async ({ group }) => ({
-        resources: (await publishedExpertises(group)).map(asResource),
+      list: withIdentity(async ({ group, drafts }) => ({
+        resources: (await servedExpertises(group, drafts)).map(asResource),
       })),
     }),
     {
@@ -114,8 +129,8 @@ function registerExpertiseResources(server) {
         'Email know-how, one Markdown document per topic, in its active version.',
       mimeType: 'text/markdown',
     },
-    withIdentity(async ({ group }, uri, { expertiseId }) => {
-      const found = await readableExpertise(expertiseId, group);
+    withIdentity(async ({ group, drafts }, uri, { expertiseId }) => {
+      const found = await readableExpertise(expertiseId, group, drafts);
       if (!found) throw new ResourceNotFoundError(uri.href);
       return {
         contents: [
