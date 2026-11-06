@@ -1,12 +1,14 @@
 'use strict';
 
+const { ProtocolError } = require('@modelcontextprotocol/server');
 const { McpCallLogs, Groups } = require('../common/models.common.js');
 const {
   computeExpiresAt,
 } = require('../ai-skill/services/invocation-logger.service.js');
 const logger = require('../utils/logger.js');
 const { isObjectIdString } = require('../utils/model.js');
-const { admit, refusalOf } = require('./mcp-rate-limit.js');
+const { admitCaller, admitCompany, refusalOf } = require('./mcp-rate-limit.js');
+const { identify } = require('./mcp-identity.js');
 const {
   declaredIdsOf,
   whatWasAsked,
@@ -33,10 +35,19 @@ async function record(entry) {
   }
 }
 
+// How a call ended: a tool reports its failure in its result, any other
+// handler throws it. A call whose caller was refused ended in that refusal.
+function outcomeOf(failed, refusal) {
+  if (!failed) return 'ok';
+  return refusal instanceof ProtocolError ? 'refused' : 'error';
+}
+
 /**
  * A request handler, counted against the rate limit and logged (ADR 0012).
- * The log keeps metadata only: who, from which application, what was asked
- * by its ids, how long it took and how it ended.
+ * Who calls is resolved once, here, for the handler too (`identify`): the
+ * call counts against the company once its caller is known to be one of its
+ * members still. The log keeps metadata only: who, from which application,
+ * what was asked by its ids, how long it took and how it ended.
  */
 function guarded(method, handler, declared) {
   return async (request, ctx) => {
@@ -49,7 +60,7 @@ function guarded(method, handler, declared) {
     const clientId = cut(authInfo.clientId, MAX_NAME_LENGTH) || '';
 
     // Counted before anything of the request is read.
-    const refused = admit({ userId, groupId, clientId });
+    const overCaller = admitCaller({ userId, groupId, clientId });
     const entry = {
       _user: userId,
       _company: groupId,
@@ -57,21 +68,29 @@ function guarded(method, handler, declared) {
       method,
       ...whatWasAsked(method, request.params, declared),
     };
-    if (refused) {
-      if (refused.firstRefusal) {
+    const { refusal } = overCaller ? {} : await identify(ctx);
+    const over = overCaller || (refusal ? null : admitCompany(groupId));
+    if (over) {
+      if (over.firstRefusal) {
         await record({ ...entry, durationMs: 0, outcome: 'rate_limited' });
       }
-      throw refusalOf(refused);
+      throw refusalOf(over);
     }
 
+    // The static listings answer anyone; a handler that reads data throws
+    // the refusal `identify` kept for it (withIdentity).
     const startedAt = Date.now();
-    let outcome = 'error';
+    let failed = true;
     try {
       const result = await handler(request, ctx);
-      outcome = result?.isError ? 'error' : 'ok';
+      failed = Boolean(result?.isError);
       return result;
     } finally {
-      await record({ ...entry, durationMs: Date.now() - startedAt, outcome });
+      await record({
+        ...entry,
+        durationMs: Date.now() - startedAt,
+        outcome: outcomeOf(failed, refusal),
+      });
     }
   };
 }

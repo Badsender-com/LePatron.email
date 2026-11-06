@@ -9,10 +9,13 @@ const {
 
 const WINDOW_MS = 60 * 1000;
 // A connection is one user, in one company, from one connected application: a
-// minute of steady work for an assistant. A company shares five times that.
-const LIMITS = { connection: 60, group: 300 };
+// minute of steady work for an assistant. A user has twice that across the
+// applications they connect, which anyone may register; a company shares five
+// times that.
+const LIMITS = { connection: 60, user: 120, group: 300 };
 const SCOPES = {
   connection: 'for this connection',
+  user: 'for this account, across its connected applications',
   group: 'for the whole company',
 };
 
@@ -41,35 +44,51 @@ function windowOf(key, now) {
   return fresh;
 }
 
+// Counts a call in each of the windows, or refuses it when one of them
+// already reached its limit this minute.
+function admitIn(keys) {
+  const now = clock.now();
+  if (windows.size > 10000) forgetEndedWindows(now);
+  const counted = Object.entries(keys).map(([scope, key]) => [
+    scope,
+    windowOf(key, now),
+  ]);
+  const full = counted.find(([scope, window]) => window.count >= LIMITS[scope]);
+  if (!full) {
+    counted.forEach(([, window]) => {
+      window.count += 1;
+    });
+    return null;
+  }
+  const [scope, window] = full;
+  const firstRefusal = !window.refusalLogged;
+  window.refusalLogged = true;
+  return { scope, retryInMs: window.start + WINDOW_MS - now, firstRefusal };
+}
+
 /**
- * Counts a call against its connection and its company, or refuses it when
- * either already reached its limit this minute.
+ * Counts a call against who makes it, from what the token says, before
+ * anything is read: its connection, and its user across their connected
+ * applications.
+ *
+ * @returns {null|{ scope: string, retryInMs: number, firstRefusal: boolean }}
+ *   the refusal, when the call is over a limit
+ */
+function admitCaller({ userId, groupId, clientId }) {
+  return admitIn({
+    connection: `connection:${userId}:${groupId}:${clientId}`,
+    user: `user:${userId}`,
+  });
+}
+
+/**
+ * Counts a call against its company, once who makes it is known to be one of
+ * its members still: a token that no longer opens anything costs it nothing.
  *
  * @returns {null|{ scope: string, retryInMs: number, firstRefusal: boolean }}
  */
-function admit({ userId, groupId, clientId }) {
-  const now = clock.now();
-  if (windows.size > 10000) forgetEndedWindows(now);
-  const counted = {
-    connection: windowOf(`connection:${userId}:${groupId}:${clientId}`, now),
-    group: windowOf(`group:${groupId}`, now),
-  };
-  const full = Object.keys(LIMITS).find(
-    (scope) => counted[scope].count >= LIMITS[scope]
-  );
-  if (!full) {
-    counted.connection.count += 1;
-    counted.group.count += 1;
-    return null;
-  }
-  const window = counted[full];
-  const firstRefusal = !window.refusalLogged;
-  window.refusalLogged = true;
-  return {
-    scope: full,
-    retryInMs: window.start + WINDOW_MS - now,
-    firstRefusal,
-  };
+function admitCompany(groupId) {
+  return admitIn({ group: `group:${groupId}` });
 }
 
 function refusalOf({ scope, retryInMs }) {
@@ -81,4 +100,11 @@ function refusalOf({ scope, retryInMs }) {
   );
 }
 
-module.exports = { admit, refusalOf, clock, forgetCounts };
+module.exports = {
+  admitCaller,
+  admitCompany,
+  refusalOf,
+  clock,
+  forgetCounts,
+  LIMITS,
+};

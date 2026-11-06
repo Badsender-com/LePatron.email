@@ -4,8 +4,10 @@
 'use strict';
 
 // The rate limit of a connected application (ADR 0012): about 60 calls a
-// minute per connection, answered beyond that with a message the user
-// understands. What the call log keeps is pinned by mcp.call-log.test.js.
+// minute per connection, 120 per user across the applications they connect,
+// 300 per company, answered beyond that with a message the user understands
+// and when to retry. What the call log keeps is pinned by
+// mcp.call-log.test.js.
 
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
@@ -35,6 +37,51 @@ describe('rate limit', () => {
     await expect(client.listResources()).rejects.toThrow(
       /limit.*(retry|try again)/i
     );
+  });
+
+  it('says in how many seconds to retry', async () => {
+    const client = await harness.connectAs(f.FRANK);
+    await callTimes(client, LIMIT);
+    harness.advanceClock(45 * 1000);
+
+    const refusal = await client.listResources().catch((error) => error);
+
+    expect(refusal.data).toEqual({ retryAfterSeconds: 15 });
+    expect(refusal.message).toMatch(/retry in 15 seconds/i);
+  });
+
+  // Anyone may register an application: more of them give a user no more.
+  it('caps a user across the applications they connect', async () => {
+    const [first, second, third] = await Promise.all(
+      ['claude', 'chatgpt', 'copilot'].map((clientId) =>
+        harness.connectAs(f.FRANK, { clientId })
+      )
+    );
+    await callTimes(first, LIMIT);
+    await callTimes(second, LIMIT);
+
+    await expect(third.listResources()).rejects.toThrow(
+      /limit.*account.*(retry|try again)/i
+    );
+  });
+
+  // A token that no longer opens anything costs its company nothing.
+  it('does not count against the company the calls of an account it refuses', async () => {
+    const dean = await harness.connectAs(f.DEAN);
+    for (let i = 0; i < LIMIT; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await dean.listResources().catch(() => null);
+    }
+    const connections = await Promise.all(
+      [f.FRANK, f.ERIN, f.TESS, f.WREN, f.REX].map((userId) =>
+        harness.connectAs(userId)
+      )
+    );
+
+    for (const client of connections) {
+      // eslint-disable-next-line no-await-in-loop
+      await expect(callTimes(client, LIMIT)).resolves.toBeUndefined();
+    }
   });
 
   it('answers again the next minute', async () => {

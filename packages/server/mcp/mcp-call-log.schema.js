@@ -21,7 +21,8 @@ const McpCallLogSchema = new Schema(
     durationMs: { type: Number, default: 0 },
     outcome: {
       type: String,
-      enum: ['ok', 'error', 'rate_limited'],
+      // `refused`: who called may no longer use LePatron through it.
+      enum: ['ok', 'error', 'refused', 'rate_limited'],
       required: true,
     },
     expiresAt: { type: Date, default: null },

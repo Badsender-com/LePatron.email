@@ -143,17 +143,25 @@ describe('call log', () => {
     expect(logs()[0].outcome).toBe('error');
   });
 
-  it('logs a refused call', async () => {
+  // A refusal is no failure of the server: the log tells them apart.
+  it('logs a call refused to who makes it as refused', async () => {
     const client = await harness.connectAs(f.FRANK);
     harness.update('groups', f.CLIENT_GROUP, { enableMcp: false });
 
     await expect(client.listResources()).rejects.toThrow();
-
-    expect(logs()[0]).toMatchObject({
-      _user: f.FRANK,
-      method: 'resources/list',
-      outcome: 'error',
+    await client.callTool({
+      name: 'submit_feedback',
+      arguments: { rating: 'up' },
     });
+
+    expect(logs()).toEqual([
+      expect.objectContaining({
+        _user: f.FRANK,
+        method: 'resources/list',
+        outcome: 'refused',
+      }),
+      expect.objectContaining({ method: 'tools/call', outcome: 'refused' }),
+    ]);
   });
 
   it('logs the first call refused by the rate limit, not each one after it', async () => {

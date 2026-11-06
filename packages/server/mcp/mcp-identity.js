@@ -213,6 +213,37 @@ async function resolveIdentity(authInfo) {
   return { user, group };
 }
 
+// Who makes a call, resolved once for it by the call guard
+// (mcp-call-guard.js), which counts it against the company only once it is
+// known, and logs a refusal as one: by the request, which the SDK builds for
+// each call and hands to the handler.
+const identities = new WeakMap();
+
+/**
+ * Resolves who makes a call, and keeps the answer for the handler of that
+ * call: the identity, or why it is refused.
+ *
+ * @param {Object} [ctx] the request context the SDK hands the handler
+ * @returns {Promise<{ identity?: Object, refusal?: Error }>}
+ */
+async function identify(ctx) {
+  const answer = await resolveIdentity(ctx?.http?.authInfo).then(
+    (identity) => ({ identity }),
+    (refusal) => ({ refusal })
+  );
+  if (ctx?.http) identities.set(ctx.http, answer);
+  return answer;
+}
+
+// The identity of a call, as identify kept it, or resolved now for a handler
+// the guard does not wrap.
+async function identityOf(ctx) {
+  const known = ctx?.http && identities.get(ctx.http);
+  if (!known) return resolveIdentity(ctx?.http?.authInfo);
+  if (known.refusal) throw known.refusal;
+  return known.identity;
+}
+
 /**
  * The one way this server registers a handler (ADR 0012): who calls is
  * resolved before the handler runs, which receives the identity first, then
@@ -233,8 +264,7 @@ async function resolveIdentity(authInfo) {
 function withIdentity(handler) {
   return async (...args) => {
     try {
-      const ctx = args[args.length - 1];
-      const identity = await resolveIdentity(ctx?.http?.authInfo);
+      const identity = await identityOf(args[args.length - 1]);
       return await handler(identity, ...args);
     } catch (error) {
       const told = toldToAssistant(error);
@@ -254,6 +284,7 @@ function withIdentity(handler) {
 
 module.exports = {
   resolveIdentity,
+  identify,
   withIdentity,
   hasScope,
   isRefusal,
