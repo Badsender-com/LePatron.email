@@ -38,6 +38,8 @@ const {
   maxMajor,
   maxMinorFor,
   assertDraft,
+  openDraftOf,
+  versionLabel,
 } = require('./version-helpers.js');
 
 /**
@@ -167,6 +169,51 @@ function createVersionedEntityService({
     return doc;
   }
 
+  /**
+   * New draft at a number given rather than the next one: an imported version
+   * keeps the number it has on the instance it comes from (ADR 0018). Only
+   * ahead of the active version, and never beside an open draft, which an
+   * import does not overwrite.
+   */
+  async function createVersionAt(id, { major, minor }, content, userId) {
+    const doc = await getDoc(id);
+    const wanted = { versionMajor: major, versionMinor: minor };
+    const open = openDraftOf(doc);
+    if (open) {
+      throw createError(
+        409,
+        `The draft ${versionLabel(open)} is open on this ${entityNoun}`
+      );
+    }
+    const active = findActiveVersion(doc);
+    const ahead =
+      !active ||
+      major > active.versionMajor ||
+      (major === active.versionMajor && minor > active.versionMinor);
+    if (!ahead || findVersion(doc, major, minor)) {
+      throw createError(
+        409,
+        `Version ${versionLabel(
+          wanted
+        )} is not ahead of this ${entityNoun}'s versions`
+      );
+    }
+    const now = new Date();
+    doc.versions.push({
+      ...wanted,
+      status: 'DRAFT',
+      ...cloneVersionContent(content),
+      changelog: content.changelog || '',
+      releaseNotes: content.releaseNotes || '',
+      createdBy: userId,
+      createdAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+    });
+    await doc.save();
+    return doc;
+  }
+
   async function updateVersion(id, { major, minor }, patch, userId) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
@@ -252,6 +299,7 @@ function createVersionedEntityService({
     cloneVersionContent,
     createMinorVersion,
     createMajorVersion,
+    createVersionAt,
     updateVersion,
     deleteVersion,
     activateVersion,
