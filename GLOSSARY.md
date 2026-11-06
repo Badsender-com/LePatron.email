@@ -95,7 +95,7 @@ _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 
 **Security event**:
-A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off: who did it, to whom, when.
+A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off or its retex allowed or stopped: who did it, to whom, when.
 _Avoid_: Audit log, activity log
 
 ### Image gallery
@@ -202,11 +202,19 @@ The company's switch that lets its users connect applications. Off unless the co
 _UI_: Accès MCP
 _Avoid_: MCP subscription (MCP access is not what is sold)
 
+**Connection**:
+One user, in one company, through one connected application: what an access token opens, and what the rate limit counts first, before the user across their applications and the company.
+_Avoid_: Session, link, integration
+
+**Call log**:
+The record of each call a connected application makes to LePatron: who, in which company, from which application, which tool, prompt or resource, the ids it named, how long it took and how it ended. Never what was typed nor what LePatron answered. Kept for the company's log retention.
+_Avoid_: Audit log, activity log, trace (the security events are another record)
+
 **Feedback**:
-A rating and a comment a user sends from a connected application about what LePatron gave them.
+A rating and a comment a user sends from a connected application about what LePatron gave them. Both reach the platform company whatever the retex; it is kept for the company's log retention.
 _UI_: Avis
 
 **Retex**:
-The summary of an assistant session, attached to a feedback, so the platform company can improve its expertises, skills and features. Sent only when the company allows it and the user agrees to it for that feedback.
+The summary of an assistant session, attached to a feedback, so the platform company can improve its expertises, skills and features. Kept only when the company allows it, which its company admin, its tech admin or a super admin decides, and the user agrees to it for that feedback. Stopping it forgets the summaries already kept.
 _UI_: Retour d'expérience
 _Avoid_: Telemetry, session log
