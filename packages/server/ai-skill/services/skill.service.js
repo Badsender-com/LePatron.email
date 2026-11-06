@@ -1,6 +1,7 @@
 'use strict';
 
 const createError = require('http-errors');
+const { pick } = require('lodash');
 const { LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
@@ -68,7 +69,25 @@ function getSkill(skillId) {
 const DEFAULT_INPUT_SCHEMA_ID = 'genericTextInput';
 const DEFAULT_OUTPUT_SCHEMA_ID = 'genericTextOutput';
 
-async function createSkill(data, userId) {
+/**
+ * A new skill, with its v1.0 draft, in one write: nothing is stored when any
+ * of it is refused, the consumed expertises checked first and the version
+ * by the schema.
+ *
+ * @param {Object} data the skill's fields (skillId, title, description,
+ *   category); never its audience, which is the platform company's
+ * @param {*} userId
+ * @param {Object} [firstVersion] what the v1.0 draft holds besides the
+ *   defaults, among its patchable fields (the nature, the procedure, the
+ *   consumed expertises, the changelog…)
+ * @returns {Promise<Object>} the skill
+ * @throws {HttpError} 409 when the skillId exists, 400 when the version is
+ *   refused
+ */
+async function createSkill(data, userId, firstVersion = {}) {
+  if (firstVersion.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(firstVersion.consumedExpertiseIds);
+  }
   const now = new Date();
   const payload = {
     skillId: data.skillId,
@@ -93,6 +112,7 @@ async function createSkill(data, userId) {
         outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
         changelog: '',
         releaseNotes: '',
+        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
         createdBy: userId,
         createdAt: now,
         updatedBy: userId,

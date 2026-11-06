@@ -1,6 +1,7 @@
 'use strict';
 
 const createError = require('http-errors');
+const { pick } = require('lodash');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
 const { listFilter } = require('./expertise-list-filter.js');
@@ -83,7 +84,20 @@ async function getFacets() {
   return { scopes: clean(scopes), emailTypes: clean(emailTypes) };
 }
 
-async function createExpertise(data, userId) {
+/**
+ * A new expertise, with its v1.0 draft, in one write: nothing is stored when
+ * the schema refuses the version (its sections).
+ *
+ * @param {Object} data the expertise's fields; never its audience, which is
+ *   the platform company's
+ * @param {*} userId
+ * @param {Object} [firstVersion] what the v1.0 draft holds, among its
+ *   patchable fields (the body, the examples, the changelog…)
+ * @returns {Promise<Object>} the expertise
+ * @throws {HttpError} 409 when the expertiseId exists, 400 when the version
+ *   is refused
+ */
+async function createExpertise(data, userId, firstVersion = {}) {
   const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
@@ -113,6 +127,7 @@ async function createExpertise(data, userId) {
         ...blankVersionContent(),
         changelog: '',
         releaseNotes: '',
+        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
         createdBy: userId,
         createdAt: now,
         updatedBy: userId,

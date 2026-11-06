@@ -331,5 +331,77 @@ describe('authoring', () => {
 
       expect(answer.error).toMatch(/already exists/i);
     });
+
+    const TASK_SKILL = {
+      skillId: 'qc.read-sending-report',
+      title: 'Read a sending report',
+      category: 'qc',
+      procedure: '## Steps\n\n1. Describe the report.',
+      changelog: 'First draft',
+    };
+    const storedSkill = () =>
+      harness
+        .stored('skills')
+        .find((skill) => skill.skillId === TASK_SKILL.skillId);
+
+    it('creates a task skill whole, its first version a task', async () => {
+      const answer = await call(await asAuthor(), 'create_task_skill', {
+        ...TASK_SKILL,
+        consumedExpertiseIds: [SUBJECT_LINES],
+      });
+
+      expect(answer).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(storedSkill().versions).toEqual([
+        expect.objectContaining({
+          versionMajor: 1,
+          versionMinor: 0,
+          nature: 'task',
+          procedure: TASK_SKILL.procedure,
+          consumedExpertiseIds: [SUBJECT_LINES],
+          changelog: 'First draft',
+        }),
+      ]);
+    });
+
+    // Nothing half made: the assistant can send the same creation again,
+    // fixed, and get the task skill it asked for.
+    it('leaves nothing behind when an expertise it consumes does not exist', async () => {
+      const client = await asAuthor();
+
+      const refused = await call(client, 'create_task_skill', {
+        ...TASK_SKILL,
+        consumedExpertiseIds: ['design.never-written'],
+      });
+      const again = await call(client, 'create_task_skill', TASK_SKILL);
+
+      expect(refused.error).toContain('design.never-written');
+      expect(again).toMatchObject({ version: '1.0', status: 'DRAFT' });
+      expect(storedSkill().versions).toHaveLength(1);
+      expect(storedSkill().versions[0].nature).toBe('task');
+    });
+
+    // Only an answer that it does not exist lets the creation go on.
+    it('creates nothing when it cannot tell whether the identifier exists', async () => {
+      const models = require('../../../packages/server/common/models.common.js');
+      const findOne = jest
+        .spyOn(models.Expertises, 'findOne')
+        .mockImplementationOnce(() => {
+          throw new Error('The database did not answer');
+        });
+
+      const answer = await call(await asAuthor(), 'create_expertise', {
+        expertiseId: 'design.button-contrast',
+        title: 'Button contrast',
+        category: 'design',
+        body: '## Contrast',
+        changelog: 'First draft',
+      });
+      findOne.mockRestore();
+
+      expect(answer.error).toBeDefined();
+      expect(
+        harness.stored('expertises').map((expertise) => expertise.expertiseId)
+      ).not.toContain('design.button-contrast');
+    });
   });
 });

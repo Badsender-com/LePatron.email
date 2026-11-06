@@ -8,6 +8,7 @@ const expertiseService = require('../ai-skill/services/expertise.service.js');
 const skillService = require('../ai-skill/services/skill.service.js');
 const {
   findActiveVersion,
+  findVersion,
   openDraftOf,
   versionLabel: label,
 } = require('../ai-skill/services/version-helpers.js');
@@ -102,39 +103,52 @@ async function draftOf(entity, id, major, userId) {
   return { doc: next, version: created };
 }
 
-async function writeDraft(entity, id, { major, ...patch }, user) {
-  const { service, textOf } = ENTITIES[entity];
-  const { version } = await draftOf(entity, id, major, user.id);
-  const saved = await service.updateVersion(
-    id,
-    { major: version.versionMajor, minor: version.versionMinor },
-    patch,
-    user.id
-  );
-  const draft = saved.versions.find(
-    (v) =>
-      v.versionMajor === version.versionMajor &&
-      v.versionMinor === version.versionMinor
-  );
-  const active = findActiveVersion(saved);
+// What a write answers: the version written, and its difference with the
+// active version, for the person to read before publishing.
+function answerOf(entity, doc, draft) {
+  const { idField, textOf } = ENTITIES[entity];
+  const active = findActiveVersion(doc);
   return {
-    [ENTITIES[entity].idField]: id,
+    [idField]: doc[idField],
     version: label(draft),
     status: draft.status,
-    audience: saved.audience,
+    audience: doc.audience,
     diff: diffOf(active ? textOf(active) : '', textOf(draft)),
   };
 }
 
+async function writeDraft(entity, id, { major, ...patch }, user) {
+  const { service } = ENTITIES[entity];
+  const { version } = await draftOf(entity, id, major, user.id);
+  const ref = { major: version.versionMajor, minor: version.versionMinor };
+  const saved = await service.updateVersion(id, ref, patch, user.id);
+  return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));
+}
+
 // The services rely on the unique index to refuse a duplicate; say it first.
+// Only an answer that it does not exist lets the creation go on.
 async function assertNew(entity, id) {
   const { service } = ENTITIES[entity];
   const get = entity === 'skill' ? 'getSkill' : 'getExpertise';
-  const exists = await service[get](id).then(
-    () => true,
-    () => false
-  );
-  if (exists) throw createError(409, `"${id}" already exists`);
+  try {
+    await service[get](id);
+  } catch (err) {
+    if (err.status === 404) return;
+    throw err;
+  }
+  throw createError(409, `"${id}" already exists`);
+}
+
+// A creation is one write, the v1.0 draft whole: nothing is left behind when
+// any of it is refused.
+async function createDraft(entity, data, firstVersion, user) {
+  const { service, idField } = ENTITIES[entity];
+  await assertNew(entity, data[idField]);
+  const created =
+    entity === 'skill'
+      ? await service.createSkill(data, user.id, firstVersion)
+      : await service.createExpertise(data, user.id, firstVersion);
+  return answerOf(entity, created, created.versions[0]);
 }
 
 // Runs a write for an author, who calls checked first (`withIdentity`), and
@@ -268,21 +282,14 @@ function registerAuthoringTools(server) {
     'create_expertise',
     {
       title: 'Create an expertise',
-      description: `Creates an expertise as a draft, read by the platform company only until a person publishes it and opens it to every company in the back office. ${SECTIONS}`,
+      description: `Creates an expertise as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company. ${SECTIONS}`,
       inputSchema: CREATE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: WRITING,
     },
-    asAuthor(async ({ body, changelog: log, ...data }, user) => {
-      await assertNew('expertise', data.expertiseId);
-      await expertiseService.createExpertise(data, user.id);
-      return writeDraft(
-        'expertise',
-        data.expertiseId,
-        { body, changelog: log },
-        user
-      );
-    })
+    asAuthor(({ body, changelog: log, ...data }, user) =>
+      createDraft('expertise', data, { body, changelog: log }, user)
+    )
   );
 
   server.registerTool(
@@ -290,22 +297,17 @@ function registerAuthoringTools(server) {
     {
       title: 'Create a task skill',
       description:
-        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, read by the platform company only until a person publishes it and opens it to every company.',
+        'Creates a task skill (a procedure for an assistant, with the expertises it consumes in order) as a draft, which no assistant reads: a person publishes it in the back office, and it stays with the platform company until a person opens it to every company.',
       inputSchema: CREATE_TASK_SKILL_INPUT,
       outputSchema: ANSWER,
       annotations: WRITING,
     },
     asAuthor(
-      async (
-        { procedure, consumedExpertiseIds, changelog: log, ...data },
-        user
-      ) => {
-        await assertNew('skill', data.skillId);
-        await skillService.createSkill(data, user.id);
+      ({ procedure, consumedExpertiseIds, changelog: log, ...data }, user) =>
         // The nature is the version's (ADR 0013): its first draft is a task.
-        return writeDraft(
+        createDraft(
           'skill',
-          data.skillId,
+          data,
           {
             nature: SkillNatures.TASK,
             procedure,
@@ -313,8 +315,7 @@ function registerAuthoringTools(server) {
             changelog: log,
           },
           user
-        );
-      }
+        )
     )
   );
 }
