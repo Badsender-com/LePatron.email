@@ -126,7 +126,7 @@ describe('publishing and opening from an assistant', () => {
   });
 
   // Turned on by #1435 (publishing a draft from an assistant, in two steps)
-  describe.skip('publishing a draft', () => {
+  describe('publishing a draft', () => {
     it('is a destructive tool listed only with the skills:write scope', async () => {
       const reader = await harness.connectAs(f.ALICE, {
         group: f.PLATFORM_GROUP,
@@ -207,6 +207,29 @@ describe('publishing and opening from an assistant', () => {
       });
 
       expect(answer.error).toMatch(/confirmation/i);
+    });
+
+    it('refuses a key given more than an hour ago', async () => {
+      const client = await asAuthor();
+      const { confirmation } = await call(client, PUBLISH, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+      });
+      const later = Date.now() + 61 * 60 * 1000;
+      const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
+
+      try {
+        const answer = await call(client, PUBLISH, {
+          kind: 'expertise',
+          id: SUBJECT_LINES,
+          confirmation,
+        });
+
+        expect(answer.error).toMatch(/expired/i);
+        expect(subjectLines().activeVersion).toEqual({ major: 2, minor: 1 });
+      } finally {
+        clock.mockRestore();
+      }
     });
 
     it('says when there is no draft to publish', async () => {
