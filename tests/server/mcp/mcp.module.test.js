@@ -10,8 +10,7 @@
 const harness = require('../../helpers/mcp-harness');
 const f = require('../../helpers/mcp-fixtures');
 
-// Turned on by #1396 (a closed module refuses the assistants)
-describe.skip('the MCP module', () => {
+describe('the MCP module', () => {
   beforeEach(() => {
     harness.seed(f.SEED);
     harness.update('groups', f.CLIENT_GROUP, {

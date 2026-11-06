@@ -403,6 +403,12 @@ export default {
         toggleMovedHint:
           'L\'activation du module se fait depuis l\'onglet Général',
       },
+      mcp: {
+        name: 'MCP',
+        description: 'Connexion de Claude, ChatGPT et Copilot à LePatron',
+        configHint:
+          'L\'admin technique active ensuite l\'accès dans Fonctionnalités IA',
+      },
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',
@@ -691,6 +697,7 @@ export default {
       status: 'Statut',
       esp: 'ESP',
       ai: 'IA',
+      mcp: 'MCP',
     },
     users: {
       passwordMail: 'Email de mot de passe',

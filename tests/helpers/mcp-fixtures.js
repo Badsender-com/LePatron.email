@@ -21,17 +21,35 @@ const OTHER_GROUP = '507f1f77bcf86cd799439c01';
 const UNSUBSCRIBED_GROUP = '507f1f77bcf86cd799439d01';
 
 const GROUPS = [
-  { _id: PLATFORM_GROUP, name: 'Platform', isPlatform: true, enableMcp: true },
+  {
+    _id: PLATFORM_GROUP,
+    name: 'Platform',
+    isPlatform: true,
+    enableMcpModule: true,
+    enableMcp: true,
+  },
   {
     _id: CLIENT_GROUP,
     name: 'A client',
+    enableMcpModule: true,
     enableMcp: true,
     allowRetex: false,
     userHasAccessToAllWorkspaces: false,
     logRetentionDays: 30,
   },
-  { _id: OTHER_GROUP, name: 'Another client', enableMcp: true },
-  { _id: UNSUBSCRIBED_GROUP, name: 'Not subscribed', enableMcp: false },
+  {
+    _id: OTHER_GROUP,
+    name: 'Another client',
+    enableMcpModule: true,
+    enableMcp: true,
+  },
+  // Has the MCP module, but its MCP access is off.
+  {
+    _id: UNSUBSCRIBED_GROUP,
+    name: 'Not subscribed',
+    enableMcpModule: true,
+    enableMcp: false,
+  },
 ];
 
 const ALICE = '507f1f77bcf86cd799439101'; // super admin, platform group

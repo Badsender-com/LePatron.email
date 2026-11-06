@@ -28,8 +28,7 @@ describe('the MCP module at consent', () => {
     return { agent, uid };
   };
 
-  // Turned on by #1396 (a closed module refuses the assistants)
-  describe.skip('what is offered', () => {
+  describe('what is offered', () => {
     it('leaves a group without the module out of a super admin’s choice', async () => {
       oauth.update(app, 'groups', f.OTHER_GROUP, { enableMcpModule: false });
       const { agent, uid } = await consentFor(f.ALICE);
