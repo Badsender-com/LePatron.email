@@ -331,7 +331,7 @@ describe('PUT /groups/:groupId — retex stopped', () => {
 
     forgotten();
     expect(McpFeedbacks.find).toHaveBeenCalledWith(
-      { _company: GROUP_ID, comment: { $regex: '^[\\s\\S]{501}' } },
+      { _company: GROUP_ID, comment: { $regex: '^[\\s\\S]{251}' } },
       { comment: 1 }
     );
   });

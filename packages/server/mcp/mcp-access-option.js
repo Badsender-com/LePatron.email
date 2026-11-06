@@ -50,14 +50,27 @@ async function recordRetexChange(actor, groupId, change) {
 // A feedback's comment without the retex: a word on LePatron, not room for a
 // session summary (ADR 0012).
 const MAX_COMMENT_WITHOUT_RETEX = 500;
-const LONGER = `^[\\s\\S]{${MAX_COMMENT_WITHOUT_RETEX + 1}}`;
+// MongoDB counts a string's characters as code points, JavaScript as UTF-16
+// units, which an emoji takes two of: a comment over 500 units has at least
+// 251 code points, which the database finds; JavaScript keeps those over 500.
+const MAYBE_LONGER = `^[\\s\\S]{${
+  Math.ceil(MAX_COMMENT_WITHOUT_RETEX / 2) + 1
+}}`;
 const BATCH_SIZE = 500;
+
+// A comment cut to what it holds without the retex, never in the middle of a
+// character written as two units.
+function cut(comment) {
+  const kept = comment.slice(0, MAX_COMMENT_WITHOUT_RETEX);
+  const last = kept.charCodeAt(kept.length - 1);
+  return last >= 0xd800 && last <= 0xdbff ? kept.slice(0, -1) : kept;
+}
 
 // The comments of a company's feedbacks cut to what they hold without the
 // retex, read through a cursor and written in batches.
 async function cutLongComments(filter) {
-  const long = McpFeedbacks.find(
-    { ...filter, comment: { $regex: LONGER } },
+  const maybeLong = McpFeedbacks.find(
+    { ...filter, comment: { $regex: MAYBE_LONGER } },
     { comment: 1 }
   )
     .lean()
@@ -68,17 +81,17 @@ async function cutLongComments(filter) {
       batch.map(({ _id, comment }) => ({
         updateOne: {
           filter: { _id },
-          update: {
-            $set: { comment: comment.slice(0, MAX_COMMENT_WITHOUT_RETEX) },
-          },
+          update: { $set: { comment: cut(comment) } },
         },
       }))
     );
     batch = [];
   };
-  for await (const feedback of long) {
-    batch.push(feedback);
-    if (batch.length === BATCH_SIZE) await write();
+  for await (const feedback of maybeLong) {
+    if (feedback.comment.length > MAX_COMMENT_WITHOUT_RETEX) {
+      batch.push(feedback);
+      if (batch.length === BATCH_SIZE) await write();
+    }
   }
   if (batch.length) await write();
 }

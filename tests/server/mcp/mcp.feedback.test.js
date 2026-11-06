@@ -258,6 +258,30 @@ describe('feedback and retex', () => {
       });
     });
 
+    // JavaScript counts an emoji as two units, MongoDB as one character: a
+    // comment is cut by what it holds in JavaScript, and never in the middle
+    // of a character.
+    it('cuts a comment of emojis to 500 units, whole characters only', async () => {
+      const emojis = '\u{1F600}'.repeat(300);
+      const create = (comment) =>
+        models().McpFeedbacks.create({
+          _company: f.CLIENT_GROUP,
+          rating: 'up',
+          comment,
+        });
+      await create(emojis);
+      await create(`a${emojis}`);
+      await create('é'.repeat(400));
+
+      await forgetRetex(f.CLIENT_GROUP);
+
+      const [even, odd, short] = kept().map((k) => k.comment);
+      expect(even).toBe('\u{1F600}'.repeat(250));
+      expect(odd).toBe(`a${'\u{1F600}'.repeat(249)}`);
+      expect(odd).not.toMatch(/[\uD800-\uDBFF]$/);
+      expect(short).toBe('é'.repeat(400));
+    });
+
     // The switch turned off while the feedback was being written: the
     // feedback keeps no more than the others once the retex is stopped.
     it('forgets what a feedback written meanwhile kept', async () => {
