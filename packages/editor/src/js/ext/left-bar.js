@@ -118,13 +118,23 @@ function leftBar(viewModel) {
   // The search of « Blocs du template », on the names the cards show.
   viewModel.blockSearch = ko.observable('');
 
+  // A template block's name, as the settings title it (« Cover »), in the
+  // user's language; empty when the template names it not.
+  viewModel.blockLabel = function (blockDef) {
+    const names = viewModel.templateBlockNames || {};
+    const name = names[ko.utils.unwrapObservable(blockDef.type)];
+    return name ? viewModel.ut('template', name) : '';
+  };
+
+  // What a card says: « Cover (largecoverBlock) », the type alone when the
+  // template gives no name. Names are not always unique: the type tells.
   viewModel.blockDisplayName = function (blockDef) {
     if (viewModel.isSyntheticBlock && viewModel.isSyntheticBlock(blockDef)) {
       return viewModel.t(viewModel.syntheticBlockLabelKey(blockDef));
     }
-    return viewModel.t('__name__', {
-      name: ko.utils.unwrapObservable(blockDef.type),
-    });
+    const type = ko.utils.unwrapObservable(blockDef.type);
+    const label = viewModel.blockLabel(blockDef);
+    return label ? `${label} (${type})` : type;
   };
 
   viewModel.matchesBlockSearch = function (blockDef) {

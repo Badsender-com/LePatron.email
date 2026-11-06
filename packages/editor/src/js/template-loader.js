@@ -584,6 +584,15 @@ var templateCompiler = function (
   }
 
   viewModel.templateDefaults = templateDefaults;
+  // The names the template gives its blocks (« Cover »), by type, as the
+  // settings title them: the left bar shows them on the blocks' cards.
+  viewModel.templateBlockNames = {};
+  Object.keys(templateDef._defs || {}).forEach(function (type) {
+    var name = templateDef._defs[type]._name;
+    if (typeof name === 'string' && name) {
+      viewModel.templateBlockNames[type] = name;
+    }
+  });
   // let's run some version check on template and editor used to build the model being loaded.
   // This will be replaced by browserify-versionify during the build
   var editver = '__VERSION__';

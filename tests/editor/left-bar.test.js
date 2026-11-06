@@ -26,6 +26,8 @@ function editor(blockDefs = []) {
     blocksActiveTab: ko.observable('TEMPLATE_BLOCKS'),
     blockDefs: ko.observableArray(blockDefs),
     t: (key, params) => (params ? `${key}:${params.name}` : key),
+    ut: (category, key) => `${category}:${key}`,
+    templateBlockNames: { heroBlock: 'Hero' },
     isSyntheticBlock: (def) => def.synthetic === true,
     syntheticBlockLabelKey: () => 'HTML code',
   };
@@ -123,6 +125,23 @@ describe('the search of the template blocks', () => {
     expect(defs.map(vm.matchesBlockSearch)).toEqual([false, false, true]);
   });
 
+  it('names a card by the template’s name, then its type', () => {
+    const vm = editor(defs);
+    expect(defs.map(vm.blockDisplayName)).toEqual([
+      'template:Hero (heroBlock)',
+      'footerBlock',
+      'HTML code',
+    ]);
+  });
+
+  it('finds a block by its name as well as by its type', () => {
+    const vm = editor(defs);
+    vm.blockSearch('hero');
+    expect(defs.map(vm.matchesBlockSearch)).toEqual([true, false, false]);
+    vm.blockSearch('herob');
+    expect(defs.map(vm.matchesBlockSearch)).toEqual([true, false, false]);
+  });
+
   it('says when no block matches', () => {
     const vm = editor(defs);
     vm.blockSearch('carousel');
@@ -157,6 +176,13 @@ describe('the markup of the left bar and of the top bar', () => {
     expect(read('tmpl-badsender/toolbox.tmpl.html')).toMatch(
       /<!-- ko ifnot: \$root\.isReadOnly\(\) -->\s*<div class="left-bar-nav">/
     );
+  });
+
+  it('shows the template’s name of a block, then its type', () => {
+    const name = root
+      .querySelector('#toolblocks .block-name__type')
+      .closest('.block-name');
+    expect(name.innerHTML).toContain('text: $root.blockLabel($data)');
   });
 
   it('searches the template blocks', () => {
