@@ -98,6 +98,53 @@ describe('skill.service', () => {
       expect(v.outputSchemaId).toBe('genericTextOutput');
     });
 
+    // Opening to every company is an act of its own (ADR 0013), never a
+    // field of the creation.
+    it('starts with the platform company, whatever the request says', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        {
+          skillId: 'redaction.cta',
+          title: 't',
+          category: 'redaction',
+          audience: 'all',
+        },
+        new Types.ObjectId()
+      );
+      expect(LePatronSkills.create.mock.calls[0][0].audience).toBe('platform');
+    });
+
+    it('writes the first version whole when given its content', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'qc.report', title: 't', category: 'qc', nature: 'task' },
+        new Types.ObjectId(),
+        { nature: 'task', procedure: '1. Read', changelog: 'First draft' }
+      );
+      expect(LePatronSkills.create).toHaveBeenCalledTimes(1);
+      const [v] = LePatronSkills.create.mock.calls[0][0].versions;
+      expect(v).toMatchObject({
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'DRAFT',
+        nature: 'task',
+        procedure: '1. Read',
+        changelog: 'First draft',
+      });
+    });
+
+    // The back office sends the skill's fields only: a version's content is
+    // never taken from them.
+    it('takes no version content from the skill fields', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'qc.report', title: 't', category: 'qc', nature: 'task' },
+        new Types.ObjectId()
+      );
+      const [v] = LePatronSkills.create.mock.calls[0][0].versions;
+      expect(v.nature).toBe('feature');
+    });
+
     it('throws 409 on duplicate skillId', async () => {
       LePatronSkills.create.mockRejectedValue({ code: 11000 });
       await expect(

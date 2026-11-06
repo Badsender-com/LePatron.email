@@ -11,15 +11,19 @@ const {
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const permissions = require('../account/permissions.js');
-const { recordRequirementChange } = require('../two-factor/group-option.js');
-const { recordMcpAccessChange } = require('../mcp/mcp-access-option.js');
-const { takeSwitches, writeSwitches } = require('./group-switch.js');
+const {
+  takeSwitches,
+  writeSwitches,
+  recordSwitches,
+} = require('./group-switch.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
-const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
+const { restampLogs } = require('./log-retention.js');
+const { forgetRetex } = require('../mcp/mcp-access-option.js');
+const { forgetRetention } = require('../mcp/mcp-call-log.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
 const logger = require('../utils/logger.js');
@@ -574,6 +578,9 @@ async function update(req, res) {
       // Without this, a company admin cannot configure the email metadata
       // feature at all — the field would be silently dropped here.
       'emailMetadata',
+      // Whether the company's session summaries may reach the platform company
+      // (ADR 0012).
+      'allowRetex',
       // The company's tracking belongs to its technical settings (ADR 0004),
       // and so does two-factor authentication for every member (ADR 0008):
       // dropped for a company admin, as the other fields it cannot set.
@@ -605,23 +612,26 @@ async function update(req, res) {
   const switches = takeSwitches(groupToUpdate);
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
-  await recordRequirementChange(
-    user,
-    req.params.groupId,
-    switched.requireTwoFactor
-  );
-  await recordMcpAccessChange(user, req.params.groupId, switched.enableMcp);
+  await recordSwitches(user, req.params.groupId, switched);
+  // Stopping the retex forgets what it let the feedbacks keep (ADR 0012),
+  // whenever a request says it is off: the security event records the
+  // change only, and a forgetting that failed can be run again.
+  if (switches.allowRetex === false) await forgetRetex(req.params.groupId);
 
-  // AISkillInvocation.expiresAt is stamped at write time, so a retention change
-  // has to be propagated to the invocations already logged — otherwise lowering
-  // it would only apply to future ones, and the RGPD promise would be weaker
-  // than the nightly purge this replaced.
+  // A log's end of retention is stamped at write time, so a retention change
+  // has to reach the logs already kept: lowering it would otherwise apply to
+  // future ones only, and the RGPD promise would be weaker than the nightly
+  // purge this replaced. Done after the answer, which does not wait for it.
   const nextRetention = Number(groupToUpdate.logRetentionDays);
   if (carriesRetention && nextRetention !== previousRetention) {
-    await invocationLogService.restampRetention({
-      groupId: req.params.groupId,
-      retentionDays: nextRetention,
-    });
+    // The MCP call logs written from now on take the new retention at once.
+    forgetRetention(req.params.groupId);
+    restampLogs(req.params.groupId).catch((error) =>
+      logger.error(
+        `[group] the logs of group=${req.params.groupId} did not take the new retention`,
+        error
+      )
+    );
   }
 
   // Fetch the updated group to return with masked credentials

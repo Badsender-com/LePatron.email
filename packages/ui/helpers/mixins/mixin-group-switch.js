@@ -3,8 +3,8 @@ import { mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
-// A switch of the company (two-factor authentication, MCP access), saved on
-// its own: switching it never carries the rest of the group's form.
+// A switch of the company (two-factor authentication, MCP access, retex),
+// saved on its own: switching it never carries the rest of the group's form.
 //
 // The switch shows `switchValue`, not the group's value. A Vuetify switch
 // keeps the state it was clicked to: after a failed save it would stay on a

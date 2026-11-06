@@ -1,6 +1,7 @@
 'use strict';
 
 const createError = require('http-errors');
+const { pick } = require('lodash');
 const { LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const {
@@ -68,13 +69,35 @@ function getSkill(skillId) {
 const DEFAULT_INPUT_SCHEMA_ID = 'genericTextInput';
 const DEFAULT_OUTPUT_SCHEMA_ID = 'genericTextOutput';
 
-async function createSkill(data, userId) {
+/**
+ * A new skill, with its v1.0 draft, in one write: nothing is stored when any
+ * of it is refused, the consumed expertises checked first and the version
+ * by the schema.
+ *
+ * @param {Object} data the skill's fields (skillId, title, description,
+ *   category); never its audience, which is the platform company's
+ * @param {*} userId
+ * @param {Object} [firstVersion] what the v1.0 draft holds besides the
+ *   defaults, among its patchable fields (the nature, the procedure, the
+ *   consumed expertises, the changelog…)
+ * @returns {Promise<Object>} the skill
+ * @throws {HttpError} 409 when the skillId exists, 400 when the version is
+ *   refused
+ */
+async function createSkill(data, userId, firstVersion = {}) {
+  if (firstVersion.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(firstVersion.consumedExpertiseIds);
+  }
   const now = new Date();
   const payload = {
     skillId: data.skillId,
     title: data.title,
     description: data.description || '',
     category: data.category,
+    // Explicit rather than left to the schema, and never taken from the
+    // request: a new skill reaches the platform company only, until it is
+    // opened, an act of its own (ADR 0013).
+    audience: Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
@@ -89,6 +112,7 @@ async function createSkill(data, userId) {
         outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
         changelog: '',
         releaseNotes: '',
+        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
         createdBy: userId,
         createdAt: now,
         updatedBy: userId,
@@ -226,6 +250,7 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
   deleteVersion,
 } = versioned;
 
@@ -277,6 +302,17 @@ async function updateVersion(skillId, ref, patch, userId) {
   return versioned.updateVersion(skillId, ref, patch, userId);
 }
 
+/**
+ * An assistant's change to a draft it read (versioned-draft.js), its
+ * consumed expertises checked before anything is written.
+ */
+async function writeDraftIfUnchanged(doc, version, patch, userId) {
+  if (patch && patch.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(patch.consumedExpertiseIds);
+  }
+  return versioned.writeDraftIfUnchanged(doc, version, patch, userId);
+}
+
 const archiveSkill = versioned.archive;
 
 module.exports = {
@@ -287,6 +323,8 @@ module.exports = {
   updateSkill,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
+  writeDraftIfUnchanged,
   updateVersion,
   deleteVersion,
   activateVersion,

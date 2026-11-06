@@ -55,6 +55,19 @@ async function servedSkills(group) {
     .sort((a, b) => a.doc.skillId.localeCompare(b.doc.skillId));
 }
 
+// What naming a served skill reads: whether it is served, and its version.
+const NAMED = { doc: ['skillId', 'servedToAssistants'], version: ['nature'] };
+
+// The skills among `ids` served to the company, by name and version only.
+async function namedSkills(ids, group) {
+  const found = await findPublished(
+    LePatronSkills,
+    { skillId: { $in: ids.map(String) }, ...audienceFilter(group) },
+    NAMED
+  );
+  return found.filter(isServed);
+}
+
 async function servedSkill(skillId, group) {
   const [found] = await findPublished(
     LePatronSkills,
@@ -161,6 +174,7 @@ module.exports = {
   isTask,
   servedSkills,
   servedSkill,
+  namedSkills,
   argumentsOf,
   inputOf,
   isSent,

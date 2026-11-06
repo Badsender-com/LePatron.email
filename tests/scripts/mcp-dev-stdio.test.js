@@ -8,6 +8,7 @@
 const {
   isLocalDatabase,
   assertMayRun,
+  stopper,
 } = require('../../scripts/mcp-dev-stdio.js');
 
 const REMOTE = 'mongodb://admin:s3cret@db.example.test:27017/lepatron';
@@ -76,5 +77,62 @@ describe('mcp-dev-stdio', () => {
     expect(() =>
       assertMayRun({ isDev: false, database: LOCAL }, [], DEV_ENV)
     ).toThrow(/development only/);
+  });
+
+  // The server writes the call log in the background: a client that stops
+  // the bridge right after its last call still finds that call logged.
+  describe('stopping', () => {
+    it('lets the database go and exits once the call logs are written', async () => {
+      const steps = [];
+      let written;
+      const stop = stopper({
+        flush: () =>
+          new Promise((resolve) => {
+            written = () => {
+              steps.push('written');
+              resolve();
+            };
+          }),
+        disconnect: async () => steps.push('disconnected'),
+        exit: (code) => steps.push(`exit ${code}`),
+      });
+
+      const stopped = stop();
+      await new Promise(setImmediate);
+      expect(steps).toEqual([]);
+      written();
+      await stopped;
+
+      expect(steps).toEqual(['written', 'disconnected', 'exit 0']);
+    });
+
+    it('stops all the same, with an error code, when the calls do not end in time', async () => {
+      const exit = jest.fn();
+      const disconnect = jest.fn();
+      const stop = stopper({
+        flush: () => new Promise(() => {}),
+        disconnect,
+        exit,
+        timeoutMs: 20,
+      });
+
+      await stop();
+
+      expect(exit).toHaveBeenCalledWith(1);
+      expect(disconnect).not.toHaveBeenCalled();
+    });
+
+    it('stops once, however often it is asked', async () => {
+      const exit = jest.fn();
+      const stop = stopper({
+        flush: async () => undefined,
+        disconnect: async () => undefined,
+        exit,
+      });
+
+      await Promise.all([stop(), stop()]);
+
+      expect(exit).toHaveBeenCalledTimes(1);
+    });
   });
 });

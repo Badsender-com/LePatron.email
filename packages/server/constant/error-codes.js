@@ -195,6 +195,8 @@ module.exports = {
   SKILL_SCHEMAS_REQUIRED_TO_PUBLISH: 'SKILL_SCHEMAS_REQUIRED_TO_PUBLISH',
   SKILL_PROCEDURE_REQUIRED_TO_PUBLISH: 'SKILL_PROCEDURE_REQUIRED_TO_PUBLISH',
   SKILL_TEMPLATE_UNKNOWN_FIELDS: 'SKILL_TEMPLATE_UNKNOWN_FIELDS',
+  // A draft written since the screen read it (ADR 0014).
+  SKILL_VERSION_CHANGED: 'SKILL_VERSION_CHANGED',
   // The expertises a task skill's version consumes: a list of expertise ids,
   // bounded, each naming an expertise that exists, once (ADR 0013).
   SKILL_CONSUMED_EXPERTISES_INVALID: 'SKILL_CONSUMED_EXPERTISES_INVALID',

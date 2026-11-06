@@ -1,8 +1,9 @@
 'use strict';
 
 const createError = require('http-errors');
+const { pick } = require('lodash');
 const { Expertises } = require('../../common/models.common.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
+const { SkillStatuses, Audiences } = require('../constant/skill-constants.js');
 const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
@@ -83,7 +84,20 @@ async function getFacets() {
   return { scopes: clean(scopes), emailTypes: clean(emailTypes) };
 }
 
-async function createExpertise(data, userId) {
+/**
+ * A new expertise, with its v1.0 draft, in one write: nothing is stored when
+ * the schema refuses the version (its sections).
+ *
+ * @param {Object} data the expertise's fields; never its audience, which is
+ *   the platform company's
+ * @param {*} userId
+ * @param {Object} [firstVersion] what the v1.0 draft holds, among its
+ *   patchable fields (the body, the examples, the changelog…)
+ * @returns {Promise<Object>} the expertise
+ * @throws {HttpError} 409 when the expertiseId exists, 400 when the version
+ *   is refused
+ */
+async function createExpertise(data, userId, firstVersion = {}) {
   const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
@@ -96,6 +110,10 @@ async function createExpertise(data, userId) {
     isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
+    // Explicit rather than left to the schema, and never taken from the
+    // request: a new expertise reaches the platform company only, until it is
+    // opened, an act of its own (ADR 0013).
+    audience: Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
@@ -109,6 +127,7 @@ async function createExpertise(data, userId) {
         ...blankVersionContent(),
         changelog: '',
         releaseNotes: '',
+        ...pick(firstVersion, versioned.PATCHABLE_VERSION_FIELDS),
         createdBy: userId,
         createdAt: now,
         updatedBy: userId,
@@ -180,6 +199,8 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
+  writeDraftIfUnchanged,
   updateVersion,
   deleteVersion,
   activateVersion,
@@ -214,6 +235,8 @@ module.exports = {
   updateExpertise,
   createMinorVersion,
   createMajorVersion,
+  openOrStartDraft,
+  writeDraftIfUnchanged,
   updateVersion,
   deleteVersion,
   activateVersion,

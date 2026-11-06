@@ -4,7 +4,10 @@
 //
 // The page names the data key of its item, the field of its id, its routes
 // and the snackbar of its archive; it has a `saving` flag and an
-// `archiveModal` ref. A warning read before a dialog opens shows the page
+// `archiveModal` ref. A save or a publication sends the update date of the
+// draft the page read (`readAtOf`): one written since, by an assistant or
+// another person, is refused, which `draftChanged` tells until the page
+// reloads the item (ADR 0014); what the person typed stays on screen. A warning read before a dialog opens shows the page
 // busy; when it cannot be read, the user is told and the change goes on.
 
 import { mapMutations } from 'vuex';
@@ -14,12 +17,16 @@ import {
   skillWarningMessage,
 } from '~/helpers/ai-skill-errors.js';
 
+// What the server answers a save or a publication of a draft written since
+// the page read it.
+const DRAFT_CHANGED = 'SKILL_VERSION_CHANGED';
+
 /**
  * @param {Object} item
  * @param {string} item.key the data key of the item (`skill`, `exp`)
  * @param {string} item.idField its id (`skillId`, `expertiseId`)
- * @param {Object} item.routes `versionMinor(id)`, `versionMajor(id)`,
- *   `version(id, major, minor)` and `archive(id)`
+ * @param {Object} item.routes `item(id)`, `versionMinor(id)`,
+ *   `versionMajor(id)`, `version(id, major, minor)` and `archive(id)`
  * @param {string} item.archivedKey the i18n key said once it is archived
  * @returns {Object} the mixin
  */
@@ -30,9 +37,35 @@ export default function mixinAiVersionedItem({
   archivedKey,
 }) {
   return {
+    data() {
+      return { draftChanged: false };
+    },
     methods: {
       ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+      // The update date of a version as the page read it, sent back with a
+      // save or a publication of it.
+      readAtOf(version) {
+        const read = (this[key].versions || []).find(
+          (v) =>
+            v.versionMajor === version.versionMajor &&
+            v.versionMinor === version.versionMinor
+        );
+        return read ? read.updatedAt : undefined;
+      },
+      // The item as it is now, replacing what the page read.
+      async reloadItem() {
+        const done = await this.replaceItem(() =>
+          this.$axios.$get(routes.item(this.itemId()))
+        );
+        if (done) this.draftChanged = false;
+      },
       handleError(err) {
+        const data = (err && err.response && err.response.data) || {};
+        // The banner says it, with a way to reload: no snackbar on top.
+        if (data.message === DRAFT_CHANGED) {
+          this.draftChanged = true;
+          return;
+        }
         this.showSnackbar({
           text: skillErrorMessage(this, err),
           color: 'error',

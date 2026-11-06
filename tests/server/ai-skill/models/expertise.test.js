@@ -57,6 +57,18 @@ describe('Expertise model', () => {
     await expect(exp.validate()).rejects.toThrow(/slug/);
   });
 
+  // Refused as a request error with a message meant to be shown, which the
+  // back office and an assistant read, rather than as a failure of the server.
+  it('refuses a body with an invalid section as a request error, saying the convention', async () => {
+    const exp = buildExpertise({
+      versions: [{ versionMajor: 1, versionMinor: 0, body: '## [Bad ID] X' }],
+    });
+    const refusal = await exp.validate().catch((error) => error);
+
+    expect(refusal).toMatchObject({ status: 400, expose: true });
+    expect(refusal.message).toContain('## [section-id] Title');
+  });
+
   it('rejects an expertiseId not matching the regex', async () => {
     const exp = buildExpertise({ expertiseId: 'Bad ID!' });
     await expect(exp.validate()).rejects.toThrow(/expertiseId/);

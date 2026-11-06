@@ -794,6 +794,17 @@ export default {
     cdnEndpointHint: 'Base URL of your CDN (without protocol)',
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
+  retex: {
+    title: 'Session summaries from AI assistants',
+    description:
+      'When a user sends feedback from their AI assistant, they may attach a summary of the session to help the platform company improve its expertises and skills. The summary is kept only if the company allows it here, and the user agrees to it for that feedback.',
+    switch: 'Allow session summaries',
+    alwaysShared:
+      'The rating and the comment of a feedback are always shared with the platform company, whether session summaries are allowed or not.',
+    offForgets:
+      'Turning it off erases the session summaries already kept, and shortens the comments of the feedbacks to 500 characters, the length allowed without them.',
+    updated: 'Session summaries updated',
+  },
   mcpAccess: {
     title: 'MCP access',
     description:
@@ -1411,6 +1422,18 @@ export default {
     },
   },
   aiSkills: {
+    feedback: {
+      tab: 'Feedback',
+      caption:
+        'Feedback sent from connected AI assistants, with the version read and, when the company and the user agreed, the summary of the session.',
+      empty: 'No feedback yet.',
+      up: 'Positive feedback',
+      down: 'Negative feedback',
+      noComment: 'No comment',
+      shown: '{shown} of {total}',
+      more: 'Show more',
+      retex: 'Session summary',
+    },
     nature: 'Nature',
     natureHint:
       'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows. The skill has the nature of its published version: to change it, publish a version of the other nature.',
@@ -1508,6 +1531,8 @@ export default {
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
+      SKILL_VERSION_CHANGED:
+        'This draft was changed meanwhile, by an assistant for instance. Reload it to see the new version before saving or publishing.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -1629,6 +1654,7 @@ export default {
       detailResolvedConfig: 'Resolved config',
     },
     version: {
+      reload: 'Reload',
       procedure: 'Procedure',
       procedureHint: 'What the assistant does, step by step, in Markdown.',
       consumedExpertises: 'Expertises consumed',

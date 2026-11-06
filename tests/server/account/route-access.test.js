@@ -54,6 +54,7 @@ const ROUTERS = {
   '/api/comments': commentsRouter,
   '/api/crm-intelligence': load('crm-intelligence/crm-intelligence.routes.js'),
   '/api/dashboards': load('dashboard/dashboard.routes.js'),
+  '/api/mcp-feedbacks': load('mcp/mcp-feedback.routes.js'),
 };
 
 // Open to anyone, or to any signed-in user, on purpose.

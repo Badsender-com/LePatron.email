@@ -3,11 +3,13 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
+import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
+import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiExpertiseCloseModal from '~/components/ai-skill/bs-ai-expertise-close-modal.vue';
 import {
   skillCategoryLabel,
@@ -19,10 +21,12 @@ export default {
   name: 'PageAiExpertiseDetail',
   components: {
     BsAiDetailHeader,
+    BsAiFeedbackTab,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
     BsAiArchiveModal,
+    BsAiDraftChangedAlert,
     BsAiExpertiseCloseModal,
   },
   mixins: [
@@ -31,6 +35,7 @@ export default {
       key: 'exp',
       idField: 'expertiseId',
       routes: {
+        item: api.aiExpertise,
         versionMinor: api.aiExpertiseVersionMinor,
         versionMajor: api.aiExpertiseVersionMajor,
         version: api.aiExpertiseVersion,
@@ -114,6 +119,8 @@ export default {
             examplesBad: version.examplesBad,
             changelog: version.changelog,
             releaseNotes: version.releaseNotes,
+            // The draft as the page read it: one written since is refused.
+            updatedAt: this.readAtOf(version),
           }
         );
         if (!silent) {
@@ -170,7 +177,7 @@ export default {
               versionMajor,
               versionMinor
             ),
-            payload
+            { ...payload, updatedAt: this.readAtOf(this.activatingVersion) }
           ),
         'aiSkills.version.activated'
       );
@@ -189,6 +196,12 @@ export default {
       :status="exp.status"
       back-to="/ai-skills?tab=expertise"
       @archive="$refs.archiveModal.open()"
+    />
+
+    <bs-ai-draft-changed-alert
+      v-if="draftChanged"
+      :loading="saving"
+      @reload="reloadItem"
     />
 
     <p class="text-caption text--secondary detail-meta">
@@ -212,6 +225,9 @@ export default {
       </v-tab>
       <v-tab href="#sections">
         {{ $t('aiSkills.expertise.sectionsTab') }}
+      </v-tab>
+      <v-tab href="#feedback">
+        {{ $t('aiSkills.feedback.tab') }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -261,6 +277,13 @@ export default {
               {{ $t('aiSkills.expertise.noSections') }}
             </p>
           </v-card>
+        </v-tab-item>
+        <v-tab-item value="feedback">
+          <bs-ai-feedback-tab
+            v-if="tab === 'feedback'"
+            kind="expertise"
+            :reference-id="exp.expertiseId"
+          />
         </v-tab-item>
       </v-tabs-items>
     </v-container>

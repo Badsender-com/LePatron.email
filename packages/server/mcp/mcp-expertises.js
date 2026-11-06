@@ -67,6 +67,15 @@ function asMarkdown({ doc, version }) {
     .trim();
 }
 
+// The expertises among `ids` the company may read, by name and version only.
+function namedExpertises(ids, group) {
+  return findPublished(
+    Expertises,
+    { expertiseId: { $in: ids.map(String) }, ...audienceFilter(group) },
+    NAMED
+  );
+}
+
 // The active version of an expertise the company may read, or null.
 async function readableExpertise(expertiseId, group) {
   const [found] = await findPublished(
@@ -128,6 +137,7 @@ function registerExpertiseResources(server) {
 
 module.exports = {
   registerExpertiseResources,
+  namedExpertises,
   consumedExpertises,
   asMarkdown,
   uriOf,

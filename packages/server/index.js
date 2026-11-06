@@ -62,6 +62,7 @@ const {
   expertiseRouter: aiExpertiseRouter,
   invocationsRouter: aiInvocationsRouter,
 } = require('./ai-skill/ai-skill.routes');
+const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 
@@ -337,6 +338,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-features', aiFeatureRouter);
   app.use('/api/ai-skills', aiSkillsRouter);
   app.use('/api/ai-expertise', aiExpertiseRouter);
+  app.use('/api/mcp-feedbacks', mcpFeedbackRouter);
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);

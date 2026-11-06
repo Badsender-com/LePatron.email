@@ -14,6 +14,7 @@
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
 const { createListingStore } = require('../../helpers/fake-listing-models.js');
 const {
+  MAILINGS,
   CLIENT_GROUP,
   OTHER_GROUP,
   NEWSLETTERS,
@@ -54,6 +55,8 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 
 const {
   searchMailings,
+  findReadableMailings,
+  findReadableMailing,
 } = require('../../../packages/server/mailing/mailing-search.service');
 
 function search(user, { filters = {}, pagination = BY_NAME } = {}) {
@@ -179,5 +182,55 @@ describe('searching every accessible workspace, its scope', () => {
         ...openable(IN_NEWSLETTERS, false),
       ]);
     });
+  });
+});
+
+// A mailing named by its id, read by the rule of the search (ADR 0007): what
+// another module, the MCP server, asks before it points at an email.
+describe('a mailing the user may read', () => {
+  beforeEach(() => seed(mockStore));
+
+  const idOf = (name) => MAILINGS.find((m) => m.name === name)._id;
+
+  it.each([
+    ['at the root of a workspace', 'Weekly news'],
+    ['in a folder', 'Spring sale'],
+    ['in a subfolder', 'Spring teaser'],
+  ])('finds one %s of an accessible workspace', async (_where, name) => {
+    expect(await findReadableMailing(frank, idOf(name), { name: 1 })).toEqual({
+      _id: idOf(name),
+      name,
+    });
+  });
+
+  it('finds none of a workspace the user cannot access', async () => {
+    expect(await findReadableMailing(frank, idOf('Spring promo'))).toBeNull();
+    expect(await findReadableMailing(frank, idOf('Spring old'))).toBeNull();
+  });
+
+  it('keeps a super admin to the selected group', async () => {
+    const admin = superAdmin(CLIENT_GROUP);
+
+    expect(await findReadableMailing(admin, idOf('Spring old'))).not.toBeNull();
+    expect(
+      await findReadableMailing(admin, idOf('Spring elsewhere'))
+    ).toBeNull();
+  });
+
+  // A check of a right never reads an email's content.
+  it('reads the id alone unless told what to read', async () => {
+    expect(await findReadableMailing(frank, idOf('Weekly news'))).toEqual({
+      _id: idOf('Weekly news'),
+    });
+  });
+
+  it('reads many at once, each once, and takes text that is no id as none', async () => {
+    const found = await findReadableMailings(
+      frank,
+      [idOf('Weekly news'), idOf('Weekly news'), { $ne: null }, 'nope'],
+      { name: 1 }
+    );
+
+    expect(found.map((m) => m.name)).toEqual(['Weekly news']);
   });
 });

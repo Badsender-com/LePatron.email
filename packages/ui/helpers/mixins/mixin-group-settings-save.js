@@ -7,16 +7,25 @@ import { CAPABILITIES } from '../../../shared/access/roles.js';
 /**
  * What a save of the company's settings sends: whoever manages the platform
  * sends the whole company, a company admin its name and colours only, the
- * fields the server lets it change.
+ * fields the server lets it change. The company's switches are never sent
+ * with it: each is saved on its own, by its switch (mixin-group-switch.js),
+ * and a page read before one of them was switched would switch it back.
  *
  * @param {Object} group the edited company
  * @param {boolean} canManagePlatform
  * @returns {Object}
  */
 export function groupSettingsPayload(group, canManagePlatform) {
-  return canManagePlatform
-    ? group
-    : { name: group.name, colorScheme: group.colorScheme };
+  if (!canManagePlatform) {
+    return { name: group.name, colorScheme: group.colorScheme };
+  }
+  const {
+    requireTwoFactor: _twoFactor,
+    enableMcp: _mcpAccess,
+    allowRetex: _retex,
+    ...settings
+  } = group;
+  return settings;
 }
 
 /**

@@ -1,7 +1,7 @@
 'use strict';
 
 // Shared by the PUT /groups/:groupId tests of the company's switches
-// (two-factor authentication, MCP access): the mocked database and
+// (two-factor authentication, MCP access, retex): the mocked database and
 // collaborators, the stored group, the driver that runs the controller, and
 // the guards the route puts before it.
 //
@@ -11,6 +11,11 @@
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },
+  McpFeedbacks: {
+    updateMany: jest.fn(),
+    find: jest.fn(() => ({ lean: () => ({ cursor: () => [] }) })),
+    bulkWrite: jest.fn(),
+  },
   Profiles: {},
   Templates: {},
   Mailings: {},
@@ -37,6 +42,12 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   createWorkspace: jest.fn(),
   findWorkspaces: jest.fn(),
 }));
+jest.mock('../../../packages/server/mcp/mcp-call-log.js', () => ({
+  forgetRetention: jest.fn(),
+}));
+jest.mock('../../../packages/server/group/log-retention.js', () => ({
+  restampLogs: jest.fn(() => Promise.resolve()),
+}));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
   info: jest.fn(),
@@ -47,6 +58,7 @@ jest.mock('../../../packages/server/utils/logger.js', () => ({
 const {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
 } = require('../../../packages/server/common/models.common.js');
 const groupService = require('../../../packages/server/group/group.service.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
@@ -129,6 +141,7 @@ function guardRefusal(user) {
 module.exports = {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
   groupService,
   groupController,
   GROUP_ID,

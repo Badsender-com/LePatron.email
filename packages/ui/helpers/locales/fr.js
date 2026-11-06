@@ -1071,6 +1071,17 @@ export default {
     cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
+  retex: {
+    title: 'Retour d\'expérience des assistants IA',
+    description:
+      'Quand un utilisateur envoie un avis depuis son assistant IA, il peut y joindre un résumé de la session pour aider l\'entreprise plateforme à améliorer ses expertises et skills. Ce résumé n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte pour cet avis.',
+    switch: 'Autoriser le retour d\'expérience',
+    alwaysShared:
+      'La note et le commentaire des avis sont toujours partagés avec l\'entreprise plateforme, que le retour d\'expérience soit autorisé ou non.',
+    offForgets:
+      'Le désactiver efface les résumés de session déjà conservés, et raccourcit les commentaires des avis à 500 caractères, la longueur permise sans eux.',
+    updated: 'Retour d\'expérience mis à jour',
+  },
   mcpAccess: {
     title: 'Accès MCP',
     description:
@@ -1430,6 +1441,18 @@ export default {
     },
   },
   aiSkills: {
+    feedback: {
+      tab: 'Avis',
+      caption:
+        'Les avis envoyés depuis les assistants IA connectés, avec la version lue et, quand l\'entreprise et l\'utilisateur l\'ont accepté, le retour d\'expérience de la session.',
+      empty: 'Aucun avis pour l\'instant.',
+      up: 'Avis positif',
+      down: 'Avis négatif',
+      noComment: 'Sans commentaire',
+      shown: '{shown} sur {total}',
+      more: 'Afficher plus',
+      retex: 'Retour d\'expérience',
+    },
     nature: 'Nature',
     natureHint:
       'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit. Le Skill a la nature de sa version publiée : pour en changer, publiez une version de l\'autre nature.',
@@ -1528,6 +1551,8 @@ export default {
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
+      SKILL_VERSION_CHANGED:
+        'Ce brouillon a été modifié entre-temps, par exemple par un assistant. Rechargez-le pour voir la nouvelle version avant d\'enregistrer ou de publier.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -1649,6 +1674,7 @@ export default {
       detailResolvedConfig: 'Configuration résolue',
     },
     version: {
+      reload: 'Recharger',
       procedure: 'Procédure',
       procedureHint: 'Ce que l\'assistant fait, étape par étape, en Markdown.',
       consumedExpertises: 'Expertises consommées',

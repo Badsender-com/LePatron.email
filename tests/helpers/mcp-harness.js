@@ -14,9 +14,14 @@
  * - `update(collection, id, changes)` changes a stored record between two
  *   calls, the way the app would (a role changed, an account deactivated, MCP
  *   access turned off).
+ * - `stored(collection)` answers what a collection holds, for what no MCP
+ *   client can read.
+ * - `callLogs()` resolves with the call log, once the logs of the calls made
+ *   so far are written: the server writes them in the background.
  * - `advanceClock(ms)` moves the server's clock forward, for what is counted
  *   per minute (the rate limit).
- * - `disconnect()` closes every client opened since the last `seed`.
+ * - `disconnect()` closes every client opened since the last `seed`, once
+ *   the call logs being written are.
  *
  * Requiring this file replaces the models with the stand-ins of
  * `mcp-fake-models.js` for the whole test file, and quiets the logger: require
@@ -43,8 +48,26 @@ const { Client, InMemoryTransport } = require('@modelcontextprotocol/client');
 
 let clients = [];
 
+// Required where used, as everything of the server the tests reach.
+const rateLimit = () => require('../../packages/server/mcp/mcp-rate-limit.js');
+const callLog = () => require('../../packages/server/mcp/mcp-call-log.js');
+
+// Every test starts at the real time, with no call counted.
 function seed(records) {
   store.seed(records);
+  const limit = rateLimit();
+  limit.forgetCounts();
+  limit.clock.now = Date.now;
+  callLog().forgetRetentions();
+}
+
+function stored(collection) {
+  return store.stored(collection);
+}
+
+async function callLogs() {
+  await callLog().callLogsWritten();
+  return store.stored('callLogs');
 }
 
 function update(collection, id, changes) {
@@ -72,7 +95,9 @@ async function connectAs(userId, options = {}) {
   const {
     createMcpServer,
   } = require('../../packages/server/mcp/mcp-server.js');
-  const server = createMcpServer();
+  // Built per connection, as the HTTP endpoint builds one per request once
+  // the token is checked: what it offers depends on the token's scopes.
+  const server = createMcpServer({ authInfo });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   // What the HTTP transport does once the bearer token is validated: every
   // message reaches the server with the token's identity.
@@ -87,14 +112,18 @@ async function connectAs(userId, options = {}) {
   return client;
 }
 
-function advanceClock() {
-  throw new Error('The clock of the MCP harness is written by #1303');
+function advanceClock(ms) {
+  const { clock } = rateLimit();
+  const previous = clock.now;
+  clock.now = () => previous() + ms;
 }
 
+// Each test leaves no call log still being written for the next one to find.
 async function disconnect() {
   const open = clients;
   clients = [];
   await Promise.all(open.map((client) => client.close()));
+  await callLog().callLogsWritten();
 }
 
 // What a tool answers, as the client receives it: the structured content, or
@@ -111,6 +140,8 @@ module.exports = {
   seed,
   connectAs,
   update,
+  stored,
+  callLogs,
   advanceClock,
   disconnect,
   answerOf,

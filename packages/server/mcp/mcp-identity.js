@@ -10,13 +10,32 @@ const permissions = require('../account/permissions.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 
-// What a user consents to on the consent screen in this version (ADR 0012).
+// What a user consents to on the consent screen: reading, for everyone (ADR
+// 0012), and drafting skills and expertises, offered to who may manage the
+// platform (ADR 0014).
 const READ_SCOPE = 'mcp:read';
+const WRITE_SCOPE = 'skills:write';
+const SCOPES = Object.freeze([READ_SCOPE, WRITE_SCOPE]);
+
+/**
+ * Whether a token was granted a scope. It only records what the user
+ * consented to: what they may do is asked of the permissions module.
+ *
+ * @param {Object} [authInfo] the validated access token
+ * @param {string} scope
+ * @returns {boolean}
+ */
+function hasScope(authInfo, scope) {
+  return (authInfo?.scopes || []).includes(scope);
+}
 
 // What the request user may carry: never a password or a token.
 const USER_FIELDS = '_id name email lang role _company isDeactivated';
-// What the handlers read of the company: never its secrets.
-const GROUP_FIELDS = '_id enableMcp isPlatform';
+// What the handlers read of the company: never its secrets. Whether it
+// allows retex, and how long its logs are kept, for a feedback; whether its
+// users read every workspace, for the rights on its mailings.
+const GROUP_FIELDS =
+  '_id enableMcp isPlatform allowRetex logRetentionDays userHasAccessToAllWorkspaces';
 
 const NO_ACCOUNT = 'This account can no longer use LePatron.';
 const NO_COMPANY = 'This connection is not bound to a company of this account.';
@@ -38,24 +57,94 @@ const CLIENT_ERRORS = Object.freeze({
 });
 
 /**
+ * Whether a service refused a request with a message meant to be shown: an
+ * `http-errors` 4xx with `expose`. Anything else is not for the assistant.
+ *
+ * @param {Error} error
+ * @returns {boolean}
+ */
+function isRefusal(error) {
+  const status = error && error.status;
+  return (
+    Boolean(error) && error.expose === true && status >= 400 && status < 500
+  );
+}
+
+// What an `http-errors` refusal carries besides its message and status: the
+// expertises at fault, a bound… (`createError(400, CODE, { max })`).
+const NOT_DETAILS = new Set([
+  'message',
+  'name',
+  'stack',
+  'status',
+  'statusCode',
+  'expose',
+  'headers',
+]);
+function detailsOf(error) {
+  const details = Object.fromEntries(
+    Object.entries(error).filter(([key]) => !NOT_DETAILS.has(key))
+  );
+  return Object.keys(details).length ? details : undefined;
+}
+
+/**
  * What the assistant may be told of a failure: a ProtocolError as the
- * handler threw it, or a client error a service threw with a message meant
- * to be shown (`expose`), as the MCP error of its status. Anything else is
- * not for the assistant.
+ * handler threw it, or a refusal of a service (`isRefusal`), as the MCP
+ * error of its status. Anything else is not for the assistant.
  *
  * @param {Error} error
  * @returns {ProtocolError|null}
  */
 function toldToAssistant(error) {
   if (error instanceof ProtocolError) return error;
-  const status = error && error.status;
-  if (error && error.expose === true && status >= 400 && status < 500) {
+  if (isRefusal(error)) {
     return new ProtocolError(
-      CLIENT_ERRORS[status] || ProtocolErrorCode.InvalidRequest,
-      error.message
+      CLIENT_ERRORS[error.status] || ProtocolErrorCode.InvalidRequest,
+      error.message,
+      detailsOf(error)
     );
   }
   return null;
+}
+
+/**
+ * A tool's answer to a request it refuses, which the assistant reads and can
+ * act on, with what the refusal carries besides its message (the expertises
+ * at fault, a bound) when there is any.
+ *
+ * @param {string} text
+ * @param {Object} [details]
+ * @returns {Object} the tool result
+ */
+function failure(text, details) {
+  const said = details ? `${text} ${JSON.stringify(details)}` : text;
+  return { isError: true, content: [{ type: 'text', text: said }] };
+}
+
+/**
+ * A tool's answer to a request a service refused (`isRefusal`): its message
+ * and what it carries besides.
+ *
+ * @param {Error} error
+ * @returns {Object} the tool result
+ */
+function refused(error) {
+  return failure(error.message, detailsOf(error));
+}
+
+/**
+ * A tool's answer: structured, and the same as text for the clients that
+ * read only that.
+ *
+ * @param {Object} answer
+ * @returns {Object} the tool result
+ */
+function success(answer) {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(answer) }],
+    structuredContent: answer,
+  };
 }
 
 /**
@@ -95,12 +184,12 @@ function toRequestUser(record, groupId) {
  * @param {Object} [authInfo] the validated access token: its `scopes`, and
  *   `extra.userId` and `extra.groupId`
  * @returns {Promise<{ user: Object, group: Object }>} the request user and
- *   the company the call reads, with `enableMcp` and `isPlatform` only
+ *   the company the call reads, with the fields of `GROUP_FIELDS` only
  * @throws {ProtocolError} when any of it no longer holds
  */
 async function resolveIdentity(authInfo) {
   if (!authInfo) refuse('This call carries no access token.');
-  if (!(authInfo.scopes || []).includes(READ_SCOPE)) {
+  if (!hasScope(authInfo, READ_SCOPE)) {
     refuse(`The access token was not granted the ${READ_SCOPE} scope.`);
   }
 
@@ -124,6 +213,37 @@ async function resolveIdentity(authInfo) {
   return { user, group };
 }
 
+// Who makes a call, resolved once for it by the call guard
+// (mcp-call-guard.js), which counts it against the company only once it is
+// known, and logs a refusal as one: by the request, which the SDK builds for
+// each call and hands to the handler.
+const identities = new WeakMap();
+
+/**
+ * Resolves who makes a call, and keeps the answer for the handler of that
+ * call: the identity, or why it is refused.
+ *
+ * @param {Object} [ctx] the request context the SDK hands the handler
+ * @returns {Promise<{ identity?: Object, refusal?: Error }>}
+ */
+async function identify(ctx) {
+  const answer = await resolveIdentity(ctx?.http?.authInfo).then(
+    (identity) => ({ identity }),
+    (refusal) => ({ refusal })
+  );
+  if (ctx?.http) identities.set(ctx.http, answer);
+  return answer;
+}
+
+// The identity of a call, as identify kept it, or resolved now for a handler
+// the guard does not wrap.
+async function identityOf(ctx) {
+  const known = ctx?.http && identities.get(ctx.http);
+  if (!known) return resolveIdentity(ctx?.http?.authInfo);
+  if (known.refusal) throw known.refusal;
+  return known.identity;
+}
+
 /**
  * The one way this server registers a handler (ADR 0012): who calls is
  * resolved before the handler runs, which receives the identity first, then
@@ -144,8 +264,7 @@ async function resolveIdentity(authInfo) {
 function withIdentity(handler) {
   return async (...args) => {
     try {
-      const ctx = args[args.length - 1];
-      const identity = await resolveIdentity(ctx?.http?.authInfo);
+      const identity = await identityOf(args[args.length - 1]);
       return await handler(identity, ...args);
     } catch (error) {
       const told = toldToAssistant(error);
@@ -163,4 +282,16 @@ function withIdentity(handler) {
   };
 }
 
-module.exports = { resolveIdentity, withIdentity, READ_SCOPE };
+module.exports = {
+  resolveIdentity,
+  identify,
+  withIdentity,
+  hasScope,
+  isRefusal,
+  failure,
+  refused,
+  success,
+  READ_SCOPE,
+  WRITE_SCOPE,
+  SCOPES,
+};

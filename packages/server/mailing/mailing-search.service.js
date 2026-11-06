@@ -12,6 +12,7 @@ const {
 } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { listingGroupIdOf } = require('../account/request-scope.js');
+const { isObjectIdString } = require('../utils/model.js');
 
 // Searching every accessible workspace (ADR 0007): the emails of every
 // workspace the user may read in the group the listing reads, in any folder or
@@ -32,7 +33,11 @@ const MAX_TIME_EXPIRED = 50;
 const SORTABLE = ['name', 'userName', 'templateName', 'createdAt', 'updatedAt'];
 const MOST_RECENT_FIRST = { sortBy: ['updatedAt'], sortDesc: [true] };
 
-module.exports = { searchMailings };
+// What a check of a right reads of a mailing when the caller names nothing:
+// its id, never its content (`data`, `previewHtml`).
+const ID_ONLY = Object.freeze({ _id: 1 });
+
+module.exports = { searchMailings, findReadableMailings, findReadableMailing };
 
 /**
  * @param {Object} params
@@ -47,20 +52,10 @@ async function searchMailings({ user, filters = {}, pagination = {} }) {
   const groupId = listingGroupIdOf(user);
   const page = pageOf(pagination);
 
-  const workspaces = await accessibleWorkspaces(user, groupId);
-  const folders = await foldersOf(workspaces);
+  const { workspaces, folders, readable } = await readableScope(user, groupId);
 
   const items = await findPage({
-    _company: mongoose.Types.ObjectId(groupId),
-    $or: [
-      { _parentFolder: { $in: folders.map((folder) => folder._id) } },
-      // An email in a folder is found through its folder only: a workspace
-      // it may still name never lets it through.
-      {
-        _workspace: { $in: workspaces.map((workspace) => workspace._id) },
-        _parentFolder: null,
-      },
-    ],
+    ...readable,
     paginationJSON: page,
     filtersJSON: filters,
     maxTimeMS: MAX_TIME_MS,
@@ -79,6 +74,64 @@ async function searchMailings({ user, filters = {}, pagination = {} }) {
           hasAccess: permissions.canWriteWorkspace(user, workspace),
         };
       }),
+    },
+  };
+}
+
+/**
+ * The mailings among `ids` the user may read, by the rule of the search
+ * (ADR 0007): in the group the user reads (a super admin's selected group),
+ * in a workspace they may read or one of its folders. A check of a right,
+ * one query for all of them once the locations are known.
+ *
+ * @param {Object} user the request user
+ * @param {string[]} ids mailing ids; anything but an id string is not found
+ * @param {Object|string} [projection] what is read of each mailing, its id
+ *   alone unless named
+ * @returns {Promise<Object[]>} the mailings found, lean
+ */
+async function findReadableMailings(user, ids, projection = ID_ONLY) {
+  const wanted = [...new Set(ids.filter(isObjectIdString))];
+  if (!wanted.length) return [];
+  const { readable } = await readableScope(user, listingGroupIdOf(user));
+  return Mailings.find(
+    { ...readable, _id: { $in: wanted } },
+    projection
+  ).lean();
+}
+
+/**
+ * A mailing the user may read (`findReadableMailings`), or null.
+ *
+ * @param {Object} user the request user
+ * @param {string} id
+ * @param {Object|string} [projection]
+ * @returns {Promise<Object|null>}
+ */
+async function findReadableMailing(user, id, projection) {
+  const [found] = await findReadableMailings(user, [id], projection);
+  return found || null;
+}
+
+// What the user may read in a group, as a filter on its mailings, with the
+// workspaces and folders it lists.
+async function readableScope(user, groupId) {
+  const workspaces = await accessibleWorkspaces(user, groupId);
+  const folders = await foldersOf(workspaces);
+  return {
+    workspaces,
+    folders,
+    readable: {
+      _company: mongoose.Types.ObjectId(groupId),
+      $or: [
+        { _parentFolder: { $in: folders.map((folder) => folder._id) } },
+        // An email in a folder is found through its folder only: a workspace
+        // it may still name never lets it through.
+        {
+          _workspace: { $in: workspaces.map((workspace) => workspace._id) },
+          _parentFolder: null,
+        },
+      ],
     },
   };
 }

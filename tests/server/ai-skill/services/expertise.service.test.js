@@ -77,6 +77,17 @@ describe('expertise.service', () => {
     expect(Expertises.create.mock.calls[0][0].isTransversal).toBe(false);
   });
 
+  // Opening to every company is an act of its own (ADR 0013), never a field
+  // of the creation.
+  it('createExpertise starts with the platform company, whatever the request says', async () => {
+    Expertises.create.mockResolvedValue({});
+    await expertiseService.createExpertise(
+      { expertiseId: 'a', title: 't', category: 'redaction', audience: 'all' },
+      null
+    );
+    expect(Expertises.create.mock.calls[0][0].audience).toBe('platform');
+  });
+
   it('createExpertise seeds a v1.0 DRAFT (empty content) — §4', async () => {
     Expertises.create.mockResolvedValue({});
     await expertiseService.createExpertise(

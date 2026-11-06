@@ -5,14 +5,16 @@
 // AI features. The group update keeps it out of a company admin's reach, as
 // every field it may not set, and the route keeps every other company's
 // members out. Turning it on or off is a security event, as switching
-// two-factor authentication is (ADR 0008).
+// two-factor authentication is (ADR 0008), and so is allowing the retex.
 
 const createError = require('http-errors');
 const mongoose = require('mongoose');
 const {
   Groups,
   SecurityEvents,
+  McpFeedbacks,
   groupService,
+  groupController,
   GROUP_ID,
   companyAdmin,
   techAdmin,
@@ -28,6 +30,13 @@ const {
   roleCan,
 } = require('../../../packages/shared/access/roles.js');
 const SecurityEventSchema = require('../../../packages/server/security-event/security-event.schema.js');
+const {
+  restampLogs,
+} = require('../../../packages/server/group/log-retention.js');
+const logger = require('../../../packages/server/utils/logger.js');
+const {
+  forgetRetention,
+} = require('../../../packages/server/mcp/mcp-call-log.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -207,4 +216,198 @@ describe('PUT /groups/:groupId — MCP access, the security event', () => {
       expect(event.validateSync()).toBeUndefined();
     }
   );
+});
+
+describe('PUT /groups/:groupId — retex', () => {
+  // Who allows the retex (ADR 0012, #1302): the company admin, the tech admin
+  // and the super admin; no other role, which the route keeps out.
+  it.each([
+    [ROLES.SUPER_ADMIN, true],
+    [ROLES.GROUP_ADMIN_TECH, true],
+    [ROLES.GROUP_ADMIN, true],
+    [ROLES.REGULAR_USER, false],
+    [ROLES.WRITER, false],
+    [ROLES.REVIEWER, false],
+  ])('lets a %s allow the retex: %p', async (role, allowed) => {
+    const user = { id: 'r1', role, group: GROUP_ID };
+
+    const through = guardRefusal(user) === null;
+    const payload = through ? await update(user, { allowRetex: true }) : {};
+
+    expect(through && payload.allowRetex === true).toBe(allowed);
+  });
+
+  it('decides every role', () => {
+    expect(Object.values(ROLES)).toHaveLength(6);
+  });
+
+  // A switch of the company, as MCP access: a strict boolean, written apart
+  // from the rest of the update.
+  it.each([['yes'], ['true'], [1], [{ $ne: false }]])(
+    'keeps a boolean when the request carries %p',
+    async (value) => {
+      const payload = await update(techAdmin, { allowRetex: value });
+
+      expect(payload.allowRetex).toBe(false);
+    }
+  );
+
+  it('writes it with the switches, never with the rest of the update', async () => {
+    await update(techAdmin, { name: 'Renamed', allowRetex: true });
+
+    expect(Groups.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: GROUP_ID },
+      { $set: { allowRetex: true } },
+      { new: false, projection: { allowRetex: 1 } }
+    );
+    expect(groupService.updateGroup).toHaveBeenCalledWith({
+      name: 'Renamed',
+      id: GROUP_ID,
+    });
+  });
+});
+
+describe('PUT /groups/:groupId — retex, the security event', () => {
+  it('records the retex allowed, by whom', async () => {
+    await update(techAdmin, { allowRetex: true });
+
+    expect(SecurityEvents.create).toHaveBeenCalledTimes(1);
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'retex.allowed',
+      actor: 'a2',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records it stopped', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(superAdmin, { allowRetex: false });
+
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'retex.disallowed',
+      actor: 'a3',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records nothing when it does not change', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: true, name: 'Renamed' });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it.each(['retex.allowed', 'retex.disallowed'])(
+    'is an action the security events accept: %s',
+    (action) => {
+      const SecurityEvent = mongoose.model(
+        `RetexEvent-${action}`,
+        SecurityEventSchema
+      );
+      const event = new SecurityEvent({ action, group: GROUP_ID });
+
+      expect(event.validateSync()).toBeUndefined();
+    }
+  );
+});
+
+// Stopping the retex forgets what it let the feedbacks keep (ADR 0012): the
+// summaries, and the comments longer than they may be without it. Whenever a
+// request says it is off, so a forgetting that failed runs again; the
+// security event records the change only.
+describe('PUT /groups/:groupId — retex stopped', () => {
+  const forgotten = () =>
+    expect(McpFeedbacks.updateMany).toHaveBeenCalledWith(
+      { _company: GROUP_ID, retex: { $ne: null } },
+      { $set: { retex: null } }
+    );
+
+  it('forgets the session summaries kept for the company, and cuts the long comments', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: false });
+
+    forgotten();
+    expect(McpFeedbacks.find).toHaveBeenCalledWith(
+      { _company: GROUP_ID, comment: { $regex: '^[\\s\\S]{251}' } },
+      { comment: 1 }
+    );
+  });
+
+  it('forgets them again when it is already stopped, recording no event', async () => {
+    storedGroup({ allowRetex: false });
+
+    await update(techAdmin, { allowRetex: false });
+
+    forgotten();
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['allowed', { allowRetex: false }, { allowRetex: true }],
+    ['not in the request', { allowRetex: true }, { name: 'Renamed' }],
+  ])('forgets nothing when it is %s', async (_case, stored, body) => {
+    storedGroup(stored);
+
+    await update(techAdmin, body);
+
+    expect(McpFeedbacks.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+// A retention change reaches the logs already kept (group/log-retention.js),
+// after the answer, which does not wait for it.
+describe('PUT /groups/:groupId — log retention', () => {
+  it('reaches every log already kept, once', async () => {
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(restampLogs).toHaveBeenCalledTimes(1);
+    expect(restampLogs).toHaveBeenCalledWith(GROUP_ID);
+  });
+
+  // The call logs written from now on take the new retention at once.
+  it('forgets the retention the call log keeps for the company', async () => {
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(forgetRetention).toHaveBeenCalledWith(GROUP_ID);
+  });
+
+  it('answers without waiting for the logs', async () => {
+    restampLogs.mockReturnValueOnce(new Promise(() => {}));
+    const res = { json: jest.fn() };
+
+    await groupController.update(
+      {
+        params: { groupId: GROUP_ID },
+        body: { logRetentionDays: 7 },
+        user: superAdmin,
+      },
+      res
+    );
+
+    expect(res.json).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs a failure to reach them', async () => {
+    restampLogs.mockReturnValueOnce(Promise.reject(new Error('timed out')));
+
+    await update(superAdmin, { logRetentionDays: 7 });
+    await new Promise(setImmediate);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('retention'),
+      expect.any(Error)
+    );
+  });
+
+  it('touches nothing when the retention does not change', async () => {
+    storedGroup({ logRetentionDays: 7 });
+
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(restampLogs).not.toHaveBeenCalled();
+    expect(forgetRetention).not.toHaveBeenCalled();
+  });
 });

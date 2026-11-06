@@ -107,7 +107,7 @@ describe('fake listing models, filters as MongoDB reads them', () => {
 
   it.each([
     ['an unknown operator', { $text: { $search: 'spring' } }],
-    ['an unknown field operator', { name: { $elemMatch: {} } }],
+    ['an unknown field operator', { name: { $all: ['Spring'] } }],
     ['a positional path', { 'versions.0.status': 'ACTIVE' }],
     ['an embedded document', { location: { workspace: WORKSPACE } }],
   ])('throws on %s rather than match nothing', (_, filter) => {

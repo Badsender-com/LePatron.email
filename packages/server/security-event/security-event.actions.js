@@ -25,18 +25,27 @@ const MCP_ACCESS_ACTIONS = Object.freeze({
   DISABLED: 'mcp-access.disabled',
 });
 
+// Whether a company lets the summaries of its assistants' sessions be kept
+// for the platform company (ADR 0012).
+const RETEX_ACTIONS = Object.freeze({
+  ALLOWED: 'retex.allowed',
+  DISALLOWED: 'retex.disallowed',
+});
+
 // How long a security event is kept, then removed by its TTL index.
 const SECURITY_EVENT_TTL_SECONDS = 365 * 24 * 60 * 60;
 
 const SECURITY_EVENT_ACTIONS = Object.freeze([
   ...Object.values(TWO_FACTOR_ACTIONS),
   ...Object.values(MCP_ACCESS_ACTIONS),
+  ...Object.values(RETEX_ACTIONS),
 ]);
 
 module.exports = {
   TWO_FACTOR_ACTIONS,
   TWO_FACTOR_METHODS,
   MCP_ACCESS_ACTIONS,
+  RETEX_ACTIONS,
   SECURITY_EVENT_ACTIONS,
   SECURITY_EVENT_TTL_SECONDS,
 };

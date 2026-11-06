@@ -13,10 +13,12 @@
  * the company must have MCP access.
  *
  * Usage:
- *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>]
+ *   NODE_ENV=development node scripts/mcp-dev-stdio.js --email someone@example.com [--group <groupId>] [--write]
  *
  * `--group` is the company a super admin works in; anyone else reads their
- * own. The database is the one the configuration reads (node.config.js, through
+ * own. `--write` adds the skills:write scope (ADR 0014): the drafting tools
+ * are then offered, and still refused to whoever may not manage the platform.
+ * The database is the one the configuration reads (node.config.js, through
  * `rc`): `lepatron_database`, from the environment, `.env` in the current
  * directory or a `.lepatronrc`, a local `lepatron` database by default. It is
  * never printed: its URI may carry credentials. stdout carries the protocol:
@@ -74,6 +76,48 @@ function assertMayRun(config, argv, env = process.env) {
   }
 }
 
+// How long the bridge waits for its calls and their logs before it stops
+// all the same.
+const STOP_TIMEOUT_MS = 10000;
+
+/**
+ * How the bridge stops: once the calls still running and their call logs
+ * are done, since the server writes the logs in the background and a client
+ * stops the bridge right after its last call; then the database is let go.
+ * Past the timeout, it stops all the same, with an error code. Asked more
+ * than once, it stops once.
+ *
+ * @param {Object} steps
+ * @param {Function} steps.flush resolves once the calls and their logs are
+ *   done
+ * @param {Function} steps.disconnect lets the database go
+ * @param {Function} steps.exit `process.exit`
+ * @param {number} [steps.timeoutMs]
+ * @returns {Function} what stops the bridge
+ */
+function stopper({ flush, disconnect, exit, timeoutMs = STOP_TIMEOUT_MS }) {
+  let stopping;
+  return () => {
+    if (!stopping) {
+      let timer;
+      const late = new Promise((resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('the calls did not end in time')),
+          timeoutMs
+        );
+      });
+      stopping = Promise.race([Promise.resolve().then(flush), late])
+        .then(disconnect)
+        .then(
+          () => exit(0),
+          () => exit(1)
+        )
+        .finally(() => clearTimeout(timer));
+    }
+    return stopping;
+  };
+}
+
 function argument(name) {
   const index = process.argv.indexOf(`--${name}`);
   return index === -1 ? undefined : process.argv[index + 1];
@@ -100,7 +144,7 @@ async function main(protocolOut) {
   const email = argument('email');
   if (!email) {
     throw new Error(
-      'Usage: NODE_ENV=development node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>]'
+      'Usage: NODE_ENV=development node scripts/mcp-dev-stdio.js --email <email> [--group <groupId>] [--write]'
     );
   }
 
@@ -110,7 +154,7 @@ async function main(protocolOut) {
   } = require('@modelcontextprotocol/server/stdio');
   const { Users } = require(server('common', 'models.common.js'));
   const { createMcpServer } = require(server('mcp', 'mcp-server.js'));
-  const { READ_SCOPE } = require(server('mcp', 'mcp-identity.js'));
+  const { READ_SCOPE, WRITE_SCOPE } = require(server('mcp', 'mcp-identity.js'));
 
   await mongoose.connect(config.database, {
     useNewUrlParser: true,
@@ -123,15 +167,27 @@ async function main(protocolOut) {
   const authInfo = {
     token: 'local-development',
     clientId: 'mcp-dev-stdio',
-    scopes: [READ_SCOPE],
+    scopes: process.argv.includes('--write')
+      ? [READ_SCOPE, WRITE_SCOPE]
+      : [READ_SCOPE],
     extra: {
       userId: String(user._id),
       groupId: argument('group') || String(user._company),
     },
   };
 
+  const { callsAndLogsDone } = require(server('mcp', 'mcp-call-log.js'));
+  const stop = stopper({
+    flush: callsAndLogsDone,
+    disconnect: () => mongoose.disconnect(),
+    exit: (code) => process.exit(code),
+  });
+  process.stdin.on('end', stop);
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+
   const transport = new StdioServerTransport(process.stdin, protocolOut);
-  await createMcpServer().connect(transport);
+  await createMcpServer({ authInfo }).connect(transport);
   const handle = transport.onmessage;
   transport.onmessage = (message, extra) =>
     handle(message, { ...extra, authInfo });
@@ -148,4 +204,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isLocalDatabase, assertMayRun };
+module.exports = { isLocalDatabase, assertMayRun, stopper };
