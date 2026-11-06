@@ -434,14 +434,25 @@ describe('feedback and retex', () => {
       expect(third.body.items).toEqual([]);
     });
 
-    it.each([['99999999999999999999'], ['1e300'], ['-3'], ['two']])(
-      'serves a page from 1 to 10000 when asked for page %p',
+    // A page beyond 10000 would ask the database to skip more than the list
+    // can hold: the last page it serves is the 10000th.
+    it.each([['10001'], ['99999999999999999999']])(
+      'serves page 10000 when asked for page %p',
       async (page) => {
         const { status, body } = await list({ page });
 
         expect(status).toBe(200);
-        expect(body.page).toBeGreaterThanOrEqual(1);
-        expect(body.page).toBeLessThanOrEqual(10000);
+        expect(body.page).toBe(10000);
+      }
+    );
+
+    it.each([['-3'], ['0'], ['two'], [{ $gt: 1 }]])(
+      'serves page 1 when asked for page %p',
+      async (page) => {
+        const { status, body } = await list({ page });
+
+        expect(status).toBe(200);
+        expect(body.page).toBe(1);
       }
     );
 
