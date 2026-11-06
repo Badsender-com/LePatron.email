@@ -349,15 +349,6 @@ function stateOf(kind, item, doc) {
   if (doc && openDraftOf(doc)) {
     return { state: 'blocked', reason: 'draft_open' };
   }
-  // An import brings a version, not a change of nature: the nature of the
-  // active version here is kept.
-  if (
-    kind === 'skill' &&
-    active &&
-    natureOf(active) !== natureOf(item.version)
-  ) {
-    return { state: 'blocked', reason: 'nature_differs' };
-  }
   if (lacksSchema(kind, item)) {
     return { state: 'blocked', reason: 'missing_schema' };
   }
@@ -376,7 +367,8 @@ async function docsOf(kind, ids) {
  * What importing a skills export would do here, item by item, writing
  * nothing (ADR 0018): `new`, `update`, `up_to_date`, or `blocked` with its
  * reason. A task skill whose consumed expertise is neither in the file nor
- * here carries a warning, and stays importable.
+ * here carries a warning, and stays importable; so does a skill whose version
+ * has another nature than its active one here.
  *
  * @param {Object} json the file, read again here
  * @returns {Promise<{ origin, exportedAt, exportedBy, items: Object[] }>}
@@ -415,11 +407,26 @@ async function previewImport(json) {
       const missing = (item.version.consumedExpertiseIds || []).filter(
         (expertiseId) => !inFile.has(expertiseId) && !known.has(expertiseId)
       );
+      const warnings = [];
       if (missing.length) {
-        preview.warnings = [
-          { code: 'missing_expertises', expertiseIds: missing },
-        ];
+        warnings.push({ code: 'missing_expertises', expertiseIds: missing });
       }
+      // The nature is the version's (ADR 0013): a version of another nature
+      // arrives as a draft with its own, and publishing it is how the skill
+      // changes nature.
+      if (
+        preview.state === 'update' &&
+        kind === 'skill' &&
+        active &&
+        natureOf(active) !== natureOf(item.version)
+      ) {
+        warnings.push({
+          code: 'nature_differs',
+          nature: natureOf(item.version),
+          current: natureOf(active),
+        });
+      }
+      if (warnings.length) preview.warnings = warnings;
       return preview;
     });
   });

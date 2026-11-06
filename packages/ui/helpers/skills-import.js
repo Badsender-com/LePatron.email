@@ -18,6 +18,15 @@ export function defaultSelection(items) {
   return items.filter(isSelectable).map(keyOf);
 }
 
+// What a warning of the preview fills its words with: the expertises it
+// names, or the nature the imported version brings, in words (`t`).
+export function warningValues(warning, t) {
+  return {
+    ids: (warning.expertiseIds || []).join(', '),
+    nature: warning.nature ? t(`aiSkills.natures.${warning.nature}`) : '',
+  };
+}
+
 // The selection, as the import route takes it.
 export function importPayload(keys) {
   const idsOf = (kind) =>

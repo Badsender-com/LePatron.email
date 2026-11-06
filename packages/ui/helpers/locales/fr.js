@@ -1700,11 +1700,11 @@ export default {
       draft_open: 'Un brouillon est ouvert ici : publiez-le ou supprimez-le d\'abord.',
       archived: 'Archivé ici.',
       version_exists: 'Cette version existe déjà ici, sans être la version active.',
-      nature_differs: 'Ce skill n\'a pas la même nature ici (tâche ou fonctionnalité).',
       missing_schema: 'Son schéma n\'existe pas sur cette instance : elle n\'est pas à jour.',
     },
     warnings: {
       missing_expertises: 'Expertises absentes ici et du fichier : {ids}',
+      nature_differs: 'Autre nature ici : la version importée sera un brouillon « {nature} », et la publier changera la nature de ce skill.',
     },
   },
   aiSkills: {

@@ -9,6 +9,7 @@ import {
   importPayload,
   reportCounts,
   draftLinks,
+  warningValues,
 } from '~/helpers/skills-import.js';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -141,9 +142,10 @@ export default {
       );
     },
     warningText(warning) {
-      return this.$t(`skillsImport.warnings.${warning.code}`, {
-        ids: warning.expertiseIds.join(', '),
-      });
+      return this.$t(
+        `skillsImport.warnings.${warning.code}`,
+        warningValues(warning, (key) => this.$t(key))
+      );
     },
   },
 };

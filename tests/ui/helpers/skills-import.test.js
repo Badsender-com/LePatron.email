@@ -102,9 +102,27 @@ describe('the preview of an import', () => {
         'archived',
         'missing_schema',
         'missing_expertises',
+        'nature_differs',
       ].forEach((key) => expect(section).toMatch(new RegExp(`\\b${key}:`)));
     }
   );
+
+  it('fills a warning with the expertises it names, or the nature it brings', () => {
+    const t = (key) => `t(${key})`;
+
+    expect(
+      helper.warningValues(
+        { code: 'missing_expertises', expertiseIds: ['a.b', 'c.d'] },
+        t
+      )
+    ).toEqual({ ids: 'a.b, c.d', nature: '' });
+    expect(
+      helper.warningValues(
+        { code: 'nature_differs', nature: 'task', current: 'feature' },
+        t
+      )
+    ).toEqual({ ids: '', nature: 't(aiSkills.natures.task)' });
+  });
 });
 
 describe('the report of an import', () => {

@@ -68,6 +68,22 @@ const SOURCE = {
 // The target: the same users, none of the source's skills and expertises.
 const EMPTY_TARGET = { ...f.SEED, expertises: [], skills: [] };
 
+// The task skill, as a target holds it at an older feature version.
+const featureWriteSubject = () => ({
+  ...TASK_SKILL,
+  activeVersion: { major: 0, minor: 1 },
+  versions: [
+    {
+      ...TASK_SKILL.versions[0],
+      nature: 'feature',
+      procedure: '',
+      consumedExpertiseIds: [],
+      versionMajor: 0,
+      versionMinor: 1,
+    },
+  ],
+});
+
 const expertiseOf = (id) =>
   store.stored('expertises').find((e) => e.expertiseId === id);
 const skillOf = (id) => store.stored('skills').find((s) => s.skillId === id);
@@ -398,31 +414,19 @@ describe('the skills export', () => {
       });
     });
 
-    it('blocks a skill whose nature differs here', async () => {
-      store.seed({
-        ...SOURCE,
-        skills: SOURCE.skills.map((s) =>
-          s.skillId === WRITE_SUBJECT
-            ? {
-                ...s,
-                activeVersion: { major: 0, minor: 1 },
-                versions: [
-                  {
-                    ...s.versions[0],
-                    nature: 'feature',
-                    versionMajor: 0,
-                    versionMinor: 1,
-                  },
-                ],
-              }
-            : s
-        ),
-      });
+    // The nature is the version's (ADR 0013): a version of another nature is
+    // how a skill changes nature, once published.
+    it('lets a skill whose nature differs here through, with a warning', async () => {
+      store.seed({ ...SOURCE, skills: [featureWriteSubject()] });
 
-      expect(itemOf(await previewImport(file), WRITE_SUBJECT)).toMatchObject({
-        state: 'blocked',
-        reason: 'nature_differs',
-      });
+      expect(itemOf(await previewImport(file), WRITE_SUBJECT)).toEqual(
+        expect.objectContaining({
+          state: 'update',
+          warnings: [
+            { code: 'nature_differs', nature: 'task', current: 'feature' },
+          ],
+        })
+      );
     });
 
     // The model checks a schema id on every nature.
@@ -622,6 +626,23 @@ describe('the skills export', () => {
         SUBJECT_IDEAS,
         WRITE_SUBJECT,
       ]);
+    });
+
+    it('imports a version of another nature with its own nature, as a draft', async () => {
+      store.seed({ ...EMPTY_TARGET, skills: [featureWriteSubject()] });
+
+      const report = await importSkills(
+        file,
+        { skillIds: [WRITE_SUBJECT] },
+        { user: ALICE }
+      );
+
+      const skill = skillOf(WRITE_SUBJECT);
+      expect(report.updated).toEqual([
+        { kind: 'skill', id: WRITE_SUBJECT, version: '1.0' },
+      ]);
+      expect(skill.activeVersion).toEqual({ major: 0, minor: 1 });
+      expect(draftOf(skill)).toMatchObject({ nature: 'task' });
     });
 
     it('carries the test cases of a feature skill with its version', async () => {

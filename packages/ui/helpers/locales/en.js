@@ -1676,11 +1676,11 @@ export default {
       draft_open: 'A draft is open here: publish or delete it first.',
       archived: 'Archived here.',
       version_exists: 'This version already exists here, without being the active one.',
-      nature_differs: 'This skill has another nature here (task or feature).',
       missing_schema: 'Its schema does not exist on this instance: it is not up to date.',
     },
     warnings: {
       missing_expertises: 'Expertises missing here and from the file: {ids}',
+      nature_differs: 'Another nature here: the imported version will be a "{nature}" draft, and publishing it will change this skill\'s nature.',
     },
   },
   aiSkills: {
