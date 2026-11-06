@@ -79,6 +79,18 @@ describe('a draft written since the page read it', () => {
     expect(vm.draftChanged).toBe(false);
   });
 
+  it('says it once, in the banner, without a snackbar on top', () => {
+    const vm = page(jest.fn());
+    const snackbar = jest.spyOn(vm, 'showSnackbar');
+
+    vm.handleError(refusal);
+    expect(vm.draftChanged).toBe(true);
+    expect(snackbar).not.toHaveBeenCalled();
+
+    vm.handleError({ response: { status: 500, data: {} } });
+    expect(snackbar).toHaveBeenCalledTimes(1);
+  });
+
   it('says it with a way to reload', async () => {
     const vm = mountSfc(
       'packages/ui/components/ai-skill/bs-ai-draft-changed-alert.vue',

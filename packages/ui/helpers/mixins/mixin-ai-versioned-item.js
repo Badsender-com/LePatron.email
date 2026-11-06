@@ -61,7 +61,11 @@ export default function mixinAiVersionedItem({
       },
       handleError(err) {
         const data = (err && err.response && err.response.data) || {};
-        if (data.message === DRAFT_CHANGED) this.draftChanged = true;
+        // The banner says it, with a way to reload: no snackbar on top.
+        if (data.message === DRAFT_CHANGED) {
+          this.draftChanged = true;
+          return;
+        }
         this.showSnackbar({
           text: skillErrorMessage(this, err),
           color: 'error',
