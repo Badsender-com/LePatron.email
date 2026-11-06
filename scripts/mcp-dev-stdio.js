@@ -76,6 +76,34 @@ function assertMayRun(config, argv, env = process.env) {
   }
 }
 
+/**
+ * How the bridge stops: once the call logs being written are, since the
+ * server writes them in the background and a client stops the bridge right
+ * after its last call; then the database is let go. Asked more than once, it
+ * stops once.
+ *
+ * @param {Object} steps
+ * @param {Function} steps.flush resolves once the call logs are written
+ * @param {Function} steps.disconnect lets the database go
+ * @param {Function} steps.exit `process.exit`
+ * @returns {Function} what stops the bridge
+ */
+function stopper({ flush, disconnect, exit }) {
+  let stopping;
+  return () => {
+    if (!stopping) {
+      stopping = Promise.resolve()
+        .then(flush)
+        .then(disconnect)
+        .then(
+          () => exit(0),
+          () => exit(1)
+        );
+    }
+    return stopping;
+  };
+}
+
 function argument(name) {
   const index = process.argv.indexOf(`--${name}`);
   return index === -1 ? undefined : process.argv[index + 1];
@@ -134,6 +162,16 @@ async function main(protocolOut) {
     },
   };
 
+  const { callLogsWritten } = require(server('mcp', 'mcp-call-log.js'));
+  const stop = stopper({
+    flush: callLogsWritten,
+    disconnect: () => mongoose.disconnect(),
+    exit: (code) => process.exit(code),
+  });
+  process.stdin.on('end', stop);
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+
   const transport = new StdioServerTransport(process.stdin, protocolOut);
   await createMcpServer({ authInfo }).connect(transport);
   const handle = transport.onmessage;
@@ -152,4 +190,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isLocalDatabase, assertMayRun };
+module.exports = { isLocalDatabase, assertMayRun, stopper };
