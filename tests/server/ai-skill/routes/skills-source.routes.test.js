@@ -44,7 +44,7 @@ const COMPANY_ADMIN = { id: f.ERIN, name: 'Erin', role: 'company_admin' };
 const SUBJECT_LINES = 'redaction.subject-line';
 
 // Turned on by #1424 (production's read tokens and read route)
-describe.skip("production's read tokens and read route", () => {
+describe("production's read tokens and read route", () => {
   let skillsRouter;
   let skillsSourceRouter;
 

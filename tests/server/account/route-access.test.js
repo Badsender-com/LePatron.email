@@ -20,9 +20,12 @@ const load = (file) => require(path.join(SERVER, file));
 const { mailingCommentsRouter, commentsRouter } = load(
   'comment/comment.routes.js'
 );
-const { skillsRouter, expertiseRouter, invocationsRouter } = load(
-  'ai-skill/ai-skill.routes'
-);
+const {
+  skillsRouter,
+  expertiseRouter,
+  invocationsRouter,
+  skillsSourceRouter,
+} = load('ai-skill/ai-skill.routes');
 
 // As index.js mounts them.
 const ROUTERS = {
@@ -45,6 +48,8 @@ const ROUTERS = {
   '/api/taxonomy-items': load('taxonomy/taxonomy.routes.js'),
   '/api/ai-features': load('ai-feature/ai-feature.routes'),
   '/api/ai-skills': skillsRouter,
+  // A copy's read token, outside the session (ADR 0019): it writes nothing.
+  '/api/skills-source': skillsSourceRouter,
   '/api/ai-expertise': expertiseRouter,
   '/api/ai-invocations': invocationsRouter,
   '/api/ai-playground': load('ai-playground/ai-playground.routes'),
