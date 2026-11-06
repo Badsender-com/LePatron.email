@@ -17,10 +17,14 @@
  * - `aggregate` answers plain copies, as Mongoose does, through the stages
  *   fake-mongo-aggregate.js reads.
  * - Each collection the seed names is a model; the others are empty.
+ * - `paginate` answers like mongoose-paginate-v2, as fake-listing-models.js
+ *   does, and `Mailings.findForApiWithPagination` is the schema's own static
+ *   over it: the search across workspaces (ADR 0007) runs as in the app.
  */
 
 const { matches, sortedBy, projected } = require('./fake-mongo-query.js');
 const { aggregated } = require('./fake-mongo-aggregate.js');
+const MailingSchema = require('../../packages/server/mailing/mailing.schema.js');
 
 // Collection → the name `models.common.js` exports it under.
 const MODELS = {
@@ -162,6 +166,32 @@ function model(records) {
       return { deletedCount: index === -1 ? 0 : 1 };
     },
     countDocuments: (filter = {}) => Promise.resolve(matching(filter)().length),
+    // What mongoose-paginate-v2 answers, with the options the search passes.
+    paginate: async (filter, options = {}) => {
+      const all = sortedBy(options.sort, matching(filter)());
+      const paginated = options.pagination !== false;
+      const limit = paginated ? options.limit ?? 10 : all.length;
+      const page = paginated ? options.page ?? 1 : 1;
+      const start = (page - 1) * limit;
+      const records = all.slice(start, paginated ? start + limit : undefined);
+      const docs = records.map((record) =>
+        projected(copy(record), options.projection)
+      );
+      const totalPages = limit ? Math.max(1, Math.ceil(all.length / limit)) : 1;
+      return {
+        // A document read with a projection has only some of its fields: it
+        // is not saved back.
+        docs: options.lean
+          ? docs
+          : docs.map((doc, index) =>
+              toDocument(doc, options.projection ? undefined : records[index])
+            ),
+        totalDocs: all.length,
+        limit,
+        page,
+        totalPages,
+      };
+    },
     // A record without the field gives no value.
     distinct: (field, filter = {}) =>
       Promise.resolve([
@@ -193,6 +223,30 @@ function createMcpStore() {
     collections[collection] = [];
     models[name] = model(collections[collection]);
   });
+  models.Mailings.findForApiWithPagination =
+    MailingSchema.statics.findForApiWithPagination;
+  // The app's approval rule, an aggregation the fakes do not run, written
+  // the way it reads (comment.schema.js): the latest root comment not
+  // deleted decides, `isDeleted: false` as the schema stores it.
+  models.Comments.findApprovedMailingIds = async (mailingIds) => {
+    const wanted = new Set(mailingIds.map(String));
+    const latest = new Map();
+    sortedBy(
+      { createdAt: -1 },
+      collections.comments.filter(
+        (comment) =>
+          wanted.has(String(comment._mailing)) &&
+          !comment._parentComment &&
+          comment.isDeleted === false
+      )
+    ).forEach((comment) => {
+      const id = String(comment._mailing);
+      if (!latest.has(id)) latest.set(id, comment.decision);
+    });
+    return [...latest]
+      .filter(([, decision]) => decision === 'approved')
+      .map(([id]) => id);
+  };
 
   return {
     models,

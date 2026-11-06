@@ -129,6 +129,9 @@ const MAILINGS = [
     {
       subject: 'Black Friday: our best prices',
       tags: ['black-friday'],
+      // The author, and their name copied on the mailing, as the app does.
+      _user: WREN,
+      author: 'Wren',
       plannedSendDate: daysFrom(-330),
       espIds: [{ profileId: '507f1f77bcf86cd799439601', campaignId: 'c-42' }],
     }
@@ -187,6 +190,8 @@ const COMMENTS = [M_NEWSLETTER, M_SCHEDULED, M_APPROVED].map((_mailing, i) => ({
   authorName: 'Rex',
   text: 'Good to go',
   decision: 'approved',
+  // As the schema stores it: the approval rule matches `false` alone.
+  isDeleted: false,
   createdAt: daysFrom(-3),
 }));
 

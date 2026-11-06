@@ -23,8 +23,7 @@ const CLIENT_MAILINGS = [
 ];
 const NEWS_MAILINGS = CLIENT_MAILINGS.filter((id) => id !== f.M_PROMO);
 
-// Turned on by #1301 (list mailings and their status)
-describe.skip('mailings list and status', () => {
+describe('mailings list and status', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 
@@ -85,6 +84,8 @@ describe.skip('mailings list and status', () => {
           name: 'Black Friday 2025',
           subject: 'Black Friday: our best prices',
           tags: ['black-friday'],
+          author: 'Wren',
+          template: 'Brand template',
           status: 'pushed-to-esp',
           approved: true,
           espProfileCount: 1,
@@ -179,10 +180,99 @@ describe.skip('mailings list and status', () => {
       );
     });
 
+    it('filters by workspace', async () => {
+      expect(ids(await list(f.FRANK, { workspaceIds: [f.WS_NEWS] }))).toEqual(
+        [...NEWS_MAILINGS].sort()
+      );
+      expect(ids(await list(f.ERIN, { workspaceIds: [f.WS_PROMO] }))).toEqual([
+        f.M_PROMO,
+      ]);
+    });
+
+    // An assistant sends an empty list for a filter it leaves blank.
+    it('takes an empty list of workspaces or folders as no filter', async () => {
+      expect(
+        ids(await list(f.FRANK, { workspaceIds: [], folderIds: [] }))
+      ).toEqual(ids(await list(f.FRANK)));
+    });
+
+    it('filters by folder, its subfolders included', async () => {
+      const SUBFOLDER = '507f1f77bcf86cd799439302';
+      const IN_SUBFOLDER = '507f1f77bcf86cd799439409';
+      harness.seed({
+        ...f.SEED,
+        folders: [
+          ...f.SEED.folders,
+          { _id: SUBFOLDER, name: '2024', _parentFolder: f.FOLDER_ARCHIVE },
+        ],
+        mailings: [
+          ...f.SEED.mailings,
+          {
+            ...f.SEED.mailings.find((m) => m._id === f.M_ARCHIVED),
+            _id: IN_SUBFOLDER,
+            name: 'Cyber Monday 2024',
+            _parentFolder: SUBFOLDER,
+          },
+        ],
+      });
+
+      expect(
+        ids(await list(f.FRANK, { folderIds: [f.FOLDER_ARCHIVE] }))
+      ).toEqual([f.M_ARCHIVED, IN_SUBFOLDER].sort());
+      expect(ids(await list(f.FRANK, { folderIds: [SUBFOLDER] }))).toEqual([
+        IN_SUBFOLDER,
+      ]);
+    });
+
+    it("filters the user's own mailings", async () => {
+      expect(ids(await list(f.WREN, { mine: true }))).toEqual([f.M_NEWSLETTER]);
+      expect(ids(await list(f.FRANK, { mine: true }))).toEqual([]);
+    });
+
+    it("filters by a part of the author's name, whatever the case", async () => {
+      expect(ids(await list(f.FRANK, { author: 'WREN' }))).toEqual([
+        f.M_NEWSLETTER,
+      ]);
+    });
+
+    it('finds nothing in a workspace the user may not read', async () => {
+      expect(ids(await list(f.FRANK, { workspaceIds: [f.WS_PROMO] }))).toEqual(
+        []
+      );
+      expect(ids(await list(f.ERIN, { workspaceIds: [f.WS_OTHER] }))).toEqual(
+        []
+      );
+    });
+
     it('refuses a page of more than 100 mailings', async () => {
       const answer = await list(f.FRANK, { pageSize: 101 });
 
       expect(answer.error).toMatch(/100/);
+    });
+  });
+
+  describe('workspaces and folders', () => {
+    const workspacesOf = async (userId) => {
+      const client = await harness.connectAs(userId);
+      return harness.answerOf(
+        await client.callTool({ name: 'list_workspaces', arguments: {} })
+      ).workspaces;
+    };
+
+    it('lists the workspaces the user reads, with their folders', async () => {
+      expect(await workspacesOf(f.FRANK)).toEqual([
+        {
+          id: f.WS_NEWS,
+          name: 'Newsletters',
+          folders: [{ id: f.FOLDER_ARCHIVE, name: 'Archive', subfolders: [] }],
+        },
+      ]);
+    });
+
+    it('lists every workspace of the group to a company admin', async () => {
+      expect((await workspacesOf(f.ERIN)).map((w) => w.id).sort()).toEqual(
+        [f.WS_NEWS, f.WS_PROMO].sort()
+      );
     });
   });
 });
