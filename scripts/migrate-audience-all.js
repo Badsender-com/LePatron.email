@@ -49,9 +49,13 @@ const WITHOUT_AUDIENCE = Object.freeze({
 async function migrate(model, { dryRun }) {
   const count = await model.countDocuments(WITHOUT_AUDIENCE);
   if (!dryRun && count) {
-    await model.updateMany(WITHOUT_AUDIENCE, {
-      $set: { audience: Audiences.ALL },
-    });
+    // An audience given at deployment is not an edit: the date the lists
+    // show as "updated on" stays the author's.
+    await model.updateMany(
+      WITHOUT_AUDIENCE,
+      { $set: { audience: Audiences.ALL } },
+      { timestamps: false }
+    );
   }
   return count;
 }

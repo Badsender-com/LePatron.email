@@ -52,9 +52,11 @@ describe('migrate-audience-all', () => {
     ]);
 
     await expect(migrate(model, { dryRun: false })).resolves.toBe(3);
-    expect(model.updateMany).toHaveBeenCalledWith(WITHOUT_AUDIENCE, {
-      $set: { audience: 'all' },
-    });
+    expect(model.updateMany).toHaveBeenCalledWith(
+      WITHOUT_AUDIENCE,
+      { $set: { audience: 'all' } },
+      { timestamps: false }
+    );
   });
 
   it('writes nothing on a dry run', async () => {
