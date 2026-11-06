@@ -410,6 +410,17 @@ describe('feedback and retex', () => {
       expect(third.body.items).toEqual([]);
     });
 
+    it.each([['99999999999999999999'], ['1e300'], ['-3'], ['two']])(
+      'serves a page from 1 to 10000 when asked for page %p',
+      async (page) => {
+        const { status, body } = await list({ page });
+
+        expect(status).toBe(200);
+        expect(body.page).toBeGreaterThanOrEqual(1);
+        expect(body.page).toBeLessThanOrEqual(10000);
+      }
+    );
+
     it('serves 50 unless asked, 200 at most', async () => {
       expect((await list({})).body.pageSize).toBe(50);
       expect((await list({ pageSize: '5000' })).body.pageSize).toBe(200);

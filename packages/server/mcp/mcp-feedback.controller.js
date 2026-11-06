@@ -6,6 +6,8 @@ const { McpFeedbacks, Groups } = require('../common/models.common.js');
 // A page of feedbacks: each may carry a long session summary.
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+// Far beyond the feedbacks a filter finds: a deeper page is a mistake.
+const MAX_PAGE = 10000;
 
 // The page asked for, as text from the query string: anything else is the
 // first page, of the default size.
@@ -14,7 +16,7 @@ function pageOf({ page, pageSize }) {
     Math.max(parseInt(pageSize, 10) || DEFAULT_PAGE_SIZE, 1),
     MAX_PAGE_SIZE
   );
-  const number = Math.max(parseInt(page, 10) || 1, 1);
+  const number = Math.min(Math.max(parseInt(page, 10) || 1, 1), MAX_PAGE);
   return { page: number, pageSize: size, skip: (number - 1) * size };
 }
 
@@ -40,7 +42,7 @@ function referringTo({ kind, id, version }) {
  * @apiParam (Query) {String} [kind] skill, expertise or mailing
  * @apiParam (Query) {String} [id] what the feedbacks refer to
  * @apiParam (Query) {String} [version] its version, e.g. 1.2
- * @apiParam (Query) {Number} [page] from 1
+ * @apiParam (Query) {Number} [page] from 1, 10000 at most
  * @apiParam (Query) {Number} [pageSize] 50 unless asked, 200 at most
  * @apiSuccess {Object[]} items the page, the latest first
  * @apiSuccess {Number} total how many feedbacks the filter finds
