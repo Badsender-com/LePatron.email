@@ -214,14 +214,26 @@ describe('PUT /groups/:groupId — MCP access, the security event', () => {
 });
 
 describe('PUT /groups/:groupId — retex', () => {
+  // Who allows the retex (ADR 0012, #1302): the company admin, the tech admin
+  // and the super admin; no other role, which the route keeps out.
   it.each([
-    ['a company admin', companyAdmin],
-    ['a tech admin', techAdmin],
-    ['a super admin', superAdmin],
-  ])('lets %s allow the retex of the group', async (_case, user) => {
-    const payload = await update(user, { allowRetex: true });
+    [ROLES.SUPER_ADMIN, true],
+    [ROLES.GROUP_ADMIN_TECH, true],
+    [ROLES.GROUP_ADMIN, true],
+    [ROLES.REGULAR_USER, false],
+    [ROLES.WRITER, false],
+    [ROLES.REVIEWER, false],
+  ])('lets a %s allow the retex: %p', async (role, allowed) => {
+    const user = { id: 'r1', role, group: GROUP_ID };
 
-    expect(payload.allowRetex).toBe(true);
+    const through = guardRefusal(user) === null;
+    const payload = through ? await update(user, { allowRetex: true }) : {};
+
+    expect(through && payload.allowRetex === true).toBe(allowed);
+  });
+
+  it('decides every role', () => {
+    expect(Object.values(ROLES)).toHaveLength(6);
   });
 
   // A switch of the company, as MCP access: a strict boolean, written apart
