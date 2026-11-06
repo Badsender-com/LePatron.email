@@ -52,7 +52,7 @@ export default {
       for (const e of this.items) {
         for (const s of e.scope || []) set.add(s);
       }
-      return [...set].sort();
+      return [...set].sort((a, b) => a.localeCompare(b));
     },
     tableHeaders() {
       return [

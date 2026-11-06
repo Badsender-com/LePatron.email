@@ -114,8 +114,8 @@ export default {
       }
     },
     // The first list shows when the field is entered, before any typing.
-    searchOnce() {
-      if (!this.searchCount) this.runSearch('');
+    async searchOnce() {
+      if (!this.searchCount) await this.runSearch('');
     },
     emitIds(ids) {
       this.$emit('update:consumedExpertiseIds', ids);
