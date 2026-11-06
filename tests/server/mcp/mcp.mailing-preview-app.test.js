@@ -8,13 +8,16 @@
 // mailing's sanitised preview in a sandbox. The other clients keep the text.
 
 const harness = require('../../helpers/mcp-harness');
+const {
+  APP_HTML,
+  PREVIEW_META_KEY,
+} = require('../../../packages/server/mcp/mcp-preview-app.js');
 const f = require('../../helpers/mcp-fixtures');
 
 const PREVIEW_APP = 'ui://lepatron/mailing-preview';
 const APP_MIME_TYPE = 'text/html;profile=mcp-app';
 
-// Turned on by #1342 (the email preview in the conversation)
-describe.skip('email preview app', () => {
+describe('email preview app', () => {
   let client;
 
   beforeEach(async () => {
@@ -52,6 +55,30 @@ describe.skip('email preview app', () => {
     expect(contents[0]._meta?.ui?.csp?.connectDomains ?? []).toEqual([]);
   });
 
+  it('loads images from LePatron only', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+
+    expect(contents[0]._meta.ui.csp.resourceDomains).toEqual([
+      expect.stringMatching(/^https?:\/\/[^/]+$/),
+    ]);
+  });
+
+  // Whatever the sanitiser missed, nothing in the email runs.
+  it('frames the email where no script runs', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+    const frame = /<iframe[^>]*id="email"[^>]*>/.exec(contents[0].text)[0];
+
+    expect(frame).toMatch(/sandbox="[^"]*"/);
+    expect(frame).not.toMatch(/allow-scripts/);
+  });
+
+  // A link left to the frame would navigate it away from the email.
+  it('catches every link of the email, image maps included', async () => {
+    const { contents } = await client.readResource({ uri: PREVIEW_APP });
+
+    expect(contents[0].text).toContain("closest('a[href], area[href]')");
+  });
+
   it('hands the app the preview of the mailing, as the text answer stays', async () => {
     const result = await client.callTool({
       name: 'get_mailing',
@@ -59,9 +86,24 @@ describe.skip('email preview app', () => {
     });
 
     expect(result.structuredContent.text).toContain('Black Friday is coming');
-    expect(result._meta?.ui?.previewHtml).toContain(
-      '<a href="https://shop.example.test/black-friday"'
+    expect(result._meta?.['lepatron/previewHtml']).toContain(
+      'href="https://shop.example.test/black-friday"'
     );
+  });
+
+  it('hands the app nothing more when the answer holds the HTML', async () => {
+    const result = await client.callTool({
+      name: 'get_mailing',
+      arguments: { mailingId: f.M_NEWSLETTER, format: 'html' },
+    });
+
+    expect(result.structuredContent.html).toContain('Black Friday is coming');
+    expect(result._meta?.['lepatron/previewHtml']).toBeUndefined();
+  });
+
+  it('reads the preview where the result carries it', () => {
+    expect(APP_HTML).toContain(`'${PREVIEW_META_KEY}'`);
+    expect(APP_HTML).toContain('structuredContent');
   });
 
   it('hands the app nothing for a mailing the user cannot read', async () => {
@@ -71,6 +113,6 @@ describe.skip('email preview app', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result._meta?.ui?.previewHtml).toBeUndefined();
+    expect(result._meta?.['lepatron/previewHtml']).toBeUndefined();
   });
 });
