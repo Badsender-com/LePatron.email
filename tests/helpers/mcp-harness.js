@@ -15,7 +15,9 @@
  *   calls, the way the app would (a role changed, an account deactivated, MCP
  *   access turned off).
  * - `stored(collection)` answers what a collection holds, for what no MCP
- *   client can read (the call log).
+ *   client can read.
+ * - `callLogs()` resolves with the call log, once the logs of the calls made
+ *   so far are written: the server writes them in the background.
  * - `advanceClock(ms)` moves the server's clock forward, for what is counted
  *   per minute (the rate limit).
  * - `disconnect()` closes every client opened since the last `seed`.
@@ -47,6 +49,7 @@ let clients = [];
 
 // Required where used, as everything of the server the tests reach.
 const rateLimit = () => require('../../packages/server/mcp/mcp-rate-limit.js');
+const callLog = () => require('../../packages/server/mcp/mcp-call-log.js');
 
 // Every test starts at the real time, with no call counted.
 function seed(records) {
@@ -54,10 +57,16 @@ function seed(records) {
   const limit = rateLimit();
   limit.forgetCounts();
   limit.clock.now = Date.now;
+  callLog().forgetRetentions();
 }
 
 function stored(collection) {
   return store.stored(collection);
+}
+
+async function callLogs() {
+  await callLog().callLogsWritten();
+  return store.stored('callLogs');
 }
 
 function update(collection, id, changes) {
@@ -129,6 +138,7 @@ module.exports = {
   connectAs,
   update,
   stored,
+  callLogs,
   advanceClock,
   disconnect,
   answerOf,

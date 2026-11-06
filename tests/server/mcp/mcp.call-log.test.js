@@ -19,7 +19,8 @@ describe('call log', () => {
   beforeEach(() => harness.seed(f.SEED));
   afterEach(() => harness.disconnect());
 
-  const logs = () => harness.stored('callLogs');
+  // The call log is written in the background: read once it is.
+  const logs = () => harness.callLogs();
 
   it('logs a call with who made it, from where, and how it ended', async () => {
     const client = await harness.connectAs(f.FRANK, { clientId: 'claude' });
@@ -28,7 +29,7 @@ describe('call log', () => {
       uri: `lepatron://expertises/${SUBJECT_LINES}`,
     });
 
-    expect(logs()).toEqual([
+    expect(await logs()).toEqual([
       expect.objectContaining({
         _user: f.FRANK,
         _company: f.CLIENT_GROUP,
@@ -53,7 +54,7 @@ describe('call log', () => {
       },
     });
 
-    const [log] = logs();
+    const [log] = await logs();
     expect(log).toMatchObject({
       method: 'tools/call',
       name: 'submit_feedback',
@@ -69,7 +70,7 @@ describe('call log', () => {
     const callTool = async (name, args) => {
       const client = await harness.connectAs(f.FRANK);
       await client.callTool({ name, arguments: args }).catch(() => null);
-      return logs()[0];
+      return (await logs())[0];
     };
 
     it('keeps no argument the tool does not declare, whatever its name', async () => {
@@ -111,7 +112,7 @@ describe('call log', () => {
       await client
         .readResource({ uri: `lepatron://${LONG}` })
         .catch(() => null);
-      const resource = logs()[1];
+      const resource = (await logs())[1];
 
       expect(tool.name).toHaveLength(500);
       expect(resource.objectIds[0]).toHaveLength(500);
@@ -126,7 +127,7 @@ describe('call log', () => {
     });
 
     expect(contents[0].text).toContain('Keep the subject under 50 characters.');
-    expect(JSON.stringify(logs())).not.toContain('50 characters');
+    expect(JSON.stringify(await logs())).not.toContain('50 characters');
   });
 
   it('logs a tool that reported an error as an error', async () => {
@@ -140,7 +141,7 @@ describe('call log', () => {
       },
     });
 
-    expect(logs()[0].outcome).toBe('error');
+    expect((await logs())[0].outcome).toBe('error');
   });
 
   // A refusal is no failure of the server: the log tells them apart.
@@ -154,7 +155,7 @@ describe('call log', () => {
       arguments: { rating: 'up' },
     });
 
-    expect(logs()).toEqual([
+    expect(await logs()).toEqual([
       expect.objectContaining({
         _user: f.FRANK,
         method: 'resources/list',
@@ -174,9 +175,9 @@ describe('call log', () => {
     await expect(client.listResources()).rejects.toThrow(/limit/i);
     await expect(client.listResources()).rejects.toThrow(/limit/i);
 
-    expect(logs().filter((log) => log.outcome === 'rate_limited')).toHaveLength(
-      1
-    );
+    expect(
+      (await logs()).filter((log) => log.outcome === 'rate_limited')
+    ).toHaveLength(1);
   });
 
   it('goes at the end of the group’s log retention', async () => {
@@ -186,16 +187,67 @@ describe('call log', () => {
 
     await client.listResources();
 
-    const { expiresAt } = logs()[0];
+    const { expiresAt } = (await logs())[0];
     expect(new Date(expiresAt).getTime()).toBeGreaterThanOrEqual(
       before + 7 * MS_PER_DAY
     );
     expect(new Date(expiresAt).getTime()).toBeLessThan(before + 8 * MS_PER_DAY);
   });
 
+  // The log is written in the background, its company's retention known from
+  // who made the call, or read a minute at most for a call without one.
+  describe('what writing it costs a call', () => {
+    const models = () =>
+      require('../../../packages/server/common/models.common.js');
+
+    it('answers without waiting for the log to be written', async () => {
+      let written;
+      const create = jest
+        .spyOn(models().McpCallLogs, 'create')
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              written = resolve;
+            })
+        );
+      const client = await harness.connectAs(f.FRANK);
+
+      await expect(client.listResources()).resolves.toBeDefined();
+
+      expect(create).toHaveBeenCalledTimes(1);
+      written();
+      create.mockRestore();
+    });
+
+    it('reads the company once for a call, to know who makes it', async () => {
+      const client = await harness.connectAs(f.FRANK);
+      const findById = jest.spyOn(models().Groups, 'findById');
+
+      await client.listResources();
+      await logs();
+
+      expect(findById).toHaveBeenCalledTimes(1);
+      findById.mockRestore();
+    });
+
+    it('reads the retention of a company once a minute for calls without an identity', async () => {
+      const client = await harness.connectAs(f.DEAN);
+      const findById = jest.spyOn(models().Groups, 'findById');
+
+      await client.listResources().catch(() => null);
+      await logs();
+      await client.listResources().catch(() => null);
+      const kept = await logs();
+
+      expect(findById).toHaveBeenCalledTimes(1);
+      expect(kept.map((log) => log.outcome)).toEqual(['refused', 'refused']);
+      findById.mockRestore();
+    });
+  });
+
   it('is not logged for a connection that only asks what the server is', async () => {
     await harness.connectAs(f.FRANK);
 
-    expect(logs()).toEqual([]);
+    expect(await logs()).toEqual([]);
   });
 });

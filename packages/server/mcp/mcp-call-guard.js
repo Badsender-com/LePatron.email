@@ -1,12 +1,10 @@
 'use strict';
 
 const { ProtocolError } = require('@modelcontextprotocol/server');
-const { McpCallLogs, Groups } = require('../common/models.common.js');
-const { computeExpiresAt } = require('../group/log-retention.js');
-const logger = require('../utils/logger.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { admitCaller, admitCompany, refusalOf } = require('./mcp-rate-limit.js');
 const { identify } = require('./mcp-identity.js');
+const { recordCall } = require('./mcp-call-log.js');
 const {
   declaredIdsOf,
   whatWasAsked,
@@ -17,21 +15,6 @@ const {
 // What is counted and logged: what a connected application asks of LePatron,
 // not the handshake.
 const GUARDED_METHODS = /^(tools|resources|prompts|completion)\//;
-
-async function record(entry) {
-  try {
-    const group =
-      entry._company &&
-      (await Groups.findById(entry._company).select('logRetentionDays').lean());
-    await McpCallLogs.create({
-      ...entry,
-      objectIds: entry.objectIds.filter(Boolean),
-      expiresAt: computeExpiresAt(new Date(), group?.logRetentionDays),
-    });
-  } catch (err) {
-    logger.error('[mcp] the call could not be logged', err.message);
-  }
-}
 
 // How a call ended: a tool reports its failure in its result, any other
 // handler throws it. A call whose caller was refused ended in that refusal.
@@ -66,11 +49,11 @@ function guarded(method, handler, declared) {
       method,
       ...whatWasAsked(method, request.params, declared),
     };
-    const { refusal } = overCaller ? {} : await identify(ctx);
+    const { identity, refusal } = overCaller ? {} : await identify(ctx);
     const over = overCaller || (refusal ? null : admitCompany(groupId));
     if (over) {
       if (over.firstRefusal) {
-        await record({ ...entry, durationMs: 0, outcome: 'rate_limited' });
+        recordCall({ ...entry, durationMs: 0, outcome: 'rate_limited' });
       }
       throw refusalOf(over);
     }
@@ -84,11 +67,15 @@ function guarded(method, handler, declared) {
       failed = Boolean(result?.isError);
       return result;
     } finally {
-      await record({
-        ...entry,
-        durationMs: Date.now() - startedAt,
-        outcome: outcomeOf(failed, refusal),
-      });
+      // Written in the background: the answer does not wait for its log.
+      recordCall(
+        {
+          ...entry,
+          durationMs: Date.now() - startedAt,
+          outcome: outcomeOf(failed, refusal),
+        },
+        identity
+      );
     }
   };
 }

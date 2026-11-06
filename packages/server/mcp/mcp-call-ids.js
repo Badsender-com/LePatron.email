@@ -80,7 +80,7 @@ function idsAlong(value, paths) {
     );
   };
   if (paths) walk(value, paths, 0);
-  return ids;
+  return ids.filter(Boolean);
 }
 
 // What a call asked for, as the log keeps it: the tool or the prompt, and the
