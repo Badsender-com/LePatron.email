@@ -10,6 +10,7 @@ const {
 } = require('../utils/editor-only-metadata-keys');
 const { errorKeyFor } = require('../utils/email-metadata');
 const { saveErrorKeyFor } = require('./synthetic-blocks/save-error.js');
+const { createExportMenu } = require('./topbar/export-menu.js');
 const {
   checkRequiredTrackingParams,
   displayTrackingError,
@@ -279,6 +280,8 @@ function loader(opts) {
     viewModel.save = saveCmd;
     // Sending a test lives in the quality drawer (viewModel.quality.open('send')).
     viewModel.download = downloadCmd;
+    // Its menu in the top bar, when there are several ways out.
+    viewModel.exportMenu = createExportMenu(ko);
   };
 }
 

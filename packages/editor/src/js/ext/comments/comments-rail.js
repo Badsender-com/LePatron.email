@@ -67,7 +67,7 @@ function createCommentsRail(
           .getComputedStyle(win.document.documentElement)
           .getPropertyValue('--top-bar-height'),
         10
-      ) || 40;
+      ) || 52;
     const visibleHeight = win.innerHeight - BOTTOM_BAR - topBar;
     // Matched by attribute, never put into a selector: a block id comes from
     // stored comments.

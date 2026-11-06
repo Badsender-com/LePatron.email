@@ -281,6 +281,10 @@ module.exports = {
   // Comments
   'Comment block': 'Commenter ce bloc',
   'panel-rail-label': 'Panneaux',
+  'topbar-export': 'Exporter',
+  'topbar-preview-label': 'Aperçu',
+  'topbar-save-readonly':
+    "Mode relecture : vous ne modifiez pas l'email, rien à enregistrer.",
   'panel-rail-unresolved-one': '1 commentaire non résolu',
   'panel-rail-unresolved': '__count__ commentaires non résolus',
   'panel-rail-blocking-one': '1 point bloquant',
