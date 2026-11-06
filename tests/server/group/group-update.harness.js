@@ -38,12 +38,8 @@ jest.mock('../../../packages/server/workspace/workspace.service.js', () => ({
   createWorkspace: jest.fn(),
   findWorkspaces: jest.fn(),
 }));
-jest.mock(
-  '../../../packages/server/ai-skill/services/invocation-log.service.js',
-  () => ({ restampRetention: jest.fn() })
-);
-jest.mock('../../../packages/server/mcp/mcp-retention.js', () => ({
-  restampMcpRetention: jest.fn(),
+jest.mock('../../../packages/server/group/log-retention.js', () => ({
+  restampLogs: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),

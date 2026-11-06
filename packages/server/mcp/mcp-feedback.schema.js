@@ -36,6 +36,8 @@ const McpFeedbackSchema = new Schema(
 );
 
 McpFeedbackSchema.index({ createdAt: -1 });
+// A company's feedbacks: their retention re-stamped, their retex forgotten.
+McpFeedbackSchema.index({ _company: 1, createdAt: -1 });
 // The feedbacks on one skill, expertise or mailing, the latest first.
 McpFeedbackSchema.index({
   'references.kind': 1,

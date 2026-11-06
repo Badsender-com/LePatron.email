@@ -2,9 +2,7 @@
 
 const { ProtocolError } = require('@modelcontextprotocol/server');
 const { McpCallLogs, Groups } = require('../common/models.common.js');
-const {
-  computeExpiresAt,
-} = require('../ai-skill/services/invocation-logger.service.js');
+const { computeExpiresAt } = require('../group/log-retention.js');
 const logger = require('../utils/logger.js');
 const { isObjectIdString } = require('../utils/model.js');
 const { admitCaller, admitCompany, refusalOf } = require('./mcp-rate-limit.js');

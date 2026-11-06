@@ -9,9 +9,7 @@ const { namedSkills } = require('./mcp-skill-catalog.js');
 const {
   findReadableMailings,
 } = require('../mailing/mailing-search.service.js');
-const {
-  computeExpiresAt,
-} = require('../ai-skill/services/invocation-logger.service.js');
+const { computeExpiresAt } = require('../group/log-retention.js');
 
 const keyOf = ({ kind, id }) => `${kind}:${id}`;
 

@@ -21,8 +21,7 @@ const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
-const invocationLogService = require('../ai-skill/services/invocation-log.service.js');
-const { restampMcpRetention } = require('../mcp/mcp-retention.js');
+const { restampLogs } = require('./log-retention.js');
 const { forgetRetex } = require('../mcp/mcp-access-option.js');
 const taxonomyDefaultsService = require('../taxonomy/taxonomy-defaults.service.js');
 const { pickSeedLang } = require('../taxonomy/default-email-types.js');
@@ -617,21 +616,18 @@ async function update(req, res) {
   // platform company (ADR 0012).
   if (switched.allowRetex === false) await forgetRetex(req.params.groupId);
 
-  // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
-  // logs' and feedbacks', so a retention change has to be propagated to what
-  // is already logged — otherwise lowering
-  // it would only apply to future ones, and the RGPD promise would be weaker
-  // than the nightly purge this replaced.
+  // A log's end of retention is stamped at write time, so a retention change
+  // has to reach the logs already kept: lowering it would otherwise apply to
+  // future ones only, and the RGPD promise would be weaker than the nightly
+  // purge this replaced. Done after the answer, which does not wait for it.
   const nextRetention = Number(groupToUpdate.logRetentionDays);
   if (carriesRetention && nextRetention !== previousRetention) {
-    await invocationLogService.restampRetention({
-      groupId: req.params.groupId,
-      retentionDays: nextRetention,
-    });
-    await restampMcpRetention({
-      groupId: req.params.groupId,
-      retentionDays: nextRetention,
-    });
+    restampLogs(req.params.groupId, nextRetention).catch((error) =>
+      logger.error(
+        `[group] the logs of group=${req.params.groupId} did not take the new retention`,
+        error
+      )
+    );
   }
 
   // Fetch the updated group to return with masked credentials

@@ -14,6 +14,7 @@ const {
   SecurityEvents,
   McpFeedbacks,
   groupService,
+  groupController,
   GROUP_ID,
   companyAdmin,
   techAdmin,
@@ -30,8 +31,9 @@ const {
 } = require('../../../packages/shared/access/roles.js');
 const SecurityEventSchema = require('../../../packages/server/security-event/security-event.schema.js');
 const {
-  restampMcpRetention,
-} = require('../../../packages/server/mcp/mcp-retention.js');
+  restampLogs,
+} = require('../../../packages/server/group/log-retention.js');
+const logger = require('../../../packages/server/utils/logger.js');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -335,13 +337,49 @@ describe('PUT /groups/:groupId — retex stopped', () => {
   });
 });
 
+// A retention change reaches the logs already kept (group/log-retention.js),
+// after the answer, which does not wait for it.
 describe('PUT /groups/:groupId — log retention', () => {
-  it('reaches the MCP call logs and feedbacks already kept', async () => {
+  it('reaches every log already kept, once', async () => {
     await update(superAdmin, { logRetentionDays: 7 });
 
-    expect(restampMcpRetention).toHaveBeenCalledWith({
-      groupId: GROUP_ID,
-      retentionDays: 7,
-    });
+    expect(restampLogs).toHaveBeenCalledTimes(1);
+    expect(restampLogs).toHaveBeenCalledWith(GROUP_ID, 7);
+  });
+
+  it('answers without waiting for the logs', async () => {
+    restampLogs.mockReturnValueOnce(new Promise(() => {}));
+    const res = { json: jest.fn() };
+
+    await groupController.update(
+      {
+        params: { groupId: GROUP_ID },
+        body: { logRetentionDays: 7 },
+        user: superAdmin,
+      },
+      res
+    );
+
+    expect(res.json).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs a failure to reach them', async () => {
+    restampLogs.mockReturnValueOnce(Promise.reject(new Error('timed out')));
+
+    await update(superAdmin, { logRetentionDays: 7 });
+    await new Promise(setImmediate);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('retention'),
+      expect.any(Error)
+    );
+  });
+
+  it('touches nothing when the retention does not change', async () => {
+    storedGroup({ logRetentionDays: 7 });
+
+    await update(superAdmin, { logRetentionDays: 7 });
+
+    expect(restampLogs).not.toHaveBeenCalled();
   });
 });
