@@ -34,4 +34,14 @@ describe('the feedback tab', () => {
     expect(source).toMatch(/this\.items\.length < this\.total/);
     expect(source).toMatch(/\$t\('aiSkills\.feedback\.more'\)/);
   });
+
+  it('says when a next page fails to load, under what is shown', () => {
+    expect(source).toMatch(/v-if="failed && items\.length"/);
+    expect(source).toMatch(/this\.failed = false;/);
+  });
+
+  // A feedback sent since the last page shifts the next one.
+  it('never shows a feedback twice', () => {
+    expect(source).toMatch(/!shown\.has\(item\.id\)/);
+  });
 });

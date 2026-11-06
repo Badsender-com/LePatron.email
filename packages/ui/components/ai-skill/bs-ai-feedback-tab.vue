@@ -31,6 +31,7 @@ export default {
     // The next page of feedbacks, after the ones shown.
     async loadMore() {
       this.loading = true;
+      this.failed = false;
       try {
         const { items, total } = await this.$axios.$get('/mcp-feedbacks', {
           params: {
@@ -39,7 +40,13 @@ export default {
             page: this.page + 1,
           },
         });
-        this.items = [...this.items, ...items];
+        // A feedback sent since the last page shifts the next one: what is
+        // already shown is not shown twice.
+        const shown = new Set(this.items.map((item) => item.id));
+        this.items = [
+          ...this.items,
+          ...items.filter((item) => !shown.has(item.id)),
+        ];
         this.total = total;
         this.page += 1;
       } catch (err) {
@@ -105,6 +112,9 @@ export default {
         </v-list-item-content>
       </v-list-item>
     </v-list>
+    <p v-if="failed && items.length" class="text-body-2 error--text mt-2 mb-0">
+      {{ $t('global.errors.errorOccured') }}
+    </p>
     <div v-if="items.length" class="d-flex align-center mt-2">
       <span class="text-caption text--secondary">
         {{ $t('aiSkills.feedback.shown', { shown: items.length, total }) }}
