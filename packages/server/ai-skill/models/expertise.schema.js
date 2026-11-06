@@ -1,6 +1,7 @@
 'use strict';
 
 const { Schema } = require('mongoose');
+const createError = require('http-errors');
 const { ObjectId } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
 const { parseSections } = require('../services/expertise-parser.service.js');
@@ -117,9 +118,15 @@ ExpertiseSchema.index({ isTransversal: 1 });
 ExpertiseSchema.index({ appliesToEmailTypes: 1 });
 ExpertiseSchema.index({ status: 1 });
 
+// How a section is written, said with a refusal so that whoever wrote the
+// body, a person or an assistant, can fix it.
+const SECTION_CONVENTION =
+  'Each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
+
 /**
  * Auto-derive the `sections[]` index from the Markdown body on each save.
- * Hard errors (invalid slug, duplicates) abort the save.
+ * Hard errors (invalid slug, duplicates) abort the save, as a request error
+ * whose message is meant to be shown (400).
  */
 ExpertiseSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
@@ -127,7 +134,12 @@ ExpertiseSchema.pre('validate', function preValidate(next) {
     const { sections, errors } = parseSections(version.body || '');
     if (errors.length > 0) {
       return next(
-        new Error(`Expertise version ${label}: ${errors.join('; ')}`)
+        createError(
+          400,
+          `Expertise version ${label}: ${errors.join(
+            '; '
+          )}. ${SECTION_CONVENTION}`
+        )
       );
     }
     version.sections = sections;

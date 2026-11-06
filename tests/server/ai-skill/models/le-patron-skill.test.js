@@ -81,6 +81,37 @@ describe('LePatronSkill model', () => {
     await expect(skill.validate()).rejects.toThrow(/skillBody/);
   });
 
+  // Refused as a request error with a message meant to be shown, which the
+  // back office and an assistant read, rather than as a failure of the server.
+  it.each([
+    ['systemPrompt', { systemPrompt: 'Hello {{input.name}}' }],
+    ['skillBody', { skillBody: 'Use {{input.prompt}}' }],
+  ])(
+    'refuses {{input.*}} in %s as a request error, naming the template',
+    async (_field, content) => {
+      const skill = buildSkill({
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            inputTemplate: '{{input.prompt}}',
+            ...content,
+          },
+        ],
+      });
+      const refusal = await skill.validate().catch((error) => error);
+
+      expect(refusal).toMatchObject({ status: 400, expose: true });
+      expect(refusal.message).toContain('inputTemplate');
+    }
+  );
+
+  it('refuses an unknown schema as a request error', async () => {
+    const skill = buildSkill({}, { inputSchemaId: 'nope' });
+
+    await expect(skill.validate()).rejects.toMatchObject({ status: 400 });
+  });
+
   it('allows {{input.*}} inside inputTemplate', async () => {
     const skill = buildSkill({
       versions: [

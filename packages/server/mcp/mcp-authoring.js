@@ -192,6 +192,10 @@ const ANSWER = z.object({
 });
 const WRITING = { readOnlyHint: false, destructiveHint: false };
 
+// How an expertise's body is cut into sections, which the server checks.
+const SECTIONS =
+  'The body is Markdown; each section is a level-2 heading "## [section-id] Title", its id in lowercase letters, digits and hyphens, once per expertise.';
+
 const PROPOSE_EXPERTISE_INPUT = z.object({
   expertiseId: ID,
   body: TEXT.optional(),
@@ -235,8 +239,7 @@ function registerAuthoringTools(server) {
     'propose_expertise_change',
     {
       title: 'Propose a change to an expertise',
-      description:
-        'Writes a change to an expertise as a draft: the open draft, or a new one from the active version. Never published from here: a person publishes it in the back office. Give a changelog.',
+      description: `Writes a change to an expertise as a draft: the open draft, or a new one from the active version. Never published from here: a person publishes it in the back office. Give a changelog. ${SECTIONS}`,
       inputSchema: PROPOSE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: WRITING,
@@ -265,8 +268,7 @@ function registerAuthoringTools(server) {
     'create_expertise',
     {
       title: 'Create an expertise',
-      description:
-        'Creates an expertise as a draft, read by the platform company only until a person publishes it and opens it to every company in the back office.',
+      description: `Creates an expertise as a draft, read by the platform company only until a person publishes it and opens it to every company in the back office. ${SECTIONS}`,
       inputSchema: CREATE_EXPERTISE_INPUT,
       outputSchema: ANSWER,
       annotations: WRITING,

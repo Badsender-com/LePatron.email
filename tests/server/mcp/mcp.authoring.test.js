@@ -108,6 +108,17 @@ describe('authoring', () => {
       );
     });
 
+    it('tells how the body of an expertise is cut into sections', async () => {
+      const { tools } = await (await asAuthor()).listTools();
+
+      tools
+        .filter((tool) => AUTHORING_TOOLS.includes(tool.name))
+        .filter((tool) => /expertise/.test(tool.name))
+        .forEach((tool) => {
+          expect(tool.description).toContain('## [section-id] Title');
+        });
+    });
+
     it('marks the writing tools as not read-only and not destructive', async () => {
       const { tools } = await (await asAuthor()).listTools();
 

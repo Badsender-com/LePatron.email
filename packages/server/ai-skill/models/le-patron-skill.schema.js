@@ -1,6 +1,7 @@
 'use strict';
 
 const { Schema } = require('mongoose');
+const createError = require('http-errors');
 const { ObjectId, Mixed } = Schema.Types;
 const { UserModel } = require('../../constant/model.names.js');
 const { hasSchema } = require('../schemas');
@@ -144,35 +145,41 @@ LePatronSkillSchema.index({ status: 1 });
  *   ensure inputSchemaId / outputSchemaId exist in the zod registry.
  * - Ensure `{{input.*}}` placeholders never appear outside `inputTemplate`
  *   (prompt-injection guard — see PLAN §4.4).
+ * Either refuses the save as a request error whose message is meant to be
+ * shown (400), for whoever wrote the version, a person or an assistant.
  */
 LePatronSkillSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
     const label = `${version.versionMajor}.${version.versionMinor}`;
     if (version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
       return next(
-        new Error(
+        createError(
+          400,
           `Version ${label}: unknown inputSchemaId "${version.inputSchemaId}" (not in zod registry)`
         )
       );
     }
     if (version.outputSchemaId && !hasSchema(version.outputSchemaId)) {
       return next(
-        new Error(
+        createError(
+          400,
           `Version ${label}: unknown outputSchemaId "${version.outputSchemaId}" (not in zod registry)`
         )
       );
     }
     if (INPUT_PLACEHOLDER_REGEX.test(version.systemPrompt || '')) {
       return next(
-        new Error(
-          `Version ${label}: {{input.*}} placeholders are not allowed in systemPrompt`
+        createError(
+          400,
+          `Version ${label}: {{input.*}} placeholders are not allowed in systemPrompt, only in inputTemplate`
         )
       );
     }
     if (INPUT_PLACEHOLDER_REGEX.test(version.skillBody || '')) {
       return next(
-        new Error(
-          `Version ${label}: {{input.*}} placeholders are not allowed in skillBody`
+        createError(
+          400,
+          `Version ${label}: {{input.*}} placeholders are not allowed in skillBody, only in inputTemplate`
         )
       );
     }
