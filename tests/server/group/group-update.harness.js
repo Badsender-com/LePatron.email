@@ -1,7 +1,7 @@
 'use strict';
 
 // Shared by the PUT /groups/:groupId tests of the company's switches
-// (two-factor authentication, MCP access): the mocked database and
+// (two-factor authentication, MCP access, retex): the mocked database and
 // collaborators, the stored group, the driver that runs the controller, and
 // the guards the route puts before it.
 //

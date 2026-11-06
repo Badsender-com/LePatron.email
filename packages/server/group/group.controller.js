@@ -11,9 +11,11 @@ const {
 const groupService = require('../group/group.service.js');
 const superAdminPolicy = require('../user/super-admin-policy.js');
 const permissions = require('../account/permissions.js');
-const { recordRequirementChange } = require('../two-factor/group-option.js');
-const { recordMcpAccessChange } = require('../mcp/mcp-access-option.js');
-const { takeSwitches, writeSwitches } = require('./group-switch.js');
+const {
+  takeSwitches,
+  writeSwitches,
+  recordSwitches,
+} = require('./group-switch.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
@@ -609,12 +611,7 @@ async function update(req, res) {
   const switches = takeSwitches(groupToUpdate);
   await groupService.updateGroup(groupToUpdate);
   const switched = await writeSwitches(req.params.groupId, switches);
-  await recordRequirementChange(
-    user,
-    req.params.groupId,
-    switched.requireTwoFactor
-  );
-  await recordMcpAccessChange(user, req.params.groupId, switched.enableMcp);
+  await recordSwitches(user, req.params.groupId, switched);
 
   // AISkillInvocation.expiresAt is stamped at write time, as are the MCP call
   // logs' and feedbacks', so a retention change has to be propagated to what

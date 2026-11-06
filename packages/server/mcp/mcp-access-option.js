@@ -5,6 +5,7 @@ const {
 } = require('../security-event/security-event.service.js');
 const {
   MCP_ACCESS_ACTIONS,
+  RETEX_ACTIONS,
 } = require('../security-event/security-event.actions.js');
 
 /**
@@ -26,4 +27,23 @@ async function recordMcpAccessChange(actor, groupId, change) {
   });
 }
 
-module.exports = { recordMcpAccessChange };
+/**
+ * Records who allowed or stopped the retex (ADR 0012): it lets the summaries
+ * of the company's assistant sessions be kept for the platform company.
+ *
+ * @param {Object} actor the request user
+ * @param {string} groupId
+ * @param {boolean} [change] the new value, from writeSwitches; none when the
+ *   switch did not change
+ * @returns {Promise<void>}
+ */
+async function recordRetexChange(actor, groupId, change) {
+  if (change === undefined) return;
+  await recordSecurityEvent({
+    action: change ? RETEX_ACTIONS.ALLOWED : RETEX_ACTIONS.DISALLOWED,
+    actor: actor.id,
+    group: groupId,
+  });
+}
+
+module.exports = { recordMcpAccessChange, recordRetexChange };

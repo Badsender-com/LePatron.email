@@ -1,10 +1,23 @@
 'use strict';
 
 const { Groups } = require('../common/models.common.js');
+const { recordRequirementChange } = require('../two-factor/group-option.js');
+const {
+  recordMcpAccessChange,
+  recordRetexChange,
+} = require('../mcp/mcp-access-option.js');
 
 // The company's switches: two-factor authentication for every member (ADR
-// 0008) and MCP access (ADR 0012). Each one switched is a security event.
-const SWITCHES = Object.freeze(['requireTwoFactor', 'enableMcp']);
+// 0008), MCP access and the retex of its assistants' sessions (ADR 0012).
+// Each one switched is a security event.
+const SWITCHES = Object.freeze(['requireTwoFactor', 'enableMcp', 'allowRetex']);
+
+// The security event each switch records, by field.
+const RECORDERS = Object.freeze({
+  requireTwoFactor: recordRequirementChange,
+  enableMcp: recordMcpAccessChange,
+  allowRetex: recordRetexChange,
+});
 
 /**
  * Takes the company's switches out of a group update, each a strict boolean:
@@ -49,4 +62,20 @@ async function writeSwitches(groupId, switches) {
   );
 }
 
-module.exports = { takeSwitches, writeSwitches };
+/**
+ * Records a security event for each switch a write changed, and for it only,
+ * in the order of the switches.
+ *
+ * @param {Object} actor the request user
+ * @param {string} groupId
+ * @param {Object} switched from writeSwitches
+ * @returns {Promise<void>}
+ */
+async function recordSwitches(actor, groupId, switched) {
+  for (const field of SWITCHES) {
+    // eslint-disable-next-line no-await-in-loop
+    await RECORDERS[field](actor, groupId, switched[field]);
+  }
+}
+
+module.exports = { takeSwitches, writeSwitches, recordSwitches };

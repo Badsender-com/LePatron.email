@@ -5,7 +5,7 @@
 // AI features. The group update keeps it out of a company admin's reach, as
 // every field it may not set, and the route keeps every other company's
 // members out. Turning it on or off is a security event, as switching
-// two-factor authentication is (ADR 0008).
+// two-factor authentication is (ADR 0008), and so is allowing the retex.
 
 const createError = require('http-errors');
 const mongoose = require('mongoose');
@@ -222,6 +222,77 @@ describe('PUT /groups/:groupId — retex', () => {
 
     expect(payload.allowRetex).toBe(true);
   });
+
+  // A switch of the company, as MCP access: a strict boolean, written apart
+  // from the rest of the update.
+  it.each([['yes'], ['true'], [1], [{ $ne: false }]])(
+    'keeps a boolean when the request carries %p',
+    async (value) => {
+      const payload = await update(techAdmin, { allowRetex: value });
+
+      expect(payload.allowRetex).toBe(false);
+    }
+  );
+
+  it('writes it with the switches, never with the rest of the update', async () => {
+    await update(techAdmin, { name: 'Renamed', allowRetex: true });
+
+    expect(Groups.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: GROUP_ID },
+      { $set: { allowRetex: true } },
+      { new: false, projection: { allowRetex: 1 } }
+    );
+    expect(groupService.updateGroup).toHaveBeenCalledWith({
+      name: 'Renamed',
+      id: GROUP_ID,
+    });
+  });
+});
+
+describe('PUT /groups/:groupId — retex, the security event', () => {
+  it('records the retex allowed, by whom', async () => {
+    await update(techAdmin, { allowRetex: true });
+
+    expect(SecurityEvents.create).toHaveBeenCalledTimes(1);
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'retex.allowed',
+      actor: 'a2',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records it stopped', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(superAdmin, { allowRetex: false });
+
+    expect(SecurityEvents.create).toHaveBeenCalledWith({
+      action: 'retex.disallowed',
+      actor: 'a3',
+      group: GROUP_ID,
+    });
+  });
+
+  it('records nothing when it does not change', async () => {
+    storedGroup({ allowRetex: true });
+
+    await update(techAdmin, { allowRetex: true, name: 'Renamed' });
+
+    expect(SecurityEvents.create).not.toHaveBeenCalled();
+  });
+
+  it.each(['retex.allowed', 'retex.disallowed'])(
+    'is an action the security events accept: %s',
+    (action) => {
+      const SecurityEvent = mongoose.model(
+        `RetexEvent-${action}`,
+        SecurityEventSchema
+      );
+      const event = new SecurityEvent({ action, group: GROUP_ID });
+
+      expect(event.validateSync()).toBeUndefined();
+    }
+  );
 });
 
 describe('PUT /groups/:groupId — log retention', () => {

@@ -117,6 +117,7 @@ describe('POST /groups — the company switches', () => {
     ['requireTwoFactor', 'yes'],
     ['enableMcp', true],
     ['enableMcp', { $ne: false }],
+    ['allowRetex', true],
   ])('creates the company without %s, sent as %p', async (field, value) => {
     await create({ name: 'Acme', [field]: value });
 
