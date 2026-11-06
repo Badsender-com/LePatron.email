@@ -9,6 +9,7 @@ import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-deta
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
+import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiExpertiseCloseModal from '~/components/ai-skill/bs-ai-expertise-close-modal.vue';
 import {
   skillCategoryLabel,
@@ -25,6 +26,7 @@ export default {
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
     BsAiArchiveModal,
+    BsAiDraftChangedAlert,
     BsAiExpertiseCloseModal,
   },
   mixins: [
@@ -33,6 +35,7 @@ export default {
       key: 'exp',
       idField: 'expertiseId',
       routes: {
+        item: api.aiExpertise,
         versionMinor: api.aiExpertiseVersionMinor,
         versionMajor: api.aiExpertiseVersionMajor,
         version: api.aiExpertiseVersion,
@@ -116,6 +119,8 @@ export default {
             examplesBad: version.examplesBad,
             changelog: version.changelog,
             releaseNotes: version.releaseNotes,
+            // The draft as the page read it: one written since is refused.
+            updatedAt: this.readAtOf(version),
           }
         );
         if (!silent) {
@@ -172,7 +177,7 @@ export default {
               versionMajor,
               versionMinor
             ),
-            payload
+            { ...payload, updatedAt: this.readAtOf(this.activatingVersion) }
           ),
         'aiSkills.version.activated'
       );
@@ -191,6 +196,12 @@ export default {
       :status="exp.status"
       back-to="/ai-skills?tab=expertise"
       @archive="$refs.archiveModal.open()"
+    />
+
+    <bs-ai-draft-changed-alert
+      v-if="draftChanged"
+      :loading="saving"
+      @reload="reloadItem"
     />
 
     <p class="text-caption text--secondary detail-meta">

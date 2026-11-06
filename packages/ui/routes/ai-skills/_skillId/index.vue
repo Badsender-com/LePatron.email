@@ -7,6 +7,7 @@ import BsAiFeedbackTab from '~/components/ai-skill/bs-ai-feedback-tab.vue';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
+import BsAiDraftChangedAlert from '~/components/ai-skill/bs-ai-draft-changed-alert.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
@@ -20,6 +21,7 @@ import {
 export default {
   name: 'PageAiSkillDetail',
   components: {
+    BsAiDraftChangedAlert,
     BsAiDetailHeader,
     BsAiFeedbackTab,
     BsAiActivateModal,
@@ -35,6 +37,7 @@ export default {
       key: 'skill',
       idField: 'skillId',
       routes: {
+        item: api.aiSkill,
         versionMinor: api.aiSkillVersionMinor,
         versionMajor: api.aiSkillVersionMajor,
         version: api.aiSkillVersion,
@@ -129,6 +132,8 @@ export default {
           consumedExpertiseIds: version.consumedExpertiseIds,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
+          // The draft as the page read it: one written since is refused.
+          updatedAt: this.readAtOf(version),
         };
         const res = await this.$axios.$patch(
           api.aiSkillVersion(
@@ -188,7 +193,7 @@ export default {
         const { versionMajor, versionMinor } = this.activatingVersion;
         const res = await this.$axios.$post(
           api.aiSkillActivate(this.skill.skillId, versionMajor, versionMinor),
-          payload
+          { ...payload, updatedAt: this.readAtOf(this.activatingVersion) }
         );
         // Non-blocking coherence warnings surface post-activation too (§3).
         this.versionWarnings = res.warnings || [];
@@ -219,6 +224,12 @@ export default {
       back-to="/ai-skills?tab=skills"
       :playground-to="`/ai-playground/new?skillId=${skill.skillId}`"
       @archive="$refs.archiveModal.open()"
+    />
+
+    <bs-ai-draft-changed-alert
+      v-if="draftChanged"
+      :loading="saving"
+      @reload="reloadItem"
     />
 
     <p class="text-caption text--secondary detail-meta">

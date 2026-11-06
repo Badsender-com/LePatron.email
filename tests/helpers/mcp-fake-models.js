@@ -12,7 +12,10 @@
  *   stores its fields back, unless it was read with a projection. As
  *   Mongoose does, an array the document only added elements to since it
  *   was read is pushed to, so two documents read at once that each add one
- *   keep both; any other field is set as the document holds it.
+ *   keep both; any other field is set as the document holds it. A
+ *   condition set on the document (`doc.$where`) is checked against the
+ *   stored record first: a record it does not match is not found, as
+ *   Mongoose's DocumentNotFoundError.
  * - `create(record)` stores a copy, with an `_id` when it has none.
  * - `validate()` runs no schema: the hooks are tested on the real schemas
  *   (tests/server/ai-skill/models/).
@@ -55,7 +58,7 @@ const copy = (record) => structuredClone(record);
 
 // The fields of a document, without what the fakes add to it.
 function fieldsOf(doc) {
-  const { id: _addedId, ...fields } = doc;
+  const { id: _addedId, $where: _condition, ...fields } = doc;
   return copy(fields);
 }
 
@@ -90,6 +93,13 @@ function toDocument(record, stored) {
     value: async () => {
       if (!stored) {
         throw new Error('fake MCP models: save of a projected document');
+      }
+      // A condition set on the document, as Mongoose's `doc.$where`: a
+      // stored record it no longer matches is not found.
+      if (doc.$where && !matches(stored, doc.$where)) {
+        throw Object.assign(new Error('No document found'), {
+          name: 'DocumentNotFoundError',
+        });
       }
       saveInto(stored, fieldsOf(doc), read);
       return doc;

@@ -306,11 +306,13 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
 
       expect(doc.validate).toHaveBeenCalled();
       const [filter, update] = model.findOneAndUpdate.mock.calls[0];
+      expect(filter.status).toEqual({ $ne: 'ARCHIVED' });
       expect(filter.versions.$elemMatch).toEqual({
         versionMajor: 1,
         versionMinor: 1,
         status: 'DRAFT',
-        updatedAt: READ_AT,
+        // A draft stored before it had an update date has none.
+        updatedAt: { $in: [READ_AT, null] },
       });
       expect(update.$set['versions.$']).toMatchObject({ changelog: 'Shorter' });
       expect(update.$set['versions.$'].updatedAt.getTime()).toBeGreaterThan(
@@ -339,6 +341,107 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
         service.writeDraftIfUnchanged(doc, doc.versions[1], {}, USER_ID)
       ).rejects.toMatchObject({ status: 400 });
       expect(model.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  // A person's save and publication are conditioned on the draft their
+  // screen read, as the assistant's writes are (ADR 0014).
+  describe('a person writing a draft an assistant may have written', () => {
+    const READ_AT = new Date('2026-11-01T10:00:00Z');
+    const draftOf = () =>
+      makeVersion({ versionMinor: 1, status: 'DRAFT', updatedAt: READ_AT });
+    let conditions;
+
+    beforeEach(() => {
+      build({ versions: [makeVersion(), draftOf()] });
+      conditions = [];
+      doc.save = jest.fn(async function save() {
+        conditions.push(this.$where);
+        return this;
+      });
+    });
+
+    it.each([
+      ['the same update date', READ_AT.toISOString()],
+      ['none, from an older client', undefined],
+    ])('saves a draft when the request sends %s', async (_case, updatedAt) => {
+      await service.updateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { changelog: 'By a person', updatedAt },
+        USER_ID
+      );
+
+      expect(doc.versions[1].changelog).toBe('By a person');
+      expect(conditions[0].versions.$elemMatch).toMatchObject({
+        versionMinor: 1,
+        status: 'DRAFT',
+        updatedAt: { $in: [READ_AT, null] },
+      });
+    });
+
+    it('refuses a save when the draft was written since the screen read it', async () => {
+      await expect(
+        service.updateVersion(
+          'an-id',
+          { major: 1, minor: 1 },
+          { changelog: 'By a person', updatedAt: '2026-10-01T00:00:00Z' },
+          USER_ID
+        )
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'SKILL_VERSION_CHANGED',
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    // What Mongoose throws when a save's condition matches nothing, by what
+    // the save changed (a VersionError once an array changed, as on MongoDB).
+    it.each(['DocumentNotFoundError', 'VersionError'])(
+      'refuses a save when the draft is written between its read and its save (%s)',
+      async (name) => {
+        doc.save = jest
+          .fn()
+          .mockRejectedValue(
+            Object.assign(new Error('No matching document found'), { name })
+          );
+
+        await expect(
+          service.updateVersion('an-id', { major: 1, minor: 1 }, {}, USER_ID)
+        ).rejects.toMatchObject({
+          status: 409,
+          message: 'SKILL_VERSION_CHANGED',
+        });
+      }
+    );
+
+    it('refuses to publish a draft written since the screen read it', async () => {
+      await expect(
+        service.activateVersion(
+          'an-id',
+          { major: 1, minor: 1 },
+          { updatedAt: '2026-10-01T00:00:00Z' },
+          USER_ID
+        )
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'SKILL_VERSION_CHANGED',
+      });
+      expect(doc.versions[1].status).toBe('DRAFT');
+    });
+
+    it('publishes on the condition that the draft is as read', async () => {
+      await service.activateVersion(
+        'an-id',
+        { major: 1, minor: 1 },
+        { updatedAt: READ_AT.toISOString() },
+        USER_ID
+      );
+
+      expect(doc.versions[1].status).toBe('ACTIVE');
+      expect(conditions[0].versions.$elemMatch.updatedAt).toEqual({
+        $in: [READ_AT, null],
+      });
     });
   });
 

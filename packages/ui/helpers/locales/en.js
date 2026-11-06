@@ -1531,6 +1531,8 @@ export default {
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'The template references fields absent from input schema "{schemaId}": {fields}. Fix the template or change the version input schema.',
+      SKILL_VERSION_CHANGED:
+        'This draft was changed meanwhile, by an assistant for instance. Reload it to see the new version before saving or publishing.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -1652,6 +1654,7 @@ export default {
       detailResolvedConfig: 'Resolved config',
     },
     version: {
+      reload: 'Reload',
       procedure: 'Procedure',
       procedureHint: 'What the assistant does, step by step, in Markdown.',
       consumedExpertises: 'Expertises consumed',

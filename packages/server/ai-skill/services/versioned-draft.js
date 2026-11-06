@@ -1,16 +1,18 @@
 'use strict';
 
 /**
- * How an assistant writes a draft of a skill or an expertise (ADR 0014): one
- * draft open at a time, and every write made on the condition that what it
- * read did not change since, so that two changes sent at once never start two
- * drafts, and never write over each other without saying so. The back office
- * writes its drafts the usual way (versioned-entity.service.js), with the
- * same numbering and seeding.
+ * How a draft of a skill or an expertise is written without writing over a
+ * change made since it was read (ADR 0014), in both directions. An assistant
+ * has one draft open at a time, and every write it makes is conditioned on
+ * what it read, so two changes sent at once never start two drafts, nor
+ * write over each other without saying so. A person's save and publication
+ * (versioned-entity.service.js) are conditioned on the draft their screen
+ * read the same way.
  */
 
 const createError = require('http-errors');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
 const {
   findVersion,
   findActiveVersion,
@@ -19,6 +21,9 @@ const {
   versionLabel,
   laterThan,
 } = require('./version-helpers.js');
+
+// The errors of a save whose condition no longer matched the document.
+const CONFLICTS = new Set(['DocumentNotFoundError', 'VersionError']);
 
 const CHANGED =
   'The draft changed since it was read: read it again and send the proposal again.';
@@ -45,6 +50,75 @@ function draftToWrite(doc, id, major) {
     );
   }
   return open;
+}
+
+/**
+ * A version's update date as the database stores it: none for a version
+ * stored before it had one, which the schema's default fills in on reading.
+ *
+ * @param {Object} version
+ * @returns {Date|null}
+ */
+function storedUpdatedAt(version) {
+  if (typeof version.$isDefault === 'function') {
+    if (version.$isDefault('updatedAt')) return null;
+  }
+  return version.updatedAt || null;
+}
+
+/**
+ * The condition a write puts on the version it read: still a draft, with the
+ * update date read, or none, for one stored before it had one.
+ *
+ * @param {Object} version
+ * @param {Date|null} readAt from storedUpdatedAt
+ * @returns {Object} an `$elemMatch` on `versions`
+ */
+function unchangedDraft(version, readAt) {
+  return {
+    $elemMatch: {
+      versionMajor: version.versionMajor,
+      versionMinor: version.versionMinor,
+      status: SkillStatuses.DRAFT,
+      updatedAt: { $in: [readAt, null] },
+    },
+  };
+}
+
+/**
+ * The update date of a draft as stored, checked against the one the
+ * person's screen read (`sent`, from the request): a 409 when the draft was
+ * written since, by an assistant or another person (ADR 0014). A request
+ * without one, from a client older than this check, writes as before.
+ *
+ * @returns {Date|null} the update date the write is conditioned on
+ */
+function readAtOf(version, sent) {
+  const stored = storedUpdatedAt(version);
+  const told = sent === undefined || sent === null || sent === '';
+  if (!told && stored && new Date(sent).getTime() !== stored.getTime()) {
+    throw createError(409, ERROR_CODES.SKILL_VERSION_CHANGED);
+  }
+  return stored;
+}
+
+// Saves the document on the condition that the draft is as it was read,
+// so a write made meanwhile is never written over.
+async function saveIfUnchanged(doc, version, readAt) {
+  // eslint-disable-next-line no-param-reassign
+  doc.$where = { versions: unchangedDraft(version, readAt) };
+  try {
+    await doc.save();
+  } catch (err) {
+    // Mongoose says a save matched nothing as either, by what it changed.
+    if (err && CONFLICTS.has(err.name)) {
+      throw createError(409, ERROR_CODES.SKILL_VERSION_CHANGED);
+    }
+    throw err;
+  } finally {
+    // eslint-disable-next-line no-param-reassign
+    doc.$where = undefined;
+  }
 }
 
 // A plain copy of a version, as the database stores it.
@@ -140,7 +214,7 @@ function createDraftWriter({
    */
   async function writeDraftIfUnchanged(doc, version, patch, userId) {
     assertDraft(version);
-    const readAt = version.updatedAt || null;
+    const readAt = storedUpdatedAt(version);
     patchable.forEach((key) => {
       if (patch[key] !== undefined) version[key] = patch[key];
     });
@@ -151,23 +225,28 @@ function createDraftWriter({
     const written = await model.findOneAndUpdate(
       {
         [idField]: doc[idField],
-        versions: {
-          $elemMatch: {
-            versionMajor: version.versionMajor,
-            versionMinor: version.versionMinor,
-            status: SkillStatuses.DRAFT,
-            updatedAt: readAt,
-          },
-        },
+        // Archived meanwhile, it takes no more drafts, as openOrStartDraft
+        // refuses to start one.
+        status: { $ne: SkillStatuses.ARCHIVED },
+        versions: unchangedDraft(version, readAt),
       },
       { $set: { 'versions.$': plain(version) } },
       { new: true }
     );
-    if (!written) throw createError(409, CHANGED);
-    return written;
+    if (written) return written;
+    const now = await getDoc(doc[idField]);
+    draftToWrite(now, doc[idField], false);
+    throw createError(409, CHANGED);
   }
 
   return { openOrStartDraft, writeDraftIfUnchanged };
 }
 
-module.exports = { createDraftWriter, draftToWrite };
+module.exports = {
+  createDraftWriter,
+  draftToWrite,
+  storedUpdatedAt,
+  unchangedDraft,
+  readAtOf,
+  saveIfUnchanged,
+};

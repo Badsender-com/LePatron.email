@@ -1551,6 +1551,8 @@ export default {
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
+      SKILL_VERSION_CHANGED:
+        'Ce brouillon a été modifié entre-temps, par exemple par un assistant. Rechargez-le pour voir la nouvelle version avant d\'enregistrer ou de publier.',
     },
     warnings: {
       TEMPLATE_UNKNOWN_FIELDS:
@@ -1672,6 +1674,7 @@ export default {
       detailResolvedConfig: 'Configuration résolue',
     },
     version: {
+      reload: 'Recharger',
       procedure: 'Procédure',
       procedureHint: 'Ce que l\'assistant fait, étape par étape, en Markdown.',
       consumedExpertises: 'Expertises consommées',

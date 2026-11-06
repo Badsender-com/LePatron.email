@@ -40,7 +40,11 @@ const {
   assertDraft,
   laterThan,
 } = require('./version-helpers.js');
-const { createDraftWriter } = require('./versioned-draft.js');
+const {
+  createDraftWriter,
+  readAtOf,
+  saveIfUnchanged,
+} = require('./versioned-draft.js');
 
 /**
  * @param {Object} options
@@ -178,16 +182,21 @@ function createVersionedEntityService({
     return doc;
   }
 
+  /**
+   * A person's change to a draft: `patch.updatedAt`, when given, is the
+   * update date of the draft the screen read (readAtOf).
+   */
   async function updateVersion(id, { major, minor }, patch, userId) {
     const doc = await getDoc(id);
     const version = findVersion(doc, major, minor);
     assertDraft(version);
+    const readAt = readAtOf(version, patch.updatedAt);
     for (const key of PATCHABLE_VERSION_FIELDS) {
       if (patch[key] !== undefined) version[key] = patch[key];
     }
     version.updatedBy = userId;
-    version.updatedAt = laterThan(version.updatedAt);
-    await doc.save();
+    version.updatedAt = laterThan(readAt);
+    await saveIfUnchanged(doc, version, readAt);
     return doc;
   }
 
@@ -219,6 +228,8 @@ function createVersionedEntityService({
    * major, archive the version it replaces, and move the `activeVersion`
    * pointer. `payload.openToAll` opens the item to every company in the same
    * write (ADR 0013), so a publication never stands half done.
+   * `payload.updatedAt`, when given, is the update date of the draft the
+   * screen read: a draft written since is not published unread (readAtOf).
    */
   async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
@@ -227,6 +238,7 @@ function createVersionedEntityService({
     if (version.status !== 'DRAFT') {
       throw createError(409, 'Only DRAFT versions can be activated');
     }
+    const readAt = readAtOf(version, payload.updatedAt);
 
     if (activationGate) await activationGate(version, doc);
 
@@ -251,14 +263,14 @@ function createVersionedEntityService({
     version.status = 'ACTIVE';
     version.activatedAt = now;
     version.updatedBy = userId;
-    version.updatedAt = now;
+    version.updatedAt = laterThan(readAt);
     doc.activeVersion = {
       major: version.versionMajor,
       minor: version.versionMinor,
     };
     doc.status = SkillStatuses.ACTIVE;
     if (payload.openToAll === true) doc.audience = Audiences.ALL;
-    await doc.save();
+    await saveIfUnchanged(doc, version, readAt);
     return doc;
   }
 
