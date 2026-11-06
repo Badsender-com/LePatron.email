@@ -13,6 +13,9 @@ const NAMESPACES = [
   'oauthConsent',
   'mcpClients',
   'mcpAccess',
+  'connectedApplications',
+  'skillsImport',
+  'aiSkills.export',
 ];
 
 const at = (messages, path) =>
