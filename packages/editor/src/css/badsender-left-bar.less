@@ -1,0 +1,225 @@
+////////
+// THE LEFT BAR — under the top bar, as on the boards « Éditeur v2 » (decision
+// of 2026-11-06): three tabs in a segmented control, two sub-tabs each, then
+// the panel of the sub-tab (js/ext/left-bar.js). 400px wide, as before.
+// Imported at the end of badsender-editor.less.
+////////
+
+// Segmented control and sub-tabs: 12 + 36 + 10 + 33, and a 1px rule.
+@left-bar-nav-height: 92px;
+
+#main-toolbox {
+  top: @topbar-height;
+}
+
+// ===== Its tabs =====
+#main-toolbox .left-bar-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  // Above Mosaico's panels (100) and the gallery that opens over them (200).
+  z-index: 202;
+  box-sizing: border-box;
+  height: @left-bar-nav-height;
+  padding: 12px 14px 0;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--white);
+}
+
+.left-bar-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--gray-100);
+
+  &__item {
+    flex: 1;
+    height: 30px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--gray-600);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover { color: var(--gray-900); }
+
+    &.is-active {
+      background: var(--white);
+      box-shadow: var(--shadow-1);
+      color: var(--v-primary-base);
+      font-weight: 600;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--v-primary-base);
+      outline-offset: 1px;
+    }
+  }
+}
+
+.left-bar-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+
+  &__item {
+    flex: 1;
+    padding: 6px 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--gray-600);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover { color: var(--gray-900); }
+
+    &.is-active {
+      border-bottom-color: var(--v-accent-base);
+      color: var(--v-primary-base);
+      font-weight: 600;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--v-primary-base);
+      outline-offset: -2px;
+    }
+  }
+}
+
+// ===== Mosaico's panels and the gallery, under the tabs =====
+// Their own tab lists stay for jQuery UI, hidden: the tabs above drive them.
+#main-toolbox .tooltabs__top-bar[hidden],
+#main-toolbox #toolimagestab > ul[hidden] {
+  display: none !important;
+}
+
+#main-toolbox #tooltabs.ui-tabs .ui-tabs-panel {
+  top: @left-bar-nav-height;
+}
+
+// The gallery opens over the panels, under the tabs, its two galleries the
+// sub-tabs « Dans cet email » and « Galerie du template ».
+#main-toolbox #toolimages.slidebar {
+  top: @left-bar-nav-height;
+  bottom: 0;
+  height: auto;
+  width: 100%;
+  box-shadow: none;
+
+  #toolimagestab,
+  #toolimagestab .ui-tabs-panel {
+    top: 0;
+    height: 100%;
+  }
+}
+
+// ===== « Blocs du template » =====
+#main-toolbox .left-bar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 12px 14px 0;
+  padding: 0 10px;
+  border: 1px solid var(--gray-300);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--gray-500);
+  font-size: 13px;
+  cursor: text;
+
+  > .lucide { flex: none; font-size: 14px; }
+
+  &:focus-within {
+    border-color: var(--v-accent-base);
+    box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.15);
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gray-900);
+    font: inherit;
+  }
+}
+
+#main-toolbox .left-bar-empty {
+  margin: 12px 14px 0;
+  color: var(--gray-600);
+  font-size: 13px;
+}
+
+// ===== The cards of the blocks, template's and saved =====
+// As on the boards: a bordered card, its name in mono above its preview.
+#main-toolbox #toolblocks {
+  .block-list {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: none;
+    padding: 12px 14px;
+  }
+
+  .draggable-item {
+    display: block;
+    width: auto;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: 7px;
+    background: var(--gray-50);
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--gray-400);
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
+  .draggable-item .block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+
+    img {
+      display: block;
+      width: 100%;
+      border-radius: 4px;
+    }
+  }
+
+  .block-name {
+    position: static;
+    order: -1;
+    max-width: none;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    color: var(--gray-600);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px;
+    font-weight: 400;
+  }
+}

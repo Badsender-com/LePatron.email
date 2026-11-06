@@ -27,7 +27,8 @@
     <!-- /ko -->
     <!-- Comment block (always available, including reviewer/writer) -->
     <div title="Comment block" class="tool comment" data-bind="attr: { title: $root.t('Comment block') }, click: $root.commentBlock.bind($element, $rawData, $parent, $index)">
-      <span class="lucide lucide-message-circle"></span>
+      <span class="lucide lucide-message-square" aria-hidden="true"></span>
+      <span class="tool__label" data-bind="text: $root.t('block-tool-comment')">Comment</span>
       <!-- ko if: $root.getBlockCommentCount && $root.getBlockCommentCount($data.id) > 0 -->
       <span class="comment-count-badge" data-bind="text: $root.getBlockCommentCount($data.id)"></span>
       <!-- /ko -->

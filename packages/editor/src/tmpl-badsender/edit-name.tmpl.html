@@ -8,10 +8,17 @@
 </form>
 <!-- /ko -->
 <!-- ko if: $root.titleMode() == 'show' -->
-<div class="creation-name" data-bind="css: { 'creation-name--readonly': !$root.canRenameCreation() }">
-  <p class="ui-button" data-bind="event: { dblclick: enableEditCreationName }, dblclickBubble: false,
-    attr: { title: $root.canRenameCreation() ? $root.t('edit-title-double-click') : null }">
-    <span class="ui-button-text" data-bind="text: $root.creationName"></span>
-  </p>
+<div class="creation-name">
+  <!-- Renamed from a click on it, its pencil showing on hover (board
+       « Repos — crayon au survol du nom »); plain text for whom may not. -->
+  <!-- ko if: $root.canRenameCreation() -->
+  <button type="button" class="creation-name__button" data-bind="click: enableEditCreationName, clickBubble: false, attr: { title: $root.t('topbar-rename'), 'aria-label': $root.t('topbar-rename') + ' : ' + $root.creationName() }">
+    <span class="creation-name__text" data-bind="text: $root.creationName"></span>
+    <span class="lucide lucide-pencil creation-name__pencil" aria-hidden="true"></span>
+  </button>
+  <!-- /ko -->
+  <!-- ko ifnot: $root.canRenameCreation() -->
+  <span class="creation-name__text" data-bind="text: $root.creationName"></span>
+  <!-- /ko -->
 </div>
 <!-- /ko -->

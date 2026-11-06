@@ -18,10 +18,10 @@ module.exports = {
 
   // gallery
   'gallery-title': 'Galeries :',
-  'gallery-mailing': "SPÉCIFIQUE À L'EMAIL",
+  'gallery-mailing': 'Dans cet email',
   'gallery-mailing-loading': "Chargement de la galerie de l'email…",
   'gallery-mailing-empty': "La galerie de l'email est vide",
-  'gallery-template': 'COMMUN AU TEMPLATE',
+  'gallery-template': 'Galerie du template',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
   'gallery-remove-image': 'Supprimer __label__',
@@ -280,7 +280,22 @@ module.exports = {
 
   // Comments
   'Comment block': 'Commenter ce bloc',
+  'block-tool-comment': 'Commenter',
   'panel-rail-label': 'Panneaux',
+  // The left bar (js/ext/left-bar.js) and the left of the top bar.
+  'Back to mailings list': 'Retour à la liste des emails',
+  'topbar-rename': "Renommer l'email",
+  'left-bar-label': 'Barre de gauche',
+  'left-bar-sublabel': 'Affichage',
+  'left-bar-blocks': 'Blocs',
+  'left-bar-images': 'Images',
+  'left-bar-settings': 'Réglages',
+  'left-bar-template-blocks': 'Blocs du template',
+  'left-bar-saved-blocks': 'Enregistrés',
+  'left-bar-content': 'Contenu',
+  'left-bar-styles': 'Styles',
+  'left-bar-block-search': 'Rechercher un bloc…',
+  'left-bar-block-search-empty': 'Aucun bloc ne porte ce nom.',
   'topbar-export': 'Exporter',
   'topbar-preview-label': 'Aperçu',
   'topbar-save-readonly':

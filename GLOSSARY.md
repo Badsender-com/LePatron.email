@@ -107,12 +107,12 @@ _Avoid_: Media library, image bank
 
 **Mailing gallery**:
 The gallery of one email: the images uploaded while designing it.
-_UI_: Spécifique à l'email
+_UI_: Dans cet email
 _Avoid_: Email images, local gallery
 
 **Template gallery**:
 The gallery of one template, shared by every email made from it.
-_UI_: Commun au template
+_UI_: Galerie du template
 _Avoid_: Shared gallery, common gallery
 
 **Stored name**:

@@ -1,0 +1,114 @@
+////////
+// THE CANVAS — as on the editor boards (ADR 0020, amendment): a light grey
+// ground, the email a card on it, and the toolbar of the block on the accent.
+// Imported last by badsender-editor.less: it overrides the ghost toolbar
+// declared there, with the same selectors.
+////////
+
+@canvas-email-top: 28px;
+@block-tool-size: 30px;
+
+// ===== The ground and the email =====
+// The email keeps its own background (the template's, on `replacedbody`):
+// the grey is around it, and stays opaque against Chrome's hover glitches.
+#main-wysiwyg-area {
+  background: var(--gray-100);
+}
+
+// Around the floating panel too, when the canvas keeps its minimum width.
+#page.withRightPanel {
+  background: var(--gray-100);
+}
+
+#main-wysiwyg-area replacedbody {
+  min-height: calc(100% - 2 * @canvas-email-top);
+  margin: @canvas-email-top auto !important;
+  box-shadow: var(--shadow-1);
+}
+
+// ===== The toolbar of the block =====
+// At the top right of the block, astride its edge: an accent card of white
+// icons, « Commenter » last and named.
+#main-edit-area .tools {
+  top: -17px;
+  right: 8px;
+  bottom: auto;
+  left: auto;
+  gap: 1px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--v-accent-base);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-2);
+}
+
+#main-edit-area .tools .tool {
+  width: @block-tool-size;
+  min-width: @block-tool-size;
+  height: @block-tool-size;
+  min-height: @block-tool-size;
+  border-radius: 6px;
+  color: var(--white);
+  font-size: 15px;
+
+  .lucide { font-size: 15px; }
+
+  &:hover,
+  &.delete:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    color: var(--white);
+  }
+}
+
+// One rule only, before « Commenter »: the others go.
+#main-edit-area .tools .tool.clone,
+#main-edit-area .tools .tool.delete {
+  margin-left: 0 !important;
+
+  &::before { content: none; }
+}
+
+#main-edit-area .tools .tool.comment {
+  order: 1;
+  gap: 6px;
+  width: auto;
+  margin-left: 5px !important;
+  padding: 0 8px;
+  // The editor's type, not the email's it sits in.
+  font-family: @font-family;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+
+  // The icon at its size, beside the name rather than filling the button.
+  > .lucide {
+    width: auto;
+    height: auto;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: -3px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  // Alone (a role without the structure tools): no rule before it.
+  &:first-child {
+    margin-left: 0 !important;
+
+    &::before { content: none; }
+  }
+}
+
+// The count of the block's comments, ringed to stand off the accent.
+#main-edit-area .tools .tool.comment .comment-count-badge {
+  top: -6px;
+  right: -6px;
+  box-shadow: 0 0 0 2px var(--white);
+}

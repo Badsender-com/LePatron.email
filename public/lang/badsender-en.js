@@ -18,10 +18,10 @@ module.exports = {
 
   // gallery
   'gallery-title': 'Galleries:',
-  'gallery-mailing': 'EMAIL ONLY',
+  'gallery-mailing': 'In this email',
   'gallery-mailing-loading': 'Loading email gallery…',
   'gallery-mailing-empty': 'The email gallery is empty',
-  'gallery-template': 'TEMPLATE SHARED',
+  'gallery-template': 'Template gallery',
   'gallery-template-loading': 'Loading template gallery…',
   'gallery-template-empty': 'The template gallery is empty',
   'gallery-remove-image': 'Delete __label__',
@@ -267,7 +267,22 @@ module.exports = {
 
   // Comments
   'Comment block': 'Comment this block',
+  'block-tool-comment': 'Comment',
   'panel-rail-label': 'Panels',
+  // The left bar (js/ext/left-bar.js) and the left of the top bar.
+  'Back to mailings list': 'Back to the emails list',
+  'topbar-rename': 'Rename the email',
+  'left-bar-label': 'Left bar',
+  'left-bar-sublabel': 'View',
+  'left-bar-blocks': 'Blocks',
+  'left-bar-images': 'Images',
+  'left-bar-settings': 'Settings',
+  'left-bar-template-blocks': 'Template blocks',
+  'left-bar-saved-blocks': 'Saved',
+  'left-bar-content': 'Content',
+  'left-bar-styles': 'Styles',
+  'left-bar-block-search': 'Search a block…',
+  'left-bar-block-search-empty': 'No block has this name.',
   'topbar-export': 'Export',
   'topbar-preview-label': 'Preview',
   'topbar-save-readonly':

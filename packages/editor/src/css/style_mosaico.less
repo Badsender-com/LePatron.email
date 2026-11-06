@@ -275,8 +275,9 @@ a[disabledhref]:-moz-read-write {
 .withToolbox #main-toolbox {
   display: block;
 }
-.withToolbox #main-edit-area,
-.withToolbox #toolbar {
+// The top bar spans the window, the left bar under it (boards « Éditeur
+// v2 »): only the canvas makes room for the left bar.
+.withToolbox #main-edit-area {
   left: @leftsidebar-width;
 }
 
