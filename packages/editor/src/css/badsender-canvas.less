@@ -9,8 +9,8 @@
 @block-tool-size: 30px;
 
 // ===== The ground and the email =====
-// The email keeps its own background (the template's, on `replacedbody`):
-// the grey is around it, and stays opaque against Chrome's hover glitches.
+// The grey is around the email, and stays opaque against Chrome's hover
+// glitches.
 #main-wysiwyg-area {
   background: var(--gray-100);
 }
@@ -20,7 +20,11 @@
   background: var(--gray-100);
 }
 
+// White, as a mail client shows an email that sets no background of its own:
+// the canvas was white before it turned grey. A template's body background,
+// inline on `replacedbody`, still wins.
 #main-wysiwyg-area replacedbody {
+  background-color: var(--white);
   min-height: calc(100% - 2 * @canvas-email-top);
   margin: @canvas-email-top auto !important;
   box-shadow: var(--shadow-1);

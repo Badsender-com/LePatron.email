@@ -58,15 +58,21 @@
   right: 0;
 }
 
-.withRightPanel #main-edit-area {
-  right: @right-panel-width + @right-panel-right + @panel-float-inset;
-  transition: right @right-panel-motion;
+// The room is made inside the canvas, not by narrowing it: its scrollbar stays
+// on the window's right edge, beside the rail, and the panel floats over the
+// canvas as the rail does.
+#main-wysiwyg-area {
+  transition: padding-right @right-panel-motion;
+}
+
+.withRightPanel #main-wysiwyg-area {
+  padding-right: @right-panel-width + @right-panel-right + @panel-float-inset;
 }
 
 @media (prefers-reduced-motion: reduce) {
   #main-toolbox .slidebar.right-panel,
   #main-toolbox .slidebar.right-panel.hidden,
-  .withRightPanel #main-edit-area {
+  #main-wysiwyg-area {
     animation: none;
     transition: none;
   }
