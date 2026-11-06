@@ -2,7 +2,7 @@
 
 /**
  * One name for a block of the email, wherever the editor shows it: the
- * comments, the quality control and the AI tools say « Cover · bloc 2 », as
+ * comments, the quality control and the AI actions say « Cover · bloc 2 », as
  * the settings title it « Cover » and the left bar lists « Cover
  * (largecoverBlock) ».
  *

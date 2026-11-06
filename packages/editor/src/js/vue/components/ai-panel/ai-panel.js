@@ -30,7 +30,7 @@ const MIRRORED = [
 ];
 
 /**
- * The AI panel, « Outils IA » (ADR 0010). Its state and decisions are the
+ * The AI panel, « Actions IA » (ADR 0010). Its state and decisions are the
  * controller's (ext/ai-panel/ai-panel-controller.js): this renders the lists
  * and hands the action under way to the component of its family. Its place,
  * Escape and the focus on open and close are the right panel's

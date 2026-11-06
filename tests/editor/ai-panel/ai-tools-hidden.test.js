@@ -4,7 +4,7 @@
 
 'use strict';
 
-// The AI tools are hidden from whoever may not edit the content (ADR 0020):
+// The AI actions are hidden from whoever may not edit the content (ADR 0020):
 // the editor reads `canUseTextGeneration`, computed by the server for this
 // user on this email, not `hasTextGenerationFeature`, which says the feature
 // is on for the company.
@@ -18,7 +18,7 @@ const MAIN = fs.readFileSync(
   'utf8'
 );
 
-describe('the AI tools, for this user on this email', () => {
+describe('the AI actions, for this user on this email', () => {
   it('shows the panel button from canUseTextGeneration', () => {
     const condition = /<!-- ko if: ([^>]*) -->\s*<button id="ai-toggle"/.exec(
       MAIN

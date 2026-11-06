@@ -958,7 +958,7 @@ module.exports = {
   'The links could not be loaded': 'The links could not be loaded',
 
   // text generation (epic #1163)
-  // AI panel, « Outils IA » (ADR 0010)
+  // AI panel, « Actions IA » (ADR 0010)
   'right-panel-close': 'Close the panel',
   'ai-panel-back': 'Back to the actions',
   'ai-panel-correct-field': 'Correct this field',
@@ -1000,7 +1000,7 @@ module.exports = {
   'ai-panel-blocks-count': '__count__ blocks',
   'ai-panel-fields-read-one': '1 field read',
   'ai-panel-fields-read': '__count__ fields read',
-  'ai-panel-title': 'AI tools',
+  'ai-panel-title': 'AI actions',
   'ai-panel-action-subject': 'Generate the subject',
   'ai-panel-action-preheader': 'Generate the preheader',
   'ai-panel-copy-only':
@@ -1079,7 +1079,7 @@ module.exports = {
   'ai-panel-see-its-actions': 'See its AI actions',
   'ai-field-subject-label': 'Generate the subject with AI',
   'ai-field-preheader-label': 'Generate the preheader with AI',
-  'ai-block-tool': 'AI tools of the block',
+  'ai-block-tool': 'AI actions of the block',
   'ai-field-correct-label': 'Correct with AI',
   'text-generation-applied-preheader': 'Preheader:',
   'text-generation-applied-subject': 'Subject:',
@@ -1110,7 +1110,7 @@ module.exports = {
   'text-generation-error-disabled':
     'Text generation is not enabled for your company.',
   'text-generation-error-forbidden':
-    'You can no longer edit this email, so the AI tools are unavailable. Reload the page, or ask an administrator for access.',
+    'You can no longer edit this email, so the AI actions are unavailable. Reload the page, or ask an administrator for access.',
   'text-generation-error-unavailable':
     'Text generation is not available right now. Contact your administrator.',
   'text-generation-error-rate-limited':

@@ -985,7 +985,7 @@ module.exports = {
   'The links could not be loaded': "Les liens n'ont pas pu être chargés",
 
   // text generation (epic #1163)
-  // AI panel, « Outils IA » (ADR 0010)
+  // AI panel, « Actions IA » (ADR 0010)
   'right-panel-close': 'Fermer le panneau',
   'ai-panel-back': 'Retour aux actions',
   'ai-panel-correct-field': 'Corriger ce champ',
@@ -1029,7 +1029,7 @@ module.exports = {
   'ai-panel-blocks-count': '__count__ blocs',
   'ai-panel-fields-read-one': '1 champ relu',
   'ai-panel-fields-read': '__count__ champs relus',
-  'ai-panel-title': 'Outils IA',
+  'ai-panel-title': 'Actions IA',
   'ai-panel-action-subject': "Générer l'objet",
   'ai-panel-action-preheader': 'Générer le préheader',
   'ai-panel-copy-only':
@@ -1113,7 +1113,7 @@ module.exports = {
   'ai-panel-see-its-actions': 'Voir ses actions IA',
   'ai-field-subject-label': "Générer l'objet avec l'IA",
   'ai-field-preheader-label': "Générer le préheader avec l'IA",
-  'ai-block-tool': 'Outils IA du bloc',
+  'ai-block-tool': 'Actions IA du bloc',
   'ai-field-correct-label': "Corriger avec l'IA",
   'text-generation-applied-preheader': 'Préheader :',
   'text-generation-applied-subject': 'Objet :',
@@ -1144,7 +1144,7 @@ module.exports = {
   'text-generation-error-disabled':
     "La génération de texte n'est pas activée pour votre entreprise.",
   'text-generation-error-forbidden':
-    "Vous ne pouvez plus modifier cet email : les Outils IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
+    "Vous ne pouvez plus modifier cet email : les Actions IA ne sont plus disponibles. Rechargez la page, ou demandez l'accès à un administrateur.",
   'text-generation-error-unavailable':
     "La génération de texte n'est pas disponible pour le moment. Contactez votre administrateur.",
   'text-generation-error-rate-limited':

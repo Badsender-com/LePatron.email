@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Acceptance tests of the AI tools hidden from whoever may not edit the
+ * Acceptance tests of the AI actions hidden from whoever may not edit the
  * content (ADR 0020).
  *
  * Seam: `findOneForMosaico`, which configures the editor. It tells the editor,

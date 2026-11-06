@@ -162,7 +162,7 @@ _Avoid_: Wireframe (the code keeps `_wireframe`)
 
 **Right panel**:
 One of the three panels that take turns on the right of the editor, one open at a time: the comments, the quality panel ("Tester l'email") and the AI panel. They share one shell: header, close button, body, foot, empty, loading and error states.
-_UI_: Commentaires, Tester l'email, Outils IA
+_UI_: Commentaires, Tester l'email, Actions IA
 _Avoid_: Drawer, sidebar, slidebar (in prose; the code keeps `.slidebar`)
 
 **Left bar**:
@@ -302,7 +302,7 @@ _Avoid_: AI tool, AI command, prompt
 
 **AI panel**:
 The right-hand panel where the user picks an AI action, gives its options and instruction, and chooses among its proposals; it shares its place with the comments and the quality control panels, one open at a time.
-_UI_: Outils IA
+_UI_: Actions IA
 _Avoid_: AI sidebar, AI drawer, assistant
 
 **Skill**:

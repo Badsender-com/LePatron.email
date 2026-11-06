@@ -5,7 +5,7 @@
 'use strict';
 
 // The shell of the right panels (ADR 0020): one header, body and foot, which
-// « Commentaires », « Tester l'email » and « Outils IA » only fill.
+// « Commentaires », « Tester l'email » and « Actions IA » only fill.
 
 const Vue = require('vue/dist/vue.common');
 const {
