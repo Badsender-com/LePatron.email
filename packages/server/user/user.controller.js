@@ -23,6 +23,7 @@ const {
 } = require('../two-factor/reset.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
@@ -326,6 +327,8 @@ async function deactivate(req, res) {
 
   await user.deactivate();
   await forgetTrustedDevices(user.id);
+  // Reactivated, the user connects their assistants again (ADR 0012).
+  await forgetConnections({ _user: user._id });
   superAdminPolicy.logAction(req.user, 'deactivate', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -356,6 +359,8 @@ async function adminResetPassword(req, res) {
   }
 
   await user.resetPassword('admin', user.lang);
+  // Whoever held the old password connected no assistant that lives on.
+  await forgetConnections({ _user: user._id });
   superAdminPolicy.logAction(req.user, 'reset-password', user);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
@@ -442,6 +447,8 @@ async function setPassword(req, res) {
 
   await user.setPassword(req.body.password, user.lang);
   await forgetTrustedDevices(user.id);
+  // Nor any assistant connected with the old one (ADR 0012).
+  await forgetConnections({ _user: user._id });
   // The emailed link opens no session for an account that needs a second
   // factor (ADR 0008): the member signs in with the new password, and the
   // code. The sessions opened before it end all the same.

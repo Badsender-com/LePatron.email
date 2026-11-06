@@ -35,6 +35,7 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
+const { forgetConnections } = require('../mcp/mcp-connections.js');
 const {
   sanitizeTrackingConfig,
 } = require('../utils/resolve-tracking-config.js');
@@ -635,6 +636,11 @@ async function update(req, res) {
 
   // Fetch the updated group to return with masked credentials
   const updatedGroup = await Groups.findById(req.params.groupId);
+  // MCP turned off ends the company's connected applications: turning it
+  // back on must not revive them (ADR 0012). Read as saved, whatever was sent.
+  if ('enableMcp' in switches && updatedGroup && !updatedGroup.enableMcp) {
+    await forgetConnections({ _company: req.params.groupId });
+  }
   res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 

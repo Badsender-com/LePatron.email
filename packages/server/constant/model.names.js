@@ -40,4 +40,5 @@ module.exports = Object.freeze({
   McpFeedbackModel: 'McpFeedback',
   McpCallLogModel: 'McpCallLog',
   McpClientModel: 'McpClient',
+  McpConnectionModel: 'McpConnection',
 });

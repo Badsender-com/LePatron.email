@@ -8,6 +8,9 @@
 // Required before anything it mocks: the jest.mock calls below register on the
 // test's module registry when this file loads.
 
+jest.mock('../../../packages/server/mcp/mcp-connections.js', () => ({
+  forgetConnections: jest.fn(),
+}));
 jest.mock('../../../packages/server/common/models.common.js', () => ({
   Groups: { findById: jest.fn(), findOneAndUpdate: jest.fn() },
   SecurityEvents: { create: jest.fn() },
@@ -80,9 +83,18 @@ function storedGroup(fields) {
     lean: jest.fn().mockResolvedValue(group),
     then: (resolve, reject) => Promise.resolve(group).then(resolve, reject),
   });
-  Groups.findOneAndUpdate.mockReturnValue({
-    lean: jest.fn().mockResolvedValue(group),
-  });
+  // The switches are written apart, and answer what they were.
+  Groups.findOneAndUpdate.mockImplementation((_filter, change) => ({
+    lean: jest.fn().mockImplementation(async () => {
+      const before = { ...group };
+      Object.assign(group, change.$set);
+      return before;
+    }),
+  }));
+  // The rest of the update, as saved: what the controller reads back.
+  groupService.updateGroup.mockImplementation(async (changes) =>
+    Object.assign(group, changes)
+  );
 }
 
 /**

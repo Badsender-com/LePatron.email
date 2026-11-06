@@ -520,3 +520,14 @@ export const oauthInteractionDeny = (uid) => consentRoute(uid, 'deny');
 export const mcpClients = () => '/mcp-clients';
 export const mcpClientsItem = ({ clientId }) =>
   `/mcp-clients/${encodeURIComponent(clientId)}`;
+
+/// ///
+// CONNECTED APPLICATIONS
+/// ///
+
+// The AI assistants a user connected, and a group's (ADR 0012).
+export const connectedApplications = () => '/connected-applications';
+export const connectedApplicationsItem = ({ id }) =>
+  `/connected-applications/${id}`;
+export const groupConnectedApplications = ({ groupId }) =>
+  `/groups/${groupId}/connected-applications`;
