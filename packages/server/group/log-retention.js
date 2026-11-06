@@ -6,6 +6,7 @@ const {
   AISkillInvocations,
   McpCallLogs,
   McpFeedbacks,
+  Groups,
 } = require('../common/models.common.js');
 const {
   DefaultLogRetentionDays,
@@ -87,14 +88,36 @@ async function restamp(model, dateField, groupId, days) {
   return restamped;
 }
 
-async function restampAll(groupId, retentionDays) {
-  const counts = {};
-  for (const { name, model, dateField } of LOGS) {
+// How many times a re-stamping starts again when the retention changed while
+// it ran, before it leaves the rest to the next change.
+const MAX_ROUNDS = 3;
+
+async function storedRetention(groupId) {
+  const group = await Groups.findById(groupId)
+    .select('logRetentionDays')
+    .lean();
+  return group ? group.logRetentionDays : undefined;
+}
+
+// Every log of the company, stamped with the retention stored for it, read
+// when the round starts and again when it ends: a retention changed while it
+// ran, by this worker or another, makes it start again.
+async function restampAll(groupId) {
+  let counts = {};
+  let days = await storedRetention(groupId);
+  for (let round = 0; round < MAX_ROUNDS; round += 1) {
+    counts = {};
+    for (const { name, model, dateField } of LOGS) {
+      // eslint-disable-next-line no-await-in-loop
+      counts[name] = await restamp(model, dateField, groupId, days);
+    }
     // eslint-disable-next-line no-await-in-loop
-    counts[name] = await restamp(model, dateField, groupId, retentionDays);
+    const now = await storedRetention(groupId);
+    if (now === days) break;
+    days = now;
   }
   logger.log(
-    `[group] log retention re-stamped for group=${groupId} days=${retentionDays} ${JSON.stringify(
+    `[group] log retention re-stamped for group=${groupId} days=${days} ${JSON.stringify(
       counts
     )}`
   );
@@ -110,25 +133,29 @@ const queues = new Map();
  * is set at write time, and a shorter retention must reach what is already
  * kept, as the nightly purge the TTL indexes replaced did.
  *
- * Two changes close together never mix: the re-stampings of a company run
- * one after the other, and one asked for while another runs is skipped when
- * a later one is asked for before it starts, so the last retention asked for
- * is the one the logs end with. One that fails is the caller's to log: it is
- * not run again by itself, and the next change of the retention runs it all.
+ * The retention stamped is the one stored for the company, read when the
+ * re-stamping starts and again when it ends, never the one the caller was
+ * given: whatever the order the changes arrive in, in this worker or in
+ * another, the logs end with the retention stored. In this worker, the
+ * re-stampings of a company run one after the other, and one asked for while
+ * another runs is skipped when a later one is asked for before it starts.
+ * One that fails is the caller's to log: it is not run again by itself, and
+ * the next change of the retention runs it all. The retention the call log
+ * keeps a minute per company (mcp-call-log.js) is forgotten in this worker
+ * when it changes, and in another worker within that minute.
  *
  * @param {import('mongoose').Types.ObjectId|string} groupId
- * @param {number} retentionDays
  * @returns {Promise<Object|null>} how many were re-stamped, by log; null when
  *   a later change replaced this one before it ran
  */
-function restampLogs(groupId, retentionDays) {
+function restampLogs(groupId) {
   const key = String(groupId);
   const queue = queues.get(key) || { last: Promise.resolve(), asked: 0 };
   queues.set(key, queue);
   queue.asked += 1;
   const turn = queue.asked;
   const run = queue.last.then(() =>
-    turn === queue.asked ? restampAll(groupId, retentionDays) : null
+    turn === queue.asked ? restampAll(groupId) : null
   );
   queue.last = run.catch(() => null);
   queue.last.then(() => {

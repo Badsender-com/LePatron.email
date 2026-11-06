@@ -364,7 +364,7 @@ describe('PUT /groups/:groupId — log retention', () => {
     await update(superAdmin, { logRetentionDays: 7 });
 
     expect(restampLogs).toHaveBeenCalledTimes(1);
-    expect(restampLogs).toHaveBeenCalledWith(GROUP_ID, 7);
+    expect(restampLogs).toHaveBeenCalledWith(GROUP_ID);
   });
 
   // The call logs written from now on take the new retention at once.

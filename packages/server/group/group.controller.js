@@ -626,7 +626,7 @@ async function update(req, res) {
   if (carriesRetention && nextRetention !== previousRetention) {
     // The MCP call logs written from now on take the new retention at once.
     forgetRetention(req.params.groupId);
-    restampLogs(req.params.groupId, nextRetention).catch((error) =>
+    restampLogs(req.params.groupId).catch((error) =>
       logger.error(
         `[group] the logs of group=${req.params.groupId} did not take the new retention`,
         error

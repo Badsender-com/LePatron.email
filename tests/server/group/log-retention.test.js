@@ -11,6 +11,7 @@ jest.mock('../../../packages/server/common/models.common.js', () => ({
   AISkillInvocations: { find: jest.fn(), bulkWrite: jest.fn() },
   McpCallLogs: { find: jest.fn(), bulkWrite: jest.fn() },
   McpFeedbacks: { find: jest.fn(), bulkWrite: jest.fn() },
+  Groups: { findById: jest.fn() },
 }));
 jest.mock('../../../packages/server/utils/logger.js', () => ({
   log: jest.fn(),
@@ -51,8 +52,23 @@ function holds(model, docs) {
   return read;
 }
 
+// The retention stored for the company, read in turn by each reading.
+function stores(...retentions) {
+  let read = 0;
+  models.Groups.findById.mockImplementation(() => ({
+    select: () => ({
+      lean: async () => {
+        const days = retentions[Math.min(read, retentions.length - 1)];
+        read += 1;
+        return { logRetentionDays: days };
+      },
+    }),
+  }));
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
+  stores(30);
   holds(models.AISkillInvocations, []);
   holds(models.McpCallLogs, []);
   holds(models.McpFeedbacks, []);
@@ -144,7 +160,7 @@ describe('restampLogs', () => {
     holds(models.McpCallLogs, [{ _id: 2, createdAt: FROM }]);
     holds(models.McpFeedbacks, [{ _id: 3, createdAt: FROM }]);
 
-    const counts = await restampLogs(GROUP_ID, 7);
+    const counts = await restampLogs(GROUP_ID);
 
     expect(counts).toEqual({ invocations: 1, callLogs: 1, feedbacks: 1 });
     expect(LOGS.map(({ model }) => model)).toEqual([
@@ -155,41 +171,69 @@ describe('restampLogs', () => {
   });
 });
 
-// Two changes of a company's retention close together never mix: one
-// re-stamping runs at a time, and the last retention asked for wins.
+// Two changes of a company's retention close together never mix: the logs
+// end with the retention stored, whatever the order the changes arrive in,
+// in this worker or in another.
 describe('restampLogs, changes close together', () => {
+  const writes = () => {
+    const written = [];
+    models.AISkillInvocations.bulkWrite.mockImplementation(async ([op]) => {
+      written.push(op.updateOne.update.$set.expiresAt.toISOString());
+      return {};
+    });
+    return written;
+  };
+  const stamped = (days) => computeExpiresAt(FROM, days).toISOString();
+
+  it('stamps the retention stored, not an older one it is asked for', async () => {
+    holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
+    const written = writes();
+    stores(90);
+
+    await restampLogs(GROUP_ID);
+
+    expect(written).toEqual([stamped(90)]);
+  });
+
+  it('starts again when the retention changed while it ran', async () => {
+    holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
+    const written = writes();
+    // Read when it starts, then changed by another worker before it ends.
+    stores(7, 90, 90);
+
+    await restampLogs(GROUP_ID);
+
+    expect(written).toEqual([stamped(7), stamped(90)]);
+  });
+
   it('runs them one after the other, skipping one a later change replaced', async () => {
     holds(models.AISkillInvocations, [{ _id: 1, startedAt: FROM }]);
     let running = 0;
     let most = 0;
-    const written = [];
     let release;
     const firstHeld = new Promise((resolve) => {
       release = resolve;
     });
-    models.AISkillInvocations.bulkWrite.mockImplementation(async ([op]) => {
+    let calls = 0;
+    models.AISkillInvocations.bulkWrite.mockImplementation(async () => {
       running += 1;
       most = Math.max(most, running);
-      written.push(op.updateOne.update.$set.expiresAt.toISOString());
-      if (written.length === 1) await firstHeld;
+      calls += 1;
+      if (calls === 1) await firstHeld;
       running -= 1;
       return {};
     });
 
-    const first = restampLogs(GROUP_ID, 7);
+    const first = restampLogs(GROUP_ID);
     await new Promise(setImmediate);
-    const second = restampLogs(GROUP_ID, 30);
-    const third = restampLogs(GROUP_ID, 90);
+    const second = restampLogs(GROUP_ID);
+    const third = restampLogs(GROUP_ID);
     release();
 
     await expect(first).resolves.toMatchObject({ invocations: 1 });
     await expect(second).resolves.toBeNull();
     await expect(third).resolves.toMatchObject({ invocations: 1 });
     expect(most).toBe(1);
-    expect(written).toEqual([
-      computeExpiresAt(FROM, 7).toISOString(),
-      computeExpiresAt(FROM, 90).toISOString(),
-    ]);
   });
 
   it('runs the next one after one that failed', async () => {
@@ -198,8 +242,8 @@ describe('restampLogs, changes close together', () => {
       new Error('timed out')
     );
 
-    await expect(restampLogs(GROUP_ID, 7)).rejects.toThrow('timed out');
-    await expect(restampLogs(GROUP_ID, 30)).resolves.toMatchObject({
+    await expect(restampLogs(GROUP_ID)).rejects.toThrow('timed out');
+    await expect(restampLogs(GROUP_ID)).resolves.toMatchObject({
       invocations: 1,
     });
   });
