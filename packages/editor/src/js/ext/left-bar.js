@@ -45,42 +45,75 @@ function leftBar(viewModel) {
       viewModel.selectedTool(settingsTool);
   };
 
-  // The two sub-tabs of the open tab, each with its state and its setter.
-  function subTab(label, active, select) {
-    return { label: label, active: active, select: select };
+  // The tabs and their sub-tabs, built once: Knockout keeps their buttons,
+  // and the focus with them, as they change state.
+  function subTab(label, observable, value) {
+    return {
+      label: label,
+      active: ko.pureComputed(function () {
+        return observable() === value;
+      }),
+      select: function () {
+        observable(value);
+      },
+    };
   }
 
-  viewModel.leftBarSubTabs = ko.pureComputed(function () {
-    const tab = viewModel.leftBarTab();
-    if (tab === 'blocks') {
-      const blocks = viewModel.blocksActiveTab();
-      return [
-        ['left-bar-template-blocks', 'TEMPLATE_BLOCKS'],
-        ['left-bar-saved-blocks', 'CUSTOM_BLOCKS'],
-      ].map(function (pair) {
-        return subTab(pair[0], blocks === pair[1], function () {
-          viewModel.blocksActiveTab(pair[1]);
-        });
+  function tab(id, label, controls, subTabs) {
+    // « Réglages » shows the content or the styles.
+    if (id === 'settings') {
+      controls = ko.pureComputed(function () {
+        return viewModel.selectedTool() === STYLE ? 'toolstyles' : 'toolcontents';
       });
     }
-    if (tab === 'images') {
-      const gallery = viewModel.selectedImageTab();
-      return ['gallery-mailing', 'gallery-template'].map(function (label, i) {
-        return subTab(label, gallery === i, function () {
-          viewModel.selectedImageTab(i);
-        });
-      });
-    }
-    const tool = viewModel.selectedTool();
-    return [
-      ['left-bar-content', CONTENT],
-      ['left-bar-styles', STYLE],
-    ].map(function (pair) {
-      return subTab(pair[0], tool === pair[1], function () {
-        viewModel.selectedTool(pair[1]);
-      });
-    });
-  });
+    return {
+      tab: id,
+      label: label,
+      controls: controls,
+      active: ko.pureComputed(function () {
+        return viewModel.leftBarTab() === id;
+      }),
+      subTabs: subTabs,
+    };
+  }
+
+  viewModel.leftBarTabs = [
+    tab('blocks', 'left-bar-blocks', 'toolblocks', [
+      subTab(
+        'left-bar-template-blocks',
+        viewModel.blocksActiveTab,
+        'TEMPLATE_BLOCKS'
+      ),
+      subTab('left-bar-saved-blocks', viewModel.blocksActiveTab, 'CUSTOM_BLOCKS'),
+    ]),
+    tab('images', 'left-bar-images', 'toolimages', [
+      subTab('gallery-mailing', viewModel.selectedImageTab, 0),
+      subTab('gallery-template', viewModel.selectedImageTab, 1),
+    ]),
+    tab('settings', 'left-bar-settings', 'toolcontents', [
+      subTab('left-bar-content', viewModel.selectedTool, CONTENT),
+      subTab('left-bar-styles', viewModel.selectedTool, STYLE),
+    ]),
+  ];
+
+  // Tabs as the ARIA pattern has them: one stop, the selected tab; the
+  // arrows, Home and End move along the list and select.
+  const KEYS = { ArrowLeft: -1, ArrowRight: 1, Home: 'first', End: 'last' };
+  viewModel.leftBarTabKeydown = function (item, event) {
+    const move = KEYS[event.key];
+    if (move === undefined) return true;
+    const tabs = Array.prototype.slice.call(
+      event.currentTarget.parentNode.querySelectorAll('[role="tab"]')
+    );
+    const at = tabs.indexOf(event.currentTarget);
+    let next;
+    if (move === 'first') next = 0;
+    else if (move === 'last') next = tabs.length - 1;
+    else next = (at + move + tabs.length) % tabs.length;
+    tabs[next].click();
+    tabs[next].focus();
+    return false;
+  };
 
   // The search of « Blocs du template », on the names the cards show.
   viewModel.blockSearch = ko.observable('');

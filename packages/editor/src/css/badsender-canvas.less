@@ -40,6 +40,13 @@
   background: var(--v-accent-base);
   backdrop-filter: none;
   box-shadow: var(--shadow-2);
+
+  // It touches the block: no gap to bridge, and the bridges would swallow
+  // the clicks on the block's top right corner.
+  &::before,
+  &::after {
+    content: none;
+  }
 }
 
 #main-edit-area .tools .tool {

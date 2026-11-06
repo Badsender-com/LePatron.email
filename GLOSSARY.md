@@ -165,6 +165,16 @@ One of the three panels that take turns on the right of the editor, one open at 
 _UI_: Commentaires, Tester l'email, Outils IA
 _Avoid_: Drawer, sidebar, slidebar (in prose; the code keeps `.slidebar`)
 
+**Left bar**:
+The column on the left of the editor, under the top bar, with three tabs of two sub-tabs each: the blocks to add (the template's and the saved ones), the images (the email's gallery and the template's) and the settings (the content and the styles of the selected block, or of the email).
+_UI_: Blocs, Images, Réglages
+_Avoid_: Toolbox, sidebar (the code keeps `#main-toolbox`)
+
+**Saved block**:
+A block a user saved from an email, with its content, to add it again to the emails of the same template.
+_UI_: Enregistrés ; bloc enregistré
+_Avoid_: Custom block, personalized block (the code keeps `personalizedBlocks`)
+
 **Panel rail**:
 The vertical strip on the right edge of the editor, below the top bar, holding the button of each right panel and its badge.
 _Avoid_: Toolbar, dock

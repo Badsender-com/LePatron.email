@@ -33,8 +33,10 @@ function editor(blockDefs = []) {
   return vm;
 }
 
+const openTab = (vm) => vm.leftBarTabs.find((tab) => tab.active());
+const subTabs = (vm) => openTab(vm).subTabs;
 const labels = (vm) =>
-  vm.leftBarSubTabs().map((tab) => (tab.active ? `*${tab.label}` : tab.label));
+  subTabs(vm).map((tab) => (tab.active() ? `*${tab.label}` : tab.label));
 
 describe('the tabs of the left bar', () => {
   it('opens on « Blocs », its template blocks first', () => {
@@ -52,7 +54,7 @@ describe('the tabs of the left bar', () => {
     expect(vm.showGallery()).toBe(true);
     expect(vm.leftBarTab()).toBe('images');
     expect(labels(vm)).toEqual(['*gallery-mailing', 'gallery-template']);
-    vm.leftBarSubTabs()[1].select();
+    subTabs(vm)[1].select();
     expect(vm.selectedImageTab()).toBe(1);
   });
 
@@ -61,7 +63,7 @@ describe('the tabs of the left bar', () => {
     vm.showLeftBarTab('settings');
     expect(vm.selectedTool()).toBe(1);
     expect(labels(vm)).toEqual(['*left-bar-content', 'left-bar-styles']);
-    vm.leftBarSubTabs()[1].select();
+    subTabs(vm)[1].select();
     expect(vm.selectedTool()).toBe(2);
     // Back to « Réglages » later: on the sub-tab left open.
     vm.showLeftBarTab('blocks');
@@ -85,9 +87,17 @@ describe('the tabs of the left bar', () => {
     expect(vm.leftBarTab()).toBe('images');
   });
 
+  it('keeps its buttons as they change state, and the focus with them', () => {
+    const vm = editor();
+    const before = subTabs(vm);
+    before[1].select();
+    expect(subTabs(vm)).toBe(before);
+    expect(before[1].active()).toBe(true);
+  });
+
   it('switches the saved blocks on and off', () => {
     const vm = editor();
-    vm.leftBarSubTabs()[1].select();
+    subTabs(vm)[1].select();
     expect(vm.blocksActiveTab()).toBe('CUSTOM_BLOCKS');
   });
 });
@@ -120,19 +130,33 @@ describe('the search of the template blocks', () => {
   });
 });
 
+const vmTabs = () => editor().leftBarTabs;
+
 describe('the markup of the left bar and of the top bar', () => {
   const root = document.createElement('div');
   root.innerHTML = read('tmpl-badsender/toolbox.tmpl.html');
 
-  it('draws three tabs and the sub-tabs of the open one, as pressed buttons', () => {
+  it('draws the tabs and the sub-tabs of the open one, as tabs', () => {
     const segmented = root.querySelector('.left-bar-nav .left-bar-segmented');
-    const html = segmented.innerHTML;
-    ['blocks', 'images', 'settings'].forEach((tab) =>
-      expect(html).toContain(`tab: '${tab}'`)
-    );
-    expect(html).toContain("'aria-pressed'");
+    expect(segmented.getAttribute('role')).toBe('tablist');
+    const tab = segmented.querySelector('button');
+    expect(tab.getAttribute('role')).toBe('tab');
+    expect(tab.getAttribute('data-bind')).toContain("'aria-selected'");
+    expect(tab.getAttribute('data-bind')).toContain("'aria-controls'");
     const sub = root.querySelector('.left-bar-subtabs');
-    expect(sub.getAttribute('data-bind')).toContain('$root.leftBarSubTabs()');
+    expect(sub.getAttribute('role')).toBe('tablist');
+    expect(sub.getAttribute('data-bind')).toContain('foreach: subTabs');
+    expect(vmTabs().map((t) => ko.unwrap(t.controls))).toEqual([
+      'toolblocks',
+      'toolimages',
+      'toolcontents',
+    ]);
+  });
+
+  it('shows no tabs to a read-only user', () => {
+    expect(read('tmpl-badsender/toolbox.tmpl.html')).toMatch(
+      /<!-- ko ifnot: \$root\.isReadOnly\(\) -->\s*<div class="left-bar-nav">/
+    );
   });
 
   it('searches the template blocks', () => {

@@ -2,7 +2,6 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double-cliquer pour modifier',
   'edit-title-cancel': 'Annuler la modification',
   'edit-title-save': 'Enregistrer le nouveau nom',
   'edit-title-ajax-pending': 'Changement du nom…',
@@ -229,13 +228,12 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
-  'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
-  'personalized-blocks-empty':
-    'Aucun bloc personnalisé disponible pour ce template.',
+    "Une erreur s'est produite lors de la récupération des blocs enregistrés.",
+  'personalized-blocks-loading': 'Chargement des blocs enregistrés…',
+  'personalized-blocks-empty': 'Aucun bloc enregistré pour ce template.',
   'personalized-blocks-empty-search':
     'Aucun résultat trouvé pour votre recherche.',
-  'personalized-blocks-search-placeholder': 'Rechercher...',
+  'personalized-blocks-search-placeholder': 'Rechercher un bloc…',
 
   // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
   'Content feed available for this block':
@@ -261,7 +259,7 @@ module.exports = {
   // DeleteBlockModal translations
   'title-delete-block': 'Supprimer le bloc',
   'confirm-delete-block':
-    'Êtes-vous sûr de vouloir supprimer le bloc personnalisé :',
+    'Êtes-vous sûr de vouloir supprimer le bloc enregistré :',
   'deleting-block': 'Suppression du bloc en cours...',
   'delete-block': 'Supprimer',
   'delete-block-success': 'Bloc supprimé avec succès',
@@ -285,8 +283,7 @@ module.exports = {
   // The left bar (js/ext/left-bar.js) and the left of the top bar.
   'Back to mailings list': 'Retour à la liste des emails',
   'topbar-rename': "Renommer l'email",
-  'left-bar-label': 'Barre de gauche',
-  'left-bar-sublabel': 'Affichage',
+  'left-bar-label': "Outils de l'email",
   'left-bar-blocks': 'Blocs',
   'left-bar-images': 'Images',
   'left-bar-settings': 'Réglages',
@@ -295,7 +292,7 @@ module.exports = {
   'left-bar-content': 'Contenu',
   'left-bar-styles': 'Styles',
   'left-bar-block-search': 'Rechercher un bloc…',
-  'left-bar-block-search-empty': 'Aucun bloc ne porte ce nom.',
+  'left-bar-block-search-empty': 'Aucun bloc ne correspond à cette recherche.',
   'topbar-export': 'Exporter',
   'topbar-preview-label': 'Aperçu',
   'topbar-save-readonly':

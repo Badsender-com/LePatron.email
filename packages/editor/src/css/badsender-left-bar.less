@@ -19,7 +19,7 @@
   right: 0;
   left: 0;
   // Above Mosaico's panels (100) and the gallery that opens over them (200).
-  z-index: 202;
+  z-index: 201;
   box-sizing: border-box;
   height: @left-bar-nav-height;
   padding: 12px 14px 0;
@@ -41,7 +41,7 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: var(--gray-600);
+    color: var(--gray-700);
     font: inherit;
     font-size: 13px;
     font-weight: 500;
@@ -74,7 +74,7 @@
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: var(--gray-600);
+    color: var(--gray-700);
     font: inherit;
     font-size: 12.5px;
     font-weight: 500;
@@ -104,6 +104,11 @@
 
 #main-toolbox #tooltabs.ui-tabs .ui-tabs-panel {
   top: @left-bar-nav-height;
+}
+
+// A read-only user has no tabs: the lock fills the bar.
+#main-toolbox:not(:has(.left-bar-nav)) #tooltabs.ui-tabs .ui-tabs-panel {
+  top: 0;
 }
 
 // The gallery opens over the panels, under the tabs, its two galleries the
@@ -141,7 +146,8 @@
 
   &:focus-within {
     border-color: var(--v-accent-base);
-    box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.15);
+    outline: 2px solid var(--v-primary-base);
+    outline-offset: 1px;
   }
 
   &__input {
@@ -160,6 +166,8 @@
 }
 
 #main-toolbox .left-bar-empty {
+  &:empty { display: none; }
+
   margin: 12px 14px 0;
   color: var(--gray-600);
   font-size: 13px;
@@ -217,9 +225,30 @@
     padding: 0;
     background: none;
     backdrop-filter: none;
-    color: var(--gray-600);
+    color: var(--gray-700);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 400;
+  }
+}
+
+// The search of « Enregistrés », in Vue: the same field as the template's.
+#main-toolbox #toolblocks .search-container {
+  margin: 12px 14px 0 !important;
+
+  .search-input {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 10px 0 32px !important;
+    border: 1px solid var(--gray-300) !important;
+    border-radius: 7px !important;
+    color: var(--gray-900) !important;
+
+    &:focus {
+      border-color: var(--v-accent-base) !important;
+      outline: 2px solid var(--v-primary-base) !important;
+      outline-offset: 1px;
+      box-shadow: none !important;
+    }
   }
 }

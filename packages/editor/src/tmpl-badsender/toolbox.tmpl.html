@@ -1,15 +1,19 @@
 <!-- The left bar's tabs (boards « Éditeur v2 », js/ext/left-bar.js): three,
-     two sub-tabs each. Above Mosaico's panels and the gallery alike. -->
+     two sub-tabs each. Above Mosaico's panels and the gallery alike. Not for a
+     read-only user: every panel says the same lock. Stable items, so a press
+     does not re-render the button that has the focus. -->
+<!-- ko ifnot: $root.isReadOnly() -->
 <div class="left-bar-nav">
-  <div class="left-bar-segmented" role="group" data-bind="attr: { 'aria-label': $root.t('left-bar-label') }">
-    <!-- ko foreach: [{ tab: 'blocks', label: 'left-bar-blocks' }, { tab: 'images', label: 'left-bar-images' }, { tab: 'settings', label: 'left-bar-settings' }] -->
-    <button type="button" class="left-bar-segmented__item" data-bind="click: function() { $root.showLeftBarTab(tab); }, css: { 'is-active': $root.leftBarTab() === tab }, attr: { 'aria-pressed': $root.leftBarTab() === tab ? 'true' : 'false' }, text: $root.t(label)"></button>
-    <!-- /ko -->
+  <div class="left-bar-segmented" role="tablist" data-bind="attr: { 'aria-label': $root.t('left-bar-label') }, foreach: $root.leftBarTabs">
+    <button type="button" role="tab" class="left-bar-segmented__item" data-bind="click: function() { $root.showLeftBarTab(tab); }, event: { keydown: $root.leftBarTabKeydown }, css: { 'is-active': active() }, attr: { 'aria-selected': active() ? 'true' : 'false', tabindex: active() ? 0 : -1, 'aria-controls': ko.unwrap(controls) }, text: $root.t(label)"></button>
   </div>
-  <div class="left-bar-subtabs" role="group" data-bind="attr: { 'aria-label': $root.t('left-bar-sublabel') }, foreach: $root.leftBarSubTabs()">
-    <button type="button" class="left-bar-subtabs__item" data-bind="click: select, css: { 'is-active': active }, attr: { 'aria-pressed': active ? 'true' : 'false' }, text: $root.t(label)"></button>
+  <!-- ko foreach: $root.leftBarTabs -->
+  <div class="left-bar-subtabs" role="tablist" data-bind="visible: active(), attr: { 'aria-label': $root.t(label) }, foreach: subTabs">
+    <button type="button" role="tab" class="left-bar-subtabs__item" data-bind="click: select, event: { keydown: $root.leftBarTabKeydown }, css: { 'is-active': active() }, attr: { 'aria-selected': active() ? 'true' : 'false', tabindex: active() ? 0 : -1 }, text: $root.t(label)"></button>
   </div>
+  <!-- /ko -->
 </div>
+<!-- /ko -->
 
 <div id="tooltabs" class="tabs_horizontal button_color" data-bind="tabs: { active: $root.selectedTool }">
   <!-- VueJs for the esp component-->
@@ -23,9 +27,10 @@
        own tabs above say which one shows (js/ext/left-bar.js). -->
   <div class="tooltabs__top-bar" hidden>
     <ul class="tooltabs__list">
-      <li class="tooltabs__item"><a data-local="true" href="#toolblocks" tabindex="-1">Blocks</a></li>
-      <li class="tooltabs__item"><a data-local="true" href="#toolcontents" tabindex="-1">Content</a></li>
-      <li class="tooltabs__item"><a data-local="true" href="#toolstyles" tabindex="-1">Style</a></li>
+      <!-- Their names label the panels, for screen readers. -->
+      <li class="tooltabs__item"><a data-local="true" href="#toolblocks" tabindex="-1" data-bind="text: $root.t('left-bar-blocks')">Blocks</a></li>
+      <li class="tooltabs__item"><a data-local="true" href="#toolcontents" tabindex="-1" data-bind="text: $root.t('left-bar-content')">Content</a></li>
+      <li class="tooltabs__item"><a data-local="true" href="#toolstyles" tabindex="-1" data-bind="text: $root.t('left-bar-styles')">Styles</a></li>
     </ul>
   </div>
 
@@ -35,7 +40,7 @@
         <span class="lucide lucide-search" aria-hidden="true"></span>
         <input type="search" class="left-bar-search__input" data-bind="textInput: $root.blockSearch, attr: { placeholder: $root.t('left-bar-block-search'), 'aria-label': $root.t('left-bar-block-search') }" />
       </label>
-      <p class="left-bar-empty" data-bind="visible: $root.noBlockMatches(), text: $root.t('left-bar-block-search-empty')"></p>
+      <p class="left-bar-empty" role="status" data-bind="text: $root.noBlockMatches() ? $root.t('left-bar-block-search-empty') : ''"></p>
       <div class="block-list" data-bind="foreach: blockDefs">
         <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }, visible: $root.matchesBlockSearch($data)">
           <div class="block"

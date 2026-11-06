@@ -2,7 +2,6 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double click to edit',
   'edit-title-cancel': 'Cancel edition',
   'edit-title-save': 'Save the new name',
   'edit-title-ajax-pending': 'Changing name…',
@@ -220,9 +219,9 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    'An error occurred while fetching custom blocks.',
-  'personalized-blocks-loading': 'Loading custom blocks...',
-  'personalized-blocks-empty': 'No custom blocks available for this template.',
+    'An error occurred while fetching saved blocks.',
+  'personalized-blocks-loading': 'Loading saved blocks…',
+  'personalized-blocks-empty': 'No saved blocks for this template.',
   'personalized-blocks-empty-search': 'No results found for your search.',
   'personalized-blocks-search-placeholder': 'Search...',
 
@@ -248,7 +247,7 @@ module.exports = {
 
   // DeleteBlockModal translations
   'title-delete-block': 'Delete block',
-  'confirm-delete-block': 'Are you sure you want to delete the custom block:',
+  'confirm-delete-block': 'Are you sure you want to delete the saved block:',
   'deleting-block': 'Deleting block...',
   'delete-block': 'Delete',
   'delete-block-success': 'Block deleted successfully',
@@ -272,8 +271,7 @@ module.exports = {
   // The left bar (js/ext/left-bar.js) and the left of the top bar.
   'Back to mailings list': 'Back to the emails list',
   'topbar-rename': 'Rename the email',
-  'left-bar-label': 'Left bar',
-  'left-bar-sublabel': 'View',
+  'left-bar-label': 'Email tools',
   'left-bar-blocks': 'Blocks',
   'left-bar-images': 'Images',
   'left-bar-settings': 'Settings',
@@ -282,7 +280,7 @@ module.exports = {
   'left-bar-content': 'Content',
   'left-bar-styles': 'Styles',
   'left-bar-block-search': 'Search a block…',
-  'left-bar-block-search-empty': 'No block has this name.',
+  'left-bar-block-search-empty': 'No block matches this search.',
   'topbar-export': 'Export',
   'topbar-preview-label': 'Preview',
   'topbar-save-readonly':
