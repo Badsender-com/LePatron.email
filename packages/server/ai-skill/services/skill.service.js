@@ -15,6 +15,7 @@ const {
 } = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
 const { idsUsedByFeatures } = require('./skills-publication.service.js');
+const { assertTestCases } = require('./test-cases.js');
 const {
   assertConsumedExpertises,
   consumedExpertiseWarnings,
@@ -289,9 +290,12 @@ async function versionPlatformOnlyExpertises(skillId, ref) {
   return platformOnlyExpertises(versionOf(await getSkill(skillId), ref));
 }
 
-// A draft saved with its consumed expertises gets them checked before
-// anything is written (the shared lifecycle knows nothing of them).
+// A draft saved with its consumed expertises or its test cases gets them
+// checked before anything is written (the shared lifecycle knows nothing of
+// them): an incomplete test case would otherwise fail the save as a Mongoose
+// ValidationError, answered as a 500.
 async function updateVersion(skillId, ref, patch, userId) {
+  if (patch && patch.testCases !== undefined) assertTestCases(patch.testCases);
   if (patch && patch.consumedExpertiseIds !== undefined) {
     await assertConsumedExpertises(patch.consumedExpertiseIds);
   }
