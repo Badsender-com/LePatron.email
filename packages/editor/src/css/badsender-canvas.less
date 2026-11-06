@@ -30,6 +30,27 @@
   box-shadow: var(--shadow-1);
 }
 
+// ===== The blocks' stacking =====
+// Mosaico lifts a hovered block (z-index 10) under the selected one (11): the
+// hovered block's toolbar, astride its top edge, went under the selected
+// block above it. The blocks no longer stack themselves; their outlines and
+// toolbars do, over every block, the hovered toolbar over the selected one.
+#main-wysiwyg-area .editable.block {
+  z-index: auto !important;
+}
+
+#main-wysiwyg-area .editable.block > .mo-blockselectionhelper {
+  z-index: 10;
+}
+
+#main-wysiwyg-area .editable.block.selected > .mo-blockselectionhelper {
+  z-index: 11;
+}
+
+#main-wysiwyg-area .editable.block:hover > .tools {
+  z-index: 101 !important;
+}
+
 // ===== The toolbar of the block =====
 // At the top right of the block, astride its edge: an accent card of white
 // icons, « Commenter » last and named.
