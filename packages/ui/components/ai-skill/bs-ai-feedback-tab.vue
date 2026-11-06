@@ -17,22 +17,37 @@ export default {
     referenceId: { type: String, required: true },
   },
   data() {
-    return { items: [], loading: false, failed: false };
+    return { items: [], total: 0, page: 0, loading: false, failed: false };
   },
-  async mounted() {
-    this.loading = true;
-    try {
-      const { items } = await this.$axios.$get('/mcp-feedbacks', {
-        params: { kind: this.kind, id: this.referenceId },
-      });
-      this.items = items;
-    } catch (err) {
-      this.failed = true;
-    } finally {
-      this.loading = false;
-    }
+  computed: {
+    hasMore() {
+      return this.items.length < this.total;
+    },
+  },
+  mounted() {
+    this.loadMore();
   },
   methods: {
+    // The next page of feedbacks, after the ones shown.
+    async loadMore() {
+      this.loading = true;
+      try {
+        const { items, total } = await this.$axios.$get('/mcp-feedbacks', {
+          params: {
+            kind: this.kind,
+            id: this.referenceId,
+            page: this.page + 1,
+          },
+        });
+        this.items = [...this.items, ...items];
+        this.total = total;
+        this.page += 1;
+      } catch (err) {
+        this.failed = true;
+      } finally {
+        this.loading = false;
+      }
+    },
     versionOf(item) {
       const reference = item.references.find(
         (r) => r.kind === this.kind && r.id === this.referenceId
@@ -48,8 +63,12 @@ export default {
     <p class="text-caption text--secondary mb-3">
       {{ $t('aiSkills.feedback.caption') }}
     </p>
-    <v-progress-linear v-if="loading" indeterminate color="accent" />
-    <p v-else-if="failed" class="text-body-2 error--text">
+    <v-progress-linear
+      v-if="loading && !items.length"
+      indeterminate
+      color="accent"
+    />
+    <p v-else-if="failed && !items.length" class="text-body-2 error--text">
       {{ $t('global.errors.errorOccured') }}
     </p>
     <p v-else-if="!items.length" class="text-body-2 text--secondary">
@@ -86,6 +105,22 @@ export default {
         </v-list-item-content>
       </v-list-item>
     </v-list>
+    <div v-if="items.length" class="d-flex align-center mt-2">
+      <span class="text-caption text--secondary">
+        {{ $t('aiSkills.feedback.shown', { shown: items.length, total }) }}
+      </span>
+      <v-spacer />
+      <v-btn
+        v-if="hasMore"
+        text
+        small
+        color="accent"
+        :loading="loading"
+        @click="loadMore"
+      >
+        {{ $t('aiSkills.feedback.more') }}
+      </v-btn>
+    </div>
   </v-card>
 </template>
 

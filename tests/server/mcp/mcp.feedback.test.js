@@ -353,6 +353,24 @@ describe('feedback and retex', () => {
       expect(body.items.map((item) => item.rating)).toEqual(['down']);
     });
 
+    it('serves a page at a time, and says how many there are', async () => {
+      const first = await list({ pageSize: '1' });
+      const second = await list({ pageSize: '1', page: '2' });
+      const third = await list({ pageSize: '1', page: '3' });
+
+      expect(first.body).toMatchObject({ total: 2, page: 1, pageSize: 1 });
+      expect(first.body.items).toHaveLength(1);
+      expect(second.body.items).toHaveLength(1);
+      expect(second.body.items[0].id).not.toBe(first.body.items[0].id);
+      expect(third.body.items).toEqual([]);
+    });
+
+    it('serves 50 unless asked, 200 at most', async () => {
+      expect((await list({})).body.pageSize).toBe(50);
+      expect((await list({ pageSize: '5000' })).body.pageSize).toBe(200);
+      expect((await list({ pageSize: { $gt: 0 } })).body.pageSize).toBe(50);
+    });
+
     it('takes a filter as text, never as a query', async () => {
       const { body } = await list({ kind: 'skill', id: { $ne: 'x' } });
 

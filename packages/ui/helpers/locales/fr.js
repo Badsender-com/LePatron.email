@@ -1447,6 +1447,8 @@ export default {
       up: 'Avis positif',
       down: 'Avis négatif',
       noComment: 'Sans commentaire',
+      shown: '{shown} sur {total}',
+      more: 'Afficher plus',
       retex: 'Retour d\'expérience',
     },
     nature: 'Nature',

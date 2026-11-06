@@ -26,4 +26,12 @@ describe('the feedback tab', () => {
     expect(source).toMatch(/color: var\(--v-success-base\)/);
     expect(source).toMatch(/color: var\(--v-error-base\)/);
   });
+
+  // The list is served a page at a time, with how many there are: the tab
+  // says how many it shows, and asks for the next page.
+  it('asks for the feedbacks a page at a time, and offers the next one', () => {
+    expect(source).toMatch(/page: this\.page \+ 1/);
+    expect(source).toMatch(/this\.items\.length < this\.total/);
+    expect(source).toMatch(/\$t\('aiSkills\.feedback\.more'\)/);
+  });
 });

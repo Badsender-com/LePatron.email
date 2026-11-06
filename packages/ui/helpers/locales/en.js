@@ -1428,6 +1428,8 @@ export default {
       up: 'Positive feedback',
       down: 'Negative feedback',
       noComment: 'No comment',
+      shown: '{shown} of {total}',
+      more: 'Show more',
       retex: 'Session summary',
     },
     nature: 'Nature',
