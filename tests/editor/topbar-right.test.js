@@ -81,6 +81,14 @@ describe('the right of the top bar', () => {
     expect(buttons[1].getAttribute('aria-controls')).toBe('download-form-menu');
   });
 
+  it('is 52px tall, as on the boards, for the canvas and the panels too', () => {
+    const less = fs.readFileSync(
+      path.join(SRC, 'css/style_mosaico.less'),
+      'utf8'
+    );
+    expect(less).toMatch(/^@topbar-height: 52px;/m);
+  });
+
   it.each(['topbar-export', 'topbar-preview-label', 'topbar-save-readonly'])(
     'has the label %s in French and in English',
     (key) => {
