@@ -12,6 +12,7 @@ const {
   skillPublication,
   expertisePublication,
 } = require('./controllers/publication.controller.js');
+const publicationBatch = require('./controllers/publication-batch.controller.js');
 
 const skillsRouter = express.Router();
 skillsRouter.use(GUARD_ADMIN);
@@ -20,6 +21,11 @@ skillsRouter.use(GUARD_ADMIN);
 skillsRouter.post('/export', skillsExport.exportFile);
 skillsRouter.post('/import/preview', skillsExport.previewFile);
 skillsRouter.post('/import', skillsExport.importFile);
+// Several drafts at once, skills and expertises alike (ADR 0019).
+skillsRouter.post('/publications/plan', publicationBatch.plan);
+skillsRouter.post('/publications/guard', publicationBatch.guard);
+skillsRouter.post('/publications/cancel', publicationBatch.cancel);
+skillsRouter.post('/publications', publicationBatch.publish);
 
 // A skills export is 5 MB at most. Mounted by the app on the import routes
 // before its own parser, which reads up to 50 MB: once a body is read, no

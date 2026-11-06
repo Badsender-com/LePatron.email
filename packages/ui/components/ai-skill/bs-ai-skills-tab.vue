@@ -8,6 +8,12 @@ import BsAiSkillCreateModal from '~/components/ai-skill/bs-ai-skill-create-modal
 import BsTimestamp from '~/components/bs-timestamp.vue';
 import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip.vue';
 import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
+import BsAiPublishDrafts from '~/components/ai-skill/bs-ai-publish-drafts.vue';
+import {
+  batchItems,
+  exportableOf,
+  isSelectable,
+} from '~/helpers/publish-drafts.js';
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { Sparkles } from 'lucide-vue';
 import { isUsedByFeature } from '~/helpers/used-by-feature.js';
@@ -24,6 +30,7 @@ export default {
     BsDataTable,
     BsAiSkillCreateModal,
     BsAiSkillsExportBar,
+    BsAiPublishDrafts,
     BsTimestamp,
     BsAiPlatformOnlyChip,
     LucideSparkles: Sparkles,
@@ -42,6 +49,12 @@ export default {
     };
   },
   computed: {
+    exportSelection() {
+      return exportableOf(this.selected);
+    },
+    publishItems() {
+      return batchItems('skill', this.selected, 'skillId');
+    },
     categoryOptions() {
       return skillCategoryOptions(this);
     },
@@ -66,6 +79,8 @@ export default {
       return this.filteredItems.map((item) => ({
         ...item,
         exportable: isExportable(item),
+        // A draft never published can be selected to publish, not exported.
+        selectable: isSelectable(item),
       }));
     },
     tableHeaders() {
@@ -88,6 +103,11 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    // The lists reload: what was published is no longer a draft.
+    onPublished() {
+      this.selected = [];
+      this.fetchData();
+    },
     isUsedByFeature,
     statusColor(status) {
       return (
@@ -209,7 +229,8 @@ export default {
       />
     </div>
 
-    <bs-ai-skills-export-bar :skills="selected" />
+    <bs-ai-skills-export-bar :skills="exportSelection" />
+    <bs-ai-publish-drafts :items="publishItems" @published="onPublished" />
 
     <bs-data-table
       v-model="selected"
@@ -217,7 +238,7 @@ export default {
       :items="tableItems"
       :loading="loading"
       show-select
-      selectable-key="exportable"
+      selectable-key="selectable"
       item-key="skillId"
       clickable
       @click:row="openSkill"
