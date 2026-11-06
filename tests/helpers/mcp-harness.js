@@ -45,16 +45,15 @@ const { Client, InMemoryTransport } = require('@modelcontextprotocol/client');
 
 let clients = [];
 
-// Required where used: the guard reads the models, which must be the
-// stand-ins.
-const callGuard = () => require('../../packages/server/mcp/mcp-call-guard.js');
+// Required where used, as everything of the server the tests reach.
+const rateLimit = () => require('../../packages/server/mcp/mcp-rate-limit.js');
 
 // Every test starts at the real time, with no call counted.
 function seed(records) {
   store.seed(records);
-  const guard = callGuard();
-  guard.forgetCounts();
-  guard.clock.now = Date.now;
+  const limit = rateLimit();
+  limit.forgetCounts();
+  limit.clock.now = Date.now;
 }
 
 function stored(collection) {
@@ -104,7 +103,7 @@ async function connectAs(userId, options = {}) {
 }
 
 function advanceClock(ms) {
-  const { clock } = callGuard();
+  const { clock } = rateLimit();
   const previous = clock.now;
   clock.now = () => previous() + ms;
 }
