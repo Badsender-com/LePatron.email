@@ -645,6 +645,37 @@ describe('the skills export', () => {
       expect(draftOf(skill)).toMatchObject({ nature: 'task' });
     });
 
+    // A missing consumed expertise warns at the import; the publication still
+    // checks each one exists (ADR 0013), so the draft cannot go live without it.
+    it('leaves a draft whose consumed expertise is missing unpublishable', async () => {
+      store.seed(SOURCE);
+      const alone = await exportOf({
+        skillIds: [WRITE_SUBJECT],
+        withoutExpertiseIds: [SPAM_WORDS],
+      });
+      store.seed(EMPTY_TARGET);
+      await importSkills(
+        alone,
+        { expertiseIds: [SUBJECT_LINES], skillIds: [WRITE_SUBJECT] },
+        { user: ALICE }
+      );
+      const skillService = require('../../../packages/server/ai-skill/services/skill.service');
+
+      await expect(
+        skillService.activateVersion(
+          WRITE_SUBJECT,
+          { major: 1, minor: 0 },
+          { changelog: 'Imported', releaseNotes: 'Imported' },
+          f.ALICE
+        )
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'SKILL_CONSUMED_EXPERTISES_NOT_FOUND',
+        expertiseIds: [SPAM_WORDS],
+      });
+      expect(skillOf(WRITE_SUBJECT).activeVersion.major).toBeNull();
+    });
+
     it('carries the test cases of a feature skill with its version', async () => {
       file.skills.find((s) => s.skillId === SUBJECT_IDEAS).version.testCases = [
         { name: 'Short brief', input: { prompt: 'Sale' } },
