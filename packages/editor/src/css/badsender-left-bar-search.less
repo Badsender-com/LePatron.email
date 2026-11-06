@@ -2,7 +2,8 @@
 // THE SEARCH FIELDS OF THE LEFT BAR — one field for « Blocs du template »,
 // « Enregistrés » and the two galleries of « Images »: 34px, a 7px radius,
 // the icon then the text at the same places, 14px from the bar's edges as
-// the cards below, and one focus. Imported after badsender-left-bar.less.
+// the cards below, and one focus: the border turns to the accent. Imported
+// after badsender-left-bar.less.
 ////////
 
 @left-bar-gutter: 14px;
@@ -26,8 +27,7 @@
 
 .left-bar-search-focus() {
   border-color: var(--v-accent-base);
-  outline: 2px solid var(--v-primary-base);
-  outline-offset: 1px;
+  outline: none;
   box-shadow: none;
 }
 
@@ -85,8 +85,7 @@
 
     &:focus {
       border-color: var(--v-accent-base) !important;
-      outline: 2px solid var(--v-primary-base) !important;
-      outline-offset: 1px;
+      outline: none !important;
       box-shadow: none !important;
     }
   }
