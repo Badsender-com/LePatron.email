@@ -19,6 +19,10 @@ skillsRouter.patch('/:skillId', skill.updateSkill);
 skillsRouter.post('/:skillId/versions/minor', skill.createMinorVersion);
 skillsRouter.post('/:skillId/versions/major', skill.createMajorVersion);
 skillsRouter.patch('/:skillId/versions/:version', skill.updateVersion);
+skillsRouter.get(
+  '/:skillId/versions/:version/platform-only-expertises',
+  skill.getPlatformOnlyExpertises
+);
 skillsRouter.delete('/:skillId/versions/:version', skill.deleteVersion);
 skillsRouter.post(
   '/:skillId/versions/:version/activate',
@@ -35,6 +39,10 @@ expertiseRouter.get('/facets', expertise.getFacets);
 expertiseRouter.get(
   '/:expertiseId/activation-impact',
   expertise.getActivationImpact
+);
+expertiseRouter.get(
+  '/:expertiseId/open-task-skills',
+  expertise.getOpenTaskSkills
 );
 expertiseRouter.get('/:expertiseId', expertise.getExpertise);
 expertiseRouter.patch('/:expertiseId', expertise.updateExpertise);

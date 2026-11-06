@@ -8,9 +8,13 @@ const {
   SkillCategoryValues,
   SkillStatuses,
   SkillStatusValues,
+  AudienceValues,
+  SkillNatures,
+  SkillNatureValues,
   SkillIdRegex,
   MaxSkillIdLength,
 } = require('../constant/skill-constants.js');
+const { newItemAudience } = require('../services/audience.js');
 
 const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
 
@@ -44,6 +48,14 @@ const SkillVersionSchema = new Schema(
       enum: VersionStatusValues,
       default: 'DRAFT',
     },
+    // What the skill is while this version is active (ADR 0013): a feature
+    // skill, or a task skill. Changing it is publishing a version of the
+    // other nature; the version it replaces keeps its own.
+    nature: {
+      type: String,
+      enum: SkillNatureValues,
+      default: SkillNatures.FEATURE,
+    },
     systemPrompt: { type: String, default: '' },
     skillBody: { type: String, default: '' },
     inputTemplate: { type: String, default: '' },
@@ -51,6 +63,10 @@ const SkillVersionSchema = new Schema(
     // ACTIVE/ARCHIVED — same rule as prompts). Empty on a fresh draft; the
     // activation gate requires them to be set before publishing.
     inputSchemaId: { type: String, default: '' },
+    // A task skill's procedure, and the expertises it consumes, in the order
+    // it reads them (ADR 0013). Empty on a feature skill.
+    procedure: { type: String, default: '' },
+    consumedExpertiseIds: { type: [String], default: [] },
     outputSchemaId: { type: String, default: '' },
     modelHints: { type: ModelHintsSchema, default: () => ({}) },
     changelog: { type: String, default: '' },
@@ -95,6 +111,17 @@ const LePatronSkillSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
+    // No audience on a document written before audiences: it waits for the
+    // migration, closed to the clients (services/audience.js).
+    audience: {
+      type: String,
+      enum: AudienceValues,
+      default: newItemAudience,
+    },
+    // A feature skill reaches assistants only when marked so (ADR 0013); a
+    // task skill always does, within its audience. Read only while the active
+    // version is a feature skill's.
+    servedToAssistants: { type: Boolean, default: false },
     activeVersion: {
       type: ActiveVersionSchema,
       default: () => ({ major: null, minor: 0 }),

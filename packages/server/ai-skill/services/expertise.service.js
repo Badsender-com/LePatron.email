@@ -3,6 +3,7 @@
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
@@ -20,21 +21,35 @@ const LIST_PROJECTION = {
   appliesToEmailTypes: 1,
   appliesToLanguages: 1,
   status: 1,
+  audience: 1,
   activeVersion: 1,
   owner: 1,
   createdAt: 1,
   updatedAt: 1,
 };
 
+/**
+ * The expertises of the back office, newest first, a page at a time.
+ *
+ * @param {Object} [filters] as the query string gives them
+ * @param {string} [filters.category]
+ * @param {string} [filters.status]
+ * @param {string} [filters.search] found in the title or the expertiseId
+ * @param {string|string[]} [filters.ids] these expertises exactly
+ * @param {number|string} [filters.page]
+ * @param {number|string} [filters.pageSize] 200 at most
+ * @returns {Promise<{items: Object[], total: number, page: number, pageSize: number}>}
+ * @throws {HttpError} 400, as listFilter (expertise-list-filter.js) refuses
+ */
 async function listExpertise({
   category,
   status,
+  search,
+  ids,
   page = 1,
   pageSize = 50,
 } = {}) {
-  const query = {};
-  if (category) query.category = category;
-  if (status) query.status = status;
+  const query = listFilter({ category, status, search, ids });
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
   const [items, total] = await Promise.all([
@@ -122,6 +137,7 @@ const PATCHABLE_FIELDS = [
   'isTransversal',
   'appliesToEmailTypes',
   'appliesToLanguages',
+  'audience',
 ];
 
 async function updateExpertise(expertiseId, patch) {

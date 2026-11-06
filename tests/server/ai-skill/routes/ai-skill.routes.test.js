@@ -19,6 +19,7 @@ jest.mock(
     deleteVersion: jest.fn(),
     activateVersion: jest.fn(),
     archiveSkill: jest.fn(),
+    consumedExpertiseWarnings: jest.fn(async () => []),
   })
 );
 jest.mock(
@@ -147,9 +148,12 @@ describe('ai-skill HTTP routes', () => {
       versions: [{ versionMajor: 1, versionMinor: 0, status: 'DRAFT' }],
     });
     skillService.activateVersion.mockResolvedValue({
-      skillId: 'a',
-      status: 'ACTIVE',
-      activeVersion: { major: 1, minor: 0 },
+      skill: {
+        skillId: 'a',
+        status: 'ACTIVE',
+        activeVersion: { major: 1, minor: 0 },
+      },
+      warnings: [],
     });
     skillService.createMinorVersion.mockResolvedValue({
       skillId: 'a',
@@ -188,6 +192,89 @@ describe('ai-skill HTTP routes', () => {
     const r5 = await request(app).post('/api/ai-skills/a/archive');
     expect(r5.status).toBe(200);
     expect(r5.body.status).toBe('ARCHIVED');
+  });
+
+  // A task skill's version has neither template nor schema (ADR 0013): the
+  // template warnings of a feature skill do not apply to it.
+  it.each([
+    ['feature', 'warns', true],
+    ['task', 'does not warn', false],
+  ])(
+    'PATCH a version of a %s skill %s about its template',
+    async (nature, _label, warned) => {
+      skillService.updateVersion.mockResolvedValue({
+        skillId: 'a',
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            nature,
+            inputSchemaId: 'genericTextInput',
+            inputTemplate: '',
+          },
+        ],
+      });
+
+      const res = await request(makeApp())
+        .patch('/api/ai-skills/a/versions/1.1')
+        .send({ nature });
+
+      expect(res.status).toBe(200);
+      expect(res.body.warnings.length > 0).toBe(warned);
+    }
+  );
+
+  // What a task version consumes warns at publication, after the template's.
+  it('POST a publication answers the warnings of the consumed expertises', async () => {
+    const skill = {
+      skillId: 'a',
+      audience: 'all',
+      versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+    };
+    const warning = {
+      code: 'CONSUMED_EXPERTISES_NOT_PUBLISHED',
+      expertiseIds: ['qc.draft'],
+    };
+    skillService.activateVersion.mockResolvedValue({ skill, warnings: [] });
+    skillService.consumedExpertiseWarnings.mockResolvedValueOnce([warning]);
+
+    const res = await request(makeApp())
+      .post('/api/ai-skills/a/versions/1.0/activate')
+      .send({ changelog: 'c', releaseNotes: 'r' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.warnings).toEqual([warning]);
+    expect(skillService.consumedExpertiseWarnings).toHaveBeenCalledWith(
+      skill,
+      skill.versions[0]
+    );
+  });
+
+  // The publication is done: what it warns of cannot turn it into an error.
+  it('POST a publication answers it, without warnings, when they cannot be read', async () => {
+    const logger = require('../../../../packages/server/utils/logger.js');
+    const logged = jest.spyOn(logger, 'error').mockImplementation(() => {});
+    skillService.activateVersion.mockResolvedValue({
+      skill: {
+        skillId: 'a',
+        status: 'ACTIVE',
+        versions: [{ versionMajor: 1, versionMinor: 0, nature: 'task' }],
+      },
+      warnings: [],
+    });
+    skillService.consumedExpertiseWarnings.mockRejectedValueOnce(
+      new Error('connection lost')
+    );
+
+    const res = await request(makeApp())
+      .post('/api/ai-skills/a/versions/1.0/activate')
+      .send({ changelog: 'c', releaseNotes: 'r' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ status: 'ACTIVE', warnings: [] });
+    expect(logged).toHaveBeenCalled();
+    logged.mockRestore();
   });
 
   it('GET /api/ai-invocations forwards filters as query', async () => {

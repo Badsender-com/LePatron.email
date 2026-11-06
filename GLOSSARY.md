@@ -95,7 +95,7 @@ _UI_: Réinitialiser la double authentification
 _Avoid_: Disable two-factor, remove two-factor
 
 **Security event**:
-A record, kept a year, of an action on an account's two-factor authentication: who did it, to whom, when.
+A record, kept a year, of an action on an account's two-factor authentication, or of a company's MCP access turned on or off: who did it, to whom, when.
 _Avoid_: Audit log, activity log
 
 ### Image gallery
@@ -152,3 +152,61 @@ _Avoid_: Allowed workspace, my workspace
 What the email search looks through: the emails sitting directly in the current location, or every email of the user's accessible workspaces, in any folder.
 _UI_: Dossier courant, Tous mes espaces de travail
 _Avoid_: Search mode, global search (in UI text)
+
+### Mailings
+
+**Mailing status**:
+A label derived from a mailing's facts (approval, planned send date, ESP push), recomputed on every read and never stored. LePatron never knows that a mailing was sent, so no status says so.
+_UI_: Statut
+_Avoid_: Workflow state, sent
+
+**Pushed to ESP**:
+A mailing from which a campaign or a template was created in at least one ESP profile. It says nothing about delivery.
+_UI_: Poussé vers l'ESP
+_Avoid_: Sent, exported (a ZIP download is also called an export)
+
+### Skills and expertises
+
+**Expertise**:
+A piece of email know-how the platform company writes, in Markdown and versioned, that a feature, a skill or an assistant reads before acting.
+_UI_: Expertise
+_Avoid_: Doctrine, knowledge base, guideline (a client's writing guidelines belong to its CRM governance)
+
+**Feature skill**:
+A skill a LePatron feature calls as a function: its input fills a template, its output follows a contract LePatron checks.
+_UI_: Skill de fonctionnalité
+
+**Task skill**:
+A skill written as a procedure for an assistant, with the expertises it consumes in order, and no template or contract.
+_UI_: Skill de tâche
+_Avoid_: Workflow, playbook, recipe
+
+**Audience**:
+The companies that may use a skill or an expertise, in the editor as through an assistant: the platform company alone, while it is tried, or every company. A new one starts with the platform company.
+_UI_: Audience
+_Avoid_: Visibility, exposure, subscribers, scope (an expertise's scope is the part of an email it covers)
+
+**CRM governance**:
+A company's own rules for its emails, such as its brand charter and its writing guidelines, kept by the company rather than written as skills or expertises. A module to come.
+_Avoid_: Client expertise, brand skill
+
+### AI assistants
+
+**Connected application**:
+An AI assistant outside LePatron (Claude, ChatGPT, Copilot…) that a user has allowed to read LePatron on their behalf, with that user's rights, in one company. The user or a company admin can revoke it at any time.
+_UI_: Application connectée
+_Avoid_: Integration (the AI provider settings of a company), connector, client
+
+**MCP access**:
+The company's switch that lets its users connect applications. Off unless the company's tech admin or a super admin turns it on.
+_UI_: Accès MCP
+_Avoid_: MCP subscription (MCP access is not what is sold)
+
+**Feedback**:
+A rating and a comment a user sends from a connected application about what LePatron gave them.
+_UI_: Avis
+
+**Retex**:
+The summary of an assistant session, attached to a feedback, so the platform company can improve its expertises, skills and features. Sent only when the company allows it and the user agrees to it for that feedback.
+_UI_: Retour d'expérience
+_Avoid_: Telemetry, session log

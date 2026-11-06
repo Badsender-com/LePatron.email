@@ -794,6 +794,13 @@ export default {
     cdnEndpointHint: 'Base URL of your CDN (without protocol)',
     cdnButtonLabelHint: 'Label displayed in the editor',
   },
+  mcpAccess: {
+    title: 'MCP access',
+    description:
+      'The company\'s users can connect their AI assistant (Claude, ChatGPT, Copilot) to LePatron. The assistant reads LePatron with each user\'s rights, in this company only.',
+    switch: 'Allow AI assistants to connect',
+    updated: 'MCP access updated',
+  },
   crmIntelligence: {
     title: 'CRM Intelligence',
     subtitle: 'Analytics dashboards',
@@ -1404,6 +1411,54 @@ export default {
     },
   },
   aiSkills: {
+    nature: 'Nature',
+    natureHint:
+      'A feature skill is called by LePatron (template, schemas, output contract). A task skill is a procedure an AI assistant follows. The skill has the nature of its published version: to change it, publish a version of the other nature.',
+    natures: {
+      feature: 'Feature skill',
+      task: 'Task skill',
+    },
+    servedToAssistants: 'Offered to AI assistants',
+    servedToAssistantsHint:
+      'Served through MCP to connected assistants, without its output contract. Leave unchecked for a skill whose input the editor builds.',
+    audience: 'Audience',
+    audienceHint:
+      'Who may use it. A new one stays with the platform company while it is proven: then open it to all companies.',
+    audiences: {
+      expertise: {
+        platform: 'Platform company only (testing)',
+        all:
+          'All companies: in the editor, and in their assistant if they have MCP access',
+      },
+      featureSkill: {
+        platform:
+          'Platform company only (testing): the button is hidden for clients',
+        all:
+          'All companies: in the editor, and in their assistant if the box is checked and they have MCP access',
+      },
+      taskSkill: {
+        platform: 'Platform company only (testing)',
+        all: 'All companies that have MCP access',
+      },
+    },
+    platformOnly: 'Platform company only',
+    warningUnchecked: 'The warning about this change could not be checked.',
+    savedWarningUnchecked:
+      'Saved, but the warning about this change could not be checked.',
+    openExpertises: {
+      skillTitle: 'Open this skill to all companies',
+      intro:
+        'This skill consumes expertises kept to the platform company: the assistants of the other companies will follow it without them.',
+      openToo: 'Open it to all companies too',
+      openTooNamed: 'Open it to all companies too: {title}',
+      appliesAtOnce:
+        'Opening an expertise also applies it, at once, to the editor features of every company. With none checked, the skill opens without them.',
+    },
+    closeExpertise: {
+      title: 'Keep this expertise to the platform company',
+      intro:
+        'These task skills, open to all companies, consume it: they will no longer receive it at the clients.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
@@ -1433,6 +1488,22 @@ export default {
       other: 'Other',
     },
     errors: {
+      EXPERTISE_LIST_FILTER_INVALID:
+        'The "{filter}" filter of the expertise list is not valid.',
+      SKILL_CONSUMED_EXPERTISES_INVALID:
+        'The expertises consumed must be a list of expertise ids.',
+      SKILL_CONSUMED_EXPERTISES_TOO_MANY:
+        'A version consumes {max} expertises at most.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'These expertises are consumed more than once: {expertiseIds}. Keep each of them once.',
+      SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
+        'These expertises consumed do not exist: {expertiseIds}. Remove them from the version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Only the published expertises this version consumes that are kept to the platform company open with the skill, and only when the skill opens to all companies.',
+      SKILL_NOT_AVAILABLE_TO_COMPANY:
+        'This feature is not available to your company yet.',
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'A task skill\'s procedure must be written before publishing this version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'The input and output schemas must be set before publishing this version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
@@ -1445,6 +1516,12 @@ export default {
         'Required field(s) of schema "{schemaId}" not referenced in the template: {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'The schema accepts expertises but the template does not insert them: they would be ignored at invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'These expertises consumed are not published: {expertiseIds}. The assistant does not receive them until they are.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'These expertises consumed are kept to the platform company: {expertiseIds}. The assistants of the other companies follow this skill without them.',
+      OPEN_EXPERTISES_FAILED:
+        'The skill is saved, but these expertises could not be opened to all companies: {expertiseIds}. Open them from their details.',
     },
     emailTypes: {
       editorial: 'Editorial',
@@ -1552,6 +1629,30 @@ export default {
       detailResolvedConfig: 'Resolved config',
     },
     version: {
+      procedure: 'Procedure',
+      procedureHint: 'What the assistant does, step by step, in Markdown.',
+      consumedExpertises: 'Expertises consumed',
+      consumedExpertisesHint:
+        'In the order the assistant reads them. Their active version is attached to the skill.',
+      consumedExpertisesEmpty: 'No expertise consumed.',
+      consumedExpertisesAdd: 'Add an expertise',
+      consumedExpertisesSearch: 'Search a published expertise by title or id',
+      consumedExpertisesNoResult: 'No published expertise found.',
+      consumedExpertisesSearchError: 'The search failed. Type again to retry.',
+      consumedExpertisesMax: 'A version consumes {max} expertises at most.',
+      consumedExpertisesLoadError: 'The expertises could not be loaded.',
+      consumedExpertisesRetry: 'Retry',
+      consumedExpertiseNotFound: 'Not found',
+      consumedExpertiseNotFoundHint:
+        'No expertise has this id: the assistant does not receive it. Remove it.',
+      consumedExpertiseNotPublished: 'Not published',
+      consumedExpertiseNotPublishedHint:
+        'A draft, or archived: the assistant does not receive it until a version of it is published. Publish it, or remove it.',
+      consumedExpertisePlatformOnlyHint:
+        'Only the platform company\'s assistants receive it: open it to all companies for their assistants to receive it too.',
+      consumedExpertiseUp: 'Move up',
+      consumedExpertiseDown: 'Move down',
+      consumedExpertiseRemove: 'Remove',
       systemPrompt: 'System prompt',
       skillBody: 'Skill body',
       inputTemplate: 'Input template (uses {input.*} placeholders)',
@@ -1563,6 +1664,11 @@ export default {
       activate: 'Activate',
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      platformOnlyReminder:
+        'This item stays visible to the platform company only.',
+      openToAll: 'Open it to all companies',
+      openToAllNotice:
+        'This item opens to all companies as soon as it is published.',
       activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
       changelog: 'Changelog',
       changelogPlaceholder:

@@ -1071,6 +1071,13 @@ export default {
     cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
     cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
+  mcpAccess: {
+    title: 'Accès MCP',
+    description:
+      'Les utilisateurs de l\'entreprise peuvent connecter leur assistant IA (Claude, ChatGPT, Copilot) à LePatron. L\'assistant lit LePatron avec les droits de chaque utilisateur, dans cette entreprise uniquement.',
+    switch: 'Autoriser la connexion des assistants IA',
+    updated: 'Accès MCP mis à jour',
+  },
   crmIntelligence: {
     title: 'CRM Intelligence',
     subtitle: 'Tableaux de bord analytiques',
@@ -1423,6 +1430,55 @@ export default {
     },
   },
   aiSkills: {
+    nature: 'Nature',
+    natureHint:
+      'Un Skill de fonctionnalité est appelé par LePatron (modèle, schémas, contrat de sortie). Un Skill de tâche est une procédure qu\'un assistant IA suit. Le Skill a la nature de sa version publiée : pour en changer, publiez une version de l\'autre nature.',
+    natures: {
+      feature: 'Skill de fonctionnalité',
+      task: 'Skill de tâche',
+    },
+    servedToAssistants: 'Proposé aux assistants IA',
+    servedToAssistantsHint:
+      'Servi via MCP aux assistants connectés, sans son contrat de sortie. À laisser décoché pour un Skill dont l\'entrée est construite par l\'éditeur.',
+    audience: 'Audience',
+    audienceHint:
+      'Qui peut s\'en servir. Une nouvelle fiche reste réservée à l\'entreprise plateforme le temps de l\'éprouver : ouvrez-la ensuite à toutes les entreprises.',
+    audiences: {
+      expertise: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si elles ont l\'accès MCP',
+      },
+      featureSkill: {
+        platform:
+          'Entreprise plateforme uniquement (en test) : le bouton est masqué chez les clients',
+        all:
+          'Toutes les entreprises : dans l\'éditeur, et dans leur assistant si la case est cochée et qu\'elles ont l\'accès MCP',
+      },
+      taskSkill: {
+        platform: 'Entreprise plateforme uniquement (en test)',
+        all: 'Toutes les entreprises qui ont l\'accès MCP',
+      },
+    },
+    platformOnly: 'Entreprise plateforme uniquement',
+    warningUnchecked:
+      'L\'avertissement lié à ce changement n\'a pas pu être vérifié.',
+    savedWarningUnchecked:
+      'Enregistré, mais l\'avertissement lié à ce changement n\'a pas pu être vérifié.',
+    openExpertises: {
+      skillTitle: 'Ouvrir ce Skill à toutes les entreprises',
+      intro:
+        'Ce Skill consomme des Expertises réservées à l\'entreprise plateforme : les assistants des autres entreprises le suivront sans elles.',
+      openToo: 'L\'ouvrir aussi à toutes les entreprises',
+      openTooNamed: 'L\'ouvrir aussi à toutes les entreprises : {title}',
+      appliesAtOnce:
+        'Ouvrir une Expertise l\'applique aussi, tout de suite, aux fonctionnalités de l\'éditeur de toutes les entreprises. Sans case cochée, le Skill s\'ouvre sans elles.',
+    },
+    closeExpertise: {
+      title: 'Réserver cette Expertise à l\'entreprise plateforme',
+      intro:
+        'Ces Skills de tâche, ouverts à toutes les entreprises, la consomment : ils ne la recevront plus chez les clients.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',
@@ -1452,6 +1508,22 @@ export default {
       other: 'Autre',
     },
     errors: {
+      EXPERTISE_LIST_FILTER_INVALID:
+        'Le filtre « {filter} » de la liste des Expertises n\'est pas valide.',
+      SKILL_CONSUMED_EXPERTISES_INVALID:
+        'Les Expertises consommées doivent être une liste d\'identifiants d\'Expertise.',
+      SKILL_CONSUMED_EXPERTISES_TOO_MANY:
+        'Une version consomme au plus {max} Expertises.',
+      SKILL_CONSUMED_EXPERTISES_DUPLICATED:
+        'Ces Expertises sont consommées plusieurs fois : {expertiseIds}. Gardez-en une seule fois chacune.',
+      SKILL_CONSUMED_EXPERTISES_NOT_FOUND:
+        'Ces Expertises consommées n\'existent pas : {expertiseIds}. Retirez-les de la version.',
+      SKILL_OPEN_EXPERTISES_INVALID:
+        'Seules les Expertises publiées que cette version consomme et qui sont réservées à l\'entreprise plateforme s\'ouvrent avec le Skill, et seulement quand le Skill s\'ouvre à toutes les entreprises.',
+      SKILL_NOT_AVAILABLE_TO_COMPANY:
+        'Cette fonctionnalité n\'est pas encore disponible pour votre entreprise.',
+      SKILL_PROCEDURE_REQUIRED_TO_PUBLISH:
+        'La procédure d\'un Skill de tâche doit être rédigée avant de publier cette version.',
       SKILL_SCHEMAS_REQUIRED_TO_PUBLISH:
         'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.',
       SKILL_TEMPLATE_UNKNOWN_FIELDS:
@@ -1464,6 +1536,12 @@ export default {
         'Champ(s) requis du schéma « {schemaId} » non référencé(s) dans le template : {fields}.',
       TEMPLATE_MISSING_EXPERTISE:
         'Le schéma accepte des expertises mais le template ne les insère pas : elles seraient ignorées à l\'invocation.',
+      CONSUMED_EXPERTISES_NOT_PUBLISHED:
+        'Ces Expertises consommées ne sont pas publiées : {expertiseIds}. L\'assistant ne les reçoit pas tant qu\'elles ne le sont pas.',
+      CONSUMED_EXPERTISES_PLATFORM_ONLY:
+        'Ces Expertises consommées sont réservées à l\'entreprise plateforme : {expertiseIds}. Les assistants des autres entreprises suivent ce Skill sans elles.',
+      OPEN_EXPERTISES_FAILED:
+        'Le Skill est enregistré, mais ces Expertises n\'ont pas pu être ouvertes à toutes les entreprises : {expertiseIds}. Ouvrez-les depuis leurs détails.',
     },
     emailTypes: {
       editorial: 'Éditorial',
@@ -1571,6 +1649,33 @@ export default {
       detailResolvedConfig: 'Configuration résolue',
     },
     version: {
+      procedure: 'Procédure',
+      procedureHint: 'Ce que l\'assistant fait, étape par étape, en Markdown.',
+      consumedExpertises: 'Expertises consommées',
+      consumedExpertisesHint:
+        'Dans l\'ordre où l\'assistant les lit. Leur version active est jointe au Skill.',
+      consumedExpertisesEmpty: 'Aucune Expertise consommée.',
+      consumedExpertisesAdd: 'Ajouter une Expertise',
+      consumedExpertisesSearch:
+        'Chercher une Expertise publiée par son titre ou son identifiant',
+      consumedExpertisesNoResult: 'Aucune Expertise publiée trouvée.',
+      consumedExpertisesSearchError:
+        'La recherche a échoué. Tapez de nouveau pour réessayer.',
+      consumedExpertisesMax: 'Une version consomme au plus {max} Expertises.',
+      consumedExpertisesLoadError:
+        'Les Expertises n\'ont pas pu être chargées.',
+      consumedExpertisesRetry: 'Réessayer',
+      consumedExpertiseNotFound: 'Introuvable',
+      consumedExpertiseNotFoundHint:
+        'Aucune Expertise ne porte cet identifiant : l\'assistant ne la reçoit pas. Retirez-la.',
+      consumedExpertiseNotPublished: 'Non publiée',
+      consumedExpertiseNotPublishedHint:
+        'Brouillon ou archivée : l\'assistant ne la reçoit pas tant qu\'aucune de ses versions n\'est publiée. Publiez-la, ou retirez-la.',
+      consumedExpertisePlatformOnlyHint:
+        'Seuls les assistants de l\'entreprise plateforme la reçoivent : ouvrez-la à toutes les entreprises pour que leurs assistants la reçoivent aussi.',
+      consumedExpertiseUp: 'Monter',
+      consumedExpertiseDown: 'Descendre',
+      consumedExpertiseRemove: 'Retirer',
       systemPrompt: 'System prompt',
       skillBody: 'Corps de la skill',
       inputTemplate: 'Modèle d\'entrée (utilise les placeholders {input.*})',
@@ -1582,6 +1687,11 @@ export default {
       activate: 'Activer',
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      platformOnlyReminder:
+        'Cette fiche reste visible par l\'entreprise plateforme uniquement.',
+      openToAll: 'L\'ouvrir à toutes les entreprises',
+      openToAllNotice:
+        'Cette fiche sera ouverte à toutes les entreprises dès sa publication.',
       activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
       changelog: 'Changelog',
       changelogPlaceholder:

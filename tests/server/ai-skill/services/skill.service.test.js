@@ -119,6 +119,18 @@ describe('skill.service', () => {
       expect(doc.inputSchemaId).toBeUndefined();
       expect(doc.save).toHaveBeenCalled();
     });
+
+    // What the publication's confirmation sends to open a skill to every
+    // company (ADR 0013).
+    it('patches the audience', async () => {
+      const doc = mockSkillDoc({ audience: 'platform' });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+
+      await skillService.updateSkill('generic.text', { audience: 'all' });
+
+      expect(doc.audience).toBe('all');
+      expect(doc.save).toHaveBeenCalled();
+    });
   });
 
   describe('createMajorVersion', () => {

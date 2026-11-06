@@ -8,7 +8,9 @@ const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { endSessions } = require('../account/sign-in.js');
 const { normalizeString } = require('../utils/model.js');
-const { recordSecurityEvent } = require('./security-event.service.js');
+const {
+  recordSecurityEvent,
+} = require('../security-event/security-event.service.js');
 const { sendTwoFactorEmail } = require('./two-factor.emails.js');
 const { METHODS, SECURITY_ACTIONS } = require('./two-factor.constants.js');
 

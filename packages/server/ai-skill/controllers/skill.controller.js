@@ -2,12 +2,14 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const logger = require('../../utils/logger.js');
 
 const skillService = require('../services/skill.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
 const { templateWarnings } = require('../services/template-coherence.js');
+const { SkillNatures } = require('../constant/skill-constants.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -21,17 +23,43 @@ function userIdOf(req) {
 }
 
 // Serialize a skill and append non-blocking template↔schema coherence warnings
-// for the given version (DRAFT save AND activation surface them). Tolerant of a
-// plain object so the service layer can be mocked in routing tests.
+// for the given version (DRAFT save AND activation surface them). A task
+// skill's version has neither template nor schema: nothing to warn about.
+// Tolerant of a plain object so the service layer can be mocked in routing
+// tests.
 function withVersionWarnings(skill, major, minor) {
   const version = (skill.versions || []).find(
     (v) => v.versionMajor === major && v.versionMinor === minor
   );
   const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
-  payload.warnings = templateWarnings(
-    version ? version.inputTemplate : '',
-    version ? version.inputSchemaId : ''
+  payload.warnings =
+    version && version.nature === SkillNatures.TASK
+      ? []
+      : templateWarnings(
+          version ? version.inputTemplate : '',
+          version ? version.inputSchemaId : ''
+        );
+  return payload;
+}
+
+// At publication, what the version's consumed expertises warn of too, with
+// the audience the skill has now, and those of its opening. The publication
+// is done: reading what it warns of never turns it into an error.
+async function withPublicationWarnings(skill, major, minor, opening) {
+  const payload = withVersionWarnings(skill, major, minor);
+  const version = (skill.versions || []).find(
+    (v) => v.versionMajor === major && v.versionMinor === minor
   );
+  let consumed = [];
+  try {
+    consumed = await skillService.consumedExpertiseWarnings(skill, version);
+  } catch (error) {
+    logger.error(
+      `[ai-skill] the warnings of ${skill.skillId} ${major}.${minor} could not be read`,
+      error
+    );
+  }
+  payload.warnings = [...payload.warnings, ...consumed, ...opening];
   return payload;
 }
 
@@ -58,9 +86,16 @@ module.exports = {
     res.status(201).json(skill);
   }),
 
+  // The skill saved, and what its opening warns of (ADR 0013).
   updateSkill: asyncHandler(async (req, res) => {
-    const skill = await skillService.updateSkill(req.params.skillId, req.body);
-    res.json(skill);
+    const { skill, warnings } = await skillService.updateSkill(
+      req.params.skillId,
+      req.body
+    );
+    res.json({
+      ...(typeof skill.toJSON === 'function' ? skill.toJSON() : skill),
+      warnings,
+    });
   }),
 
   createMinorVersion: asyncHandler(async (req, res) => {
@@ -112,15 +147,25 @@ module.exports = {
 
   activateVersion: asyncHandler(async (req, res) => {
     const { major, minor } = versionFromParam(req);
-    const skill = await skillService.activateVersion(
+    const { skill, warnings } = await skillService.activateVersion(
       req.params.skillId,
       { major, minor },
       req.body,
       userIdOf(req)
     );
     // Non-blocking coherence warnings surface post-activation too (e.g. a
-    // schema that accepts expertises but a template that never inserts them).
-    res.json(withVersionWarnings(skill, major, minor));
+    // schema that accepts expertises but a template that never inserts them),
+    // with those of the expertises a task version consumes and of its opening.
+    res.json(await withPublicationWarnings(skill, major, minor, warnings));
+  }),
+
+  getPlatformOnlyExpertises: asyncHandler(async (req, res) => {
+    res.json({
+      expertises: await skillService.versionPlatformOnlyExpertises(
+        req.params.skillId,
+        versionFromParam(req)
+      ),
+    });
   }),
 
   archiveSkill: asyncHandler(async (req, res) => {

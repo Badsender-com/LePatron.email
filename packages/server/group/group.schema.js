@@ -168,6 +168,13 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // MCP access (ADR 0012): the company's switch that lets its users connect
+    // an AI assistant. Off until a super admin or the company's tech admin
+    // turns it on; the update keeps it out of a company admin's reach.
+    enableMcp: {
+      type: Boolean,
+      default: false,
+    },
     // Platform group: an internal Badsender-owned group that holds the AI
     // engine used by the super-admin AI Playground (R&D / benchmark), instead
     // of borrowing a client group's integration. Excluded from client-facing

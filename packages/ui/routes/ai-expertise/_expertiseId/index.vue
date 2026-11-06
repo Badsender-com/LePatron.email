@@ -1,16 +1,19 @@
 <script>
-import { mapMutations } from 'vuex';
-import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/bs-ai-expertise-details-form.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/bs-ai-expertise-versions-panel.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import BsAiExpertiseCloseModal from '~/components/ai-skill/bs-ai-expertise-close-modal.vue';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
+import mixinAiExpertiseDetails from '~/helpers/mixins/mixin-ai-expertise-details.js';
 
 export default {
   name: 'PageAiExpertiseDetail',
@@ -20,13 +23,28 @@ export default {
     BsAiExpertiseVersionsPanel,
     BsAiActivateModal,
     BsAiArchiveModal,
+    BsAiExpertiseCloseModal,
   },
-  mixins: [mixinPageTitle],
+  mixins: [
+    mixinPageTitle,
+    mixinAiVersionedItem({
+      key: 'exp',
+      idField: 'expertiseId',
+      routes: {
+        versionMinor: api.aiExpertiseVersionMinor,
+        versionMajor: api.aiExpertiseVersionMajor,
+        version: api.aiExpertiseVersion,
+        archive: api.aiExpertiseArchive,
+      },
+      archivedKey: 'aiSkills.expertise.archived',
+    }),
+    mixinAiExpertiseDetails,
+  ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
       const exp = await $axios.$get(api.aiExpertise(params.expertiseId));
-      return { exp };
+      return { exp, savedAudience: exp.audience };
     } catch (err) {
       return error({ statusCode: 404, message: 'Expertise not found' });
     }
@@ -34,6 +52,9 @@ export default {
   data() {
     return {
       exp: null,
+      // The audience stored: keeping it to the platform company again is
+      // confirmed first.
+      savedAudience: null,
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with ?tab=versions&expand=1.0 (§4).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
@@ -55,6 +76,11 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
+    // Still kept to the platform company, or not opened yet, as stored: the
+    // publication reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.exp && this.savedAudience !== AUDIENCES.ALL;
+    },
     activeVersion() {
       const av = this.exp && this.exp.activeVersion;
       if (!av || av.major == null) return null;
@@ -67,81 +93,8 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
-    },
-    handleError(err) {
-      const msg = skillErrorMessage(this, err);
-      this.showSnackbar({ text: msg, color: 'error' });
-    },
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$patch(
-          api.aiExpertise(this.exp.expertiseId),
-          {
-            title: this.exp.title,
-            description: this.exp.description,
-            category: this.exp.category,
-            scope: this.exp.scope,
-            isTransversal: this.exp.isTransversal,
-            appliesToEmailTypes: this.exp.appliesToEmailTypes,
-            appliesToLanguages: this.exp.appliesToLanguages,
-          }
-        );
-        this.showSnackbar({
-          text: this.$t('global.savedSuccessfully'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    async createMinorVersion() {
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseVersionMinor(this.exp.expertiseId)
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    async createMajorVersion(source) {
-      this.saving = true;
-      try {
-        const body = source
-          ? {
-              sourceMajor: source.versionMajor,
-              sourceMinor: source.versionMinor,
-            }
-          : {};
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseVersionMajor(this.exp.expertiseId),
-          body
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
     },
     // `silent` skips the snackbar: publishing an edited draft saves it first
     // (see askActivate) and only the activation is worth announcing.
@@ -177,23 +130,6 @@ export default {
         this.saving = false;
       }
     },
-    async deleteVersion(version) {
-      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$delete(
-          api.aiExpertiseVersion(
-            this.exp.expertiseId,
-            version.versionMajor,
-            version.versionMinor
-          )
-        );
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
     async askActivate({ version, dirty }) {
       // Publishing means publishing what is on screen. Activation only posts
       // changelog / release notes and then replaces the local state with the
@@ -209,55 +145,38 @@ export default {
       // must show either way. Informed consent: surface which features will
       // load this expertise. Changelog/notes required for major only.
       this.activationImpact = [];
+      this.saving = true;
       try {
         const res = await this.$axios.$get(
           api.aiExpertiseActivationImpact(this.exp.expertiseId)
         );
         this.activationImpact = res.matches || [];
       } catch (err) {
-        this.activationImpact = [];
+        this.tellWarningUnchecked();
+      } finally {
+        this.saving = false;
       }
       // Pre-fill changelog / release notes from the draft, shared modal.
       this.$refs.activateModal.open(version);
     },
+    // Published, and opened to all when the modal says so, in one request.
     async activateVersion(payload) {
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseActivate(
-            this.exp.expertiseId,
-            this.activatingVersion.versionMajor,
-            this.activatingVersion.versionMinor
+      const { versionMajor, versionMinor } = this.activatingVersion;
+      const done = await this.replaceItem(
+        () =>
+          this.$axios.$post(
+            api.aiExpertiseActivate(
+              this.exp.expertiseId,
+              versionMajor,
+              versionMinor
+            ),
+            payload
           ),
-          payload
-        );
-        if (this.$refs.activateModal) this.$refs.activateModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.activated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    async archive() {
-      this.saving = true;
-      try {
-        this.exp = await this.$axios.$post(
-          api.aiExpertiseArchive(this.exp.expertiseId)
-        );
-        this.$refs.archiveModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.expertise.archived'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
+        'aiSkills.version.activated'
+      );
+      if (!done) return;
+      this.savedAudience = this.exp.audience;
+      if (this.$refs.activateModal) this.$refs.activateModal.close();
     },
   },
 };
@@ -352,6 +271,7 @@ export default {
       :show-impact="true"
       :impact="activationImpact"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="platformOnly"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal
@@ -361,6 +281,7 @@ export default {
       :loading="saving"
       @confirm="archive"
     />
+    <bs-ai-expertise-close-modal ref="closeModal" @confirm="patchDetails()" />
   </div>
 </template>
 

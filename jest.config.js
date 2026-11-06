@@ -86,6 +86,18 @@ module.exports = {
   // it was extracted to be testable.
   moduleNameMapper: {
     '^~/(.*)$': '<rootDir>/packages/ui/$1',
+    // Jest 27 does not read a package's `exports`, and the MCP SDK reaches its
+    // own subpaths through it: point them at the CommonJS builds `require`
+    // gets in Node. Gone with a Jest that reads `exports` (28 and later).
+    '^@modelcontextprotocol/core/internal$':
+      '<rootDir>/node_modules/@modelcontextprotocol/core/dist/internal.cjs',
+    '^@modelcontextprotocol/core/ext/skills$':
+      '<rootDir>/node_modules/@modelcontextprotocol/core/dist/ext/skills/index.cjs',
+    '^@modelcontextprotocol/(client|server)/_shims$':
+      '<rootDir>/node_modules/@modelcontextprotocol/$1/dist/shimsNode.cjs',
+    // A dependency of the MCP client with no `main`, only `exports`.
+    '^pkce-challenge$':
+      '<rootDir>/node_modules/pkce-challenge/dist/index.node.cjs',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader

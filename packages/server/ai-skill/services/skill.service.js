@@ -3,9 +3,23 @@
 const createError = require('http-errors');
 const { LePatronSkills } = require('../../common/models.common.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
-const { SkillStatuses } = require('../constant/skill-constants.js');
-const { versionLabel } = require('./version-helpers.js');
+const {
+  SkillStatuses,
+  SkillNatures,
+  Audiences,
+} = require('../constant/skill-constants.js');
+const {
+  versionLabel,
+  findVersion,
+  findActiveVersion,
+} = require('./version-helpers.js');
 const { validateTemplateCoherence } = require('./template-coherence.js');
+const {
+  assertConsumedExpertises,
+  consumedExpertiseWarnings,
+  platformOnlyExpertises,
+} = require('./consumed-expertises.js');
+const { assertOpenable, openExpertises } = require('./audience-opening.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -16,6 +30,8 @@ const LIST_PROJECTION = {
   description: 1,
   category: 1,
   status: 1,
+  audience: 1,
+  servedToAssistants: 1,
   activeVersion: 1,
   owner: 1,
   createdAt: 1,
@@ -90,17 +106,40 @@ async function createSkill(data, userId) {
   }
 }
 
-// Schemas are NOT here anymore — they live on the version and are edited via
-// updateVersion (DRAFT only), like the prompts.
-const PATCHABLE_FIELDS = ['title', 'description', 'category'];
+// Schemas and the nature are NOT here — they live on the version and are
+// edited via updateVersion (DRAFT only), like the prompts.
+const PATCHABLE_FIELDS = [
+  'title',
+  'description',
+  'category',
+  'audience',
+  'servedToAssistants',
+];
 
+/**
+ * Everything is checked before anything is written; the skill saved, the
+ * expertises chosen open with it, and a failure to open them is a warning.
+ *
+ * @param {string} skillId
+ * @param {Object} patch the PATCHABLE_FIELDS to set, and `openExpertiseIds`:
+ *   expertises the active version consumes kept to the platform company,
+ *   opened to every company with the skill when the patch opens it too
+ *   (ADR 0013)
+ * @returns {Promise<{skill: Object, warnings: Object[]}>} the skill, and the
+ *   warnings of its opening
+ */
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
+  const opened = await assertOpenable(
+    findActiveVersion(skill),
+    patch.openExpertiseIds,
+    patch.audience === Audiences.ALL
+  );
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
   }
   await skill.save();
-  return skill;
+  return { skill, warnings: await openExpertises(opened, skillId) };
 }
 
 // ─── Versioning ────────────────────────────────────────────────────────────
@@ -120,6 +159,7 @@ async function updateSkill(skillId, patch) {
 // the rest are primitives copied by value. `default` yields a fresh empty value
 // when the source lacks the field.
 const VERSION_CONTENT_FIELDS = [
+  { name: 'nature', default: () => SkillNatures.FEATURE },
   { name: 'systemPrompt', default: () => '' },
   { name: 'skillBody', default: () => '' },
   { name: 'inputTemplate', default: () => '' },
@@ -127,13 +167,25 @@ const VERSION_CONTENT_FIELDS = [
   { name: 'outputSchemaId', default: () => '' },
   { name: 'modelHints', default: () => ({}), deep: true },
   { name: 'testCases', default: () => [], deep: true },
+  { name: 'procedure', default: () => '' },
+  { name: 'consumedExpertiseIds', default: () => [], deep: true },
 ];
 
 /**
  * Publication gate specific to skills. Expertises have no equivalent, which is
  * exactly why it is injected rather than living in the shared lifecycle.
  */
-function assertSkillPublishable(version) {
+async function assertSkillPublishable(version) {
+  // Checked at save too; checked again here, on what is about to be served.
+  await assertConsumedExpertises(version.consumedExpertiseIds || []);
+  // A task skill's version has no template nor schema: its procedure is what
+  // it serves. The gate is the one of the nature of the version published.
+  if (version.nature === SkillNatures.TASK) {
+    if (!String(version.procedure || '').trim()) {
+      throw createError(400, ERROR_CODES.SKILL_PROCEDURE_REQUIRED_TO_PUBLISH);
+    }
+    return;
+  }
   // Schemas are required to publish (they may be empty on a DRAFT).
   if (!version.inputSchemaId || !version.outputSchemaId) {
     throw createError(400, ERROR_CODES.SKILL_SCHEMAS_REQUIRED_TO_PUBLISH);
@@ -174,10 +226,56 @@ const {
   blankVersionContent,
   createMinorVersion,
   createMajorVersion,
-  updateVersion,
   deleteVersion,
-  activateVersion,
 } = versioned;
+
+function versionOf(skill, { major, minor }) {
+  const version = findVersion(skill, major, minor);
+  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
+  return version;
+}
+
+/**
+ * Publish a draft (versioned-entity.service.js). `payload.openToAll` opens
+ * the skill to every company in the same write, and
+ * `payload.openExpertiseIds` the expertises of that version chosen to open
+ * with it, checked before anything is published. The publication done, a
+ * failure to open them is a warning.
+ *
+ * @returns {Promise<{skill: Object, warnings: Object[]}>} the skill, and the
+ *   warnings of its opening
+ */
+async function activateVersion(skillId, ref, payload = {}, userId) {
+  const opened =
+    payload.openExpertiseIds === undefined
+      ? []
+      : await assertOpenable(
+          versionOf(await getSkill(skillId), ref),
+          payload.openExpertiseIds,
+          payload.openToAll === true
+        );
+  const skill = await versioned.activateVersion(skillId, ref, payload, userId);
+  return { skill, warnings: await openExpertises(opened, skillId) };
+}
+
+/**
+ * What opening the skill to every company would leave out for them, with
+ * this version: its consumed expertises kept to the platform company.
+ *
+ * @returns {Promise<Array<{expertiseId: string, title: string}>>}
+ */
+async function versionPlatformOnlyExpertises(skillId, ref) {
+  return platformOnlyExpertises(versionOf(await getSkill(skillId), ref));
+}
+
+// A draft saved with its consumed expertises gets them checked before
+// anything is written (the shared lifecycle knows nothing of them).
+async function updateVersion(skillId, ref, patch, userId) {
+  if (patch && patch.consumedExpertiseIds !== undefined) {
+    await assertConsumedExpertises(patch.consumedExpertiseIds);
+  }
+  return versioned.updateVersion(skillId, ref, patch, userId);
+}
 
 const archiveSkill = versioned.archive;
 
@@ -193,5 +291,7 @@ module.exports = {
   deleteVersion,
   activateVersion,
   archiveSkill,
+  consumedExpertiseWarnings,
+  versionPlatformOnlyExpertises,
   versionLabel,
 };

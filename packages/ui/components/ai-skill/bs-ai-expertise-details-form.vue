@@ -8,7 +8,12 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/bs-ai-language-picker.vue';
 import { emailTypeItems, emailTypeLabel } from '~/helpers/email-types.js';
-import { skillCategoryOptions } from '~/helpers/ai-skill-categories.js';
+import {
+  skillCategoryOptions,
+  audienceOptions,
+  AUDIENCE_ITEM_KINDS,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'BsAiExpertiseDetailsForm',
@@ -29,6 +34,14 @@ export default {
   computed: {
     categoryOptions() {
       return skillCategoryOptions(this);
+    },
+    audienceOptions() {
+      return audienceOptions(this, AUDIENCE_ITEM_KINDS.EXPERTISE);
+    },
+    // One stored before audiences has none until the migration opens it, and
+    // no client uses it meanwhile: shown as the platform company's.
+    audience() {
+      return this.value.audience || AUDIENCES.PLATFORM;
     },
     emailTypeItems() {
       return emailTypeItems(this.emailTypeFacets);
@@ -86,6 +99,16 @@ export default {
       :hint="$t('aiSkills.expertise.categoryHelp')"
       persistent-hint
       @input="update({ category: $event })"
+    />
+    <bs-select
+      :value="audience"
+      :items="audienceOptions"
+      item-text="text"
+      item-value="value"
+      :label="$t('aiSkills.audience')"
+      :hint="$t('aiSkills.audienceHint')"
+      persistent-hint
+      @input="update({ audience: $event })"
     />
     <v-checkbox
       :input-value="value.isTransversal"

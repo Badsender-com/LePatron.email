@@ -56,6 +56,7 @@ function buildSkill(overrides = {}) {
     _id: SKILL_OID,
     skillId: 'generic.text',
     status: 'ACTIVE',
+    audience: 'all',
     activeVersion: { major: 1, minor: 0 },
     versions: [
       {
@@ -524,6 +525,61 @@ describe('skill-invocation.invoke', () => {
         expect(mockProvider.chatComplete).not.toHaveBeenCalled();
       }
     );
+  });
+
+  // A feature skill still proven by the platform company is not used on behalf
+  // of a client's user (ADR 0013, option B).
+  describe('the audience', () => {
+    const invokeIn = (group, skill, options) => {
+      wireHappyPath({ skill });
+      Groups.findById.mockReturnValue({ lean: () => Promise.resolve(group) });
+      return skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        userId: USER_ID,
+        invocationSource: 'demo',
+        options,
+      });
+    };
+    const CLIENT = { _id: GROUP_ID, isPlatform: false };
+    const PLATFORM = { _id: GROUP_ID, isPlatform: true };
+
+    it.each([
+      ['meant for the platform company', 'platform'],
+      ['with no audience yet', undefined],
+    ])(
+      'refuses a client a skill %s, before anything is spent',
+      async (_label, audience) => {
+        await expect(
+          invokeIn(CLIENT, buildSkill({ audience }))
+        ).rejects.toMatchObject({
+          status: 403,
+          message: 'SKILL_NOT_AVAILABLE_TO_COMPANY',
+        });
+        expect(mockProvider.chatComplete).not.toHaveBeenCalled();
+        expect(AISkillInvocations.create).not.toHaveBeenCalled();
+      }
+    );
+
+    it('gives the platform company a skill meant for it', async () => {
+      const result = await invokeIn(
+        PLATFORM,
+        buildSkill({ audience: 'platform' })
+      );
+
+      expect(result.output).toEqual({ text: 'hello world' });
+    });
+
+    it('gives the playground every audience, whatever the company', async () => {
+      const result = await invokeIn(
+        CLIENT,
+        buildSkill({ audience: 'platform' }),
+        { everyAudience: true }
+      );
+
+      expect(result.output).toEqual({ text: 'hello world' });
+    });
   });
 
   describe('dryRun', () => {

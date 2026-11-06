@@ -30,6 +30,7 @@ const createError = require('http-errors');
 const {
   SkillStatuses,
   MinorVersionDefaults,
+  Audiences,
 } = require('../constant/skill-constants.js');
 const {
   findVersion,
@@ -46,7 +47,9 @@ const {
  * @param {string} options.entityNoun Lowercase, for prose ("skill")
  * @param {string} options.idField Business key field ("skillId")
  * @param {Array<{name: string, default: Function, deep?: boolean}>} options.contentFields
- * @param {(version: Object) => void} [options.activationGate] Throws to refuse publication
+ * @param {(version: Object, doc: Object) => (void|Promise<void>)} [options.activationGate]
+ *   Throws (or rejects) to refuse publication; receives the version and the
+ *   document it belongs to
  */
 function createVersionedEntityService({
   model,
@@ -191,7 +194,8 @@ function createVersionedEntityService({
   /**
    * Publish a DRAFT: run the entity's own gate, require release notes on a
    * major, archive the version it replaces, and move the `activeVersion`
-   * pointer.
+   * pointer. `payload.openToAll` opens the item to every company in the same
+   * write (ADR 0013), so a publication never stands half done.
    */
   async function activateVersion(id, { major, minor }, payload = {}, userId) {
     const doc = await getDoc(id);
@@ -201,7 +205,7 @@ function createVersionedEntityService({
       throw createError(409, 'Only DRAFT versions can be activated');
     }
 
-    if (activationGate) activationGate(version);
+    if (activationGate) await activationGate(version, doc);
 
     // Major releases require explicit changelog and releaseNotes. Minor
     // releases inherit the auto-filled defaults from createMinorVersion.
@@ -230,6 +234,7 @@ function createVersionedEntityService({
       minor: version.versionMinor,
     };
     doc.status = SkillStatuses.ACTIVE;
+    if (payload.openToAll === true) doc.audience = Audiences.ALL;
     await doc.save();
     return doc;
   }

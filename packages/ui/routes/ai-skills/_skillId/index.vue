@@ -1,17 +1,20 @@
 <script>
-import { mapMutations } from 'vuex';
-import { skillErrorMessage } from '~/helpers/ai-skill-errors.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinAiVersionedItem from '~/helpers/mixins/mixin-ai-versioned-item.js';
 import BsAiDetailHeader from '~/components/ai-skill/bs-ai-detail-header.vue';
 import BsAiActivateModal from '~/components/ai-skill/bs-ai-activate-modal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/bs-ai-archive-modal.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/bs-ai-skill-versions-panel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/bs-ai-skill-details-form.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/bs-ai-skill-logs-panel.vue';
-import { skillCategoryLabel } from '~/helpers/ai-skill-categories.js';
+import BsAiSkillOpenModal from '~/components/ai-skill/bs-ai-skill-open-modal.vue';
+import mixinAiSkillDetails from '~/helpers/mixins/mixin-ai-skill-details.js';
+import {
+  skillCategoryLabel,
+  AUDIENCES,
+} from '~/helpers/ai-skill-categories.js';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -22,8 +25,23 @@ export default {
     BsAiSkillVersionsPanel,
     BsAiSkillDetailsForm,
     BsAiSkillLogsPanel,
+    BsAiSkillOpenModal,
   },
-  mixins: [mixinPageTitle],
+  mixins: [
+    mixinPageTitle,
+    mixinAiVersionedItem({
+      key: 'skill',
+      idField: 'skillId',
+      routes: {
+        versionMinor: api.aiSkillVersionMinor,
+        versionMajor: api.aiSkillVersionMajor,
+        version: api.aiSkillVersion,
+        archive: api.aiSkillArchive,
+      },
+      archivedKey: 'aiSkills.skill.archived',
+    }),
+    mixinAiSkillDetails,
+  ],
   meta: { acl: acls.ACL_PLATFORM_MANAGE, sidebarModule: 'settings' },
   async asyncData({ $axios, params, error }) {
     try {
@@ -31,7 +49,11 @@ export default {
         $axios.$get(api.aiSkill(params.skillId)),
         $axios.$get(api.aiSkillSchemas()),
       ]);
-      return { skill, schemas: schemasRes.schemas || [] };
+      return {
+        skill,
+        savedAudience: skill.audience,
+        schemas: schemasRes.schemas || [],
+      };
     } catch (err) {
       return error({ statusCode: 404, message: 'Skill not found' });
     }
@@ -39,12 +61,16 @@ export default {
   data() {
     return {
       skill: null,
+      // The audience stored: opening the skill to all is confirmed first.
+      savedAudience: null,
       schemas: [],
       // Landing tab / auto-expanded version come from the query — the create
       // flow redirects here with `?tab=versions&expand=1.0` (§B2).
       tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
       autoExpandVersion: this.$route.query.expand || null,
       activatingVersion: null,
+      // What the version published consumes kept to the platform company.
+      platformOnlyExpertises: [],
       saving: false,
       versionWarnings: [],
       // "major.minor" of the version the warnings belong to, so the panel can
@@ -64,79 +90,23 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
+    // Still kept to the platform company, or not opened yet, as stored: the
+    // publication reminds it (ADR 0013).
+    platformOnly() {
+      return !!this.skill && this.savedAudience !== AUDIENCES.ALL;
+    },
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     categoryLabel(value) {
       return skillCategoryLabel(this, value);
     },
 
-    async saveDetails() {
-      if (document.activeElement && document.activeElement.blur) {
-        document.activeElement.blur();
-      }
-      await this.$nextTick();
-      this.saving = true;
-      try {
-        const patch = {
-          title: this.skill.title,
-          description: this.skill.description,
-          category: this.skill.category,
-        };
-        this.skill = await this.$axios.$patch(
-          api.aiSkill(this.skill.skillId),
-          patch
-        );
-        this.showSnackbar({
-          text: this.$t('global.savedSuccessfully'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    async createMinorVersion() {
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$post(
-          api.aiSkillVersionMinor(this.skill.skillId)
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-
-    async createMajorVersion(source) {
-      this.saving = true;
-      try {
-        const body = source
-          ? {
-              sourceMajor: source.versionMajor,
-              sourceMinor: source.versionMinor,
-            }
-          : {};
-        this.skill = await this.$axios.$post(
-          api.aiSkillVersionMajor(this.skill.skillId),
-          body
-        );
-        this.showSnackbar({
-          text: this.$t('aiSkills.version.versionCreated'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
+    activeVersion() {
+      const av = this.skill.activeVersion;
+      if (!av || av.major == null) return null;
+      return (this.skill.versions || []).find(
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
+      );
     },
 
     // `silent` skips the snackbar: publishing an edited draft saves it first
@@ -146,12 +116,15 @@ export default {
       this.saving = true;
       try {
         const payload = {
+          nature: version.nature,
           systemPrompt: version.systemPrompt,
           skillBody: version.skillBody,
           inputTemplate: version.inputTemplate,
           inputSchemaId: version.inputSchemaId,
           outputSchemaId: version.outputSchemaId,
           modelHints: version.modelHints,
+          procedure: version.procedure,
+          consumedExpertiseIds: version.consumedExpertiseIds,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
         };
@@ -184,24 +157,6 @@ export default {
       }
     },
 
-    async deleteVersion(version) {
-      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$delete(
-          api.aiSkillVersion(
-            this.skill.skillId,
-            version.versionMajor,
-            version.versionMinor
-          )
-        );
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-
     async askActivate({ version, dirty }) {
       // Publishing means publishing what is on screen. Activation only posts
       // changelog / release notes and then replaces the local state with the
@@ -212,28 +167,33 @@ export default {
         return;
       }
       this.activatingVersion = version;
+      const expertises = this.platformOnly
+        ? await this.readPlatformOnlyExpertises(version)
+        : [];
+      if (expertises === null) this.tellWarningUnchecked();
+      this.platformOnlyExpertises = expertises || [];
       // Both major AND minor go through the modal: activating any version
       // instantly changes the doctrine features consume. Pre-filled from the
       // draft (one click). Only difference: changelog/notes are required for a
       // major (versionMinor === 0), optional for a minor.
       this.$refs.activateModal.open(version);
     },
+    // Published, and opened to all with the expertises chosen when the
+    // modal says so, in one request.
     async activateVersion(payload) {
       this.saving = true;
       try {
+        const { versionMajor, versionMinor } = this.activatingVersion;
         const res = await this.$axios.$post(
-          api.aiSkillActivate(
-            this.skill.skillId,
-            this.activatingVersion.versionMajor,
-            this.activatingVersion.versionMinor
-          ),
+          api.aiSkillActivate(this.skill.skillId, versionMajor, versionMinor),
           payload
         );
         // Non-blocking coherence warnings surface post-activation too (§3).
         this.versionWarnings = res.warnings || [];
-        this.warningsVersionKey = `${this.activatingVersion.versionMajor}.${this.activatingVersion.versionMinor}`;
+        this.warningsVersionKey = `${versionMajor}.${versionMinor}`;
         delete res.warnings;
         this.skill = res;
+        this.savedAudience = res.audience;
         if (this.$refs.activateModal) this.$refs.activateModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.activated'),
@@ -244,28 +204,6 @@ export default {
       } finally {
         this.saving = false;
       }
-    },
-
-    async archive() {
-      this.saving = true;
-      try {
-        this.skill = await this.$axios.$post(
-          api.aiSkillArchive(this.skill.skillId)
-        );
-        this.$refs.archiveModal.close();
-        this.showSnackbar({
-          text: this.$t('aiSkills.skill.archived'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.handleError(err);
-      } finally {
-        this.saving = false;
-      }
-    },
-    handleError(err) {
-      const msg = skillErrorMessage(this, err);
-      this.showSnackbar({ text: msg, color: 'error' });
     },
   },
 };
@@ -346,7 +284,13 @@ export default {
       ref="activateModal"
       :loading="saving"
       :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
+      :platform-only="platformOnly"
+      :platform-only-expertises="platformOnlyExpertises"
       @confirm="activateVersion"
+    />
+    <bs-ai-skill-open-modal
+      ref="openModal"
+      @confirm="(ids) => patchDetails(ids)"
     />
     <bs-ai-archive-modal
       ref="archiveModal"

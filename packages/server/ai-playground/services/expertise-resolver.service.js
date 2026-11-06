@@ -43,6 +43,8 @@ async function resolveExpertise(scenario) {
       categories: filter.categories,
       emailType: filter.emailType || undefined,
       language: filter.language || undefined,
+      // The super admins try here what is not opened to the clients yet.
+      everyAudience: true,
     });
   }
   return [];
@@ -112,7 +114,10 @@ function normaliseFilter(source = {}) {
  */
 async function previewFilter(source) {
   const filter = normaliseFilter(source);
-  const matches = await expertiseRepo.findApplicable(filter);
+  const matches = await expertiseRepo.findApplicable({
+    ...filter,
+    everyAudience: true,
+  });
   return {
     count: matches.length,
     items: matches.map((m) => ({
