@@ -534,4 +534,6 @@ module.exports = {
   previewImport,
   importSkills,
   FORMAT,
+  // What a file holds of one item, for production's answer to a copy.
+  ITEM_SCHEMAS: { expertise: EXPERTISE, skill: SKILL },
 };

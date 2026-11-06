@@ -1680,6 +1680,44 @@ export default {
       done: 'Export téléchargé.',
       failed: 'L\'export a échoué.',
     },
+    follow: {
+      title: 'Suivre la production',
+      description:
+        'Cette instance est une copie : elle reçoit les skills et expertises de la production, telles que les clients les vivent. Ce qui n\'existe qu\'ici reste, un brouillon local plus récent n\'est jamais écrasé.',
+      production: 'Production : {origin}',
+      now: 'Suivre maintenant',
+      running: 'Suivi en cours…',
+      never: 'La production n\'a encore jamais été suivie.',
+      last: 'Dernier suivi le {date} par {by}',
+      loadError: 'Le suivi de la production n\'a pas pu être chargé.',
+      done: 'Production suivie.',
+      statuses: {
+        succeeded: 'Réussi',
+        partial: 'Réussi en partie',
+        failed: 'Échoué',
+      },
+      outcomes: {
+        created: '{count} ajoutée(s)',
+        updated: '{count} mise(s) à jour',
+        upToDate: '{count} déjà à jour',
+        kept: '{count} conservée(s) sur la copie',
+        failed: '{count} en échec',
+      },
+      failuresLabel: 'Éléments en échec',
+      nothingWritten: 'Rien n\'a été écrit.',
+      reasons: {
+        not_configured:
+          'Cette instance n\'est configurée pour suivre aucune production.',
+        invalid_address:
+          'L\'adresse de la production n\'est pas une adresse https valide.',
+        unreachable: 'La production n\'a pas pu être jointe.',
+        token_refused:
+          'La production a refusé le jeton de lecture : il a peut-être été révoqué.',
+        production_error: 'La production a répondu par une erreur.',
+        unreadable:
+          'La réponse de la production n\'a pas pu être lue : les deux instances n\'ont peut-être pas la même version de LePatron.',
+      },
+    },
     readTokens: {
       title: 'Jetons de lecture',
       description:

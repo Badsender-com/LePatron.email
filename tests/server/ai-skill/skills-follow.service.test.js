@@ -143,7 +143,7 @@ describe('a copy following production', () => {
   });
 
   // Turned on by #1425 (a copy follows production on demand)
-  describe.skip('following', () => {
+  describe('following', () => {
     it('brings what is active in production active on the copy', async () => {
       await follow(EMPTY_COPY);
 
@@ -309,7 +309,7 @@ describe('a copy following production', () => {
         actor: ALICE,
       });
 
-      expect(report).toMatchObject({ status: 'failed' });
+      expect(report).toMatchObject({ status: 'failed', reason: 'unreachable' });
       expect(store.stored('expertises')).toEqual([]);
       expect(store.stored('skills')).toEqual([]);
     });
@@ -322,8 +322,26 @@ describe('a copy following production', () => {
         actor: ALICE,
       });
 
-      expect(report).toMatchObject({ status: 'failed' });
+      expect(report).toMatchObject({ status: 'failed', reason: 'unreadable' });
       expect(store.stored('expertises')).toEqual([]);
+    });
+
+    it('rewrites nothing a second time, and says so', async () => {
+      await follow(EMPTY_COPY);
+      const report = await followProduction({
+        fetchExport: async () => JSON.parse(JSON.stringify(production)),
+        actor: ALICE,
+      });
+
+      expect(report).toMatchObject({
+        status: 'succeeded',
+        created: [],
+        updated: [],
+        failed: [],
+      });
+      expect(report.upToDate.map((entry) => entry.id)).toEqual(
+        expect.arrayContaining([SUBJECT_LINES, SUBJECT_IDEAS])
+      );
     });
 
     it('records each follow, and tells the last one', async () => {
@@ -341,12 +359,17 @@ describe('a copy following production', () => {
       store.seed(EMPTY_COPY);
       await followProduction({
         fetchExport: async () => {
-          throw new Error('timeout');
+          throw Object.assign(new Error('Production refused the read token.'), {
+            reason: 'token_refused',
+          });
         },
         actor: ALICE,
       });
 
-      expect(await lastFollow()).toMatchObject({ status: 'failed' });
+      expect(await lastFollow()).toMatchObject({
+        status: 'failed',
+        reason: 'token_refused',
+      });
     });
   });
 });

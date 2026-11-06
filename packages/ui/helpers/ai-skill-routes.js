@@ -101,3 +101,8 @@ export function aiSkillsReadTokens() {
 export function aiSkillsReadToken(tokenId) {
   return `/ai-skills/read-tokens/${tokenId}`;
 }
+
+// A copy following production, on demand (ADR 0019).
+export function aiSkillsFollow() {
+  return '/ai-skills/follow';
+}
