@@ -6,6 +6,7 @@ const expertiseService = require('../services/expertise.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { openTaskSkillsConsuming } = require('../services/audience-opening.js');
 const { withUsedBy } = require('../services/skills-publication.service.js');
+const { expertisePublication } = require('./publication.controller.js');
 
 /**
  * Who is acting, for the `owner` / `createdBy` / `updatedBy` audit fields.
@@ -123,15 +124,10 @@ module.exports = {
     );
   }),
 
+  // Through the publication guard when a feature uses the version (ADR 0019).
   activateVersion: asyncHandler(async (req, res) => {
-    res.json(
-      await expertiseService.activateVersion(
-        req.params.expertiseId,
-        versionFromParam(req),
-        req.body,
-        userIdOf(req)
-      )
-    );
+    const { doc } = await expertisePublication.publish(req);
+    res.json(doc);
   }),
 
   archiveExpertise: asyncHandler(async (req, res) => {

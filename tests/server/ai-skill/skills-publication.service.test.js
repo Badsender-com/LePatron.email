@@ -61,6 +61,7 @@ jest.doMock(
 jest.doMock(
   '../../../packages/server/ai-feature/ai-feature.service.js',
   () => ({
+    FeatureResolutionReasons: {},
     resolveActiveFeature: jest.fn(async () => ({
       ok: true,
       feature: {
@@ -115,13 +116,21 @@ const subjectLines = {
     },
   ],
 };
+// A skill that reads expertises says where they go in its input.
+const READS_EXPERTISE = 'Brief: {{input.prompt}}\nRules: {{input.expertise}}';
 const subjectIdeas = {
   ...f.SKILLS[0],
   activeVersion: { major: 1, minor: 2 },
   versions: [
-    { ...f.SKILLS[0].versions[0], skillBody: ACTIVE_BODY, testCases: [CASE] },
     {
       ...f.SKILLS[0].versions[0],
+      inputTemplate: READS_EXPERTISE,
+      skillBody: ACTIVE_BODY,
+      testCases: [CASE],
+    },
+    {
+      ...f.SKILLS[0].versions[0],
+      inputTemplate: READS_EXPERTISE,
       versionMinor: 3,
       status: 'DRAFT',
       skillBody: DRAFT_BODY,
@@ -277,7 +286,7 @@ describe('publishing what a feature uses', () => {
   });
 
   // Turned on by #1430 (the guard on a publication)
-  describe.skip('the guard', () => {
+  describe('the guard', () => {
     it('has nothing to replay for a version no feature uses', async () => {
       const guard = await publication.guardPublication({
         kind: 'expertise',
@@ -440,6 +449,38 @@ describe('publishing what a feature uses', () => {
           missing: [PREHEADER_IDEAS],
         }),
       ]);
+    });
+
+    // The opening a publication asks for (ADR 0013) is the same past the
+    // guard.
+    it('publishes a skill after its guard with the opening asked for', async () => {
+      store.seed({
+        ...SEED,
+        skills: [{ ...subjectIdeas, audience: 'platform' }, preheaderIdeas],
+      });
+      const version = { major: 1, minor: 3 };
+      const guard = await publication.guardPublication({
+        kind: 'skill',
+        id: SUBJECT_IDEAS,
+        version,
+      });
+
+      const { doc, warnings } = await publication.publishVersion(
+        {
+          kind: 'skill',
+          id: SUBJECT_IDEAS,
+          version,
+          guard,
+          payload: { changelog: 'Five', openToAll: true },
+        },
+        ALICE
+      );
+
+      expect(doc.audience).toBe('all');
+      expect(warnings).toEqual([]);
+      expect(
+        store.stored('skills').find((s) => s.skillId === SUBJECT_IDEAS).audience
+      ).toBe('all');
     });
 
     it('records a cancellation, and publishes nothing', async () => {

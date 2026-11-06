@@ -1797,6 +1797,33 @@ export default {
         'Le template référence des champs absents du schéma d\'entrée « {schemaId} » : {fields}. Corrigez le template ou changez le schéma d\'entrée de la version.',
       SKILL_TEST_CASE_INVALID:
         'Un cas de test est incomplet : chaque cas a besoin d\'un nom et d\'une entrée.',
+      SKILL_PUBLICATION_GUARD_REQUIRED:
+        'Une fonctionnalité utilise cette version : vérifiez-la avant de la publier.',
+    },
+    publicationGuard: {
+      title: 'Vérifier avant de publier',
+      intro: 'LePatron rejoue les cas de test des skills de fonctionnalité concernées, avec la version active puis avec cette version. Un écart vous avertit sans bloquer : vous décidez.',
+      usedBy: 'Utilisée par : {features}.',
+      calls: '{calls} appel(s) à l\'IA, avec le moteur IA du groupe plateforme.',
+      missing: 'Sans cas de test, donc non vérifiée(s) : {skills}.',
+      noCase: 'Aucun cas de test à rejouer : relisez la version avant de la publier.',
+      run: 'Lancer la vérification',
+      running: 'Vérification en cours, un appel après l\'autre…',
+      summary: '{cases} cas rejoué(s), {failed} en écart.',
+      before: 'Version active',
+      after: 'Cette version',
+      noBefore: 'Pas encore publiée',
+      same: 'Sortie identique',
+      contractOk: 'Respecte le contrat de sortie',
+      publish: 'Publier',
+      publishAnyway: 'Publier malgré les écarts',
+      cancel: 'Annuler la publication',
+      cancelled: 'Publication annulée : la version reste un brouillon.',
+      errors: {
+        OUTPUT_CONTRACT: 'La réponse ne respecte pas le contrat de sortie.',
+        INPUT_INVALID: 'L\'entrée du cas ne respecte plus le schéma d\'entrée.',
+        CALL_FAILED: 'L\'appel à l\'IA a échoué.',
+      },
     },
     testCases: {
       title: 'Cas de test',

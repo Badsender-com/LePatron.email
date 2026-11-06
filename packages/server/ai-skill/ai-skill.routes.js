@@ -8,6 +8,10 @@ const skill = require('./controllers/skill.controller.js');
 const expertise = require('./controllers/expertise.controller.js');
 const invocation = require('./controllers/invocation.controller.js');
 const skillsExport = require('./controllers/skills-export.controller.js');
+const {
+  skillPublication,
+  expertisePublication,
+} = require('./controllers/publication.controller.js');
 
 const skillsRouter = express.Router();
 skillsRouter.use(GUARD_ADMIN);
@@ -38,6 +42,16 @@ skillsRouter.delete('/:skillId/versions/:version', skill.deleteVersion);
 skillsRouter.post(
   '/:skillId/versions/:version/activate',
   skill.activateVersion
+);
+// The publication guard (ADR 0019): what it replays, the replay, a cancel.
+skillsRouter.get(
+  '/:skillId/versions/:version/publication',
+  skillPublication.plan
+);
+skillsRouter.post('/:skillId/versions/:version/guard', skillPublication.guard);
+skillsRouter.post(
+  '/:skillId/versions/:version/cancel-publication',
+  skillPublication.cancel
 );
 skillsRouter.post('/:skillId/archive', skill.archiveSkill);
 
@@ -76,6 +90,18 @@ expertiseRouter.delete(
 expertiseRouter.post(
   '/:expertiseId/versions/:version/activate',
   expertise.activateVersion
+);
+expertiseRouter.get(
+  '/:expertiseId/versions/:version/publication',
+  expertisePublication.plan
+);
+expertiseRouter.post(
+  '/:expertiseId/versions/:version/guard',
+  expertisePublication.guard
+);
+expertiseRouter.post(
+  '/:expertiseId/versions/:version/cancel-publication',
+  expertisePublication.cancel
 );
 expertiseRouter.post('/:expertiseId/archive', expertise.archiveExpertise);
 
