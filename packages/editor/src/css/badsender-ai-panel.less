@@ -24,6 +24,9 @@
       margin: 0;
       padding: 0;
       list-style: none;
+
+      // The editor's lists space their items: the list's gap does here.
+      > li { margin: 0; }
     }
 
     // In the shell's body, which alone scrolls; fills it, the note at its
@@ -47,7 +50,7 @@
     &__actions {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
     }
 
     // An action of the list (boards a1, a2): its icon, its name on its
@@ -118,10 +121,24 @@
     }
 
     &__section {
-      margin-top: 4px;
+      margin: 4px 0 -4px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--gray-700);
+      color: var(--gray-600);
+    }
+
+    // A selection: three sections, set closer (board a2).
+    &__body--targeted {
+      gap: 10px;
+
+      .ai-panel__actions { gap: 10px; }
+      .ai-panel__section { margin: 6px 0 -2px; }
+      .ai-panel__action { padding: 9px 12px; }
+
+      .ai-panel__action-icon {
+        width: 30px;
+        height: 30px;
+      }
     }
 
     &__section-meta {
@@ -146,15 +163,17 @@
 
     &__invite {
       display: flex;
+      align-items: center;
       gap: 10px;
-      padding: 12px 14px;
+      padding: 12px;
       border: 1px solid var(--gray-200);
-      border-radius: @qc-radius;
+      border-radius: @qc-radius-card;
       background: var(--gray-50);
-      color: var(--gray-700);
-      line-height: 1.5;
+      color: var(--gray-600);
+      font-size: 12.5px;
+      line-height: 1.45;
 
-      > .lucide { flex: none; margin-top: 2px; font-size: 17px; }
+      > .lucide { flex: none; font-size: 17px; }
     }
 
     // ===== The steps of an action =====

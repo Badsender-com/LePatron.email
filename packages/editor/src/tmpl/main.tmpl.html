@@ -121,7 +121,7 @@
   <nav class="panel-rail" data-bind="attr: { 'aria-label': $root.t('panel-rail-label') }, tooltips: {}">
     <!-- ko if: typeof $root.showComments !== 'undefined' -->
     <button id="comments-toggle" type="button" class="panel-rail__button" aria-controls="toolcomments" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-title') + ($root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 ? ' · ' + $root.t($root.unresolvedCommentCount() === 1 ? 'panel-rail-unresolved-one' : 'panel-rail-unresolved', { count: $root.unresolvedCommentCount() }) : ''), 'aria-expanded': $root.showComments() ? 'true' : 'false' }">
-      <span class="lucide lucide-messages-square" aria-hidden="true"></span>
+      <span class="lucide lucide-message-square" aria-hidden="true"></span>
       <span class="panel-rail__sr" data-bind="text: $root.t('comments-title')"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="panel-rail__badge panel-rail__badge--volume">

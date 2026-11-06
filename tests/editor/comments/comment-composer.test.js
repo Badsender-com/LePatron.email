@@ -145,6 +145,17 @@ describe('the comment form', () => {
     ).not.toBeNull();
   });
 
+  it('sets approving apart, under a rule across the foot (boards c3, c5)', () => {
+    expect(
+      composer({ text: 'Hi' }).root.querySelector('.comment-composer__approval')
+    ).toBeNull();
+    const { root } = composer({ canApprove: true, approveBlocked: true });
+    const approval = root.querySelector('.comment-composer__approval');
+    expect(approval.querySelector('.comment-composer__blocked')).not.toBeNull();
+    expect(approval.querySelector('.comment-composer__approve')).not.toBeNull();
+    expect(approval.querySelector('button[type="submit"]')).not.toBeNull();
+  });
+
   it("offers « Approuver l'email » only to whom may approve", () => {
     expect(
       composer().root.querySelector('.comment-composer__approve')

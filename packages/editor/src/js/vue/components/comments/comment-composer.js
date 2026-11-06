@@ -126,10 +126,12 @@ const CommentComposer = Vue.component('CommentComposer', {
         <!-- Who may not approve adds on this line (board c1); who may, below. -->
         <button v-if="!canApprove" type="submit" class="qc-button qc-button--cta comment-composer__add" :disabled="busy || !text.trim()">{{ t('comments-add') }}</button>
       </div>
-      <p v-if="canApprove && approveBlocked" :id="reasonId" class="comment-composer__blocked">
+      <!-- Who may approve: below a rule across the foot (boards c3, c5). -->
+      <div v-if="canApprove" class="comment-composer__approval">
+      <p v-if="approveBlocked" :id="reasonId" class="comment-composer__blocked">
         <span class="lucide lucide-alert-circle" aria-hidden="true"></span>{{ t('comments-approve-blocked') }}
       </p>
-      <div v-if="canApprove" class="comment-composer__actions">
+      <div class="comment-composer__actions">
         <button
           type="button"
           class="qc-button qc-button--outline comment-composer__approve"
@@ -140,6 +142,7 @@ const CommentComposer = Vue.component('CommentComposer', {
           <span class="lucide lucide-check-check" aria-hidden="true"></span>{{ t('comments-approve-email') }}
         </button>
         <button type="submit" class="qc-button qc-button--cta" :disabled="busy || !text.trim()">{{ t('comments-add') }}</button>
+      </div>
       </div>
     </form>
   `,

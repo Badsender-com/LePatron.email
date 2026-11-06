@@ -14,8 +14,11 @@
   &__box {
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
     gap: 6px;
-    min-height: 40px;
+    // Room for two lines of chips, as on board q4.
+    min-height: 64px;
+    box-sizing: border-box;
     padding: 6px 8px;
     border: 1px solid var(--gray-300);
     border-radius: @qc-radius;
@@ -23,6 +26,7 @@
     cursor: text;
 
     &:focus-within {
+      border-color: var(--accent);
       outline: 2px solid var(--primary);
       outline-offset: 1px;
     }

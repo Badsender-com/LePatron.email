@@ -16,13 +16,17 @@ const {
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
 
-function mount(target, targetActions = []) {
+function mount(
+  target,
+  targetActions = [],
+  actions = [
+    { id: 'generate-subject', canApply: true },
+    { id: 'correct-text', canApply: true },
+  ]
+) {
   const panel = {
     target: ko.observable(target),
-    actions: ko.observable([
-      { id: 'generate-subject', canApply: true },
-      { id: 'correct-text', canApply: true },
-    ]),
+    actions: ko.observable(actions),
     targetActions: ko.observable(targetActions),
     session: ko.observable(null),
     sessionAction: ko.observable(null),
@@ -77,6 +81,33 @@ describe('the list of the AI panel', () => {
       root.querySelector('.ai-panel__action--first .ai-panel__action-desc')
         .textContent
     ).toBe('ai-panel-correct-field-desc');
+  });
+
+  it('names the whole email’s actions alone under a selection, a copy-only one still saying so (board a2)', () => {
+    const descs = (root) =>
+      [...root.querySelectorAll('.ai-panel__action')].map((a) => {
+        const desc = a.querySelector('.ai-panel__action-desc');
+        return desc && desc.textContent;
+      });
+    expect(descs(mount({ kind: 'email' }))).toEqual([
+      'ai-panel-subject-desc',
+      'ai-panel-correct-email-desc',
+    ]);
+    const root = mount(
+      { kind: 'block', blockId: 'b1' },
+      [{ id: 'correct-text', canApply: true }],
+      [
+        { id: 'generate-subject', canApply: false },
+        { id: 'correct-text', canApply: true },
+      ]
+    );
+    // The block's action, then the email's two by their name, but for the
+    // one that can only be copied.
+    expect(descs(root)).toEqual([
+      'ai-panel-correct-block-desc',
+      'ai-panel-copy-only',
+      null,
+    ]);
   });
 
   it('names a block’s action « Corriger ce bloc », and a subject or preheader as a field', () => {

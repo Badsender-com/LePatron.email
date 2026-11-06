@@ -22,7 +22,7 @@ module.exports = `
   @back="showList()"
   @close="vm.rightPanel.hide()"
 >
-  <div class="ai-panel__body">
+  <div class="ai-panel__body" :class="{ 'ai-panel__body--targeted': !session && target.kind !== 'email' }">
     <p class="qc-sr-only" aria-live="polite">{{ liveMessage }}</p>
 
     <!-- The list (boards a1, a2): what the selection offers, the action of
@@ -57,7 +57,8 @@ module.exports = `
             <span :class="['lucide', iconOf(item.id), 'ai-panel__action-icon']" aria-hidden="true"></span>
             <span class="ai-panel__action-text">
               <span class="ai-panel__action-name">{{ nameOf(item.id, { kind: 'email' }) }}</span>
-              <span class="ai-panel__action-desc">{{ item.canApply ? descriptionOf(item.id, { kind: 'email' }) : t('ai-panel-copy-only') }}</span>
+              <!-- With a selection, the email's actions go by their name (a2). -->
+              <span v-if="!item.canApply || target.kind === 'email'" class="ai-panel__action-desc">{{ item.canApply ? descriptionOf(item.id, { kind: 'email' }) : t('ai-panel-copy-only') }}</span>
             </span>
             <span class="lucide lucide-chevron-right ai-panel__action-chevron" aria-hidden="true"></span>
           </button>
