@@ -32,7 +32,7 @@ const MAX_TIME_EXPIRED = 50;
 const SORTABLE = ['name', 'userName', 'templateName', 'createdAt', 'updatedAt'];
 const MOST_RECENT_FIRST = { sortBy: ['updatedAt'], sortDesc: [true] };
 
-module.exports = { searchMailings, accessibleLocations };
+module.exports = { searchMailings, accessibleLocations, findReadableMailing };
 
 /**
  * @param {Object} params
@@ -182,6 +182,44 @@ async function accessibleLocations(user) {
         .sort(byName),
     }))
     .sort(byName);
+}
+
+/**
+ * One email the user may read, by the rule of the search (ADR 0007): in the
+ * group the listing reads, filed in a workspace or a folder the user may read.
+ * What the search would never find is never read, at any folder depth.
+ *
+ * @param {Object} params
+ * @param {Object} params.user the request user
+ * @param {string} params.mailingId
+ * @param {string} params.fields the fields to read, space separated (an
+ *   inclusion); where the email sits is always read
+ * @returns {Promise<{ mailing: Object, location: Object }|null>} the email,
+ *   lean, and where it sits; null when the user may not read it
+ */
+async function findReadableMailing({ user, mailingId, fields }) {
+  if (!/^[0-9a-f]{24}$/i.test(String(mailingId))) return null;
+  const groupId = listingGroupIdOf(user);
+  const mailing = await Mailings.findOne({
+    _id: String(mailingId),
+    _company: groupId,
+  })
+    .select(`${fields} _workspace _parentFolder`)
+    .lean();
+  if (!mailing) return null;
+  const workspaces = await accessibleWorkspaces(user, groupId);
+  const folders = await foldersOf(workspaces);
+  const { workspaces: inWorkspaces, folders: inFolders } = scopeOf(
+    workspaces,
+    folders
+  );
+  const isIn = (list, id) =>
+    list.some((item) => String(item._id) === String(id));
+  const reachable = mailing._parentFolder
+    ? isIn(inFolders, mailing._parentFolder)
+    : isIn(inWorkspaces, mailing._workspace);
+  if (!reachable) return null;
+  return { mailing, location: locator(workspaces, folders)(mailing).location };
 }
 
 async function findPage(query) {

@@ -162,7 +162,6 @@ describe('identity and MCP access', () => {
       enableMcp: true,
       allowRetex: false,
       logRetentionDays: 30,
-      userHasAccessToAllWorkspaces: false,
     });
   });
 

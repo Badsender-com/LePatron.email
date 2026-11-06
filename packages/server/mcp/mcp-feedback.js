@@ -6,7 +6,7 @@ const { versionLabel } = require('../ai-skill/services/version-helpers.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { readableExpertise } = require('./mcp-expertises.js');
 const { servedSkill } = require('./mcp-skill-catalog.js');
-const { readableMailing } = require('./mcp-mailings.js');
+const { readableMailing } = require('./mcp-mailing-read.js');
 const {
   computeExpiresAt,
 } = require('../ai-skill/services/invocation-logger.service.js');
