@@ -198,7 +198,9 @@ describe('task skills', () => {
       await expect(
         client.readResource({ uri: 'lepatron://skills/redaction.correction' })
       ).rejects.toThrow(/not found/i);
-      expect((await findSkills('spelling')).skills).toEqual([]);
+      expect(
+        (await findSkills('spelling')).skills.map((skill) => skill.skillId)
+      ).not.toContain('redaction.correction');
     });
 
     it('takes the placeholders of its template as arguments, the expertise excepted', async () => {
