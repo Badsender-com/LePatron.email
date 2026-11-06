@@ -62,6 +62,62 @@ describe('call log', () => {
     expect(JSON.stringify(log)).not.toContain(COMMENT);
   });
 
+  // The log is read before the tool checks its arguments: it keeps the ids
+  // the tool declares, bounded, and nothing else of what was sent.
+  describe('what it keeps of the arguments', () => {
+    const LONG = 'x'.repeat(100000);
+    const callTool = async (name, args) => {
+      const client = await harness.connectAs(f.FRANK);
+      await client.callTool({ name, arguments: args }).catch(() => null);
+      return logs()[0];
+    };
+
+    it('keeps no argument the tool does not declare, whatever its name', async () => {
+      const log = await callTool('submit_feedback', {
+        rating: 'up',
+        notesId: LONG,
+        references: [{ kind: 'skill', id: 'redaction.subject-ideas' }],
+      });
+
+      expect(log.outcome).toBe('ok');
+      expect(log.objectIds).toEqual(['redaction.subject-ideas']);
+      expect(JSON.stringify(log)).not.toContain('xxxx');
+    });
+
+    it('cuts an id at 200 characters', async () => {
+      const log = await callTool('submit_feedback', {
+        rating: 'up',
+        references: [{ kind: 'skill', id: LONG }],
+      });
+
+      expect(log.objectIds).toEqual(['x'.repeat(200)]);
+    });
+
+    it('keeps 20 ids at most', async () => {
+      const log = await callTool('submit_feedback', {
+        rating: 'up',
+        references: Array.from({ length: 5000 }, (_, i) => ({
+          kind: 'skill',
+          id: `skill-${i}`,
+        })),
+      });
+
+      expect(log.objectIds).toHaveLength(20);
+    });
+
+    it('cuts the name of a tool and a resource at 500 characters', async () => {
+      const tool = await callTool(LONG, {});
+      const client = await harness.connectAs(f.FRANK);
+      await client
+        .readResource({ uri: `lepatron://${LONG}` })
+        .catch(() => null);
+      const resource = logs()[1];
+
+      expect(tool.name).toHaveLength(500);
+      expect(resource.objectIds[0]).toHaveLength(500);
+    });
+  });
+
   it('keeps nothing of what LePatron answered', async () => {
     const client = await harness.connectAs(f.FRANK);
 

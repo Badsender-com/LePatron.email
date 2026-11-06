@@ -1,5 +1,6 @@
 'use strict';
 
+const { z } = require('zod');
 const {
   ProtocolError,
   ProtocolErrorCode,
@@ -89,29 +90,101 @@ function refusalOf({ scope, retryInMs }) {
   );
 }
 
+// What the log keeps of what was asked: ids, never the rest of what was
+// typed, each bounded, and a few of them.
 const ID_KEY = /^(id|uri)$|Ids?$/;
+const MAX_IDS = 20;
+const MAX_ID_LENGTH = 200;
+const MAX_NAME_LENGTH = 500;
+// How deep, and over how many values, the arguments are read for their ids.
+const MAX_DEPTH = 4;
+const MAX_VISITS = 1000;
 
-// The ids a call was given, never the rest of what was typed: an argument
-// counts when its name says it is an id.
-function idsIn(value, key = '', depth = 0) {
-  if (depth > 4 || value === null || value === undefined) return [];
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => idsIn(item, key, depth + 1));
-  }
-  if (typeof value === 'object') {
-    return Object.entries(value).flatMap(([name, item]) =>
-      idsIn(item, name, depth + 1)
-    );
-  }
-  return ID_KEY.test(key) && typeof value === 'string' ? [value] : [];
+const cut = (value, max) =>
+  typeof value === 'string' ? value.slice(0, max) : null;
+
+/**
+ * The ids a tool declares, read from its input schema: an argument whose name
+ * says it is an id (`id`, `uri`, `…Id`, `…Ids`), a string or a list of
+ * strings, at any depth.
+ *
+ * @param {Object} schema the JSON schema of the tool's input
+ * @returns {Object|true|null} the paths of its ids, as a tree whose leaves
+ *   are `true`; null when it declares none
+ */
+function idPathsOf(schema, depth = 0) {
+  if (!schema || depth > MAX_DEPTH) return null;
+  if (schema.type === 'array') return idPathsOf(schema.items, depth + 1);
+  if (schema.type !== 'object' || !schema.properties) return null;
+  const tree = {};
+  Object.entries(schema.properties).forEach(([name, property]) => {
+    const item = property.type === 'array' ? property.items : property;
+    if (ID_KEY.test(name) && item && item.type === 'string') {
+      tree[name] = true;
+      return;
+    }
+    const nested = idPathsOf(property, depth + 1);
+    if (nested) tree[name] = nested;
+  });
+  return Object.keys(tree).length ? tree : null;
 }
 
-function whatWasAsked(method, params = {}) {
-  if (method === 'tools/call') {
-    return { name: params.name, objectIds: idsIn(params.arguments) };
+function declaredIdsOf(inputSchema) {
+  if (!inputSchema) return null;
+  try {
+    return idPathsOf(z.toJSONSchema(inputSchema, { io: 'input' }));
+  } catch (err) {
+    // A schema JSON cannot describe declares no id the log could keep.
+    return null;
   }
-  if (method === 'prompts/get') return { name: params.name, objectIds: [] };
-  if (method === 'resources/read') return { objectIds: [params.uri] };
+}
+
+// The ids found along the declared paths, until MAX_IDS of them, reading at
+// most MAX_VISITS values: what was typed beside them is never read.
+function idsAlong(value, paths) {
+  const ids = [];
+  let visits = 0;
+  const walk = (node, tree, depth) => {
+    visits += 1;
+    if (ids.length >= MAX_IDS || visits > MAX_VISITS || depth > MAX_DEPTH) {
+      return;
+    }
+    if (node === null || node === undefined) return;
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        if (ids.length >= MAX_IDS || visits > MAX_VISITS) return;
+        walk(item, tree, depth + 1);
+      }
+      return;
+    }
+    if (tree === true) {
+      if (typeof node === 'string') ids.push(cut(node, MAX_ID_LENGTH));
+      return;
+    }
+    if (typeof node !== 'object') return;
+    Object.entries(tree).forEach(([name, subtree]) =>
+      walk(node[name], subtree, depth + 1)
+    );
+  };
+  if (paths) walk(value, paths, 0);
+  return ids;
+}
+
+// What a call asked for, as the log keeps it: the tool or the prompt, and the
+// ids it was given, those its tool declares only.
+function whatWasAsked(method, params = {}, declared) {
+  const name = cut(params.name, MAX_NAME_LENGTH);
+  if (method === 'tools/call') {
+    return {
+      name,
+      objectIds: idsAlong(params.arguments, declared.get(params.name)),
+    };
+  }
+  if (method === 'prompts/get') return { name, objectIds: [] };
+  if (method === 'resources/read') {
+    const uri = cut(params.uri, MAX_NAME_LENGTH);
+    return { objectIds: uri ? [uri] : [] };
+  }
   return { objectIds: [] };
 }
 
@@ -122,7 +195,7 @@ async function record(entry) {
       (await Groups.findById(entry._company).select('logRetentionDays').lean());
     await McpCallLogs.create({
       ...entry,
-      objectIds: entry.objectIds.filter(Boolean).slice(0, 20),
+      objectIds: entry.objectIds.filter(Boolean),
       expiresAt: computeExpiresAt(new Date(), group?.logRetentionDays),
     });
   } catch (err) {
@@ -135,7 +208,7 @@ async function record(entry) {
  * The log keeps metadata only: who, from which application, what was asked
  * by its ids, how long it took and how it ended.
  */
-function guarded(method, handler) {
+function guarded(method, handler, declared) {
   return async (request, ctx) => {
     const authInfo = ctx?.http?.authInfo || {};
     // Ids as the server wrote them in the token, checked as such before any
@@ -143,16 +216,17 @@ function guarded(method, handler) {
     const { extra = {} } = authInfo;
     const userId = isObjectIdString(extra.userId) ? extra.userId : null;
     const groupId = isObjectIdString(extra.groupId) ? extra.groupId : null;
-    const clientId = authInfo.clientId || '';
+    const clientId = cut(authInfo.clientId, MAX_NAME_LENGTH) || '';
+
+    // Counted before anything of the request is read.
+    const refused = admit({ userId, groupId, clientId });
     const entry = {
       _user: userId,
       _company: groupId,
       clientId,
       method,
-      ...whatWasAsked(method, request.params),
+      ...whatWasAsked(method, request.params, declared),
     };
-
-    const refused = admit({ userId, groupId, clientId });
     if (refused) {
       if (refused.firstRefusal) {
         await record({ ...entry, durationMs: 0, outcome: 'rate_limited' });
@@ -175,17 +249,29 @@ function guarded(method, handler) {
 /**
  * Guards every handler the server registers from now on. The SDK pinned in
  * package.json wraps each registered handler with `_wrapHandler`, its hook for
- * this; the handshake is registered before and stays out.
+ * this; the handshake is registered before and stays out. The tools
+ * registered from now on say which of their arguments are ids.
  *
  * @param {import('@modelcontextprotocol/server').McpServer} server
  */
 function guardCalls(server) {
+  // The ids each tool declares, as it is registered: the log keeps those.
+  const declared = new Map();
+  const register = server.registerTool.bind(server);
+  // eslint-disable-next-line no-param-reassign
+  server.registerTool = (name, config, callback) => {
+    declared.set(name, declaredIdsOf(config && config.inputSchema));
+    return register(name, config, callback);
+  };
+
   const inner = server.server;
   const wrap = inner._wrapHandler.bind(inner);
   inner._wrapHandler = (method, handler) =>
     wrap(
       method,
-      GUARDED_METHODS.test(method) ? guarded(method, handler) : handler
+      GUARDED_METHODS.test(method)
+        ? guarded(method, handler, declared)
+        : handler
     );
 }
 
