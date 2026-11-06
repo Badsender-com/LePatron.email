@@ -219,8 +219,7 @@ describe('the skills export', () => {
     });
   });
 
-  // Turned on by #1410 (preview an import before anything is written)
-  describe.skip('previewing an import', () => {
+  describe('previewing an import', () => {
     let file;
     beforeEach(async () => {
       file = await exportOf({ all: true });
@@ -339,7 +338,6 @@ describe('the skills export', () => {
     });
 
     it('warns about a task skill whose expertise is neither in the file nor here', async () => {
-      store.seed(EMPTY_TARGET);
       const alone = await exportOf({
         skillIds: [WRITE_SUBJECT],
         withoutExpertiseIds: [SPAM_WORDS],

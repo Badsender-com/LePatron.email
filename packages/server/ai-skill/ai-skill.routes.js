@@ -13,6 +13,11 @@ skillsRouter.use(GUARD_ADMIN);
 
 // The skills export (ADR 0018), before the routes keyed by a skill id.
 skillsRouter.post('/export', skillsExport.exportFile);
+skillsRouter.post(
+  '/import/preview',
+  skillsExport.capFileSize,
+  skillsExport.previewFile
+);
 skillsRouter.get('/schemas', skill.listSchemas);
 skillsRouter.get('/schemas/:schemaId/descriptor', skill.getSchemaDescriptor);
 skillsRouter.get('/', skill.listSkills);

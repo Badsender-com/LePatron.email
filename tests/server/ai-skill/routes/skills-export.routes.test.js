@@ -45,7 +45,8 @@ const SUBJECT_LINES = 'redaction.subject-line';
 
 function makeApp(user) {
   const app = express();
-  app.use(express.json());
+  // As the app parses every body: up to 50 MB (packages/server/index.js).
+  app.use(express.json({ limit: '50mb' }));
   app.use((req, _res, next) => {
     req.user = user;
     next();
@@ -87,8 +88,7 @@ describe('exporting through the API', () => {
   });
 });
 
-// Turned on by #1410 (preview an import before anything is written)
-describe.skip('previewing through the API', () => {
+describe('previewing through the API', () => {
   let file;
   beforeEach(async () => {
     store.seed(f.SEED);
@@ -131,7 +131,7 @@ describe.skip('previewing through the API', () => {
     expect(res.body.items).toBeUndefined();
   });
 
-  // The app's JSON parser stops at 100 kB: a real export is larger.
+  // A real export is larger than a usual body, and the route sets its own cap.
   it('reads a file of a few megabytes, and refuses one over 5 MB', async () => {
     const padding = (size) => ({
       ...file,

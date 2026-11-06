@@ -87,3 +87,6 @@ export function aiInvocation(id) {
 export function aiSkillsExport() {
   return '/ai-skills/export';
 }
+export function aiSkillsImportPreview() {
+  return '/ai-skills/import/preview';
+}

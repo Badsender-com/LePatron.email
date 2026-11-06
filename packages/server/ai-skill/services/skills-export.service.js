@@ -18,7 +18,12 @@ const {
   SkillNatures,
   SkillIdRegex,
 } = require('../constant/skill-constants.js');
-const { findActiveVersion } = require('./version-helpers.js');
+const {
+  findActiveVersion,
+  openDraftOf,
+  versionLabel,
+} = require('./version-helpers.js');
+const { hasSchema } = require('../schemas');
 const skillService = require('./skill.service.js');
 const expertiseService = require('./expertise.service.js');
 
@@ -213,4 +218,122 @@ function readSkillsExport(json) {
   return parsed.data;
 }
 
-module.exports = { exportSkills, readSkillsExport, FORMAT };
+const KINDS = ['expertise', 'skill'];
+const listOf = (kind) => (kind === 'skill' ? 'skills' : 'expertises');
+const labelOf = ({ major, minor }) =>
+  versionLabel({ versionMajor: major, versionMinor: minor });
+
+// -1, 0 or 1 as the file's version stands to a version of this instance.
+function compare({ major, minor }, version) {
+  if (major !== version.versionMajor) {
+    return major > version.versionMajor ? 1 : -1;
+  }
+  if (minor === version.versionMinor) return 0;
+  return minor > version.versionMinor ? 1 : -1;
+}
+
+// What a version says, without the notes that come with its release.
+const contentOf = (version, contentFields) =>
+  JSON.stringify(
+    contentFields.map(({ name }) => [name, version[name] ?? null])
+  );
+
+// The schema a feature skill's version needs, when this instance lacks it.
+function lacksSchema(kind, item) {
+  if (kind !== 'skill' || item.nature === SkillNatures.TASK) return false;
+  const { inputSchemaId, outputSchemaId } = item.version;
+  return [inputSchemaId, outputSchemaId].some((id) => id && !hasSchema(id));
+}
+
+// What an import would do with one item of the file, against this instance.
+function stateOf(kind, item, doc) {
+  if (doc && doc.status === SkillStatuses.ARCHIVED) {
+    return { state: 'blocked', reason: 'archived' };
+  }
+  const active = doc && findActiveVersion(doc);
+  if (active) {
+    const order = compare(item.version, active);
+    if (order < 0) return { state: 'blocked', reason: 'target_newer' };
+    if (order === 0) {
+      const { contentFields } = ENTITIES[kind];
+      const same =
+        contentOf(versionOf(active, contentFields), contentFields) ===
+        contentOf(item.version, contentFields);
+      return same
+        ? { state: 'up_to_date' }
+        : { state: 'blocked', reason: 'diverged' };
+    }
+  }
+  if (doc && openDraftOf(doc))
+    return { state: 'blocked', reason: 'draft_open' };
+  if (lacksSchema(kind, item)) {
+    return { state: 'blocked', reason: 'missing_schema' };
+  }
+  return { state: doc ? 'update' : 'new' };
+}
+
+async function docsOf(kind, ids) {
+  const { model, idField } = ENTITIES[kind];
+  const docs = await model()
+    .find({ [idField]: { $in: ids } })
+    .lean();
+  return new Map(docs.map((doc) => [doc[idField], doc]));
+}
+
+/**
+ * What importing a skills export would do here, item by item, writing
+ * nothing (ADR 0018): `new`, `update`, `up_to_date`, or `blocked` with its
+ * reason. A task skill whose consumed expertise is neither in the file nor
+ * here carries a warning, and stays importable.
+ *
+ * @param {Object} json the file, read again here
+ * @returns {Promise<{ origin, exportedAt, exportedBy, items: Object[] }>}
+ */
+async function previewImport(json) {
+  const file = readSkillsExport(json);
+  const docs = {};
+  for (const kind of KINDS) {
+    const { idField } = ENTITIES[kind];
+    // eslint-disable-next-line no-await-in-loop
+    docs[kind] = await docsOf(
+      kind,
+      file[listOf(kind)].map((item) => item[idField])
+    );
+  }
+  const inFile = new Set(file.expertises.map((item) => item.expertiseId));
+  const consumed = file.skills.flatMap(
+    (item) => item.version.consumedExpertiseIds || []
+  );
+  const known = await docsOf('expertise', consumed);
+
+  const items = KINDS.flatMap((kind) => {
+    const { idField } = ENTITIES[kind];
+    return file[listOf(kind)].map((item) => {
+      const id = item[idField];
+      const doc = docs[kind].get(id);
+      const active = doc && findActiveVersion(doc);
+      const preview = {
+        kind,
+        id,
+        title: item.title,
+        version: labelOf(item.version),
+        current: active ? versionLabel(active) : null,
+        ...stateOf(kind, item, doc),
+      };
+      const missing = (item.version.consumedExpertiseIds || []).filter(
+        (expertiseId) => !inFile.has(expertiseId) && !known.has(expertiseId)
+      );
+      if (missing.length) {
+        preview.warnings = [
+          { code: 'missing_expertises', expertiseIds: missing },
+        ];
+      }
+      return preview;
+    });
+  });
+
+  const { origin, exportedAt, exportedBy } = file;
+  return { origin, exportedAt, exportedBy, items };
+}
+
+module.exports = { exportSkills, readSkillsExport, previewImport, FORMAT };

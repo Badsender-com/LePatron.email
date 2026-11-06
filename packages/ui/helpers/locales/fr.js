@@ -1620,6 +1620,42 @@ export default {
       hint: 'Le bloc apparaîtra en fin de palette dans l\'éditeur.',
     },
   },
+  skillsImport: {
+    open: 'Importer',
+    title: 'Importer des skills et expertises',
+    file: 'Export de skills (.json)',
+    fileHint: 'Un fichier exporté d\'une autre instance LePatron, 5 Mo au plus.',
+    preview: 'Voir l\'aperçu',
+    reading: 'Lecture du fichier…',
+    from: 'Exporté de {origin} par {by}, le {date}.',
+    counter: '{count} élément à importer | {count} éléments à importer',
+    nothing: 'Rien à importer : tout est à jour ou bloqué.',
+    otherFile: 'Choisir un autre fichier',
+    current: 'ici : {version}',
+    notJson: 'Ce fichier n\'est pas du JSON.',
+    tooLarge: 'Ce fichier dépasse 5 Mo.',
+    unreadable: 'Ce fichier n\'est pas un export de skills lisible : {message}',
+    kinds: {
+      expertise: 'Expertise',
+      skill: 'Skill',
+    },
+    states: {
+      new: 'Nouveau',
+      update: 'Mise à jour',
+      up_to_date: 'À jour',
+      blocked: 'Bloqué',
+    },
+    reasons: {
+      diverged: 'Même version, contenu différent : les deux instances ont divergé.',
+      target_newer: 'Une version plus récente existe ici.',
+      draft_open: 'Un brouillon est ouvert ici : publiez-le ou supprimez-le d\'abord.',
+      archived: 'Archivé ici.',
+      missing_schema: 'Son schéma n\'existe pas sur cette instance : elle n\'est pas à jour.',
+    },
+    warnings: {
+      missing_expertises: 'Expertises absentes ici et du fichier : {ids}',
+    },
+  },
   aiSkills: {
     export: {
       all: 'Tout exporter',
