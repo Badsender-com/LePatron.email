@@ -165,7 +165,7 @@ describe('publishing what a feature uses', () => {
   });
 
   // Turned on by #1428 (used by a feature, worked out and shown)
-  describe.skip('used by a feature', () => {
+  describe('used by a feature', () => {
     it('is said of an expertise a feature loads through its declared filters', async () => {
       expect(
         await publication.usedByFeatures({
@@ -192,6 +192,87 @@ describe('publishing what a feature uses', () => {
       expect(
         await publication.usedByFeatures({ kind: 'expertise', id: SPAM_WORDS })
       ).toEqual([]);
+    });
+
+    // A feature loads only active expertises, and calls no archived skill.
+    it('is not said of an archived expertise, even one the filters match', async () => {
+      const oldRules = f.EXPERTISES.find((e) => e.status === 'ARCHIVED');
+      store.seed({ ...SEED, expertises: [...SEED.expertises, oldRules] });
+
+      expect(
+        await publication.usedByFeatures({
+          kind: 'expertise',
+          id: oldRules.expertiseId,
+        })
+      ).toEqual([]);
+    });
+
+    it('is not said of an archived skill a feature still names', async () => {
+      store.seed({
+        ...SEED,
+        skills: [subjectIdeas, { ...preheaderIdeas, status: 'ARCHIVED' }],
+      });
+
+      expect(
+        await publication.usedByFeatures({ kind: 'skill', id: PREHEADER_IDEAS })
+      ).toEqual([]);
+    });
+
+    // The back office pages its lists: the filter must reach past a page.
+    describe('as a filter of the lists', () => {
+      let skillService;
+      let expertiseService;
+      const UNUSED_SKILL = {
+        ...f.SKILLS[1],
+        updatedAt: new Date('2099-01-01'),
+      };
+
+      beforeAll(() => {
+        skillService = require('../../../packages/server/ai-skill/services/skill.service');
+        expertiseService = require('../../../packages/server/ai-skill/services/expertise.service');
+      });
+
+      it('keeps the skills a feature uses, past the first page', async () => {
+        store.seed({ ...SEED, skills: [...SEED.skills, UNUSED_SKILL] });
+
+        const firstPage = await skillService.listSkills({
+          usedByFeature: 'true',
+          pageSize: 1,
+        });
+
+        expect(firstPage.total).toBe(2);
+        expect([SUBJECT_IDEAS, PREHEADER_IDEAS]).toContain(
+          firstPage.items[0].skillId
+        );
+      });
+
+      it('keeps the expertises a feature uses, and no archived one', async () => {
+        store.seed({ ...SEED, expertises: f.EXPERTISES });
+
+        const list = await expertiseService.listExpertise({
+          usedByFeature: 'true',
+        });
+
+        expect(list.items.map((e) => e.expertiseId)).toEqual([SUBJECT_LINES]);
+        expect(list.total).toBe(1);
+      });
+
+      it('keeps, of the expertises named, those a feature uses', async () => {
+        store.seed({ ...SEED, expertises: f.EXPERTISES });
+
+        const list = await expertiseService.listExpertise({
+          usedByFeature: 'true',
+          ids: [SUBJECT_LINES, SPAM_WORDS],
+        });
+
+        expect(list.items.map((e) => e.expertiseId)).toEqual([SUBJECT_LINES]);
+      });
+
+      it('keeps everything when it is off', async () => {
+        store.seed({ ...SEED, skills: [...SEED.skills, UNUSED_SKILL] });
+
+        expect((await skillService.listSkills({})).total).toBe(3);
+      });
     });
   });
 

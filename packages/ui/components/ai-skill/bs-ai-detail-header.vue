@@ -16,6 +16,8 @@ export default {
     // Optional "Test in the playground" link (skill pages only). The route
     // lives on the playground branch; harmless until the branches are merged.
     playgroundTo: { type: String, default: null },
+    // Worked out by the server from the features' declarations (ADR 0019).
+    usedByFeature: { type: Boolean, default: false },
   },
   computed: {
     statusColor() {
@@ -49,6 +51,9 @@ export default {
         :dark="status === 'ACTIVE'"
       >
         {{ statusLabel }}
+      </v-chip>
+      <v-chip v-if="usedByFeature" small outlined color="primary" class="ml-2">
+        {{ $t('aiSkills.usedByFeature.badge') }}
       </v-chip>
     </template>
     <template #actions>

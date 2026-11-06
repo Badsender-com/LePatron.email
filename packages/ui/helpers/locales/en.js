@@ -1718,6 +1718,13 @@ export default {
       intro:
         'These task skills, open to all companies, consume it: they will no longer receive it at the clients.',
     },
+    usedByFeature: {
+      badge: 'Used by a feature',
+      filter: 'Used by a feature',
+      features: 'Used by the features',
+      none: 'No feature uses it.',
+      hint: 'Worked out from what the features declare, never set by hand.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

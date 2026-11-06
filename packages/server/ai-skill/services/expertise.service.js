@@ -7,6 +7,7 @@ const { listFilter } = require('./expertise-list-filter.js');
 const { versionLabel } = require('./version-helpers.js');
 const manifestRegistry = require('./manifest-registry.js');
 const { normalizeScopes } = require('./expertise-scope.js');
+const { idsUsedByFeatures } = require('./skills-publication.service.js');
 const {
   createVersionedEntityService,
 } = require('./versioned-entity.service.js');
@@ -36,6 +37,7 @@ const LIST_PROJECTION = {
  * @param {string} [filters.status]
  * @param {string} [filters.search] found in the title or the expertiseId
  * @param {string|string[]} [filters.ids] these expertises exactly
+ * @param {string} [filters.usedByFeature] `true`: only those a feature uses
  * @param {number|string} [filters.page]
  * @param {number|string} [filters.pageSize] 200 at most
  * @returns {Promise<{items: Object[], total: number, page: number, pageSize: number}>}
@@ -46,10 +48,21 @@ async function listExpertise({
   status,
   search,
   ids,
+  usedByFeature,
   page = 1,
   pageSize = 50,
 } = {}) {
-  const query = listFilter({ category, status, search, ids });
+  let query = listFilter({ category, status, search, ids });
+  // Worked out from the features' declarations (ADR 0019), before paging;
+  // with `ids`, the expertises named that a feature uses.
+  if (String(usedByFeature) === 'true') {
+    const used = {
+      expertiseId: { $in: await idsUsedByFeatures('expertise') },
+    };
+    query = query.expertiseId
+      ? { $and: [query, used] }
+      : Object.assign(query, used);
+  }
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
   const [items, total] = await Promise.all([

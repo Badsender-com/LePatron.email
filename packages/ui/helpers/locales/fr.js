@@ -1739,6 +1739,13 @@ export default {
       intro:
         'Ces Skills de tâche, ouverts à toutes les entreprises, la consomment : ils ne la recevront plus chez les clients.',
     },
+    usedByFeature: {
+      badge: 'Utilisé par une fonctionnalité',
+      filter: 'Utilisé par une fonctionnalité',
+      features: 'Utilisé par les fonctionnalités',
+      none: 'Aucune fonctionnalité ne l\'utilise.',
+      hint: 'Déduit des déclarations des fonctionnalités, jamais saisi à la main.',
+    },
     pageTitle: 'Skills & Expertise',
     tabs: {
       skills: 'Skills',

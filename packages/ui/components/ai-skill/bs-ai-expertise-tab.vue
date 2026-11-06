@@ -10,6 +10,7 @@ import BsAiPlatformOnlyChip from '~/components/ai-skill/bs-ai-platform-only-chip
 import BsAiSkillsExportBar from '~/components/ai-skill/bs-ai-skills-export-bar.vue';
 import { isExportable } from '~/helpers/skills-export-download.js';
 import { BookOpen } from 'lucide-vue';
+import { isUsedByFeature } from '~/helpers/used-by-feature.js';
 import {
   skillCategoryOptions,
   skillCategoryLabel,
@@ -38,6 +39,7 @@ export default {
       filterCategory: null,
       filterStatus: null,
       filterScope: null,
+      onlyUsedByFeature: false,
     };
   },
   computed: {
@@ -100,6 +102,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUsedByFeature,
     statusColor(status) {
       return (
         { ACTIVE: 'success', DRAFT: 'warning', ARCHIVED: 'grey' }[status] ||
@@ -122,7 +125,11 @@ export default {
       this.loading = true;
       try {
         const list = await this.$axios.$get(api.aiExpertiseList(), {
-          params: { pageSize: 200 },
+          // On the server, so the filter reaches past the first page.
+          params: {
+            pageSize: 200,
+            ...(this.onlyUsedByFeature ? { usedByFeature: true } : {}),
+          },
         });
         this.items = list.items || [];
         this.total = list.total || 0;
@@ -213,6 +220,14 @@ export default {
         clearable
         class="filter-field"
       />
+      <v-checkbox
+        v-model="onlyUsedByFeature"
+        :label="$t('aiSkills.usedByFeature.filter')"
+        dense
+        hide-details
+        class="filter-checkbox"
+        @change="fetchData"
+      />
     </div>
 
     <bs-ai-skills-export-bar :expertise-ids="selectedIds" />
@@ -231,6 +246,15 @@ export default {
       <template #item.title="{ item }">
         <span class="font-weight-medium">{{ item.title }}</span>
         <bs-ai-platform-only-chip :audience="item.audience" />
+        <v-chip
+          v-if="isUsedByFeature(item)"
+          x-small
+          outlined
+          color="primary"
+          class="ml-2"
+        >
+          {{ $t('aiSkills.usedByFeature.badge') }}
+        </v-chip>
       </template>
       <template #item.expertiseId="{ item }">
         <span class="text-caption text--secondary">{{ item.expertiseId }}</span>
@@ -299,6 +323,9 @@ export default {
   gap: 0.75rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+.filter-checkbox {
+  margin-top: 0;
 }
 .filter-field {
   max-width: 220px;
