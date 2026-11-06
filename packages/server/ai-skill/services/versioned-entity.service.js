@@ -214,8 +214,8 @@ function createVersionedEntityService({
    * @param {Object} [options]
    * @param {boolean} [options.major] a major draft rather than a minor one
    * @param {*} [options.userId]
-   * @returns {Promise<{doc: Object, version: Object}>} the document and the
-   *   draft
+   * @returns {Promise<{doc: Object, version: Object, started: boolean}>}
+   *   the document, the draft, and whether this call started it
    * @throws {HttpError} 404, or 409 when the document is archived, when a
    *   major is asked while a minor draft is open, or when it changed in a
    *   way that leaves no draft to write
@@ -223,7 +223,7 @@ function createVersionedEntityService({
   async function openOrStartDraft(id, { major = false, userId } = {}) {
     const doc = await getDoc(id);
     const open = draftToWrite(doc, id, major);
-    if (open) return { doc, version: open };
+    if (open) return { doc, version: open, started: false };
 
     // A minor by default, a major on request or when nothing is published
     // yet, as the back office starts them.
@@ -245,12 +245,13 @@ function createVersionedEntityService({
       return {
         doc: written,
         version: findVersion(written, draft.versionMajor, draft.versionMinor),
+        started: true,
       };
     }
     // Another write came first: the draft it started is the one to write.
     const now = await getDoc(id);
     const started = draftToWrite(now, id, major);
-    if (started) return { doc: now, version: started };
+    if (started) return { doc: now, version: started, started: false };
     throw createError(
       409,
       `The ${entityNoun} "${id}" changed while the draft was started: send the change again.`

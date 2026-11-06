@@ -87,15 +87,28 @@ function answerOf(entity, doc, draft) {
   };
 }
 
+// The changelog of a draft a proposal writes into: the draft's own, then the
+// proposal's, so that what a person or an earlier proposal wrote stays. A
+// draft this proposal started has only the default of a new version.
+function changelogAfter(version, started, changelog) {
+  const before = started ? '' : String(version.changelog || '').trim();
+  return before ? `${before}\n${changelog}` : changelog;
+}
+
 // The open draft, or a new one the versioning service starts (ADR 0014).
 async function writeDraft(entity, id, { major, ...patch }, user) {
   const { service } = ENTITIES[entity];
-  const { version } = await service.openOrStartDraft(id, {
+  const { version, started } = await service.openOrStartDraft(id, {
     major,
     userId: user.id,
   });
   const ref = { major: version.versionMajor, minor: version.versionMinor };
-  const saved = await service.updateVersion(id, ref, patch, user.id);
+  const saved = await service.updateVersion(
+    id,
+    ref,
+    { ...patch, changelog: changelogAfter(version, started, patch.changelog) },
+    user.id
+  );
   return answerOf(entity, saved, findVersion(saved, ref.major, ref.minor));
 }
 

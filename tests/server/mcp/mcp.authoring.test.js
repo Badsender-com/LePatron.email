@@ -191,6 +191,45 @@ describe('authoring', () => {
       expect(second.diff).toContain('+ One at most.');
     });
 
+    // What a person or an earlier proposal wrote of the draft stays.
+    it('adds its changelog after the one of the draft it writes into', async () => {
+      harness.seed(
+        withVersions([{ ...draft(2, 2), changelog: 'By a person' }])
+      );
+      const client = await asAuthor();
+      const propose = (changelog) =>
+        call(client, 'propose_expertise_change', {
+          expertiseId: SUBJECT_LINES,
+          body: NEW_BODY,
+          changelog,
+        });
+
+      await propose('Shorter subjects');
+      await propose('No shouting');
+
+      const { versions } = harness
+        .stored('expertises')
+        .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
+      const open = versions.find((v) => v.status === 'DRAFT');
+      expect(open.changelog).toBe('By a person\nShorter subjects\nNo shouting');
+    });
+
+    it('writes its changelog alone into the draft it starts', async () => {
+      harness.seed(WITHOUT_DRAFT);
+
+      await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: NEW_BODY,
+        changelog: 'Shorter subjects',
+      });
+
+      const { versions } = harness
+        .stored('expertises')
+        .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
+      const open = versions.find((v) => v.status === 'DRAFT');
+      expect(open.changelog).toBe('Shorter subjects');
+    });
+
     // An assistant may send two changes at once: the second goes to the
     // draft the first started.
     it('opens one draft for two changes proposed at once', async () => {
