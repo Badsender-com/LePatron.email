@@ -14,11 +14,15 @@
 @right-panel-width: 360px;
 @right-panel-offset: -(@right-panel-width + 50px);
 // The panel rail and the open panel float over the canvas, as on the boards
-// (ADR 0020): 14 px from the edges, the rail a card of 40 px buttons, the
+// (ADR 0020): 14 px under the top bar, the rail a card of 40 px buttons, the
 // panel 10 px beside it.
 @panel-float-inset: 14px;
 @panel-rail-width: 50px; // 40 px buttons, 4 px padding, 1 px border
-@right-panel-right: @panel-float-inset + @panel-rail-width + 10px;
+// On the right, the canvas's scrollbar (classic scrollbars are 15 px wide)
+// stays clear of the rail by a few pixels.
+@canvas-scrollbar-width: 15px;
+@panel-rail-right: @canvas-scrollbar-width + 8px;
+@right-panel-right: @panel-rail-right + @panel-rail-width + 10px;
 
 @keyframes right-panel-slide-in {
   0% { right: @right-panel-offset; }
@@ -84,7 +88,7 @@
 .panel-rail {
   position: fixed;
   top: calc(var(--top-bar-height, 52px) + @panel-float-inset);
-  right: @panel-float-inset;
+  right: @panel-rail-right;
   // The panels' level, and after them in the page: a sliding panel passes
   // under the rail. Below the top bar (201) and its menus, and the dialogs.
   z-index: 200;
