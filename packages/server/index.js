@@ -6,6 +6,7 @@ disableOutboundKeepAlive();
 
 const path = require('path');
 const chalk = require('chalk');
+const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const express = require('express');
 const session = require('express-session');
@@ -24,6 +25,10 @@ const cluster = require('cluster');
 const config = require('./node.config.js');
 const { assertNoDevDefaults } = require('./config/dev-defaults.js');
 const { sessionCookieOptions, forceHttps } = require('./utils/https-only.js');
+const {
+  isReturnPath,
+  samlReturnPath,
+} = require('../shared/access/return-path.js');
 const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
@@ -63,6 +68,9 @@ const {
   invocationsRouter: aiInvocationsRouter,
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
+const { mountMcp } = require('./mcp/mcp-http.js');
+const { McpOAuthAdapter } = require('./mcp/mcp-oauth-adapter.js');
+const { siteOrigin } = require('./email-templates/email-template.js');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
 
@@ -145,6 +153,9 @@ if (cluster.isMaster) {
   app.use(cookieParser());
   // fix size error while downloading a zip
   // https://stackoverflow.com/a/19965089
+  // The MCP endpoint takes tool calls, never files (ADR 0012): read before the
+  // app's own limit, which would let one call carry 50 MB of arguments.
+  app.use('/mcp', bodyParser.json({ limit: '1mb' }));
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 
@@ -153,13 +164,16 @@ if (cluster.isMaster) {
   // • Events routes are omitted from this due to SSE's response cut
   //   https://github.com/expressjs/compression#chunksize
   const EVENT_ROUTE_REGEX = /\/events$/;
+  // The MCP endpoint streams its answers as server-sent events too.
+  const MCP_ROUTE_REGEX = /^\/mcp$/;
   app.use(
     compression({
       // • this param was used for compression to play gracefully with SSE
       //   but it doesn't solve our chunksize issues
       //   https://github.com/expressjs/compression/issues/86#issuecomment-245377396
       // flush: zlib.Z_SYNC_FLUSH,
-      filter: (req) => !EVENT_ROUTE_REGEX.test(req.path),
+      filter: (req) =>
+        !EVENT_ROUTE_REGEX.test(req.path) && !MCP_ROUTE_REGEX.test(req.path),
     })
   );
 
@@ -280,6 +294,15 @@ if (cluster.isMaster) {
       if (req.query.SAMLResponse || req.query.SAMLRequest || !req.query.email) {
         return res.redirect('/');
       }
+      // Where the callback sends the user back: the consent page of a
+      // connected application, or home (ADR 0012).
+      req.session.returnPath = isReturnPath(req.query.next)
+        ? req.query.next
+        : undefined;
+      // The identity provider posts its answer back cross-site, where the
+      // session's lax cookie does not travel: the path goes with the request,
+      // as its RelayState, which the identity provider sends back.
+      if (req.session.returnPath) req.query.RelayState = req.query.next;
       next();
     },
     passport.authenticate('saml', { failureRedirect: '/' }),
@@ -299,7 +322,12 @@ if (cluster.isMaster) {
     async function (req, res) {
       // Update session tracking after SAML login
       await updateSessionTracking(req, req.user);
-      res.redirect('/');
+      const returnPath = samlReturnPath(
+        req.body && req.body.RelayState,
+        req.session.returnPath
+      );
+      delete req.session.returnPath;
+      res.redirect(returnPath || '/');
     }
   );
 
@@ -312,7 +340,28 @@ if (cluster.isMaster) {
   app.get('/account/logout', (req, res) => {
     forgetSessionSelection(req);
     req.logout();
-    res.redirect('/account/login');
+    // Changing accounts on a consent page brings the user back to it.
+    const { next } = req.query;
+    res.redirect(
+      isReturnPath(next)
+        ? `/account/login?next=${encodeURIComponent(next)}`
+        : '/account/login'
+    );
+  });
+
+  // The MCP endpoint and LePatron's authorization server (ADR 0012), after
+  // the session: the consent reads the app's user.
+  mountMcp(app, {
+    origin: siteOrigin(),
+    // A key of its own, derived from the session's secret.
+    cookieKeys: [
+      crypto
+        .createHmac('sha256', config.sessionSecret)
+        .update('mcp-oauth-cookies')
+        .digest('base64'),
+    ],
+    adapter: McpOAuthAdapter,
+    ...(config.mcpOauthJwks && { jwks: JSON.parse(config.mcpOauthJwks) }),
   });
 
   // Passport configuration

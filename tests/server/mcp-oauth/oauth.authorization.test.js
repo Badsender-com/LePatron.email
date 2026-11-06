@@ -1,3 +1,6 @@
+/**
+ * @jest-environment ./tests/helpers/node-globals-environment.js
+ */
 'use strict';
 
 // Connecting an application (ADR 0012): the user logs in to LePatron as usual,
@@ -10,8 +13,7 @@ const f = require('../../helpers/mcp-fixtures');
 
 const { CIMD_CLIENT, ISSUER } = oauth;
 
-// Turned on by #1306 (OAuth connection end to end)
-describe.skip('authorization and consent', () => {
+describe('authorization and consent', () => {
   let app;
   beforeEach(() => {
     app = oauth.createApp();
@@ -40,7 +42,7 @@ describe.skip('authorization and consent', () => {
   it('asks a visitor without a session to log in first', async () => {
     const { uid } = await consentFor(f.FRANK);
 
-    const response = await request(app).get(`/api/oauth/interactions/${uid}`);
+    const response = await request(app).get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(401);
   });
@@ -48,30 +50,44 @@ describe.skip('authorization and consent', () => {
   it('names the application, what it asks for and the user’s group', async () => {
     const { agent, uid } = await consentFor(f.FRANK);
 
-    const { status, body } = await agent.get(`/api/oauth/interactions/${uid}`);
+    const { status, body } = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(status).toBe(200);
     expect(body).toEqual({
       client: { name: 'An assistant' },
+      redirectHost: 'assistant.example.test',
       scopes: ['mcp:read'],
       groups: [{ id: f.CLIENT_GROUP, name: 'A client' }],
+      account: { email: 'frank@example.test' },
     });
   });
 
   it('offers a super admin every group with MCP access', async () => {
     const { agent, uid } = await consentFor(f.ALICE);
 
-    const { body } = await agent.get(`/api/oauth/interactions/${uid}`);
+    const { body } = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(body.groups.map((group) => group.id).sort()).toEqual(
       [f.PLATFORM_GROUP, f.CLIENT_GROUP, f.OTHER_GROUP].sort()
     );
   });
 
+  it('stops an account LePatron does not know, as the bootstrap account', async () => {
+    const { uid } = await consentFor(f.FRANK);
+
+    // The bootstrap account's id has no document.
+    const response = await oauth
+      .signIn(app, '576b90a441ceadc005124896')
+      .get(`/oauth/consent/${uid}/details`);
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe('account_cannot_connect');
+  });
+
   it('stops a user whose group has no MCP access', async () => {
     const { agent, uid } = await consentFor(f.NINA);
 
-    const response = await agent.get(`/api/oauth/interactions/${uid}`);
+    const response = await agent.get(`/oauth/consent/${uid}/details`);
 
     expect(response.status).toBe(403);
     expect(response.body.message).toMatch(/MCP access/i);
@@ -80,7 +96,7 @@ describe.skip('authorization and consent', () => {
   it('hands the application a code, its state and the issuer', async () => {
     const { agent, uid } = await consentFor(f.FRANK);
     const consent = await agent
-      .post(`/api/oauth/interactions/${uid}/consent`)
+      .post(`/oauth/consent/${uid}/consent`)
       .send({ groupId: f.CLIENT_GROUP });
 
     const back = await oauth.followToClient(agent, consent.body.redirectTo);
@@ -91,11 +107,31 @@ describe.skip('authorization and consent', () => {
     expect(back.searchParams.get('iss')).toBe(ISSUER);
   });
 
+  // A consent link sent to someone else: the victim's consent must not
+  // reach the browser of whoever started the authorization.
+  it('answers nothing to a browser that did not start the authorization', async () => {
+    const attacker = oauth.signIn(app, f.OTTO);
+    const uid = await oauth.startConsent(
+      attacker,
+      CIMD_CLIENT,
+      oauth.pkce().challenge
+    );
+    const victim = oauth.signIn(app, f.FRANK);
+
+    const details = await victim.get(`/oauth/consent/${uid}/details`);
+    const consent = await victim
+      .post(`/oauth/consent/${uid}/consent`)
+      .send({ groupId: f.CLIENT_GROUP });
+
+    expect(details.status).toBe(404);
+    expect(consent.status).toBe(404);
+  });
+
   it('refuses to bind a user to a group they are not in', async () => {
     const { agent, uid } = await consentFor(f.FRANK);
 
     const consent = await agent
-      .post(`/api/oauth/interactions/${uid}/consent`)
+      .post(`/oauth/consent/${uid}/consent`)
       .send({ groupId: f.OTHER_GROUP });
 
     expect(consent.status).toBe(403);
@@ -105,7 +141,7 @@ describe.skip('authorization and consent', () => {
     const { agent, uid } = await consentFor(f.ALICE);
 
     const consent = await agent
-      .post(`/api/oauth/interactions/${uid}/consent`)
+      .post(`/oauth/consent/${uid}/consent`)
       .send({ groupId: f.UNSUBSCRIBED_GROUP });
 
     expect(consent.status).toBe(403);
@@ -114,7 +150,7 @@ describe.skip('authorization and consent', () => {
   it('tells the application when the user declines', async () => {
     const { agent, uid } = await consentFor(f.FRANK);
 
-    const denied = await agent.post(`/api/oauth/interactions/${uid}/deny`);
+    const denied = await agent.post(`/oauth/consent/${uid}/deny`);
     const back = await oauth.followToClient(agent, denied.body.redirectTo);
 
     expect(back.searchParams.get('error')).toBe('access_denied');

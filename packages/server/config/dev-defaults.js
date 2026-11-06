@@ -6,11 +6,16 @@
 const DEFAULTS = {
   sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
   'admin.password': 'admin',
+  // No default, but one all the same: without its keys, the MCP authorization
+  // server (ADR 0012) signs its tokens with oidc-provider's development keys,
+  // which are published.
+  mcpOauthJwks: undefined,
 };
 
 const ENV_NAMES = {
   sessionSecret: 'lepatron_sessionSecret',
   'admin.password': 'lepatron_admin__password',
+  mcpOauthJwks: 'lepatron_mcpOauthJwks',
 };
 
 // Named explicitly: an unset NODE_ENV reads as development in node.config.js,

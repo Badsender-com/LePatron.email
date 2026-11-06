@@ -14,6 +14,7 @@ import {
   STEP_RECOVERY_CODES,
 } from '~/helpers/two-factor.js';
 import { takeLogoutReason } from '~/helpers/logout-reason.js';
+import { isReturnPath } from '../../../../shared/access/return-path.js';
 import BsLoginLogo from '~/components/account/login-logo.vue';
 import BsTwoFactorCode from '~/components/account/two-factor-code.vue';
 import BsTwoFactorSetup from '~/components/account/two-factor-setup.vue';
@@ -57,6 +58,12 @@ export default {
     title() {
       return 'login';
     },
+    // The consent page of a connected application, when the login was asked
+    // on its way (ADR 0012).
+    returnPath() {
+      const { next } = this.$route.query;
+      return isReturnPath(next) ? next : null;
+    },
   },
   validations: {
     username: { required },
@@ -94,9 +101,12 @@ export default {
           );
           this.isLoading = false;
           if (profile && profile.group && profile.group.isSAMLAuthentication) {
+            const next = this.returnPath
+              ? `&next=${encodeURIComponent(this.returnPath)}`
+              : '';
             window.location = `/account/SAML-login?email=${encodeURIComponent(
               this.username
-            )}`;
+            )}${next}`;
           } else {
             this.isBasicAuthentication = true;
             this.userIsFound = true;
@@ -162,10 +172,13 @@ export default {
       // Use action to fetch complete group data with module flags
       await this.$store.dispatch(`${USER}/${USER_SET}`, user);
 
-      // Redirect to home page, which will handle routing to the first
-      // enabled module; the bootstrap account, which has no role, stays
-      // in the settings (ADR 0002, amended).
-      if (this.$store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
+      // Back to the consent page the login was asked on; otherwise home,
+      // which will handle routing to the first enabled module; the
+      // bootstrap account, which has no role, stays in the settings
+      // (ADR 0002, amended).
+      if (this.returnPath) {
+        await $router.push(this.returnPath);
+      } else if (this.$store.getters[`${USER}/${IS_BOOTSTRAP_ACCOUNT}`]) {
         await $router.push('/groups');
       } else {
         await $router.push('/');
@@ -208,6 +221,10 @@ export default {
         </v-toolbar-title>
       </v-toolbar>
       <v-divider />
+      <!-- Sent here by an assistant asking to connect (ADR 0012). -->
+      <v-card-text v-if="returnPath" class="pb-0 text-left">
+        {{ $t('oauthConsent.loginHint') }}
+      </v-card-text>
       <div v-if="!userIsFound">
         <v-card-text>
           <v-form id="check-email-form" @submit.prevent="checkEmailForm">

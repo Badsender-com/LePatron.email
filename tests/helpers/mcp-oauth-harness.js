@@ -9,21 +9,42 @@
  *
  * 1. `GET /oauth/auth` (client, PKCE challenge, `resource`, scope) answers a
  *    redirect to the consent page, `/oauth/consent/:uid`.
- * 2. The consent page reads `GET /api/oauth/interactions/:uid` with the user's
- *    session: the client's name, the scopes, and the groups the user may bind
- *    the connection to.
- * 3. It posts `POST /api/oauth/interactions/:uid/consent` with the group, or
+ * 2. The consent page reads `GET /oauth/consent/:uid/details` with the user's
+ *    session and the provider's interaction cookie, which binds the consent
+ *    to the browser that started: the client's name, where it redirects, the
+ *    scopes, and the groups the user may bind the connection to.
+ * 3. It posts `POST /oauth/consent/:uid/consent` with the group, or
  *    `/deny`, and is answered `{ redirectTo }`, where the browser resumes.
  * 4. The authorization server redirects to the client with a code and `iss`.
  * 5. `POST /oauth/token` trades the code and the PKCE verifier for tokens.
  *
- * `createApp`, `signIn`, `signInBeforeCode`, `update` and `serveClientMetadata`
- * are written by #1306, which mounts the authorization server; the rest drives
- * the flow above.
+ * `createApp` mounts the authorization server and the MCP endpoint on an
+ * Express app, as index.js does, with the app's session reduced to the user
+ * `signIn` names; the app's `provider` is the authorization server. Requiring
+ * this file replaces the models with the stand-ins of `mcp-fake-models.js` for
+ * the whole test file, and quiets the logger. `signInBeforeCode` is written
+ * with the check of the verification code before the consent (ADR 0008).
  */
 
 const crypto = require('crypto');
+const express = require('express');
 const request = require('./local-request');
+const { createMcpStore } = require('./mcp-fake-models');
+const f = require('./mcp-fixtures');
+
+const store = createMcpStore();
+
+jest.doMock(
+  '../../packages/server/common/models.common.js',
+  () => store.models
+);
+jest.doMock('../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+}));
 
 const BASE = 'http://lepatron.test';
 const MCP_RESOURCE = `${BASE}/mcp`;
@@ -38,22 +59,61 @@ const CIMD_CLIENT = Object.freeze({
   token_endpoint_auth_method: 'none',
 });
 
-const NOT_YET = 'The OAuth harness is written by #1306';
+// The documents the authorization server finds when it fetches a client_id.
+let documents = new Map();
+
+function fetchDocument(url) {
+  const document = documents.get(String(url));
+  return Promise.resolve(
+    document
+      ? new Response(JSON.stringify(document), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      : new Response('Not found', { status: 404 })
+  );
+}
+
+const TEST_USER = 'x-test-user';
+const NOT_YET =
+  'Signing in before the verification code is written with ADR 0008 at consent';
 
 /**
  * The app with the authorization server and the MCP endpoint mounted, the
  * records of `mcp-fixtures.js` seeded, and `CIMD_CLIENT`'s document served.
  */
 function createApp() {
-  throw new Error(NOT_YET);
+  store.seed(f.SEED);
+  documents = new Map([[CIMD_CLIENT.client_id, CIMD_CLIENT]]);
+  require('../../packages/server/mcp/mcp-call-guard.js').forgetCounts();
+
+  const app = express();
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
+  // What passport leaves of the session: the user, or nobody.
+  app.use((req, res, next) => {
+    const userId = req.get(TEST_USER);
+    if (userId) req.user = { id: userId };
+    next();
+  });
+  // Required here: the server reads the models, which must be the stand-ins.
+  const { mountMcp } = require('../../packages/server/mcp/mcp-http.js');
+  // The authorization server, for what no HTTP client can do (a token issued
+  // for another resource).
+  app.provider = mountMcp(app, {
+    origin: BASE,
+    cookieKeys: ['a-test-cookie-key'],
+    fetch: fetchDocument,
+  });
+  return app;
 }
 
 /**
  * A supertest agent carrying the session of `userId`, as after the login, its
  * verification code checked when one is asked (ADR 0008).
  */
-function signIn() {
-  throw new Error(NOT_YET);
+function signIn(app, userId) {
+  return request.agent(app).set(TEST_USER, userId);
 }
 
 /**
@@ -66,13 +126,13 @@ function signInBeforeCode() {
 }
 
 /** Changes a seeded record, the way the app would (MCP access turned off). */
-function update() {
-  throw new Error(NOT_YET);
+function update(_app, collection, id, changes) {
+  store.update(collection, id, changes);
 }
 
 /** Answers `document` when the authorization server fetches `url`. */
-function serveClientMetadata() {
-  throw new Error(NOT_YET);
+function serveClientMetadata(url, document) {
+  documents.set(url, document);
 }
 
 function pkce() {
@@ -126,7 +186,7 @@ async function connect(
   const { verifier, challenge } = pkce();
   const uid = await startConsent(agent, client, challenge);
   const consent = await agent
-    .post(`/api/oauth/interactions/${uid}/consent`)
+    .post(`/oauth/consent/${uid}/consent`)
     .send({ groupId: group });
   const back = await followToClient(agent, consent.body.redirectTo);
   const code = back.searchParams.get('code');
