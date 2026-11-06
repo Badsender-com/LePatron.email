@@ -1,12 +1,13 @@
 'use strict';
 
 const express = require('express');
-const { Users, Groups } = require('../common/models.common.js');
+const { Users, Groups, McpClients } = require('../common/models.common.js');
 const permissions = require('../account/permissions.js');
 const { CAPABILITIES } = require('../../shared/access/roles.js');
 const { READ_SCOPE } = require('./mcp-identity.js');
 const { WRITE_SCOPE } = require('./mcp-authoring.js');
-const { accountIdOf } = require('./mcp-oauth.js');
+const logger = require('../utils/logger.js');
+const { accountIdOf, keepRegisteredClient } = require('./mcp-oauth.js');
 
 const NO_ACCESS = 'This company has no MCP access to LePatron.';
 
@@ -47,6 +48,26 @@ async function consenterOf(req) {
     // platform (ADR 0014).
     scopes: isPlatform ? [READ_SCOPE, WRITE_SCOPE] : [READ_SCOPE],
   };
+}
+
+/**
+ * How the client made itself known, for the user to weigh its name: a super
+ * admin registered it, a site publishes its metadata document (its host is
+ * shown), or it registered itself, and its name is only what it claims.
+ */
+async function registrationOf(clientId) {
+  if (await McpClients.findOne({ clientId }).lean()) {
+    return { registration: 'preRegistered' };
+  }
+  try {
+    const url = new URL(clientId);
+    if (url.protocol === 'https:') {
+      return { registration: 'metadataDocument', host: url.host };
+    }
+  } catch {
+    // Not a URL: an id the authorization server gave.
+  }
+  return { registration: 'dynamic' };
 }
 
 /**
@@ -108,10 +129,15 @@ function createInteractionsRouter(provider, resource) {
     try {
       const { params } = req.interaction;
       const client = await provider.Client.find(params.client_id);
+      const redirect = new URL(params.redirect_uri);
       res.json({
-        client: { name: client?.clientName || params.client_id },
-        // Where the answer goes, for the user to recognise the application.
-        redirectHost: new URL(params.redirect_uri).host,
+        client: {
+          name: client?.clientName || params.client_id,
+          ...(await registrationOf(params.client_id)),
+        },
+        // Where the answer goes, for the user to recognise the application;
+        // the whole URI when it has no host (an app's own scheme).
+        redirectHost: redirect.host || params.redirect_uri,
         scopes: req.granted,
         groups: req.consenter.groups,
         // Whose rights the application gets, for the user to check.
@@ -149,6 +175,13 @@ function createInteractionsRouter(provider, resource) {
       grant.addOIDCScope(granted.join(' '));
       grant.addResourceScope(resource, granted.join(' '));
       const grantId = await grant.save();
+      // Never in the way of the consent: the client only lives on.
+      await keepRegisteredClient(
+        provider,
+        interaction.params.client_id
+      ).catch((error) =>
+        logger.error('[mcp-oauth] keep client', error.message)
+      );
       return await finish(req, res, {
         login: { accountId },
         consent: { grantId },

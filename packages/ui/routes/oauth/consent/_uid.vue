@@ -38,8 +38,15 @@ export default {
     uid() {
       return this.$route.params.uid;
     },
+    isSelfRegistered() {
+      return this.interaction?.client.registration === 'dynamic';
+    },
+    // The name a client gave itself is quoted: it is only what it claims.
     client() {
-      return this.interaction?.client.name || '';
+      const name = this.interaction?.client.name || '';
+      return name && this.isSelfRegistered
+        ? this.$t('oauthConsent.claimedName', { client: name })
+        : name;
     },
     // Logging out comes back here, to consent with another account.
     switchAccountUrl() {
@@ -50,6 +57,19 @@ export default {
         (candidate) => candidate.id === this.groupId
       );
       return group ? group.name : '';
+    },
+    // Its name is only what it claims, unless a super admin registered it.
+    registrationNote() {
+      const client = this.interaction?.client;
+      if (client?.registration === 'dynamic') {
+        return this.$t('oauthConsent.registration.dynamic');
+      }
+      if (client?.registration === 'metadataDocument') {
+        return this.$t('oauthConsent.registration.metadataDocument', {
+          host: client.host,
+        });
+      }
+      return '';
     },
     scopeLabels() {
       return (this.interaction?.scopes || [])
@@ -136,6 +156,16 @@ export default {
         </v-card-title>
         <v-divider />
         <v-card-text>
+          <!-- First, and a warning when nobody vouches for the name. -->
+          <v-alert
+            v-if="registrationNote"
+            :type="isSelfRegistered ? 'warning' : 'info'"
+            :dense="!isSelfRegistered"
+            text
+            class="text-body-2"
+          >
+            {{ registrationNote }}
+          </v-alert>
           <p class="mb-1">{{ $t('oauthConsent.intro', { client }) }}</p>
           <p class="text-caption">
             {{

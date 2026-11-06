@@ -11,6 +11,7 @@ const { createMcpServer } = require('./mcp-server.js');
 const { resolveIdentity, READ_SCOPE } = require('./mcp-identity.js');
 const { createAuthorizationServer, identityOf } = require('./mcp-oauth.js');
 const { createInteractionsRouter } = require('./mcp-oauth-interactions.js');
+const { createClientsRouter, isClientAllowed } = require('./mcp-clients.js');
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -38,6 +39,7 @@ async function authInfoOf(provider, header, resource) {
   if (kind !== 'Bearer' || !value) return null;
   const token = await provider.AccessToken.find(value);
   if (!token || token.isExpired || token.aud !== resource) return null;
+  if (!(await isClientAllowed(token.clientId))) return null;
   return {
     token: value,
     clientId: token.clientId,
@@ -54,7 +56,8 @@ async function authInfoOf(provider, header, resource) {
  * Mounts the MCP endpoint and LePatron's authorization server on the app
  * (ADR 0012): the metadata a connected application discovers them by
  * (RFC 9728, RFC 8414), the authorization server under `/oauth`, the consent
- * API the consent page reads (`/oauth/consent/:uid/…`), and `/mcp`, which
+ * API the consent page reads (`/oauth/consent/:uid/…`), the clients a super
+ * admin registers (`/api/mcp-clients`), and `/mcp`, which
  * takes only the access tokens issued for it. The consent page itself,
  * `/oauth/consent/:uid`, is the UI's.
  *
@@ -133,6 +136,9 @@ function mountMcp(app, { origin, ...providerOptions }) {
     `${ISSUER_PATH}/consent`,
     createInteractionsRouter(provider, resource)
   );
+
+  // The clients a super admin registers, kept by the authorization server.
+  app.use('/api/mcp-clients', createClientsRouter(provider));
 
   // Everything else under /oauth is the provider's; the consent page itself
   // is the UI's. Express hands the provider the path without the mount point,

@@ -51,7 +51,7 @@
 import { mapGetters } from 'vuex';
 import { GROUP, CAN, SELECTED_GROUP, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../shared/access/roles.js';
-import { Shield, Sparkles, FlaskConical, UserCog } from 'lucide-vue';
+import { Shield, Sparkles, FlaskConical, UserCog, KeyRound } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
@@ -61,6 +61,7 @@ export default {
     LucideSparkles: Sparkles,
     LucideFlaskConical: FlaskConical,
     LucideUserCog: UserCog,
+    LucideKeyRound: KeyRound,
   },
   props: {
     collapsed: {
@@ -122,6 +123,13 @@ export default {
               route: '/super-admins',
               superAdminOnly: true,
               activePatterns: ['/super-admins'],
+            },
+            {
+              id: 'mcp-clients',
+              label: this.$t('mcpClients.pageTitle'),
+              iconComponent: 'LucideKeyRound',
+              route: '/mcp-clients',
+              superAdminOnly: true,
             },
             {
               id: 'ai-playground',

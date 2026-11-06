@@ -1079,6 +1079,7 @@ export default {
     updated: 'Retour d\'expérience mis à jour',
   },
   oauthConsent: {
+    claimedName: '« {client} »',
     title: 'Connecter {client} à LePatron',
     pageTitle: 'Connecter un assistant à LePatron',
     loginHint: 'Connectez-vous pour autoriser votre assistant IA à accéder à LePatron.',
@@ -1088,6 +1089,11 @@ export default {
     closeHint: 'Vous pouvez fermer cette fenêtre et relancer la connexion depuis votre assistant.',
     redirectHost: 'Après accord, vous serez renvoyé vers {host}.',
     canDo: 'Cette application pourra :',
+    registration: {
+      dynamic:
+        'Cette application s\'est enregistrée elle-même : LePatron ne peut pas garantir son nom. Ne continuez que si vous venez de lancer la connexion depuis elle.',
+      metadataDocument: 'Son identité est publiée par {host}.',
+    },
     scopes: {
       read:
         'lire les expertises, les skills et les mailings auxquels vous avez accès, avec vos droits',
@@ -1107,6 +1113,55 @@ export default {
       'Ce compte ne peut pas connecter d\'assistant : connectez-vous avec votre compte utilisateur.',
     noAccess:
       'Votre entreprise n\'a pas l\'accès MCP : demandez à son administrateur de l\'activer.',
+  },
+  mcpClients: {
+    pageTitle: 'Clients MCP',
+    description:
+      'Les assistants qui ne savent pas s\'enregistrer eux-mêmes, comme Copilot Studio en mode manuel, reçoivent ici un identifiant et un secret. Claude, ChatGPT et Microsoft 365 Copilot n\'en ont pas besoin.',
+    add: 'Ajouter un client',
+    addDescription:
+      'Recopiez l\'URL de redirection que l\'assistant affiche dans son écran de configuration.',
+    name: 'Nom',
+    nameHint: 'Montré à l\'utilisateur sur l\'écran de consentement.',
+    redirectUris: 'URL de redirection',
+    redirectUrisHint: 'Une par ligne, en HTTPS.',
+    authMethod: 'Envoi du secret',
+    authMethodHint:
+      'Où l\'assistant envoie le secret à LePatron. Dans le doute, gardez « Dans le corps de la requête ».',
+    authMethods: {
+      client_secret_post: 'Dans le corps de la requête',
+      client_secret_basic: 'Dans l\'en-tête (Basic)',
+    },
+    empty: 'Aucun client enregistré.',
+    loadError: 'Impossible de charger les clients MCP.',
+    createdTitle: 'Client « {name} » créé',
+    secretOnce:
+      'Copiez le secret maintenant : il ne sera plus jamais affiché. S\'il est perdu, supprimez le client et créez-en un autre.',
+    secretSaved: 'J\'ai copié le secret',
+    copy: 'Copier',
+    copied: 'Copié',
+    deleteTitle: 'Supprimer ce client ?',
+    deleteConfirm:
+      'L\'assistant « {name} » ne pourra plus se connecter ni renouveler ses connexions. Celles en cours s\'arrêtent dans l\'heure.',
+    deleted: 'Client supprimé',
+    serverTitle: 'Paramètres du serveur',
+    serverDescription:
+      'Les valeurs que l\'assistant demande pour se connecter à LePatron.',
+    settings: {
+      clientId: 'Identifiant client (client ID)',
+      clientSecret: 'Secret client (client secret)',
+      mcpUrl: 'URL du serveur MCP',
+      authorizationUrl: 'URL d\'autorisation',
+      tokenUrl: 'URL du token',
+      refreshUrl: 'URL de renouvellement',
+      scope: 'Scope',
+    },
+    errors: {
+      nameTooLong: 'Le nom fait au plus 100 caractères.',
+      redirectUrisRequired: 'Au moins une URL de redirection est requise.',
+      redirectUrisInvalid:
+        'Jusqu\'à 10 URL, en HTTPS (HTTP seulement vers localhost), sans fragment #.',
+    },
   },
   mcpAccess: {
     title: 'Accès MCP',

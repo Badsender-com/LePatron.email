@@ -90,11 +90,24 @@ function createApp() {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
-  // What passport leaves of the session: the user, or nobody.
+  // What passport leaves of the session (deserializeUser): the user with
+  // its capabilities, an id alone for an account with no record (the
+  // configuration's admin), or nobody.
+  const permissions = require('../../packages/server/account/permissions.js');
   app.use((req, res, next) => {
     const userId = req.get(TEST_USER);
-    if (userId) req.user = { id: userId };
-    next();
+    if (!userId) return next();
+    const record = store
+      .stored('users')
+      .find((user) => String(user._id) === userId && !user.isDeactivated);
+    req.user = record
+      ? permissions.withCapabilities({
+          ...record,
+          id: userId,
+          group: { id: String(record._company) },
+        })
+      : { id: userId };
+    return next();
   });
   // Required here: the server reads the models, which must be the stand-ins.
   const { mountMcp } = require('../../packages/server/mcp/mcp-http.js');
