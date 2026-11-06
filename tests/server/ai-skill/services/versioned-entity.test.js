@@ -320,6 +320,21 @@ describe.each(ENTITIES)('versioned lifecycle — $label', (entity) => {
       );
     });
 
+    // The schema fills in the update date of a version stored without one:
+    // the condition takes it as none, so such a draft can be written.
+    it('writes a draft stored without an update date', async () => {
+      const legacy = doc.versions[1];
+      legacy.$isDefault = (field) => field === 'updatedAt';
+      model.findOneAndUpdate = jest.fn().mockResolvedValue(doc);
+
+      await service.writeDraftIfUnchanged(doc, legacy, {}, USER_ID);
+
+      const [filter] = model.findOneAndUpdate.mock.calls[0];
+      expect(filter.versions.$elemMatch.updatedAt).toEqual({
+        $in: [null, null],
+      });
+    });
+
     it('refuses when the draft changed since it was read', async () => {
       model.findOneAndUpdate = jest.fn().mockResolvedValue(null);
 

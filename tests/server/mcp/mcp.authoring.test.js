@@ -426,6 +426,28 @@ describe('authoring', () => {
       });
     });
 
+    // Archived between the reading of its draft and the writing of the
+    // proposal, it takes no more drafts.
+    it('writes nothing into an expertise archived since its draft was read', async () => {
+      harness.seed(withVersions([draft(2, 2)]));
+      const service = require('../../../packages/server/ai-skill/services/expertise.service.js');
+      const { doc, version } = await service.openOrStartDraft(SUBJECT_LINES);
+      await service.archiveExpertise(SUBJECT_LINES);
+
+      await expect(
+        service.writeDraftIfUnchanged(doc, version, { body: NEW_BODY }, null)
+      ).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringMatching(/archived/),
+      });
+      const stored = harness
+        .stored('expertises')
+        .find((expertise) => expertise.expertiseId === SUBJECT_LINES);
+      expect(stored.versions.find((v) => v.status === 'DRAFT').body).not.toBe(
+        NEW_BODY
+      );
+    });
+
     it('counts the default changelog of a minor version as empty', async () => {
       harness.seed(
         withVersions([{ ...draft(2, 2), changelog: 'Correction mineure' }])
