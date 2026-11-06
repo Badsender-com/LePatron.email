@@ -55,9 +55,10 @@ const QualitySummary = Vue.component('QualitySummary', {
            to fix and what of it blocks. Results of an earlier version say
            nothing: the banner above says to run again. -->
       <div v-if="status === 'done' && remoteStatus !== 'running'" class="qc-status" :class="'qc-status--' + verdict.kind">
-        <span :class="['lucide', verdict.icon, 'qc-status__icon']" aria-hidden="true"></span>
+        <!-- Ready: the icon beside the text; else inline with the title (q2, q3). -->
+        <span v-if="verdict.kind === 'ready'" :class="['lucide', verdict.icon, 'qc-status__icon']" aria-hidden="true"></span>
         <div class="qc-status__body">
-          <p class="qc-status__title">{{ verdict.title }}</p>
+          <p class="qc-status__title"><span v-if="verdict.kind !== 'ready'" :class="['lucide', verdict.icon, 'qc-status__icon']" aria-hidden="true"></span>{{ verdict.title }}</p>
           <p class="qc-status__text">
             <template v-if="verdict.kind === 'ready'">
               {{ t('quality-ready-text', { count: checksTotal, when: lastRunLabel }) }}

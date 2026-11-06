@@ -10,7 +10,9 @@
  */
 
 @right-panel-motion: 0.2s ease-out;
-@right-panel-offset: -(@leftsidebar-width + 50px);
+// The boards' panel: 360px, whatever the left bar's width.
+@right-panel-width: 360px;
+@right-panel-offset: -(@right-panel-width + 50px);
 // The panel rail and the open panel float over the canvas, as on the boards
 // (ADR 0020): 14 px from the edges, the rail a card of 40 px buttons, the
 // panel 10 px beside it.
@@ -32,6 +34,7 @@
   position: fixed;
   left: auto;
   right: @right-panel-right;
+  width: @right-panel-width;
   top: calc(var(--top-bar-height, 52px) + @panel-float-inset);
   height: calc(100vh - var(--top-bar-height, 52px) - 2 * @panel-float-inset);
   overflow: hidden;
@@ -56,7 +59,7 @@
 }
 
 .withRightPanel #main-edit-area {
-  right: @leftsidebar-width + @right-panel-right + @panel-float-inset;
+  right: @right-panel-width + @right-panel-right + @panel-float-inset;
   transition: right @right-panel-motion;
 }
 
@@ -109,20 +112,18 @@
     border-radius: 9px;
     background: transparent;
     color: var(--gray-700);
-    font-size: 20px;
+    font-size: 19px;
     cursor: pointer;
 
     &:hover { background: var(--gray-100); }
 
-    // Tinted with the accent, as the board draws it; the icon takes the
-    // brand's dark colour, which the tint alone would not be enough to say.
+    // Tinted with the accent, the icon in its darker shade (board « Ouvert »).
     &[aria-expanded='true'] {
-      border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 14%, var(--white));
-      color: var(--primary);
+      background: color-mix(in srgb, var(--accent) 10%, var(--white));
+      color: var(--v-accent-darken1, var(--accent));
 
       &:hover {
-        background: color-mix(in srgb, var(--accent) 22%, var(--white));
+        background: color-mix(in srgb, var(--accent) 16%, var(--white));
       }
     }
 
@@ -135,18 +136,17 @@
   // On the top right corner of its button.
   &__badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: -3px;
+    right: -3px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    height: 20px;
+    min-width: 18px;
+    height: 18px;
     padding: 0 5px;
-    border: 2px solid var(--white);
-    border-radius: 10px;
+    border-radius: 9px;
     box-sizing: border-box;
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
     line-height: 1;
 
@@ -191,6 +191,6 @@
 
 @media (min-width: 1200px) {
   #page.withRightPanel #toast-container.toast-bottom-full-width {
-    right: @leftsidebar-width + @right-panel-right + @panel-float-inset;
+    right: @right-panel-width + @right-panel-right + @panel-float-inset;
   }
 }

@@ -73,29 +73,35 @@
 // Red only when something blocks the export (decision 6).
 .qc-status {
   display: flex;
+  align-items: center;
   gap: 12px;
   margin: 12px 16px 4px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: 1px solid var(--gray-200);
-  border-radius: @qc-radius;
+  border-radius: @qc-radius-card;
   background: var(--gray-50);
 
   &__icon {
     flex: none;
-    margin-top: 2px;
-    font-size: 18px;
+    font-size: 20px;
   }
 
   &__title {
-    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 2px;
     font-weight: 600;
     color: var(--gray-900);
+
+    > .qc-status__icon { font-size: 15px; }
   }
 
   &__text {
     margin: 0;
-    line-height: 1.5;
-    color: var(--gray-800);
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--gray-700);
   }
 
   &--ready {
@@ -106,8 +112,8 @@
   }
 
   &--blocking {
-    border-color: color-mix(in srgb, @qc-error 35%, var(--white));
-    background: @qc-tint-error;
+    border-color: color-mix(in srgb, @qc-error 30%, var(--white));
+    background: color-mix(in srgb, @qc-error 8%, var(--white));
 
     .qc-status__icon { color: @qc-error-text; }
   }

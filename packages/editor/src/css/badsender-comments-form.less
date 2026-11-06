@@ -23,8 +23,9 @@
     align-items: center;
     gap: 6px;
 
-    > .comments-menu { flex: 1; min-width: 0; }
-    > .comment-composer__add { flex: none; }
+    // Type and Priority at their own width, « Ajouter » pushed right (c1).
+    > .comments-menu { flex: none; min-width: 0; }
+    > .comment-composer__add { flex: none; margin-left: auto; }
 
     // The right-hand menu opens from its right edge, inside the panel.
     > .comments-menu:last-child .comments-menu__popup {
@@ -33,13 +34,23 @@
     }
   }
 
+  // Approving: under a rule across the whole foot, its padding undone.
+  .comment-composer__approval {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px -16px 0;
+    padding: 10px 16px 0;
+    border-top: 1px solid var(--gray-300);
+  }
+
   .comment-composer__blocked {
     display: flex;
     gap: 8px;
-    margin: 4px 0 0;
-    color: var(--gray-800);
-    font-size: 12px;
-    line-height: 1.4;
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 12.5px;
+    line-height: 1.45;
 
     > .lucide { color: @qc-error; flex: none; }
   }
