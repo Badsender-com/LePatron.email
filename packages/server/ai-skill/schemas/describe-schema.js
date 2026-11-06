@@ -43,7 +43,7 @@ function unwrapField(zodField) {
 }
 
 /**
- * @returns {{ name: string, type: 'string'|'number'|'boolean'|'unknown', required: boolean, multiline: boolean }}
+ * @returns {{ name: string, type: 'string'|'number'|'boolean'|'unknown', required: boolean, multiline: boolean, description?: string }}
  */
 function describeField(name, zodField) {
   // Covers .optional() AND .default(): both accept undefined.
@@ -62,6 +62,10 @@ function describeField(name, zodField) {
     // v1 rule: every string renders as a textarea (a short value in a
     // textarea is harmless; the reverse is not).
     multiline: type === 'string',
+    // What the schema says of the field, when it says something.
+    ...((zodField.description || inner.description) && {
+      description: zodField.description || inner.description,
+    }),
   };
 }
 

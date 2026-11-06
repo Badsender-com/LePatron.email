@@ -11,6 +11,7 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity } = require('./mcp-identity.js');
 const { uriOf } = require('./mcp-expertises.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
 const TOOL = 'find_applicable_expertises';
 
@@ -22,14 +23,31 @@ const MAX_LISTED_SCOPES = 100;
 
 const VALUE = z.string().max(MAX_VALUE_LENGTH);
 const SCOPE = VALUE.regex(/\S/, 'A scope is not blank');
+// A list of scopes, never a string or a list: Copilot Studio reads one type a
+// field.
 const FIND_INPUT = z.object({
-  scope: z.union([SCOPE, z.array(SCOPE).min(1).max(MAX_SCOPES)]),
+  scope: z
+    .array(SCOPE)
+    .min(1)
+    .max(MAX_SCOPES)
+    .describe(
+      'The parts of the email worked on, e.g. ["subject"], ["preheader"], ["cta"].'
+    ),
   categories: z
     .array(z.enum(SkillCategoryValues))
     .min(1)
-    .max(SkillCategoryValues.length),
-  emailType: VALUE.optional(),
-  language: VALUE.optional(),
+    .max(SkillCategoryValues.length)
+    .describe(
+      `The kinds of know-how wanted, one or more of: ${SkillCategoryValues.join(
+        ', '
+      )}.`
+    ),
+  emailType: VALUE.optional().describe(
+    'The type of the email, e.g. promo. Without it, the type is not checked.'
+  ),
+  language: VALUE.optional().describe(
+    'The language of the email, as an ISO 639-1 code: fr, en, de… Without it, the language is not checked.'
+  ),
 });
 const FIND_OUTPUT = z.object({
   expertises: z.array(
@@ -118,7 +136,7 @@ function registerFindApplicableExpertises(server) {
       description: DESCRIPTION,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(findExpertises)
   );

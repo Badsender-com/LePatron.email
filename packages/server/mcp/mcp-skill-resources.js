@@ -21,6 +21,7 @@ const {
   SkillNatureValues,
 } = require('../ai-skill/constant/skill-constants.js');
 const { draftNotice } = require('./mcp-drafts.js');
+const { READ_ONLY } = require('./mcp-tool-grammar.js');
 
 // What an assistant reads of a skill: a task skill's procedure and the
 // expertises it consumes, a feature skill's instructions. An MCP prompt is only
@@ -108,7 +109,10 @@ const FIND_INPUT = z.object({
     .string()
     .max(MAX_QUERY_LENGTH)
     .regex(/\S/, 'A query is not blank')
-    .optional(),
+    .optional()
+    .describe(
+      'What the user wants to do, in French words. Without it, every skill is listed.'
+    ),
 });
 const FIND_OUTPUT = z.object({
   skills: z.array(
@@ -144,7 +148,7 @@ function registerFindSkills(server) {
       description: `Finds the skills whose identifier, title or description match what the user wants to do, ${MAX_FOUND_SKILLS} at most. They are written in French: search with French words. When nothing matches, or without a query, every skill is listed (matched is false then): pick by their descriptions. Read the one that fits through its resource URI, then follow it.`,
       inputSchema: FIND_INPUT,
       outputSchema: FIND_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(async ({ group, drafts }, { query }) => {
       const served = await servedSkills(group, drafts);

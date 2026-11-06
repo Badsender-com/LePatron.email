@@ -7,6 +7,7 @@ const {
   accessibleLocations,
 } = require('../mailing/mailing-search.service.js');
 const { withIdentity } = require('./mcp-identity.js');
+const { failure, READ_ONLY } = require('./mcp-tool-grammar.js');
 const {
   MAILING_STATUSES,
   approvedMailingIds,
@@ -96,11 +97,6 @@ function asItem(mailing, facts, now) {
   };
 }
 
-const failure = (text) => ({
-  isError: true,
-  content: [{ type: 'text', text }],
-});
-
 /**
  * The mailings a user may read in the company the token is bound to (ADR 0012),
  * answered by the search across accessible workspaces (ADR 0007): the same
@@ -158,21 +154,57 @@ async function listMailings({ user }, args) {
   };
 }
 
-const DATE = z.string().datetime({ offset: true });
+const dateFilter = (description) =>
+  z
+    .string()
+    .datetime({ offset: true })
+    .optional()
+    .describe(`${description} ISO 8601, e.g. 2026-11-04T00:00:00Z.`);
 const LOCATION_IDS = z.array(z.string().max(MAX_ID_LENGTH)).max(MAX_LOCATIONS);
 const LIST_INPUT = z.object({
-  name: z.string().max(MAX_NAME_LENGTH).optional(),
-  tags: z.array(z.string().max(MAX_TAG_LENGTH)).max(MAX_TAGS).optional(),
-  workspaceIds: LOCATION_IDS.optional(),
-  folderIds: LOCATION_IDS.optional(),
-  mine: z.boolean().optional(),
-  author: z.string().max(MAX_NAME_LENGTH).optional(),
-  createdAfter: DATE.optional(),
-  createdBefore: DATE.optional(),
-  updatedAfter: DATE.optional(),
-  updatedBefore: DATE.optional(),
-  page: z.number().int().min(1).optional(),
-  pageSize: z.number().int().min(1).optional(),
+  name: z
+    .string()
+    .max(MAX_NAME_LENGTH)
+    .optional()
+    .describe('A part of the mailing name, whatever its case.'),
+  tags: z
+    .array(z.string().max(MAX_TAG_LENGTH))
+    .max(MAX_TAGS)
+    .optional()
+    .describe('Tags the mailing carries, all of them.'),
+  workspaceIds: LOCATION_IDS.optional().describe(
+    'Workspace ids, from list_workspaces.'
+  ),
+  folderIds: LOCATION_IDS.optional().describe(
+    'Folder ids, from list_workspaces: a folder with its subfolders.'
+  ),
+  mine: z
+    .boolean()
+    .optional()
+    .describe('true: only the mailings the user created.'),
+  author: z
+    .string()
+    .max(MAX_NAME_LENGTH)
+    .optional()
+    .describe("A part of the author's name."),
+  createdAfter: dateFilter('Created on or after this date.'),
+  createdBefore: dateFilter('Created on or before this date.'),
+  updatedAfter: dateFilter('Updated on or after this date.'),
+  updatedBefore: dateFilter('Updated on or before this date.'),
+  page: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe('The page to read, from 1. Default: 1.'),
+  pageSize: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      `Mailings per page, ${MAX_PAGE_SIZE} at most. Default: ${DEFAULT_PAGE_SIZE}.`
+    ),
 });
 const LIST_OUTPUT = z.object({
   mailings: z.array(MAILING),
@@ -191,7 +223,7 @@ function registerListMailings(server) {
         "Lists the mailings the user may read in LePatron, in the company of this connection, the most recently updated first, a page at a time. Filters: a part of the name, tags, creation and update dates, workspaces and folders (a folder with its subfolders; list_workspaces gives their ids), the user's own mailings (mine) or a part of the author's name. A mailing with no folder sits at the root of its workspace. Each one comes with its status, derived from its facts: pushed-to-esp (a campaign or template was created in an ESP; it says nothing of sending), scheduled (approved, planned in the future), approved, or draft. LePatron never knows whether a mailing was sent. Read a mailing's content through its resource URI.",
       inputSchema: LIST_INPUT,
       outputSchema: LIST_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(listMailings)
   );
@@ -211,7 +243,7 @@ function registerListWorkspaces(server) {
         'Lists the workspaces the user may read in LePatron, in the company of this connection, each with its folders and their subfolders: where mailings are filed. Give their ids to list_mailings to look in some of them only.',
       inputSchema: WORKSPACES_INPUT,
       outputSchema: WORKSPACES_OUTPUT,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: READ_ONLY,
     },
     withIdentity(async ({ user }) => {
       const answer = { workspaces: await accessibleLocations(user) };
@@ -227,7 +259,6 @@ module.exports = {
   registerListMailings,
   registerListWorkspaces,
   asItem,
-  failure,
   MAILING,
   uriOf,
 };
