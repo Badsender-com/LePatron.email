@@ -41,6 +41,9 @@ const MODELS = {
   clients: 'McpClients',
   connections: 'McpConnections',
   taxonomyItems: 'TaxonomyItems',
+  // A copy following production (ADR 0019).
+  readTokens: 'SkillsReadTokens',
+  follows: 'SkillsFollows',
 };
 
 // Node 17+, given to the test files by node-globals-environment.js.
