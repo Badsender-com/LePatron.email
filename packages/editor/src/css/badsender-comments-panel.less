@@ -145,18 +145,9 @@
     background: var(--white);
 
     // Given the focus after an action: a ring at the keyboard only.
-    &:focus {
-      outline: none;
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
-    }
-
-    &--resolved {
-      background: var(--gray-50);
-    }
+    &:focus { outline: none; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    &--resolved { background: var(--gray-50); }
 
     // The open blocking comment stands out (board c3).
     &--blocking {
@@ -176,9 +167,11 @@
       gap: 8px;
     }
 
+    // Its tags stay on the line of who wrote it, as on board c1: a long
+    // name gives way, cut short.
     &__tags {
       display: inline-flex;
-      flex-wrap: wrap;
+      flex: none;
       align-items: center;
       gap: 6px;
       margin-left: auto;
@@ -193,9 +186,16 @@
       margin: 0;
     }
 
+    &__head { flex-wrap: nowrap; min-width: 0; }
+    &__date { flex: none; white-space: nowrap; }
+
     &__author {
+      min-width: 0;
+      overflow: hidden;
       font-weight: 600;
       color: var(--gray-900);
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &__date,

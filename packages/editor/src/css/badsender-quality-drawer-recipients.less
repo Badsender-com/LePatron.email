@@ -11,13 +11,21 @@
   flex-direction: column;
   gap: 6px;
 
+  // Spaced by the field's gap, not Mosaico's `.mo p` margins; the count,
+  // kept in the page for its live region, takes no room while empty.
+  .qc-field__help {
+    margin: 0;
+
+    &:empty { margin-top: -6px; }
+  }
+
   &__box {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
     gap: 6px;
-    // Room for two lines of chips, as on board q4.
-    min-height: 64px;
+    // One line, growing with its chips (board q4).
+    min-height: 38px;
     box-sizing: border-box;
     padding: 6px 8px;
     border: 1px solid var(--gray-300);
@@ -25,10 +33,10 @@
     background: var(--white);
     cursor: text;
 
+    // A text field: its border turns to the accent, as the left bar's.
     &:focus-within {
       border-color: var(--accent);
-      outline: 2px solid var(--primary);
-      outline-offset: 1px;
+      outline: none;
     }
 
     &--invalid {

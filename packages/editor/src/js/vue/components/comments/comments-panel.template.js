@@ -37,6 +37,7 @@ module.exports = `
   ></comments-filter>
   </template>
 
+  <p class="qc-sr-only" aria-live="polite">{{ announcement }}</p>
   <comments-list
     :comments="comments"
     :all-comments="allComments"

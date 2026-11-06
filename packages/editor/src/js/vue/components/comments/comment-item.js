@@ -4,12 +4,6 @@ const Vue = require('vue/dist/vue.common');
 const { CommentText } = require('./comment-text');
 const { authorOf } = require('../../../ext/comments/comments-thread');
 
-const CATEGORY_ICONS = {
-  general: 'lucide-message-circle',
-  design: 'lucide-brush',
-  content: 'lucide-file-text',
-};
-
 /**
  * A comment of the panel and its replies (ADR 0020, board v3-comments-c1):
  * who and when, its priority while open, its type, what it is on (a block,
@@ -39,9 +33,6 @@ const CommentItem = Vue.component('CommentItem', {
     },
     author() {
       return authorOf(this.comment) || this.t('comments-anonymous');
-    },
-    categoryIcon() {
-      return CATEGORY_ICONS[this.comment.category] || CATEGORY_ICONS.general;
     },
     category() {
       return this.t(`comments-category-${this.comment.category || 'general'}`);
@@ -75,9 +66,7 @@ const CommentItem = Vue.component('CommentItem', {
           <span v-if="comment.resolved" class="comment-badge comment-badge--resolved">
             <span class="lucide lucide-check" aria-hidden="true"></span>{{ t('comments-resolved-badge') }}
           </span>
-          <span class="comment-item__category">
-            <span :class="['lucide', categoryIcon]" aria-hidden="true"></span>{{ category }}
-          </span>
+          <span class="comment-item__category">{{ category }}</span>
           <button
             v-if="comment.resolved"
             type="button"

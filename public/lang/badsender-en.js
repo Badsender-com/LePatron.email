@@ -615,7 +615,9 @@ module.exports = {
   'sending-test-mails': 'Sending test mail…',
   'Saved list of addresses': 'Saved list of addresses',
   'ai-panel-current-subject': 'Current subject',
+  'ai-panel-current-subject-empty': 'No subject yet',
   'ai-panel-current-preheader': 'Current preheader',
+  'ai-panel-current-preheader-empty': 'No preheader yet',
   'quality-test-sent-subject': 'Subject: « __subject__ ».',
   'quality-ready-title': 'Ready to go',
   'quality-ready-text':
@@ -644,8 +646,7 @@ module.exports = {
   'Missing mobile background image': 'Missing mobile background image',
   'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
     'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking',
-  'Required tracking parameters missing: __keys__':
-    'Required tracking parameters missing: __keys__',
+  'Required tracking parameters missing: __keys__': 'Missing: __keys__',
   'Test email': 'Test email',
   'Run quality checks': 'Run quality checks',
   Blocking: 'Blocking',
@@ -965,6 +966,8 @@ module.exports = {
   'ai-panel-correct-email': 'Correct the whole email',
   'ai-panel-correct-field-desc': 'Spelling and grammar of the field',
   'ai-panel-correct-block-desc': 'The text fields of the block',
+  'ai-panel-correct-block-desc-count': 'The __count__ text fields of the block',
+  'ai-panel-correct-block-desc-count-one': 'The text field of the block',
   'ai-panel-correct-email-desc': 'Spelling and grammar, block by block',
   'ai-panel-subject-desc': 'Three proposals from the content',
   'ai-panel-preheader-desc': 'Consistent with the subject',

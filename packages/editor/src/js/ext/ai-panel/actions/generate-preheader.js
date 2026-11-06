@@ -42,6 +42,8 @@ module.exports = {
   labels: {
     name: 'ai-panel-action-preheader',
     current: 'ai-panel-current-preheader',
+    // Said in its place while the field is empty (board a3).
+    currentEmpty: 'ai-panel-current-preheader-empty',
     description: 'ai-panel-preheader-desc',
     generate: 'ai-panel-generate-preheader',
     proposals: 'text-generation-preheaders-title',

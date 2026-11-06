@@ -9,16 +9,12 @@
 ////////
 
 #toolai {
-  #ai-panel {
-    height: 100%;
-  }
+  #ai-panel { height: 100%; }
 
   // Its layout is the shell's (badsender-right-panel-ui.less).
   .ai-panel {
     // Without weight: a paragraph of the panel sets its own margin.
-    :where(p, h3) {
-      margin: 0;
-    }
+    :where(p, h3) { margin: 0; }
 
     ul {
       margin: 0;
@@ -191,9 +187,7 @@
     &__applied {
       align-items: flex-start;
 
-      &:focus {
-        outline: none;
-      }
+      &:focus { outline: none; }
     }
 
     &__current {
@@ -205,6 +199,8 @@
     &__current-text {
       color: var(--gray-900);
       overflow-wrap: anywhere;
+
+      &--empty { color: var(--gray-600); }
     }
 
     &__brief {
@@ -215,14 +211,15 @@
       border: 1px solid var(--gray-300);
       border-radius: @qc-radius;
       resize: vertical;
+
+      // A text field: its border turns to the accent, as the left bar's.
+      &:focus { border-color: var(--accent); outline: none; box-shadow: none; }
     }
 
     &__intro {
       font-weight: 600;
 
-      &:focus {
-        outline: none;
-      }
+      &:focus { outline: none; }
     }
 
     &__proposals {

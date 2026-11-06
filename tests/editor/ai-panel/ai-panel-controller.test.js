@@ -25,7 +25,7 @@ const block = (type, id) => ({ type: () => type, id: () => id });
 const COVER = block('coverBlock', 'ko_coverBlock_1');
 const PREHEADER_BLOCK = block('preheaderBlock', 'ko_preheaderBlock_1');
 
-function mount({ context = CONTEXT, definitions } = {}) {
+function mount({ context = CONTEXT, definitions, textFieldsOf } = {}) {
   const isOpen = ko.observable(false);
   const selection = ko.observable(null);
   const fieldSelection = ko.observable(null);
@@ -34,6 +34,7 @@ function mount({ context = CONTEXT, definitions } = {}) {
   const history = ko.observable(0);
   const editor = {
     context: () => context,
+    ...(textFieldsOf ? { textFieldsOf } : {}),
     onHistory(callback) {
       const subscription = history.subscribe(callback);
       return () => subscription.dispose();
@@ -125,6 +126,39 @@ describe('ai panel: the controller', () => {
       editField(title, COVER);
       expect(panel.target()).toEqual(title);
       expect(ids(panel.targetActions())).toEqual(['correct-text']);
+    });
+
+    it('offers the block of the field too, and counts the text fields the reader sees (board a2)', () => {
+      const { panel, isOpen, editField } = mount({
+        textFieldsOf: () => [
+          { path: 'titleText', hidden: false },
+          { path: 'text', hidden: false },
+          { path: 'buttonText', hidden: true },
+        ],
+      });
+      isOpen(true);
+      const title = {
+        kind: 'blockField',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+        field: 'titleText',
+      };
+      editField(title, COVER);
+      expect(ids(panel.blockActions())).toEqual(['correct-text']);
+      expect(panel.blockFieldCount()).toBe(2);
+      expect(panel.blockOf(title)).toEqual({
+        kind: 'block',
+        blockId: 'ko_coverBlock_1',
+        blockType: 'coverBlock',
+      });
+    });
+
+    it('lists no block actions for a block, nor counts without the editor to read it', () => {
+      const { panel, isOpen, selection } = mount();
+      isOpen(true);
+      selection(COVER);
+      expect(panel.blockActions()).toEqual([]);
+      expect(panel.blockFieldCount()).toBeNull();
     });
 
     it('keeps the field it followed when the focus moves to the panel', () => {

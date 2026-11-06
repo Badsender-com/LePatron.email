@@ -162,14 +162,14 @@ const SendTestPanel = Vue.component('SendTestPanel', {
       <!-- Red only when something blocks the export (decision 6). -->
       <div v-else-if="status === 'done' && !ready" class="qc-notice" :class="blockingCount > 0 ? 'qc-notice--error' : 'qc-notice--neutral'" role="status">
         <span class="lucide" :class="blockingCount > 0 ? 'lucide-alert-circle' : issueCount ? 'lucide-triangle-alert' : 'lucide-circle-slash'" aria-hidden="true"></span>
-        <span v-if="issueCount" class="qc-notice__text">{{ t(issueCount === 1 ? 'quality-send-not-ready-one' : 'quality-send-not-ready', { count: issueCount }) }}</span>
-        <span v-else class="qc-notice__text">{{ t('A check could not run: you can send a test anyway') }}</span>
-        <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('quality-see-checks') }}</button>
+        <!-- The link at the end of the sentence, as on board q4. -->
+        <span class="qc-notice__text">{{ issueCount ? t(issueCount === 1 ? 'quality-send-not-ready-one' : 'quality-send-not-ready', { count: issueCount }) : t('A check could not run: you can send a test anyway') }}
+          <button type="button" class="qc-link-button" @click="$emit('show-results')">{{ t('quality-see-checks') }}</button></span>
       </div>
       <div v-else-if="status === 'idle' || status === 'stale'" class="qc-notice" role="status">
         <span class="lucide lucide-info" aria-hidden="true"></span>
-        <span class="qc-notice__text">{{ t('The quality checks have not run on this version yet') }}</span>
-        <button type="button" class="qc-link-button" @click="$emit('run-checks')">{{ t('Run quality checks') }}</button>
+        <span class="qc-notice__text">{{ t('The quality checks have not run on this version yet') }}
+          <button type="button" class="qc-link-button" @click="$emit('run-checks')">{{ t('Run quality checks') }}</button></span>
       </div>
 
       <div v-if="sent" class="qc-notice qc-notice--success" role="status">

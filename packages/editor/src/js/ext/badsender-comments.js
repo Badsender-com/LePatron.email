@@ -4,10 +4,8 @@ const $ = require('jquery');
 const ko = require('knockout');
 const { userCan } = require('./user-can.js');
 const { CAPABILITIES } = require('../../../../shared/access/roles.js');
-const {
-  formatBlockName,
-  formatCommentDate,
-} = require('./comments-utils.js');
+const { formatCommentDate } = require('./comments-utils.js');
+const { blockLabel, blockTypeName } = require('./block-label.js');
 const { findBlockById, goToBlock } = require('./block-navigation.js');
 const { installRightPanel } = require('./right-panel.js');
 const { createCommentsRail } = require('./comments/comments-rail.js');
@@ -43,7 +41,16 @@ function commentsLoader(opts) {
       mailingId,
       notifier: () => viewModel.notifier,
       t: (key, params) => viewModel.t(key, params),
+      // The panel open shows what was written: its success is said to screen
+      // readers alone, no message over its foot.
+      announce: (message) => {
+        if (!viewModel.showComments || !viewModel.showComments()) return false;
+        viewModel.commentsAnnouncement('');
+        viewModel.commentsAnnouncement(message);
+        return true;
+      },
     });
+    viewModel.commentsAnnouncement = ko.observable('');
     viewModel.commentsStore = store;
     viewModel.commentsActions = actions;
 
@@ -82,39 +89,9 @@ function commentsLoader(opts) {
     });
 
     // ===== BLOCKS =====
-    // The type of a block, as the rail and the block tool name it.
-    const labelOfBlock = function (blockId) {
-      const block = findBlockById(viewModel, blockId);
-      // A block outside the lists (the header, the footer): its type is in
-      // its id, ko_<type>_<n>.
-      if (!block) {
-        const match = /^ko_(.+)_\d+$/.exec(blockId);
-        return match ? formatBlockName(match[1]) : blockId;
-      }
-      let blockType = ko.unwrap(block._type || block.type);
-      if (typeof blockType === 'object' && blockType !== null) {
-        blockType = blockType.name || blockType.label;
-      }
-      return formatBlockName(blockType || 'Block');
-    };
-
-    // « Cover · bloc 2 »: its type, and its place among the blocks of the
-    // email; a block out of the list (a header) by its type alone.
+    // « Cover · bloc 2 », as every panel names a block (ext/block-label.js).
     viewModel.commentBlockLabel = function (blockId) {
-      try {
-        const blocks = viewModel.content().mainBlocks().blocks();
-        const place = blocks.findIndex(function (block) {
-          return ko.unwrap(ko.unwrap(block).id) === blockId;
-        });
-        if (place === -1) return labelOfBlock(blockId);
-        return (
-          labelOfBlock(blockId) +
-          ' · ' +
-          viewModel.t('comments-block-place', { place: place + 1 })
-        );
-      } catch (e) {
-        return labelOfBlock(blockId);
-      }
+      return blockLabel(viewModel, blockId);
     };
 
     // Changes whenever the blocks of the email change: the panel, in Vue,
@@ -134,8 +111,16 @@ function commentsLoader(opts) {
       }
     });
 
-    // Its type alone, as the filter's chip names it (board c1).
-    viewModel.commentBlockType = labelOfBlock;
+    // Its name alone, as the filter's chip names it (board c1).
+    viewModel.commentBlockType = function (blockId) {
+      const block = findBlockById(viewModel, blockId);
+      if (!block) return blockLabel(viewModel, blockId);
+      let type = ko.unwrap(block._type || block.type);
+      if (typeof type === 'object' && type !== null) {
+        type = type.name || type.label;
+      }
+      return blockTypeName(viewModel, type || 'Block');
+    };
 
     // Any block of the email, its header and footer included.
     viewModel.blockExists = function (blockId) {
@@ -159,7 +144,7 @@ function commentsLoader(opts) {
       openForBlock: function (blockId) {
         viewModel.openCommentsForBlock(blockId);
       },
-      labelOf: labelOfBlock,
+      labelOf: viewModel.commentBlockType,
       scroller: function () {
         return document.querySelector('#main-wysiwyg-area');
       },

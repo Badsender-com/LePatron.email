@@ -35,64 +35,6 @@ function getBlockType(blockData) {
   return blockType || null;
 }
 
-/**
- * Get formatted block label with numbering for duplicates
- * @param {Array} blocks - All blocks in the email
- * @param {string} targetBlockId - The block ID to get label for
- * @returns {string|null} - Formatted label like "Header Block" or "Title Block #2"
- */
-function getBlockLabelWithNumber(blocks, targetBlockId) {
-  if (!blocks || !targetBlockId) return null;
-
-  let targetType = null;
-  let targetIndex = -1;
-
-  // First pass: find the target block and its type
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    const blockData = typeof block === 'function' ? block() : block;
-    if (!blockData) continue;
-
-    const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-    if (id === targetBlockId) {
-      targetType = getBlockType(blockData);
-      targetIndex = i;
-      break;
-    }
-  }
-
-  if (!targetType) return null;
-
-  // Second pass: count blocks of the same type and find position
-  let sameTypeCount = 0;
-  let positionAmongSameType = 0;
-
-  for (let j = 0; j < blocks.length; j++) {
-    const block = blocks[j];
-    const blockData = typeof block === 'function' ? block() : block;
-    if (!blockData) continue;
-
-    const blockType = getBlockType(blockData);
-    if (blockType === targetType) {
-      sameTypeCount++;
-      if (j < targetIndex) {
-        positionAmongSameType++;
-      } else if (j === targetIndex) {
-        positionAmongSameType++; // This is our block's position (1-indexed)
-      }
-    }
-  }
-
-  const formattedName = formatBlockName(targetType);
-
-  // Add number only if there are multiple blocks of the same type
-  if (sameTypeCount > 1) {
-    return formattedName + ' #' + positionAmongSameType;
-  }
-
-  return formattedName;
-}
-
 // ===== DATE FORMATTING =====
 
 /**
@@ -230,7 +172,6 @@ module.exports = {
   // Block utilities
   formatBlockName: formatBlockName,
   getBlockType: getBlockType,
-  getBlockLabelWithNumber: getBlockLabelWithNumber,
 
   // Date formatting
   formatCommentDate: formatCommentDate,

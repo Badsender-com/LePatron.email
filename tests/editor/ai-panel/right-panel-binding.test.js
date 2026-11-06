@@ -10,6 +10,7 @@
  */
 
 const ko = require('knockout');
+const $ = require('jquery');
 const {
   installRightPanel,
 } = require('../../../packages/editor/src/js/ext/right-panel');
@@ -48,6 +49,14 @@ describe('the right panel binding', () => {
     expect(panel.classList.contains('hidden')).toBe(false);
     expect(panel.hasAttribute('inert')).toBe(false);
     expect(document.activeElement.id).toBe('close');
+  });
+
+  it('closes the tooltip of its toggle as it opens: the label would sit over the panel', () => {
+    const { vm } = mount();
+    const left = jest.fn();
+    $('#toggle').on('mouseleave', left);
+    vm.rightPanel.show('quality');
+    expect(left).toHaveBeenCalledTimes(1);
   });
 
   it('closes on Escape', () => {

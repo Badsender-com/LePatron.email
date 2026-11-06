@@ -30,5 +30,9 @@ module.exports = {
       block: 'ai-panel-correct-block-desc',
       email: 'ai-panel-correct-email-desc',
     },
+    // « Les 4 champs de texte du bloc », when the panel can count them.
+    describeCountByKind: {
+      block: 'ai-panel-correct-block-desc-count',
+    },
   },
 };

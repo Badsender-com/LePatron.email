@@ -630,7 +630,9 @@ module.exports = {
   'Add comment': 'Ajouter un commentaire',
   'sending-test-mails': "Envoi de l'email de test…",
   'ai-panel-current-subject': 'Objet actuel',
+  'ai-panel-current-subject-empty': "Aucun objet pour l'instant",
   'ai-panel-current-preheader': 'Préheader actuel',
+  'ai-panel-current-preheader-empty': "Aucun préheader pour l'instant",
   'quality-test-sent-subject': 'Objet : « __subject__ ».',
   'quality-ready-title': 'Prêt à partir',
   'quality-ready-text':
@@ -660,8 +662,7 @@ module.exports = {
   'Missing mobile background image': 'Image de fond mobile manquante',
   'Exported HTML weighs __size__ KB: keep it under __max__ KB, Gmail clips emails over 102 KB once the ESP adds its tracking':
     "Le HTML exporté pèse __size__ Ko : restez sous __max__ Ko, Gmail coupe les emails de plus de 102 Ko une fois le tracking de l'ESP ajouté",
-  'Required tracking parameters missing: __keys__':
-    'Paramètres de tracking obligatoires manquants : __keys__',
+  'Required tracking parameters missing: __keys__': 'Manquants : __keys__',
   'Test email': "Tester l'email",
   'Run quality checks': 'Lancer le contrôle qualité',
   Blocking: 'Bloquant',
@@ -682,7 +683,7 @@ module.exports = {
     '__count__ point(s) à corriger : ouvrez le contrôle qualité',
   'Go to block': 'Aller au bloc',
   'This check could not run': "Ce contrôle n'a pas pu s'exécuter",
-  'Required tracking parameters': 'Paramètres de tracking obligatoires',
+  'Required tracking parameters': 'Paramètres de tracking',
   'All required tracking parameters are filled in':
     'Tous les paramètres de tracking obligatoires sont renseignés',
   'quality-title-links': 'Liens',
@@ -992,6 +993,8 @@ module.exports = {
   'ai-panel-correct-email': "Corriger tout l'email",
   'ai-panel-correct-field-desc': 'Orthographe et grammaire du champ',
   'ai-panel-correct-block-desc': 'Les champs de texte du bloc',
+  'ai-panel-correct-block-desc-count': 'Les __count__ champs de texte du bloc',
+  'ai-panel-correct-block-desc-count-one': 'Le champ de texte du bloc',
   'ai-panel-correct-email-desc': 'Orthographe et grammaire, bloc par bloc',
   'ai-panel-subject-desc': 'Trois propositions à partir du contenu',
   'ai-panel-preheader-desc': "En cohérence avec l'objet",
@@ -1120,7 +1123,7 @@ module.exports = {
   'text-generation-copy-hint-preheader':
     "Ce template n'a pas de préheader modifiable : copiez une proposition pour la coller dans votre outil d'envoi.",
   'text-generation-preheaders-title': 'Choisissez un préheader',
-  'text-generation-brief-label': 'Consigne (facultatif)',
+  'text-generation-brief-label': 'Consigne (facultative)',
   'text-generation-brief-placeholder': 'Ex. insister sur la livraison offerte',
   'text-generation-more': "Proposer d'autres",
   'text-generation-subjects-title': 'Choisissez un objet',

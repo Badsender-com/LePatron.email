@@ -29,6 +29,8 @@ module.exports = {
   labels: {
     name: 'ai-panel-action-subject',
     current: 'ai-panel-current-subject',
+    // Said in its place while the field is empty (board a3).
+    currentEmpty: 'ai-panel-current-subject-empty',
     description: 'ai-panel-subject-desc',
     generate: 'ai-panel-generate-subject',
     proposals: 'text-generation-subjects-title',

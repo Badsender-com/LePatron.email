@@ -6,6 +6,7 @@ const { verdictOf } = require('./quality-verdict');
 const { SEVERITY_ORDER, SEVERITY_META } = require('./quality-meta');
 const { findingItems, checkItems } = require('./quality-items');
 const { commentDraftFor } = require('./quality-actions');
+const { RightPanelState } = require('../right-panel/right-panel-state');
 const { goToBlock, findBlockById } = require('../../../ext/block-navigation');
 
 const HIGHLIGHT_CLASS = 'qc-highlight';
@@ -27,7 +28,7 @@ function clearHighlight() {
 // results by severity and acts on each one: go to its block, turn it into a
 // comment, or ignore it (the ignored ones wait in their own group).
 const QualityChecksPanel = Vue.component('QualityChecksPanel', {
-  components: { QualityGroup, QualitySummary },
+  components: { QualityGroup, QualitySummary, RightPanelState },
   props: {
     vm: { type: Object, required: true },
     // 'idle' | 'running' | 'done' | 'stale' (the email changed since).
@@ -209,9 +210,8 @@ const QualityChecksPanel = Vue.component('QualityChecksPanel', {
         <p v-if="vm.quality.turnedOffCount() > 0" class="qc-drawer__empty-text qc-turned-off">{{ t('__count__ checks turned off by your group or template', { count: vm.quality.turnedOffCount() }) }}</p>
       </div>
 
-      <div v-else-if="status === 'running'" class="qc-drawer__running">
-        <span class="qc-running-label"><span class="qc-spinner" aria-hidden="true"></span>{{ t('Running checks…') }}</span>
-      </div>
+      <!-- Under way: the loading state of every panel (board v3-shell). -->
+      <right-panel-state v-else-if="status === 'running'" kind="loading" class="qc-drawer__running" :text="t('Running checks…')"></right-panel-state>
 
       <template v-else>
         <quality-summary

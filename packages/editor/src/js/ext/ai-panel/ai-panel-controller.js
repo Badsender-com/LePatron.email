@@ -42,9 +42,31 @@ function createAiPanel({
   const sessionAction = ko.observable(null);
   // The selection moved during an action, to an element with actions.
   const selectionChanged = ko.observable(null);
+  // A field selected: its block's actions too, listed under the field's
+  // (board a2); and how many text fields that block has.
+  const blockActions = ko.observable([]);
+  const blockFieldCount = ko.observable(null);
 
   const offer = (forTarget, context) =>
     availableActions(forTarget, context, definitions);
+
+  // The block a target is in, or null for the email and its copy fields.
+  function blockOf(on) {
+    if (on.kind === 'block') return on;
+    if (on.kind !== 'blockField') return null;
+    return { kind: 'block', blockId: on.blockId, blockType: on.blockType };
+  }
+
+  // The text fields the reader sees: « Les 4 champs de texte du bloc ».
+  function countTextFields(blockId) {
+    if (typeof editor.textFieldsOf !== 'function') return null;
+    try {
+      return editor.textFieldsOf(blockId).filter((field) => !field.hidden)
+        .length;
+    } catch (e) {
+      return null;
+    }
+  }
 
   // The email is read once for every list.
   function refresh() {
@@ -53,6 +75,11 @@ function createAiPanel({
     targetActions(
       target().kind === 'email' ? [] : offer(target(), context).actions
     );
+    const block = blockOf(target());
+    blockActions(
+      target().kind === 'blockField' ? offer(block, context).actions : []
+    );
+    blockFieldCount(block ? countTextFields(block.blockId) : null);
     const current = session();
     sessionAction(
       current
@@ -163,6 +190,9 @@ function createAiPanel({
     target,
     actions,
     targetActions,
+    blockActions,
+    blockFieldCount,
+    blockOf,
     session,
     sessionAction,
     selectionChanged,

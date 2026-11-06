@@ -33,6 +33,8 @@ function createErrorKey(xhr) {
  * @param {Function} options.notifier - () => { success, error }
  * @param {Function} options.t
  * @param {Function} [options.confirm] - asks before a deletion
+ * @param {Function} [options.announce] - says a success where it shows, and
+ *   returns true; the notifier says it otherwise
  */
 function createCommentsActions({
   ajax,
@@ -42,6 +44,7 @@ function createCommentsActions({
   notifier,
   t,
   confirm = (message) => window.confirm(message),
+  announce = () => false,
 }) {
   const commentUrl = (id) => `${apiBaseUrl}/comments/${encodeURIComponent(id)}`;
   // Before the list loads, the counters come from the server: ask again.
@@ -59,7 +62,7 @@ function createCommentsActions({
         success(answer) {
           try {
             success(answer);
-            if (done) notifier().success(t(done));
+            if (done && !announce(t(done))) notifier().success(t(done));
             resolve(answer);
           } catch (error) {
             reject(error);

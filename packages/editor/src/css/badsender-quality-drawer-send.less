@@ -99,8 +99,7 @@
 
     &:focus {
       border-color: var(--accent);
-      outline: 2px solid var(--primary);
-      outline-offset: -1px;
+      outline: none;
     }
 
     &--invalid {
@@ -133,8 +132,7 @@
     padding: 0 36px 0 12px;
     border-width: 1px;
     border-color: var(--accent);
-    outline: 2px solid var(--primary);
-    outline-offset: -1px;
+    outline: none;
   }
 }
 
@@ -143,7 +141,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--gray-200);
 
@@ -153,6 +151,9 @@
     font-weight: 600;
     color: var(--gray-900);
   }
+
+  // Spaced by the gap, not Mosaico's `.mo p` margins.
+  .qc-field__help { margin: 0; }
 
   &__url {
     display: flex;

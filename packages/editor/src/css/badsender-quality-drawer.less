@@ -57,10 +57,10 @@
     color: var(--gray-600);
   }
 
+  // Centred in the body, as the empty state before a run.
   &__running {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
+    flex: 1;
+    justify-content: center;
   }
 
   // The shell's body scrolls, the actions staying in its foot.
@@ -120,13 +120,6 @@
 
   &--todo .qc-status__icon { color: @qc-warning; }
   &--incomplete .qc-status__icon { color: var(--gray-600); }
-}
-
-.qc-running-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
 }
 
 // ===== Severity colours =====

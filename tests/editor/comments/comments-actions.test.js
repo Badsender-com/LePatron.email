@@ -11,6 +11,7 @@ function setup({
   answer = 'success',
   response = {},
   confirm = () => true,
+  announce,
 } = {}) {
   const calls = [];
   const notifier = { success: jest.fn(), error: jest.fn() };
@@ -33,6 +34,7 @@ function setup({
     notifier: () => notifier,
     t: (key) => key,
     confirm,
+    ...(announce ? { announce } : {}),
   });
   return { actions, calls, notifier, store };
 }
@@ -50,6 +52,18 @@ describe('the comments actions', () => {
     expect(JSON.parse(calls[0].data)).toEqual({ text: 'Hi' });
     expect(store.upsert).toHaveBeenCalledWith({ _id: 'c1' });
     expect(notifier.success).toHaveBeenCalledWith('comments-created');
+  });
+
+  it('says a success where the panel shows it, the notifier saying it otherwise', async () => {
+    const announce = jest.fn(() => true);
+    const open = setup({ response: { _id: 'c1' }, announce });
+    await open.actions.create({ text: 'Hi' });
+    expect(announce).toHaveBeenCalledWith('comments-created');
+    expect(open.notifier.success).not.toHaveBeenCalled();
+
+    const closed = setup({ response: { _id: 'c2' }, announce: () => false });
+    await closed.actions.create({ text: 'Hi' });
+    expect(closed.notifier.success).toHaveBeenCalledWith('comments-created');
   });
 
   it('says why the server refused an approval, and rejects', async () => {

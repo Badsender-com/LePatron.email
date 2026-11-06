@@ -4,12 +4,7 @@ const Vue = require('vue/dist/vue.common');
 const template = require('./ai-corrections-steps.template');
 
 // Which field a correction is in, on a block or the whole email.
-const ROLE_LABELS = {
-  title: 'ai-panel-field-title',
-  text: 'ai-panel-field-text',
-  button: 'ai-panel-field-button',
-  alt: 'ai-panel-field-alt',
-};
+const { ROLE_LABELS } = require('./field-role-labels');
 
 // What a correction that is no longer pending says.
 const STATUS_LABELS = {
