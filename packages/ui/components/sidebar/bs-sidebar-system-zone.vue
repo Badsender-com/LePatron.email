@@ -24,7 +24,8 @@
 import { Settings, Plug, HelpCircle, LogOut } from 'lucide-vue';
 import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import { CAN, GROUP, SELECTED_GROUP, USER } from '~/store/user';
+import { CAN, GROUP, MODULES_GROUP, SELECTED_GROUP, USER } from '~/store/user';
+import { canConnectApplications } from '~/helpers/module-activation.js';
 import { CAPABILITIES } from '../../../shared/access/roles.js';
 
 const ICON_MAP = {
@@ -52,6 +53,7 @@ export default {
     ...mapGetters(USER, {
       userGroup: GROUP,
       selectedGroup: SELECTED_GROUP,
+      modulesGroup: MODULES_GROUP,
       can: CAN,
     }),
 
@@ -64,13 +66,11 @@ export default {
         if (item.id === 'settings') {
           return canAccessSettings;
         }
-        // The AI assistants connected to LePatron, where the group allows
-        // them, or for whoever manages the platform.
+        // The AI assistants connected to LePatron, where the group has the
+        // MCP module and allows them (ADR 0017). A super admin is shown its
+        // selected group, with no exception.
         if (item.id === 'connectedApplications') {
-          return (
-            this.userGroup?.enableMcp === true ||
-            this.can(CAPABILITIES.PLATFORM_MANAGE)
-          );
+          return canConnectApplications(this.modulesGroup);
         }
         // The others (help, logout) are for everyone
         return true;

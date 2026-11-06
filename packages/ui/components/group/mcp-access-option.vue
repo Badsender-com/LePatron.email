@@ -1,6 +1,9 @@
 <script>
+import { mapGetters } from 'vuex';
 import { Plug, Copy, Check, ChevronRight } from 'lucide-vue';
 import mixinGroupSwitch from '~/helpers/mixins/mixin-group-switch.js';
+import { CAN, USER } from '~/store/user';
+import { CAPABILITIES } from '../../../shared/access/roles.js';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsSettingsRow from '~/components/layout/bs-settings-row.vue';
@@ -35,8 +38,17 @@ export default {
     return { switchKey: 0, origin: '', copied: false };
   },
   computed: {
+    ...mapGetters(USER, { can: CAN }),
+    // Sold apart (ADR 0017): without the MCP module, MCP access cannot be
+    // used, and the section says who may open it.
+    hasModule() {
+      return this.group.enableMcpModule === true;
+    },
     enabled() {
-      return this.group.enableMcp === true;
+      return this.hasModule && this.group.enableMcp === true;
+    },
+    canOpenModule() {
+      return this.can(CAPABILITIES.PLATFORM_MANAGE);
     },
     mcpUrl() {
       return this.origin && `${this.origin}/mcp`;
@@ -77,7 +89,10 @@ export default {
 </script>
 
 <template>
-  <bs-form-section class="bs-group-mcp-access-option" :folded="!enabled">
+  <bs-form-section
+    class="bs-group-mcp-access-option"
+    :folded="hasModule && !enabled"
+  >
     <template #icon>
       <lucide-plug :size="20" />
     </template>
@@ -90,17 +105,29 @@ export default {
     <template #header-actions>
       <bs-group-feature-switch
         :key="switchKey"
-        :value="switchValue"
+        :value="hasModule && switchValue"
         :label="$t('mcpAccess.switch')"
         :on-text="$t('mcpAccess.on')"
-        :off-text="$t('mcpAccess.off')"
+        :off-text="
+          hasModule ? $t('mcpAccess.off') : $t('mcpAccess.notIncluded')
+        "
         :loading="loading"
-        :disabled="loading"
+        :disabled="loading || !hasModule"
         @change="change"
       />
     </template>
 
-    <template v-if="enabled">
+    <p v-if="!hasModule" class="bs-group-mcp-access-option__no-module">
+      {{ $t('mcpAccess.noModule', { group: group.name }) }}
+      <nuxt-link
+        v-if="canOpenModule"
+        :to="`/groups/${group.id}/settings/general`"
+      >
+        {{ $t('mcpAccess.openModule') }}
+      </nuxt-link>
+    </p>
+
+    <template v-else-if="enabled">
       <div class="bs-group-mcp-access-option__address">
         <label
           for="mcp-address"
@@ -211,6 +238,12 @@ export default {
       border-radius: 0;
       height: 36px !important;
     }
+  }
+
+  &__no-module {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.7);
   }
 
   &__hint {

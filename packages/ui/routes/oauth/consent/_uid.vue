@@ -145,6 +145,8 @@ export default {
       if (code === 'account_cannot_connect') {
         return this.$t('oauthConsent.accountCannotConnect');
       }
+      // Only Badsender opens the module (ADR 0017): not the tech admin's to fix.
+      if (code === 'no_mcp_module') return this.$t('oauthConsent.noModule');
       if (status === 403) return this.$t('oauthConsent.noAccess');
       return this.$t('global.errors.errorOccured');
     },

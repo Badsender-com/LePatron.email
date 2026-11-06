@@ -16,6 +16,10 @@ node -e "const {generateKeyPair, exportJWK}=require('jose');generateKeyPair('RS2
 
 Puis les donner à l'application dans la variable `lepatron_mcpOauthJwks`. Les changer déconnecte tous les assistants.
 
+### Module MCP
+
+À la première release qui porte le module MCP (ADR 0017), un super admin **ouvre le module MCP du groupe plateforme** dans chaque environnement (**Paramètres › Général › Modules activés**). Sans lui, l'accès MCP du groupe plateforme ne fonctionne plus. Ouvrir aussi celui des groupes de staging A, B et C.
+
 ### Comptes et groupes de staging
 
 | Rôle                               | Groupe            | Accès MCP du groupe |
@@ -25,6 +29,7 @@ Puis les donner à l'application dans la variable `lepatron_mcpOauthJwks`. Les c
 | Admin d'entreprise (non technique) | groupe A          | activé              |
 | Utilisateur simple                 | groupe B          | activé              |
 | Utilisateur simple                 | groupe C          | **coupé**           |
+| Utilisateur simple                 | groupe D          | **module fermé**    |
 | Super admin                        | groupe plateforme | —                   |
 
 Le groupe A doit avoir au moins une expertise et un skill actifs.
@@ -82,17 +87,19 @@ La colonne « Enregistrement » dit comment le client se fait connaître de LePa
 
 ## 2. Refus
 
-| Cas                                      | Comment le provoquer                                                                         | Attendu                                                                                                    | OK  |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --- |
-| Groupe sans accès MCP                    | connecter un assistant avec l'utilisateur du groupe C                                        | consentement refusé : « Votre entreprise n'a pas l'accès MCP »                                             | [ ] |
-| Accès MCP coupé après connexion          | connecter l'utilisateur du groupe A, puis couper l'accès MCP du groupe A                     | l'assistant est refusé ; l'application disparaît de la liste ; réactiver l'accès ne la fait pas revenir    | [ ] |
-| Application révoquée                     | **Révoquer** depuis Applications connectées                                                  | refus à la requête suivante, renouvellement refusé                                                         | [ ] |
-| Révocation par l'admin                   | **Paramètres › Fonctionnalités IA › Accès MCP › Tout révoquer**, admin technique du groupe A | toutes les applications du groupe A sont refusées, celles du groupe B fonctionnent                         | [ ] |
-| Utilisateur désactivé                    | désactiver l'utilisateur connecté                                                            | refus ; le réactiver ne fait pas revenir ses connexions                                                    | [ ] |
-| Client d'une autre entreprise            | utiliser le client manuel du groupe A avec l'utilisateur du groupe B                         | consentement refusé : « Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée » | [ ] |
-| Client manuel supprimé                   | supprimer le client depuis **Accès MCP › Clients enregistrés à la main › Gérer**             | refus immédiat des connexions qui passaient par lui                                                        | [ ] |
-| Compte d'administration de la plateforme | consentir avec le compte admin de configuration                                              | « Ce compte ne peut pas connecter d'assistant »                                                            | [ ] |
-| Consentement expiré                      | ouvrir l'écran de consentement et attendre plus de 10 minutes                                | « Cette demande de connexion a expiré… »                                                                   | [ ] |
+| Cas                                      | Comment le provoquer                                                                                | Attendu                                                                                                                                                       | OK  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Groupe sans accès MCP                    | connecter un assistant avec l'utilisateur du groupe C                                               | consentement refusé : « Votre entreprise n'a pas l'accès MCP »                                                                                                | [ ] |
+| Groupe sans module MCP                   | connecter un assistant avec l'utilisateur du groupe D                                               | consentement refusé : « Le module MCP n'est pas inclus dans l'abonnement de votre entreprise » ; dans ses Fonctionnalités IA, l'accès MCP est « Non inclus »  | [ ] |
+| Module MCP fermé après connexion         | connecter l'utilisateur du groupe A, puis fermer le module MCP du groupe A (super admin, confirmer) | la confirmation annonce le nombre d'applications ; l'assistant est refusé ; rouvrir le module ne fait pas revenir l'application, l'accès MCP est resté activé | [ ] |
+| Accès MCP coupé après connexion          | connecter l'utilisateur du groupe A, puis couper l'accès MCP du groupe A                            | l'assistant est refusé ; l'application disparaît de la liste ; réactiver l'accès ne la fait pas revenir                                                       | [ ] |
+| Application révoquée                     | **Révoquer** depuis Applications connectées                                                         | refus à la requête suivante, renouvellement refusé                                                                                                            | [ ] |
+| Révocation par l'admin                   | **Paramètres › Fonctionnalités IA › Accès MCP › Tout révoquer**, admin technique du groupe A        | toutes les applications du groupe A sont refusées, celles du groupe B fonctionnent                                                                            | [ ] |
+| Utilisateur désactivé                    | désactiver l'utilisateur connecté                                                                   | refus ; le réactiver ne fait pas revenir ses connexions                                                                                                       | [ ] |
+| Client d'une autre entreprise            | utiliser le client manuel du groupe A avec l'utilisateur du groupe B                                | consentement refusé : « Cette application est réservée aux utilisateurs de l'entreprise qui l'a déclarée »                                                    | [ ] |
+| Client manuel supprimé                   | supprimer le client depuis **Accès MCP › Clients enregistrés à la main › Gérer**                    | refus immédiat des connexions qui passaient par lui                                                                                                           | [ ] |
+| Compte d'administration de la plateforme | consentir avec le compte admin de configuration                                                     | « Ce compte ne peut pas connecter d'assistant »                                                                                                               | [ ] |
+| Consentement expiré                      | ouvrir l'écran de consentement et attendre plus de 10 minutes                                       | « Cette demande de connexion a expiré… »                                                                                                                      | [ ] |
 
 ## 3. Droits sur les écrans
 
