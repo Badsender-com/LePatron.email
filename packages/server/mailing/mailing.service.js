@@ -73,6 +73,11 @@ const {
 const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
+
+// Sanitized previews, held per version: see utils/sanitized-preview-cache.js.
+const { sanitizeCached: sanitizePreviewCached } = createSanitizedPreviewCache({
+  sanitize: sanitizePreviewHtml,
+});
 module.exports = {
   createMailing,
   findMailings,
@@ -1496,11 +1501,6 @@ async function renameMailing(
 async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
-
-// Sanitized previews, held per version: see utils/sanitized-preview-cache.js.
-const { sanitizeCached: sanitizePreviewCached } = createSanitizedPreviewCache({
-  sanitize: sanitizePreviewHtml,
-});
 
 async function previewMail(mailingId, user) {
   // Scoped like every other mailing read: the company first, then the workspace
