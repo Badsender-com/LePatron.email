@@ -113,12 +113,17 @@
 
 // The gallery opens over the panels, under the tabs, its two galleries the
 // sub-tabs « Dans cet email » and « Galerie du template ».
+// Shown and hidden at once, as « Blocs » and « Réglages » are: it is a tab
+// of the bar now, no longer a drawer sliding over it.
 #main-toolbox #toolimages.slidebar {
   top: @left-bar-nav-height;
   bottom: 0;
   height: auto;
   width: 100%;
   box-shadow: none;
+  animation: none;
+
+  &.hidden { animation: none; }
 
   #toolimagestab,
   #toolimagestab .ui-tabs-panel {
