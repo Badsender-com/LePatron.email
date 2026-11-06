@@ -66,6 +66,7 @@ const {
   skillsRouter: aiSkillsRouter,
   expertiseRouter: aiExpertiseRouter,
   invocationsRouter: aiInvocationsRouter,
+  skillsImportBodyParser: aiSkillsImportBodyParser,
 } = require('./ai-skill/ai-skill.routes');
 const mcpFeedbackRouter = require('./mcp/mcp-feedback.routes.js');
 const { mountMcp } = require('./mcp/mcp-http.js');
@@ -156,6 +157,8 @@ if (cluster.isMaster) {
   // The MCP endpoint takes tool calls, never files (ADR 0012): read before the
   // app's own limit, which would let one call carry 50 MB of arguments.
   app.use('/mcp', bodyParser.json({ limit: '1mb' }));
+  // A skills export is 5 MB at most (ADR 0018).
+  app.use('/api/ai-skills/import', aiSkillsImportBodyParser);
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));
 

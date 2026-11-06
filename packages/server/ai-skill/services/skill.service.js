@@ -68,7 +68,9 @@ function getSkill(skillId) {
 const DEFAULT_INPUT_SCHEMA_ID = 'genericTextInput';
 const DEFAULT_OUTPUT_SCHEMA_ID = 'genericTextOutput';
 
-async function createSkill(data, userId) {
+// `initialVersion`, when given, replaces the blank 1.0 draft: an imported
+// version, written with the document in one go (ADR 0018).
+async function createSkill(data, userId, { initialVersion } = {}) {
   const now = new Date();
   const payload = {
     skillId: data.skillId,
@@ -78,25 +80,29 @@ async function createSkill(data, userId) {
     // Explicit rather than left to the schema: a new skill reaches the
     // platform company only, until it is opened (ADR 0013).
     audience: data.audience || Audiences.PLATFORM,
+    // Not served to assistants until someone decides it (ADR 0013).
+    servedToAssistants: false,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
     // Seed a v1.0 DRAFT with the generic schemas pre-filled (§B1).
     versions: [
-      {
-        versionMajor: 1,
-        versionMinor: 0,
-        status: 'DRAFT',
-        ...blankVersionContent(),
-        inputSchemaId: DEFAULT_INPUT_SCHEMA_ID,
-        outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
-        changelog: '',
-        releaseNotes: '',
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      },
+      initialVersion
+        ? versioned.importedDraft(initialVersion, userId)
+        : {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            ...blankVersionContent(),
+            inputSchemaId: DEFAULT_INPUT_SCHEMA_ID,
+            outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
+            changelog: '',
+            releaseNotes: '',
+            createdBy: userId,
+            createdAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          },
     ],
   };
   try {

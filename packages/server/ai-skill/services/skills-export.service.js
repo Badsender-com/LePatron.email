@@ -16,10 +16,15 @@ const { Expertises, LePatronSkills } = require('../../common/models.common.js');
 const {
   SkillStatuses,
   SkillNatures,
+  SkillNatureValues,
+  SkillCategoryValues,
   SkillIdRegex,
+  Audiences,
+  MaxConsumedExpertises,
 } = require('../constant/skill-constants.js');
 const {
   findActiveVersion,
+  findVersion,
   openDraftOf,
   versionLabel,
 } = require('./version-helpers.js');
@@ -86,8 +91,9 @@ function refusalOf(doc) {
   return null;
 }
 
-async function exportable(kind, ids, { strict }) {
+async function exportable(kind, chosen, { strict }) {
   const { model, idField } = ENTITIES[kind];
+  const ids = [...new Set(chosen)];
   const docs = await model()
     .find({ [idField]: { $in: ids } })
     .lean();
@@ -167,29 +173,97 @@ async function exportSkills(
   };
 }
 
-const VERSION = z
-  .object({
+// What a file may hold, typed, so a wrong file is refused whole before the
+// preview rather than failing item by item at the import (ADR 0018). Keys
+// this format does not know are dropped.
+const id = z.string().regex(SkillIdRegex);
+const strings = z.array(z.string());
+const version = (content) =>
+  z.object({
     major: z.number().int().min(1),
     minor: z.number().int().min(0),
-  })
-  .passthrough();
-const itemSchema = (idField) =>
-  z
-    .object({
-      [idField]: z.string().regex(SkillIdRegex),
-      title: z.string().min(1),
-      category: z.string().min(1),
-      version: VERSION,
-    })
-    .passthrough();
+    changelog: z.string().optional(),
+    releaseNotes: z.string().optional(),
+    ...content,
+  });
+const TEST_CASE = z.object({
+  name: z.string().min(1),
+  input: z
+    .unknown()
+    .refine((value) => value !== undefined && value !== null, 'Required'),
+  expectedOutput: z.unknown().optional(),
+  notes: z.string().optional(),
+});
+const EXPERTISE = z.object({
+  expertiseId: id,
+  title: z.string().min(1),
+  description: z.string().optional(),
+  category: z.enum(SkillCategoryValues),
+  scope: strings.optional(),
+  isTransversal: z.boolean().optional(),
+  appliesToEmailTypes: strings.optional(),
+  appliesToLanguages: strings.optional(),
+  version: version({
+    body: z.string().optional(),
+    examplesGood: strings.optional(),
+    examplesBad: strings.optional(),
+  }),
+});
+const SKILL = z.object({
+  skillId: id,
+  title: z.string().min(1),
+  description: z.string().optional(),
+  category: z.enum(SkillCategoryValues),
+  version: version({
+    // The version's, as every content of it (ADR 0013).
+    nature: z.enum(SkillNatureValues),
+    systemPrompt: z.string().optional(),
+    skillBody: z.string().optional(),
+    inputTemplate: z.string().optional(),
+    inputSchemaId: z.string().optional(),
+    outputSchemaId: z.string().optional(),
+    modelHints: z
+      .object({
+        temperature: z.number().optional(),
+        maxTokens: z.number().optional(),
+        topP: z.number().optional(),
+      })
+      .optional(),
+    testCases: z.array(TEST_CASE).optional(),
+    procedure: z.string().optional(),
+    // As the back office saves them: each named once, a bounded list.
+    consumedExpertiseIds: z
+      .array(id)
+      .max(MaxConsumedExpertises)
+      .refine(
+        (ids) => new Set(ids).size === ids.length,
+        'names an expertise twice'
+      )
+      .optional(),
+  }),
+});
+// An item twice would be previewed twice, and its second import would fail.
+const once = (idField) => (items, ctx) => {
+  const seen = new Set();
+  items.forEach((item, index) => {
+    if (seen.has(item[idField])) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, idField],
+        message: `"${item[idField]}" is in the file twice`,
+      });
+    }
+    seen.add(item[idField]);
+  });
+};
 const FILE = z
   .object({
     format: z.literal(FORMAT),
     origin: z.string(),
     exportedAt: z.string(),
     exportedBy: z.string(),
-    expertises: z.array(itemSchema('expertiseId')),
-    skills: z.array(itemSchema('skillId')),
+    expertises: z.array(EXPERTISE).superRefine(once('expertiseId')),
+    skills: z.array(SKILL).superRefine(once('skillId')),
   })
   .passthrough();
 
@@ -238,9 +312,13 @@ const contentOf = (version, contentFields) =>
     contentFields.map(({ name }) => [name, version[name] ?? null])
   );
 
-// The schema a feature skill's version needs, when this instance lacks it.
+// A version stored before natures were versioned has none: a feature one.
+const natureOf = (version) => version.nature || SkillNatures.FEATURE;
+
+// A schema a skill's version names, when this instance's code lacks it: the
+// model refuses an unknown schema id, whatever the skill's nature.
 function lacksSchema(kind, item) {
-  if (kind !== 'skill' || item.nature === SkillNatures.TASK) return false;
+  if (kind !== 'skill') return false;
   const { inputSchemaId, outputSchemaId } = item.version;
   return [inputSchemaId, outputSchemaId].some((id) => id && !hasSchema(id));
 }
@@ -264,8 +342,22 @@ function stateOf(kind, item, doc) {
         : { state: 'blocked', reason: 'diverged' };
     }
   }
-  if (doc && openDraftOf(doc))
+  // Archived here, or left behind when an older draft was published.
+  if (doc && findVersion(doc, item.version.major, item.version.minor)) {
+    return { state: 'blocked', reason: 'version_exists' };
+  }
+  if (doc && openDraftOf(doc)) {
     return { state: 'blocked', reason: 'draft_open' };
+  }
+  // An import brings a version, not a change of nature: the nature of the
+  // active version here is kept.
+  if (
+    kind === 'skill' &&
+    active &&
+    natureOf(active) !== natureOf(item.version)
+  ) {
+    return { state: 'blocked', reason: 'nature_differs' };
+  }
   if (lacksSchema(kind, item)) {
     return { state: 'blocked', reason: 'missing_schema' };
   }
@@ -336,4 +428,92 @@ async function previewImport(json) {
   return { origin, exportedAt, exportedBy, items };
 }
 
-module.exports = { exportSkills, readSkillsExport, previewImport, FORMAT };
+const SERVICES = { expertise: expertiseService, skill: skillService };
+
+// A new item: the document, as the back office creates one, with the
+// imported version in place of the blank 1.0 draft a creation seeds, in one
+// write: the model validates the document with its version, so a refused
+// version leaves nothing behind. Nothing opened to the outside, owned by the
+// person importing.
+function create(kind, item, userId) {
+  const { version, ...data } = item;
+  const { major, minor, ...content } = version;
+  const options = {
+    initialVersion: { versionMajor: major, versionMinor: minor, ...content },
+  };
+  const owned = { ...data, audience: Audiences.PLATFORM };
+  return kind === 'skill'
+    ? skillService.createSkill(owned, userId, options)
+    : expertiseService.createExpertise(owned, userId, options);
+}
+
+/**
+ * Imports the chosen items of a skills export as drafts (ADR 0018):
+ * expertises first, then skills, each on its own, so one failing item stops
+ * nothing else. A chosen item the preview does not let through is skipped,
+ * with its reason. Each imported version keeps the source's number; the
+ * active version here keeps serving until a person publishes the draft.
+ *
+ * @param {Object} json the file
+ * @param {{ expertiseIds?: string[], skillIds?: string[] }} chosen
+ * @param {{ user: { id: string } }} context
+ * @returns {Promise<{ created, updated, skipped, failed }>} each a list of
+ *   `{ kind, id, version }`, with a `reason` when skipped and a `message`
+ *   when failed
+ */
+async function importSkills(
+  json,
+  { expertiseIds = [], skillIds = [] },
+  { user }
+) {
+  const file = readSkillsExport(json);
+  const { items } = await previewImport(file);
+  const chosen = { expertise: expertiseIds, skill: skillIds };
+  const report = { created: [], updated: [], skipped: [], failed: [] };
+
+  for (const kind of KINDS) {
+    const { idField } = ENTITIES[kind];
+    const wanted = file[listOf(kind)].filter((item) =>
+      chosen[kind].includes(item[idField])
+    );
+    for (const item of wanted) {
+      const id = item[idField];
+      const entry = { kind, id, version: labelOf(item.version) };
+      const preview = items.find((p) => p.kind === kind && p.id === id);
+      if (preview.state !== 'new' && preview.state !== 'update') {
+        report.skipped.push({
+          ...entry,
+          reason: preview.reason || preview.state,
+        });
+        continue; // eslint-disable-line no-continue
+      }
+      try {
+        if (preview.state === 'new') {
+          // eslint-disable-next-line no-await-in-loop
+          await create(kind, item, user.id);
+          report.created.push(entry);
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          await SERVICES[kind].createVersionAt(
+            id,
+            item.version,
+            item.version,
+            user.id
+          );
+          report.updated.push(entry);
+        }
+      } catch (err) {
+        report.failed.push({ ...entry, message: err.message });
+      }
+    }
+  }
+  return report;
+}
+
+module.exports = {
+  exportSkills,
+  readSkillsExport,
+  previewImport,
+  importSkills,
+  FORMAT,
+};

@@ -90,3 +90,6 @@ export function aiSkillsExport() {
 export function aiSkillsImportPreview() {
   return '/ai-skills/import/preview';
 }
+export function aiSkillsImport() {
+  return '/ai-skills/import';
+}

@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const bodyParser = require('body-parser');
 
 const { GUARD_ADMIN } = require('../account/auth.guard.js');
 const skill = require('./controllers/skill.controller.js');
@@ -13,11 +14,13 @@ skillsRouter.use(GUARD_ADMIN);
 
 // The skills export (ADR 0018), before the routes keyed by a skill id.
 skillsRouter.post('/export', skillsExport.exportFile);
-skillsRouter.post(
-  '/import/preview',
-  skillsExport.capFileSize,
-  skillsExport.previewFile
-);
+skillsRouter.post('/import/preview', skillsExport.previewFile);
+skillsRouter.post('/import', skillsExport.importFile);
+
+// A skills export is 5 MB at most. Mounted by the app on the import routes
+// before its own parser, which reads up to 50 MB: once a body is read, no
+// later parser reads it again, whatever its announced size or encoding.
+const skillsImportBodyParser = bodyParser.json({ limit: '5mb' });
 skillsRouter.get('/schemas', skill.listSchemas);
 skillsRouter.get('/schemas/:schemaId/descriptor', skill.getSchemaDescriptor);
 skillsRouter.get('/', skill.listSkills);
@@ -83,6 +86,7 @@ invocationsRouter.get('/:id', invocation.getInvocation);
 
 module.exports = {
   skillsRouter,
+  skillsImportBodyParser,
   expertiseRouter,
   invocationsRouter,
 };

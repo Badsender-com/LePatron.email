@@ -39,13 +39,16 @@ const request = require('../../../helpers/local-request.js');
 const f = require('../../../helpers/mcp-fixtures');
 const {
   skillsRouter,
+  skillsImportBodyParser,
 } = require('../../../../packages/server/ai-skill/ai-skill.routes');
 
 const SUBJECT_LINES = 'redaction.subject-line';
 
 function makeApp(user) {
   const app = express();
-  // As the app parses every body: up to 50 MB (packages/server/index.js).
+  // As the app mounts them (packages/server/index.js): the import's own
+  // parser first, then every other body up to 50 MB.
+  app.use('/api/ai-skills/import', skillsImportBodyParser);
   app.use(express.json({ limit: '50mb' }));
   app.use((req, _res, next) => {
     req.user = user;
@@ -77,6 +80,14 @@ describe('exporting through the API', () => {
       format: 1,
       expertises: [expect.objectContaining({ expertiseId: SUBJECT_LINES })],
     });
+  });
+
+  it('refuses a selection that is not a list of ids', async () => {
+    const res = await request(makeApp(SUPER_ADMIN))
+      .post('/api/ai-skills/export')
+      .send({ skillIds: 'redaction.subject-ideas' });
+
+    expect(res.status).toBe(400);
   });
 
   it('refuses anyone else', async () => {
@@ -154,8 +165,7 @@ describe('previewing through the API', () => {
   });
 });
 
-// Turned on by #1411 (import the chosen items as drafts, with a report)
-describe.skip('importing through the API', () => {
+describe('importing through the API', () => {
   let file;
   beforeEach(async () => {
     store.seed(f.SEED);
@@ -178,6 +188,15 @@ describe.skip('importing through the API', () => {
     expect(res.body.created).toEqual([
       { kind: 'expertise', id: SUBJECT_LINES, version: '2.1' },
     ]);
+  });
+
+  it('refuses a choice that is not a list of ids', async () => {
+    const res = await request(makeApp(SUPER_ADMIN))
+      .post('/api/ai-skills/import')
+      .send({ file, expertiseIds: SUBJECT_LINES });
+
+    expect(res.status).toBe(400);
+    expect(store.stored('expertises')).toEqual([]);
   });
 
   it('refuses anyone else, and writes nothing', async () => {
