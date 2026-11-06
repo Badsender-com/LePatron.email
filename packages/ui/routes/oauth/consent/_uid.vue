@@ -58,9 +58,14 @@ export default {
       );
       return group ? group.name : '';
     },
-    // Its name is only what it claims, unless a super admin registered it.
+    // Its name is only what it claims, unless a company registered it.
     registrationNote() {
       const client = this.interaction?.client;
+      if (client?.registration === 'preRegistered') {
+        return this.$t('oauthConsent.registration.preRegistered', {
+          company: client.company,
+        });
+      }
       if (client?.registration === 'dynamic') {
         return this.$t('oauthConsent.registration.dynamic');
       }
@@ -97,6 +102,9 @@ export default {
       const code = err.response?.data?.code;
       // Expired, or started in another browser: the provider tells no more.
       if (status === 404) return this.$t('oauthConsent.expired');
+      if (code === 'client_of_another_company') {
+        return this.$t('oauthConsent.clientOfAnotherCompany');
+      }
       if (code === 'account_cannot_connect') {
         return this.$t('oauthConsent.accountCannotConnect');
       }

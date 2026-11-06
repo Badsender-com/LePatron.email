@@ -37,6 +37,13 @@ export default {
       return this.can(CAPABILITIES.PLATFORM_MANAGE) && this.group.name;
     },
   },
+  methods: {
+    // The MCP section saves the access and the retex: the page follows.
+    onMcpUpdate(saved) {
+      this.group.enableMcp = saved.enableMcp;
+      this.group.allowRetex = saved.allowRetex;
+    },
+  },
 };
 </script>
 
@@ -60,13 +67,13 @@ export default {
         <bs-group-ai-features-tab
           :active="true"
           :is-platform="!!group.isPlatform"
-        />
-        <bs-group-mcp-access-option
-          v-if="group.id"
-          class="mt-6"
-          :group="group"
-          @update="group.enableMcp = $event.enableMcp"
-        />
+        >
+          <bs-group-mcp-access-option
+            v-if="group.id"
+            :group="group"
+            @update="onMcpUpdate"
+          />
+        </bs-group-ai-features-tab>
       </div>
     </v-container>
   </div>

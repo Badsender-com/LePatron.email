@@ -8,6 +8,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsAiModelPicker from '~/components/group/bs-ai-model-picker.vue';
 import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsAiFeatureSkillEngineSection from '~/components/group/BsAiFeatureSkillEngineSection.vue';
+import BsGroupFeatureSwitch from '~/components/group/feature-switch.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 // Three levels, mirroring packages/server/constant/translation-formality.js:
@@ -26,6 +27,7 @@ export default {
     BsAiModelPicker,
     BsFormSection,
     BsAiFeatureSkillEngineSection,
+    BsGroupFeatureSwitch,
     LucideLanguages: Languages,
     LucideFileText: FileText,
     LucideBadgeCheck: BadgeCheck,
@@ -98,6 +100,11 @@ export default {
       set(value) {
         this.updateFeature('translation', { isActive: value });
       },
+    },
+    // Switched off, the settings fold under the header, unless they are
+    // what it takes to switch it on: no active integration chosen yet.
+    translationFolded() {
+      return !this.translationIsActive && Boolean(this.hasActiveIntegration);
     },
     selectedLanguages: {
       get() {
@@ -225,7 +232,7 @@ export default {
         </v-alert>
 
         <!-- Section: Translation Feature -->
-        <bs-form-section>
+        <bs-form-section :folded="translationFolded">
           <template #icon>
             <lucide-languages :size="20" />
           </template>
@@ -235,19 +242,16 @@ export default {
           <template #description>
             {{ $t('aiFeatures.translation.description') }}
           </template>
-
-          <!-- Activation switch -->
-          <div class="activation-row mb-4">
-            <v-switch
+          <template #header-actions>
+            <bs-group-feature-switch
               v-model="translationIsActive"
               :label="$t('aiFeatures.translation.enableLabel')"
+              :on-text="$t('aiFeatures.translation.on')"
+              :off-text="$t('aiFeatures.translation.off')"
               :disabled="saving || !hasActiveIntegration"
               :loading="saving"
-              color="accent"
-              hide-details
-              class="mt-0"
             />
-          </div>
+          </template>
 
           <!-- Warning if no active integration selected -->
           <v-alert
@@ -319,6 +323,9 @@ export default {
           :group-id="groupId"
         />
 
+        <!-- The page's own sections (MCP access), before what is coming. -->
+        <slot />
+
         <!-- Section: Coming Soon Features -->
         <bs-form-section last>
           <template #icon>
@@ -369,11 +376,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.activation-row {
-  display: flex;
-  align-items: center;
-}
-
 .upcoming-features {
   display: flex;
   flex-direction: column;

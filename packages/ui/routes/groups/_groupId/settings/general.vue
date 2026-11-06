@@ -6,8 +6,6 @@ import mixinGroupSettingsSave from '~/helpers/mixins/mixin-group-settings-save.j
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupForm from '~/components/group/form.vue';
 import BsGroupTwoFactorOption from '~/components/group/two-factor-option.vue';
-import BsGroupRetexOption from '~/components/group/retex-option.vue';
-import BsGroupConnectedApplicationsOption from '~/components/group/connected-applications-option.vue';
 
 export default {
   name: 'BsPageSettingsGeneral',
@@ -15,8 +13,6 @@ export default {
     BsPageHeader,
     BsGroupForm,
     BsGroupTwoFactorOption,
-    BsGroupRetexOption,
-    BsGroupConnectedApplicationsOption,
   },
   mixins: [mixinSettingsTitle, mixinGroupSettingsSave],
   meta: {
@@ -61,17 +57,6 @@ export default {
         class="mt-6"
         :group="group"
         @update="group.requireTwoFactor = $event.requireTwoFactor"
-      />
-      <bs-group-retex-option
-        v-if="group.id && group.enableMcp"
-        class="mt-6"
-        :group="group"
-        @update="group.allowRetex = $event.allowRetex"
-      />
-      <bs-group-connected-applications-option
-        v-if="group.id"
-        class="mt-6"
-        :group="group"
       />
     </v-container>
   </div>
