@@ -1074,7 +1074,7 @@ export default {
   retex: {
     title: 'Retour d\'expérience des assistants IA',
     description:
-      'Quand un utilisateur envoie un avis depuis son assistant IA, il peut y joindre un résumé de la session pour aider Badsender à améliorer ses expertises et skills. Ce résumé n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte pour cet avis.',
+      'Quand un utilisateur envoie un avis depuis son assistant IA, il peut y joindre un résumé de la session pour aider l\'entreprise plateforme à améliorer ses expertises et skills. Ce résumé n\'est conservé que si l\'entreprise l\'autorise ici, et que l\'utilisateur l\'accepte pour cet avis.',
     switch: 'Autoriser le retour d\'expérience',
     updated: 'Retour d\'expérience mis à jour',
   },
