@@ -23,7 +23,7 @@ const {
   refused,
   WRITE_SCOPE,
 } = require('./mcp-identity.js');
-const { draftDiff } = require('./mcp-draft-diff.js');
+const { draftDiff, differs } = require('./mcp-draft-diff.js');
 const {
   ANSWER,
   PROPOSE_EXPERTISE_INPUT,
@@ -73,20 +73,29 @@ function answerOf(entity, doc, draft) {
       audience: doc.audience,
     },
     diff: draftDiff(findActiveVersion(doc), draft, fields),
+    differs: differs(findActiveVersion(doc), draft, fields),
   };
+}
+
+// What the person reads of the difference: the diff, or why there is none.
+function differenceSaid(diff, changed) {
+  if (diff) {
+    return `Its difference with the active version, for the person to read before publishing:\n${diff}`;
+  }
+  return changed
+    ? 'Only spaces or blank lines differ from the active version.'
+    : 'It does not differ from the active version.';
 }
 
 // The tool's result: the difference is sent once, in the text every client
 // reads, and the structured answer says what was written.
-function drafted({ answer, diff }) {
+function drafted({ answer, diff, differs: changed }) {
   const id = answer.expertiseId || answer.skillId;
   const kept =
     answer.audience === Audiences.ALL
       ? 'open to every company'
       : 'kept to the platform company';
-  const said = diff
-    ? `Its difference with the active version, for the person to read before publishing:\n${diff}`
-    : 'It does not differ from the active version.';
+  const said = differenceSaid(diff, changed);
   return {
     content: [
       {

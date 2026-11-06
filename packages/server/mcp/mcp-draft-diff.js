@@ -163,4 +163,24 @@ function draftDiff(before, after, fields) {
   return more ? [...kept, `… ${more} more lines`].join('\n') : kept.join('\n');
 }
 
-module.exports = { draftDiff, MAX_LINES };
+// A field as stored, for telling a change the diff does not show (spaces,
+// blank lines) from none.
+const rawOf = (value) =>
+  Array.isArray(value) ? value.join('\n') : String(value || '');
+
+/**
+ * Whether two versions differ at all in the fields, spaces and blank lines
+ * included, which the diff leaves out.
+ *
+ * @param {Object|null} before
+ * @param {Object} after
+ * @param {string[]} fields
+ * @returns {boolean}
+ */
+function differs(before, after, fields) {
+  return fields.some(
+    (field) => rawOf(before && before[field]) !== rawOf(after[field])
+  );
+}
+
+module.exports = { draftDiff, differs, MAX_LINES };

@@ -231,6 +231,21 @@ describe('authoring', () => {
       expect(second.text).toContain('+ One at most.');
     });
 
+    it('says when only spaces or blank lines change', async () => {
+      harness.seed(WITHOUT_DRAFT);
+
+      const answer = await call(await asAuthor(), 'propose_expertise_change', {
+        expertiseId: SUBJECT_LINES,
+        body: `${
+          f.EXPERTISES[0].versions.find((v) => v.status === 'ACTIVE').body
+        }\n\n\n`,
+        changelog: 'Spacing',
+      });
+
+      expect(answer.text).toMatch(/Only spaces or blank lines differ/);
+      expect(answer.text).not.toMatch(/does not differ/);
+    });
+
     it('sends the difference once, in the text', async () => {
       harness.seed(WITHOUT_DRAFT);
       const client = await asAuthor();

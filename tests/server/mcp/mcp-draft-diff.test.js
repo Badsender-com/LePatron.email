@@ -5,6 +5,7 @@
 
 const {
   draftDiff,
+  differs,
   MAX_LINES,
 } = require('../../../packages/server/mcp/mcp-draft-diff.js');
 
@@ -109,5 +110,15 @@ describe('the difference of a draft', () => {
 
     expect(diff.split('\n')).toHaveLength(MAX_LINES + 1);
     expect(diff).toMatch(/… \d+ more lines$/);
+  });
+
+  // The diff leaves spaces and blank lines out; whether they changed is told
+  // apart from no change at all.
+  it('tells a change of blank lines from none', () => {
+    const fields = ['body'];
+
+    expect(differs({ body: 'One' }, { body: 'One\n\n' }, fields)).toBe(true);
+    expect(differs({ body: 'One' }, { body: 'One' }, fields)).toBe(false);
+    expect(differs(null, { body: '' }, fields)).toBe(false);
   });
 });
