@@ -96,9 +96,10 @@ async function createExpertise(data, userId) {
     isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
-    // Explicit rather than left to the schema: a new expertise reaches the
-    // platform company only, until it is opened (ADR 0013).
-    audience: data.audience || Audiences.PLATFORM,
+    // Explicit rather than left to the schema, and never taken from the
+    // request: a new expertise reaches the platform company only, until it is
+    // opened, an act of its own (ADR 0013).
+    audience: Audiences.PLATFORM,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },

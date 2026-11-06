@@ -98,6 +98,22 @@ describe('skill.service', () => {
       expect(v.outputSchemaId).toBe('genericTextOutput');
     });
 
+    // Opening to every company is an act of its own (ADR 0013), never a
+    // field of the creation.
+    it('starts with the platform company, whatever the request says', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        {
+          skillId: 'redaction.cta',
+          title: 't',
+          category: 'redaction',
+          audience: 'all',
+        },
+        new Types.ObjectId()
+      );
+      expect(LePatronSkills.create.mock.calls[0][0].audience).toBe('platform');
+    });
+
     it('throws 409 on duplicate skillId', async () => {
       LePatronSkills.create.mockRejectedValue({ code: 11000 });
       await expect(
