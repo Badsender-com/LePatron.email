@@ -249,7 +249,7 @@ export default {
                 <v-btn
                   icon
                   small
-                  color="error"
+                  class="bs-mcp-clients__delete"
                   :aria-label="
                     $t('mcpClients.deleteNamed', { name: client.name })
                   "
@@ -357,6 +357,17 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// Neutral at rest, the error tint on hover: deleting is not the row's state.
+.bs-mcp-clients__delete.v-btn {
+  color: var(--gray-600);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+  }
+}
+
 .bs-mcp-clients {
   max-width: 880px;
   display: flex;

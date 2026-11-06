@@ -216,8 +216,8 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
+  <v-card flat tile class="ai-features">
+    <v-card-text class="ai-features__cards">
       <v-skeleton-loader v-if="loading" type="article" />
 
       <template v-else>
@@ -232,7 +232,11 @@ export default {
         </v-alert>
 
         <!-- Section: Translation Feature -->
-        <bs-form-section :folded="translationFolded">
+        <bs-form-section
+          card
+          :active="translationIsActive"
+          :folded="translationFolded"
+        >
           <template #icon>
             <lucide-languages :size="20" />
           </template>
@@ -308,7 +312,20 @@ export default {
                 :error-messages="languagesError"
                 :disabled="saving || !selectedIntegrationId"
                 multiple
-              />
+              >
+                <!-- One line, not a chip per language: the list is long. -->
+                <template #selection="{ index }">
+                  <span v-if="index === 0">
+                    {{
+                      $tc(
+                        'aiFeatures.translation.languagesSelected',
+                        selectedLanguages.length,
+                        { count: selectedLanguages.length }
+                      )
+                    }}
+                  </span>
+                </template>
+              </bs-select>
             </v-col>
           </v-row>
         </bs-form-section>
@@ -327,7 +344,7 @@ export default {
         <slot />
 
         <!-- Section: Coming Soon Features -->
-        <bs-form-section last>
+        <bs-form-section card last>
           <template #icon>
             <lucide-sparkles :size="20" />
           </template>
@@ -376,6 +393,12 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+// The features stack as cards (the AI features mockup), on the settings
+// page's own ground: a grey of their own would stop at the content's edge.
+.ai-features__cards {
+  max-width: 880px;
+}
+
 .upcoming-features {
   display: flex;
   flex-direction: column;

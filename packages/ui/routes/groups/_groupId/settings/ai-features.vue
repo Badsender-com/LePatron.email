@@ -6,7 +6,7 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
 import BsGroupMcpAccessOption from '~/components/group/mcp-access-option.vue';
-import { CAN, USER } from '~/store/user';
+import { CAN, M_USER_SET, USER } from '~/store/user';
 import { CAPABILITIES } from '../../../../../shared/access/roles.js';
 
 export default {
@@ -42,6 +42,22 @@ export default {
     onMcpUpdate(saved) {
       this.group.enableMcp = saved.enableMcp;
       this.group.allowRetex = saved.allowRetex;
+      this.followInSidebar(saved);
+    },
+    // The sidebar's connected applications link reads the user's group, or a
+    // super admin's selected one: it follows a change of the group shown.
+    followInSidebar(saved) {
+      const { group, selectedGroup } = this.$store.state.user.info || {};
+      const id = String(this.group.id || this.group._id);
+      const changes = { enableMcp: saved.enableMcp };
+      ['group', 'selectedGroup'].forEach((key) => {
+        const held = key === 'group' ? group : selectedGroup;
+        if (held && String(held.id || held._id) === id) {
+          this.$store.commit(`${USER}/${M_USER_SET}`, {
+            [key]: { ...held, ...changes },
+          });
+        }
+      });
     },
   },
 };
