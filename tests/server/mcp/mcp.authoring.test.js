@@ -100,11 +100,12 @@ describe('authoring', () => {
       expect(answer.error).toMatch(/not allowed/i);
     });
 
-    it('offers no tool that publishes, archives, deletes or opens to clients', async () => {
+    // Opening to clients came with ADR 0019 (set_audience, #1434).
+    it('offers no tool that publishes, archives or deletes', async () => {
       const names = await toolNames(await asAuthor());
 
       names.forEach((name) =>
-        expect(name).not.toMatch(/activate|publish|archive|delete|audience/)
+        expect(name).not.toMatch(/activate|publish|archive|delete/)
       );
     });
 

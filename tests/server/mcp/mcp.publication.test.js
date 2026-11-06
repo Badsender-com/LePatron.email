@@ -41,7 +41,7 @@ describe('publishing and opening from an assistant', () => {
   const toolsOf = async (client) => (await client.listTools()).tools;
 
   // Turned on by #1434 (opening and closing an audience from an assistant)
-  describe.skip('the audience', () => {
+  describe('the audience', () => {
     it('is changed by a tool listed only with the skills:write scope', async () => {
       const reader = await harness.connectAs(f.ALICE, {
         group: f.PLATFORM_GROUP,
@@ -100,6 +100,27 @@ describe('publishing and opening from an assistant', () => {
       });
 
       expect(subjectLines().audience).toBe('platform');
+    });
+
+    // The call log keeps metadata only (ADR 0012); which way an audience went
+    // is one, and the log would not say it otherwise.
+    it('records which way the audience went in the call log', async () => {
+      await call(await asAuthor(), AUDIENCE, {
+        kind: 'expertise',
+        id: SUBJECT_LINES,
+        audience: 'subscribers',
+      });
+
+      expect(harness.stored('callLogs')).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: AUDIENCE,
+            objectIds: [SUBJECT_LINES],
+            change: 'audience:subscribers',
+            clientId: 'test-client',
+          }),
+        ])
+      );
     });
 
     it('never opens what was never published', async () => {
