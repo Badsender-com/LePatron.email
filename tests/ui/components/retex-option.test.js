@@ -1,46 +1,76 @@
+/**
+ * @jest-environment jsdom
+ */
 'use strict';
 
-// The retex switch of a company (ADR 0012): under it, the admin reads that the
-// rating and the comment of a feedback reach the platform company whether the
-// retex is allowed or not; only the session summary depends on it.
-//
-// The project has no @vue/test-utils, so this reads the component source.
+// The retex switch of a company (ADR 0012), mounted: under it, the admin
+// reads that the rating and the comment of a feedback reach the platform
+// company whether the retex is allowed or not, and what turning it off
+// erases; switching it saves it on its own.
 
-const fs = require('fs');
-const path = require('path');
+const { mountSfc, settle } = require('../../helpers/mount-sfc.js');
+const mixinGroupSwitch = require('../../../packages/ui/helpers/mixins/mixin-group-switch.js');
 const fr = require('../../../packages/ui/helpers/locales/fr.js').default;
 const en = require('../../../packages/ui/helpers/locales/en.js').default;
 
-const source = fs.readFileSync(
-  path.join(
-    __dirname,
-    '../../../packages/ui/components/group/retex-option.vue'
-  ),
-  'utf8'
-);
+function mountOption(group, $put) {
+  const commit = jest.fn();
+  return mountSfc('packages/ui/components/group/retex-option.vue', {
+    props: { group },
+    mocks: {
+      $t: (key) => key,
+      $axios: { $put },
+      // What mapMutations reads of the store's `page` module.
+      $store: {
+        commit,
+        _modulesNamespaceMap: { 'page/': { context: { commit } } },
+      },
+    },
+    imports: { '~/helpers/mixins/mixin-group-switch.js': mixinGroupSwitch },
+  });
+}
 
 describe('the retex option of a company', () => {
-  it('says under the switch what is always shared', () => {
-    const switchAt = source.indexOf('<v-switch');
-    const noteAt = source.indexOf("$t('retex.alwaysShared')");
+  it('says under the switch what is always shared, and what turning it off erases', async () => {
+    const vm = mountOption({ id: 'g1', allowRetex: false }, jest.fn());
+    await settle(vm);
 
+    const text = vm.$el.innerHTML;
+    const switchAt = text.indexOf('<v-switch');
     expect(switchAt).toBeGreaterThan(-1);
-    expect(noteAt).toBeGreaterThan(switchAt);
+    expect(text.indexOf('retex.alwaysShared')).toBeGreaterThan(switchAt);
+    expect(text.indexOf('retex.offForgets')).toBeGreaterThan(switchAt);
+  });
+
+  it('saves the switch on its own, and tells the page', async () => {
+    const saved = { id: 'g1', allowRetex: true };
+    const $put = jest.fn().mockResolvedValue(saved);
+    const vm = mountOption({ id: 'g1', allowRetex: false }, $put);
+    const update = jest.fn();
+    vm.$on('update', update);
+
+    vm.$el.querySelector('v-switch').dispatchEvent(new Event('change'));
+    await settle(vm);
+
+    expect($put).toHaveBeenCalledWith(expect.any(String), { allowRetex: true });
+    expect(update).toHaveBeenCalledWith(saved);
   });
 
   it.each([
-    ['fr', fr, /note et le commentaire.*entreprise plateforme/],
-    ['en', en, /rating and the comment.*platform company/],
-  ])('says it in %s', (_lang, messages, said) => {
-    expect(messages.retex.alwaysShared).toMatch(said);
-  });
-
-  // Turning the retex off forgets what it let the feedbacks keep (ADR 0012).
-  it.each([
-    ['fr', fr, /efface les résumés.*500 caractères/],
-    ['en', en, /erases the session summaries.*500 characters/],
-  ])('says in %s what turning it off erases', (_lang, messages, said) => {
-    expect(source).toMatch(/\$t\('retex\.offForgets'\)/);
-    expect(messages.retex.offForgets).toMatch(said);
+    [
+      'fr',
+      fr,
+      /note et le commentaire.*entreprise plateforme/,
+      /efface les résumés.*500 caractères/,
+    ],
+    [
+      'en',
+      en,
+      /rating and the comment.*platform company/,
+      /erases the session summaries.*500 characters/,
+    ],
+  ])('says it in %s', (_lang, messages, shared, erased) => {
+    expect(messages.retex.alwaysShared).toMatch(shared);
+    expect(messages.retex.offForgets).toMatch(erased);
   });
 });
