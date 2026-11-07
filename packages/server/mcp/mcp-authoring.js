@@ -17,7 +17,12 @@ const {
 } = require('../ai-skill/constant/skill-constants.js');
 const { withIdentity, mayDraft } = require('./mcp-identity.js');
 const { failure, ADDITIVE, OVERWRITING } = require('./mcp-tool-grammar.js');
-const { notOpen } = require('./mcp-retex-status.js');
+const {
+  addressesRetex,
+  addressedRetex,
+  assertCitable,
+  citeIn,
+} = require('./mcp-authoring-retex.js');
 
 const ENTITIES = {
   expertise: {
@@ -90,20 +95,6 @@ async function draftOf(entity, id, major, userId) {
   return { doc: next, version: created };
 }
 
-// The retex a draft may cite: open ones only (ADR 0021).
-async function assertCitable(retexIds) {
-  if (!retexIds || !retexIds.length) return;
-  const refused = await notOpen(retexIds);
-  if (refused.length) {
-    throw createError(
-      422,
-      `Not an open retex: ${refused.join(
-        ', '
-      )}. Cite only open retex, as list_retex gives them.`
-    );
-  }
-}
-
 async function writeDraft(
   entity,
   id,
@@ -111,19 +102,15 @@ async function writeDraft(
   user
 ) {
   const { service, textOf } = ENTITIES[entity];
-  // Checked before a draft is started: a refusal leaves nothing behind.
   await assertCitable(addressesRetex);
   const { version } = await draftOf(entity, id, major, user.id);
-  // The draft cites what it addresses, from every proposal written into it.
-  const retexIds = addressesRetex
-    ? [...new Set([...(version.retexIds || []), ...addressesRetex])]
-    : undefined;
   const saved = await service.updateVersion(
     id,
     { major: version.versionMajor, minor: version.versionMinor },
-    { ...patch, retexIds },
+    patch,
     user.id
   );
+  const cited = await citeIn(service, id, version, addressesRetex, user.id);
   const draft = saved.versions.find(
     (v) =>
       v.versionMajor === version.versionMajor &&
@@ -137,7 +124,7 @@ async function writeDraft(
     status: String(draft.status).toLowerCase(),
     audience: saved.audience,
     diff: diffOf(active ? textOf(active) : '', textOf(draft)),
-    addressesRetex: draft.retexIds || [],
+    addressesRetex: cited,
   };
 }
 
@@ -186,7 +173,6 @@ const MAX_EXAMPLE_LENGTH = 2000;
 const MAX_CHANGELOG_LENGTH = 2000;
 const MAX_SCOPES = 20;
 const MAX_SCOPE_LENGTH = 50;
-const MAX_CITED_RETEX = 50;
 
 const ID = z.string().min(1).max(MAX_ID_LENGTH);
 const NEW_ID = ID.regex(SkillIdRegex);
@@ -210,17 +196,8 @@ const ANSWER = z.object({
   status: z.enum(['draft']),
   audience: z.string().optional(),
   diff: z.string(),
-  addressesRetex: z
-    .array(z.string())
-    .describe('The retex the draft addresses, closed when it is published.'),
+  addressesRetex: addressedRetex,
 });
-const addressesRetex = z
-  .array(z.string().max(MAX_ID_LENGTH))
-  .max(MAX_CITED_RETEX)
-  .optional()
-  .describe(
-    'The open retex this change addresses, as list_retex gives them: they are closed when the version is published.'
-  );
 const major = z
   .boolean()
   .optional()
